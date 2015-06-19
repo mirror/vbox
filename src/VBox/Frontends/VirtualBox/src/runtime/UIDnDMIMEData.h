@@ -64,7 +64,7 @@ public:
 
 signals:
 
-     int getData(const QString &strMIMEType, QVariant::Type vaType) const;
+     int getData(const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData) const;
 
 public slots:
 

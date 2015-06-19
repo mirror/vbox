@@ -96,7 +96,17 @@ public:
 
 public slots:
 
-    QVariant                   sltGetData(const QString &strMimeType, QVariant::Type vaType);
+    /**
+     * Called by UIDnDMIMEData (Linux, OS X, Solaris) to start retrieving the actual data
+     * from the guest. This function will block and show a modal progress dialog until
+     * the data transfer is complete.
+     *
+     * @return IPRT status code.
+     * @param strMimeType           MIME data type.
+     * @param vaType                Qt's variant type of the MIME data.
+     * @param vaData                Reference to QVariant where to store the retrieved data.
+     */
+    int                        sltGetData(const QString &strMimeType, QVariant::Type vaType, QVariant &vaData);
 
 protected:
 

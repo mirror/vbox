@@ -279,8 +279,8 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     }
 
     /* Invoke this handler as data needs to be retrieved. */
-    connect(m_pMIMEData, SIGNAL(getData(QString, QVariant::Type)),
-            this, SLOT(sltGetData(QString, QVariant::Type)));
+    connect(m_pMIMEData, SIGNAL(getData(QString, QVariant::Type, QVariant&)),
+            this, SLOT(sltGetData(QString, QVariant::Type, QVariant&)));
 
     /* Inform the MIME data object of any changes in the current action. */
     connect(pDrag, SIGNAL(actionChanged(Qt::DropAction)),
@@ -467,7 +467,7 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
                                              QVariant::Type  vaType,
                                              QVariant       &vaData)
 {
-    LogFlowFunc(("Retrieving data as type=%s (variant type=%ld)\n",
+    LogFlowFunc(("Retrieving data as type=%s (variant type=%RU32)\n",
                  strMimeType.toAscii().constData(), vaType));
 
     int rc = VINF_SUCCESS;
@@ -502,14 +502,17 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
                     {
                         case QVariant::String:
                         {
-                            vaData = QVariant(QString(reinterpret_cast<const char*>(vecData.constData())));
+                            vaData = QVariant::fromValue(QString(reinterpret_cast<const char *>(vecData.constData())));
+                            Assert(vaData.type() == QVariant::Type::String);
                             break;
                         }
 
                         case QVariant::ByteArray:
                         {
                             QByteArray ba(reinterpret_cast<const char*>(vecData.constData()), vecData.size());
-                            vaData = QVariant(ba);
+
+                            vaData = QVariant::fromValue(ba);
+                            Assert(vaData.type() == QVariant::Type::ByteArray);
                             break;
                         }
 
@@ -518,7 +521,8 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
                             QString strData = QString(reinterpret_cast<const char*>(vecData.constData()));
                             QStringList lstString = strData.split("\r\n", QString::SkipEmptyParts);
 
-                            vaData = QVariant(lstString);
+                            vaData = QVariant::fromValue(lstString);
+                            Assert(vaData.type() == QVariant::Type::StringList);
                             break;
                         }
 
@@ -555,23 +559,13 @@ void UIDnDHandler::setMode(DNDMODE enmMode)
     LogFlowFunc(("Mode is now: %RU32\n", m_enmMode));
 }
 
-/**
- * Called by UIDnDMIMEData (Linux, OS X, Solaris) to start retrieving the actual data
- * from the guest. This function will block and show a modal progress dialog until
- * the data transfer is complete.
- *
- * @return QVariant with data retrieved, if any.
- * @param strMimeType           MIME data type.
- * @param vaType                Qt's variant type of the MIME data.
- */
-QVariant UIDnDHandler::sltGetData(const QString        &strMimeType,
-                                        QVariant::Type  vaType)
+int UIDnDHandler::sltGetData(const QString        &strMimeType,
+                                   QVariant::Type  vaType,
+                                   QVariant       &vaData)
 {
-    QVariant vaData;
     int rc = retrieveDataInternal(Qt::CopyAction, strMimeType, vaType, vaData);
-    NOREF(rc);
     LogFlowFuncLeaveRC(rc);
-    return vaData;
+    return rc;
 }
 
 /*

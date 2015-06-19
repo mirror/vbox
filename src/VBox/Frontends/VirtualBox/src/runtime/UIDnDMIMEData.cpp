@@ -124,16 +124,22 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QVariant::Type 
 
     LogRel3(("DnD: State=%ld, Action=0x%x, fCanDrop=%RTbool\n", m_enmState, m_curAction, fCanDrop));
 
-    if (!fCanDrop)
+    if (fCanDrop)
     {
-        LogFlowFunc(("Skipping request, state=%RU32 ...\n", m_enmState));
-        return QVariant(QVariant::Invalid); /* Return a NULL variant. */
+        QVariant vaData;
+        int rc = emit getData(strMIMEType, vaType, vaData);
+
+        LogRel3(("DnD: Returning data of type=%s (requested MIME type=%s, requested type=%s), rc=%Rrc\n",
+                 vaData.typeName() ? vaData.typeName() : "<Invalid>",
+                 strMIMEType.toStdString().c_str(),
+                 QVariant::typeToName(vaType) ? QVariant::typeToName(vaType) : "<Invalid>", rc));
+
+        if (RT_SUCCESS(rc))
+            return vaData;
     }
 
-    QVariant vaData = emit getData(strMIMEType, vaType);
-
-    LogRel3(("DnD: Returning data of type '%s'\n", vaData.typeName()));
-    return vaData;
+    LogFlowFunc(("Skipping request, state=%RU32 ...\n", m_enmState));
+    return QVariant(QVariant::Invalid); /* Return a NULL variant. */
 }
 
 int UIDnDMIMEData::setData(const QString &strMIMEType, const QVariant &vaData)
