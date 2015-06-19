@@ -258,7 +258,7 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, std::vector<com::Utf8Str>
         GuestDnDResponse *pResp = GuestDnDInst()->response();
         if (pResp)
         {
-            if (pResp->waitForGuestResponse() == VERR_TIMEOUT)
+            if (pResp->waitForGuestResponse(5000 /* Timeout in ms */) == VERR_TIMEOUT)
                 fFetchResult = false;
 
             if (isDnDIgnoreAction(pResp->defAction()))
