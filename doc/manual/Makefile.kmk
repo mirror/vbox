@@ -452,57 +452,16 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES) \
 ,$(eval $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_ChangeLog.xml: $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml))
 
-# intermediate step to do some variable replacement in the document
-$(foreach lang,$(VBOX_MANUAL_LANGUAGES) \
-,$(foreach file,$(filter-out user_VBoxManage.xml,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
-,$(evalcall2 def_vbox_replace_stuff_in_xml,/$(lang)/$(file),/$(lang))))
-
-# TODO: figure why the rule below doesn't cause kmk to rebuild the manual when a man page changes!
+# Manual dependency for user_VBoxManage.xml.
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
 $(eval $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_VBoxManage.xml: $(VBOX_PATH_MANUAL_SRC)/$(lang)/user_VBoxManage.xml \
 	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
 	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/overview_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
 	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml ))
 
-# user_VBoxManage.xml currently needs some extra processing to stitch in the VBoxManage usage blob.
-$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxManage.xml): \
-		$(VBOX_PATH_MANUAL_OUTBASE)/% : \
-		$(VBOX_PATH_MANUAL_SRC)/% \
-               $$(addprefix $$(@D)/user_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-               $$(addprefix $$(@D)/overview_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-		$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
-		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
-		$(VBOXMANAGEHELP_PATH) | $$(dir $$@)
-	$(call MSG_L1,Pre-processing [2] $(@F) to $@)
-	$(QUIET)$(RM) -f $@ $@.dumpopts $@.screen
-	$(QUIET)$(REDIRECT) -wo $@.dumpopts -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
-		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
-		-- \
-		$(VBOXMANAGEHELP_PATH) --dumpopts
-	$(QUIET)$(SED) \
-		-e ':a' \
-		-e 'N' \
-		-e '$(DOLLAR)!ba' \
-		-e 's/</\&lt\;/g' \
-		-e 's/>/\&gt\;/g' \
-		-e 's/\n*$(DOLLAR)/<\/screen>/' \
-		-e 's/^/<screen>/' \
-		--output $@.screen $@.dumpopts
-	$(QUIET)$(SED) \
-		-e '/@VBOX_MANAGE_OUTPUT@/{' -e 'r $@.screen' -e 'd' -e '}' \
-               \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-		-e 's|@VBOX_PATH_DOCBOOK@|$(VBOX_PATH_DOCBOOK)|g' \
-		-e 's|@VBOX_PATH_MANUAL_SRC@|$(VBOX_PATH_MANUAL_SRC)|g' \
-		--output "$@" \
-		"$<"
-	$(QUIET)$(RM) -f $@.dumpopts $@.screen
+# Intermediate step to do some variable replacement in the document.
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG) \
+,$(evalcall2 def_vbox_replace_stuff_in_xml,/$(lang)/$(file),/$(lang))))
 
 ##
 # Morph man pages into manual sections.
@@ -533,15 +492,33 @@ $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FIL
 	$(call MSG_TOOL,xsltproc $(notdir $(filter %.xsl,$^)),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --output "$@" $< $(filter %.xml,$^)
 
-$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml: $(MAKEFILE_CURRENT) | $$(dir $$@)
+$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml: $(VBOXMANAGEHELP_PATH) $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,)
+	$(QUIET)$(RM) -f $@ $@.dumpopts
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<?xml version="1.0" encoding="UTF-8"?>' \
                '<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">' \
-               '<remark role="VBoxManage-overview">' \
+               '<sect1> <!-- this will be skipped via xpointer in the include. --> '
+	$(QUIET)$(REDIRECT) -wo $@.dumpopts -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
+		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
+		-- \
+		$(VBOXMANAGEHELP_PATH) --dumpopts
+	$(QUIET)$(SED) \
+		-e ':a' \
+		-e 'N' \
+		-e '$(DOLLAR)!ba' \
+		-e 's/</\&lt\;/g' \
+		-e 's/>/\&gt\;/g' \
+		-e 's/\n*$(DOLLAR)/<\/screen>/' \
+		-e 's/^/<screen>/' \
+		--append $@ $@.dumpopts
+	$(QUIET)$(RM) -f $@.dumpopts
+	$(QUIET)$(APPEND) -n "$@" \
+               '  <remark role="VBoxManage-overview">' \
                $(foreach refentry, $(filter man_VBoxManage%,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
 		, '  <xi:include href="overview_$(refentry)" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />') \
-               '</remark>'
+               '  </remark>' \
+               '</sect1>'
 
 
 

@@ -143,8 +143,7 @@ Settings file: '/home/nomutilisateur/.config/VirtualBox/Machines/SUSE 10.2/SUSE 
     en cas de doute, vérifiez la sortie de <computeroutput>VBoxManage</computeroutput>
     pour voir les commandes disponibles sur votre hôte en particulier.</para>
 
-    <screen>@VBOX_MANAGE_OUTPUT@</screen> <!-- the whole line is replaced later -->
-    <xi:include href="../user_VBoxManage_CommandsOverview.xml" xpointer="element(/1)"
+    <xi:include href="../user_VBoxManage_CommandsOverview.xml" xpointer="xpointer(/sect1/*)"
       xmlns:xi="http://www.w3.org/2001/XInclude" />
 
     <para>À chaque fois que vous appelez VBoxManage, une seule commande peut être
