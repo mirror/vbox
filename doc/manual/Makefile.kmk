@@ -893,20 +893,20 @@ define def_vbox_refentry_to_manpage
 $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(2): \
 		$$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl \
-		$$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
+		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) \
 		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(RM) -f "$$@"
 	$$(QUIET)$$(VBOX_XSLTPROC_WITH_CAT) --output $$@ \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl $$<
  ifdef VBOX_HAVE_XMLLINT
-	$$(QUIET)$$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $$@
+	$$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $$@
  endif
 
 $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(patsubst man_%,%.1,$(basename $(2))): \
 		$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(2) \
 		$$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-manpage.xsl \
-		$$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
+		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) \
 		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(RM) -f "$$@"
