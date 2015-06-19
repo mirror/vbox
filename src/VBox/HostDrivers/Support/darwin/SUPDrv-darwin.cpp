@@ -901,6 +901,28 @@ IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32
 }
 
 
+#ifdef VBOX_WITH_HOST_VMX
+/**
+ * For cleaning up the mess we left behind on Yosemite with 4.3.28 and earlier.
+ *
+ * We ASSUME VT-x is supported by the CPU.
+ *
+ * @param   idCpu       Unused.
+ * @param   pvUser1     Unused.
+ * @param   pvUser2     Unused.
+ */
+static DECLCALLBACK(void) vboxdrvDarwinVmxEnableFix(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    RTCCUINTREG uCr4 = ASMGetCR4();
+    if (!(uCr4 & X86_CR4_VMXE))
+    {
+        uCr4 |= X86_CR4_VMXE;
+        ASMSetCR4(uCr4);
+    }
+}
+#endif
+
+
 /**
  * @copydoc SUPR0EnableVTx
  */
@@ -918,6 +940,35 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
     {
         if (fEnable)
         {
+            /*
+             * We screwed up on Yosemite and didn't notice that we weren't
+             * calling host_vmxon.  CR4.VMXE may therefor have been disabled
+             * by us.  So, first time around we make sure it's set so we won't
+             * crash in the pre-4.3.28/5.0RC1 upgrade scenario.
+             */
+            static bool volatile g_fDoneCleanup = false;
+            if (!g_fDoneCleanup)
+            {
+                if (version_major == 14 /* 14 = 10.10 = yosemite */)
+                {
+                    uint32_t fCaps;
+                    int rc = supdrvQueryVTCapsInternal(&fCaps);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (fCaps & SUPVTCAPS_VT_X)
+                            rc = RTMpOnAll(vboxdrvDarwinVmxEnableFix, NULL, NULL);
+                        else
+                            rc = VERR_VMX_NO_VMX;
+                    }
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+                g_fDoneCleanup = true;
+            }
+
+            /*
+             * Call the kernel.
+             */
             rc = host_vmxon(false /* exclusive */);
             if (rc == VMX_OK)
                 rc = VINF_SUCCESS;
