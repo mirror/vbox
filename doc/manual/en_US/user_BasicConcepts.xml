@@ -1000,8 +1000,8 @@
     emulation of an Intel AC'97 controller, an Intel HD Audio
     controller<footnote>
         <para>Intel HD Audio support was added with VirtualBox 4.0 because
-        Windows 7 (32-bit and 64-bit versions) as well as 64-bit Windows Vista
-        do not support the Intel AC'97 controller.</para>
+        Windows 7 and later (as well as 64-bit Windows Vista) do not support
+        the Intel AC'97 controller out of the box.</para>
       </footnote> or a SoundBlaster 16 card. In any case, you can select what
     audio driver VirtualBox will use on the host.</para>
 
