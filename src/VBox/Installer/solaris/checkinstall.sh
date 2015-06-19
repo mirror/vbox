@@ -50,7 +50,7 @@ checkdep_svr4()
 checkdep_ips()
 {
     if test -z "$1"; then
-        errorprint "Missing argument to checkdep_svr4"
+        errorprint "Missing argument to checkdep_ips"
         return 1
     fi
     # using "list" without "-a" only lists installed pkgs which is what we need
@@ -60,7 +60,25 @@ checkdep_ips()
     fi
     PKG_MISSING_IPS="$PKG_MISSING_IPS $1"
     return 1
+}
 
+checkdep_ips_either()
+{
+    if test -z "$1" || test -z "$2"; then
+        errorprint "Missing argument to checkdep_ips_either"
+        return 1
+    fi
+    # using "list" without "-a" only lists installed pkgs which is what we need
+    $BIN_PKG $BASEDIR_OPT list "$1" >/dev/null 2>&1
+    if test $? -eq 0; then
+        return 0
+    fi
+    $BIN_PKG $BASEDIR_OPT list "$2" >/dev/null 2>&1
+    if test $? -eq 0; then
+        return 0
+    fi
+    PKG_MISSING_IPS="$PKG_MISSING_IPS $1 or $2"
+    return 1
 }
 
 disable_service()
@@ -116,7 +134,7 @@ infoprint "Checking package dependencies..."
 
 if test -x "$BIN_PKG"; then
     checkdep_ips "runtime/python-26"
-    checkdep_ips "system/library/iconv/utf-8"
+    checkdep_ips_either "system/library/iconv/utf-8" "system/library/iconv/iconv-core"
 else
     PKG_MISSING_IPS="runtime/python-26 system/library/iconv/utf-8"
 fi
