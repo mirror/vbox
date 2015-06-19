@@ -920,6 +920,8 @@ help-experiment:: \
 $(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-C-help.xsl,)
 $(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-H-help.xsl,)
 
+$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-C-help.xsl: $(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl # manual dependency.
+
 $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp.ts \
 +| $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-C-help.xsl \

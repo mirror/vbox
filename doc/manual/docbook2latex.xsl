@@ -786,6 +786,7 @@
     </xsl:choose>
   </xsl:template>
 
+  <!-- duplicated in docbook2latex.xsl -->
   <xsl:template match="arg|group">
     <!-- separator char if we're not the first child -->
     <xsl:if test="position() > 1">

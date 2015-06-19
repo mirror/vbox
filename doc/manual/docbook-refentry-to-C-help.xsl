@@ -23,14 +23,21 @@
   >
 
   <xsl:import href="@VBOX_PATH_MANUAL_SRC@/string.xsl"/>
+  <xsl:import href="@VBOX_PATH_MANUAL_SRC@/common-formatcfg.xsl"/>
 
   <xsl:output method="text" version="1.0" encoding="utf-8" indent="yes"/>
   <xsl:strip-space elements="*"/>
 
+  <xsl:variable name="g_sUnderlineRefSect1">
+    <xsl:text>===================================================================================================================</xsl:text>
+  </xsl:variable>
+  <xsl:variable name="g_sUnderlineRefSect2">
+    <xsl:text>-------------------------------------------------------------------------------------------------------------------</xsl:text>
+  </xsl:variable>
+
 
   <!-- Default action, do nothing. -->
   <xsl:template match="node()|@*"/>
-
 
   <!--
     main() - because we need to order the output in a specific manner
@@ -113,7 +120,11 @@ static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:t
     <!-- The follows the usage (synopsis) section. -->
     <xsl:text>
     {   REFENTRYSTR_SCOPE_GLOBAL,
-        "Usage:" },</xsl:text>
+        "Usage" },
+    {   REFENTRYSTR_SCOPE_SAME,
+        "=====" },
+    {   REFENTRYSTR_SCOPE_SAME,
+        "" },</xsl:text>
         <xsl:apply-templates select="./refsynopsisdiv/node()"/>
 
     <!-- Then comes the description and other refsect1 -->
@@ -121,11 +132,19 @@ static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:t
       <xsl:if test="name(*[1]) != 'title'"><xsl:message terminate="yes">Expected title as the first element in refsect1.</xsl:message></xsl:if>
       <xsl:if test="text()"><xsl:message terminate="yes">No text supported in refsect1.</xsl:message></xsl:if>
       <xsl:if test="not(./remark[@role='help-skip'])">
+        <xsl:variable name="sTitle">
+          <xsl:apply-templates select="./title/node()"/>
+        </xsl:variable>
         <xsl:text>
     {   </xsl:text><xsl:call-template name="calc-scope-refsect1"/><xsl:text>, "" },
     {   REFENTRYSTR_SCOPE_SAME,
-        "</xsl:text><xsl:apply-templates select="title/node()"/><xsl:text>:" },</xsl:text>
-        <xsl:apply-templates select="./*[position() > 1]"/>
+        "</xsl:text><xsl:value-of select="$sTitle"/><xsl:text>" },
+    {   REFENTRYSTR_SCOPE_SAME,
+        "</xsl:text>
+        <xsl:value-of select="substring($g_sUnderlineRefSect1, 1, string-length($sTitle))"/>
+        <xsl:text>" },</xsl:text>
+
+        <xsl:apply-templates select="./*[name() != 'title']"/>
       </xsl:if>
     </xsl:for-each>
 
@@ -190,38 +209,51 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   </xsl:template>
 
   <xsl:template match="replaceable">
-    <xsl:text>&lt;</xsl:text>
-    <xsl:apply-templates select="node()|@*"/>
-    <xsl:text>&gt;</xsl:text>
+    <xsl:choose>
+      <xsl:when test="not(ancestor::cmdsynopsis) or ancestor::arg">
+        <xsl:apply-templates />
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>&lt;</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>&gt;</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
+  <!-- duplicated in docbook2latex.xsl -->
   <xsl:template match="arg|group">
     <!-- separator char if we're not the first child -->
     <xsl:if test="position() > 1">
       <xsl:choose>
+        <xsl:when test="parent::group"><xsl:value-of select="$arg.or.sep"/></xsl:when>
         <xsl:when test="ancestor-or-self::*/@sepchar"><xsl:value-of select="ancestor-or-self::*/@sepchar"/></xsl:when>
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
     </xsl:if>
     <!-- open wrapping -->
     <xsl:choose>
-      <xsl:when test="@choice = 'opt' or not(@choice) or @choice = ''"> <xsl:text>[</xsl:text></xsl:when>
-      <xsl:when test="@choice = 'req'">                                 <xsl:text></xsl:text></xsl:when>
+      <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.open.str"/></xsl:when>
+      <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.open.str"/></xsl:when>
+      <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.open.str"/></xsl:when>
       <xsl:when test="@choice = 'plain'"/>
       <xsl:otherwise><xsl:message terminate="yes">Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
+
     <!-- render the arg (TODO: may need to do more work here) -->
-    <xsl:apply-templates select="node()|@*"/>
+    <xsl:apply-templates />
+
     <!-- repeat wrapping -->
     <xsl:choose>
       <xsl:when test="@rep = 'norepeat' or not(@rep) or @rep = ''"/>
-      <xsl:when test="@rep = 'repeat'">                                 <xsl:text>...</xsl:text></xsl:when>
+      <xsl:when test="@rep = 'repeat'">               <xsl:value-of select="$arg.rep.repeat.str"/></xsl:when>
       <xsl:otherwise><xsl:message terminate="yes">Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
     <!-- close wrapping -->
     <xsl:choose>
-      <xsl:when test="@choice = 'opt' or not(@choice) or @choice = ''"> <xsl:text>]</xsl:text></xsl:when>
-      <xsl:when test="@choice = 'req'">                                 <xsl:text></xsl:text></xsl:when>
+      <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.close.str"/></xsl:when>
+      <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
+      <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
     </xsl:choose>
   </xsl:template>
 
@@ -235,12 +267,20 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
     <xsl:if test="count(./title) != 1"><xsl:message terminate="yes">refsect2 requires a title (<xsl:value-of select="ancestor-or-self::*[@id][1]/@id"/>)</xsl:message></xsl:if>
 
     <!-- title / command synopsis - sets the scope. -->
+    <xsl:variable name="sTitle">
+      <xsl:apply-templates select="./title/text()"/>
+    </xsl:variable>
     <xsl:text>
     {   </xsl:text><xsl:call-template name="calc-scope-refsect2"/><xsl:text>, "" },
     {   REFENTRYSTR_SCOPE_SAME,
         "</xsl:text><xsl:call-template name="emit-indentation"/>
-    <xsl:apply-templates select="./title/text()"/>
-    <xsl:text>" },</xsl:text>
+    <xsl:value-of select="$sTitle"/>
+    <xsl:text>" },
+    {   REFENTRYSTR_SCOPE_SAME,
+        "</xsl:text><xsl:call-template name="emit-indentation"/>
+    <xsl:value-of select="substring($g_sUnderlineRefSect2, 1, string-length($sTitle))"/>
+    <xsl:text>" },
+    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
 
     <!-- Format the text in the section -->
     <xsl:for-each select="./*[name() != 'title']">
@@ -274,13 +314,13 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
     <xsl:if test="*[not(self::varlistentry)]|text()">
       <xsl:message terminate="yes">Only varlistentry elements are supported in variablelist</xsl:message>
     </xsl:if>
-    <xsl:if test="position() != 1">
-      <xsl:text>
-    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
-    </xsl:if>
     <xsl:for-each select="./varlistentry">
       <xsl:if test="count(*) != 2 or not(term) or not(listitem)">
         <xsl:message terminate="yes">Expected exactly one term and one listentry member in varlistentry element.</xsl:message>
+      </xsl:if>
+      <xsl:if test="not(@spacing) or @spacing != 'compact'">
+        <xsl:text>
+    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
       </xsl:if>
       <xsl:apply-templates select="*"/>
     </xsl:for-each>
@@ -291,8 +331,40 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   </xsl:template>
 
   <xsl:template match="varlistentry/listitem">
-    <xsl:if test="text() or *[not(self::para)]">
+    <xsl:if test="text() or *[not(self::para or self::itemizedlist)]">
       <xsl:message terminate="yes">Expected varlistentry/listitem to only contain para elements</xsl:message>
+    </xsl:if>
+    <xsl:apply-templates select="*"/>
+  </xsl:template>
+
+
+  <!--
+    itemizedlist
+    -->
+  <xsl:template match="itemizedlist">
+    <xsl:if test="*[not(self::listitem)]|text()">
+      <xsl:message terminate="yes">Only listitem elements are supported in itemizedlist.</xsl:message>
+    </xsl:if>
+    <xsl:if test="parent::para">
+      <xsl:message terminate="yes">itemizedlist inside a para is current not supported. <!-- no newline
+        -->Close the para before the list, it makes no difference to html and latex/pdf output.</xsl:message>
+    </xsl:if>
+    <xsl:if test="position() != 1 and (not(@spacing) or @spacing != 'compact')">
+      <xsl:text>
+    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
+    </xsl:if>
+    <xsl:for-each select="./listitem">
+      <xsl:apply-templates select="*"/>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="itemizedlist/listitem">
+    <xsl:if test="text() or *[not(self::para)]">
+      <xsl:message terminate="yes">Expected itemizedlist/listitem to only contain para elements</xsl:message>
+    </xsl:if>
+    <xsl:if test="position() != 1 and @spaceing != 'compact'">
+      <xsl:text>
+    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
     </xsl:if>
     <xsl:apply-templates select="*"/>
   </xsl:template>
@@ -375,10 +447,16 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
         <xsl:value-of select="normalize-space(.)"/>
       </xsl:otherwise>
     </xsl:choose>
+
+    <!-- Ugly whitespace hack! Mainly for <arg>-_-cpu <replaceable>id</replaceable></arg> -->
+    <xsl:if test="substring(.,string-length(.)) = ' ' and position() != last()">
+      <xsl:text> </xsl:text>
+    </xsl:if>
+
   </xsl:template>
 
   <!-- Elements producing non-breaking strings (single line). -->
-  <xsl:template match="command/text()|option/text()|computeroutput/text()" name="escape_fixed_text">
+  <xsl:template match="command/text()|option/text()|computeroutput/text()|arg/text()" name="escape_fixed_text">
     <xsl:param name="sText" select="."/>
     <xsl:choose>
 
@@ -627,26 +705,30 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
 
 
   <!--
-    Calculates and emits indentation.
+    Calculates and emits indentation list markup.
     -->
   <xsl:template name="emit-indentation">
-    <xsl:if test="ancestor::refsect1|ancestor::refsynopsisdiv">
-      <xsl:text>  </xsl:text>
-    </xsl:if>
-    <xsl:if test="ancestor::refsect2">
-      <xsl:text>  </xsl:text>
-    </xsl:if>
-    <xsl:if test="ancestor::refsect3">
-      <xsl:text>  </xsl:text>
-    </xsl:if>
-    <xsl:if test="ancestor::varlistentry">
-      <xsl:if test="ancestor-or-self::term">
-        <xsl:text> </xsl:text>
-      </xsl:if>
-      <xsl:if test="ancestor-or-self::listitem">
-        <xsl:text>    </xsl:text>
-      </xsl:if>
-    </xsl:if>
+    <xsl:variable name="iDepth" select="count(ancestor-or-self::*)"/>
+    <xsl:for-each select="ancestor-or-self::*">
+      <xsl:choose>
+        <xsl:when test="self::refsect1
+                      | self::refsect2
+                      | self::refsect3
+                      | self::refsynopsisdiv">
+          <xsl:text>  </xsl:text>
+        </xsl:when>
+        <xsl:when test="self::term"/> <!-- currently no indent. -->
+        <xsl:when test="self::listitem and parent::varlistentry">
+          <xsl:text>    </xsl:text>
+        </xsl:when>
+        <xsl:when test="self::listitem and parent::itemizedlist and (position() + 1) = $iDepth">
+          <xsl:text>  * </xsl:text>
+        </xsl:when>
+        <xsl:when test="self::listitem and parent::itemizedlist">
+          <xsl:text>    </xsl:text>
+        </xsl:when>
+      </xsl:choose>
+    </xsl:for-each>
   </xsl:template>
 
   <!--
