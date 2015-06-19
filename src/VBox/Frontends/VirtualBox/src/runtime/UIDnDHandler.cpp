@@ -503,7 +503,7 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
                         case QVariant::String:
                         {
                             vaData = QVariant::fromValue(QString(reinterpret_cast<const char *>(vecData.constData())));
-                            Assert(vaData.type() == QVariant::Type::String);
+                            Assert(vaData.type() == QVariant::String);
                             break;
                         }
 
@@ -512,7 +512,7 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
                             QByteArray ba(reinterpret_cast<const char*>(vecData.constData()), vecData.size());
 
                             vaData = QVariant::fromValue(ba);
-                            Assert(vaData.type() == QVariant::Type::ByteArray);
+                            Assert(vaData.type() == QVariant::ByteArray);
                             break;
                         }
 
@@ -522,7 +522,7 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
                             QStringList lstString = strData.split("\r\n", QString::SkipEmptyParts);
 
                             vaData = QVariant::fromValue(lstString);
-                            Assert(vaData.type() == QVariant::Type::StringList);
+                            Assert(vaData.type() == QVariant::StringList);
                             break;
                         }
 
