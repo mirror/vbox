@@ -28,6 +28,8 @@
   <xsl:output method="text" version="1.0" encoding="utf-8" indent="yes"/>
   <xsl:strip-space elements="*"/>
 
+  <xsl:param name="g_fDebugText" select="0"/>
+
   <xsl:variable name="g_sUnderlineRefSect1">
     <xsl:text>===================================================================================================================</xsl:text>
   </xsl:variable>
@@ -331,22 +333,22 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   </xsl:template>
 
   <xsl:template match="varlistentry/listitem">
-    <xsl:if test="text() or *[not(self::para or self::itemizedlist)]">
-      <xsl:message terminate="yes">Expected varlistentry/listitem to only contain para elements</xsl:message>
+    <xsl:if test="text() or *[not(self::para or self::itemizedlist or self::orderedlist)]">
+      <xsl:message terminate="yes">Expected varlistentry/listitem to only contain para, itemizedlist and orderedlist elements</xsl:message>
     </xsl:if>
     <xsl:apply-templates select="*"/>
   </xsl:template>
 
 
   <!--
-    itemizedlist
+    itemizedlist and orderedlist
     -->
-  <xsl:template match="itemizedlist">
+  <xsl:template match="itemizedlist|orderedlist">
     <xsl:if test="*[not(self::listitem)]|text()">
-      <xsl:message terminate="yes">Only listitem elements are supported in itemizedlist.</xsl:message>
+      <xsl:message terminate="yes">Only listitem elements are supported in <xsl:value-of select="name()"/>.</xsl:message>
     </xsl:if>
     <xsl:if test="parent::para">
-      <xsl:message terminate="yes">itemizedlist inside a para is current not supported. <!-- no newline
+      <xsl:message terminate="yes"><xsl:value-of select="name()"/> inside a para is current not supported. <!-- no newline
         -->Close the para before the list, it makes no difference to html and latex/pdf output.</xsl:message>
     </xsl:if>
     <xsl:if test="position() != 1 and (not(@spacing) or @spacing != 'compact')">
@@ -358,9 +360,9 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
     </xsl:for-each>
   </xsl:template>
 
-  <xsl:template match="itemizedlist/listitem">
+  <xsl:template match="itemizedlist/listitem|orderedlist/listitem">
     <xsl:if test="text() or *[not(self::para)]">
-      <xsl:message terminate="yes">Expected itemizedlist/listitem to only contain para elements</xsl:message>
+      <xsl:message terminate="yes">Expected <xsl:value-of select="name()"/>/listitem to only contain para elements</xsl:message>
     </xsl:if>
     <xsl:if test="position() != 1 and @spaceing != 'compact'">
       <xsl:text>
@@ -419,11 +421,19 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   </xsl:template>
 
 
-
   <!--
     Text escaping for C.
     -->
   <xsl:template match="text()" name="escape_text">
+    <!-- Leading whitespace hack! -->
+    <xsl:if test="substring(.,1,1) = ' ' and position() != 1">
+      <xsl:text> </xsl:text>
+      <xsl:if test="boolean($g_fDebugText)">
+        <xsl:message>text: add space</xsl:message>
+      </xsl:if>
+    </xsl:if>
+
+    <!-- Body of text -->
     <xsl:choose>
 
       <xsl:when test="contains(., '\') or contains(., '&quot;')">
@@ -435,22 +445,34 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
             <xsl:with-param name="disable-output-escaping" select="yes"/>
           </xsl:call-template>
         </xsl:variable>
-        <xsl:call-template name="str:subst">
-          <xsl:with-param name="text" select="$sTmp"/>
-          <xsl:with-param name="replace" select="'&quot;'"/>
-          <xsl:with-param name="with" select="'\&quot;'"/>
-          <xsl:with-param name="disable-output-escaping" select="yes"/>
-        </xsl:call-template>
+        <xsl:variable name="sTmp2">
+          <xsl:call-template name="str:subst">
+            <xsl:with-param name="text" select="$sTmp"/>
+            <xsl:with-param name="replace" select="'&quot;'"/>
+            <xsl:with-param name="with" select="'\&quot;'"/>
+            <xsl:with-param name="disable-output-escaping" select="yes"/>
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:value-of select="$sTmp2"/>
+        <xsl:if test="boolean($g_fDebugText)">
+          <xsl:message>text: |<xsl:value-of select="$sTmp2"/>|</xsl:message>
+        </xsl:if>
       </xsl:when>
 
       <xsl:otherwise>
         <xsl:value-of select="normalize-space(.)"/>
+        <xsl:if test="boolean($g_fDebugText)">
+          <xsl:message>text: |<xsl:value-of select="normalize-space(.)"/>|</xsl:message>
+        </xsl:if>
       </xsl:otherwise>
     </xsl:choose>
 
-    <!-- Ugly whitespace hack! Mainly for <arg>-_-cpu <replaceable>id</replaceable></arg> -->
-    <xsl:if test="substring(.,string-length(.)) = ' ' and position() != last()">
+    <!-- Trailing whitespace hack! -->
+    <xsl:if test="substring(.,string-length(.)) = ' ' and position() != last() and string-length(.) != 1">
       <xsl:text> </xsl:text>
+      <xsl:if test="boolean($g_fDebugText)">
+        <xsl:message>text: add space</xsl:message>
+      </xsl:if>
     </xsl:if>
 
   </xsl:template>
@@ -477,25 +499,40 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
             <xsl:with-param name="disable-output-escaping" select="yes"/>
           </xsl:call-template>
         </xsl:variable>
-        <xsl:call-template name="str:subst">
-          <xsl:with-param name="text" select="$sTmp2"/>
-          <xsl:with-param name="replace" select="' '"/>
-          <xsl:with-param name="with" select="'\b'"/>
-          <xsl:with-param name="disable-output-escaping" select="yes"/>
-        </xsl:call-template>
+        <xsl:variable name="sTmp3">
+          <xsl:call-template name="str:subst">
+            <xsl:with-param name="text" select="$sTmp2"/>
+            <xsl:with-param name="replace" select="' '"/>
+            <xsl:with-param name="with" select="'\b'"/>
+            <xsl:with-param name="disable-output-escaping" select="yes"/>
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:value-of select="$sTmp3"/>
+        <xsl:if test="boolean($g_fDebugText)">
+          <xsl:message>text! |<xsl:value-of select="$sTmp3"/>|</xsl:message>
+        </xsl:if>
       </xsl:when>
 
       <xsl:when test="contains($sText, ' ')">
-        <xsl:call-template name="str:subst">
-          <xsl:with-param name="text" select="$sText"/>
-          <xsl:with-param name="replace" select="' '"/>
-          <xsl:with-param name="with" select="'\b'"/>
-          <xsl:with-param name="disable-output-escaping" select="yes"/>
-        </xsl:call-template>
+        <xsl:variable name="sTmp">
+          <xsl:call-template name="str:subst">
+            <xsl:with-param name="text" select="$sText"/>
+            <xsl:with-param name="replace" select="' '"/>
+            <xsl:with-param name="with" select="'\b'"/>
+            <xsl:with-param name="disable-output-escaping" select="yes"/>
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:value-of select="$sTmp"/>
+        <xsl:if test="boolean($g_fDebugText)">
+          <xsl:message>text! |<xsl:value-of select="$sTmp"/>|</xsl:message>
+        </xsl:if>
       </xsl:when>
 
       <xsl:otherwise>
         <xsl:value-of select="$sText"/>
+        <xsl:if test="boolean($g_fDebugText)">
+          <xsl:message>text! |<xsl:value-of select="$sText"/>|</xsl:message>
+        </xsl:if>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -561,9 +598,6 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
         "</xsl:text><xsl:call-template name="emit-indentation"/>
 
     <xsl:for-each select="node()[not(self::remark)]">
-      <xsl:if test="position() != 1">
-        <xsl:text> </xsl:text>
-      </xsl:if>
       <xsl:choose>
         <xsl:when test="name() = ''">
           <xsl:call-template name="escape_text"/>
@@ -711,22 +745,37 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     <xsl:variable name="iDepth" select="count(ancestor-or-self::*)"/>
     <xsl:for-each select="ancestor-or-self::*">
       <xsl:choose>
+
         <xsl:when test="self::refsect1
                       | self::refsect2
                       | self::refsect3
                       | self::refsynopsisdiv">
           <xsl:text>  </xsl:text>
         </xsl:when>
-        <xsl:when test="self::term"/> <!-- currently no indent. -->
-        <xsl:when test="self::listitem and parent::varlistentry">
-          <xsl:text>    </xsl:text>
+
+        <xsl:when test="self::term">
+           <!-- currently no indent. -->
         </xsl:when>
+
+        <!-- Evidence here (especially with orderedlist) that doing list by for-each
+             listitem in the template matching the list type would be easier... -->
         <xsl:when test="self::listitem and parent::itemizedlist and (position() + 1) = $iDepth">
-          <xsl:text>  * </xsl:text>
+          <xsl:text>  - </xsl:text>
         </xsl:when>
-        <xsl:when test="self::listitem and parent::itemizedlist">
+
+        <xsl:when test="self::listitem and parent::orderedlist and (position() + 1) = $iDepth">
+          <xsl:variable name="iNumber" select="count(preceding-sibling::listitem) + 1"/>
+          <xsl:if test="$iNumber &lt;= 9">
+            <xsl:text> </xsl:text>
+          </xsl:if>
+          <xsl:value-of select="$iNumber"/>
+          <xsl:text>. </xsl:text>
+        </xsl:when>
+
+        <xsl:when test="self::listitem">
           <xsl:text>    </xsl:text>
         </xsl:when>
+
       </xsl:choose>
     </xsl:for-each>
   </xsl:template>
