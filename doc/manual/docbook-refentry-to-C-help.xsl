@@ -333,12 +333,12 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   </xsl:template>
 
   <xsl:template match="varlistentry/listitem">
-    <xsl:if test="text() or *[not(self::para or self::itemizedlist or self::orderedlist)]">
-      <xsl:message terminate="yes">Expected varlistentry/listitem to only contain para, itemizedlist and orderedlist elements:<!-- no newline -->
-        <xsl:if test="text()">text(), </xsl:if>
-        <for-each select="*[self::para or self::itemizedlist or self::orderedlist]">
-          <xsl:value-of select="concat(name(.), ', ')"/>
-        </for-each>
+    <xsl:if test="*[not(self::para or self::itemizedlist or self::orderedlist)]|text()">
+      <xsl:message terminate="yes">
+        <xsl:call-template name="get-node-path"/>: error: Expected varlistentry/listitem to only contain para, itemizedlist and orderedlist elements:
+        <xsl:call-template name="list-nodes">
+          <xsl:with-param name="Nodes" select="*[not(self::para or self::itemizedlist or self::orderedlist)]|text()"/>
+        </xsl:call-template>
       </xsl:message>
     </xsl:if>
 
@@ -351,7 +351,12 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
     -->
   <xsl:template match="itemizedlist|orderedlist">
     <xsl:if test="*[not(self::listitem)]|text()">
-      <xsl:message terminate="yes">Only listitem elements are supported in <xsl:value-of select="name()"/>.</xsl:message>
+      <xsl:message terminate="yes">
+        <xsl:call-template name="get-node-path"/>: error: Only listitem elements are supported in <xsl:value-of select="name()"/>:
+        <xsl:call-template name="list-nodes">
+          <xsl:with-param name="Nodes" select="*[not(self::listitem)]|text()"/>
+        </xsl:call-template>
+        </xsl:message>
     </xsl:if>
     <xsl:if test="parent::para">
       <xsl:message terminate="yes"><xsl:value-of select="name()"/> inside a para is current not supported. <!-- no newline
@@ -367,9 +372,15 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   </xsl:template>
 
   <xsl:template match="itemizedlist/listitem|orderedlist/listitem">
-    <xsl:if test="text() or *[not(self::para)]">
-      <xsl:message terminate="yes">Expected <xsl:value-of select="name()"/>/listitem to only contain para elements</xsl:message>
+    <xsl:if test="*[not(self::para)]|text()">
+      <xsl:message terminate="yes">
+        <xsl:call-template name="get-node-path"/>: error: Expected <xsl:value-of select="name()"/>/listitem to only contain para elements:
+        <xsl:call-template name="list-nodes">
+          <xsl:with-param name="Nodes" select="*[not(self::para)]|text()"/>
+        </xsl:call-template>
+      </xsl:message>
     </xsl:if>
+
     <xsl:if test="position() != 1 and @spaceing != 'compact'">
       <xsl:text>
     {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
@@ -795,6 +806,58 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
       <xsl:with-param name="text" select="substring($text,1,1)"/>
     </xsl:call-template>
     <xsl:value-of select="substring($text,2)"/>
+  </xsl:template>
+
+
+  <!--
+    Debug/Diagnostics: Return the path to the specified node (by default the current).
+    -->
+  <xsl:template name="get-node-path">
+    <xsl:param name="Node" select="."/>
+    <xsl:for-each select="$Node">
+      <xsl:for-each select="ancestor-or-self::node()">
+        <xsl:choose>
+          <xsl:when test="name(.) = ''">
+            <xsl:text>text()</xsl:text>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="concat('/', name(.))"/>
+            <xsl:if test="@id">
+              <xsl:text>[@id=</xsl:text>
+              <xsl:value-of select="@id"/>
+              <xsl:text>]</xsl:text>
+            </xsl:if>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:for-each>
+    </xsl:for-each>
+  </xsl:template>
+
+  <!--
+    Debug/Diagnostics: Print list of nodes (by default all children of current node).
+    -->
+  <xsl:template name="list-nodes">
+    <xsl:param name="Nodes" select="node()"/>
+
+    <for-each select="$Nodes">
+      <xsl:if test="posision() != 1">
+        <xsl:text>, </xsl:text>
+      </xsl:if>
+      <xsl:choose>
+        <xsl:when test="name(.) = ''">
+          <xsl:text>text()</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="name(.)"/>
+          <xsl:if test="@id">
+            <xsl:text>[@id=</xsl:text>
+            <xsl:value-of select="@id"/>
+            <xsl:text>]</xsl:text>
+          </xsl:if>
+        </xsl:otherwise>
+      </xsl:choose>
+    </for-each>
+
   </xsl:template>
 
 </xsl:stylesheet>
