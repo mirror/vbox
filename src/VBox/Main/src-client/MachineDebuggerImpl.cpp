@@ -454,11 +454,8 @@ HRESULT MachineDebugger::setLogEnabled(BOOL aLogEnabled)
 }
 
 HRESULT MachineDebugger::i_logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLogGetStr,
-                                          const char *pszLogGetStr, Utf8Str astrSettings)
+                                          const char *pszLogGetStr, Utf8Str *pstrSettings)
 {
-    BSTR *a_pbstrSettings = new BSTR;
-    astrSettings.cloneTo(a_pbstrSettings);
-
     /* Make sure the VM is powered up. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
@@ -469,8 +466,7 @@ HRESULT MachineDebugger::i_logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLog
     /* Make sure we've got a logger. */
     if (!pLogger)
     {
-        Bstr bstrEmpty;
-        bstrEmpty.cloneTo(a_pbstrSettings);
+        *pstrSettings = "";
         return S_OK;
     }
 
@@ -480,25 +476,20 @@ HRESULT MachineDebugger::i_logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLog
     {
         char *pszBuf = (char *)RTMemTmpAlloc(cbBuf);
         AssertReturn(pszBuf, E_OUTOFMEMORY);
-
-        int rc = pfnLogGetStr(pLogger, pszBuf, cbBuf);
-        if (RT_SUCCESS(rc))
+        int vrc = pstrSettings->reserveNoThrow(cbBuf);
+        if (RT_SUCCESS(vrc))
         {
-            try
+            vrc = pfnLogGetStr(pLogger, pstrSettings->mutableRaw(), cbBuf);
+            if (RT_SUCCESS(vrc))
             {
-                Bstr bstrRet(pszBuf);
-                bstrRet.detachTo(a_pbstrSettings);
-                hrc = S_OK;
+                pstrSettings->jolt();
+                return S_OK;
             }
-            catch (std::bad_alloc)
-            {
-                hrc = E_OUTOFMEMORY;
-            }
-            RTMemTmpFree(pszBuf);
-            return hrc;
+            *pstrSettings = "";
+            AssertReturn(vrc == VERR_BUFFER_OVERFLOW, setError(VBOX_E_IPRT_ERROR, tr("%s returned %Rrc"), pszLogGetStr, vrc));
         }
-        RTMemTmpFree(pszBuf);
-        AssertReturn(rc == VERR_BUFFER_OVERFLOW, setError(VBOX_E_IPRT_ERROR, tr("%s returned %Rrc"), pszLogGetStr, rc));
+        else
+            return E_OUTOFMEMORY;
 
         /* try again with a bigger buffer. */
         cbBuf *= 2;
@@ -508,40 +499,32 @@ HRESULT MachineDebugger::i_logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLog
 
 HRESULT MachineDebugger::getLogDbgFlags(com::Utf8Str &aLogDbgFlags)
 {
-    HRESULT hrc = i_logStringProps(RTLogGetDefaultInstance(), RTLogGetFlags, "RTGetFlags", aLogDbgFlags);
-
-    return hrc;
+    return i_logStringProps(RTLogGetDefaultInstance(), RTLogGetFlags, "RTGetFlags", &aLogDbgFlags);
 }
 
 HRESULT MachineDebugger::getLogDbgGroups(com::Utf8Str &aLogDbgGroups)
 {
-    HRESULT hrc = i_logStringProps(RTLogGetDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", aLogDbgGroups);
-
-    return hrc;
+    return i_logStringProps(RTLogGetDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", &aLogDbgGroups);
 }
 
 HRESULT MachineDebugger::getLogDbgDestinations(com::Utf8Str &aLogDbgDestinations)
 {
-    HRESULT hrc = i_logStringProps(RTLogGetDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", aLogDbgDestinations);
-    return hrc;
+    return i_logStringProps(RTLogGetDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", &aLogDbgDestinations);
 }
 
 HRESULT MachineDebugger::getLogRelFlags(com::Utf8Str &aLogRelFlags)
 {
-    HRESULT hrc = i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetFlags, "RTGetFlags", aLogRelFlags);
-    return hrc;
+    return i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetFlags, "RTGetFlags", &aLogRelFlags);
 }
 
 HRESULT MachineDebugger::getLogRelGroups(com::Utf8Str &aLogRelGroups)
 {
-    HRESULT hrc = i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", aLogRelGroups);
-    return hrc;
+    return i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", &aLogRelGroups);
 }
 
 HRESULT MachineDebugger::getLogRelDestinations(com::Utf8Str &aLogRelDestinations)
 {
-    HRESULT hrc = i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", aLogRelDestinations);
-    return hrc;
+    return i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", &aLogRelDestinations);
 }
 
 /**
