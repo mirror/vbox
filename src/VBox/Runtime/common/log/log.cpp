@@ -300,7 +300,7 @@ static struct
     size_t      cchInstr;               /**< The size of the name. */
     uint32_t    fFlag;                  /**< The flag value. */
     bool        fInverted;              /**< Inverse meaning? */
-} const s_aLogFlags[] =
+} const g_aLogFlags[] =
 {
     { "disabled",     sizeof("disabled"    ) - 1,   RTLOGFLAGS_DISABLED,            false },
     { "enabled",      sizeof("enabled"     ) - 1,   RTLOGFLAGS_DISABLED,            true  },
@@ -2047,21 +2047,21 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszValue)
         }
 
         /* instruction. */
-        for (i = 0; i < RT_ELEMENTS(s_aLogFlags); i++)
+        for (i = 0; i < RT_ELEMENTS(g_aLogFlags); i++)
         {
-            if (!strncmp(pszValue, s_aLogFlags[i].pszInstr, s_aLogFlags[i].cchInstr))
+            if (!strncmp(pszValue, g_aLogFlags[i].pszInstr, g_aLogFlags[i].cchInstr))
             {
-                if (fNo == s_aLogFlags[i].fInverted)
-                    pLogger->fFlags |= s_aLogFlags[i].fFlag;
+                if (fNo == g_aLogFlags[i].fInverted)
+                    pLogger->fFlags |= g_aLogFlags[i].fFlag;
                 else
-                    pLogger->fFlags &= ~s_aLogFlags[i].fFlag;
-                pszValue += s_aLogFlags[i].cchInstr;
+                    pLogger->fFlags &= ~g_aLogFlags[i].fFlag;
+                pszValue += g_aLogFlags[i].cchInstr;
                 break;
             }
         }
 
         /* unknown instruction? */
-        if (i >= RT_ELEMENTS(s_aLogFlags))
+        if (i >= RT_ELEMENTS(g_aLogFlags))
         {
             AssertMsgFailed(("Invalid flags! unknown instruction %.20s\n", pszValue));
             pszValue++;
@@ -2173,12 +2173,12 @@ RTDECL(int) RTLogGetFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
      * Add the flags in the list.
      */
     fFlags = pLogger->fFlags;
-    for (i = 0; i < RT_ELEMENTS(s_aLogFlags); i++)
-        if (    !s_aLogFlags[i].fInverted
-            ?   (s_aLogFlags[i].fFlag & fFlags)
-            :   !(s_aLogFlags[i].fFlag & fFlags))
+    for (i = 0; i < RT_ELEMENTS(g_aLogFlags); i++)
+        if (    !g_aLogFlags[i].fInverted
+            ?   (g_aLogFlags[i].fFlag & fFlags)
+            :   !(g_aLogFlags[i].fFlag & fFlags))
         {
-            size_t cchInstr = s_aLogFlags[i].cchInstr;
+            size_t cchInstr = g_aLogFlags[i].cchInstr;
             if (cchInstr + fNotFirst + 1 > cchBuf)
             {
                 rc = VERR_BUFFER_OVERFLOW;
@@ -2189,7 +2189,7 @@ RTDECL(int) RTLogGetFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
                 *pszBuf++ = ' ';
                 cchBuf--;
             }
-            memcpy(pszBuf, s_aLogFlags[i].pszInstr, cchInstr);
+            memcpy(pszBuf, g_aLogFlags[i].pszInstr, cchInstr);
             pszBuf += cchInstr;
             cchBuf -= cchInstr;
             fNotFirst = true;
