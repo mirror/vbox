@@ -20,6 +20,7 @@ typedef struct CRHashTable CRHashTable;
 
 /* Callback function used for freeing/deleting table entries */
 typedef void (*CRHashtableCallback)(void *data);
+typedef void (*CRHashtableCallbackEx)(void *data1, void *data2);
 /* Callback function used for walking through table entries */
 typedef void (*CRHashtableWalkCallback)(unsigned long key, void *data1, void *data2);
 /* Callback function used for walking through allocated keys */
@@ -38,6 +39,7 @@ DECLEXPORT(void) crHashIdWalkKeys( CRHashIdPool *pool, CRHashIdWalkKeys walkFunc
 DECLEXPORT(CRHashTable *) crAllocHashtable( void );
 DECLEXPORT(CRHashTable *) crAllocHashtableEx( GLuint min, GLuint max );
 DECLEXPORT(void) crFreeHashtable( CRHashTable *hash, CRHashtableCallback deleteCallback );
+DECLEXPORT(void) crFreeHashtableEx( CRHashTable *hash, CRHashtableCallbackEx deleteCallback, void *pData );
 DECLEXPORT(void) crHashtableAdd( CRHashTable *h, unsigned long key, void *data );
 /* to ensure hash table pool id consistency, there is no crHashTableFreeKeys/UnregisterKey,
  * one should call crHashtableDelete to free unneeded keys, 
@@ -46,6 +48,7 @@ DECLEXPORT(GLuint) crHashtableAllocKeys( CRHashTable *h, GLsizei range );
 /* @return GL_TRUE if the id is allocated, and GL_FALSE if the id was already allocated */
 DECLEXPORT(GLboolean) crHashtableAllocRegisterKey( CRHashTable *h,  GLuint key);
 DECLEXPORT(void) crHashtableDelete( CRHashTable *h, unsigned long key, CRHashtableCallback deleteCallback );
+DECLEXPORT(void) crHashtableDeleteEx( CRHashTable *h, unsigned long key, CRHashtableCallbackEx deleteCallback, void *pData );
 DECLEXPORT(void) crHashtableDeleteBlock( CRHashTable *h, unsigned long key, GLsizei range, CRHashtableCallback deleteFunc );
 DECLEXPORT(void *) crHashtableSearch( const CRHashTable *h, unsigned long key );
 DECLEXPORT(void) crHashtableReplace( CRHashTable *h, unsigned long key, void *data, CRHashtableCallback deleteFunc);

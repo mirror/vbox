@@ -15,9 +15,9 @@ keys = apiutil.GetDispatchedFunctions(sys.argv[2]+"/APIspec.txt")
 additionalFunctions = [
 	('CRDLM DLM_APIENTRY *', 'crDLMNewDLM', 'unsigned int configSize, const CRDLMConfig *config'),
 	('CRDLMContextState DLM_APIENTRY *', 'crDLMNewContext', 'CRDLM *dlm'),
-	('void DLM_APIENTRY', 'crDLMFreeContext', 'CRDLMContextState *state'),
+	('void DLM_APIENTRY', 'crDLMFreeContext', 'CRDLMContextState *state, SPUDispatchTable *dispatchTable'),
 	('void DLM_APIENTRY', 'crDLMUseDLM', 'CRDLM *dlm'),
-	('void DLM_APIENTRY','crDLMFreeDLM', 'CRDLM *dlm'),
+	('void DLM_APIENTRY','crDLMFreeDLM', 'CRDLM *dlm, SPUDispatchTable *dispatchTable'),
 	('void DLM_APIENTRY', 'crDLMSetCurrentState', 'CRDLMContextState *state'),
 	('CRDLMContextState DLM_APIENTRY *', 'crDLMGetCurrentState', 'void'),
 	('CRDLMReplayState DLM_APIENTRY', 'crDLMGetReplayState', 'void'),
@@ -41,12 +41,14 @@ additionalFunctions = [
 	('GLuint DLM_APIENTRY', 'crDLMGetCurrentList', 'void'),
 	('GLenum DLM_APIENTRY', 'crDLMGetCurrentMode', 'void'),
 	('void DLM_APIENTRY', 'crDLMErrorFunction', 'CRDLMErrorCallback callback'),
-	('void DLM_APIENTRY', 'crDLMNewList', 'GLuint listIdentifier, GLenum mode'),
-	('void DLM_APIENTRY', 'crDLMEndList', 'void'),
-	('void DLM_APIENTRY', 'crDLMDeleteLists', 'GLuint firstListIdentifier, GLsizei range'),
-	('GLboolean DLM_APIENTRY', 'crDLMIsList', 'GLuint list'),
-	('GLuint DLM_APIENTRY', 'crDLMGenLists', 'GLsizei range'),
-	('void DLM_APIENTRY', 'crDLMListBase', 'GLuint base'),
+	('void DLM_APIENTRY', 'crDLMNewList', 'GLuint list, GLenum mode, SPUDispatchTable *dispatchTable'),
+	('void DLM_APIENTRY', 'crDLMEndList', 'SPUDispatchTable *dispatchTable'),
+	('void DLM_APIENTRY', 'crDLMCallList', 'GLuint list, SPUDispatchTable *dispatchTable'),
+	('void DLM_APIENTRY', 'crDLMCallLists', 'GLsizei n, GLenum type, const GLvoid *lists, SPUDispatchTable *dispatchTable'),
+	('void DLM_APIENTRY', 'crDLMDeleteLists', 'GLuint list, GLsizei range, SPUDispatchTable *dispatchTable'),
+	('void DLM_APIENTRY', 'crDLMListBase', 'GLuint base, SPUDispatchTable *dispatchTable'),
+	('GLboolean DLM_APIENTRY', 'crDLMIsList', 'GLuint list, SPUDispatchTable *dispatchTable'),
+	('GLuint DLM_APIENTRY', 'crDLMGenLists', 'GLsizei range, SPUDispatchTable *dispatchTable'),
 	('int32_t DLM_APIENTRY', 'crDLMSaveState', 'void'),
 	#('void DLM_APIENTRY', 'crDLMListSent', 'CRDLM *dlm, unsigned long listIdentifier'),
 	#('GLboolean DLM_APIENTRY', 'crDLMIsListSent', 'CRDLM *dlm, unsigned long listIdentifier'),
@@ -114,6 +116,7 @@ typedef struct {
 	CRHashTable *references; /* display lists that this display list calls */
 	CRDLMBounds bbox;
 	GLboolean listSent;
+	GLuint hwid;
 } DLMListInfo;
 
 typedef struct {

@@ -25,7 +25,7 @@ extern CRDLMContextState *CRDLMCurrentState;
  * outside.
  */
 extern void crdlmWarning( int line, char *file, GLenum error, char *format, ... );
-extern void crdlm_free_list(/* DLMListInfo * */ void *listInfo);
+extern void crdlmFreeDisplayListResourcesCb(void *pParm1, void *pParam2);
 extern void crdlm_error(int line, const char *file, GLenum error, const char *info);
 
 #endif

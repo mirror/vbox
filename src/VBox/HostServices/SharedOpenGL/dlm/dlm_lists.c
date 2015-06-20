@@ -1,277 +1,428 @@
 /* $Id$ */
+
+/** @file
+ * Implementation of all the Display Lists related routines:
+ *
+ *   glGenLists, glDeleteLists, glNewList, glEndList, glCallList, glCallLists,
+ *   glListBase and glIsList.
+ *
+ * Privide OpenGL IDs mapping between host and guest.
+ */
+
+/*
+ * Copyright (C) 2015 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
 #include <float.h>
 #include "cr_dlm.h"
 #include "cr_mem.h"
 #include "dlm.h"
 
 
-
-/* This file defines the display list functions such as NewList, EndList,
- * IsList, DeleteLists, etc.
- * Generally, SPUs will call these as needed to implement display lists.
- * See the expando, replicate, and tilesort SPUs for examples.
- *
- * The functions which compile GL functions into our display lists are named:
- *     void DLM_APIENTRY crdlm_<function name>
- * where <function_name> is the Chromium function name (which in 
- * turn is the GL function name with the "gl" prefix removed).
- *
- * All these entry points require that a CRDLMContextState structure
- * be created (with crDLMNewContext()) and assigned to the current
- * thread (with crDLMSetCurrentState()).
+/**
+ * Destroy each list entry.
  */
+static void crdlmFreeDisplayListElements(DLMInstanceList *instance)
+{
+    while (instance)
+    {
+        DLMInstanceList *nextInstance = instance->next;
+        crFree(instance);
+        instance = nextInstance;
+    }
+}
 
 
-/*
- * Begin compiling a list.
+/**
+ * A callback routine used when iterating over all
+ * available lists in order to remove them.
+ *
+ * NOTE: @param pParam2 might be NULL.
+ */
+void crdlmFreeDisplayListResourcesCb(void *pParm1, void *pParam2)
+{
+    DLMListInfo      *pListInfo     = (DLMListInfo *)pParm1;
+    SPUDispatchTable *dispatchTable = (SPUDispatchTable *)pParam2;
+
+    if (pListInfo)
+    {
+        crdlmFreeDisplayListElements(pListInfo->first);
+        pListInfo->first = pListInfo->last = NULL;
+
+        /* The references list has no allocated information; it's
+         * just a set of entries.  So we don't need to free any
+         * information as each entry is deleted.
+         */
+        crFreeHashtable(pListInfo->references, NULL);
+
+        /* Free host OpenGL resources. */
+        if (dispatchTable)
+            dispatchTable->DeleteLists(pListInfo->hwid, 1);
+
+        crFree(pListInfo);
+    }
+}
+
+
+/**
+ * Generate host and guest IDs, setup IDs mapping between host and guest.
+ */
+GLuint DLM_APIENTRY crDLMGenLists(GLsizei range, SPUDispatchTable *dispatchTable)
+{
+    CRDLMContextState *listState = CURRENT_STATE();
+    GLuint             idHostRangeStart = 0;
+    GLuint             idGuestRangeStart = 0;
+
+    crDebug("DLM: GenLists(%d) (DLM=%p).", range, listState ? listState->dlm : 0);
+
+    if (listState)
+    {
+        idHostRangeStart = dispatchTable->GenLists(range);
+        if (idHostRangeStart > 0)
+        {
+            idGuestRangeStart = crHashtableAllocKeys(listState->dlm->displayLists, range);
+            if (idGuestRangeStart > 0)
+            {
+                GLuint i;
+                bool fSuccess = true;
+
+                /* Now have successfully generated IDs range for host and guest. Let's make IDs association. */
+                for (i = 0; i < (GLuint)range; i++)
+                {
+                    DLMListInfo *pListInfo;
+
+                    pListInfo = (DLMListInfo *)crCalloc(sizeof(DLMListInfo));
+                    if (pListInfo)
+                    {
+                        crMemset(pListInfo, 0, sizeof(DLMListInfo));
+                        pListInfo->hwid = idHostRangeStart + i;
+
+                        /* Insert pre-initialized list data which contains IDs mapping into the hash. */
+                        crHashtableReplace(listState->dlm->displayLists, idGuestRangeStart + i, pListInfo, NULL);
+                    }
+                    else
+                    {
+                        fSuccess = false;
+                        break;
+                    }
+                }
+
+                /* All structures allocated and initialized successfully. */
+                if (fSuccess)
+                    return idGuestRangeStart;
+
+                /* Rollback some data was not allocated. */
+                crDLMDeleteLists(idGuestRangeStart, range, NULL /* we do DeleteLists() later in this routine */ );
+            }
+            else
+                crDebug("DLM: Can't allocate Display List IDs range for the guest.");
+
+            dispatchTable->DeleteLists(idHostRangeStart, range);
+        }
+        else
+            crDebug("DLM: Can't allocate Display List IDs range on the host side.");
+    }
+    else
+        crDebug("DLM: GenLists(%u) called with no current state.", range);
+
+    /* Can't reserve IDs range.  */
+    return 0;
+}
+
+
+/**
+ * Release host and guest IDs, free memory resources.
+ */
+void DLM_APIENTRY crDLMDeleteLists(GLuint list, GLsizei range, SPUDispatchTable *dispatchTable)
+{
+    CRDLMContextState *listState = CURRENT_STATE();
+
+    crDebug("DLM: DeleteLists(%u, %d) (DLM=%p).", list, range, listState ? listState->dlm : 0);
+
+    if (listState)
+    {
+        if (range >= 0)
+        {
+            int i;
+
+            /* Free resources: host memory, host IDs and guest IDs. */
+            DLM_LOCK(listState->dlm)
+            for (i = 0; i < range; i++)
+                crHashtableDeleteEx(listState->dlm->displayLists, list + i, crdlmFreeDisplayListResourcesCb, dispatchTable);
+            DLM_UNLOCK(listState->dlm)
+        }
+        else
+            crDebug("DLM: DeleteLists(%u, %d) not allowed.", list, range);
+    }
+    else
+        crDebug("DLM: DeleteLists(%u, %d) called with no current state.", list, range);
+}
+
+
+/**
+ * Start recording a list.
  */
 void DLM_APIENTRY
-crDLMNewList(GLuint listIdentifier, GLenum mode)
+crDLMNewList(GLuint list, GLenum mode, SPUDispatchTable *dispatchTable)
 {
-    DLMListInfo *listInfo;
+    DLMListInfo       *listInfo;
     CRDLMContextState *listState = CURRENT_STATE();
 
-    /* Error checks: 0 is not a valid identifier, and
-     * we can't call NewList if NewList has been called
-     * more recently than EndList.
-     *
-     * The caller is expected to check for an improper
-     * mode parameter (GL_INVALID_ENUM), or for a NewList
-     * within a glBegin/glEnd (GL_INVALID_OPERATION).
-     */
-    if (listState == NULL)
+    crDebug("DLM: NewList(%u, %u) (DLM=%p).", list, mode, listState ? listState->dlm : 0);
+
+    if (listState)
     {
-	crWarning("DLM error: NewList(%d,%d) called with no current state (%s line %d)\n",
-	    (int) listIdentifier, (int) mode, __FILE__, __LINE__);
-	return;
+        /* Valid list ID should be > 0. */
+        if (list > 0)
+        {
+            if (listState->currentListInfo == NULL)
+            {
+                listInfo = (DLMListInfo *)crHashtableSearch(listState->dlm->displayLists, list);
+                if (listInfo)
+                {
+                    listInfo->first = listInfo->last = NULL;
+                    listInfo->stateFirst = listInfo->stateLast = NULL;
+                    listInfo->references = crAllocHashtable();
+                    if (listInfo->references)
+                    {
+                        listInfo->numInstances = 0;
+                        listInfo->listSent = GL_FALSE;
+                        listInfo->bbox.xmin = FLT_MAX;
+                        listInfo->bbox.xmax = -FLT_MAX;
+                        listInfo->bbox.ymin = FLT_MAX;
+                        listInfo->bbox.ymax = -FLT_MAX;
+                        listInfo->bbox.zmin = FLT_MAX;
+                        listInfo->bbox.zmax = -FLT_MAX;
+
+                        listState->currentListInfo = listInfo;
+                        listState->currentListIdentifier = list;
+                        listState->currentListMode = mode;
+
+                        dispatchTable->NewList(listInfo->hwid, mode);
+
+                        crDebug("DLM: create new list with [guest, host] ID pair [%u, %u].", list, listInfo->hwid);
+
+                        return;
+                    }
+                    else
+                        crDebug("DLM: Could not allocate memory in NewList.");
+                }
+                else
+                    crDebug("DLM: Requested Display List %u was not previously reserved with glGenLists().", list);
+            }
+            else
+                crDebug("DLM: NewList called with display list %u while display list %u was already open.", list, listState->currentListIdentifier);
+        }
+        else
+            crDebug("DLM: NewList called with a list identifier of 0.");
     }
-
-    if (listIdentifier == 0)
-    {
-	crdlm_error(__LINE__, __FILE__, GL_INVALID_VALUE,
-	     "NewList called with a list identifier of 0");
-	return;
-    }
-
-    if (listState->currentListInfo != NULL)
-    {
-	char msg[1000];
-	sprintf(msg, "NewList called with display list %d while display list %d was already open",
-	    (int) listIdentifier, (int) listState->currentListIdentifier);
-	crdlm_error(__LINE__, __FILE__, GL_INVALID_OPERATION, msg);
-	return;
-    }
-
-    listInfo = (DLMListInfo *) crCalloc(sizeof(DLMListInfo));
-    if (!(listInfo))
-    {
-	char msg[1000];
-	sprintf(msg, "could not allocate %u bytes of memory in NewList",
-	    (unsigned) sizeof(DLMListInfo));
-	crdlm_error(__LINE__, __FILE__, GL_OUT_OF_MEMORY, msg);									 
-	return;
-    }
-
-    listInfo->first = listInfo->last = NULL;
-    listInfo->stateFirst = listInfo->stateLast = NULL;
-    listInfo->references = crAllocHashtable();
-    if (!(listInfo->references))
-    {
-	crFree(listInfo);
-	crdlm_error(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
-	    "could not allocate memory in NewList");
-	return;
-    }
-    listInfo->numInstances = 0;
-    listInfo->listSent = GL_FALSE;
-    listInfo->bbox.xmin = FLT_MAX;
-    listInfo->bbox.xmax = -FLT_MAX;
-    listInfo->bbox.ymin = FLT_MAX;
-    listInfo->bbox.ymax = -FLT_MAX;
-    listInfo->bbox.zmin = FLT_MAX;
-    listInfo->bbox.zmax = -FLT_MAX;
-
-    listState->currentListInfo = listInfo;
-    listState->currentListIdentifier = listIdentifier;
-    listState->currentListMode = mode;
-
-    crDebug("Display Lists: create new with guest ID %u.", listIdentifier);
+    else
+        crDebug("DLM: NewList(%u, %u) called with no current state.\n", list, mode);
 }
 
 
-/* This small utility routine is used to traverse a buffer
- * list, freeing each buffer.  It is used to free the buffer
- * list in the DLMListInfo structure, both when freeing the
- * entire structure and when freeing just the retained content.
+/**
+ * Stop recording a list.
  */
-static void free_instance_list(DLMInstanceList * instance)
+void DLM_APIENTRY crDLMEndList(SPUDispatchTable *dispatchTable)
 {
-	while (instance)
-	{
-		DLMInstanceList *nextInstance = instance->next;
-		crFree(instance);
-		instance = nextInstance;
-	}
+    CRDLMContextState *listState = CURRENT_STATE();
+
+    crDebug("DLM: EndList() (DLM=%p).", listState ? listState->dlm : 0);
+
+    if (listState)
+    {
+        /* Check if list was ever started. */
+        if (listState->currentListInfo)
+        {
+            /* reset the current state to show the list had been ended */
+            listState->currentListIdentifier = 0;
+            listState->currentListInfo = NULL;
+            listState->currentListMode = GL_FALSE;
+
+            dispatchTable->EndList();
+        }
+        else
+            crDebug("DLM: glEndList() is assuming glNewList() was issued previously.");
+    } 
+    else
+        crDebug("DLM: EndList called with no current state.");
 }
 
-/* This utility routine frees a DLMListInfo structure and all
- * of its components.  It is used directly, when deleting a
- * single list; it is also used as a callback function for
- * hash tree operations (Free and Replace).
+
+/**
+ * Execute list on hardware and cach ethis call if we currently recording a list.
+ */
+void DLM_APIENTRY crDLMCallList(GLuint list, SPUDispatchTable *dispatchTable)
+{
+    CRDLMContextState *listState = CURRENT_STATE();
+
+    //crDebug("DLM: CallList(%u).", list);
+
+    if (listState)
+    {
+        DLMListInfo *listInfo;
+
+        /* Add to calls cache if we recording a list. */
+        if (listState->currentListInfo)
+            crDLMCompileCallList(list);
+
+        /* Find hwid for list. */
+        listInfo = (DLMListInfo *)crHashtableSearch(listState->dlm->displayLists, list);
+        if (listInfo)
+            dispatchTable->CallList(listInfo->hwid);
+        else
+            crDebug("DLM: CallList(%u) issued for non-existent list.", list);
+    }
+    else
+        crDebug("DLM: CallList(%u) called with no current state.", list);
+}
+
+
+/* Helper for crDLMCallLists().
+ * We need to extract list ID by index from array of given type and cast it to GLuint.
+ * Please replece it w/ something more elegant if better solution will be found!
+ */
+inline GLuint crDLMGetListByIndex(const GLvoid *aValues, GLsizei index, GLenum type)
+{
+    GLuint element = 0;
+
+    switch (type)
+    {
+#define CRDLM_LIST_BY_INDEX_HANDLE_TYPE(_type_name, _size_of_type) \
+        case _type_name: \
+        { \
+            crMemcpy((void *)&element, (void *)((void *)(aValues) + (index * (_size_of_type))) \
+            , (_size_of_type)); \
+            break; \
+        }
+
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_BYTE,            sizeof(GLbyte));
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_UNSIGNED_BYTE,   sizeof(GLubyte));
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_SHORT,           sizeof(GLshort));
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_UNSIGNED_SHORT,  sizeof(GLushort));
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_INT,             sizeof(GLint));
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_UNSIGNED_INT,    sizeof(GLuint));
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_FLOAT,           sizeof(GLfloat));
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_2_BYTES,         2);
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_3_BYTES,         3);
+        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_4_BYTES,         4);
+
+        default:
+            crError("DLM: attempt to pass to crDLMCallLists() unknown type: %u.", index);
+
+#undef CRDLM_LIST_BY_INDEX_HANDLE_TYPE
+    }
+
+    return element;
+}
+
+/**
+ * Execute lists on hardware and cach ethis call if we currently recording a list.
+ */
+void DLM_APIENTRY crDLMCallLists(GLsizei n, GLenum type, const GLvoid *lists, SPUDispatchTable *dispatchTable)
+{
+    CRDLMContextState *listState = CURRENT_STATE();
+
+    crDebug("DLM: CallLists(%d, %u, %p).", n, type, lists);
+
+    if (listState)
+    {
+        GLsizei i;
+
+        /* Add to calls cache if we recording a list. */
+        if (listState->currentListInfo)
+            crDLMCompileCallLists(n, type, lists);
+
+        /* This is sad, but we need to translate guest IDs into host ones.
+         * Since spec does not promise that @param lists conain contiguous set of IDs,
+         * the only way to do that is to iterate over each guest ID and perform translation.
+         * This might have negative performance impact. */
+        for (i = 0; i < n; i++)
+        {
+            DLMListInfo *listInfo;
+            GLuint guest_id = crDLMGetListByIndex(lists, n, type);
+
+            if (guest_id > 0)
+            {
+                listInfo = (DLMListInfo *)crHashtableSearch(listState->dlm->displayLists, guest_id);
+                if (listInfo)
+                    dispatchTable->CallList(listInfo->hwid);
+                else
+                    crDebug("DLM: CallLists(%d, %u, %p) was unabbe to resolve host ID for guest ID %u.", n, type, lists, guest_id);
+            }
+            else
+                crDebug("DLM: CallLists(%d, %u, %p) received bad array of IDs.", n, type, lists);
+        }
+    }
+    else
+        crDebug("DLM: CallLists(%d, %u, %p) called with no current state.", n, type, lists);
+}
+
+
+/**
+ * Set list base, remember its value and add call to the cache.
+ */
+void DLM_APIENTRY crDLMListBase(GLuint base, SPUDispatchTable *dispatchTable)
+{
+    CRDLMContextState *listState = CURRENT_STATE();
+
+    crDebug("DLM: ListBase(%u).", base);
+
+    if (listState)
+    {
+        listState->listBase = base;
+        crDLMCompileListBase(base);
+        dispatchTable->ListBase(base);
+    }
+    else
+        crDebug("DLM: ListBase(%u) called with no current state.", base);
+}
+
+
+/**
+ * Check if specified list ID belongs to valid Display List.
+ * Positive result is only returned in case both conditions below are satisfied:
  *
- * The parameter is listed as a (void *) instead of a (DLMListInfo *)
- * in order that the function can be used as a callback routine for
- * the hash table functions.  The (void *) designation causes no
- * other harm, save disabling type-checking on the pointer argument
- * of the function.
+ *   - given list found in DLM hash table (i.e., it was previously allocated
+ *     with crDLMGenLists and still not released with crDLMDeleteLists);
+ *
+ *   - list is valid on the host side.
  */
-void crdlm_free_list(void *parm)
-{
-	DLMListInfo *listInfo = (DLMListInfo *) parm;
-
-	free_instance_list(listInfo->first);
-	listInfo->first = listInfo->last = NULL;
-
-	/* The references list has no allocated information; it's
-	 * just a set of entries.  So we don't need to free any
-	 * information as each entry is deleted.
-	 */
-	crFreeHashtable(listInfo->references, NULL);
-
-	crFree(listInfo);
-}
-
-
-void DLM_APIENTRY crDLMEndList(void)
+GLboolean DLM_APIENTRY crDLMIsList(GLuint list, SPUDispatchTable *dispatchTable)
 {
     CRDLMContextState *listState = CURRENT_STATE();
 
-    /* Error check: cannot call EndList without a (successful)
-     * preceding NewList.
-     *
-     * The caller is expected to check for glNewList within
-     * a glBegin/glEnd sequence.
-     */
-    if (listState == NULL)
+    crDebug("DLM: IsList(%u).", list);
+
+    if (listState)
     {
-	crWarning("DLM error: EndList called with no current state (%s line %d)\n",
-	    __FILE__, __LINE__);
-	return;
+        if (list > 0)
+        {
+            DLMListInfo *listInfo = (DLMListInfo *)crHashtableSearch(listState->dlm->displayLists, list);
+            if (listInfo)
+            {
+                if (dispatchTable->IsList(listInfo->hwid))
+                    return true;
+                else
+                    crDebug("DLM: list [%u, %u] not found on the host side.", list, listInfo->hwid);
+            }
+            else
+                crDebug("DLM: list %u not found in guest cache.", list);
+        }
+        else
+            crDebug("DLM: IsList(%u) is not allowed.", list);
     }
-    if (listState->currentListInfo == NULL)
-    {
-	crdlm_error(__LINE__, __FILE__, GL_INVALID_OPERATION,
-	    "EndList called while no display list was open");
-	return;
-    }
+    else
+        crDebug("DLM: IsList(%u) called with no current state.", list);
 
-    DLM_LOCK(listState->dlm)
-
-    /* This function will either replace the list information that's
-     * already present with our new list information, freeing the
-     * former list information; or will add the new information
-     * to the set of display lists, depending on whether the
-     * list already exists or not.
-     */
-    crHashtableReplace(listState->dlm->displayLists,
-	listState->currentListIdentifier,
-	listState->currentListInfo, crdlm_free_list);
-
-    DLM_UNLOCK(listState->dlm)
-
-    /* reset the current state to show the list had been ended */
-    listState->currentListIdentifier = 0;
-    listState->currentListInfo = NULL;
-    listState->currentListMode = GL_FALSE;
-}
-
-
-void DLM_APIENTRY crDLMDeleteLists(GLuint firstListIdentifier, GLsizei range)
-{
-	CRDLMContextState *listState = CURRENT_STATE();
-	register int i;
-
-	if (listState == NULL)
-	{
-		crWarning
-			("DLM error: DeleteLists(%d,%d) called with no current state (%s line %d)\n",
-			 (int) firstListIdentifier, (int) range, __FILE__, __LINE__);
-		return;
-	}
-	if (range < 0)
-	{
-		char msg[1000];
-		sprintf(msg, "DeleteLists called with range (%d) less than zero", (int) range);
-		crdlm_error(__LINE__, __FILE__, GL_INVALID_VALUE, msg);								 
-		return;
-	}
-
-	/* Interestingly, there doesn't seem to be an error for deleting
-	 * display list 0, which cannot exist.
-	 *
-	 * We could delete the desired lists by walking the entire hash of
-	 * display lists and looking for and deleting any in our range; or we
-	 * could delete lists one by one.  The former is faster if the hashing
-	 * algorithm is inefficient or if we're deleting all or most of our
-	 * lists; the latter is faster if we're deleting a relatively small
-	 * number of lists.
-	 *
-	 * For now, we'll go with the latter; it's also easier to implement
-	 * given the current functions available.
-	 */
-	DLM_LOCK(listState->dlm)
-	for (i = 0; i < range; i++)
-	{
-		crHashtableDelete(listState->dlm->displayLists, 
-				  firstListIdentifier + i, crdlm_free_list);
-	}
-	DLM_UNLOCK(listState->dlm)
-}
-
-GLboolean DLM_APIENTRY crDLMIsList(GLuint list)
-{
-	CRDLMContextState *listState = CURRENT_STATE();
-
-	if (listState == NULL)
-	{
-		crWarning
-			("DLM error: IsLists(%d) called with no current state (%s line %d)\n",
-			 (int) list, __FILE__, __LINE__);
-		return 0;
-	}
-
-	if (list == 0)
-		return GL_FALSE;
-
-	return crHashtableIsKeyUsed(listState->dlm->displayLists, list);
-}
-
-GLuint DLM_APIENTRY crDLMGenLists(GLsizei range)
-{
-	CRDLMContextState *listState = CURRENT_STATE();
-
-	if (listState == NULL)
-	{
-		crWarning
-			("DLM error: GenLists(%d) called with no current state (%s line %d)\n",
-			 (int) range, __FILE__, __LINE__);
-		return 0;
-	}
-
-	return crHashtableAllocKeys(listState->dlm->displayLists, range);
-}
-
-void DLM_APIENTRY crDLMListBase( GLuint base )
-{
-	CRDLMContextState *listState = CURRENT_STATE();
-
-	if (listState == NULL)
-	{
-		crWarning
-			("DLM error: ListBase(%d) called with no current state (%s line %d)\n",
-			 (int) base, __FILE__, __LINE__);
-		return;
-	}
-
-	listState->listBase = base;
+    return false;
 }

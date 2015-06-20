@@ -5,6 +5,7 @@ NewList
 EndList
 DeleteLists
 GenLists
+ListBase
 IsList
 CallList
 CallLists

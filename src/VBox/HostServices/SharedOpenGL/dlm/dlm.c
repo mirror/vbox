@@ -48,12 +48,12 @@ static void threadDestructor(void *tsd)
 {
     CRDLMContextState *listState = (CRDLMContextState *)tsd;
 
-    if (listState) {
-	if (listState->currentListInfo) {
-	    crdlm_free_list(listState->currentListInfo);
-	}
+    if (listState)
+    {
+        //if (listState->currentListInfo)
+        //    crdlm_free_list(listState->currentListInfo);
 
-	crFree(listState);
+        crFree(listState);
     }
 }
 #endif
@@ -143,7 +143,7 @@ void DLM_APIENTRY crDLMUseDLM(CRDLM *dlm)
  * It maintains an internal count of users, and will only actually destroy
  * itself when no one is still using the DLM.
  */
-void DLM_APIENTRY crDLMFreeDLM(CRDLM *dlm)
+void DLM_APIENTRY crDLMFreeDLM(CRDLM *dlm, SPUDispatchTable *dispatchTable)
 {
     /* We're about to change the displayLists hash; lock it first */
     DLM_LOCK(dlm)
@@ -156,12 +156,7 @@ void DLM_APIENTRY crDLMFreeDLM(CRDLM *dlm)
     dlm->userCount--;
     if (dlm->userCount == 0) {
 
-	/* Free the set of display lists.  As each one is freed, the
-	 * crdlm_free_list function will be called to free up its
-	 * internal resources.  The crdlm_free_list() routine is
-	 * cast to a (void *) to avoid warnings about being an
-	 */
-	crFreeHashtable(dlm->displayLists, crdlm_free_list);
+	crFreeHashtableEx(dlm->displayLists, crdlmFreeDisplayListResourcesCb, dispatchTable);
 	dlm->displayLists = NULL;
 
 	/* Must unlock before freeing the mutex */
@@ -268,32 +263,32 @@ CRDLMContextState DLM_APIENTRY *crDLMGetCurrentState(void)
  * is no longer going to be used.
  */
 
-void DLM_APIENTRY crDLMFreeContext(CRDLMContextState *state)
+void DLM_APIENTRY crDLMFreeContext(CRDLMContextState *state, SPUDispatchTable *dispatchTable)
 {
-	CRDLMContextState *listState = CURRENT_STATE();
+    CRDLMContextState *listState = CURRENT_STATE();
 
-	/* If we're currently using this context, release it first */
-	if (listState == state) {
-		crDLMSetCurrentState(NULL);
-	}
+    /* If we're currently using this context, release it first */
+    if (listState == state)
+        crDLMSetCurrentState(NULL);
 
-	/* Try to free the DLM.  This will either decrement the use count,
-	 * or will actually free the DLM, if we were the last user.
-	 */
-	crDLMFreeDLM(state->dlm);
-	state->dlm = NULL;
+    /* Try to free the DLM.  This will either decrement the use count,
+     * or will actually free the DLM, if we were the last user.
+     */
+    crDLMFreeDLM(state->dlm, dispatchTable);
+    state->dlm = NULL;
 
-	/* If any buffers still remain (e.g. because there was an open
-	 * display list), remove those as well.
-	 */
-	if (state->currentListInfo) {
-		crdlm_free_list((void *)state->currentListInfo);
-	}
-	state->currentListInfo = NULL;
-	state->currentListIdentifier = 0;
+    /* If any buffers still remain (e.g. because there was an open
+     * display list), remove those as well.
+     */
+    if (state->currentListInfo)
+    {
+        crdlmFreeDisplayListResourcesCb((void *)state->currentListInfo, (void *)dispatchTable);
+        state->currentListInfo = NULL;
+    }
+    state->currentListIdentifier = 0;
 
-	/* Free the state record itself */
-	crFree(state);
+    /* Free the state record itself */
+    crFree(state);
 }
 
 

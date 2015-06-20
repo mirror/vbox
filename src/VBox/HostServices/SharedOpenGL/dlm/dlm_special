@@ -10,8 +10,8 @@ MultiDrawElementsEXT
 # dlm_calllist.c: since the DLM can manage state stored
 # inside display lists, we can manage state updates for
 # these sorts of elements.
-CallList
-CallLists
+#CallList
+#CallLists
 
 # Calls to be ignored.
 #VBoxConCreate

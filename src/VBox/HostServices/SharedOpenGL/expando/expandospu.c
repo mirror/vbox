@@ -1,8 +1,25 @@
 /* $Id$ */
+/** @file
+ * Implementation of routines which Expando SPU explicitly overrides.
+ */
+
 /* Copyright (c) 2001, Stanford University
  * All rights reserved
  *
  * See the file LICENSE.txt for information on redistributing this software.
+ */
+
+
+/*
+ * Copyright (C) 2015 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
 #include <stdio.h>
@@ -14,145 +31,152 @@
 extern GLint EXPANDOSPU_APIENTRY
 expandoCreateContext(const char *displayName, GLint visBits, GLint shareCtx)
 {
-	ExpandoContextState *contextState;
-	GLint contextId;
+    ExpandoContextState *contextState;
 
-	/* Allocate our own per-context record */
-	contextState = crCalloc(sizeof(ExpandoContextState));
-	if (contextState == NULL) {
-	    crError("expando: couldn't allocate per-context state");
-	    return 0;
-	}
+    /* Allocate our own per-context record */
+    contextState = crCalloc(sizeof(ExpandoContextState));
+    if (contextState)
+    {
+        GLint contextId;
 
-	/* Get an official context ID from our super */
-	contextId = expando_spu.super.CreateContext(displayName, visBits, shareCtx);
+        /* Get an official context ID from our super */
+        contextId = expando_spu.super.CreateContext(displayName, visBits, shareCtx);
 
-	/* Supplement that with our DLM.  In a more correct situation, we should
-	 * see if we've been called through glXCreateContext, which has a parameter
-	 * for sharing DLMs.  We don't currently get that information, so for now
-	 * give each context its own DLM.
-	 */
-	contextState->dlm = crDLMNewDLM(0, NULL);
-	if (!contextState->dlm) {
-		crError("expando: couldn't get DLM!");
-	}
+        /* Supplement that with our DLM.  In a more correct situation, we should
+         * see if we've been called through glXCreateContext, which has a parameter
+         * for sharing DLMs.  We don't currently get that information, so for now
+         * give each context its own DLM.
+         */
+        contextState->dlm = crDLMNewDLM(0, NULL);
+        if (contextState->dlm)
+        {
+            contextState->dlmContext = crDLMNewContext(contextState->dlm);
+            if (contextState->dlmContext)
+            {
+                /* The DLM needs us to use the state tracker to track client
+                 * state, so we can compile client-state-using functions correctly.
+                 */
+                contextState->State = crStateCreateContext(NULL, visBits, NULL);
 
-	contextState->dlmContext = crDLMNewContext(contextState->dlm);
-	if (!contextState->dlmContext) {
-		crError("expando: couldn't get dlmContext");
-	}
+                /* Associate the Expando context with the user context. */
+                crHashtableAdd(expando_spu.contextTable, contextId, (void *)contextState);
 
-	/* The DLM needs us to use the state tracker to track client
-	 * state, so we can compile client-state-using functions correctly.
-	 */
-	contextState->State = crStateCreateContext(NULL, visBits, NULL);
+                crDebug("Expando SPU: created context %d (contextState=%p, contextState->dlm=%p, "
+                        "contextState->dlmContext=%p, contextState->State=%p).",
+                        contextId, contextState, contextState->dlm, contextState->dlmContext, contextState->State);
 
-	/* Associate the Expando context with the user context. */
-	crHashtableAdd(expando_spu.contextTable, contextId, (void *)contextState);
+                return contextId;
+            }
+            else
+                crError("Expando SPU: can't allocate new DLM context.");
 
-	return contextId;
+            crDLMFreeDLM(contextState->dlm, &expando_spu.super);
+        }
+        else
+            crError("Expando SPU: can't allocate new DLM.");
+
+        crFree(contextState);
+    }
+    else
+        crError("Expando SPU: couldn't allocate per-context state");
+
+    return 0;
 }
 
 void expando_free_context_state(void *data)
 {
-    ExpandoContextState *expandoContextState = (ExpandoContextState *)data;
+    ExpandoContextState *contextState = (ExpandoContextState *)data;
 
-    crDLMFreeContext(expandoContextState->dlmContext);
-    crDLMFreeDLM(expandoContextState->dlm);
-    crStateDestroyContext(expandoContextState->State);
-    crFree(expandoContextState);
+    crDebug("Expando SPU: destroying context internals: "
+            "contextState=%p, contextState->dlm=%p, contextState->dlmContext=%p, contextState->State=%p",
+            contextState, contextState->dlm, contextState->dlmContext, contextState->State);
+
+    crDLMFreeContext(contextState->dlmContext, &expando_spu.super);
+    crDLMFreeDLM(contextState->dlm, &expando_spu.super);
+    crStateDestroyContext(contextState->State);
+    crFree(contextState);
 }
 
-extern void EXPANDOSPU_APIENTRY
+void EXPANDOSPU_APIENTRY
 expandoDestroyContext(GLint contextId)
 {
-	/* Destroy our context information */
-	crHashtableDelete(expando_spu.contextTable, contextId, 
-				expando_free_context_state);
+    crDebug("Expando SPU: destroy context %d.", contextId);
 
-	/* Pass along the destruction to our super. */
-	expando_spu.super.DestroyContext(contextId);
+    /* Destroy our context information */
+    crHashtableDelete(expando_spu.contextTable, contextId, expando_free_context_state);
+
+    /* Pass along the destruction to our super. */
+    expando_spu.super.DestroyContext(contextId);
 }
 
-extern void EXPANDOSPU_APIENTRY
+void EXPANDOSPU_APIENTRY
 expandoMakeCurrent(GLint crWindow, GLint nativeWindow, GLint contextId)
 {
-	ExpandoContextState *expandoContextState;
+    ExpandoContextState *expandoContextState;
 
-	expando_spu.super.MakeCurrent(crWindow, nativeWindow, contextId);
+    expando_spu.super.MakeCurrent(crWindow, nativeWindow, contextId);
 
-	expandoContextState = crHashtableSearch(expando_spu.contextTable, contextId);
-	if (expandoContextState) {
-	    crDLMSetCurrentState(expandoContextState->dlmContext);
-	    crStateMakeCurrent(expandoContextState->State);
-	}
-	else {
-	    crDLMSetCurrentState(NULL);
-	    crStateMakeCurrent(NULL);
-	}
+    expandoContextState = crHashtableSearch(expando_spu.contextTable, contextId);
+    if (expandoContextState)
+    {
+        crDebug("Expando SPU: switch to context %d.", contextId);
+
+        crDLMSetCurrentState(expandoContextState->dlmContext);
+        crStateMakeCurrent(expandoContextState->State);
+    }
+    else
+    {
+        crDebug("Expando SPU: can't switch to context %d: not found.", contextId);
+
+        crDLMSetCurrentState(NULL);
+        crStateMakeCurrent(NULL);
+    }
 }
 
 extern void EXPANDOSPU_APIENTRY
 expandoNewList(GLuint list, GLenum mode)
 {
-    crDebug("Expando SPU: expandoNewList()");
-	crDLMNewList(list, mode);
+    crDLMNewList(list, mode, &expando_spu.super);
 }
 
 extern void EXPANDOSPU_APIENTRY
 expandoEndList(void)
 {
-    crDebug("Expando SPU: expandoEndList()");
-	crDLMEndList();
+    crDLMEndList(&expando_spu.super);
 }
 
 extern void EXPANDOSPU_APIENTRY
 expandoDeleteLists(GLuint first, GLsizei range)
 {
-	crDLMDeleteLists(first, range);
+    crDLMDeleteLists(first, range, &expando_spu.super);
 }
 
 extern GLuint EXPANDOSPU_APIENTRY
 expandoGenLists(GLsizei range)
 {
-	 return crDLMGenLists(range);
+    return crDLMGenLists(range, &expando_spu.super);
+}
+
+void EXPANDOSPU_APIENTRY
+expandoListBase(GLuint base)
+{
+    crDLMListBase(base, &expando_spu.super);
 }
 
 extern GLboolean EXPANDOSPU_APIENTRY
 expandoIsList(GLuint list)
 {
-	 return crDLMIsList(list);
+    return crDLMIsList(list, &expando_spu.super);
 }
 
 extern void EXPANDOSPU_APIENTRY
 expandoCallList(GLuint list)
 {
-	GLenum mode = crDLMGetCurrentMode();
-	if (mode != GL_FALSE) {
-		crDLMCompileCallList(list);
-		if (mode == GL_COMPILE) return;
-	}
-
-	/* Instead of passing through the CallList,
-	 * expand it into its components.  This will cause
-	 * a recursion if there are any compiled CallList
-	 * elements within the display list.
-	 */
-	crDLMReplayList(list, &expando_spu.self);
+    crDLMCallList(list, &expando_spu.super);
 }
 
 extern void EXPANDOSPU_APIENTRY
 expandoCallLists(GLsizei n, GLenum type, const GLvoid *lists)
 {
-	GLenum mode = crDLMGetCurrentMode();
-	if (mode != GL_FALSE) {
-		crDLMCompileCallLists(n, type, lists);
-		if (mode == GL_COMPILE) return;
-	}
-	/* Instead of passing through the CallLists,
-	 * expand it into its components.  This will cause
-	 * a recursion if there are any compiled CallLists
-	 * elements within the display list.
-	 */
-	crDLMReplayLists(n, type, lists, &expando_spu.self);
+    crDLMCallLists(n, type, lists, &expando_spu.super);
 }

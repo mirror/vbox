@@ -61,6 +61,7 @@ extern void EXPANDOSPU_APIENTRY expandoNewList(GLuint list, GLenum mode);
 extern void EXPANDOSPU_APIENTRY expandoEndList(void);
 extern void EXPANDOSPU_APIENTRY expandoDeleteLists(GLuint first, GLsizei range);
 extern GLuint EXPANDOSPU_APIENTRY expandoGenLists(GLsizei range);
+extern void EXPANDOSPU_APIENTRY expandoListBase(GLuint base);
 extern GLboolean EXPANDOSPU_APIENTRY expandoIsList(GLuint list);
 extern  void EXPANDOSPU_APIENTRY expandoCallList(GLuint list);
 extern void EXPANDOSPU_APIENTRY expandoCallLists(GLsizei n, GLenum type, const GLvoid *lists);

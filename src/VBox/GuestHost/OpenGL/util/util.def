@@ -77,6 +77,7 @@ crGetenv
 crSetenv
 crHashtableAdd
 crHashtableDelete
+crHashtableDeleteEx
 crHashtableSearch
 crHashtableReplace
 crHashtableNumElements
@@ -86,6 +87,7 @@ crHashtableAllocRegisterKey
 crAllocHashtable
 crAllocHashtableEx
 crFreeHashtable
+crFreeHashtableEx
 crHashtableGetDataKey
 crDetermineEndianness
 SWAPDOUBLE

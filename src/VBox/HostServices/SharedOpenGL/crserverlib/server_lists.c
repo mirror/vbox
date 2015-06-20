@@ -39,10 +39,12 @@
 
 static GLuint TranslateListID( GLuint id )
 {
+#ifndef VBOX_WITH_CR_DISPLAY_LISTS
     if (!cr_server.sharedDisplayLists) {
         int client = cr_server.curClient->number;
         return id + client * 100000;
     }
+#endif
     return id;
 }
 

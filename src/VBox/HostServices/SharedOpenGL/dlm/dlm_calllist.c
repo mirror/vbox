@@ -1,4 +1,6 @@
 /* $Id$ */
+#if 0
+
 #include <stdio.h>
 #include "cr_spu.h"
 #include "cr_dlm.h"
@@ -61,3 +63,5 @@ void DLM_APIENTRY crDLMCompileCallLists( GLsizei n, GLenum type, const GLvoid * 
 
 	crdlm_add_to_list((DLMInstanceList *)instance, executeCallLists);
 }
+
+#endif
