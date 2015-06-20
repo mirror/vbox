@@ -334,8 +334,14 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
 
   <xsl:template match="varlistentry/listitem">
     <xsl:if test="text() or *[not(self::para or self::itemizedlist or self::orderedlist)]">
-      <xsl:message terminate="yes">Expected varlistentry/listitem to only contain para, itemizedlist and orderedlist elements</xsl:message>
+      <xsl:message terminate="yes">Expected varlistentry/listitem to only contain para, itemizedlist and orderedlist elements:<!-- no newline -->
+        <xsl:if test="text()">text(), </xsl:if>
+        <for-each select="*[self::para or self::itemizedlist or self::orderedlist]">
+          <xsl:value-of select="concat(name(.), ', ')"/>
+        </for-each>
+      </xsl:message>
     </xsl:if>
+
     <xsl:apply-templates select="*"/>
   </xsl:template>
 
