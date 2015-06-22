@@ -116,7 +116,7 @@ PRInt32 nsExceptionManager::totalInstances = 0;
 // NS_CheckThreadSafe() assertions will still happen and yell in the debug
 // build. Since it is quite annoying, we use a special ReleaseQuiet() mehtod
 // in DoDropThread() to shut them up.
-NS_IMPL_ISUPPORTS1(nsExceptionManager, nsIExceptionManager)
+NS_IMPL_THREADSAFE_ISUPPORTS1(nsExceptionManager, nsIExceptionManager)
 
 nsExceptionManager::nsExceptionManager(nsExceptionService *svc) :
   mNextThread(nsnull),
