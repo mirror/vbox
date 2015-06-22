@@ -1332,91 +1332,40 @@ const char * AggregateMax::getName()
     return "max";
 }
 
-Filter::Filter(ComSafeArrayIn(IN_BSTR, metricNames),
-               ComSafeArrayIn(IUnknown *, objects))
+Filter::Filter(const std::vector<com::Utf8Str> &metricNames,
+               const std::vector<ComPtr<IUnknown> > &objects)
 {
-    /*
-     * Let's work around null/empty safe array mess. I am not sure there is
-     * a way to pass null arrays via webservice, I haven't found one. So I
-     * guess the users will be forced to use empty arrays instead. Constructing
-     * an empty SafeArray is a bit awkward, so what we do in this method is
-     * actually convert null arrays to empty arrays and pass them down to
-     * init() method. If someone knows how to do it better, please be my guest,
-     * fix it.
-     */
-    if (ComSafeArrayInIsNull(metricNames))
+    if (!objects.size())
     {
-        com::SafeArray<BSTR> nameArray;
-        if (ComSafeArrayInIsNull(objects))
+        if (metricNames.size())
         {
-            com::SafeIfaceArray<IUnknown> objectArray;
-            objectArray.reset(0);
-            init(ComSafeArrayAsInParam(nameArray),
-                 ComSafeArrayAsInParam(objectArray));
-        }
-        else
-        {
-            com::SafeIfaceArray<IUnknown> objectArray(ComSafeArrayInArg(objects));
-            init(ComSafeArrayAsInParam(nameArray),
-                 ComSafeArrayAsInParam(objectArray));
-        }
-    }
-    else
-    {
-        com::SafeArray<IN_BSTR> nameArray(ComSafeArrayInArg(metricNames));
-        if (ComSafeArrayInIsNull(objects))
-        {
-            com::SafeIfaceArray<IUnknown> objectArray;
-            objectArray.reset(0);
-            init(ComSafeArrayAsInParam(nameArray),
-                 ComSafeArrayAsInParam(objectArray));
-        }
-        else
-        {
-            com::SafeIfaceArray<IUnknown> objectArray(ComSafeArrayInArg(objects));
-            init(ComSafeArrayAsInParam(nameArray),
-                 ComSafeArrayAsInParam(objectArray));
-        }
-    }
-}
-
-Filter::Filter(const com::Utf8Str name, const ComPtr<IUnknown> &aObject)
-{
-    processMetricList(name, aObject);
-}
-
-void Filter::init(ComSafeArrayIn(IN_BSTR, metricNames),
-                  ComSafeArrayIn(IUnknown *, objects))
-{
-    com::SafeArray<IN_BSTR> nameArray(ComSafeArrayInArg(metricNames));
-    com::SafeIfaceArray<IUnknown> objectArray(ComSafeArrayInArg(objects));
-
-    if (!objectArray.size())
-    {
-        if (nameArray.size())
-        {
-            for (size_t i = 0; i < nameArray.size(); ++i)
-                processMetricList(com::Utf8Str(nameArray[i]), ComPtr<IUnknown>());
+            for (size_t i = 0; i < metricNames.size(); ++i)
+                processMetricList(metricNames[i], ComPtr<IUnknown>());
         }
         else
             processMetricList("*", ComPtr<IUnknown>());
     }
     else
     {
-        for (size_t i = 0; i < objectArray.size(); ++i)
-            switch (nameArray.size())
+        for (size_t i = 0; i < objects.size(); ++i)
+            switch (metricNames.size())
             {
                 case 0:
-                    processMetricList("*", objectArray[i]);
+                    processMetricList("*", objects[i]);
                     break;
                 case 1:
-                    processMetricList(com::Utf8Str(nameArray[0]), objectArray[i]);
+                    processMetricList(metricNames[0], objects[i]);
                     break;
                 default:
-                    processMetricList(com::Utf8Str(nameArray[i]), objectArray[i]);
+                    processMetricList(metricNames[i], objects[i]);
                     break;
             }
     }
+}
+
+Filter::Filter(const com::Utf8Str &name, const ComPtr<IUnknown> &aObject)
+{
+    processMetricList(name, aObject);
 }
 
 void Filter::processMetricList(const com::Utf8Str &name, const ComPtr<IUnknown> object)

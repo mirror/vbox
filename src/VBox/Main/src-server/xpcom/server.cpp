@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2014 Oracle Corporation
+ * Copyright (C) 2004-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -112,17 +112,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SnapshotMachine, IMachine)
 
 NS_DECL_CLASSINFO(ProgressProxy)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ProgressProxy, IProgress)
-
-#ifdef VBOX_WITH_USB
-
-#endif
-
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-NS_DECL_CLASSINFO(PerformanceCollector)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PerformanceCollector, IPerformanceCollector)
-NS_DECL_CLASSINFO(PerformanceMetric)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PerformanceMetric, IPerformanceMetric)
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 ////////////////////////////////////////////////////////////////////////////////
 

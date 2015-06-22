@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,8 @@
 #ifndef ____H_PERFORMANCEIMPL
 #define ____H_PERFORMANCEIMPL
 
-#include "VirtualBoxBase.h"
+#include "PerformanceCollectorWrap.h"
+#include "PerformanceMetricWrap.h"
 
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
@@ -45,51 +46,32 @@ namespace pm
 /* Each second we obtain new CPU load stats. */
 #define VBOX_USAGE_SAMPLER_MIN_INTERVAL 1000
 
-class HostUSBDevice;
-
 class ATL_NO_VTABLE PerformanceMetric :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IPerformanceMetric)
+    public PerformanceMetricWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PerformanceMetric, IPerformanceMetric)
 
-    DECLARE_NOT_AGGREGATABLE (PerformanceMetric)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP (PerformanceMetric)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (IPerformanceMetric)
-    END_COM_MAP()
-
-    DECLARE_EMPTY_CTOR_DTOR (PerformanceMetric)
+    DECLARE_EMPTY_CTOR_DTOR(PerformanceMetric)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (pm::Metric *aMetric);
-    HRESULT init (pm::BaseMetric *aMetric);
+    HRESULT init(pm::Metric *aMetric);
+    HRESULT init(pm::BaseMetric *aMetric);
     void uninit();
 
-    // IPerformanceMetric properties
-    STDMETHOD(COMGETTER(MetricName)) (BSTR *aMetricName);
-    STDMETHOD(COMGETTER(Object)) (IUnknown **anObject);
-    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
-    STDMETHOD(COMGETTER(Period)) (ULONG *aPeriod);
-    STDMETHOD(COMGETTER(Count)) (ULONG *aCount);
-    STDMETHOD(COMGETTER(Unit)) (BSTR *aUnit);
-    STDMETHOD(COMGETTER(MinimumValue)) (LONG *aMinValue);
-    STDMETHOD(COMGETTER(MaximumValue)) (LONG *aMaxValue);
-
-    // IPerformanceMetric methods
-
-    // public methods only for internal purposes
-
-    // public methods for internal purposes only
-    // (ensure there is a caller and a read lock before calling them!)
-
 private:
+
+    // wrapped IPerformanceMetric properties
+    HRESULT getMetricName(com::Utf8Str &aMetricName);
+    HRESULT getObject(ComPtr<IUnknown> &aObject);
+    HRESULT getDescription(com::Utf8Str &aDescription);
+    HRESULT getPeriod(ULONG *aPeriod);
+    HRESULT getCount(ULONG *aCount);
+    HRESULT getUnit(com::Utf8Str &aUnit);
+    HRESULT getMinimumValue(LONG *aMinimumValue);
+    HRESULT getMaximumValue(LONG *aMaximumValue);
 
     struct Data
     {
@@ -99,12 +81,12 @@ private:
         {
         }
 
-        Bstr             name;
+        Utf8Str          name;
         ComPtr<IUnknown> object;
-        Bstr             description;
+        Utf8Str          description;
         ULONG            period;
         ULONG            count;
-        Bstr             unit;
+        Utf8Str          unit;
         LONG             min;
         LONG             max;
     };
@@ -114,22 +96,11 @@ private:
 
 
 class ATL_NO_VTABLE PerformanceCollector :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IPerformanceCollector)
+    public PerformanceCollectorWrap
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PerformanceCollector, IPerformanceCollector)
-
-    DECLARE_NOT_AGGREGATABLE (PerformanceCollector)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(PerformanceCollector)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IPerformanceCollector)
-    END_COM_MAP()
-
-    DECLARE_EMPTY_CTOR_DTOR (PerformanceCollector)
+    DECLARE_EMPTY_CTOR_DTOR(PerformanceCollector)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -138,43 +109,12 @@ public:
     HRESULT init();
     void uninit();
 
-    // IPerformanceCollector properties
-    STDMETHOD(COMGETTER(MetricNames)) (ComSafeArrayOut (BSTR, metricNames));
-
-    // IPerformanceCollector methods
-    STDMETHOD(GetMetrics) (ComSafeArrayIn (IN_BSTR, metricNames),
-                           ComSafeArrayIn (IUnknown *, objects),
-                           ComSafeArrayOut (IPerformanceMetric *, outMetrics));
-    STDMETHOD(SetupMetrics) (ComSafeArrayIn (IN_BSTR, metricNames),
-                             ComSafeArrayIn (IUnknown *, objects),
-                             ULONG aPeriod, ULONG aCount,
-                             ComSafeArrayOut (IPerformanceMetric *,
-                                              outMetrics));
-    STDMETHOD(EnableMetrics) (ComSafeArrayIn (IN_BSTR, metricNames),
-                              ComSafeArrayIn (IUnknown *, objects),
-                              ComSafeArrayOut (IPerformanceMetric *,
-                                               outMetrics));
-    STDMETHOD(DisableMetrics) (ComSafeArrayIn (IN_BSTR, metricNames),
-                               ComSafeArrayIn (IUnknown *, objects),
-                               ComSafeArrayOut (IPerformanceMetric *,
-                                                outMetrics));
-    STDMETHOD(QueryMetricsData) (ComSafeArrayIn (IN_BSTR, metricNames),
-                                 ComSafeArrayIn (IUnknown *, objects),
-                                 ComSafeArrayOut (BSTR, outMetricNames),
-                                 ComSafeArrayOut (IUnknown *, outObjects),
-                                 ComSafeArrayOut (BSTR, outUnits),
-                                 ComSafeArrayOut (ULONG, outScales),
-                                 ComSafeArrayOut (ULONG, outSequenceNumbers),
-                                 ComSafeArrayOut (ULONG, outDataIndices),
-                                 ComSafeArrayOut (ULONG, outDataLengths),
-                                 ComSafeArrayOut (LONG, outData));
-
     // public methods only for internal purposes
 
-    void registerBaseMetric (pm::BaseMetric *baseMetric);
-    void registerMetric (pm::Metric *metric);
-    void unregisterBaseMetricsFor (const ComPtr<IUnknown> &object, const Utf8Str name = "*");
-    void unregisterMetricsFor (const ComPtr<IUnknown> &object, const Utf8Str name = "*");
+    void registerBaseMetric(pm::BaseMetric *baseMetric);
+    void registerMetric(pm::Metric *metric);
+    void unregisterBaseMetricsFor(const ComPtr<IUnknown> &object, const Utf8Str name = "*");
+    void unregisterMetricsFor(const ComPtr<IUnknown> &object, const Utf8Str name = "*");
     void registerGuest(pm::CollectorGuest* pGuest);
     void unregisterGuest(pm::CollectorGuest* pGuest);
 
@@ -188,10 +128,41 @@ public:
     pm::CollectorGuestManager *getGuestManager() { return m.gm; };
 
 private:
-    HRESULT toIPerformanceMetric(pm::Metric *src, IPerformanceMetric **dst);
-    HRESULT toIPerformanceMetric(pm::BaseMetric *src, IPerformanceMetric **dst);
 
-    static void staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
+    // wrapped IPerformanceCollector properties
+    HRESULT getMetricNames(std::vector<com::Utf8Str> &aMetricNames);
+
+    // wrapped IPerformanceCollector methods
+    HRESULT getMetrics(const std::vector<com::Utf8Str> &aMetricNames,
+                       const std::vector<ComPtr<IUnknown> > &aObjects,
+                       std::vector<ComPtr<IPerformanceMetric> > &aMetrics);
+    HRESULT setupMetrics(const std::vector<com::Utf8Str> &aMetricNames,
+                         const std::vector<ComPtr<IUnknown> > &aObjects,
+                         ULONG aPeriod,
+                         ULONG aCount,
+                         std::vector<ComPtr<IPerformanceMetric> > &aAffectedMetrics);
+    HRESULT enableMetrics(const std::vector<com::Utf8Str> &aMetricNames,
+                          const std::vector<ComPtr<IUnknown> > &aObjects,
+                          std::vector<ComPtr<IPerformanceMetric> > &aAffectedMetrics);
+    HRESULT disableMetrics(const std::vector<com::Utf8Str> &aMetricNames,
+                           const std::vector<ComPtr<IUnknown> > &aObjects,
+                           std::vector<ComPtr<IPerformanceMetric> > &aAffectedMetrics);
+    HRESULT queryMetricsData(const std::vector<com::Utf8Str> &aMetricNames,
+                             const std::vector<ComPtr<IUnknown> > &aObjects,
+                             std::vector<com::Utf8Str> &aReturnMetricNames,
+                             std::vector<ComPtr<IUnknown> > &aReturnObjects,
+                             std::vector<com::Utf8Str> &aReturnUnits,
+                             std::vector<ULONG> &aReturnScales,
+                             std::vector<ULONG> &aReturnSequenceNumbers,
+                             std::vector<ULONG> &aReturnDataIndices,
+                             std::vector<ULONG> &aReturnDataLengths,
+                             std::vector<LONG> &aReturnData);
+
+
+    HRESULT toIPerformanceMetric(pm::Metric *src, ComPtr<IPerformanceMetric> &dst);
+    HRESULT toIPerformanceMetric(pm::BaseMetric *src, ComPtr<IPerformanceMetric> &dst);
+
+    static void staticSamplerCallback(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
     void samplerCallback(uint64_t iTick);
 
     const Utf8Str& getFailedGuestName();
