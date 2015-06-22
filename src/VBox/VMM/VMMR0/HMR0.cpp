@@ -143,6 +143,7 @@ static struct
     /** Saved error from detection */
     int32_t                         lLastError;
 
+    /** CPUID 0x80000001 ecx:edx features */
     struct
     {
         uint32_t                    u32AMDFeatureECX;
