@@ -6275,7 +6275,7 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
                 && VMR3GetSuspendReason(ptrVM.rawUVM()) == VMSUSPENDREASON_HOST_SUSPEND)
             {
                 LogRel(("Ignoring VM resume request, VM was paused in response to a host-suspend\n"));
-                return S_OK;
+                return setError(VBOX_E_INVALID_VM_STATE, tr("VM is paused due to host power management"));
             }
 
             enmReason = aReason == Reason_Snapshot ? VMRESUMEREASON_STATE_SAVED : VMRESUMEREASON_USER;
