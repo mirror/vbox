@@ -1500,8 +1500,11 @@
   -->
 
   <interface name="INATNetwork" extends="$unknown"
-    uuid="a63c75da-4c99-4e9d-8351-eb73651c18cc"
-    wsmap="managed">
+    uuid="4bbc405d-f268-4483-9a52-f43ffdbf67f8"
+    wsmap="managed"
+    reservedMethods="2" reservedAttributes="4"
+    >
+
     <attribute name="networkName" type="wstring">
       <desc>
         TBD: the idea, technically we can start any number of the NAT networks,
@@ -1682,8 +1685,9 @@
 
   <interface
     name="IDHCPServer" extends="$unknown"
-    uuid="ff0774c5-1f62-4bc3-919c-7fc942bf1d25"
+    uuid="00c8f974-92c5-44a1-8f3f-702469fdd04b"
     wsmap="managed"
+    reservedMethods="2" reservedAttributes="3"
     >
     <desc>
       The IDHCPServer interface represents the VirtualBox DHCP server configuration.
@@ -3325,8 +3329,9 @@
 
   <interface
     name="IVirtualSystemDescription" extends="$unknown"
-    uuid="d7525e6c-531a-4c51-8e04-41235083a3d8"
+    uuid="316c99a2-405d-41af-8508-46889144d067"
     wsmap="managed"
+    reservedMethods="4" reservedAttributes="2"
     >
 
     <desc>Represents one virtual system (machine) in an appliance. This interface is used in
@@ -7628,9 +7633,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IVRDEServerInfo" extends="$unknown"
-    uuid="f4ccd4c8-406c-4ba1-4bcf-19a68a12b723"
+    uuid="c39ef4d6-7532-45e8-96da-eb5986ae76e4"
     wsmap="struct"
-    reservedMethods="1" reservedAttributes="4"
+    reservedAttributes="4"
     >
     <desc>
       Contains information about the remote desktop (VRDE) server capabilities and status.
@@ -8499,8 +8504,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IHostVideoInputDevice" extends="$unknown"
-    uuid="a1ceae44-d65e-4156-9359-d390f93ee9a0"
+    uuid="e8c25d4d-ac97-4c16-b3e2-81bd8a57cc27"
     wsmap="managed"
+    reservedAttributes="2"
     >
     <desc>
       Represents one of host's video capture devices, for example a webcam.
@@ -13754,9 +13760,9 @@ useful to the API client. -->
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="ec769654-4b4a-1dd4-9cf9-3295e8b3f2a3"
+    uuid="3785b3f7-7b5f-4000-8842-ad0cc6ab30b7"
     wsmap="struct"
-    reservedMethods="1" reservedAttributes="1"
+    reservedAttributes="2"
     >
     <desc>
       The IMediumAttachment interface links storage media to virtual machines.
@@ -15550,8 +15556,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IToken" extends="$unknown"
-    uuid="3b1c4797-e289-4d4c-b74c-50c9b86a36f8"
+    uuid="20479eaf-d8ed-44cf-85ac-c83a26c95a4d"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       The IToken interface represents a token passed to an API client, which
@@ -16180,6 +16187,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="capabilities" type="FramebufferCapabilities" safearray="yes" readonly="yes">
+      <desc>
+        Capabilities of the framebuffer instance.
+
+        For the meaning of individual capability flags see
+        <link to="FramebufferCapabilities"/>.
+      </desc>
+    </attribute>
+
     <method name="notifyUpdate">
       <desc>
         Informs about an update.
@@ -16338,22 +16354,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <attribute name="capabilities" type="FramebufferCapabilities" safearray="yes" readonly="yes">
-      <desc>
-        Capabilities of the framebuffer instance.
-
-        For the meaning of individual capability flags see
-        <link to="FramebufferCapabilities"/>.
-      </desc>
-    </attribute>
-
   </interface>
 
   <interface
     name="IFramebufferOverlay" extends="IFramebuffer"
-    uuid="724802c7-4a2a-3296-501f-0f871ce6fdb5"
+    uuid="af398a9a-6b76-4805-8fab-00a9dcf4732b"
     wsmap="managed"
-    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       The IFramebufferOverlay interface represents an alpha blended overlay
@@ -17153,8 +17159,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IParallelPort" extends="$unknown"
-    uuid="0c925f06-dd10-4b77-8de8-294d738c3214"
+    uuid="788b87df-7708-444b-9eef-c116ce423d39"
     wsmap="managed"
+    reservedAttributes="2"
     >
 
     <desc>
@@ -17706,8 +17713,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IUSBDeviceFilters" extends="$unknown"
-    uuid="2ab550b2-53cc-4c2e-ae07-0adf4114e75c"
+    uuid="9709db9b-3346-49d6-8f1c-41b0c4784ff2"
     wsmap="managed"
+    reservedMethods="2" reservedAttributes="1"
     >
 
     <attribute name="deviceFilters" type="IUSBDeviceFilter" readonly="yes" safearray="yes">
@@ -17936,8 +17944,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IUSBDevice" extends="$unknown"
-    uuid="8d826296-e04f-4e86-9310-cb85b19becde"
+    uuid="5915d179-83c7-4f2b-a323-9a97f46f4e29"
     wsmap="managed"
+    reservedAttributes="2"
     >
     <desc>
       The IUSBDevice interface represents a virtual USB device attached to the
@@ -18278,8 +18287,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IHostUSBDevice" extends="IUSBDevice"
-    uuid="173b4b44-d268-4334-a00d-b6521c9a740a"
+    uuid="c19073dd-cc7b-431b-98b2-951fda8eab89"
     wsmap="managed"
+    reservedAttributes="2"
     >
     <desc>
       The IHostUSBDevice interface represents a physical USB device attached
@@ -18331,8 +18341,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IHostUSBDeviceFilter" extends="IUSBDeviceFilter"
-    uuid="4cc70246-d74a-400f-8222-3900489c0374"
+    uuid="01adb2d6-aedf-461c-be2c-99e91bdad8a1"
     wsmap="managed"
+    reservedAttributes="4"
     >
     <desc>
       The IHostUSBDeviceFilter interface represents a global filter for a
@@ -18647,9 +18658,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ISharedFolder" extends="$unknown"
-    uuid="54310a5c-46b8-2d30-6afe-a48efe731429"
+    uuid="15aabe95-e594-4e18-9222-b5e83a23f1da"
     wsmap="struct"
-    reservedMethods="1" reservedAttributes="1"
+    reservedAttributes="2"
     >
     <desc>
       The ISharedFolder interface represents a folder in the host computer's
@@ -19400,9 +19411,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ISession" extends="$unknown"
-    uuid="3d4f472c-aac8-4387-94be-54042bcd8901"
+    uuid="7844aa05-b02e-4cdd-a04f-ade4a762e6b7"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalSessionControl"
+    reservedMethods="3" reservedAttributes="2"
     >
     <desc>
       The ISession interface represents a client process and allows for locking
@@ -19828,7 +19840,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IPerformanceMetric" extends="$unknown"
-    uuid="2a1a60ae-9345-4019-ad53-d34ba41cbfe9" wsmap="managed"
+    uuid="81314d14-fd1c-411a-95c5-e9bb1414e632" wsmap="managed"
+    reservedAttributes="4"
     >
     <desc>
       The IPerformanceMetric interface represents parameters of the given
@@ -19890,8 +19903,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IPerformanceCollector" extends="$unknown"
-    uuid="e22e1acb-ac4a-43bb-a31c-17321659b0c6"
+    uuid="b14290ad-cd54-400c-b858-797bcb82570e"
     wsmap="managed"
+    reservedMethods="4" reservedAttributes="4"
     >
     <desc>
       The IPerformanceCollector interface represents a service that collects
@@ -20717,8 +20731,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="IBandwidthGroup" extends="$unknown"
-    uuid="badea2d7-0261-4146-89f0-6a57cc34833d"
+    uuid="31587f93-2d12-4d7c-ba6d-ce51d0d5b265"
     wsmap="managed"
+    reservedAttributes="2"
     >
     <desc>Represents one bandwidth group.</desc>
 
@@ -20747,9 +20762,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="IBandwidthControl" extends="$unknown"
-    uuid="6458e7b2-4e84-faf0-625e-2093ed2b17e4"
+    uuid="48c7f4c0-c9d6-4742-957c-a6fd52e8c4ae"
     wsmap="managed"
-    reservedMethods="1" reservedAttributes="1"
+    reservedMethods="2" reservedAttributes="1"
     >
     <desc>
       Controls the bandwidth groups of one machine used to cap I/O done by a VM.
@@ -20820,8 +20835,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVirtualBoxClient" extends="$unknown"
-    uuid="d191281f-b0cb-4d83-a8fa-0d9fd6ba234c"
+    uuid="d2937a8e-cb8d-4382-90ba-b7da78a74573"
     wsmap="suppress"
+    reservedMethods="4" reservedAttributes="2"
     >
     <desc>
       Convenience interface for client applications. Treat this as a
@@ -23226,6 +23242,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- network name is common setting for all event types -->
     <attribute name="networkName" type="wstring" readonly="yes"/>
   </interface>
+
   <!-- base class for start/stop events -->
   <interface name="INATNetworkStartStopEvent" extends="INATNetworkChangedEvent"
              uuid="269d8f6b-fa1e-4cee-91c7-6d8496bea3c1"
@@ -23251,6 +23268,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkCreationDeletion">
     <attribute name="creationEvent" type="boolean" readonly="yes"/>
   </interface>
+
   <interface name="INATNetworkSettingEvent" extends="INATNetworkAlterEvent"
              uuid="9db3a9e6-7f29-4aae-a627-5a282c83092c"
              wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkSetting">
@@ -23260,6 +23278,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="advertiseDefaultIPv6RouteEnabled" type="boolean" readonly="yes" dtracename="advertiseDefIPv6Route"/>
     <attribute name="needDhcpServer" type="boolean" readonly="yes"/>
   </interface>
+
   <interface name="INATNetworkPortForwardEvent" extends="INATNetworkAlterEvent"
              uuid="2514881b-23d0-430a-a7ff-7ed7f05534bc"
              wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkPortForward">
