@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,29 +21,17 @@
 #ifndef ____H_REMOTEUSBDEVICEIMPL
 #define ____H_REMOTEUSBDEVICEIMPL
 
-#include "VirtualBoxBase.h"
+#include "HostUSBDeviceWrap.h"
 
 struct _VRDEUSBDEVICEDESC;
 typedef _VRDEUSBDEVICEDESC VRDEUSBDEVICEDESC;
 
 class ATL_NO_VTABLE RemoteUSBDevice :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IHostUSBDevice)
+    public HostUSBDeviceWrap
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(RemoteUSBDevice, IHostUSBDevice)
-
-    DECLARE_NOT_AGGREGATABLE (RemoteUSBDevice)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP (RemoteUSBDevice)
-        COM_INTERFACE_ENTRY  (IHostUSBDevice)
-        VBOX_DEFAULT_INTERFACE_ENTRIES  (IUSBDevice)
-    END_COM_MAP()
-
-    DECLARE_EMPTY_CTOR_DTOR (RemoteUSBDevice)
+    DECLARE_EMPTY_CTOR_DTOR(RemoteUSBDevice)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -52,33 +40,15 @@ public:
     HRESULT init(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevDesc, bool fDescExt);
     void uninit();
 
-    // IUSBDevice properties
-    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
-    STDMETHOD(COMGETTER(VendorId)) (USHORT *aVendorId);
-    STDMETHOD(COMGETTER(ProductId)) (USHORT *aProductId);
-    STDMETHOD(COMGETTER(Revision)) (USHORT *aRevision);
-    STDMETHOD(COMGETTER(Manufacturer)) (BSTR *aManufacturer);
-    STDMETHOD(COMGETTER(Product)) (BSTR *aProduct);
-    STDMETHOD(COMGETTER(SerialNumber)) (BSTR *aSerialNumber);
-    STDMETHOD(COMGETTER(Address)) (BSTR *aAddress);
-    STDMETHOD(COMGETTER(Port)) (USHORT *aPort);
-    STDMETHOD(COMGETTER(Version)) (USHORT *aVersion);
-    STDMETHOD(COMGETTER(PortVersion)) (USHORT *aPortVersion);
-    STDMETHOD(COMGETTER(Speed)) (USBConnectionSpeed_T *aSpeed);
-    STDMETHOD(COMGETTER(Remote)) (BOOL *aRemote);
-
-    // IHostUSBDevice properties
-    STDMETHOD(COMGETTER(State)) (USBDeviceState_T *aState);
-
     // public methods only for internal purposes
-    bool dirty (void) const { return mData.dirty; }
-    void dirty (bool aDirty) { mData.dirty = aDirty; }
+    bool dirty(void) const { return mData.dirty; }
+    void dirty(bool aDirty) { mData.dirty = aDirty; }
 
-    uint16_t devId (void) const { return mData.devId; }
-    uint32_t clientId (void) { return mData.clientId; }
+    uint16_t devId(void) const { return mData.devId; }
+    uint32_t clientId(void) { return mData.clientId; }
 
-    bool captured (void) const { return mData.state == USBDeviceState_Captured; }
-    void captured (bool aCaptured)
+    bool captured(void) const { return mData.state == USBDeviceState_Captured; }
+    void captured(bool aCaptured)
     {
         if (aCaptured)
         {
@@ -94,10 +64,30 @@ public:
 
 private:
 
+    // wrapped IUSBDevice properties
+    HRESULT getId(com::Guid &aId);
+    HRESULT getVendorId(USHORT *aVendorId);
+    HRESULT getProductId(USHORT *aProductId);
+    HRESULT getRevision(USHORT *aRevision);
+    HRESULT getManufacturer(com::Utf8Str &aManufacturer);
+    HRESULT getProduct(com::Utf8Str &aProduct);
+    HRESULT getSerialNumber(com::Utf8Str &aSerialNumber);
+    HRESULT getAddress(com::Utf8Str &aAddress);
+    HRESULT getPort(USHORT *aPort);
+    HRESULT getVersion(USHORT *aVersion);
+    HRESULT getPortVersion(USHORT *aPortVersion);
+    HRESULT getSpeed(USBConnectionSpeed_T *aSpeed);
+    HRESULT getRemote(BOOL *aRemote);
+
+    // wrapped IHostUSBDevice properties
+    HRESULT getState(USBDeviceState_T *aState);
+
+
     struct Data
     {
-        Data() : vendorId (0), productId (0), revision (0), port (0), version (1),
-                 portVersion (1), speed (USBConnectionSpeed_Null), dirty (FALSE), devId (0), clientId (0) {}
+        Data() : vendorId(0), productId(0), revision(0), port(0), version(1),
+                 portVersion(1), speed(USBConnectionSpeed_Null), dirty(FALSE),
+                 devId(0), clientId(0) {}
 
         const Guid id;
 
@@ -105,11 +95,11 @@ private:
         const uint16_t productId;
         const uint16_t revision;
 
-        const Bstr manufacturer;
-        const Bstr product;
-        const Bstr serialNumber;
+        const Utf8Str manufacturer;
+        const Utf8Str product;
+        const Utf8Str serialNumber;
 
-        const Bstr address;
+        const Utf8Str address;
 
         const uint16_t port;
         const uint16_t version;

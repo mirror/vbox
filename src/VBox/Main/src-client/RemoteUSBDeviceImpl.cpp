@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,7 +33,7 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (RemoteUSBDevice)
+DEFINE_EMPTY_CTOR_DTOR(RemoteUSBDevice)
 
 HRESULT RemoteUSBDevice::FinalConstruct()
 {
@@ -54,7 +54,7 @@ void RemoteUSBDevice::FinalRelease()
 /**
  * Initializes the remote USB device object.
  */
-HRESULT RemoteUSBDevice::init (uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevDesc, bool fDescExt)
+HRESULT RemoteUSBDevice::init(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevDesc, bool fDescExt)
 {
     LogFlowThisFunc(("u32ClientId=%d,pDevDesc=%p\n", u32ClientId, pDevDesc));
 
@@ -68,12 +68,12 @@ HRESULT RemoteUSBDevice::init (uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevDesc
     unconst(mData.productId)    = pDevDesc->idProduct;
     unconst(mData.revision)     = pDevDesc->bcdRev;
 
-    unconst(mData.manufacturer) = pDevDesc->oManufacturer? (char *)pDevDesc + pDevDesc->oManufacturer: "";
-    unconst(mData.product)      = pDevDesc->oProduct? (char *)pDevDesc + pDevDesc->oProduct: "";
-    unconst(mData.serialNumber) = pDevDesc->oSerialNumber? (char *)pDevDesc + pDevDesc->oSerialNumber: "";
+    unconst(mData.manufacturer) = pDevDesc->oManufacturer ? (char *)pDevDesc + pDevDesc->oManufacturer : "";
+    unconst(mData.product)      = pDevDesc->oProduct ? (char *)pDevDesc + pDevDesc->oProduct : "";
+    unconst(mData.serialNumber) = pDevDesc->oSerialNumber ? (char *)pDevDesc + pDevDesc->oSerialNumber : "";
 
     char id[64];
-    RTStrPrintf(id, sizeof (id), REMOTE_USB_BACKEND_PREFIX_S "0x%08X&0x%08X", pDevDesc->id, u32ClientId);
+    RTStrPrintf(id, sizeof(id), REMOTE_USB_BACKEND_PREFIX_S "0x%08X&0x%08X", pDevDesc->id, u32ClientId);
     unconst(mData.address)      = id;
 
     unconst(mData.port)         = pDevDesc->idPort;
@@ -164,169 +164,103 @@ void RemoteUSBDevice::uninit()
 // IUSBDevice properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Id) (BSTR *aId)
+HRESULT RemoteUSBDevice::getId(com::Guid &aId)
 {
-    CheckComArgOutPointerValid(aId);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* this is const, no need to lock */
-    mData.id.toUtf16().detachTo(aId);
+    aId = mData.id;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(VendorId) (USHORT *aVendorId)
+HRESULT RemoteUSBDevice::getVendorId(USHORT *aVendorId)
 {
-    CheckComArgOutPointerValid(aVendorId);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
     *aVendorId = mData.vendorId;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(ProductId) (USHORT *aProductId)
+HRESULT RemoteUSBDevice::getProductId(USHORT *aProductId)
 {
-    CheckComArgOutPointerValid(aProductId);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
     *aProductId = mData.productId;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Revision) (USHORT *aRevision)
+HRESULT RemoteUSBDevice::getRevision(USHORT *aRevision)
 {
-    CheckComArgOutPointerValid(aRevision);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
     *aRevision = mData.revision;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Manufacturer) (BSTR *aManufacturer)
+HRESULT RemoteUSBDevice::getManufacturer(com::Utf8Str &aManufacturer)
 {
-    CheckComArgOutPointerValid(aManufacturer);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
-    mData.manufacturer.cloneTo(aManufacturer);
+    aManufacturer = mData.manufacturer;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Product) (BSTR *aProduct)
+HRESULT RemoteUSBDevice::getProduct(com::Utf8Str &aProduct)
 {
-    CheckComArgOutPointerValid(aProduct);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
-    mData.product.cloneTo(aProduct);
+    aProduct = mData.product;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(SerialNumber) (BSTR *aSerialNumber)
+HRESULT RemoteUSBDevice::getSerialNumber(com::Utf8Str &aSerialNumber)
 {
-    CheckComArgOutPointerValid(aSerialNumber);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
-    mData.serialNumber.cloneTo(aSerialNumber);
+    aSerialNumber = mData.serialNumber;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Address) (BSTR *aAddress)
+HRESULT RemoteUSBDevice::getAddress(com::Utf8Str &aAddress)
 {
-    CheckComArgOutPointerValid(aAddress);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
-    mData.address.cloneTo(aAddress);
+    aAddress = mData.address;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Port) (USHORT *aPort)
+HRESULT RemoteUSBDevice::getPort(USHORT *aPort)
 {
-    CheckComArgOutPointerValid(aPort);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
     *aPort = mData.port;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Version) (USHORT *aVersion)
+HRESULT RemoteUSBDevice::getVersion(USHORT *aVersion)
 {
-    CheckComArgOutPointerValid(aVersion);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
     *aVersion = mData.version;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(PortVersion) (USHORT *aPortVersion)
+HRESULT RemoteUSBDevice::getPortVersion(USHORT *aPortVersion)
 {
-    CheckComArgOutPointerValid(aPortVersion);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
     *aPortVersion = mData.portVersion;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Speed) (USBConnectionSpeed_T *aSpeed)
+HRESULT RemoteUSBDevice::getSpeed(USBConnectionSpeed_T *aSpeed)
 {
-    CheckComArgOutPointerValid(aSpeed);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
     *aSpeed = mData.speed;
 
     return S_OK;
 }
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Remote) (BOOL *aRemote)
+HRESULT RemoteUSBDevice::getRemote(BOOL *aRemote)
 {
-    CheckComArgOutPointerValid(aRemote);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* RemoteUSBDevice is always remote. */
     /* this is const, no need to lock */
     *aRemote = TRUE;
@@ -337,13 +271,8 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Remote) (BOOL *aRemote)
 // IHostUSBDevice properties
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
+HRESULT RemoteUSBDevice::getState(USBDeviceState_T *aState)
 {
-    CheckComArgOutPointerValid(aState);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aState = mData.state;
