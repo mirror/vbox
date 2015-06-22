@@ -346,40 +346,40 @@ static int vbglR3DnDHGProcessSendFileHdrMessage(PVBGLR3GUESTDNDCMDCTX  pCtx,
     return rc;
 }
 
-static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
-                                         uint32_t              *puScreenId,
-                                         char                  *pszFormat,
-                                         uint32_t               cbFormat,
-                                         uint32_t              *pcbFormatRecv,
-                                         void                 **ppvData,
-                                         uint32_t               cbData,
-                                         size_t                *pcbDataRecv)
+static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX   pCtx,
+                                         void                  **ppvData,
+                                         uint32_t                cbData,
+                                         size_t                 *pcbDataRecv)
 {
     AssertPtrReturn(pCtx,        VERR_INVALID_POINTER);
     AssertPtrReturn(ppvData,     VERR_INVALID_POINTER);
     AssertPtrReturn(cbData,      VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbDataRecv, VERR_INVALID_POINTER);
 
-    void    *pvData        = *ppvData;
-    uint32_t cbDataRecv    = 0;
-    uint64_t cbDataToRead  = *pcbDataRecv;
-    uint64_t cbDataWritten = 0;
-
-    int rc = VINF_SUCCESS;
-
-    /* Allocate temp buffer. */
-    uint32_t cbTmpData = _64K; /** @todo Make this configurable? */
-    void *pvTmpData = RTMemAlloc(cbTmpData);
-    if (!pvTmpData)
+    /*
+     * Allocate chunk buffer.
+     */
+    uint32_t cbChunkMax = _64K; /** @todo Make this configurable? */
+    void *pvChunk = RTMemAlloc(cbChunkMax);
+    if (!pvChunk)
         return VERR_NO_MEMORY;
+    uint32_t cbChunkRead = 0;
 
-    /* Create and query the (unique) drop target directory in the user's temporary directory. */
+    uint64_t cbFileSize    = 0; /* Total file size (in bytes). */
+    uint64_t cbFileWritten = 0; /* Written bytes. */
+
+    /*
+     * Create and query the (unique) drop target directory in the user's temporary directory.
+     */
     DNDDIRDROPPEDFILES dirDroppedFiles;
     const char *pszDropDir;
-    rc = DnDDirDroppedFilesCreateAndOpenTemp(&dirDroppedFiles);
+    int rc = DnDDirDroppedFilesCreateAndOpenTemp(&dirDroppedFiles);
     if (RT_SUCCESS(rc))
         pszDropDir = DnDDirDroppedFilesGetDirAbs(&dirDroppedFiles);
 
+    /*
+     * Enter the main loop of retieving files + directories.
+     */
     DnDURIList lstURI;
     DnDURIObject objFile(DnDURIObject::File);
 
@@ -426,21 +426,31 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
                 case DragAndDropSvc::HOST_DND_HG_SND_FILE_DATA:
                 {
                     if (uNextMsg == DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR)
+                    {
                         rc = vbglR3DnDHGProcessSendFileHdrMessage(pCtx,
                                                                   szPathName,
                                                                   sizeof(szPathName),
                                                                   &fFlags,
                                                                   &fMode,
-                                                                  &cbDataToRead);
+                                                                  &cbFileSize);
+                        LogFlowFunc(("HOST_DND_HG_SND_FILE_HDR szPathName=%s, fFlags=0x%x, fMode=0x%x, cbFileSize=%RU64, rc=%Rrc\n",
+                                     szPathName, fFlags, fMode, cbFileSize, rc));
+                    }
                     else
+                    {
                         rc = vbglR3DnDHGProcessSendFileMessage(pCtx,
                                                                szPathName,
                                                                sizeof(szPathName),
                                                                &cbPathName,
-                                                               pvTmpData,
-                                                               cbTmpData,
-                                                               &cbDataRecv,
+                                                               pvChunk,
+                                                               cbChunkMax,
+                                                               &cbChunkRead,
                                                                &fMode);
+                        LogFlowFunc(("HOST_DND_HG_SND_FILE_DATA "
+                                     "szPathName=%s, cbPathName=%RU32, cbChunkRead=%RU32, fMode=0x%x, rc=%Rrc\n",
+                                     szPathName, cbPathName, cbChunkRead, fMode, rc));
+                    }
+
                     if (   RT_SUCCESS(rc)
                         && (   uNextMsg == DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR
                              /* Protocol v1 always sends the file name, so try opening every time. */
@@ -450,8 +460,8 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
                         char *pszPathAbs = RTPathJoinA(pszDropDir, szPathName);
                         if (pszPathAbs)
                         {
-                            LogFlowFunc(("Opening pszPathName=%s, cbPathName=%RU32, fMode=0x%x, cbSize=%RU64\n",
-                                         szPathName, cbPathName, fMode, cbDataToRead));
+                            LogFlowFunc(("Opening pszPathName=%s, cbPathName=%RU32, fMode=0x%x, cbFileSize=%zu\n",
+                                         szPathName, cbPathName, fMode, cbFileSize));
 
                             uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_ALL;
                             if (pCtx->uProtocol <= 1)
@@ -462,7 +472,6 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
                             /* Is there already a file open, e.g. in transfer? */
                             if (!objFile.IsOpen())
                             {
-
                                 RTCString strPathAbs(pszPathAbs);
                                 rc = objFile.OpenEx(strPathAbs, DnDURIObject::File, DnDURIObject::Target, fOpen,
                                                     (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
@@ -471,10 +480,10 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
                                     rc = DnDDirDroppedAddFile(&dirDroppedFiles, strPathAbs.c_str());
                                     if (RT_SUCCESS(rc))
                                     {
-                                        cbDataWritten = 0;
+                                        cbFileWritten = 0;
 
                                         if (pCtx->uProtocol >= 2) /* Set the expected file size. */
-                                            objFile.SetSize(cbDataToRead);
+                                            objFile.SetSize(cbFileSize);
                                     }
                                 }
                             }
@@ -492,8 +501,8 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
                     {
                         bool fClose = false;
 
-                        uint32_t cbWritten;
-                        rc = objFile.Write(pvTmpData, cbDataRecv, &cbWritten);
+                        uint32_t cbChunkWritten;
+                        rc = objFile.Write(pvChunk, cbChunkRead, &cbChunkWritten);
                         if (RT_SUCCESS(rc))
                         {
                             if (pCtx->uProtocol >= 2)
@@ -504,8 +513,8 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
                             else
                                 fClose = true; /* Always close the file after each chunk. */
 
-                            cbDataWritten += cbWritten;
-                            Assert(cbDataWritten <= cbDataToRead);
+                            cbFileWritten += cbChunkWritten;
+                            Assert(cbFileWritten <= cbFileSize);
                         }
 
                         if (fClose)
@@ -524,65 +533,12 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
                     break;
                 }
                 default:
+                {
                     LogFlowFunc(("Message %RU32 not supported\n", uNextMsg));
                     rc = VERR_NOT_SUPPORTED;
                     break;
-            }
-
-#if 0 /* Not used yet. */
-            if (pCtx->uProtocol >= XXX)
-            {
-                /*
-                 * Send the progress back to the host.
-                 */
-                uint32_t uStatus;
-                int guestRc;
-                uint8_t uPercent;
-                switch (rc)
-                {
-                    case VINF_SUCCESS:
-                    {
-                        if (!cbData)
-                            cbData = 1;
-                        uPercent = cbDataWritten * 100 / (cbDataToRead ? cbDataToRead : 1);
-                        uStatus  = uPercent >= 100 ?
-                                   DragAndDropSvc::DND_PROGRESS_COMPLETE : DragAndDropSvc::DND_PROGRESS_RUNNING;
-                        guestRc  = VINF_SUCCESS;
-                        break;
-                    }
-
-                    case VERR_CANCELLED:
-                    {
-                        uStatus  = DragAndDropSvc::DND_PROGRESS_CANCELLED;
-                        uPercent = 100;
-                        guestRc  = VINF_SUCCESS;
-                        break;
-                    }
-
-                    default:
-                    {
-                        uStatus  = DragAndDropSvc::DND_PROGRESS_ERROR;
-                        uPercent = 100;
-                        guestRc  = rc;
-                        break;
-                    }
-                }
-
-                int rc2 = VbglR3DnDHGSetProgress(pCtx, uStatus, uPercent, guestRc);
-                LogFlowFunc(("cbDataWritten=%RU64 / cbDataToRead=%RU64 => %RU8%% (uStatus=%ld, %Rrc), rc=%Rrc\n", cbDataWritten, cbDataToRead,
-                              uPercent, uStatus, guestRc, rc2));
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-
-                /* All data transferred? */
-                if (   RT_SUCCESS(rc)
-                    && uPercent == 100)
-                {
-                    rc = VINF_EOF;
-                    break;
                 }
             }
-#endif
         }
 
         if (RT_FAILURE(rc))
@@ -596,8 +552,9 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
     if (rc == VERR_NO_DATA)
         rc = VINF_SUCCESS;
 
-    if (pvTmpData)
-        RTMemFree(pvTmpData);
+    /* Delete chunk buffer again. */
+    if (pvChunk)
+        RTMemFree(pvChunk);
 
     /* Cleanup on failure or if the user has canceled the operation or
      * something else went wrong. */
@@ -609,25 +566,39 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
     else
     {
         /*
-         * Patch the old drop data with the new drop directory, so the drop target can find the files.
+         * Now we need to transform the URI list which came from the host into
+         * an URI list which also has the final "Dropped Files" directory as a prefix
+         * for each URI entry.
+         *
+         * So patch the old drop data with the new drop directory to let the drop
+         * target on the guest can find the files later.
          */
-        rc = lstURI.RootFromURIData(pvData, cbDataToRead, 0 /* fFlags */);
+        void  *pvURIData = *ppvData;
+        size_t cbURIData = *pcbDataRecv;
+
+        rc = lstURI.RootFromURIData(pvURIData, cbURIData, 0 /* fFlags */);
         if (RT_SUCCESS(rc))
         {
             /* Cleanup the old data and write the new data back to the event. */
-            RTMemFree(pvData);
+            RTMemFree(pvURIData);
 
             RTCString strData = lstURI.RootToString(pszDropDir);
-            LogFlowFunc(("cbDataToRead: %zu -> %zu\n", cbDataToRead, strData.length() + 1));
+            Assert(!strData.isEmpty());
+            LogFlowFunc(("New URI list now has %zu bytes (formerly %RU32 bytes)\n", strData.length() + 1, cbURIData));
 
-            pvData       = RTStrDupN(strData.c_str(), strData.length());
-            cbDataToRead = strData.length() + 1;
+            pvURIData = RTStrDupN(strData.c_str(), strData.length());
+            if (pvURIData)
+            {
+                cbURIData = strData.length() + 1;
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
 
         if (RT_SUCCESS(rc))
         {
-            *ppvData     = pvData;
-            *pcbDataRecv = cbDataToRead;
+            *ppvData     = pvURIData;
+            *pcbDataRecv = cbURIData;
         }
 
         /** @todo Compare the URI list with the dirs/files we really transferred. */
@@ -848,10 +819,6 @@ static int vbglR3DnDHGProcessSendDataMessage(PVBGLR3GUESTDNDCMDCTX pCtx,
         if (DnDMIMEHasFileURLs(pszFormat, *pcbFormatRecv))
         {
             rc = vbglR3DnDHGProcessURIMessages(pCtx,
-                                               puScreenId,
-                                               pszFormat,
-                                               cbFormat,
-                                               pcbFormatRecv,
                                                ppvData,
                                                cbData,
                                                pcbDataRecv);
