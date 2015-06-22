@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -76,10 +76,10 @@ public:
     STDMETHOD(COMGETTER(Height))(ULONG *height);
     STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *bitsPerPixel);
     STDMETHOD(COMGETTER(BytesPerLine))(ULONG *bytesPerLine);
-    STDMETHOD(COMGETTER(PixelFormat)) (BitmapFormat_T *pixelFormat);
-    STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
-    STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
-    STDMETHOD(COMGETTER(WinId)) (LONG64 *winId);
+    STDMETHOD(COMGETTER(PixelFormat))(BitmapFormat_T *pixelFormat);
+    STDMETHOD(COMGETTER(HeightReduction))(ULONG *heightReduction);
+    STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **aOverlay);
+    STDMETHOD(COMGETTER(WinId))(LONG64 *winId);
     STDMETHOD(COMGETTER(Capabilities))(ComSafeArrayOut(FramebufferCapabilities_T, aCapabilities));
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y, ULONG w, ULONG h);
@@ -222,11 +222,11 @@ public:
 #ifdef RT_OS_WINDOWS
     STDMETHOD_(ULONG, AddRef)()
     {
-        return ::InterlockedIncrement (&refcnt);
+        return ::InterlockedIncrement(&refcnt);
     }
     STDMETHOD_(ULONG, Release)()
     {
-        long cnt = ::InterlockedDecrement (&refcnt);
+        long cnt = ::InterlockedDecrement(&refcnt);
         if (cnt == 0)
             delete this;
         return cnt;
@@ -249,11 +249,11 @@ public:
 
     /* These are not used, or return standard values. */
     STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *bitsPerPixel);
-    STDMETHOD(COMGETTER(PixelFormat)) (ULONG *pixelFormat);
-    STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
-    STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
-    STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
-    STDMETHOD(COMGETTER(WinId)) (LONG64 *winId);
+    STDMETHOD(COMGETTER(PixelFormat))(ULONG *pixelFormat);
+    STDMETHOD(COMGETTER(UsesGuestVRAM))(BOOL *usesGuestVRAM);
+    STDMETHOD(COMGETTER(HeightReduction))(ULONG *heightReduction);
+    STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **aOverlay);
+    STDMETHOD(COMGETTER(WinId))(LONG64 *winId);
 
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
