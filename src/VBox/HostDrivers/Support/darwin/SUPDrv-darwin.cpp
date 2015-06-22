@@ -945,6 +945,7 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
              * calling host_vmxon.  CR4.VMXE may therefore have been disabled
              * by us.  So, first time around we make sure it's set so we won't
              * crash in the pre-4.3.28/5.0RC1 upgrade scenario.
+             * See @bugref{7907}.
              */
             static bool volatile g_fDoneCleanup = false;
             if (!g_fDoneCleanup)
