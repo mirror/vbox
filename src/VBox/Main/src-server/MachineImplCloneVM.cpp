@@ -45,6 +45,7 @@ typedef struct
 typedef struct
 {
     RTCList<MEDIUMTASK>     chain;
+    DeviceType_T            devType;
     bool                    fCreateDiffs;
     bool                    fAttachLinked;
 } MEDIUMTASKCHAIN;
@@ -269,20 +270,23 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
             rc = pAtt->COMGETTER(Type)(&type);
             if (FAILED(rc)) return rc;
 
-            /* Only harddisk's are of interest. */
-            if (type != DeviceType_HardDisk)
+            /* Only harddisks and floppies are of interest. */
+            if (   type != DeviceType_HardDisk
+                && type != DeviceType_Floppy)
                 continue;
 
             /* Valid medium attached? */
             ComPtr<IMedium> pSrcMedium;
             rc = pAtt->COMGETTER(Medium)(pSrcMedium.asOutParam());
             if (FAILED(rc)) return rc;
+
             if (pSrcMedium.isNull())
                 continue;
 
             /* Create the medium task chain. In this case it will always
              * contain one image only. */
             MEDIUMTASKCHAIN mtc;
+            mtc.devType       = type;
             mtc.fCreateDiffs  = fCreateDiffs;
             mtc.fAttachLinked = fAttachLinked;
 
@@ -376,8 +380,9 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
             rc = pAtt->COMGETTER(Type)(&type);
             if (FAILED(rc)) return rc;
 
-            /* Only harddisk's are of interest. */
-            if (type != DeviceType_HardDisk)
+            /* Only harddisks and floppies are of interest. */
+            if (   type != DeviceType_HardDisk
+                && type != DeviceType_Floppy)
                 continue;
 
             /* Valid medium attached? */
@@ -389,6 +394,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
                 continue;
 
             MEDIUMTASKCHAIN mtc;
+            mtc.devType       = type;
             mtc.fCreateDiffs  = fCreateDiffs;
             mtc.fAttachLinked = fAttachLinked;
 
@@ -519,14 +525,16 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
             rc = pAtt->COMGETTER(Type)(&type);
             if (FAILED(rc)) return rc;
 
-            /* Only harddisk's are of interest. */
-            if (type != DeviceType_HardDisk)
+            /* Only harddisks and floppies are of interest. */
+            if (   type != DeviceType_HardDisk
+                && type != DeviceType_Floppy)
                 continue;
 
             /* Valid medium attached? */
             ComPtr<IMedium> pSrcMedium;
             rc = pAtt->COMGETTER(Medium)(pSrcMedium.asOutParam());
             if (FAILED(rc)) return rc;
+
             if (pSrcMedium.isNull())
                 continue;
 
@@ -534,6 +542,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
              * not interested of any child's not attached to this VM. So this
              * will not create a full copy of the base/child relationship.) */
             MEDIUMTASKCHAIN mtc;
+            mtc.devType       = type;
             mtc.fCreateDiffs  = fCreateDiffs;
             mtc.fAttachLinked = fAttachLinked;
 
@@ -645,7 +654,8 @@ void MachineCloneVMPrivate::updateStorageLists(settings::StorageControllersList 
              it4 != llAttachments.end();
              ++it4)
         {
-            if (   it4->deviceType == DeviceType_HardDisk
+            if (   (   it4->deviceType == DeviceType_HardDisk
+                    || it4->deviceType == DeviceType_Floppy)
                 && it4->uuid == bstrOldId)
             {
                 it4->uuid = bstrNewId;
@@ -995,6 +1005,8 @@ HRESULT MachineCloneVM::run()
 
         /* Reset media registry. */
         trgMCF.mediaRegistry.llHardDisks.clear();
+        trgMCF.mediaRegistry.llDvdImages.clear();
+        trgMCF.mediaRegistry.llFloppyImages.clear();
         /* If we got a valid snapshot id, replace the hardware/storage section
          * with the stuff from the snapshot. */
         settings::Snapshot sn;
@@ -1146,7 +1158,11 @@ HRESULT MachineCloneVM::run()
 
                         /* Default format? */
                         Utf8Str strDefaultFormat;
-                        p->mParent->i_getDefaultHardDiskFormat(strDefaultFormat);
+                        if (mtc.devType == DeviceType_HardDisk)
+                            p->mParent->i_getDefaultHardDiskFormat(strDefaultFormat);
+                        else
+                            strDefaultFormat = "RAW";
+
                         Bstr bstrSrcFormat(strDefaultFormat);
 
                         ULONG srcVar = MediumVariant_Standard;
@@ -1224,26 +1240,28 @@ HRESULT MachineCloneVM::run()
                                            Utf8Str(bstrSrcFormat),
                                            strFile,
                                            Guid::Empty /* empty media registry */,
-                                           DeviceType_HardDisk);
+                                           mtc.devType);
                         if (FAILED(rc)) throw rc;
 
                         /* Update the new uuid. */
                         pTarget->i_updateId(newId);
 
-                        srcLock.release();
                         /* Do the disk cloning. */
                         ComPtr<IProgress> progress2;
 
                         ComObjPtr<Medium> pLMedium = static_cast<Medium*>((IMedium*)pMedium);
+                        srcLock.release();
                         rc = pLMedium->i_cloneToEx(pTarget,
                                                    srcVar,
                                                    pNewParent,
                                                    progress2.asOutParam(),
                                                    uSrcParentIdx,
                                                    uTrgParentIdx);
+                        srcLock.acquire();
                         if (FAILED(rc)) throw rc;
 
                         /* Wait until the async process has finished. */
+                        srcLock.release();
                         rc = d->pProgress->WaitForAsyncProgressCompletion(progress2);
                         srcLock.acquire();
                         if (FAILED(rc)) throw rc;
@@ -1263,14 +1281,18 @@ HRESULT MachineCloneVM::run()
                         MediumType_T type;
                         rc = pMedium->COMGETTER(Type)(&type);
                         if (FAILED(rc)) throw rc;
+                        trgLock.release();
+                        srcLock.release();
                         rc = pTarget->COMSETTER(Type)(type);
+                        srcLock.acquire();
+                        trgLock.acquire();
                         if (FAILED(rc)) throw rc;
                         map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pTarget));
-                        /* register the new harddisk */
+                        /* register the new medium */
                         {
                             AutoWriteLock tlock(p->mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
                             rc = p->mParent->i_registerMedium(pTarget, &pTarget,
-                                                            tlock);
+                                                              tlock);
                             if (FAILED(rc)) throw rc;
                         }
                         /* This medium becomes the parent of the next medium in the
@@ -1462,6 +1484,9 @@ HRESULT MachineCloneVM::run()
     }
     catch (HRESULT rc2)
     {
+        /* Error handling code only works correctly without locks held. */
+        trgLock.release();
+        srcLock.release();
         rc = rc2;
     }
     catch (...)
@@ -1487,7 +1512,7 @@ HRESULT MachineCloneVM::run()
         {
             const ComObjPtr<Medium> &pMedium = newMedia.at(i - 1);
             mrc = pMedium->i_deleteStorage(NULL /* aProgress */,
-                                         true /* aWait */);
+                                           true /* aWait */);
             pMedium->Close();
         }
         /* Delete the snapshot folder when not empty. */
