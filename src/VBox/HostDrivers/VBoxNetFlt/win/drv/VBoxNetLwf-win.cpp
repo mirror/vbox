@@ -801,10 +801,6 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     pModuleCtx->pGlobals  = pGlobals;
     pModuleCtx->hFilter   = hFilter;
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Attaching);
-    /* Insert into module chain */
-    NdisAcquireSpinLock(&pGlobals->Lock);
-    RTListPrepend(&pGlobals->listModules, &pModuleCtx->node);
-    NdisReleaseSpinLock(&pGlobals->Lock);
     /* Initialize transmission mutex and events */
     NDIS_INIT_MUTEX(&pModuleCtx->InTransmit);
 #ifdef VBOXNETLWF_SYNC_SEND
@@ -854,6 +850,10 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         NdisFreeMemory(pModuleCtx, 0, 0);
         return NDIS_STATUS_RESOURCES;
     }
+    /* Insert into module chain */
+    NdisAcquireSpinLock(&pGlobals->Lock);
+    RTListPrepend(&pGlobals->listModules, &pModuleCtx->node);
+    NdisReleaseSpinLock(&pGlobals->Lock);
 
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Paused);
 
@@ -2332,11 +2332,13 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     ANSI_STRING strInst;
     RtlInitAnsiString(&strInst, pThis->szName);
     PVBOXNETLWF_MODULE pModuleCtx = NULL;
+    NdisAcquireSpinLock(&g_VBoxNetLwfGlobals.Lock);
     RTListForEach(&g_VBoxNetLwfGlobals.listModules, pModuleCtx, VBOXNETLWF_MODULE, node)
     {
         DbgPrint(__FUNCTION__": evaluating module, name=%Z\n", pModuleCtx->strMiniportName);
         if (RtlEqualString(&strInst, &pModuleCtx->strMiniportName, TRUE))
         {
+            NdisReleaseSpinLock(&g_VBoxNetLwfGlobals.Lock);
             Log(("vboxNetFltOsInitInstance: found matching module, name=%s\n", pThis->szName));
             pThis->u.s.WinIf.hModuleCtx = pModuleCtx;
             pModuleCtx->pNetFlt = pThis;
@@ -2346,6 +2348,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
             return VINF_SUCCESS;
         }
     }
+    NdisReleaseSpinLock(&g_VBoxNetLwfGlobals.Lock);
     LogFlow(("<==vboxNetFltOsInitInstance: return VERR_INTNET_FLT_IF_NOT_FOUND\n"));
     return VERR_INTNET_FLT_IF_NOT_FOUND;
 }
