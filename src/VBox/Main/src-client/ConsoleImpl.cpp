@@ -6251,12 +6251,12 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
              */
             if (VMR3GetStateU(ptrVM.rawUVM()) != VMSTATE_SUSPENDED)
             {
-                LogRel(("Ignoring host-resume VM resume request, VM is not currently suspended\n"));
+                LogRel(("Ignoring VM resume request, VM is currently not suspended\n"));
                 return S_OK;
             }
             if (VMR3GetSuspendReason(ptrVM.rawUVM()) != VMSUSPENDREASON_HOST_SUSPEND)
             {
-                LogRel(("Ignoring host-resume VM resume request, VM was not suspended due to host-suspend\n"));
+                LogRel(("Ignoring VM resume request, VM was not suspended due to host-suspend\n"));
                 return S_OK;
             }
 
@@ -6265,18 +6265,12 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
         else
         {
             /*
-             * Any other reason to resume the VM is ignored when the VM was suspended due to a host suspend.
+             * Any other reason to resume the VM throws an error when the VM was suspended due to a host suspend.
              * See @bugref{7836}.
              */
-            /** @todo we need to return an error code when trying to resume a VM (using
-             *        "Reason_Unspecified") when the VM has been paused due to
-             *        host-suspend. */
             if (   VMR3GetStateU(ptrVM.rawUVM()) == VMSTATE_SUSPENDED
                 && VMR3GetSuspendReason(ptrVM.rawUVM()) == VMSUSPENDREASON_HOST_SUSPEND)
-            {
-                LogRel(("Ignoring VM resume request, VM was paused in response to a host-suspend\n"));
                 return setError(VBOX_E_INVALID_VM_STATE, tr("VM is paused due to host power management"));
-            }
 
             enmReason = aReason == Reason_Snapshot ? VMRESUMEREASON_STATE_SAVED : VMRESUMEREASON_USER;
         }
