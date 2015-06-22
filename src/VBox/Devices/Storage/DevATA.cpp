@@ -2221,9 +2221,9 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                  * Motivation: changing the VM configuration should be as
                  *             invisible as possible to the guest. */
                 Log3(("ATAPI PT inquiry data before (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
-                ataR3PadString(s->CTX_SUFF(pbIOBuffer) + 8, "VBOX", 8);
-                ataR3PadString(s->CTX_SUFF(pbIOBuffer) + 16, "CD-ROM", 16);
-                ataR3PadString(s->CTX_SUFF(pbIOBuffer) + 32, "1.0", 4);
+                ataR3SCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 8, "VBOX", 8);
+                ataR3SCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 16, "CD-ROM", 16);
+                ataR3SCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 32, "1.0", 4);
             }
 
             if (cbTransfer)
@@ -2778,9 +2778,9 @@ static bool atapiR3InquirySS(ATADevState *s)
     pbBuf[5] = 0; /* reserved */
     pbBuf[6] = 0; /* reserved */
     pbBuf[7] = 0; /* reserved */
-    ataR3PadString(pbBuf + 8, s->szInquiryVendorId, 8);
-    ataR3PadString(pbBuf + 16, s->szInquiryProductId, 16);
-    ataR3PadString(pbBuf + 32, s->szInquiryRevision, 4);
+    ataR3SCSIPadStr(pbBuf + 8, s->szInquiryVendorId, 8);
+    ataR3SCSIPadStr(pbBuf + 16, s->szInquiryProductId, 16);
+    ataR3SCSIPadStr(pbBuf + 32, s->szInquiryRevision, 4);
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
     return false;
