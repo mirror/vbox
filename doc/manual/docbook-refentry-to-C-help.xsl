@@ -333,14 +333,10 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   </xsl:template>
 
   <xsl:template match="varlistentry/listitem">
-    <xsl:if test="*[not(self::para or self::itemizedlist or self::orderedlist)]|text()">
-      <xsl:message terminate="yes">
-        <xsl:call-template name="get-node-path"/>: error: Expected varlistentry/listitem to only contain para, itemizedlist and orderedlist elements:
-        <xsl:call-template name="list-nodes">
-          <xsl:with-param name="Nodes" select="*[not(self::para or self::itemizedlist or self::orderedlist)]|text()"/>
-        </xsl:call-template>
-      </xsl:message>
-    </xsl:if>
+    <xsl:call-template name="check-children">
+      <xsl:with-param name="UnsupportedNodes" select="*[not(self::para or self::itemizedlist or self::orderedlist)]|text()"/>
+      <xsl:with-param name="SupportedNames">para, itemizedlist and orderedlist</xsl:with-param>
+    </xsl:call-template>
 
     <xsl:apply-templates select="*"/>
   </xsl:template>
@@ -858,6 +854,25 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
       </xsl:choose>
     </for-each>
 
+  </xsl:template>
+
+  <xsl:template name="check-children">
+    <xsl:param name="Node"             select="."/>
+    <xsl:param name="UnsupportedNodes" select="*"/>
+    <xsl:param name="SupportedNames"   select="'none'"/>
+    <xsl:if test="count($UnsupportedNodes) != 0">
+      <xsl:message terminate="yes">
+        <xsl:call-template name="get-node-path">
+          <xsl:with-param name="Node" select="$Node"/>
+        </xsl:call-template>
+        <!-- -->: error: Only <xsl:value-of select="$SupportedNames"/> are supported as children to <!-- -->
+        <xsl:value-of select="name($Node)"/>
+        <!-- -->Unsupported children: <!-- -->
+        <xsl:call-template name="list-nodes">
+          <xsl:with-param name="Nodes" select="$UnsupportedNodes"/>
+        </xsl:call-template>
+      </xsl:message>
+    </xsl:if>
   </xsl:template>
 
 </xsl:stylesheet>
