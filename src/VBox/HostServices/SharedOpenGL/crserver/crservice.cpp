@@ -227,7 +227,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
     if (rc==VERR_SSM_DATA_UNIT_FORMAT_CHANGED && ui32!=SHCROGL_SSM_VERSION)
     {
-        LogRel(("SHARED_CROPENGL svcLoadState: unsupported save state version %d\n", ui32));
+        LogRel(("OpenGL: svcLoadState: Unsupported save state version %d\n", ui32));
 
         /*@todo ugly hack, as we don't know size of stored opengl data try to read untill end of opengl data marker*/
         /*VBoxSharedCrOpenGL isn't last hgcm service now, so can't use SSMR3SkipToEndOfUnit*/
@@ -312,7 +312,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
 static void svcClientVersionUnsupported(uint32_t minor, uint32_t major)
 {
-    LogRel(("SHARED_CROPENGL: unsupported client version %d.%d\n", minor, major));
+    LogRel(("OpenGL: Unsupported client version %d.%d\n", minor, major));
 
     /*MS's opengl32 tries to load our ICD around 30 times on failure...this is to prevent unnecessary spam*/
     static int shown = 0;
@@ -345,7 +345,7 @@ static CRVBOXSVCBUFFER_t* svcGetBuffer(uint32_t iBuffer, uint32_t cbBufferSize)
                     if (shown<20)
                     {
                         shown++;
-                        LogRel(("SHARED_CROPENGL svcGetBuffer: invalid buffer(%i) size %i instead of %i\n",
+                        LogRel(("OpenGL: svcGetBuffer: Invalid buffer(%i) size %i instead of %i\n",
                                 iBuffer, pBuffer->uiSize, cbBufferSize));
                     }
                     return NULL;
@@ -364,7 +364,7 @@ static CRVBOXSVCBUFFER_t* svcGetBuffer(uint32_t iBuffer, uint32_t cbBufferSize)
             pBuffer->pData = RTMemAlloc(cbBufferSize);
             if (!pBuffer->pData)
             {
-                LogRel(("SHARED_CROPENGL svcGetBuffer: not enough memory (%d)\n", cbBufferSize));
+                LogRel(("OpenGL: svcGetBuffer: Not enough memory (%d)\n", cbBufferSize));
                 RTMemFree(pBuffer);
                 return NULL;
             }
@@ -385,7 +385,7 @@ static CRVBOXSVCBUFFER_t* svcGetBuffer(uint32_t iBuffer, uint32_t cbBufferSize)
         }
         else
         {
-            LogRel(("SHARED_CROPENGL svcGetBuffer: not enough memory (%d)\n", sizeof(CRVBOXSVCBUFFER_t)));
+            LogRel(("OpenGL: svcGetBuffer: Not enough memory (%d)\n", sizeof(CRVBOXSVCBUFFER_t)));
         }
         return pBuffer;
     }
@@ -732,7 +732,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 CRVBOXSVCBUFFER_t *pSvcBuffer = svcGetBuffer(iBuffer, 0);
                 if (!pSvcBuffer)
                 {
-                    LogRel(("SHARED_CROPENGL svcCall(WRITE_READ_BUFFERED): invalid buffer (%d)\n", iBuffer));
+                    LogRel(("OpenGL: svcCall(WRITE_READ_BUFFERED): Invalid buffer (%d)\n", iBuffer));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
@@ -1116,7 +1116,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
         {
             if (cParms != 1)
             {
-                LogRel(("SHCRGL_HOST_FN_TAKE_SCREENSHOT: cParms invalid - %d", cParms));
+                LogRel(("OpenGL: SHCRGL_HOST_FN_TAKE_SCREENSHOT: cParms invalid - %d", cParms));
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -1171,7 +1171,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
             /* Verify parameter count and types. */
             if (cParms != SHCRGL_CPARMS_DEV_RESIZE)
             {
-                LogRel(("SHCRGL_HOST_FN_DEV_RESIZE: cParms invalid - %d", cParms));
+                LogRel(("OpenGL: SHCRGL_HOST_FN_DEV_RESIZE: cParms invalid - %d", cParms));
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -1206,7 +1206,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
             /* Verify parameter count and types. */
             if (cParms != SHCRGL_CPARMS_VIEWPORT_CHANGED)
             {
-                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: cParms invalid - %d", cParms));
+                LogRel(("OpenGL: SHCRGL_HOST_FN_VIEWPORT_CHANGED: cParms invalid - %d", cParms));
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -1215,7 +1215,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
             {
                 if (paParms[i].type != VBOX_HGCM_SVC_PARM_32BIT)
                 {
-                    LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: param[%d] type invalid - %d", i, paParms[i].type));
+                    LogRel(("OpenGL: SHCRGL_HOST_FN_VIEWPORT_CHANGED: param[%d] type invalid - %d", i, paParms[i].type));
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
@@ -1223,7 +1223,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
 
             if (!RT_SUCCESS(rc))
             {
-                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: param validation failed, returning.."));
+                LogRel(("OpenGL: SHCRGL_HOST_FN_VIEWPORT_CHANGED: param validation failed, returning.."));
                 break;
             }
 
@@ -1236,7 +1236,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
                     paParms[4].u.uint32  /* h */);
             if (!RT_SUCCESS(rc))
             {
-                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: crVBoxServerSetScreenViewport failed, rc %d", rc));
+                LogRel(("OpenGL: SHCRGL_HOST_FN_VIEWPORT_CHANGED: crVBoxServerSetScreenViewport failed, rc %d", rc));
             }
 
             crServerVBoxCompositionSetEnableStateGlobal(GL_TRUE);
@@ -1250,7 +1250,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
             /* Verify parameter count and types. */
             if (cParms != SHCRGL_CPARMS_VIEWPORT_CHANGED)
             {
-                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: cParms invalid - %d", cParms));
+                LogRel(("OpenGL: SHCRGL_HOST_FN_VIEWPORT_CHANGED: cParms invalid - %d", cParms));
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -1259,7 +1259,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
                     || !paParms[0].u.pointer.addr
                     || paParms[0].u.pointer.size != sizeof (CRVBOXHGCMVIEWPORT))
             {
-                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: param invalid - %d, %#x, %d",
+                LogRel(("OpenGL: SHCRGL_HOST_FN_VIEWPORT_CHANGED: param invalid - %d, %#x, %d",
                         paParms[0].type,
                         paParms[0].u.pointer.addr,
                         paParms[0].u.pointer.size));
@@ -1278,7 +1278,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
                     pViewportInfo->height  /* h */);
             if (!RT_SUCCESS(rc))
             {
-                LogRel(("SHCRGL_HOST_FN_VIEWPORT_CHANGED: crVBoxServerSetScreenViewport failed, rc %d", rc));
+                LogRel(("OpenGL: SHCRGL_HOST_FN_VIEWPORT_CHANGED: crVBoxServerSetScreenViewport failed, rc %d", rc));
             }
 
             crServerVBoxCompositionSetEnableStateGlobal(GL_TRUE);
@@ -1386,7 +1386,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
             rc = VBoxOglSetScaleFactor(pData->u32Screen, dScaleFactorW, dScaleFactorH);
 
             /* Log scaling factor rounded to nearest 'int' value (not so precise). */
-            LogRel(("OpenGL: Set 3D content scale factor to (%u, %u), multiplier %d (rc=%Rrc).\n",
+            LogRel(("OpenGL: Set 3D content scale factor to (%u, %u), multiplier %d (rc=%Rrc)\n",
                 pData->u32ScaleFactorWMultiplied,
                 pData->u32ScaleFactorHMultiplied,
                 (int)VBOX_OGL_SCALE_FACTOR_MULTIPLIER,
@@ -1410,7 +1410,7 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
 
             CRVBOXHGCMSETUNSCALEDHIDPIOUTPUT *pData = (CRVBOXHGCMSETUNSCALEDHIDPIOUTPUT *)paParms[0].u.pointer.addr;
             crServerSetUnscaledHiDPI(pData->fUnscaledHiDPI);
-            LogRel(("OpenGL: Set OpenGL scale policy on HiDPI displays (fUnscaledHiDPI=%d).\n", pData->fUnscaledHiDPI));
+            LogRel(("OpenGL: Set OpenGL scale policy on HiDPI displays (fUnscaledHiDPI=%d)\n", pData->fUnscaledHiDPI));
             break;
         }
 
