@@ -50,6 +50,10 @@
 #include <iprt/stream.h>
 #include <iprt/asm.h>
 
+#ifndef RT_OS_WINDOWS
+# include <signal.h>
+#endif
+
 // workaround for compile problems on gcc 4.1
 #ifdef __GNUC__
 #pragma GCC visibility push(default)
@@ -142,6 +146,7 @@ static uint64_t         g_uHistoryFileSize = 100 * _1M; // max 100MB per file
 bool                    g_fVerbose = false;             // be verbose
 
 static bool             g_fDaemonize = false;           // run in background.
+static volatile bool    g_fKeepRunning = true;          // controlling the exit
 
 const WSDLT_ID          g_EmptyWSDLID;                  // for NULL MORs
 
@@ -365,8 +370,8 @@ public:
 
         int rc = RTThreadCreate(&m_pThread,
                                 fntWrapper,
-                                this,             // pvUser
-                                0,               // cbStack,
+                                this,           // pvUser
+                                0,              // cbStack
                                 RTTHREADTYPE_MAIN_HEAVY_WORKER,
                                 0,
                                 m_strThread.c_str());
@@ -400,7 +405,7 @@ public:
     static int fntWrapper(RTTHREAD pThread, void *pvThread)
     {
         SoapThread *pst = (SoapThread*)pvThread;
-        pst->process();     // this never returns really
+        pst->process();
         return 0;
     }
 
@@ -434,6 +439,21 @@ public:
 
     ~SoapQ()
     {
+        /* Tell the threads to terminate. */
+        RTSemEventMultiSignal(m_event);
+        {
+            util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
+            int i = 0;
+            while (m_llAllThreads.size() && i++ <= 30)
+            {
+                qlock.release();
+                RTThreadSleep(1000);
+                RTSemEventMultiSignal(m_event);
+                qlock.acquire();
+            }
+            WebLog("ending queue processing (%d out of %d threads idle)\n", m_cIdleThreads, m_llAllThreads.size());
+        }
+
         RTSemEventMultiDestroy(m_event);
     }
 
@@ -488,10 +508,13 @@ public:
      */
     SOAP_SOCKET get(size_t &cIdleThreads, size_t &cThreads)
     {
-        while (1)
+        while (g_fKeepRunning)
         {
             // wait for something to happen
             RTSemEventMultiWait(m_event, RT_INDEFINITE_WAIT);
+
+            if (!g_fKeepRunning)
+                break;
 
             util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
             if (!m_llSocketsQ.empty())
@@ -514,6 +537,7 @@ public:
 
             // nothing to do: keep looping
         }
+        return SOAP_INVALID_SOCKET;
     }
 
     /**
@@ -524,6 +548,24 @@ public:
     {
         util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
         ++m_cIdleThreads;
+    }
+
+    /**
+     * To be called by a worker thread when signing off, i.e. no longer
+     * willing to process requests.
+     */
+    void signoff(SoapThread *th)
+    {
+        {
+            util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
+            size_t c = g_mapThreads.erase(th->m_pThread);
+            AssertReturnVoid(c == 1);
+        }
+        {
+            util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
+            m_llAllThreads.remove(th);
+            --m_cIdleThreads;
+        }
     }
 
     const struct soap       *m_soap;            // soap structure created by main(), passed to constructor
@@ -549,11 +591,14 @@ void SoapThread::process()
 {
     WebLog("New SOAP thread started\n");
 
-    while (1)
+    while (g_fKeepRunning)
     {
         // wait for a socket to arrive on the queue
         size_t cIdleThreads = 0, cThreads = 0;
         m_soap->socket = m_pQ->get(cIdleThreads, cThreads);
+
+        if (!soap_valid_socket(m_soap->socket))
+            continue;
 
         WebLog("Processing connection from IP=%lu.%lu.%lu.%lu socket=%d (%d out of %d threads idle)\n",
                (m_soap->ip >> 24) & 0xFF,
@@ -586,6 +631,7 @@ void SoapThread::process()
         // tell the queue we're idle again
         m_pQ->done();
     }
+    m_pQ->signoff(this);
 }
 
 /****************************************************************************
@@ -630,7 +676,7 @@ public:
                     WebLog("VBoxSVC became unavailable\n");
                     {
                         util::AutoWriteLock vlock(g_pVirtualBoxLockHandle COMMA_LOCKVAL_SRC_POS);
-                        g_pVirtualBox = NULL;
+                        g_pVirtualBox.setNull();
                     }
                     {
                         // we're messing with websessions, so lock them
@@ -872,14 +918,16 @@ static void doQueuesLoop()
         g_pSoapQ = new SoapQ(&soap);
 
         for (uint64_t i = 1;
-             ;
+             g_fKeepRunning;
              i++)
         {
             // call gSOAP to handle incoming SOAP connection
+            soap.accept_timeout = 10;
             s = soap_accept(&soap);
-            if (s < 0)
+            if (!soap_valid_socket(s))
             {
-                WebLogSoapError(&soap);
+                if (soap.errnum)
+                    WebLogSoapError(&soap);
                 continue;
             }
 
@@ -888,6 +936,15 @@ static void doQueuesLoop()
             size_t cItemsOnQ = g_pSoapQ->add(s);
             WebLog("Request %llu on socket %d queued for processing (%d items on Q)\n", i, s, cItemsOnQ);
         }
+
+        delete g_pSoapQ;
+        g_pSoapQ = NULL;
+
+        WebLog("ending SOAP request handling\n");
+
+        delete g_pSoapQ;
+        g_pSoapQ = NULL;
+
     }
     soap_done(&soap); // close master socket and detach environment
 
@@ -911,12 +968,59 @@ static int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
 
     doQueuesLoop();
 
+    thrLock.acquire();
+    g_mapThreads.erase(RTThreadSelf());
     return 0;
 }
 
 #ifdef RT_OS_WINDOWS
 // Required for ATL
 static CComModule _Module;
+
+/**
+ * "Signal" handler for cleanly terminating the event loop.
+ */
+static BOOL WINAPI websrvSignalHandler(DWORD dwCtrlType)
+{
+    bool fEventHandled = FALSE;
+    switch (dwCtrlType)
+    {
+        /* User pressed CTRL+C or CTRL+BREAK or an external event was sent
+         * via GenerateConsoleCtrlEvent(). */
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT:
+        case CTRL_C_EVENT:
+        case CTRL_LOGOFF_EVENT:
+        case CTRL_SHUTDOWN_EVENT:
+            ASMAtomicWriteBool(&g_fGuestCtrlCanceled, true);
+            fEventHandled = TRUE;
+            break;
+        default:
+            break;
+    }
+    return fEventHandled;
+#else
+class ForceQuitEvent : public com::NativeEvent
+{
+    void *handler()
+    {
+        LogFlowFunc(("\n"));
+
+        g_fKeepRunning = false;
+
+        return NULL;
+    }
+};
+
+/**
+ * Signal handler for cleanly terminating the event loop.
+ */
+static void websrvSignalHandler(int iSignal)
+{
+    NOREF(iSignal);
+    com::NativeEventQueue *pQ = com::NativeEventQueue::getMainEventQueue();
+    pQ->postEvent(new ForceQuitEvent());
+}
 #endif
 
 
@@ -1199,33 +1303,48 @@ int main(int argc, char *argv[])
     g_pThreadsLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
 
     // SOAP queue pumper thread
-    rc = RTThreadCreate(NULL,
+    RTTHREAD threadQPumper;
+    rc = RTThreadCreate(&threadQPumper,
                         fntQPumper,
                         NULL,        // pvUser
                         0,           // cbStack (default)
                         RTTHREADTYPE_MAIN_WORKER,
-                        0,           // flags
+                        RTTHREADFLAGS_WAITABLE,
                         "SQPmp");
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start SOAP queue pumper thread: %Rrc", rc);
 
     // watchdog thread
+    RTTHREAD threadWatchdog = NIL_RTTHREAD;
     if (g_iWatchdogTimeoutSecs > 0)
     {
         // start our watchdog thread
-        rc = RTThreadCreate(NULL,
+        rc = RTThreadCreate(&threadWatchdog,
                             fntWatchdog,
                             NULL,
                             0,
                             RTTHREADTYPE_MAIN_WORKER,
-                            0,
+                            RTTHREADFLAGS_WAITABLE,
                             "Watchdog");
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start watchdog thread: %Rrc", rc);
     }
 
+#ifdef RT_OS_WINDOWS
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)gctlSignalHandler, TRUE /* Add handler */))
+    {
+        rc = RTErrConvertFromWin32(GetLastError());
+        RTMsgError("Unable to install console control handler, rc=%Rrc\n", rc);
+    }
+#else
+    signal(SIGINT,   websrvSignalHandler);
+# ifdef SIGBREAK
+    signal(SIGBREAK, websrvSignalHandler);
+# endif
+#endif
+
     com::NativeEventQueue *pQ = com::NativeEventQueue::getMainEventQueue();
-    for (;;)
+    while (g_fKeepRunning)
     {
         // we have to process main event queue
         WEBDEBUG(("Pumping COM event queue\n"));
@@ -1233,6 +1352,25 @@ int main(int argc, char *argv[])
         if (RT_FAILURE(rc))
             RTMsgError("processEventQueue -> %Rrc", rc);
     }
+
+    WebLog("requested termination, cleaning up\n");
+
+#ifdef RT_OS_WINDOWS
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)gctlSignalHandler, FALSE /* Remove handler */))
+    {
+        rc = RTErrConvertFromWin32(GetLastError());
+        RTMsgError("Unable to remove console control handler, rc=%Rrc\n", rc);
+    }
+#else
+    signal(SIGINT,   SIG_DFL);
+# ifdef SIGBREAK
+    signal(SIGBREAK, SIG_DFL);
+# endif
+#endif
+
+    RTThreadWait(threadQPumper, 30000, NULL);
+    if (threadWatchdog != NIL_RTTHREAD)
+        RTThreadWait(threadWatchdog, g_iWatchdogCheckInterval * 1000 + 10000, NULL);
 
     /* VirtualBoxClient events unregistration. */
     if (vboxClientListener)
@@ -1243,6 +1381,24 @@ int main(int argc, char *argv[])
             CHECK_ERROR(pES, UnregisterListener(vboxClientListener));
         vboxClientListener.setNull();
     }
+
+    {
+        util::AutoWriteLock vlock(g_pVirtualBoxLockHandle COMMA_LOCKVAL_SRC_POS);
+        g_pVirtualBox.setNull();
+    }
+    {
+        util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+        WebsessionsMapIterator it = g_mapWebsessions.begin(),
+                               itEnd = g_mapWebsessions.end();
+        while (it != itEnd)
+        {
+            WebServiceSession *pWebsession = it->second;
+            WEBDEBUG(("SVC unavailable: websession %#llx stale, deleting\n", pWebsession->getID()));
+            delete pWebsession;
+            it = g_mapWebsessions.begin();
+        }
+    }
+    g_pVirtualBoxClient.setNull();
 
     com::Shutdown();
 
@@ -1272,7 +1428,7 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
 
     WEBDEBUG(("Watchdog thread started\n"));
 
-    while (1)
+    while (g_fKeepRunning)
     {
         WEBDEBUG(("Watchdog: sleeping %d seconds\n", g_iWatchdogCheckInterval));
         RTThreadSleep(g_iWatchdogCheckInterval * 1000);
@@ -1310,7 +1466,10 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
         }
     }
 
-    WEBDEBUG(("Watchdog thread ending\n"));
+    thrLock.acquire();
+    g_mapThreads.erase(RTThreadSelf());
+
+    WebLog("ending Watchdog thread\n");
     return 0;
 }
 
