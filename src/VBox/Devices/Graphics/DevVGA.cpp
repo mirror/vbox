@@ -4183,10 +4183,9 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     pHlp->pfnPrintf(pHlp, "display refresh interval: %u ms\n", pThis->cMilliesRefreshInterval);
 
 #ifdef VBOX_WITH_VMSVGA
-    if (pThis->svga.fEnabled) {
+    if (pThis->svga.fEnabled)
         pHlp->pfnPrintf(pHlp, pThis->svga.f3DEnabled ? "VMSVGA 3D enabled: %ux%ux%u\n" : "VMSVGA enabled: %ux%ux%u",
                         pThis->svga.uWidth, pThis->svga.uHeight, pThis->svga.uBpp);
-    }
 #endif
 }
 
