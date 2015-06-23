@@ -757,7 +757,10 @@ SetupParams(JNIEnv *env, const jobject aParam, PRUint8 aType, PRBool aIsOut,
         rv = JavaObjectToNativeInterface(env, java_obj, iid, &xpcom_obj);
         if (NS_FAILED(rv))
           break;
-        rv = ((nsISupports*) xpcom_obj)->QueryInterface(iid, &xpcom_obj);
+        NS_ENSURE_TRUE(xpcom_obj, NS_ERROR_FAILURE);
+        nsISupports *xpcom_nat_obj = (nsISupports*) xpcom_obj;
+        rv = xpcom_nat_obj->QueryInterface(iid, &xpcom_obj);
+        NS_IF_RELEASE(xpcom_nat_obj);
         if (NS_FAILED(rv))
           break;
 

@@ -504,7 +504,9 @@ JXUTILS_NATIVE(wrapJavaObject) (JNIEnv* env, jobject, jobject aJavaObject,
       if (iid.Parse(str)) {
         rv = JavaObjectToNativeInterface(env, aJavaObject, iid, &xpcomObject);
         if (NS_SUCCEEDED(rv)) {
-          rv = ((nsISupports*) xpcomObject)->QueryInterface(iid, &xpcomObject);
+          nsISupports *xpcom_nat_obj = (nsISupports*) xpcomObject;
+          rv = xpcom_nat_obj->QueryInterface(iid, &xpcomObject);
+          NS_IF_RELEASE(xpcom_nat_obj);
         }
       } else {
         rv = NS_ERROR_INVALID_ARG;
