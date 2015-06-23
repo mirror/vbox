@@ -118,6 +118,11 @@ VBoxOGLcrserverlib_INTERMEDIATES = \
         $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
+
+ifdef VBOX_WITH_CR_DISPLAY_LISTS
+VBoxOGLcrserverlib_INTERMEDIATES += $(VBOX_PATH_CROGL_GENFILES)/cr_dlm.h
+endif
+
 VBoxOGLcrserverlib_SOURCES := \
 	crserverlib/server_main.c \
 	crserverlib/server_boundsinfo.c \
