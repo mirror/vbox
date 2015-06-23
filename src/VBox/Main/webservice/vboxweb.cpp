@@ -992,13 +992,14 @@ static BOOL WINAPI websrvSignalHandler(DWORD dwCtrlType)
         case CTRL_C_EVENT:
         case CTRL_LOGOFF_EVENT:
         case CTRL_SHUTDOWN_EVENT:
-            ASMAtomicWriteBool(&g_fGuestCtrlCanceled, true);
+            ASMAtomicWriteBool(&g_fKeepRunning, false);
             fEventHandled = TRUE;
             break;
         default:
             break;
     }
     return fEventHandled;
+}
 #else
 class ForceQuitEvent : public com::NativeEvent
 {
@@ -1006,7 +1007,7 @@ class ForceQuitEvent : public com::NativeEvent
     {
         LogFlowFunc(("\n"));
 
-        g_fKeepRunning = false;
+        ASMAtomicWriteBool(&g_fKeepRunning, false);
 
         return NULL;
     }
