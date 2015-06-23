@@ -45,6 +45,18 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def IEM_USE_IEM_INSTEAD
+ * Use IEM instead of IOM for interpreting MMIO accesses.
+ * Because of PATM/CSAM issues in raw-mode, we've split this up into 2nd and 3rd
+ * IEM deployment step. */
+#if  ((defined(IN_RING3) || defined(IN_RING0)) && defined(VBOX_WITH_2ND_IEM_STEP)) \
+  || defined(VBOX_WITH_3RD_IEM_STEP)
+# define IEM_USE_IEM_INSTEAD
+#endif
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -719,7 +731,7 @@ DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
 }
 
 
-#ifndef VBOX_WITH_2ND_IEM_STEP
+#ifndef IEM_USE_IEM_INSTEAD
 
 /**
  * MOV      reg, mem         (read)
@@ -1646,7 +1658,7 @@ static int iomInterpretXCHG(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
     return rc;
 }
 
-#endif /* !VBOX_WITH_2ND_IEM_STEP */
+#endif /* !IEM_USE_IEM_INSTEAD */
 
 /**
  * \#PF Handler callback for MMIO ranges.
@@ -1736,7 +1748,7 @@ static VBOXSTRICTRC iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, P
         return rc;
     }
 
-#ifdef VBOX_WITH_2ND_IEM_STEP
+#ifdef IEM_USE_IEM_INSTEAD
 
     /*
      * Let IEM call us back via iomMmioHandler.
@@ -1895,7 +1907,7 @@ static VBOXSTRICTRC iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, P
     PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     iomMmioReleaseRange(pVM, pRange);
     return rc;
-#endif /* !VBOX_WITH_2ND_IEM_STEP */
+#endif /* !IEM_USE_IEM_INSTEAD */
 }
 
 
@@ -2256,7 +2268,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint3
 }
 
 #endif /* IN_RING3 - only used by REM. */
-#ifndef VBOX_WITH_2ND_IEM_STEP
+#ifndef IEM_USE_IEM_INSTEAD
 
 /**
  * [REP*] INSB/INSW/INSD
@@ -2578,7 +2590,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
     return rcStrict;
 }
 
-#endif /* !VBOX_WITH_2ND_IEM_STEP */
+#endif /* !IEM_USE_IEM_INSTEAD */
 
 
 #ifndef IN_RC

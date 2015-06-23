@@ -42,7 +42,7 @@
 #include <iprt/string.h>
 
 
-#ifdef VBOX_WITH_2ND_IEM_STEP
+#ifdef VBOX_WITH_3RD_IEM_STEP
 /**
  * Converts disassembler mode to IEM mode.
  * @return IEM CPU mode.
@@ -199,7 +199,7 @@ static VBOXSTRICTRC iomRCInterpretOUT(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFr
  */
 static VBOXSTRICTRC iomRCInterpretINS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-#ifdef VBOX_WITH_2ND_IEM_STEP
+#ifdef VBOX_WITH_3RD_IEM_STEP
     uint8_t cbValue = pCpu->pCurInstr->uOpcode == OP_INSB ? 1
                     : pCpu->uOpMode == DISCPUMODE_16BIT ? 2 : 4;       /* dword in both 32 & 64 bits mode */
     return IEMExecStringIoRead(pVCpu,
@@ -253,7 +253,7 @@ static VBOXSTRICTRC iomRCInterpretINS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFr
  */
 static VBOXSTRICTRC iomRCInterpretOUTS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-#ifdef VBOX_WITH_2ND_IEM_STEP
+#ifdef VBOX_WITH_3RD_IEM_STEP
     uint8_t cbValue = pCpu->pCurInstr->uOpcode == OP_OUTSB ? 1
                     : pCpu->uOpMode == DISCPUMODE_16BIT ? 2 : 4;       /* dword in both 32 & 64 bits mode */
     return IEMExecStringIoWrite(pVCpu,
