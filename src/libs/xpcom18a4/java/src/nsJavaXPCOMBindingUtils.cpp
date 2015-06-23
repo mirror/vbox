@@ -787,9 +787,16 @@ JavaXPCOMInstance::~JavaXPCOMInstance()
   nsresult rv = NS_OK;
 
 #ifdef VBOX
+# if 0
   nsCOMPtr<nsIEventQueue> eq = do_GetMainThreadQueue();
   rv = NS_ProxyRelease(eq.get(), mInstance);
   rv |= NS_ProxyRelease(eq.get(), mIInfo);
+# else
+  // The above code crashes in nsTraceRefcntImpl::LogAddCOMPtr() (@bugref 7620)
+  NS_RELEASE(mInstance);
+  NS_RELEASE(mIInfo);
+  rv = NS_OK;
+# endif
 #else
   // Need to release these objects on the main thread.
   nsCOMPtr<nsIThread> thread = do_GetMainThread();
