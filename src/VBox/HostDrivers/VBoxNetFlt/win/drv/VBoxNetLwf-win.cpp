@@ -1473,12 +1473,12 @@ VOID vboxNetLwfWinSendNetBufferLists(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER_L
         Assert((pBufLists == pPassHead) || (pBufLists == pDropHead));
         if (pPassHead)
         {
-            vboxNetLwfWinDumpPackets(__FUNCTION__": passing down", pPassHead);
+            vboxNetLwfWinDumpPackets("vboxNetLwfWinSendNetBufferLists: passing down", pPassHead);
             NdisFSendNetBufferLists(pModule->hFilter, pBufLists, nPort, fFlags);
         }
         if (pDropHead)
         {
-            vboxNetLwfWinDumpPackets(__FUNCTION__": consumed", pDropHead);
+            vboxNetLwfWinDumpPackets("vboxNetLwfWinSendNetBufferLists: consumed", pDropHead);
             NdisFSendNetBufferListsComplete(pModule->hFilter, pDropHead,
                                             fFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL ? NDIS_SEND_COMPLETE_FLAGS_DISPATCH_LEVEL : 0);
         }
@@ -1489,7 +1489,7 @@ VOID vboxNetLwfWinSendNetBufferLists(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER_L
         {
             NET_BUFFER_LIST_STATUS(pList) = NDIS_STATUS_PAUSED;
         }
-        vboxNetLwfWinDumpPackets(__FUNCTION__": consumed", pBufLists);
+        vboxNetLwfWinDumpPackets("vboxNetLwfWinSendNetBufferLists: consumed", pBufLists);
         NdisFSendNetBufferListsComplete(pModule->hFilter, pBufLists,
                                         fFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL ? NDIS_SEND_COMPLETE_FLAGS_DISPATCH_LEVEL : 0);
 
@@ -1595,7 +1595,7 @@ VOID vboxNetLwfWinReceiveNetBufferLists(IN NDIS_HANDLE hModuleCtx,
                 {
                     PNET_BUFFER_LIST pNext = NET_BUFFER_LIST_NEXT_NBL(pList);
                     NET_BUFFER_LIST_NEXT_NBL(pList) = NULL; /* Unlink temporarily */
-                    vboxNetLwfWinDumpPackets(__FUNCTION__": passing up", pList);
+                    vboxNetLwfWinDumpPackets("vboxNetLwfWinReceiveNetBufferLists: passing up", pList);
                     NdisFIndicateReceiveNetBufferLists(pModule->hFilter, pList, nPort, nBufLists, fFlags);
                     NET_BUFFER_LIST_NEXT_NBL(pList) = pNext; /* Restore the link */
                 }
@@ -1603,7 +1603,7 @@ VOID vboxNetLwfWinReceiveNetBufferLists(IN NDIS_HANDLE hModuleCtx,
             else
             {
                 /* All NBLs must be indicated, do it in bulk. */
-                vboxNetLwfWinDumpPackets(__FUNCTION__": passing up", pBufLists);
+                vboxNetLwfWinDumpPackets("vboxNetLwfWinReceiveNetBufferLists: passing up", pBufLists);
                 NdisFIndicateReceiveNetBufferLists(pModule->hFilter, pBufLists, nPort, nBufLists, fFlags);
             }
         }
@@ -1645,12 +1645,12 @@ VOID vboxNetLwfWinReceiveNetBufferLists(IN NDIS_HANDLE hModuleCtx,
             Assert(nDrop + nPass == nBufLists);
             if (pPassHead)
             {
-                vboxNetLwfWinDumpPackets(__FUNCTION__": passing up", pPassHead);
+                vboxNetLwfWinDumpPackets("vboxNetLwfWinReceiveNetBufferLists: passing up", pPassHead);
                 NdisFIndicateReceiveNetBufferLists(pModule->hFilter, pPassHead, nPort, nPass, fFlags);
             }
             if (pDropHead)
             {
-                vboxNetLwfWinDumpPackets(__FUNCTION__": consumed", pDropHead);
+                vboxNetLwfWinDumpPackets("vboxNetLwfWinReceiveNetBufferLists: consumed", pDropHead);
                 NdisFReturnNetBufferLists(pModule->hFilter, pDropHead,
                                           fFlags & NDIS_RECEIVE_FLAGS_DISPATCH_LEVEL ? NDIS_RETURN_FLAGS_DISPATCH_LEVEL : 0);
             }
@@ -1659,7 +1659,7 @@ VOID vboxNetLwfWinReceiveNetBufferLists(IN NDIS_HANDLE hModuleCtx,
     }
     else
     {
-        vboxNetLwfWinDumpPackets(__FUNCTION__": consumed", pBufLists);
+        vboxNetLwfWinDumpPackets("vboxNetLwfWinReceiveNetBufferLists: consumed", pBufLists);
         if ((fFlags & NDIS_RECEIVE_FLAGS_RESOURCES) == 0)
             NdisFReturnNetBufferLists(pModule->hFilter, pBufLists,
                                       fFlags & NDIS_RECEIVE_FLAGS_DISPATCH_LEVEL ? NDIS_RETURN_FLAGS_DISPATCH_LEVEL : 0);
@@ -2338,7 +2338,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     NdisAcquireSpinLock(&g_VBoxNetLwfGlobals.Lock);
     RTListForEach(&g_VBoxNetLwfGlobals.listModules, pModuleCtx, VBOXNETLWF_MODULE, node)
     {
-        DbgPrint(__FUNCTION__": evaluating module, name=%Z\n", pModuleCtx->strMiniportName);
+        DbgPrint("vboxNetFltOsInitInstance: evaluating module, name=%Z\n", pModuleCtx->strMiniportName);
         if (RtlEqualString(&strInst, &pModuleCtx->strMiniportName, TRUE))
         {
             NdisReleaseSpinLock(&g_VBoxNetLwfGlobals.Lock);

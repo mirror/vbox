@@ -172,7 +172,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinAllocAdapter(NDIS_HANDLE hAdapter, PVBOXNET
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
     PVBOXNETADP_ADAPTER pAdapter = NULL;
 
-    LogFlow(("==>"__FUNCTION__": adapter handle=%p\n", hAdapter));
+    LogFlow(("==>vboxNetAdpWinAllocAdapter: adapter handle=%p\n", hAdapter));
 
     *ppAdapter = NULL;
 
@@ -183,7 +183,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinAllocAdapter(NDIS_HANDLE hAdapter, PVBOXNET
     if (!pAdapter)
     {
         Status = NDIS_STATUS_RESOURCES;
-        Log((__FUNCTION__": Out of memory while allocating adapter context (size=%d)\n", sizeof(VBOXNETADP_ADAPTER)));
+        Log(("vboxNetAdpWinAllocAdapter: Out of memory while allocating adapter context (size=%d)\n", sizeof(VBOXNETADP_ADAPTER)));
     }
     else
     {
@@ -204,7 +204,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinAllocAdapter(NDIS_HANDLE hAdapter, PVBOXNET
 
         *ppAdapter = pAdapter;
     }
-    LogFlow(("<=="__FUNCTION__": status=0x%x\n", Status));
+    LogFlow(("<==vboxNetAdpWinAllocAdapter: status=0x%x\n", Status));
     return Status;
 }
 
@@ -226,7 +226,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
     PVBOXNETADP_ADAPTER pAdapter = NULL;
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
 
-    LogFlow(("==>"__FUNCTION__": miniport=0x%x\n", NdisMiniportHandle));
+    LogFlow(("==>vboxNetAdpWinInitializeEx: miniport=0x%x\n", NdisMiniportHandle));
 
     do
     {
@@ -236,7 +236,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
         Status = vboxNetAdpWinAllocAdapter(NdisMiniportHandle, &pAdapter, MiniportInitParameters->NetLuid.Value);
         if (Status != NDIS_STATUS_SUCCESS)
         {
-            Log((__FUNCTION__": Failed to allocate the adapter context with 0x%x\n", Status));
+            Log(("vboxNetAdpWinInitializeEx: Failed to allocate the adapter context with 0x%x\n", Status));
             break;
         }
 
@@ -252,7 +252,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
                                             (PNDIS_MINIPORT_ADAPTER_ATTRIBUTES)&RAttrs);
         if (Status != NDIS_STATUS_SUCCESS)
         {
-            Log((__FUNCTION__": NdisMSetMiniportAttributes(registration) failed with 0x%x\n", Status));
+            Log(("vboxNetAdpWinInitializeEx: NdisMSetMiniportAttributes(registration) failed with 0x%x\n", Status));
             break;
         }
 
@@ -304,7 +304,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
                                             (PNDIS_MINIPORT_ADAPTER_ATTRIBUTES)&GAttrs);
         if (Status != NDIS_STATUS_SUCCESS)
         {
-            Log((__FUNCTION__": NdisMSetMiniportAttributes(general) failed with 0x%x\n", Status));
+            Log(("vboxNetAdpWinInitializeEx: NdisMSetMiniportAttributes(general) failed with 0x%x\n", Status));
             break;
         }
     } while (false);
@@ -315,7 +315,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
             vboxNetAdpWinFreeAdapter(pAdapter);
     }
 
-    LogFlow(("<=="__FUNCTION__": status=0x%x\n", Status));
+    LogFlow(("<==vboxNetAdpWinInitializeEx: status=0x%x\n", Status));
     return Status;
 }
 
@@ -323,17 +323,17 @@ DECLHIDDEN(VOID) vboxNetAdpWinHaltEx(IN NDIS_HANDLE MiniportAdapterContext,
                                      IN NDIS_HALT_ACTION HaltAction)
 {
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
-    LogFlow(("==>"__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinHaltEx\n"));
     // TODO: Stop something?
-    LogFlow(("<=="__FUNCTION__"\n"));
+    LogFlow(("<==vboxNetAdpWinHaltEx\n"));
 }
 
 DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinPause(IN NDIS_HANDLE MiniportAdapterContext,
                                            IN PNDIS_MINIPORT_PAUSE_PARAMETERS MiniportPauseParameters)
 {
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
-    LogFlow(("==>"__FUNCTION__"\n"));
-    LogFlow(("<=="__FUNCTION__": status=0x%x\n", Status));
+    LogFlow(("==>vboxNetAdpWinPause\n"));
+    LogFlow(("<==vboxNetAdpWinPause: status=0x%x\n", Status));
     return Status;
 }
 
@@ -341,8 +341,8 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinRestart(IN NDIS_HANDLE MiniportAdapterConte
                                              IN PNDIS_MINIPORT_RESTART_PARAMETERS MiniportRestartParameters)
 {
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
-    LogFlow(("==>"__FUNCTION__"\n"));
-    LogFlow(("<=="__FUNCTION__": status=0x%x\n", Status));
+    LogFlow(("==>vboxNetAdpWinRestart\n"));
+    LogFlow(("<==vboxNetAdpWinRestart: status=0x%x\n", Status));
     return Status;
 }
 
@@ -352,7 +352,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pAdapter,
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
     struct _NDIS_OID_REQUEST::_REQUEST_DATA::_QUERY *pQuery = &pRequest->DATA.QUERY_INFORMATION;
 
-    LogFlow(("==>"__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinOidRqQuery\n"));
 
     uint64_t u64Tmp = 0;
     ULONG ulTmp = 0;
@@ -454,7 +454,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pAdapter,
         }
     }
 
-    LogFlow(("<=="__FUNCTION__": status=0x%x\n", Status));
+    LogFlow(("<==vboxNetAdpWinOidRqQuery: status=0x%x\n", Status));
     return Status;
 }
 
@@ -464,7 +464,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqSet(PVBOXNETADP_ADAPTER pAdapter,
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
     struct _NDIS_OID_REQUEST::_REQUEST_DATA::_SET *pSet = &pRequest->DATA.SET_INFORMATION;
 
-    LogFlow(("==>"__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinOidRqSet\n"));
 
     switch (pSet->Oid)
     {
@@ -513,7 +513,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqSet(PVBOXNETADP_ADAPTER pAdapter,
             break;
     }
 
-    LogFlow(("<=="__FUNCTION__": status=0x%x\n", Status));
+    LogFlow(("<==vboxNetAdpWinOidRqSet: status=0x%x\n", Status));
     return Status;
 }
 
@@ -522,7 +522,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRequest(IN NDIS_HANDLE MiniportAdapterCo
 {
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
-    LogFlow(("==>"__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinOidRequest\n"));
     vboxNetCmnWinDumpOidRequest(__FUNCTION__, NdisRequest);
 
     switch (NdisRequest->RequestType)
@@ -546,7 +546,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRequest(IN NDIS_HANDLE MiniportAdapterCo
             Status = NDIS_STATUS_NOT_SUPPORTED;
             break;
     }
-    LogFlow(("<=="__FUNCTION__": status=0x%x\n", Status));
+    LogFlow(("<==vboxNetAdpWinOidRequest: status=0x%x\n", Status));
     return Status;
 }
 
@@ -556,14 +556,14 @@ DECLHIDDEN(VOID) vboxNetAdpWinSendNetBufferLists(IN NDIS_HANDLE MiniportAdapterC
                                                  IN ULONG SendFlags)
 {
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
-    LogFlow(("==>"__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinSendNetBufferLists\n"));
     PNET_BUFFER_LIST pNbl = NetBufferLists;
     for (pNbl = NetBufferLists; pNbl; pNbl = NET_BUFFER_LIST_NEXT_NBL(pNbl))
         NET_BUFFER_LIST_STATUS(pNbl) = NDIS_STATUS_SUCCESS;
     NdisMSendNetBufferListsComplete(pAdapter->hAdapter, NetBufferLists,
                                     (SendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL) ?
                                     NDIS_SEND_COMPLETE_FLAGS_DISPATCH_LEVEL : 0);
-    LogFlow(("<=="__FUNCTION__"\n"));
+    LogFlow(("<==vboxNetAdpWinSendNetBufferLists\n"));
 }
 
 DECLHIDDEN(VOID) vboxNetAdpWinReturnNetBufferLists(IN NDIS_HANDLE MiniportAdapterContext,
@@ -571,26 +571,26 @@ DECLHIDDEN(VOID) vboxNetAdpWinReturnNetBufferLists(IN NDIS_HANDLE MiniportAdapte
                                                    IN ULONG ReturnFlags)
 {
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
-    LogFlow(("==>"__FUNCTION__"\n"));
-    Log((__FUNCTION__": We should not be here!\n"));
-    LogFlow(("<=="__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinReturnNetBufferLists\n"));
+    Log(("vboxNetAdpWinReturnNetBufferLists: We should not be here!\n"));
+    LogFlow(("<==vboxNetAdpWinReturnNetBufferLists\n"));
 }
 
 DECLHIDDEN(VOID) vboxNetAdpWinCancelSend(IN NDIS_HANDLE MiniportAdapterContext,
                                          IN PVOID CancelId)
 {
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
-    LogFlow(("==>"__FUNCTION__"\n"));
-    Log((__FUNCTION__": We should not be here!\n"));
-    LogFlow(("<=="__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinCancelSend\n"));
+    Log(("vboxNetAdpWinCancelSend: We should not be here!\n"));
+    LogFlow(("<==vboxNetAdpWinCancelSend\n"));
 }
 
 
 DECLHIDDEN(BOOLEAN) vboxNetAdpWinCheckForHangEx(IN NDIS_HANDLE MiniportAdapterContext)
 {
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
-    LogFlow(("==>"__FUNCTION__"\n"));
-    LogFlow(("<=="__FUNCTION__" return false\n"));
+    LogFlow(("==>vboxNetAdpWinCheckForHangEx\n"));
+    LogFlow(("<==vboxNetAdpWinCheckForHangEx return false\n"));
     return FALSE;
 }
 
@@ -598,8 +598,8 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinResetEx(IN NDIS_HANDLE MiniportAdapterConte
                                              OUT PBOOLEAN AddressingReset)
 {
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
-    LogFlow(("==>"__FUNCTION__"\n"));
-    LogFlow(("<=="__FUNCTION__": status=0x%x\n", Status));
+    LogFlow(("==>vboxNetAdpWinResetEx\n"));
+    LogFlow(("<==vboxNetAdpWinResetEx: status=0x%x\n", Status));
     return Status;
 }
 
@@ -607,9 +607,9 @@ DECLHIDDEN(VOID) vboxNetAdpWinDevicePnPEventNotify(IN NDIS_HANDLE MiniportAdapte
                                                    IN PNET_DEVICE_PNP_EVENT NetDevicePnPEvent)
 {
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
-    LogFlow(("==>"__FUNCTION__"\n"));
-    Log((__FUNCTION__": PnP event=%d\n", NetDevicePnPEvent->DevicePnPEvent));
-    LogFlow(("<=="__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinDevicePnPEventNotify\n"));
+    Log(("vboxNetAdpWinDevicePnPEventNotify: PnP event=%d\n", NetDevicePnPEvent->DevicePnPEvent));
+    LogFlow(("<==vboxNetAdpWinDevicePnPEventNotify\n"));
 }
 
 
@@ -617,30 +617,30 @@ DECLHIDDEN(VOID) vboxNetAdpWinShutdownEx(IN NDIS_HANDLE MiniportAdapterContext,
                                          IN NDIS_SHUTDOWN_ACTION ShutdownAction)
 {
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
-    LogFlow(("==>"__FUNCTION__"\n"));
-    Log((__FUNCTION__": action=%d\n", ShutdownAction));
-    LogFlow(("<=="__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinShutdownEx\n"));
+    Log(("vboxNetAdpWinShutdownEx: action=%d\n", ShutdownAction));
+    LogFlow(("<==vboxNetAdpWinShutdownEx\n"));
 }
 
 DECLHIDDEN(VOID) vboxNetAdpWinCancelOidRequest(IN NDIS_HANDLE MiniportAdapterContext,
                                                IN PVOID RequestId)
 {
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
-    LogFlow(("==>"__FUNCTION__"\n"));
-    Log((__FUNCTION__": req id=%p\n", RequestId));
-    LogFlow(("<=="__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinCancelOidRequest\n"));
+    Log(("vboxNetAdpWinCancelOidRequest: req id=%p\n", RequestId));
+    LogFlow(("<==vboxNetAdpWinCancelOidRequest\n"));
 }
 
 
 
 DECLHIDDEN(VOID) vboxNetAdpWinUnload(IN PDRIVER_OBJECT DriverObject)
 {
-    LogFlow(("==>"__FUNCTION__"\n"));
+    LogFlow(("==>vboxNetAdpWinUnload\n"));
     //vboxNetAdpWinDevDestroy(&g_VBoxNetAdpGlobals);
     if (g_VBoxNetAdpGlobals.hMiniportDriver)
         NdisMDeregisterMiniportDriver(g_VBoxNetAdpGlobals.hMiniportDriver);
     //NdisFreeSpinLock(&g_VBoxNetAdpGlobals.Lock);
-    LogFlow(("<=="__FUNCTION__"\n"));
+    LogFlow(("<==vboxNetAdpWinUnload\n"));
     RTR0Term();
 }
 
