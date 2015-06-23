@@ -1551,9 +1551,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                     <xsl:text>    STDMETHOD(COMGETTER(InternalAndReservedAttribute</xsl:text>
                     <xsl:value-of select="concat(position(), $name)"/>
                     <xsl:text>))(ULONG *aReserved);&#x0A;</xsl:text>
-                    <xsl:text>    STDMETHOD(COMSETTER(InternalAndReservedAttribute</xsl:text>
-                    <xsl:value-of select="concat(position(), $name)"/>
-                    <xsl:text>))(ULONG aReserved);&#x0A;</xsl:text>
                 </xsl:for-each>
             </xsl:if>
         </xsl:when>
@@ -1573,13 +1570,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                 <!-- tricky way to do a "for" loop without recursion -->
                 <xsl:for-each select="(//*)[position() &lt;= $reservedAttributes]">
                     <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMGETTER(InternalAndReservedAttribute', position(), $name, ')(ULONG *aReserved)&#x0A;')"/>
-                    <xsl:text>{
-    NOREF(aReserved);
-    return E_NOTIMPL;
-}
-
-</xsl:text>
-                    <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMSETTER(InternalAndReservedAttribute', position(), $name, ')(ULONG aReserved)&#x0A;')"/>
                     <xsl:text>{
     NOREF(aReserved);
     return E_NOTIMPL;

@@ -222,9 +222,6 @@ warning MIDL2460 : dual interface should be derived from IDispatch : IVirtualBox
       <xsl:text>    [propget] HRESULT InternalAndReservedAttribute</xsl:text>
       <xsl:value-of select="concat(position(), $name)"/>
       <xsl:text> ([out, retval] ULONG *aReserved);&#x0A;&#x0A;</xsl:text>
-      <xsl:text>    [propput] HRESULT InternalAndReservedAttribute</xsl:text>
-      <xsl:value-of select="concat(position(), $name)"/>
-      <xsl:text> ([in] ULONG aReserved);&#x0A;&#x0A;</xsl:text>
     </xsl:for-each>
   </xsl:if>
   <!-- methods -->

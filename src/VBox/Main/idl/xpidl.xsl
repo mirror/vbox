@@ -206,7 +206,7 @@
   <xsl:if test="$reservedAttributes > 0">
     <!-- tricky way to do a "for" loop without recursion -->
     <xsl:for-each select="(//*)[position() &lt;= $reservedAttributes]">
-      <xsl:text>    attribute unsigned long InternalAndReservedAttribute</xsl:text>
+      <xsl:text>    readonly attribute unsigned long InternalAndReservedAttribute</xsl:text>
       <xsl:value-of select="concat(position(), $name)"/>
       <xsl:text>;&#x0A;&#x0A;</xsl:text>
     </xsl:for-each>
