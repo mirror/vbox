@@ -1332,7 +1332,7 @@ int main(int argc, char *argv[])
     }
 
 #ifdef RT_OS_WINDOWS
-    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)gctlSignalHandler, TRUE /* Add handler */))
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)websrvSignalHandler, TRUE /* Add handler */))
     {
         rc = RTErrConvertFromWin32(GetLastError());
         RTMsgError("Unable to install console control handler, rc=%Rrc\n", rc);
@@ -1357,7 +1357,7 @@ int main(int argc, char *argv[])
     WebLog("requested termination, cleaning up\n");
 
 #ifdef RT_OS_WINDOWS
-    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)gctlSignalHandler, FALSE /* Remove handler */))
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)websrvSignalHandler, FALSE /* Remove handler */))
     {
         rc = RTErrConvertFromWin32(GetLastError());
         RTMsgError("Unable to remove console control handler, rc=%Rrc\n", rc);
