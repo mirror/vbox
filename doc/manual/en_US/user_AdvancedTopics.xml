@@ -3760,7 +3760,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       Starting with VirtualBox 5.0, it is possible to encrypt the data stored in
       hard disk images transparently for the guest. It does not depend on a specific
       image format to be used. Images which have the data encrypted are not portable
-      between VirtualBox and other virtualization software though.
+      between VirtualBox and other virtualization software.
     </para>
 
     <para>
@@ -3768,6 +3768,14 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       data encryption keys (DEK).
       The DEK is stored encrypted in the medium properties and is decrypted during
       VM startup by entering a password which was chosen when the image was encrypted.
+    </para>
+
+    <para>
+      Since the DEK is stored as part of the VM configuration file, it is
+      important that it is kept safe. Losing the DEK means that the data stored
+      in the disk images is lost irrecoverably. Having complete and up to
+      date backups of all data related to the VM is the responsibility of the
+      user.
     </para>
 
     <sect2 id="diskencryption-limitations">
@@ -3781,15 +3789,17 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       <itemizedlist>
 
         <listitem>
-          <para>This feature is currently closed source and requires the VirtualBox extension
-            pack to be installed to work.</para>
+          <para>This feature is part of the Oracle VM VirtualBox Extension
+            Pack, which needs to be installed. Otherwise disk encryption
+            is unavailable.</para>
         </listitem>
 
         <listitem>
           <para>Since encryption works only on the stored user data,
             it is currently not possible to check for metadata integrity of the disk image.
-            Attackers might take advantage of this to remove or insert blocks of data
-            into the image or change certain metadata items such as the disk size.</para>
+            Attackers might destroy data by removing or changing blocks of data
+            in the image or change metadata items such as the disk size.
+          </para>
         </listitem>
 
         <listitem>
@@ -3802,20 +3812,22 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
           <para>The DEK is kept in memory while the VM is running to be able to
             decrypt data read and encrypt data written by the guest. While this should
             be obvious the user needs to be aware of this because an attacker might be able
-            to extract the key on a compromised host and get access to the data later.</para>
+            to extract the key on a compromised host and decrypt the data.</para>
         </listitem>
 
         <listitem>
-          <para>When encrypting or decrypting the images, the password is passed unencrypted
-            via the Main API from the frontend to VBoxSVC. This needs to be kept in mind,
-            especially when using third party frontends which make use of the webservice
-            where the password might be transmitted unencrypted over the network.</para>
+          <para>When encrypting or decrypting the images, the password is
+            passed in clear text via the VirtualBox API. This needs to be kept
+            in mind, especially when using third party API clients which make
+            use of the webservice where the password might be transmitted
+            over the network. The use of HTTPS is mandatory in such a case.
+          </para>
         </listitem>
 
         <listitem>
-          <para>Encrypting images with differencing images is only possible if there
-            are no branches. This limitation may be addressed in a future
-            VirtualBox version.</para>
+          <para>Encrypting images with differencing images is only possible if
+            there are no snapshots or a linear chain of snapshots. This
+            limitation may be addressed in a future VirtualBox version.</para>
         </listitem>
 
       </itemizedlist>
