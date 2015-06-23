@@ -790,6 +790,9 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         NdisFreeMemory(pModuleCtx, 0, 0);
         return NDIS_STATUS_FAILURE;
     }
+    DbgPrint("vboxNetLwfWinAttach: friendly name=%wZ\n", pParameters->BaseMiniportInstanceName);
+    DbgPrint("vboxNetLwfWinAttach: name=%Z\n", pModuleCtx->strMiniportName);
+
     Assert(pParameters->MacAddressLength == sizeof(RTMAC));
     NdisMoveMemory(&pModuleCtx->MacAddr, pParameters->CurrentMacAddress, RT_MIN(sizeof(RTMAC), pParameters->MacAddressLength));
     if (pParameters->DefaultOffloadConfiguration)
