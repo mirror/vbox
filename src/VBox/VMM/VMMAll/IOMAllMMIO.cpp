@@ -2372,9 +2372,15 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
                 AssertRC(VBOXSTRICTRC_VAL(rcStrict));
                 Assert(cThisTime <= cMaxThisTime); /* cThisTime is now how many transfers we have left. */
 
+                uint32_t const cActual  = cMaxThisTime - cThisTime;
+                if (cActual)
+                {   /* Must dirty the page.  */
+                    uint8_t b = *(uint8_t *)pvDst;
+                    iomRamWrite(pVCpu, pRegFrame, GCPtrDst, &b, 1);
+                }
+
                 PGMPhysReleasePageMappingLock(pVM, &Lock);
 
-                uint32_t const cActual  = cMaxThisTime - cThisTime;
                 uint32_t const cbActual = cActual * cbTransfer;
                 cTransfers    -= cActual;
                 pRegFrame->rdi = ((pRegFrame->rdi + cbActual) & fAddrMask)
