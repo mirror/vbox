@@ -691,5 +691,9 @@ STDMETHODIMP ProgressProxy::SetNextOperation(IN_BSTR bstrNextOperationDescriptio
     return E_NOTIMPL;
 }
 
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */
+#ifdef VBOX_WITH_XPCOM
+NS_DECL_CLASSINFO(ProgressProxy)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ProgressProxy, IProgress)
+#endif
 
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

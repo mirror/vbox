@@ -14742,3 +14742,12 @@ HRESULT Machine::reportVmStatistics(ULONG aValidStats,
     NOREF(aVmNetTx);
     ReturnComNotImplemented();
 }
+
+/* This isn't handled entirely by the wrapper generator yet. */
+#ifdef VBOX_WITH_XPCOM
+NS_DECL_CLASSINFO(SessionMachine)
+NS_IMPL_THREADSAFE_ISUPPORTS2_CI(SessionMachine, IMachine, IInternalMachineControl)
+
+NS_DECL_CLASSINFO(SnapshotMachine)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SnapshotMachine, IMachine)
+#endif

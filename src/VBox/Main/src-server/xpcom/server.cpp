@@ -99,20 +99,6 @@
 extern nsIClassInfo *NS_CLASSINFO_NAME(VirtualBoxWrap);
 NS_DECL_CI_INTERFACE_GETTER(VirtualBoxWrap)
 
-// The declarations/implementations of the various XPCOM helper data structures
-// and functions have to be removed bit by bit, as the conversion to the
-// automatically generated wrappers makes them obsolete.
-
-/* implement nsISupports parts of our objects with support for nsIClassInfo */
-NS_DECL_CLASSINFO(SessionMachine)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(SessionMachine, IMachine, IInternalMachineControl)
-
-NS_DECL_CLASSINFO(SnapshotMachine)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SnapshotMachine, IMachine)
-
-NS_DECL_CLASSINFO(ProgressProxy)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ProgressProxy, IProgress)
-
 ////////////////////////////////////////////////////////////////////////////////
 
 static bool gAutoShutdown = false;
