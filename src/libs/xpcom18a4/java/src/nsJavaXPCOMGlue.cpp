@@ -118,6 +118,7 @@ GetJavaFilePath(JNIEnv* env, jobject aFile)
 #include "nsXPTCUtils.h"
 #include "nsCOMPtr.h"
 #include "nsIInterfaceInfoManager.h"
+#include "nsJavaInterfaces.h"
 
 void
 ThrowException(JNIEnv* env, const nsresult aErrorCode, const char* aMessage);
@@ -224,10 +225,16 @@ NS_DestroyXPTCallStub(nsISomeInterface* aStub)
 }
 
 
+extern "C" void JAVAPROXY_NATIVE(finalizeProxy)(JNIEnv *env, jclass that, jobject aJavaProxy);
+
 nsresult
 FindVBoxMethods(JNIEnv* env, jobject aXPCOMPath, void** aFunctions)
 {
     nsresult rv = 0;
+
+    // We only need to care about this function because the C function we offer
+    // is different from what the Java side expects
+    aFunctions[kFunc_FinalizeProxy] = (void*)JAVAPROXY_NATIVE(finalizeProxy);
 
     return rv;
 }
