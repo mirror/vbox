@@ -6936,11 +6936,6 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 bool fContinue = ahciR3CmdPrepare(pAhciPort, &Req);
                 if (fContinue)
                     fReqCanceled = ahciTransferComplete(pAhciPort, &Req, VERR_NO_MEMORY);
-                else
-                {
-                    ASMAtomicWriteNullPtr(&pAhciPort->aActiveTasks[pAhciReq->uTag]);
-                    ahciR3ReqFree(pAhciPort, pAhciReq);
-                }
             }
 
             /*
