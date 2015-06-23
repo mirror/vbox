@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -80,7 +80,7 @@ static HRESULT parseFilterParameters(int argc, char *argv[],
             ComPtr<IMachine> machine;
             rc = aVirtualBox->FindMachine(Bstr(argv[0]).raw(),
                                           machine.asOutParam());
-            if (SUCCEEDED (rc))
+            if (SUCCEEDED(rc))
             {
                 retObjects.reset(1);
                 machine.queryInterfaceTo(&retObjects[0]);
@@ -107,7 +107,7 @@ static Bstr toBaseName(Utf8Str& aFullName)
      * Currently there are two metrics which base name is the same as the
      * sub-metric name: CPU/MHz and Net/<iface>/LinkSpeed.
      */
-    if (strcmp(pszRaw, "CPU/MHz") && !RTStrSimplePatternMatch("Net/*/LinkSpeed", pszRaw))
+    if (pszRaw && strcmp(pszRaw, "CPU/MHz") && !RTStrSimplePatternMatch("Net/*/LinkSpeed", pszRaw))
     {
         char *pszSlash = strrchr(pszRaw, '/');
         if (pszSlash)
@@ -302,16 +302,16 @@ static RTEXITCODE handleMetricsQuery(int argc, char *argv[],
     com::SafeArray<ULONG>         retIndices;
     com::SafeArray<ULONG>         retLengths;
     com::SafeArray<LONG>          retData;
-    CHECK_ERROR (performanceCollector, QueryMetricsData(ComSafeArrayAsInParam(metrics),
-                                             ComSafeArrayAsInParam(objects),
-                                             ComSafeArrayAsOutParam(retNames),
-                                             ComSafeArrayAsOutParam(retObjects),
-                                             ComSafeArrayAsOutParam(retUnits),
-                                             ComSafeArrayAsOutParam(retScales),
-                                             ComSafeArrayAsOutParam(retSequenceNumbers),
-                                             ComSafeArrayAsOutParam(retIndices),
-                                             ComSafeArrayAsOutParam(retLengths),
-                                             ComSafeArrayAsOutParam(retData)) );
+    CHECK_ERROR(performanceCollector, QueryMetricsData(ComSafeArrayAsInParam(metrics),
+                                                       ComSafeArrayAsInParam(objects),
+                                                       ComSafeArrayAsOutParam(retNames),
+                                                       ComSafeArrayAsOutParam(retObjects),
+                                                       ComSafeArrayAsOutParam(retUnits),
+                                                       ComSafeArrayAsOutParam(retScales),
+                                                       ComSafeArrayAsOutParam(retSequenceNumbers),
+                                                       ComSafeArrayAsOutParam(retIndices),
+                                                       ComSafeArrayAsOutParam(retLengths),
+                                                       ComSafeArrayAsOutParam(retData)) );
 
     RTPrintf("Object     Metric               Values\n"
              "---------- -------------------- --------------------------------------------\n");
@@ -500,16 +500,16 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
         com::SafeArray<ULONG>         retIndices;
         com::SafeArray<ULONG>         retLengths;
         com::SafeArray<LONG>          retData;
-        CHECK_ERROR (performanceCollector, QueryMetricsData(ComSafeArrayAsInParam(metrics),
-                                                 ComSafeArrayAsInParam(objects),
-                                                 ComSafeArrayAsOutParam(retNames),
-                                                 ComSafeArrayAsOutParam(retObjects),
-                                                 ComSafeArrayAsOutParam(retUnits),
-                                                 ComSafeArrayAsOutParam(retScales),
-                                                 ComSafeArrayAsOutParam(retSequenceNumbers),
-                                                 ComSafeArrayAsOutParam(retIndices),
-                                                 ComSafeArrayAsOutParam(retLengths),
-                                                 ComSafeArrayAsOutParam(retData)) );
+        CHECK_ERROR(performanceCollector, QueryMetricsData(ComSafeArrayAsInParam(metrics),
+                                                           ComSafeArrayAsInParam(objects),
+                                                           ComSafeArrayAsOutParam(retNames),
+                                                           ComSafeArrayAsOutParam(retObjects),
+                                                           ComSafeArrayAsOutParam(retUnits),
+                                                           ComSafeArrayAsOutParam(retScales),
+                                                           ComSafeArrayAsOutParam(retSequenceNumbers),
+                                                           ComSafeArrayAsOutParam(retIndices),
+                                                           ComSafeArrayAsOutParam(retLengths),
+                                                           ComSafeArrayAsOutParam(retData)) );
         for (unsigned j = 0; j < retNames.size(); j++)
         {
             Bstr metricUnit(retUnits[j]);
