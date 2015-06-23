@@ -1201,6 +1201,7 @@ private:
                                 ComPtr<IProgress> &aProgress);
     HRESULT restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
                             ComPtr<IProgress> &aProgress);
+    HRESULT applyDefaults(const com::Utf8Str &aFlags);
 
     // wrapped IInternalMachineControl properties
 

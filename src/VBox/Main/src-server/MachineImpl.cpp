@@ -14743,6 +14743,12 @@ HRESULT Machine::reportVmStatistics(ULONG aValidStats,
     ReturnComNotImplemented();
 }
 
+HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
+{
+    NOREF(aFlags);
+    ReturnComNotImplemented();
+}
+
 /* This isn't handled entirely by the wrapper generator yet. */
 #ifdef VBOX_WITH_XPCOM
 NS_DECL_CLASSINFO(SessionMachine)

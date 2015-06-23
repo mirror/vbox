@@ -4180,7 +4180,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="5c3e5503-40c1-f2bb-a949-26b413aa541a"
+    uuid="703510de-8d5e-411b-a25b-378b03382bac"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -7588,6 +7588,30 @@ and "VAR" for unsetting. -->
       </param>
     </method>
 
+    <method name="applyDefaults">
+      <desc>
+        Applies the defaults for the configured guest OS type. This is
+        primarily for getting sane settings straight after creating a
+        new VM, but it can also be applied later.
+
+        <note>
+          This is primarily a shortcut, centralizing the tedious job of
+          getting the recommended settings and translating them into
+          settings updates. The settings are made at the end of the call,
+          but not saved.
+        </note>
+
+        <result name="E_NOTIMPL">
+          This method is not implemented yet.
+        </result>
+      </desc>
+      <param name="flags" type="wstring" dir="in">
+        <desc>
+          Additional flags, to be defined later.
+        </desc>
+      </param>
+    </method>
+
   </interface>
 
   <interface
@@ -9479,9 +9503,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="d7cb0243-97bf-48ac-9d44-1c3bade5ea0f"
+    uuid="03cd409d-20f5-43f9-8de1-4a129620990b"
     wsmap="struct"
-    reservedAttributes="8"
+    reservedAttributes="16"
     >
     <desc>
     </desc>
