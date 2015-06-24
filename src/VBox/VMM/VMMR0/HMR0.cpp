@@ -342,7 +342,6 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
          && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
        )
     {
-        /** @todo move this into a separate function. */
         /* Read this MSR now as it may be useful for error reporting when initializing VT-x fails. */
         g_HmR0.vmx.Msrs.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
@@ -364,8 +363,6 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
         }
         else
         {
-            /* We need to check if VT-x has been properly initialized on all
-               CPUs. Some BIOSes do a lousy job. */
             HMR0FIRSTRC FirstRc;
             hmR0FirstRcInit(&FirstRc);
             g_HmR0.lLastError = RTMpOnAll(hmR0InitIntelCpu, &FirstRc, NULL);
