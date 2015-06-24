@@ -3891,7 +3891,6 @@ public class VirtualBoxManager
 
     public void waitForEvents(long tmo)
     {
-        // what to do here?
         try
         {
           Thread.sleep(tmo);
@@ -4694,6 +4693,13 @@ public class VirtualBoxManager
 
     public void waitForEvents(long tmo)
     {
+        try
+        {
+          Thread.sleep(tmo);
+        }
+        catch (InterruptedException ie)
+        {
+        }
     }
 
     protected void finalize() throws Throwable

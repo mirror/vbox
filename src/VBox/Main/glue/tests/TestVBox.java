@@ -72,6 +72,7 @@ public class TestVBox
                     processEvent(ev);
                     es.eventProcessed(listener, ev);
                 }
+                mgr.waitForEvents(0);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -114,6 +115,7 @@ public class TestVBox
                                    + ", PAE: " + paeEnabled);
             }
         }
+        mgr.waitForEvents(0);
     }
 
     static boolean progressBar(VirtualBoxManager mgr, IProgress p, long waitMillis)
@@ -139,6 +141,7 @@ public class TestVBox
         IProgress p = m.launchVMProcess(session, "gui", "");
         progressBar(mgr, p, 10000);
         session.unlockMachine();
+        mgr.waitForEvents(0);
     }
 
     static void testMultiServer()
@@ -162,6 +165,8 @@ public class TestVBox
             progressBar(mgr2, p2, 10000);
             session1.unlockMachine();
             session2.unlockMachine();
+            mgr1.waitForEvents(0);
+            mgr2.waitForEvents(0);
         } finally {
             mgr1.cleanup();
             mgr2.cleanup();
@@ -182,6 +187,7 @@ public class TestVBox
             System.out.print(new String(buf));
             off += buf.length;
         }
+        mgr.waitForEvents(0);
     }
 
     static void printErrorInfo(VBoxException e)
@@ -264,6 +270,7 @@ public class TestVBox
             e.printStackTrace();
         }
 
+        mgr.waitForEvents(0);
         if (ws)
         {
             try {

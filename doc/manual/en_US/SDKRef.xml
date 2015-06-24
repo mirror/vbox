@@ -3839,6 +3839,28 @@ AuthResult AUTHCALL AuthEntry(
       <computeroutput>TestVBox.java</computeroutput>, shipped with the
       SDK. It contains exception handling and error printing code, which
       is important for reliable larger scale projects.</para>
+
+      <para>It is good practice in long-running API clients to process the
+      system events every now and then in the main thread (does not work
+      in other threads). As a rule of thumb it makes sense to process them
+      every few 100msec to every few seconds). This is done by
+      calling<programlisting>
+        mgr.waitForEvents(0);
+        </programlisting>
+      This avoids that a large number of system events accumulate, which can
+      need a significant amount of memory, and as they also play a role in
+      object cleanup it helps freeing additional memory in a timely manner
+      which is used by the API implementation itself. Java's garbage collection
+      approach already needs more memory due to the delayed freeing of memory
+      used by no longer accessible objects, and not processing the system
+      events exacerbates the memory usage. The
+      <computeroutput>TestVBox.java</computeroutput> example code sprinkles
+      such lines over the code to achieve the desired effect. In multi-threaded
+      applications it can be called from the main thread periodically.
+      Sometimes it's possible to use the non-zero timeout variant of the
+      method, which then waits the specified number of milliseconds for
+      events, processing them immediately as they arrive. It achieves better
+      runtime behavior than separate sleeping/processing.</para>
     </sect1>
   </chapter>
 
