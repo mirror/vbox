@@ -3895,6 +3895,7 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
 
         CFGMR3Dump(pCtlInst);
     }
+#ifdef VBOX_WITH_USB
     else
     {
         /* Find the correct USB device in the list. */
@@ -3910,6 +3911,7 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
         AssertRCReturn(rc, rc);
         pThis->mUSBStorageDevices.erase(it);
     }
+#endif
 
     LogFlowFunc(("Returning %Rrc\n", rcRet));
     return rcRet;
