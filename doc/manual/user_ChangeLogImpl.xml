@@ -160,6 +160,11 @@
       </listitem>
 
       <listitem>
+        <para>API: fixed incorrect resuming of VMs on host-resume unless they were
+          previously paused due to a host-suspend</para>
+      </listitem>
+
+      <listitem>
         <para>Main/Properties: properly drop transient guest properties when
           the VM is powered off</para>
       </listitem>
