@@ -5287,7 +5287,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
     {
         int rc = CPUMSetGuestDRx(IEMCPU_TO_VMCPU(pIemCpu), iDrReg, uNewDrX);
-        AssertRCSuccessReturn(rc, RT_SUCCESS_NP(rc) ? VERR_INTERNAL_ERROR : rc);
+        AssertRCSuccessReturn(rc, RT_SUCCESS_NP(rc) ? VERR_IEM_IPE_1 : rc);
     }
     else
         pCtx->dr[iDrReg] = uNewDrX;
@@ -5442,7 +5442,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
         *pCtx = *pCtx2;
         *pCtx2 = CtxTmp;
 #else
-        AssertReleaseFailedReturn(VERR_INTERNAL_ERROR_4);
+        AssertReleaseFailedReturn(VERR_IEM_IPE_2);
 #endif
     }
     if (rcStrict == VINF_SUCCESS)
@@ -5503,7 +5503,7 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
             case 1: pCtx->al  = (uint8_t)u32Value;  break;
             case 2: pCtx->ax  = (uint16_t)u32Value; break;
             case 4: pCtx->rax = u32Value;           break;
-            default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+            default: AssertFailedReturn(VERR_IEM_IPE_3);
         }
         iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         pIemCpu->cPotentialExits++;
@@ -5567,7 +5567,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         case 1: u32Value = pCtx->al;  break;
         case 2: u32Value = pCtx->ax;  break;
         case 4: u32Value = pCtx->eax; break;
-        default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+        default: AssertFailedReturn(VERR_IEM_IPE_4);
     }
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
         rcStrict = IOMIOPortWrite(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu), u16Port, u32Value, cbReg);

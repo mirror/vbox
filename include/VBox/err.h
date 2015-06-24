@@ -2295,16 +2295,28 @@
 /** Internal status code for indicating that a selector isn't valid (LAR, LSL,
  *  VERR, VERW).  This is not used outside the instruction implementations. */
 #define VINF_IEM_SELECTOR_NOT_OK                    (5305)
-/** This particular aspect of the instruction is not yet implemented by IEM. */
-#define VERR_IEM_ASPECT_NOT_IMPLEMENTED             (-5391)
-/** Internal processing error \#1 in the IEM code.. */
-#define VERR_IEM_IPE_1                              (-5392)
-/** Internal processing error \#2 in the IEM code.. */
-#define VERR_IEM_IPE_2                              (-5393)
-/** Internal processing error \#3 in the IEM code.. */
-#define VERR_IEM_IPE_3                              (-5394)
 /** Restart the current instruction. For testing only. */
-#define VERR_IEM_RESTART_INSTRUCTION                (-5395)
+#define VERR_IEM_RESTART_INSTRUCTION                (-5389)
+/** This particular aspect of the instruction is not yet implemented by IEM. */
+#define VERR_IEM_ASPECT_NOT_IMPLEMENTED             (-5390)
+/** Internal processing error \#1 in the IEM code. */
+#define VERR_IEM_IPE_1                              (-5391)
+/** Internal processing error \#2 in the IEM code. */
+#define VERR_IEM_IPE_2                              (-5392)
+/** Internal processing error \#3 in the IEM code. */
+#define VERR_IEM_IPE_3                              (-5393)
+/** Internal processing error \#4 in the IEM code. */
+#define VERR_IEM_IPE_4                              (-5394)
+/** Internal processing error \#5 in the IEM code. */
+#define VERR_IEM_IPE_5                              (-5395)
+/** Internal processing error \#6 in the IEM code. */
+#define VERR_IEM_IPE_6                              (-5396)
+/** Internal processing error \#7 in the IEM code. */
+#define VERR_IEM_IPE_7                              (-5397)
+/** Internal processing error \#8 in the IEM code. */
+#define VERR_IEM_IPE_8                              (-5398)
+/** Internal processing error \#9 in the IEM code. */
+#define VERR_IEM_IPE_9                              (-5399)
 /** @} */
 
 

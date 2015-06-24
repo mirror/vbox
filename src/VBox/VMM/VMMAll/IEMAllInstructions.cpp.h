@@ -8455,7 +8455,7 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
             return VINF_SUCCESS;
         }
     }
-    AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+    AssertFailedReturn(VERR_IEM_IPE_9);
 }
 
 
@@ -8636,7 +8636,7 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
             }
             return VINF_SUCCESS;
     }
-    AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+    AssertFailedReturn(VERR_IEM_IPE_8);
 }
 
 
@@ -10104,7 +10104,7 @@ FNIEMOP_DEF(iemOp_lea_Gv_M)
             IEM_MC_END();
             return VINF_SUCCESS;
     }
-    AssertFailedReturn(VERR_INTERNAL_ERROR_5);
+    AssertFailedReturn(VERR_IEM_IPE_7);
 }
 
 
@@ -10843,7 +10843,7 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
             case IEMMODE_64BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_6);
                     case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_movs_op64_addr32, pIemCpu->iEffSeg);
                     case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_movs_op64_addr64, pIemCpu->iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -10882,7 +10882,7 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
         case IEMMODE_64BIT:
             switch (pIemCpu->enmEffAddrMode)
             {
-                case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* cannot be encoded */ break;
+                case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_1); /* cannot be encoded */ break;
                 case IEMMODE_32BIT: IEM_MOVS_CASE(64, 32); break;
                 case IEMMODE_64BIT: IEM_MOVS_CASE(64, 64); break;
                 IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11002,7 +11002,7 @@ FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
             case IEMMODE_64BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_4);
                     case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op64_addr32, pIemCpu->iEffSeg);
                     case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op64_addr64, pIemCpu->iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11036,7 +11036,7 @@ FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
             case IEMMODE_64BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_2);
                     case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op64_addr32, pIemCpu->iEffSeg);
                     case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op64_addr64, pIemCpu->iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11076,7 +11076,7 @@ FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
         case IEMMODE_64BIT:
             switch (pIemCpu->enmEffAddrMode)
             {
-                case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* cannot be encoded */ break;
+                case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_1); /* cannot be encoded */ break;
                 case IEMMODE_32BIT: IEM_CMPS_CASE(64, 32); break;
                 case IEMMODE_64BIT: IEM_CMPS_CASE(64, 64); break;
                 IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11192,7 +11192,7 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
             case IEMMODE_64BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_9);
                     case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_stos_rax_m32);
                     case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_stos_rax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11231,7 +11231,7 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
         case IEMMODE_64BIT:
             switch (pIemCpu->enmEffAddrMode)
             {
-                case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* cannot be encoded */ break;
+                case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_1); /* cannot be encoded */ break;
                 case IEMMODE_32BIT: IEM_STOS_CASE(64, 32); break;
                 case IEMMODE_64BIT: IEM_STOS_CASE(64, 64); break;
                 IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11328,7 +11328,7 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
             case IEMMODE_64BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_7);
                     case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_lods_rax_m32, pIemCpu->iEffSeg);
                     case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_lods_rax_m64, pIemCpu->iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11367,7 +11367,7 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
         case IEMMODE_64BIT:
             switch (pIemCpu->enmEffAddrMode)
             {
-                case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* cannot be encoded */ break;
+                case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_1); /* cannot be encoded */ break;
                 case IEMMODE_32BIT: IEM_LODS_CASE(64, 32); break;
                 case IEMMODE_64BIT: IEM_LODS_CASE(64, 64); break;
                 IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11481,7 +11481,7 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
             case IEMMODE_64BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3); /** @todo It's this wrong, we can do 16-bit addressing in 64-bit mode, but not 32-bit. right? */
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_6); /** @todo It's this wrong, we can do 16-bit addressing in 64-bit mode, but not 32-bit. right? */
                     case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_rax_m32);
                     case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_rax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11514,7 +11514,7 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
             case IEMMODE_64BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_5);
                     case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_rax_m32);
                     case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_rax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11553,7 +11553,7 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
         case IEMMODE_64BIT:
             switch (pIemCpu->enmEffAddrMode)
             {
-                case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* cannot be encoded */ break;
+                case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_1); /* cannot be encoded */ break;
                 case IEMMODE_32BIT: IEM_SCAS_CASE(64, 32); break;
                 case IEMMODE_64BIT: IEM_SCAS_CASE(64, 64); break;
                 IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -17300,7 +17300,7 @@ FNIEMOP_DEF(iemOp_Grp5)
             IEMOP_MNEMONIC("grp5-ud");
             return IEMOP_RAISE_INVALID_OPCODE();
     }
-    AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+    AssertFailedReturn(VERR_IEM_IPE_3);
 }
 
 

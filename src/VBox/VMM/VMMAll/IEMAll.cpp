@@ -2149,7 +2149,7 @@ IEM_STATIC VBOXSTRICTRC iemRaiseLoadStackFromTss32Or16(PIEMCPU pIemCpu, PCCPUMCT
         }
 
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+            AssertFailedReturn(VERR_IEM_IPE_4);
     }
     return rcStrict;
 }
@@ -2171,7 +2171,7 @@ IEM_STATIC VBOXSTRICTRC iemRaiseLoadStackFromTss64(PIEMCPU pIemCpu, PCCPUMCTX pC
     Assert(uIst < 8);
     *puRsp  = 0; /* make gcc happy */
 
-    AssertReturn(pCtx->tr.Attr.n.u4Type == AMD64_SEL_TYPE_SYS_TSS_BUSY, VERR_INTERNAL_ERROR_2);
+    AssertReturn(pCtx->tr.Attr.n.u4Type == AMD64_SEL_TYPE_SYS_TSS_BUSY, VERR_IEM_IPE_5);
 
     uint32_t off;
     if (uIst)
@@ -2228,7 +2228,7 @@ iemRaiseXcptOrIntInRealMode(PIEMCPU     pIemCpu,
                             uint16_t    uErr,
                             uint64_t    uCr2)
 {
-    AssertReturn(pIemCpu->enmCpuMode == IEMMODE_16BIT, VERR_INTERNAL_ERROR_3);
+    AssertReturn(pIemCpu->enmCpuMode == IEMMODE_16BIT, VERR_IEM_IPE_6);
     NOREF(uErr); NOREF(uCr2);
 
     /*
@@ -6237,7 +6237,7 @@ iemMemApplySegment(PIEMCPU pIemCpu, uint32_t fAccess, uint8_t iSegReg, size_t cb
             return VINF_SUCCESS;
 
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_5);
+            AssertFailedReturn(VERR_IEM_IPE_7);
     }
 }
 
@@ -6831,7 +6831,7 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMem
         && rcMap != VERR_PGM_PHYS_TLB_CATCH_ALL
         && rcMap != VERR_PGM_PHYS_TLB_UNASSIGNED)
     {
-        AssertReturn(RT_FAILURE_NP(rcMap), VERR_INTERNAL_ERROR_3);
+        AssertReturn(RT_FAILURE_NP(rcMap), VERR_IEM_IPE_8);
         return rcMap;
     }
     pIemCpu->cPotentialExits++;
@@ -6967,7 +6967,7 @@ iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint8_t iSegReg, RTGCPTR
         || pIemCpu->aMemMappings[iMemMap].fAccess != IEM_ACCESS_INVALID)
     {
         iMemMap = iemMemMapFindFree(pIemCpu);
-        AssertReturn(iMemMap < RT_ELEMENTS(pIemCpu->aMemMappings), VERR_INTERNAL_ERROR_3);
+        AssertReturn(iMemMap < RT_ELEMENTS(pIemCpu->aMemMappings), VERR_IEM_IPE_9);
     }
 
     /*
@@ -9441,7 +9441,7 @@ IEM_STATIC VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, uint
                     case 0:  u16EffAddr = 0;                             break;
                     case 1:  IEM_OPCODE_GET_NEXT_S8_SX_U16(&u16EffAddr); break;
                     case 2:  IEM_OPCODE_GET_NEXT_U16(&u16EffAddr);       break;
-                    default: AssertFailedReturn(VERR_INTERNAL_ERROR_2); /* (caller checked for these) */
+                    default: AssertFailedReturn(VERR_IEM_IPE_1); /* (caller checked for these) */
                 }
 
                 /* Add the base and index registers to the disp. */
@@ -9547,7 +9547,7 @@ IEM_STATIC VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, uint
                         break;
                     }
                     default:
-                        AssertFailedReturn(VERR_INTERNAL_ERROR_2); /* (caller checked for these) */
+                        AssertFailedReturn(VERR_IEM_IPE_2); /* (caller checked for these) */
                 }
 
             }
