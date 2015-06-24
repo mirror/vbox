@@ -92,6 +92,11 @@
       </listitem>
 
       <listitem>
+        <para>VMM: debug facility now includes includes the guest CPU's
+          FPU/SSE/extended state in the core dump</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: improved HID LEDs synchronization for Mac and Windows hosts.
           The physical LEDs state now restored together with the VM state.</para>
       </listitem>
