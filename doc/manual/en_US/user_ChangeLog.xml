@@ -18,9 +18,9 @@
 
   <sect1>
     <title>Older Change log details</title>
-    <para>With VirtualBox 3.2, changelog information for versions before 2.0
+    <para>With VirtualBox 5.0, changelog information for versions before 4.3
     was removed in order to save space. To access this information, please
-    consult the User Manual of VirtualBox version 3.1 or earlier.</para>
+    consult the User Manual of VirtualBox version 4.3 or earlier.</para>
   </sect1>
 
 </chapter>
