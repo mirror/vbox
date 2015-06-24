@@ -810,42 +810,42 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg: \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res/English.lproj
 	$(MKDIR) -p -m 0755 \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin
+		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin
 	@# Generate the wrapper scripts.
-	$(APPEND) -tn  $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VirtualBox \
+	$(APPEND) -tn  $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VirtualBox \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VirtualBox "$$@"'
-	$(APPEND) -tn  $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxManage \
+	$(APPEND) -tn  $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxManage \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxManage "$$@"'
-	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxVRDP \
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxVRDP \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxHeadless "$$@"'
-	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxHeadless \
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxHeadless \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxHeadless "$$@"'
 ifdef VBOX_WITH_WEBSERVICES
-	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/vboxwebsrv \
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/vboxwebsrv \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/vboxwebsrv "$$@"'
 endif
 if defined(VBOX_WITH_VBOX_IMG) || defined(VBOX_WITH_TESTCASES)
-	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/vbox-img \
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/vbox-img \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/vbox-img "$$@"'
 endif
-	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxBalloonCtrl \
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxBalloonCtrl \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxBalloonCtrl "$$@"'
-	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxAutostart \
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxAutostart \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart "$$@"'
 ifdef VBOX_WITH_DTRACE
-	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxDTrace \
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxDTrace \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxDTrace "$$@"'
 endif
 	@# Set the correct owners and file permissions.
-	sudo chmod 0755 $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/*
+	sudo chmod 0755 $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/*
 	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr
 	@# Build the package.
 	$(VBOX_PKGBUILD) \
-       	--root   $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin \
+       	--root   $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin \
 		--identifier org.virtualbox.pkg.virtualboxcli \
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
-		--install-location /usr/bin \
+		--install-location /usr/local/bin \
 		--ownership preserve \
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
