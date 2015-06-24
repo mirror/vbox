@@ -59,8 +59,6 @@ RT_C_DECLS_END
 #include "AudioMixBuffer.h"
 
 #include "VBoxDD.h"
-#include "vl_vbox.h"
-
 
 
 #ifdef LOG_GROUP

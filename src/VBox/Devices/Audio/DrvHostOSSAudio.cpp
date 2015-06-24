@@ -19,7 +19,6 @@
 #include "AudioMixBuffer.h"
 
 #include "VBoxDD.h"
-#include "vl_vbox.h"
 
 #include <errno.h>
 #include <fcntl.h>

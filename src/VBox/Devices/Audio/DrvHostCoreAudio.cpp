@@ -17,12 +17,13 @@
 #include "DrvAudio.h"
 #include "AudioMixBuffer.h"
 
+#include "VBoxDD.h"
+
 #include <iprt/asm.h>
 #include <iprt/cdefs.h>
 #include <iprt/circbuf.h>
 #include <iprt/mem.h>
 
-#include "vl_vbox.h"
 #include <iprt/uuid.h>
 
 #include <CoreAudio/CoreAudio.h>

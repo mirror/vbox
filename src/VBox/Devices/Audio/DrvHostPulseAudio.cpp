@@ -32,10 +32,11 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 
 #include <pulse/pulseaudio.h>
-#include "vl_vbox.h"
 
 #include "DrvAudio.h"
 #include "AudioMixBuffer.h"
+
+#include "VBoxDD.h"
 
 #ifdef LOG_GROUP
 # undef LOG_GROUP
