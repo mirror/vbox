@@ -834,8 +834,8 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
      * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
     if (mDataBase.mProtocolVersion <= 1)
     {
-        pMsg->setNextString(aFile.GetSourcePath().c_str());                  /* pvName */
-        pMsg->setNextUInt32((uint32_t)(aFile.GetSourcePath().length() + 1)); /* cbName */
+        pMsg->setNextString(aFile.GetDestPath().c_str());                  /* pvName */
+        pMsg->setNextUInt32((uint32_t)(aFile.GetDestPath().length() + 1)); /* cbName */
     }
     else
     {
