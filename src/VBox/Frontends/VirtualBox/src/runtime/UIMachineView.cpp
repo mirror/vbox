@@ -100,6 +100,15 @@ const int XKeyRelease = KeyRelease;
 #include <math.h>
 
 
+#ifdef DEBUG_andy
+/* Macro for debugging drag and drop actions which usually would
+ * go to Main's logging group. */
+# define DNDDEBUG(x) LogRel(x)
+#else
+# define DNDDEBUG(x)
+#endif
+
+
 /* static */
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                      , ulong uScreenId
@@ -1429,7 +1438,6 @@ bool UIMachineView::dragAndDropCanAccept(void) const
                  && !m_fIsDraggingFromGuest
 #endif
                  && machine().GetDnDMode() != KDnDMode_Disabled;
-    LogRelFunc(("fAccept=%RTbool\n", fAccept));
     return fAccept;
 }
 
@@ -1443,58 +1451,67 @@ void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    if (!dragAndDropCanAccept())
-        return;
+    int rc = dragAndDropCanAccept() ? VINF_SUCCESS : VERR_ACCESS_DENIED;
+    if (RT_SUCCESS(rc))
+    {
+        /* Get mouse-pointer location. */
+        const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    /* Get mouse-pointer location. */
-    const QPoint &cpnt = viewportToContents(pEvent->pos());
+        /* Ask the target for starting a DnD event. */
+        Qt::DropAction result = m_pDnDHandler->dragEnter(screenId(),
+                                                         frameBuffer()->convertHostXTo(cpnt.x()),
+                                                         frameBuffer()->convertHostYTo(cpnt.y()),
+                                                         pEvent->proposedAction(),
+                                                         pEvent->possibleActions(),
+                                                         pEvent->mimeData());
 
-    /* Ask the target for starting a DnD event. */
-    Qt::DropAction result = m_pDnDHandler->dragEnter(screenId(),
-                                                     frameBuffer()->convertHostXTo(cpnt.x()),
-                                                     frameBuffer()->convertHostYTo(cpnt.y()),
-                                                     pEvent->proposedAction(),
-                                                     pEvent->possibleActions(),
-                                                     pEvent->mimeData());
+        /* Set the DnD action returned by the guest. */
+        pEvent->setDropAction(result);
+        pEvent->accept();
+    }
 
-    /* Set the DnD action returned by the guest. */
-    pEvent->setDropAction(result);
-    pEvent->accept();
+    DNDDEBUG(("DnD: dragEnterEvent ended with rc=%Rrc\n", rc));
 }
 
 void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    if (!dragAndDropCanAccept())
-        return;
+    int rc = dragAndDropCanAccept() ? VINF_SUCCESS : VERR_ACCESS_DENIED;
+    if (RT_SUCCESS(rc))
+    {
+        /* Get mouse-pointer location. */
+        const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    /* Get mouse-pointer location. */
-    const QPoint &cpnt = viewportToContents(pEvent->pos());
+        /* Ask the guest for moving the drop cursor. */
+        Qt::DropAction result = m_pDnDHandler->dragMove(screenId(),
+                                                        frameBuffer()->convertHostXTo(cpnt.x()),
+                                                        frameBuffer()->convertHostYTo(cpnt.y()),
+                                                        pEvent->proposedAction(),
+                                                        pEvent->possibleActions(),
+                                                        pEvent->mimeData());
 
-    /* Ask the guest for moving the drop cursor. */
-    Qt::DropAction result = m_pDnDHandler->dragMove(screenId(),
-                                                    frameBuffer()->convertHostXTo(cpnt.x()),
-                                                    frameBuffer()->convertHostYTo(cpnt.y()),
-                                                    pEvent->proposedAction(),
-                                                    pEvent->possibleActions(),
-                                                    pEvent->mimeData());
+        /* Set the DnD action returned by the guest. */
+        pEvent->setDropAction(result);
+        pEvent->accept();
+    }
 
-    /* Set the DnD action returned by the guest. */
-    pEvent->setDropAction(result);
-    pEvent->accept();
+    DNDDEBUG(("DnD: dragMoveEvent ended with rc=%Rrc\n", rc));
 }
 
 void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    if (!dragAndDropCanAccept())
-        return;
+    int rc = dragAndDropCanAccept() ? VINF_SUCCESS : VERR_ACCESS_DENIED;
+    if (RT_SUCCESS(rc))
+    {
+        m_pDnDHandler->dragLeave(screenId());
 
-    m_pDnDHandler->dragLeave(screenId());
+        pEvent->accept();
+    }
 
-    pEvent->accept();
+    DNDDEBUG(("DnD: dragLeaveEvent ended with rc=%Rrc\n", rc));
 }
 
 int UIMachineView::dragCheckPending(void)
@@ -1518,7 +1535,7 @@ int UIMachineView::dragCheckPending(void)
     rc = VERR_NOT_SUPPORTED;
 #endif
 
-    LogRel3(("DnD: dragCheckPending ended with rc=%Rrc\n", rc));
+    DNDDEBUG(("DnD: dragCheckPending ended with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1543,7 +1560,7 @@ int UIMachineView::dragStart(void)
     rc = VERR_NOT_SUPPORTED;
 #endif
 
-    LogRel3(("DnD: dragStart ended with rc=%Rrc\n", rc));
+    DNDDEBUG(("DnD: dragStart ended with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1562,7 +1579,7 @@ int UIMachineView::dragStop(void)
     rc = VERR_NOT_SUPPORTED;
 #endif
 
-    LogRel3(("DnD: dragStop ended with rc=%Rrc\n", rc));
+    DNDDEBUG(("DnD: dragStop ended with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1570,23 +1587,26 @@ void UIMachineView::dropEvent(QDropEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    if (!dragAndDropCanAccept())
-        return;
+    int rc = dragAndDropCanAccept() ? VINF_SUCCESS : VERR_ACCESS_DENIED;
+    if (RT_SUCCESS(rc))
+    {
+        /* Get mouse-pointer location. */
+        const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    /* Get mouse-pointer location. */
-    const QPoint &cpnt = viewportToContents(pEvent->pos());
+        /* Ask the guest for dropping data. */
+        Qt::DropAction result = m_pDnDHandler->dragDrop(screenId(),
+                                                        frameBuffer()->convertHostXTo(cpnt.x()),
+                                                        frameBuffer()->convertHostYTo(cpnt.y()),
+                                                        pEvent->proposedAction(),
+                                                        pEvent->possibleActions(),
+                                                        pEvent->mimeData());
 
-    /* Ask the guest for dropping data. */
-    Qt::DropAction result = m_pDnDHandler->dragDrop(screenId(),
-                                                    frameBuffer()->convertHostXTo(cpnt.x()),
-                                                    frameBuffer()->convertHostYTo(cpnt.y()),
-                                                    pEvent->proposedAction(),
-                                                    pEvent->possibleActions(),
-                                                    pEvent->mimeData());
+        /* Set the DnD action returned by the guest. */
+        pEvent->setDropAction(result);
+        pEvent->accept();
+    }
 
-    /* Set the DnD action returned by the guest. */
-    pEvent->setDropAction(result);
-    pEvent->accept();
+    DNDDEBUG(("DnD: dropEvent ended with rc=%Rrc\n", rc));
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
