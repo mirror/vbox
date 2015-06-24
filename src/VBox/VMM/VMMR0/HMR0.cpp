@@ -343,6 +343,9 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
        )
     {
         /** @todo move this into a separate function. */
+        /* Read this MSR now as it may be useful for error reporting when initializing VT-x fails. */
+        g_HmR0.vmx.Msrs.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+
         /*
          * First try use native kernel API for controlling VT-x.
          * (This is only supported by some Mac OS X kernels atm.)
@@ -371,12 +374,14 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
         }
         if (RT_SUCCESS(g_HmR0.lLastError))
         {
+            /* Reread in case it was changed by SUPR0GetVmxUsability(). */
+            g_HmR0.vmx.Msrs.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+
             /*
              * Read all relevant registers and MSRs.
              */
             g_HmR0.vmx.u64HostCr4          = ASMGetCR4();
             g_HmR0.vmx.u64HostEfer         = ASMRdMsr(MSR_K6_EFER);
-            g_HmR0.vmx.Msrs.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
             g_HmR0.vmx.Msrs.u64BasicInfo   = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
             g_HmR0.vmx.Msrs.VmxPinCtls.u   = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
             g_HmR0.vmx.Msrs.VmxProcCtls.u  = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
