@@ -1245,10 +1245,15 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
             *ppv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
         }
         else
+# ifdef VBOX_WITH_2ND_IEM_STEP
+            *ppv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
+# else
         {
+            /* This kind of screws up the TLB entry if accessed from a different section afterwards. */
             static uint8_t s_abPlayItSafe[0x1000*2];  /* I don't dare return the zero page at the moment. */
             *ppv = (uint8_t *)((uintptr_t)&s_abPlayItSafe[0x1000] & ~(uintptr_t)0xfff);
         }
+# endif
         *ppMap = NULL;
         return VINF_SUCCESS;
     }
@@ -2427,8 +2432,8 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys,
  * @retval  VINF_EM_HALT in RC and R0 - read completed.
  * @retval  VINF_SELM_SYNC_GDT in RC only - read completed.
  *
- * @retval  VINF_EM_DBG_STOP in RC and R0.
- * @retval  VINF_EM_DBG_BREAKPOINT in RC and R0.
+ * @retval  VINF_EM_DBG_STOP in RC and R0 - read completed.
+ * @retval  VINF_EM_DBG_BREAKPOINT in RC and R0 - read completed.
  * @retval  VINF_EM_RAW_EMULATE_INSTR in RC and R0 only.
  *
  * @retval  VINF_IOM_R3_MMIO_READ in RC and R0.
@@ -3047,8 +3052,8 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  * @retval  VINF_EM_HALT in RC and R0 - write completed.
  * @retval  VINF_SELM_SYNC_GDT in RC only - write completed.
  *
- * @retval  VINF_EM_DBG_STOP in RC and R0.
- * @retval  VINF_EM_DBG_BREAKPOINT in RC and R0.
+ * @retval  VINF_EM_DBG_STOP in RC and R0 - write completed.
+ * @retval  VINF_EM_DBG_BREAKPOINT in RC and R0 - write completed.
  * @retval  VINF_EM_RAW_EMULATE_INSTR in RC and R0 only.
  *
  * @retval  VINF_IOM_R3_MMIO_WRITE in RC and R0.
