@@ -1574,6 +1574,10 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
     }
 
+    /* IEM has pending work (typically memory write after INS instruction). */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IEM))
+        rc = VBOXSTRICTRC_TODO(IEMR3DoPendingAction(pVCpu, rc));
+
 #ifdef VBOX_WITH_RAW_MODE
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
         CSAMR3DoPendingAction(pVM, pVCpu);

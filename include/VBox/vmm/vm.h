@@ -372,6 +372,10 @@ typedef struct VMCPU
 #define VMCPU_FF_PDM_CRITSECT               RT_BIT_32(5)
 /** This action forces the VCPU out of the halted state. */
 #define VMCPU_FF_UNHALT                     RT_BIT_32(6)
+/** Pending IEM action (bit number). */
+#define VMCPU_FF_IEM_BIT                    7
+/** Pending IEM action (mask). */
+#define VMCPU_FF_IEM                        RT_BIT_32(VMCPU_FF_IEM_BIT)
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
 #define VMCPU_FF_REQUEST                    RT_BIT_32(9)
@@ -456,7 +460,7 @@ typedef struct VMCPU
 #define VM_FF_HIGH_PRIORITY_POST_MASK           (VM_FF_PGM_NO_MEMORY)
 /** High priority post-execution actions. */
 #define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) \
-                                                 | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES)
+                                                 | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES | VMCPU_FF_IEM)
 
 /** Normal priority VM post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \
@@ -477,7 +481,7 @@ typedef struct VMCPU
 #define VM_FF_HM_TO_R3_MASK                     (  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
                                                  | VM_FF_PDM_QUEUES | VM_FF_EMT_RENDEZVOUS)
 /** VMCPU Flags that cause the HM loops to go back to ring-3. */
-#define VMCPU_FF_HM_TO_R3_MASK                  (VMCPU_FF_TO_R3 | VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT)
+#define VMCPU_FF_HM_TO_R3_MASK                  (VMCPU_FF_TO_R3 | VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_IEM)
 
 /** High priority ring-0 VM pre HM-mode execution mask. */
 #define VM_FF_HP_R0_PRE_HM_MASK                 (VM_FF_HM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)
