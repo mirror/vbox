@@ -1543,7 +1543,7 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
             /* Release the ring buffer, so the read thread could start reading this data. */
             RTCircBufReleaseWriteBlock(pStreamOut->pBuf, cbToWrite);
 
-            Assert(cbToRead >= cRead);
+            Assert(cbToRead >= cbRead);
             cbToRead -= cbRead;
             cbReadTotal += cbRead;
         }
