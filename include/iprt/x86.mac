@@ -246,6 +246,7 @@
 %define X86_CR4_OSXSAVE                     RT_BIT(18)
 %define X86_CR4_SMEP                        RT_BIT(20)
 %define X86_CR4_SMAP                        RT_BIT(21)
+%define X86_CR4_PKE                         RT_BIT(22)
 %define X86_DR6_B0                          RT_BIT(0)
 %define X86_DR6_B1                          RT_BIT(1)
 %define X86_DR6_B2                          RT_BIT(2)
@@ -690,15 +691,26 @@
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
-%define XSAVE_C_X87         RT_BIT_64(0)
-%define XSAVE_C_SSE         RT_BIT_64(1)
-%define XSAVE_C_YMM         RT_BIT_64(2)
-%define XSAVE_C_BNDREGS     RT_BIT_64(3)
-%define XSAVE_C_BNDCSR      RT_BIT_64(4)
-%define XSAVE_C_OPMASK      RT_BIT_64(5)
-%define XSAVE_C_ZMM_HI256   RT_BIT_64(6)
-%define XSAVE_C_ZMM_16HI    RT_BIT_64(7)
-%define XSAVE_C_LWP         RT_BIT_64(62)
+%define XSAVE_C_X87_BIT         0
+%define XSAVE_C_X87             RT_BIT_64(XSAVE_C_X87_BIT)
+%define XSAVE_C_SSE_BIT         1
+%define XSAVE_C_SSE             RT_BIT_64(XSAVE_C_SSE_BIT)
+%define XSAVE_C_YMM_BIT         2
+%define XSAVE_C_YMM             RT_BIT_64(XSAVE_C_YMM_BIT)
+%define XSAVE_C_BNDREGS_BIT     3
+%define XSAVE_C_BNDREGS         RT_BIT_64(XSAVE_C_BNDREGS_BIT)
+%define XSAVE_C_BNDCSR_BIT      4
+%define XSAVE_C_BNDCSR          RT_BIT_64(XSAVE_C_BNDCSR_BIT)
+%define XSAVE_C_OPMASK_BIT      5
+%define XSAVE_C_OPMASK          RT_BIT_64(XSAVE_C_OPMASK_BIT)
+%define XSAVE_C_ZMM_HI256_BIT   6
+%define XSAVE_C_ZMM_HI256       RT_BIT_64(XSAVE_C_ZMM_HI256_BIT)
+%define XSAVE_C_ZMM_16HI_BIT    7
+%define XSAVE_C_ZMM_16HI        RT_BIT_64(XSAVE_C_ZMM_16HI_BIT)
+%define XSAVE_C_PKRU_BIT        9
+%define XSAVE_C_PKRU            RT_BIT_64(XSAVE_C_PKRU_BIT)
+%define XSAVE_C_LWP_BIT         62
+%define XSAVE_C_LWP             RT_BIT_64(XSAVE_C_LWP_BIT)
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %define X86DESCATTR_TYPE            0x0000000f
@@ -825,6 +837,7 @@
 %define X86_TRAP_PF_US              RT_BIT(2)
 %define X86_TRAP_PF_RSVD            RT_BIT(3)
 %define X86_TRAP_PF_ID              RT_BIT(4)
+%define X86_TRAP_PF_PK              RT_BIT(5)
 %ifndef VBOX_FOR_DTRACE_LIB
 %else
 %endif
