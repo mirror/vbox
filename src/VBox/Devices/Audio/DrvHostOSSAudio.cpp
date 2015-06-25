@@ -1,4 +1,4 @@
-/* $Id */
+/* $Id$ */
 /** @file
  * OSS (Open Sound System) host audio backend.
  */
