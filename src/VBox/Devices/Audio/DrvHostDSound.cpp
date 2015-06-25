@@ -16,7 +16,8 @@
  * --------------------------------------------------------------------
  *
  */
-
+#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
+#include <VBox/log.h>
 #include <dsound.h>
 
 #include <iprt/alloc.h>
@@ -25,12 +26,6 @@
 #include "AudioMixBuffer.h"
 #include "DrvAudio.h"
 #include "VBoxDD.h"
-
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#include <VBox/log.h>
 
 #define DSLOG(a) do { LogRel2(a); } while(0)
 #define DSLOGF(a) do { LogRel3(a); } while(0)

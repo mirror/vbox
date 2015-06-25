@@ -15,6 +15,8 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+#define LOG_GROUP LOG_GROUP_AUDIO_MIXER_BUFFER
+#include <VBox/log.h>
 
 /*
  * DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
@@ -32,12 +34,6 @@
 #endif
 #include <iprt/mem.h>
 #include <iprt/string.h> /* For RT_BZERO. */
-
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#include <VBox/log.h>
 
 #ifdef TESTCASE
 # define LOG_ENABLED

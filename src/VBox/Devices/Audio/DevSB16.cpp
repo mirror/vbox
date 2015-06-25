@@ -40,7 +40,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
+#define LOG_GROUP LOG_GROUP_DEV_SB16
+#include <VBox/log.h>
 #include <iprt/assert.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
@@ -52,12 +53,6 @@
 #include <VBox/vmm/pdmaudioifs.h>
 
 #include "VBoxDD.h"
-
-#ifdef LOG_GROUP
- #undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#include <VBox/log.h>
 
 #include "AudioMixer.h"
 

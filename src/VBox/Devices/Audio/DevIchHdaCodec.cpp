@@ -23,7 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-//#define LOG_GROUP LOG_GROUP_DEV_AUDIO
+#define LOG_GROUP LOG_GROUP_DEV_HDA_CODEC
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <iprt/assert.h>

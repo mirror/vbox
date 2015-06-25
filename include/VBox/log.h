@@ -59,6 +59,10 @@ typedef enum LOGGROUP
 {
     /** The default VBox group. */
     LOG_GROUP_DEFAULT = RTLOGGROUP_FIRST_USER,
+    /** Audio mixer group. */
+    LOG_GROUP_AUDIO_MIXER,
+    /** Audio mixer buffer group. */
+    LOG_GROUP_AUDIO_MIXER_BUFFER,
     /** Auto-logon group. */
     LOG_GROUP_AUTOLOGON,
     /** CFGM group. */
@@ -77,14 +81,14 @@ typedef enum LOGGROUP
     LOG_GROUP_DBGG,
     /** Generic Device group. */
     LOG_GROUP_DEV,
+    /** AC97 Device group. */
+    LOG_GROUP_DEV_AC97,
     /** ACPI Device group. */
     LOG_GROUP_DEV_ACPI,
     /** AHCI Device group. */
     LOG_GROUP_DEV_AHCI,
     /** APIC Device group. */
     LOG_GROUP_DEV_APIC,
-    /** Audio Device group. */
-    LOG_GROUP_DEV_AUDIO,
     /** BusLogic SCSI host adapter group. */
     LOG_GROUP_DEV_BUSLOGIC,
     /** DMA Controller group. */
@@ -99,6 +103,10 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_FDC,
     /** Guest Interface Manager Device group. */
     LOG_GROUP_DEV_GIM,
+    /** HDA Device group. */
+    LOG_GROUP_DEV_HDA,
+    /** HDA Codec Device group. */
+    LOG_GROUP_DEV_HDA_CODEC,
     /** High Precision Event Timer Device group. */
     LOG_GROUP_DEV_HPET,
     /** IDE Device group. */
@@ -135,6 +143,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_PIT,
     /** RTC Device group. */
     LOG_GROUP_DEV_RTC,
+    /** SB16 Device group. */
+    LOG_GROUP_DEV_SB16,
     /** Serial Device group */
     LOG_GROUP_DEV_SERIAL,
     /** System Management Controller Device group. */
@@ -161,6 +171,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV,
     /** ACPI driver group */
     LOG_GROUP_DRV_ACPI,
+    /** Audio driver group */
+    LOG_GROUP_DRV_AUDIO,
     /** Block driver group. */
     LOG_GROUP_DRV_BLOCK,
     /** Char driver group. */
@@ -171,6 +183,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_DISPLAY,
     /** Floppy media driver group. */
     LOG_GROUP_DRV_FLOPPY,
+    /** Host Audio driver group. */
+    LOG_GROUP_DRV_HOST_AUDIO,
     /** Host Base block driver group. */
     LOG_GROUP_DRV_HOST_BASE,
     /** Host DVD block driver group. */
@@ -219,6 +233,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_VBOXHDD,
     /** VBox HDD container media driver group. */
     LOG_GROUP_DRV_VD,
+    /** VRDE audio driver group. */
+    LOG_GROUP_DRV_VRDE_AUDIO,
     /** Virtual Switch transport driver group */
     LOG_GROUP_DRV_VSWITCH,
     /** VUSB driver group */
@@ -782,6 +798,8 @@ typedef enum LOGGROUP
 {                   \
     RT_LOGGROUP_NAMES, \
     "DEFAULT",      \
+    "AUDIO_MIXER",  \
+    "AUDIO_MIXER_BUFFER", \
     "AUTOLOGON",    \
     "CFGM",         \
     "CPUM",         \
@@ -791,10 +809,10 @@ typedef enum LOGGROUP
     "DBGF_INFO",    \
     "DBGG",         \
     "DEV",          \
+    "DEV_AC97",     \
     "DEV_ACPI",     \
     "DEV_AHCI",     \
     "DEV_APIC",     \
-    "DEV_AUDIO",    \
     "DEV_BUSLOGIC", \
     "DEV_DMA",      \
     "DEV_E1000",    \
@@ -802,6 +820,8 @@ typedef enum LOGGROUP
     "DEV_EHCI",     \
     "DEV_FDC",      \
     "DEV_GIM",      \
+    "DEV_HDA",      \
+    "DEV_HDA_CODEC", \
     "DEV_HPET",     \
     "DEV_IDE",      \
     "DEV_INIP",     \
@@ -820,6 +840,7 @@ typedef enum LOGGROUP
     "DEV_PIC",      \
     "DEV_PIT",      \
     "DEV_RTC",      \
+    "DEV_SB16",     \
     "DEV_SERIAL",   \
     "DEV_SMC",      \
     "DEV_VGA",      \
@@ -833,11 +854,13 @@ typedef enum LOGGROUP
     "DIS",          \
     "DRV",          \
     "DRV_ACPI",     \
+    "DRV_AUDIO",    \
     "DRV_BLOCK",    \
     "DRV_CHAR",     \
     "DRV_DISK_INTEGRITY", \
     "DRV_DISPLAY",  \
     "DRV_FLOPPY",   \
+    "DRV_HOST_AUDIO", \
     "DRV_HOST_BASE", \
     "DRV_HOST_DVD", \
     "DRV_HOST_FLOPPY", \
@@ -862,6 +885,7 @@ typedef enum LOGGROUP
     "DRV_USBPROXY", \
     "DRV_VBOXHDD",  \
     "DRV_VD",       \
+    "DRV_VRDE_AUDIO", \
     "DRV_VSWITCH",  \
     "DRV_VUSB",     \
     "EM",           \

@@ -22,6 +22,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DEV_HDA
+#include <VBox/log.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/version.h>
@@ -35,12 +37,6 @@
 # include <iprt/mem.h>
 #endif
 #include <iprt/list.h>
-
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#include <VBox/log.h>
 
 #include "VBoxDD.h"
 

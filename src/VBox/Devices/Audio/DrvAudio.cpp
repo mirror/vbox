@@ -42,7 +42,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
+#define LOG_GROUP LOG_GROUP_DRV_AUDIO
+#include <VBox/log.h>
 #include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
 #include <VBox/vmm/mm.h>
@@ -54,12 +55,6 @@
 #include <iprt/circbuf.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
-
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#include <VBox/log.h>
 
 #include "VBoxDD.h"
 

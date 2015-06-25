@@ -16,7 +16,8 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
+#define LOG_GROUP LOG_GROUP_AUDIO_MIXER
+#include <VBox/log.h>
 #include "AudioMixer.h"
 #include "AudioMixBuffer.h"
 
@@ -29,13 +30,6 @@
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#include <VBox/log.h>
-
 
 static int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster);
 

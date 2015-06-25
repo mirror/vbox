@@ -19,6 +19,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DRV_VRDE_AUDIO
+#include <VBox/log.h>
 #include "DrvAudioVRDE.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
@@ -37,11 +39,6 @@
 #include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/vmm/cfgm.h>
 #include <VBox/err.h>
-
-#undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#include <VBox/log.h>
-
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *

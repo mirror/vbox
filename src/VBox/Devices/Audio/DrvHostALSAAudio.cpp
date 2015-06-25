@@ -43,7 +43,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-
+#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
+#include <VBox/log.h>
 #include <iprt/alloc.h>
 #include <iprt/uuid.h> /* For PDMIBASE_2_PDMDRV. */
 #include <VBox/vmm/pdmaudioifs.h>
@@ -59,13 +60,6 @@ RT_C_DECLS_END
 #include "AudioMixBuffer.h"
 
 #include "VBoxDD.h"
-
-
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#include <VBox/log.h>
 
 typedef struct ALSAAUDIOSTREAMIN
 {
