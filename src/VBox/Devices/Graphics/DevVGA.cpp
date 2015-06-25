@@ -6215,8 +6215,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
                                           vgaLFBAccessHandler,
-                                          g_DeviceVga.szR0Mod, NULL, "vgaLbfAccessPfHandler",
-                                          g_DeviceVga.szRCMod, NULL, "vgaLbfAccessPfHandler",
+                                          g_DeviceVga.szR0Mod, "vgaLFBAccessHandler", "vgaLbfAccessPfHandler",
+                                          g_DeviceVga.szRCMod, "vgaLFBAccessHandler", "vgaLbfAccessPfHandler",
                                           "VGA LFB", &pThis->hLfbAccessHandlerType);
     AssertRCReturn(rc, rc);
 
