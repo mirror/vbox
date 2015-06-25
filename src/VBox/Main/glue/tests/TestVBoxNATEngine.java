@@ -4,7 +4,7 @@
  * be used to connect to the webservice and (XP)COM APIs. */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,7 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-import org.virtualbox_4_3.*;
+import org.virtualbox_5_0.*;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -84,12 +84,17 @@ public class TestVBoxNATEngine
             name = "<inaccessible>";
             inaccessible = true;
         }            
+
+        // process system event queue
+        mgr.waitForEvents(0);
     }
 
     static void testStart(VirtualBoxManager mgr, IVirtualBox vbox, IMachine vm)
     {
         System.out.println("\nAttempting to start VM '" + vm.getName() + "'");
         mgr.startVm(vm.getName(), null, 7000);
+        // process system event queue
+        mgr.waitForEvents(0);
     }
 
     public TestVBoxNATEngine(String[] args)
@@ -151,7 +156,6 @@ public class TestVBoxNATEngine
                     {
                         testEnumeration(mgr, vbox, vm);
                         testStart(mgr, vbox, vm);
-                        //testEvents(mgr, vbox.getEventSource());
                     }
                     System.out.println("done, press Enter...");
                     int ch = System.in.read();
@@ -166,6 +170,9 @@ public class TestVBoxNATEngine
             {
                 e.printStackTrace();
             }
+
+        // process system event queue
+        mgr.waitForEvents(0);
 
         if (ws)
             {
