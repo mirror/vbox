@@ -282,8 +282,8 @@ int pgmR3PoolInit(PVM pVM)
     pPool->hAccessHandlerType = NIL_PGMPHYSHANDLERTYPE;
     rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
                                           pgmPoolAccessHandler,
-                                          NULL, NULL, "pgmPoolAccessPfHandler",
-                                          NULL, NULL, "pgmPoolAccessPfHandler",
+                                          NULL, "pgmPoolAccessHandler", "pgmPoolAccessPfHandler",
+                                          NULL, "pgmPoolAccessHandler", "pgmPoolAccessPfHandler",
                                           "Guest Paging Access Handler",
                                           &pPool->hAccessHandlerType);
     AssertLogRelRCReturn(rc, rc);
