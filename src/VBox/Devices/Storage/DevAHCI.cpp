@@ -4653,6 +4653,13 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                      */
                     ahciR3PortCachedReqsFree(pAhciPort);
 
+                    /*
+                     * Also make sure that the current request has no memroy still allocated
+                     * because it might be allocated by the driver below us. We don't require
+                     * it here anyway.
+                     */
+                    ahciReqMemFree(pAhciPort, pAhciReq, true /* fForceFree */);
+
                     rc = VMR3ReqPriorityCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
                                                  (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 3,
                                                  pAhciPort->pDrvMount, false/*=fForce*/, true/*=fEject*/);
@@ -7595,6 +7602,9 @@ static DECLCALLBACK(void) ahciR3UnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
     PAHCIPort pAhciPort = PDMIMOUNTNOTIFY_2_PAHCIPORT(pInterface);
     Log(("%s:\n", __FUNCTION__));
+
+    /* Free all cached I/O tasks. */
+    ahciR3PortCachedReqsFree(pAhciPort);
 
     pAhciPort->cTotalSectors = 0;
 
