@@ -73,6 +73,8 @@
      || (a_rcStrict) == ((a_fWrite) ? VINF_IOM_R3_MMIO_WRITE : VINF_IOM_R3_MMIO_READ) \
      || (a_rcStrict) == VINF_IOM_R3_MMIO_READ_WRITE \
      \
+     || ((a_fWrite) ? (a_rcStrict) == VINF_EM_RAW_EMULATE_IO_BLOCK : false) \
+     \
      || (a_rcStrict) == VINF_EM_RAW_EMULATE_INSTR  \
      || (a_rcStrict) == VINF_EM_DBG_STOP \
      || (a_rcStrict) == VINF_EM_DBG_BREAKPOINT \
@@ -3058,6 +3060,8 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  *
  * @retval  VINF_IOM_R3_MMIO_WRITE in RC and R0.
  * @retval  VINF_IOM_R3_MMIO_READ_WRITE in RC and R0.
+ *
+ * @retval  VINF_EM_RAW_EMULATE_IO_BLOCK in R0 only.
  *
  * @retval  VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT in RC only - write completed.
  * @retval  VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT in RC only.

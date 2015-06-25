@@ -10722,6 +10722,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PIEMCPU pIemCpu, VBOXS
                       || rcStrict == VINF_CPUM_R3_MSR_WRITE
                       || rcStrict == VINF_EM_RAW_EMULATE_INSTR
                       || rcStrict == VINF_EM_RAW_TO_R3
+                      || rcStrict == VINF_EM_RAW_EMULATE_IO_BLOCK
                       /* raw-mode / virt handlers only: */
                       || rcStrict == VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT
                       || rcStrict == VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT
