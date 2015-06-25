@@ -824,8 +824,13 @@ static DECLCALLBACK(int) drvHostALSAAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
         }
     }
 
+    /*
+     * Check how much we can read from the capture device without overflowing
+     * the mixer buffer.
+     */
     Assert(cAvail);
-    size_t cbToRead = AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf, cAvail);
+    size_t cbToRead = RT_MIN(AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf, cAvail),
+                             AudioMixBufFreeBytes(&pHstStrmIn->MixBuf));
 
     LogFlowFunc(("cbToRead=%zu, cAvail=%RI32\n", cbToRead, cAvail));
 
@@ -885,6 +890,13 @@ static DECLCALLBACK(int) drvHostALSAAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
             if (RT_FAILURE(rc))
                 break;
 
+            /*
+             * We should not run into a full mixer buffer or we loose samples and
+             * run into an endless loop if ALSA keeps producing samples ("null"
+             * capture device for example).
+             */
+            AssertLogRelMsgBreakStmt(cWritten > 0, ("Mixer buffer shouldn't be full at this point!\n"),
+                                     rc = VERR_INTERNAL_ERROR);
             uint32_t cbWritten = AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf, cWritten);
 
             Assert(cbToRead >= cbWritten);
