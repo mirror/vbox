@@ -1661,7 +1661,7 @@ static int iomInterpretXCHG(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
 #endif /* !IEM_USE_IEM_INSTEAD */
 
 /**
- * \#PF Handler callback for MMIO ranges.
+ * Common worker for the \#PF handler and IOMMMIOPhysHandler (APIC+VT-x).
  *
  * @returns VBox status code (appropriate for GC return).
  * @param   pVM         Pointer to the VM.
@@ -1672,7 +1672,8 @@ static int iomInterpretXCHG(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      Pointer to the MMIO ring-3 range entry.
  */
-static VBOXSTRICTRC iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault, void *pvUser)
+static VBOXSTRICTRC iomMmioCommonPfHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore,
+                                           RTGCPHYS GCPhysFault, void *pvUser)
 {
     int rc = IOM_LOCK_SHARED(pVM);
 #ifndef IN_RING3
@@ -1682,7 +1683,7 @@ static VBOXSTRICTRC iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, P
     AssertRC(rc);
 
     STAM_PROFILE_START(&pVM->iom.s.StatRZMMIOHandler, a);
-    Log(("iomMMIOHandler: GCPhys=%RGp uErr=%#x rip=%RGv\n", GCPhysFault, uErrorCode, (RTGCPTR)pCtxCore->rip));
+    Log(("iomMmioCommonPfHandler: GCPhys=%RGp uErr=%#x rip=%RGv\n", GCPhysFault, uErrorCode, (RTGCPTR)pCtxCore->rip));
 
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
     Assert(pRange);
@@ -1758,6 +1759,14 @@ static VBOXSTRICTRC iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, P
     STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
     PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     iomMmioReleaseRange(pVM, pRange);
+    if (RT_SUCCESS(rcStrict))
+        return rcStrict;
+    if (   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+        || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
+    {
+        Log(("IOM: Hit unsupported IEM feature!\n"));
+        rcStrict = VINF_EM_RAW_EMULATE_INSTR;
+    }
     return rcStrict;
 
 #else
@@ -1922,7 +1931,7 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uError
 {
     LogFlow(("iomMmioPfHandler: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
              GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
-    return iomMMIOHandler(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pvUser);
+    return iomMmioCommonPfHandler(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pvUser);
 }
 
 
@@ -1955,7 +1964,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorC
     iomMmioRetainRange(pRange);
     IOM_UNLOCK_SHARED(pVM);
 
-    VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pRange);
+    VBOXSTRICTRC rcStrict = iomMmioCommonPfHandler(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pRange);
 
     iomMmioReleaseRange(pVM, pRange);
     return VBOXSTRICTRC_VAL(rcStrict);
