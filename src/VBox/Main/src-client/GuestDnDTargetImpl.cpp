@@ -240,10 +240,10 @@ HRESULT GuestDnDTarget::getProtocolVersion(ULONG *aProtocolVersion)
 /////////////////////////////////////////////////////////////////////////////
 
 HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
-                              DnDAction_T aDefaultAction,
-                              const std::vector<DnDAction_T> &aAllowedActions,
+                              DnDAction_T                      aDefaultAction,
+                              const std::vector<DnDAction_T>  &aAllowedActions,
                               const std::vector<com::Utf8Str> &aFormats,
-                              DnDAction_T *aResultAction)
+                              DnDAction_T                     *aResultAction)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
     ReturnComNotImplemented();
@@ -280,7 +280,17 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
 
     /* If there is no valid supported format, ignore this request. */
     if (strFormats.isEmpty())
-        return S_OK;
+        return setError(E_INVALIDARG, tr("Specified format(s) not supported"));
+
+    LogRel2(("DnD: Offered formats to guest:\n"));
+    RTCList<RTCString> lstFormats = strFormats.split("\r\n");
+    for (size_t i = 0; i < lstFormats.size(); i++)
+        LogRel2(("DnD: \t%s\n", lstFormats[i].c_str()));
+
+    /* Save the formats offered to the guest. This is needed to later
+     * decide what to do with the data when sending stuff to the guest. */
+    m_vecFmtOff = aFormats;
+    Assert(m_vecFmtOff.size());
 
     HRESULT hr = S_OK;
 
@@ -307,8 +317,14 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         }
     }
 
-    if (aResultAction)
-        *aResultAction = resAction;
+    if (RT_FAILURE(rc))
+        hr = VBOX_E_IPRT_ERROR;
+
+    if (SUCCEEDED(hr))
+    {
+        if (aResultAction)
+            *aResultAction = resAction;
+    }
 
     LogFlowFunc(("hr=%Rhrc, resAction=%ld\n", hr, resAction));
     return hr;
@@ -316,10 +332,10 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
 }
 
 HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
-                             DnDAction_T aDefaultAction,
-                             const std::vector<DnDAction_T> &aAllowedActions,
+                             DnDAction_T                      aDefaultAction,
+                             const std::vector<DnDAction_T>  &aAllowedActions,
                              const std::vector<com::Utf8Str> &aFormats,
-                             DnDAction_T *aResultAction)
+                             DnDAction_T                     *aResultAction)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
     ReturnComNotImplemented();
@@ -346,7 +362,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     RTCString strFormats = GuestDnD::toFormatString(m_vecFmtSup, aFormats);
     /* If there is no valid supported format, ignore this request. */
     if (strFormats.isEmpty())
-        return S_OK;
+        return setError(E_INVALIDARG, tr("Specified format(s) not supported"));
 
     HRESULT hr = S_OK;
 
@@ -372,8 +388,14 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         }
     }
 
-    if (aResultAction)
-        *aResultAction = resAction;
+    if (RT_FAILURE(rc))
+        hr = VBOX_E_IPRT_ERROR;
+
+    if (SUCCEEDED(hr))
+    {
+        if (aResultAction)
+            *aResultAction = resAction;
+    }
 
     LogFlowFunc(("hr=%Rhrc, *pResultAction=%ld\n", hr, resAction));
     return hr;
@@ -399,16 +421,20 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
             pResp->waitForGuestResponse();
     }
 
+    if (RT_FAILURE(rc))
+        hr = VBOX_E_IPRT_ERROR;
+
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
 HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
-                             DnDAction_T aDefaultAction,
-                             const std::vector<DnDAction_T> &aAllowedActions,
+                             DnDAction_T                      aDefaultAction,
+                             const std::vector<DnDAction_T>  &aAllowedActions,
                              const std::vector<com::Utf8Str> &aFormats,
-                             com::Utf8Str &aFormat, DnDAction_T *aResultAction)
+                             com::Utf8Str                    &aFormat,
+                             DnDAction_T                     *aResultAction)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
     ReturnComNotImplemented();
@@ -431,13 +457,18 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
                             aAllowedActions, &uAllowedActions);
     /* If there is no usable action, ignore this request. */
     if (isDnDIgnoreAction(uDefAction))
+    {
+        aFormat = "";
+        if (aResultAction)
+            *aResultAction = DnDAction_Ignore;
         return S_OK;
+    }
 
     /* Make a flat data string out of the supported format list. */
     Utf8Str strFormats = GuestDnD::toFormatString(m_vecFmtSup, aFormats);
     /* If there is no valid supported format, ignore this request. */
     if (strFormats.isEmpty())
-        return S_OK;
+        return setError(E_INVALIDARG, tr("Specified format(s) not supported"));
 
     HRESULT hr = S_OK;
 
@@ -470,9 +501,16 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         }
     }
 
-    if (aResultAction)
-        *aResultAction = resAction;
+    if (RT_FAILURE(rc))
+        hr = VBOX_E_IPRT_ERROR;
 
+    if (SUCCEEDED(hr))
+    {
+        if (aResultAction)
+            *aResultAction = resAction;
+    }
+
+    LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
@@ -680,10 +718,6 @@ Utf8Str GuestDnDTarget::i_hostErrorToString(int hostRc)
 int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-
-    GuestDnD *pInst = GuestDnDInst();
-    if (!pInst)
-        return VERR_INVALID_POINTER;
 
     int rc;
 
@@ -1300,7 +1334,10 @@ HRESULT GuestDnDTarget::cancel(BOOL *aVeto)
     if (aVeto)
         *aVeto = FALSE; /** @todo */
 
-    return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+
+    LogFlowFunc(("hr=%Rhrc\n", hr));
+    return hr;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
