@@ -276,7 +276,8 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         return S_OK;
 
     /* Make a flat data string out of the supported format list. */
-    Utf8Str strFormats = GuestDnD::toFormatString(m_strFormats, aFormats);
+    Utf8Str strFormats = GuestDnD::toFormatString(m_vecFmtSup, aFormats);
+
     /* If there is no valid supported format, ignore this request. */
     if (strFormats.isEmpty())
         return S_OK;
@@ -342,7 +343,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         return S_OK;
 
     /* Make a flat data string out of the supported format list. */
-    RTCString strFormats = GuestDnD::toFormatString(m_strFormats, aFormats);
+    RTCString strFormats = GuestDnD::toFormatString(m_vecFmtSup, aFormats);
     /* If there is no valid supported format, ignore this request. */
     if (strFormats.isEmpty())
         return S_OK;
@@ -433,7 +434,7 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         return S_OK;
 
     /* Make a flat data string out of the supported format list. */
-    Utf8Str strFormats = GuestDnD::toFormatString(m_strFormats, aFormats);
+    Utf8Str strFormats = GuestDnD::toFormatString(m_vecFmtSup, aFormats);
     /* If there is no valid supported format, ignore this request. */
     if (strFormats.isEmpty())
         return S_OK;
@@ -461,10 +462,10 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
             if (pResp && RT_SUCCESS(pResp->waitForGuestResponse()))
             {
                 resAction = GuestDnD::toMainAction(pResp->defAction());
-                aFormat = pResp->format();
+                aFormat = pResp->fmtReq();
 
                 LogFlowFunc(("resFormat=%s, resAction=%RU32\n",
-                             pResp->format().c_str(), pResp->defAction()));
+                             pResp->fmtReq().c_str(), pResp->defAction()));
             }
         }
     }
@@ -555,7 +556,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         pSendCtx->mpTarget      = this;
         pSendCtx->mpResp        = pResp;
         pSendCtx->mScreenID     = aScreenId;
-        pSendCtx->mFormat       = aFormat;
+        pSendCtx->mFmtReq       = aFormat;
         pSendCtx->mData.vecData = aData;
 
         SendDataTask *pTask = new SendDataTask(this, pSendCtx);
@@ -691,8 +692,8 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     /* Clear all remaining outgoing messages. */
     mDataBase.mListOutgoing.clear();
 
-    const char *pszFormat = pCtx->mFormat.c_str();
-    uint32_t cbFormat = pCtx->mFormat.length() + 1;
+    const char *pszFormat = pCtx->mFmtReq.c_str();
+    uint32_t cbFormat = pCtx->mFmtReq.length() + 1;
 
     /* Do we need to build up a file tree? */
     bool fHasURIList = DnDMIMEHasFileURLs(pszFormat, cbFormat);
@@ -1128,8 +1129,8 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
         GuestDnDMsg MsgSndData;
         MsgSndData.setType(DragAndDropSvc::HOST_DND_HG_SND_DATA);
         MsgSndData.setNextUInt32(pCtx->mScreenID);
-        MsgSndData.setNextPointer((void *)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
-        MsgSndData.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
+        MsgSndData.setNextPointer((void *)pCtx->mFmtReq.c_str(), (uint32_t)pCtx->mFmtReq.length() + 1);
+        MsgSndData.setNextUInt32((uint32_t)pCtx->mFmtReq.length() + 1);
         MsgSndData.setNextPointer((void*)strData.c_str(), (uint32_t)cbData);
         MsgSndData.setNextUInt32((uint32_t)cbData);
 
@@ -1278,8 +1279,8 @@ int GuestDnDTarget::i_sendRawData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     GuestDnDMsg Msg;
     Msg.setType(DragAndDropSvc::HOST_DND_HG_SND_DATA);
     Msg.setNextUInt32(pCtx->mScreenID);
-    Msg.setNextPointer((void *)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
-    Msg.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
+    Msg.setNextPointer((void *)pCtx->mFmtReq.c_str(), (uint32_t)pCtx->mFmtReq.length() + 1);
+    Msg.setNextUInt32((uint32_t)pCtx->mFmtReq.length() + 1);
     Msg.setNextPointer((void*)&pCtx->mData.vecData.front(), (uint32_t)cbDataTotal);
     Msg.setNextUInt32(cbDataTotal);
 
