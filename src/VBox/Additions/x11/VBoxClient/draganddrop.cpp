@@ -23,6 +23,7 @@
 #endif
 
 #include <iprt/asm.h>
+#include <iprt/buildconfig.h>
 #include <iprt/critsect.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
@@ -50,7 +51,7 @@
 #endif
 
 /**
- * For X11 guest xDnD is used. See http://www.acc.umu.se/~vatten/XDND.html for
+ * For X11 guest Xdnd is used. See http://www.acc.umu.se/~vatten/XDND.html for
  * a walk trough.
  *
  * Host -> Guest:
@@ -124,7 +125,7 @@ enum XA_Type
     XA_text_uri,
     XA_text_plain,
     XA_TEXT,
-    /* xDnD */
+    /* Xdnd */
     XA_XdndSelection,
     XA_XdndAware,
     XA_XdndEnter,
@@ -143,6 +144,64 @@ enum XA_Type
     /* End marker */
     XA_End
 };
+
+/**
+ * Xdnd message value indexes, sorted by message type.
+ */
+typedef enum XdndMsg
+{
+    /** XdndEnter. */
+    XdndEnterTypeCount = 3,         /* Maximum number of types in XdndEnter message. */
+
+    XdndEnterWindow = 0,            /* Source window (sender). */
+    XdndEnterFlags,                 /* Version in high byte, bit 0 => more data types. */
+    XdndEnterType1,                 /* First available data type. */
+    XdndEnterType2,                 /* Second available data type. */
+    XdndEnterType3,                 /* Third available data type. */
+
+    XdndEnterMoreTypesFlag = 1,     /* Set if there are more than XdndEnterTypeCount. */
+    XdndEnterVersionRShift = 24,    /* Right shift to position version number. */
+    XdndEnterVersionMask   = 0xFF,  /* Mask to get version after shifting. */
+
+    /** XdndHere. */
+    XdndHereWindow = 0,             /* Source window (sender). */
+    XdndHereFlags,                  /* Reserved. */
+    XdndHerePt,                     /* X + Y coordinates of mouse (root window coords). */
+    XdndHereTimeStamp,              /* Timestamp for requesting data. */
+    XdndHereAction,                 /* Action requested by user. */
+
+    /** XdndPosition. */
+    XdndPositionWindow = 0,         /* Source window (sender). */
+    XdndPositionFlags,              /* Flags. */
+    XdndPositionCoords,             /* X/Y coordinates of the mouse position relative to the root window. */
+    XdndPositionTimeStamp,          /* Time stamp for retrieving the data. */
+    XdndPositionAction,             /* Action requested by the user. */
+
+    /** XdndStatus. */
+    XdndStatusWindow = 0,           /* Target window (sender).*/
+    XdndStatusFlags,                /* Flags returned by target. */
+    XdndStatusPt,                   /* X + Y of "no msg" rectangle (root window coords). */
+    XdndStatusArea,                 /* Width + height of "no msg" rectangle. */
+    XdndStatusAction,               /* Action accepted by target. */
+
+    XdndStatusAcceptDropFlag = 1,   /* Set if target will accept the drop. */
+    XdndStatusSendHereFlag   = 2,   /* Set if target wants a stream of XdndPosition. */
+
+    /** XdndLeave. */
+    XdndLeaveWindow = 0,            /* Source window (sender). */
+    XdndLeaveFlags,                 /* Reserved. */
+
+    /** XdndDrop. */
+    XdndDropWindow = 0,             /* Source window (sender). */
+    XdndDropFlags,                  /* Reserved. */
+    XdndDropTimeStamp,              /* Timestamp for requesting data. */
+
+    /** XdndFinished. */
+    XdndFinishedWindow = 0,         /* Target window (sender). */
+    XdndFinishedFlags,              /* Version 5: Bit 0 is set if the current target accepted the drop. */
+    XdndFinishedAction              /* Version 5: Contains the action performed by the target. */
+
+} XdndMsg;
 
 class DragAndDropService;
 
@@ -248,7 +307,7 @@ const char *xHelpers::m_xAtomNames[] =
     "text/uri",
     "text/plain",
     "TEXT",
-    /* xDnD */
+    /* Xdnd */
     "XdndSelection",
     "XdndAware",
     "XdndEnter",
@@ -301,18 +360,22 @@ Window xHelpers::applicationWindowBelowCursor(Window wndParent) const
 
     Window wndApp = 0;
     int cProps = -1;
+
     /* Fetch all x11 window properties of the parent window. */
     Atom *pProps = XListProperties(m_pDisplay, wndParent, &cProps);
     if (cProps > 0)
     {
         /* We check the window for the WM_STATE property. */
         for (int i = 0; i < cProps; ++i)
+        {
             if (pProps[i] == xAtom(XA_WM_STATE))
             {
                 /* Found it. */
                 wndApp = wndParent;
                 break;
             }
+        }
+
         /* Cleanup */
         XFree(pProps);
     }
@@ -382,21 +445,25 @@ public:
     void reset(void);
 
     /* Logging. */
+    VBOX_DND_FN_DECL_LOG(void) logInfo(const char *pszFormat, ...);
     VBOX_DND_FN_DECL_LOG(void) logError(const char *pszFormat, ...);
 
     /* X11 message processing. */
     int onX11ClientMessage(const XEvent &e);
+    int onX11MotionNotify(const XEvent &e);
+    int onX11SelectionClear(const XEvent &e);
     int onX11SelectionNotify(const XEvent &e);
     int onX11SelectionRequest(const XEvent &e);
     int onX11Event(const XEvent &e);
+    int  waitForStatusChange(uint32_t enmState, RTMSINTERVAL uTimeoutMS = 30000);
     bool waitForX11Msg(XEvent &evX, int iType, RTMSINTERVAL uTimeoutMS = 100);
     bool waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType, RTMSINTERVAL uTimeoutMS = 100);
 
     /* Host -> Guest handling. */
     int hgEnter(const RTCList<RTCString> &formats, uint32_t actions);
     int hgLeave(void);
-    int hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t action);
-    int hgDrop(void);
+    int hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction);
+    int hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction);
     int hgDataReceived(const void *pvData, uint32_t cData);
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -408,9 +475,13 @@ public:
     /* X11 helpers. */
     int  mouseCursorMove(int iPosX, int iPosY) const;
     void mouseButtonSet(Window wndDest, int rx, int ry, int iButton, bool fPress);
-    int proxyWinShow(int *piRootX = NULL, int *piRootY = NULL, bool fMouseMove = false) const;
+    int proxyWinShow(int *piRootX = NULL, int *piRootY = NULL) const;
     int proxyWinHide(void);
 
+    /* X11 window helpers. */
+    char *wndX11GetNameA(Window wndThis) const;
+
+    /* Xdnd protocol helpers. */
     void wndXDnDClearActionList(Window wndThis) const;
     void wndXDnDClearFormatList(Window wndThis) const;
     int wndXDnDGetActionList(Window wndThis, VBoxDnDAtomList &lstActions) const;
@@ -418,6 +489,7 @@ public:
     int wndXDnDSetActionList(Window wndThis, const VBoxDnDAtomList &lstActions) const;
     int wndXDnDSetFormatList(Window wndThis, Atom atmProp, const VBoxDnDAtomList &lstFormats) const;
 
+    /* Atom / HGCM formatting helpers. */
     int             toAtomList(const RTCList<RTCString> &lstFormats, VBoxDnDAtomList &lstAtoms) const;
     int             toAtomList(const void *pvData, uint32_t cbData, VBoxDnDAtomList &lstAtoms) const;
     static Atom     toAtomAction(uint32_t uAction);
@@ -450,21 +522,24 @@ protected:
     VBoxDnDAtomList             m_lstFormats;
     /** List of (Atom) actions the source window supports. */
     VBoxDnDAtomList             m_lstActions;
-    /** Deferred host to guest selection event for sending to the
-     *  target window as soon as data from the host arrived. */
-    XEvent                      m_eventHgSelection;
+    /** Buffer for answering the target window's selection request. */
+    void                       *m_pvSelReqData;
+    /** Size (in bytes) of selection request data buffer. */
+    uint32_t                    m_cbSelReqData;
     /** Current operation mode. */
-    Mode                        m_enmMode;
+    volatile uint32_t           m_enmMode;
     /** Current state of operation mode. */
-    State                       m_enmState;
+    volatile uint32_t           m_enmState;
     /** The instance's own X event queue. */
-    RTCMTList<XEvent>           m_eventQueue;
+    RTCMTList<XEvent>           m_eventQueueList;
     /** Critical section for providing serialized access to list
      *  event queue's contents. */
     RTCRITSECT                  m_eventQueueCS;
     /** Event for notifying this instance in case of a new
      *  event. */
-    RTSEMEVENT                  m_hEventSem;
+    RTSEMEVENT                  m_eventQueueEvent;
+    /** Critical section for data access. */
+    RTCRITSECT                  m_dataCS;
     /** List of allowed formats. */
     RTCList<RTCString>          m_lstAllowedFormats;
 };
@@ -527,10 +602,11 @@ DragInstance::DragInstance(Display *pDisplay, DragAndDropService *pParent)
     , m_wndProxy(0)
     , m_wndCur(0)
     , m_curVer(-1)
+    , m_pvSelReqData(NULL)
+    , m_cbSelReqData(0)
     , m_enmMode(Unknown)
     , m_enmState(Uninitialized)
 {
-    uninit();
 }
 
 /**
@@ -538,17 +614,24 @@ DragInstance::DragInstance(Display *pDisplay, DragAndDropService *pParent)
  */
 void DragInstance::uninit(void)
 {
-    reset();
+    LogFlowFuncEnter();
+
     if (m_wndProxy != 0)
         XDestroyWindow(m_pDisplay, m_wndProxy);
 
-    VbglR3DnDDisconnect(&m_dndCtx);
+    int rc2 = VbglR3DnDDisconnect(&m_dndCtx);
 
-    m_enmState    = Uninitialized;
-    m_screenId = -1;
-    m_pScreen  = 0;
-    m_wndRoot  = 0;
-    m_wndProxy = 0;
+    if (m_pvSelReqData)
+        RTMemFree(m_pvSelReqData);
+
+    rc2 = RTSemEventDestroy(m_eventQueueEvent);
+    AssertRC(rc2);
+
+    rc2 = RTCritSectDelete(&m_eventQueueCS);
+    AssertRC(rc2);
+
+    rc2 = RTCritSectDelete(&m_dataCS);
+    AssertRC(rc2);
 }
 
 /**
@@ -561,23 +644,39 @@ void DragInstance::reset(void)
     /* Hide the proxy win. */
     proxyWinHide();
 
-    /* If we are currently the Xdnd selection owner, clear that. */
-    Window w = XGetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection));
-    if (w == m_wndProxy)
-        XSetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection), None, CurrentTime);
+    int rc2 = RTCritSectEnter(&m_dataCS);
+    if (RT_SUCCESS(rc2))
+    {
+        /* If we are currently the Xdnd selection owner, clear that. */
+        Window pWnd = XGetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection));
+        if (pWnd == m_wndProxy)
+            XSetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection), None, CurrentTime);
 
-    /* Clear any other DnD specific data on the proxy window. */
-    wndXDnDClearFormatList(m_wndProxy);
-    wndXDnDClearActionList(m_wndProxy);
+        /* Clear any other DnD specific data on the proxy window. */
+        wndXDnDClearFormatList(m_wndProxy);
+        wndXDnDClearActionList(m_wndProxy);
 
-    /* Reset the internal state. */
-    m_lstActions.clear();
-    m_lstFormats.clear();
-    m_wndCur    = 0;
-    m_curVer    = -1;
-    m_enmState  = Initialized;
-    m_enmMode   = Unknown;
-    m_eventQueue.clear();
+        /* Reset the internal state. */
+        m_lstActions.clear();
+        m_lstFormats.clear();
+        m_wndCur    = 0;
+        m_curVer    = -1;
+        m_enmState  = Initialized;
+        m_enmMode   = Unknown;
+        m_eventQueueList.clear();
+
+        /* Reset the selection request buffer. */
+        if (m_pvSelReqData)
+        {
+            RTMemFree(m_pvSelReqData);
+            m_pvSelReqData = NULL;
+
+            Assert(m_cbSelReqData);
+            m_cbSelReqData = 0;
+        }
+
+        RTCritSectLeave(&m_dataCS);
+    }
 }
 
 /**
@@ -592,17 +691,19 @@ int DragInstance::init(uint32_t u32ScreenID)
 
     do
     {
-        uninit();
-
         rc = VbglR3DnDConnect(&m_dndCtx);
         if (RT_FAILURE(rc))
             break;
 
-        rc = RTSemEventCreate(&m_hEventSem);
+        rc = RTSemEventCreate(&m_eventQueueEvent);
         if (RT_FAILURE(rc))
             break;
 
         rc = RTCritSectInit(&m_eventQueueCS);
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = RTCritSectInit(&m_dataCS);
         if (RT_FAILURE(rc))
             break;
 
@@ -683,7 +784,7 @@ int DragInstance::init(uint32_t u32ScreenID)
         XRaiseWindow(m_pDisplay, m_wndProxy);
         XFlush(m_pDisplay);
 #endif
-        LogFlowThisFunc(("Created proxy window 0x%x at m_wndRoot=0x%x ...\n", m_wndProxy, m_wndRoot));
+        logInfo("Proxy window=0x%x, root window=0x%x ...\n", m_wndProxy, m_wndRoot);
 
         /* Set the window's name for easier lookup. */
         XStoreName(m_pDisplay, m_wndProxy, "VBoxClientWndDnD");
@@ -696,11 +797,10 @@ int DragInstance::init(uint32_t u32ScreenID)
 
     if (RT_SUCCESS(rc))
     {
-        m_enmState = Initialized;
+        reset();
     }
     else
-        LogRel(("DnD: Initializing drag instance for screen %RU32 failed with rc=%Rrc\n",
-                u32ScreenID, rc));
+        logError("Initializing drag instance for screen %RU32 failed with rc=%Rrc\n", u32ScreenID, rc);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -712,6 +812,26 @@ int DragInstance::init(uint32_t u32ScreenID)
  * @param   pszFormat               Format string to log.
  */
 VBOX_DND_FN_DECL_LOG(void) DragInstance::logError(const char *pszFormat, ...)
+{
+    va_list args;
+    va_start(args, pszFormat);
+    char *psz = NULL;
+    RTStrAPrintfV(&psz, pszFormat, args);
+    va_end(args);
+
+    AssertPtr(psz);
+    LogFlowFunc(("%s", psz));
+    LogRel(("DnD: %s", psz));
+
+    RTStrFree(psz);
+}
+
+/**
+ * Logs an info message to the (release) logging instance.
+ *
+ * @param   pszFormat               Format string to log.
+ */
+VBOX_DND_FN_DECL_LOG(void) DragInstance::logInfo(const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
@@ -736,10 +856,10 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
 {
     AssertReturn(e.type == ClientMessage, VERR_INVALID_PARAMETER);
 
-    LogFlowThisFunc(("mode=%d, state=%d\n", m_enmMode, m_enmState));
+    LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
     LogFlowThisFunc(("Event wnd=%#x, msg=%s\n", e.xclient.window, xAtomToString(e.xclient.message_type).c_str()));
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     switch (m_enmMode)
     {
@@ -750,52 +870,213 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
              * window, in response of some events we send to them.
              */
             if (   e.xclient.message_type == xAtom(XA_XdndStatus)
-                && m_wndCur               == static_cast<Window>(e.xclient.data.l[0]))
+                && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndStatusWindow]))
             {
+                bool fAcceptDrop     = ASMBitTest   (&e.xclient.data.l[XdndStatusFlags], 0); /* Does the target accept the drop? */
+                bool fWantsPosition  = ASMBitTest   (&e.xclient.data.l[XdndStatusFlags], 1); /* Does the target want XdndPosition messages? */
+                RTCString strActions = xAtomToString( e.xclient.data.l[XdndStatusAction]);
+
+                char *pszWndName = wndX11GetNameA(e.xclient.data.l[XdndStatusWindow]);
+                AssertPtr(pszWndName);
+
                 /*
                  * The XdndStatus message tell us if the window will accept the DnD
                  * event and with which action. We immediately send this info down to
                  * the host as a response of a previous DnD message.
                  */
-                LogFlowThisFunc(("XA_XdndStatus: wnd=%#x, accept=%RTbool, action=%s\n",
-                                 e.xclient.data.l[0],
-                                 ASMBitTest(&e.xclient.data.l[1], 0),
-                                 xAtomToString(e.xclient.data.l[4]).c_str()));
+                LogFlowThisFunc(("XA_XdndStatus: wnd=%#x ('%s'), fAcceptDrop=%RTbool, fWantsPosition=%RTbool, strActions=%s\n",
+                                 e.xclient.data.l[XdndStatusWindow], pszWndName, fAcceptDrop, fWantsPosition, strActions.c_str()));
 
-                uint32_t uAction = DND_IGNORE_ACTION;
+                RTStrFree(pszWndName);
+
+                uint16_t x = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusPt]);
+                uint16_t y = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusPt]);
+                uint16_t w = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusArea]);
+                uint16_t h = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusArea]);
+                LogFlowThisFunc(("\tReported dead area: x=%RU16, y=%RU16, w=%RU16, h=%RU16\n", x, y, w, h));
+
+                uint32_t uAction = DND_IGNORE_ACTION; /* Default is ignoring. */
                 /** @todo Compare this with the allowed actions. */
-                if (ASMBitTest(&e.xclient.data.l[1], 0))
-                    uAction = toHGCMAction(static_cast<Atom>(e.xclient.data.l[4]));
+                if (fAcceptDrop)
+                    uAction = toHGCMAction(static_cast<Atom>(e.xclient.data.l[XdndStatusAction]));
 
                 rc = VbglR3DnDHGAcknowledgeOperation(&m_dndCtx, uAction);
             }
             else if (e.xclient.message_type == xAtom(XA_XdndFinished))
             {
-                rc = VINF_SUCCESS;
+                bool fSucceeded = ASMBitTest(&e.xclient.data.l[XdndFinishedFlags], 0);
+
+                char *pszWndName = wndX11GetNameA(e.xclient.data.l[XdndFinishedWindow]);
+                AssertPtr(pszWndName);
 
                 /* This message is sent on an un/successful DnD drop request. */
-                LogFlowThisFunc(("XA_XdndFinished: wnd=%#x, success=%RTbool, action=%s\n",
-                                 e.xclient.data.l[0],
-                                 ASMBitTest(&e.xclient.data.l[1], 0),
-                                 xAtomToString(e.xclient.data.l[2]).c_str()));
+                LogFlowThisFunc(("XA_XdndFinished: wnd=%#x ('%s'), success=%RTbool, action=%s\n",
+                                 e.xclient.data.l[XdndFinishedWindow], pszWndName, fSucceeded,
+                                 xAtomToString(e.xclient.data.l[XdndFinishedAction]).c_str()));
 
-                proxyWinHide();
+                RTStrFree(pszWndName);
+
+                reset();
             }
             else
             {
-                LogFlowThisFunc(("Unhandled: wnd=%#x, msg=%s\n",
-                                 e.xclient.data.l[0], xAtomToString(e.xclient.message_type).c_str()));
+                char *pszWndName = wndX11GetNameA(e.xclient.data.l[0]);
+                AssertPtr(pszWndName);
+                LogFlowThisFunc(("Unhandled: wnd=%#x ('%s'), msg=%s\n",
+                                 e.xclient.data.l[0], pszWndName, xAtomToString(e.xclient.message_type).c_str()));
+                RTStrFree(pszWndName);
+
                 rc = VERR_NOT_SUPPORTED;
             }
 
             break;
         }
 
+        case Unknown: /* Mode not set (yet). */
         case GH:
-        case Unknown: /* Mode not set (yet), just add what we got. */
         {
-            m_eventQueue.append(e);
-            rc = RTSemEventSignal(m_hEventSem);
+            /*
+             * This message marks the beginning of a new drag and drop
+             * operation on the guest.
+             */
+            if (e.xclient.message_type == xAtom(XA_XdndEnter))
+            {
+                LogFlowFunc(("XA_XdndEnter\n"));
+
+                /*
+                 * Get the window which currently has the XA_XdndSelection
+                 * bit set.
+                 */
+                Window wndSelection = XGetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection));
+
+                char *pszWndName = wndX11GetNameA(wndSelection);
+                AssertPtr(pszWndName);
+
+                LogFlowThisFunc(("wndSelection=%#x ('%s'), wndProxy=%#x\n", wndSelection, pszWndName, m_wndProxy));
+
+                RTStrFree(pszWndName);
+
+                mouseButtonSet(m_wndProxy, -1, -1, 1, true /* fPress */);
+
+                /*
+                 * Update our state and the window handle to process.
+                 */
+                int rc2 = RTCritSectEnter(&m_dataCS);
+                if (RT_SUCCESS(rc2))
+                {
+                    m_wndCur = wndSelection;
+                    m_curVer = e.xclient.data.l[XdndEnterFlags] >> XdndEnterVersionRShift;
+                    Assert(m_wndCur == (Window)e.xclient.data.l[XdndEnterWindow]); /* Source window. */
+#ifdef DEBUG
+                    XWindowAttributes xwa;
+                    XGetWindowAttributes(m_pDisplay, m_wndCur, &xwa);
+                    LogFlowThisFunc(("wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n", m_wndCur, xwa.x, xwa.y, xwa.width, xwa.height));
+#endif
+                    /*
+                     * Retrieve supported formats.
+                     */
+
+                    /* Check if the MIME types are in the message itself or if we need
+                     * to fetch the XdndTypeList property from the window. */
+                    bool fMoreTypes = e.xclient.data.l[XdndEnterFlags] & XdndEnterMoreTypesFlag;
+                    LogFlowThisFunc(("XdndVer=%d, fMoreTypes=%RTbool\n", m_curVer, fMoreTypes));
+                    if (!fMoreTypes)
+                    {
+                        /* Only up to 3 format types supported. */
+                        /* Start with index 2 (first item). */
+                        for (int i = 2; i < 5; i++)
+                        {
+                            LogFlowThisFunc(("\t%s\n", gX11->xAtomToString(e.xclient.data.l[i]).c_str()));
+                            m_lstFormats.append(e.xclient.data.l[i]);
+                        }
+                    }
+                    else
+                    {
+                        /* More than 3 format types supported. */
+                        rc = wndXDnDGetFormatList(wndSelection, m_lstFormats);
+                    }
+
+                    /*
+                     * Retrieve supported actions.
+                     */
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (m_curVer >= 2) /* More than one action allowed since protocol version 2. */
+                        {
+                            rc = wndXDnDGetActionList(wndSelection, m_lstActions);
+                        }
+                        else /* Only "copy" action allowed on legacy applications. */
+                            m_lstActions.append(XA_XdndActionCopy);
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        m_enmMode  = GH;
+                        m_enmState = Dragging;
+                    }
+
+                    RTCritSectLeave(&m_dataCS);
+                }
+            }
+            else if (   e.xclient.message_type == xAtom(XA_XdndPosition)
+                     && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndPositionWindow]))
+            {
+                int32_t lPos      = e.xclient.data.l[XdndPositionCoords];
+                Atom    atmAction = m_curVer >= 2 /* Actions other than "copy" or only supported since protocol version 2. */
+                                  ? e.xclient.data.l[XdndPositionAction] : xAtom(XA_XdndActionCopy);
+
+                LogFlowThisFunc(("XA_XdndPosition: wndProxy=%#x, wndCur=%#x, x=%RI32, y=%RI32, strAction=%s\n",
+                                 m_wndProxy, m_wndCur, RT_HIWORD(lPos), RT_LOWORD(lPos),
+                                 xAtomToString(atmAction).c_str()));
+
+                bool fAcceptDrop = true;
+
+                /* Reply with a XdndStatus message to tell the source whether
+                 * the data can be dropped or not. */
+                XClientMessageEvent m;
+                RT_ZERO(m);
+                m.type         = ClientMessage;
+                m.display      = m_pDisplay;
+                m.window       = e.xclient.data.l[XdndPositionWindow];
+                m.message_type = xAtom(XA_XdndStatus);
+                m.format       = 32;
+                m.data.l[XdndStatusWindow] = m_wndProxy;
+                m.data.l[XdndStatusFlags]  = fAcceptDrop ? RT_BIT(0) : 0;                        /* Whether to accept the drop or not. */
+                m.data.l[XdndStatusAction] = fAcceptDrop ? toAtomAction(DND_COPY_ACTION) : None; /** @todo Handle default action! */
+
+                int xRc = XSendEvent(m_pDisplay, e.xclient.data.l[XdndPositionWindow],
+                                     False /* Propagate */, NoEventMask, reinterpret_cast<XEvent *>(&m));
+                if (xRc == 0)
+                    logError("Error sending position XA_XdndStatus event to current window=%#x: %s\n",
+                              m_wndCur, gX11->xErrorToString(xRc).c_str());
+            }
+            else if (   e.xclient.message_type == xAtom(XA_XdndLeave)
+                     && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndLeaveWindow]))
+            {
+                LogFlowThisFunc(("XA_XdndLeave\n"));
+                logInfo("Guest to host transfer canceled by the guest source window\n");
+
+                /* Start over. */
+                reset();
+            }
+            else if (   e.xclient.message_type == xAtom(XA_XdndDrop)
+                     && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndDropWindow]))
+            {
+                LogFlowThisFunc(("XA_XdndDrop\n"));
+                logInfo("Notified guest target window that drop operation is finished\n");
+
+                m_eventQueueList.append(e);
+                rc = RTSemEventSignal(m_eventQueueEvent);
+            }
+            else if (   e.xclient.message_type == xAtom(XA_XdndFinished)
+                     && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndFinishedWindow]))
+            {
+                LogFlowThisFunc(("XA_XdndFinished\n"));
+                logInfo("Guest target window finished drag and drop operation\n");
+
+                m_eventQueueList.append(e);
+                rc = RTSemEventSignal(m_eventQueueEvent);
+            }
             break;
         }
 
@@ -811,6 +1092,29 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
     return rc;
 }
 
+int DragInstance::onX11MotionNotify(const XEvent &e)
+{
+    LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Callback handler for being notified if some other window now
+ * is the owner of the current selection.
+ *
+ * @return  IPRT status code.
+ * @param   e                       X11 event to handle.
+ *
+ * @remark
+ */
+int DragInstance::onX11SelectionClear(const XEvent &e)
+{
+    LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Callback handler for a XDnD selection notify from a window. This is needed
  * to let the us know if a certain window has drag'n drop data to share with us,
@@ -823,7 +1127,7 @@ int DragInstance::onX11SelectionNotify(const XEvent &e)
 {
     AssertReturn(e.type == SelectionNotify, VERR_INVALID_PARAMETER);
 
-    LogFlowThisFunc(("m_mode=%d, m_state=%d\n", m_enmMode, m_enmState));
+    LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
 
     int rc;
 
@@ -833,9 +1137,11 @@ int DragInstance::onX11SelectionNotify(const XEvent &e)
         {
             if (m_enmState == Dropped)
             {
-                m_eventQueue.append(e);
-                rc = RTSemEventSignal(m_hEventSem);
+                m_eventQueueList.append(e);
+                rc = RTSemEventSignal(m_eventQueueEvent);
             }
+            else
+                rc = VERR_WRONG_ORDER;
             break;
         }
 
@@ -863,7 +1169,7 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
 {
     AssertReturn(e.type == SelectionRequest, VERR_INVALID_PARAMETER);
 
-    LogFlowThisFunc(("m_mode=%d, m_state=%d\n", m_enmMode, m_enmState));
+    LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
     LogFlowThisFunc(("Event owner=%#x, requestor=%#x, selection=%s, target=%s, prop=%s, time=%u\n",
                      e.xselectionrequest.owner,
                      e.xselectionrequest.requestor,
@@ -873,121 +1179,115 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
                      e.xselectionrequest.time));
     int rc;
 
-    bool fSendEvent  = false;
-    Atom atmTarget   = None;
-    Atom atmProperty = None;
-
     switch (m_enmMode)
     {
         case HG:
         {
             rc = VINF_SUCCESS;
 
-#ifdef DEBUG
-            XTextProperty propName;
-            XGetWMName(m_pDisplay, e.xselectionrequest.requestor, &propName);
-#endif
+            char *pszWndName = wndX11GetNameA(e.xselectionrequest.requestor);
+            AssertPtr(pszWndName);
+
             /*
-             * A window is asking for some data. Normally here the data would be copied
-             * into the selection buffer and send to the requestor. Obviously we can't
-             * do that, because we first need to ask the host for the data of the
-             * requested MIME type. This is done and later answered with the correct
-             * data -- see DragInstance::hgDataReceived().
+             * Start by creating a refusal selection notify message.
+             * That way we only need to care for the success case.
              */
 
+            XEvent s;
+            RT_ZERO(s);
+            s.xselection.type      = SelectionNotify;
+            s.xselection.display   = e.xselectionrequest.display;
+            s.xselection.requestor = e.xselectionrequest.requestor;
+            s.xselection.selection = e.xselectionrequest.selection;
+            s.xselection.target    = e.xselectionrequest.target;
+            s.xselection.property  = None;                          /* "None" means refusal. */
+            s.xselection.time      = e.xselectionrequest.time;
+
+            const XSelectionRequestEvent *pReq = &e.xselectionrequest;
+
+#ifdef DEBUG
+            LogFlowFunc(("Supported formats:\n"));
+            for (size_t i = 0; i < m_lstFormats.size(); i++)
+                LogFlowFunc(("\t%s\n", xAtomToString(m_lstFormats.at(i)).c_str()));
+#endif
             /* Is the requestor asking for the possible MIME types? */
-            if (e.xselectionrequest.target == xAtom(XA_TARGETS))
+            if (pReq->target == xAtom(XA_TARGETS))
             {
-                LogFlowThisFunc(("wnd=%#x ('%s') asking for target list\n",
-                                 e.xselectionrequest.requestor, propName.value ? (const char *)propName.value : "<No name>"));
+                logInfo("Target window %#x ('%s') asking for target list\n", e.xselectionrequest.requestor, pszWndName);
 
                 /* If so, set the window property with the formats on the requestor
                  * window. */
-                rc = wndXDnDSetFormatList(e.xselectionrequest.requestor, e.xselectionrequest.property, m_lstFormats);
+                rc = wndXDnDSetFormatList(pReq->requestor, pReq->property, m_lstFormats);
                 if (RT_SUCCESS(rc))
-                {
-                    atmTarget   = e.xselectionrequest.target;
-                    atmProperty = e.xselectionrequest.property;
-
-                    fSendEvent  = true;
-                }
+                    s.xselection.property = pReq->property;
             }
             /* Is the requestor asking for a specific MIME type (we support)? */
-            else if (m_lstFormats.contains(e.xselectionrequest.target))
+            else if (m_lstFormats.contains(pReq->target))
             {
-                LogFlowThisFunc(("wnd=%#x ('%s') asking for data, format=%s\n",
-                                 e.xselectionrequest.requestor, propName.value ? (const char *)propName.value : "<No name>",
-                                 xAtomToString(e.xselectionrequest.target).c_str()));
+                logInfo("Target window %#x ('%s') is asking for data as '%s'\n",
+                         pReq->requestor, pszWndName, xAtomToString(pReq->target).c_str());
 
-                /* If so, we need to inform the host about this request. Save the
-                 * selection request event for later use. */
+                /* Did we not drop our stuff to the guest yet? Bail out. */
                 if (m_enmState != Dropped)
                 {
                     LogFlowThisFunc(("Wrong state (%RU32), refusing request\n", m_enmState));
-
-                    atmTarget   = None;
-                    atmProperty = e.xselectionrequest.property;
-
-                    fSendEvent  = true;
                 }
+                /* Did we not store the requestor's initial selection request yet? Then do so now. */
                 else
                 {
-                    LogFlowThisFunc(("Saving selection notify message of wnd=%#x ('%s')\n",
-                                     e.xselectionrequest.requestor, propName.value ? (const char *)propName.value : "<No name>"));
-
-                    memcpy(&m_eventHgSelection, &e, sizeof(XEvent));
-
-                    RTCString strFormat = xAtomToString(e.xselectionrequest.target);
+                    /* Get the data format the requestor wants from us. */
+                    RTCString strFormat = xAtomToString(pReq->target);
                     Assert(strFormat.isNotEmpty());
+                    logInfo("Target window=%#x requested data from host as '%s', rc=%Rrc\n",
+                            pReq->requestor, strFormat.c_str(), rc);
 
-                    rc = VbglR3DnDHGRequestData(&m_dndCtx, strFormat.c_str());
-                    LogFlowThisFunc(("Requested data from host as \"%s\", rc=%Rrc\n", strFormat.c_str(), rc));
+                    /* Make a copy of the MIME data to be passed back. The X server will be become
+                     * the new owner of that data, so no deletion needed. */
+                    /** @todo Do we need to do some more conversion here? XConvertSelection? */
+                    void *pvData = RTMemDup(m_pvSelReqData, m_cbSelReqData);
+                    uint32_t cbData = m_cbSelReqData;
+
+                    /* Always return the requested property. */
+                    s.xselection.property = pReq->property;
+
+                    /* Note: Always seems to return BadRequest. Seems fine. */
+                    int xRc = XChangeProperty(s.xselection.display, s.xselection.requestor, s.xselection.property,
+                                              s.xselection.target, 8, PropModeReplace,
+                                              reinterpret_cast<const unsigned char*>(pvData), cbData);
+
+                    LogFlowFunc(("Changing property '%s' (target '%s') of window=0x%x: %s\n",
+                                 xAtomToString(pReq->property).c_str(),
+                                 xAtomToString(pReq->target).c_str(),
+                                 pReq->requestor,
+                                 gX11->xErrorToString(xRc).c_str()));
                 }
             }
             /* Anything else. */
             else
             {
-                LogFlowThisFunc(("Refusing unknown command of wnd=%#x ('%s')\n", e.xselectionrequest.requestor,
-                                 propName.value ? (const char *)propName.value : "<No name>"));
-
-                /* We don't understand this request message and therefore answer with an
-                 * refusal messages. */
-                fSendEvent = true;
+                logError("Refusing unknown command/format '%s' of wnd=%#x ('%s')\n",
+                         xAtomToString(e.xselectionrequest.target).c_str(), pReq->requestor, pszWndName);
+                rc = VERR_NOT_SUPPORTED;
             }
 
-            if (   RT_SUCCESS(rc)
-                && fSendEvent)
-            {
-                XEvent s;
-                RT_ZERO(s);
-                s.xselection.type      = SelectionNotify;
-                s.xselection.display   = e.xselection.display;
-                s.xselection.time      = e.xselectionrequest.time;
-                s.xselection.selection = e.xselectionrequest.selection;
-                s.xselection.requestor = e.xselectionrequest.requestor;
-                s.xselection.target    = atmTarget;
-                s.xselection.property  = atmProperty;
+            LogFlowThisFunc(("Offering type '%s', property '%s' to wnd=%#x ...\n",
+                             xAtomToString(pReq->target).c_str(),
+                             xAtomToString(pReq->property).c_str(), pReq->requestor));
 
-                int xRc = XSendEvent(e.xselection.display, e.xselectionrequest.requestor, False, 0, &s);
-                if (RT_UNLIKELY(xRc == 0))
-                    logError("Error sending SelectionNotify(1) event to wnd=%#x: %s\n", e.xselectionrequest.requestor,
-                             gX11->xErrorToString(xRc).c_str());
-            }
+            int xRc = XSendEvent(pReq->display, pReq->requestor, True /* Propagate */, 0, &s);
+            if (xRc == 0)
+                logError("Error sending SelectionNotify(1) event to wnd=%#x: %s\n", pReq->requestor,
+                         gX11->xErrorToString(xRc).c_str());
+            XFlush(pReq->display);
 
-#ifdef DEBUG
-            if (propName.value)
-                XFree(propName.value);
-#endif
+            if (pszWndName)
+                RTStrFree(pszWndName);
             break;
         }
 
         default:
-        {
-            LogFlowThisFunc(("Unhandled message for wnd=%#x: %s\n",
-                             e.xclient.data.l[0], xAtomToString(e.xclient.message_type).c_str()));
             rc = VERR_INVALID_STATE;
             break;
-        }
     }
 
     LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
@@ -1022,10 +1322,8 @@ int DragInstance::onX11Event(const XEvent &e)
             break;
 
         case SelectionClear:
-           LogFlowThisFunc(("SelectionClear\n"));
-           reset();
-           rc = VINF_SUCCESS;
-           break;
+            rc = onX11SelectionClear(e);
+            break;
 
         case SelectionNotify:
             rc = onX11SelectionNotify(e);
@@ -1035,9 +1333,9 @@ int DragInstance::onX11Event(const XEvent &e)
             rc = onX11SelectionRequest(e);
             break;
 
-        /*case MotionNotify:
-          hide();
-          break;*/
+        case MotionNotify:
+            rc = onX11MotionNotify(e);
+            break;
 
         default:
             rc = VERR_NOT_IMPLEMENTED;
@@ -1045,6 +1343,30 @@ int DragInstance::onX11Event(const XEvent &e)
     }
 
     LogFlowThisFunc(("rc=%Rrc\n", rc));
+    return rc;
+}
+
+int DragInstance::waitForStatusChange(uint32_t enmState, RTMSINTERVAL uTimeoutMS /* = 30000 */)
+{
+    const uint64_t uiStart = RTTimeMilliTS();
+    volatile uint32_t enmCurState;
+
+    int rc = VERR_TIMEOUT;
+
+    LogFlowFunc(("enmState=%RU32, uTimeoutMS=%RU32\n", enmState, uTimeoutMS));
+
+    do
+    {
+        enmCurState = ASMAtomicReadU32(&m_enmState);
+        if (enmCurState == enmState)
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+    }
+    while (RTTimeMilliTS() - uiStart < uTimeoutMS);
+
+    LogFlowThisFunc(("Returning %Rrc\n", rc));
     return rc;
 }
 
@@ -1059,7 +1381,7 @@ int DragInstance::onX11Event(const XEvent &e)
  */
 bool DragInstance::waitForX11Msg(XEvent &evX, int iType, RTMSINTERVAL uTimeoutMS /* = 100 */)
 {
-    LogFlowThisFunc(("iType=%d, uTimeoutMS=%RU32, cEventQueue=%zu\n", iType, uTimeoutMS, m_eventQueue.size()));
+    LogFlowThisFunc(("iType=%d, uTimeoutMS=%RU32, cEventQueue=%zu\n", iType, uTimeoutMS, m_eventQueueList.size()));
 
     bool fFound = false;
     const uint64_t uiStart = RTTimeMilliTS();
@@ -1067,17 +1389,17 @@ bool DragInstance::waitForX11Msg(XEvent &evX, int iType, RTMSINTERVAL uTimeoutMS
     do
     {
         /* Check if there is a client message in the queue. */
-        for (size_t i = 0; i < m_eventQueue.size(); i++)
+        for (size_t i = 0; i < m_eventQueueList.size(); i++)
         {
             int rc2 = RTCritSectEnter(&m_eventQueueCS);
             if (RT_SUCCESS(rc2))
             {
-                XEvent e = m_eventQueue.at(i);
+                XEvent e = m_eventQueueList.at(i);
 
                 fFound = e.type == iType;
                 if (fFound)
                 {
-                    m_eventQueue.removeAt(i);
+                    m_eventQueueList.removeAt(i);
                     evX = e;
                 }
 
@@ -1092,7 +1414,7 @@ bool DragInstance::waitForX11Msg(XEvent &evX, int iType, RTMSINTERVAL uTimeoutMS
         if (fFound)
             break;
 
-        int rc2 = RTSemEventWait(m_hEventSem, 25 /* ms */);
+        int rc2 = RTSemEventWait(m_eventQueueEvent, 25 /* ms */);
         if (   RT_FAILURE(rc2)
             && rc2 != VERR_TIMEOUT)
         {
@@ -1115,31 +1437,38 @@ bool DragInstance::waitForX11Msg(XEvent &evX, int iType, RTMSINTERVAL uTimeoutMS
  * @param   uTimeoutMS              Timeout (in ms) to wait for the event.
  */
 bool DragInstance::waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType,
-                                       RTMSINTERVAL uTimeoutMS /*= 100 */)
+                                       RTMSINTERVAL uTimeoutMS /* = 100 */)
 {
     LogFlowThisFunc(("aType=%s, uTimeoutMS=%RU32, cEventQueue=%zu\n",
-                     xAtomToString(aType).c_str(), uTimeoutMS, m_eventQueue.size()));
+                     xAtomToString(aType).c_str(), uTimeoutMS, m_eventQueueList.size()));
 
     bool fFound = false;
     const uint64_t uiStart = RTTimeMilliTS();
     do
     {
         /* Check if there is a client message in the queue. */
-        for (size_t i = 0; i < m_eventQueue.size(); i++)
+        for (size_t i = 0; i < m_eventQueueList.size(); i++)
         {
             int rc2 = RTCritSectEnter(&m_eventQueueCS);
             if (RT_SUCCESS(rc2))
             {
-                XEvent e = m_eventQueue.at(i);
-                if (e.type == ClientMessage)
+                XEvent e = m_eventQueueList.at(i);
+                if (   e.type                 == ClientMessage
+                    && e.xclient.message_type == aType)
                 {
-                    /** @todo Check is aType matches the event's type! */
-
-                    m_eventQueue.removeAt(i);
+                    m_eventQueueList.removeAt(i);
                     evMsg = e.xclient;
 
                     fFound = true;
                 }
+
+                if (e.type == ClientMessage)
+                {
+                    LogFlowThisFunc(("Client message: Type=%ld (%s)\n",
+                                     e.xclient.message_type, xAtomToString(e.xclient.message_type).c_str()));
+                }
+                else
+                    LogFlowThisFunc(("X message: Type=%d\n", e.type));
 
                 rc2 = RTCritSectLeave(&m_eventQueueCS);
                 AssertRC(rc2);
@@ -1152,7 +1481,7 @@ bool DragInstance::waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType,
         if (fFound)
             break;
 
-        int rc2 = RTSemEventWait(m_hEventSem, 25 /* ms */);
+        int rc2 = RTSemEventWait(m_eventQueueEvent, 25 /* ms */);
         if (   RT_FAILURE(rc2)
             && rc2 != VERR_TIMEOUT)
         {
@@ -1219,6 +1548,7 @@ int DragInstance::hgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAction
         rc = wndXDnDSetActionList(m_wndProxy, lstActions);
 
         /* Set the DnD selection owner to our window. */
+        /** @todo Don't use CurrentTime -- according to ICCCM section 2.1. */
         XSetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection), m_wndProxy, CurrentTime);
 
         m_enmMode  = HG;
@@ -1286,61 +1616,82 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
         xRc = XGetWindowProperty(m_pDisplay, wndCursor, xAtom(XA_XdndAware),
                                  0, 2, False, AnyPropertyType,
                                  &atmp, &fmt, &cItems, &cbRemaining, &pcData);
-
-        if (RT_UNLIKELY(xRc != Success))
+        if (xRc != Success)
+        {
             logError("Error getting properties of cursor window=%#x: %s\n", wndCursor, gX11->xErrorToString(xRc).c_str());
+        }
         else
         {
-            if (RT_UNLIKELY(pcData == NULL || fmt != 32 || cItems != 1))
-                LogFlowThisFunc(("Wrong properties: pcData=%#x, iFmt=%d, cItems=%ul\n", pcData, fmt, cItems));
+            if (pcData == NULL || fmt != 32 || cItems != 1)
+            {
+                /** @todo Do we need to deal with this? */
+                logError("Wrong window properties for window %#x: pcData=%#x, iFmt=%d, cItems=%ul\n",
+                         wndCursor, pcData, fmt, cItems);
+            }
             else
             {
-                newVer = reinterpret_cast<long*>(pcData)[0];
-#ifdef DEBUG
-                XTextProperty propName;
-                if (XGetWMName(m_pDisplay, wndCursor, &propName))
-                {
-                    LogFlowThisFunc(("Current: wndCursor=%#x '%s', XdndAware=%ld\n", wndCursor, propName.value, newVer));
-                    XFree(propName.value);
-                }
-#endif
+                /* Get the current window's Xdnd version. */
+                newVer = reinterpret_cast<long *>(pcData)[0];
             }
 
             XFree(pcData);
         }
     }
 
-    /*
-     * Is the window under the cursor another one than our current one?
-     * Cancel the current drop.
-     */
+#ifdef DEBUG
+    char *pszNameCursor = wndX11GetNameA(wndCursor);
+    AssertPtr(pszNameCursor);
+    char *pszNameCur = wndX11GetNameA(m_wndCur);
+    AssertPtr(pszNameCur);
+
+    LogFlowThisFunc(("wndCursor=%x ('%s', Xdnd version %ld), wndCur=%x ('%s', Xdnd version %ld)\n",
+                     wndCursor, pszNameCursor, newVer, m_wndCur, pszNameCur, m_curVer));
+
+    RTStrFree(pszNameCursor);
+    RTStrFree(pszNameCur);
+#endif
+
     if (   wndCursor != m_wndCur
         && m_curVer  != -1)
     {
         LogFlowThisFunc(("XA_XdndLeave: window=%#x\n", m_wndCur));
 
+        char *pszWndName = wndX11GetNameA(m_wndCur);
+        AssertPtr(pszWndName);
+        logInfo("Left old window %#x ('%s'), Xdnd version=%ld\n", m_wndCur, pszWndName, newVer);
+        RTStrFree(pszWndName);
+
         /* We left the current XdndAware window. Announce this to the current indow. */
         XClientMessageEvent m;
         RT_ZERO(m);
-        m.type         = ClientMessage;
-        m.display      = m_pDisplay;
-        m.window       = m_wndCur;
-        m.message_type = xAtom(XA_XdndLeave);
-        m.format       = 32;
-        m.data.l[0]    = m_wndProxy;                    /* Source window. */
+        m.type                    = ClientMessage;
+        m.display                 = m_pDisplay;
+        m.window                  = m_wndCur;
+        m.message_type            = xAtom(XA_XdndLeave);
+        m.format                  = 32;
+        m.data.l[XdndLeaveWindow] = m_wndProxy;
 
         xRc = XSendEvent(m_pDisplay, m_wndCur, False, NoEventMask, reinterpret_cast<XEvent*>(&m));
-        if (RT_UNLIKELY(xRc == 0))
+        if (xRc == 0)
             logError("Error sending XA_XdndLeave event to old window=%#x: %s\n", m_wndCur, gX11->xErrorToString(xRc).c_str());
+
+        /* Reset our current window. */
+        m_wndCur = 0;
+        m_curVer = -1;
     }
 
     /*
-     * Do we have a new window which now is under the cursor?
+     * Do we have a new Xdnd-aware window which now is under the cursor?
      */
     if (   wndCursor != m_wndCur
         && newVer    != -1)
     {
         LogFlowThisFunc(("XA_XdndEnter: window=%#x\n", wndCursor));
+
+        char *pszWndName = wndX11GetNameA(wndCursor);
+        AssertPtr(pszWndName);
+        logInfo("Entered new window %#x ('%s'), supports Xdnd version=%ld\n", wndCursor, pszWndName, newVer);
+        RTStrFree(pszWndName);
 
         /*
          * We enter a new window. Announce the XdndEnter event to the new
@@ -1355,25 +1706,27 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
         m.window       = wndCursor;
         m.message_type = xAtom(XA_XdndEnter);
         m.format       = 32;
-        m.data.l[0]    = m_wndProxy;                    /* Source window. */
-        m.data.l[1]    = RT_MAKE_U32_FROM_U8(
-                         /* Bit 0 is set if the source supports more than three data types. */
-                         m_lstFormats.size() > 3 ? 1 : 0,
-                         /* Reserved for future use. */
-                         0, 0,
-                         /* Protocol version to use. */
-                         RT_MIN(VBOX_XDND_VERSION, newVer));
-        m.data.l[2]    = m_lstFormats.value(0, None);   /* First data type to use. */
-        m.data.l[3]    = m_lstFormats.value(1, None);   /* Second data type to use. */
-        m.data.l[4]    = m_lstFormats.value(2, None);   /* Third data type to use. */
+        m.data.l[XdndEnterWindow] = m_wndProxy;
+        m.data.l[XdndEnterFlags]  = RT_MAKE_U32_FROM_U8(
+                                    /* Bit 0 is set if the source supports more than three data types. */
+                                    m_lstFormats.size() > 3 ? RT_BIT(0) : 0,
+                                    /* Reserved for future use. */
+                                    0, 0,
+                                    /* Protocol version to use. */
+                                    RT_MIN(VBOX_XDND_VERSION, newVer));
+        m.data.l[XdndEnterType1]  = m_lstFormats.value(0, None); /* First data type to use. */
+        m.data.l[XdndEnterType2]  = m_lstFormats.value(1, None); /* Second data type to use. */
+        m.data.l[XdndEnterType3]  = m_lstFormats.value(2, None); /* Third data type to use. */
 
         xRc = XSendEvent(m_pDisplay, wndCursor, False, NoEventMask, reinterpret_cast<XEvent*>(&m));
-        if (RT_UNLIKELY(xRc == 0))
+        if (xRc == 0)
             logError("Error sending XA_XdndEnter event to window=%#x: %s\n", wndCursor, gX11->xErrorToString(xRc).c_str());
     }
 
     if (newVer != -1)
     {
+        Assert(wndCursor != None);
+
         LogFlowThisFunc(("XA_XdndPosition: xPos=%RU32, yPos=%RU32 to window=%#x\n", u32xPos, u32yPos, wndCursor));
 
         /*
@@ -1389,26 +1742,27 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
         m.window       = wndCursor;
         m.message_type = xAtom(XA_XdndPosition);
         m.format       = 32;
-        m.data.l[0]    = m_wndProxy;                    /* X window ID of source window. */
-        m.data.l[2]    = RT_MAKE_U32(u32yPos, u32xPos); /* Cursor coordinates relative to the root window. */
-        m.data.l[3]    = CurrentTime;                   /* Timestamp for retrieving data. */
-        m.data.l[4]    = pa;                            /* Actions requested by the user. */
+        m.data.l[XdndPositionWindow]    = m_wndProxy;                    /* X window ID of source window. */
+        m.data.l[XdndPositionCoords]    = RT_MAKE_U32(u32yPos, u32xPos); /* Cursor coordinates relative to the root window. */
+        m.data.l[XdndPositionTimeStamp] = CurrentTime;                   /* Timestamp for retrieving data. */
+        m.data.l[XdndPositionAction]    = pa;                            /* Actions requested by the user. */
 
         xRc = XSendEvent(m_pDisplay, wndCursor, False, NoEventMask, reinterpret_cast<XEvent*>(&m));
-        if (RT_UNLIKELY(xRc == 0))
+        if (xRc == 0)
             logError("Error sending XA_XdndPosition event to current window=%#x: %s\n", wndCursor, gX11->xErrorToString(xRc).c_str());
     }
 
-    if (   wndCursor == None
-        && newVer    == -1)
+    if (newVer == -1)
     {
         /* No window to process, so send a ignore ack event to the host. */
         rc = VbglR3DnDHGAcknowledgeOperation(&m_dndCtx, DND_IGNORE_ACTION);
     }
     else
     {
+        Assert(wndCursor != None);
+
         m_wndCur = wndCursor;
-        m_curVer = RT_MIN(VBOX_XDND_VERSION, newVer);
+        m_curVer = newVer;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1419,10 +1773,15 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
  * Host -> Guest: Event signalling that the host has dropped the data over the VM (guest) window.
  *
  * @returns IPRT status code.
+ * @param   u32xPos                 Relative X position within the guest's display area.
+ * @param   u32yPos                 Relative Y position within the guest's display area.
+ * @param   uDefaultAction          Default action the host wants to perform on the guest
+ *                                  as soon as the operation successfully finishes.
  */
-int DragInstance::hgDrop(void)
+int DragInstance::hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction)
 {
     LogFlowThisFunc(("wndCur=%#x, wndProxy=%#x, mode=%RU32, state=%RU32\n", m_wndCur, m_wndProxy, m_enmMode, m_enmState));
+    LogFlowThisFunc(("u32xPos=%RU32, u32yPos=%RU32, uAction=%RU32\n", u32xPos, u32yPos, uDefaultAction));
 
     if (   m_enmMode  != HG
         || m_enmState != Dragging)
@@ -1430,37 +1789,27 @@ int DragInstance::hgDrop(void)
         return VERR_INVALID_STATE;
     }
 
-    int rc = VINF_SUCCESS;
+    /* Set the state accordingly. */
+    m_enmState = Dropped;
 
     /*
-     * Send a drop event to the current window and reset our DnD status.
+     * Ask the host to send the raw data, as we don't (yet) know which format
+     * the guest exactly expects. As blocking in a SelectionRequest message turned
+     * out to be very unreliable (e.g. with KDE apps) we request to start transferring
+     * file/directory data (if any) here.
      */
-    XClientMessageEvent m;
-    RT_ZERO(m);
-    m.type         = ClientMessage;
-    m.display      = m_pDisplay;
-    m.window       = m_wndCur;
-    m.message_type = xAtom(XA_XdndDrop);
-    m.format       = 32;
-    m.data.l[0]    = m_wndProxy;                        /* Source window. */
-    m.data.l[2]    = CurrentTime;                       /* Timestamp. */
+    char szFormat[] = { "text/uri-list" };
 
-    int xRc = XSendEvent(m_pDisplay, m_wndCur, False, NoEventMask, reinterpret_cast<XEvent*>(&m));
-    if (RT_UNLIKELY(xRc == 0))
-        logError("Error sending XA_XdndDrop event to wndCur=%#x: %s\n", m_wndCur, gX11->xErrorToString(xRc).c_str());
-
-    m_wndCur = None;
-    m_curVer = -1;
-
-    m_enmState = Dropped;
+    int rc = VbglR3DnDHGRequestData(&m_dndCtx, szFormat);
+    logInfo("Drop event from host resuled in: %Rrc\n", rc);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 /**
- * Host -> Guest: Event signalling that the host has sent drag'n drop (MIME) data
- *                to the guest for further processing.
+ * Host -> Guest: Event signalling that the host has finished sending drag'n drop
+ *                data to the guest for further processing.
  *
  * @returns IPRT status code.
  * @param   pvData                  Pointer to (MIME) data from host.
@@ -1469,6 +1818,7 @@ int DragInstance::hgDrop(void)
 int DragInstance::hgDataReceived(const void *pvData, uint32_t cbData)
 {
     LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
+    LogFlowThisFunc(("pvData=%p, cbData=%RU32\n", pvData, cbData));
 
     if (   m_enmMode  != HG
         || m_enmState != Dropped)
@@ -1476,55 +1826,68 @@ int DragInstance::hgDataReceived(const void *pvData, uint32_t cbData)
         return VERR_INVALID_STATE;
     }
 
-    if (RT_UNLIKELY(   pvData == NULL
-                    || cbData  == 0))
+    if (   pvData == NULL
+        || cbData == 0)
     {
         return VERR_INVALID_PARAMETER;
     }
 
-    /* Make a copy of the data. The X server will become the new owner. */
-    void *pvNewData = RTMemAlloc(cbData);
-    if (RT_UNLIKELY(!pvNewData))
-        return VERR_NO_MEMORY;
-
-    memcpy(pvNewData, pvData, cbData);
+    int rc = VINF_SUCCESS;
 
     /*
-     * The host has sent us the DnD data in the requested MIME type. This allows us
-     * to fill the XdndSelection property of the requestor window with the data
-     * and afterwards inform the host about the new status.
+     * At this point all data needed (including sent files/directories) should
+     * be on the guest, so proceed working on communicating with the target window.
      */
-    XEvent s;
-    RT_ZERO(s);
-    s.xselection.type      = SelectionNotify;
-    s.xselection.display   = m_eventHgSelection.xselection.display;
-//    s.xselection.owner     = m_selEvent.xselectionrequest.owner;
-    s.xselection.time      = m_eventHgSelection.xselectionrequest.time;
-    s.xselection.selection = m_eventHgSelection.xselectionrequest.selection;
-    s.xselection.requestor = m_eventHgSelection.xselectionrequest.requestor;
-    s.xselection.target    = m_eventHgSelection.xselectionrequest.target;
-    s.xselection.property  = m_eventHgSelection.xselectionrequest.property;
+    logInfo("Received %RU32 bytes MIME data from host\n", cbData);
 
-    LogFlowThisFunc(("owner=%#x, requestor=%#x, sel_atom=%s, target_atom=%s, prop_atom=%s, time=%u\n",
-                     m_eventHgSelection.xselectionrequest.owner,
-                     s.xselection.requestor,
-                     xAtomToString(s.xselection.selection).c_str(),
-                     xAtomToString(s.xselection.target).c_str(),
-                     xAtomToString(s.xselection.property).c_str(),
-                     s.xselection.time));
+    /* Destroy any old data. */
+    if (m_pvSelReqData)
+    {
+        Assert(m_cbSelReqData);
 
-    /* Fill up the property with the data. */
-    XChangeProperty(s.xselection.display, s.xselection.requestor, s.xselection.property, s.xselection.target, 8, PropModeReplace,
-                    reinterpret_cast<const unsigned char*>(pvNewData), cbData);
-    int xRc = XSendEvent(s.xselection.display, s.xselection.requestor, True, 0, &s);
-    if (RT_UNLIKELY(xRc == 0))
-        logError("Error sending SelectionNotify(2) event to window=%#x: %s\n",
-                 s.xselection.requestor, gX11->xErrorToString(xRc).c_str());
+        RTMemFree(m_pvSelReqData); /** @todo RTMemRealloc? */
+        m_cbSelReqData = 0;
+    }
 
-    /* We're finally done, reset. */
-    reset();
+    /** @todo Handle incremental transfers. */
 
-    return VINF_SUCCESS;
+    /* Make a copy of the data. This data later then will be used to fill into
+     * the selection request. */
+    if (cbData)
+    {
+        m_pvSelReqData = RTMemAlloc(cbData);
+        if (!m_pvSelReqData)
+            return VERR_NO_MEMORY;
+
+        memcpy(m_pvSelReqData, pvData, cbData);
+        m_cbSelReqData = cbData;
+    }
+
+    /*
+     * Send a drop event to the current window (target).
+     * This window in turn then will raise a SelectionRequest message to our proxy window,
+     * which we will handle in our onX11SelectionRequest handler.
+     *
+     * The SelectionRequest will tell us in which format the target wants the data from the host.
+     */
+    XClientMessageEvent m;
+    RT_ZERO(m);
+    m.type         = ClientMessage;
+    m.display      = m_pDisplay;
+    m.window       = m_wndCur;
+    m.message_type = xAtom(XA_XdndDrop);
+    m.format       = 32;
+    m.data.l[XdndDropWindow]    = m_wndProxy;  /* Source window. */
+    m.data.l[XdndDropFlags]     = 0;           /* Reserved for future use. */
+    m.data.l[XdndDropTimeStamp] = CurrentTime; /* Our DnD data does not rely on any timing, so just use the current time. */
+
+    int xRc = XSendEvent(m_pDisplay, m_wndCur, False /* Propagate */, NoEventMask, reinterpret_cast<XEvent*>(&m));
+    if (xRc == 0)
+        logError("Error sending XA_XdndDrop event to window=%#x: %s\n", m_wndCur, gX11->xErrorToString(xRc).c_str());
+    XFlush(m_pDisplay);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -1538,127 +1901,80 @@ int DragInstance::ghIsDnDPending(void)
 {
     LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
 
+    /* Currently in wrong mode? Bail out. */
     if (m_enmMode == HG)
         return VERR_INVALID_STATE;
 
-    int rc = VINF_SUCCESS;
-    Window wndSelection = XGetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection));
-    LogFlowThisFunc(("Checking pending wndSelection=%#x, wndProxy=%#x\n", wndSelection, m_wndProxy));
-
-    /* Is this another window which has a Xdnd selection than our current one? */
-    if (   wndSelection
-        && wndSelection != m_wndProxy)
+    /* Message already processed successfully? */
+    if (   m_enmMode  == GH
+        && (   m_enmState == Dragging
+            || m_enmState == Dropped)
+       )
     {
+        return VERR_INVALID_STATE;
+    }
+
+    int rc = VINF_SUCCESS;
+
+    /* Determine the current window which currently has the XdndSelection set. */
+    Window wndSelection = XGetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection));
+    LogFlowThisFunc(("wndSelection=%#x, wndProxy=%#x, wndCur=%#x\n", wndSelection, m_wndProxy, m_wndCur));
+
+    RTCString strFormats = "None"; /** @todo If empty, IOCTL fails with VERR_ACCESS_DENIED. */
+    uint32_t uDefAction  = DND_IGNORE_ACTION;
+    uint32_t uAllActions = DND_IGNORE_ACTION;
+
+    /* Is this another window which has a Xdnd selection and not our proxy window? */
+    if (   wndSelection
+        && wndSelection != m_wndCur)
+    {
+#ifdef DEBUG
+        char *pszWndName = wndX11GetNameA(wndSelection);
+        AssertPtr(pszWndName);
+        LogFlowThisFunc(("*** New source window ('%s') ***\n", pszWndName));
+        RTStrFree(pszWndName);
+#endif
+        /* Start over. */
+        reset();
+
         /* Map the window on the current cursor position, which should provoke
          * an XdndEnter event. */
-        proxyWinShow(NULL, NULL, true);
-
-        XEvent e;
-        if (waitForX11Msg(e, ClientMessage))
+        rc = proxyWinShow(NULL, NULL);
+        if (RT_SUCCESS(rc))
         {
-            bool fAcceptDrop = false;
-
-            int xRc;
-            XClientMessageEvent *pEventClient = reinterpret_cast<XClientMessageEvent*>(&e);
-            AssertPtr(pEventClient);
-
-            LogFlowThisFunc(("Received event=%s\n",
-                             gX11->xAtomToString(pEventClient->message_type).c_str()));
-
-            if (pEventClient->message_type == xAtom(XA_XdndEnter))
-            {
-                LogFlowThisFunc(("XA_XdndEnter\n"));
-
-                /*
-                 * Prepare everything for our new window.
-                 */
-                reset();
-
-                /*
-                 * Update our state and the window handle to process.
-                 */
-                m_enmMode   = GH;
-                m_enmState  = Dragging;
-                m_wndCur    = wndSelection;
-                Assert(m_wndCur == (Window)pEventClient->data.l[0]);
-#ifdef DEBUG
-                XWindowAttributes xwa;
-                XGetWindowAttributes(m_pDisplay, m_wndCur, &xwa);
-                LogFlowThisFunc(("m_wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n",
-                                 m_wndCur, xwa.x, xwa.y, xwa.width, xwa.height));
-#endif
-                /* Check if the MIME types are in the message itself or if we need
-                 * to fetch the XdndTypeList property from the window. */
-                if (!ASMBitTest(&pEventClient->data.l[1], 0))
-                {
-                    for (int i = 2; i < 5; ++i)
-                    {
-                        LogFlowThisFunc(("Received format via message: %s\n",
-                                         gX11->xAtomToString(pEventClient->data.l[i]).c_str()));
-
-                        m_lstFormats.append(pEventClient->data.l[i]);
-                    }
-                }
-                else
-                {
-                    rc = wndXDnDGetFormatList(wndSelection, m_lstFormats);
-                }
-
-                /*
-                 * Fetch the actions.
-                 */
-                rc = wndXDnDGetActionList(wndSelection, m_lstActions);
-
-                fAcceptDrop = true;
-            }
-            /* Did the source tell us where the cursor currently is? */
-            else if (pEventClient->message_type == xAtom(XA_XdndPosition))
-            {
-                LogFlowThisFunc(("XA_XdndPosition\n"));
-                fAcceptDrop = true;
-            }
-            else if (pEventClient->message_type == xAtom(XA_XdndLeave))
-            {
-                LogFlowThisFunc(("XA_XdndLeave\n"));
-            }
-
-            if (fAcceptDrop)
-            {
-                /* Reply with a XdndStatus message to tell the source whether
-                 * the data can be dropped or not. */
-                XClientMessageEvent m;
-                RT_ZERO(m);
-                m.type         = ClientMessage;
-                m.display      = m_pDisplay;
-                m.window       = m_wndCur;
-                m.message_type = xAtom(XA_XdndStatus);
-                m.format       = 32;
-                m.data.l[0]    = m_wndProxy;
-                m.data.l[1]    = RT_BIT(0); /* Accept the drop. */
-                m.data.l[4]    = xAtom(XA_XdndActionCopy); /** @todo Make the accepted action configurable. */
-
-                xRc = XSendEvent(m_pDisplay, m_wndCur,
-                                 False, 0, reinterpret_cast<XEvent*>(&m));
-                if (RT_UNLIKELY(xRc == 0))
-                {
-                    logError("Error sending position XA_XdndStatus event to current window=%#x: %s\n",
-                              m_wndCur, gX11->xErrorToString(xRc).c_str());
-                }
-            }
-        }
-
-        /* Do we need to acknowledge at least one format to the host? */
-        if (!m_lstFormats.isEmpty())
-        {
-            RTCString strFormats = gX11->xAtomListToString(m_lstFormats);
-            uint32_t uDefAction = DND_COPY_ACTION; /** @todo Handle default action! */
-            uint32_t uAllActions = toHGCMActions(m_lstActions);
-
-            rc = VbglR3DnDGHAcknowledgePending(&m_dndCtx, uDefAction, uAllActions, strFormats.c_str());
-            LogFlowThisFunc(("Acknowledging m_uClientID=%RU32, allActions=0x%x, strFormats=%s, rc=%Rrc\n",
-                             m_dndCtx.uClientID, uAllActions, strFormats.c_str(), rc));
+            /* Wait until we're in "Dragging" state. */
+            rc = waitForStatusChange(Dragging, 5 * 1000);
+            if (RT_SUCCESS(rc))
+                m_enmMode = GH;
         }
     }
+    else
+        RTThreadSleep(3000);
+
+    /*
+     * Acknowledge to the host in any case, regardless
+     * if something failed here or not. Be responsive.
+     */
+
+    int rc2 = RTCritSectEnter(&m_dataCS);
+    if (RT_SUCCESS(rc2))
+    {
+        strFormats   = gX11->xAtomListToString(m_lstFormats);
+        uDefAction   = DND_COPY_ACTION; /** @todo Handle default action! */
+        uAllActions  = DND_COPY_ACTION; /** @todo Ditto. */
+        uAllActions |= toHGCMActions(m_lstActions);
+
+        RTCritSectLeave(&m_dataCS);
+    }
+
+    rc2 = VbglR3DnDGHAcknowledgePending(&m_dndCtx, uDefAction, uAllActions, strFormats.c_str());
+    LogFlowThisFunc(("Pending status to host: uClientID=%RU32, uDefAction=0x%x, allActions=0x%x, strFormats=%s, rc=%Rrc\n",
+                     m_dndCtx.uClientID, uDefAction, uAllActions, strFormats.c_str(), rc2));
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    if (RT_FAILURE(rc)) /* Start over on failure. */
+        reset();
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1677,8 +1993,15 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
     LogFlowThisFunc(("mode=%RU32, state=%RU32, strFormat=%s, uAction=%RU32\n",
                      m_enmMode, m_enmState, strFormat.c_str(), uAction));
 
-    if (   m_enmMode  != GH
-        || m_enmState != Dragging)
+    /* Currently in wrong mode? Bail out. */
+    if (   m_enmMode == Unknown
+        || m_enmMode == HG)
+    {
+        return VERR_INVALID_STATE;
+    }
+
+    if (   m_enmMode  == GH
+        && m_enmState != Dragging)
     {
         return VERR_INVALID_STATE;
     }
@@ -1687,48 +2010,60 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 
     m_enmState = Dropped;
 
-    /* Show the proxy window, so that the source will find it. */
+    /* Show the proxy window, so that the current source window will find it. */
     int iRootX, iRootY;
     proxyWinShow(&iRootX, &iRootY);
-    XFlush(m_pDisplay);
 
 #ifdef DEBUG
     XWindowAttributes xwa;
     XGetWindowAttributes(m_pDisplay, m_wndCur, &xwa);
-    LogFlowThisFunc(("wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n", m_wndCur, xwa.x, xwa.y, xwa.width, xwa.height));
+    LogFlowThisFunc(("wndProxy=%#x, wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n",
+                     m_wndProxy, m_wndCur, xwa.x, xwa.y, xwa.width, xwa.height));
 #endif
 
     /* We send a fake release event to the current window, cause
      * this should have the grab. */
-    mouseButtonSet(m_wndCur /* Destination window */, iRootX, iRootY,
-                   1 /* Button */, false /* fPress */);
+#if 0
+    //mouseButtonSet(m_wndCur /* Destination window */, xwa.x + (xwa.width / 2), xwa.y + (xwa.height / 2), 1 /* Button */, false /* fPress */);
+#else
+    mouseButtonSet(m_wndCur /* Destination window */, -1 /* Root X */, -1 /* Root Y */, 1 /* Button */, false /* fPress */);
+#endif
 
     /**
      * The fake button release event above should lead to a XdndDrop event from the
-     * source. Because of showing our proxy window, other Xdnd events can
+     * source window. Because of showing our proxy window, other Xdnd events can
      * occur before, e.g. a XdndPosition event. We are not interested
      * in those, so just try to get the right one.
      */
 
     XClientMessageEvent evDnDDrop;
-    bool fDrop = waitForX11ClientMsg(evDnDDrop, xAtom(XA_XdndDrop), 5 * 1000 /* Timeout in ms */);
+    bool fDrop = waitForX11ClientMsg(evDnDDrop, xAtom(XA_XdndDrop), 5 * 1000 /* 5s timeout */);
     if (fDrop)
     {
         LogFlowThisFunc(("XA_XdndDrop\n"));
 
         /* Request to convert the selection in the specific format and
          * place it to our proxy window as property. */
-        Window wndSource = evDnDDrop.data.l[0]; /* Source window which has sent the message. */
+        Assert(evDnDDrop.message_type == xAtom(XA_XdndDrop));
+
+        Window wndSource = evDnDDrop.data.l[XdndDropWindow]; /* Source window which has sent the message. */
         Assert(wndSource == m_wndCur);
-        Atom aFormat  = gX11->stringToxAtom(strFormat.c_str());
+
+        Atom aFormat     = gX11->stringToxAtom(strFormat.c_str());
+
+        Time tsDrop;
+        if (m_curVer >= 1)
+            tsDrop = evDnDDrop.data.l[XdndDropTimeStamp];
+        else
+            tsDrop = CurrentTime;
 
         XConvertSelection(m_pDisplay, xAtom(XA_XdndSelection), aFormat, xAtom(XA_XdndSelection),
-                          m_wndProxy, evDnDDrop.data.l[2]);
+                          m_wndProxy, tsDrop);
 
         /* Wait for the selection notify event. */
         XEvent evSelNotify;
         RT_ZERO(evSelNotify);
-        if (waitForX11Msg(evSelNotify, SelectionNotify))
+        if (waitForX11Msg(evSelNotify, SelectionNotify, 5 * 1000 /* 5s timeout */))
         {
             bool fCancel = false;
 
@@ -1752,9 +2087,9 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                                              True                     /* Delete property? */,
                                              AnyPropertyType,         /* Property type */
                                              &aPropType, &iPropFormat, &cItems, &cbRemaining, &pcData);
-                if (RT_UNLIKELY(xRc != Success))
-                    LogFlowThisFunc(("Error getting XA_XdndSelection property of proxy window=%#x: %s\n",
-                                     m_wndProxy, gX11->xErrorToString(xRc).c_str()));
+                if (xRc != Success)
+                    logError("Error getting XA_XdndSelection property of proxy window=%#x: %s\n",
+                             m_wndProxy, gX11->xErrorToString(xRc).c_str());
 
                 LogFlowThisFunc(("strType=%s, iPropFormat=%d, cItems=%RU32, cbRemaining=%RU32\n",
                                  gX11->xAtomToString(aPropType).c_str(), iPropFormat, cItems, cbRemaining));
@@ -1796,6 +2131,9 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 
                     if (RT_SUCCESS(rc))
                     {
+                        /* Was the drop accepted by the host? That is, anything than ignoring. */
+                        bool fDropAccepted = uAction > DND_IGNORE_ACTION;
+
                         /* Confirm the result of the transfer to the target window. */
                         XClientMessageEvent m;
                         RT_ZERO(m);
@@ -1804,15 +2142,14 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                         m.window       = wndSource;
                         m.message_type = xAtom(XA_XdndFinished);
                         m.format       = 32;
-                        m.data.l[0]    = m_wndProxy;                   /* Target window. */
-                        m.data.l[1]    = 0;                            /* Don't accept the drop to not make the guest stuck. */
-                        m.data.l[2]    = RT_SUCCESS(rc)
-                                       ? toAtomAction(uAction) : None; /* Action used on success */
+                        m.data.l[XdndFinishedWindow] = m_wndProxy;                                   /* Target window. */
+                        m.data.l[XdndFinishedFlags]  = fDropAccepted ? RT_BIT(0) : 0;                /* Was the drop accepted? */
+                        m.data.l[XdndFinishedAction] = fDropAccepted ? toAtomAction(uAction) : None; /* Action used on accept. */
 
                         xRc = XSendEvent(m_pDisplay, wndSource, True, NoEventMask, reinterpret_cast<XEvent*>(&m));
-                        if (RT_UNLIKELY(xRc == 0))
-                            LogFlowThisFunc(("Error sending XA_XdndFinished event to proxy window=%#x: %s\n",
-                                             m_wndProxy, gX11->xErrorToString(xRc).c_str()));
+                        if (xRc == 0)
+                            logError("Error sending XA_XdndFinished event to source window=%#x: %s\n",
+                                     wndSource, gX11->xErrorToString(xRc).c_str());
                     }
                     else
                         fCancel = true;
@@ -1822,12 +2159,14 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                     if (aPropType == xAtom(XA_INCR))
                     {
                         /** @todo Support incremental transfers. */
-                        AssertMsgFailed(("Incrementally transfers are not supported yet\n"));
+                        AssertMsgFailed(("Incremental transfers are not supported yet\n"));
+
+                        logError("Incremental transfers are not supported yet\n");
                         rc = VERR_NOT_IMPLEMENTED;
                     }
                     else
                     {
-                        LogFlowFunc(("Not supported data type: %s\n", gX11->xAtomToString(aPropType).c_str()));
+                        logError("Not supported data type: %s\n", gX11->xAtomToString(aPropType).c_str());
                         rc = VERR_NOT_SUPPORTED;
                     }
 
@@ -1838,22 +2177,23 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                 {
                     LogFlowFunc(("Cancelling drop ...\n"));
 
-                    /* Cancel the operation -- inform the source window. */
+                    /* Cancel the operation -- inform the source window by
+                     * sending a XdndFinished message so that the source can toss the required data. */
                     XClientMessageEvent m;
                     RT_ZERO(m);
                     m.type         = ClientMessage;
                     m.display      = m_pDisplay;
                     m.window       = m_wndProxy;
-                    m.message_type = xAtom(XA_XdndLeave);
+                    m.message_type = xAtom(XA_XdndFinished);
                     m.format       = 32;
-                    m.data.l[0]    = wndSource;         /* Source window. */
+                    m.data.l[XdndFinishedWindow] = m_wndProxy; /* Target window. */
+                    m.data.l[XdndFinishedFlags]  = 0;          /* Did not accept the drop. */
+                    m.data.l[XdndFinishedAction] = None;       /* Action used on accept. */
 
                     xRc = XSendEvent(m_pDisplay, wndSource, False, NoEventMask, reinterpret_cast<XEvent*>(&m));
-                    if (RT_UNLIKELY(xRc == 0))
-                    {
-                        logError("Error sending XA_XdndLeave event to proxy window=%#x: %s\n",
-                                  m_wndProxy, gX11->xErrorToString(xRc).c_str());
-                    }
+                    if (xRc == 0)
+                        logError("Error sending XA_XdndFinished event to source window=%#x: %s\n",
+                                  wndSource, gX11->xErrorToString(xRc).c_str());
                 }
 
                 /* Cleanup. */
@@ -1873,11 +2213,13 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
     if (RT_FAILURE(rc))
     {
         int rc2 = VbglR3DnDGHSendError(&m_dndCtx, rc);
-        AssertRC(rc2);
+        LogFlowThisFunc(("Sending error to host resulted in %Rrc\n", rc2));
+        /* This is not fatal for us, just ignore. */
     }
 
     /* At this point, we have either successfully transfered any data or not.
-     * So reset our internal state because we are done here for this transaction. */
+     * So reset our internal state because we are done here for the current (ongoing)
+     * drag and drop operation. */
     reset();
 
     LogFlowFuncLeaveRC(rc);
@@ -1937,14 +2279,23 @@ void DragInstance::mouseButtonSet(Window wndDest, int rx, int ry, int iButton, b
         LogFlowThisFunc(("XText extension available\n"));
 
         int xRc = XTestFakeButtonEvent(m_pDisplay, 1, fPress ? True : False, CurrentTime);
-        if (RT_UNLIKELY(xRc == 0))
+        if (Rc == 0)
             logError("Error sending XTestFakeButtonEvent event: %s\n", gX11->xErrorToString(xRc).c_str());
         XFlush(m_pDisplay);
     }
     else
     {
 #endif
-        LogFlowThisFunc(("XText extension not available or disabled\n"));
+        LogFlowThisFunc(("Note: XText extension not available or disabled\n"));
+
+        if (   rx == -1
+            && ry == -1)
+        {
+            Window wndTemp, wndChild;
+            int wx, wy; unsigned int mask;
+            XQueryPointer(m_pDisplay, m_wndRoot, &wndTemp, &wndChild, &rx, &ry, &wx, &wy, &mask);
+            LogFlowThisFunc(("cursorRootX=%d, cursorRootY=%d\n", rx, ry));
+        }
 
         XButtonEvent eBtn;
         RT_ZERO(eBtn);
@@ -1966,24 +2317,20 @@ void DragInstance::mouseButtonSet(Window wndDest, int rx, int ry, int iButton, b
         eBtn.x_root       = rx;
         eBtn.y_root       = ry;
 
-        //XTranslateCoordinates(m_pDisplay, eBtn.root, eBtn.window, eBtn.x_root, eBtn.y_root, &eBtn.x, &eBtn.y, &eBtn.subwindow);
-#if 0
-        int xRc = XSendEvent(m_pDisplay, eBtn.window, True /* fPropagate */,
+        XTranslateCoordinates(m_pDisplay, eBtn.root, eBtn.window, eBtn.x_root, eBtn.y_root, &eBtn.x, &eBtn.y, &eBtn.subwindow);
+        LogFlowThisFunc(("x=%d, y=%d\n", eBtn.x, eBtn.y));
+#if 1
+        int xRc = XSendEvent(m_pDisplay, wndDest, True /* fPropagate */,
                                fPress
                              ? ButtonPressMask : ButtonReleaseMask,
                              reinterpret_cast<XEvent*>(&eBtn));
+        if (xRc == 0)
+            logError("Error sending XButtonEvent event to window=%#x: %s\n", wndDest, gX11->xErrorToString(xRc).c_str());
 #else
         int xRc = XSendEvent(m_pDisplay, eBtn.window, False /* fPropagate */,
                              0 /* Mask */, reinterpret_cast<XEvent*>(&eBtn));
-        if (RT_UNLIKELY(xRc == 0))
+        if (xRc == 0)
             logError("Error sending XButtonEvent event to window=%#x: %s\n", wndDest, gX11->xErrorToString(xRc).c_str());
-#endif
-
-#ifdef DEBUG
-        Window wndTemp, wndChild;
-        int wx, wy; unsigned int mask;
-        XQueryPointer(m_pDisplay, m_wndRoot, &wndTemp, &wndChild, &rx, &ry, &wx, &wy, &mask);
-        LogFlowThisFunc(("cursorRootX=%d, cursorRootY=%d\n", rx, ry));
 #endif
 
 #ifdef VBOX_DND_WITH_XTEST
@@ -2003,11 +2350,8 @@ void DragInstance::mouseButtonSet(Window wndDest, int rx, int ry, int iButton, b
  * @returns IPRT status code.
  * @param   piRootX                 X coordinate relative to the root window's origin. Optional.
  * @param   piRootY                 Y coordinate relative to the root window's origin. Optional.
- * @param   fMouseMove              Whether to move the mouse cursor to the root window's origin or not.
  */
-int DragInstance::proxyWinShow(int *piRootX /*= NULL*/,
-                               int *piRootY /*= NULL*/,
-                               bool fMouseMove /*= false */) const
+int DragInstance::proxyWinShow(int *piRootX /* = NULL */, int *piRootY /* = NULL */) const
 {
     /* piRootX is optional. */
     /* piRootY is optional. */
@@ -2017,7 +2361,9 @@ int DragInstance::proxyWinShow(int *piRootX /*= NULL*/,
     int rc = VINF_SUCCESS;
 
 #if 0
+# ifdef VBOX_DND_WITH_XTEST
     XTestGrabControl(m_pDisplay, False);
+# endif
 #endif
 
     /* Get the mouse pointer position and determine if we're on the same screen as the root window
@@ -2027,8 +2373,7 @@ int DragInstance::proxyWinShow(int *piRootX /*= NULL*/,
     unsigned int iMask;
     Window wndRoot, wndChild;
     Bool fInRootWnd = XQueryPointer(m_pDisplay, m_wndRoot, &wndRoot, &wndChild,
-                                    &iRootX, &iRootY,
-                                    &iChildX, &iChildY, &iMask);
+                                    &iRootX, &iRootY, &iChildX, &iChildY, &iMask);
 
     LogFlowThisFunc(("fInRootWnd=%RTbool, wndRoot=0x%x, wndChild=0x%x, iRootX=%d, iRootY=%d\n",
                      RT_BOOL(fInRootWnd), wndRoot, wndChild, iRootX, iRootY));
@@ -2046,18 +2391,22 @@ int DragInstance::proxyWinShow(int *piRootX /*= NULL*/,
 
     /* Spawn our proxy window over the entire screen, making it an easy drop target for the host's cursor. */
     int iScreenID = XDefaultScreen(m_pDisplay);
+    LogFlowThisFunc(("Proxy window screenID=%d, x=%d, y=%d, width=%d, height=%d\n",
+                     iScreenID, 0, 0, XDisplayWidth(m_pDisplay, iScreenID), XDisplayHeight(m_pDisplay, iScreenID)));
     XMoveResizeWindow(m_pDisplay, m_wndProxy, 0, 0, XDisplayWidth(m_pDisplay, iScreenID), XDisplayHeight(m_pDisplay, iScreenID));
     /** @todo What about multiple screens? Test this! */
 
-    if (fMouseMove)
-        rc = mouseCursorMove(iRootX, iRootY);
+    XFlush(m_pDisplay);
 
     XSynchronize(m_pDisplay, False /* Disable sync */);
 
 #if 0
+# ifdef VBOX_DND_WITH_XTEST
     XTestGrabControl(m_pDisplay, True);
+# endif
 #endif
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -2068,12 +2417,40 @@ int DragInstance::proxyWinHide(void)
 {
     LogFlowFuncEnter();
 
-#ifndef VBOX_DND_DEBUG_WND
     XUnmapWindow(m_pDisplay, m_wndProxy);
-#endif
-    m_eventQueue.clear();
+    XFlush(m_pDisplay);
+
+    m_eventQueueList.clear();
 
     return VINF_SUCCESS; /** @todo Add error checking. */
+}
+
+/**
+ * Allocates the name (title) of an X window.
+ * The returned pointer must be freed using RTStrFree().
+ *
+ * @returns Pointer to the allocated window name.
+ * @param   wndThis                 Window to retrieve name for.
+ *
+ * @remark If the window title is not available, the text
+ *         "<No name>" will be returned.
+ */
+char *DragInstance::wndX11GetNameA(Window wndThis) const
+{
+    char *pszName = NULL;
+
+    XTextProperty propName;
+    if (XGetWMName(m_pDisplay, wndThis, &propName))
+    {
+        if (propName.value)
+            pszName = RTStrDup((char *)propName.value); /** @todo UTF8? */
+        XFree(propName.value);
+    }
+
+    if (!pszName) /* No window name found? */
+        pszName = RTStrDup("<No name>");
+
+    return pszName;
 }
 
 /**
@@ -2122,16 +2499,16 @@ int DragInstance::wndXDnDGetActionList(Window wndThis, VBoxDnDAtomList &lstActio
         return VERR_NOT_FOUND;
     }
 
-    if (   cItems > 0
-        && pcbData)
+    LogFlowThisFunc(("wndThis=%#x, cItems=%RU32, pcbData=%p\n", wndThis, cItems, pcbData));
+
+    if (cItems > 0)
     {
+        AssertPtr(pcbData);
         Atom *paData = reinterpret_cast<Atom *>(pcbData);
 
         for (unsigned i = 0; i < RT_MIN(VBOX_MAX_XPROPERTIES, cItems); i++)
         {
-            LogFlowThisFunc(("Received action: %s\n",
-                             gX11->xAtomToString(paData[i]).c_str()));
-
+            LogFlowThisFunc(("\t%s\n", gX11->xAtomToString(paData[i]).c_str()));
             lstActions.append(paData[i]);
         }
 
@@ -2166,16 +2543,16 @@ int DragInstance::wndXDnDGetFormatList(Window wndThis, VBoxDnDAtomList &lstTypes
         return VERR_NOT_FOUND;
     }
 
-    if (   cItems > 0
-        && pcbData)
+    LogFlowThisFunc(("wndThis=%#x, cItems=%RU32, pcbData=%p\n", wndThis, cItems, pcbData));
+
+    if (cItems > 0)
     {
-        Atom *paData = reinterpret_cast<Atom*>(pcbData);
+        AssertPtr(pcbData);
+        Atom *paData = reinterpret_cast<Atom *>(pcbData);
 
         for (unsigned i = 0; i < RT_MIN(VBOX_MAX_XPROPERTIES, cItems); i++)
         {
-            LogFlowThisFunc(("Received format via XdndTypeList: %s\n",
-                             gX11->xAtomToString(paData[i]).c_str()));
-
+            LogFlowThisFunc(("\t%s\n", gX11->xAtomToString(paData[i]).c_str()));
             lstTypes.append(paData[i]);
         }
 
@@ -2219,7 +2596,7 @@ int DragInstance::wndXDnDSetActionList(Window wndThis, const VBoxDnDAtomList &ls
 int DragInstance::wndXDnDSetFormatList(Window wndThis, Atom atmProp, const VBoxDnDAtomList &lstFormats) const
 {
     if (lstFormats.isEmpty())
-        return VINF_SUCCESS;
+        return VERR_INVALID_PARAMETER;
 
     /* We support TARGETS and the data types. */
     VBoxDnDAtomList lstFormatsExt(lstFormats.size() + 1);
@@ -2360,7 +2737,7 @@ uint32_t DragInstance::toHGCMActions(const VBoxDnDAtomList &lstActions)
 {
     uint32_t uActions = DND_IGNORE_ACTION;
 
-    for (size_t i = 0; i < lstActions.size(); ++i)
+    for (size_t i = 0; i < lstActions.size(); i++)
         uActions |= toHGCMAction(lstActions.at(i));
 
     return uActions;
@@ -2405,6 +2782,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
             break;
 
         LogRel(("DnD: Started\n"));
+        LogRel2(("DnD: %sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
 
         /* Enter the main event processing loop. */
         do
@@ -2455,7 +2833,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                     }
                     case DragAndDropSvc::HOST_DND_HG_EVT_DROPPED:
                     {
-                        rc = m_pCurDnD->hgDrop();
+                        rc = m_pCurDnD->hgDrop(e.hgcm.u.a.uXpos, e.hgcm.u.a.uYpos, e.hgcm.u.a.uDefAction);
                         break;
                     }
                     case DragAndDropSvc::HOST_DND_HG_SND_DATA:
@@ -2477,24 +2855,17 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
 #endif
                     default:
                     {
-                        LogFlowThisFunc(("Unsupported message: %RU32\n", e.hgcm.uType));
+                        m_pCurDnD->logError("Received unsupported message: %RU32\n", e.hgcm.uType);
                         rc = VERR_NOT_SUPPORTED;
                         break;
                     }
                 }
 
                 LogFlowFunc(("Message %RU32 processed with %Rrc\n", e.hgcm.uType, rc));
-                if (   RT_FAILURE(rc)
-                    /*
-                     * Note: The hgXXX and ghXXX functions of the DnD instance above may return
-                     *       VERR_INVALID_STATE in case we're not in the expected state they want
-                     *       to operate in. As the user might drag content back and forth to/from
-                     *       the host/guest we don't want to reset the overall state here in case
-                     *       a VERR_INVALID_STATE occurs. Just continue in our initially set mode.
-                     */
-                    && rc != VERR_INVALID_STATE)
+                if (RT_FAILURE(rc))
                 {
-                    m_pCurDnD->logError("Error: Processing message %RU32 failed with %Rrc\n", e.hgcm.uType, rc);
+                    /* Tell the user. */
+                    m_pCurDnD->logError("Error processing message %RU32, failed with %Rrc, resetting all\n", e.hgcm.uType, rc);
 
                     /* If anything went wrong, do a reset and start over. */
                     m_pCurDnD->reset();
@@ -2652,7 +3023,7 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
         }
         else
         {
-            LogFlowFunc(("Processing next message failed with rc=%Rrc\n", rc));
+            LogRel(("DnD: Processing next message failed with rc=%Rrc\n", rc));
 
             /* Old(er) hosts either are broken regarding DnD support or otherwise
              * don't support the stuff we do on the guest side, so make sure we
@@ -2718,22 +3089,7 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
                         AssertPtr(pEvent);
 
                         RTCString strType = xAtomToString(pEvent->message_type);
-                        LogFlowFunc(("ClientMessage: %s (%RU32), serial=%RU32, wnd=%#x\n", strType.c_str(),
-                                     pEvent->message_type, pEvent->serial, pEvent->window));
-
-                        if (pEvent->message_type == xAtom(XA_XdndPosition))
-                        {
-                            int32_t dwPos = pEvent->data.l[2];
-                            int32_t dwAction = pEvent->data.l[4];
-
-                            LogFlowFunc(("XA_XdndPosition x=%RI32, y=%RI32, dwAction=%RI32\n",
-                                         RT_HIWORD(dwPos), RT_LOWORD(dwPos), dwAction));
-                        }
-                        else if (pEvent->message_type == xAtom(XA_XdndDrop))
-                        {
-                            LogFlowFunc(("XA_XdndDrop\n"));
-                        }
-
+                        LogFlowFunc(("ClientMessage: %s from wnd=%#x\n", strType.c_str(), pEvent->window));
                         break;
                     }
 
