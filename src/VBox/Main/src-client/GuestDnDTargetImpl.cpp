@@ -726,11 +726,18 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     /* Clear all remaining outgoing messages. */
     mDataBase.mListOutgoing.clear();
 
-    const char *pszFormat = pCtx->mFmtReq.c_str();
-    uint32_t cbFormat = pCtx->mFmtReq.length() + 1;
-
-    /* Do we need to build up a file tree? */
-    bool fHasURIList = DnDMIMEHasFileURLs(pszFormat, cbFormat);
+    /**
+     * Do we need to build up a file tree?
+     * Note: The decision whether we need to build up a file tree and sending
+     *       actual file data only depends on the actual formats offered by this target.
+     *       If the guest does not want an URI list ("text/uri-list") but text ("TEXT" and
+     *       friends) instead, still send the data over to the guest -- the file as such still
+     *       is needed on the guest in this case, as the guest then just wants a simple path
+     *       instead of an URI list (pointing to a file on the guest itself).
+     *
+     ** @todo Support more than one format; add a format<->function handler concept. Later. */
+    bool fHasURIList = std::find(m_vecFmtOff.begin(),
+                                 m_vecFmtOff.end(), "text/uri-list") != m_vecFmtOff.end();
     if (fHasURIList)
     {
         rc = i_sendURIData(pCtx, msTimeout);
@@ -1301,7 +1308,8 @@ int GuestDnDTarget::i_sendRawData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     GuestDnD *pInst = GuestDnDInst();
     AssertPtr(pInst);
 
-    /* At the moment we only allow up to 64K raw data. */
+    /** @todo At the moment we only allow sending up to 64K raw data. Fix this by
+     *        using HOST_DND_HG_SND_MORE_DATA. */
     size_t cbDataTotal = pCtx->mData.vecData.size();
     if (   !cbDataTotal
         || cbDataTotal > _64K)
@@ -1318,9 +1326,20 @@ int GuestDnDTarget::i_sendRawData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     Msg.setNextPointer((void*)&pCtx->mData.vecData.front(), (uint32_t)cbDataTotal);
     Msg.setNextUInt32(cbDataTotal);
 
-    LogFlowFunc(("%zu total bytes of raw data to transfer\n", cbDataTotal));
+    LogFlowFunc(("Transferring %zu total bytes of raw data ('%s')\n", cbDataTotal, pCtx->mFmtReq.c_str()));
 
-    return pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    int rc2;
+
+    int rc = pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    if (RT_FAILURE(rc))
+        rc2 = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, rc,
+                                        GuestDnDTarget::i_hostErrorToString(rc));
+    else
+        rc2 = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_COMPLETE, rc);
+    AssertRC(rc2);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 HRESULT GuestDnDTarget::cancel(BOOL *aVeto)
