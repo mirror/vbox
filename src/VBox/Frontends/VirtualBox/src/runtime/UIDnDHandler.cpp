@@ -142,35 +142,80 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
         return Qt::IgnoreAction;
 
     /* The format the guest requests. */
-    QString format;
+    QString strFormat;
     /* Ask the guest for dropping data. */
-    KDnDAction result = m_dndTarget.Drop(screenID,
-                                         x,
-                                         y,
-                                         toVBoxDnDAction(proposedAction),
-                                         toVBoxDnDActions(possibleActions),
-                                         pMimeData->formats().toVector(), format);
+    KDnDAction enmResult = m_dndTarget.Drop(screenID,
+                                            x,
+                                            y,
+                                            toVBoxDnDAction(proposedAction),
+                                            toVBoxDnDActions(possibleActions),
+                                            pMimeData->formats().toVector(), strFormat);
 
     /* Has the guest accepted the drop event? */
     if (   m_dndTarget.isOk()
-        && result != KDnDAction_Ignore)
+        && enmResult != KDnDAction_Ignore)
     {
-        /* Get the actual MIME data in the requested format. */
-        AssertPtr(pMimeData);
-        const QByteArray &d = pMimeData->data(format);
-        if (   !d.isEmpty()
-            && !format.isEmpty())
-        {
-            /* Convert the actual MIME data to a vector (needed for the COM wrapper). */
-            QVector<uint8_t> dv(d.size());
-            memcpy(dv.data(), d.constData(), d.size());
+        LogFlowFunc(("strFormat=%s ...\n", strFormat.toAscii().constData()));
 
-            CProgress progress = m_dndTarget.SendData(screenID, format, dv);
+        QByteArray arrBytes;
+
+        /*
+         * Does the host support the format requested by the guest?
+         * Lookup the format in the MIME data object.
+         */
+        AssertPtr(pMimeData);
+        if (pMimeData->formats().indexOf(strFormat) >= 0)
+        {
+            arrBytes = pMimeData->data(strFormat);
+            Assert(!arrBytes.isEmpty());
+        }
+        /*
+         * The host does not support the format requested by the guest.
+         * This can happen if the host wants to send plan text, for example, but
+         * the guest requested something else, e.g. an URI list.
+         *
+         * In that case dictate the guest to use a fixed format from the host,
+         * so instead returning the requested URI list, return the original
+         * data format from the host. The guest has to try to deal with that then.
+         **/
+        else
+        {
+            LogRel3(("DnD: Guest requested a different format '%s'\n", strFormat.toAscii().constData()));
+            LogRel3(("DnD: The host offered:\n"));
+#if 0
+            for (QStringList::iterator itFmt  = pMimeData->formats().begin();
+                                       itFmt != pMimeData->formats().end(); itFmt++)
+            {
+                QString strTemp = *itFmt;
+                LogRel3(("DnD: \t%s\n", strTemp.toAscii().constData()));
+            }
+#endif
+            if (pMimeData->hasText())
+            {
+                LogRel3(("DnD: Converting data to text ...\n"));
+                arrBytes  = pMimeData->text().toUtf8();
+                strFormat = "text/plain;charset=utf-8";
+            }
+            else
+            {
+                LogRel(("DnD: Error: Could not convert host format to guest format\n"));
+                enmResult = KDnDAction_Ignore;
+            }
+        }
+
+        if (arrBytes.size()) /* Anything to send? */
+        {
+            /* Convert data to a vector. */
+            QVector<uint8_t> vecData(arrBytes.size()); /** @todo Can this throw or anything? */
+            AssertReleaseMsg(vecData.size() == arrBytes.size(), ("Drag and drop format buffer size does not match"));
+            memcpy(vecData.data(), arrBytes.constData(), arrBytes.size());
+
+            /* Send data to the guest. */
+            LogRel3(("DnD: Host is sending %d bytes of data as '%s'\n", vecData.size(), strFormat.toAscii().constData()));
+            CProgress progress = m_dndTarget.SendData(screenID, strFormat, vecData);
 
             if (m_dndTarget.isOk())
             {
-                LogFlowFunc(("Transferring data to guest ...\n"));
-
                 msgCenter().showModalProgressDialog(progress,
                                                     tr("Dropping data ..."), ":/progress_dnd_hg_90px.png",
                                                     m_pParent);
@@ -184,15 +229,17 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
                         ||  progress.GetResultCode() != 0))
                 {
                     msgCenter().cannotDropDataToGuest(progress, m_pParent);
-                    result = KDnDAction_Ignore;
+                    enmResult = KDnDAction_Ignore;
                 }
             }
             else
             {
                 msgCenter().cannotDropDataToGuest(m_dndTarget, m_pParent);
-                result = KDnDAction_Ignore;
+                enmResult = KDnDAction_Ignore;
             }
         }
+        else /* Error. */
+            enmResult = KDnDAction_Ignore;
     }
 
     /*
@@ -202,7 +249,7 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
      */
     setMode(DNDMODE_UNKNOWN);
 
-    return toQtDnDAction(result);
+    return toQtDnDAction(enmResult);
 }
 
 void UIDnDHandler::dragLeave(ulong screenID)
