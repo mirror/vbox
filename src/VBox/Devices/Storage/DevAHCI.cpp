@@ -5715,30 +5715,33 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort, PAHCIREQ pAhciReqExcept)
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pAhciPort->aActiveTasks); i++)
     {
-        PAHCIREQ pAhciReq = (PAHCIREQ)ASMAtomicXchgPtr((void * volatile *)&pAhciPort->aActiveTasks[i], NULL);
-
-        if (   VALID_PTR(pAhciReq)
-            && pAhciReq != pAhciReqExcept)
+        PAHCIREQ pAhciReq = ASMAtomicReadPtrT(&pAhciPort->aActiveTasks[i], PAHCIREQ);
+        if (pAhciReq != pAhciReqExcept)
         {
-            bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_CANCELED, AHCITXSTATE_ACTIVE);
-            if (fXchg)
-            {
-                /* Task is active and was canceled. */
-                AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0,
-                                 ("Task was canceled but none is active\n"));
-                ASMAtomicDecU32(&pAhciPort->cTasksActive);
+            pAhciReq = (PAHCIREQ)ASMAtomicXchgPtr((void * volatile *)&pAhciPort->aActiveTasks[i], NULL);
 
-                /*
-                 * Clear the pointer in the cached array. The controller will allocate a
-                 * a new task structure for this tag.
-                 */
-                ASMAtomicWriteNullPtr(&pAhciPort->aActiveTasks[i]);
-                LogRel(("AHCI#%uP%u: Cancelled task %u\n", pAhciPort->CTX_SUFF(pDevIns)->iInstance,
-                        pAhciPort->iLUN, pAhciReq->uTag));
+            if (VALID_PTR(pAhciReq))
+            {
+                bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_CANCELED, AHCITXSTATE_ACTIVE);
+                if (fXchg)
+                {
+                    /* Task is active and was canceled. */
+                    AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0,
+                                     ("Task was canceled but none is active\n"));
+                    ASMAtomicDecU32(&pAhciPort->cTasksActive);
+
+                    /*
+                     * Clear the pointer in the cached array. The controller will allocate a
+                     * a new task structure for this tag.
+                     */
+                    ASMAtomicWriteNullPtr(&pAhciPort->aActiveTasks[i]);
+                    LogRel(("AHCI#%uP%u: Cancelled task %u\n", pAhciPort->CTX_SUFF(pDevIns)->iInstance,
+                            pAhciPort->iLUN, pAhciReq->uTag));
+                }
+                else
+                    AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_FREE,
+                              ("Invalid task state, must be free!\n"));
             }
-            else
-                AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_FREE,
-                          ("Invalid task state, must be free!\n"));
         }
     }
 
@@ -5959,7 +5962,10 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort)
     RTCritSectEnter(&pAhciPort->CritSectReqsFree);
     pAhciReq = RTListGetFirst(pAhciPort->pListReqsFree, AHCIREQ, NodeList);
     if (pAhciReq)
+    {
+        AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_FREE, ("Should be free!\n"));
         RTListNodeRemove(&pAhciReq->NodeList);
+    }
     RTCritSectLeave(&pAhciPort->CritSectReqsFree);
 
     if (!pAhciReq)
@@ -5977,6 +5983,7 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort)
  */
 static void ahciR3ReqFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
+    AssertMsg(pAhciReq->enmTxState != AHCITXSTATE_FREE, ("Double free!\n"));
     pAhciReq->enmTxState = AHCITXSTATE_FREE;
 
     RTCritSectEnter(&pAhciPort->CritSectReqsFree);
@@ -6016,6 +6023,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
      */
     bool fPortReset = ASMAtomicReadBool(&pAhciPort->fPortReset);
     bool fXchg = ASMAtomicCmpXchgPtr(&pAhciPort->aActiveTasks[pAhciReq->uTag], NULL, pAhciReq);
+    bool fReqErrSaved = false;
 
     /*
      * Leave a release log entry if the request was active for more than 25 seconds
@@ -6094,7 +6102,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 pAhciReq->cmdHdr.u32PRDBC = 0;
                 pAhciReq->uATARegError    = ID_ERR;
                 pAhciReq->uATARegStatus   = ATA_STAT_READY | ATA_STAT_ERR;
-                ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pAhciReq, NULL);
+                fReqErrSaved = ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pAhciReq, NULL);
             }
             else
                 ASMAtomicOrU32(&pAhciPort->u32TasksRedo, RT_BIT_32(pAhciReq->uTag));
@@ -6206,7 +6214,10 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     if (pAhciPort->cTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
         PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
 
-    if (pAhciReq && !(pAhciReq->fFlags & AHCI_REQ_IS_ON_STACK))
+    /* Don't free the request yet when it is saved for the error log page. */
+    if (   pAhciReq
+        && !(pAhciReq->fFlags & AHCI_REQ_IS_ON_STACK)
+        && !fReqErrSaved)
         ahciR3ReqFree(pAhciPort, pAhciReq);
     return fCanceled;
 }
@@ -6470,7 +6481,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
                             if (pTaskErr->enmTxDir == AHCITXDIR_TRIM)
                                 ahciTrimRangesDestroy(pTaskErr);
                             else if (pTaskErr->enmTxDir != AHCITXDIR_FLUSH)
-                                ahciIoBufFree(pAhciPort, pTaskErr, false /* fCopyToGuest */);
+                                ahciReqMemFree(pAhciPort, pTaskErr, true /* fForceFree */);
 
                             /* Finally free the error task state structure because it is completely unused now. */
                             RTMemFree(pTaskErr);
