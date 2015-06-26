@@ -781,6 +781,7 @@ static int vbglR3DnDHGProcessSendDataMessageLoop(PVBGLR3GUESTDNDCMDCTX pCtx,
             *pcbDataRecv = cbDataTotal;
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -817,25 +818,18 @@ static int vbglR3DnDHGProcessSendDataMessage(PVBGLR3GUESTDNDCMDCTX pCtx,
          * VBoxTray) small by not having too much redundant code. */
         AssertPtr(pcbFormatRecv);
         if (DnDMIMEHasFileURLs(pszFormat, *pcbFormatRecv))
-        {
             rc = vbglR3DnDHGProcessURIMessages(pCtx,
                                                ppvData,
                                                cbData,
                                                pcbDataRecv);
-        }
-        else
-            rc = VERR_NOT_SUPPORTED;
-
         if (RT_FAILURE(rc))
         {
-            if (RT_FAILURE(rc))
-            {
-                int rc2 = VbglR3DnDHGSetProgress(pCtx, DragAndDropSvc::DND_PROGRESS_ERROR, 100 /* Percent */, rc);
-                AssertRC(rc2);
-            }
+            int rc2 = VbglR3DnDHGSetProgress(pCtx, DragAndDropSvc::DND_PROGRESS_ERROR, 100 /* Percent */, rc);
+            AssertRC(rc2);
         }
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
