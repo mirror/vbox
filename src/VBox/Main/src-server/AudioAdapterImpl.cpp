@@ -322,27 +322,37 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
 
     if (mData->m->mAudioController != aAudioController)
     {
+        AudioCodecType_T defaultCodec;
+
         /*
          * which audio hardware type are we supposed to use?
          */
         switch (aAudioController)
         {
+            /* codec type needs to match the controller. */
             case AudioControllerType_AC97:
-            case AudioControllerType_SB16:
-            case AudioControllerType_HDA:
-            {
-                mData->m.backup();
-                mData->m->mAudioController = aAudioController;
-                alock.release();
-                AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-                mParent->i_setModified(Machine::IsModified_AudioAdapter);
+                defaultCodec = AudioCodecType_STAC9700;
                 break;
-            }
+            case AudioControllerType_SB16:
+                defaultCodec = AudioCodecType_SB16;
+                break;
+            case AudioControllerType_HDA:
+                defaultCodec = AudioCodecType_STAC9221;
+                break;
 
             default:
                 AssertMsgFailed (("Wrong audio controller type %d\n",
                                   aAudioController));
                 rc = E_FAIL;
+        }
+        if (rc == S_OK)
+        {
+            mData->m.backup();
+            mData->m->mAudioController = aAudioController;
+            mData->m->mAudioCodec = defaultCodec;
+            alock.release();
+            AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+            mParent->i_setModified(Machine::IsModified_AudioAdapter);
         }
     }
 
@@ -369,7 +379,7 @@ HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
     HRESULT rc = S_OK;
 
     /*
-     * which audio hardware type are we supposed to use?
+     * ensure that the codec type matches the audio controller
      */
     switch (mData->m->mAudioController)
     {
