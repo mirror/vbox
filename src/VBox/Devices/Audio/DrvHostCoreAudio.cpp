@@ -1506,7 +1506,8 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
 
     do
     {
-        size_t cbBuf = RT_MIN(AudioMixBufSizeBytes(&pHstStrmOut->MixBuf), pStreamOut->cbPCMBuf);
+        size_t cbMixBuf = AudioMixBufSizeBytes(&pHstStrmOut->MixBuf);
+        size_t cbBuf    = RT_MIN(cbMixBuf, pStreamOut->cbPCMBuf);
         size_t cbToRead = RT_MIN(cbBuf, RTCircBufFree(pStreamOut->pBuf));
         LogFlowFunc(("cbToRead=%zu\n", cbToRead));
 

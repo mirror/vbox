@@ -823,8 +823,8 @@ static DECLCALLBACK(int) drvHostALSAAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
      * the mixer buffer.
      */
     Assert(cAvail);
-    size_t cbToRead = RT_MIN(AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf, cAvail),
-                             AudioMixBufFreeBytes(&pHstStrmIn->MixBuf));
+    size_t cbMixFree = AudioMixBufFreeBytes(&pHstStrmIn->MixBuf);
+    size_t cbToRead = RT_MIN((size_t)AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf, cAvail), cbMixFree);
 
     LogFlowFunc(("cbToRead=%zu, cAvail=%RI32\n", cbToRead, cAvail));
 
