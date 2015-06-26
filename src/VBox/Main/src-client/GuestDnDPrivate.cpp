@@ -220,7 +220,7 @@ void GuestDnDResponse::reset(void)
     m_defAction  = 0;
     m_allActions = 0;
 
-    m_strFormat  = "";
+    m_strFmtReq  = "";
 }
 
 HRESULT GuestDnDResponse::resetProgress(const ComObjPtr<Guest>& pParent)
@@ -381,13 +381,13 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_REQ_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             if (   pCBData->cbFormat == 0
-                || pCBData->cbFormat >  _64K)
+                || pCBData->cbFormat > _64K)
             {
                 rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                setFormat(pCBData->pszFormat);
+                setFmtReq(pCBData->pszFormat);
 
                 rc = VINF_SUCCESS;
             }
@@ -427,7 +427,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             }
             else
             {
-                setFormat    (pCBData->pszFormat);
+                setFmtReq    (pCBData->pszFormat);
                 setDefAction (pCBData->uDefAction);
                 setAllActions(pCBData->uAllActions);
 
@@ -491,9 +491,13 @@ GuestDnD::GuestDnD(const ComObjPtr<Guest> &pGuest)
     m_pResponse = new GuestDnDResponse(pGuest);
 
     /* List of supported default MIME types. */
+    LogRel2(("DnD: Supported default host formats:\n"));
     const com::Utf8Str arrEntries[] = { VBOX_DND_FORMATS_DEFAULT };
     for (size_t i = 0; i < RT_ELEMENTS(arrEntries); i++)
+    {
         m_strDefaultFormats.push_back(arrEntries[i]);
+        LogRel2(("DnD: \t%s\n", arrEntries[i].c_str()));
+    }
 }
 
 GuestDnD::~GuestDnD(void)
@@ -576,12 +580,12 @@ DECLCALLBACK(int) GuestDnD::notifyDnDDispatcher(void *pvExtension, uint32_t u32F
 
 /* static */
 com::Utf8Str GuestDnD::toFormatString(const std::vector<com::Utf8Str> &lstSupportedFormats,
-                                      const std::vector<com::Utf8Str> &lstFormats)
+                                      const std::vector<com::Utf8Str> &lstWantedFormats)
 {
     com::Utf8Str strFormat;
-    for (size_t i = 0; i < lstFormats.size(); ++i)
+    for (size_t i = 0; i < lstWantedFormats.size(); ++i)
     {
-        const com::Utf8Str &f = lstFormats.at(i);
+        const com::Utf8Str &f = lstWantedFormats.at(i);
         /* Only keep allowed format types. */
         if (std::find(lstSupportedFormats.begin(),
                       lstSupportedFormats.end(), f) != lstSupportedFormats.end())
@@ -706,20 +710,20 @@ GuestDnDBase::GuestDnDBase(void)
     /*
      * Initialize public attributes.
      */
-    m_strFormats = GuestDnDInst()->defaultFormats();
+    m_vecFmtSup = GuestDnDInst()->defaultFormats();
 }
 
 HRESULT GuestDnDBase::i_isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported)
 {
-    *aSupported = std::find(m_strFormats.begin(),
-                            m_strFormats.end(), aFormat) != m_strFormats.end()
+    *aSupported = std::find(m_vecFmtSup.begin(),
+                            m_vecFmtSup.end(), aFormat) != m_vecFmtSup.end()
                 ? TRUE : FALSE;
     return S_OK;
 }
 
 HRESULT GuestDnDBase::i_getFormats(std::vector<com::Utf8Str> &aFormats)
 {
-    aFormats = m_strFormats;
+    aFormats = m_vecFmtSup;
 
     return S_OK;
 }
@@ -729,10 +733,10 @@ HRESULT GuestDnDBase::i_addFormats(const std::vector<com::Utf8Str> &aFormats)
     for (size_t i = 0; i < aFormats.size(); ++i)
     {
         Utf8Str strFormat = aFormats.at(i);
-        if (std::find(m_strFormats.begin(),
-                      m_strFormats.end(), strFormat) == m_strFormats.end())
+        if (std::find(m_vecFmtSup.begin(),
+                      m_vecFmtSup.end(), strFormat) == m_vecFmtSup.end())
         {
-            m_strFormats.push_back(strFormat);
+            m_vecFmtSup.push_back(strFormat);
         }
     }
 
@@ -744,10 +748,10 @@ HRESULT GuestDnDBase::i_removeFormats(const std::vector<com::Utf8Str> &aFormats)
     for (size_t i = 0; i < aFormats.size(); ++i)
     {
         Utf8Str strFormat = aFormats.at(i);
-        std::vector<com::Utf8Str>::iterator itFormat = std::find(m_strFormats.begin(),
-                                                                 m_strFormats.end(), strFormat);
-        if (itFormat != m_strFormats.end())
-            m_strFormats.erase(itFormat);
+        std::vector<com::Utf8Str>::iterator itFormat = std::find(m_vecFmtSup.begin(),
+                                                                 m_vecFmtSup.end(), strFormat);
+        if (itFormat != m_vecFmtSup.end())
+            m_vecFmtSup.erase(itFormat);
     }
 
     return S_OK;

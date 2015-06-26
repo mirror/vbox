@@ -146,8 +146,8 @@ typedef struct SENDDATACTX
     bool                                mIsActive;
     /** Target (VM) screen ID. */
     uint32_t                            mScreenID;
-    /** Drag'n drop format to send. */
-    com::Utf8Str                        mFormat;
+    /** Drag'n drop format requested by the guest. */
+    com::Utf8Str                        mFmtReq;
     /** Drag'n drop data to send.
      *  This can be arbitrary data or an URI list. */
     GuestDnDData                        mData;
@@ -360,8 +360,8 @@ public:
     void setDefAction(uint32_t a) { m_defAction = a; }
     uint32_t defAction(void) const { return m_defAction; }
 
-    void setFormat(const Utf8Str &strFormat) { m_strFormat = strFormat; }
-    Utf8Str format(void) const { return m_strFormat; }
+    void setFmtReq(const Utf8Str &strFormat) { m_strFmtReq = strFormat; }
+    Utf8Str fmtReq(void) const { return m_strFmtReq; }
 
     void reset(void);
 
@@ -382,11 +382,16 @@ protected:
 
     /** Pointer to context this class is tied to. */
     void                 *m_pvCtx;
+    /** Event for waiting for response. */
     RTSEMEVENT            m_EventSem;
+    /** Default action to perform in case of a
+     *  successful drop. */
     uint32_t              m_defAction;
+    /** Actions supported by the guest in case of
+     *  a successful drop. */
     uint32_t              m_allActions;
-    Utf8Str               m_strFormat;
-
+    /** Format requested by the guest. */
+    Utf8Str               m_strFmtReq;
     /** Pointer to IGuest parent object. */
     ComObjPtr<Guest>      m_parent;
     /** Pointer to associated progress object. Optional. */
@@ -450,7 +455,7 @@ public:
 
     /** @name Static helper methods.
      * @{ */
-    static com::Utf8Str        toFormatString(const std::vector<com::Utf8Str> &lstSupportedFormats, const std::vector<com::Utf8Str> &lstFormats);
+    static com::Utf8Str        toFormatString(const std::vector<com::Utf8Str> &lstSupportedFormats, const std::vector<com::Utf8Str> &lstWantedFormats);
     static void                toFormatVector(const std::vector<com::Utf8Str> &lstSupportedFormats, const com::Utf8Str &strFormats, std::vector<com::Utf8Str> &vecformats);
     static DnDAction_T         toMainAction(uint32_t uAction);
     static void                toMainActions(uint32_t uActions, std::vector<DnDAction_T> &vecActions);
@@ -527,7 +532,10 @@ protected:
     /** Pointer to guest implementation. */
     const ComObjPtr<Guest>          m_pGuest;
     /** List of supported MIME/Content-type formats. */
-    std::vector<com::Utf8Str>       m_strFormats;
+    std::vector<com::Utf8Str>       m_vecFmtSup;
+    /** List of offered/compatible MIME/Content-type formats to the
+     *  counterpart. */
+    std::vector<com::Utf8Str>       m_vecFmtOff;
     /** @}  */
 
     struct
