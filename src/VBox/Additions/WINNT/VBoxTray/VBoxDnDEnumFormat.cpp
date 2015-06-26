@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,7 @@
 
 
 
-VBoxDnDEnumFormatEtc::VBoxDnDEnumFormatEtc(FORMATETC *pFormatEtc, ULONG cFormats)
+VBoxDnDEnumFormatEtc::VBoxDnDEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats)
     : m_lRefCount(1),
       m_nIndex(0)
 {
@@ -111,7 +111,7 @@ STDMETHODIMP VBoxDnDEnumFormatEtc::QueryInterface(REFIID iid, void **ppvObject)
     return E_NOINTERFACE;
 }
 
-STDMETHODIMP VBoxDnDEnumFormatEtc::Next(ULONG cFormats, FORMATETC *pFormatEtc, ULONG *pcFetched)
+STDMETHODIMP VBoxDnDEnumFormatEtc::Next(ULONG cFormats, LPFORMATETC pFormatEtc, ULONG *pcFetched)
 {
     ULONG ulCopied  = 0;
 
@@ -157,7 +157,7 @@ STDMETHODIMP VBoxDnDEnumFormatEtc::Clone(IEnumFORMATETC **ppEnumFormatEtc)
 }
 
 /* static */
-void VBoxDnDEnumFormatEtc::CopyFormat(FORMATETC *pDest, FORMATETC *pSource)
+void VBoxDnDEnumFormatEtc::CopyFormat(LPFORMATETC pDest, LPFORMATETC pSource)
 {
     AssertPtrReturnVoid(pDest);
     AssertPtrReturnVoid(pSource);
@@ -172,7 +172,7 @@ void VBoxDnDEnumFormatEtc::CopyFormat(FORMATETC *pDest, FORMATETC *pSource)
 }
 
 /* static */
-HRESULT VBoxDnDEnumFormatEtc::CreateEnumFormatEtc(UINT nNumFormats, FORMATETC *pFormatEtc, IEnumFORMATETC **ppEnumFormatEtc)
+HRESULT VBoxDnDEnumFormatEtc::CreateEnumFormatEtc(UINT nNumFormats, LPFORMATETC pFormatEtc, IEnumFORMATETC **ppEnumFormatEtc)
 {
     AssertReturn(nNumFormats, E_INVALIDARG);
     AssertPtrReturn(pFormatEtc, E_INVALIDARG);

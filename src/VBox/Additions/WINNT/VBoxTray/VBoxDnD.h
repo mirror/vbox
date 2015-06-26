@@ -45,13 +45,9 @@ public:
 
 public:
 
-    VBoxDnDDataObject(FORMATETC *pFormatEtc = NULL, STGMEDIUM *pStgMed = NULL, ULONG cFormats = 0);
+    VBoxDnDDataObject(LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
     virtual ~VBoxDnDDataObject(void);
 
-public:
-
-    static int CreateDataObject(FORMATETC *pFormatEtc, STGMEDIUM *pStgMeds,
-                                ULONG cFormats, IDataObject **ppDataObject);
 public: /* IUnknown methods. */
 
     STDMETHOD(QueryInterface)(REFIID iid, void ** ppvObject);
@@ -60,13 +56,13 @@ public: /* IUnknown methods. */
 
 public: /* IDataObject methods. */
 
-    STDMETHOD(GetData)(FORMATETC *pFormatEtc, STGMEDIUM *pMedium);
-    STDMETHOD(GetDataHere)(FORMATETC *pFormatEtc, STGMEDIUM *pMedium);
-    STDMETHOD(QueryGetData)(FORMATETC *pFormatEtc);
-    STDMETHOD(GetCanonicalFormatEtc)(FORMATETC *pFormatEct,  FORMATETC *pFormatEtcOut);
-    STDMETHOD(SetData)(FORMATETC *pFormatEtc, STGMEDIUM *pMedium, BOOL fRelease);
+    STDMETHOD(GetData)(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium);
+    STDMETHOD(GetDataHere)(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium);
+    STDMETHOD(QueryGetData)(LPFORMATETC pFormatEtc);
+    STDMETHOD(GetCanonicalFormatEtc)(LPFORMATETC pFormatEct,  LPFORMATETC pFormatEtcOut);
+    STDMETHOD(SetData)(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium, BOOL fRelease);
     STDMETHOD(EnumFormatEtc)(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc);
-    STDMETHOD(DAdvise)(FORMATETC *pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection);
+    STDMETHOD(DAdvise)(LPFORMATETC pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection);
     STDMETHOD(DUnadvise)(DWORD dwConnection);
     STDMETHOD(EnumDAdvise)(IEnumSTATDATA **ppEnumAdvise);
 
@@ -80,20 +76,20 @@ public:
 
 protected:
 
-    bool LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex);
+    bool LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
     static HGLOBAL MemDup(HGLOBAL hMemSource);
-    void RegisterFormat(FORMATETC *pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
+    void RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 
-    Status     mStatus;
-    LONG       mRefCount;
-    ULONG      mcFormats;
-    FORMATETC *mpFormatEtc;
-    STGMEDIUM *mpStgMedium;
-    RTSEMEVENT mSemEvent;
-    RTCString  mstrFormat;
-    void      *mpvData;
-    uint32_t   mcbData;
+    Status      mStatus;
+    LONG        mRefCount;
+    ULONG       mcFormats;
+    LPFORMATETC mpFormatEtc;
+    LPSTGMEDIUM mpStgMedium;
+    RTSEMEVENT  mSemEvent;
+    RTCString   mstrFormat;
+    void       *mpvData;
+    uint32_t    mcbData;
 };
 
 class VBoxDnDDropSource : public IDropSource
@@ -179,7 +175,7 @@ class VBoxDnDEnumFormatEtc : public IEnumFORMATETC
 {
 public:
 
-    VBoxDnDEnumFormatEtc(FORMATETC *pFormatEtc, ULONG cFormats);
+    VBoxDnDEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats);
     virtual ~VBoxDnDEnumFormatEtc(void);
 
 public:
@@ -188,22 +184,22 @@ public:
     STDMETHOD_(ULONG, AddRef)(void);
     STDMETHOD_(ULONG, Release)(void);
 
-    STDMETHOD(Next)(ULONG cFormats, FORMATETC *pFormatEtc, ULONG *pcFetched);
+    STDMETHOD(Next)(ULONG cFormats, LPFORMATETC pFormatEtc, ULONG *pcFetched);
     STDMETHOD(Skip)(ULONG cFormats);
     STDMETHOD(Reset)(void);
-    STDMETHOD(Clone)(IEnumFORMATETC ** ppEnumFormatEtc);
+    STDMETHOD(Clone)(IEnumFORMATETC **ppEnumFormatEtc);
 
 public:
 
-    static void CopyFormat(FORMATETC *pFormatDest, FORMATETC *pFormatSource);
-    static HRESULT CreateEnumFormatEtc(UINT cFormats, FORMATETC *pFormatEtc, IEnumFORMATETC **ppEnumFormatEtc);
+    static void CopyFormat(LPFORMATETC pFormatDest, LPFORMATETC pFormatSource);
+    static HRESULT CreateEnumFormatEtc(UINT cFormats, LPFORMATETC pFormatEtc, IEnumFORMATETC **ppEnumFormatEtc);
 
 private:
 
     LONG        m_lRefCount;
     ULONG       m_nIndex;
     ULONG       m_nNumFormats;
-    FORMATETC * m_pFormatEtc;
+    LPFORMATETC m_pFormatEtc;
 };
 
 struct VBOXDNDCONTEXT;
@@ -368,10 +364,10 @@ public: /** @todo Make protected! */
      *  client can handle. Make this a per-instance
      *  property so that we can selectively allow/forbid
      *  certain types later on runtime. */
-    RTCList<RTCString>         lstAllowedFormats;
+    RTCList<RTCString>         lstFmtSup;
     /** List of formats for the current
      *  drag'n drop operation. */
-    RTCList<RTCString>         lstFormats;
+    RTCList<RTCString>         lstFmtActive;
     /** Flags of all current drag'n drop
      *  actions allowed. */
     uint32_t                   uAllActions;

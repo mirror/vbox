@@ -81,7 +81,7 @@ VBoxDnDWnd::VBoxDnDWnd(void)
     for (size_t i = 0; i < RT_ELEMENTS(arrEntries); i++)
     {
         LogFlowFunc(("\t%s\n", arrEntries[i].c_str()));
-        this->lstAllowedFormats.append(arrEntries[i]);
+        this->lstFmtSup.append(arrEntries[i]);
     }
 }
 
@@ -748,42 +748,94 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
     reset();
     setMode(HG);
 
-    /* Save all allowed actions. */
-    this->uAllActions = uAllActions;
-
-    /*
-     * Check if requested formats are compatible with this client.
-     */
-    LogFlowThisFunc(("Supported formats:\n"));
-    for (size_t i = 0; i < lstFormats.size(); i++)
-    {
-        bool fSupported = false;
-        for (size_t a = 0; a < this->lstAllowedFormats.size(); a++)
-        {
-            LogFlowThisFunc(("\t\"%s\" <=> \"%s\"\n", this->lstAllowedFormats.at(a).c_str(), lstFormats.at(i).c_str()));
-            fSupported = RTStrICmp(this->lstAllowedFormats.at(a).c_str(), lstFormats.at(i).c_str()) == 0;
-            if (fSupported)
-            {
-                this->lstFormats.append(lstFormats.at(i));
-                break;
-            }
-        }
-
-        LogFlowThisFunc(("\t%s: %RTbool\n", lstFormats.at(i).c_str(), fSupported));
-    }
-
-    /*
-     * Warn in the log if this guest does not accept anything.
-     */
-    if (!this->lstFormats.size())
-        LogRel(("DnD: Warning: No supported drag and drop formats on the guest found!\n"));
-
-    /*
-     * Prepare the startup info for DoDragDrop().
-     */
     int rc = VINF_SUCCESS;
+
     try
     {
+        /* Save all allowed actions. */
+        this->uAllActions = uAllActions;
+
+        /*
+         * Check if reported formats from host are compatible with this client.
+         */
+        size_t cFormatsSup    = this->lstFmtSup.size();
+        size_t cFormatsActive = 0;
+
+        LPFORMATETC pFormatEtc = new FORMATETC[cFormatsSup];
+        RT_BZERO(pFormatEtc, sizeof(FORMATETC) * cFormatsSup);
+
+        LPSTGMEDIUM pStgMeds   = new STGMEDIUM[cFormatsSup];
+        RT_BZERO(pStgMeds, sizeof(STGMEDIUM) * cFormatsSup);
+
+        LogRel2(("DnD: Reported formats:\n"));
+        for (size_t i = 0; i < lstFormats.size(); i++)
+        {
+            bool fSupported = false;
+            for (size_t a = 0; a < this->lstFmtSup.size(); a++)
+            {
+                const char *pszFormat = lstFormats.at(i).c_str();
+                LogFlowThisFunc(("\t\"%s\" <=> \"%s\"\n", this->lstFmtSup.at(a).c_str(), pszFormat));
+
+                fSupported = RTStrICmp(this->lstFmtSup.at(a).c_str(), pszFormat) == 0;
+                if (fSupported)
+                {
+                    this->lstFmtActive.append(lstFormats.at(i));
+
+                    /** @todo Put this into a #define / struct. */
+                    if (!RTStrICmp(pszFormat, "text/uri-list"))
+                    {
+                        pFormatEtc[cFormatsActive].cfFormat = CF_HDROP;
+                        pFormatEtc[cFormatsActive].dwAspect = DVASPECT_CONTENT;
+                        pFormatEtc[cFormatsActive].lindex   = -1;
+                        pFormatEtc[cFormatsActive].tymed    = TYMED_HGLOBAL;
+
+                        pStgMeds  [cFormatsActive].tymed    = TYMED_HGLOBAL;
+                        cFormatsActive++;
+                    }
+                    else if (   !RTStrICmp(pszFormat, "text/plain")
+                             || !RTStrICmp(pszFormat, "text/html")
+                             || !RTStrICmp(pszFormat, "text/plain;charset=utf-8")
+                             || !RTStrICmp(pszFormat, "text/plain;charset=utf-16")
+                             || !RTStrICmp(pszFormat, "text/plain")
+                             || !RTStrICmp(pszFormat, "text/richtext")
+                             || !RTStrICmp(pszFormat, "UTF8_STRING")
+                             || !RTStrICmp(pszFormat, "TEXT")
+                             || !RTStrICmp(pszFormat, "STRING"))
+                    {
+                        pFormatEtc[cFormatsActive].cfFormat = CF_TEXT;
+                        pFormatEtc[cFormatsActive].dwAspect = DVASPECT_CONTENT;
+                        pFormatEtc[cFormatsActive].lindex   = -1;
+                        pFormatEtc[cFormatsActive].tymed    = TYMED_HGLOBAL;
+
+                        pStgMeds  [cFormatsActive].tymed    = TYMED_HGLOBAL;
+                        cFormatsActive++;
+                    }
+                    else /* Should never happen. */
+                        AssertReleaseFailedBreak(("Format specification for '%s' not implemented\n", pszFormat));
+                    break;
+                }
+            }
+
+            LogRel2(("DnD: \t%s: %RTbool\n", lstFormats.at(i).c_str(), fSupported));
+        }
+
+        /*
+         * Warn in the log if this guest does not accept anything.
+         */
+        Assert(cFormatsActive <= cFormatsSup);
+        if (cFormatsActive)
+        {
+            LogRel2(("DnD: %RU32 supported formats found:\n", cFormatsActive));
+            for (size_t i = 0; i < cFormatsActive; i++)
+                LogRel2(("DnD: \t%s\n", this->lstFmtActive.at(i).c_str()));
+        }
+        else
+            LogRel(("DnD: Warning: No supported drag and drop formats on the guest found!\n"));
+
+        /*
+         * Prepare the startup info for DoDragDrop().
+         */
+
         /* Translate our drop actions into allowed Windows drop effects. */
         startupInfo.dwOKEffects = DROPEFFECT_NONE;
         if (uAllActions)
@@ -796,8 +848,15 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
                 startupInfo.dwOKEffects |= DROPEFFECT_LINK;
         }
 
+        LogRel2(("DnD: Supported drop actions: 0x%x\n", startupInfo.dwOKEffects));
+
         startupInfo.pDropSource = new VBoxDnDDropSource(this);
-        startupInfo.pDataObject = new VBoxDnDDataObject();
+        startupInfo.pDataObject = new VBoxDnDDataObject(pFormatEtc, pStgMeds, cFormatsActive);
+
+        if (pFormatEtc)
+            delete pFormatEtc;
+        if (pStgMeds)
+            delete pStgMeds;
     }
     catch (std::bad_alloc)
     {
@@ -902,10 +961,10 @@ int VBoxDnDWnd::OnHgDrop(void)
     int rc = VINF_SUCCESS;
     if (mState == Dragging)
     {
-        if (lstFormats.size() >= 1)
+        if (lstFmtActive.size() >= 1)
         {
             /** @todo What to do when multiple formats are available? */
-            mFormatRequested = lstFormats.at(0);
+            mFormatRequested = lstFmtActive.at(0);
 
             rc = RTCritSectEnter(&mCritSect);
             if (RT_SUCCESS(rc))
@@ -1427,7 +1486,7 @@ void VBoxDnDWnd::reset(void)
      *       so keep this in mind when implementing this.
      */
 
-    this->lstFormats.clear();
+    this->lstFmtActive.clear();
     this->uAllActions = DND_IGNORE_ACTION;
 
     int rc2 = setMode(Unknown);

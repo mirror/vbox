@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2014 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,8 +40,7 @@
 
 /** @todo Implement IDataObjectAsyncCapability interface? */
 
-VBoxDnDDataObject::VBoxDnDDataObject(FORMATETC *pFormatEtc,
-                                     STGMEDIUM *pStgMed, ULONG cFormats)
+VBoxDnDDataObject::VBoxDnDDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
     : mStatus(Uninitialized),
       mRefCount(1),
       mcFormats(0),
@@ -50,8 +49,8 @@ VBoxDnDDataObject::VBoxDnDDataObject(FORMATETC *pFormatEtc,
 {
     HRESULT hr;
 
-    /* Make sure that there's enough room for our fixed formats. */
-    ULONG cAllFormats = cFormats + 1;
+    ULONG cFixedFormats = 1;
+    ULONG cAllFormats   = cFormats + cFixedFormats;
 
     try
     {
@@ -60,9 +59,15 @@ VBoxDnDDataObject::VBoxDnDDataObject(FORMATETC *pFormatEtc,
         mpStgMedium = new STGMEDIUM[cAllFormats];
         RT_BZERO(mpStgMedium, sizeof(STGMEDIUM) * cAllFormats);
 
-        if (   pFormatEtc
-            && pStgMed)
+        /*
+         * Registration of dynamic formats needed?
+         */
+        LogFlowFunc(("%RU32 dynamic formats\n", cFormats));
+        if (cFormats)
         {
+            AssertPtr(pFormatEtc);
+            AssertPtr(pStgMed);
+
             for (ULONG i = 0; i < cFormats; i++)
             {
                 LogFlowFunc(("Format %RU32: cfFormat=%RI16, tyMed=%RU32, dwAspect=%RU32\n",
@@ -84,10 +89,14 @@ VBoxDnDDataObject::VBoxDnDDataObject(FORMATETC *pFormatEtc,
         int rc2 = RTSemEventCreate(&mSemEvent);
         AssertRC(rc2);
 
-        /* Most commonly used format. */
+        /*
+         * Register fixed formats.
+         */
+#if 0
+        /* CF_HDROP. */
         RegisterFormat(&mpFormatEtc[cFormats], CF_HDROP);
         mpStgMedium[cFormats++].tymed = TYMED_HGLOBAL;
-#if 0
+
         /* IStream. */
         RegisterFormat(&mpFormatEtc[cFormats++],
                        RegisterClipboardFormat(CFSTR_FILEDESCRIPTOR));
@@ -106,7 +115,7 @@ VBoxDnDDataObject::VBoxDnDDataObject(FORMATETC *pFormatEtc,
                        RegisterClipboardFormat(CFSTR_SHELLIDLISTOFFSET));
 #endif
         mcFormats = cFormats;
-        mStatus = Initialized;
+        mStatus   = Initialized;
     }
 
     LogFlowFunc(("cFormats=%RU32, hr=%Rhrc\n", cFormats, hr));
@@ -124,28 +133,6 @@ VBoxDnDDataObject::~VBoxDnDDataObject(void)
         RTMemFree(mpvData);
 
     LogFlowFunc(("mRefCount=%RI32\n", mRefCount));
-}
-
-/* static */
-int VBoxDnDDataObject::CreateDataObject(FORMATETC *pFormatEtc, STGMEDIUM *pStgMeds,
-                                        ULONG cFormats, IDataObject **ppDataObject)
-{
-    AssertPtrReturn(pFormatEtc, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStgMeds, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppDataObject, VERR_INVALID_POINTER);
-
-    int rc;
-    try
-    {
-        *ppDataObject = new VBoxDnDDataObject(pFormatEtc, pStgMeds, cFormats);
-        rc = VINF_SUCCESS;
-    }
-    catch(std::bad_alloc &)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-
-    return rc;
 }
 
 /*
@@ -194,7 +181,7 @@ STDMETHODIMP VBoxDnDDataObject::QueryInterface(REFIID iid, void **ppvObject)
  * @param   pFormatEtc
  * @param   pMedium
  */
-STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
+STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
 {
     AssertPtrReturn(pFormatEtc, DV_E_FORMATETC);
     AssertPtrReturn(pMedium, DV_E_FORMATETC);
@@ -205,15 +192,15 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
     if (lIndex >= mcFormats) /* Paranoia. */
         return DV_E_FORMATETC;
 
-    FORMATETC *pThisFormat = &mpFormatEtc[lIndex];
+    LPFORMATETC pThisFormat = &mpFormatEtc[lIndex];
     AssertPtr(pThisFormat);
 
-    STGMEDIUM *pThisMedium = &mpStgMedium[lIndex];
+    LPSTGMEDIUM pThisMedium = &mpStgMedium[lIndex];
     AssertPtr(pThisMedium);
 
     LogFlowFunc(("Using pThisFormat=%p, pThisMedium=%p\n", pThisFormat, pThisMedium));
 
-    HRESULT hr = DV_E_FORMATETC;
+    HRESULT hr = DV_E_FORMATETC; /* Play safe. */
 
     LogFlowFunc(("mStatus=%ld\n", mStatus));
     if (mStatus == Dropping)
@@ -225,12 +212,21 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
 
     if (mStatus == Dropped)
     {
-        LogFlowFunc(("cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
-                     pThisFormat->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
-                     pThisFormat->tymed, pThisFormat->dwAspect));
-        LogFlowFunc(("Got strFormat=%s, pvData=%p, cbData=%RU32\n",
-                     mstrFormat.c_str(), mpvData, mcbData));
+        LogRel3(("DnD: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
+                 pThisFormat->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
+                 pThisFormat->tymed, pThisFormat->dwAspect));
+        LogRel3(("DnD: Got strFormat=%s, pvData=%p, cbData=%RU32\n",
+                  mstrFormat.c_str(), mpvData, mcbData));
 
+        /*
+         * Initialize default values.
+         */
+        pMedium->tymed          = pThisFormat->tymed;
+        pMedium->pUnkForRelease = NULL;
+
+        /*
+         * URI list handling.
+         */
         if (mstrFormat.equalsIgnoreCase("text/uri-list"))
         {
             RTCList<RTCString> lstFilesURI = RTCString((char*)mpvData, mcbData).split("\r\n");
@@ -371,8 +367,35 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
                     hr = DV_E_FORMATETC;
             }
         }
+        /*
+         * Plain text handling.
+         */
+        else if (   mstrFormat.equalsIgnoreCase("text/plain")
+                 || mstrFormat.equalsIgnoreCase("text/html")
+                 || mstrFormat.equalsIgnoreCase("text/plain;charset=utf-8")
+                 || mstrFormat.equalsIgnoreCase("text/plain;charset=utf-16")
+                 || mstrFormat.equalsIgnoreCase("text/plain")
+                 || mstrFormat.equalsIgnoreCase("text/richtext")
+                 || mstrFormat.equalsIgnoreCase("UTF8_STRING")
+                 || mstrFormat.equalsIgnoreCase("TEXT")
+                 || mstrFormat.equalsIgnoreCase("STRING"))
+        {
+            pMedium->hGlobal = GlobalAlloc(GHND, mcbData + 1);
+            if (pMedium->hGlobal)
+            {
+                char *pcDst  = (char *)GlobalLock(pMedium->hGlobal);
+                memcpy(pcDst, mpvData, mcbData);
+                pcDst[mcbData] = '\0';
+                GlobalUnlock(pMedium->hGlobal);
+
+                hr = S_OK;
+            }
+        }
+        else
+            LogRel(("DnD: Error: Format '%s' not implemented\n", mstrFormat.c_str()));
     }
 
+    /* Error handling; at least return some basic data. */
     if (FAILED(hr))
     {
         LogFlowFunc(("Copying medium ...\n"));
@@ -392,6 +415,9 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
         pMedium->pUnkForRelease = NULL;
     }
 
+    if (hr == DV_E_FORMATETC)
+        LogRel(("DnD: Error handling format '%s' (%RU32 bytes)\n", mstrFormat.c_str(), mcbData));
+
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
 }
@@ -404,7 +430,7 @@ STDMETHODIMP VBoxDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMediu
  * @param   pFormatEtc
  * @param   pMedium
  */
-STDMETHODIMP VBoxDnDDataObject::GetDataHere(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
+STDMETHODIMP VBoxDnDDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
 {
     LogFlowFunc(("\n"));
     return DATA_E_FORMATETC;
@@ -417,13 +443,13 @@ STDMETHODIMP VBoxDnDDataObject::GetDataHere(FORMATETC *pFormatEtc, STGMEDIUM *pM
  * @return  HRESULT
  * @param   pFormatEtc
  */
-STDMETHODIMP VBoxDnDDataObject::QueryGetData(FORMATETC *pFormatEtc)
+STDMETHODIMP VBoxDnDDataObject::QueryGetData(LPFORMATETC pFormatEtc)
 {
     LogFlowFunc(("\n"));
     return (LookupFormatEtc(pFormatEtc, NULL /* puIndex */)) ? S_OK : DV_E_FORMATETC;
 }
 
-STDMETHODIMP VBoxDnDDataObject::GetCanonicalFormatEtc(FORMATETC *pFormatEct, FORMATETC *pFormatEtcOut)
+STDMETHODIMP VBoxDnDDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEct, LPFORMATETC pFormatEtcOut)
 {
     LogFlowFunc(("\n"));
 
@@ -432,7 +458,7 @@ STDMETHODIMP VBoxDnDDataObject::GetCanonicalFormatEtc(FORMATETC *pFormatEct, FOR
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxDnDDataObject::SetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium,  BOOL fRelease)
+STDMETHODIMP VBoxDnDDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium,  BOOL fRelease)
 {
     return E_NOTIMPL;
 }
@@ -454,7 +480,7 @@ STDMETHODIMP VBoxDnDDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC 
     return hr;
 }
 
-STDMETHODIMP VBoxDnDDataObject::DAdvise(FORMATETC *pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection)
+STDMETHODIMP VBoxDnDDataObject::DAdvise(LPFORMATETC pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection)
 {
     return OLE_E_ADVISENOTSUPPORTED;
 }
@@ -563,7 +589,7 @@ const char* VBoxDnDDataObject::ClipboardFormatToString(CLIPFORMAT fmt)
     return "unknown";
 }
 
-bool VBoxDnDDataObject::LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex)
+bool VBoxDnDDataObject::LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex)
 {
     AssertReturn(pFormatEtc, false);
     /* puIndex is optional. */
@@ -574,20 +600,19 @@ bool VBoxDnDDataObject::LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex)
             && pFormatEtc->cfFormat == mpFormatEtc[i].cfFormat
             && pFormatEtc->dwAspect == mpFormatEtc[i].dwAspect)
         {
-            LogFlowFunc(("Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
-                         pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mpFormatEtc[i].cfFormat),
-                         pFormatEtc->dwAspect, i));
+            LogRel3(("DnD: Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
+                      pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mpFormatEtc[i].cfFormat),
+                      pFormatEtc->dwAspect, i));
             if (puIndex)
                 *puIndex = i;
             return true;
         }
     }
 
-#ifdef VBOX_DND_DEBUG_FORMATS
-    LogFlowFunc(("Format NOT found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32\n",
-                 pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
-                 pFormatEtc->dwAspect));
-#endif
+    LogRel3(("DnD: Format NOT found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32\n",
+             pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
+             pFormatEtc->dwAspect));
+
     return false;
 }
 
@@ -610,7 +635,7 @@ HGLOBAL VBoxDnDDataObject::MemDup(HGLOBAL hMemSource)
     return NULL;
 }
 
-void VBoxDnDDataObject::RegisterFormat(FORMATETC *pFormatEtc, CLIPFORMAT clipFormat,
+void VBoxDnDDataObject::RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat,
                                        TYMED tyMed, LONG lIndex, DWORD dwAspect,
                                        DVTARGETDEVICE *pTargetDevice)
 {
