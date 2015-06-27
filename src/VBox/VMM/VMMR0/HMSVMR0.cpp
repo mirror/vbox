@@ -2014,10 +2014,17 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * Guest TR.
      * Fixup TR attributes so it's compatible with Intel. Important when saved-states are used
      * between Intel and AMD. See @bugref{6208} comment #39.
+     * ASSUME that it's normally correct and that we're in 32-bit or 64-bit mode.
      */
     HMSVM_SAVE_SEG_REG(TR, tr);
-    if (CPUMIsGuestInLongModeEx(pMixedCtx))
-        pMixedCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_386_TSS_BUSY;
+    if (pMixedCtx->tr.Attr.n.u4Type != X86_SEL_TYPE_SYS_386_TSS_BUSY)
+    {
+        if (   pMixedCtx->tr.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL
+            || CPUMIsGuestInLongModeEx(pMixedCtx))
+            pMixedCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_386_TSS_BUSY;
+        else if (pMixedCtx->tr.Attr.n.u4Type == X86_SEL_TYPE_SYS_286_TSS_AVAIL)
+            pMixedCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_286_TSS_BUSY;
+    }
 
     /*
      * Guest Descriptor-Table registers.
