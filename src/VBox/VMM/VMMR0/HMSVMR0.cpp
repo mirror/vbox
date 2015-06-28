@@ -4817,7 +4817,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                         rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1REP, (uint8_t)cbInstr,
                                                         IoExitInfo.n.u3SEG);
                     }
-                    else if (cbInstr != 1U + IoExitInfo.n.u1REP)
+                    else if (cbInstr == 1U + IoExitInfo.n.u1REP)
                         rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1REP, (uint8_t)cbInstr,
                                                         X86_SREG_DS);
                     else
