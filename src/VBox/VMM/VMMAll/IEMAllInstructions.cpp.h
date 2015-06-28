@@ -8736,7 +8736,7 @@ FNIEMOP_DEF(iemOp_outsb_Yb_DX)
     IEMOP_HLP_NO_LOCK_PREFIX();
     if (pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
-        IEMOP_MNEMONIC("rep out DX,Yb");
+        IEMOP_MNEMONIC("rep outs DX,Yb");
         switch (pIemCpu->enmEffAddrMode)
         {
             case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op8_addr16, pIemCpu->iEffSeg, false);
@@ -8747,7 +8747,7 @@ FNIEMOP_DEF(iemOp_outsb_Yb_DX)
     }
     else
     {
-        IEMOP_MNEMONIC("out DX,Yb");
+        IEMOP_MNEMONIC("outs DX,Yb");
         switch (pIemCpu->enmEffAddrMode)
         {
             case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op8_addr16, pIemCpu->iEffSeg, false);
