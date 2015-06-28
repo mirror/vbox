@@ -564,7 +564,32 @@ class PlatformMSCOM(PlatformBase):
         return oInterface.__getattr__(sAttrib)
 
     def setArray(self, oInterface, sAttrib, aoArray):
-        return oInterface.__setattr__(sAttrib, aoArray)
+        #
+        # HACK ALERT!
+        #
+        # With pywin32 build 218, we're seeing type mismatch errors here for
+        # IGuestSession::environmentChanges (safearray of BSTRs). The Dispatch
+        # object (_oleobj_) seems to get some type conversion wrong and COM
+        # gets upset.  So, we redo some of the dispatcher work here, picking
+        # the missing type information from the getter.
+        #
+        oOleObj     = getattr(oInterface, '_oleobj_');
+        aPropMapGet = getattr(oInterface, '_prop_map_get_');
+        aPropMapPut = getattr(oInterface, '_prop_map_put_');
+        sComAttrib  = sAttrib if sAttrib in aPropMapGet else ComifyName(sAttrib);
+        try:
+            aArgs, aDefaultArgs = aPropMapPut[sComAttrib];
+            aGetArgs            = aPropMapGet[sComAttrib];
+        except KeyError: # fallback.
+            return oInterface.__setattr__(sAttrib, aoArray);
+
+        import pythoncom;
+        oOleObj.InvokeTypes(aArgs[0],                   # dispid
+                            aArgs[1],                   # LCID
+                            aArgs[2],                   # DISPATCH_PROPERTYPUT
+                            (pythoncom.VT_HRESULT, 0),  # retType - or void?
+                            (aGetArgs[2],),             # argTypes - trick: we get the type from the getter.
+                            aoArray,);                  # The array
 
     def initPerThread(self):
         import pythoncom
