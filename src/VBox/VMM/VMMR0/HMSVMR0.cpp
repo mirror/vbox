@@ -4803,7 +4803,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             uint64_t cbInstr = pVmcb->ctrl.u64ExitInfo2 - pCtx->rip;
             if (cbInstr <= 15 && cbInstr >= 1)
             {
-                Assert(cbInstr >= 1 + IoExitInfo.n.u1REP);
+                Assert(cbInstr >= 1U + IoExitInfo.n.u1REP);
                 if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
                 {
                     /* Don't know exactly how to detect whether u3SEG is valid, currently
@@ -4812,11 +4812,14 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     if (   (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
                         && pVM->cpum.ro.GuestFeatures.enmMicroarch >= kCpumMicroarch_AMD_15h_First)
                     {
-                        AssertMsg(IoExitInfo.n.u3SEG == X86_SREG_DS || cbInstr > 1 + IoExitInfo.n.u1REP,
+                        AssertMsg(IoExitInfo.n.u3SEG == X86_SREG_DS || cbInstr > 1U + IoExitInfo.n.u1REP,
                                   ("u32Seg=%d cbInstr=%d u1REP=%d", IoExitInfo.n.u3SEG, cbInstr, IoExitInfo.n.u1REP));
                         rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1REP, (uint8_t)cbInstr,
                                                         IoExitInfo.n.u3SEG);
                     }
+                    else if (cbInstr != 1U + IoExitInfo.n.u1REP)
+                        rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1REP, (uint8_t)cbInstr,
+                                                        X86_SREG_DS);
                     else
                         rcStrict = IEMExecOne(pVCpu);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
