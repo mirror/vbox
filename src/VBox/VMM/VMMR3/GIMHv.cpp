@@ -130,14 +130,14 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
     PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
     pRegion->iRegion    = GIM_HV_HYPERCALL_PAGE_REGION_IDX;
     pRegion->fRCMapping = false;
-    pRegion->cbRegion   = PAGE_SIZE;
+    pRegion->cbRegion   = PAGE_SIZE;  /* Sanity checked in gimR3HvLoad(), gimR3HvEnableTscPage() & gimR3HvEnableHypercallPage() */
     pRegion->GCPhysPage = NIL_RTGCPHYS;
     RTStrCopy(pRegion->szDescription, sizeof(pRegion->szDescription), "Hyper-V hypercall page");
 
     pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
     pRegion->iRegion    = GIM_HV_REF_TSC_PAGE_REGION_IDX;
     pRegion->fRCMapping = false;
-    pRegion->cbRegion   = PAGE_SIZE;
+    pRegion->cbRegion   = PAGE_SIZE;  /* Sanity checked in gimR3HvLoad(), gimR3HvEnableTscPage() & gimR3HvEnableHypercallPage() */
     pRegion->GCPhysPage = NIL_RTGCPHYS;
     RTStrCopy(pRegion->szDescription, sizeof(pRegion->szDescription), "Hyper-V TSC page");
 
@@ -478,6 +478,11 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     SSMR3GetGCPhys(pSSM, &pRegion->GCPhysPage);
     rc = SSMR3GetStrZ(pSSM, pRegion->szDescription, sizeof(pRegion->szDescription));
     AssertRCReturn(rc, rc);
+
+    if (pRegion->cbRegion != PAGE_SIZE)
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Hypercall page region size %u invalid, expected %u"),
+                                pRegion->cbRegion, PAGE_SIZE);
+
     if (MSR_GIM_HV_HYPERCALL_IS_ENABLED(pHv->u64HypercallMsr))
     {
         Assert(pRegion->GCPhysPage != NIL_RTGCPHYS);
@@ -504,6 +509,11 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     SSMR3GetStrZ(pSSM,    pRegion->szDescription, sizeof(pRegion->szDescription));
     rc = SSMR3GetU32(pSSM, &uTscSequence);
     AssertRCReturn(rc, rc);
+
+    if (pRegion->cbRegion != PAGE_SIZE)
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("TSC page region size %u invalid, expected %u"),
+                                pRegion->cbRegion, PAGE_SIZE);
+
     if (MSR_GIM_HV_REF_TSC_IS_ENABLED(pHv->u64TscPageMsr))
     {
         Assert(pRegion->GCPhysPage != NIL_RTGCPHYS);
@@ -559,6 +569,11 @@ VMMR3_INT_DECL(int) gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
      * Map the TSC-page at the specified address.
      */
     Assert(!pRegion->fMapped);
+
+    /** @todo this is buggy when large pages are used due to a PGM limitation, see
+     *        @bugref{7532}. Instead of the overlay style mapping, we just
+     *               rewrite guest memory directly. */
+#if 0
     rc = GIMR3Mmio2Map(pVM, pRegion, GCPhysTscPage);
     if (RT_SUCCESS(rc))
     {
@@ -591,8 +606,43 @@ VMMR3_INT_DECL(int) gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
     }
     else
         LogRelFunc(("GIMR3Mmio2Map failed. rc=%Rrc\n", rc));
-
     return VERR_GIM_OPERATION_FAILED;
+#else
+    AssertReturn(pRegion->cbRegion == PAGE_SIZE, VERR_GIM_IPE_2);
+    PGIMHVREFTSC pRefTsc = (PGIMHVREFTSC)RTMemAllocZ(PAGE_SIZE);
+    if (RT_UNLIKELY(!pRefTsc))
+    {
+        LogRelFunc(("Failed to alloc %u bytes\n", PAGE_SIZE));
+        return VERR_NO_MEMORY;
+    }
+
+    uint64_t const u64TscKHz = TMCpuTicksPerSecond(pVM) / UINT64_C(1000);
+    uint32_t       u32TscSeq = 1;
+    if (   fUseThisTscSeq
+        && uTscSeq < UINT32_C(0xfffffffe))
+        u32TscSeq = uTscSeq + 1;
+    pRefTsc->u32TscSequence  = u32TscSeq;
+    pRefTsc->u64TscScale     = ((INT64_C(10000) << 32) / u64TscKHz) << 32;
+    pRefTsc->i64TscOffset    = 0;
+
+    rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysTscPage, pRefTsc, sizeof(*pRefTsc));
+    if (RT_SUCCESS(rc))
+    {
+        LogRel(("GIM: HyperV: Enabled TSC page at %#RGp - u64TscScale=%#RX64 u64TscKHz=%#RX64 (%'RU64) Seq=%#RU32\n",
+                GCPhysTscPage, pRefTsc->u64TscScale, u64TscKHz, u64TscKHz, pRefTsc->u32TscSequence));
+
+        pRegion->GCPhysPage = GCPhysTscPage;
+        pRegion->fMapped = true;
+        TMR3CpuTickParavirtEnable(pVM);
+    }
+    else
+    {
+        LogRelFunc(("GIM: HyperV: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", rc));
+        rc = VERR_GIM_OPERATION_FAILED;
+    }
+    RTMemFree(pRefTsc);
+    return rc;
+#endif
 }
 
 
@@ -608,8 +658,12 @@ VMMR3_INT_DECL(int) gimR3HvDisableTscPage(PVM pVM)
     PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
     if (pRegion->fMapped)
     {
+#if 0
         GIMR3Mmio2Unmap(pVM, pRegion);
         Assert(!pRegion->fMapped);
+#else
+        pRegion->fMapped = false;
+#endif
         LogRel(("GIM: HyperV: Disabled TSC-page\n"));
 
         TMR3CpuTickParavirtDisable(pVM);
@@ -630,8 +684,12 @@ VMMR3_INT_DECL(int) gimR3HvDisableHypercallPage(PVM pVM)
     PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
     if (pRegion->fMapped)
     {
+#if 0
         GIMR3Mmio2Unmap(pVM, pRegion);
         Assert(!pRegion->fMapped);
+#else
+        pRegion->fMapped = false;
+#endif
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
             VMMHypercallsDisable(&pVM->aCpus[i]);
         LogRel(("GIM: HyperV: Disabled Hypercall-page\n"));
@@ -673,6 +731,11 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
      * Map the hypercall-page at the specified address.
      */
     Assert(!pRegion->fMapped);
+
+    /** @todo this is buggy when large pages are used due to a PGM limitation, see
+     *        @bugref{7532}. Instead of the overlay style mapping, we just
+     *               rewrite guest memory directly. */
+#if 0
     int rc = GIMR3Mmio2Map(pVM, pRegion, GCPhysHypercallPage);
     if (RT_SUCCESS(rc))
     {
@@ -710,5 +773,51 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
 
     LogRel(("GIM: HyperV: GIMR3Mmio2Map failed. rc=%Rrc\n", rc));
     return rc;
+#else
+    AssertReturn(pRegion->cbRegion == PAGE_SIZE, VERR_GIM_IPE_3);
+    void *pvHypercallPage = RTMemAllocZ(PAGE_SIZE);
+    if (RT_UNLIKELY(!pvHypercallPage))
+    {
+        LogRelFunc(("Failed to alloc %u bytes\n", PAGE_SIZE));
+        return VERR_NO_MEMORY;
+    }
+
+    /*
+     * Patch the hypercall-page.
+     */
+    size_t cbWritten = 0;
+    int rc = VMMPatchHypercall(pVM, pvHypercallPage, PAGE_SIZE, &cbWritten);
+    if (   RT_SUCCESS(rc)
+        && cbWritten < PAGE_SIZE)
+    {
+        uint8_t *pbLast = (uint8_t *)pvHypercallPage + cbWritten;
+        *pbLast = 0xc3;  /* RET */
+
+        rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysHypercallPage, pvHypercallPage, PAGE_SIZE);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Notify VMM that hypercalls are now enabled for all VCPUs.
+             */
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+                VMMHypercallsEnable(&pVM->aCpus[i]);
+
+            pRegion->GCPhysPage = GCPhysHypercallPage;
+            pRegion->fMapped = true;
+            LogRel(("GIM: HyperV: Enabled hypercalls at %#RGp\n", GCPhysHypercallPage));
+        }
+        else
+            LogRel(("GIM: HyperV: PGMPhysSimpleWriteGCPhys failed during hypercall page setup. rc=%Rrc\n", rc));
+    }
+    else
+    {
+        if (rc == VINF_SUCCESS)
+            rc = VERR_GIM_OPERATION_FAILED;
+        LogRel(("GIM: HyperV: VMMPatchHypercall failed. rc=%Rrc cbWritten=%u\n", rc, cbWritten));
+    }
+
+    RTMemFree(pvHypercallPage);
+    return rc;
+#endif
 }
 
