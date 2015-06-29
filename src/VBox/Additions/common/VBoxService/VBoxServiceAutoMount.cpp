@@ -440,6 +440,7 @@ static int VBoxServiceAutoMountProcessMappings(PVBGLR3SHAREDFOLDERMAPPING paMapp
                             0,                     /* dmask */
                             0,                     /* fmask */
                             0,                     /* ronly */
+                            0,                     /* sloppy */
                             0,                     /* noexec */
                             0,                     /* nodev */
                             0,                     /* nosuid */

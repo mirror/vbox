@@ -62,6 +62,7 @@ struct vbsf_mount_opts
     int  dmask;
     int  fmask;
     int  ronly;
+    int  sloppy;
     int  noexec;
     int  nodev;
     int  nosuid;

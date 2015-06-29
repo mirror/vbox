@@ -287,7 +287,8 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
             continue;
         }
 
-        if (!handler->name)
+        if (   !handler->name
+            && !opts->sloppy)
         {
             fprintf(stderr, "unknown mount option `%.*s'\n", (int)len, s);
             fprintf(stderr, "valid options:\n");
@@ -345,6 +346,7 @@ static void __attribute ((noreturn)) usage(char *name)
            "  -w                    mount the shared folder writable (the default)\n"
            "  -r                    mount the shared folder read-only\n"
            "  -n                    do not create an mtab entry\n"
+           "  -s                    sloppy parsing, ignore unrecognized mount options\n"
            "  -o OPTION[,OPTION...] use the mount options specified\n"
            "\n", name);
     printf("Available mount options are:\n"
@@ -387,6 +389,7 @@ main (int argc, char **argv)
         0,     /* dmask */
         0,     /* fmask */
         0,     /* ronly */
+        0,     /* sloppy */
         0,     /* noexec */
         0,     /* nodev */
         0,     /* nosuid */
@@ -411,7 +414,7 @@ main (int argc, char **argv)
     CT_ASSERT(sizeof(uid_t) == sizeof(int));
     CT_ASSERT(sizeof(gid_t) == sizeof(int));
 
-    while ((c = getopt(argc, argv, "rwno:h")) != -1)
+    while ((c = getopt(argc, argv, "rwsno:h")) != -1)
     {
         switch (c)
         {
@@ -427,6 +430,10 @@ main (int argc, char **argv)
 
             case 'w':
                 opts.ronly = 0;
+
+            case 's':
+                opts.sloppy = 1;
+                break;
 
             case 'o':
                 process_mount_opts(optarg, &opts);
