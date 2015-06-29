@@ -254,6 +254,28 @@ class ComError(object):
         return True;
 
     @staticmethod
+    def getXcptResult(oXcpt):
+        """
+        Gets the result code for an exception.
+        Returns COM status code (or E_UNEXPECTED).
+        """
+        if platform.system() == 'Windows':
+            # The DISP_E_EXCEPTION + excptinfo fun needs checking up, only
+            # empirical info on it so far.
+            try:
+                hrXcpt = oXcpt.hresult;
+            except AttributeError:
+                hrXcpt = ComError.E_UNEXPECTED;
+            if hrXcpt == ComError.DISP_E_EXCEPTION and oXcpt.excepinfo is not None:
+                hrXcpt = oXcpt.excepinfo[5];
+        else:
+            try:
+                hrXcpt = oXcpt.errno;
+            except AttributeError:
+                hrXcpt = ComError.E_UNEXPECTED;
+        return hrXcpt;
+
+    @staticmethod
     def equal(oXcpt, hr):
         """
         Checks if the ComException e is not equal to the COM status code hr.
