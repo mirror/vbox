@@ -174,6 +174,7 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
     if (!HMIsEnabled(pVM))
         pKvm->fTrapXcptUD = true;
 
+    pKvm->cTscTicksPerSecond = TMCpuTicksPerSecond(pVM);
     return VINF_SUCCESS;
 }
 
@@ -417,7 +418,8 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU p
      *     tsc >>= -i8TscShift;
      * time = ((tsc * SysTime.u32TscScale) >> 32) + SysTime.u64NanoTS
      */
-    uint64_t u64TscFreq   = TMCpuTicksPerSecond(pVM);
+    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
+    uint64_t u64TscFreq   = pKvm->cTscTicksPerSecond;
     SystemTime.i8TscShift = 0;
     while (u64TscFreq > 2 * RT_NS_1SEC_64)
     {
