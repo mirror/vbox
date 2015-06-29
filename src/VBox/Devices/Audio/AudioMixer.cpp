@@ -468,3 +468,19 @@ int AudioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
 
     return audioMixerUpdateSinkVolume(pSink, &pSink->pParent->VolMaster);
 }
+
+void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PAUDMIXSINK pSink;
+    unsigned    iSink = 0;
+
+    pHlp->pfnPrintf(pHlp, "[Master] %s: lVol=%u, rVol=%u, fMuted=%RTbool\n", pMixer->pszName,
+                    pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight, pMixer->VolMaster.fMuted);
+
+    RTListForEach(&pMixer->lstSinks, pSink, AUDMIXSINK, Node)
+    {
+        pHlp->pfnPrintf(pHlp, "[Sink %u] %s: lVol=%u, rVol=%u, fMuted=%RTbool\n", iSink, pSink->pszName,
+                        pSink->Volume.uLeft, pSink->Volume.uRight, pSink->Volume.fMuted);
+        ++iSink;
+    }
+}

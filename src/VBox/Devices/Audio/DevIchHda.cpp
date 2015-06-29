@@ -3327,12 +3327,10 @@ static DECLCALLBACK(void) hdaInfoMixer(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
-#if 0 /* The AudioMixerDebug code missing, I need a working build. */
     if (pThis->pMixer)
         AudioMixerDebug(pThis->pMixer, pHlp, pszArgs);
     else
         pHlp->pfnPrintf(pHlp, "Mixer not available\n");
-#endif
 }
 
 
