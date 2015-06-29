@@ -6761,8 +6761,17 @@ static bool ahciR3CmdPrepare(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 
         if (pAhciReq->cmdFis[AHCI_CMDFIS_BITS] & AHCI_CMDFIS_C)
         {
-            AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) < AHCI_NR_COMMAND_SLOTS,
-                             ("There are more than 32 requests active"));
+            /*
+             * It is possible that the request counter can get one higher than the maximum because
+             * the request counter is decremented after the guest was notified about the completed
+             * request (see @bugref{7859}). If the completing thread is preempted in between the
+             * guest might already issue another request before the request counter is decremented
+             * which would trigger the following assertion incorrectly in the past.
+             */
+            AssertLogRelMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) <= AHCI_NR_COMMAND_SLOTS,
+                            ("AHCI#%uP%u: There are more than %u (+1) requests active",
+                             pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN,
+                             AHCI_NR_COMMAND_SLOTS));
             ASMAtomicIncU32(&pAhciPort->cTasksActive);
         }
         else
