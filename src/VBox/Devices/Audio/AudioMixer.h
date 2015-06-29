@@ -106,6 +106,7 @@ void AudioMixerRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 int AudioMixerSetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg);
 int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
 int AudioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
+void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 #endif /* AUDIO_MIXER_H */
 

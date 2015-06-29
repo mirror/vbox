@@ -742,6 +742,21 @@ static SSMFIELD const g_aCodecNodeFieldsV1[] =
 
 
 
+static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    for (int i = 1; i < 12; i++)
+    {
+        PCODECNODE pNode = &pThis->paNodes[i];
+        AMPLIFIER *pAmp = &pNode->dac.B_params;
+
+        uint8_t lVol = AMPLIFIER_REGISTER(*pAmp, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) & 0x7f;
+        uint8_t rVol = AMPLIFIER_REGISTER(*pAmp, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) & 0x7f;
+
+        pHlp->pfnPrintf(pHlp, "0x%x: lVol=%RU8, rVol=%RU8\n", i, lVol, rVol);
+    }
+}
+
+
 static int stac9220ResetNode(PHDACODEC pThis, uint8_t nodenum, PCODECNODE pNode)
 {
     pNode->node.id = nodenum;
@@ -1087,6 +1102,7 @@ static int stac9220Construct(PHDACODEC pThis)
 {
     unconst(pThis->cTotalNodes) = 0x1C;
     pThis->pfnCodecNodeReset = stac9220ResetNode;
+    pThis->pfnCodecDbgListNodes = stac9220DbgNodes;
     pThis->u16VendorId = 0x8384;
     pThis->u16DeviceId = 0x7680;
     pThis->u8BSKU = 0x76;
