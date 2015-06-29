@@ -174,7 +174,6 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
     if (!HMIsEnabled(pVM))
         pKvm->fTrapXcptUD = true;
 
-    pKvm->cTscTicksPerSecond = TMCpuTicksPerSecond(pVM);
     return VINF_SUCCESS;
 }
 
@@ -189,13 +188,14 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
  */
 VMMR3_INT_DECL(int) gimR3KvmInitCompleted(PVM pVM)
 {
+    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
+    pKvm->cTscTicksPerSecond = TMCpuTicksPerSecond(pVM);
     if (TMR3CpuTickIsFixedRateMonotonic(pVM, true /* fWithParavirtEnabled */))
     {
         /** @todo We might want to consider just enabling this bit *always*. As far
          *        as I can see in the Linux guest, the "TSC_STABLE" bit is only
          *        translated as a "monotonic" bit which even in Async systems we
          *        -should- be reporting a strictly monotonic TSC to the guest.  */
-        PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
         pKvm->uBaseFeat |= GIM_KVM_BASE_FEAT_TSC_STABLE;
 
         CPUMCPUIDLEAF HyperLeaf;
@@ -208,7 +208,6 @@ VMMR3_INT_DECL(int) gimR3KvmInitCompleted(PVM pVM)
         int rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
         AssertLogRelRCReturn(rc, rc);
     }
-
     return VINF_SUCCESS;
 }
 
@@ -338,6 +337,12 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
                                  GIM_KVM_SAVED_STATE_VERSION);
 
     /*
+     * Update the TSC frequency from TM.
+     */
+    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
+    pKvm->cTscTicksPerSecond = TMCpuTicksPerSecond(pVM);
+
+    /*
      * Load per-VCPU data.
      */
     for (uint32_t i = 0; i < pVM->cCpus; i++)
@@ -367,7 +372,6 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     /*
      * Load per-VM data.
      */
-    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
     SSMR3GetU64(pSSM, &pKvm->u64WallClockMsr);
     rc = SSMR3GetU32(pSSM, &pKvm->uBaseFeat);
     AssertRCReturn(rc, rc);
