@@ -1844,12 +1844,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
       <xsl:value-of select="concat(position(), $name)"/>
       <xsl:text>)(</xsl:text>
       <xsl:value-of select="$iface"/>
-      <xsl:text> *pThis, PRUint32 *reserved);&#x0A;</xsl:text>
-      <xsl:text>    nsresult (*SetInternalAndReservedAttribute</xsl:text>
-      <xsl:value-of select="concat(position(), $name)"/>
-      <xsl:text>)(</xsl:text>
-      <xsl:value-of select="$iface"/>
-      <xsl:text> *pThis, PRUint32 reserved);&#x0A;&#x0A;</xsl:text>
+      <xsl:text> *pThis, PRUint32 *reserved);&#x0A;&#x0A;</xsl:text>
     </xsl:for-each>
   </xsl:if>
   <!-- methods -->
@@ -1875,18 +1870,19 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 -->
 <xsl:template match="interface">
   <xsl:if test="not(@internal='yes')">
+    <xsl:variable name="name" select="@name"/>
     <xsl:text>/* Start of struct </xsl:text>
-    <xsl:value-of select="@name"/>
+    <xsl:value-of select="$name"/>
     <xsl:text> declaration */&#x0A;</xsl:text>
     <xsl:text>#define </xsl:text>
     <xsl:call-template name="string-to-upper">
-      <xsl:with-param name="str" select="@name"/>
+      <xsl:with-param name="str" select="$name"/>
     </xsl:call-template>
     <xsl:value-of select="concat('_IID_STR &quot;',@uuid,'&quot;')"/>
     <xsl:text>&#x0A;</xsl:text>
     <xsl:text>#define </xsl:text>
     <xsl:call-template name="string-to-upper">
-      <xsl:with-param name="str" select="@name"/>
+      <xsl:with-param name="str" select="$name"/>
     </xsl:call-template>
     <xsl:text>_IID { \&#x0A;</xsl:text>
     <xsl:text>    0x</xsl:text><xsl:value-of select="substring(@uuid,1,8)"/>
@@ -1904,11 +1900,11 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
     <xsl:text> } \&#x0A;}&#x0A;</xsl:text>
     <xsl:text>/* COM compatibility */&#x0A;</xsl:text>
     <xsl:text>VBOX_EXTERN_CONST(nsIID, IID_</xsl:text>
-    <xsl:value-of select="@name"/>
+    <xsl:value-of select="$name"/>
     <xsl:text>);&#x0A;</xsl:text>
     <xsl:text>#ifndef VBOX_WITH_GLUE&#x0A;</xsl:text>
     <xsl:text>struct </xsl:text>
-    <xsl:value-of select="@name"/>
+    <xsl:value-of select="$name"/>
     <xsl:text>_vtbl&#x0A;{&#x0A;</xsl:text>
     <xsl:text>    </xsl:text>
     <xsl:choose>
@@ -1927,39 +1923,61 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
     <xsl:text>&#x0A;&#x0A;</xsl:text>
     <!-- attributes (properties) -->
     <xsl:apply-templates select="attribute | if/attribute"/>
+    <xsl:variable name="reservedAttributes" select="@reservedAttributes"/>
+    <xsl:if test="$reservedAttributes > 0">
+      <!-- tricky way to do a "for" loop without recursion -->
+      <xsl:for-each select="(//*)[position() &lt;= $reservedAttributes]">
+        <xsl:text>    nsresult (*GetInternalAndReservedAttribute</xsl:text>
+        <xsl:value-of select="concat(position(), $name)"/>
+        <xsl:text>)(</xsl:text>
+        <xsl:value-of select="$name"/>
+        <xsl:text> *pThis, PRUint32 *reserved);&#x0A;&#x0A;</xsl:text>
+      </xsl:for-each>
+    </xsl:if>
     <!-- methods -->
     <xsl:apply-templates select="method | if/method"/>
+    <xsl:variable name="reservedMethods" select="@reservedMethods"/>
+    <xsl:if test="$reservedMethods > 0">
+      <!-- tricky way to do a "for" loop without recursion -->
+      <xsl:for-each select="(//*)[position() &lt;= $reservedMethods]">
+        <xsl:text>    nsresult (*InternalAndReservedMethod</xsl:text>
+        <xsl:value-of select="concat(position(), $name)"/>
+        <xsl:text>)(</xsl:text>
+        <xsl:value-of select="$name"/>
+        <xsl:text> *pThis);&#x0A;&#x0A;</xsl:text>
+      </xsl:for-each>
+    </xsl:if>
     <!-- -->
     <xsl:text>};&#x0A;</xsl:text>
     <xsl:text>#else /* VBOX_WITH_GLUE */&#x0A;</xsl:text>
     <xsl:text>struct </xsl:text>
-    <xsl:value-of select="@name"/>
+    <xsl:value-of select="$name"/>
     <xsl:text>Vtbl&#x0A;{&#x0A;</xsl:text>
     <xsl:apply-templates select="." mode="vtab_flat">
-      <xsl:with-param name="iface" select="@name"/>
+      <xsl:with-param name="iface" select="$name"/>
     </xsl:apply-templates>
     <xsl:text>};&#x0A;</xsl:text>
     <xsl:apply-templates select="." mode="cobjmacro">
-      <xsl:with-param name="iface" select="@name"/>
+      <xsl:with-param name="iface" select="$name"/>
     </xsl:apply-templates>
     <!-- -->
     <xsl:text>#endif /* VBOX_WITH_GLUE */&#x0A;</xsl:text>
     <xsl:text>&#x0A;</xsl:text>
     <xsl:text>interface </xsl:text>
-    <xsl:value-of select="@name"/>
+    <xsl:value-of select="$name"/>
     <xsl:text>&#x0A;{&#x0A;</xsl:text>
     <xsl:text>#ifndef VBOX_WITH_GLUE&#x0A;</xsl:text>
     <xsl:text>    struct </xsl:text>
-    <xsl:value-of select="@name"/>
+    <xsl:value-of select="$name"/>
     <xsl:text>_vtbl *vtbl;&#x0A;</xsl:text>
     <xsl:text>#else /* VBOX_WITH_GLUE */&#x0A;</xsl:text>
     <xsl:text>    CONST_VTBL struct </xsl:text>
-    <xsl:value-of select="@name"/>
+    <xsl:value-of select="$name"/>
     <xsl:text>Vtbl *lpVtbl;&#x0A;</xsl:text>
     <xsl:text>#endif /* VBOX_WITH_GLUE */&#x0A;</xsl:text>
     <xsl:text>};&#x0A;</xsl:text>
     <xsl:text>/* End of struct </xsl:text>
-    <xsl:value-of select="@name"/>
+    <xsl:value-of select="$name"/>
     <xsl:text> declaration */&#x0A;&#x0A;</xsl:text>
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
   </xsl:if>
