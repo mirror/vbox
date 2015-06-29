@@ -652,7 +652,11 @@ static int hgsmiHostHeapRestoreMA(HGSMIHOSTHEAP *pHeap,
     {
         rc = HGSMIMAInit(&pHeap->u.ma, &pHeap->area, paDescriptors, cBlocks, cbMaxBlock, pEnv);
 
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+        {
+            pHeap->u32HeapType = HGSMI_HEAP_TYPE_MA;
+        }
+        else
         {
             HGSMIAreaClear(&pHeap->area);
         }
