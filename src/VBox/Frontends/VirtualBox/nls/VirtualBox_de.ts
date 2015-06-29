@@ -456,11 +456,11 @@
     </message>
     <message>
         <source>&amp;Menu Bar Settings...</source>
-        <translation>&amp;Einstelungen...</translation>
+        <translation>&amp;Einstelungen für Menüleiste...</translation>
     </message>
     <message>
         <source>Show Menu &amp;Bar</source>
-        <translation>Zeigt die &amp;Menüleiste</translation>
+        <translation>Zeige &amp;Menüleiste</translation>
     </message>
     <message>
         <source>&amp;Status Bar</source>
@@ -599,7 +599,7 @@
     <message>
         <source>&amp;Preferences...</source>
         <comment>global preferences window</comment>
-        <translation>&amp;Globale Einstellungen...</translation>
+        <translation>&amp;Einstellungen...</translation>
     </message>
     <message>
         <source>Display the global preferences window</source>
