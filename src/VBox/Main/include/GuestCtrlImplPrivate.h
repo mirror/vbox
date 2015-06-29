@@ -382,6 +382,9 @@ protected:
         RTENV hNewEnv = NIL_RTENV;
         if (rThat.m_hEnv != NIL_RTENV)
         {
+            /*
+             * Clone it.
+             */
             if (RTEnvIsChangeRecord(rThat.m_hEnv) == fChangeRecord)
                 rc = RTEnvClone(&hNewEnv, rThat.m_hEnv);
             else
@@ -398,7 +401,17 @@ protected:
                         RTEnvDestroy(hNewEnv);
                 }
             }
-
+        }
+        else
+        {
+            /*
+             * Create an empty one so the object works smoothly.
+             * (Relevant for GuestProcessStartupInfo and internal commands.)
+             */
+            if (fChangeRecord)
+                rc = RTEnvCreateChangeRecord(&hNewEnv);
+            else
+                rc = RTEnvCreate(&hNewEnv);
         }
         if (RT_SUCCESS(rc))
         {
