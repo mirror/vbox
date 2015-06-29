@@ -175,7 +175,7 @@ static int rtEnvCreate(PRTENVINTERNAL *ppIntEnv, size_t cAllocated, bool fCaseSe
 RTDECL(int) RTEnvCreate(PRTENV pEnv)
 {
     AssertPtrReturn(pEnv, VERR_INVALID_POINTER);
-    return rtEnvCreate(pEnv, RTENV_GROW_SIZE, false /*fCaseSensitive*/, false /*fPutEnvBlock*/);
+    return rtEnvCreate(pEnv, RTENV_GROW_SIZE, true /*fCaseSensitive*/, false /*fPutEnvBlock*/);
 }
 RT_EXPORT_SYMBOL(RTEnvCreate);
 
@@ -1136,7 +1136,7 @@ RT_EXPORT_SYMBOL(RTEnvGetByIndexRawEx);
 RTDECL(int) RTEnvCreateChangeRecord(PRTENV phEnv)
 {
     AssertPtrReturn(phEnv, VERR_INVALID_POINTER);
-    return rtEnvCreate(phEnv, RTENV_GROW_SIZE, false /*fCaseSensitive*/, true /*fPutEnvBlock*/);
+    return rtEnvCreate(phEnv, RTENV_GROW_SIZE, true /*fCaseSensitive*/, true /*fPutEnvBlock*/);
 }
 RT_EXPORT_SYMBOL(RTEnvCreateChangeRecord);
 
