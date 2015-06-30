@@ -729,6 +729,8 @@ VMMR0_INT_DECL(int) HMR0Term(void)
             rc = SUPR0EnableVTx(false /* fEnable */);
             g_HmR0.vmx.fCalledSUPR0EnableVTx = false;
         }
+        else
+            rc = VINF_SUCCESS;
 
         for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(g_HmR0.aCpuInfo); iCpu++)
         {
