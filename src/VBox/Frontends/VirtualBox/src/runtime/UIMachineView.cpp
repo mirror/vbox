@@ -658,7 +658,7 @@ void UIMachineView::prepareFrameBuffer()
         /* Processing pseudo resize-event to synchronize frame-buffer with stored framebuffer size.
          * On X11 this will be additional done when the machine state was 'saved'. */
         if (machine().GetState() == KMachineState_Saved)
-            size = guestSizeHint();
+            size = guestScreenSizeHint();
 #endif /* Q_WS_X11 */
 
         /* If there is a preview image saved,
@@ -922,20 +922,29 @@ QSize UIMachineView::maxGuestSize()
     return QSize(int(RT_HI_U32(u64Size)), int(RT_LO_U32(u64Size)));
 }
 
-QSize UIMachineView::guestSizeHint()
+QSize UIMachineView::guestScreenSizeHint() const
 {
     /* Load guest-screen size-hint: */
-    QSize size = gEDataManager->lastGuestSizeHint(m_uScreenId, vboxGlobal().managedVMUuid());
+    QSize sizeHint = gEDataManager->lastGuestScreenSizeHint(m_uScreenId, vboxGlobal().managedVMUuid());
 
     /* Invent the default if necessary: */
-    if (!size.isValid())
-        size = QSize(800, 600);
+    if (!sizeHint.isValid())
+        sizeHint = QSize(800, 600);
 
     /* Take the scale-factor(s) into account: */
-    size = scaledForward(size);
+    sizeHint = scaledForward(sizeHint);
 
-    /* Return size: */
-    return size;
+    /* Return size-hint: */
+    return sizeHint;
+}
+
+void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
+{
+    /* Save guest-screen size-hint: */
+    LogRel(("GUI: UIMachineView::storeGuestSizeHint: "
+            "Storing guest-screen size-hint for screen %d as %dx%d\n",
+            (int)screenId(), sizeHint.width(), sizeHint.height()));
+    gEDataManager->setLastGuestScreenSizeHint(m_uScreenId, sizeHint, vboxGlobal().managedVMUuid());
 }
 
 void UIMachineView::handleScaleChange()
@@ -982,15 +991,6 @@ void UIMachineView::handleScaleChange()
 
     LogRelFlow(("GUI: UIMachineView::handleScaleChange: Complete for Screen=%d\n",
                 (unsigned long)m_uScreenId));
-}
-
-void UIMachineView::storeGuestSizeHint(const QSize &size)
-{
-    /* Save guest-screen size-hint: */
-    LogRel(("GUI: UIMachineView::storeGuestSizeHint: "
-            "Storing guest size-hint for screen %d as %dx%d\n",
-            (int)screenId(), size.width(), size.height()));
-    gEDataManager->setLastGuestSizeHint(m_uScreenId, size, vboxGlobal().managedVMUuid());
 }
 
 void UIMachineView::resetPausePixmap()
@@ -1058,7 +1058,7 @@ void UIMachineView::takePausePixmapSnapshot()
     machine().QuerySavedGuestScreenInfo(m_uScreenId, uGuestOriginX, uGuestOriginY, uGuestWidth, uGuestHeight, fEnabled);
 
     /* Create a screen-shot on the basis of the screen-data we have in saved-state: */
-    QImage screenShot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(uGuestWidth > 0 ? QSize(uGuestWidth, uGuestHeight) : guestSizeHint());
+    QImage screenShot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(uGuestWidth > 0 ? QSize(uGuestWidth, uGuestHeight) : guestScreenSizeHint());
 
     /* Dim screen-shot if it is Ok: */
     if (machine().isOk() && !screenShot.isNull())

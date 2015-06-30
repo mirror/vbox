@@ -208,17 +208,14 @@ protected:
      * UIFramebuffer on EMT).
      * @sa m_u64MaxGuestSize. */
     QSize maxGuestSize();
-    /** Retrieve the last non-fullscreen guest size hint (from extra data).
-     */
-    QSize guestSizeHint();
+
+    /** Retrieves the last guest-screen size-hint from extra-data. */
+    QSize guestScreenSizeHint() const;
+    /** Stores a guest-screen size-hint to extra-data. */
+    void storeGuestSizeHint(const QSize &sizeHint);
 
     /** Handles machine-view scale changes. */
     void handleScaleChange();
-
-    /* Protected setters: */
-    /** Store a guest size hint value to extra data, called on switching to
-     * fullscreen. */
-    void storeGuestSizeHint(const QSize &size);
 
     /** Returns the pause-pixmap: */
     const QPixmap& pausePixmap() const { return m_pausePixmap; }
