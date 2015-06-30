@@ -190,6 +190,7 @@ VMMR3_INT_DECL(int) gimR3KvmInitCompleted(PVM pVM)
 {
     PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
     pKvm->cTscTicksPerSecond = TMCpuTicksPerSecond(pVM);
+
     if (TMR3CpuTickIsFixedRateMonotonic(pVM, true /* fWithParavirtEnabled */))
     {
         /** @todo We might want to consider just enabling this bit *always*. As far
