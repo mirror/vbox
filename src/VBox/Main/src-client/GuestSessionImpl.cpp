@@ -3174,8 +3174,8 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
         else
             hrc = setErrorVrc(vrc, tr("Querying file information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
     }
-    /* else: If the file name is empty, there is no way it can exists. So, don't
-       be a tedious and return E_INVALIDARG, simply return FALSE. */
+    else
+            hrc = setError(E_INVALIDARG, tr("the path parameter must not be empty/NULL"));
     LogFlowThisFuncLeave();
     return hrc;
 }
