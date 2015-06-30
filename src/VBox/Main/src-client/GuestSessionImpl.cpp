@@ -648,8 +648,9 @@ int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMo
     int vrc = VINF_SUCCESS;
 
     GuestProcessStartupInfo procInfo;
-    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
     procInfo.mFlags      = ProcessCreateFlag_Hidden;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
+    procInfo.mArguments.push_back(procInfo.mExecutable);
 
     try
     {
@@ -805,8 +806,9 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
     int vrc = VINF_SUCCESS;
 
     GuestProcessStartupInfo procInfo;
-    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
+    procInfo.mArguments.push_back(procInfo.mExecutable);
 
     try
     {
@@ -1207,8 +1209,9 @@ int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
     GuestProcessStartupInfo procInfo;
     GuestProcessStream      streamOut;
 
-    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_RM);
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_RM);
+    procInfo.mArguments.push_back(procInfo.mExecutable);
 
     try
     {
@@ -1374,8 +1377,9 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
 
     /** @todo Merge this with IGuestFile::queryInfo(). */
     GuestProcessStartupInfo procInfo;
-    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_STAT);
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_STAT);
+    procInfo.mArguments.push_back(procInfo.mExecutable);
 
     try
     {

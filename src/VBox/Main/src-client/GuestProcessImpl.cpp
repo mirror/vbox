@@ -1926,6 +1926,7 @@ int GuestProcessTool::Init(GuestSession *pGuestSession, const GuestProcessStartu
                      pGuestSession, startupInfo.mExecutable.c_str(), fAsync));
 
     AssertPtrReturn(pGuestSession, VERR_INVALID_POINTER);
+    Assert(startupInfo.mArguments[0] == startupInfo.mExecutable);
 
     pSession = pGuestSession;
     mStartupInfo = startupInfo;
@@ -2021,7 +2022,8 @@ int GuestProcessTool::i_runEx(      GuestSession            *pGuestSession,
                                     uint32_t                 cStrmOutObjects,
                                     int                     *pGuestRc)
 {
-    GuestProcessTool procTool; int guestRc;
+    GuestProcessTool procTool;
+    int guestRc;
     int vrc = procTool.Init(pGuestSession, startupInfo, false /* Async */, &guestRc);
     if (RT_SUCCESS(vrc))
     {
