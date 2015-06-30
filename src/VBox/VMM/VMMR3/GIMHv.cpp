@@ -241,6 +241,7 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
 VMMR3_INT_DECL(int) gimR3HvInitCompleted(PVM pVM)
 {
     PGIMHV pHv = &pVM->gim.s.u.Hv;
+    pHv->cTscTicksPerSecond = TMCpuTicksPerSecond(pVM);
 
     /*
      * Determine interface capabilities based on the version.
@@ -438,8 +439,6 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
  */
 VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
 {
-    PGIMHV pHv = &pVM->gim.s.u.Hv;
-
     /*
      * Load the Hyper-V SSM version first.
      */
@@ -450,6 +449,12 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
         return SSMR3SetLoadError(pSSM, VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION, RT_SRC_POS,
                                  N_("Unsupported Hyper-V saved-state version %u (expected %u)."), uHvSavedStatVersion,
                                  GIM_HV_SAVED_STATE_VERSION);
+
+    /*
+     * Update the TSC frequency from TM.
+     */
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    pHv->cTscTicksPerSecond = TMCpuTicksPerSecond(pVM);
 
     /*
      * Load per-VM MSRs.
@@ -589,7 +594,8 @@ VMMR3_INT_DECL(int) gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
         PGIMHVREFTSC pRefTsc = (PGIMHVREFTSC)pRegion->pvPageR3;
         Assert(pRefTsc);
 
-        uint64_t const u64TscKHz = TMCpuTicksPerSecond(pVM) / UINT64_C(1000);
+        PGIMHV pHv = &pVM->gim.s.u.Hv;
+        uint64_t const u64TscKHz = pHv->cTscTicksPerSecond / UINT64_C(1000);
         uint32_t       u32TscSeq = 1;
         if (   fUseThisTscSeq
             && uTscSeq < UINT32_C(0xfffffffe))
@@ -616,7 +622,8 @@ VMMR3_INT_DECL(int) gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
         return VERR_NO_MEMORY;
     }
 
-    uint64_t const u64TscKHz = TMCpuTicksPerSecond(pVM) / UINT64_C(1000);
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    uint64_t const u64TscKHz = pHv->cTscTicksPerSecond / UINT64_C(1000);
     uint32_t       u32TscSeq = 1;
     if (   fUseThisTscSeq
         && uTscSeq < UINT32_C(0xfffffffe))

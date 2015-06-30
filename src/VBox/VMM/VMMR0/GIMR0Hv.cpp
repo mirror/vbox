@@ -114,7 +114,7 @@ VMM_INT_DECL(int) gimR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
     /*
      * Hyper-V reports the reference time in 100 nanosecond units.
      */
-    uint64_t u64Tsc100Ns = TMCpuTicksPerSecond(pVM) / RT_NS_10MS;
+    uint64_t u64Tsc100Ns = pcHv->cTscTicksPerSecond / RT_NS_10MS;
     int64_t i64TscOffset = (int64_t)u64Offset / u64Tsc100Ns;
 
     /*
