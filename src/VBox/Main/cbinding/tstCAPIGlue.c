@@ -676,7 +676,7 @@ static void PrintErrorInfo(const char *pszExecutable, const char *pszErrorMsg, H
     HRESULT rc2 = S_OK;
     fprintf(stderr, "%s: %s (rc=%#010x)\n", pszExecutable, pszErrorMsg, (unsigned)rc);
     rc2 = g_pVBoxFuncs->pfnGetException(&ex);
-    if (SUCCEEDED(rc2))
+    if (SUCCEEDED(rc2) && ex)
     {
         IVirtualBoxErrorInfo *ei;
         rc2 = IErrorInfo_QueryInterface(ex, &IID_IVirtualBoxErrorInfo, (void **)&ei);
