@@ -970,6 +970,10 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
             /*
              * Call the kernel.
              */
+            AssertLogRelMsg(!g_pVmxUseCount || *g_pVmxUseCount >= 0,
+                            ("vmx_use_count=%d (@ %p, expected it to be a positive number\n",
+                             *g_pVmxUseCount, g_pVmxUseCount));
+
             rc = host_vmxon(false /* exclusive */);
             if (rc == VMX_OK)
                 rc = VINF_SUCCESS;
@@ -986,6 +990,10 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
         }
         else
         {
+            AssertLogRelMsgReturn(!g_pVmxUseCount || *g_pVmxUseCount >= 1,
+                                  ("vmx_use_count=%d (@ %p, expected it to be a non-zero positive number\n",
+                                   *g_pVmxUseCount, g_pVmxUseCount),
+                                  VERR_WRONG_ORDER);
             host_vmxoff();
             rc = VINF_SUCCESS;
             LogRel(("VBoxDrv: host_vmxoff -> vmx_use_count=%d\n", *g_pVmxUseCount));
