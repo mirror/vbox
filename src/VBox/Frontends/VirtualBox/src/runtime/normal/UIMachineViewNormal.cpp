@@ -158,7 +158,7 @@ void UIMachineViewNormal::resendSizeHint()
     /// @todo What if not m_bIsGuestAutoresizeEnabled?
     ///       Just let the guest start at the default 800x600?
     display().SetVideoModeHint(screenId(),
-                               true /* temporary decision */,
+                               guestScreenVisibilityStatus(),
                                false, 0, 0, sizeHint.width(), sizeHint.height(), 0);
 }
 

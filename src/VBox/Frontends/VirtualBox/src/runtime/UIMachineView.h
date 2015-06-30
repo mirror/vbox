@@ -209,6 +209,9 @@ protected:
      * @sa m_u64MaxGuestSize. */
     QSize maxGuestSize();
 
+    /** Retrieves the last guest-screen visibility status from extra-data. */
+    bool guestScreenVisibilityStatus() const;
+
     /** Retrieves the last guest-screen size-hint from extra-data. */
     QSize guestScreenSizeHint() const;
     /** Stores a guest-screen size-hint to extra-data. */

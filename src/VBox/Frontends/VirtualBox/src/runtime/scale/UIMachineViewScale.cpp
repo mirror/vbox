@@ -162,7 +162,7 @@ void UIMachineViewScale::resendSizeHint()
 
     /* Send saved size-hint to the guest: */
     display().SetVideoModeHint(screenId(),
-                               true /* temporary decision */,
+                               guestScreenVisibilityStatus(),
                                false, 0, 0, sizeHint.width(), sizeHint.height(), 0);
 }
 

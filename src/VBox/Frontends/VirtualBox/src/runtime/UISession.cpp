@@ -1936,15 +1936,22 @@ bool UISession::postprocessInitialization()
 
 bool UISession::isScreenVisible(ulong uScreenId) const
 {
-    Assert(uScreenId < (ulong)m_monitorVisibilityVector.size());
-    return m_monitorVisibilityVector.value((int)uScreenId, false);
+    /* Make sure index feats the bounds: */
+    AssertReturn(uScreenId < (ulong)m_monitorVisibilityVector.size(), false);
+
+    /* Return 'actual' visibility status: */
+    return m_monitorVisibilityVector.value((int)uScreenId);
 }
 
 void UISession::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
 {
-    Assert(uScreenId < (ulong)m_monitorVisibilityVector.size());
-    if (uScreenId < (ulong)m_monitorVisibilityVector.size())
-        m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
+    /* Make sure index feats the bounds: */
+    AssertReturnVoid(uScreenId < (ulong)m_monitorVisibilityVector.size());
+
+    /* Remember 'actual' visibility status: */
+    m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
+    /* Remember 'desired' visibility status: */
+    gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, vboxGlobal().managedVMUuid());
 }
 
 int UISession::countOfVisibleWindows()

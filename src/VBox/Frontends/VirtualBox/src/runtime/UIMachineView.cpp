@@ -922,6 +922,16 @@ QSize UIMachineView::maxGuestSize()
     return QSize(int(RT_HI_U32(u64Size)), int(RT_LO_U32(u64Size)));
 }
 
+bool UIMachineView::guestScreenVisibilityStatus() const
+{
+    /* Always 'true' for primary guest-screen: */
+    if (m_uScreenId == 0)
+        return true;
+
+    /* Actual value for other guest-screens: */
+    return gEDataManager->lastGuestScreenVisibilityStatus(m_uScreenId, vboxGlobal().managedVMUuid());
+}
+
 QSize UIMachineView::guestScreenSizeHint() const
 {
     /* Load guest-screen size-hint: */

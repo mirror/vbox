@@ -1776,7 +1776,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #ifdef Q_WS_X11
            << GUI_Fullscreen_LegacyMode
 #endif /* Q_WS_X11 */
-           << GUI_AutoresizeGuest << GUI_LastGuestSizeHint
+           << GUI_AutoresizeGuest << GUI_LastVisibilityStatusForGuestScreen << GUI_LastGuestSizeHint
            << GUI_VirtualScreenToHostScreen << GUI_AutomountGuestScreens
 #ifdef VBOX_WITH_VIDEOHWACCEL
            << GUI_Accelerate2D_StretchLinear
@@ -3069,6 +3069,30 @@ void UIExtraDataManager::setGuestScreenAutoResizeEnabled(bool fEnabled, const QS
 {
     /* 'False' if feature restricted, null-string otherwise: */
     setExtraDataString(GUI_AutoresizeGuest, toFeatureRestricted(!fEnabled), strID);
+}
+
+bool UIExtraDataManager::lastGuestScreenVisibilityStatus(ulong uScreenIndex, const QString &strID)
+{
+    /* Not for primary screen: */
+    AssertReturn(uScreenIndex > 0, true);
+
+    /* Compose corresponding key: */
+    const QString strKey = extraDataKeyPerScreen(GUI_LastVisibilityStatusForGuestScreen, uScreenIndex);
+
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(strKey, strID);
+}
+
+void UIExtraDataManager::setLastGuestScreenVisibilityStatus(ulong uScreenIndex, bool fEnabled, const QString &strID)
+{
+    /* Not for primary screen: */
+    AssertReturnVoid(uScreenIndex > 0);
+
+    /* Compose corresponding key: */
+    const QString strKey = extraDataKeyPerScreen(GUI_LastVisibilityStatusForGuestScreen, uScreenIndex);
+
+    /* 'True' if feature allowed, null-string otherwise: */
+    return setExtraDataString(strKey, toFeatureAllowed(fEnabled), strID);
 }
 
 QSize UIExtraDataManager::lastGuestScreenSizeHint(ulong uScreenIndex, const QString &strID)

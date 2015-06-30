@@ -189,6 +189,9 @@ namespace UIExtraDataDefs
         /** Holds whether guest-screen auto-resize according machine-window size is enabled. */
         extern const char* GUI_AutoresizeGuest;
         /** Prefix used by composite extra-data keys,
+          * which holds last guest-screen visibility status per screen-index. */
+        extern const char* GUI_LastVisibilityStatusForGuestScreen;
+        /** Prefix used by composite extra-data keys,
           * which holds last guest-screen size-hint per screen-index. */
         extern const char* GUI_LastGuestSizeHint;
         /** Prefix used by composite extra-data keys,
