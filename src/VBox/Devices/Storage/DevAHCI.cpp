@@ -574,9 +574,17 @@ typedef struct AHCIPort
     /** Head of the global free request list. */
     R3PTRTYPE(PRTLISTANCHOR)        pListReqsFree;
 
+    /** Align to a multiple of 8. */
+#if HC_ARCH_BITS == 32
+    uint32_t                        u32Alignment6;
+#endif
+
 } AHCIPort;
 /** Pointer to the state of an AHCI port. */
 typedef AHCIPort *PAHCIPort;
+
+AssertCompileMemberAlignment(AHCIPort, StatDMA, 8);
+AssertCompileSizeAlignment(AHCIPort, 8);
 
 /**
  * Main AHCI device state.
@@ -722,6 +730,8 @@ typedef struct AHCI
 } AHCI;
 /** Pointer to the state of an AHCI device. */
 typedef AHCI *PAHCI;
+
+AssertCompileMemberAlignment(AHCI, ahciPort[0], 8);
 
 /**
  * Scatter gather list entry.

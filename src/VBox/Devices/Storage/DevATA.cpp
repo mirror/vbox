@@ -440,10 +440,10 @@ typedef struct ATACONTROLLER
     uint8_t             Alignment3[1]; /**< Explicit padding of the 1 byte gap. */
     /** Magic delay before triggering interrupts in DMA mode. */
     uint32_t            DelayIRQMillies;
-    /** The lock protecting the request queue. */
-    PDMCRITSECT         AsyncIORequestLock;
     /** The event semaphore the thread is waiting on during suspended I/O. */
     RTSEMEVENT          SuspendIOSem;
+    /** The lock protecting the request queue. */
+    PDMCRITSECT         AsyncIORequestLock;
 #if 0 /*HC_ARCH_BITS == 32*/
     uint32_t            Alignment0;
 #endif
@@ -463,6 +463,8 @@ AssertCompileMemberAlignment(ATACONTROLLER, lock, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, aIfs, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, u64ResetTime, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, StatAsyncOps, 8);
+AssertCompileMemberAlignment(ATACONTROLLER, AsyncIORequestLock, 8);
+AssertCompileSizeAlignment(ATACONTROLLER, 8);
 
 typedef enum CHIPSET
 {

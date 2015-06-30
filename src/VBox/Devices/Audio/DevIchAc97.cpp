@@ -268,6 +268,9 @@ typedef struct AC97STATE
     /** Timer ticks for handling the LUN drivers. */
     uint64_t                uTicks;
 #ifdef VBOX_WITH_STATISTICS
+# if HC_ARCH_BITS == 32
+    uint32_t                u32Alignment0;
+# endif
     STAMPROFILE             StatTimer;
     STAMCOUNTER             StatBytesRead;
     STAMCOUNTER             StatBytesWritten;
@@ -299,6 +302,8 @@ typedef struct AC97STATE
 } AC97STATE;
 /** Pointer to the AC97 device state. */
 typedef AC97STATE *PAC97STATE;
+
+AssertCompileMemberAlignment(AC97STATE, StatTimer, 8);
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 

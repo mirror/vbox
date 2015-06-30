@@ -499,7 +499,7 @@ typedef struct HM
 
     /** HMR0Init was run */
     bool                    fHMR0Init;
-    bool                    u8Alignment1[7];
+    bool                    u8Alignment1[HC_ARCH_BITS == 64 ? 7 : 3];
 
     STAMCOUNTER             StatTprPatchSuccess;
     STAMCOUNTER             StatTprPatchFailure;
@@ -508,6 +508,8 @@ typedef struct HM
 } HM;
 /** Pointer to HM VM instance data. */
 typedef HM *PHM;
+
+AssertCompileMemberAlignment(HM, StatTprPatchSuccess, 8);
 
 /* Maximum number of cached entries. */
 #define VMCSCACHE_MAX_ENTRY                             128
