@@ -67,7 +67,7 @@
     <name>BootItemsTable</name>
     <message>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="obsolete">Meghatározza a bootsorrendet. Használja ezt az opciót a boot eszközök engedélyezésére/tiltására. Mozgassa fel vagy le az elemeket a pontos sorrendhez.</translation>
+        <translation type="obsolete">Meghatározza a boot-sorrendet. Használja ezt az opciót a boot eszközök engedélyezésére/tiltására. Mozgassa fel vagy le az elemeket a pontos sorrendhez.</translation>
     </message>
 </context>
 <context>
@@ -105,7 +105,7 @@
     </message>
     <message>
         <source>Please try reinstalling VirtualBox.</source>
-        <translation>Talán újra kellene telepítened a VirtualBox-ot.</translation>
+        <translation>Talán újra kellene telepítened a VirtualBoxot.</translation>
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
@@ -137,11 +137,11 @@
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
-        <translation>A VirtualBox kernel modul verziója nem megfelelő ehhez a VirtualBox-hoz. Valószínű, hogy a telepítés nem sikerült, és a program vagy a kernelmodul eltávolítása és újratelepítése segíthet.</translation>
+        <translation>A VirtualBox kernel modul verziója nem megfelelő ehhez a VirtualBoxhoz. Valószínű, hogy a telepítés nem sikerült, és a program vagy a kernelmodul eltávolítása és újratelepítése segíthet.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation>A VirtualBox kernel modul nem megfelelő a VirtualBox-hoz. Valószínű, hogy a telepítés nem volt sikeres, de a &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;/etc/init.d/vboxdrv setup&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;parancs lefuttatása segíthet. Figyelj arra, hogy a VirtualBox OSE és a PUEL verziója nem kompatibilis egymással.</translation>
+        <translation>A VirtualBox kernel modul nem megfelelő a VirtualBoxhoz. Valószínű, hogy a telepítés nem volt sikeres, de a &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;/etc/init.d/vboxdrv setup&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;parancs lefuttatása segíthet. Figyelj arra, hogy a VirtualBox OSE és a PUEL verziója nem kompatibilis egymással.</translation>
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
@@ -150,7 +150,7 @@
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation>A VirtualBox Linuxos eszközmeghajtója nem tölthető be, vagy jogosultságprobléma van a /dev/vboxdrv eszközfájllal. Kérlek, telepítsd újra a kernel modult a&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;parancs rendszergazdaként történő végrehajtásával. Lehet,  hogy ehhez előbb telepítened kell a megfelelő DKMS csomagot, ha ez elérhető a disztribúciódhoz. Ez a csomag figyeli a Linux kenel változásait, és újrafordítja a vboxdrv meghajtót ha szükséges.</translation>
+        <translation>A VirtualBox Linuxos eszközmeghajtója nem tölthető be, vagy jogosultságprobléma van a /dev/vboxdrv eszközfájllal. Kérlek, telepítsd újra a kernel modult a&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;parancs rendszergazdaként történő végrehajtásával. Lehet,  hogy ehhez előbb telepítened kell a megfelelő DKMS csomagot, ha ez elérhető a disztribúciódhoz. Ez a csomag figyeli a Linux kernel változásait, és újrafordítja a vboxdrv meghajtót ha szükséges.</translation>
     </message>
 </context>
 <context>
@@ -297,7 +297,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation type="unfinished">Aszta&amp;l-integráció</translation>
+        <translation>Aszta&amp;l-integráció</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -528,7 +528,7 @@
     </message>
     <message>
         <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation type="obsolete">Letiltja a vendég gép képernyőjének automatikus méretezesét az ablakának méretezésekor</translation>
+        <translation type="obsolete">Letiltja a vendég gép képernyőjének automatikus méretezését az ablakának méretezésekor</translation>
     </message>
     <message>
         <source>&amp;Enable Remote Display</source>
@@ -680,7 +680,7 @@
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
-        <translation>Gép importálása a VirtualBox-ba</translation>
+        <translation>Gép importálása a VirtualBoxba</translation>
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
@@ -688,7 +688,7 @@
     </message>
     <message>
         <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Egy vagy több virtuális gép exportálása a VirtualBox-ból</translation>
+        <translation>Egy vagy több virtuális gép exportálása a VirtualBoxból</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
@@ -853,11 +853,11 @@
     </message>
     <message>
         <source>Sort the items of the selected virtual machine group alphabetically</source>
-        <translation type="obsolete">A kiválasztott virtuális gép csoport elemeinek betűrentdbe rendezése</translation>
+        <translation type="obsolete">A kiválasztott virtuális gép csoport elemeinek betűrendbe rendezése</translation>
     </message>
     <message>
         <source>Remove the selected virtual machines</source>
-        <translation type="obsolete">A kiválasztott viruális gépek eltávolítása</translation>
+        <translation type="obsolete">A kiválasztott virtuális gépek eltávolítása</translation>
     </message>
     <message>
         <source>Start the selected virtual machines</source>
@@ -913,7 +913,7 @@
     </message>
     <message>
         <source>Power off the selected virtual machines</source>
-        <translation type="obsolete">A kiválasztott viruális gépek kikapcsolása</translation>
+        <translation type="obsolete">A kiválasztott virtuális gépek kikapcsolása</translation>
     </message>
     <message>
         <source>&amp;New Machine...</source>
@@ -957,7 +957,7 @@
     </message>
     <message>
         <source>Power off the virtual machine</source>
-        <translation>A viruális gép kikapcsolása</translation>
+        <translation>A virtuális gép kikapcsolása</translation>
     </message>
     <message>
         <source>&amp;Network Settings...</source>
@@ -1020,446 +1020,446 @@
     </message>
     <message>
         <source>&amp;VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VirtualBox</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="unfinished">&amp;Fájl</translation>
+        <translation>&amp;Fájl</translation>
     </message>
     <message>
         <source>&amp;Window</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ablak</translation>
     </message>
     <message>
         <source>&amp;Minimize</source>
-        <translation type="unfinished"></translation>
+        <translation>Kis &amp;méretre</translation>
     </message>
     <message>
         <source>Minimize active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktív gépablakot kis méretre állítja</translation>
     </message>
     <message>
         <source>Display the Network Operations Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Megjeleníti a Hálózati műveletek kezelőt</translation>
     </message>
     <message>
         <source>Display a window with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy ablak a termékinformációkkal</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
         <comment>global preferences window</comment>
-        <translation type="unfinished">&amp;Beállítások...</translation>
+        <translation>&amp;Beállítások...</translation>
     </message>
     <message>
         <source>Display the global preferences window</source>
-        <translation type="unfinished"></translation>
+        <translation>Megjeleníti a globális beállításokat</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window</source>
-        <translation type="unfinished"></translation>
+        <translation>Megjeleníti a virtuális gép beállításait</translation>
     </message>
     <message>
         <source>Display the virtual machine session information window</source>
-        <translation type="unfinished"></translation>
+        <translation>Megjeleníti a virtuális gép munkamenet információit</translation>
     </message>
     <message>
         <source>&amp;Save State</source>
-        <translation type="unfinished"></translation>
+        <translation>Állapot menté&amp;se</translation>
     </message>
     <message>
         <source>Save the state of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gép állapotának mentése</translation>
     </message>
     <message>
         <source>Send the ACPI Shutdown signal to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>ACPI leállítási parancs küldése a virtuális gépnek</translation>
     </message>
     <message>
         <source>&amp;Full-screen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Teljes képernyős mód</translation>
     </message>
     <message>
         <source>Switch between normal and full-screen mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Váltás a normál és teljes képernyős mód között</translation>
     </message>
     <message>
         <source>S&amp;caled Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Méretezett</translation>
     </message>
     <message>
         <source>&amp;Minimize Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Ablak kis &amp;méretre</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatikusan átméretezi a vendég gép képernyőjét, ha az ablak mérete változik</translation>
     </message>
     <message>
         <source>Take guest display screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőmentés a vendég képernyőjéről</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gép beállításai a videórögzítés módosításához</translation>
     </message>
     <message>
         <source>Enable guest display video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Vendég képernyőjének videórögzítése</translation>
     </message>
     <message>
         <source>Allow remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Távoli asztal (RDP) csatlakozás kapcsoló ehhez a géphez</translation>
     </message>
     <message>
         <source>&amp;Menu Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Menü sor</translation>
     </message>
     <message>
         <source>&amp;Menu Bar Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Menü sor beállítások...</translation>
     </message>
     <message>
         <source>Display window to configure menu-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyitja a menü sor beállítási lehetőségeit</translation>
     </message>
     <message>
         <source>Show Menu &amp;Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Menü sor mutatása</translation>
     </message>
     <message>
         <source>Enable menu-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Menü sor bekapcsolása</translation>
     </message>
     <message>
         <source>&amp;Status Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Állapot&amp;sor</translation>
     </message>
     <message>
         <source>&amp;Status Bar Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Állapot&amp;sor beállítások...</translation>
     </message>
     <message>
         <source>Display window to configure status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyitja az állapotsor beállítási lehetőségeit</translation>
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Á&amp;llapotsor mutatása</translation>
     </message>
     <message>
         <source>Enable status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Állapotsor bekapcsolása</translation>
     </message>
     <message>
         <source>S&amp;cale Factor</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Méretezési faktor</translation>
     </message>
     <message>
         <source>&amp;Input</source>
-        <translation type="unfinished"></translation>
+        <translation>Bev&amp;itel</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
-        <translation type="unfinished">&amp;Billentyűzet</translation>
+        <translation>&amp;Billentyűzet</translation>
     </message>
     <message>
         <source>&amp;Keyboard Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Billentyűzet beállítások...</translation>
     </message>
     <message>
         <source>Display global preferences window to configure keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Globális beállítások a gyorsbillentyűk módosításához</translation>
     </message>
     <message>
         <source>&amp;Insert %1</source>
         <comment>that means send the %1 key sequence to the virtual machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 &amp;küldése</translation>
     </message>
     <message>
         <source>Send the %1 sequence to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy %1 kérést küld a virtuális gépnek</translation>
     </message>
     <message>
         <source>&amp;Mouse</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Egér</translation>
     </message>
     <message>
         <source>&amp;Mouse Integration</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Egér-integráció</translation>
     </message>
     <message>
         <source>Enable host mouse pointer integration</source>
-        <translation type="unfinished"></translation>
+        <translation>Gazda egér integrációjának engedélyezése</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished">&amp;Merevlemezek</translation>
+        <translation>&amp;Merevlemezek</translation>
     </message>
     <message>
         <source>&amp;Hard Disk Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Merevlemez beállítások...</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure hard disks</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gép beállításai a merevlemezek módosításához</translation>
     </message>
     <message>
         <source>&amp;Optical Drives</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Optikai meghajtók</translation>
     </message>
     <message>
         <source>&amp;Floppy Drives</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Floppy meghajtók</translation>
     </message>
     <message>
         <source>&amp;Network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hálózat</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure network adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gép beállításai a hálózati adapterek módosításához</translation>
     </message>
     <message>
         <source>&amp;USB</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;USB</translation>
     </message>
     <message>
         <source>&amp;USB Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;USB beállítások...</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure USB devices</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gép beállításai az USB eszközök módosításához</translation>
     </message>
     <message>
         <source>&amp;Drag and Drop</source>
-        <translation type="unfinished"></translation>
+        <translation>Fog&amp;d és vidd</translation>
     </message>
     <message>
         <source>&amp;Shared Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Mego&amp;sztott mappák</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure shared folders</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gép beállításai a megosztott mappák módosításához</translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual optical drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Integrációs szolgáltatások behelyezése a virtuális optikai meghajtóba</translation>
     </message>
     <message>
         <source>&amp;Logging</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nap&amp;lózás</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">Nap&amp;ló mutatása...</translation>
+        <translation>Nap&amp;ló mutatása...</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished">Engedélyez</translation>
+        <translation>Engedélyez</translation>
     </message>
     <message>
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Átméretezés: %1x%2</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation type="unfinished">Monitor-előnézet: %1</translation>
+        <translation>Monitor-előnézet: %1</translation>
     </message>
     <message>
         <source>&amp;Connect Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Hálózati adapter &amp;csatlakoztatása</translation>
     </message>
     <message>
         <source>Connect Network Adapter &amp;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;%1 hálózati adapter csatlakoztatása</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation type="unfinished">Nincs USB eszköz csatlakoztatva</translation>
+        <translation>Nincs USB eszköz csatlakoztatva</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished">Nincs támogatott eszköz a gazda PC-hez csatlakoztatva</translation>
+        <translation>Nincs támogatott eszköz a gazda PC-hez csatlakoztatva</translation>
     </message>
     <message>
         <source>No Webcams Connected</source>
-        <translation type="unfinished">Nincs webkamera csatlakoztatva</translation>
+        <translation>Nincs webkamera csatlakoztatva</translation>
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
-        <translation type="unfinished">Nincs támogatott webkamera a gazda PC-hez csatlakoztatva</translation>
+        <translation>Nincs támogatott webkamera a gazda PC-hez csatlakoztatva</translation>
     </message>
     <message>
         <source>E&amp;xtra Data Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>E&amp;xtra adatkezelő...</translation>
     </message>
     <message>
         <source>Display the Extra Data Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Extra adatkezelő ablak megjelenítése</translation>
     </message>
     <message>
         <source>Create new virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Új virtuális gép készítése</translation>
     </message>
     <message>
         <source>Add existing virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Létező virtuális gép hozzáadása</translation>
     </message>
     <message>
         <source>Rename selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gép csoport átnevezése</translation>
     </message>
     <message>
         <source>&amp;Ungroup</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Csoportosítatlan</translation>
     </message>
     <message>
         <source>Ungroup items of selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gép csoportosítatlan elemei</translation>
     </message>
     <message>
         <source>&amp;Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>Rendezé&amp;s</translation>
     </message>
     <message>
         <source>Sort items of selected virtual machine group alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gép csoport elemeinek betűrendbe rendezése</translation>
     </message>
     <message>
         <source>Add new group based on selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Új csoport hozzáadása a kiválasztott virtuális gépek alapján</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gép klónozása</translation>
     </message>
     <message>
         <source>Remove selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gépek eltávolítása</translation>
     </message>
     <message>
         <source>Start selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gép elindítása</translation>
     </message>
     <message>
         <source>Switch to the windows of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gépek ablakaira váltás</translation>
     </message>
     <message>
         <source>&amp;Normal Start</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Normál indítás</translation>
     </message>
     <message>
         <source>&amp;Headless Start</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ablaktalan indítás</translation>
     </message>
     <message>
         <source>Start selected virtual machines in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gépek indítása a háttérben</translation>
     </message>
     <message>
         <source>&amp;Detachable Start</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Leválasztható indítás</translation>
     </message>
     <message>
         <source>Start selected virtual machines with option of continuing in background</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gépek indítása, hogy a háttérben is futhatnak tovább</translation>
     </message>
     <message>
         <source>Suspend execution of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gépek futásának felfüggesztése</translation>
     </message>
     <message>
         <source>Reset selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gépek visszaállítása</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mentett állapot eldobása...</translation>
     </message>
     <message>
         <source>Discard saved state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation> A kiválasztott virtuális gép mentett állapotának eldobása</translation>
     </message>
     <message>
         <source>Show log files of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott gép naplófájljainak mutatása</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Frissítés</translation>
     </message>
     <message>
         <source>Refresh accessibility state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissíti az állapotinformációkat a kiválasztott virtuális gépen</translation>
     </message>
     <message>
         <source>S&amp;how in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Megjelenítés a keresőben</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>A VirtualBox gép definíciós fájljának megjelenítése a keresőben</translation>
     </message>
     <message>
         <source>S&amp;how in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Megjelenítés az Intézőben</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>A VirtualBox gép definíciós fájljának megjelenítése az Intézőben</translation>
     </message>
     <message>
         <source>S&amp;how in File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Megjelenítés a fájlkezelőben</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>A VirtualBox gép definíciós fájljának megjelenítése a fájlkezelőben</translation>
     </message>
     <message>
         <source>Cr&amp;eate Alias on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Alias létr&amp;ehozása az asztalon</translation>
     </message>
     <message>
         <source>Create alias files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Létrehoz egy Alias-t az asztalon a VirtualBox gép definíciós fájljához</translation>
     </message>
     <message>
         <source>Cr&amp;eate Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Parancsikon létr&amp;ehozása az asztalon</translation>
     </message>
     <message>
         <source>Create shortcut files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Létrehoz egy parancsikont az asztalon a VirtualBox gép definíciós fájljához</translation>
     </message>
     <message>
         <source>Sort group of first selected virtual machine alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>Az elsőnek kiválasztott gép csoportjának betűrendbe rendezése</translation>
     </message>
     <message>
         <source>Save state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gép állapotának mentése</translation>
     </message>
     <message>
         <source>Send ACPI Shutdown signal to selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>ACPI leállítási parancs küldése a virtuális gépnek</translation>
     </message>
     <message>
         <source>Power off selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gépek kikapcsolása</translation>
     </message>
 </context>
 <context>
@@ -1467,34 +1467,34 @@
     <message>
         <source>Status</source>
         <comment>password table field</comment>
-        <translation type="unfinished"></translation>
+        <translation>Státusz</translation>
     </message>
     <message>
         <source>ID</source>
         <comment>password table field</comment>
-        <translation type="unfinished"></translation>
+        <translation>Azonosító</translation>
     </message>
     <message>
         <source>Password</source>
         <comment>password table field</comment>
-        <translation type="unfinished"></translation>
+        <translation>Jelszó</translation>
     </message>
     <message numerus="yes">
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;nobr&gt;A következő merevlemez használja::&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
     </message>
     <message>
         <source>%1 - Disk Encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Lemeztitkosítás</translation>
     </message>
     <message numerus="yes">
         <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>A virtuális gép jelszóval védett. Kérlek, add meg lentebb a titkosítási jelszót.</numerusform>
         </translation>
     </message>
 </context>
@@ -1628,19 +1628,19 @@
     </message>
     <message>
         <source>Storage Controller (IDE)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tárolási vezérlő (IDE)</translation>
     </message>
     <message>
         <source>Storage Controller (SATA)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tárolási vezérlő (SATA)</translation>
     </message>
     <message>
         <source>Storage Controller (SCSI)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tárolási vezérlő (SCSI)</translation>
     </message>
     <message>
         <source>Storage Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tárolási vezérlő (SAS)</translation>
     </message>
 </context>
 <context>
@@ -1733,7 +1733,7 @@
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="obsolete">Ha a &lt;b&gt;Minden állapot&lt;/b&gt;ot választod, az aktuális virtuális gép és minden piialantkép klónozva lesz.</translation>
+        <translation type="obsolete">Ha a &lt;b&gt;Minden állapot&lt;/b&gt;ot választod, az aktuális virtuális gép és minden pillanatkép klónozva lesz.</translation>
     </message>
     <message>
         <source>Full Clone</source>
@@ -1784,7 +1784,7 @@
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="obsolete">Ha a &lt;b&gt;Minden állapot&lt;/b&gt;ot választod, az aktuális virtuális gép és minden piialantkép klónozva lesz.</translation>
+        <translation type="obsolete">Ha a &lt;b&gt;Minden állapot&lt;/b&gt;ot választod, az aktuális virtuális gép és minden pillanatkép klónozva lesz.</translation>
     </message>
 </context>
 <context>
@@ -2338,7 +2338,7 @@
     </message>
     <message>
         <source>Retrieving data ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Adatgyűjtés...</translation>
     </message>
 </context>
 <context>
@@ -2597,7 +2597,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ez a varázsló végig fog vezetni a virtuális gép exportálás folyamatán.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Válaszd ki azt a virtuális gépet, melyet hozzá szeretnél adni a mostanihoz. Egynél többetis kijelölhetsz. Ne feledd, hogy ezeknek a gépeknek kikapcsolva kell lenniük az exportálás megkezdése előtt.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ez a varázsló végig fog vezetni a virtuális gép exportálás folyamatán.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Válaszd ki azt a virtuális gépet, melyet hozzá szeretnél adni a mostanihoz. Egynél többet is kijelölhetsz. Ne feledd, hogy ezeknek a gépeknek kikapcsolva kell lenniük az exportálás megkezdése előtt.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2933,7 +2933,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ha a fentiek megfelelőek, nyomd meg a &lt;b&gt;Befejezés&lt;/b&gt; gombot. Ha megnyomtad, a kiválasztott média ideiglenesen felcsatolódik a virtuális gépre és a gép el fogja indítani.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy mikor bezárod a virtuális gépet, a megadott média automatikusan le fog választódni és az első merevlemezről fog indulni a gép.&lt;/p&gt;&lt;p&gt;A telepítőprogram típusától függgően, talán neked kell kézzel leválasztani (kiadni) a médiát, miután a telepítő újraindította a virtuális gépet, hogy megelőzd a telepítési folyamat újbóli elindulását. Ezt megteheted a megfelelő &lt;b&gt;Lecsatolás...&lt;/b&gt; művelet használatával az &lt;b&gt;Eszközök&lt;/b&gt; menüben.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ha a fentiek megfelelőek, nyomd meg a &lt;b&gt;Befejezés&lt;/b&gt; gombot. Ha megnyomtad, a kiválasztott média ideiglenesen felcsatolódik a virtuális gépre és a gép el fogja indítani.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy mikor bezárod a virtuális gépet, a megadott média automatikusan le fog választódni és az első merevlemezről fog indulni a gép.&lt;/p&gt;&lt;p&gt;A telepítőprogram típusától függően, talán neked kell kézzel leválasztani (kiadni) a médiát, miután a telepítő újraindította a virtuális gépet, hogy megelőzd a telepítési folyamat újbóli elindulását. Ezt megteheted a megfelelő &lt;b&gt;Lecsatolás...&lt;/b&gt; művelet használatával az &lt;b&gt;Eszközök&lt;/b&gt; menüben.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Start</source>
@@ -2986,7 +2986,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ha a fentiek megfelelőek, nyomd meg a &lt;b&gt;Befejezés&lt;/b&gt; gombot. Ha megnyomtad, a kiválasztott média ideiglenesen felcsatolódik a virtuális gépre és a gép el fogja indítani.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy mikor bezárod a virtuális gépet, a megadott média automatikusan le fog választódni és az első merevlemezről fog indulni a gép.&lt;/p&gt;&lt;p&gt;A telepítőprogram típusától függgően, talán neked kell kézzel leválasztani (kiadni) a médiát, miután a telepítő újraindította a virtuális gépet, hogy megelőzd a telepítési folyamat újbóli elindulását. Ezt megteheted a megfelelő &lt;b&gt;Lecsatolás...&lt;/b&gt; művelet használatával az &lt;b&gt;Eszközök&lt;/b&gt; menüben.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ha a fentiek megfelelőek, nyomd meg a &lt;b&gt;Befejezés&lt;/b&gt; gombot. Ha megnyomtad, a kiválasztott média ideiglenesen felcsatolódik a virtuális gépre és a gép el fogja indítani.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy mikor bezárod a virtuális gépet, a megadott média automatikusan le fog választódni és az első merevlemezről fog indulni a gép.&lt;/p&gt;&lt;p&gt;A telepítőprogram típusától függően, talán neked kell kézzel leválasztani (kiadni) a médiát, miután a telepítő újraindította a virtuális gépet, hogy megelőzd a telepítési folyamat újbóli elindulását. Ezt megteheted a megfelelő &lt;b&gt;Lecsatolás...&lt;/b&gt; művelet használatával az &lt;b&gt;Eszközök&lt;/b&gt; menüben.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
@@ -3352,107 +3352,107 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Méret: %1x%2, frissitési ráta: %3fps, bitráta: %4kbps</translation>
+        <translation>Méret: %1x%2, frissítési ráta: %3fps, bitráta: %4kbps</translation>
     </message>
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Minimális paravirtualizáció</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Hyper-V paravirtualizáció</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>KVM paravirtualizáció</translation>
     </message>
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Képméretezési faktor</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Méretezés nélküli HiDPI videókimenet</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished">Engedélyezve</translation>
+        <translation>Engedélyezve</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished"></translation>
+        <translation>[Optikai meghajtó]</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Általános meghajtó, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">USB vezérlő</translation>
+        <translation>USB vezérlő</translation>
     </message>
     <message>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Menü sor</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished">Engedélyezve</translation>
+        <translation>Engedélyezve</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation>Letiltva</translation>
     </message>
     <message>
         <source>Status-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Állapotsor</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished">Engedélyezve</translation>
+        <translation>Engedélyezve</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation>Letiltva</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Mini eszköztár pozíció</translation>
     </message>
     <message>
         <source>Top</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Fent</translation>
     </message>
     <message>
         <source>Bottom</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lent</translation>
     </message>
     <message>
         <source>Mini-toolbar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Mini eszköztár</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/mini-toolbar)</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation>Letiltva</translation>
     </message>
 </context>
 <context>
@@ -3707,7 +3707,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Suggest a reasonable maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
-        <translation>Javaslat, egy ésszerű maximális képernyőméret használatához. A vendég csak ezt a javaslatot fogja látni, mikor az intergációs szolgáltatás telepítve van.</translation>
+        <translation>Javaslat, egy ésszerű maximális képernyőméret használatához. A vendég csak ezt a javaslatot fogja látni, mikor az integrációs szolgáltatás telepítve van.</translation>
     </message>
     <message>
         <source>None</source>
@@ -3725,27 +3725,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Suggest a maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
-        <translation>Javaslat, a vendég maximális képernyőméretére. A vendég csak ezt a javaslatot fogja látni, mikor az intergációs szolgáltatás telepítve van.</translation>
+        <translation>Javaslat, a vendég maximális képernyőméretére. A vendég csak ezt a javaslatot fogja látni, mikor az integrációs szolgáltatás telepítve van.</translation>
     </message>
     <message>
         <source>Machine Windows:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gép ablakai:</translation>
     </message>
     <message>
         <source>&amp;Raise Window Under Mouse</source>
-        <translation type="unfinished"></translation>
+        <translation>Ablak kiemelése az egé&amp;r alatt</translation>
     </message>
     <message>
         <source>Holds the maximum width which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>A maximális szélesség, melyet a vendég használhat.</translation>
     </message>
     <message>
         <source>Holds the maximum height which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>A maximális magasság, melyet a vendég használhat.</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a gép ablakai kiemelkednek, mikor föléjük viszed az egeret.</translation>
     </message>
 </context>
 <context>
@@ -3796,19 +3796,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Csomag hozzáadása</translation>
     </message>
     <message>
         <source>Remove Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Csomag eltávolítása</translation>
     </message>
     <message>
         <source>Adds new package.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hozzáad egy új csomagot.</translation>
     </message>
     <message>
         <source>Removes selected package.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eltávolítja a kiválasztott csomagot.</translation>
     </message>
 </context>
 <context>
@@ -3823,7 +3823,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>Az azonosítási könyvtár elérési útját mutatja, ami a VRDP klienseket autentikálja. </translation>
+        <translation>Az azonosítási könyvtár elérési útját mutatja, ami a VRDP klienseket hitelesítése. </translation>
     </message>
     <message>
         <source>Default &amp;Hard Disk Folder:</source>
@@ -3835,7 +3835,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation>V&amp;RDP azonosítási könyvtár:</translation>
+        <translation>V&amp;RDP hitelesítési könyvtár:</translation>
     </message>
     <message>
         <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
@@ -3891,7 +3891,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the host screensaver will be disabled whenever a virtual machine is running.</source>
-        <translation>Ha engedélyezed, a gazda képernyővédője ki lesz kapcsolva, mikoregy virtuális gép fut.</translation>
+        <translation>Ha engedélyezed, a gazda képernyővédője ki lesz kapcsolva, mikor egy virtuális gép fut.</translation>
     </message>
     <message>
         <source>Disable When Running Virtual Machines</source>
@@ -3899,11 +3899,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Screensaver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gazda képernyővédő:</translation>
     </message>
     <message>
         <source>&amp;Disable When Running Virtual Machines</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Letiltva, ha virtuális gép fut</translation>
     </message>
 </context>
 <context>
@@ -3966,11 +3966,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Lists all available shortcuts which can be configured.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elérhető gyorsbillentyűk listája.</translation>
     </message>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
-        <translation type="unfinished"></translation>
+        <translation>A gyorsbillentyűk szűrési feltételei.</translation>
     </message>
 </context>
 <context>
@@ -4311,51 +4311,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add NAT Network</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT hálózat hozzáadása</translation>
     </message>
     <message>
         <source>Remove NAT Network</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT hálózat eltávolítása</translation>
     </message>
     <message>
         <source>Edit NAT Network</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT hálózat szerkesztése</translation>
     </message>
     <message>
         <source>Adds new NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hozzáad egy új NAT hálózatot.</translation>
     </message>
     <message>
         <source>Removes selected NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott NAT hálózat eltávolítása.</translation>
     </message>
     <message>
         <source>Edits selected NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott NAT hálózat szerkesztése.</translation>
     </message>
     <message>
         <source>Add Host-only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only hálózat hozzáadása</translation>
     </message>
     <message>
         <source>Remove Host-only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only hálózat eltávolítása</translation>
     </message>
     <message>
         <source>Edit Host-only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only hálózat szerkesztése</translation>
     </message>
     <message>
         <source>Adds new host-only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Új host-only hálózat hozzáadása.</translation>
     </message>
     <message>
         <source>Removes selected host-only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott host-only hálózat eltávolítása.</translation>
     </message>
     <message>
         <source>Edits selected host-only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott host-only hálózat szerkesztése.</translation>
     </message>
 </context>
 <context>
@@ -4549,11 +4549,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, manual configuration will be used for this network adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, ennél a hálózati kártyánál a manuális beállítások lesznek használva.</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a DHCP szerver be lesz kapcsolva ezen a hálózaton a gép indulásakor.</translation>
     </message>
 </context>
 <context>
@@ -4588,7 +4588,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network Options:</source>
-        <translation>Hálózati beállításak:</translation>
+        <translation>Hálózati beállítások:</translation>
     </message>
     <message>
         <source>Supports &amp;DHCP</source>
@@ -4624,23 +4624,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, this network will be enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, ez a hálózat be lesz kapcsolva.</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, ez a hálózat támogatni fogja a DHCP-t.</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, ez a hálózat támogatni fogja az IPv6-ot.</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, ez a hálózat lesz kinevezve alapértelmezett IPv6 útvonalnak.</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Megjeleníti a port továbbítási szabályokat.</translation>
     </message>
 </context>
 <context>
@@ -4718,11 +4718,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the proxy host.</source>
-        <translation type="unfinished"></translation>
+        <translation>A proxy gazda.</translation>
     </message>
     <message>
         <source>Holds the proxy port.</source>
-        <translation type="unfinished"></translation>
+        <translation>A proxy port.</translation>
     </message>
 </context>
 <context>
@@ -4777,7 +4777,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation type="unfinished"></translation>
+        <translation>Megadhatod, hogy a VirtualBox milyen sűrűn keressen frissítéseket. Ha szeretnéd teljesen kikapcsolni, csak vedd ki a jelölőnégyzet pipáját.</translation>
     </message>
 </context>
 <context>
@@ -5286,25 +5286,25 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;A merevlemez aktivitását jelzi:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Az optikai meghajtók aktivitását jelzi:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;A floppy meghajtók aktivitását jelzi:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;A képernyő aktivitását jelzi:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the host keyboard is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is captured&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelzi, hogy a vendég gép elfogta-e a gazda billentyűzetét:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;billentyűzet nincs elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;billentyűzet elfogva&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -5401,7 +5401,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="obsolete">Az audio kimenet driver beállítása. A &lt;b&gt;Null Audio Driver&lt;/b&gt; hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a gazda gépen.</translation>
+        <translation type="obsolete">Az audió kimenet driver beállítása. A &lt;b&gt;Null Audio Driver&lt;/b&gt; hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a gazda gépen.</translation>
     </message>
     <message>
         <source>Audio &amp;Controller:</source>
@@ -5413,7 +5413,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az audió kimenet driver beállítása. A &lt;b&gt;Null Audio Driver&lt;/b&gt; hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a gazda gépen.</translation>
     </message>
 </context>
 <context>
@@ -5476,23 +5476,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation>Autentikációs &amp;metódus:</translation>
+        <translation>Hitelesítési &amp;metódus:</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="obsolete">A VRDP autentikációs metódus.</translation>
+        <translation type="obsolete">A VRDP hitelesítési metódus.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation>Autentikációs &amp;időkorlát:</translation>
+        <translation>Hitelesítési &amp;időkorlát:</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="obsolete">Időkorlát a vendég autentikálásához, ezredmásodpercben.</translation>
+        <translation type="obsolete">Időkorlát a vendég hitelesítéséhez, ezredmásodpercben.</translation>
     </message>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation type="obsolete">kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videómemóriát rendeltél a géphez, pedig ez a minimum, ami a nagyfelbontású videók lejátszásához kell.</translation>
+        <translation type="obsolete">kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videómemóriát rendeltél a géphez, pedig ez a minimum, ami a nagy felbontású videók lejátszásához kell.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
@@ -5613,11 +5613,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for High Definition Video to be played efficiently.</source>
-        <translation>A virtuális gépen kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videómemóriát adtál meg, pedig ez a minimum, ami a nagyfelbontású videók lejátszásához szükséges.</translation>
+        <translation>A virtuális gépen kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videómemóriát adtál meg, pedig ez a minimum, ami a nagy felbontású videók lejátszásához szükséges.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">A virtuális gép a gardveres gafikus gyorsító használatása, és az operációs rendszer Windows Vistára vagy újabbra van állítva. A legjobb teljesítmény érdekében, a videómemória ajánlott minimuma: &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">A virtuális gép a hardveres grafikus gyorsító használatára, és az operációs rendszer Windows Vistára vagy újabbra van állítva. A legjobb teljesítmény érdekében, a videómemória ajánlott minimuma: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
@@ -5672,107 +5672,107 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Képernyők</translation>
     </message>
     <message>
         <source>Scale Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Képméretezési faktor:</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>A vendég képméretezési faktorát állítja be.</translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished"></translation>
+        <translation>%</translation>
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation type="unfinished"></translation>
+        <translation>HiDPI támogatás:</translation>
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a vendég képernyője nem lesz felskálázva a nagy gazda felbontás kompenzálásához.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Méretezés nélküli HiDPI kimenet használata</translation>
     </message>
     <message>
         <source>Acceleration:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gyorsítás:</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
+        <translation>A VRDP szerver portszáma. &lt;tt&gt;0&lt;/tt&gt; (nulla) megadásával a szabványos 3389-es RDP port lép érvénybe.</translation>
     </message>
     <message>
         <source>Selects the VRDP authentication method.</source>
-        <translation type="unfinished"></translation>
+        <translation>A VRDP hitelesítési metódus.</translation>
     </message>
     <message>
         <source>Holds the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Időkorlát a vendég hitelesítéshez, ezredmásodpercben.</translation>
     </message>
     <message>
         <source>When checked, multiple simultaneous connections to the VM are permitted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, több egyidejű kapcsolatot engedélyez a virtuális géphez.</translation>
     </message>
     <message>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ez a beállítás határozza meg a rögzített tartalom mentési fájlnevét.</translation>
     </message>
     <message>
         <source>Selects the resolution (frame size) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>A rögzített videó felbontása (keretméret).</translation>
     </message>
     <message>
         <source>Holds the &lt;b&gt;horizontal&lt;/b&gt; resolution (frame width) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>A rögzített videó &lt;b&gt;vízszintes&lt;/b&gt; felbontása.</translation>
     </message>
     <message>
         <source>Holds the &lt;b&gt;vertical&lt;/b&gt; resolution (frame height) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>A rögzített videó &lt;b&gt;függőleges&lt;/b&gt; felbontása.</translation>
     </message>
     <message>
         <source>Controls the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>A &lt;b&gt;percenkénti képkockák&lt;/b&gt; maximális száma. A további képkockák ki lesznek hagyva. Ezen érték csökkentése növeli a kihagyott képkockák számát és csökkenti a fájlméretet.</translation>
     </message>
     <message>
         <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>A &lt;b&gt;képminőséget&lt;/b&gt; határozza meg. Ezen érték növelése javítja a videó minőségét, és megnő a fájlméret.</translation>
     </message>
     <message>
         <source>Holds the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>A &lt;b&gt;másodpercenkénti kilobitek&lt;/b&gt; száma. Ezen érték növelése javítja a képminőséget, és megnő a fájlméret.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális géphez jelenleg kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videomemória van társítva, mely a minimális érték, ami a teljes képernyős- vagy asztal-integrációs módhoz szükséges.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gép készen áll a hardveres grafikus gyorsítás használatára, amihez Windows Vista vagy újabb szükséges. A legjobb teljesítményhez legalább &lt;b&gt;%1&lt;/b&gt; videomemória használata ajánlott.</translation>
     </message>
     <message>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>A távoli képernyő jelenleg engedélyezett a virtuális gépen. Azonban telepített &lt;i&gt;%1&lt;/i&gt; szükséges hozzá. Töltsd le a Kiterjesztő csomagot a VirtualBox oldaláról, vagy a távoli képernyő ki lesz kapcsolva.</translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;5 perc videó kb. %1MB&lt;/i&gt;</translation>
     </message>
     <message>
         <source>When checked, enables video recording for screen %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 képernyő videórögzítése.</translation>
     </message>
 </context>
 <context>
@@ -5835,7 +5835,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="obsolete">Meghatározza a bootsorrendet. A pipadobozok segítségével lehetőség nyílik a boot eszközök engedélyezésére/tiltására, illetve az elemek fel-le mozgatásával a bootolási sorrend meghatározására.</translation>
+        <translation type="obsolete">Meghatározza a boot-sorrendet. A pipadobozok segítségével lehetőség nyílik a boot eszközök engedélyezésére/tiltására, illetve az elemek fel-le mozgatásával a bootolási sorrend meghatározására.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
@@ -6008,7 +6008,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No name specified for the virtual machine.</source>
-        <translation>Nincs megadva név a vituális géphez.</translation>
+        <translation>Nincs megadva név a virtuális géphez.</translation>
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
@@ -6016,111 +6016,111 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Basi&amp;c</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Alap</translation>
     </message>
     <message>
         <source>A&amp;dvanced</source>
-        <translation type="unfinished">H&amp;aladó</translation>
+        <translation>H&amp;aladó</translation>
     </message>
     <message>
         <source>D&amp;rag&apos;n&apos;Drop:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fog&amp;d és vidd:</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation type="unfinished">L&amp;eírás</translation>
+        <translation>L&amp;eírás</translation>
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Titkosítás</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, bekapcsolod a virtuális gép titkosítását.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Titkosítás engedélyezése</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;itkosítási mód:</translation>
     </message>
     <message>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gép merevlemezeinek titkosításához használt titkosítási eljárás.</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ú&amp;j jelszó megadása:</translation>
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális géphez társított jelszó.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Új j&amp;elszó megerősítése:</translation>
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális géphez társított jelszó megerősítése.</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation type="unfinished"></translation>
+        <translation>Titkosítani próbálod a virtuális gépet. Azonban ehhez telepített &lt;i&gt;%1&lt;/i&gt; szükséges. Telepítsd fel a Kiterjesztő csomagot a VirtualBox oldaláról.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>A titkosítási típus nincs megadva.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>A titkosítási jelszó üres.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation type="unfinished"></translation>
+        <translation>A titkosítási jelszavak nem egyeznek.</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
-        <translation type="unfinished"></translation>
+        <translation>A gépről készített pillanatképek útvonala. A pillanatképek egy picit sok helyet foglalnak el.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Változatlanul hagy</translation>
     </message>
 </context>
 <context>
     <name>UIMachineSettingsInterface</name>
     <message>
         <source>Allows to modify VM menu-bar contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lehetővé teszi a VM menüsor tartalmának módosítását.</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished">Mini eszköztár:</translation>
+        <translation>Mini eszköztár:</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar in full-screen and seamless modes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a Mini eszköztár meg fog jelenni teljes képernyős és asztal-integrációs módban.</translation>
     </message>
     <message>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Megjelenítés teljes képernyőn/asztal-integrációban</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a mini eszköztár a képernyő tetején fog megjelenni, és nem pedig alul, az alapértelmezett helyén.</translation>
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation type="unfinished">Legyen a képernyő &amp;tetején</translation>
+        <translation>Legyen a képernyő &amp;tetején</translation>
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lehetővé teszi a VM állapotsor tartalmának módosítását.</translation>
     </message>
 </context>
 <context>
@@ -6370,23 +6370,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Megadhatod, hogyan legyen a virtuális adapter a valódi hálózathoz csatlakoztatva.</translation>
     </message>
     <message>
         <source>Shows additional network adapter options.</source>
-        <translation type="unfinished"></translation>
+        <translation>További hálózati kártya beállítások.</translation>
     </message>
     <message>
         <source>Holds the configuration settings for the network attachment driver. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>A hálózati driver konfigurációs beállításai. A beállításokat &lt;b&gt;név=érték&lt;/b&gt; formátumban kell megadni és a drivertől fognak függni. Új bejegyzés hozzáadásához &lt;b&gt;shift-enter&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>When checked, the virtual network cable is plugged in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális hálózati kábel be van dugva.</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Port továbbítási szabályok beállításai.</translation>
     </message>
 </context>
 <context>
@@ -6488,23 +6488,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished">Jelenleg nincs IRQ megadva.</translation>
+        <translation>Jelenleg nincs IRQ megadva.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished">Jelenleg nincs I/O port megadva.</translation>
+        <translation>Jelenleg nincs I/O port megadva.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished">Kettő vagy több portnak ugyanazok a beállításai.</translation>
+        <translation>Kettő vagy több portnak ugyanazok a beállításai.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished">Jelenleg nincs port elérési út megadva.</translation>
+        <translation>Jelenleg nincs port elérési út megadva.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished">Jelenleg duplikált port elérési út van megadva.</translation>
+        <translation>Jelenleg duplikált port elérési út van megadva.</translation>
     </message>
 </context>
 <context>
@@ -6617,7 +6617,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Minden a gép számára elérhető megosztott mappa listázása. A &apos;net use x: \\vboxsvr\share&apos; parancs segítségével használható a &lt;i&gt;share&lt;/i&gt; nevű megosztás a DOS-szerű OS-ekból, a &apos;mount -t vboxsf share mount_point&apos; paranccsal pedig Linux-alapú OS-ekből. Az integrációs szolgáltatások telepítése szükséges hozzá.</translation>
+        <translation>Minden a gép számára elérhető megosztott mappa listázása. A &apos;net use x: \\vboxsvr\share&apos; parancs segítségével használható a &lt;i&gt;share&lt;/i&gt; nevű megosztás a DOS-szerű OS-ekből, a &apos;mount -t vboxsf share mount_point&apos; paranccsal pedig Linux-alapú OS-ekből. Az integrációs szolgáltatások telepítése szükséges hozzá.</translation>
     </message>
     <message>
         <source>Name</source>
@@ -6661,27 +6661,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Megosztott mappa hozzáadása</translation>
     </message>
     <message>
         <source>Edit Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Megosztott mappa szerkesztése</translation>
     </message>
     <message>
         <source>Remove Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Megosztott mappa eltávolítása</translation>
     </message>
     <message>
         <source>Adds new shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Új megosztott mappa hozzáadása.</translation>
     </message>
     <message>
         <source>Edits selected shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott megosztott mappa szerkesztése.</translation>
     </message>
     <message>
         <source>Removes selected shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott megosztott mappa törlése.</translation>
     </message>
 </context>
 <context>
@@ -6740,7 +6740,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, this shared folder will be permanent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, ez a megosztott mappa végleges lesz.</translation>
     </message>
 </context>
 <context>
@@ -6820,43 +6820,43 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished"></translation>
+        <translation>A soros port működési módja. Ha a &lt;b&gt;Lekapcsolva&lt;/b&gt; módot választod, a vendég rendszer érzékeli majd a soros portot, de használni nem fogja tudni.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális gép feltételezni fogja, hogy az &lt;b&gt;Elérési út/Cím&lt;/b&gt; mezőben levő cső vagy socket létezik, és megpróbálja használni. Egyéb esetben a virtuális gép hozza létre induláskor a csövet vagy socketet.</translation>
     </message>
     <message>
         <source>&amp;Connect to existing pipe/socket</source>
-        <translation type="unfinished"></translation>
+        <translation>Létező &amp;csőhöz/sockethez csatlakozás</translation>
     </message>
     <message>
         <source>&amp;Path/Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Elérési út/Cím:</translation>
     </message>
     <message>
         <source>&lt;p&gt;In &lt;b&gt;Host Pipe&lt;/b&gt; mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Host Device&lt;/b&gt; mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Raw File&lt;/b&gt; mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;TCP&lt;/b&gt; mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Gazda cső&lt;/b&gt; módban: A soros port csövének elérési útja a gazda gépen. Például: &quot;\\.\pipe\myvbox&quot; vagy &quot;/tmp/myvbox&quot;,Windows és UNIX jellegű rendszereken.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Gazda eszköz&lt;/b&gt;módban: A gazda soros eszköz neve. Például: &quot;COM1&quot; vagy &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Raw fájl&lt;/b&gt; móban: A fájl elérési útja a gazda rendszeren, ahova a soros port kimenete lesz mentve.&lt;/p&gt;&lt;p&gt;&lt;b&gt;TCP&lt;/b&gt; módban: A TCP &quot;port&quot; szerver módban, vagy &quot;hostname:port&quot; kliens módban.</translation>
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished">Jelenleg nincs IRQ megadva.</translation>
+        <translation>Jelenleg nincs IRQ megadva.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished">Jelenleg nincs I/O port megadva.</translation>
+        <translation>Jelenleg nincs I/O port megadva.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished">Kettő vagy több portnak ugyanazok a beállításai.</translation>
+        <translation>Kettő vagy több portnak ugyanazok a beállításai.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished">Jelenleg nincs port elérési út megadva.</translation>
+        <translation>Jelenleg nincs port elérési út megadva.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished">Jelenleg duplikált port elérési út van megadva.</translation>
+        <translation>Jelenleg duplikált port elérési út van megadva.</translation>
     </message>
 </context>
 <context>
@@ -7128,7 +7128,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation type="obsolete">Válaszd ki a használandó virtális lemezképet vagy gazda meghajtót.</translation>
+        <translation type="obsolete">Válaszd ki a használandó virtuális lemezképet vagy gazda meghajtót.</translation>
     </message>
     <message>
         <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
@@ -7144,7 +7144,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Ha ez kiválasztod, a vendég ATAPI parancsokat küldhet közvetlenül a gazda meghanjtónak, mely által a gazda géphez csatlakozó CD/DVD írókat a virtuális gépen belül is lehet használni. Megjegyzendő, hogy a virtuális gépen belül nem támogatott még az audió CD írása.</translation>
+        <translation>Ha ez kiválasztod, a vendég ATAPI parancsokat küldhet közvetlenül a gazda meghajtónak, mely által a gazda géphez csatlakozó CD/DVD írókat a virtuális gépen belül is lehet használni. Megjegyzendő, hogy a virtuális gépen belül nem támogatott még az audió CD írása.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
@@ -7176,7 +7176,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Allows to use host I/O caching capabilities.</source>
-        <translation type="obsolete">Lehetővé teszi a gazda I/O cache képességeinek haszbnálatát.</translation>
+        <translation type="obsolete">Lehetővé teszi a gazda I/O cache képességeinek használatát.</translation>
     </message>
     <message>
         <source>Use Host I/O Cache</source>
@@ -7224,7 +7224,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="obsolete">Válassz egy virtuális meghajtóként használandó virtuális CD/DVD lemezt vagy fizikai meghajtót. A virtuális gép létni fogja a meghajtóba vagy a fizikai meghajtóba helyezett lemez tartalmát.</translation>
+        <translation type="obsolete">Válassz egy virtuális meghajtóként használandó virtuális CD/DVD lemezt vagy fizikai meghajtót. A virtuális gép látni fogja a meghajtóba vagy a fizikai meghajtóba helyezett lemez tartalmát.</translation>
     </message>
     <message>
         <source>Set up the virtual CD/DVD drive</source>
@@ -7236,7 +7236,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation>Válassz egy virtuális meghajtóként használandó virtuális floppy lemezt vagy fizikai meghajtót. A virtuális gép létni fogja a meghajtóba vagy a fizikai meghajtóba helyezett lemez tartalmát.</translation>
+        <translation>Válassz egy virtuális meghajtóként használandó virtuális floppy lemezt vagy fizikai meghajtót. A virtuális gép látni fogja a meghajtóba vagy a fizikai meghajtóba helyezett lemez tartalmát.</translation>
     </message>
     <message>
         <source>Set up the virtual floppy drive</source>
@@ -7338,117 +7338,117 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gép minden tárolási vezérlőjének, illetve a géphez csatolt összes lemezképének, és gazdaeszközének listája.</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>A tárolófán jelenleg kijelölt vezérlő neve.</translation>
     </message>
     <message>
         <source>When checked, allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a gazda I/O cache képességei használhatóak.</translation>
     </message>
     <message>
         <source>When checked, the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális lemez nem lesz eltávolítva, mikor a vendég rendszer kiadja azt.</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a solid-state device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a vendég rendszer mozgó alkatrészek nélküli tárolóként (SSD) fogja látni a virtuális lemezt.</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a hot-pluggable device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a vendég rendszer hot-plug eszközként fogja látni a virtuális lemezt.</translation>
     </message>
     <message>
         <source>&amp;Hot-pluggable</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hot-plug eszköz</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kulccsal titkosítás:</translation>
     </message>
     <message>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lemezkép választása...</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>storage image</comment>
-        <translation type="unfinished">Képfájl</translation>
+        <translation>Képfájl</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Elem&amp;nbsp;kibontása/becsukása.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;hard&amp;nbsp;disk.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Merevlemez&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;optical&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Optikai&amp;nbsp;meghajtó&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;floppy&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Floppy&amp;nbsp;meghajtó&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Add USB Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB vezérlő hozzáadása</translation>
     </message>
     <message>
         <source>Add Optical Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Optikai meghajtók hozzáadása</translation>
     </message>
     <message>
         <source>Add Floppy Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Floppy meghajtó hozzáadása</translation>
     </message>
     <message>
         <source>Adds new storage controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Új tárolási vezérlő hozzáadása.</translation>
     </message>
     <message>
         <source>Removes selected storage controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott tárolási vezérlő törlése.</translation>
     </message>
     <message>
         <source>Adds new storage attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Új tárolóeszköz hozzáadása.</translation>
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott tárolóeszköz eltávolítása.</translation>
     </message>
     <message>
         <source>Optical &amp;Drive:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Optikai meghajtó:</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Válassz egy virtuális meghajtóként használandó virtuális optikai lemezt vagy fizikai meghajtót. A virtuális gép látni fogja a meghajtóba vagy a fizikai meghajtóba helyezett lemez tartalmát.</translation>
     </message>
     <message>
         <source>Create New Hard Disk...</source>
-        <translation type="unfinished"></translation>
+        <translation>Új  merevlemez létrehozása...</translation>
     </message>
     <message>
         <source>Choose Virtual Hard Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális merevlemez választása...</translation>
     </message>
     <message>
         <source>Choose Virtual Optical Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális optikai lemez választása...</translation>
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Lemez eltávolítása a virtuális meghajtóból</translation>
     </message>
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális floppy választása...</translation>
     </message>
 </context>
 <context>
@@ -7513,7 +7513,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Meghatározza a bootsorrendet. Használd ezt az opciót a boot eszközök engedélyezésére/tiltására. Mozgasd fel vagy le az elemeket a pontos sorrendhez.</translation>
+        <translation>Meghatározza a boot-sorrendet. Használd ezt az opciót a boot eszközök engedélyezésére/tiltására. Mozgasd fel vagy le az elemeket a pontos sorrendhez.</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
@@ -7650,7 +7650,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
-        <translation type="obsolete">a processzor végrehajtási csúcsát túl acsonyra állítottad. Ez lassíthatja a virtuális gépet.</translation>
+        <translation type="obsolete">a processzor végrehajtási csúcsát túl alacsonyra állítottad. Ez lassíthatja a virtuális gépet.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -7692,11 +7692,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9. It will be done automatically if you confirm your changes.</source>
-        <translation type="obsolete">Az I/O APIC szolgáltatás jelenleg nincs bekapcsolva a Rendszer lapon Alaplap részében. Szükség van rá az ICH9 lapkakészlet támogatásához. Automatikusan bekapcsolódik, ha eelfogadod a változtatásokat.</translation>
+        <translation type="obsolete">Az I/O APIC szolgáltatás jelenleg nincs bekapcsolva a Rendszer lapon Alaplap részében. Szükség van rá az ICH9 lapkakészlet támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device. It will be done automatically if you confirm your changes.</source>
-        <translation type="obsolete">Az USB vezérlő emulációja jelenleg nincs bekapcsolva az USB lapon. Az USB-s beviteli eszközök támogatásátához ban rá szükség. Automatikusan bekapcsolódik, ha eelfogadod a változtatásokat.</translation>
+        <translation type="obsolete">Az USB vezérlő emulációja jelenleg nincs bekapcsolva az USB lapon. Az USB-s beviteli eszközök támogatásához van rá szükség. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
@@ -7708,65 +7708,65 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation type="obsolete">Az I/O APIC szolgáltatás jelenleg nincs bekapcsolva a Rendszer lapon Alaplap részében. Szükség van rá az egynél több virtuális processzor támogatásához. Automatikusan bekapcsolódik, ha eelfogadod a változtatásokat.</translation>
+        <translation type="obsolete">Az I/O APIC szolgáltatás jelenleg nincs bekapcsolva a Rendszer lapon Alaplap részében. Szükség van rá az egynél több virtuális processzor támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation type="obsolete">A hardveres virtualizáció jelenleg nincs bekapcsolva a Rendszer lap Gyorsítás részében. Szükség van rá az egynél több virtuális processzor támogatásához. Automatikusan bekapcsolódik, ha eelfogadod a változtatásokat.</translation>
+        <translation type="obsolete">A hardveres virtualizáció jelenleg nincs bekapcsolva a Rendszer lap Gyorsítás részében. Szükség van rá az egynél több virtuális processzor támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
-        <translation>A processzor végrehajtási csúcsát túl acsonyra állítottad. Ez lassíthatja a virtuális gép reakcióidejét.</translation>
+        <translation>A processzor végrehajtási csúcsát túl alacsonyra állítottad. Ez lassíthatja a virtuális gép reakcióidejét.</translation>
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, az RTC eszköz közli az UTC időt, egyéb esetben a helyi (gazda) idő lesz érvényben. Az Unix rendszer általában elvárja a hardveres idő UTC-re állítását.</translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished"></translation>
+        <translation>%</translation>
     </message>
     <message>
         <source>&amp;Paravirtualization Interface:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Paravirtualizációs interfész:</translation>
     </message>
     <message>
         <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ezen virtuális gép által használandó paravirtualizációs interfész szolgáltató.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9 you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az I/O APIC szolgáltatás jelenleg nincs bekapcsolva a Rendszer lapon Alaplap részében. Szükség van rá az ICH9 lapkakészlet támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az USB vezérlő emulációja jelenleg nincs bekapcsolva az USB lapon. Az USB-s beviteli eszközök támogatásához van rá szükség. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az I/O APIC szolgáltatás jelenleg nincs bekapcsolva a Rendszer lapon Alaplap részében. Szükség van rá az egynél több virtuális processzor támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>A hardveres virtualizáció jelenleg nincs bekapcsolva a Rendszer lap Gyorsítás részében. Szükség van rá az egynél több virtuális processzor támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <source>%1 CPU</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 CPU</translation>
     </message>
     <message>
         <source>%1 CPUs</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 CPU</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -7906,79 +7906,79 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális USB OHCI vezérlő használható lesz ebben a virtuális gépben. Az USB OHCI vezérlő USB 1.0 támogatással rendelkezik.</translation>
     </message>
     <message>
         <source>USB &amp;1.1 (OHCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB &amp;1.1 (OHCI) vezérlő</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális USB EHCI vezérlő használható lesz ebben a virtuális gépben. Az USB EHCI vezérlő USB 2.0 támogatással rendelkezik.</translation>
     </message>
     <message>
         <source>USB &amp;2.0 (EHCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB &amp;2.0 (EHCI) vezérlő</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális USB xHCI vezérlő használható lesz ebben a virtuális gépben. Az USB xHCI vezérlő USB 3.0 támogatással rendelkezik.</translation>
     </message>
     <message>
         <source>USB &amp;3.0 (xHCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB &amp;3.0 (xHCI) vezérlő</translation>
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális gépen az USB 2.0/3.0 jelenleg be van kapcsolva. Azonban telepített &lt;i&gt;%1&lt;/i&gt; szükséges hozzá. Telepítsd fel a Kiterjesztő csomagot a VirtualBox oldalról, vagy kapcsold ki az USB 2.0/3.0-t, hogy el tudjon indulni a gép.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Üres szűrő hozzáadása</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Szűrő hozzáadása eszköz alapján</translation>
     </message>
     <message>
         <source>Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Szűrő szerkesztése</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Szűrő törlése</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Feljebb</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Lejjebb</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy teljesen üres USB szűrőt hoz létre. Ez a szűrő minden csatlakoztatott eszközre illeszkedni fog.</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy teljesen új USB szűrő létrehozása a kiválasztott USB eszköz paraméterei alapján.</translation>
     </message>
     <message>
         <source>Edits selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kijelölt szűrő szerkesztése.</translation>
     </message>
     <message>
         <source>Removes selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott USB szűrő törlése.</translation>
     </message>
     <message>
         <source>Moves selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott USB szűrő felfelé mozgatása.</translation>
     </message>
     <message>
         <source>Moves selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott USB szűrő lefelé mozgatása.</translation>
     </message>
 </context>
 <context>
@@ -8084,35 +8084,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gyártó ID alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;XXXX&lt;/tt&gt;, ahol &lt;tt&gt;X&lt;/tt&gt; egy hexadecimális szám. Az üres mező bármely értékre illeszkedni fog.</translation>
     </message>
     <message>
         <source>Holds the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Termék ID alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;XXXX&lt;/tt&gt;, ahol &lt;tt&gt;X&lt;/tt&gt; egy hexadecimális szám. Az üres mező bármely azonosítóra illeszkedni fog.</translation>
     </message>
     <message>
         <source>Holds the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Revízió szám alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;IIFF&lt;/tt&gt;, ahol &lt;tt&gt;I&lt;/tt&gt; az egész rész egy számjegye, &lt;tt&gt;F&lt;/tt&gt; pedig a törtrész számjegye. Az üres mező bármely azonosítóra illeszkedni fog.</translation>
     </message>
     <message>
         <source>Holds the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gyártó alapú szűrőt készít a gyártó &lt;i&gt;pontos&lt;/i&gt; neve alapján. Az üres mező bármely értékre illeszkedni fog.</translation>
     </message>
     <message>
         <source>Holds the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Termék alapú szűrőt készít a termék &lt;i&gt;pontos&lt;/i&gt; neve alapján. Az üres mező bármely értékre illeszkedni fog.</translation>
     </message>
     <message>
         <source>Holds the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorozatszám alapú szűrőt készít a sorozatszám alapján. Az üres mező bármely értékre illeszkedni fog.</translation>
     </message>
     <message>
         <source>Holds the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gazda USB port alapú szűrőt készít a port &lt;i&gt;pontos&lt;/i&gt; neve alapján. Az üres mező bármely értékre illeszkedni fog.</translation>
     </message>
     <message>
         <source>Holds whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>A csatlakoztatás módjára épülő szűrő, azaz hogy az USB eszköz helyileg (&lt;i&gt;Nem&lt;/i&gt;), a VRDP kliens gépen (&lt;i&gt;Igen&lt;/i&gt;) van csatlakoztatva, vagy mindegy (&lt;i&gt;Bárhol&lt;/i&gt;).</translation>
     </message>
 </context>
 <context>
@@ -8153,18 +8153,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation type="unfinished"></translation>
+        <translation>Médium eltávolítása...</translation>
     </message>
     <message>
         <source>&amp;Hard disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Merevlemezek</translation>
     </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
     <message>
         <source>Modify medium attributes</source>
-        <translation>Médium atttribútimainak módosítása</translation>
+        <translation>Médium attribútumainak módosítása</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
@@ -8179,23 +8179,23 @@ p, li { white-space: pre-wrap; }
     <name>UIMenuBarEditorWidget</name>
     <message>
         <source>Virtual Screen Resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális képernyő átméretezés</translation>
     </message>
     <message>
         <source>Virtual Screen Mapping</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális képernyő leképezése</translation>
     </message>
     <message>
         <source>Switch</source>
-        <translation type="unfinished">Átváltás</translation>
+        <translation>Átváltás</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Bezárás</translation>
+        <translation>Bezárás</translation>
     </message>
     <message>
         <source>Enable Menu Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Menü sor bekapcsolása</translation>
     </message>
 </context>
 <context>
@@ -8433,7 +8433,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl régiiek: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl régiek: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
@@ -8450,7 +8450,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Végzetes hiba lépett fel a virtuális gép futása során! A virtuáis gép ki fog kapcsolni. Ajánlott a következő hibaüzenet vágólapra másolása a későbbi megvizsgáláshoz:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Végzetes hiba lépett fel a virtuális gép futása során! A virtuális gép ki fog kapcsolni. Ajánlott a következő hibaüzenet vágólapra másolása a későbbi megvizsgáláshoz:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
@@ -8458,11 +8458,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">A virtuális gép &lt;b&gt;%1&lt;/b&gt; pillantkép mappájának &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; mappára történő átállítása sikertelen.</translation>
+        <translation type="obsolete">A virtuális gép &lt;b&gt;%1&lt;/b&gt; pillanatkép mappájának &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; mappára történő átállítása sikertelen.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A(z) &lt;b&gt;%1&lt;/b&gt;megosztott mappa (ami ide mutat: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) eltávolítása sikertelen a virtuáis gépről: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Zárj be minden programot a vendég OS-en belül, mely a mappát használhatja és próbáld újra.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;A(z) &lt;b&gt;%1&lt;/b&gt;megosztott mappa (ami ide mutat: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) eltávolítása sikertelen a virtuális gépről: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Zárj be minden programot a vendég OS-en belül, mely a mappát használhatja és próbáld újra.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
@@ -8482,7 +8482,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A virtuális gép ablaka &lt;b&gt;%1&amp;nbsp;bites&lt;/b&gt; színmélységű munkára van optimalizálva, de a virtuális megjelenítő jelenlegi színmélysége &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nyisd meg a vendég OS megjelenítési tulajdonságait és válassz egy &lt;b&gt;%3&amp;nbsp;bites&lt;/b&gt; módot, ha elérhető, a virtuális videóalrendszer legjobb teljesítménye érdekében.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés&lt;/b&gt;. Néhány operációs rendszer, mint az OS/2, működhetnek 32&amp;nbsp;bites módban, de mégis 24&amp;nbsp;bitnek (16 millió szín) érzékeli. Próbáld meg másik színmélységet választani, hogy akkor eltűnik-e ez az üzenet vay egyszerűen kikapcsolhatod most is, ha biztos vagy bene, hogy a szükséges színmélység (%4&amp;nbsp;bit) nem érhető el az adott vendég rendszeren.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A virtuális gép ablaka &lt;b&gt;%1&amp;nbsp;bites&lt;/b&gt; színmélységű munkára van optimalizálva, de a virtuális megjelenítő jelenlegi színmélysége &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nyisd meg a vendég OS megjelenítési tulajdonságait és válassz egy &lt;b&gt;%3&amp;nbsp;bites&lt;/b&gt; módot, ha elérhető, a virtuális videóalrendszer legjobb teljesítménye érdekében.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés&lt;/b&gt;. Néhány operációs rendszer, mint az OS/2, működhetnek 32&amp;nbsp;bites módban, de mégis 24&amp;nbsp;bitnek (16 millió szín) érzékeli. Próbáld meg másik színmélységet választani, hogy akkor eltűnik-e ez az üzenet vay egyszerűen kikapcsolhatod most is, ha biztos vagy benne, hogy a szükséges színmélység (%4&amp;nbsp;bit) nem érhető el az adott vendég rendszeren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
@@ -8672,7 +8672,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;teljesképernyős&lt;/b&gt; módra vált. Bármikor visszaléphetsz ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik teljesképernyős módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;teljes képernyős&lt;/b&gt; módra vált. Bármikor visszaléphetsz ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik teljes képernyős módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -8894,7 +8894,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="obsolete">Nem lehet használni az USB-t a gazda rendszerben, mert sem az USB fájlrendszer (usbfs), sem a DBus/Hal szolgáltatások nem elérhetők. Ha szeretnél USB eszközt használni a gazda gép rendszeréből, ennek a problémának a javítása szükséges. Ha végeztél, indítsd újra a VirtualBox-ot.</translation>
+        <translation type="obsolete">Nem lehet használni az USB-t a gazda rendszerben, mert sem az USB fájlrendszer (usbfs), sem a DBus/Hal szolgáltatások nem elérhetők. Ha szeretnél USB eszközt használni a gazda gép rendszeréből, ennek a problémának a javítása szükséges. Ha végeztél, indítsd újra a VirtualBoxot.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
@@ -9039,7 +9039,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;Új&lt;/b&gt; gombot az &lt;i&gt;Új virtuális lemez&lt;/i&gt; varázsló elindításához, és készíts egy új médiumot, vagy nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;Új&lt;/b&gt; gombot az &lt;i&gt;Új virtuális lemez&lt;/i&gt; varázsló elindításához, és készíts egy új médiumot, vagy nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elindításához.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
@@ -9053,7 +9053,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elindításához.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9089,7 +9089,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nem lehet a VirtualBox integrációs szolgáltatások telepítőlemezét felcsatolni a(z) &lt;b&gt;%1&lt;/b&gt; virtuálus gépre, mert a gép nem rendelkezik CD/DVD meghajtóval. Adj egyet a hozzá a virtuális gép beállításainál a Tároló fülön.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nem lehet a VirtualBox integrációs szolgáltatások telepítőlemezét felcsatolni a(z) &lt;b&gt;%1&lt;/b&gt; virtuális gépre, mert a gép nem rendelkezik CD/DVD meghajtóval. Adj egyet a hozzá a virtuális gép beállításainál a Tároló fülön.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -9098,7 +9098,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A következő VirtualBox beállításfájlok automatikusan konvertálva lesznek a régi formátumról az újra.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;OK&lt;/b&gt; gombot a VirtualBox indításához, vagy a &lt;b&gt;Kilépés&lt;/b&gt;-t a VirtualBox-ból való azonnali kilépéshez&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A következő VirtualBox beállításfájlok automatikusan konvertálva lesznek a régi formátumról az újra.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;OK&lt;/b&gt; gombot a VirtualBox indításához, vagy a &lt;b&gt;Kilépés&lt;/b&gt;-t a VirtualBoxból való azonnali kilépéshez&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -9159,7 +9159,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A(z) %1 pillanatfelvéte törléséhez időlegesen többszabad hely szükséges. A legrosszabb esetben a(z) %2 kép mérete %3 mérettel nőhet meg, miközben csak %4 szabad hely van a rendszeren.&lt;/p&gt;&lt;p&gt;Ha a művelet közben fogy el a szabad hely, az a kép és a virtuális gép beállításainak megsérülését okozhatja,mint például a virtuális gép és annak adatainak elvesztése.&lt;/p&gt;&lt;p&gt;Saját felelősségre folytathatja a pillanatfelvétel törlését.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A(z) %1 pillanatfelvétel törléséhez időlegesen több szabad hely szükséges. A legrosszabb esetben a(z) %2 kép mérete %3 mérettel nőhet meg, miközben csak %4 szabad hely van a rendszeren.&lt;/p&gt;&lt;p&gt;Ha a művelet közben fogy el a szabad hely, az a kép és a virtuális gép beállításainak megsérülését okozhatja,mint például a virtuális gép és annak adatainak elvesztése.&lt;/p&gt;&lt;p&gt;Saját felelősségre folytathatja a pillanatfelvétel törlését.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -9171,11 +9171,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nem tudsz teljes képernyőre váltani. Több virtuális képernyőd van beállítva, mint mannyi fizikai van csatlakoztatva a gazda géphez.&lt;/p&gt;&lt;p&gt;Csökkentsd a virtuális képernyők számát a beállításoknál vagy csatlakoztass további képernyőt a gazda géphez.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nem tudsz teljes képernyőre váltani. Több virtuális képernyőd van beállítva, mint amennyi fizikai van csatlakoztatva a gazda géphez.&lt;/p&gt;&lt;p&gt;Csökkentsd a virtuális képernyők számát a beállításoknál vagy csatlakoztass további képernyőt a gazda géphez.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nem tudsz asztal-integrációs módba váltani. Több virtuális képernyőd van beállítva, mint mannyi fizikai van csatlakoztatva a gazda géphez.&lt;/p&gt;&lt;p&gt;Csökkentsd a virtuális képernyők számát a beállításoknál vagy csatlakoztass további képernyőt a gazda géphez.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nem tudsz asztal-integrációs módba váltani. Több virtuális képernyőd van beállítva, mint amennyi fizikai van csatlakoztatva a gazda géphez.&lt;/p&gt;&lt;p&gt;Csökkentsd a virtuális képernyők számát a beállításoknál vagy csatlakoztass további képernyőt a gazda géphez.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
@@ -9191,11 +9191,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A VirtualBox Felhasználói kézikönyv sikresen letöltődött innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; és el lett mentve mint &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A VirtualBox Felhasználói kézikönyv sikeresen letöltődött innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; és el lett mentve mint &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A VirtualBox Felhasználói kézikönyv sikresen letöltődött innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; de nem lett helyikeg elmentve, mint &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Válassz a fájl számára másik helyet.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A VirtualBox Felhasználói kézikönyv sikeresen letöltődött innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; de nem lett helyileg elmentve, mint &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Válassz a fájl számára másik helyet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open virtual machine located in %1.</source>
@@ -9259,7 +9259,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuális floppy meghajtót adsz hozzá a vezérlőhöz: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnél egy virtuálisfloppy lemezt a meghajtóba tenni vagy még maradjon üresen?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Virtuális floppy meghajtót adsz hozzá a vezérlőhöz: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnél egy virtuális floppy lemezt a meghajtóba tenni vagy még maradjon üresen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9285,7 +9285,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
-        <translation>Az Integrációs szolgáltatások telepítése sikertelen. Az Integrációs szolgáltatások telepítési képe fel lesz csatolva a manuális etlepítés biztosításához.</translation>
+        <translation>Az Integrációs szolgáltatások telepítése sikertelen. Az Integrációs szolgáltatások telepítési képe fel lesz csatolva a manuális telepítés biztosításához.</translation>
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -9309,7 +9309,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A port továbbítási beállítások mentetlen módosításokattartalmaznak.&lt;/p&gt;&lt;p&gt;Ha folytatod, a módosítások elvesznek.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;A port továbbítási beállítások mentetlen módosításokat tartalmaznak.&lt;/p&gt;&lt;p&gt;Ha folytatod, a módosítások elvesznek.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
@@ -9358,7 +9358,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Egy VirtualBox kiterjesztő csomagot telepítesz. A kiterjesztő csomagok kiegészítik a VirtualBox képességeit és rendszerszintű szoftvert tartalmaznak, mely teljesen ártalmatlan a rendszeredre. Nézd át a lenti leírást és csak akkor folytasd, ha megbízható forásból származik a kiterjesztő csomag.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Egy VirtualBox kiterjesztő csomagot telepítesz. A kiterjesztő csomagok kiegészítik a VirtualBox képességeit és rendszerszintű szoftvert tartalmaznak, mely teljesen ártalmatlan a rendszeredre. Nézd át a lenti leírást és csak akkor folytasd, ha megbízható forrásból származik a kiterjesztő csomag.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
@@ -9366,7 +9366,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation>A kiterjesztő csomagok kiegészítik a VirtualBox képességeit és rendszerszintű szoftvert tartalmaznak, mely teljesen ártalmatlan a rendszeredre. Nézd át a lenti leírást és csak akkor folytasd, ha megbízható forásból származik a kiterjesztő csomag.</translation>
+        <translation>A kiterjesztő csomagok kiegészítik a VirtualBox képességeit és rendszerszintű szoftvert tartalmaznak, mely teljesen ártalmatlan a rendszeredre. Nézd át a lenti leírást és csak akkor folytasd, ha megbízható forrásból származik a kiterjesztő csomag.</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -9394,7 +9394,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Eltávolítod a VirtualBox kiterjesztő scomagot: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Biztos folytatni akarod?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Eltávolítod a VirtualBox kiterjesztő csomagot: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Biztos folytatni akarod?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
@@ -9639,7 +9639,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A VirtualBox kezelő helyi korlátozások miatt nem tud elindulni.&lt;/p&gt;&lt;p&gt;A progmram most leáll-&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;A VirtualBox kezelő helyi korlátozások miatt nem tud elindulni.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -9699,7 +9699,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Biztos elengeded a virtuálisoptikai lemezt: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Le fog választódni a következő virtuális gép(ek)ről: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Biztos elengeded a virtuális optikai lemezt: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Le fog választódni a következő virtuális gép(ek)ről: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -9872,131 +9872,131 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A virtuális képernyő jelenleg &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; színmódra van beállítva. A jobb teljesítmény érdekében, állítsd át &lt;b&gt;%2&amp;nbsp;bitre&lt;/b&gt;. Ez alapesetben megtehető a vendég operációs rendszer Vezérlőpult vagy Rendszerbeállítások. &lt;b&gt;Képernyő&lt;/b&gt; részében.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;A virtuális képernyő színmélysége jelenleg &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;. A jobb teljesítmény érdekében kérlek, válts &lt;b&gt;%2&amp;nbsp;bitre&lt;/b&gt;.Ezt általában a rendszer Vezérlőpultjában vagy Rendszerbeállításainál a &lt;b&gt;Képernyő&lt;/b&gt; részben teheted meg.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBoxClient COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A VirtualBoxCleint COM elem létrehozása sikertelen.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set the global VirtualBox extra data for key &lt;i&gt;%1&lt;/i&gt; to value &lt;i&gt;{%2}&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>A globális Virtualbox extra adat beállítása, &lt;i&gt;{%2}&lt;/i&gt; értékre, sikertelen ennél a kulcsnál: &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az extra adat beállítása, &lt;i&gt;{%3}&lt;/i&gt; értékre, sikertelen a(z) &lt;i&gt;%2&lt;/i&gt; virtuális gépen ennél a kulcsnál: &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Egy vagy több virtuális merevlemez, optikai vagy floppy képfájl jelenleg nem érhető el. Ennek eredményeképp, nem leszel képes olyan műveletek végrehajtására, melyek ezt a médiumot használnák, amíg az újra elérhető nem lesz.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombbal nyisd meg a Virtuális médiakezelő ablakot és láthatod az elérhetetlen médiát, vagy a &lt;b&gt;Kihagy&lt;/b&gt; gombbal figyelmen kívül hagyod ezt az üzenetet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A pillanatkép törlése azt okozhatja, hogy a mentett állapotinformációk elvesznek, és a VirtualBox által készített lemez-pillanatképek rá lesznek játszva az aktuális lemezre. Ez hosszú ideig is eltarthat, és a pillanatkép-beli információk ezután már nem lesznek helyreállíthatóak.&lt;/p&gt;&lt;/p&gt;Biztos törlöd ezt a pillanatképet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A(z) %1 pillanatfelvétel törléséhez időlegesen több szabad hely szükséges. A legrosszabb esetben a(z) %2 kép mérete %3 mérettel nőhet meg, miközben csak %4 szabad hely van a rendszeren.&lt;/p&gt;&lt;p&gt;Ha a művelet közben fogy el a szabad hely, az a kép és a virtuális gép beállításainak megsérülését okozhatja, mint például a virtuális gép és annak adatainak elvesztése.&lt;/p&gt;&lt;p&gt;Saját felelősségre folytathatja a pillanatfelvétel törlését.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to save the settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Beállítások mentése sikertelen.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new optical drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual optical disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Virtuális optikai meghajtót adsz hozzá a vezérlőhöz: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnél egy virtuális optikai lemezt a meghajtóba tenni vagy még maradjon üresen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the optical drive?&lt;/p&gt;&lt;p&gt;You will not be able to insert any optical disks or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Biztos, hogy törlöd ezt az optikai meghajtót?&lt;/p&gt;&lt;p&gt;Enélkül nem leszel képes optikai lemezt vagy ISO képfájlt csatolni, illetve az Integrációs szolgáltatásokat telepíteni!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem sikerült az optikai meghajtót (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem sikerült a floppy meghajtót (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az aktuális port továbbítási szabályok nem érvényesek. A szabály nevének egyedinek kell lennie.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az aktuális port továbbítási szabályok nem érvényesek. Néhány szabálynak ugyanaz a gazda portja, és ütköznek az IP címek.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Biztos elengeded a képfájlt: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Le fog választódni a következő virtuális gép(ek)ről: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Törölni akarod a virtuális merevlemez ezen tárolóegységét: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Ha a &lt;b&gt;Törlést&lt;/b&gt; választod, a tárolóegység véglegesen törlődni fog. Ez a művelet &lt;b&gt;nem vonható vissza&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ha a &lt;b&gt;Megtartást&lt;/b&gt; választod, a merevlemez csak az ismert merevlemezek listájáról törlődik, de a tárolóegység érintetlen marad, amit később újra hozzá lehet adni a merevlemezek listájához.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem sikerült az optikai meghajtót (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) leválasztani a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról, ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem sikerült a floppy meghajtót (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) leválasztani a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról, ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to open the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>A lemezfájl megnyitása sikertelen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to close the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>A lemezfájl bezárása sikertelen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard disk. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Merevlemez nélküli gépet készülsz létrehozni. Merevlemez nélkül nem leszel képes operációs rendszert telepíteni rá. Addig csak virtuális optikai meghajtóról vagy hálózatról tudod elindítani a gépet.</translation>
     </message>
     <message>
         <source>Bad password or authentication failure.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rossz jelszó vagy sikertelen hitelesítés.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kritikus hiba lépett fel a virtuális gép futása során és a gép leállt.&lt;/p&gt;&lt;p&gt;Segítségért látogass el a &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; közösségi részlegébe vagy a támogatási oldalra. Mellékeld a &lt;tt&gt;VBox.log&lt;/tt&gt; naplófájl tartalmát , melyet a virtuális gép naplózási mappájában találsz, ahogy annak a leírását is, mit csináltál mikor a hiba bekövetkezett. és a. Ne feledd, hogy a fenti fájlokhoz hozzáférhetsz a VirtualBox főablakából a &lt;b&gt;Gép&lt;/b&gt; menüben a &lt;b&gt;Napló mutatása&lt;/b&gt; menüpont választásával.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;OK&lt;/b&gt; gombbal kikapcsolhatod a gépet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;full-screen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in full-screen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;teljes képernyős&lt;/b&gt; módra vált. Bármikor visszaléphetsz az ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik a teljes képernyős módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to full-screen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to full-screen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nem tudsz teljes képernyőre váltani a vendég kevés videómemóriája miatt.&lt;/p&gt;&lt;p&gt;Be kell állítanod a virtuális gépet, hogy legalább &lt;b&gt;%1&lt;/b&gt; videómemóriával rendelkezzen.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;Kihagy&lt;/b&gt; gombbal teljes képernyőre válthatsz vagy a &lt;b&gt;Mégsem&lt;/b&gt; gombbal megszakíthatod a műveletet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem sikerült csatlakoztatni a virtuális gép hálózati kábelét: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem sikerült leválasztani a virtuális gép hálózati kábelét: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nem lehet a &lt;b&gt;VirtualBox integrációs szolgáltatások&lt;/b&gt; telepítőlemezét felcsatolni a(z) &lt;b&gt;%1&lt;/b&gt; virtuális gépre, mert a gép nem rendelkezik optikai meghajtóval. Adj hozzá egyet a virtuális gép beállításainál.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A VirtualBox Integrációs szolgáltatások lemezkép fájl sikeresen letöltődött a &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; helyről és el lett mentve: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Szeretnéd regisztrálni a lemezkép fájlt és berakni a virtuális optikai meghajtóba?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Drag and drop operation from host to guest failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>A fogd és vidd művelet sikertelen a vendég gép irányában.</translation>
     </message>
     <message>
         <source>Unable to cancel host to guest drag and drop operation.</source>
-        <translation type="unfinished"></translation>
+        <translation>A fogd és vidd művelet megszakítása sikertelen a vendég gép irányában.</translation>
     </message>
     <message>
         <source>Drag and drop operation from guest to host failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>A fogd és vidd művelet sikertelen a gazda gép irányában.</translation>
     </message>
 </context>
 <context>
@@ -10113,7 +10113,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Név:</translation>
     </message>
 </context>
 <context>
@@ -10272,7 +10272,7 @@ to store the virtual hard disk image or type a file name in the entry field.&lt;
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Adja meg a virtuális lemez méretét megabájtban. Ezt a méretet fogják a virtuális gépek látni a
+        <translation type="obsolete">&lt;p&gt;Adja meg a virtuális lemez méretét megabyte-ban. Ezt a méretet fogják a virtuális gépek látni a
 lemezből&lt;/p&gt;</translation>
     </message>
     <message>
@@ -10349,7 +10349,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Add meg a virtuális lemez méretét megabájtban. Ezt a méretet fogja a virtuális gép látni a lemezből&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Add meg a virtuális lemez méretét megabyte-ban. Ezt a méretet fogja a virtuális gép látni a lemezből&lt;/p&gt;</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
@@ -10417,7 +10417,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Add meg a virtuális lemez méretét megabájtban. Ezt a méretet fogják a virtuális gépek látni a lemezből&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Add meg a virtuális lemez méretét megabyte-ban. Ezt a méretet fogják a virtuális gépek látni a lemezből&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
@@ -10458,7 +10458,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
     <message>
         <source>Please select the virtual disk which you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select a virtual disk file.</source>
-        <translation type="obsolete">Válaszd ki a virtuális lemezt, amelyiket másolni szeretnél, ha még nincs kiválasztva. válaszhatsz másikat is  alistából vagy a mappa ikonnal kiválaszthatsz egy virtuális lemezfájlt.</translation>
+        <translation type="obsolete">Válaszd ki a virtuális lemezt, amelyiket másolni szeretnél, ha még nincs kiválasztva. Választhatsz másikat is a listából vagy a mappa ikonnal kiválaszthatsz egy virtuális lemezfájlt.</translation>
     </message>
     <message>
         <source>&amp;VDI (VirtualBox Disk Image)</source>
@@ -10486,7 +10486,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
     <message>
         <source>Virtual disk file type</source>
-        <translation type="obsolete">Virtuális lemez fájtípusa</translation>
+        <translation type="obsolete">Virtuális lemez fájltípusa</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
@@ -10502,7 +10502,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A &lt;b&gt;dinamikus növekvő&lt;/b&gt; virtuális lemezfájl a benne levő adatokhoz mérten foglal helyet, bár a felszabaduló hellyel nem fog automatikusan csökkeni a mérete.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A &lt;b&gt;dinamikus növekvő&lt;/b&gt; virtuális lemezfájl a benne levő adatokhoz mérten foglal helyet, bár a felszabaduló hellyel nem fog automatikusan csökkenni a mérete.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
@@ -10530,7 +10530,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
     <message>
         <source>Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk.</source>
-        <translation type="obsolete">Add meg a virtuális lemez méretét megabájtban. Ezt a méretet fogják a virtuális gépek látni a lemezből.</translation>
+        <translation type="obsolete">Add meg a virtuális lemez méretét megabyte-ban. Ezt a méretet fogják a virtuális gépek látni a lemezből.</translation>
     </message>
     <message>
         <source>Virtual disk file location</source>
@@ -10662,7 +10662,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Add meg a virtuális lemez méretét megabájtban. Ezt a méretet fogják a virtuális gépek látni a lemezből.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Add meg a virtuális lemez méretét megabyte-ban. Ezt a méretet fogják a virtuális gépek látni a lemezből.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
@@ -10751,7 +10751,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Add meg a fizikai memória (RAM) mennyiségét megabájtban, amelyet hozzá akarsz rendelni ehhez a virtuális géphez.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Add meg a fizikai memória (RAM) mennyiségét megabyte-ban, amelyet hozzá akarsz rendelni ehhez a virtuális géphez.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
@@ -10951,7 +10951,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="obsolete">Létező merevlemez &amp;haználata</translation>
+        <translation type="obsolete">Létező merevlemez &amp;használata</translation>
     </message>
     <message>
         <source>Create</source>
@@ -10992,7 +10992,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <name>UINewVMWzdPage3</name>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Add meg a fizikai memória (RAM) mennyiségét megabájtban, amelyet hozzá akarsz rendelni ehhez a virtuális géphez.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Add meg a fizikai memória (RAM) mennyiségét megabyte-ban, amelyet hozzá akarsz rendelni ehhez a virtuális géphez.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
@@ -11048,7 +11048,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Most kiválaszthatod az új virtuális gép indítólemezét. Készíthetsz új merevlemezt, vagy választhatsz egy létezőt a listából vagy a mappa ikon használatával kiválasztahtod a helyét.&lt;/p&gt;&lt;p&gt;Ha ennél bonyolultabb beállítást szeretnél, hagyd ki ezt a lépést, és majd később a virtuális gép beállításaoban csatlakoztass fel a merevlemezt.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Most kiválaszthatod az új virtuális gép indítólemezét. Készíthetsz új merevlemezt, vagy választhatsz egy létezőt a listából vagy a mappa ikon használatával kiválaszthatod a helyét.&lt;/p&gt;&lt;p&gt;Ha ennél bonyolultabb beállítást szeretnél, hagyd ki ezt a lépést, és majd később a virtuális gép beállításaiban csatlakoztass fel a merevlemezt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -11137,55 +11137,55 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <name>UIPortForwardingTable</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Név</translation>
+        <translation>Név</translation>
     </message>
     <message>
         <source>Protocol</source>
-        <translation type="unfinished">Protokoll</translation>
+        <translation>Protokoll</translation>
     </message>
     <message>
         <source>Host IP</source>
-        <translation type="unfinished">Gazda IP</translation>
+        <translation>Gazda IP</translation>
     </message>
     <message>
         <source>Host Port</source>
-        <translation type="unfinished">Gazda port</translation>
+        <translation>Gazda port</translation>
     </message>
     <message>
         <source>Guest IP</source>
-        <translation type="unfinished">Vendég IP</translation>
+        <translation>Vendég IP</translation>
     </message>
     <message>
         <source>Guest Port</source>
-        <translation type="unfinished">Vendég port</translation>
+        <translation>Vendég port</translation>
     </message>
     <message>
         <source>Contains a list of port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>A port továbbítási szabályokat tartalmazó lista.</translation>
     </message>
     <message>
         <source>Add New Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Új szabály hozzáadása</translation>
     </message>
     <message>
         <source>Copy Selected Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiválasztott szabály másolása</translation>
     </message>
     <message>
         <source>Remove Selected Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiválasztott szabály eltávolítása</translation>
     </message>
     <message>
         <source>Adds new port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Új port továbbítási szabály hozzáadása.</translation>
     </message>
     <message>
         <source>Copies selected port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott port továbbítási szabály másolása.</translation>
     </message>
     <message>
         <source>Removes selected port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott port továbbítási szabály eltávolítása.</translation>
     </message>
 </context>
 <context>
@@ -11213,12 +11213,12 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>%1, %2 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation>%2 van hátra a(z) %1 -ből</translation>
+        <translation>Hátralévő idő: %1 %2</translation>
     </message>
     <message>
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation>%1 van hátra</translation>
+        <translation>Hátralévő idő: %1</translation>
     </message>
 </context>
 <context>
@@ -11335,7 +11335,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>Beállítások</translation>
     </message>
 </context>
 <context>
@@ -11414,37 +11414,37 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>User Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Felhasználói felület</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Beállítások</translation>
+        <translation>Beállítások</translation>
     </message>
 </context>
 <context>
     <name>UISettingsSerializerProgress</name>
     <message>
         <source>Loading Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Beállítások betöltése...</translation>
     </message>
     <message>
         <source>Saving Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Beállítások mentése...</translation>
     </message>
 </context>
 <context>
     <name>UIStatusBarEditorWidget</name>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;A kijelzés átkapcsolásához &lt;b&gt;kattintás rá&lt;/b&gt;.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;A kijelzések áthelyezéséhez &lt;b&gt;&amp;fogd és vidd&lt;/b&gt; őket.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Bezárás</translation>
+        <translation>Bezárás</translation>
     </message>
     <message>
         <source>Enable Status Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Állapotsor bekapcsolása</translation>
     </message>
 </context>
 <context>
@@ -11570,7 +11570,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ez a varázsló ellenőrizni fogja a VirtualBox weboldalán, hogy elérhető-e újabb verzió a VirtualBox-ból.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombbal tudod elindítani a folyamatot és a &lt;b&gt;Mégsem&lt;/b&gt; gombbal jelezheted, ha nem akarsz ellenőrizni.&lt;/p&gt;&lt;p&gt;Bármikor elindíthatod a varázslót a &lt;b&gt;Súgó&lt;/b&gt; menü &lt;b&gt;Frissítések ellenőrzése...&lt;/b&gt; pontjával.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ez a varázsló ellenőrizni fogja a VirtualBox weboldalán, hogy elérhető-e újabb verzió a VirtualBoxból.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombbal tudod elindítani a folyamatot és a &lt;b&gt;Mégsem&lt;/b&gt; gombbal jelezheted, ha nem akarsz ellenőrizni.&lt;/p&gt;&lt;p&gt;Bármikor elindíthatod a varázslót a &lt;b&gt;Súgó&lt;/b&gt; menü &lt;b&gt;Frissítések ellenőrzése...&lt;/b&gt; pontjával.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -11592,7 +11592,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Elmenti a virtuális gép aktuális állapotát a merevlemezre.&lt;/p&gt;&lt;p&gt;Amikor a virtuális gép legközelebb el lesz indítva, a mentett állapot lesz visszatöltve, és a futás a mentés előtti állapottól fog indulni.&lt;/p&gt;&lt;p&gt;A virtuális gép mentése a virtuális gép memóriájának méretétől és a vendégrendszer típusától függően hosszú ideig is eltarthat. Légy türelemmel, és ne állítsd le a VirtualBox-ot addig&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Elmenti a virtuális gép aktuális állapotát a merevlemezre.&lt;/p&gt;&lt;p&gt;Amikor a virtuális gép legközelebb el lesz indítva, a mentett állapot lesz visszatöltve, és a futás a mentés előtti állapottól fog indulni.&lt;/p&gt;&lt;p&gt;A virtuális gép mentése a virtuális gép memóriájának méretétől és a vendégrendszer típusától függően hosszú ideig is eltarthat. Légy türelemmel, és ne állítsd le a VirtualBoxot addig&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -11628,11 +11628,11 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&amp;Continue running in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Futtatás tovább a háttérben</translation>
     </message>
     <message>
         <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Bezárja a virtuális gépet, de a virtuális gép fut tovább.&lt;/p&gt;&lt;p&gt;A VirtualBox kezelővel visszaléphetsz a futó virtuális gépbe.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -11650,98 +11650,98 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
-        <translation type="unfinished">%1 - Munkamenet információk</translation>
+        <translation>%1 - Munkamenet információk</translation>
     </message>
     <message>
         <source>Configuration &amp;Details</source>
-        <translation type="unfinished">&amp;Konfigurációs részletek</translation>
+        <translation>&amp;Konfigurációs részletek</translation>
     </message>
     <message>
         <source>&amp;Runtime Information</source>
-        <translation type="unfinished">Futásidő info&amp;rmációk</translation>
+        <translation>Futásidő info&amp;rmációk</translation>
     </message>
     <message>
         <source>DMA Transfers</source>
-        <translation type="unfinished">DMA átvitelek</translation>
+        <translation>DMA átvitelek</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="unfinished">PIO átvitelek</translation>
+        <translation>PIO átvitelek</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation type="unfinished">Olvasott adat</translation>
+        <translation>Olvasott adat</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation type="unfinished">Írt adat</translation>
+        <translation>Írt adat</translation>
     </message>
     <message>
         <source>Data Transmitted</source>
-        <translation type="unfinished">Küldött adat</translation>
+        <translation>Küldött adat</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation type="unfinished">Fogadott adat</translation>
+        <translation>Fogadott adat</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished">Nem található</translation>
+        <translation>Nem található</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished">Nem található</translation>
+        <translation>Nem található</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
-        <translation type="unfinished">Nem érhető el</translation>
+        <translation>Nem érhető el</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
-        <translation type="unfinished">Futtatókörnyezet paraméterei</translation>
+        <translation>Futtatókörnyezet paraméterei</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="unfinished">Felbontás</translation>
+        <translation>Felbontás</translation>
     </message>
     <message>
         <source>VM Uptime</source>
-        <translation type="unfinished"></translation>
+        <translation>VM futási ideje</translation>
     </message>
     <message>
         <source>Clipboard Mode</source>
-        <translation type="unfinished">Vágólap mód</translation>
+        <translation>Vágólap mód</translation>
     </message>
     <message>
         <source>Drag and Drop Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Fogd és vidd mód</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="unfinished">Integrációs szolgáltatások</translation>
+        <translation>Integrációs szolgáltatások</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">Vendég OS típusa</translation>
+        <translation>Vendég OS típusa</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
-        <translation type="unfinished">Tároló statisztika</translation>
+        <translation>Tároló statisztika</translation>
     </message>
     <message>
         <source>No Storage Devices</source>
-        <translation type="unfinished">Nincsenek tárolóeszközök</translation>
+        <translation>Nincsenek tárolóeszközök</translation>
     </message>
     <message>
         <source>Network Statistics</source>
-        <translation type="unfinished">Hálózati statisztika</translation>
+        <translation>Hálózati statisztika</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
-        <translation type="unfinished">Nincsenek hálózati adapterek</translation>
+        <translation>Nincsenek hálózati adapterek</translation>
     </message>
 </context>
 <context>
@@ -11903,19 +11903,19 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&amp;Expert Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Szakértő mód</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Expert Mode&lt;/b&gt;&lt;/nobr&gt;, a one-page dialog for experienced users.</source>
-        <translation type="unfinished"></translation>
+        <translation>A &lt;nobr&gt;&lt;b&gt;Szakértő mód&lt;/b&gt;&lt;/nobr&gt; egyetlen oldal, tapasztalt felhasználók számára.</translation>
     </message>
     <message>
         <source>&amp;Guided Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>E&amp;gyszerű mód</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Guided Mode&lt;/b&gt;&lt;/nobr&gt;, a step-by-step dialog with detailed explanations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az &lt;nobr&gt;&lt;b&gt;Egyszerű mód&lt;/b&gt;&lt;/nobr&gt;lépésről lépésre segít részletes magyarázatokkal.</translation>
     </message>
 </context>
 <context>
@@ -11934,7 +11934,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual hard drive file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Válaszd ki a virtuális lemezt, amelyiket másolni szeretnél, ha még nincs kiválasztva. Válaszhatsz másikat is a listából vagy a mappa ikonnal kiválaszthatsz egy virtuális lemezfájlt.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Válaszd ki a virtuális lemezt, amelyiket másolni szeretnél, ha még nincs kiválasztva. Választhatsz másikat is a listából vagy a mappa ikonnal kiválaszthatsz egy virtuális lemezfájlt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard drive file to copy...</source>
@@ -11958,7 +11958,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A &lt;b&gt;dinamikus növekvő&lt;/b&gt; virtuális lemezfájl a benne levő adatokhoz mérten foglal helyet a fizikai merevlemezen (a maxmimális &lt;b&gt;fix méretig&lt;/b&gt;), bár a felszabaduló hellyel nem fog automatikusan csökkeni a mérete.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A &lt;b&gt;dinamikus növekvő&lt;/b&gt; virtuális lemezfájl a benne levő adatokhoz mérten foglal helyet a fizikai merevlemezen (a maximális &lt;b&gt;fix méretig&lt;/b&gt;), bár a felszabaduló hellyel nem fog automatikusan csökkenni a mérete.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
@@ -12015,75 +12015,75 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Copy Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális merevlemez másolása</translation>
     </message>
     <message>
         <source>Hard disk to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Másolandó merevlemez</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual hard disk file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Válaszd ki a virtuális lemezt, amelyiket másolni szeretnél, ha még nincs kiválasztva. Választhatsz másikat is a listából vagy a mappa ikonnal kiválaszthatsz egy virtuális lemezfájlt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>Másolandó virtuális merevlemez választása...</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Merevlemez típusa</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Válassz egy fájltípust, amit az új virtuális lemezhez szeretnél használni. Ha nem szeretnéd másik virtualizációs szoftverhez használni, nem kell a beállításokat módosítanod.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Fizikai merevlemezen tárolás</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Válaszd ki, hogy az új virtuális lemez mérete folyamatosan növekedjen (dinamikusan növekvő) vagy lefoglalja-e a teljes területét (fix méretű).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A &lt;b&gt;dinamikus növekvő&lt;/b&gt; virtuális lemezfájl a benne levő adatokhoz mérten foglal helyet a fizikai merevlemezen (a maximális &lt;b&gt;fix méretig&lt;/b&gt;), bár a felszabaduló hellyel nem fog automatikusan csökkenni a mérete.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A &lt;b&gt;fix méretű&lt;/b&gt; merevlemezfájl létrehozása egyes rendszereken lassú lehet, de gyakran gyorsabb a használata.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Feldarabol&lt;/b&gt;hatod a virtuális lemezeket, maximum 2GB-os fájlokra. Leginkább akkor hasznos, ha a virtuális gépet USB eszközön vagy régi fájlrendszeren tárolod, melyek nem tudják a nagy fájlokat kezelni.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Válaszd ki az új virtuális merevlemez fájl helyét</translation>
     </message>
     <message>
         <source>New hard disk to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Új  merevlemez létrehozása</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kérlek add meg a lenti mezőben az új virtuális merevlemez nevét, vagy kattints a mappa ikonra a mappa kiválasztásához, ahol létrejöjjön a fájl.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Az új merevlemez helyének kiválasztása...</translation>
     </message>
     <message>
         <source>Hard disk to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Másolandó merevlemez</translation>
     </message>
     <message>
         <source>&amp;New hard disk to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Új  &amp;merevlemez létrehozása</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Merevlemez &amp;típusa</translation>
     </message>
 </context>
 <context>
@@ -12186,7 +12186,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Válaszd ki a klón típusát.&lt;/p&gt;&lt;p&gt;Ha a &lt;b&gt;Teljes klón&lt;/b&gt;t választod, az eredeti virtuális gép pontos másolata (minden virtuális lemezképpel együtt) fog létrejönni.&lt;/p&gt;&lt;p&gt;Ha a &lt;b&gt;Linkelt klón&lt;/b&gt;t választod, egy új virtuális gép jön létre, de a virtuális lemezképek az eredeti virtuális gép lemezképeire fognak mutatni, és az eredeti virtuális gép nélkül nem tudod a virtuális gépet másik számítógépre átmozgatni.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -12229,7 +12229,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Please choose where to create the virtual appliance. You can create it on your own computer, on the Sun Cloud service or on an S3 storage server.</source>
-        <translation>Válaszd ki a virtuális gép létrehozási helyét. Létrehozhatod a saját gépeden, Sun Cloudszolgáltatáson vagy egy S3 szerveren.</translation>
+        <translation>Válaszd ki a virtuális gép létrehozási helyét. Létrehozhatod a saját gépeden, Sun Cloud szolgáltatáson vagy egy S3 szerveren.</translation>
     </message>
     <message>
         <source>Create on</source>
@@ -12394,7 +12394,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from and should contain the operating system you wish to install on the virtual machine if you want to do that now. The disk will be ejected from the virtual drive automatically next time you switch the virtual machine off, but you can also do this yourself if needed using the Devices menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Válassz ki egy virtuális optikai lemezt vagy egy fizikai optikai meghajtót, melyről az új virtuális gép indulhat.&lt;/p&gt;&lt;p&gt;A lemeznek alkalmasnak kell lennie, egy számítógép elindításához és tartalmaznia kell a virtuális gépre telepítendő opreációs rendszert, ha ezt szeretnéd tenni. A lemez automatikusan leválasztódik a virtuális meghajtóról, amint kikapcsolod a virtuális gépet, de ezt te is megteheted az Eszközök menüből.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Válassz ki egy virtuális optikai lemezt vagy egy fizikai optikai meghajtót, melyről az új virtuális gép indulhat.&lt;/p&gt;&lt;p&gt;A lemeznek alkalmasnak kell lennie, egy számítógép elindításához és tartalmaznia kell a virtuális gépre telepítendő operációs rendszert, ha ezt szeretnéd tenni. A lemez automatikusan leválasztódik a virtuális meghajtóról, amint kikapcsolod a virtuális gépet, de ezt te is megteheted az Eszközök menüből.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from. As this virtual machine has no hard drive you will not be able to install an operating system on it at the moment.&lt;/p&gt;</source>
@@ -12488,7 +12488,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A &lt;b&gt;dinamikus növekvő&lt;/b&gt; virtuális lemezfájl a benne levő adatokhoz mérten foglal helyet a fizikai merevlemezen (a maxmimális &lt;b&gt;fix méretig&lt;/b&gt;), bár a felszabaduló hellyel nem fog automatikusan csökkeni a mérete.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A &lt;b&gt;dinamikus növekvő&lt;/b&gt; virtuális lemezfájl a benne levő adatokhoz mérten foglal helyet a fizikai merevlemezen (a maximális &lt;b&gt;fix méretig&lt;/b&gt;), bár a felszabaduló hellyel nem fog automatikusan csökkenni a mérete.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
@@ -12528,7 +12528,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Select the size of the virtual hard drive in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard drive.</source>
-        <translation type="obsolete">Add meg a virtuális lemez méretét megabájtban. Ezt a méretet fogja a virtuális gép látni a lemezből.</translation>
+        <translation type="obsolete">Add meg a virtuális lemez méretét megabyte-ban. Ezt a méretet fogja a virtuális gép látni a lemezből.</translation>
     </message>
     <message>
         <source>File &amp;location</source>
@@ -12544,51 +12544,51 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Create Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális merevlemez készítése</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Merevlemez típusa</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Válassz egy fájltípust, amit az új virtuális lemezhez szeretnél használni. Ha nem szeretnéd másik virtualizációs szoftverhez használni, nem kell a beállításokat módosítanod.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Fizikai merevlemezen tárolás</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Válaszd ki, hogy az új virtuális lemez mérete folyamatosan növekedjen (dinamikusan növekvő) vagy lefoglalja-e a teljes területét (fix méretű).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A &lt;b&gt;dinamikus növekvő&lt;/b&gt; virtuális lemezfájl a benne levő adatokhoz mérten foglal helyet a fizikai merevlemezen (a maximális &lt;b&gt;fix méretig&lt;/b&gt;), bár a felszabaduló hellyel nem fog automatikusan csökkenni a mérete.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A &lt;b&gt;fix méretű&lt;/b&gt; merevlemezfájl létrehozása egyes rendszereken lassú lehet, de gyakran gyorsabb a használata.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Feldarabol&lt;/b&gt;hatod a virtuális lemezeket, maximum 2GB-os fájlokra. Leginkább akkor hasznos, ha a virtuális gépet USB eszközön vagy régi fájlrendszeren tárolod, melyek nem tudják a nagy fájlokat kezelni.</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kérlek add meg a lenti mezőben az új virtuális merevlemez nevét, vagy kattints a mappa ikonra a mappa kiválasztásához, ahol létrejöjjön a fájl.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Az új merevlemez helyének kiválasztása...</translation>
     </message>
     <message>
         <source>Select the size of the virtual hard disk in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Add meg a virtuális lemez méretét megabyte-ban. Ezt a méretet fogja a virtuális gép látni a lemezből.</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Merevlemez &amp;típusa</translation>
     </message>
 </context>
 <context>
@@ -12635,7 +12635,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;&lt;p&gt;The recommended memory size is &lt;b&gt;%1&lt;/b&gt; MB.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Válaszd ki a virtuális gép számára fenntartott memória méretét (RAM), megabájtban.&lt;/p&gt;&lt;p&gt;Ajánlott memóriaméret: &lt;b&gt;%1&lt;/b&gt; MB.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Válaszd ki a virtuális gép számára fenntartott memória méretét (RAM), megabyte-ban.&lt;/p&gt;&lt;p&gt;Ajánlott memóriaméret: &lt;b&gt;%1&lt;/b&gt; MB.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Hard drive</source>
@@ -12667,27 +12667,27 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Merevlemez</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex storage set-up you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;&lt;p&gt;The recommended size of the hard disk is &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ha szeretnéd, hozzáadhatsz merevlemezt az új virtuális géphez. Létrehozhatsz új merevlemezt, választhatsz egyet a listából, vagy a mappa ikonra kattintva, kikereshetsz egyet.&lt;/p&gt;&lt;p&gt;Ha összetettebb felépítésre van szükséged, kihagyhatod ezt a lépést, és a virtuális gép létrejötte után is végezhetsz módosításokat.&lt;/p&gt;&lt;p&gt;Ajánlott merevlemezméret: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Do not add a virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne a&amp;djon hozzá virtuális merevlemezt</translation>
     </message>
     <message>
         <source>&amp;Create a virtual hard disk now</source>
-        <translation type="unfinished"></translation>
+        <translation>Ú&amp;j virtuális merevlemez készítése</translation>
     </message>
     <message>
         <source>&amp;Use an existing virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Létező virtuális merevlemez használata</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished">Virtuális merevlemez választása...</translation>
+        <translation>Virtuális merevlemez választása...</translation>
     </message>
 </context>
 <context>
@@ -12888,7 +12888,7 @@ Verzió %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Elmenti a virtuális gép aktuális állapotát a merevlemezre.&lt;/p&gt;&lt;p&gt;Amikor a virtuális gép legközelebb el lesz indítva, a mentett állapot lesz visszatöltve, és a futás a mentés előtti állapottól fog indulni.&lt;/p&gt;&lt;p&gt;A virtuális gép mentése a virtuális gép memóriájának méretétől és a vendégrendszer típusától függően hosszú ideig is eltarthat. Légy türelemmel, és ne állítsd le a VirtualBox-ot addig&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Elmenti a virtuális gép aktuális állapotát a merevlemezre.&lt;/p&gt;&lt;p&gt;Amikor a virtuális gép legközelebb el lesz indítva, a mentett állapot lesz visszatöltve, és a futás a mentés előtti állapottól fog indulni.&lt;/p&gt;&lt;p&gt;A virtuális gép mentése a virtuális gép memóriájának méretétől és a vendégrendszer típusától függően hosszú ideig is eltarthat. Légy türelemmel, és ne állítsd le a VirtualBoxot addig&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -13924,19 +13924,19 @@ Verzió %1</translation>
     </message>
     <message>
         <source>Displays a window to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyit egy ablakot az egy másik mappa kiválasztásához.</translation>
     </message>
     <message>
         <source>Displays a window to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyit egy ablakot az egy másik fájl kiválasztásához.</translation>
     </message>
     <message>
         <source>Holds the folder path.</source>
-        <translation type="unfinished"></translation>
+        <translation>A mappa elérési útja.</translation>
     </message>
     <message>
         <source>Holds the file path.</source>
-        <translation type="unfinished"></translation>
+        <translation>A fájl elérési útja.</translation>
     </message>
 </context>
 <context>
@@ -14017,7 +14017,7 @@ Verzió %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Sorozatszám %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
@@ -14764,7 +14764,7 @@ Verzió %1</translation>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Sorozatszám: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
@@ -15844,7 +15844,7 @@ Verzió %1</translation>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Nat hálózat, &apos;%1&apos;</translation>
+        <translation>NAT hálózat, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>You can create or add disk image files in the virtual machine settings.</source>
@@ -15853,153 +15853,153 @@ Verzió %1</translation>
     <message>
         <source>USB</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>off</source>
         <comment>guest monitor status</comment>
-        <translation type="unfinished"></translation>
+        <translation>ki</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Aktív</translation>
+        <translation>Aktív</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inaktív</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">Aktív</translation>
+        <translation>Aktív</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inaktív</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished">Aktív</translation>
+        <translation>Aktív</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inaktív</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Paravirtualizációs interfész</translation>
     </message>
     <message>
         <source>Taking Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pillanatfelvétel készítése</translation>
     </message>
     <message>
         <source>Taking Online Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Online pillanatkép készítése</translation>
     </message>
     <message>
         <source>None</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nincs</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished">Alapértelmezett</translation>
+        <translation>Alapértelmezett</translation>
     </message>
     <message>
         <source>Legacy</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>Örökölt</translation>
     </message>
     <message>
         <source>Minimal</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>Minimális</translation>
     </message>
     <message>
         <source>Hyper-V</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>Hyper-V</translation>
     </message>
     <message>
         <source>KVM</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>KVM</translation>
     </message>
     <message>
         <source>Optical</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Optikai</translation>
     </message>
     <message>
         <source>New dynamically allocated storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>Új dinamikusan növekvő tároló</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>PortMode</comment>
-        <translation type="unfinished">TCP</translation>
+        <translation>TCP</translation>
     </message>
     <message>
         <source>OHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>OHCI</translation>
     </message>
     <message>
         <source>EHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>EHCI</translation>
     </message>
     <message>
         <source>xHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>xHCI</translation>
     </message>
     <message>
         <source>USB Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB port %1</translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Felhasználói felület</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
-        <translation type="unfinished"></translation>
+        <translation>(Optikai meghajtó)</translation>
     </message>
     <message>
         <source>Please choose a virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Válassz egy virtuális merevlemez fájlt</translation>
     </message>
     <message>
         <source>All virtual hard disk files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden virtuális merevlemez fájl (%1)</translation>
     </message>
     <message>
         <source>Encrypted</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Titkosított</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Valamelyik fájl ebben a merevlemez-láncban elérhetetlen. Kérlek, használd a Virtuális médiakezelőt a fájlok ellenőrzéséhez.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Válaszd ki az új virtuális merevlemez fájl helyét</translation>
     </message>
 </context>
 <context>
@@ -16312,7 +16312,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="obsolete">Az azonosítási könyvtár elérési útját mutatja, ami a VRDP klienseket autentikálja. </translation>
+        <translation type="obsolete">Az azonosítási könyvtár elérési útját mutatja, ami a VRDP klienseket hitelesíti. </translation>
     </message>
     <message>
         <source>Opens a window to select the VRDP authentication library file.</source>
@@ -16654,15 +16654,15 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Nem&amp;nbsp;titkosított&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kulccsal titkosított:</translation>
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="unfinished"></translation>
+        <translation>UUID:</translation>
     </message>
 </context>
 <context>
@@ -16781,7 +16781,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation type="obsolete">Akkor engedélyezd ezt, ha nem szeretnél levelet kapni az Innotek-től erre az e-mail címre.</translation>
+        <translation type="obsolete">Akkor engedélyezd ezt, ha nem szeretnél levelet kapni az Innotektől erre az e-mail címre.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
@@ -16805,7 +16805,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Kérlek töltsd ki ezt a regisztrációs űrlapot, hogy tudjuk, hogy használod a VirtualBox-ot. Ha akarod, a friss VirtualBox-os hírekről és frissítésekről is értesítünk.&lt;/p&gt;&lt;p&gt;Add meg a nevedet ékezet nélkül, és az e-mail címedet az alábbi mezőkben. A Sun Microsystems ezeket az adatokat csakis statisztikai célokra és hírlevél küldésére használja. Természetesen a Sun Microsystems vállalja, hogy harmadik fél számára ezeket az adatokat nem továbbítja. Adatkezelési szabályainkról bővebben a VirtualBox kézikönyv &lt;b&gt;Privacy Policy&lt;/b&gt; részében olvashatsz, vagy a VirtualBox &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; oldalán.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Kérlek töltsd ki ezt a regisztrációs űrlapot, hogy tudjuk, hogy használod a VirtualBoxot. Ha akarod, a friss VirtualBoxos hírekről és frissítésekről is értesítünk.&lt;/p&gt;&lt;p&gt;Add meg a nevedet ékezet nélkül, és az e-mail címedet az alábbi mezőkben. A Sun Microsystems ezeket az adatokat csakis statisztikai célokra és hírlevél küldésére használja. Természetesen a Sun Microsystems vállalja, hogy harmadik fél számára ezeket az adatokat nem továbbítja. Adatkezelési szabályainkról bővebben a VirtualBox kézikönyv &lt;b&gt;Privacy Policy&lt;/b&gt; részében olvashatsz, vagy a VirtualBox &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; oldalán.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
@@ -16825,7 +16825,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Kérlek, töltsd ki ezt a regisztrációs űrlapot, hogy tudjuk azt, hogy a felhasználóink táborába tartozol, valamint, hogy informálhassunk téged a különböző hírekről, újdonságokról.&lt;/p&gt;&lt;p&gt;Add meg speciális karakterek nélkül a neved, illetve az e-mail címedet. A Sun Microsystems az adataidat kizárólag statisztikai célokra, és a te informálásodra használja, harmadik fél számára ki nem adja. A személyes adatok felhasználásának és kezelésének részleteiről a kézikönyv &lt;b&gt;Adatvédemi nyilatkozat&lt;/b&gt; részéből vagy a VirtualBox weboldalának &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Adatvédemi nyilatkozat&lt;/a&gt; oldalán tájékozódhatsz.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Kérlek, töltsd ki ezt a regisztrációs űrlapot, hogy tudjuk azt, hogy a felhasználóink táborába tartozol, valamint, hogy informálhassunk téged a különböző hírekről, újdonságokról.&lt;/p&gt;&lt;p&gt;Add meg speciális karakterek nélkül a neved, illetve az e-mail címedet. A Sun Microsystems az adataidat kizárólag statisztikai célokra, és a te informálásodra használja, harmadik fél számára ki nem adja. A személyes adatok felhasználásának és kezelésének részleteiről a kézikönyv &lt;b&gt;Adatvédelmi nyilatkozat&lt;/b&gt; részéből vagy a VirtualBox weboldalának &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Adatvédelmi nyilatkozat&lt;/a&gt; oldalán tájékozódhatsz.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
@@ -17051,11 +17051,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="obsolete">&amp;VirtualBox website...</translation>
+        <translation type="obsolete">&amp;VirtualBox weboldal...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="obsolete">Böngésző megnyitása a VirtualBox website-jával</translation>
+        <translation type="obsolete">Böngésző megnyitása a VirtualBox weboldalával</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
@@ -17184,7 +17184,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
-        <translation type="obsolete">Virtuális gép importálása a VirtualBox-ba</translation>
+        <translation type="obsolete">Virtuális gép importálása a VirtualBoxba</translation>
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
@@ -17192,7 +17192,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation type="obsolete">Virtuális gép exportálása a VirtualBox-ból</translation>
+        <translation type="obsolete">Virtuális gép exportálása a VirtualBoxból</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
@@ -17350,7 +17350,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">&lt;qt&gt;Minden a gép számára elérhető megosztott mappa listázása.
 Használja a
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
-parancsot a &lt;i&gt;share&lt;/i&gt; nevű megosztás eléréséhez a DOS-szerű OS-ekból, vagy
+parancsot a &lt;i&gt;share&lt;/i&gt; nevű megosztás eléréséhez a DOS-szerű OS-ekből, vagy
 a &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 parancsot Linux-alapú OS-ekből. Integrációs szolgáltatások szükségesek hozzá.&lt;/qt&gt;</translation>
     </message>
@@ -17592,12 +17592,12 @@ parancsot Linux-alapú OS-ekből. Integrációs szolgáltatások szükségesek h
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>A jelen állapot egyezik az aktuális snapshot-ban található állapottal</translation>
+        <translation>A jelen állapot egyezik az aktuális pillanatfelvételben található állapottal</translation>
     </message>
     <message>
         <source> (current, </source>
         <comment>Snapshot details</comment>
-        <translation> (current, </translation>
+        <translation> (jelenlegi, </translation>
     </message>
     <message>
         <source>online)</source>
@@ -17612,12 +17612,12 @@ parancsot Linux-alapú OS-ekből. Integrációs szolgáltatások szükségesek h
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation>%1 fogadva</translation>
+        <translation>Készítve: %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation>%1 fogadva</translation>
+        <translation>Készítve: %1</translation>
     </message>
     <message>
         <source>%1 since %2</source>
@@ -17710,19 +17710,19 @@ parancsot Linux-alapú OS-ekből. Integrációs szolgáltatások szükségesek h
     </message>
     <message>
         <source>Restore selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott pillanatkép helyreállítása a virtuális gépre</translation>
     </message>
     <message>
         <source>Delete selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott pillanatkép törlése</translation>
     </message>
     <message>
         <source>Display a window with selected snapshot details</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott pillanatkép részleteinek megjelenítése</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott virtuális gép klónozása</translation>
     </message>
 </context>
 <context>
@@ -17782,7 +17782,7 @@ parancsot Linux-alapú OS-ekből. Integrációs szolgáltatások szükségesek h
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Pillanatkép: %1</translation>
     </message>
 </context>
 <context>
@@ -17854,7 +17854,7 @@ parancsot Linux-alapú OS-ekből. Integrációs szolgáltatások szükségesek h
     </message>
     <message>
         <source>&amp;Revision</source>
-        <translation type="obsolete">&amp;Revizió</translation>
+        <translation type="obsolete">&amp;Revízió</translation>
     </message>
     <message>
         <source>Por&amp;t</source>
@@ -18561,7 +18561,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="obsolete">A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gp nem indul el.</translation>
+        <translation type="obsolete">A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gép nem indul el.</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -18781,11 +18781,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Authentication Method </source>
-        <translation type="obsolete">Autentikáció típusa </translation>
+        <translation type="obsolete">Hitelesítés típusa </translation>
     </message>
     <message>
         <source>Authentication Timeout </source>
-        <translation type="obsolete">Autentikációs időtúllépés </translation>
+        <translation type="obsolete">Hitelesítési időtúllépés </translation>
     </message>
     <message>
         <source>Holds the VRDP Server port.</source>
@@ -18793,11 +18793,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="obsolete">A VRDP autentikációs metódus.</translation>
+        <translation type="obsolete">A VRDP hitelesítési metódus.</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="obsolete">Időkorlát a vendég autentikálásához, millisec-ben.</translation>
+        <translation type="obsolete">Időkorlát a vendég hitelesítéséhez, ezredmásodpercben.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -18972,7 +18972,7 @@ Input Output APIC (I/O APIC), amely egy picit visszafogja a virtuális gép telj
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Az audio kimenet driver beállítása. A &lt;b&gt;Null Audio Driver&lt;/b&gt;
+        <translation type="obsolete">&lt;qt&gt;Az audió kimenet driver beállítása. A &lt;b&gt;Null Audio Driver&lt;/b&gt;
 hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a gazda gépen.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -19082,11 +19082,11 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Authentication &amp;Method </source>
-        <translation type="obsolete">Autentikációs &amp;metódus </translation>
+        <translation type="obsolete">Hitelesítési &amp;metódus </translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout </source>
-        <translation type="obsolete">Autentikációs &amp;időkorlát </translation>
+        <translation type="obsolete">Hitelesítési &amp;időkorlát </translation>
     </message>
     <message>
         <source>&lt;qt&gt;Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
@@ -19346,19 +19346,19 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation type="obsolete">Autentikációs &amp;metódus:</translation>
+        <translation type="obsolete">Hitelesítési &amp;metódus:</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="obsolete">A VRDP autentikációs metódus.</translation>
+        <translation type="obsolete">A VRDP hitelesítési metódus.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="obsolete">Autentikációs &amp;időkorlát:</translation>
+        <translation type="obsolete">Hitelesítési &amp;időkorlát:</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="obsolete">Időkorlát a vendég autentikálásához, ezredmásodpercben.</translation>
+        <translation type="obsolete">Időkorlát a vendég hitelesítéséhez, ezredmásodpercben.</translation>
     </message>
 </context>
 </TS>

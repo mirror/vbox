@@ -2003,12 +2003,12 @@
 <context>
     <name>UIDnDHandler</name>
     <message>
-        <location filename="../src/runtime/UIDnDHandler.cpp" line="+175"/>
+        <location filename="../src/runtime/UIDnDHandler.cpp" line="+220"/>
         <source>Dropping data ...</source>
         <translation>Datuak erortzen...</translation>
     </message>
     <message>
-        <location line="+283"/>
+        <location line="+310"/>
         <source>Retrieving data ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10409,7 +10409,7 @@
 <context>
     <name>UIWizardNewVM</name>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+291"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+293"/>
         <source>Create Virtual Machine</source>
         <translation>Sortu Makina Birtuala</translation>
     </message>
