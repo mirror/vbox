@@ -514,7 +514,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_test_u64,(uint64_t *puDst, uint64_t uSrc, uint3
             uTmp = uOld; \
             fEflTmp = *pfEFlags; \
             iemAImpl_ ## a_Mnemonic ## _u64(&uTmp, uSrc, &fEflTmp); \
-        } while (ASMAtomicCmpXchgExU64(puDst, uTmp, uOld, &uOld)); \
+        } while (!ASMAtomicCmpXchgExU64(puDst, uTmp, uOld, &uOld)); \
         *pfEFlags = fEflTmp; \
     } while (0)
 
@@ -581,7 +581,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64_locked,(uint64_t *puDst, uint64_t *puR
         uTmpDst = uOld;
         fEflTmp = *pfEFlags;
         iemAImpl_add_u64(&uTmpDst, *puReg, pfEFlags);
-    } while (ASMAtomicCmpXchgExU64(puDst, uTmpDst, uOld, &uOld));
+    } while (!ASMAtomicCmpXchgExU64(puDst, uTmpDst, uOld, &uOld));
     *puReg    = uOld;
     *pfEFlags = fEflTmp;
 }
@@ -862,7 +862,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u64,(uint64_t  *puDst,  uint32_t *pfEFlags)
             uTmp = uOld; \
             fEflTmp = *pfEFlags; \
             iemAImpl_ ## a_Mnemonic ## _u64(&uTmp, &fEflTmp); \
-        } while (ASMAtomicCmpXchgExU64(puDst, uTmp, uOld, &uOld)); \
+        } while (!ASMAtomicCmpXchgExU64(puDst, uTmp, uOld, &uOld)); \
         *pfEFlags = fEflTmp; \
     } while (0)
 
