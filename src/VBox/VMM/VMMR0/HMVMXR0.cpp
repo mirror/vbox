@@ -8132,16 +8132,10 @@ static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
     Log4Func(("vcpu[%d]\n", pVCpu->idCpu));
 
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
-    {
         hmR0VmxClearIntWindowExitVmcs(pVCpu);
-        Assert(!pVCpu->hm.s.Event.fPending);
-    }
 
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT)
-    {
         hmR0VmxClearNmiWindowExitVmcs(pVCpu);
-        Assert(!pVCpu->hm.s.Event.fPending);
-    }
 
     if (!pVCpu->hm.s.Event.fPending)
         return;
