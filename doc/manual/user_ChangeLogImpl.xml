@@ -897,6 +897,11 @@
       </listitem>
 
       <listitem>
+        <para>Storage: fixed crash as a result of I/O errors in certain conditions
+          (bug #13105)</para>
+      </listitem>
+
+      <listitem>
         <para>Storage: fixed broken iSCSI authentication (4.3.14 regression; bugs #13386,
           #13435)</para>
       </listitem>
