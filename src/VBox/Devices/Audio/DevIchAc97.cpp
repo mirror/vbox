@@ -303,7 +303,9 @@ typedef struct AC97STATE
 /** Pointer to the AC97 device state. */
 typedef AC97STATE *PAC97STATE;
 
+#ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(AC97STATE, StatTimer, 8);
+#endif
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
