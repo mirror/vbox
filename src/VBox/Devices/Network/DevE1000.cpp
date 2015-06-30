@@ -2629,7 +2629,7 @@ static int e1kRegWriteCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
     if (value & CTRL_RESET)
     { /* RST */
 #ifndef IN_RING3
-        return VINF_IOM_R3_IOPORT_WRITE;
+        return VINF_IOM_R3_MMIO_WRITE;
 #else
         e1kHardReset(pThis);
 #endif
@@ -3029,7 +3029,7 @@ static int e1kRegWriteRCTL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
     {
         /* Promiscuity has changed, pass the knowledge on. */
 #ifndef IN_RING3
-        return VINF_IOM_R3_IOPORT_WRITE;
+        return VINF_IOM_R3_MMIO_WRITE;
 #else
         if (pThis->pDrvR3)
             pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, fBecomePromiscous);
@@ -5229,7 +5229,7 @@ static int e1kXmitPending(PE1KSTATE pThis, bool fOnWorkerThread)
 # ifdef IN_RING3
                 rc = VERR_NET_INCOMPLETE_TX_PACKET;
 # else /* !IN_RING3 */
-                rc = VINF_IOM_R3_IOPORT_WRITE;
+                rc = VINF_IOM_R3_MMIO_WRITE;
 # endif /* !IN_RING3 */
                 goto out;
             }
@@ -5385,7 +5385,7 @@ static int e1kRegWriteTDT(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
             if (rc == VERR_TRY_AGAIN)
                 rc = VINF_SUCCESS;
             else if (rc == VERR_SEM_BUSY)
-                rc = VINF_IOM_R3_IOPORT_WRITE;
+                rc = VINF_IOM_R3_MMIO_WRITE;
             AssertRC(rc);
         }
     }
