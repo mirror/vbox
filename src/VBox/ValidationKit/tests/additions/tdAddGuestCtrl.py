@@ -62,6 +62,10 @@ from testdriver import vbox;
 from testdriver import vboxcon;
 from testdriver import vboxwrappers;
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    long = int      # pylint: disable=W0622,C0103
+
 
 class GuestStream(bytearray):
     """
@@ -451,6 +455,24 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
                 fRc = False;
         return fRc;
 
+    @staticmethod
+    def executeListTestSessions(aoTests, oTstDrv, oVmSession, oTxsSession, oTestVm, sMsgPrefix):
+        """
+        Works thru a list of tdTestSessionEx object.
+        """
+        fRc = True;
+        for (i, oCurTest) in enumerate(aoTests):
+            try:
+                fRc2 = oCurTest.execute(oTstDrv, oVmSession, oTxsSession, oTestVm, '%s, test %#d' % (sMsgPrefix, i,));
+                if fRc2 is not True:
+                    fRc = False;
+            except:
+                reporter.errorXcpt('Unexpected exception executing test #%d' % (i,));
+                fRc = False;
+
+        return (fRc, oTxsSession);
+
+
 
 #
 # Scheduling Environment Changes with the Guest Control Session.
@@ -629,6 +651,114 @@ class tdStepSessionCheckEnv(object):
         return fRc;
 
 #
+# File system object statistics (i.e. stat()).
+#
+
+class tdStepStat(object):
+    """
+    Stats a file system object.
+    """
+    def __init__(self, sPath, hrcExpected = 0, fFound = True, fFollowLinks = True, enmType = None):
+        self.sPath        = sPath;
+        self.hrcExpected  = hrcExpected;
+        self.fFound       = fFound;
+        self.fFollowLinks = fFollowLinks;
+        self.enmType      = enmType if enmType is not None else vboxcon.FsObjType_File;
+        self.cbExactSize  = None;
+        self.cbMinSize    = None;
+
+    def execute(self, oTstDrv, oGstCtrlSession, sMsgPrefix):
+        """
+        Execute the test step.
+        """
+        reporter.log2('tdStepStat: sPath=%s enmType=%s hrcExpected=%s fFound=%s fFollowLinks=%s'
+                      % (self.sPath, self.enmType, self.hrcExpected, self.fFound, self.fFollowLinks,));
+
+        # Don't execute non-file tests on older VBox version.
+        if oTstDrv.fpApiVer >= 5.0 or self.enmType == vboxcon.FsObjType_File or not self.fFound:
+            #
+            # Call the API.
+            #
+            try:
+                if oTstDrv.fpApiVer >= 5.0:
+                    oFsInfo = oGstCtrlSession.fsObjQueryInfo(self.sPath, self.fFollowLinks);
+                else:
+                    oFsInfo = oGstCtrlSession.fileQueryInfo(self.sPath);
+            except vbox.ComException, oXcpt:
+                ## @todo: The error reporting in the API just plain sucks! Most of the errors are
+                ##        VBOX_E_IPRT_ERROR and there seems to be no way to distinguish between
+                ##        non-existing files/path and a lot of other errors.  Fix API and test!
+                if not self.fFound:
+                    return True;
+                if vbox.ComError.equal(oXcpt, self.hrcExpected): # Is this an expected failure?
+                    return True;
+                return reporter.errorXcpt('%s: Unexpected exception for exiting path "%s" (enmType=%d, hrcExpected=%d):'
+                                          % (sMsgPrefix, self.sPath, self.enmType, self.hrcExpected,));
+            except:
+                return reporter.errorXcpt('%s: Unexpected exception in tdStepStat::execute (%s)'
+                                          % (sMsgPrefix, self.sPath,));
+            if oFsInfo is None:
+                return reporter.error('%s: "%s" got None instead of IFsObjInfo instance!' % (sMsgPrefix, self.sPath,));
+
+            #
+            # Check type expectations.
+            #
+            try:
+                enmType = oFsInfo.type;
+            except:
+                return reporter.errorXcpt('%s: Unexpected exception in reading "IFsObjInfo::type"' % (sMsgPrefix,));
+            if enmType != self.enmType:
+                return reporter.error('%s: "%s" has type %s, expected %s'
+                                      % (sMsgPrefix, self.sPath, enmType, self.enmType));
+
+            #
+            # Check size expectations.
+            # Note! This is unicode string here on windows, for some reason.
+            #       long long mapping perhaps?
+            #
+            try:
+                cbObject = long(oFsInfo.objectSize);
+            except:
+                return reporter.errorXcpt('%s: Unexpected exception in reading "IFsObjInfo::objectSize"'
+                                          % (sMsgPrefix,));
+            if    self.cbExactSize is not None \
+              and cbObject != self.cbExactSize:
+                return reporter.error('%s: "%s" has size %s bytes, expected %s bytes'
+                                      % (sMsgPrefix, self.sPath, cbObject, self.cbExactSize));
+            if    self.cbMinSize is not None \
+              and cbObject < self.cbMinSize:
+                return reporter.error('%s: "%s" has size %s bytes, expected as least %s bytes'
+                                      % (sMsgPrefix, self.sPath, cbObject, self.cbMinSize));
+        return True;
+
+class tdStepStatDir(tdStepStat):
+    """ Checks for an existing directory. """
+    def __init__(self, sDirPath):
+        tdStepStat.__init__(self, sPath = sDirPath, enmType = vboxcon.FsObjType_Directory);
+
+class tdStepStatFile(tdStepStat):
+    """ Checks for an existing file  """
+    def __init__(self, sFilePath):
+        tdStepStat.__init__(self, sPath = sFilePath, enmType = vboxcon.FsObjType_File);
+
+class tdStepStatFileSize(tdStepStat):
+    """ Checks for an existing file of a given expected size.. """
+    def __init__(self, sFilePath, cbExactSize = 0):
+        tdStepStat.__init__(self, sPath = sFilePath, enmType = vboxcon.FsObjType_File);
+        self.cbExactSize = cbExactSize;
+
+class tdStepStatFileNotFound(tdStepStat):
+    """ Checks for an existing directory. """
+    def __init__(self, sPath):
+        tdStepStat.__init__(self, sPath = sPath, fFound = False);
+
+class tdStepStatPathNotFound(tdStepStat):
+    """ Checks for an existing directory. """
+    def __init__(self, sPath):
+        tdStepStat.__init__(self, sPath = sPath, fFound = False);
+
+
+#
 #
 #
 
@@ -787,6 +917,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Returns fRc, oTxsSession.  The latter may have changed.
         """
         reporter.log("Active tests: %s" % (self.asTests,));
+
+        fRc = True;
 
         # Do the testing.
         reporter.testStart('Session Basics');
@@ -1334,8 +1466,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         Tests the guest session environment changes.
         """
-
-        aaTests = [
+        aoTests = [
             # Check basic operations.
             tdTestSessionEx([ # Initial environment is empty.
                               tdStepSessionCheckEnv(),
@@ -1420,21 +1551,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                               tdStepSessionCheckEnv([ 'FOO=BAR', 'BAR=BAZ',]),
                               ]),
         ];
-
-        #
-        # Work through the tests.
-        #
-        fRc = True;
-        for (i, oCurTest) in enumerate(aaTests):
-            try:
-                fRc2 = oCurTest.execute(self.oTstDrv, oSession, oTxsSession, oTestVm, 'test %#d' % (i,));
-                if fRc2 is not True:
-                    fRc = False;
-            except:
-                reporter.errorXcpt('Unexpected exception executing test #%d' % (i,));
-                fRc = False;
-
-        return (fRc, oTxsSession);
+        return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'SessionEnv');
 
     def testGuestCtrlSession(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
         """
@@ -2709,88 +2826,85 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests querying file information through stat.
         """
 
+        # Basic stuff, existing stuff.
+        aoTests = [
+            tdTestSessionEx([ tdStepStatDir('.'),
+                              tdStepStatDir('..'),
+                              ]),
+        ];
         if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
+            aoTests += [ tdTestSessionEx([ tdStepStatDir('C:\\Windows'),
+                                           tdStepStatDir('C:\\Windows\\System32'),
+                                           tdStepStatDir('C:\\Windows\\System32\\'),
+                                           tdStepStatDir('C:\\Windows\\System32\\.'),
+                                           tdStepStatDir('C:\\Windows\\System32\\.\\'),
+                                           tdStepStatDir('C:\\Windows\\System32\\..'),
+                                           tdStepStatDir('C:\\Windows\\System32\\..\\'),
+                                           tdStepStatDir('C:\\Windows\\System32\\..\\\\'),
+                                           tdStepStatDir('C:\\Windows\\System32\\\\..\\\\'),
+                                           tdStepStatDir('C:/Windows/System32'),
+                                           tdStepStatDir('C:/Windows/System32/'),
+                                           tdStepStatDir('c:/winDowS/sYsTeM32/'),
+                                           tdStepStatDir('C:/Windows/System32/.'),
+                                           tdStepStatDir('C:/Windows/System32/./'),
+                                           tdStepStatDir('C:/Windows/System32/..'),
+                                           tdStepStatDir('C:/Windows/System32/../'),
+                                           tdStepStatDir('C:/Windows/System32/..//'),
+                                           tdStepStatDir('C:/Windows/System32//..//'),
+                                           tdStepStatFile('C:\\Windows\\System32\\kernel32.dll'),
+                                           tdStepStatFile('C:/Windows/System32/kernel32.dll')
+                                           ]) ];
+        elif oTestVm.isOS2():
+            aoTests += [ tdTestSessionEx([ tdStepStatDir('C:\\OS2'),
+                                           tdStepStatDir('C:\\OS2\\DLL'),
+                                           tdStepStatDir('C:\\OS2\\DLL\\'),
+                                           tdStepStatDir('C:/OS2/DLL'),
+                                           tdStepStatDir('c:/OS2/DLL'),
+                                           tdStepStatDir('c:/OS2/DLL/'),
+                                           tdStepStatFile('C:\\CONFIG.SYS'),
+                                           tdStepStatFile('C:\\OS2\\DLL\\DOSCALL1.DLL'),
+                                           ]) ];
+        else: # generic unix.
+            aoTests += [ tdTestSessionEx([ tdStepStatDir('/'),
+                                           tdStepStatDir('///'),
+                                           tdStepStatDir('/usr/bin/.'),
+                                           tdStepStatDir('/usr/bin/./'),
+                                           tdStepStatDir('/usr/bin/..'),
+                                           tdStepStatDir('/usr/bin/../'),
+                                           tdStepStatFile('/bin/ls'),
+                                           tdStepStatFile('/bin/cp'),
+                                           tdStepStatFile('/bin/date'),
+                                           ]) ];
+        # None existing stuff.
+        if oTestVm.isWindows() or oTestVm.isOS2():
+            aoTests += [ tdTestSessionEx([ tdStepStatFileNotFound('C:\\NoSuchFileOrDirectory', ),
+                                           tdStepStatPathNotFound('C:\\NoSuchDirectory\\'),
+                                           tdStepStatPathNotFound('C:/NoSuchDirectory/'),
+                                           tdStepStatPathNotFound('C:\\NoSuchDirectory\\.'),
+                                           tdStepStatPathNotFound('C:/NoSuchDirectory/.'),
+                                           tdStepStatPathNotFound('C:\\NoSuchDirectory\\NoSuchFileOrDirectory'),
+                                           tdStepStatPathNotFound('C:/NoSuchDirectory/NoSuchFileOrDirectory'),
+                                           tdStepStatPathNotFound('C:/NoSuchDirectory/NoSuchFileOrDirectory/'),
+                                           tdStepStatPathNotFound('N:\\'), # ASSUMES nothing mounted on N:!
+                                           tdStepStatPathNotFound('\\\\NoSuchUncServerName\\NoSuchShare'),
+                                           ]) ];
+        else: # generic unix.
+            aoTests += [ tdTestSessionEx([ tdStepStatFileNotFound('/NoSuchFileOrDirectory', ),
+                                           tdStepStatFileNotFound('/bin/NoSuchFileOrDirectory'),
+                                           tdStepStatPathNotFound('/NoSuchDirectory/'),
+                                           tdStepStatPathNotFound('/NoSuchDirectory/.'),
+                                           ]) ];
+        # Invalid parameter check.
+        aoTests += [ tdTestSessionEx([ tdStepStat('', vbox.ComError.E_INVALIDARG), ]), ];
 
-        aaTests = [];
-        if oTestVm.isWindows():
-            aaTests.extend([
-                # Invalid stuff.
-                [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = ''),
-                  tdTestResultFileStat(fRc = False) ],
-                [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows'),
-                  tdTestResultFileStat(fRc = False) ],
-                [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows'),
-                  tdTestResultFileStat(fRc = False) ],
-                # More unusual stuff.
-                [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = 'z:\\'),
-                  tdTestResultFileStat(fRc = False) ],
-                [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = '\\\\uncrulez\\foo'),
-                  tdTestResultFileStat(fRc = False) ],
-                # Non-existing stuff.
-                [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Apps\\nonexisting'),
-                  tdTestResultFileStat(fRc = False) ],
-                [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Apps\\testDirRead'),
-                  tdTestResultFileStat(fRc = False) ]
-            ]);
+        # Some test VM specific tests.
+        if oTestVm.sVmName == 'tst-xppro':
+            aoTests += [ tdTestSessionEx([ tdStepStatFileSize('c:\\Windows\\system32\\kernel32.dll', 926720), ]) ];
 
-            if oTestVm.sVmName == 'tst-xppro':
-                aaTests.extend([
-                    # Directories; should fail.
-                    [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = '../../Windows/Fonts'),
-                      tdTestResultFileStat(fRc = False) ],
-                    [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\Help'),
-                      tdTestResultFileStat(fRc = False) ],
-                    [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\system32'),
-                      tdTestResultFileStat(fRc = False) ],
-                    # Regular files.
-                    [ tdTestFileStat(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\system32\\kernel32.dll'),
-                      tdTestResultFileStat(fRc = False, cbSize = 926720, eFileType = vboxcon.FsObjType_File) ]
-                ]);
-        else:
-            reporter.log('No OS-specific tests for non-Windows yet!');
-
-        fRc = True;
-        for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sFile="%s" ...' % (i, curTest.sFile));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlFileStat: Test #%d' % (i,));
-            if fRc is False:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
-                break;
-            fileObjInfo = None;
-            try:
-                if self.oTstDrv.fpApiVer >= 5.0:
-                    fileObjInfo = curGuestSession.fsObjQueryInfo(curTest.sFile, True);
-                else:
-                    fileObjInfo = curGuestSession.fileQueryInfo(curTest.sFile);
-            except:
-                if curRes.fRc is True:
-                    reporter.errorXcpt('Querying file information for "%s" failed:' % (curTest.sFile,));
-                    fRc = False;
-                    break;
-                else:
-                    reporter.logXcpt('Querying file information for "%s" failed expectedly, skipping:' % (curTest.sFile,));
-            curTest.closeSession();
-            if fileObjInfo is not None:
-                eFileType = fileObjInfo.type;
-                if curRes.eFileType != eFileType:
-                    reporter.error('Test #%d failed: Got file type %d, expected %d' % (i, eFileType, curRes.eFileType));
-                    fRc = False;
-                    break;
-                cbFile = long(fileObjInfo.objectSize);
-                if curRes.cbSize != cbFile:
-                    reporter.error('Test #%d failed: Got %d bytes size, expected %d bytes' % (i, cbFile, curRes.cbSize));
-                    fRc = False;
-                    break;
-                ## @todo Add more checks later.
-
-        return (fRc, oTxsSession);
+        #
+        # Execute the tests.
+        #
+        return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'FsStat');
 
     def testGuestCtrlFileRead(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
         """
