@@ -558,10 +558,7 @@ class tdUnitTest1(vbox.TestDriver):
         if    sName in self.kasHardened \
           and self.sUnitTestsPathBase != self.sVBoxInstallRoot:
 
-            if utils.getHostOs() == 'win':
-                sDstDir = self.sVBoxInstallRoot; # Have trouble finding VMMR0.r0 and friends if in sub-dir.
-            else:
-                sDstDir = os.path.join(self.sVBoxInstallRoot, sTestCaseSubDir);
+            sDstDir = os.path.join(self.sVBoxInstallRoot, sTestCaseSubDir);
             if not os.path.exists(sDstDir):
                 self._hardenedMkDir(sDstDir);
                 asDirsToRemove.append(sDstDir);
