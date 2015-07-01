@@ -648,31 +648,37 @@ uint32_t GuestDnD::toHGCMAction(DnDAction_T enmAction)
 }
 
 /* static */
-void GuestDnD::toHGCMActions(DnDAction_T enmDefAction,
-                             uint32_t *puDefAction,
+void GuestDnD::toHGCMActions(DnDAction_T                    enmDefAction,
+                             uint32_t                      *puDefAction,
                              const std::vector<DnDAction_T> vecAllowedActions,
-                             uint32_t *puAllowedActions)
+                             uint32_t                      *puAllowedActions)
 {
-    if (puDefAction)
-        *puDefAction = toHGCMAction(enmDefAction);
-    if (puAllowedActions)
+    uint32_t uAllowedActions = DND_IGNORE_ACTION;
+    uint32_t uDefAction      = toHGCMAction(enmDefAction);
+
+    if (!vecAllowedActions.empty())
     {
-        *puAllowedActions = DND_IGNORE_ACTION;
-
         /* First convert the allowed actions to a bit array. */
-        for (size_t i = 0; i < vecAllowedActions.size(); ++i)
-            *puAllowedActions |= toHGCMAction(vecAllowedActions[i]);
+        for (size_t i = 0; i < vecAllowedActions.size(); i++)
+            uAllowedActions |= toHGCMAction(vecAllowedActions[i]);
 
-        /* Second check if the default action is a valid action and if not so try
-         * to find an allowed action. */
-        if (isDnDIgnoreAction(*puAllowedActions))
+        /*
+         * If no default action is set (ignoring), try one of the
+         * set allowed actions, preferring copy, move (in that order).
+         */
+        if (isDnDIgnoreAction(uDefAction))
         {
-            if (hasDnDCopyAction(*puAllowedActions))
-                *puAllowedActions = DND_COPY_ACTION;
-            else if (hasDnDMoveAction(*puAllowedActions))
-                *puAllowedActions = DND_MOVE_ACTION;
+            if (hasDnDCopyAction(uAllowedActions))
+                uDefAction = DND_COPY_ACTION;
+            else if (hasDnDMoveAction(uAllowedActions))
+                uDefAction = DND_MOVE_ACTION;
         }
     }
+
+    if (puDefAction)
+        *puDefAction      = uDefAction;
+    if (puAllowedActions)
+        *puAllowedActions = uAllowedActions;
 }
 
 /* static */
