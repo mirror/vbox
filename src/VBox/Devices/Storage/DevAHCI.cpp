@@ -731,7 +731,7 @@ typedef struct AHCI
 /** Pointer to the state of an AHCI device. */
 typedef AHCI *PAHCI;
 
-AssertCompileMemberAlignment(AHCI, ahciPort[0], 8);
+AssertCompileMemberAlignment(AHCI, ahciPort, 8);
 
 /**
  * Scatter gather list entry.
