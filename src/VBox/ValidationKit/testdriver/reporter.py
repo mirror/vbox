@@ -202,14 +202,14 @@ class ReporterBase(object):
         self._xmlWrite([ '<Test timestamp="%s" name="%s">' % (sTsIso, self._xmlEscAttr(sName),), ]);
         self.atTests.append((sName, self.cErrors, self.fTimedOut));
         self.fTimedOut = False;
-        return self.log(1, '*** %-50s: TESTING' % (self._testGetFullName()), sCaller, sTsPrf);
+        return self.log(1, ' %-50s: TESTING' % (self._testGetFullName()), sCaller, sTsPrf);
 
     def testValue(self, sName, sValue, sUnit, sCaller):
         """ Reports a benchmark value or something simiarlly useful. """
         (sTsPrf, sTsIso) = utils.getTimePrefixAndIsoTimestamp();
         self._xmlWrite([ '<Value timestamp="%s" name="%s" unit="%s" value="%s"/>'
                          % (sTsIso, self._xmlEscAttr(sName), self._xmlEscAttr(sUnit), self._xmlEscAttr(sValue)), ]);
-        return self.log(0, '***  %-48s: %12s %s' % (sName, sValue, sUnit), sCaller, sTsPrf);
+        return self.log(0, '**  %-48s: %12s %s' % (sName, sValue, sUnit), sCaller, sTsPrf);
 
     def testFailure(self, sDetails, sCaller):
         """ Reports a failure. """
@@ -239,16 +239,16 @@ class ReporterBase(object):
         if cErrors == 0:
             if fSkipped is not True:
                 self._xmlWrite([ '  <Passed timestamp="%s"/>' % (sTsIso,), '</Test>' ],);
-                self.log(1, '*** %-50s: PASSED' % (sFullName,), sCaller, sTsPrf);
+                self.log(1, '** %-50s: PASSED' % (sFullName,), sCaller, sTsPrf);
             else:
                 self._xmlWrite([ '  <Skipped timestamp="%s"/>' % (sTsIso,), '</Test>' ]);
-                self.log(1, '*** %-50s: SKIPPED' % (sFullName,), sCaller, sTsPrf);
+                self.log(1, '** %-50s: SKIPPED' % (sFullName,), sCaller, sTsPrf);
         elif fTimedOut:
             self._xmlWrite([ '  <TimedOut timestamp="%s" errors="%d"/>' % (sTsIso, cErrors), '</Test>' ]);
-            self.log(0, '*** %-50s: TIMED-OUT - %d errors' % (sFullName, cErrors), sCaller, sTsPrf);
+            self.log(0, '** %-50s: TIMED-OUT - %d errors' % (sFullName, cErrors), sCaller, sTsPrf);
         else:
             self._xmlWrite([ '  <Failed timestamp="%s" errors="%d"/>' % (sTsIso, cErrors), '</Test>' ]);
-            self.log(0, '*** %-50s: FAILED - %d errors' % (sFullName, cErrors), sCaller, sTsPrf);
+            self.log(0, '** %-50s: FAILED - %d errors' % (sFullName, cErrors), sCaller, sTsPrf);
 
         # Flush buffers when reaching the last test.
         if len(self.atTests) == 0:
@@ -430,7 +430,7 @@ class LocalReporter(ReporterBase):
         self.iOtherFile += 1;
         sDstFilename = os.path.join(self.sLogDir, 'other-%d-%s.log' \
                                     % (iOtherFile, os.path.splitext(os.path.basename(sSrcFilename))[0]));
-        self.log(0, '*** Other log file: %s - %s (%s)' % (sDstFilename, sDescription, sSrcFilename), sCaller, sTsPrf);
+        self.log(0, '** Other log file: %s - %s (%s)' % (sDstFilename, sDescription, sSrcFilename), sCaller, sTsPrf);
 
         # Open the destination file and copy over the data.
         fRc = True;
@@ -873,7 +873,7 @@ def logXcptWorker(iLevel, fIncErrors, sPrefix="", sText=None, cFrames=1):
                     asInfo.append('Stack:')
                     asInfo = asInfo + traceback.format_stack(oTraceback.tb_frame.f_back, cFrames);
             except:
-                g_oReporter.log(0, '*** internal-error: Hit exception #2! %s' % (traceback.format_exc()), sCaller, sTsPrf);
+                g_oReporter.log(0, '** internal-error: Hit exception #2! %s' % (traceback.format_exc()), sCaller, sTsPrf);
 
             if len(asInfo) > 0:
                 # Do the logging.
@@ -886,10 +886,10 @@ def logXcptWorker(iLevel, fIncErrors, sPrefix="", sText=None, cFrames=1):
                 g_oReporter.log(iLevel, 'No exception info...', sCaller, sTsPrf);
                 rc = -3;
         except:
-            g_oReporter.log(0, '*** internal-error: Hit exception! %s' % (traceback.format_exc()), None, sTsPrf);
+            g_oReporter.log(0, '** internal-error: Hit exception! %s' % (traceback.format_exc()), None, sTsPrf);
             rc = -2;
     else:
-        g_oReporter.log(0, '*** internal-error: No exception! %s'
+        g_oReporter.log(0, '** internal-error: No exception! %s'
                         % (utils.getCallerName(iFrame=3)), utils.getCallerName(iFrame=3), sTsPrf);
         rc = -1;
 
@@ -1049,7 +1049,7 @@ def error(sText):
     g_oLock.acquire();
     g_oReporter.testIncErrors();
     try:
-        g_oReporter.log(0, '*** error: %s' % (sText), utils.getCallerName(), utils.getTimePrefix());
+        g_oReporter.log(0, '** error: %s' % (sText), utils.getCallerName(), utils.getTimePrefix());
     except:
         pass;
     g_oLock.release();
@@ -1065,7 +1065,7 @@ def errorXcpt(sText=None, cFrames=1):
     Always returns False for the convenience of methods returning boolean
     success indicators.
     """
-    logXcptWorker(0, True, '*** error: ', sText, cFrames);
+    logXcptWorker(0, True, '** error: ', sText, cFrames);
     return False;
 
 def errorTimeout(sText):
@@ -1080,7 +1080,7 @@ def errorTimeout(sText):
     g_oLock.acquire();
     g_oReporter.testSetTimedOut();
     try:
-        g_oReporter.log(0, '*** timeout-error: %s' % (sText), utils.getCallerName(), utils.getTimePrefix());
+        g_oReporter.log(0, '** timeout-error: %s' % (sText), utils.getCallerName(), utils.getTimePrefix());
     except:
         pass;
     g_oLock.release();
@@ -1098,7 +1098,7 @@ def fatal(sText):
     g_oLock.acquire();
     g_oReporter.testIncErrors();
     try:
-        g_oReporter.log(0, '*** fatal error: %s' % (sText), utils.getCallerName(), utils.getTimePrefix());
+        g_oReporter.log(0, '** fatal error: %s' % (sText), utils.getCallerName(), utils.getTimePrefix());
     except:
         pass
     g_oLock.release();
@@ -1115,7 +1115,7 @@ def fatalXcpt(sText=None, cFrames=1):
     Always returns False for the convenience of methods returning boolean
     success indicators.
     """
-    logXcptWorker(0, True, "*** fatal error: ", sText, cFrames);
+    logXcptWorker(0, True, "** fatal error: ", sText, cFrames);
     return False;
 
 def addLogFile(sFilename, sKind, sDescription = '', sAltName = None):
