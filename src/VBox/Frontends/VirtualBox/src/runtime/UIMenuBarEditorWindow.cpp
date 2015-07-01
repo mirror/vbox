@@ -80,37 +80,37 @@ void UIMenuBarEditorWidget::setActionPool(UIActionPool *pActionPool)
     prepare();
 }
 
+#ifndef Q_WS_MAC
+bool UIMenuBarEditorWidget::isMenuBarEnabled() const
+{
+    /* For VM settings only: */
+    AssertReturn(m_fStartedFromVMSettings, false);
+
+    /* Acquire enable-checkbox if possible: */
+    AssertPtrReturn(m_pCheckBoxEnable, false);
+    return m_pCheckBoxEnable->isChecked();
+}
+
+void UIMenuBarEditorWidget::setMenuBarEnabled(bool fEnabled)
+{
+    /* For VM settings only: */
+    AssertReturnVoid(m_fStartedFromVMSettings);
+
+    /* Update enable-checkbox if possible: */
+    AssertPtrReturnVoid(m_pCheckBoxEnable);
+    m_pCheckBoxEnable->setChecked(fEnabled);
+}
+#endif /* !Q_WS_MAC */
+
 void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QString &strMachineID)
 {
     /* Skip unrelated machine IDs: */
     if (machineID() != strMachineID)
         return;
 
-#ifndef Q_WS_MAC
-    /* Update enable-checkbox: */
-    updateEnableCheckbox();
-#endif /* !Q_WS_MAC */
-
     /* Update menus: */
     updateMenus();
 }
-
-#ifndef RT_OS_DARWIN
-void UIMenuBarEditorWidget::sltHandleMenuBarEnableToggle(bool fEnabled)
-{
-    /* Toggle enable-checkbox if necessary: */
-    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
-    {
-        /* Check whether this value is really changed: */
-        const bool fMenuBarEnabled = gEDataManager->menuBarEnabled(machineID());
-        if (fMenuBarEnabled != fEnabled)
-        {
-            /* Set new value: */
-            gEDataManager->setMenuBarEnabled(fEnabled, machineID());
-        }
-    }
-}
-#endif /* !RT_OS_DARWIN */
 
 void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
 {
@@ -314,11 +314,8 @@ void UIMenuBarEditorWidget::prepare()
             {
                 /* Configure enable-checkbox: */
                 m_pCheckBoxEnable->setFocusPolicy(Qt::StrongFocus);
-                connect(m_pCheckBoxEnable, SIGNAL(toggled(bool)), this, SLOT(sltHandleMenuBarEnableToggle(bool)));
                 /* Add enable-checkbox into main-layout: */
                 m_pMainLayout->addWidget(m_pCheckBoxEnable);
-                /* Update enable-checkbox: */
-                updateEnableCheckbox();
             }
         }
 #endif /* !Q_WS_MAC */
@@ -347,9 +344,12 @@ void UIMenuBarEditorWidget::prepareMenus()
 #endif /* Q_WS_MAC */
     prepareMenuHelp();
 
-    /* Listen for the menu-bar configuration changes: */
-    connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
-            this, SLOT(sltHandleConfigurationChange(const QString&)));
+    /* Listen for the menu-bar configuration changes if necessary: */
+    if (!m_fStartedFromVMSettings)
+    {
+        connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
+                this, SLOT(sltHandleConfigurationChange(const QString&)));
+    }
 
     /* Update menus: */
     updateMenus();
@@ -654,19 +654,6 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
 #endif /* !Q_WS_MAC */
     }
 }
-
-#ifndef Q_WS_MAC
-void UIMenuBarEditorWidget::updateEnableCheckbox()
-{
-    /* Update enable-checkbox if necessary: */
-    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
-    {
-        m_pCheckBoxEnable->blockSignals(true);
-        m_pCheckBoxEnable->setChecked(gEDataManager->menuBarEnabled(machineID()));
-        m_pCheckBoxEnable->blockSignals(false);
-    }
-}
-#endif /* !Q_WS_MAC */
 
 void UIMenuBarEditorWidget::updateMenus()
 {

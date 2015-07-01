@@ -30,8 +30,10 @@ struct UIDataSettingsMachineInterface
 {
     /* Constructor: */
     UIDataSettingsMachineInterface()
+        : m_fStatusBarEnabled(false)
 #ifndef Q_WS_MAC
-        : m_fShowMiniToolBar(false)
+        , m_fMenuBarEnabled(false)
+        , m_fShowMiniToolBar(false)
         , m_fMiniToolBarAtTop(false)
 #endif /* !Q_WS_MAC */
     {}
@@ -39,13 +41,13 @@ struct UIDataSettingsMachineInterface
     /* Functions: */
     bool equal(const UIDataSettingsMachineInterface &other) const
     {
+        return    (m_fStatusBarEnabled == other.m_fStatusBarEnabled)
 #ifndef Q_WS_MAC
-        return (m_fShowMiniToolBar == other.m_fShowMiniToolBar) &&
-               (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop);
-#else /* Q_WS_MAC */
-        Q_UNUSED(other);
-        return true;
-#endif /* Q_WS_MAC */
+               && (m_fMenuBarEnabled == other.m_fMenuBarEnabled)
+               && (m_fShowMiniToolBar == other.m_fShowMiniToolBar)
+               && (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop)
+#endif /* !Q_WS_MAC */
+               ;
     }
 
     /* Operators: */
@@ -53,7 +55,9 @@ struct UIDataSettingsMachineInterface
     bool operator!=(const UIDataSettingsMachineInterface &other) const { return !equal(other); }
 
     /* Variables: */
+    bool m_fStatusBarEnabled;
 #ifndef Q_WS_MAC
+    bool m_fMenuBarEnabled;
     bool m_fShowMiniToolBar;
     bool m_fMiniToolBarAtTop;
 #endif /* !Q_WS_MAC */

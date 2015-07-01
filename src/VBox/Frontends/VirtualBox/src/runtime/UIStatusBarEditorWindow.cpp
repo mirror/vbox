@@ -282,32 +282,34 @@ void UIStatusBarEditorWidget::setMachineID(const QString &strMachineID)
     prepare();
 }
 
+bool UIStatusBarEditorWidget::isStatusBarEnabled() const
+{
+    /* For VM settings only: */
+    AssertReturn(m_fStartedFromVMSettings, false);
+
+    /* Acquire enable-checkbox if possible: */
+    AssertPtrReturn(m_pCheckBoxEnable, false);
+    return m_pCheckBoxEnable->isChecked();
+}
+
+void UIStatusBarEditorWidget::setStatusBarEnabled(bool fEnabled)
+{
+    /* For VM settings only: */
+    AssertReturnVoid(m_fStartedFromVMSettings);
+
+    /* Update enable-checkbox if possible: */
+    AssertPtrReturnVoid(m_pCheckBoxEnable);
+    m_pCheckBoxEnable->setChecked(fEnabled);
+}
+
 void UIStatusBarEditorWidget::sltHandleConfigurationChange(const QString &strMachineID)
 {
     /* Skip unrelated machine IDs: */
     if (machineID() != strMachineID)
         return;
 
-    /* Update enable-checkbox: */
-    updateEnableCheckbox();
-
     /* Update status buttons: */
     updateStatusButtons();
-}
-
-void UIStatusBarEditorWidget::sltHandleStatusBarEnableToggle(bool fEnabled)
-{
-    /* Toggle enable-checkbox if necessary: */
-    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
-    {
-        /* Check whether this value is really changed: */
-        const bool fStatusBarEnabled = gEDataManager->statusBarEnabled(machineID());
-        if (fStatusBarEnabled != fEnabled)
-        {
-            /* Set new value: */
-            gEDataManager->setStatusBarEnabled(fEnabled, machineID());
-        }
-    }
 }
 
 void UIStatusBarEditorWidget::sltHandleButtonClick()
@@ -399,11 +401,8 @@ void UIStatusBarEditorWidget::prepare()
             {
                 /* Configure enable-checkbox: */
                 m_pCheckBoxEnable->setFocusPolicy(Qt::StrongFocus);
-                connect(m_pCheckBoxEnable, SIGNAL(toggled(bool)), this, SLOT(sltHandleStatusBarEnableToggle(bool)));
                 /* Add enable-checkbox into main-layout: */
                 m_pMainLayout->addWidget(m_pCheckBoxEnable);
-                /* Update enable-checkbox: */
-                updateEnableCheckbox();
             }
         }
         /* Insert stretch: */
@@ -443,9 +442,12 @@ void UIStatusBarEditorWidget::prepareStatusButtons()
         prepareStatusButton(type);
     }
 
-    /* Listen for the status-bar configuration changes: */
-    connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QString&)),
-            this, SLOT(sltHandleConfigurationChange(const QString&)));
+    /* Listen for the status-bar configuration changes if necessary: */
+    if (!m_fStartedFromVMSettings)
+    {
+        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QString&)),
+                this, SLOT(sltHandleConfigurationChange(const QString&)));
+    }
 
     /* Update status buttons: */
     updateStatusButtons();
@@ -464,17 +466,6 @@ void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType type)
         m_pButtonLayout->addWidget(pButton);
         /* Insert status button into map: */
         m_buttons.insert(type, pButton);
-    }
-}
-
-void UIStatusBarEditorWidget::updateEnableCheckbox()
-{
-    /* Update enable-checkbox if necessary: */
-    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
-    {
-        m_pCheckBoxEnable->blockSignals(true);
-        m_pCheckBoxEnable->setChecked(gEDataManager->statusBarEnabled(machineID()));
-        m_pCheckBoxEnable->blockSignals(false);
     }
 }
 

@@ -72,13 +72,16 @@ public:
     /** Defines the @a strMachineID instance. */
     void setMachineID(const QString &strMachineID);
 
+    /** Returns whether the status-bar enabled. */
+    bool isStatusBarEnabled() const;
+    /** Defines whether the status-bar @a fEnabled. */
+    void setStatusBarEnabled(bool fEnabled);
+
 private slots:
 
     /** Handles configuration change. */
     void sltHandleConfigurationChange(const QString &strMachineID);
 
-    /** Handles status-bar enable toggle. */
-    void sltHandleStatusBarEnableToggle(bool fEnabled);
     /** Handles button click. */
     void sltHandleButtonClick();
 
@@ -94,8 +97,6 @@ private:
     /** Prepare status button routine. */
     void prepareStatusButton(IndicatorType type);
 
-    /** Update enable-checkbox routine. */
-    void updateEnableCheckbox();
     /** Update status buttons routine. */
     void updateStatusButtons();
 

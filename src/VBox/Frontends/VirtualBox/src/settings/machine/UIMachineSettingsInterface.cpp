@@ -54,7 +54,9 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
     UIDataSettingsMachineInterface interfaceData;
 
     /* Cache interface data: */
+    interfaceData.m_fStatusBarEnabled = gEDataManager->statusBarEnabled(m_machine.GetId());
 #ifndef Q_WS_MAC
+    interfaceData.m_fMenuBarEnabled = gEDataManager->menuBarEnabled(m_machine.GetId());
     interfaceData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
     interfaceData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
 #endif /* !Q_WS_MAC */
@@ -74,12 +76,12 @@ void UIMachineSettingsInterface::getFromCache()
     const UIDataSettingsMachineInterface &interfaceData = m_cache.base();
 
     /* Prepare interface data: */
+    m_pStatusBarEditor->setStatusBarEnabled(interfaceData.m_fStatusBarEnabled);
 #ifndef Q_WS_MAC
+    m_pMenuBarEditor->setMenuBarEnabled(interfaceData.m_fMenuBarEnabled);
     m_pCheckBoxShowMiniToolBar->setChecked(interfaceData.m_fShowMiniToolBar);
     m_pComboToolBarAlignment->setChecked(interfaceData.m_fMiniToolBarAtTop);
-#else /* Q_WS_MAC */
-    Q_UNUSED(interfaceData);
-#endif /* Q_WS_MAC */
+#endif /* !Q_WS_MAC */
 
     /* Polish page finally: */
     polishPage();
@@ -96,7 +98,9 @@ void UIMachineSettingsInterface::putToCache()
     UIDataSettingsMachineInterface interfaceData = m_cache.base();
 
     /* Gather interface data from page: */
+    interfaceData.m_fStatusBarEnabled = m_pStatusBarEditor->isStatusBarEnabled();
 #ifndef Q_WS_MAC
+    interfaceData.m_fMenuBarEnabled = m_pMenuBarEditor->isMenuBarEnabled();
     interfaceData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
     interfaceData.m_fMiniToolBarAtTop = m_pComboToolBarAlignment->isChecked();
 #endif /* !Q_WS_MAC */
@@ -121,12 +125,12 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
         /* Store interface data: */
         if (isMachineInValidMode())
         {
+            gEDataManager->setStatusBarEnabled(interfaceData.m_fStatusBarEnabled, m_machine.GetId());
 #ifndef Q_WS_MAC
+            gEDataManager->setMenuBarEnabled(interfaceData.m_fMenuBarEnabled, m_machine.GetId());
             gEDataManager->setMiniToolbarEnabled(interfaceData.m_fShowMiniToolBar, m_machine.GetId());
             gEDataManager->setMiniToolbarAlignment(interfaceData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
-#else /* Q_WS_MAC */
-            Q_UNUSED(interfaceData);
-#endif /* Q_WS_MAC */
+#endif /* !Q_WS_MAC */
         }
     }
 

@@ -84,15 +84,18 @@ public:
     /** Defines the @a pActionPool reference. */
     void setActionPool(UIActionPool *pActionPool);
 
+#ifndef Q_WS_MAC
+    /** Returns whether the menu-bar enabled. */
+    bool isMenuBarEnabled() const;
+    /** Defines whether the menu-bar @a fEnabled. */
+    void setMenuBarEnabled(bool fEnabled);
+#endif /* !Q_WS_MAC */
+
 private slots:
 
     /** Handles configuration change. */
     void sltHandleConfigurationChange(const QString &strMachineID);
 
-#ifndef RT_OS_DARWIN
-    /** Non Mac OS X: Handles menu-bar enable toggle. */
-    void sltHandleMenuBarEnableToggle(bool fEnabled);
-#endif /* !RT_OS_DARWIN */
     /** Handles menu-bar menu click. */
     void sltHandleMenuBarMenuClick();
 
@@ -140,10 +143,6 @@ private:
     /** Prepare 'Help' menu routine. */
     void prepareMenuHelp();
 
-#ifndef Q_WS_MAC
-    /** Non Mac OS X: Update enable-checkbox routine. */
-    void updateEnableCheckbox();
-#endif /* !Q_WS_MAC */
     /** Update menus routine. */
     void updateMenus();
     /** Update 'Application' menu routine. */
