@@ -956,6 +956,15 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
 }
 
 
+#if 1
+
+/* Try using RTPathRmCmd. */
+static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
+{
+    return RTPathRmCmd(argc, argv);
+}
+
+#else
 static char g_paszRmHelp[] =
     "  VBoxService [--use-toolbox] vbox_rm [<general options>] [<options>] <file>...\n\n"
     "Delete files and optionally directories if the '-R' or '-r' option is specified.\n"
@@ -1135,6 +1144,7 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
     }
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
+#endif
 
 
 static char g_paszMkTempHelp[] =
