@@ -1701,7 +1701,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
              ));
     }
 
-    LogRel(("VBoxNetFlt: attached to '%s' / %.*Rhxs\n", pThis->szName, sizeof(pThis->u.s.MacAddr), &pThis->u.s.MacAddr));
+    LogRel(("VBoxNetFlt: attached to '%s' / %RTmac\n", pThis->szName, &pThis->u.s.MacAddr));
     return VINF_SUCCESS;
 }
 

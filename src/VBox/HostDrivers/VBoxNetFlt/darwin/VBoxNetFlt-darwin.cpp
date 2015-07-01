@@ -1103,7 +1103,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
 
     int rc = RTErrConvertFromErrno(err);
     if (RT_SUCCESS(rc))
-        LogRel(("VBoxFltDrv: attached to '%s' / %.*Rhxs\n", pThis->szName, sizeof(pThis->u.s.MacAddr), &pThis->u.s.MacAddr));
+        LogRel(("VBoxFltDrv: attached to '%s' / %RTmac\n", pThis->szName, &pThis->u.s.MacAddr));
     else
         LogRel(("VBoxFltDrv: failed to attach to ifnet '%s' (err=%d)\n", pThis->szName, err));
     return rc;
