@@ -820,7 +820,7 @@ static uint8_t const g_abStac9220Cds[]        = { STAC9220_NID_PIN_CD, 0 };
 static uint8_t const g_abStac9220VolKnobs[]   = { STAC9220_NID_VOL_KNOB, 0 };
 /* STAC 9221. */
 /** @todo Is STAC9220_NID_SPDIF_IN really correct for reserved nodes? */
-+static uint8_t const g_abStac9220Reserveds[]  = { STAC9220_NID_SPDIF_IN, STAC9221_NID_ADAT_OUT, STAC9221_NID_I2S_OUT, STAC9221_NID_PIN_I2S_OUT, 0 };
+static uint8_t const g_abStac9220Reserveds[]  = { STAC9220_NID_SPDIF_IN, STAC9221_NID_ADAT_OUT, STAC9221_NID_I2S_OUT, STAC9221_NID_PIN_I2S_OUT, 0 };
 #endif
 
 /** SSM description of a CODECNODE. */
