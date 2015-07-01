@@ -204,7 +204,7 @@ extern SUPSYSROOTDIRBUF g_CommonFilesX86NtPath;
 # endif
 #endif /* IN_RING3 && !VBOX_PERMIT_EVEN_MORE */
 extern SUPSYSROOTDIRBUF g_SupLibHardenedExeNtPath;
-extern uint32_t         g_offSupLibHardenedExeNtName;
+extern SUPSYSROOTDIRBUF g_SupLibHardenedAppBinNtPath;
 
 #   ifdef IN_RING0
 /** Pointer to NtQueryVirtualMemory. */

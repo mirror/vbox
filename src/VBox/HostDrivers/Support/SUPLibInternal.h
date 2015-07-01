@@ -78,9 +78,9 @@
  */
 # define supR3HardenedPathAppPrivateNoArch supR3HardenedStaticPathAppPrivateNoArch
 # define supR3HardenedPathAppPrivateArch   supR3HardenedStaticPathAppPrivateArch
-# define supR3HardenedPathSharedLibs       supR3HardenedStaticPathSharedLibs
+# define supR3HardenedPathAppSharedLibs    supR3HardenedStaticPathAppSharedLibs
 # define supR3HardenedPathAppDocs          supR3HardenedStaticPathAppDocs
-# define supR3HardenedPathExecDir          supR3HardenedStaticPathExecDir
+# define supR3HardenedPathAppBin           supR3HardenedStaticPathAppBin
 # define supR3HardenedPathFilename         supR3HardenedStaticPathFilename
 # define supR3HardenedFatalV               supR3HardenedStaticFatalV
 # define supR3HardenedFatal                supR3HardenedStaticFatal
@@ -175,9 +175,8 @@ typedef enum SUPINSTFILETYPE
 typedef enum SUPINSTDIR
 {
     kSupID_Invalid = 0,
-    kSupID_Bin,
     kSupID_AppBin,
-    kSupID_SharedLib,
+    kSupID_AppSharedLib,
     kSupID_AppPrivArch,
     kSupID_AppPrivArchComp,
     kSupID_AppPrivNoArch,
@@ -381,11 +380,11 @@ DECLHIDDEN(int)    supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPa
 /** @copydoc RTPathAppPrivateArch */
 DECLHIDDEN(int)    supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath);
 /** @copydoc RTPathSharedLibs */
-DECLHIDDEN(int)    supR3HardenedPathSharedLibs(char *pszPath, size_t cchPath);
+DECLHIDDEN(int)    supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath);
 /** @copydoc RTPathAppDocs */
 DECLHIDDEN(int)    supR3HardenedPathAppDocs(char *pszPath, size_t cchPath);
 /** @copydoc RTPathExecDir */
-DECLHIDDEN(int)    supR3HardenedPathExecDir(char *pszPath, size_t cchPath);
+DECLHIDDEN(int)    supR3HardenedPathAppBin(char *pszPath, size_t cchPath);
 /** @copydoc RTPathFilename */
 DECLHIDDEN(char *) supR3HardenedPathFilename(const char *pszPath);
 
@@ -440,7 +439,7 @@ DECLHIDDEN(void)    supR3HardenedLog(const char *pszFormat, ...);
 DECLHIDDEN(void)    supR3HardenedLogFlush(void);
 
 
-DECLHIDDEN(int)     supR3HardenedVerifyAll(bool fFatal, const char *pszProgName);
+DECLHIDDEN(int)     supR3HardenedVerifyAll(bool fFatal, const char *pszProgName, const char *pszExePath);
 DECLHIDDEN(int)     supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal);
 DECLHIDDEN(int)     supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFatal);
 DECLHIDDEN(int)     supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo);
@@ -451,8 +450,10 @@ DECLHIDDEN(int)     supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData);
 
 #ifdef RT_OS_WINDOWS
 DECLHIDDEN(void)    supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge);
+DECLHIDDEN(void)    supR3HardenedWinInitAppBin(uint32_t fFlags);
 DECLHIDDEN(void)    supR3HardenedWinInitVersion(void);
 DECLHIDDEN(void)    supR3HardenedWinInitImports(void);
+DECLHIDDEN(void)    supR3HardenedWinModifyDllSearchPath(uint32_t fFlags, const char *pszAppBinPath);
 # ifdef ___iprt_nt_nt_h___
 DECLHIDDEN(void)    supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
                                                         PFNNTWAITFORSINGLEOBJECT *ppfnNtWaitForSingleObject,

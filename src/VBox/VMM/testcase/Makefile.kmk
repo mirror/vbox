@@ -228,8 +228,8 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstGlobalConfigHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstGlobalConfigHardened_NAME     = tstGlobalConfig
  tstGlobalConfigHardened_DEFS     = PROGRAM_NAME_STR=\"tstGlobalConfig\"
- tstGlobalConfigHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
- tstGlobalConfig_TEMPLATE = VBoxR3TstDll
+ tstGlobalConfigHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
+ tstGlobalConfig_TEMPLATE = VBoxR3HardenedTstDll
 else
  tstGlobalConfig_TEMPLATE = VBOXR3TSTEXE
 endif
@@ -253,8 +253,8 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstMMHyperHeapHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstMMHyperHeapHardened_NAME     = tstMMHyperHeap
  tstMMHyperHeapHardened_DEFS     = PROGRAM_NAME_STR=\"tstMMHyperHeap\"
- tstMMHyperHeapHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
- tstMMHyperHeap_TEMPLATE = VBoxR3TstDll
+ tstMMHyperHeapHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
+ tstMMHyperHeap_TEMPLATE = VBoxR3HardenedTstDll
 else
  tstMMHyperHeap_TEMPLATE = VBOXR3TSTEXE
 endif
@@ -268,8 +268,8 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstSSMHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstSSMHardened_NAME     = tstSSM
  tstSSMHardened_DEFS     = PROGRAM_NAME_STR=\"tstSSM\"
- tstSSMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
- tstSSM_TEMPLATE        = VBoxR3TstDll
+ tstSSMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
+ tstSSM_TEMPLATE        = VBoxR3HardenedTstDll
 else
  tstSSM_TEMPLATE        = VBOXR3TSTEXE
 endif
@@ -291,8 +291,8 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstCFGMHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstCFGMHardened_NAME     = tstCFGM
  tstCFGMHardened_DEFS     = PROGRAM_NAME_STR=\"tstCFGM\"
- tstCFGMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
- tstCFGM_TEMPLATE       = VBoxR3TstDll
+ tstCFGMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
+ tstCFGM_TEMPLATE       = VBoxR3HardenedTstDll
 else
  tstCFGM_TEMPLATE       = VBOXR3TSTEXE
 endif
@@ -328,7 +328,7 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstVMREQHardened_TEMPLATE = VBOXR3HARDENEDEXE
  tstVMREQHardened_NAME     = tstVMREQ
  tstVMREQHardened_DEFS     = PROGRAM_NAME_STR=\"tstVMREQ\"
- tstVMREQHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+ tstVMREQHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
  tstVMREQ_TEMPLATE      = VBOXR3
 else
  tstVMREQ_TEMPLATE      = VBOXR3EXE
@@ -343,7 +343,7 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstAnimateHardened_TEMPLATE = VBOXR3HARDENEDEXE
  tstAnimateHardened_NAME     = tstAnimate
  tstAnimateHardened_DEFS     = PROGRAM_NAME_STR=\"tstAnimate\"
- tstAnimateHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+ tstAnimateHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
  tstAnimate_TEMPLATE    = VBOXR3
 else
  tstAnimate_TEMPLATE    = VBOXR3EXE
@@ -368,7 +368,7 @@ ifdef VBOX_WITH_RAW_MODE
   tstVMMHardened_TEMPLATE = VBOXR3HARDENEDEXE
   tstVMMHardened_NAME     = tstVMM
   tstVMMHardened_DEFS     = PROGRAM_NAME_STR=\"tstVMM\"
-  tstVMMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+  tstVMMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
   tstVMM_TEMPLATE       = VBOXR3
  else
   tstVMM_TEMPLATE       = VBOXR3EXE
@@ -397,7 +397,7 @@ ifdef VBOX_WITH_RAW_MODE
   tstMicroHardened_TEMPLATE = VBOXR3HARDENEDEXE
   tstMicroHardened_NAME     = tstMicro
   tstMicroHardened_DEFS     = PROGRAM_NAME_STR=\"tstMicro\"
-  tstMicroHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+  tstMicroHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
   tstMicro_TEMPLATE      = VBOXR3
  else
   tstMicro_TEMPLATE      = VBOXR3EXE
@@ -434,7 +434,7 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
   tstPDMAsyncCompletionHardened_TEMPLATE = VBOXR3HARDENEDEXE
   tstPDMAsyncCompletionHardened_NAME     = tstPDMAsyncCompletion
   tstPDMAsyncCompletionHardened_DEFS     = PROGRAM_NAME_STR=\"tstPDMAsyncCompletion\"
-  tstPDMAsyncCompletionHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+  tstPDMAsyncCompletionHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
   tstPDMAsyncCompletion_TEMPLATE        = VBOXR3
  else
   tstPDMAsyncCompletion_TEMPLATE        = VBOXR3EXE
@@ -450,7 +450,7 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
   tstPDMAsyncCompletionStressHardened_TEMPLATE = VBOXR3HARDENEDEXE
   tstPDMAsyncCompletionStressHardened_NAME     = tstPDMAsyncCompletionStress
   tstPDMAsyncCompletionStressHardened_DEFS     = PROGRAM_NAME_STR=\"tstPDMAsyncCompletionStress\"
-  tstPDMAsyncCompletionStressHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+  tstPDMAsyncCompletionStressHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
   tstPDMAsyncCompletionStress_TEMPLATE  = VBOXR3
  else
   tstPDMAsyncCompletionStress_TEMPLATE  = VBOXR3EXE

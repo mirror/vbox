@@ -4319,12 +4319,23 @@ TEMPLATE_VBOXR3HARDENEDLIB_LIBS = $(NO_SUCH_VARIABLE)
 
 
 #
-# Template for building hardened Ring-3 executables.
-# These shall have no extra runpaths, esp. not origin ones.
+# Template for building hardened Ring-3 testcase executables.
 #
 TEMPLATE_VBoxR3HardenedTstExe = VBox Ring-3 Hardened Testcase Exe (currently windows only!)
 TEMPLATE_VBoxR3HardenedTstExe_EXTENDS = VBOXR3HARDENEDEXE
 TEMPLATE_VBoxR3HardenedTstExe_INST = $(INST_TESTCASE)
+
+#
+# Template for building hardened Ring-3 testcase DLLs (pairs with VBoxR3HardenedTstExe).
+#
+TEMPLATE_VBoxR3HardenedTstDll = VBox Ring-3 Hardened Testcase Dll (currently windows only!)
+TEMPLATE_VBoxR3HardenedTstDll_EXTENDS = VBoxR3TstDll
+TEMPLATE_VBoxR3HardenedTstDll_INST = $(INST_TESTCASE)
+ TEMPLATE_VBoxR3HardenedTstDll_LDFLAGS.win = $(TEMPLATE_VBoxR3TstDll_LDFLAGS.win) -IntegrityCheck
+ifn1of ($(KBUILD_TARGET), win os2)
+ TEMPLATE_VBoxR3HardenedTstDll_LDFLAGS       = $(filter-out '$(VBOX_GCC_RPATH_OPT)%,$(TEMPLATE_VBoxR3TstDll_LDFLAGS))
+ TEMPLATE_VBoxR3HardenedTstDll_LDFLAGS.linux = $(filter-out $(VBOX_GCC_ORIGIN_OPT),$(TEMPLATE_VBoxR3TstDll_LDFLAGS.linux))
+endif
 
 #
 # Template for building set-uid-to-root helper programs.

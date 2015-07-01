@@ -34,8 +34,10 @@
 # define PROCESS_SET_LIMITED_INFORMATION        0x2000
 #endif
 #ifndef LOAD_LIBRARY_SEARCH_APPLICATION_DIR
-# define LOAD_LIBRARY_SEARCH_APPLICATION_DIR    0x200
-# define LOAD_LIBRARY_SEARCH_SYSTEM32           0x800
+# define LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR       UINT32_C(0x100)
+# define LOAD_LIBRARY_SEARCH_APPLICATION_DIR    UINT32_C(0x200)
+# define LOAD_LIBRARY_SEARCH_USER_DIRS          UINT32_C(0x400)
+# define LOAD_LIBRARY_SEARCH_SYSTEM32           UINT32_C(0x800)
 #endif
 
 #include <VBox/sup.h>
@@ -273,10 +275,14 @@ static uint32_t volatile    g_cSuplibHardenedWindowsMainCalls;
 RTUTF16                     g_wszSupLibHardenedExePath[1024];
 /** The NT path of the executable. */
 SUPSYSROOTDIRBUF            g_SupLibHardenedExeNtPath;
+/** The NT path of the application binary directory. */
+SUPSYSROOTDIRBUF            g_SupLibHardenedAppBinNtPath;
 /** The offset into g_SupLibHardenedExeNtPath of the executable name (WCHAR,
  * not byte). This also gives the length of the exectuable directory path,
  * including a trailing slash. */
-uint32_t                    g_offSupLibHardenedExeNtName;
+static uint32_t             g_offSupLibHardenedExeNtName;
+/** Set if we need to use the LOAD_LIBRARY_SEARCH_USER_DIRS option. */
+bool                        g_fSupLibHardenedDllSearchUserDirs = false;
 /** @} */
 
 /** @name Hook related variables.
@@ -463,9 +469,13 @@ DECLHIDDEN(void *) supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem
         DWORD fFlags = 0;
         if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0))
         {
-           fFlags |= LOAD_LIBRARY_SEARCH_SYSTEM32;
-           if (!fSystem32Only)
-               fFlags |= LOAD_LIBRARY_SEARCH_APPLICATION_DIR;
+            fFlags |= LOAD_LIBRARY_SEARCH_SYSTEM32;
+            if (!fSystem32Only)
+            {
+                fFlags |= LOAD_LIBRARY_SEARCH_APPLICATION_DIR;
+                if (g_fSupLibHardenedDllSearchUserDirs)
+                    fFlags |= LOAD_LIBRARY_SEARCH_USER_DIRS;
+            }
         }
 
         void *pvRet = (void *)LoadLibraryExW(wszPath, NULL /*hFile*/, fFlags);
@@ -805,8 +815,8 @@ DECLHIDDEN(void) supR3HardenedWinVerifyCacheScheduleImports(RTLDRMOD hLdrMod, PC
                         SUP_DPRINTF(("supR3HardenedWinVerifyCacheScheduleImports: '%s' cached for system32\n", uBuf.szName));
                         continue;
                     }
-                    if (supR3HardenedWinVerifyCacheLookupImport(g_SupLibHardenedExeNtPath.UniStr.Buffer,
-                                                                g_offSupLibHardenedExeNtName,
+                    if (supR3HardenedWinVerifyCacheLookupImport(g_SupLibHardenedAppBinNtPath.UniStr.Buffer,
+                                                                g_SupLibHardenedAppBinNtPath.UniStr.Length / sizeof(CHAR),
                                                                 uBuf.szName) != NULL)
                     {
                         SUP_DPRINTF(("supR3HardenedWinVerifyCacheScheduleImports: '%s' cached for appdir\n", uBuf.szName));
@@ -888,8 +898,8 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
             if (   !supR3HardenedWinVerifyCacheLookupImport(g_System32NtPath.UniStr.Buffer,
                                                             g_System32NtPath.UniStr.Length / sizeof(WCHAR),
                                                             pCur->szName)
-                && !supR3HardenedWinVerifyCacheLookupImport(g_SupLibHardenedExeNtPath.UniStr.Buffer,
-                                                            g_offSupLibHardenedExeNtName,
+                && !supR3HardenedWinVerifyCacheLookupImport(g_SupLibHardenedAppBinNtPath.UniStr.Buffer,
+                                                            g_SupLibHardenedAppBinNtPath.UniStr.Length / sizeof(WCHAR),
                                                             pCur->szName)
                 && (   pCur->cwcAltSearchDir == 0
                     || !supR3HardenedWinVerifyCacheLookupImport(pCur->pwszAltSearchDir, pCur->cwcAltSearchDir, pCur->szName)) )
@@ -982,7 +992,7 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
                     } Tmp, aDirs[] =
                     {
                         { g_System32NtPath.UniStr.Buffer,           g_System32NtPath.UniStr.Length / sizeof(WCHAR) },
-                        { g_SupLibHardenedExeNtPath.UniStr.Buffer,  g_offSupLibHardenedExeNtName - 1 },
+                        { g_SupLibHardenedExeNtPath.UniStr.Buffer,  g_SupLibHardenedAppBinNtPath.UniStr.Length / sizeof(WCHAR) },
                         { pCur->pwszAltSearchDir,                   pCur->cwcAltSearchDir },
                     };
 
@@ -1351,15 +1361,12 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnore
      *      6. Common Files  - normal code or cat signing, owner TrustedInstaller.
      *      7. x86 variations of 4 & 5 - ditto.
      */
-    Assert(g_SupLibHardenedExeNtPath.UniStr.Buffer[g_offSupLibHardenedExeNtName - 1] == '\\');
     uint32_t fFlags = 0;
     if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_System32NtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_WinSxSNtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
-    else if (supHardViUtf16PathStartsWithEx(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR),
-                                            g_SupLibHardenedExeNtPath.UniStr.Buffer,
-                                            g_offSupLibHardenedExeNtName, false /*fCheckSlash*/))
+    else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_SupLibHardenedAppBinNtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
 # ifdef VBOX_PERMIT_MORE
     else if (supHardViIsAppPatchDir(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR)))
@@ -1403,11 +1410,8 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnore
      * for the VBox bits where we require kernel code signing and special
      * integrity checks.
      */
-    Assert(g_SupLibHardenedExeNtPath.UniStr.Buffer[g_offSupLibHardenedExeNtName - 1] == '\\');
     uint32_t fFlags = 0;
-    if (supHardViUtf16PathStartsWithEx(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR),
-                                       g_SupLibHardenedExeNtPath.UniStr.Buffer,
-                                       g_offSupLibHardenedExeNtName, false /*fCheckSlash*/))
+    if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_SupLibHardenedAppBinNtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
     else
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
@@ -4652,6 +4656,136 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
 
 
 /**
+ * Modifies the DLL search path for testcases.
+ *
+ * This makes sure the application binary path is in the search path.  When
+ * starting a testcase executable in the testcase/ subdirectory this isn't the
+ * case by default.  So, unless we do something about it we won't be able to
+ * import VBox DLLs.
+ *
+ * @param   fFlags          The main flags (giving the location).
+ * @param   pszAppBinPath   The path to the application binary directory
+ *                          (windows style).
+ */
+DECLHIDDEN(void) supR3HardenedWinModifyDllSearchPath(uint32_t fFlags, const char *pszAppBinPath)
+{
+    /*
+     * For the testcases to work, we must add the app bin directory to the
+     * DLL search list before the testcase dll is loaded or it won't be
+     * able to find the VBox DLLs.  This is done _after_ VBoxRT.dll is
+     * initialized and sets its defaults.
+     */
+    switch (fFlags & SUPSECMAIN_FLAGS_LOC_MASK)
+    {
+        case SUPSECMAIN_FLAGS_LOC_TESTCASE:
+            break;
+        default:
+            return;
+    }
+
+    /*
+     * Dynamically resolve the two APIs we need (the latter uses forwarders on w7).
+     */
+    HMODULE hModKernel32 = GetModuleHandleW(L"kernel32.dll");
+
+    typedef BOOL (WINAPI *PFNSETDLLDIRECTORY)(LPCWSTR);
+    PFNSETDLLDIRECTORY pfnSetDllDir;
+    pfnSetDllDir     = (PFNSETDLLDIRECTORY)GetProcAddress(hModKernel32, "SetDllDirectoryW");
+
+    typedef BOOL (WINAPI *PFNSETDEFAULTDLLDIRECTORIES)(DWORD);
+    PFNSETDEFAULTDLLDIRECTORIES pfnSetDefDllDirs;
+    pfnSetDefDllDirs = (PFNSETDEFAULTDLLDIRECTORIES)GetProcAddress(hModKernel32, "SetDefaultDllDirectories");
+
+    if (pfnSetDllDir != NULL)
+    {
+        /*
+         * Convert the path to UTF-16 and try set it.
+         */
+        PRTUTF16 pwszAppBinPath = NULL;
+        int rc = RTStrToUtf16(pszAppBinPath, &pwszAppBinPath);
+        if (RT_SUCCESS(rc))
+        {
+            if (pfnSetDllDir(pwszAppBinPath))
+            {
+                SUP_DPRINTF(("supR3HardenedWinModifyDllSearchPath: Set dll dir to '%ls'\n", pwszAppBinPath));
+                g_fSupLibHardenedDllSearchUserDirs = true;
+
+                /*
+                 * We set it alright, on W7 and later we also must modify the
+                 * default DLL search order.  See @bugref{6861} for details on
+                 * why we don't do this on Vista (also see init-win.cpp in IPRT).
+                 */
+                if (   pfnSetDefDllDirs
+                    && g_uNtVerCombined >= SUP_NT_VER_W70)
+                {
+                    if (pfnSetDefDllDirs(  LOAD_LIBRARY_SEARCH_APPLICATION_DIR
+                                         | LOAD_LIBRARY_SEARCH_SYSTEM32
+                                         | LOAD_LIBRARY_SEARCH_USER_DIRS))
+                        SUP_DPRINTF(("supR3HardenedWinModifyDllSearchPath: Successfully modified search dirs.\n"));
+                    else
+                        supR3HardenedFatal("supR3HardenedWinModifyDllSearchPath: SetDllDirectoryW(%ls) failed: %d\n",
+                                           pwszAppBinPath, RtlGetLastWin32Error());
+                }
+            }
+            else
+                supR3HardenedFatal("supR3HardenedWinModifyDllSearchPath: SetDllDirectoryW(%ls) failed: %d\n",
+                                   pwszAppBinPath, RtlGetLastWin32Error());
+            RTUtf16Free(pwszAppBinPath);
+        }
+        else
+            supR3HardenedFatal("supR3HardenedWinModifyDllSearchPath: RTStrToUtf16(%s) failed: %d\n", pszAppBinPath, rc);
+    }
+}
+
+
+/**
+ * Initializes the application binary directory path.
+ *
+ * This is called once or twice.
+ *
+ * @param   fFlags          The main flags (giving the location).
+ */
+DECLHIDDEN(void) supR3HardenedWinInitAppBin(uint32_t fFlags)
+{
+    USHORT cwc = (USHORT)g_offSupLibHardenedExeNtName - 1;
+    g_SupLibHardenedAppBinNtPath.UniStr.Buffer = g_SupLibHardenedAppBinNtPath.awcBuffer;
+    memcpy(g_SupLibHardenedAppBinNtPath.UniStr.Buffer, g_SupLibHardenedExeNtPath.UniStr.Buffer, cwc * sizeof(WCHAR));
+
+    switch (fFlags & SUPSECMAIN_FLAGS_LOC_MASK)
+    {
+        case SUPSECMAIN_FLAGS_LOC_APP_BIN:
+            break;
+        case SUPSECMAIN_FLAGS_LOC_TESTCASE:
+        {
+            /* Drop one directory level. */
+            USHORT off = cwc;
+            WCHAR  wc;
+            while (   off > 1
+                   && (wc = g_SupLibHardenedAppBinNtPath.UniStr.Buffer[off - 1]) != '\0')
+                if (wc != '\\' && wc != '/')
+                    off--;
+                else
+                {
+                    if (g_SupLibHardenedAppBinNtPath.UniStr.Buffer[off - 2] == ':')
+                        cwc = off;
+                    else
+                        cwc = off - 1;
+                    break;
+                }
+            break;
+        }
+        default:
+            supR3HardenedFatal("supR3HardenedWinInitAppBin: Unknown program binary location: %#x\n", fFlags);
+    }
+
+    g_SupLibHardenedAppBinNtPath.UniStr.Buffer[cwc]   = '\0';
+    g_SupLibHardenedAppBinNtPath.UniStr.Length        = cwc * sizeof(WCHAR);
+    g_SupLibHardenedAppBinNtPath.UniStr.MaximumLength = sizeof(g_SupLibHardenedAppBinNtPath.awcBuffer);
+    SUP_DPRINTF(("supR3HardenedWinInitAppBin(%#x): '%ls'\n", fFlags, g_SupLibHardenedAppBinNtPath.UniStr.Buffer));
+}
+
+
+/**
  * Converts the Windows command line string (UTF-16) to an array of UTF-8
  * arguments suitable for passing to main().
  *
@@ -5371,6 +5505,12 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
         g_offSupLibHardenedExeNtName--;
 
     /*
+     * Preliminary app binary path init.  May change when SUPR3HardenedMain is
+     * called (via main below).
+     */
+    supR3HardenedWinInitAppBin(SUPSECMAIN_FLAGS_LOC_APP_BIN);
+
+    /*
      * If we've done early init already, register the DLL load notification
      * callback and reinstall the NtDll patches.
      */
@@ -5563,6 +5703,11 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
     while (   g_offSupLibHardenedExeNtName > 1
            && g_SupLibHardenedExeNtPath.UniStr.Buffer[g_offSupLibHardenedExeNtName - 1] != '\\' )
         g_offSupLibHardenedExeNtName--;
+
+    /*
+     * Preliminary app binary path init.  May change when SUPR3HardenedMain is called.
+     */
+    supR3HardenedWinInitAppBin(SUPSECMAIN_FLAGS_LOC_APP_BIN);
 
     /*
      * Initialize the image verification stuff (hooks LdrLoadDll and NtCreateSection).

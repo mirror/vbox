@@ -70,7 +70,7 @@ DECLHIDDEN(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
 /**
  * @copydoc RTPathSharedLibs
  */
-DECLHIDDEN(int) supR3HardenedPathSharedLibs(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath)
 {
     return RTPathSharedLibs(pszPath, cchPath);
 }
@@ -88,7 +88,7 @@ DECLHIDDEN(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
 /**
  * @copydoc RTPathExecDir
  */
-DECLHIDDEN(int) supR3HardenedPathExecDir(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
 {
     return RTPathExecDir(pszPath, cchPath);
 }

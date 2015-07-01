@@ -1217,10 +1217,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    tstIntNetHardened-1_TEMPLATE = VBoxR3HardenedTstExe
    tstIntNetHardened-1_NAME     = tstIntNet-1
    tstIntNetHardened-1_DEFS     = PROGRAM_NAME_STR=\"tstIntNet-1\"
-   tstIntNetHardened-1_SOURCES  = ../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+   tstIntNetHardened-1_SOURCES  = ../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
 
    DLLS += tstIntNet-1
-   tstIntNet-1_TEMPLATE   = VBoxR3TstDll
+   tstIntNet-1_TEMPLATE   = VBoxR3HardenedTstDll
   else
    PROGRAMS += tstIntNet-1
    tstIntNet-1_TEMPLATE   = VBOXR3TSTEXE

@@ -104,7 +104,7 @@
  * The files that gets verified.
  *
  * @todo This needs reviewing against the linux packages.
- * @todo The excessive use of kSupID_SharedLib needs to be reviewed at some point. For
+ * @todo The excessive use of kSupID_AppSharedLib needs to be reviewed at some point. For
  *       the time being we're building the linux packages with SharedLib pointing to
  *       AppPrivArch (lazy bird).
  */
@@ -122,20 +122,20 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Rc,   kSupID_AppPrivArch,       false, "VBoxDD2RC.rc" },
 #endif
 
-    {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxRT" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxVMM" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxREM" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxRT" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxVMM" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxREM" SUPLIB_DLL_SUFF },
 #if HC_ARCH_BITS == 32
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxREM32" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxREM64" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxREM32" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxREM64" SUPLIB_DLL_SUFF },
 #endif
-    {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxDD" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxDD2" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxDDU" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxDD" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxDD2" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxDDU" SUPLIB_DLL_SUFF },
 
 //#ifdef VBOX_WITH_DEBUGGER_GUI
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxDbg" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxDbg3" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxDbg" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxDbg3" SUPLIB_DLL_SUFF },
 //#endif
 
 //#ifdef VBOX_WITH_SHARED_CLIPBOARD
@@ -164,10 +164,10 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
 #ifdef VBOX_WITH_MAIN
     {   kSupIFT_Exe,  kSupID_AppBin,            false, "VBoxSVC" SUPLIB_EXE_SUFF },
  #ifdef RT_OS_WINDOWS
-    {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxC" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxC" SUPLIB_DLL_SUFF },
  #else
     {   kSupIFT_Exe,  kSupID_AppPrivArch,       false, "VBoxXPCOMIPCD" SUPLIB_EXE_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxXPCOM" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxXPCOM" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArchComp,   false, "VBoxXPCOMIPCC" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArchComp,   false, "VBoxC" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArchComp,   false, "VBoxSVCM" SUPLIB_DLL_SUFF },
@@ -175,9 +175,9 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
  #endif
 #endif
 
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VRDPAuth" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxAuth" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxVRDP" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VRDPAuth" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxAuth" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxVRDP" SUPLIB_DLL_SUFF },
 
 //#ifdef VBOX_WITH_HEADLESS
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxHeadless" SUPLIB_EXE_SUFF },
@@ -189,7 +189,7 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VirtualBox" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VirtualBox" SUPLIB_DLL_SUFF },
 # if !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxKeyboard" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxKeyboard" SUPLIB_DLL_SUFF },
 # endif
 //#endif
 
@@ -262,12 +262,11 @@ static int supR3HardenedMakePath(SUPINSTDIR enmDir, char *pszDst, size_t cchDst,
     int rc;
     switch (enmDir)
     {
-        case kSupID_AppBin: /** @todo fix this AppBin crap (uncertain wtf some binaries actually are installed). */
-        case kSupID_Bin:
-            rc = supR3HardenedPathExecDir(pszDst, cchDst);
+        case kSupID_AppBin:
+            rc = supR3HardenedPathAppBin(pszDst, cchDst);
             break;
-        case kSupID_SharedLib:
-            rc = supR3HardenedPathSharedLibs(pszDst, cchDst);
+        case kSupID_AppSharedLib:
+            rc = supR3HardenedPathAppSharedLibs(pszDst, cchDst);
             break;
         case kSupID_AppPrivArch:
             rc = supR3HardenedPathAppPrivateArch(pszDst, cchDst);
@@ -287,7 +286,7 @@ static int supR3HardenedMakePath(SUPINSTDIR enmDir, char *pszDst, size_t cchDst,
             rc = supR3HardenedPathAppPrivateNoArch(pszDst, cchDst);
             break;
         case kSupID_Testcase:
-            rc = supR3HardenedPathExecDir(pszDst, cchDst);
+            rc = supR3HardenedPathAppBin(pszDst, cchDst);
             if (RT_SUCCESS(rc))
             {
                 size_t off = suplibHardenedStrLen(pszDst);
@@ -849,11 +848,12 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFata
  *
  * @returns See supR3HardenedVerifyAll.
  * @param   pszProgName         See supR3HardenedVerifyAll.
+ * @param   pszExePath          The path to the executable.
  * @param   fFatal              See supR3HardenedVerifyAll.
  * @param   fLeaveOpen          The leave open setting used by
  *                              supR3HardenedVerifyAll.
  */
-static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal, bool fLeaveOpen)
+static int supR3HardenedVerifyProgram(const char *pszProgName, const char *pszExePath, bool fFatal, bool fLeaveOpen)
 {
     /*
      * Search the table looking for the executable and the DLL/DYLIB/SO.
@@ -890,17 +890,7 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal, bool
                     rc = supR3HardenedVerifyFileInternal(iFile, fFatal, fLeaveOpen, false /* fVerifyAll */);
                 fExe = true;
 
-                char szFilename[RTPATH_MAX];
-                int rc2 = supR3HardenedPathExecDir(szFilename, sizeof(szFilename) - cchProgName - sizeof(SUPLIB_EXE_SUFF));
-                if (RT_SUCCESS(rc2))
-                {
-                    suplibHardenedStrCat(szFilename, "/");
-                    suplibHardenedStrCat(szFilename, g_aSupInstallFiles[iFile].pszFile);
-                    supR3HardenedVerifySameFile(iFile, szFilename, fFatal);
-                }
-                else
-                    rc = supR3HardenedError(rc2, fFatal,
-                                            "supR3HardenedVerifyProgram: failed to query program path: rc=%d\n", rc2);
+                supR3HardenedVerifySameFile(iFile, pszExePath, fFatal);
             }
         }
 
@@ -935,8 +925,9 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal, bool
  * @param   pszProgName         The program name. This is used to verify that
  *                              both the executable and corresponding
  *                              DLL/DYLIB/SO are valid.
+ * @param   pszExePath          The path to the executable.
  */
-DECLHIDDEN(int) supR3HardenedVerifyAll(bool fFatal, const char *pszProgName)
+DECLHIDDEN(int) supR3HardenedVerifyAll(bool fFatal, const char *pszProgName, const char *pszExePath)
 {
     /*
      * On windows
@@ -963,7 +954,7 @@ DECLHIDDEN(int) supR3HardenedVerifyAll(bool fFatal, const char *pszProgName)
      * (thus verified above) and verify the signature on platforms where we
      * sign things.
      */
-    int rc2 = supR3HardenedVerifyProgram(pszProgName, fFatal, fLeaveOpen);
+    int rc2 = supR3HardenedVerifyProgram(pszProgName, pszExePath, fFatal, fLeaveOpen);
     if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
         rc2 = rc;
 

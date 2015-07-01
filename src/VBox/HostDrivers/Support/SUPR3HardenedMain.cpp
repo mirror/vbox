@@ -133,8 +133,8 @@ static SUPPREINITDATA   g_SupPreInitData;
 static
 #endif
 char                    g_szSupLibHardenedExePath[RTPATH_MAX];
-/** The program directory path. */
-static char             g_szSupLibHardenedDirPath[RTPATH_MAX];
+/** The application bin directory path. */
+static char             g_szSupLibHardenedAppBinPath[RTPATH_MAX];
 
 /** The program name. */
 static const char      *g_pszSupLibHardenedProgName;
@@ -780,7 +780,7 @@ DECLHIDDEN(int) supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath)
     return VINF_SUCCESS;
 
 #else
-    return supR3HardenedPathExecDir(pszPath, cchPath);
+    return supR3HardenedPathAppBin(pszPath, cchPath);
 #endif
 }
 
@@ -799,7 +799,7 @@ DECLHIDDEN(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
     return VINF_SUCCESS;
 
 #else
-    return supR3HardenedPathExecDir(pszPath, cchPath);
+    return supR3HardenedPathAppBin(pszPath, cchPath);
 #endif
 }
 
@@ -807,18 +807,18 @@ DECLHIDDEN(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
 /**
  * @copydoc RTPathSharedLibs
  */
-DECLHIDDEN(int) supR3HardenedPathSharedLibs(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_SHARED_LIBS)
     const char *pszSrcPath = RTPATH_SHARED_LIBS;
     size_t cchPathSharedLibs = suplibHardenedStrLen(pszSrcPath);
     if (cchPathSharedLibs >= cchPath)
-        supR3HardenedFatal("supR3HardenedPathSharedLibs: Buffer overflow, %zu >= %zu\n", cchPathSharedLibs, cchPath);
+        supR3HardenedFatal("supR3HardenedPathAppSharedLibs: Buffer overflow, %zu >= %zu\n", cchPathSharedLibs, cchPath);
     suplibHardenedMemCopy(pszPath, pszSrcPath, cchPathSharedLibs + 1);
     return VINF_SUCCESS;
 
 #else
-    return supR3HardenedPathExecDir(pszPath, cchPath);
+    return supR3HardenedPathAppBin(pszPath, cchPath);
 #endif
 }
 
@@ -837,7 +837,7 @@ DECLHIDDEN(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
     return VINF_SUCCESS;
 
 #else
-    return supR3HardenedPathExecDir(pszPath, cchPath);
+    return supR3HardenedPathAppBin(pszPath, cchPath);
 #endif
 }
 
@@ -910,10 +910,23 @@ static void supR3HardenedGetFullExePath(void)
 #endif
 
     /*
-     * Strip off the filename part (RTPathStripFilename()).
+     * Determine the application binary directory location.
      */
-    suplibHardenedStrCopy(g_szSupLibHardenedDirPath, g_szSupLibHardenedExePath);
-    suplibHardenedPathStripFilename(g_szSupLibHardenedDirPath);
+    suplibHardenedStrCopy(g_szSupLibHardenedAppBinPath, g_szSupLibHardenedExePath);
+    suplibHardenedPathStripFilename(g_szSupLibHardenedAppBinPath);
+
+    if (g_enmSupR3HardenedMainState < SUPR3HARDENEDMAINSTATE_HARDENED_MAIN_CALLED)
+        supR3HardenedFatal("supR3HardenedExecDir: Called before SUPR3HardenedMain! (%d)\n", g_enmSupR3HardenedMainState);
+    switch (g_fSupHardenedMain & SUPSECMAIN_FLAGS_LOC_MASK)
+    {
+        case SUPSECMAIN_FLAGS_LOC_APP_BIN:
+            break;
+        case SUPSECMAIN_FLAGS_LOC_TESTCASE:
+            suplibHardenedPathStripFilename(g_szSupLibHardenedAppBinPath);
+            break;
+        default:
+            supR3HardenedFatal("supR3HardenedExecDir: Unknown program binary location: %#x\n", g_fSupHardenedMain);
+    }
 }
 
 
@@ -938,26 +951,27 @@ static bool supR3HardenedMainIsProcSelfExeAccssible(void)
 
 /**
  * @copydoc RTPathExecDir
+ * @remarks not quite like RTPathExecDir actually...
  */
-DECLHIDDEN(int) supR3HardenedPathExecDir(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
 {
     /*
      * Lazy init (probably not required).
      */
-    if (!g_szSupLibHardenedDirPath[0])
+    if (!g_szSupLibHardenedAppBinPath[0])
         supR3HardenedGetFullExePath();
 
     /*
      * Calc the length and check if there is space before copying.
      */
-    size_t cch = suplibHardenedStrLen(g_szSupLibHardenedDirPath) + 1;
+    size_t cch = suplibHardenedStrLen(g_szSupLibHardenedAppBinPath) + 1;
     if (cch <= cchPath)
     {
-        suplibHardenedMemCopy(pszPath, g_szSupLibHardenedDirPath, cch + 1);
+        suplibHardenedMemCopy(pszPath, g_szSupLibHardenedAppBinPath, cch + 1);
         return VINF_SUCCESS;
     }
 
-    supR3HardenedFatal("supR3HardenedPathExecDir: Buffer too small (%u < %u)\n", cchPath, cch);
+    supR3HardenedFatal("supR3HardenedPathAppBin: Buffer too small (%u < %u)\n", cchPath, cch);
     return VERR_BUFFER_OVERFLOW;
 }
 
@@ -1627,7 +1641,7 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
      * Construct the name.
      */
     char szPath[RTPATH_MAX];
-    supR3HardenedPathSharedLibs(szPath, sizeof(szPath) - sizeof("/VBoxRT" SUPLIB_DLL_SUFF));
+    supR3HardenedPathAppSharedLibs(szPath, sizeof(szPath) - sizeof("/VBoxRT" SUPLIB_DLL_SUFF));
     suplibHardenedStrCat(szPath, "/VBoxRT" SUPLIB_DLL_SUFF);
 
     /*
@@ -1773,8 +1787,21 @@ static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName
      */
     char szPath[RTPATH_MAX];
     supR3HardenedPathAppPrivateArch(szPath, sizeof(szPath) - 10);
+    const char *pszSubDirSlash;
+    switch (g_fSupHardenedMain & SUPSECMAIN_FLAGS_LOC_MASK)
+    {
+        case SUPSECMAIN_FLAGS_LOC_APP_BIN:
+            pszSubDirSlash = "/";
+            break;
+        case SUPSECMAIN_FLAGS_LOC_TESTCASE:
+            pszSubDirSlash = "/testcase/";
+            break;
+        default:
+            pszSubDirSlash = "/";
+            supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Unknown program binary location: %#x\n", g_fSupHardenedMain);
+    }
     size_t cch = suplibHardenedStrLen(szPath);
-    suplibHardenedStrCopyEx(&szPath[cch], sizeof(szPath) - cch, "/", pszProgName, SUPLIB_DLL_SUFF, NULL);
+    suplibHardenedStrCopyEx(&szPath[cch], sizeof(szPath) - cch, pszSubDirSlash, pszProgName, SUPLIB_DLL_SUFF, NULL);
 
     /*
      * Open it and resolve the symbol.
@@ -1843,15 +1870,17 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 #endif
         g_SupPreInitData.Data.hDevice = SUP_HDEVICE_NIL;
 
-#ifdef SUP_HARDENED_SUID
-# ifdef RT_OS_LINUX
     /*
-     * On linux we have to make sure the path is initialized because we
-     * *might* not be able to access /proc/self/exe after the seteuid call.
+     * Determine the full exe path as we'll be needing it for the verify all
+     * call(s) below.  (We have to do this early on Linux because we * *might*
+     * not be able to access /proc/self/exe after the seteuid call.)
      */
     supR3HardenedGetFullExePath();
-# endif
+#ifdef RT_OS_WINDOWS
+    supR3HardenedWinInitAppBin(fFlags);
+#endif
 
+#ifdef SUP_HARDENED_SUID
     /*
      * Grab any options from the environment.
      */
@@ -1880,7 +1909,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     {
         SUP_DPRINTF(("SUPR3HardenedMain: Respawn #1\n"));
         supR3HardenedWinInit(SUPSECMAIN_FLAGS_DONT_OPEN_DEV, false /*fAvastKludge*/);
-        supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
+        supR3HardenedVerifyAll(true /* fFatal */, pszProgName, g_szSupLibHardenedExePath);
         return supR3HardenedWinReSpawn(1 /*iWhich*/);
     }
 
@@ -1897,7 +1926,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     /*
      * Validate the installation.
      */
-    supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
+    supR3HardenedVerifyAll(true /* fFatal */, pszProgName, g_szSupLibHardenedExePath);
 
     /*
      * The next steps are only taken if we actually need to access the support
@@ -1962,6 +1991,9 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     SUP_DPRINTF(("SUPR3HardenedMain: Load Runtime...\n"));
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_INIT_RUNTIME;
     supR3HardenedMainInitRuntime(fFlags);
+#ifdef RT_OS_WINDOWS
+    supR3HardenedWinModifyDllSearchPath(fFlags, g_szSupLibHardenedAppBinPath);
+#endif
 
     /*
      * Load the DLL/SO/DYLIB containing the actual program

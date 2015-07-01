@@ -1050,6 +1050,14 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 #define SUPSECMAIN_FLAGS_DONT_OPEN_DEV      RT_BIT_32(0)
 /** The hardened DLL has a "TrustedError" function (see FNSUPTRUSTEDERROR). */
 #define SUPSECMAIN_FLAGS_TRUSTED_ERROR      RT_BIT_32(1)
+/** Program binary location mask. */
+#define SUPSECMAIN_FLAGS_LOC_MASK           UINT32_C(0x00000010)
+/** Default binary location is the application binary directory.  Does
+ * not need to be given explicitly (it's 0).  */
+#define SUPSECMAIN_FLAGS_LOC_APP_BIN        UINT32_C(0x00000000)
+/** The binary is located in the testcase directory instead of the
+ * default application binary directory. */
+#define SUPSECMAIN_FLAGS_LOC_TESTCASE       UINT32_C(0x00000010)
 /** @} */
 
 /**
