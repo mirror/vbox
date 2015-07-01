@@ -3299,8 +3299,8 @@ static DECLCALLBACK(void) hdaInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
-    if (pThis->pCodec->pfnCodecDbgListNodes)
-        pThis->pCodec->pfnCodecDbgListNodes(pThis->pCodec, pHlp, pszArgs);
+    if (pThis->pCodec->pfnDbgListNodes)
+        pThis->pCodec->pfnDbgListNodes(pThis->pCodec, pHlp, pszArgs);
     else
         pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback\n");
 }
@@ -3313,8 +3313,8 @@ static DECLCALLBACK(void) hdaInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
-    if (pThis->pCodec->pfnCodecDbgSelector)
-        pThis->pCodec->pfnCodecDbgSelector(pThis->pCodec, pHlp, pszArgs);
+    if (pThis->pCodec->pfnDbgSelector)
+        pThis->pCodec->pfnDbgSelector(pThis->pCodec, pHlp, pszArgs);
     else
         pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback\n");
 }

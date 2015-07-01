@@ -42,81 +42,86 @@
 *******************************************************************************/
 /* PRM 5.3.1 */
 /** Codec address mask. */
-#define CODEC_CAD_MASK              0xF0000000
+#define CODEC_CAD_MASK                                     0xF0000000
 /** Codec address shift. */
-#define CODEC_CAD_SHIFT             28
-#define CODEC_DIRECT_MASK           RT_BIT(27)
+#define CODEC_CAD_SHIFT                                    28
+#define CODEC_DIRECT_MASK                                  RT_BIT(27)
 /** Node ID mask. */
-#define CODEC_NID_MASK              0x07F00000
+#define CODEC_NID_MASK                                     0x07F00000
 /** Node ID shift. */
-#define CODEC_NID_SHIFT             20
-#define CODEC_VERBDATA_MASK         0x000FFFFF
-#define CODEC_VERB_4BIT_CMD         0x000FFFF0
-#define CODEC_VERB_4BIT_DATA        0x0000000F
-#define CODEC_VERB_8BIT_CMD         0x000FFF00
-#define CODEC_VERB_8BIT_DATA        0x000000FF
-#define CODEC_VERB_16BIT_CMD        0x000F0000
-#define CODEC_VERB_16BIT_DATA       0x0000FFFF
+#define CODEC_NID_SHIFT                                    20
+#define CODEC_VERBDATA_MASK                                0x000FFFFF
+#define CODEC_VERB_4BIT_CMD                                0x000FFFF0
+#define CODEC_VERB_4BIT_DATA                               0x0000000F
+#define CODEC_VERB_8BIT_CMD                                0x000FFF00
+#define CODEC_VERB_8BIT_DATA                               0x000000FF
+#define CODEC_VERB_16BIT_CMD                               0x000F0000
+#define CODEC_VERB_16BIT_DATA                              0x0000FFFF
 
-#define CODEC_CAD(cmd) (((cmd) & CODEC_CAD_MASK) >> CODEC_CAD_SHIFT)
-#define CODEC_DIRECT(cmd) ((cmd) & CODEC_DIRECT_MASK)
-#define CODEC_NID(cmd) ((((cmd) & CODEC_NID_MASK)) >> CODEC_NID_SHIFT)
-#define CODEC_VERBDATA(cmd) ((cmd) & CODEC_VERBDATA_MASK)
-#define CODEC_VERB_CMD(cmd, mask, x) (((cmd) & (mask)) >> (x))
-#define CODEC_VERB_CMD4(cmd) (CODEC_VERB_CMD((cmd), CODEC_VERB_4BIT_CMD, 4))
-#define CODEC_VERB_CMD8(cmd) (CODEC_VERB_CMD((cmd), CODEC_VERB_8BIT_CMD, 8))
-#define CODEC_VERB_CMD16(cmd) (CODEC_VERB_CMD((cmd), CODEC_VERB_16BIT_CMD, 16))
-#define CODEC_VERB_PAYLOAD4(cmd) ((cmd) & CODEC_VERB_4BIT_DATA)
-#define CODEC_VERB_PAYLOAD8(cmd) ((cmd) & CODEC_VERB_8BIT_DATA)
-#define CODEC_VERB_PAYLOAD16(cmd) ((cmd) & CODEC_VERB_16BIT_DATA)
+#define CODEC_CAD(cmd)                                     (((cmd) & CODEC_CAD_MASK) >> CODEC_CAD_SHIFT)
+#define CODEC_DIRECT(cmd)                                  ((cmd) & CODEC_DIRECT_MASK)
+#define CODEC_NID(cmd)                                     ((((cmd) & CODEC_NID_MASK)) >> CODEC_NID_SHIFT)
+#define CODEC_VERBDATA(cmd)                                ((cmd) & CODEC_VERBDATA_MASK)
+#define CODEC_VERB_CMD(cmd, mask, x)                       (((cmd) & (mask)) >> (x))
+#define CODEC_VERB_CMD4(cmd)                               (CODEC_VERB_CMD((cmd), CODEC_VERB_4BIT_CMD, 4))
+#define CODEC_VERB_CMD8(cmd)                               (CODEC_VERB_CMD((cmd), CODEC_VERB_8BIT_CMD, 8))
+#define CODEC_VERB_CMD16(cmd)                              (CODEC_VERB_CMD((cmd), CODEC_VERB_16BIT_CMD, 16))
+#define CODEC_VERB_PAYLOAD4(cmd)                           ((cmd) & CODEC_VERB_4BIT_DATA)
+#define CODEC_VERB_PAYLOAD8(cmd)                           ((cmd) & CODEC_VERB_8BIT_DATA)
+#define CODEC_VERB_PAYLOAD16(cmd)                          ((cmd) & CODEC_VERB_16BIT_DATA)
 
-#define CODEC_VERB_GET_AMP_DIRECTION  RT_BIT(15)
-#define CODEC_VERB_GET_AMP_SIDE       RT_BIT(13)
-#define CODEC_VERB_GET_AMP_INDEX      0x7
+#define CODEC_VERB_GET_AMP_DIRECTION                       RT_BIT(15)
+#define CODEC_VERB_GET_AMP_SIDE                            RT_BIT(13)
+#define CODEC_VERB_GET_AMP_INDEX                           0x7
 
 /* HDA spec 7.3.3.7 NoteA */
-#define CODEC_GET_AMP_DIRECTION(cmd)  (((cmd) & CODEC_VERB_GET_AMP_DIRECTION) >> 15)
-#define CODEC_GET_AMP_SIDE(cmd)       (((cmd) & CODEC_VERB_GET_AMP_SIDE) >> 13)
-#define CODEC_GET_AMP_INDEX(cmd)      (CODEC_GET_AMP_DIRECTION(cmd) ? 0 : ((cmd) & CODEC_VERB_GET_AMP_INDEX))
+#define CODEC_GET_AMP_DIRECTION(cmd)                       (((cmd) & CODEC_VERB_GET_AMP_DIRECTION) >> 15)
+#define CODEC_GET_AMP_SIDE(cmd)                            (((cmd) & CODEC_VERB_GET_AMP_SIDE) >> 13)
+#define CODEC_GET_AMP_INDEX(cmd)                           (CODEC_GET_AMP_DIRECTION(cmd) ? 0 : ((cmd) & CODEC_VERB_GET_AMP_INDEX))
 
 /* HDA spec 7.3.3.7 NoteC */
-#define CODEC_VERB_SET_AMP_OUT_DIRECTION  RT_BIT(15)
-#define CODEC_VERB_SET_AMP_IN_DIRECTION   RT_BIT(14)
-#define CODEC_VERB_SET_AMP_LEFT_SIDE      RT_BIT(13)
-#define CODEC_VERB_SET_AMP_RIGHT_SIDE     RT_BIT(12)
-#define CODEC_VERB_SET_AMP_INDEX          (0x7 << 8)
+#define CODEC_VERB_SET_AMP_OUT_DIRECTION                   RT_BIT(15)
+#define CODEC_VERB_SET_AMP_IN_DIRECTION                    RT_BIT(14)
+#define CODEC_VERB_SET_AMP_LEFT_SIDE                       RT_BIT(13)
+#define CODEC_VERB_SET_AMP_RIGHT_SIDE                      RT_BIT(12)
+#define CODEC_VERB_SET_AMP_INDEX                           (0x7 << 8)
+#define CODEC_VERB_SET_AMP_MUTE                            RT_BIT(7)
+/** Note: 7-bit value [6:0]. */
+#define CODEC_VERB_SET_AMP_GAIN                            0x7F
 
-#define CODEC_SET_AMP_IS_OUT_DIRECTION(cmd)  (((cmd) & CODEC_VERB_SET_AMP_OUT_DIRECTION) != 0)
-#define CODEC_SET_AMP_IS_IN_DIRECTION(cmd)   (((cmd) & CODEC_VERB_SET_AMP_IN_DIRECTION) != 0)
-#define CODEC_SET_AMP_IS_LEFT_SIDE(cmd)      (((cmd) & CODEC_VERB_SET_AMP_LEFT_SIDE) != 0)
-#define CODEC_SET_AMP_IS_RIGHT_SIDE(cmd)     (((cmd) & CODEC_VERB_SET_AMP_RIGHT_SIDE) != 0)
-#define CODEC_SET_AMP_INDEX(cmd)             (((cmd) & CODEC_VERB_SET_AMP_INDEX) >> 7)
+#define CODEC_SET_AMP_IS_OUT_DIRECTION(cmd)                (((cmd) & CODEC_VERB_SET_AMP_OUT_DIRECTION) != 0)
+#define CODEC_SET_AMP_IS_IN_DIRECTION(cmd)                 (((cmd) & CODEC_VERB_SET_AMP_IN_DIRECTION) != 0)
+#define CODEC_SET_AMP_IS_LEFT_SIDE(cmd)                    (((cmd) & CODEC_VERB_SET_AMP_LEFT_SIDE) != 0)
+#define CODEC_SET_AMP_IS_RIGHT_SIDE(cmd)                   (((cmd) & CODEC_VERB_SET_AMP_RIGHT_SIDE) != 0)
+#define CODEC_SET_AMP_INDEX(cmd)                           (((cmd) & CODEC_VERB_SET_AMP_INDEX) >> 7)
+#define CODEC_SET_AMP_MUTE(cmd)                            ((cmd) & CODEC_VERB_SET_AMP_MUTE)
+#define CODEC_SET_AMP_GAIN(cmd)                            ((cmd) & CODEC_VERB_SET_AMP_GAIN)
 
 /* HDA spec 7.3.3.1 defines layout of configuration registers/verbs (0xF00) */
 /* VendorID (7.3.4.1) */
-#define CODEC_MAKE_F00_00(vendorID, deviceID) (((vendorID) << 16) | (deviceID))
-#define CODEC_F00_00_VENDORID(f00_00) (((f00_00) >> 16) & 0xFFFF)
-#define CODEC_F00_00_DEVICEID(f00_00) ((f00_00) & 0xFFFF)
+#define CODEC_MAKE_F00_00(vendorID, deviceID)              (((vendorID) << 16) | (deviceID))
+#define CODEC_F00_00_VENDORID(f00_00)                      (((f00_00) >> 16) & 0xFFFF)
+#define CODEC_F00_00_DEVICEID(f00_00)                      ((f00_00) & 0xFFFF)
 /* RevisionID (7.3.4.2)*/
 #define CODEC_MAKE_F00_02(MajRev, MinRev, RevisionID, SteppingID) (((MajRev) << 20)|((MinRev) << 16)|((RevisionID) << 8)|(SteppingID))
 /* Subordinate node count (7.3.4.3)*/
 #define CODEC_MAKE_F00_04(startNodeNumber, totalNodeNumber) ((((startNodeNumber) & 0xFF) << 16)|((totalNodeNumber) & 0xFF))
-#define CODEC_F00_04_TO_START_NODE_NUMBER(f00_04) (((f00_04) >> 16) & 0xFF)
-#define CODEC_F00_04_TO_NODE_COUNT(f00_04) ((f00_04) & 0xFF)
+#define CODEC_F00_04_TO_START_NODE_NUMBER(f00_04)          (((f00_04) >> 16) & 0xFF)
+#define CODEC_F00_04_TO_NODE_COUNT(f00_04)                 ((f00_04) & 0xFF)
 /*
  * Function Group Type  (7.3.4.4)
  * 0 & [0x3-0x7f] are reserved types
  * [0x80 - 0xff] are vendor defined function groups
  */
-#define CODEC_MAKE_F00_05(UnSol, NodeType) (((UnSol) << 8)|(NodeType))
-#define CODEC_F00_05_UNSOL  RT_BIT(8)
-#define CODEC_F00_05_AFG    (0x1)
-#define CODEC_F00_05_MFG    (0x2)
-#define CODEC_F00_05_IS_UNSOL(f00_05) RT_BOOL((f00_05) & RT_BIT(8))
-#define CODEC_F00_05_GROUP(f00_05) ((f00_05) & 0xff)
+#define CODEC_MAKE_F00_05(UnSol, NodeType)                 (((UnSol) << 8)|(NodeType))
+#define CODEC_F00_05_UNSOL                                 RT_BIT(8)
+#define CODEC_F00_05_AFG                                   (0x1)
+#define CODEC_F00_05_MFG                                   (0x2)
+#define CODEC_F00_05_IS_UNSOL(f00_05)                      RT_BOOL((f00_05) & RT_BIT(8))
+#define CODEC_F00_05_GROUP(f00_05)                         ((f00_05) & 0xff)
 /*  Audio Function Group capabilities (7.3.4.5) */
 #define CODEC_MAKE_F00_08(BeepGen, InputDelay, OutputDelay) ((((BeepGen) & 0x1) << 16)| (((InputDelay) & 0xF) << 8) | ((OutputDelay) & 0xF))
-#define CODEC_F00_08_BEEP_GEN(f00_08) ((f00_08) & RT_BIT(16)
+#define CODEC_F00_08_BEEP_GEN(f00_08)                      ((f00_08) & RT_BIT(16)
 
 /* Widget Capabilities (7.3.4.6) */
 #define CODEC_MAKE_F00_09(type, delay, chanel_count) \
@@ -124,88 +129,88 @@
     | (((delay) & 0xF) << 16)           \
     | (((chanel_count) & 0xF) << 13))
 /* note: types 0x8-0xe are reserved */
-#define CODEC_F00_09_TYPE_AUDIO_OUTPUT      (0x0)
-#define CODEC_F00_09_TYPE_AUDIO_INPUT       (0x1)
-#define CODEC_F00_09_TYPE_AUDIO_MIXER       (0x2)
-#define CODEC_F00_09_TYPE_AUDIO_SELECTOR    (0x3)
-#define CODEC_F00_09_TYPE_PIN_COMPLEX       (0x4)
-#define CODEC_F00_09_TYPE_POWER_WIDGET      (0x5)
-#define CODEC_F00_09_TYPE_VOLUME_KNOB       (0x6)
-#define CODEC_F00_09_TYPE_BEEP_GEN          (0x7)
-#define CODEC_F00_09_TYPE_VENDOR_DEFINED    (0xF)
+#define CODEC_F00_09_TYPE_AUDIO_OUTPUT                     (0x0)
+#define CODEC_F00_09_TYPE_AUDIO_INPUT                      (0x1)
+#define CODEC_F00_09_TYPE_AUDIO_MIXER                      (0x2)
+#define CODEC_F00_09_TYPE_AUDIO_SELECTOR                   (0x3)
+#define CODEC_F00_09_TYPE_PIN_COMPLEX                      (0x4)
+#define CODEC_F00_09_TYPE_POWER_WIDGET                     (0x5)
+#define CODEC_F00_09_TYPE_VOLUME_KNOB                      (0x6)
+#define CODEC_F00_09_TYPE_BEEP_GEN                         (0x7)
+#define CODEC_F00_09_TYPE_VENDOR_DEFINED                   (0xF)
 
-#define CODEC_F00_09_CAP_CP                 RT_BIT(12)
-#define CODEC_F00_09_CAP_L_R_SWAP           RT_BIT(11)
-#define CODEC_F00_09_CAP_POWER_CTRL         RT_BIT(10)
-#define CODEC_F00_09_CAP_DIGITAL            RT_BIT(9)
-#define CODEC_F00_09_CAP_CONNECTION_LIST    RT_BIT(8)
-#define CODEC_F00_09_CAP_UNSOL              RT_BIT(7)
-#define CODEC_F00_09_CAP_PROC_WIDGET        RT_BIT(6)
-#define CODEC_F00_09_CAP_STRIPE             RT_BIT(5)
-#define CODEC_F00_09_CAP_FMT_OVERRIDE       RT_BIT(4)
-#define CODEC_F00_09_CAP_AMP_FMT_OVERRIDE   RT_BIT(3)
-#define CODEC_F00_09_CAP_OUT_AMP_PRESENT    RT_BIT(2)
-#define CODEC_F00_09_CAP_IN_AMP_PRESENT     RT_BIT(1)
-#define CODEC_F00_09_CAP_LSB                RT_BIT(0)
+#define CODEC_F00_09_CAP_CP                                RT_BIT(12)
+#define CODEC_F00_09_CAP_L_R_SWAP                          RT_BIT(11)
+#define CODEC_F00_09_CAP_POWER_CTRL                        RT_BIT(10)
+#define CODEC_F00_09_CAP_DIGITAL                           RT_BIT(9)
+#define CODEC_F00_09_CAP_CONNECTION_LIST                   RT_BIT(8)
+#define CODEC_F00_09_CAP_UNSOL                             RT_BIT(7)
+#define CODEC_F00_09_CAP_PROC_WIDGET                       RT_BIT(6)
+#define CODEC_F00_09_CAP_STRIPE                            RT_BIT(5)
+#define CODEC_F00_09_CAP_FMT_OVERRIDE                      RT_BIT(4)
+#define CODEC_F00_09_CAP_AMP_FMT_OVERRIDE                  RT_BIT(3)
+#define CODEC_F00_09_CAP_OUT_AMP_PRESENT                   RT_BIT(2)
+#define CODEC_F00_09_CAP_IN_AMP_PRESENT                    RT_BIT(1)
+#define CODEC_F00_09_CAP_LSB                               RT_BIT(0)
 
-#define CODEC_F00_09_TYPE(f00_09) (((f00_09) >> 20) & 0xF)
+#define CODEC_F00_09_TYPE(f00_09)                          (((f00_09) >> 20) & 0xF)
 
-#define CODEC_F00_09_IS_CAP_CP(f00_09)              RT_BOOL((f00_09) & RT_BIT(12))
-#define CODEC_F00_09_IS_CAP_L_R_SWAP(f00_09)        RT_BOOL((f00_09) & RT_BIT(11))
-#define CODEC_F00_09_IS_CAP_POWER_CTRL(f00_09)      RT_BOOL((f00_09) & RT_BIT(10))
-#define CODEC_F00_09_IS_CAP_DIGITAL(f00_09)         RT_BOOL((f00_09) & RT_BIT(9))
-#define CODEC_F00_09_IS_CAP_CONNECTION_LIST(f00_09) RT_BOOL((f00_09) & RT_BIT(8))
-#define CODEC_F00_09_IS_CAP_UNSOL(f00_09)           RT_BOOL((f00_09) & RT_BIT(7))
-#define CODEC_F00_09_IS_CAP_PROC_WIDGET(f00_09)     RT_BOOL((f00_09) & RT_BIT(6))
-#define CODEC_F00_09_IS_CAP_STRIPE(f00_09)          RT_BOOL((f00_09) & RT_BIT(5))
-#define CODEC_F00_09_IS_CAP_FMT_OVERRIDE(f00_09)    RT_BOOL((f00_09) & RT_BIT(4))
-#define CODEC_F00_09_IS_CAP_AMP_OVERRIDE(f00_09)    RT_BOOL((f00_09) & RT_BIT(3))
-#define CODEC_F00_09_IS_CAP_OUT_AMP_PRESENT(f00_09) RT_BOOL((f00_09) & RT_BIT(2))
-#define CODEC_F00_09_IS_CAP_IN_AMP_PRESENT(f00_09)  RT_BOOL((f00_09) & RT_BIT(1))
-#define CODEC_F00_09_IS_CAP_LSB(f00_09)             RT_BOOL((f00_09) & RT_BIT(0))
+#define CODEC_F00_09_IS_CAP_CP(f00_09)                     RT_BOOL((f00_09) & RT_BIT(12))
+#define CODEC_F00_09_IS_CAP_L_R_SWAP(f00_09)               RT_BOOL((f00_09) & RT_BIT(11))
+#define CODEC_F00_09_IS_CAP_POWER_CTRL(f00_09)             RT_BOOL((f00_09) & RT_BIT(10))
+#define CODEC_F00_09_IS_CAP_DIGITAL(f00_09)                RT_BOOL((f00_09) & RT_BIT(9))
+#define CODEC_F00_09_IS_CAP_CONNECTION_LIST(f00_09)        RT_BOOL((f00_09) & RT_BIT(8))
+#define CODEC_F00_09_IS_CAP_UNSOL(f00_09)                  RT_BOOL((f00_09) & RT_BIT(7))
+#define CODEC_F00_09_IS_CAP_PROC_WIDGET(f00_09)            RT_BOOL((f00_09) & RT_BIT(6))
+#define CODEC_F00_09_IS_CAP_STRIPE(f00_09)                 RT_BOOL((f00_09) & RT_BIT(5))
+#define CODEC_F00_09_IS_CAP_FMT_OVERRIDE(f00_09)           RT_BOOL((f00_09) & RT_BIT(4))
+#define CODEC_F00_09_IS_CAP_AMP_OVERRIDE(f00_09)           RT_BOOL((f00_09) & RT_BIT(3))
+#define CODEC_F00_09_IS_CAP_OUT_AMP_PRESENT(f00_09)        RT_BOOL((f00_09) & RT_BIT(2))
+#define CODEC_F00_09_IS_CAP_IN_AMP_PRESENT(f00_09)         RT_BOOL((f00_09) & RT_BIT(1))
+#define CODEC_F00_09_IS_CAP_LSB(f00_09)                    RT_BOOL((f00_09) & RT_BIT(0))
 
 /* Supported PCM size, rates (7.3.4.7) */
-#define CODEC_F00_0A_32_BIT             RT_BIT(19)
-#define CODEC_F00_0A_24_BIT             RT_BIT(18)
-#define CODEC_F00_0A_16_BIT             RT_BIT(17)
-#define CODEC_F00_0A_8_BIT              RT_BIT(16)
+#define CODEC_F00_0A_32_BIT                                RT_BIT(19)
+#define CODEC_F00_0A_24_BIT                                RT_BIT(18)
+#define CODEC_F00_0A_16_BIT                                RT_BIT(17)
+#define CODEC_F00_0A_8_BIT                                 RT_BIT(16)
 
-#define CODEC_F00_0A_48KHZ_MULT_8X      RT_BIT(11)
-#define CODEC_F00_0A_48KHZ_MULT_4X      RT_BIT(10)
-#define CODEC_F00_0A_44_1KHZ_MULT_4X    RT_BIT(9)
-#define CODEC_F00_0A_48KHZ_MULT_2X      RT_BIT(8)
-#define CODEC_F00_0A_44_1KHZ_MULT_2X    RT_BIT(7)
-#define CODEC_F00_0A_48KHZ              RT_BIT(6)
-#define CODEC_F00_0A_44_1KHZ            RT_BIT(5)
+#define CODEC_F00_0A_48KHZ_MULT_8X                         RT_BIT(11)
+#define CODEC_F00_0A_48KHZ_MULT_4X                         RT_BIT(10)
+#define CODEC_F00_0A_44_1KHZ_MULT_4X                       RT_BIT(9)
+#define CODEC_F00_0A_48KHZ_MULT_2X                         RT_BIT(8)
+#define CODEC_F00_0A_44_1KHZ_MULT_2X                       RT_BIT(7)
+#define CODEC_F00_0A_48KHZ                                 RT_BIT(6)
+#define CODEC_F00_0A_44_1KHZ                               RT_BIT(5)
 /* 2/3 * 48kHz */
-#define CODEC_F00_0A_48KHZ_2_3X         RT_BIT(4)
+#define CODEC_F00_0A_48KHZ_2_3X                            RT_BIT(4)
 /* 1/2 * 44.1kHz */
-#define CODEC_F00_0A_44_1KHZ_1_2X       RT_BIT(3)
+#define CODEC_F00_0A_44_1KHZ_1_2X                          RT_BIT(3)
 /* 1/3 * 48kHz */
-#define CODEC_F00_0A_48KHZ_1_3X         RT_BIT(2)
+#define CODEC_F00_0A_48KHZ_1_3X                            RT_BIT(2)
 /* 1/4 * 44.1kHz */
-#define CODEC_F00_0A_44_1KHZ_1_4X       RT_BIT(1)
+#define CODEC_F00_0A_44_1KHZ_1_4X                          RT_BIT(1)
 /* 1/6 * 48kHz */
-#define CODEC_F00_0A_48KHZ_1_6X         RT_BIT(0)
+#define CODEC_F00_0A_48KHZ_1_6X                            RT_BIT(0)
 
 /* Supported streams formats (7.3.4.8) */
-#define CODEC_F00_0B_AC3                RT_BIT(2)
-#define CODEC_F00_0B_FLOAT32            RT_BIT(1)
-#define CODEC_F00_0B_PCM                RT_BIT(0)
+#define CODEC_F00_0B_AC3                                   RT_BIT(2)
+#define CODEC_F00_0B_FLOAT32                               RT_BIT(1)
+#define CODEC_F00_0B_PCM                                   RT_BIT(0)
 
 /* Pin Capabilities (7.3.4.9)*/
 #define CODEC_MAKE_F00_0C(vref_ctrl) (((vref_ctrl) & 0xFF) << 8)
-#define CODEC_F00_0C_CAP_HBR                    RT_BIT(27)
-#define CODEC_F00_0C_CAP_DP                     RT_BIT(24)
-#define CODEC_F00_0C_CAP_EAPD                   RT_BIT(16)
-#define CODEC_F00_0C_CAP_HDMI                   RT_BIT(7)
-#define CODEC_F00_0C_CAP_BALANCED_IO            RT_BIT(6)
-#define CODEC_F00_0C_CAP_INPUT                  RT_BIT(5)
-#define CODEC_F00_0C_CAP_OUTPUT                 RT_BIT(4)
-#define CODEC_F00_0C_CAP_HP                     RT_BIT(3)
-#define CODEC_F00_0C_CAP_PRESENSE_DETECT        RT_BIT(2)
-#define CODEC_F00_0C_CAP_TRIGGER_REQUIRED       RT_BIT(1)
-#define CODEC_F00_0C_CAP_IMPENDANCE_SENSE       RT_BIT(0)
+#define CODEC_F00_0C_CAP_HBR                               RT_BIT(27)
+#define CODEC_F00_0C_CAP_DP                                RT_BIT(24)
+#define CODEC_F00_0C_CAP_EAPD                              RT_BIT(16)
+#define CODEC_F00_0C_CAP_HDMI                              RT_BIT(7)
+#define CODEC_F00_0C_CAP_BALANCED_IO                       RT_BIT(6)
+#define CODEC_F00_0C_CAP_INPUT                             RT_BIT(5)
+#define CODEC_F00_0C_CAP_OUTPUT                            RT_BIT(4)
+#define CODEC_F00_0C_CAP_HP                                RT_BIT(3)
+#define CODEC_F00_0C_CAP_PRESENSE_DETECT                   RT_BIT(2)
+#define CODEC_F00_0C_CAP_TRIGGER_REQUIRED                  RT_BIT(1)
+#define CODEC_F00_0C_CAP_IMPENDANCE_SENSE                  RT_BIT(0)
 
 #define CODEC_F00_0C_IS_CAP_HBR(f00_0c)                    ((f00_0c) & RT_BIT(27))
 #define CODEC_F00_0C_IS_CAP_DP(f00_0c)                     ((f00_0c) & RT_BIT(24))
@@ -226,29 +231,45 @@
          | (((num_steps) & 0xFF) << 8)                            \
          | ((offset) & 0xFF))
 
+#define CODEC_F00_0D_CAP_MUTE                              RT_BIT(7)
+
+#define CODEC_F00_0D_IS_CAP_MUTE(f00_0d)                   ( ( f00_0d) & RT_BIT(31))
+#define CODEC_F00_0D_STEP_SIZE(f00_0d)                     ((( f00_0d) & (0x7F << 16)) >> 16)
+#define CODEC_F00_0D_NUM_STEPS(f00_0d)                     ((((f00_0d) & (0x7F << 8)) >> 8) + 1)
+#define CODEC_F00_0D_OFFSET(f00_0d)                        (  (f00_0d) & 0x7F)
+
 /* Output Amplifier capabilities (7.3.4.10) */
-#define CODEC_MAKE_F00_12 CODEC_MAKE_F00_0D
+#define CODEC_MAKE_F00_12                                  CODEC_MAKE_F00_0D
+
+#define CODEC_F00_12_IS_CAP_MUTE(f00_12)                   CODEC_F00_0D_IS_CAP_MUTE(f00_12)
+#define CODEC_F00_12_STEP_SIZE(f00_12)                     CODEC_F00_0D_STEP_SIZE(f00_12)
+#define CODEC_F00_12_NUM_STEPS(f00_12)                     CODEC_F00_0D_NUM_STEPS(f00_12)
+#define CODEC_F00_12_OFFSET(f00_12)                        CODEC_F00_0D_OFFSET(f00_12)
 
 /* Connection list lenght (7.3.4.11) */
 #define CODEC_MAKE_F00_0E(long_form, length)    \
     (  (((long_form) & 0x1) << 7)               \
      | ((length) & 0x7F))
-#define CODEC_F00_0E_IS_LONG(f00_0e) RT_BOOL((f00_0e) & RT_BIT(7))
-#define CODEC_F00_0E_COUNT(f00_0e) ((f00_0e) & 0x7F)
+/* Indicates short-form NIDs. */
+#define CODEC_F00_0E_LIST_NID_SHORT                        0
+/* Indicates long-form NIDs. */
+#define CODEC_F00_0E_LIST_NID_LONG                         1
+#define CODEC_F00_0E_IS_LONG(f00_0e)                       RT_BOOL((f00_0e) & RT_BIT(7))
+#define CODEC_F00_0E_COUNT(f00_0e)                         ((f00_0e) & 0x7F)
 /* Supported Power States (7.3.4.12) */
-#define CODEC_F00_0F_EPSS       RT_BIT(31)
-#define CODEC_F00_0F_CLKSTOP    RT_BIT(30)
-#define CODEC_F00_0F_S3D3       RT_BIT(29)
-#define CODEC_F00_0F_D3COLD     RT_BIT(4)
-#define CODEC_F00_0F_D3         RT_BIT(3)
-#define CODEC_F00_0F_D2         RT_BIT(2)
-#define CODEC_F00_0F_D1         RT_BIT(1)
-#define CODEC_F00_0F_D0         RT_BIT(0)
+#define CODEC_F00_0F_EPSS                                  RT_BIT(31)
+#define CODEC_F00_0F_CLKSTOP                               RT_BIT(30)
+#define CODEC_F00_0F_S3D3                                  RT_BIT(29)
+#define CODEC_F00_0F_D3COLD                                RT_BIT(4)
+#define CODEC_F00_0F_D3                                    RT_BIT(3)
+#define CODEC_F00_0F_D2                                    RT_BIT(2)
+#define CODEC_F00_0F_D1                                    RT_BIT(1)
+#define CODEC_F00_0F_D0                                    RT_BIT(0)
 
 /* Processing capabilities 7.3.4.13 */
-#define CODEC_MAKE_F00_10(num, benign) ((((num) & 0xFF) << 8) | ((benign) & 0x1))
-#define CODEC_F00_10_NUM(f00_10) (((f00_10) & (0xFF << 8)) >> 8)
-#define CODEC_F00_10_BENING(f00_10) ((f00_10) & 0x1)
+#define CODEC_MAKE_F00_10(num, benign)                     ((((num) & 0xFF) << 8) | ((benign) & 0x1))
+#define CODEC_F00_10_NUM(f00_10)                           (((f00_10) & (0xFF << 8)) >> 8)
+#define CODEC_F00_10_BENING(f00_10)                        ((f00_10) & 0x1)
 
 /* CP/IO Count (7.3.4.14) */
 #define CODEC_MAKE_F00_11(wake, unsol, numgpi, numgpo, numgpio) \
@@ -259,9 +280,9 @@
      | ((numgpio) & 0xFF))
 
 /* Processing States (7.3.3.4) */
-#define CODEC_F03_OFF    (0)
-#define CODEC_F03_ON     RT_BIT(0)
-#define CODEC_F03_BENING RT_BIT(1)
+#define CODEC_F03_OFF                                      (0)
+#define CODEC_F03_ON                                       RT_BIT(0)
+#define CODEC_F03_BENING                                   RT_BIT(1)
 /* Power States (7.3.3.10) */
 #define CODEC_MAKE_F05(reset, stopok, error, act, set)          \
     (   (((reset) & 0x1) << 10)                                 \
@@ -269,30 +290,30 @@
       | (((error) & 0x1) << 8)                                  \
       | (((act) & 0x7) << 4)                                    \
       | ((set) & 0x7))
-#define CODEC_F05_D3COLD    (4)
-#define CODEC_F05_D3        (3)
-#define CODEC_F05_D2        (2)
-#define CODEC_F05_D1        (1)
-#define CODEC_F05_D0        (0)
+#define CODEC_F05_D3COLD                                   (4)
+#define CODEC_F05_D3                                       (3)
+#define CODEC_F05_D2                                       (2)
+#define CODEC_F05_D1                                       (1)
+#define CODEC_F05_D0                                       (0)
 
-#define CODEC_F05_IS_RESET(value)   (((value) & RT_BIT(10)) != 0)
-#define CODEC_F05_IS_STOPOK(value)  (((value) & RT_BIT(9)) != 0)
-#define CODEC_F05_IS_ERROR(value)   (((value) & RT_BIT(8)) != 0)
-#define CODEC_F05_ACT(value)        (((value) & 0x7) >> 4)
-#define CODEC_F05_SET(value)        (((value) & 0x7))
+#define CODEC_F05_IS_RESET(value)                          (((value) & RT_BIT(10)) != 0)
+#define CODEC_F05_IS_STOPOK(value)                         (((value) & RT_BIT(9)) != 0)
+#define CODEC_F05_IS_ERROR(value)                          (((value) & RT_BIT(8)) != 0)
+#define CODEC_F05_ACT(value)                               (((value) & 0x7) >> 4)
+#define CODEC_F05_SET(value)                               (((value) & 0x7))
 
-#define CODEC_F05_GE(p0, p1) ((p0) <= (p1))
-#define CODEC_F05_LE(p0, p1) ((p0) >= (p1))
+#define CODEC_F05_GE(p0, p1)                               ((p0) <= (p1))
+#define CODEC_F05_LE(p0, p1)                               ((p0) >= (p1))
 
 /* Pin Widged Control (7.3.3.13) */
-#define CODEC_F07_VREF_HIZ      (0)
-#define CODEC_F07_VREF_50       (0x1)
-#define CODEC_F07_VREF_GROUND   (0x2)
-#define CODEC_F07_VREF_80       (0x4)
-#define CODEC_F07_VREF_100      (0x5)
-#define CODEC_F07_IN_ENABLE     RT_BIT(5)
-#define CODEC_F07_OUT_ENABLE    RT_BIT(6)
-#define CODEC_F07_OUT_H_ENABLE  RT_BIT(7)
+#define CODEC_F07_VREF_HIZ                                 (0)
+#define CODEC_F07_VREF_50                                  (0x1)
+#define CODEC_F07_VREF_GROUND                              (0x2)
+#define CODEC_F07_VREF_80                                  (0x4)
+#define CODEC_F07_VREF_100                                 (0x5)
+#define CODEC_F07_IN_ENABLE                                RT_BIT(5)
+#define CODEC_F07_OUT_ENABLE                               RT_BIT(6)
+#define CODEC_F07_OUT_H_ENABLE                             RT_BIT(7)
 
 /* Unsolicited enabled (7.3.3.14) */
 #define CODEC_MAKE_F08(enable, tag) ((((enable) & 1) << 7) | ((tag) & 0x3F))
@@ -306,25 +327,36 @@
      | (((bits) & 0x7) << 4)                                        \
      | ((chan) & 0xF))
 
-#define CODEC_A_MULT_1X     (0)
-#define CODEC_A_MULT_2X     (1)
-#define CODEC_A_MULT_3X     (2)
-#define CODEC_A_MULT_4X     (3)
+#define CODEC_A_TYPE                                       RT_BIT(15)
+#define CODEC_A_TYPE_PCM                                   (0)
+#define CODEC_A_TYPE_NON_PCM                               (1)
 
-#define CODEC_A_DIV_1X      (0)
-#define CODEC_A_DIV_2X      (1)
-#define CODEC_A_DIV_3X      (2)
-#define CODEC_A_DIV_4X      (3)
-#define CODEC_A_DIV_5X      (4)
-#define CODEC_A_DIV_6X      (5)
-#define CODEC_A_DIV_7X      (6)
-#define CODEC_A_DIV_8X      (7)
+#define CODEC_A_BASE                                       RT_BIT(14)
+#define CODEC_A_BASE_48KHZ                                 (0)
+#define CODEC_A_BASE_44KHZ                                 (1)
 
-#define CODEC_A_8_BIT       (0)
-#define CODEC_A_16_BIT      (1)
-#define CODEC_A_20_BIT      (2)
-#define CODEC_A_24_BIT      (3)
-#define CODEC_A_32_BIT      (4)
+#define CODEC_A_MULT_1X                                    (0)
+#define CODEC_A_MULT_2X                                    (1)
+#define CODEC_A_MULT_3X                                    (2)
+#define CODEC_A_MULT_4X                                    (3)
+
+#define CODEC_A_DIV_1X                                     (0)
+#define CODEC_A_DIV_2X                                     (1)
+#define CODEC_A_DIV_3X                                     (2)
+#define CODEC_A_DIV_4X                                     (3)
+#define CODEC_A_DIV_5X                                     (4)
+#define CODEC_A_DIV_6X                                     (5)
+#define CODEC_A_DIV_7X                                     (6)
+#define CODEC_A_DIV_8X                                     (7)
+
+#define CODEC_A_8_BIT                                      (0)
+#define CODEC_A_16_BIT                                     (1)
+#define CODEC_A_20_BIT                                     (2)
+#define CODEC_A_24_BIT                                     (3)
+#define CODEC_A_32_BIT                                     (4)
+
+#define CODEC_A_CHAN_MONO                                  (0)
+#define CODEC_A_CHAN_STEREO                                (1)
 
 /* Pin Sense (7.3.3.15) */
 #define CODEC_MAKE_F09_ANALOG(fPresent, impedance)  \
@@ -336,111 +368,138 @@
   | (((fELDValid) & 0x1) << 30))
 
 #define CODEC_MAKE_F0C(lrswap, eapd, btl) ((((lrswap) & 1) << 2) | (((eapd) & 1) << 1) | ((btl) & 1))
-#define CODEC_FOC_IS_LRSWAP(f0c)    RT_BOOL((f0c) & RT_BIT(2))
-#define CODEC_FOC_IS_EAPD(f0c)      RT_BOOL((f0c) & RT_BIT(1))
-#define CODEC_FOC_IS_BTL(f0c)       RT_BOOL((f0c) & RT_BIT(0))
+#define CODEC_FOC_IS_LRSWAP(f0c)                           RT_BOOL((f0c) & RT_BIT(2))
+#define CODEC_FOC_IS_EAPD(f0c)                             RT_BOOL((f0c) & RT_BIT(1))
+#define CODEC_FOC_IS_BTL(f0c)                              RT_BOOL((f0c) & RT_BIT(0))
 /* HDA spec 7.3.3.31 defines layout of configuration registers/verbs (0xF1C) */
 /* Configuration's port connection */
-#define CODEC_F1C_PORT_MASK    (0x3)
-#define CODEC_F1C_PORT_SHIFT   (30)
+#define CODEC_F1C_PORT_MASK                                (0x3)
+#define CODEC_F1C_PORT_SHIFT                               (30)
 
-#define CODEC_F1C_PORT_COMPLEX (0x0)
-#define CODEC_F1C_PORT_NO_PHYS (0x1)
-#define CODEC_F1C_PORT_FIXED   (0x2)
-#define CODEC_F1C_BOTH         (0x3)
+#define CODEC_F1C_PORT_COMPLEX                             (0x0)
+#define CODEC_F1C_PORT_NO_PHYS                             (0x1)
+#define CODEC_F1C_PORT_FIXED                               (0x2)
+#define CODEC_F1C_BOTH                                     (0x3)
 
-/* Configuration's location */
-#define CODEC_F1C_LOCATION_MASK  (0x3F)
-#define CODEC_F1C_LOCATION_SHIFT (24)
+/* Configuration default: connection */
+#define CODEC_F1C_PORT_MASK                                (0x3)
+#define CODEC_F1C_PORT_SHIFT                               (30)
+
+/* Connected to a jack (1/8", ATAPI, ...). */
+#define CODEC_F1C_PORT_COMPLEX                             (0x0)
+/* No physical connection. */
+#define CODEC_F1C_PORT_NO_PHYS                             (0x1)
+/* Fixed function device (integrated speaker, integrated mic, ...). */
+#define CODEC_F1C_PORT_FIXED                               (0x2)
+/* Both, a jack and an internal device are attached. */
+#define CODEC_F1C_BOTH                                     (0x3)
+
+/* Configuration default: Location */
+#define CODEC_F1C_LOCATION_MASK                            (0x3F)
+#define CODEC_F1C_LOCATION_SHIFT                           (24)
+
 /* [4:5] bits of location region means chassis attachment */
-#define CODEC_F1C_LOCATION_PRIMARY_CHASSIS     (0)
-#define CODEC_F1C_LOCATION_INTERNAL            RT_BIT(4)
-#define CODEC_F1C_LOCATION_SECONDRARY_CHASSIS  RT_BIT(5)
-#define CODEC_F1C_LOCATION_OTHER               (RT_BIT(5))
+#define CODEC_F1C_LOCATION_PRIMARY_CHASSIS                 (0)
+#define CODEC_F1C_LOCATION_INTERNAL                        RT_BIT(4)
+#define CODEC_F1C_LOCATION_SECONDRARY_CHASSIS              RT_BIT(5)
+#define CODEC_F1C_LOCATION_OTHER                           RT_BIT(5)
 
 /* [0:3] bits of location region means geometry location attachment */
-#define CODEC_F1C_LOCATION_NA                  (0)
-#define CODEC_F1C_LOCATION_REAR                (0x1)
-#define CODEC_F1C_LOCATION_FRONT               (0x2)
-#define CODEC_F1C_LOCATION_LEFT                (0x3)
-#define CODEC_F1C_LOCATION_RIGTH               (0x4)
-#define CODEC_F1C_LOCATION_TOP                 (0x5)
-#define CODEC_F1C_LOCATION_BOTTOM              (0x6)
-#define CODEC_F1C_LOCATION_SPECIAL_0           (0x7)
-#define CODEC_F1C_LOCATION_SPECIAL_1           (0x8)
-#define CODEC_F1C_LOCATION_SPECIAL_2           (0x9)
+#define CODEC_F1C_LOCATION_NA                              (0)
+#define CODEC_F1C_LOCATION_REAR                            (0x1)
+#define CODEC_F1C_LOCATION_FRONT                           (0x2)
+#define CODEC_F1C_LOCATION_LEFT                            (0x3)
+#define CODEC_F1C_LOCATION_RIGTH                           (0x4)
+#define CODEC_F1C_LOCATION_TOP                             (0x5)
+#define CODEC_F1C_LOCATION_BOTTOM                          (0x6)
+#define CODEC_F1C_LOCATION_SPECIAL_0                       (0x7)
+#define CODEC_F1C_LOCATION_SPECIAL_1                       (0x8)
+#define CODEC_F1C_LOCATION_SPECIAL_2                       (0x9)
 
-/* Configuration's devices */
-#define CODEC_F1C_DEVICE_MASK                  (0xF)
-#define CODEC_F1C_DEVICE_SHIFT                 (20)
-#define CODEC_F1C_DEVICE_LINE_OUT              (0)
-#define CODEC_F1C_DEVICE_SPEAKER               (0x1)
-#define CODEC_F1C_DEVICE_HP                    (0x2)
-#define CODEC_F1C_DEVICE_CD                    (0x3)
-#define CODEC_F1C_DEVICE_SPDIF_OUT             (0x4)
-#define CODEC_F1C_DEVICE_DIGITAL_OTHER_OUT     (0x5)
-#define CODEC_F1C_DEVICE_MODEM_LINE_SIDE       (0x6)
-#define CODEC_F1C_DEVICE_MODEM_HANDSET_SIDE    (0x7)
-#define CODEC_F1C_DEVICE_LINE_IN               (0x8)
-#define CODEC_F1C_DEVICE_AUX                   (0x9)
-#define CODEC_F1C_DEVICE_MIC                   (0xA)
-#define CODEC_F1C_DEVICE_PHONE                 (0xB)
-#define CODEC_F1C_DEVICE_SPDIF_IN              (0xC)
-#define CODEC_F1C_DEVICE_RESERVED              (0xE)
-#define CODEC_F1C_DEVICE_OTHER                 (0xF)
+/* Configuration default: Device type */
+#define CODEC_F1C_DEVICE_MASK                              (0xF)
+#define CODEC_F1C_DEVICE_SHIFT                             (20)
+#define CODEC_F1C_DEVICE_LINE_OUT                          (0)
+#define CODEC_F1C_DEVICE_SPEAKER                           (0x1)
+#define CODEC_F1C_DEVICE_HP                                (0x2)
+#define CODEC_F1C_DEVICE_CD                                (0x3)
+#define CODEC_F1C_DEVICE_SPDIF_OUT                         (0x4)
+#define CODEC_F1C_DEVICE_DIGITAL_OTHER_OUT                 (0x5)
+#define CODEC_F1C_DEVICE_MODEM_LINE_SIDE                   (0x6)
+#define CODEC_F1C_DEVICE_MODEM_HANDSET_SIDE                (0x7)
+#define CODEC_F1C_DEVICE_LINE_IN                           (0x8)
+#define CODEC_F1C_DEVICE_AUX                               (0x9)
+#define CODEC_F1C_DEVICE_MIC                               (0xA)
+#define CODEC_F1C_DEVICE_PHONE                             (0xB)
+#define CODEC_F1C_DEVICE_SPDIF_IN                          (0xC)
+#define CODEC_F1C_DEVICE_RESERVED                          (0xE)
+#define CODEC_F1C_DEVICE_OTHER                             (0xF)
 
-/* Configuration's Connection type */
-#define CODEC_F1C_CONNECTION_TYPE_MASK         (0xF)
-#define CODEC_F1C_CONNECTION_TYPE_SHIFT        (16)
+/* Configuration default: Connection type */
+#define CODEC_F1C_CONNECTION_TYPE_MASK                     (0xF)
+#define CODEC_F1C_CONNECTION_TYPE_SHIFT                    (16)
 
-#define CODEC_F1C_CONNECTION_TYPE_UNKNOWN               (0)
-#define CODEC_F1C_CONNECTION_TYPE_1_8INCHES             (0x1)
-#define CODEC_F1C_CONNECTION_TYPE_1_4INCHES             (0x2)
-#define CODEC_F1C_CONNECTION_TYPE_ATAPI                 (0x3)
-#define CODEC_F1C_CONNECTION_TYPE_RCA                   (0x4)
-#define CODEC_F1C_CONNECTION_TYPE_OPTICAL               (0x5)
-#define CODEC_F1C_CONNECTION_TYPE_OTHER_DIGITAL         (0x6)
-#define CODEC_F1C_CONNECTION_TYPE_ANALOG                (0x7)
-#define CODEC_F1C_CONNECTION_TYPE_DIN                   (0x8)
-#define CODEC_F1C_CONNECTION_TYPE_XLR                   (0x9)
-#define CODEC_F1C_CONNECTION_TYPE_RJ_11                 (0xA)
-#define CODEC_F1C_CONNECTION_TYPE_COMBO                 (0xB)
-#define CODEC_F1C_CONNECTION_TYPE_OTHER                 (0xF)
+#define CODEC_F1C_CONNECTION_TYPE_UNKNOWN                  (0)
+#define CODEC_F1C_CONNECTION_TYPE_1_8INCHES                (0x1)
+#define CODEC_F1C_CONNECTION_TYPE_1_4INCHES                (0x2)
+#define CODEC_F1C_CONNECTION_TYPE_ATAPI                    (0x3)
+#define CODEC_F1C_CONNECTION_TYPE_RCA                      (0x4)
+#define CODEC_F1C_CONNECTION_TYPE_OPTICAL                  (0x5)
+#define CODEC_F1C_CONNECTION_TYPE_OTHER_DIGITAL            (0x6)
+#define CODEC_F1C_CONNECTION_TYPE_ANALOG                   (0x7)
+#define CODEC_F1C_CONNECTION_TYPE_DIN                      (0x8)
+#define CODEC_F1C_CONNECTION_TYPE_XLR                      (0x9)
+#define CODEC_F1C_CONNECTION_TYPE_RJ_11                    (0xA)
+#define CODEC_F1C_CONNECTION_TYPE_COMBO                    (0xB)
+#define CODEC_F1C_CONNECTION_TYPE_OTHER                    (0xF)
 
 /* Configuration's color */
-#define CODEC_F1C_COLOR_MASK                  (0xF)
-#define CODEC_F1C_COLOR_SHIFT                 (12)
-#define CODEC_F1C_COLOR_UNKNOWN               (0)
-#define CODEC_F1C_COLOR_BLACK                 (0x1)
-#define CODEC_F1C_COLOR_GREY                  (0x2)
-#define CODEC_F1C_COLOR_BLUE                  (0x3)
-#define CODEC_F1C_COLOR_GREEN                 (0x4)
-#define CODEC_F1C_COLOR_RED                   (0x5)
-#define CODEC_F1C_COLOR_ORANGE                (0x6)
-#define CODEC_F1C_COLOR_YELLOW                (0x7)
-#define CODEC_F1C_COLOR_PURPLE                (0x8)
-#define CODEC_F1C_COLOR_PINK                  (0x9)
-#define CODEC_F1C_COLOR_RESERVED_0            (0xA)
-#define CODEC_F1C_COLOR_RESERVED_1            (0xB)
-#define CODEC_F1C_COLOR_RESERVED_2            (0xC)
-#define CODEC_F1C_COLOR_RESERVED_3            (0xD)
-#define CODEC_F1C_COLOR_WHITE                 (0xE)
-#define CODEC_F1C_COLOR_OTHER                 (0xF)
+#define CODEC_F1C_COLOR_MASK                               (0xF)
+#define CODEC_F1C_COLOR_SHIFT                              (12)
+#define CODEC_F1C_COLOR_UNKNOWN                            (0)
+#define CODEC_F1C_COLOR_BLACK                              (0x1)
+#define CODEC_F1C_COLOR_GREY                               (0x2)
+#define CODEC_F1C_COLOR_BLUE                               (0x3)
+#define CODEC_F1C_COLOR_GREEN                              (0x4)
+#define CODEC_F1C_COLOR_RED                                (0x5)
+#define CODEC_F1C_COLOR_ORANGE                             (0x6)
+#define CODEC_F1C_COLOR_YELLOW                             (0x7)
+#define CODEC_F1C_COLOR_PURPLE                             (0x8)
+#define CODEC_F1C_COLOR_PINK                               (0x9)
+#define CODEC_F1C_COLOR_RESERVED_0                         (0xA)
+#define CODEC_F1C_COLOR_RESERVED_1                         (0xB)
+#define CODEC_F1C_COLOR_RESERVED_2                         (0xC)
+#define CODEC_F1C_COLOR_RESERVED_3                         (0xD)
+#define CODEC_F1C_COLOR_WHITE                              (0xE)
+#define CODEC_F1C_COLOR_OTHER                              (0xF)
 
 /* Configuration's misc */
-#define CODEC_F1C_MISC_MASK                  (0xF)
-#define CODEC_F1C_MISC_SHIFT                 (8)
-#define CODEC_F1C_MISC_JACK_DETECT           (0)
-#define CODEC_F1C_MISC_RESERVED_0            (1)
-#define CODEC_F1C_MISC_RESERVED_1            (2)
-#define CODEC_F1C_MISC_RESERVED_2            (3)
+#define CODEC_F1C_MISC_MASK                                (0xF)
+#define CODEC_F1C_MISC_SHIFT                               (8)
+#define CODEC_F1C_MISC_JACK_DETECT                         (0)
+#define CODEC_F1C_MISC_RESERVED_0                          (1)
+#define CODEC_F1C_MISC_RESERVED_1                          (2)
+#define CODEC_F1C_MISC_RESERVED_2                          (3)
 
-/* Configuration's association */
-#define CODEC_F1C_ASSOCIATION_MASK                  (0xF)
-#define CODEC_F1C_ASSOCIATION_SHIFT                 (4)
-/* Connection's sequence */
-#define CODEC_F1C_SEQ_MASK                  (0xF)
-#define CODEC_F1C_SEQ_SHIFT                 (0)
+/* Configuration default: Association */
+#define CODEC_F1C_ASSOCIATION_MASK                         (0xF)
+#define CODEC_F1C_ASSOCIATION_SHIFT                        (4)
+
+/* Reserved; don't use. */
+#define CODEC_F1C_ASSOCIATION_INVALID                      0x0
+#define CODEC_F1C_ASSOCIATION_GROUP_0                      0x1
+#define CODEC_F1C_ASSOCIATION_GROUP_1                      0x2
+#define CODEC_F1C_ASSOCIATION_GROUP_2                      0x3
+#define CODEC_F1C_ASSOCIATION_GROUP_3                      0x4
+#define CODEC_F1C_ASSOCIATION_GROUP_4                      0x5
+#define CODEC_F1C_ASSOCIATION_GROUP_5                      0x6
+#define CODEC_F1C_ASSOCIATION_GROUP_6                      0x7
+#define CODEC_F1C_ASSOCIATION_GROUP_7                      0x8
+#define CODEC_F1C_ASSOCIATION_GROUP_15                     0xF
+
+/* Configuration default: Association Sequence */
+#define CODEC_F1C_SEQ_MASK                                 (0xF)
+#define CODEC_F1C_SEQ_SHIFT                                (0)
 
 /* Implementation identification (7.3.3.30) */
 #define CODEC_MAKE_F20(bmid, bsku, aid)     \
@@ -700,6 +759,38 @@ AssertNodeSize(CODECNODE, 60 + 6);
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/* STAC9220 - Nodes IDs / names. */
+#define STAC9220_NID_ROOT                                  0x0  /* Root node */
+#define STAC9220_NID_AFG                                   0x1  /* Audio Configuration Group */
+#define STAC9220_NID_DAC0                                  0x2  /* Out */
+#define STAC9220_NID_DAC1                                  0x3  /* Out */
+#define STAC9220_NID_DAC2                                  0x4  /* Out */
+#define STAC9220_NID_DAC3                                  0x5  /* Out */
+#define STAC9220_NID_ADC0                                  0x6  /* In */
+#define STAC9220_NID_ADC1                                  0x7  /* In */
+#define STAC9220_NID_SPDIF_OUT                             0x8  /* Out */
+#define STAC9220_NID_SPDIF_IN                              0x9  /* In */
+#define STAC9220_NID_PIN_HEADPHONE0                        0xA  /* In, Out */
+#define STAC9220_NID_PIN_B                                 0xB  /* In, Out */
+#define STAC9220_NID_PIN_C                                 0xC  /* In, Out */
+#define STAC9220_NID_PIN_HEADPHONE1                        0xD  /* In, Out */
+#define STAC9220_NID_PIN_E                                 0xE  /* In */
+#define STAC9220_NID_PIN_F                                 0xF  /* In, Out */
+#define STAC9220_NID_PIN_SPDIF_OUT                         0x10 /* Out */
+#define STAC9220_NID_PIN_SPDIF_IN                          0x11 /* In */
+#define STAC9220_NID_ADC0_MUX                              0x12 /* In */
+#define STAC9220_NID_ADC1_MUX                              0x13 /* In */
+#define STAC9220_NID_PCBEEP                                0x14 /* Out */
+#define STAC9220_NID_PIN_CD                                0x15 /* In */
+#define STAC9220_NID_VOL_KNOB                              0x16
+#define STAC9220_NID_AMP_ADC0                              0x17 /* In */
+#define STAC9220_NID_AMP_ADC1                              0x18 /* In */
+/* STAC9221. */
+#define STAC9221_NID_ADAT_OUT                              0x19 /* Out */
+#define STAC9221_NID_I2S_OUT                               0x1A /* Out */
+#define STAC9221_NID_PIN_I2S_OUT                           0x1B /* Out */
+
+#if 1
 /* STAC9220 - Referenced thru STAC9220WIDGET in the constructor below. */
 static uint8_t const g_abStac9220Ports[]      = { 0x0A, 0xB, 0xC, 0xD, 0xE, 0xF, 0};
 static uint8_t const g_abStac9220Dacs[]       = { 0x02, 0x3, 0x4, 0x5, 0};
@@ -714,7 +805,23 @@ static uint8_t const g_abStac9220Pcbeeps[]    = { 0x14, 0 };
 static uint8_t const g_abStac9220Cds[]        = { 0x15, 0 };
 static uint8_t const g_abStac9220VolKnobs[]   = { 0x16, 0 };
 static uint8_t const g_abStac9220Reserveds[]  = { 0x09, 0x19, 0x1a, 0x1b, 0 };
-
+#else /** @todo Enable this after 5.0 -- needs more testing first. */
+static uint8_t const g_abStac9220Ports[]      = { STAC9220_NID_PIN_HEADPHONE0, STAC9220_NID_PIN_B, STAC9220_NID_PIN_C, STAC9220_NID_PIN_HEADPHONE1, STAC9220_NID_PIN_E, STAC9220_NID_PIN_F, 0};
+static uint8_t const g_abStac9220Dacs[]       = { STAC9220_NID_DAC0, STAC9220_NID_DAC1, STAC9220_NID_DAC2, STAC9220_NID_DAC3, 0};
+static uint8_t const g_abStac9220Adcs[]       = { STAC9220_NID_ADC0, STAC9220_NID_ADC1, 0};
+static uint8_t const g_abStac9220SpdifOuts[]  = { STAC9220_NID_SPDIF_OUT, 0 };
+static uint8_t const g_abStac9220SpdifIns[]   = { STAC9220_NID_SPDIF_IN, 0 };
+static uint8_t const g_abStac9220DigOutPins[] = { STAC9220_NID_PIN_SPDIF_OUT, 0 };
+static uint8_t const g_abStac9220DigInPins[]  = { STAC9220_NID_PIN_SPDIF_IN, 0 };
+static uint8_t const g_abStac9220AdcVols[]    = { STAC9220_NID_AMP_ADC0, STAC9220_NID_AMP_ADC1, 0};
+static uint8_t const g_abStac9220AdcMuxs[]    = { STAC9220_NID_ADC0_MUX, STAC9220_NID_ADC1_MUX, 0};
+static uint8_t const g_abStac9220Pcbeeps[]    = { STAC9220_NID_PCBEEP, 0 };
+static uint8_t const g_abStac9220Cds[]        = { STAC9220_NID_PIN_CD, 0 };
+static uint8_t const g_abStac9220VolKnobs[]   = { STAC9220_NID_VOL_KNOB, 0 };
+/* STAC 9221. */
+/** @todo Is STAC9220_NID_SPDIF_IN really correct for reserved nodes? */
++static uint8_t const g_abStac9220Reserveds[]  = { STAC9220_NID_SPDIF_IN, STAC9221_NID_ADAT_OUT, STAC9221_NID_I2S_OUT, STAC9221_NID_PIN_I2S_OUT, 0 };
+#endif
 
 /** SSM description of a CODECNODE. */
 static SSMFIELD const g_aCodecNodeFields[] =
@@ -1102,7 +1209,7 @@ static int stac9220Construct(PHDACODEC pThis)
 {
     unconst(pThis->cTotalNodes) = 0x1C;
     pThis->pfnCodecNodeReset = stac9220ResetNode;
-    pThis->pfnCodecDbgListNodes = stac9220DbgNodes;
+    pThis->pfnDbgListNodes   = stac9220DbgNodes;
     pThis->u16VendorId = 0x8384;
     pThis->u16DeviceId = 0x7680;
     pThis->u8BSKU = 0x76;
@@ -2229,6 +2336,225 @@ static const CODECVERB g_aCodecVerbs[] =
     { 0x00030000, CODEC_VERB_16BIT_CMD, vrbProcSetAmplifier           },
 };
 
+#ifdef DEBUG
+typedef struct CODECDBGINFO
+{
+    /** DBGF info helpers. */
+    PCDBGFINFOHLP pHlp;
+    /** Current recursion level. */
+    uint8_t uLevel;
+    /** Pointer to codec state. */
+    PHDACODEC pThis;
+
+} CODECDBGINFO, *PCODECDBGINFO;
+
+#define CODECDBG_INDENT   pInfo->uLevel++;
+#define CODECDBG_UNINDENT if (pInfo->uLevel) pInfo->uLevel--;
+
+#define CODECDBG_PRINT(x, ...)  pInfo->pHlp->pfnPrintf(pInfo->pHlp, x);
+#define CODECDBG_PRINTI(x, ...) codecDbgPrintf(pInfo, x);
+
+static void codecDbgPrintfIndentV(PCODECDBGINFO pInfo, uint16_t uIndent, const char *pszFormat, va_list va)
+{
+    char *pszValueFormat;
+    if (RTStrAPrintfV(&pszValueFormat, pszFormat, va))
+    {
+        pInfo->pHlp->pfnPrintf(pInfo->pHlp, "%*s%s", uIndent, "", pszValueFormat);
+        RTStrFree(pszValueFormat);
+    }
+}
+
+static void codecDbgPrintf(PCODECDBGINFO pInfo, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    codecDbgPrintfIndentV(pInfo, pInfo->uLevel * 4, pszFormat, va);
+    va_end(va);
+}
+
+/* Power state */
+static void codecDbgPrintNodeRegF05(PCODECDBGINFO pInfo, uint32_t u32Reg)
+{
+    codecDbgPrintf(pInfo, "Power (F05): fReset=%RTbool, fStopOk=%RTbool, Set=%RU8, Act=%RU8\n",
+                   CODEC_F05_IS_RESET(u32Reg), CODEC_F05_IS_STOPOK(u32Reg), CODEC_F05_SET(u32Reg), CODEC_F05_ACT(u32Reg));
+}
+
+static void codecDbgPrintNodeRegA(PCODECDBGINFO pInfo, uint32_t u32Reg)
+{
+    codecDbgPrintf(pInfo, "RegA: %x\n", u32Reg);
+}
+
+static void codecDbgPrintNodeRegF00(PCODECDBGINFO pInfo, uint32_t *paReg00)
+{
+    codecDbgPrintf(pInfo, "Parameters (F00):\n");
+
+    CODECDBG_INDENT
+        codecDbgPrintf(pInfo, "Amplifier Caps:\n");
+        uint32_t uReg = paReg00[0xD];
+        CODECDBG_INDENT
+            codecDbgPrintf(pInfo, "Input Steps=%02RU8, StepSize=%02RU8, StepOff=%02RU8, fCanMute=%RTbool\n",
+                           CODEC_F00_0D_NUM_STEPS(uReg),
+                           CODEC_F00_0D_STEP_SIZE(uReg),
+                           CODEC_F00_0D_OFFSET(uReg),
+                           RT_BOOL(CODEC_F00_0D_IS_CAP_MUTE(uReg)));
+
+            uReg = paReg00[0x12];
+            codecDbgPrintf(pInfo, "Output Steps=%02RU8, StepSize=%02RU8, StepOff=%02RU8, fCanMute=%RTbool\n",
+                           CODEC_F00_12_NUM_STEPS(uReg),
+                           CODEC_F00_12_STEP_SIZE(uReg),
+                           CODEC_F00_12_OFFSET(uReg),
+                           RT_BOOL(CODEC_F00_0D_IS_CAP_MUTE(uReg)));
+        CODECDBG_UNINDENT
+    CODECDBG_UNINDENT
+}
+
+static void codecDbgPrintNodeAmp(PCODECDBGINFO pInfo, uint32_t *paReg, uint8_t uIdx, uint8_t uDir)
+{
+#define CODECDBG_AMP(reg, chan) \
+    codecDbgPrintf(pInfo, "Amp %RU8 %s %s: In=%RTbool, Out=%RTbool, Left=%RTbool, Right=%RTbool, Idx=%RU8, fMute=%RTbool, uGain=%RU8\n", \
+                   uIdx, chan, uDir == AMPLIFIER_IN ? "In" : "Out", \
+                   RT_BOOL(CODEC_SET_AMP_IS_IN_DIRECTION(reg)), RT_BOOL(CODEC_SET_AMP_IS_OUT_DIRECTION(reg)), \
+                   RT_BOOL(CODEC_SET_AMP_IS_LEFT_SIDE(reg)), RT_BOOL(CODEC_SET_AMP_IS_RIGHT_SIDE(reg)), \
+                   CODEC_SET_AMP_INDEX(reg), RT_BOOL(CODEC_SET_AMP_MUTE(reg)), CODEC_SET_AMP_GAIN(reg));
+
+    uint32_t regAmp = AMPLIFIER_REGISTER(paReg, uDir, AMPLIFIER_LEFT, uIdx);
+    CODECDBG_AMP(regAmp, "Left");
+    regAmp = AMPLIFIER_REGISTER(paReg, uDir, AMPLIFIER_RIGHT, uIdx);
+    CODECDBG_AMP(regAmp, "Right");
+
+#undef CODECDBG_AMP
+}
+
+static void codecDbgPrintNodeConnections(PCODECDBGINFO pInfo, PCODECNODE pNode)
+{
+    if (pNode->node.au32F00_param[0xE] == 0) /* Directly connected to HDA link. */
+    {
+         codecDbgPrintf(pInfo, "[HDA LINK]\n");
+         return;
+    }
+}
+
+static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode)
+{
+    codecDbgPrintf(pInfo, "Node 0x%02x (%02RU8): ", pNode->node.id, pNode->node.id);
+
+    if (pNode->node.id == STAC9220_NID_ROOT)
+    {
+        CODECDBG_PRINT("ROOT\n")
+    }
+    else if (pNode->node.id == STAC9220_NID_AFG)
+    {
+        CODECDBG_PRINT("AFG\n")
+        CODECDBG_INDENT
+            codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
+            codecDbgPrintNodeRegF05(pInfo, pNode->afg.u32F05_param);
+        CODECDBG_UNINDENT
+    }
+    else if (hdaCodecIsPortNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("PORT\n")
+    }
+    else if (hdaCodecIsDacNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("DAC\n")
+        CODECDBG_INDENT
+            codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
+            codecDbgPrintNodeRegF05(pInfo, pNode->dac.u32F05_param);
+            codecDbgPrintNodeRegA  (pInfo, pNode->dac.u32A_param);
+            codecDbgPrintNodeAmp   (pInfo, pNode->dac.B_params, 0, AMPLIFIER_OUT);
+        CODECDBG_UNINDENT
+    }
+    else if (hdaCodecIsAdcVolNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("ADC VOLUME\n")
+        CODECDBG_INDENT
+            codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
+            codecDbgPrintNodeRegA  (pInfo, pNode->adcvol.u32A_params);
+            codecDbgPrintNodeAmp   (pInfo, pNode->adcvol.B_params, 0, AMPLIFIER_IN);
+        CODECDBG_UNINDENT
+    }
+    else if (hdaCodecIsAdcNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("ADC\n")
+        CODECDBG_INDENT
+            codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
+            codecDbgPrintNodeRegF05(pInfo, pNode->adc.u32F05_param);
+            codecDbgPrintNodeRegA  (pInfo, pNode->adc.u32A_param);
+            codecDbgPrintNodeAmp   (pInfo, pNode->adc.B_params, 0, AMPLIFIER_IN);
+        CODECDBG_UNINDENT
+    }
+    else if (hdaCodecIsAdcMuxNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("ADC MUX\n")
+        CODECDBG_INDENT
+            codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
+            codecDbgPrintNodeRegA  (pInfo, pNode->adcmux.u32A_param);
+            codecDbgPrintNodeAmp   (pInfo, pNode->adcmux.B_params, 0, AMPLIFIER_IN);
+        CODECDBG_UNINDENT
+    }
+    else if (hdaCodecIsPcbeepNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("PC BEEP\n")
+    }
+    else if (hdaCodecIsSpdifOutNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("SPDIF OUT\n")
+    }
+    else if (hdaCodecIsSpdifInNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("SPDIF IN\n")
+    }
+    else if (hdaCodecIsDigInPinNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("DIGITAL IN PIN\n")
+    }
+    else if (hdaCodecIsDigOutPinNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("DIGITAL OUT PIN\n")
+    }
+    else if (hdaCodecIsCdNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("CD\n")
+    }
+    else if (hdaCodecIsVolKnobNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("VOLUME KNOB\n")
+    }
+    else if (hdaCodecIsReservedNode(pInfo->pThis, pNode->node.id))
+    {
+        CODECDBG_PRINT("RESERVED\n")
+    }
+    else
+        CODECDBG_PRINT("UNKNOWN TYPE 0x%x\n", pNode->node.id);
+}
+
+static DECLCALLBACK(void) codecDbgListNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    pHlp->pfnPrintf(pHlp, "HDA LINK\n");
+
+    CODECDBGINFO dbgInfo;
+    dbgInfo.pHlp   = pHlp;
+    dbgInfo.pThis  = pThis;
+    dbgInfo.uLevel = 0;
+
+    PCODECDBGINFO pInfo = &dbgInfo;
+
+    CODECDBG_INDENT
+        for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
+        {
+            PCODECNODE pNode = &pThis->paNodes[i];
+            if (pNode->node.au32F00_param[0xE] == 0) /* Start with all nodes connected directly to the HDA (Azalia) link. */
+                codecDbgPrintNode(&dbgInfo, pNode);
+        }
+    CODECDBG_UNINDENT
+}
+
+static DECLCALLBACK(void) codecDbgSelector(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+
+}
+#endif
+
 static int codecLookup(PHDACODEC pThis, uint32_t cmd, PPFNHDACODECVERBPROCESSOR pfn)
 {
     Assert(CODEC_CAD(cmd) == pThis->id);
@@ -2396,7 +2722,11 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
     pThis->id        = uLUN;
     pThis->paVerbs   = &g_aCodecVerbs[0];
     pThis->cVerbs    = RT_ELEMENTS(g_aCodecVerbs);
-    pThis->pfnLookup = codecLookup;
+    pThis->pfnLookup       = codecLookup;
+#ifdef DEBUG
+    pThis->pfnDbgSelector  = codecDbgSelector;
+    pThis->pfnDbgListNodes = codecDbgListNodes;
+#endif
     int rc = stac9220Construct(pThis);
     AssertRC(rc);
 

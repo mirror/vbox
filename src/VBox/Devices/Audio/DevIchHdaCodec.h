@@ -109,19 +109,19 @@ typedef struct HDACODEC
     const uint8_t           u8AdcVolsLineIn;
     const uint8_t           u8DacLineOut;
 #endif
-    /* Callbacks to the HDA controller, mostly used for multiplexing to the various host backends. */
+    /** Callbacks to the HDA controller, mostly used for multiplexing to the various host backends. */
     DECLR3CALLBACKMEMBER(void, pfnCloseIn, (PHDASTATE pThis, PDMAUDIORECSOURCE enmRecSource));
     DECLR3CALLBACKMEMBER(void, pfnCloseOut, (PHDASTATE pThis));
     DECLR3CALLBACKMEMBER(int, pfnOpenIn, (PHDASTATE pThis, const char *pszName, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg));
     DECLR3CALLBACKMEMBER(int, pfnOpenOut, (PHDASTATE pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg));
     DECLR3CALLBACKMEMBER(int, pfnSetVolume, (PHDASTATE pThis, ENMSOUNDSOURCE enmSource, bool fMute, uint8_t uVolLeft, uint8_t uVolRight));
-    /* Callbacks by codec implementation. */
+    /** Callbacks by codec implementation. */
     DECLR3CALLBACKMEMBER(int, pfnLookup, (PHDACODEC pThis, uint32_t verb, PPFNHDACODECVERBPROCESSOR));
     DECLR3CALLBACKMEMBER(int, pfnReset, (PHDACODEC pThis));
     DECLR3CALLBACKMEMBER(int, pfnCodecNodeReset, (PHDACODEC pThis, uint8_t, PCODECNODE));
-    /* Callbacks by codec implementation to answer debugger requests. */
-    DECLR3CALLBACKMEMBER(void, pfnCodecDbgListNodes, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));
-    DECLR3CALLBACKMEMBER(void, pfnCodecDbgSelector, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));
+    /** These callbacks are set by codec implementation to answer debugger requests. */
+    DECLR3CALLBACKMEMBER(void, pfnDbgListNodes, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));
+    DECLR3CALLBACKMEMBER(void, pfnDbgSelector, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));
 } CODECState;
 
 int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, uint16_t uLUN, PCFGMNODE pCfg);
