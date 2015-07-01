@@ -170,6 +170,7 @@ typedef SUPHNTIMPDLL *PSUPHNTIMPDLL;
 #define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
     extern PFNRT    RT_CONCAT(g_pfn, a_Name); \
     extern FNRT     RT_CONCAT(a_Name, _Early);
+#define SUPHARNT_IMPORT_STDCALL_OPTIONAL(a_Name, a_cbParamsX86) SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
 
 RT_C_DECLS_BEGIN
 #include "import-template-ntdll.h"
@@ -183,6 +184,7 @@ RT_C_DECLS_END
 #undef SUPHARNT_IMPORT_STDCALL_EARLY
 #undef SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL
 #undef SUPHARNT_IMPORT_STDCALL
+#undef SUPHARNT_IMPORT_STDCALL_OPTIONAL
 #define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
     { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL, false },
 #define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) \
@@ -191,6 +193,8 @@ RT_C_DECLS_END
     { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL, true },
 #define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
     { #a_Name, &RT_CONCAT(g_pfn, a_Name), RT_CONCAT(a_Name,_Early), false },
+#define SUPHARNT_IMPORT_STDCALL_OPTIONAL(a_Name, a_cbParamsX86) \
+    { #a_Name, &RT_CONCAT(g_pfn, a_Name), RT_CONCAT(a_Name,_Early), true },
 static const SUPHNTIMPFUNC g_aSupNtImpNtDllFunctions[] =
 {
 #include "import-template-ntdll.h"
@@ -207,9 +211,10 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
  * Syscalls in ntdll.
  */
 #undef SUPHARNT_IMPORT_SYSCALL
-#undef SUPHARNT_IMPORT_STDCALL
 #undef SUPHARNT_IMPORT_STDCALL_EARLY
 #undef SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL
+#undef SUPHARNT_IMPORT_STDCALL
+#undef SUPHARNT_IMPORT_STDCALL_OPTIONAL
 #ifdef RT_ARCH_AMD64
 # define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
     { NULL, NULL },
@@ -221,6 +226,7 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
 # define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
     { &RT_CONCAT(g_uApiNo, a_Name), &RT_CONCAT(a_Name,_SyscallType1), &RT_CONCAT(a_Name, _SyscallType2), a_cbParamsX86 },
 #endif
+#define SUPHARNT_IMPORT_STDCALL_OPTIONAL(a_Name, a_cbParamsX86)       SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
 #define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86)          SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
 #define SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL(a_Name, a_cbParamsX86) SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
 static const SUPHNTIMPSYSCALL g_aSupNtImpNtDllSyscalls[] =
