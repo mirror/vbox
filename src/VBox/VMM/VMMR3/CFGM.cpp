@@ -1183,6 +1183,19 @@ VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
     UPDATERC();
 
+    /*
+     * VMMDev.
+     */
+    rc = CFGMR3InsertNode(pDevices, "VMMDev", &pDev);
+    UPDATERC();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);
+    UPDATERC();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
+    UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */
+    UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "RamSize",              128U * _1M);
+    UPDATERC();
 
 
     /*
