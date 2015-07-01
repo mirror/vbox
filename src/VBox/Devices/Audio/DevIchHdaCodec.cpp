@@ -971,6 +971,7 @@ static int stac9220ResetNode(PHDACODEC pThis, uint8_t nodenum, PCODECNODE pNode)
                                                           CODEC_F1C_COLOR_GREEN,
                                                           CODEC_F1C_MISC_JACK_DETECT,
                                                           0x2, 0);//RT_MAKE_U32_FROM_U8(0x20, 0x40, 0x21, 0x02);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0, CODEC_F09_ANALOG_NA);//0x7fffffff;
             goto port_init;
         case 0xB:
             pNode->node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
@@ -989,6 +990,7 @@ static int stac9220ResetNode(PHDACODEC pThis, uint8_t nodenum, PCODECNODE pNode)
                                                           CODEC_F1C_COLOR_BLACK,
                                                           CODEC_F1C_MISC_JACK_DETECT,
                                                           0x1, 0x1);//RT_MAKE_U32_FROM_U8(0x11, 0x60, 0x11, 0x01);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);//RT_BIT(31)|0x7fffffff;
             goto port_init;
         case 0xC:
             pNode->node.au32F02_param[0] = 0x3;
@@ -1006,6 +1008,7 @@ static int stac9220ResetNode(PHDACODEC pThis, uint8_t nodenum, PCODECNODE pNode)
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_GREEN,
                                                           0x0, 0x1, 0x0);//RT_MAKE_U32_FROM_U8(0x10, 0x40, 0x11, 0x01);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);//RT_BIT(31)|0x7fffffff;
             goto port_init;
         case 0xD:
             pNode->node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
@@ -1023,8 +1026,8 @@ static int stac9220ResetNode(PHDACODEC pThis, uint8_t nodenum, PCODECNODE pNode)
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_PINK,
                                                           0x0, 0x5, 0x0);//RT_MAKE_U32_FROM_U8(0x50, 0x90, 0xA1, 0x02); /* Microphone */
-        port_init:
             pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);//RT_BIT(31)|0x7fffffff;
+        port_init:
             pNode->port.u32F08_param = 0;
             pNode->node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0x0, 0)
                                          | CODEC_F00_09_CAP_CONNECTION_LIST
@@ -1099,7 +1102,7 @@ static int stac9220ResetNode(PHDACODEC pThis, uint8_t nodenum, PCODECNODE pNode)
             pNode->digin.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3);//0x3 << 4 | 0x3; /* PS-Act: D3 -> D3 */
             pNode->digin.u32F07_param = 0;
             pNode->digin.u32F08_param = 0;
-            pNode->digin.u32F09_param = 0;
+            pNode->digin.u32F09_param = CODEC_MAKE_F09_DIGITAL(0, 0);
             pNode->digin.u32F0c_param = 0;
             if (!pThis->fInReset)
                 pNode->digin.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
@@ -1234,7 +1237,7 @@ static int stac9220Construct(PHDACODEC pThis)
     STAC9220WIDGET(Reserved);
 #undef STAC9220WIDGET
     unconst(pThis->u8AdcVolsLineIn) = 0x17;
-    unconst(pThis->u8DacLineOut) = 0x2;
+    unconst(pThis->u8DacLineOut) = 0x3;
 
     return VINF_SUCCESS;
 }
@@ -1467,8 +1470,8 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
         if (fIsRight)
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
 
-        /** @todo Fix ID of u8DacLineOut! */
-        hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_PCM);
+        if (CODEC_NID(cmd) == pThis->u8DacLineOut)
+            hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_PCM);
     }
 
     return VINF_SUCCESS;
