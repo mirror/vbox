@@ -129,7 +129,7 @@ int main(int argc, char **argv)
                     if ((iCpu % 4) == 0)
                         RTPrintf("\ntstSupTscDelta:");
                     if (pGip->aCPUs[iCpu].enmState != SUPGIPCPUSTATE_ONLINE)
-                        RTPrintf("  %02x: offline     ", iCpu, iTscDelta);
+                        RTPrintf("  %02x: offline     ", iCpu);
                     else if (iTscDelta != INT64_MAX)
                         RTPrintf("  %02x: %-12lld", iCpu, iTscDelta);
                     else
