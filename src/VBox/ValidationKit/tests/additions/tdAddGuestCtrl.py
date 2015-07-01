@@ -451,7 +451,12 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
         fRc = True;
         for (i, oStep) in enumerate(self.aoSteps):
             fRc2 = oStep.execute(oTstDrv, oGstCtrlSession, sMsgPrefix + ', step #%d' % i);
-            if fRc2 is False:
+            if fRc2 is True:
+                pass;
+            elif fRc2 is None:
+                reporter.log('skipping remaining %d steps' % (len(self.aoSteps) - i - 1,));
+                break;
+            else:
                 fRc = False;
         return fRc;
 
@@ -473,12 +478,47 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
         return (fRc, oTxsSession);
 
 
+class tdSessionStepBase(object):
+    """
+    Base class for the guest control session test steps.
+    """
+
+    def execute(self, oTstDrv, oGstCtrlSession, sMsgPrefix):
+        """
+        Executes the test step.
+
+        Returns True on success.
+        Returns False on failure (must be reported as error).
+        Returns None if to skip the remaining steps.
+        """
+        reporter.error('%s: Missing execute implementation: %s' % (sMsgPrefix, self,));
+        _ = oTstDrv;
+        _ = oGstCtrlSession;
+        return False;
+
+
+class tdStepRequireMinimumApiVer(tdSessionStepBase):
+    """
+    Special test step which will cause executeSteps to skip the remaining step
+    if the VBox API is too old:
+    """
+    def __init__(self, fpMinApiVer):
+        self.fpMinApiVer = fpMinApiVer;
+
+    def execute(self, oTstDrv, oGstCtrlSession, sMsgPrefix):
+        """ Returns None if API version is too old, otherwise True. """
+        if oTstDrv.fpApiVer >= self.fpMinApiVer:
+            return True;
+        _ = oGstCtrlSession;
+        _ = sMsgPrefix;
+        return None; # Special return value. Don't use elsewhere.
+
 
 #
 # Scheduling Environment Changes with the Guest Control Session.
 #
 
-class tdStepSessionSetEnv(object):
+class tdStepSessionSetEnv(tdSessionStepBase):
     """
     Guest session environment: schedule putenv
     """
@@ -520,7 +560,7 @@ class tdStepSessionSetEnv(object):
             return False;
         return True;
 
-class tdStepSessionUnsetEnv(object):
+class tdStepSessionUnsetEnv(tdSessionStepBase):
     """
     Guest session environment: schedule unset.
     """
@@ -561,7 +601,7 @@ class tdStepSessionUnsetEnv(object):
             return False;
         return True;
 
-class tdStepSessionBulkEnv(object):
+class tdStepSessionBulkEnv(tdSessionStepBase):
     """
     Guest session environment: Bulk environment changes.
     """
@@ -604,7 +644,7 @@ class tdStepSessionClearEnv(tdStepSessionBulkEnv):
         tdStepSessionBulkEnv.__init__(self);
 
 
-class tdStepSessionCheckEnv(object):
+class tdStepSessionCheckEnv(tdSessionStepBase):
     """
     Check the currently scheduled environment changes of a guest control session.
     """
@@ -650,11 +690,12 @@ class tdStepSessionCheckEnv(object):
             reporter.log2('%s: Current environment: %s' % (sMsgPrefix, asCurEnv));
         return fRc;
 
+
 #
 # File system object statistics (i.e. stat()).
 #
 
-class tdStepStat(object):
+class tdStepStat(tdSessionStepBase):
     """
     Stats a file system object.
     """
@@ -1476,6 +1517,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                               # Check set.
                               tdStepSessionSetEnv('FOO', 'BAR'),
                               tdStepSessionCheckEnv(['FOO=BAR',]),
+                              tdStepRequireMinimumApiVer(5.0), # 4.3 can't cope with the remainder.
                               tdStepSessionClearEnv(),
                               tdStepSessionCheckEnv(),
                               # Check unset.
@@ -1499,6 +1541,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                               tdStepSessionCheckEnv([ 'FOO=BAR2',]),
                               tdStepSessionSetEnv('FOO','BAR3'),
                               tdStepSessionCheckEnv([ 'FOO=BAR3',]),
+                              tdStepRequireMinimumApiVer(5.0), # 4.3 can't cope with the remainder.
                               # Add a little unsetting to the mix.
                               tdStepSessionSetEnv('BAR', 'BEAR'),
                               tdStepSessionCheckEnv([ 'FOO=BAR3', 'BAR=BEAR',]),
@@ -1515,6 +1558,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             tdTestSessionEx([ # Bulk settings merges stuff, last entry standing.
                               tdStepSessionBulkEnv(['FOO=bar', 'foo=bar', 'FOO=doofus', 'TMPDIR=/tmp', 'foo=bar2']),
                               tdStepSessionCheckEnv(['FOO=doofus', 'TMPDIR=/tmp', 'foo=bar2']),
+                              tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy!
+                              tdStepSessionBulkEnv(['2=1+1', 'FOO=doofus2', ]),
+                              tdStepSessionCheckEnv(['2=1+1', 'FOO=doofus2', 'TMPDIR=/tmp', 'foo=bar2']),
                               ]),
             # Invalid variable names.
             tdTestSessionEx([ tdStepSessionSetEnv('', 'FOO', vbox.ComError.E_INVALIDARG),
@@ -1525,6 +1571,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                               tdStepSessionCheckEnv(),
                               tdStepSessionSetEnv('=FOO', 'BAR', vbox.ComError.E_INVALIDARG),
                               tdStepSessionCheckEnv(),
+                              tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy!
                               tdStepSessionBulkEnv(['=', 'foo=bar'], vbox.ComError.E_INVALIDARG),
                               tdStepSessionCheckEnv(),
                               tdStepSessionBulkEnv(['=FOO', 'foo=bar'], vbox.ComError.E_INVALIDARG),
