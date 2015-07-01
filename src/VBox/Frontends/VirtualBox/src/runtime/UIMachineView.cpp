@@ -247,11 +247,6 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     display().SetVideoModeHint(screenId(),
                                uisession()->isScreenVisible(screenId()),
                                false, 0, 0, size.width(), size.height(), 0);
-
-    /* If we are in normal or scaled mode, remember the size sent for the next
-     * time we have to restore one of those two modes: */
-    if (!isFullscreenOrSeamless())
-        storeGuestSizeHint(size);
 }
 
 void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
@@ -325,6 +320,11 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     /* Ask for just required guest display update (it will also update
      * the viewport through IFramebuffer::NotifyUpdate): */
     display().InvalidateAndUpdateScreen(m_uScreenId);
+
+    /* If we are in normal or scaled mode and if GA are active,
+     * remember the guest-screen size to be able to restore it when necessary: */
+    if (!isFullscreenOrSeamless() && uisession()->isGuestSupportsGraphics())
+        storeGuestSizeHint(QSize(iWidth, iHeight));
 
     LogRelFlow(("GUI: UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d\n",
                 (unsigned long)m_uScreenId, iWidth, iHeight));
