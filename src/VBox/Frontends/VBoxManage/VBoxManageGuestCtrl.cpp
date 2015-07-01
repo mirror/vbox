@@ -1663,9 +1663,9 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                          || procStatus == ProcessStatus_TimedOutAbnormally)
                 {
                     if (pCtx->cVerbose > 1)
-                        RTPrintf("Process timed out (guest side) and\n",
+                        RTPrintf("Process timed out (guest side) and %s\n",
                                  procStatus == ProcessStatus_TimedOutAbnormally
-                                 ? " failed to terminate so far" : " was terminated");
+                                 ? "failed to terminate so far" : "was terminated");
                     rcExit = EXITCODEEXEC_TIMEOUT;
                 }
                 else
