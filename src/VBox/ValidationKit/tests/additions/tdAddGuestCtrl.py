@@ -643,7 +643,7 @@ class tdStepSessionCheckEnv(object):
                 reporter.error('%s: Expected "%s" to be in the resulting environment' % (sMsgPrefix, sExpected,));
                 fRc = False;
         for sUnexpected in asCopy:
-            reporter.error('%d: Unexpected "%s" in the resulting environment' % (sMsgPrefix, sUnexpected,));
+            reporter.error('%s: Unexpected "%s" in the resulting environment' % (sMsgPrefix, sUnexpected,));
             fRc = False;
 
         if fRc is not True:
@@ -692,7 +692,7 @@ class tdStepStat(object):
                     return True;
                 if vbox.ComError.equal(oXcpt, self.hrcExpected): # Is this an expected failure?
                     return True;
-                return reporter.errorXcpt('%s: Unexpected exception for exiting path "%s" (enmType=%d, hrcExpected=%d):'
+                return reporter.errorXcpt('%s: Unexpected exception for exiting path "%s" (enmType=%s, hrcExpected=%s):'
                                           % (sMsgPrefix, self.sPath, self.enmType, self.hrcExpected,));
             except:
                 return reporter.errorXcpt('%s: Unexpected exception in tdStepStat::execute (%s)'
