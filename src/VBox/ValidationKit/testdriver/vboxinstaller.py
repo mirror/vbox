@@ -49,6 +49,7 @@ sys.path.append(g_ksValidationKitDir);
 
 # Validation Kit imports.
 from common             import utils, webutils;
+from common.constants   import rtexitcode;
 from testdriver         import reporter;
 from testdriver.base    import TestDriverBase;
 
@@ -176,7 +177,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         """
         fRc = True;
         if 'execute' not in self.asActions and 'all' not in self.asActions:
-            fRc = self._executeSubDriver([ 'cleanup-after', ]);
+            fRc = self._executeSubDriver([ 'cleanup-after', ], fMaySkip = False);
 
         if not self._killAllVBoxProcesses():
             fRc = False;
@@ -198,7 +199,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         Forward this to the sub testdriver first, then do the default pid file
         based cleanup and finally swipe the scene with the heavy artillery.
         """
-        fRc1 = self._executeSubDriver([ 'abort', ]);
+        fRc1 = self._executeSubDriver([ 'abort', ], fMaySkip = False);
         fRc2 = TestDriverBase.actionAbort(self);
         fRc3 = self._killAllVBoxProcesses();
         return fRc1 and fRc2 and fRc3;
@@ -328,11 +329,13 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
         return False;
 
-    def _executeSync(self, asArgs):
+    def _executeSync(self, asArgs, fMaySkip = False):
         """
         Executes a child process synchronously.
-        Returns True if the process executed successfully and returned 0,
-        otherwise False is returned.
+
+        Returns True if the process executed successfully and returned 0.
+        Returns None if fMaySkip is true and the child exits with RTEXITCODE_SKIPPED.
+        Returns False for all other cases.
         """
         reporter.log('Executing: %s' % (asArgs, ));
         reporter.flushall();
@@ -342,6 +345,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
             reporter.errorXcpt();
             return False;
         reporter.log('Exit code: %s (%s)' % (iRc, asArgs));
+        if fMaySkip and iRc == rtexitcode.RTEXITCODE_SKIPPED:
+            return None;
         return iRc is 0;
 
     def _sudoExecuteSync(self, asArgs):
@@ -361,14 +366,14 @@ class VBoxInstallerTestDriver(TestDriverBase):
         reporter.log('Exit code [sudo]: %s (%s)' % (iRc, asArgs));
         return (iRc is 0, iRc);
 
-    def _executeSubDriver(self, asActions):
+    def _executeSubDriver(self, asActions, fMaySkip = True):
         """
         Execute the sub testdriver with the specified action.
         """
         asArgs = list(self._asSubDriver)
         asArgs.append('--no-wipe-clean');
         asArgs.extend(asActions);
-        return self._executeSync(asArgs);
+        return self._executeSync(asArgs, fMaySkip = fMaySkip);
 
     def _maybeUnpackArchive(self, sMaybeArchive, fNonFatal = False):
         """
