@@ -193,6 +193,11 @@
       </listitem>
 
       <listitem>
+        <para>Storage: fixed crash as a result of I/O errors in certain conditions
+          (bug #13105)</para>
+      </listitem>
+
+      <listitem>
         <para>ICH9: fixed the interrupt disable logic for MSI interrupts; should
           fix old Linux guests with AHCI</para>
       </listitem>
@@ -894,11 +899,6 @@
 
       <listitem>
         <para>Storage: follow the spec with AHCI interrupt acknowledge (bug #13474)</para>
-      </listitem>
-
-      <listitem>
-        <para>Storage: fixed crash as a result of I/O errors in certain conditions
-          (bug #13105)</para>
       </listitem>
 
       <listitem>
