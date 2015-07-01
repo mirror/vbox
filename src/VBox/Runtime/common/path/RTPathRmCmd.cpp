@@ -117,7 +117,7 @@ static int rtPathRmError(PRTPATHRMCMDOPTS pOpts, const char *pszPath, int rc,
                          const char *pszFormat, ...)
 {
     if (pOpts->fMachineReadable)
-        RTPrintf("fname=%s%crc=%d%c", pszPath, rc);
+        RTPrintf("fname=%s\0rc=%d\0", pszPath, rc);
     else
     {
         va_list va;
