@@ -75,7 +75,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (RTTestErrorCount(g_hTest) == 0)
         {
 #  if 1
-#   ifndef RT_OS_SOLARIS        /* Solaris cannot call back into cyclic subsystem from a cyclic callback. */
+#   if !defined(RT_OS_SOLARIS) && !defined(RT_OS_WINDOWS)
+            /* Solaris cannot call back into cyclic subsystem from a cyclic callback. */
             RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART, "Restart one shot from callback");
             RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_DESTROY, "Destroy one shot from callback");
 #   endif
@@ -98,7 +99,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (RTTestErrorCount(g_hTest) == 0)
         {
 #  if 1
-#   ifndef RT_OS_SOLARIS        /* Solaris cannot call back into cyclic subsystem from a cyclic callback. */
+#   if !defined(RT_OS_SOLARIS) && !defined(RT_OS_WINDOWS)
+            /* Solaris cannot call back into cyclic subsystem from a cyclic callback. */
             RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES, "Restart hires one shot from callback");
             RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES, "Destroy hires one shot from callback");
 #   endif
