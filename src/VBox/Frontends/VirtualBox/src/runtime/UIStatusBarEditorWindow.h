@@ -77,6 +77,13 @@ public:
     /** Defines whether the status-bar @a fEnabled. */
     void setStatusBarEnabled(bool fEnabled);
 
+    /** Returns status-bar indicator restrictions. */
+    const QList<IndicatorType>& statusBarIndicatorRestrictions() const { return m_restrictions; }
+    /** Returns status-bar indicator order. */
+    const QList<IndicatorType>& statusBarIndicatorOrder() const { return m_order; }
+    /** Defines status-bar indicator @a restrictions and @a order. */
+    void setStatusBarConfiguration(const QList<IndicatorType> &restrictions, const QList<IndicatorType> &order);
+
 private slots:
 
     /** Handles configuration change. */
@@ -96,9 +103,6 @@ private:
     void prepareStatusButtons();
     /** Prepare status button routine. */
     void prepareStatusButton(IndicatorType type);
-
-    /** Update status buttons routine. */
-    void updateStatusButtons();
 
     /** Retranslation routine. */
     virtual void retranslateUi();

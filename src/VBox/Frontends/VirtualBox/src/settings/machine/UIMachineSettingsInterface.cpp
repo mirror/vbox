@@ -55,6 +55,8 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
 
     /* Cache interface data: */
     interfaceData.m_fStatusBarEnabled = gEDataManager->statusBarEnabled(m_machine.GetId());
+    interfaceData.m_statusBarRestrictions = gEDataManager->restrictedStatusBarIndicators(m_machine.GetId());
+    interfaceData.m_statusBarOrder = gEDataManager->statusBarIndicatorOrder(m_machine.GetId());
 #ifndef Q_WS_MAC
     interfaceData.m_fMenuBarEnabled = gEDataManager->menuBarEnabled(m_machine.GetId());
     interfaceData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
@@ -77,6 +79,8 @@ void UIMachineSettingsInterface::getFromCache()
 
     /* Prepare interface data: */
     m_pStatusBarEditor->setStatusBarEnabled(interfaceData.m_fStatusBarEnabled);
+    m_pStatusBarEditor->setStatusBarConfiguration(interfaceData.m_statusBarRestrictions,
+                                                  interfaceData.m_statusBarOrder);
 #ifndef Q_WS_MAC
     m_pMenuBarEditor->setMenuBarEnabled(interfaceData.m_fMenuBarEnabled);
     m_pCheckBoxShowMiniToolBar->setChecked(interfaceData.m_fShowMiniToolBar);
@@ -99,6 +103,8 @@ void UIMachineSettingsInterface::putToCache()
 
     /* Gather interface data from page: */
     interfaceData.m_fStatusBarEnabled = m_pStatusBarEditor->isStatusBarEnabled();
+    interfaceData.m_statusBarRestrictions = m_pStatusBarEditor->statusBarIndicatorRestrictions();
+    interfaceData.m_statusBarOrder = m_pStatusBarEditor->statusBarIndicatorOrder();
 #ifndef Q_WS_MAC
     interfaceData.m_fMenuBarEnabled = m_pMenuBarEditor->isMenuBarEnabled();
     interfaceData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
@@ -126,6 +132,8 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
         if (isMachineInValidMode())
         {
             gEDataManager->setStatusBarEnabled(interfaceData.m_fStatusBarEnabled, m_machine.GetId());
+            gEDataManager->setRestrictedStatusBarIndicators(interfaceData.m_statusBarRestrictions, m_machine.GetId());
+            gEDataManager->setStatusBarIndicatorOrder(interfaceData.m_statusBarOrder, m_machine.GetId());
 #ifndef Q_WS_MAC
             gEDataManager->setMenuBarEnabled(interfaceData.m_fMenuBarEnabled, m_machine.GetId());
             gEDataManager->setMiniToolbarEnabled(interfaceData.m_fShowMiniToolBar, m_machine.GetId());

@@ -302,14 +302,51 @@ void UIStatusBarEditorWidget::setStatusBarEnabled(bool fEnabled)
     m_pCheckBoxEnable->setChecked(fEnabled);
 }
 
+void UIStatusBarEditorWidget::setStatusBarConfiguration(const QList<IndicatorType> &restrictions,
+                                                        const QList<IndicatorType> &order)
+{
+    /* Cache passed restrictions: */
+    m_restrictions = restrictions;
+
+    /* Cache passed order: */
+    m_order = order;
+    /* Append order with missed indicators: */
+    for (int iType = IndicatorType_Invalid; iType < IndicatorType_Max; ++iType)
+        if (iType != IndicatorType_Invalid && iType != IndicatorType_KeyboardExtension &&
+            !m_order.contains((IndicatorType)iType))
+            m_order << (IndicatorType)iType;
+
+    /* Update configuration for all existing buttons: */
+    foreach (const IndicatorType &type, m_order)
+    {
+        /* Get button: */
+        UIStatusBarEditorButton *pButton = m_buttons.value(type);
+        /* Make sure button exists: */
+        if (!pButton)
+            continue;
+        /* Update button 'checked' state: */
+        pButton->setChecked(!m_restrictions.contains(type));
+        /* Make sure it have valid position: */
+        const int iWantedIndex = position(type);
+        const int iActualIndex = m_pButtonLayout->indexOf(pButton);
+        if (iActualIndex != iWantedIndex)
+        {
+            /* Re-inject button into main-layout at proper position: */
+            m_pButtonLayout->removeWidget(pButton);
+            m_pButtonLayout->insertWidget(iWantedIndex, pButton);
+        }
+    }
+}
+
 void UIStatusBarEditorWidget::sltHandleConfigurationChange(const QString &strMachineID)
 {
     /* Skip unrelated machine IDs: */
     if (machineID() != strMachineID)
         return;
 
-    /* Update status buttons: */
-    updateStatusButtons();
+    /* Recache status-bar configuration: */
+    setStatusBarConfiguration(gEDataManager->restrictedStatusBarIndicators(machineID()),
+                              gEDataManager->statusBarIndicatorOrder(machineID()));
 }
 
 void UIStatusBarEditorWidget::sltHandleButtonClick()
@@ -321,18 +358,22 @@ void UIStatusBarEditorWidget::sltHandleButtonClick()
     /* Get sender type: */
     const IndicatorType type = pButton->type();
 
-    /* Load current status-bar indicator restrictions: */
-    QList<IndicatorType> restrictions =
-        gEDataManager->restrictedStatusBarIndicators(machineID());
-
     /* Invert restriction for sender type: */
-    if (restrictions.contains(type))
-        restrictions.removeAll(type);
+    if (m_restrictions.contains(type))
+        m_restrictions.removeAll(type);
     else
-        restrictions.append(type);
+        m_restrictions.append(type);
 
-    /* Save updated status-bar indicator restrictions: */
-    gEDataManager->setRestrictedStatusBarIndicators(restrictions, machineID());
+    if (m_fStartedFromVMSettings)
+    {
+        /* Reapply status-bar configuration from cache: */
+        setStatusBarConfiguration(m_restrictions, m_order);
+    }
+    else
+    {
+        /* Save updated status-bar indicator restrictions: */
+        gEDataManager->setRestrictedStatusBarIndicators(m_restrictions, machineID());
+    }
 }
 
 void UIStatusBarEditorWidget::sltHandleDragObjectDestroy()
@@ -442,15 +483,15 @@ void UIStatusBarEditorWidget::prepareStatusButtons()
         prepareStatusButton(type);
     }
 
-    /* Listen for the status-bar configuration changes if necessary: */
     if (!m_fStartedFromVMSettings)
     {
+        /* Cache status-bar configuration: */
+        setStatusBarConfiguration(gEDataManager->restrictedStatusBarIndicators(machineID()),
+                                  gEDataManager->statusBarIndicatorOrder(machineID()));
+        /* And listen for the status-bar configuration changes after that: */
         connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QString&)),
                 this, SLOT(sltHandleConfigurationChange(const QString&)));
     }
-
-    /* Update status buttons: */
-    updateStatusButtons();
 }
 
 void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType type)
@@ -466,35 +507,6 @@ void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType type)
         m_pButtonLayout->addWidget(pButton);
         /* Insert status button into map: */
         m_buttons.insert(type, pButton);
-    }
-}
-
-void UIStatusBarEditorWidget::updateStatusButtons()
-{
-    /* Recache status-bar configuration: */
-    m_restrictions = gEDataManager->restrictedStatusBarIndicators(machineID());
-    m_order = gEDataManager->statusBarIndicatorOrder(machineID());
-    for (int iType = IndicatorType_Invalid; iType < IndicatorType_Max; ++iType)
-        if (iType != IndicatorType_Invalid && iType != IndicatorType_KeyboardExtension &&
-            !m_order.contains((IndicatorType)iType))
-            m_order << (IndicatorType)iType;
-
-    /* Update configuration for all the status buttons: */
-    foreach (const IndicatorType &type, m_order)
-    {
-        /* Get button: */
-        UIStatusBarEditorButton *pButton = m_buttons.value(type);
-        /* Update button 'checked' state: */
-        pButton->setChecked(!m_restrictions.contains(type));
-        /* Make sure it have valid position: */
-        const int iWantedIndex = position(type);
-        const int iActualIndex = m_pButtonLayout->indexOf(pButton);
-        if (iActualIndex != iWantedIndex)
-        {
-            /* Re-inject button into main-layout at proper position: */
-            m_pButtonLayout->removeWidget(pButton);
-            m_pButtonLayout->insertWidget(iWantedIndex, pButton);
-        }
     }
 }
 
@@ -672,24 +684,24 @@ void UIStatusBarEditorWidget::dropEvent(QDropEvent *pEvent)
     if (droppedType == tokenType)
         return;
 
-    /* Load current status-bar indicator order and make sure it's complete: */
-    QList<IndicatorType> order =
-        gEDataManager->statusBarIndicatorOrder(machineID());
-    for (int iType = IndicatorType_Invalid; iType < IndicatorType_Max; ++iType)
-        if (iType != IndicatorType_Invalid && iType != IndicatorType_KeyboardExtension &&
-            !order.contains((IndicatorType)iType))
-            order << (IndicatorType)iType;
-
     /* Remove type of dropped-button: */
-    order.removeAll(droppedType);
+    m_order.removeAll(droppedType);
     /* Insert type of dropped-button into position of token-button: */
-    int iPosition = order.indexOf(tokenType);
+    int iPosition = m_order.indexOf(tokenType);
     if (m_fDropAfterTokenButton)
         ++iPosition;
-    order.insert(iPosition, droppedType);
+    m_order.insert(iPosition, droppedType);
 
-    /* Save updated status-bar indicator order: */
-    gEDataManager->setStatusBarIndicatorOrder(order, machineID());
+    if (m_fStartedFromVMSettings)
+    {
+        /* Reapply status-bar configuration from cache: */
+        setStatusBarConfiguration(m_restrictions, m_order);
+    }
+    else
+    {
+        /* Save updated status-bar indicator order: */
+        gEDataManager->setStatusBarIndicatorOrder(m_order, machineID());
+    }
 }
 
 int UIStatusBarEditorWidget::position(IndicatorType type) const
