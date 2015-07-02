@@ -2942,8 +2942,10 @@ int DragAndDropService::dragAndDropInit(void)
     /* Connect to the x11 server. */
     m_pDisplay = XOpenDisplay(NULL);
     if (!m_pDisplay)
-        /** @todo Correct errors. */
+    {
+        VBClFatalError(("DnD: Unable to connect to X server -- running in a terminal session?\n"));
         return VERR_NOT_FOUND;
+    }
 
     xHelpers *pHelpers = xHelpers::getInstance(m_pDisplay);
     if (!pHelpers)
@@ -3179,4 +3181,3 @@ struct VBCLSERVICE **VBClGetDragAndDropService(void)
     new(&pService->mDragAndDrop) DragAndDropService();
     return &pService->pInterface;
 }
-
