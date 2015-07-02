@@ -675,11 +675,12 @@ static int vdAddBackends(RTLDRMOD hPlugin, PCVBOXHDDBACKEND *ppBackends, unsigne
            (g_cBackends + cBackends) * sizeof(PCVBOXHDDBACKEND));
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
+    g_apBackends = pTmp;
+
     RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemRealloc(g_ahBackendPlugins,
            (g_cBackends + cBackends) * sizeof(RTLDRMOD));
     if (RT_UNLIKELY(!pTmpPlugins))
         return VERR_NO_MEMORY;
-    g_apBackends = pTmp;
     g_ahBackendPlugins = pTmpPlugins;
     memcpy(&g_apBackends[g_cBackends], ppBackends, cBackends * sizeof(PCVBOXHDDBACKEND));
     for (unsigned i = g_cBackends; i < g_cBackends + cBackends; i++)
@@ -705,11 +706,12 @@ static int vdAddCacheBackends(RTLDRMOD hPlugin, PCVDCACHEBACKEND *ppBackends, un
            (g_cCacheBackends + cBackends) * sizeof(PCVDCACHEBACKEND));
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
+    g_apCacheBackends = pTmp;
+
     RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemRealloc(g_ahCacheBackendPlugins,
            (g_cCacheBackends + cBackends) * sizeof(RTLDRMOD));
     if (RT_UNLIKELY(!pTmpPlugins))
         return VERR_NO_MEMORY;
-    g_apCacheBackends = pTmp;
     g_ahCacheBackendPlugins = pTmpPlugins;
     memcpy(&g_apCacheBackends[g_cCacheBackends], ppBackends, cBackends * sizeof(PCVDCACHEBACKEND));
     for (unsigned i = g_cCacheBackends; i < g_cCacheBackends + cBackends; i++)
@@ -740,11 +742,13 @@ static int vdAddFilterBackends(RTLDRMOD hPlugin, PCVDFILTERBACKEND *ppBackends, 
            (g_cFilterBackends + cBackends) * sizeof(PCVDFILTERBACKEND));
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
+    g_apFilterBackends = pTmp;
+
     RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemRealloc(g_ahFilterBackendPlugins,
            (g_cFilterBackends + cBackends) * sizeof(RTLDRMOD));
     if (RT_UNLIKELY(!pTmpPlugins))
         return VERR_NO_MEMORY;
-    g_apFilterBackends = pTmp;
+
     g_ahFilterBackendPlugins = pTmpPlugins;
     memcpy(&g_apFilterBackends[g_cFilterBackends], ppBackends, cBackends * sizeof(PCVDFILTERBACKEND));
     for (unsigned i = g_cFilterBackends; i < g_cFilterBackends + cBackends; i++)
