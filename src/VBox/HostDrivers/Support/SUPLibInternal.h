@@ -470,7 +470,7 @@ DECLHIDDEN(int)     supR3HardenedWinReSpawn(int iWhich);
 # ifdef _WINDEF_
 DECLHIDDEN(void)    supR3HardenedWinCreateParentWatcherThread(HMODULE hVBoxRT);
 # endif
-DECLHIDDEN(void *)  supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only);
+DECLHIDDEN(void *)  supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only, uint32_t fMainFlags);
 extern RTUTF16      g_wszSupLibHardenedExePath[1024];
 # ifdef RTPATH_MAX
 extern char         g_szSupLibHardenedExePath[RTPATH_MAX];

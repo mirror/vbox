@@ -1648,7 +1648,7 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
      * Open it and resolve the symbols.
      */
 #if defined(RT_OS_WINDOWS)
-    HMODULE hMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, false /*fSystem32Only*/);
+    HMODULE hMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, false /*fSystem32Only*/, g_fSupHardenedMain);
     if (!hMod)
         supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_MODULE_NOT_FOUND,
                               "LoadLibrary \"%s\" failed (rc=%d)",
@@ -1751,7 +1751,7 @@ static PFNSUPTRUSTEDERROR supR3HardenedMainGetTrustedError(const char *pszProgNa
      */
 #if defined(RT_OS_WINDOWS)
     supR3HardenedWinEnableThreadCreation();
-    HMODULE hMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, false /*fSystem32Only*/);
+    HMODULE hMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, false /*fSystem32Only*/, 0 /*fMainFlags*/);
     if (!hMod)
         return NULL;
     FARPROC pfn = GetProcAddress(hMod, SUP_HARDENED_SYM("TrustedError"));
@@ -1807,7 +1807,7 @@ static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName
      * Open it and resolve the symbol.
      */
 #if defined(RT_OS_WINDOWS)
-    HMODULE hMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, false /*fSystem32Only*/);
+    HMODULE hMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, false /*fSystem32Only*/, 0 /*fMainFlags*/);
     if (!hMod)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: LoadLibrary \"%s\" failed, rc=%d\n",
                             szPath, RtlGetLastWin32Error());

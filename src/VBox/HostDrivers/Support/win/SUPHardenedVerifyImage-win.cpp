@@ -2040,7 +2040,7 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
     char szPath[RTPATH_MAX];
     supR3HardenedPathAppSharedLibs(szPath, sizeof(szPath) - sizeof("/VBoxSupLib.DLL"));
     suplibHardenedStrCat(szPath, "/VBoxSupLib.DLL");
-    HMODULE hSupLibMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, true /*fSystem32Only*/);
+    HMODULE hSupLibMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, true /*fSystem32Only*/, 0 /*fMainFlags*/);
     if (hSupLibMod == NULL)
         supR3HardenedFatal("Error loading '%s': %u", szPath, RtlGetLastWin32Error());
 # endif

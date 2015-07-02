@@ -451,8 +451,16 @@ static uint64_t supR3HardenedWinGetMilliTS(void)
  * @param   fSystem32Only       Whether to only look for imports in the system32
  *                              directory.  If set to false, the application
  *                              directory is also searched.
+ * @param   fMainFlags          The main flags (giving the location), if the DLL
+ *                              being loaded is loaded from the app bin
+ *                              directory and import other DLLs from there. Pass
+ *                              0 (= SUPSECMAIN_FLAGS_LOC_APP_BIN) if not
+ *                              applicable.  Ignored if @a fSystem32Only is set.
+ *
+ *                              This is only needed to load VBoxRT.dll when
+ *                              executing a testcase from the testcase/ subdir.
  */
-DECLHIDDEN(void *) supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only)
+DECLHIDDEN(void *) supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only, uint32_t fMainFlags)
 {
     WCHAR wszPath[RTPATH_MAX];
     PRTUTF16 pwszPath = wszPath;
@@ -475,6 +483,8 @@ DECLHIDDEN(void *) supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem
                 fFlags |= LOAD_LIBRARY_SEARCH_APPLICATION_DIR;
                 if (g_fSupLibHardenedDllSearchUserDirs)
                     fFlags |= LOAD_LIBRARY_SEARCH_USER_DIRS;
+                if ((fMainFlags & SUPSECMAIN_FLAGS_LOC_MASK) != SUPSECMAIN_FLAGS_LOC_APP_BIN)
+                    fFlags |= LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR;
             }
         }
 
