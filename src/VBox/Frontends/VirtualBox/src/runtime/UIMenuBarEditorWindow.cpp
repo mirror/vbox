@@ -102,14 +102,291 @@ void UIMenuBarEditorWidget::setMenuBarEnabled(bool fEnabled)
 }
 #endif /* !Q_WS_MAC */
 
+void UIMenuBarEditorWidget::setRestrictionsOfMenuBar(UIExtraDataMetaDefs::MenuType restrictions)
+{
+    /* Cache passed restrictions: */
+    m_restrictionsOfMenuBar = restrictions;
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::MenuType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("MenuType");
+    const QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::MenuType enumValue =
+            static_cast<const UIExtraDataMetaDefs::MenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip MenuType_Invalid & MenuType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::MenuType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::MenuType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuBar & enumValue));
+    }
+}
+
+void UIMenuBarEditorWidget::setRestrictionsOfMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType restrictions)
+{
+    /* Cache passed restrictions: */
+    m_restrictionsOfMenuApplication = restrictions;
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::MenuApplicationActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("MenuApplicationActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::MenuApplicationActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::MenuApplicationActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip MenuApplicationActionType_Invalid & MenuApplicationActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuApplication & enumValue));
+    }
+}
+
+void UIMenuBarEditorWidget::setRestrictionsOfMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictions)
+{
+    /* Cache passed restrictions: */
+    m_restrictionsOfMenuMachine = restrictions;
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::RuntimeMenuMachineActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuMachineActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::RuntimeMenuMachineActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip RuntimeMenuMachineActionType_Invalid & RuntimeMenuMachineActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuMachine & enumValue));
+    }
+}
+
+void UIMenuBarEditorWidget::setRestrictionsOfMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictions)
+{
+    /* Cache passed restrictions: */
+    m_restrictionsOfMenuView = restrictions;
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::RuntimeMenuViewActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuViewActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::RuntimeMenuViewActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::RuntimeMenuViewActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip RuntimeMenuViewActionType_Invalid & RuntimeMenuViewActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuView & enumValue));
+    }
+}
+
+void UIMenuBarEditorWidget::setRestrictionsOfMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictions)
+{
+    /* Cache passed restrictions: */
+    m_restrictionsOfMenuInput = restrictions;
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::RuntimeMenuInputActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuInputActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::RuntimeMenuInputActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::RuntimeMenuInputActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip RuntimeMenuInputActionType_Invalid & RuntimeMenuInputActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuInput & enumValue));
+    }
+}
+
+void UIMenuBarEditorWidget::setRestrictionsOfMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictions)
+{
+    /* Cache passed restrictions: */
+    m_restrictionsOfMenuDevices = restrictions;
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::RuntimeMenuDevicesActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuDevicesActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip RuntimeMenuDevicesActionType_Invalid & RuntimeMenuDevicesActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuDevices & enumValue));
+    }
+}
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+void UIMenuBarEditorWidget::setRestrictionsOfMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictions)
+{
+    /* Cache passed restrictions: */
+    m_restrictionsOfMenuDebug = restrictions;
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuDebuggerActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip RuntimeMenuDebuggerActionType_Invalid & RuntimeMenuDebuggerActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuDebug & enumValue));
+    }
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
+#ifdef Q_WS_MAC
+void UIMenuBarEditorWidget::setRestrictionsOfMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType restrictions)
+{
+    /* Cache passed restrictions: */
+    m_restrictionsOfMenuWindow = restrictions;
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::MenuWindowActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("MenuWindowActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::MenuWindowActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::MenuWindowActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip MenuWindowActionType_Invalid & MenuWindowActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::MenuWindowActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::MenuWindowActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuWindow & enumValue));
+    }
+}
+#endif /* Q_WS_MAC */
+
+void UIMenuBarEditorWidget::setRestrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType restrictions)
+{
+    /* Cache passed restrictions: */
+    m_restrictionsOfMenuHelp = restrictions;
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::MenuHelpActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("MenuHelpActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::MenuHelpActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::MenuHelpActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip MenuHelpActionType_Invalid & MenuHelpActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::MenuHelpActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::MenuHelpActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuHelp & enumValue));
+    }
+}
+
 void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QString &strMachineID)
 {
     /* Skip unrelated machine IDs: */
     if (machineID() != strMachineID)
         return;
 
-    /* Update menus: */
-    updateMenus();
+    /* Recache menu-bar configuration: */
+    setRestrictionsOfMenuBar(gEDataManager->restrictedRuntimeMenuTypes(machineID()));
+    setRestrictionsOfMenuApplication(gEDataManager->restrictedRuntimeMenuApplicationActionTypes(machineID()));
+    setRestrictionsOfMenuMachine(gEDataManager->restrictedRuntimeMenuMachineActionTypes(machineID()));
+    setRestrictionsOfMenuView(gEDataManager->restrictedRuntimeMenuViewActionTypes(machineID()));
+    setRestrictionsOfMenuInput(gEDataManager->restrictedRuntimeMenuInputActionTypes(machineID()));
+    setRestrictionsOfMenuDevices(gEDataManager->restrictedRuntimeMenuDevicesActionTypes(machineID()));
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    setRestrictionsOfMenuDebug(gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID()));
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+    setRestrictionsOfMenuWindow(gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID()));
+#endif /* Q_WS_MAC */
+    setRestrictionsOfMenuHelp(gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID()));
 }
 
 void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
@@ -126,12 +403,18 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             /* Get sender type: */
             const UIExtraDataMetaDefs::MenuType type =
                 static_cast<UIExtraDataMetaDefs::MenuType>(pAction->property("type").toInt());
-            /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::MenuType restrictions = gEDataManager->restrictedRuntimeMenuTypes(machineID());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::MenuType)(restrictions ^ type);
-            /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuTypes(restrictions, machineID());
+            m_restrictionsOfMenuBar = (UIExtraDataMetaDefs::MenuType)(m_restrictionsOfMenuBar ^ type);
+            if (m_fStartedFromVMSettings)
+            {
+                /* Reapply menu-bar restrictions from cache: */
+                setRestrictionsOfMenuBar(m_restrictionsOfMenuBar);
+            }
+            else
+            {
+                /* Save updated menu-bar restrictions: */
+                gEDataManager->setRestrictedRuntimeMenuTypes(m_restrictionsOfMenuBar, machineID());
+            }
             break;
         }
         case UIExtraDataMetaDefs::MenuType_Application:
@@ -139,12 +422,18 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             /* Get sender type: */
             const UIExtraDataMetaDefs::MenuApplicationActionType type =
                 static_cast<UIExtraDataMetaDefs::MenuApplicationActionType>(pAction->property("type").toInt());
-            /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::MenuApplicationActionType restrictions = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(machineID());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::MenuApplicationActionType)(restrictions ^ type);
-            /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(restrictions, machineID());
+            m_restrictionsOfMenuApplication = (UIExtraDataMetaDefs::MenuApplicationActionType)(m_restrictionsOfMenuApplication ^ type);
+            if (m_fStartedFromVMSettings)
+            {
+                /* Reapply menu-bar restrictions from cache: */
+                setRestrictionsOfMenuApplication(m_restrictionsOfMenuApplication);
+            }
+            else
+            {
+                /* Save updated menu-bar restrictions: */
+                gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(m_restrictionsOfMenuApplication, machineID());
+            }
             break;
         }
         case UIExtraDataMetaDefs::MenuType_Machine:
@@ -152,12 +441,18 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             /* Get sender type: */
             const UIExtraDataMetaDefs::RuntimeMenuMachineActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(pAction->property("type").toInt());
-            /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictions = gEDataManager->restrictedRuntimeMenuMachineActionTypes(machineID());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)(restrictions ^ type);
-            /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuMachineActionTypes(restrictions, machineID());
+            m_restrictionsOfMenuMachine = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)(m_restrictionsOfMenuMachine ^ type);
+            if (m_fStartedFromVMSettings)
+            {
+                /* Reapply menu-bar restrictions from cache: */
+                setRestrictionsOfMenuMachine(m_restrictionsOfMenuMachine);
+            }
+            else
+            {
+                /* Save updated menu-bar restrictions: */
+                gEDataManager->setRestrictedRuntimeMenuMachineActionTypes(m_restrictionsOfMenuMachine, machineID());
+            }
             break;
         }
         case UIExtraDataMetaDefs::MenuType_View:
@@ -165,12 +460,18 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             /* Get sender type: */
             const UIExtraDataMetaDefs::RuntimeMenuViewActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(pAction->property("type").toInt());
-            /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictions = gEDataManager->restrictedRuntimeMenuViewActionTypes(machineID());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)(restrictions ^ type);
-            /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuViewActionTypes(restrictions, machineID());
+            m_restrictionsOfMenuView = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)(m_restrictionsOfMenuView ^ type);
+            if (m_fStartedFromVMSettings)
+            {
+                /* Reapply menu-bar restrictions from cache: */
+                setRestrictionsOfMenuView(m_restrictionsOfMenuView);
+            }
+            else
+            {
+                /* Save updated menu-bar restrictions: */
+                gEDataManager->setRestrictedRuntimeMenuViewActionTypes(m_restrictionsOfMenuView, machineID());
+            }
             break;
         }
         case UIExtraDataMetaDefs::MenuType_Input:
@@ -178,12 +479,18 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             /* Get sender type: */
             const UIExtraDataMetaDefs::RuntimeMenuInputActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(pAction->property("type").toInt());
-            /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictions = gEDataManager->restrictedRuntimeMenuInputActionTypes(machineID());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::RuntimeMenuInputActionType)(restrictions ^ type);
-            /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuInputActionTypes(restrictions, machineID());
+            m_restrictionsOfMenuInput = (UIExtraDataMetaDefs::RuntimeMenuInputActionType)(m_restrictionsOfMenuInput ^ type);
+            if (m_fStartedFromVMSettings)
+            {
+                /* Reapply menu-bar restrictions from cache: */
+                setRestrictionsOfMenuInput(m_restrictionsOfMenuInput);
+            }
+            else
+            {
+                /* Save updated menu-bar restrictions: */
+                gEDataManager->setRestrictedRuntimeMenuInputActionTypes(m_restrictionsOfMenuInput, machineID());
+            }
             break;
         }
         case UIExtraDataMetaDefs::MenuType_Devices:
@@ -191,12 +498,18 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             /* Get sender type: */
             const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(pAction->property("type").toInt());
-            /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictions = gEDataManager->restrictedRuntimeMenuDevicesActionTypes(machineID());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictions ^ type);
-            /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuDevicesActionTypes(restrictions, machineID());
+            m_restrictionsOfMenuDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(m_restrictionsOfMenuDevices ^ type);
+            if (m_fStartedFromVMSettings)
+            {
+                /* Reapply menu-bar restrictions from cache: */
+                setRestrictionsOfMenuDevices(m_restrictionsOfMenuDevices);
+            }
+            else
+            {
+                /* Save updated menu-bar restrictions: */
+                gEDataManager->setRestrictedRuntimeMenuDevicesActionTypes(m_restrictionsOfMenuDevices, machineID());
+            }
             break;
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -205,12 +518,18 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             /* Get sender type: */
             const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(pAction->property("type").toInt());
-            /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictions = gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType)(restrictions ^ type);
-            /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuDebuggerActionTypes(restrictions, machineID());
+            m_restrictionsOfMenuDebug = (UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType)(m_restrictionsOfMenuDebug ^ type);
+            if (m_fStartedFromVMSettings)
+            {
+                /* Reapply menu-bar restrictions from cache: */
+                setRestrictionsOfMenuDebug(m_restrictionsOfMenuDebug);
+            }
+            else
+            {
+                /* Save updated menu-bar restrictions: */
+                gEDataManager->setRestrictedRuntimeMenuDebuggerActionTypes(m_restrictionsOfMenuDebug, machineID());
+            }
             break;
         }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -220,12 +539,18 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             /* Get sender type: */
             const UIExtraDataMetaDefs::MenuWindowActionType type =
                 static_cast<UIExtraDataMetaDefs::MenuWindowActionType>(pAction->property("type").toInt());
-            /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::MenuWindowActionType restrictions = gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::MenuWindowActionType)(restrictions ^ type);
-            /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuWindowActionTypes(restrictions, machineID());
+            m_restrictionsOfMenuWindow = (UIExtraDataMetaDefs::MenuWindowActionType)(m_restrictionsOfMenuWindow ^ type);
+            if (m_fStartedFromVMSettings)
+            {
+                /* Reapply menu-bar restrictions from cache: */
+                setRestrictionsOfMenuWindow(m_restrictionsOfMenuWindow);
+            }
+            else
+            {
+                /* Save updated menu-bar restrictions: */
+                gEDataManager->setRestrictedRuntimeMenuWindowActionTypes(m_restrictionsOfMenuWindow, machineID());
+            }
             break;
         }
 #endif /* Q_WS_MAC */
@@ -234,13 +559,18 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             /* Get sender type: */
             const UIExtraDataMetaDefs::MenuHelpActionType type =
                 static_cast<UIExtraDataMetaDefs::MenuHelpActionType>(pAction->property("type").toInt());
-            /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::MenuHelpActionType restrictions = gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::MenuHelpActionType)(restrictions ^ type);
-            /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuHelpActionTypes(restrictions, machineID());
-            break;
+            m_restrictionsOfMenuHelp = (UIExtraDataMetaDefs::MenuHelpActionType)(m_restrictionsOfMenuHelp ^ type);
+            if (m_fStartedFromVMSettings)
+            {
+                /* Reapply menu-bar restrictions from cache: */
+                setRestrictionsOfMenuHelp(m_restrictionsOfMenuHelp);
+            }
+            else
+            {
+                /* Save updated menu-bar restrictions: */
+                gEDataManager->setRestrictedRuntimeMenuHelpActionTypes(m_restrictionsOfMenuHelp, machineID());
+            }            break;
         }
         default: break;
     }
@@ -344,15 +674,26 @@ void UIMenuBarEditorWidget::prepareMenus()
 #endif /* Q_WS_MAC */
     prepareMenuHelp();
 
-    /* Listen for the menu-bar configuration changes if necessary: */
     if (!m_fStartedFromVMSettings)
     {
+        /* Cache menu-bar configuration: */
+        setRestrictionsOfMenuBar(gEDataManager->restrictedRuntimeMenuTypes(machineID()));
+        setRestrictionsOfMenuApplication(gEDataManager->restrictedRuntimeMenuApplicationActionTypes(machineID()));
+        setRestrictionsOfMenuMachine(gEDataManager->restrictedRuntimeMenuMachineActionTypes(machineID()));
+        setRestrictionsOfMenuView(gEDataManager->restrictedRuntimeMenuViewActionTypes(machineID()));
+        setRestrictionsOfMenuInput(gEDataManager->restrictedRuntimeMenuInputActionTypes(machineID()));
+        setRestrictionsOfMenuDevices(gEDataManager->restrictedRuntimeMenuDevicesActionTypes(machineID()));
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        setRestrictionsOfMenuDebug(gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID()));
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+        setRestrictionsOfMenuWindow(gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID()));
+#endif /* Q_WS_MAC */
+        setRestrictionsOfMenuHelp(gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID()));
+        /* And listen for the menu-bar configuration changes after that: */
         connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
                 this, SLOT(sltHandleConfigurationChange(const QString&)));
     }
-
-    /* Update menus: */
-    updateMenus();
 }
 
 #ifdef Q_WS_MAC
@@ -652,285 +993,6 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
 #ifndef Q_WS_MAC
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_About));
 #endif /* !Q_WS_MAC */
-    }
-}
-
-void UIMenuBarEditorWidget::updateMenus()
-{
-    /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::MenuType restrictionsMenuBar = gEDataManager->restrictedRuntimeMenuTypes(machineID());
-    /* Get static meta-object: */
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-
-    /* We have UIExtraDataMetaDefs::MenuType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("MenuType");
-    const QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-    /* Handle other enum-values: */
-    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-    {
-        /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::MenuType enumValue =
-            static_cast<const UIExtraDataMetaDefs::MenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip MenuType_Invalid & MenuType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::MenuType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::MenuType_All)
-            continue;
-        /* Which key required action registered under? */
-        const QString strKey = gpConverter->toInternalString(enumValue);
-        if (!m_actions.contains(strKey))
-            continue;
-        /* Update action 'checked' state: */
-        m_actions.value(strKey)->setChecked(!(restrictionsMenuBar & enumValue));
-    }
-
-    /* Update known menu-bar menus: */
-    updateMenuApplication();
-    updateMenuMachine();
-    updateMenuView();
-    updateMenuInput();
-    updateMenuDevices();
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    updateMenuDebug();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
-    updateMenuWindow();
-#endif /* Q_WS_MAC */
-    updateMenuHelp();
-}
-
-void UIMenuBarEditorWidget::updateMenuApplication()
-{
-    /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::MenuApplicationActionType restrictionsMenuApplication = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(machineID());
-    /* Get static meta-object: */
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-
-    /* We have UIExtraDataMetaDefs::MenuApplicationActionType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("MenuApplicationActionType");
-    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-    /* Handle other enum-values: */
-    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-    {
-        /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::MenuApplicationActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::MenuApplicationActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip MenuApplicationActionType_Invalid & MenuApplicationActionType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_All)
-            continue;
-        /* Which key required action registered under? */
-        const QString strKey = gpConverter->toInternalString(enumValue);
-        if (!m_actions.contains(strKey))
-            continue;
-        /* Update action 'checked' state: */
-        m_actions.value(strKey)->setChecked(!(restrictionsMenuApplication & enumValue));
-    }
-}
-
-void UIMenuBarEditorWidget::updateMenuMachine()
-{
-    /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictionsMenuMachine = gEDataManager->restrictedRuntimeMenuMachineActionTypes(machineID());
-    /* Get static meta-object: */
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-
-    /* We have UIExtraDataMetaDefs::RuntimeMenuMachineActionType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuMachineActionType");
-    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-    /* Handle other enum-values: */
-    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-    {
-        /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::RuntimeMenuMachineActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip RuntimeMenuMachineActionType_Invalid & RuntimeMenuMachineActionType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All)
-            continue;
-        /* Which key required action registered under? */
-        const QString strKey = gpConverter->toInternalString(enumValue);
-        if (!m_actions.contains(strKey))
-            continue;
-        /* Update action 'checked' state: */
-        m_actions.value(strKey)->setChecked(!(restrictionsMenuMachine & enumValue));
-    }
-}
-
-void UIMenuBarEditorWidget::updateMenuView()
-{
-    /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictionsMenuView = gEDataManager->restrictedRuntimeMenuViewActionTypes(machineID());
-    /* Get static meta-object: */
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-
-    /* We have UIExtraDataMetaDefs::RuntimeMenuViewActionType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuViewActionType");
-    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-    /* Handle other enum-values: */
-    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-    {
-        /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::RuntimeMenuViewActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuViewActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip RuntimeMenuViewActionType_Invalid & RuntimeMenuViewActionType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_All)
-            continue;
-        /* Which key required action registered under? */
-        const QString strKey = gpConverter->toInternalString(enumValue);
-        if (!m_actions.contains(strKey))
-            continue;
-        /* Update action 'checked' state: */
-        m_actions.value(strKey)->setChecked(!(restrictionsMenuView & enumValue));
-    }
-}
-
-void UIMenuBarEditorWidget::updateMenuInput()
-{
-    /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictionsMenuInput = gEDataManager->restrictedRuntimeMenuInputActionTypes(machineID());
-    /* Get static meta-object: */
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-
-    /* We have UIExtraDataMetaDefs::RuntimeMenuInputActionType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuInputActionType");
-    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-    /* Handle other enum-values: */
-    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-    {
-        /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::RuntimeMenuInputActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuInputActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip RuntimeMenuInputActionType_Invalid & RuntimeMenuInputActionType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_All)
-            continue;
-        /* Which key required action registered under? */
-        const QString strKey = gpConverter->toInternalString(enumValue);
-        if (!m_actions.contains(strKey))
-            continue;
-        /* Update action 'checked' state: */
-        m_actions.value(strKey)->setChecked(!(restrictionsMenuInput & enumValue));
-    }
-}
-
-void UIMenuBarEditorWidget::updateMenuDevices()
-{
-    /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictionsMenuDevices = gEDataManager->restrictedRuntimeMenuDevicesActionTypes(machineID());
-    /* Get static meta-object: */
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-
-    /* We have UIExtraDataMetaDefs::RuntimeMenuDevicesActionType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuDevicesActionType");
-    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-    /* Handle other enum-values: */
-    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-    {
-        /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip RuntimeMenuDevicesActionType_Invalid & RuntimeMenuDevicesActionType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All)
-            continue;
-        /* Which key required action registered under? */
-        const QString strKey = gpConverter->toInternalString(enumValue);
-        if (!m_actions.contains(strKey))
-            continue;
-        /* Update action 'checked' state: */
-        m_actions.value(strKey)->setChecked(!(restrictionsMenuDevices & enumValue));
-    }
-}
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-void UIMenuBarEditorWidget::updateMenuDebug()
-{
-    /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictionsMenuDebug = gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID());
-    /* Get static meta-object: */
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-
-    /* We have UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuDebuggerActionType");
-    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-    /* Handle other enum-values: */
-    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-    {
-        /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip RuntimeMenuDebuggerActionType_Invalid & RuntimeMenuDebuggerActionType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All)
-            continue;
-        /* Which key required action registered under? */
-        const QString strKey = gpConverter->toInternalString(enumValue);
-        if (!m_actions.contains(strKey))
-            continue;
-        /* Update action 'checked' state: */
-        m_actions.value(strKey)->setChecked(!(restrictionsMenuDebug & enumValue));
-    }
-}
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-
-#ifdef Q_WS_MAC
-void UIMenuBarEditorWidget::updateMenuWindow()
-{
-    /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::MenuWindowActionType restrictionsMenuWindow = gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID());
-    /* Get static meta-object: */
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-
-    /* We have UIExtraDataMetaDefs::MenuWindowActionType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("MenuWindowActionType");
-    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-    /* Handle other enum-values: */
-    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-    {
-        /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::MenuWindowActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::MenuWindowActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip MenuWindowActionType_Invalid & MenuWindowActionType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::MenuWindowActionType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::MenuWindowActionType_All)
-            continue;
-        /* Which key required action registered under? */
-        const QString strKey = gpConverter->toInternalString(enumValue);
-        if (!m_actions.contains(strKey))
-            continue;
-        /* Update action 'checked' state: */
-        m_actions.value(strKey)->setChecked(!(restrictionsMenuWindow & enumValue));
-    }
-}
-#endif /* Q_WS_MAC */
-
-void UIMenuBarEditorWidget::updateMenuHelp()
-{
-    /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::MenuHelpActionType restrictionsMenuHelp = gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID());
-    /* Get static meta-object: */
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-
-    /* We have UIExtraDataMetaDefs::MenuHelpActionType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("MenuHelpActionType");
-    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-    /* Handle other enum-values: */
-    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-    {
-        /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::MenuHelpActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::MenuHelpActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip MenuHelpActionType_Invalid & MenuHelpActionType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::MenuHelpActionType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::MenuHelpActionType_All)
-            continue;
-        /* Which key required action registered under? */
-        const QString strKey = gpConverter->toInternalString(enumValue);
-        if (!m_actions.contains(strKey))
-            continue;
-        /* Update action 'checked' state: */
-        m_actions.value(strKey)->setChecked(!(restrictionsMenuHelp & enumValue));
     }
 }
 
