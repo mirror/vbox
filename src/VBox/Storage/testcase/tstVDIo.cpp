@@ -1002,7 +1002,13 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                 RTMemFree(paIoReq);
             }
             else
+            {
+                if (paIoReq)
+                    RTMemFree(paIoReq);
+                if RT_SUCCESS(rc)
+                    RTSemEventDestroy(EventSem);
                 rc = VERR_NO_MEMORY;
+            }
 
             tstVDIoTestDestroy(&IoTest);
         }

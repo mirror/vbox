@@ -744,7 +744,10 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetStartDiscard(VDIOLOGGER hIoLogger, uint64_t 
                     *ppaRanges = paRanges;
                 }
                 else
+                {
                     pIoLogger->offReadNext -= sizeof(Entry);
+                    RTMemFree(paRanges);
+                }
             }
             else
                 rc = VERR_NO_MEMORY;

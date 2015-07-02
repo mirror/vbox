@@ -588,6 +588,8 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
                             pBlkMap->pRangesHead = pRangeCur;
                             pBlkMap->pRangesTail = pRangeCur;
                         }
+                        else
+                            RTMemFree(pRangeCur);
 
                         while (   RT_SUCCESS(rc)
                                && cBlocksLeft)

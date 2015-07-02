@@ -4849,7 +4849,10 @@ static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, PVDIOCTX pIoCt
          * a new grain table and put the reference to it in the GDs. */
         uFileOffset = pExtent->uAppendPosition;
         if (!uFileOffset)
+        {
+            RTMemFree(pGrainAlloc);
             return VERR_INTERNAL_ERROR;
+        }
         Assert(!(uFileOffset % 512));
 
         uFileOffset = RT_ALIGN_64(uFileOffset, 512);
@@ -4859,7 +4862,10 @@ static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, PVDIOCTX pIoCt
          * that support more than 32 bit sector numbers. So this shouldn't
          * ever happen on a valid extent. */
         if (uGTSector > UINT32_MAX)
+        {
+            RTMemFree(pGrainAlloc);
             return VERR_VD_VMDK_INVALID_HEADER;
+        }
 
         /* Write grain table by writing the required number of grain table
          * cache chunks. Allocate memory dynamically here or we flood the
@@ -4868,7 +4874,10 @@ static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, PVDIOCTX pIoCt
         uint32_t *paGTDataTmp = (uint32_t *)RTMemTmpAllocZ(cbGTDataTmp);
 
         if (!paGTDataTmp)
+        {
+            RTMemFree(pGrainAlloc);
             return VERR_NO_MEMORY;
+        }
 
         memset(paGTDataTmp, '\0', cbGTDataTmp);
         rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pExtent->pFile->pStorage,
@@ -4880,6 +4889,7 @@ static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, PVDIOCTX pIoCt
         else if (RT_FAILURE(rc))
         {
             RTMemTmpFree(paGTDataTmp);
+            RTMemFree(pGrainAlloc);
             return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: cannot write grain table allocation in '%s'"), pExtent->pszFullname);
         }
         pExtent->uAppendPosition = RT_ALIGN_64(  pExtent->uAppendPosition
