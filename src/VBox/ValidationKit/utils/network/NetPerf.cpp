@@ -1416,6 +1416,7 @@ static int netperfTCPClientDoLatency(NETPERFPARAMS *pParams)
         {
             while (i-- > 0)
                 RTMemFree(apPackets[i]);
+            RTMemFree(pvReadBuf);
             return RTTestIFailedRc(VERR_NO_MEMORY, "Out of memory");
         }
         RTRandBytes(apPackets[i], pParams->cbPacket);
@@ -1577,6 +1578,8 @@ static int netperfTCPClientDoLatency(NETPERFPARAMS *pParams)
         RTTestIFailed("Failed to create timer object: %Rrc\n", rc);
     for (i = 0; i < RT_ELEMENTS(apPackets); i++)
         RTMemFree(apPackets[i]);
+
+    RTMemFree(pvReadBuf);
 
     return rc;
 }
