@@ -3255,6 +3255,8 @@ int VBoxVHWAImage::vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE 
 //            AssertRC(rc);
 //        }
     }
+    else
+        free(buf);
 
     VBOXQGL_LOAD_SURFSTOP(pSSM);
 

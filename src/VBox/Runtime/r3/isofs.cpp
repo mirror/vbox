@@ -334,7 +334,12 @@ static int rtIsoFsFindEntry(PRTISOFSFILE pFile, const char *pszFileName,
                     break;
 
                 char *pszName = RTStrAlloc(pCurRecord->name_len + 1);
-                AssertPtr(pszName);
+                if (RT_UNLIKELY(!pszName))
+                {
+                    rc = VERR_NO_STR_MEMORY;
+                    break;
+                }
+
                 Assert(idx + sizeof(RTISOFSDIRRECORD) < cbRead);
                 memcpy(pszName, &abBuffer[idx + sizeof(RTISOFSDIRRECORD)], pCurRecord->name_len);
                 pszName[pCurRecord->name_len] = '\0'; /* Force string termination. */
@@ -384,6 +389,7 @@ static int rtIsoFsFindEntry(PRTISOFSFILE pFile, const char *pszFileName,
                     }
                 }
                 idx += pCurRecord->record_length;
+                RTStrFree(pszName);
             }
         }
     }
