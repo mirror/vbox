@@ -13,7 +13,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-# chkconfig: 35 35 65
+# chkconfig: 345 35 65
 # description: VirtualBox web service API
 #
 ### BEGIN INIT INFO
