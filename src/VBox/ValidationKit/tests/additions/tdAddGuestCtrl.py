@@ -1565,13 +1565,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Invalid variable names.
             tdTestSessionEx([ tdStepSessionSetEnv('', 'FOO', vbox.ComError.E_INVALIDARG),
                               tdStepSessionCheckEnv(),
+                              tdStepRequireMinimumApiVer(5.0), # 4.3 is too relaxed checking input!
                               tdStepSessionSetEnv('=', '===', vbox.ComError.E_INVALIDARG),
                               tdStepSessionCheckEnv(),
                               tdStepSessionSetEnv('FOO=', 'BAR', vbox.ComError.E_INVALIDARG),
                               tdStepSessionCheckEnv(),
                               tdStepSessionSetEnv('=FOO', 'BAR', vbox.ComError.E_INVALIDARG),
                               tdStepSessionCheckEnv(),
-                              tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy!
+                              tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy and too relaxed!
+                              tdStepSessionBulkEnv(['', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                              tdStepSessionCheckEnv(),
                               tdStepSessionBulkEnv(['=', 'foo=bar'], vbox.ComError.E_INVALIDARG),
                               tdStepSessionCheckEnv(),
                               tdStepSessionBulkEnv(['=FOO', 'foo=bar'], vbox.ComError.E_INVALIDARG),
@@ -1583,7 +1586,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             tdTestSessionEx([ tdStepSessionSetEnv('$$$', '%%%'),
                               tdStepSessionCheckEnv([ '$$$=%%%',]),
                               ]),
-            tdTestSessionEx([ tdStepSessionSetEnv(u'ß$%ß&', ''),
+            tdTestSessionEx([ tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy!
+                              tdStepSessionSetEnv(u'ß$%ß&', ''),
                               tdStepSessionCheckEnv([ u'ß$%ß&=',]),
                               ]),
             # Misc stuff.
