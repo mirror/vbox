@@ -58,13 +58,13 @@ public: /* IUnknown methods. */
 
 public: /* IDataObject methods. */
 
-    STDMETHOD(GetData)(FORMATETC *pFormatEtc, STGMEDIUM *pMedium);
-    STDMETHOD(GetDataHere)(FORMATETC *pFormatEtc, STGMEDIUM *pMedium);
-    STDMETHOD(QueryGetData)(FORMATETC *pFormatEtc);
-    STDMETHOD(GetCanonicalFormatEtc)(FORMATETC *pFormatEct,  FORMATETC *pFormatEtcOut);
-    STDMETHOD(SetData)(FORMATETC *pFormatEtc, STGMEDIUM *pMedium, BOOL fRelease);
+    STDMETHOD(GetData)(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium);
+    STDMETHOD(GetDataHere)(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium);
+    STDMETHOD(QueryGetData)(LPFORMATETC pFormatEtc);
+    STDMETHOD(GetCanonicalFormatEtc)(LPFORMATETC pFormatEct,  LPFORMATETC pFormatEtcOut);
+    STDMETHOD(SetData)(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium, BOOL fRelease);
     STDMETHOD(EnumFormatEtc)(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc);
-    STDMETHOD(DAdvise)(FORMATETC *pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection);
+    STDMETHOD(DAdvise)(LPFORMATETC pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection);
     STDMETHOD(DUnadvise)(DWORD dwConnection);
     STDMETHOD(EnumDAdvise)(IEnumSTATDATA **ppEnumAdvise);
 
@@ -78,9 +78,9 @@ public:
 
 protected:
 
-    bool LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex);
+    bool LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
     static HGLOBAL MemDup(HGLOBAL hMemSource);
-    void RegisterFormat(FORMATETC *pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
+    void RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 
     UIDnDHandler   *m_pDnDHandler;

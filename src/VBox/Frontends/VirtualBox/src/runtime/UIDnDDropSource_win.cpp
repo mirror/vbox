@@ -104,6 +104,7 @@ STDMETHODIMP UIDnDDropSource::QueryContinueDrag(BOOL fEscapePressed, DWORD dwKey
         mdwCurEffect = 0;
         muCurAction = Qt::IgnoreAction;
 
+        LogRel2(("DnD: User cancelled dropping data to the host\n"));
         return DRAGDROP_S_CANCEL;
     }
 
@@ -111,7 +112,14 @@ STDMETHODIMP UIDnDDropSource::QueryContinueDrag(BOOL fEscapePressed, DWORD dwKey
 
     /* Left mouse button released? Start "drop" action. */
     if ((dwKeyState & MK_LBUTTON) == 0)
+        fDropContent = true;
+    /** @todo Make this configurable? */
+
+    if (fDropContent)
+    {
+        LogRel2(("DnD: User dropped data to the host\n"));
         return DRAGDROP_S_DROP;
+    }
 
     /* No change, just continue. */
     return S_OK;
