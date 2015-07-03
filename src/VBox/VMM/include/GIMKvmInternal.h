@@ -202,6 +202,8 @@ typedef struct GIMKVM
     uint16_t                    uOpCodeNative;
     /** The TSC frequency (in HZ) reported to the guest. */
     uint64_t                    cTscTicksPerSecond;
+    /** Ring-0 mutex. */
+    RTSEMFASTMUTEX              hFastMtx;
 } GIMKVM;
 /** Pointer to per-VM GIM KVM instance data. */
 typedef GIMKVM *PGIMKVM;
@@ -224,6 +226,8 @@ typedef struct GIMKVMCPU
     uint64_t                    uTsc;
     /** The guest virtual time while enabling the system-time MSR. */
     uint64_t                    uVirtNanoTS;
+    /** The flags of the system-time struct. */
+    uint8_t                     fSystemTimeFlags;
 } GIMKVMCPU;
 /** Pointer to per-VCPU GIM KVM instance data. */
 typedef GIMKVMCPU *PGIMKVMCPU;
@@ -234,11 +238,9 @@ typedef GIMKVMCPU const *PCGIMKVMCPU;
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING0
-#if 0
 VMMR0_INT_DECL(int)             gimR0KvmInitVM(PVM pVM);
 VMMR0_INT_DECL(int)             gimR0KvmTermVM(PVM pVM);
-VMMR0_INT_DECL(int)             gimR0KvmUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
-#endif
+VMMR0_INT_DECL(int)             gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu);
 #endif /* IN_RING0 */
 
 #ifdef IN_RING3
@@ -251,7 +253,7 @@ VMMR3_INT_DECL(int)             gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)             gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion);
 
 VMMR3_INT_DECL(int)             gimR3KvmDisableSystemTime(PVM pVM);
-VMMR3_INT_DECL(int)             gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU pKvmCpu, uint8_t fFlags);
+VMMR3_INT_DECL(int)             gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             gimR3KvmEnableWallClock(PVM pVM, RTGCPHYS GCPhysSysTime);
 #endif /* IN_RING3 */
 

@@ -357,15 +357,17 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
         SSMR3GetU64(pSSM, &pKvmCpu->uVirtNanoTS);
         SSMR3GetGCPhys(pSSM, &pKvmCpu->GCPhysSystemTime);
         SSMR3GetU32(pSSM, &pKvmCpu->u32SystemTimeVersion);
-        rc = SSMR3GetU8(pSSM, &fSystemTimeFlags);
+        rc = SSMR3GetU8(pSSM, &pKvmCpu->fSystemTimeFlags);
         AssertRCReturn(rc, rc);
 
         /* Enable the system-time struct. if necessary. */
+        /** @todo update guest struct only if cTscTicksPerSecond doesn't match host
+         *        anymore. */
         if (MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr))
         {
             Assert(!TMVirtualIsTicking(pVM));       /* paranoia. */
             Assert(!TMCpuTickIsTicking(pVCpu));
-            rc = gimR3KvmEnableSystemTime(pVM, pVCpu, pKvmCpu, fSystemTimeFlags);
+            rc = gimR3KvmEnableSystemTime(pVM, pVCpu);
             AssertRCReturn(rc, rc);
         }
     }
@@ -387,15 +389,15 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
  * @returns VBox status code.
  * @param   pVM                Pointer to the VM.
  * @param   pVCpu              Pointer to the VMCPU.
- * @param   pKvmCpu            Pointer to the GIMKVMCPU with all fields
- *                             populated by the caller.
- * @param   fFlags             The system-time struct. flags.
  *
  * @remarks Don't do any release assertions here, these can be triggered by
  *          guest R0 code.
  */
-VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU pKvmCpu, uint8_t fFlags)
+VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu)
 {
+    PGIMKVM    pKvm    = &pVM->gim.s.u.Kvm;
+    PGIMKVMCPU pKvmCpu = &pVCpu->gim.s.u.KvmCpu;
+
     /*
      * Validate the mapping address first.
      */
@@ -406,12 +408,15 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU p
         return VERR_GIM_OPERATION_FAILED;
     }
 
+    /*
+     * Construct the system-time struct.
+     */
     GIMKVMSYSTEMTIME SystemTime;
     RT_ZERO(SystemTime);
     SystemTime.u32Version  = pKvmCpu->u32SystemTimeVersion;
     SystemTime.u64NanoTS   = pKvmCpu->uVirtNanoTS;
     SystemTime.u64Tsc      = pKvmCpu->uTsc;
-    SystemTime.fFlags      = fFlags | GIM_KVM_SYSTEM_TIME_FLAGS_TSC_STABLE;
+    SystemTime.fFlags      = pKvmCpu->fSystemTimeFlags | GIM_KVM_SYSTEM_TIME_FLAGS_TSC_STABLE;
 
     /*
      * How the guest calculates the system time (nanoseconds):
@@ -423,7 +428,6 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU p
      *     tsc >>= -i8TscShift;
      * time = ((tsc * SysTime.u32TscScale) >> 32) + SysTime.u64NanoTS
      */
-    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
     uint64_t u64TscFreq   = pKvm->cTscTicksPerSecond;
     SystemTime.i8TscShift = 0;
     while (u64TscFreq > 2 * RT_NS_1SEC_64)
@@ -439,6 +443,9 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU p
     }
     SystemTime.u32TscScale = ASMDivU64ByU32RetU32(RT_NS_1SEC_64 << 32, uTscFreqLo);
 
+    /*
+     * Update guest memory with the system-time struct.
+     */
     Assert(!(SystemTime.u32Version & UINT32_C(1)));
     int rc = PGMPhysSimpleWriteGCPhys(pVM, pKvmCpu->GCPhysSystemTime, &SystemTime, sizeof(GIMKVMSYSTEMTIME));
     if (RT_SUCCESS(rc))

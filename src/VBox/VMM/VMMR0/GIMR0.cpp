@@ -42,6 +42,9 @@ VMMR0_INT_DECL(int) GIMR0InitVM(PVM pVM)
         case GIMPROVIDERID_HYPERV:
             return gimR0HvInitVM(pVM);
 
+        case GIMPROVIDERID_KVM:
+            return gimR0KvmInitVM(pVM);
+
         default:
             break;
     }
@@ -64,6 +67,9 @@ VMMR0_INT_DECL(int) GIMR0TermVM(PVM pVM)
     {
         case GIMPROVIDERID_HYPERV:
             return gimR0HvTermVM(pVM);
+
+        case GIMPROVIDERID_KVM:
+            return gimR0KvmTermVM(pVM);
 
         default:
             break;

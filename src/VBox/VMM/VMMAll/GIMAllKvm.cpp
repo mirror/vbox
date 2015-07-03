@@ -34,6 +34,7 @@
 #include <VBox/sup.h>
 
 #include <iprt/asm-amd64-x86.h>
+#include <iprt/time.h>
 
 
 /**
@@ -225,13 +226,18 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
         {
             bool fEnable = RT_BOOL(uRawValue & MSR_GIM_KVM_SYSTEM_TIME_ENABLE_BIT);
 #ifndef IN_RING3
+# ifdef IN_RING0
+            gimR0KvmUpdateSystemTime(pVM, pVCpu);
+# else
+            Assert(pVM->cCpus == 1);
             if (fEnable)
             {
-                RTCCUINTREG fEFlags  = ASMIntDisableFlags();
-                pKvmCpu->uTsc        = TMCpuTickGetNoCheck(pVCpu);
-                pKvmCpu->uVirtNanoTS = TMVirtualGetNoCheck(pVM);
+                RTCCUINTREG fEFlags = ASMIntDisableFlags();
+                pKvmCpu->uTsc        = TMCpuTickGetNoCheck(pVCpu) | UINT64_C(1);
+                pKvmCpu->uVirtNanoTS = TMVirtualGetNoCheck(pVM)   | UINT64_C(1);
                 ASMSetFlags(fEFlags);
             }
+# endif
             return VINF_CPUM_R3_MSR_WRITE;
 #else
             if (!fEnable)
@@ -250,14 +256,14 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
             {
                 int rc2 = PGMPhysSimpleReadGCPhys(pVM, &SystemTime, pKvmCpu->GCPhysSystemTime, sizeof(GIMKVMSYSTEMTIME));
                 if (RT_SUCCESS(rc2))
-                    fFlags = (SystemTime.fFlags & GIM_KVM_SYSTEM_TIME_FLAGS_GUEST_PAUSED);
+                    pKvmCpu->fSystemTimeFlags = (SystemTime.fFlags & GIM_KVM_SYSTEM_TIME_FLAGS_GUEST_PAUSED);
             }
 
             /* Enable and populate the system-time struct. */
             pKvmCpu->u64SystemTimeMsr      = uRawValue;
             pKvmCpu->GCPhysSystemTime      = MSR_GIM_KVM_SYSTEM_TIME_GUEST_GPA(uRawValue);
             pKvmCpu->u32SystemTimeVersion += 2;
-            int rc = gimR3KvmEnableSystemTime(pVM, pVCpu, pKvmCpu, fFlags);
+            int rc = gimR3KvmEnableSystemTime(pVM, pVCpu);
             if (RT_FAILURE(rc))
             {
                 pKvmCpu->u64SystemTimeMsr = 0;
@@ -281,7 +287,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
                 int rc = gimR3KvmEnableWallClock(pVM, GCPhysWallClock);
                 if (RT_SUCCESS(rc))
                 {
-                    pKvm->u64WallClockMsr     = uRawValue;
+                    pKvm->u64WallClockMsr = uRawValue;
                     return VINF_SUCCESS;
                 }
             }

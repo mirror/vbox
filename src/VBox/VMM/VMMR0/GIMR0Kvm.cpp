@@ -1,0 +1,117 @@
+/* $Id$ */
+/** @file
+ * Guest Interface Manager (GIM), KVM - Host Context Ring-0.
+ */
+
+/*
+ * Copyright (C) 2015 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#define LOG_GROUP LOG_GROUP_GIM
+#include "GIMInternal.h"
+#include "GIMKvmInternal.h"
+
+#include <VBox/err.h>
+#include <VBox/vmm/gim.h>
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/vm.h>
+
+#include <iprt/semaphore.h>
+
+
+/**
+ * Updates KVM's system time information globally for all VCPUs.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param
+ * @thread  EMT.
+ */
+VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu)
+{
+    /*
+     * Validate.
+     */
+    Assert(GIMIsEnabled(pVM));
+    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
+    AssertReturn(pKvm->hFastMtx != NIL_RTSEMFASTMUTEX, VERR_GIM_IPE_3);
+
+    /*
+     * Record the TSC and virtual NanoTS pairs.
+     */
+    uint64_t uTsc;
+    uint64_t uVirtNanoTS;
+    RTCCUINTREG fEFlags = ASMIntDisableFlags();
+    uTsc        = TMCpuTickGetNoCheck(pVCpu) | UINT64_C(1);
+    uVirtNanoTS = TMVirtualGetNoCheck(pVM)   | UINT64_C(1);
+    ASMSetFlags(fEFlags);
+
+    /*
+     * Update VCPUs with this information. The first VCPU's values
+     * will be applied to the remaining.
+     */
+    RTSemFastMutexRequest(pKvm->hFastMtx);
+    for (uint32_t i = 0; i < pVM->cCpus; i++)
+    {
+        PGIMKVMCPU pKvmCpu   = &pVM->aCpus[i].gim.s.u.KvmCpu;
+        if (   !pKvmCpu->uTsc
+            && !pKvmCpu->uVirtNanoTS)
+        {
+            pKvmCpu->uTsc        = uTsc;
+            pKvmCpu->uVirtNanoTS = uVirtNanoTS;
+        }
+    }
+    RTSemFastMutexRelease(pKvm->hFastMtx);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Does ring-0 per-VM GIM KVM initialization.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the VM.
+ */
+VMMR0_INT_DECL(int) gimR0KvmInitVM(PVM pVM)
+{
+    AssertPtr(pVM);
+    Assert(GIMIsEnabled(pVM));
+
+    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
+    Assert(pKvm->hFastMtx == NIL_RTSEMFASTMUTEX);
+
+    int rc = RTSemFastMutexCreate(&pKvm->hFastMtx);
+    return rc;
+}
+
+
+/**
+ * Does ring-0 per-VM GIM KVM termination.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the VM.
+ */
+VMMR0_INT_DECL(int) gimR0KvmTermVM(PVM pVM)
+{
+    AssertPtr(pVM);
+    Assert(GIMIsEnabled(pVM));
+
+    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
+    RTSemFastMutexDestroy(pKvm->hFastMtx);
+    pKvm->hFastMtx = NIL_RTSEMFASTMUTEX;
+
+    return VINF_SUCCESS;
+}
+
