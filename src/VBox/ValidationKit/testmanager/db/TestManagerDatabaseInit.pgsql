@@ -127,7 +127,7 @@ CREATE TABLE Users (
 
     PRIMARY KEY (uid, tsExpire)
 );
-CREATE INDEX UsersLoginNameIdx ON Users (tsExpire, sLoginName);
+CREATE INDEX UsersLoginNameIdx ON Users (sLoginName, tsExpire DESC);
 
 
 --- @table GlobalResources
@@ -409,7 +409,7 @@ CREATE TABLE TestCaseArgs (
     -- reconfigured with more/less permutations.
     PRIMARY KEY (idTestCase, tsExpire, sArgs)
 );
-CREATE INDEX TestCaseArgsLookupIdx ON TestCaseArgs (idTestCase, tsExpire, tsEffective);
+CREATE INDEX TestCaseArgsLookupIdx ON TestCaseArgs (idTestCase, tsExpire DESC, tsEffective ASC);
 
 
 --- @table TestCaseDeps
@@ -514,7 +514,7 @@ CREATE TABLE TestGroups (
 
     PRIMARY KEY (idTestGroup, tsExpire)
 );
-CREATE INDEX TestGroups_id_index ON TestGroups (idTestGroup, tsExpire, tsEffective);
+CREATE INDEX TestGroups_id_index ON TestGroups (idTestGroup, tsExpire DESC, tsEffective ASC);
 
 
 --- @table TestGroupMembers
@@ -833,7 +833,8 @@ CREATE TABLE TestBoxes (
     --- Nested paging requires hardware virtualization.
     CHECK (fCpuNestedPaging IS NULL OR (fCpuNestedPaging <> TRUE OR fCpuHwVirt = TRUE))
 );
-CREATE UNIQUE INDEX TestBoxesUuidIdx ON TestBoxes (uuidSystem, tsExpire);
+CREATE UNIQUE INDEX TestBoxesUuidIdx ON TestBoxes (uuidSystem, tsExpire DESC);
+CREATE INDEX TestBoxesExpireEffectiveIdx ON TestBoxes (tsExpire DESC, tsEffective ASC);
 
 
 
@@ -1045,6 +1046,8 @@ CREATE TABLE BuildBlacklist (
 
     PRIMARY KEY (idBlacklisting, tsExpire)
 );
+CREATE INDEX BuildBlacklistIdx ON BuildBlacklist (iLastRevision DESC, iFirstRevision ASC, sProduct, sBranch, 
+                                                  tsExpire DESC, tsEffective ASC);
 
 --- @table BuildCategories
 -- Build categories.
@@ -1310,8 +1313,9 @@ CREATE TABLE TestResults (
 
 CREATE INDEX TestResultsSetIdx ON TestResults (idTestSet, idStrName, idTestResult);
 CREATE INDEX TestResultsParentIdx ON TestResults (idTestResultParent);
--- The TestResultsNameIdx is for speeding up the result graph & reporting code.
-CREATE INDEX TestResultsNameIdx ON TestResults (idStrName, idTestResult, tsCreated);
+-- The TestResultsNameIdx and TestResultsNameIdx2 are for speeding up the result graph & reporting code.
+CREATE INDEX TestResultsNameIdx ON TestResults (idStrName, tsCreated DESC);
+CREATE INDEX TestResultsNameIdx2 ON TestResults (idTestResult, idStrName);
 
 ALTER TABLE TestResultFailures
     ADD CONSTRAINT idTestResultFk FOREIGN KEY (idTestResult) REFERENCES TestResults(idTestResult) MATCH FULL;
@@ -1545,10 +1549,10 @@ CREATE INDEX TestSetsBoxIdx         ON TestSets (idTestBox, idTestResult);
 CREATE INDEX TestSetsBuildIdx       ON TestSets (idBuild, idTestResult);
 CREATE INDEX TestSetsTestCaseIdx    ON TestSets (idTestCase, idTestResult);
 CREATE INDEX TestSetsTestVarIdx     ON TestSets (idTestCaseArgs, idTestResult);
---- The TestSetCreatedDone is for testbox results, graph options and such.
-CREATE INDEX TestSetsCreatedDoneIdx ON TestSets (tsCreated, tsDone);
+--- The TestSetsDoneCreatedBuildCatIdx is for testbox results, graph options and such.
+CREATE INDEX TestSetsDoneCreatedBuildCatIdx ON TestSets (tsDone DESC NULLS FIRST, tsCreated ASC, idBuildCategory);
 --- For graphs.
-CREATE INDEX TestSetsGraphBoxIdx    ON TestSets (idTestBox, tsCreated, tsDone, idBuildCategory, idTestCase);
+CREATE INDEX TestSetsGraphBoxIdx    ON TestSets (idTestBox, tsCreated DESC, tsDone ASC NULLS LAST, idBuildCategory, idTestCase);
 
 ALTER TABLE TestResults      ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
 ALTER TABLE TestResultValues ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
@@ -1755,4 +1759,6 @@ CREATE TABLE SchedQueues (
 
     PRIMARY KEY (idSchedGroup, idItem)
 );
+CREATE INDEX SchedQueuesItemIdx          ON SchedQueues(idItem);
+CREATE INDEX SchedQueuesSchedGroupIdx    ON SchedQueues(idSchedGroup);
 
