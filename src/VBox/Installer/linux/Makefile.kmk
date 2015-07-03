@@ -69,7 +69,10 @@ linux-bin_SOURCES = \
 	scripts/install.sh=>scripts/install.sh \
 	scripts/VBoxHeadlessXOrg.sh=>scripts/VBoxHeadlessXOrg.sh \
 	VBoxSysInfo.sh \
+	vboxautostart-service.sh \
+	vboxballoonctrl-service.sh \
 	VBoxCreateUSBNode.sh \
+	vboxweb-service.sh \
 	VBox.sh=>VBox.sh \
 	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
 
@@ -78,6 +81,8 @@ linux-scripts_INST = $(VBOX_LNX_INST_STAGE_DIR_REL)/
 linux-scripts_MODE = a+rx,u+w
 linux-scripts_SOURCES = \
 	deffiles \
+	install-common.sh \
+	postinst-common.sh \
 	routines.sh \
 	uninstall.sh \
 	vboxautostart-service.sh \
@@ -202,8 +207,12 @@ VBOX_LNX_NO_STRIP = \
 	  ExtensionPacks/VNC/ExtPack-license.rtf \
 	  ExtensionPacks/VNC/ExtPack-license.txt,) \
 	VBoxSysInfo.sh \
+	vboxautostart-service.sh \
+	vboxballoonctrl-service.sh \
 	VBoxCreateUSBNode.sh \
+	vboxdrv.sh \
 	VBox.sh \
+	vboxweb-service.sh \
 	VBox.png \
 	scripts
 
@@ -371,6 +380,14 @@ $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $
 		-e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
 		--output $@ \
 		$<
+
+$(PATH_STAGE_BIN)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $$(dir $$@)
+	$(QUIET)$(SED_EXT) \
+		-e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
+		-e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
+		--output $@ \
+		$<
+	$(QUIET)$(CHMOD) 0755 $@
 
 $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX_PATH_LNX_INST_SRC)/installer-common.sh $(VBOX_VERSION_STAMP) $(VBOX_SVN_REV_KMK).ts | $$(dir $$@)
 	$(QUIET)$(SED) \

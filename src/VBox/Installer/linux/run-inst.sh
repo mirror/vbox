@@ -150,8 +150,9 @@ EOF
     # system
     for i in $UNINSTALL_SCRIPTS; do
         stop_init_script "$i"
-        cleanup_init "$i" 1>&2 2>> "$LOGFILE"
+        cleanup_init_script "$i" 1>&2 2>> "$LOGFILE"
         test -x "./$i" && "./$i" cleanup 1>&2 2>> "$LOGFILE"
+        delrunlevel "$i"
         remove_init_script "$i"
     done
 
@@ -418,6 +419,7 @@ fi
 for i in "$INSTALLATION_DIR/init/"*; do
   if test -r "$i"; then
     install_init_script "$i" "`basename "$i"`"
+    addrunlevel "`basename "$i"`"
     test -n "$DO_SETUP" && setup_init_script "`basename "$i"`" 1>&2
     start_init_script "`basename "$i"`"
   fi
@@ -458,7 +460,8 @@ test -r "$CONFIG_DIR/$CONFIG_FILES" || abort "Required file $CONFIG_FILES not fo
 for i in "$INSTALLATION_DIR/init/"*; do
     if test -r "\$i"; then
         stop_init_script "\`basename "\$i"\`"
-        test -z "\$NO_CLEANUP" && cleanup_init "\`basename "\$i"\`" 2>> "\$LOGFILE"
+        test -z "\$NO_CLEANUP" && cleanup_init_script "\`basename "\$i"\`" 2>> "\$LOGFILE"
+        delrunlevel "\`basename "\$i"\`"
         remove_init_script "\`basename "\$i"\`"
     fi
 done

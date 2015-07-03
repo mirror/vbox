@@ -383,14 +383,25 @@ if [ "$ACTION" = "install" ]; then
     install_init_script vboxballoonctrl-service.sh vboxballoonctrl-service
     install_init_script vboxautostart-service.sh vboxautostart-service
     install_init_script vboxweb-service.sh vboxweb-service
+
+    # Write the configuration. Do this before we call /etc/init.d/vboxdrv setup!
+    echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
+    echo "INSTALL_DIR='$INSTALLATION_DIR'" >> $CONFIG_DIR/$CONFIG
+    echo "# VirtualBox version" >> $CONFIG_DIR/$CONFIG
+    echo "INSTALL_VER='$VERSION'" >> $CONFIG_DIR/$CONFIG
+    echo "INSTALL_REV='$SVNREV'" >> $CONFIG_DIR/$CONFIG
+    echo "# Build type and user name for logging purposes" >> $CONFIG_DIR/$CONFIG
+    echo "BUILD_TYPE='$BUILD_BUILDTYPE'" >> $CONFIG_DIR/$CONFIG
+    echo "USERNAME='$BUILD_USERNAME'" >> $CONFIG_DIR/$CONFIG
+
     delrunlevel vboxdrv > /dev/null 2>&1
-    addrunlevel vboxdrv 20 80 # This may produce useful output
+    addrunlevel vboxdrv # This may produce useful output
     delrunlevel vboxballoonctrl-service > /dev/null 2>&1
-    addrunlevel vboxballoonctrl-service 25 75 # This may produce useful output
+    addrunlevel vboxballoonctrl-service # This may produce useful output
     delrunlevel vboxautostart-service > /dev/null 2>&1
-    addrunlevel vboxautostart-service 25 75 # This may produce useful output
+    addrunlevel vboxautostart-service # This may produce useful output
     delrunlevel vboxweb-service > /dev/null 2>&1
-    addrunlevel vboxweb-service 25 75 # This may produce useful output
+    addrunlevel vboxweb-service # This may produce useful output
 
     # Create users group
     groupadd -r -f $GROUPNAME 2> /dev/null
@@ -459,16 +470,6 @@ if [ "$ACTION" = "install" ]; then
     fi
 
     install_device_node_setup "$VBOXDRV_GRP" "$VBOXDRV_MODE" "$INSTALLATION_DIR"
-
-    # Write the configuration. Do this before we call /etc/init.d/vboxdrv setup!
-    echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
-    echo "INSTALL_DIR='$INSTALLATION_DIR'" >> $CONFIG_DIR/$CONFIG
-    echo "# VirtualBox version" >> $CONFIG_DIR/$CONFIG
-    echo "INSTALL_VER='$VERSION'" >> $CONFIG_DIR/$CONFIG
-    echo "INSTALL_REV='$SVNREV'" >> $CONFIG_DIR/$CONFIG
-    echo "# Build type and user name for logging purposes" >> $CONFIG_DIR/$CONFIG
-    echo "BUILD_TYPE='$BUILD_BUILDTYPE'" >> $CONFIG_DIR/$CONFIG
-    echo "USERNAME='$BUILD_USERNAME'" >> $CONFIG_DIR/$CONFIG
 
     # Make kernel module
     MODULE_FAILED="false"
