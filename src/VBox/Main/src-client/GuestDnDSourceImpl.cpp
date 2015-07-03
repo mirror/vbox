@@ -254,10 +254,11 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, std::vector<com::Utf8Str>
     int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
     if (RT_SUCCESS(rc))
     {
-        bool fFetchResult = true;
         GuestDnDResponse *pResp = GuestDnDInst()->response();
         if (pResp)
         {
+            bool fFetchResult = true;
+
             if (pResp->waitForGuestResponse(5000 /* Timeout in ms */) == VERR_TIMEOUT)
                 fFetchResult = false;
 
@@ -1235,4 +1236,3 @@ int GuestDnDSource::i_updateProcess(PRECVDATACTX pCtx, uint64_t cbDataAdd)
                                        : DragAndDropSvc::DND_PROGRESS_RUNNING);
     return rc;
 }
-
