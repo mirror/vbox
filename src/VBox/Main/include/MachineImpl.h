@@ -984,6 +984,8 @@ private:
     HRESULT getDefaultFrontend(com::Utf8Str &aDefaultFrontend);
     HRESULT setDefaultFrontend(const com::Utf8Str &aDefaultFrontend);
     HRESULT getUSBProxyAvailable(BOOL *aUSBProxyAvailable);
+    HRESULT getVMProcessPriority(com::Utf8Str &aVMProcessPriority);
+    HRESULT setVMProcessPriority(const com::Utf8Str &aVMProcessPriority);
 
     // wrapped IMachine methods
     HRESULT lockMachine(const ComPtr<ISession> &aSession,

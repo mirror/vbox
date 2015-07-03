@@ -1198,7 +1198,8 @@ struct MachineUserData
           enmFaultToleranceState(FaultToleranceState_Inactive),
           uFaultTolerancePort(0),
           uFaultToleranceInterval(0),
-          fRTCUseUTC(false)
+          fRTCUseUTC(false),
+          strVMPriority("")
     {
         llGroups.push_back("/");
     }
@@ -1222,7 +1223,8 @@ struct MachineUserData
                && (strFaultToleranceAddress   == c.strFaultToleranceAddress)
                && (strFaultTolerancePassword  == c.strFaultTolerancePassword)
                && (fRTCUseUTC                 == c.fRTCUseUTC)
-               && (ovIcon                     == c.ovIcon);
+               && (ovIcon                     == c.ovIcon)
+               && (strVMPriority              == c.strVMPriority);
     }
 
     com::Utf8Str            strName;
@@ -1243,6 +1245,7 @@ struct MachineUserData
     uint32_t                uFaultToleranceInterval;
     bool                    fRTCUseUTC;
     com::Utf8Str            ovIcon;
+    com::Utf8Str            strVMPriority;
 };
 
 extern const struct Snapshot g_SnapshotEmpty;

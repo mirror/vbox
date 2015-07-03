@@ -4180,7 +4180,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="703510de-8d5e-411b-a25b-378b03382bac"
+    uuid="f30138d4-e5ea-4b3a-8858-a059de4c93fd"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -5003,6 +5003,23 @@
     <attribute name="USBProxyAvailable" type="boolean" readonly="yes">
       <desc>
         Returns whether there is an USB proxy available.
+      </desc>
+    </attribute>
+
+    <attribute name="VMProcessPriority" type="wstring">
+      <desc>
+        Sets the priority of the VM process. It is a VM setting which can
+        be changed both before starting the VM and at runtime. The valid
+        values are system specific, and if a value is specified which does
+        not get recognized, then it will be remembered (useful for preparing
+        VM configs for other host OSes), with a successful result.
+
+        The default value is the empty string, which selects the default
+        process priority.
+
+        <result name="E_NOTIMPL">
+          This attribute is currently not implemented.
+        </result>
       </desc>
     </attribute>
 
@@ -10564,7 +10581,7 @@ and "VAR" for unsetting. -->
         write access. (Was "oa".)
         <note>
           <!-- @todo r=bird: See iprt/file.h, RTFILE_O_APPEND - not an action/disposition!
-              Moving the file pointer to the end, is almost fine, but impliying 'write' access
+              Moving the file pointer to the end, is almost fine, but implying 'write' access
               isn't. That is something that is exclusively reserved for the opening mode. -->
           Deprecated. Only here for historical reasons. Do not use!
         </note>
