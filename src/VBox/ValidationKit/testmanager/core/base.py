@@ -637,7 +637,8 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         return (sValue, sError);
 
     @staticmethod
-    def validateStr(sValue, cchMin = 0, cchMax = 4096, aoNilValues = tuple([None, '']), fAllowNull = True, fAllowUnicodeSymbols = False): # pylint: disable=C0301
+    def validateStr(sValue, cchMin = 0, cchMax = 4096, aoNilValues = tuple([None, '']), fAllowNull = True,
+                    fAllowUnicodeSymbols = False):
         """ Validates a string field. """
         if sValue in aoNilValues:
             return (sValue, None if fAllowNull else 'Mandatory.');
