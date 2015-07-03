@@ -28,34 +28,34 @@
 --
 -- Reordered, modified and new indexes.
 --
-\d UsersLoginNameIdx
+\d UsersLoginNameIdx;
 DROP   INDEX UsersLoginNameIdx;
 CREATE INDEX UsersLoginNameIdx ON Users (sLoginName, tsExpire DESC);
-\d UsersLoginNameIdx
+\d UsersLoginNameIdx;
 ANALYZE VERBOSE Users;
 
 
-\d TestCaseArgsLookupIdx
+\d TestCaseArgsLookupIdx;
 DROP   INDEX TestCaseArgsLookupIdx;
 CREATE INDEX TestCaseArgsLookupIdx ON TestCaseArgs (idTestCase, tsExpire DESC, tsEffective ASC);
-\d TestCaseArgsLookupIdx
+\d TestCaseArgsLookupIdx;
 ANALYZE VERBOSE TestCaseArgs;
 
 
-\d TestGroups_id_index
-DROP   INDEX TestGroups_id_index
+\d TestGroups_id_index;
+DROP   INDEX TestGroups_id_index;
 CREATE INDEX TestGroups_id_index ON TestGroups (idTestGroup, tsExpire DESC, tsEffective ASC);
-\d TestGroups_id_index
-ANALYZE VERBOSE TestGroups_id_index
+\d TestGroups_id_index;
+ANALYZE VERBOSE TestGroups_id_index;
 
 
-\d TestBoxesUuidIdx
+\d TestBoxesUuidIdx;
 DROP          INDEX TestBoxesUuidIdx;
 CREATE UNIQUE INDEX TestBoxesUuidIdx ON TestBoxes (uuidSystem, tsExpire DESC);
-\d TestBoxesUuidIdx
+\d TestBoxesUuidIdx;
 DROP INDEX IF EXISTS TestBoxesExpireEffectiveIdx;
 CREATE INDEX TestBoxesExpireEffectiveIdx ON TestBoxes (tsExpire DESC, tsEffective ASC);
-\d TestBoxesExpireEffectiveIdx
+\d TestBoxesExpireEffectiveIdx;
 ANALYZE VERBOSE TestBoxes;
 
 
@@ -66,13 +66,13 @@ CREATE INDEX BuildBlacklistIdx ON BuildBlacklist (iLastRevision DESC, iFirstRevi
 ANALYZE VERBOSE BuildBlacklist;
 
 
-\d TestResultsNameIdx
+\d TestResultsNameIdx;
 DROP INDEX TestResultsNameIdx;
 CREATE INDEX TestResultsNameIdx ON TestResults (idStrName, tsCreated DESC);
-\d TestResultsNameIdx
+\d TestResultsNameIdx;
 DROP INDEX IF EXISTS TestResultsNameIdx2;
 CREATE INDEX TestResultsNameIdx2 ON TestResults (idTestResult, idStrName);
-\d TestResultsNameIdx2
+\d TestResultsNameIdx2;
 ANALYZE VERBOSE TestResults;
 
 
