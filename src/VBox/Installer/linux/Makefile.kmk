@@ -81,8 +81,6 @@ linux-scripts_INST = $(VBOX_LNX_INST_STAGE_DIR_REL)/
 linux-scripts_MODE = a+rx,u+w
 linux-scripts_SOURCES = \
 	deffiles \
-	install-common.sh \
-	postinst-common.sh \
 	routines.sh \
 	uninstall.sh \
 	vboxautostart-service.sh \
