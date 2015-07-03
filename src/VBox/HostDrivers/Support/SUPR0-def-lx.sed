@@ -38,16 +38,17 @@ $b footer
 
 # Handle trailing selection comment (/* solaris-only, os2-only */). 
 /\*\/ *$/!b transform
-/only-os2/b strip_comment
+/only-os2/b transform
+/only-/!b transform
 d
-:strip_comment
-s/ *\/\*.*$//
      
 :transform
 # Transform the export line, the format is like this:
 #    { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },            /* SED: DATA */
 
 s/^    { "\([^"]*\)",[^}]*}[,].*$/    _\1/
+
+s, */\*.*\*/ *$,,
 b end
 
 :header

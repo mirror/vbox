@@ -38,10 +38,9 @@ $b footer
 
 # Handle trailing selection comment (/* solaris-only, windows-only */). 
 /\*\/ *$/!b transform
-/only-windows/b strip_comment
+/only-windows/b transform
+/only-/!b transform
 d
-:strip_comment
-s/ *\/\*.*$//
      
 :transform
 # Transform the export line, the format is like this:
@@ -50,6 +49,7 @@ s/ *\/\*.*$//
 s/^    { "\([^"]*\)",[^}]*}[,]/    \1/
 
 s,/\* SED: \([A-Z]*\) \*/, \1,
+s, */\*.*\*/ *$,,
 b end
 
 :header
