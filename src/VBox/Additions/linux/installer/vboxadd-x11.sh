@@ -593,7 +593,7 @@ cleanup()
             nobak="true"
         fi
     done
-    if test -n "${nobak}"; then
+    if test -z "${nobak}"; then
         for i in $x11conf_files; do
             if test -r "$i.vbox"; then
                 if test ! "$i" -nt "$i.vbox" -o -n "$legacy"; then
@@ -628,14 +628,27 @@ $failed
 EOF
 
     # Remove X.Org drivers
-    find "$x11_modules_dir" /usr/lib64/xorg/modules /usr/lib/xorg/modules \
-        /usr/X11R6/lib64/modules /usr/X11R6/lib/modules \
-        /usr/X11R6/lib/X11/modules \
-        '(' -name 'vboxvideo_drv*' -o -name 'vboxmouse_drv*' ')' \
-        -exec rm -f '{}' ';' 2>/dev/null
+    modules_dir=`X -showDefaultModulePath 2>&1` || modules_dir=
+    if [ -z "$modules_dir" ]; then
+        for dir in /usr/lib64/xorg/modules /usr/lib/xorg/modules /usr/X11R6/lib64/modules /usr/X11R6/lib/modules /usr/X11R6/lib/X11/modules; do
+            if [ -d $dir ]; then
+                modules_dir=$dir
+                break
+            fi
+        done
+    fi
+    rm -f "$modules_dir/drivers/vboxvideo_drv"* 2>/dev/null
+    rm -f "$modules_dir/input/vboxmouse_drv"* 2>/dev/null
 
     # Remove the link to vboxvideo_dri.so
-    rm -f /usr/lib/dri/vboxvideo_dri.so /usr/lib64/dri/vboxvideo_dri.so 2>/dev/null
+    for dir in /usr/lib/dri /usr/lib32/dri /usr/lib64/dri \
+        /usr/lib/xorg/modules/dri /usr/lib32/xorg/modules/dri \
+        /usr/lib64/xorg/modules/dri /usr/lib/i386-linux-gnu/dri \
+        /usr/lib/x86_64-linux-gnu/dri; do
+        if [ -d $dir ]; then
+            rm -f "$dir/vboxvideo_dri.so" 2>/dev/null
+        fi
+    done
 
     # Remove VBoxClient autostart files
     rm /etc/X11/Xsession.d/98vboxadd-xclient 2>/dev/null
