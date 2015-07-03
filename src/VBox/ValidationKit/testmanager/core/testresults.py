@@ -519,37 +519,17 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
     ksResultsGroupingTypeTestCase   = 'ResultsGroupingTypeTestCase'
     ksResultsGroupingTypeSchedGroup = 'ResultsGroupingTypeSchedGroup'
 
-    ksBaseTables = 'BuildCategories, Builds, TestBoxes, TestResults, TestCases, TestCaseArgs,\n' \
-                 + '       TestSets LEFT OUTER JOIN Builds AS TestSuiteBits\n' \
-                   '                ON TestSets.idBuildTestSuite = TestSuiteBits.idBuild\n';
-
-    ksBasePreCondition = 'TestSets.idTestSet         = TestResults.idTestSet\n' \
-                + '   AND TestResults.idTestResultParent is NULL\n' \
-                + '   AND TestSets.idBuild           = Builds.idBuild\n' \
-                + '   AND Builds.tsExpire            > TestSets.tsCreated\n' \
-                + '   AND Builds.tsEffective        <= TestSets.tsCreated\n' \
-                + '   AND Builds.idBuildCategory     = BuildCategories.idBuildCategory\n' \
-                + '   AND TestSets.idGenTestBox      = TestBoxes.idGenTestBox\n' \
-                + '   AND TestSets.idGenTestCase     = TestCases.idGenTestCase\n' \
-                + '   AND TestSets.idGenTestCaseArgs = TestCaseArgs.idGenTestCaseArgs\n'
     kdResultGroupingMap = {
-        ksResultsGroupingTypeNone:       (ksBaseTables,
-                                          ksBasePreCondition,),
-
-        ksResultsGroupingTypeTestGroup:  (ksBaseTables,
-                                          ksBasePreCondition + '   AND TestSets.idTestGroup',),
-
-        ksResultsGroupingTypeBuildRev:   (ksBaseTables,
-                                          ksBasePreCondition + '   AND Builds.iRevision',),
-
-        ksResultsGroupingTypeTestBox:    (ksBaseTables,
-                                          ksBasePreCondition + '   AND TestSets.idTestBox',),
-
-        ksResultsGroupingTypeTestCase:   (ksBaseTables,
-                                          ksBasePreCondition + '   AND TestSets.idTestCase',),
-
-        ksResultsGroupingTypeSchedGroup: (ksBaseTables,
-                                          ksBasePreCondition + '   AND TestBoxes.idSchedGroup',),
+        ksResultsGroupingTypeNone:       ('TestSets',            None,                      None),
+        ksResultsGroupingTypeTestGroup:  ('TestSets',            'TestSets.idTestGroup',    None),
+        ksResultsGroupingTypeTestBox:    ('TestSets',            'TestSets.idTestBox',      None),
+        ksResultsGroupingTypeTestCase:   ('TestSets',            'TestSets.idTestCase',     None),
+        ksResultsGroupingTypeBuildRev:   ('TestSets, Builds',    'Builds.iRevision',
+                                          ' AND Builds.idBuild      = TestSets.idBuild'
+                                          ' AND Builds.tsExpire     > TestSets.tsCreated'
+                                          ' AND Builds.tsEffective <= TestSets.tsCreated' ),
+        ksResultsGroupingTypeSchedGroup: ('TestSets, TestBoxes', 'TestBoxes.idSchedGroup',
+                                          ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox'),
     }
 
     def _getTimePeriodQueryPart(self, tsNow, sInterval):
@@ -574,40 +554,6 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                      sTsNow, sInterval );
         return sRet
 
-    def _getSqlQueryForGroupSearch(self, sWhat, tsNow, sInterval, enmResultsGroupingType, iResultsGroupingValue, fOnlyFailures):
-        """
-        Returns an SQL query that limits SELECT result
-        in order to satisfy @param enmResultsGroupingType.
-        """
-
-        if enmResultsGroupingType is None:
-            raise TMExceptionBase('Unknown grouping type')
-
-        if enmResultsGroupingType not in self.kdResultGroupingMap:
-            raise TMExceptionBase('Unknown grouping type')
-
-        # Get SQL query parameters
-        sTables, sCondition = self.kdResultGroupingMap[enmResultsGroupingType]
-
-        # Extend SQL query with time period limitation
-        sTimePeriodQuery = self._getTimePeriodQueryPart(tsNow, sInterval)
-
-        if iResultsGroupingValue is not None:
-            sCondition += ' = %d' % iResultsGroupingValue + '\n';
-        sCondition += '   AND ' + sTimePeriodQuery
-
-        # Extend the condition with test status limitations if requested.
-        if fOnlyFailures:
-            sCondition += '\n   AND TestSets.enmStatus != \'success\'::TestStatus_T' \
-                          '\n   AND TestSets.enmStatus != \'running\'::TestStatus_T';
-
-        # Assemble the query.
-        sQuery  = 'SELECT DISTINCT %s\n'  % sWhat
-        sQuery += 'FROM   %s\n'  % sTables
-        sQuery += 'WHERE  %s\n' % sCondition
-
-        return sQuery
-
     def fetchResultsForListing(self, iStart, cMaxRows, tsNow, sInterval, enmResultsGroupingType, iResultsGroupingValue,
                                fOnlyFailures):
         """
@@ -624,46 +570,94 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         Raises exception on error.
         """
 
-        sWhat =        'TestSets.idTestSet,\n' \
-                '       BuildCategories.idBuildCategory,\n' \
-                '       BuildCategories.sProduct,\n' \
-                '       BuildCategories.sRepository,\n' \
-                '       BuildCategories.sBranch,\n' \
-                '       BuildCategories.sType,\n' \
-                '       Builds.idBuild,\n' \
-                '       Builds.sVersion,\n' \
-                '       Builds.iRevision,\n' \
-                '       TestBoxes.sOs,\n' \
-                '       TestBoxes.sOsVersion,\n' \
-                '       TestBoxes.sCpuArch,\n' \
-                '       TestBoxes.sCpuVendor,\n' \
-                '       TestBoxes.sCpuName,\n' \
-                '       TestBoxes.cCpus,\n' \
-                '       TestBoxes.fCpuHwVirt,\n' \
-                '       TestBoxes.fCpuNestedPaging,\n' \
-                '       TestBoxes.fCpu64BitGuest,\n' \
-                '       TestBoxes.idTestBox,\n' \
-                '       TestBoxes.sName,\n' \
-                '       TestResults.tsCreated,\n' \
-                '       COALESCE(TestResults.tsElapsed, CURRENT_TIMESTAMP - TestResults.tsCreated),\n' \
-                '       TestSets.enmStatus,\n' \
-                '       TestResults.cErrors,\n' \
-                '       TestCases.idTestCase,\n' \
-                '       TestCases.sName,\n' \
-                '       TestCases.sBaseCmd,\n' \
-                '       TestCaseArgs.sArgs,\n' \
-                '       TestSuiteBits.idBuild AS idBuildTestSuite,\n' \
-                '       TestSuiteBits.iRevision AS iRevisionTestSuite,\n' \
-                '       (TestSets.tsDone IS NULL) SortRunningFirst' \
-                ;
+        #
+        # Get SQL query parameters
+        #
+        if enmResultsGroupingType is None:
+            raise TMExceptionBase('Unknown grouping type')
+        if enmResultsGroupingType not in self.kdResultGroupingMap:
+            raise TMExceptionBase('Unknown grouping type')
+        sTables, sGroupingField, sGroupingCondition = self.kdResultGroupingMap[enmResultsGroupingType]
 
-        sSqlQuery = self._getSqlQueryForGroupSearch(sWhat, tsNow, sInterval, enmResultsGroupingType, iResultsGroupingValue,
-                                                    fOnlyFailures);
+        #
+        # Construct the query.
+        #
+        sQuery  = 'SELECT DISTINCT TestSets.idTestSet,\n' \
+                  '       BuildCategories.idBuildCategory,\n' \
+                  '       BuildCategories.sProduct,\n' \
+                  '       BuildCategories.sRepository,\n' \
+                  '       BuildCategories.sBranch,\n' \
+                  '       BuildCategories.sType,\n' \
+                  '       Builds.idBuild,\n' \
+                  '       Builds.sVersion,\n' \
+                  '       Builds.iRevision,\n' \
+                  '       TestBoxes.sOs,\n' \
+                  '       TestBoxes.sOsVersion,\n' \
+                  '       TestBoxes.sCpuArch,\n' \
+                  '       TestBoxes.sCpuVendor,\n' \
+                  '       TestBoxes.sCpuName,\n' \
+                  '       TestBoxes.cCpus,\n' \
+                  '       TestBoxes.fCpuHwVirt,\n' \
+                  '       TestBoxes.fCpuNestedPaging,\n' \
+                  '       TestBoxes.fCpu64BitGuest,\n' \
+                  '       TestBoxes.idTestBox,\n' \
+                  '       TestBoxes.sName,\n' \
+                  '       TestResults.tsCreated,\n' \
+                  '       COALESCE(TestResults.tsElapsed, CURRENT_TIMESTAMP - TestResults.tsCreated),\n' \
+                  '       TestSets.enmStatus,\n' \
+                  '       TestResults.cErrors,\n' \
+                  '       TestCases.idTestCase,\n' \
+                  '       TestCases.sName,\n' \
+                  '       TestCases.sBaseCmd,\n' \
+                  '       TestCaseArgs.sArgs,\n' \
+                  '       TestSuiteBits.idBuild AS idBuildTestSuite,\n' \
+                  '       TestSuiteBits.iRevision AS iRevisionTestSuite,\n' \
+                  '       (TestSets.tsDone IS NULL) SortRunningFirst\n' \
+                  'FROM   BuildCategories,\n' \
+                  '       Builds,\n' \
+                  '       TestBoxes,\n' \
+                  '       TestResults,\n' \
+                  '       TestCases,\n' \
+                  '       TestCaseArgs,\n' \
+                  '       (  SELECT TestSets.idTestSet AS idTestSet,\n' \
+                  '                 TestSets.tsDone AS tsDone,\n' \
+                  '                 TestSets.tsCreated AS tsCreated,\n' \
+                  '                 TestSets.enmStatus AS enmStatus,\n' \
+                  '                 TestSets.idBuild AS idBuild,\n' \
+                  '                 TestSets.idBuildTestSuite AS idBuildTestSuite,\n' \
+                  '                 TestSets.idGenTestBox AS idGenTestBox,\n' \
+                  '                 TestSets.idGenTestCase AS idGenTestCase,\n' \
+                  '                 TestSets.idGenTestCaseArgs AS idGenTestCaseArgs\n' \
+                  '          FROM  ' + sTables + '\n' \
+                  '          WHERE ' + self._getTimePeriodQueryPart(tsNow, sInterval);
+        if fOnlyFailures:
+            sQuery += '            AND TestSets.enmStatus != \'success\'::TestStatus_T' \
+                      '            AND TestSets.enmStatus != \'running\'::TestStatus_T';
+        if sGroupingField is not None:
+            sQuery += '            AND %s = %d\n' % (sGroupingField, iResultsGroupingValue,);
+        if sGroupingCondition is not None:
+            sQuery += sGroupingCondition.replace(' AND ', '            AND ');
+        sQuery += '          ORDER BY (TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n' \
+                  '          LIMIT %s OFFSET %s\n' % (cMaxRows, iStart,);
 
-        sSqlQuery += 'ORDER BY SortRunningFirst DESC, TestSets.idTestSet DESC\n';
-        sSqlQuery += 'LIMIT %s OFFSET %s\n' % (cMaxRows, iStart,);
+        sQuery += '       ) AS TestSets\n' \
+                  '       LEFT OUTER JOIN Builds AS TestSuiteBits\n' \
+                  '                    ON TestSets.idBuildTestSuite = TestSuiteBits.idBuild\n' \
+                  'WHERE  TestSets.idTestSet         = TestResults.idTestSet\n' \
+                  '   AND TestResults.idTestResultParent is NULL\n' \
+                  '   AND TestSets.idBuild           = Builds.idBuild\n' \
+                  '   AND Builds.tsExpire            > TestSets.tsCreated\n' \
+                  '   AND Builds.tsEffective        <= TestSets.tsCreated\n' \
+                  '   AND Builds.idBuildCategory     = BuildCategories.idBuildCategory\n' \
+                  '   AND TestSets.idGenTestBox      = TestBoxes.idGenTestBox\n' \
+                  '   AND TestSets.idGenTestCase     = TestCases.idGenTestCase\n' \
+                  '   AND TestSets.idGenTestCaseArgs = TestCaseArgs.idGenTestCaseArgs\n' \
+                  'ORDER BY (TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n'
 
-        self._oDb.execute(sSqlQuery);
+        #
+        # Execute the query and return the wrapped results.
+        #
+        self._oDb.execute(sQuery);
 
         aoRows = [];
         for aoRow in self._oDb.fetchAll():
@@ -683,9 +677,34 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         @param iResultsGroupingValue is ignored.
         """
 
-        sSqlQuery = self._getSqlQueryForGroupSearch('COUNT(TestSets.idTestSet)', tsNow, sInterval,
-                                                    enmResultsGroupingType, iResultsGroupingValue, fOnlyFailures)
-        self._oDb.execute(sSqlQuery)
+        #
+        # Get SQL query parameters
+        #
+        if enmResultsGroupingType is None:
+            raise TMExceptionBase('Unknown grouping type')
+
+        if enmResultsGroupingType not in self.kdResultGroupingMap:
+            raise TMExceptionBase('Unknown grouping type')
+        sTables, sGroupingField, sGroupingCondition  = self.kdResultGroupingMap[enmResultsGroupingType]
+
+        #
+        # Construct the query.
+        #
+        sQuery = 'SELECT COUNT(idTestSet)\n' \
+                 'FROM   ' + sTables + '\n' \
+                 'WHERE  ' + self._getTimePeriodQueryPart(tsNow, sInterval);
+        if fOnlyFailures:
+            sQuery += '   AND TestSets.enmStatus != \'success\'::TestStatus_T' \
+                      '   AND TestSets.enmStatus != \'running\'::TestStatus_T';
+        if sGroupingField is not None:
+            sQuery += '   AND %s = %d\n' % (sGroupingField, iResultsGroupingValue,);
+        if sGroupingCondition is not None:
+            sQuery += sGroupingCondition.replace(' AND ', '   AND ');
+
+        #
+        # Execute the query and return the result.
+        #
+        self._oDb.execute(sQuery)
         return self._oDb.fetchOne()[0]
 
     def getTestGroups(self, tsNow, sPeriod):
