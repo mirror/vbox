@@ -31,7 +31,6 @@
 #include <VBox/vmm/pdmapi.h>
 
 #include <iprt/asm-amd64-x86.h>
-#include <iprt/spinlock.h>
 
 
 /**
