@@ -2338,7 +2338,7 @@ static int vbvaHandleEnable(PVGASTATE pVGAState, const VBVAENABLE *pVbvaEnable, 
 
         if (RT_FAILURE(rc))
         {
-            LogRel(("VBVA: can not enable: %Rrc\n", rc));
+            LogRelMax(8, ("VBVA: can not enable: %Rrc\n", rc));
         }
     }
     else if ((parms.u32Flags & (VBVA_F_ENABLE | VBVA_F_DISABLE)) == VBVA_F_DISABLE)
