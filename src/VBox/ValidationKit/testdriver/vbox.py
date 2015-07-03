@@ -2039,10 +2039,11 @@ class TestDriver(base.TestDriver):                                              
                 except:
                     raise;
             except:
+                reporter.logXcpt();
                 if self.fpApiVer >= 4.0:
                     try:
                         if self.fpApiVer >= 4.3:
-                            oProgress = oVM.deleteConfig(None);
+                            oProgress = oVM.deleteConfig([]);
                         else:
                             oProgress = oVM.delete(None);
                         self.waitOnProgress(oProgress);
@@ -2106,7 +2107,7 @@ class TestDriver(base.TestDriver):                                              
             if self.fpApiVer >= 4.0:
                 try:
                     if self.fpApiVer >= 4.3:
-                        oProgress = oVM.deleteConfig(None);
+                        oProgress = oVM.deleteConfig([]);
                     else:
                         oProgress = oVM.delete(None);
                     self.waitOnProgress(oProgress);
