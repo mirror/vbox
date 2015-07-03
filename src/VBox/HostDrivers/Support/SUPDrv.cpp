@@ -133,6 +133,10 @@ static int                  supdrvIOCtl_ResumeSuspendedKbds(void);
  *
  * While making changes to these exports, make sure to update the IOC
  * minor version (SUPDRV_IOC_VERSION).
+ *
+ * @remarks This array is processed by SUPR0-def-pe.sed and SUPR0-def-lx.sed to
+ *          produce definition files from which import libraries are generated.
+ *          Take care when commenting things and especially with \#ifdef'ing.
  */
 static SUPFUNC g_aFunctions[] =
 {
