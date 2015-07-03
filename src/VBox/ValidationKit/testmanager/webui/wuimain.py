@@ -175,7 +175,7 @@ class WuiMain(WuiDispatcherBase):
         ( '1 year',   'One year',    365 * 24 ),
     ];
     ## The default test result period.
-    ksResultPeriodDefault = '3 hours';
+    ksResultPeriodDefault = '6 hours';
 
 
 
