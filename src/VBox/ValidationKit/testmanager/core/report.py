@@ -609,10 +609,9 @@ class ReportGraphModel(ReportModelBase): # pylint: disable=R0903
         self._oDb.execute('SELECT   DISTINCT *\n'
                           'FROM     BuildCategories\n'
                           'WHERE    idBuildCategory IN (\n'
-                          '   SELECT DISTINCT Builds.idBuildCategory\n'
-                          '   FROM  TestSets, Builds\n'
+                          '   SELECT DISTINCT idBuildCategory\n'
+                          '   FROM  TestSets\n'
                           '   WHERE ' + self._getEligibleTestSetPeriod(fLeadingAnd = False) +
-                          '     AND TestSets.idBuild       = Builds.idBuild\n'
                           ')\n'
                           + sSelectedBuildCats +
                           'ORDER BY sProduct,\n'
