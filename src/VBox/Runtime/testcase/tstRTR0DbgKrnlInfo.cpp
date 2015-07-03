@@ -64,6 +64,8 @@ DECLEXPORT(int) TSTR0DbgKrnlInfoSrvReqHandler(PSUPDRVSESSION pSession, uint32_t 
     /*
      * The big switch.
      */
+    bool fSavedMayPanic = RTAssertSetMayPanic(false); /* Don't crash the host with strict builds! */
+    RTDBGKRNLINFO hKrnlInfo = NIL_RTDBGKRNLINFO;
     switch (uOperation)
     {
         case TSTRTR0DBGKRNLINFO_SANITY_OK:
@@ -75,7 +77,6 @@ DECLEXPORT(int) TSTR0DbgKrnlInfoSrvReqHandler(PSUPDRVSESSION pSession, uint32_t 
 
         case TSTRTR0DBGKRNLINFO_BASIC:
         {
-            RTDBGKRNLINFO hKrnlInfo;
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoOpen(&hKrnlInfo, 1), VERR_INVALID_PARAMETER);
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoOpen(NULL, 0), VERR_INVALID_PARAMETER);
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0), VINF_SUCCESS);
@@ -90,6 +91,12 @@ DECLEXPORT(int) TSTR0DbgKrnlInfoSrvReqHandler(PSUPDRVSESSION pSession, uint32_t 
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQuerySymbol(NULL, "Test", "Test", &pvSymbol), VERR_INVALID_HANDLE);
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, "TestModule", "Test", &pvSymbol), VERR_MODULE_NOT_FOUND);
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, NULL, &pvSymbol), VERR_INVALID_PARAMETER);
+
+            RTDBGKRNLINFO hTmp = hKrnlInfo;
+            hKrnlInfo = NIL_RTDBGKRNLINFO;
+            RTR0DbgKrnlInfoRelease(hKrnlInfo);
+            uint32_t cRefs;
+            RTR0TESTR0_CHECK_MSG((cRefs = RTR0DbgKrnlInfoRelease(hKrnlInfo)) == 0, ("cRefs=%#x", cRefs));
             break;
         }
 
@@ -100,6 +107,9 @@ DECLEXPORT(int) TSTR0DbgKrnlInfoSrvReqHandler(PSUPDRVSESSION pSession, uint32_t 
             RTStrPrintf(pszErr, cchErr, "!Unknown test #%d", uOperation);
             break;
     }
+    if (hKrnlInfo != NIL_RTDBGKRNLINFO)
+        RTR0DbgKrnlInfoRelease(hKrnlInfo);
+    RTAssertSetMayPanic(fSavedMayPanic);
 
     /* The error indicator is the '!' in the message buffer. */
     return VINF_SUCCESS;
