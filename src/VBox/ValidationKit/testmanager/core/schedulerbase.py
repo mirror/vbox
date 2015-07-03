@@ -611,8 +611,8 @@ class SchedulerBase(object):
             if len(oData.aoArgsVariations) > 0:
                 aoItems = self._recreateQueueItems(oData);
                 self.msgDebug('len(aoItems)=%s' % (len(aoItems),));
-                for i in range(len(aoItems)):
-                    self.msgDebug('aoItems[%2d]=%s' % (i, aoItems[i]));
+                #for i in range(len(aoItems)):
+                #    self.msgDebug('aoItems[%2d]=%s' % (i, aoItems[i]));
             if len(aoItems) > 0:
                 self._oDb.execute('SELECT offQueue FROM SchedQueues WHERE idSchedGroup = %s ORDER BY idItem LIMIT 1'
                                   , (self._oSchedGrpData.idSchedGroup,));
@@ -632,25 +632,30 @@ class SchedulerBase(object):
             #
             self._recreateQueueCancelGatherings();
             self._oDb.execute('DELETE FROM SchedQueues WHERE idSchedGroup = %s\n', (self._oSchedGrpData.idSchedGroup,));
-            for oItem in aoItems:
-                self._oDb.execute('INSERT INTO SchedQueues (\n'
+            self._oDb.insertList('INSERT INTO SchedQueues (\n'
                                   '         idSchedGroup,\n'
                                   '         offQueue,\n'
                                   '         idGenTestCaseArgs,\n'
                                   '         idTestGroup,\n'
                                   '         aidTestGroupPreReqs,\n'
                                   '         bmHourlySchedule,\n'
-                                  '         cMissingGangMembers )\n'
-                                  'VALUES ( %s, %s, %s, %s, %s, %s, %s )\n'
-                                  , ( oItem.idSchedGroup,
-                                      oItem.offQueue,
-                                      oItem.idGenTestCaseArgs,
-                                      oItem.idTestGroup,
-                                      oItem.aidTestGroupPreReqs if len(oItem.aidTestGroupPreReqs) > 0 else None,
-                                      oItem.bmHourlySchedule,
-                                      oItem.cMissingGangMembers
-                                  ));
+                                  '         cMissingGangMembers )\n',
+                                 aoItems, self._formatItemForInsert);
         return (aoErrors, self._asMessages);
+
+    def _formatItemForInsert(self, oItem):
+        """
+        Used by recreateQueueWorker together with TMDatabaseConnect::insertList
+        """
+        return self._oDb.formatBindArgs('(%s,%s,%s,%s,%s,%s,%s)'
+                                        , ( oItem.idSchedGroup,
+                                            oItem.offQueue,
+                                            oItem.idGenTestCaseArgs,
+                                            oItem.idTestGroup,
+                                            oItem.aidTestGroupPreReqs if len(oItem.aidTestGroupPreReqs) > 0 else None,
+                                            oItem.bmHourlySchedule,
+                                            oItem.cMissingGangMembers
+                                        ));
 
     @staticmethod
     def recreateQueue(oDb, uidAuthor, idSchedGroup, iVerbosity = 1):
@@ -663,6 +668,12 @@ class SchedulerBase(object):
 
         Raises exception database error.
         """
+
+        aoExtraMsgs = [];
+        if oDb.debugIsExplainEnabled():
+            aoExtraMsgs += ['Warning! Disabling SQL explain to avoid deadlocking against locked tables.'];
+            oDb.debugDisableExplain();
+
         aoErrors   = [];
         asMessages = [];
         try:
@@ -695,7 +706,7 @@ class SchedulerBase(object):
             oDb.rollback();
             raise;
 
-        return (aoErrors, asMessages);
+        return (aoErrors, aoExtraMsgs + asMessages);
 
 
 
