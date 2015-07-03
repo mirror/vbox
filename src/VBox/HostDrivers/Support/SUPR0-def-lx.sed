@@ -36,6 +36,14 @@ $b footer
 # Drop all lines not specifying an export.
 /^    { "/!d
 
+# Handle trailing selection comment (/* solaris-only, os2-only */). 
+/\*\/ *$/!b transform
+/only-os2/b strip_comment
+d
+:strip_comment
+s/ *\/\*.*$//
+     
+:transform
 # Transform the export line, the format is like this:
 #    { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },            /* SED: DATA */
 
