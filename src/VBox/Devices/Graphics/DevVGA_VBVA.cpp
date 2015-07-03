@@ -568,11 +568,18 @@ static int vbvaEnable(unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx
         return VERR_INVALID_PARAMETER;
     }
 
-    if (   parms.off32Data != 0
-        || parms.off32Free != 0
-        || parms.indexRecordFirst != 0
-        || parms.indexRecordFree != 0
-        || parms.cbPartialWriteThreshold >= parms.cbData
+    if (!fRestored)
+    {
+        if (   parms.off32Data != 0
+            || parms.off32Free != 0
+            || parms.indexRecordFirst != 0
+            || parms.indexRecordFree != 0)
+        {
+            return VERR_INVALID_PARAMETER;
+        }
+    }
+
+    if (   parms.cbPartialWriteThreshold >= parms.cbData
         || parms.cbPartialWriteThreshold == 0)
     {
         return VERR_INVALID_PARAMETER;
@@ -598,8 +605,8 @@ static int vbvaEnable(unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx
         pVBVAData->guest.pVBVA             = pVBVA;
         pVBVAData->guest.pu8Data           = &pVBVA->au8Data[0];
         pVBVAData->u32VBVAOffset           = u32Offset;
-        pVBVAData->off32Data               = 0;
-        pVBVAData->indexRecordFirst        = 0;
+        pVBVAData->off32Data               = parms.off32Data;
+        pVBVAData->indexRecordFirst        = parms.indexRecordFirst;
         pVBVAData->cbPartialWriteThreshold = parms.cbPartialWriteThreshold;
         pVBVAData->cbData                  = parms.cbData;
 
