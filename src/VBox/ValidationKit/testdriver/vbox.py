@@ -2010,7 +2010,7 @@ class TestDriver(base.TestDriver):                                              
     # VM Api wrappers that logs errors, hides exceptions and other details.
     #
 
-    # pylint: disable=R0913,R0914
+    # pylint: disable=R0913,R0914,R0915
     def createTestVM(self, sName, iGroup, sHd = None, cMbRam = None, cCpus = 1, fVirtEx = None, fNestedPaging = None, \
                      sDvdImage = None, sKind = "Other", fIoApic = None, fPae = None, fFastBootLogo = True, \
                      eNic0Type = None, eNic0AttachType = None, sNic0NetName = 'default', sNic0MacAddr = 'grouped', \
@@ -2123,7 +2123,7 @@ class TestDriver(base.TestDriver):                                              
         self.aoVMs.append(oVM);
         self.logVmInfo(oVM); # testing...
         return oVM;
-    # pylint: enable=R0913,R0914
+    # pylint: enable=R0913,R0914,R0915
 
     def addTestMachine(self, sNameOrId, fQuiet = False):
         """
