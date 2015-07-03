@@ -302,7 +302,8 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     }
 
     DWORD dwEffect;
-    LogRel3(("DnD: dwOKEffects=0x%x\n", dwOKEffects));
+    LogRel2(("DnD: Starting drag and drop operation\n", dwOKEffects));
+    LogRel3(("DnD: DoDragDrop dwOKEffects=0x%x\n", dwOKEffects));
     HRESULT hr = ::DoDragDrop(pDataObject, pDropSource, dwOKEffects, &dwEffect);
     LogRel3(("DnD: DoDragDrop ended with hr=%Rhrc, dwEffect=%RI32\n", hr, dwEffect));
 
@@ -406,14 +407,17 @@ int UIDnDHandler::dragCheckPending(ulong screenID)
     LogRel3(("DnD: Default action is: 0x%x\n", m_dataSource.defaultAction));
     LogRel3(("DnD: Number of supported guest actions: %d\n", m_dataSource.vecActions.size()));
         for (int i = 0; i < m_dataSource.vecActions.size(); i++)
-            LogRel3(("\tAction %d: 0x%x\n", i, m_dataSource.vecActions.at(i)));
+            LogRel3(("DnD: \tAction %d: 0x%x\n", i, m_dataSource.vecActions.at(i)));
 
     LogRel3(("DnD: Number of supported guest formats: %d\n", vecFormats.size()));
         for (int i = 0; i < vecFormats.size(); i++)
         {
             const QString &strFmtGuest = vecFormats.at(i);
-            LogRel3(("\tFormat %d: %s\n", i, strFmtGuest.toAscii().constData()));
+            LogRel3(("DnD: \tFormat %d: %s\n", i, strFmtGuest.toAscii().constData()));
         }
+
+    LogFlowFunc(("defaultAction=0x%x, vecFormatsSize=%d, vecActionsSize=%d\n",
+                 m_dataSource.defaultAction, vecFormats.size(), m_dataSource.vecActions.size()));
 
     if (   m_dataSource.defaultAction != KDnDAction_Ignore
         && vecFormats.size())
