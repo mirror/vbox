@@ -119,6 +119,10 @@ class TMDatabaseCursor(object):
         """ See TMDatabaseConnection.callProc()"""
         return self._oDb.callProcInternal(self._oCursor, sProcedure, aoArgs, utils.getCallerName());
 
+    def insertList(self, sInsertSql, aoList, fnEntryFmt):
+        """ See TMDatabaseConnection.insertList. """
+        return self._oDb.insertListInternal(self._oCursor, sInsertSql, aoList, fnEntryFmt, utils.getCallerName());
+
     def fetchOne(self):
         """Wrapper around Psycopg2.cursor.fetchone."""
         return self._oCursor.fetchone();
@@ -383,6 +387,21 @@ class TMDatabaseConnection(object):
 
         return oRc;
 
+    def insertListInternal(self, oCursor, sInsertSql, aoList, fnEntryFmt, sCallerName):
+        """
+        Optimizes the insertion of a list of values.
+        """
+        oRc = None;
+        asValues = [];
+        for aoEntry in aoList:
+            asValues.append(fnEntryFmt(aoEntry));
+            if len(asValues) > 256:
+                oRc = self.executeInternal(oCursor, sInsertSql + 'VALUES' + ', '.join(asValues), None, sCallerName);
+                asValues = [];
+        if len(asValues) > 0:
+            oRc = self.executeInternal(oCursor, sInsertSql + 'VALUES' + ', '.join(asValues), None, sCallerName);
+        return oRc
+
     def _fetchOne(self, oCursor):
         """Wrapper around Psycopg2.cursor.fetchone."""
         oRow = oCursor.fetchone()
@@ -424,6 +443,12 @@ class TMDatabaseConnection(object):
         collect data for traceback.
         """
         return self.callProcInternal(self._oCursor, sProcedure, aoArgs, utils.getCallerName());
+
+    def insertList(self, sInsertSql, aoList, fnEntryFmt):
+        """
+        Optimizes the insertion of a list of values.
+        """
+        return self.insertListInternal(self._oCursor, sInsertSql, aoList, fnEntryFmt, utils.getCallerName());
 
     def fetchOne(self):
         """Wrapper around Psycopg2.cursor.fetchone."""
@@ -627,4 +652,14 @@ class TMDatabaseConnection(object):
             self._oExplainConn  = psycopg2.connect(**dArgs); # pylint: disable=W0142
             self._oExplainCursor = self._oExplainConn.cursor();
         return True;
+
+    def debugDisableExplain(self):
+        """ Disables explain. """
+        self._oExplainCursor = None;
+        self._oExplainConn   = None
+        return True;
+
+    def debugIsExplainEnabled(self):
+        """ Check if explaining of SQL statements is enabled. """
+        return self._oExplainConn is not None;
 
