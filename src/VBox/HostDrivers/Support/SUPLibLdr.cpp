@@ -95,8 +95,10 @@ static RTR0PTR                  g_pvVMMR0 = NIL_RTR0PTR;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler, void **ppvImageBase);
-static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
+static int               supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler,
+                                       PRTERRINFO pErrInfo, void **ppvImageBase);
+static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol,
+                                                    unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
 
 
 SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase, PRTERRINFO pErrInfo)
@@ -107,7 +109,7 @@ SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, v
     int rc = SUPR3HardenedVerifyPlugIn(pszFilename, pErrInfo);
     if (RT_SUCCESS(rc))
     {
-        rc = supLoadModule(pszFilename, pszModule, NULL, ppvImageBase);
+        rc = supLoadModule(pszFilename, pszModule, NULL, pErrInfo, ppvImageBase);
         if (RT_FAILURE(rc))
             RTErrInfoSetF(pErrInfo, rc, "SUPR3LoadModule: supLoadModule returned %Rrc", rc);
     }
@@ -125,12 +127,21 @@ SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszMo
      */
     int rc = SUPR3HardenedVerifyPlugIn(pszFilename, NULL /*pErrInfo*/);
     if (RT_SUCCESS(rc))
-        rc = supLoadModule(pszFilename, pszModule, pszSrvReqHandler, ppvImageBase);
+        rc = supLoadModule(pszFilename, pszModule, pszSrvReqHandler, NULL /*pErrInfo*/, ppvImageBase);
     else
         LogRel(("SUPR3LoadServiceModule: Verification of \"%s\" failed, rc=%Rrc\n", rc));
     return rc;
 }
 
+
+/**
+ * Argument package for supLoadModuleResolveImport.
+ */
+typedef struct SUPLDRRESIMPARGS
+{
+    const char *pszModule;
+    PRTERRINFO  pErrInfo;
+} SUPLDRRESIMPARGS, *PSUPLDRRESIMPARGS;
 
 /**
  * Resolve an external symbol during RTLdrGetBits().
@@ -146,9 +157,10 @@ SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszMo
 static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char *pszModule,
                                                     const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
 {
-    NOREF(hLdrMod); NOREF(pvUser); NOREF(uSymbol);
+    NOREF(hLdrMod); NOREF(uSymbol);
     AssertPtr(pValue);
     AssertPtr(pvUser);
+    PSUPLDRRESIMPARGS pArgs = (PSUPLDRRESIMPARGS)pvUser;
 
     /*
      * Only SUPR0 and VMMR0.r0
@@ -158,17 +170,19 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
         &&  strcmp(pszModule, "VBoxDrv.sys")
         &&  strcmp(pszModule, "VMMR0.r0"))
     {
-        AssertMsgFailed(("%s is importing from %s! (expected 'SUPR0.dll' or 'VMMR0.r0', case-sensitive)\n", pvUser, pszModule));
-        return VERR_SYMBOL_NOT_FOUND;
+        AssertMsgFailed(("%s is importing from %s! (expected 'SUPR0.dll' or 'VMMR0.r0', case-sensitive)\n", pArgs->pszModule, pszModule));
+        return RTErrInfoSetF(pArgs->pErrInfo, VERR_SYMBOL_NOT_FOUND,
+                             "Unexpected import module '%s' in '%s'", pszModule, pArgs->pszModule);
     }
 
     /*
      * No ordinals.
      */
-    if (pszSymbol < (const char*)0x10000)
+    if (uSymbol != ~0U)
     {
-        AssertMsgFailed(("%s is importing by ordinal (ord=%d)\n", pvUser, (int)(uintptr_t)pszSymbol));
-        return VERR_SYMBOL_NOT_FOUND;
+        AssertMsgFailed(("%s is importing by ordinal (ord=%d)\n", pArgs->pszModule, uSymbol));
+        return RTErrInfoSetF(pArgs->pErrInfo, VERR_SYMBOL_NOT_FOUND,
+                             "Unexpected ordinal import (%#x) in '%s'", uSymbol, pArgs->pszModule);
     }
 
     /*
@@ -253,14 +267,19 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
         RTAssertMsg2Weak("%d: %s\n", g_pSupFunctions->u.Out.cFunctions - c, pFunc->szName);
         pFunc++;
     }
+    RTAssertMsg2Weak("%s is importing %s which we couldn't find\n", pArgs->pszModule, pszSymbol);
 
-    AssertLogRelMsgFailed(("%s is importing %s which we couldn't find\n", pvUser, pszSymbol));
+    AssertLogRelMsgFailed(("%s is importing %s which we couldn't find\n", pArgs->pszModule, pszSymbol));
     if (g_uSupFakeMode)
     {
         *pValue = 0xdeadbeef;
         return VINF_SUCCESS;
     }
-    return VERR_SYMBOL_NOT_FOUND;
+    return RTErrInfoSetF(pArgs->pErrInfo, VERR_SYMBOL_NOT_FOUND,
+                         "Unable to local imported symbol '%s%s%s' for module '%s'",
+                         pszModule ? pszModule : "",
+                         pszModule && *pszModule ? "." : "",
+                         pArgs->pszModule);
 }
 
 
@@ -330,7 +349,8 @@ static DECLCALLBACK(int) supLoadModuleCreateTabsCB(RTLDRMOD hLdrMod, const char 
  * @returns VBox status code.
  * @param   pszFilename     Name of the VMMR0 image file
  */
-static int supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler, void **ppvImageBase)
+static int supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler,
+                         PRTERRINFO pErrInfo, void **ppvImageBase)
 {
     int rc;
 
@@ -412,8 +432,10 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                 /*
                  * Get the image bits.
                  */
+
+                SUPLDRRESIMPARGS Args = { pszModule, pErrInfo };
                 rc = RTLdrGetBits(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase,
-                                  supLoadModuleResolveImport, (void *)pszModule);
+                                  supLoadModuleResolveImport, &Args);
 
                 if (RT_SUCCESS(rc))
                 {
