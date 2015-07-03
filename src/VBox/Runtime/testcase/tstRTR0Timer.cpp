@@ -486,10 +486,10 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             break;
         }
 
-#if !defined(RT_OS_SOLARIS) /* Not expected to work on all hosts. */
         case TSTRTR0TIMER_ONE_SHOT_RESTART:
         case TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES:
         {
+#if !defined(RT_OS_SOLARIS) /* Not expected to work on all hosts. */
             /* Create a one-shot timer and restart it in the callback handler. */
             PRTTIMER pTimer;
             uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
@@ -515,14 +515,17 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 } while (0);
                 RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
             }
+#else
+            RTR0TestR0Info("restarting from callback not supported on this platform\n");
+
+#endif
             break;
         }
-#endif
 
-#if !defined(RT_OS_SOLARIS) && !defined(RT_OS_WINDOWS) /* Not expected to work on all hosts. */
         case TSTRTR0TIMER_ONE_SHOT_DESTROY:
         case TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES:
         {
+#if !defined(RT_OS_SOLARIS) && !defined(RT_OS_WINDOWS) /* Not expected to work on all hosts. */
             /* Create a one-shot timer and destroy it in the callback handler. */
             PRTTIMER pTimer;
             uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
@@ -551,9 +554,11 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 if (RT_FAILURE(State.rc))
                     RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
             }
+#else
+            RTR0TestR0Info("destroying from callback not supported on this platform\n");
+#endif
             break;
         }
-#endif
 
         case TSTRTR0TIMER_ONE_SHOT_SPECIFIC:
         case TSTRTR0TIMER_ONE_SHOT_SPECIFIC_HIRES:
