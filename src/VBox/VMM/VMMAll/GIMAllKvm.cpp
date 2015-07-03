@@ -232,7 +232,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
             Assert(pVM->cCpus == 1);
             if (fEnable)
             {
-                RTCCUINTREG fEFlags = ASMIntDisableFlags();
+                RTCCUINTREG fEFlags  = ASMIntDisableFlags();
                 pKvmCpu->uTsc        = TMCpuTickGetNoCheck(pVCpu) | UINT64_C(1);
                 pKvmCpu->uVirtNanoTS = TMVirtualGetNoCheck(pVM)   | UINT64_C(1);
                 ASMSetFlags(fEFlags);
