@@ -174,6 +174,10 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First);
 /**
  * Stops an active timer.
  *
+ * @todo    May return while the timer callback function is being services on
+ *          some platforms (ring-0 Windows, ring-0 linux).  This needs to be
+ *          addressed at some point...
+ *
  * @returns IPRT status code.
  * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
  * @retval  VERR_TIMER_SUSPENDED if the timer isn't active.

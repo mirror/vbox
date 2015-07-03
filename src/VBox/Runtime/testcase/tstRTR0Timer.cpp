@@ -632,6 +632,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicUoReadU32(&State.cShots) == 10, ("cShots=%u\n", State.cShots));
                 if (tstRTR0TimerCheckShotIntervals(&State, uStartNsTS, u10HzAsNsMin, u10HzAsNsMax))
                     break;
+                RTThreadSleep(1); /** @todo RTTimerStop doesn't currently make sure the timer callback not is running
+                                   *        before returning on windows, linux (low res) and possible other plaforms. */
             }
             RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
             RTR0TESTR0_CHECK_RC(RTTimerDestroy(NULL), VINF_SUCCESS);
@@ -658,6 +660,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     for (uint32_t k = 0; k < 1000 && ASMAtomicUoReadU32(&State.cShots) < 2; k++)
                         RTThreadSleep(1);
                     RTR0TESTR0_CHECK_RC_BREAK(RTTimerStop(pTimer), VINF_SUCCESS);
+                    RTThreadSleep(1); /** @todo RTTimerStop doesn't currently make sure the timer callback not is running
+                                       *        before returning on windows, linux (low res) and possible other plaforms. */
                 }
                 RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
             }
@@ -758,6 +762,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                         RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicReadU32(&State.cShots) > 5,
                                                    ("cShots=%u iCpu=%u i=%u iCurCpu=%u cNsElapsed=%'llu\n",
                                                     State.cShots, iCpu, i, RTMpCpuIdToSetIndex(RTMpCpuId()), cNsElapsed));
+                        RTThreadSleep(1); /** @todo RTTimerStop doesn't currently make sure the timer callback not is running
+                                           *        before returning on windows, linux (low res) and possible other plaforms. */
                         RTR0TESTR0_CHECK_MSG_BREAK(State.rc == VINF_SUCCESS, ("rc=%Rrc\n", State.rc));
                         RTR0TESTR0_CHECK_MSG_BREAK(!State.u.Specific.fFailed, ("iCpu=%u i=%u\n", iCpu, i));
                     }
