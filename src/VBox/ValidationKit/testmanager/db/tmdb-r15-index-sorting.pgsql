@@ -46,7 +46,7 @@ ANALYZE VERBOSE TestCaseArgs;
 DROP   INDEX TestGroups_id_index;
 CREATE INDEX TestGroups_id_index ON TestGroups (idTestGroup, tsExpire DESC, tsEffective ASC);
 \d TestGroups_id_index;
-ANALYZE VERBOSE TestGroups_id_index;
+ANALYZE VERBOSE TestGroups;
 
 
 \d TestBoxesUuidIdx;
