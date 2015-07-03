@@ -446,6 +446,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             if (rc == VERR_NOT_SUPPORTED)
             {
                 RTR0TestR0Info("one-shot timer are not supported, skipping\n");
+                RTR0TESTR0_SKIP();
                 break;
             }
             RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
@@ -499,6 +500,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 if (rc == VERR_NOT_SUPPORTED)
                 {
                     RTR0TestR0Info("one-shot timer are not supported, skipping\n");
+                    RTR0TESTR0_SKIP();
                     break;
                 }
                 RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
@@ -517,7 +519,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             }
 #else
             RTR0TestR0Info("restarting from callback not supported on this platform\n");
-
+            RTR0TESTR0_SKIP();
 #endif
             break;
         }
@@ -535,6 +537,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 if (rc == VERR_NOT_SUPPORTED)
                 {
                     RTR0TestR0Info("one-shot timer are not supported, skipping\n");
+                    RTR0TESTR0_SKIP();
                     break;
                 }
                 RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
@@ -556,6 +559,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             }
 #else
             RTR0TestR0Info("destroying from callback not supported on this platform\n");
+            RTR0TESTR0_SKIP();
 #endif
             break;
         }
@@ -581,6 +585,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     if (rc == VERR_NOT_SUPPORTED)
                     {
                         RTR0TestR0Info("one-shot specific timer are not supported, skipping\n");
+                        RTR0TESTR0_SKIP();
                         break;
                     }
                     RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
@@ -711,6 +716,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             {
                 RTR0TestR0Info("RTTimerChangeInterval not supported, skipped");
                 RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+                RTR0TESTR0_SKIP();
                 break;
             }
 
@@ -751,6 +757,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     if (rc == VERR_NOT_SUPPORTED)
                     {
                         RTR0TestR0Info("specific timer are not supported, skipping\n");
+                        RTR0TESTR0_SKIP();
                         break;
                     }
                     RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
