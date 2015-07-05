@@ -93,6 +93,14 @@ def dbTimestampToZuluDatetime(oValue):
 
     return tsValue;
 
+def isDbInterval(oValue):
+    """
+    Checks if oValue is a DB interval object.
+    """
+    if isinstance(oValue, datetime.timedelta):
+        return True;
+    return False;
+
 
 class TMDatabaseIntegrityException(Exception):
     """
