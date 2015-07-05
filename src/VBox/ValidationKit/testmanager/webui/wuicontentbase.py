@@ -651,7 +651,6 @@ class WuiListContentBase(WuiContentBase):
             elif db.isDbInterval(aoValues[i]):
                 sRow += webutils.escapeElem(self.formatIntervalShort(aoValues[i]));
             elif aoValues[i] is not None:
-                sRow += '<!-- type: %s -->' % (type(aoValues[i]),); ### XXXX
                 sRow += webutils.escapeElem(unicode(aoValues[i]));
 
             sRow += u'</td>\n';
