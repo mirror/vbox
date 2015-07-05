@@ -792,7 +792,7 @@ class WuiMain(WuiDispatcherBase):
             (oTestResultTree, _) = TestResultLogic(self._oDb).fetchResultTree(idTestSet, 2);
         oBuildDataEx          = BuildDataEx().initFromDbWithId(self._oDb, oTestSetData.idBuild, oTestSetData.tsCreated);
         try:    oBuildValidationKitDataEx = BuildDataEx().initFromDbWithId(self._oDb, oTestSetData.idBuildTestSuite,
-                                                                       oTestSetData.tsCreated);
+                                                                           oTestSetData.tsCreated);
         except: oBuildValidationKitDataEx = None;
         oTestBoxData          = TestBoxData().initFromDbWithGenId(self._oDb, oTestSetData.idGenTestBox);
         oTestGroupData        = TestGroupData().initFromDbWithId(self._oDb,  ## @todo This bogus time wise. Bad DB design?

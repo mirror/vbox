@@ -61,6 +61,8 @@ class WuiTestResult(WuiContentBase):
             return oObject.toHtml();
         if db.isDbTimestamp(oObject):
             return webutils.escapeElem(self.formatTsShort(oObject));
+        if db.isDbInterval(oObject):
+            return webutils.escapeElem(self.formatIntervalShort(oObject));
         if utils.isString(oObject):
             return webutils.escapeElem(oObject);
         return webutils.escapeElem(str(oObject));
@@ -163,7 +165,8 @@ class WuiTestResult(WuiContentBase):
                    % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth, oTestResult.enmStatus,
                        webutils.escapeElem(self.formatTsShort(tsEvent)),
                        sElapsedGraph,
-                       webutils.escapeElem(str(oTestResult.tsElapsed)) if oTestResult.tsElapsed is not None else '',
+                       webutils.escapeElem(self.formatIntervalShort(oTestResult.tsElapsed)) if oTestResult.tsElapsed is not None
+                                           else '',
                        sDisplayName,
                        ' id="failure-%u"' % (iFailure,) if oTestResult.isFailure() else '',
                        webutils.escapeElem(oTestResult.enmStatus), webutils.escapeElem(sErrCnt),
@@ -285,7 +288,7 @@ class WuiTestResult(WuiContentBase):
                        % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth, oTestResult.enmStatus,
                            webutils.escapeElem(self.formatTsShort(oTestResult.tsCreated + oTestResult.tsElapsed)),
                            sElapsedGraph,
-                           webutils.escapeElem(str(oTestResult.tsElapsed)),
+                           webutils.escapeElem(self.formatIntervalShort(oTestResult.tsElapsed)),
                            sDisplayName,
                            ' id="failure-%u"' % (iFailure,) if oTestResult.isFailure() else '',
                            webutils.escapeElem(oTestResult.enmStatus), webutils.escapeElem(sErrCnt),
