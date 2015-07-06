@@ -1079,6 +1079,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--portcount <1-n>]\n"
                      "                            [--hostiocache on|off]\n"
                      "                            [--bootable on|off]\n"
+                     "                            [--rename <name>]\n"
                      "                            [--remove]\n"
                      "\n", SEP);
 

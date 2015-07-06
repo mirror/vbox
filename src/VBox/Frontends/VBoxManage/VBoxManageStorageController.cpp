@@ -946,6 +946,7 @@ static const RTGETOPTDEF g_aStorageControllerOptions[] =
     { "--controller",       'c', RTGETOPT_REQ_STRING },
     { "--portcount",        'p', RTGETOPT_REQ_UINT32 },
     { "--remove",           'r', RTGETOPT_REQ_NOTHING },
+    { "--rename",           'R', RTGETOPT_REQ_STRING },
     { "--hostiocache",      'i', RTGETOPT_REQ_STRING },
     { "--bootable",         'b', RTGETOPT_REQ_STRING },
 };
@@ -958,6 +959,7 @@ RTEXITCODE handleStorageController(HandlerArg *a)
     const char       *pszCtlType     = NULL;
     const char       *pszHostIOCache = NULL;
     const char       *pszBootable    = NULL;
+    const char       *pszCtlNewName  = NULL;
     ULONG             satabootdev    = ~0U;
     ULONG             sataidedev     = ~0U;
     ULONG             portcount      = ~0U;
@@ -997,6 +999,11 @@ RTEXITCODE handleStorageController(HandlerArg *a)
 
             case 'r':   // remove controller
                 fRemoveCtl = true;
+                break;
+
+            case 'R':   // rename controller
+                Assert(ValueUnion.psz);
+                pszCtlNewName = ValueUnion.psz;
                 break;
 
             case 'i':
@@ -1218,6 +1225,26 @@ RTEXITCODE handleStorageController(HandlerArg *a)
                 rc = E_FAIL;
             }
         }
+
+        if (   pszCtlNewName
+            && SUCCEEDED(rc))
+        {
+            ComPtr<IStorageController> ctl;
+
+            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl).raw(),
+                                                            ctl.asOutParam()));
+
+            if (SUCCEEDED(rc))
+            {
+                CHECK_ERROR(ctl, COMSETTER(Name)(Bstr(pszCtlNewName).raw()));
+            }
+            else
+            {
+                errorArgument("Couldn't find the controller with the name: '%s'\n", pszCtl);
+                rc = E_FAIL;
+            }
+        }
+
     }
 
     /* commit changes */
