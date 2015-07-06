@@ -528,6 +528,8 @@ static int vbvaFlush(PVGASTATE pVGAState, VBVACONTEXT *pCtx)
     {
         /* Turn off VBVA processing. */
         LogRel(("VBVA: Disabling\n", rc));
+        pVGAState->fGuestCaps = 0;
+        pVGAState->pDrv->pfnVBVAGuestCapabilityUpdate(pVGAState->pDrv, pVGAState->fGuestCaps);
         for (uScreenId = 0; uScreenId < pCtx->cViews; uScreenId++)
         {
             VBVADATA *pVBVAData = &pCtx->aViews[uScreenId].vbva;
@@ -637,6 +639,11 @@ static int vbvaDisable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pC
     VBVADATA *pVBVAData = &pCtx->aViews[uScreenId].vbva;
     vbvaDataCleanup(pVBVAData);
 
+    if (uScreenId == 0)
+    {
+        pVGAState->fGuestCaps = 0;
+        pVGAState->pDrv->pfnVBVAGuestCapabilityUpdate(pVGAState->pDrv, pVGAState->fGuestCaps);
+    }
     pVGAState->pDrv->pfnVBVADisable(pVGAState->pDrv, uScreenId);
     return VINF_SUCCESS;
 }
