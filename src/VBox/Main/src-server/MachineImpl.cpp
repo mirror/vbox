@@ -9579,7 +9579,7 @@ HRESULT Machine::i_getMediumAttachmentsOfController(const Utf8Str &aName,
         }
         AutoReadLock attLock(pAtt COMMA_LOCKVAL_SRC_POS);
 
-        if (pAtt->i_getControllerName() == Bstr(aName).raw())
+        if (pAtt->i_getControllerName() == aName)
             atts.push_back(pAtt);
     }
 
@@ -11066,7 +11066,7 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
  * @return
  */
 MediumAttachment* Machine::i_findAttachment(const MediaData::AttachmentList &ll,
-                                            IN_BSTR aControllerName,
+                                            const Utf8Str &aControllerName,
                                             LONG aControllerPort,
                                             LONG aDevice)
 {

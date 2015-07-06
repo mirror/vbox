@@ -52,7 +52,7 @@ struct BackupableMediumAttachmentData
      * controller will not work - when settings are changed it will point
      * to the old, uninitialized instance. Changing this requires
      * substantial changes to MediumImpl.cpp. */
-    const Bstr          bstrControllerName;
+    const Utf8Str       strControllerName;
     /* Same counts for the assigned bandwidth group */
     Utf8Str             strBandwidthGroup;
     const LONG          lPort;
@@ -117,7 +117,7 @@ void MediumAttachment::FinalRelease()
  */
 HRESULT MediumAttachment::init(Machine *aParent,
                                Medium *aMedium,
-                               const Bstr &aControllerName,
+                               const Utf8Str &aControllerName,
                                LONG aPort,
                                LONG aDevice,
                                DeviceType_T aType,
@@ -130,7 +130,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
                                const Utf8Str &strBandwidthGroup)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aImplicit=%d aPassthrough=%d aTempEject=%d aNonRotational=%d aDiscard=%d aHotPluggable=%d strBandwithGroup=%s\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aImplicit, aPassthrough, aTempEject, aNonRotational, aDiscard, aHotPluggable, strBandwidthGroup.c_str()));
+    LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%s aPort=%d aDevice=%d aType=%d aImplicit=%d aPassthrough=%d aTempEject=%d aNonRotational=%d aDiscard=%d aHotPluggable=%d strBandwithGroup=%s\n", aParent, aMedium, aControllerName.c_str(), aPort, aDevice, aType, aImplicit, aPassthrough, aTempEject, aNonRotational, aDiscard, aHotPluggable, strBandwidthGroup.c_str()));
 
     if (aType == DeviceType_HardDisk)
         AssertReturn(aMedium, E_INVALIDARG);
@@ -146,7 +146,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
     m->bd.allocate();
     m->bd->pMedium = aMedium;
     unconst(m->bd->strBandwidthGroup) = strBandwidthGroup;
-    unconst(m->bd->bstrControllerName) = aControllerName;
+    unconst(m->bd->strControllerName) = aControllerName;
     unconst(m->bd->lPort)   = aPort;
     unconst(m->bd->lDevice) = aDevice;
     unconst(m->bd->type)    = aType;
@@ -249,7 +249,7 @@ HRESULT MediumAttachment::getController(com::Utf8Str &aController)
     LogFlowThisFuncEnter();
 
     /* m->controller is constant during life time, no need to lock */
-    aController = Utf8Str(m->bd->bstrControllerName);
+    aController = Utf8Str(m->bd->strControllerName);
 
     LogFlowThisFuncLeave();
     return S_OK;
@@ -441,9 +441,9 @@ const ComObjPtr<Medium>& MediumAttachment::i_getMedium() const
     return m->bd->pMedium;
 }
 
-const Bstr MediumAttachment::i_getControllerName() const
+const Utf8Str &MediumAttachment::i_getControllerName() const
 {
-    return m->bd->bstrControllerName;
+    return m->bd->strControllerName;
 }
 
 LONG MediumAttachment::i_getPort() const
@@ -496,11 +496,20 @@ Utf8Str& MediumAttachment::i_getBandwidthGroup() const
     return m->bd->strBandwidthGroup;
 }
 
-bool MediumAttachment::i_matches(CBSTR aControllerName, LONG aPort, LONG aDevice)
+bool MediumAttachment::i_matches(const Utf8Str &aControllerName, LONG aPort, LONG aDevice)
 {
-    return (    aControllerName == m->bd->bstrControllerName
+    return (    aControllerName == m->bd->strControllerName
              && aPort == m->bd->lPort
              && aDevice == m->bd->lDevice);
+}
+
+/** Must be called from under this object's write lock. */
+void MediumAttachment::i_updateName(const Utf8Str &aName)
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    m->bd.backup();
+    unconst(m->bd->strControllerName) = aName;
 }
 
 /**

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,7 +34,7 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aParent,
                  Medium *aMedium,
-                 const Bstr &aControllerName,
+                 const Utf8Str &aControllerName,
                  LONG aPort,
                  LONG aDevice,
                  DeviceType_T aType,
@@ -58,7 +58,7 @@ public:
     void i_setImplicit(bool aImplicit);
 
     const ComObjPtr<Medium>& i_getMedium() const;
-    const Bstr i_getControllerName() const;
+    const Utf8Str &i_getControllerName() const;
     LONG i_getPort() const;
     LONG i_getDevice() const;
     DeviceType_T i_getType() const;
@@ -69,7 +69,10 @@ public:
     Utf8Str& i_getBandwidthGroup() const;
     bool i_getHotPluggable() const;
 
-    bool i_matches(CBSTR aControllerName, LONG aPort, LONG aDevice);
+    bool i_matches(const Utf8Str &aControllerName, LONG aPort, LONG aDevice);
+
+    /** Must be called from under this object's write lock. */
+    void i_updateName(const Utf8Str &aName);
 
     /** Must be called from under this object's write lock. */
     void i_updateMedium(const ComObjPtr<Medium> &aMedium);

@@ -2688,7 +2688,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                 // prevent online merging in general.
                 pOnlineMediumAttachment =
                     i_findAttachment(mMediaData->mAttachments,
-                                     pAttach->i_getControllerName().raw(),
+                                     pAttach->i_getControllerName(),
                                      pAttach->i_getPort(),
                                      pAttach->i_getDevice());
                 if (pOnlineMediumAttachment)

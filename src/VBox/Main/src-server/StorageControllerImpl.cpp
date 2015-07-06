@@ -233,14 +233,14 @@ HRESULT StorageController::init(Machine *aParent,
         AutoWriteLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
 
         unconst(aThat->m->pPeer) = this;
-        m->bd.attach (aThat->m->bd);
+        m->bd.attach(aThat->m->bd);
     }
     else
     {
         unconst(m->pPeer) = aThat;
 
         AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
-        m->bd.share (aThat->m->bd);
+        m->bd.share(aThat->m->bd);
     }
 
     /* Confirm successful initialization */
@@ -330,6 +330,19 @@ HRESULT StorageController::setName(const com::Utf8Str &aName)
                             tr("Storage controller named '%s' already exists"),
                             aName.c_str());
 
+        Machine::MediaData::AttachmentList atts;
+        rc = m->pParent->i_getMediumAttachmentsOfController(m->bd->strName, atts);
+        for (Machine::MediaData::AttachmentList::const_iterator it = atts.begin();
+             it != atts.end();
+             ++it)
+        {
+            IMediumAttachment *iA = *it;
+            MediumAttachment *pAttach = static_cast<MediumAttachment *>(iA);
+            AutoWriteLock attlock(pAttach COMMA_LOCKVAL_SRC_POS);
+            pAttach->i_updateName(aName);
+        }
+
+
         m->bd.backup();
         m->bd->strName = aName;
 
@@ -418,7 +431,7 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
 
     if (!SUCCEEDED(rc))
         return setError(rc,
-                        tr ("Invalid controller type %d"),
+                        tr("Invalid controller type %d"),
                         aControllerType);
 
     if (m->bd->mStorageControllerType != aControllerType)
@@ -729,11 +742,11 @@ void StorageController::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller peerCaller (m->pPeer);
-    AssertComRCReturnVoid (peerCaller.rc());
+    AutoCaller peerCaller(m->pPeer);
+    AssertComRCReturnVoid(peerCaller.rc());
 
     /* lock both for writing since we modify both (m->pPeer is "master" so locked
      * first) */
@@ -745,7 +758,7 @@ void StorageController::i_commit()
         if (m->pPeer)
         {
             // attach new data to the peer and reshare it
-            m->pPeer->m->bd.attach (m->bd);
+            m->pPeer->m->bd.attach(m->bd);
         }
     }
 }
@@ -761,11 +774,11 @@ void StorageController::i_unshare()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller peerCaller (m->pPeer);
-    AssertComRCReturnVoid (peerCaller.rc());
+    AutoCaller peerCaller(m->pPeer);
+    AssertComRCReturnVoid(peerCaller.rc());
 
     /* peer is not modified, lock it for reading (m->pPeer is "master" so locked
      * first) */
