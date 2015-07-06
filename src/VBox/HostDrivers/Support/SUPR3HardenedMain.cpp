@@ -1745,7 +1745,7 @@ static int supR3HardenedMainGetTrustedLib(const char *pszProgName, uint32_t fMai
             supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Unknown program binary location: %#x\n", g_fSupHardenedMain);
     }
 #ifdef RT_OS_DARWIN
-    if (fFlags & SUPSECMAIN_FLAGS_OSX_VM_APP)
+    if (fMainFlags & SUPSECMAIN_FLAGS_OSX_VM_APP)
         pszProgName = "VirtualBox";
 #endif
     size_t cch = suplibHardenedStrLen(pszPath);
