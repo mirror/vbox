@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2014 Oracle Corporation
+ * Copyright (C) 2005-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,6 +29,7 @@
 
 #include <VBox/err.h>
 #include <iprt/cpp/utils.h>
+#include "USBDevAliases.h"
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -166,7 +167,14 @@ HRESULT HostUSBDevice::getManufacturer(com::Utf8Str &aManufacturer)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aManufacturer = mUsb->pszManufacturer;
-
+    if (mUsb->pszManufacturer == NULL || mUsb->pszManufacturer[0] == 0)
+    {
+        USBNameAlias* alias = USBDevTableAdapter::findAlias(mUsb->idVendor, mUsb->idProduct);
+        if (alias != NULL)
+        {
+            aManufacturer = alias->vendor;
+        }
+    }
     return S_OK;
 }
 
@@ -176,7 +184,14 @@ HRESULT HostUSBDevice::getProduct(com::Utf8Str &aProduct)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aProduct = mUsb->pszProduct;
-
+    if (mUsb->pszProduct == NULL || mUsb->pszProduct[0]== 0)
+    {
+        USBNameAlias* alias = USBDevTableAdapter::findAlias(mUsb->idVendor, mUsb->idProduct);
+        if (alias != NULL)
+        {
+            aProduct = alias->product;
+        }
+    }
     return S_OK;
 }
 
@@ -327,8 +342,19 @@ com::Utf8Str HostUSBDevice::i_getName()
     else if (haveProduct)
         name = Utf8StrFmt("%s", mUsb->pszProduct);
     else
-        name = "<unknown>";
-
+    {
+        USBNameAlias* alias = USBDevTableAdapter::findAlias(mUsb->idVendor, mUsb->idProduct);
+        if (alias == NULL)
+        {
+            name = "<unknown>";
+            LogRel(("USB: Unknown USB device detected ( idVendor: 0x%04x, idProduct: 0x%04x ). \
+                    Please, report the idVendor and idProduct to vbox.org.\n", mUsb->idVendor, mUsb->idProduct));
+        }
+        else
+        {
+            name = Utf8StrFmt("%s %s", alias->vendor, alias->product);
+        }
+    }
     return name;
 }
 
