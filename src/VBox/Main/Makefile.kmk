@@ -452,8 +452,7 @@ ifdef VBOX_WITH_USB
  VBoxSVC_SOURCES  += \
 	src-server/USBDeviceFilterImpl.cpp \
 	src-server/USBProxyService.cpp \
-	src-server/HostUSBDeviceImpl.cpp\
-	src-server/USBDevAliases.cpp
+	src-server/HostUSBDeviceImpl.cpp
  VBoxSVC_SOURCES.darwin  +=  src-server/darwin/USBProxyServiceDarwin.cpp
  VBoxSVC_SOURCES.linux   +=   src-server/linux/USBProxyServiceLinux.cpp
  VBoxSVC_SOURCES.linux   +=   src-server/linux/USBGetDevices.cpp
