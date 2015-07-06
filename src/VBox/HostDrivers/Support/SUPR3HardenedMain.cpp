@@ -1719,6 +1719,41 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
 
 
 /**
+ * Construct the path to the DLL/SO/DYLIB containing the actual program.
+ *
+ * @returns VBox status code.
+ * @param   pszProgName     The program name.
+ * @param   fMainFlags      The flags passed to SUPR3HardenedMain.
+ * @param   pszPath         The output buffer.
+ * @param   cbPath          The size of the output buffer, in bytes.  Must be at
+ *                          least 128 bytes!
+ */
+static int supR3HardenedMainGetTrustedLib(const char *pszProgName, uint32_t fMainFlags, char *pszPath, size_t cbPath)
+{
+    supR3HardenedPathAppPrivateArch(pszPath, sizeof(cbPath) - 10);
+    const char *pszSubDirSlash;
+    switch (g_fSupHardenedMain & SUPSECMAIN_FLAGS_LOC_MASK)
+    {
+        case SUPSECMAIN_FLAGS_LOC_APP_BIN:
+            pszSubDirSlash = "/";
+            break;
+        case SUPSECMAIN_FLAGS_LOC_TESTCASE:
+            pszSubDirSlash = "/testcase/";
+            break;
+        default:
+            pszSubDirSlash = "/";
+            supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Unknown program binary location: %#x\n", g_fSupHardenedMain);
+    }
+#ifdef RT_OS_DARWIN
+    if (fFlags & SUPSECMAIN_FLAGS_OSX_VM_APP)
+        pszProgName = "VirtualBox";
+#endif
+    size_t cch = suplibHardenedStrLen(pszPath);
+    return suplibHardenedStrCopyEx(&pszPath[cch], cbPath - cch, pszSubDirSlash, pszProgName, SUPLIB_DLL_SUFF, NULL);
+}
+
+
+/**
  * Loads the DLL/SO/DYLIB containing the actual program and
  * resolves the TrustedError symbol.
  *
@@ -1742,9 +1777,7 @@ static PFNSUPTRUSTEDERROR supR3HardenedMainGetTrustedError(const char *pszProgNa
      * Construct the name.
      */
     char szPath[RTPATH_MAX];
-    supR3HardenedPathAppPrivateArch(szPath, sizeof(szPath) - 10);
-    size_t cch = suplibHardenedStrLen(szPath);
-    suplibHardenedStrCopyEx(&szPath[cch], sizeof(szPath) - cch, "/", pszProgName, SUPLIB_DLL_SUFF, NULL);
+    supR3HardenedMainGetTrustedLib(pszProgName, g_fSupHardenedMain, szPath, sizeof(szPath));
 
     /*
      * Open it and resolve the symbol.
@@ -1778,30 +1811,16 @@ static PFNSUPTRUSTEDERROR supR3HardenedMainGetTrustedError(const char *pszProgNa
  *
  * @returns Pointer to the trusted main of the actual program.
  * @param   pszProgName     The program name.
+ * @param   fMainFlags      The flags passed to SUPR3HardenedMain.
  * @remarks This function will not return on failure.
  */
-static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName)
+static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName, uint32_t fMainFlags)
 {
     /*
      * Construct the name.
      */
     char szPath[RTPATH_MAX];
-    supR3HardenedPathAppPrivateArch(szPath, sizeof(szPath) - 10);
-    const char *pszSubDirSlash;
-    switch (g_fSupHardenedMain & SUPSECMAIN_FLAGS_LOC_MASK)
-    {
-        case SUPSECMAIN_FLAGS_LOC_APP_BIN:
-            pszSubDirSlash = "/";
-            break;
-        case SUPSECMAIN_FLAGS_LOC_TESTCASE:
-            pszSubDirSlash = "/testcase/";
-            break;
-        default:
-            pszSubDirSlash = "/";
-            supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Unknown program binary location: %#x\n", g_fSupHardenedMain);
-    }
-    size_t cch = suplibHardenedStrLen(szPath);
-    suplibHardenedStrCopyEx(&szPath[cch], sizeof(szPath) - cch, pszSubDirSlash, pszProgName, SUPLIB_DLL_SUFF, NULL);
+    supR3HardenedMainGetTrustedLib(pszProgName, fMainFlags, szPath, sizeof(szPath));
 
     /*
      * Open it and resolve the symbol.
@@ -1810,11 +1829,11 @@ static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName
     HMODULE hMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, false /*fSystem32Only*/, 0 /*fMainFlags*/);
     if (!hMod)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: LoadLibrary \"%s\" failed, rc=%d\n",
-                            szPath, RtlGetLastWin32Error());
+                           szPath, RtlGetLastWin32Error());
     FARPROC pfn = GetProcAddress(hMod, SUP_HARDENED_SYM("TrustedMain"));
     if (!pfn)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"TrustedMain\" not found in \"%s\" (rc=%d)\n",
-                            szPath, RtlGetLastWin32Error());
+                           szPath, RtlGetLastWin32Error());
     return (PFNSUPTRUSTEDMAIN)pfn;
 
 #else
@@ -1822,11 +1841,11 @@ static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName
     void *pvMod = dlopen(szPath, RTLD_NOW | RTLD_GLOBAL);
     if (!pvMod)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: dlopen(\"%s\",) failed: %s\n",
-                            szPath, dlerror());
+                           szPath, dlerror());
     void *pvSym = dlsym(pvMod, SUP_HARDENED_SYM("TrustedMain"));
     if (!pvSym)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"TrustedMain\" not found in \"%s\"!\ndlerror: %s\n",
-                            szPath, dlerror());
+                           szPath, dlerror());
     return (PFNSUPTRUSTEDMAIN)(uintptr_t)pvSym;
 #endif
 }
@@ -2001,7 +2020,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      */
     SUP_DPRINTF(("SUPR3HardenedMain: Load TrustedMain...\n"));
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_GET_TRUSTED_MAIN;
-    PFNSUPTRUSTEDMAIN pfnTrustedMain = supR3HardenedMainGetTrustedMain(pszProgName);
+    PFNSUPTRUSTEDMAIN pfnTrustedMain = supR3HardenedMainGetTrustedMain(pszProgName, fFlags);
 
     SUP_DPRINTF(("SUPR3HardenedMain: Calling TrustedMain (%p)...\n", pfnTrustedMain));
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_CALLED_TRUSTED_MAIN;
