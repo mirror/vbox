@@ -2008,7 +2008,7 @@
         <translation>Datuak erortzen...</translation>
     </message>
     <message>
-        <location line="+310"/>
+        <location line="+314"/>
         <source>Retrieving data ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6961,7 +6961,7 @@
 <context>
     <name>UIMenuBarEditorWidget</name>
     <message>
-        <location filename="../src/runtime/UIMenuBarEditorWindow.cpp" line="+570"/>
+        <location filename="../src/runtime/UIMenuBarEditorWindow.cpp" line="+911"/>
         <source>Virtual Screen Resize</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6976,7 +6976,7 @@
         <translation type="unfinished">Aldatu</translation>
     </message>
     <message>
-        <location line="+318"/>
+        <location line="+26"/>
         <source>Close</source>
         <translation type="unfinished">Itxi</translation>
     </message>
@@ -9090,7 +9090,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+361"/>
+        <location line="+364"/>
         <source>Close</source>
         <translation type="unfinished">Itxi</translation>
     </message>
