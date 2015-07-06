@@ -91,7 +91,11 @@ VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                 PVMCPU pVCpuTarget = &pVM->aCpus[uHyperArg1];   /** ASSUMES pVCpu index == ApicId of the VCPU. */
                 VMCPU_FF_SET(pVCpuTarget, VMCPU_FF_UNHALT);
 #ifdef IN_RING0
-                GVMMR0SchedWakeUp(pVM, pVCpuTarget->idCpu);
+                /*
+                 * We might be here with preemption disabled or enabled (i.e. depending on thread-context hooks
+                 * being used), so don't try obtaining the GVMMR0 used lock here. See @bugref{7270} comment #148.
+                 */
+                GVMMR0SchedWakeUpEx(pVM, pVCpuTarget->idCpu, false /* fTakeUsedLock */);
 #elif defined(IN_RING3)
                 int rc2 = SUPR3CallVMMR0(pVM->pVMR0, pVCpuTarget->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, NULL);
                 AssertRC(rc2);
