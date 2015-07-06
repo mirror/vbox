@@ -35,6 +35,7 @@ endif
 #
 ifdef VBOX_WITH_HARDENING
 PROGRAMS += VirtualBoxHardened
+PROGRAMS.darwin += VirtualBoxVM
 DLLS += VirtualBox
 else
 PROGRAMS += VirtualBox
@@ -56,10 +57,19 @@ VirtualBoxHardened_TEMPLATE = VBOXR3HARDENEDEXE
 VirtualBoxHardened_SOURCES = src/hardenedmain.cpp
 VirtualBoxHardened_SOURCES.win = src/platform/win/VirtualBoxHardened.rc
 VirtualBoxHardened_NAME = VirtualBox
-VirtualBoxHardened_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 VirtualBoxHardened_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
 src/platform/win/VirtualBoxHardened.rc_INCS  = $(VirtualBox_0_OUTDIR)
 src/platform/win/VirtualBoxHardened.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+
+
+#
+# Hardened VirtualBoxVM.
+#
+ifeq ($(KBUILD_TARGET),darwin)
+ VirtualBoxVM_EXTENDS = VirtualBoxHardened
+ VirtualBoxVM_NAME    = VirtualBoxVM
+ VirtualBoxVM_DEFS    = $(VirtualBoxHardened_DEFS) VIRTUALBOX_VM
+endif
 
 
 #

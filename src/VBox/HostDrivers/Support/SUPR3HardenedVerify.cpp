@@ -188,6 +188,9 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
 //#ifdef VBOX_WITH_QTGUI
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VirtualBox" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VirtualBox" SUPLIB_DLL_SUFF },
+# ifdef RT_OS_DARWIN
+    {   kSupIFT_Exe,  kSupID_AppBin,             true, "VirtualBoxVM" SUPLIB_EXE_SUFF },
+# endif
 # if !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
     {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxKeyboard" SUPLIB_DLL_SUFF },
 # endif
@@ -852,22 +855,37 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFata
  * @param   fFatal              See supR3HardenedVerifyAll.
  * @param   fLeaveOpen          The leave open setting used by
  *                              supR3HardenedVerifyAll.
+ * @param   fMainFlags          Flags supplied to SUPR3HardenedMain.
  */
-static int supR3HardenedVerifyProgram(const char *pszProgName, const char *pszExePath, bool fFatal, bool fLeaveOpen)
+static int supR3HardenedVerifyProgram(const char *pszProgName, const char *pszExePath, bool fFatal,
+                                      bool fLeaveOpen, uint32_t fMainFlags)
 {
     /*
      * Search the table looking for the executable and the DLL/DYLIB/SO.
+     * Note! On darwin we have a hack in place for VirtualBoxVM helper app
+     *       to share VirtualBox.dylib with the VirtualBox app.  This ASSUMES
+     *       that cchProgNameDll is equal or shorter to the exe name.
      */
     int             rc = VINF_SUCCESS;
     bool            fExe = false;
     bool            fDll = false;
-    size_t const    cchProgName = suplibHardenedStrLen(pszProgName);
+    size_t const    cchProgNameExe = suplibHardenedStrLen(pszProgName);
+#ifndef RT_OS_DARWIN
+    size_t const    cchProgNameDll = cchProgNameExe;
+#else
+    size_t const    cchProgNameDll = fMainFlags & SUPSECMAIN_FLAGS_OSX_VM_APP
+                                   ? sizeof("VirtualBox") - 1
+                                   : cchProgNameExe;
+    if (cchProgNameDll > cchProgNameExe)
+        return supR3HardenedError(VERR_INTERNAL_ERROR, fFatal,
+                                  "supR3HardenedVerifyProgram: SUPSECMAIN_FLAGS_OSX_VM_APP + '%s'", pszProgName);
+#endif
     for (unsigned iFile = 0; iFile < RT_ELEMENTS(g_aSupInstallFiles); iFile++)
-        if (!suplibHardenedStrNCmp(pszProgName, g_aSupInstallFiles[iFile].pszFile, cchProgName))
+        if (!suplibHardenedStrNCmp(pszProgName, g_aSupInstallFiles[iFile].pszFile, cchProgNameDll))
         {
-            if (    (   g_aSupInstallFiles[iFile].enmType == kSupIFT_Dll
-                     || g_aSupInstallFiles[iFile].enmType == kSupIFT_TestDll)
-                &&  !suplibHardenedStrCmp(&g_aSupInstallFiles[iFile].pszFile[cchProgName], SUPLIB_DLL_SUFF))
+            if (   (   g_aSupInstallFiles[iFile].enmType == kSupIFT_Dll
+                    || g_aSupInstallFiles[iFile].enmType == kSupIFT_TestDll)
+                && !suplibHardenedStrCmp(&g_aSupInstallFiles[iFile].pszFile[cchProgNameDll], SUPLIB_DLL_SUFF))
             {
                 /* This only has to be found (once). */
                 if (fDll)
@@ -880,7 +898,9 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, const char *pszEx
             }
             else if (   (   g_aSupInstallFiles[iFile].enmType == kSupIFT_Exe
                          || g_aSupInstallFiles[iFile].enmType == kSupIFT_TestExe)
-                     && !suplibHardenedStrCmp(&g_aSupInstallFiles[iFile].pszFile[cchProgName], SUPLIB_EXE_SUFF))
+                     && (   cchProgNameExe == cchProgNameDll
+                         || !suplibHardenedStrNCmp(pszProgName, g_aSupInstallFiles[iFile].pszFile, cchProgNameExe))
+                     && !suplibHardenedStrCmp(&g_aSupInstallFiles[iFile].pszFile[cchProgNameExe], SUPLIB_EXE_SUFF))
             {
                 /* Here we'll have to check that the specific program is the same as the entry. */
                 if (fExe)
@@ -926,8 +946,9 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, const char *pszEx
  *                              both the executable and corresponding
  *                              DLL/DYLIB/SO are valid.
  * @param   pszExePath          The path to the executable.
+ * @param   fMainFlags          Flags supplied to SUPR3HardenedMain.
  */
-DECLHIDDEN(int) supR3HardenedVerifyAll(bool fFatal, const char *pszProgName, const char *pszExePath)
+DECLHIDDEN(int) supR3HardenedVerifyAll(bool fFatal, const char *pszProgName, const char *pszExePath, uint32_t fMainFlags)
 {
     /*
      * On windows
@@ -954,7 +975,7 @@ DECLHIDDEN(int) supR3HardenedVerifyAll(bool fFatal, const char *pszProgName, con
      * (thus verified above) and verify the signature on platforms where we
      * sign things.
      */
-    int rc2 = supR3HardenedVerifyProgram(pszProgName, pszExePath, fFatal, fLeaveOpen);
+    int rc2 = supR3HardenedVerifyProgram(pszProgName, pszExePath, fFatal, fLeaveOpen, fMainFlags);
     if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
         rc2 = rc;
 
