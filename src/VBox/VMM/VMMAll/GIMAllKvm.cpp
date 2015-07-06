@@ -225,10 +225,10 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
         case MSR_GIM_KVM_SYSTEM_TIME_OLD:
         {
             bool fEnable = RT_BOOL(uRawValue & MSR_GIM_KVM_SYSTEM_TIME_ENABLE_BIT);
-#ifndef IN_RING3
-# ifdef IN_RING0
+#ifdef IN_RING0
             gimR0KvmUpdateSystemTime(pVM, pVCpu);
-# else
+            return VINF_CPUM_R3_MSR_WRITE;
+#elif defined(IN_RC)
             Assert(pVM->cCpus == 1);
             if (fEnable)
             {
@@ -237,9 +237,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
                 pKvmCpu->uVirtNanoTS = TMVirtualGetNoCheck(pVM)   | UINT64_C(1);
                 ASMSetFlags(fEFlags);
             }
-# endif
             return VINF_CPUM_R3_MSR_WRITE;
-#else
+#else /* IN_RING3 */
             if (!fEnable)
             {
                 gimR3KvmDisableSystemTime(pVM);
@@ -270,14 +269,13 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
                 return VERR_CPUM_RAISE_GP_0;
             }
             return VINF_SUCCESS;
-#endif /* IN_RING3 */
+#endif
         }
 
         case MSR_GIM_KVM_WALL_CLOCK:
         case MSR_GIM_KVM_WALL_CLOCK_OLD:
         {
 #ifndef IN_RING3
-
             return VINF_CPUM_R3_MSR_WRITE;
 #else
             /* Enable the wall-clock struct. */

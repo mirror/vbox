@@ -187,7 +187,7 @@ AssertCompileSize(GIMKVMWALLCLOCK, 12);
 
 
 /**
- * GIM KVMV VM instance data.
+ * GIM KVM VM instance data.
  * Changes to this must checked against the padding of the gim union in VM!
  */
 typedef struct GIMKVM
@@ -202,8 +202,9 @@ typedef struct GIMKVM
     uint16_t                    uOpCodeNative;
     /** The TSC frequency (in HZ) reported to the guest. */
     uint64_t                    cTscTicksPerSecond;
-    /** Ring-0 mutex. */
-    RTSEMFASTMUTEX              hFastMtx;
+    /** Spinlock used for protecting GIMKVMCPU::uTsc and
+     *  GIMKVMCPU::uVirtNanoTS. */
+    RTSPINLOCK                  hSpinlockR0;
 } GIMKVM;
 /** Pointer to per-VM GIM KVM instance data. */
 typedef GIMKVM *PGIMKVM;

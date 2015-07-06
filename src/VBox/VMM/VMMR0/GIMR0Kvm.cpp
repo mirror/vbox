@@ -27,7 +27,7 @@
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/vm.h>
 
-#include <iprt/semaphore.h>
+#include <iprt/spinlock.h>
 
 
 /**
@@ -45,7 +45,7 @@ VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu)
      */
     Assert(GIMIsEnabled(pVM));
     PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
-    AssertReturn(pKvm->hFastMtx != NIL_RTSEMFASTMUTEX, VERR_GIM_IPE_3);
+    AssertReturn(pKvm->hSpinlockR0 != NIL_RTSPINLOCK, VERR_GIM_IPE_3);
 
     /*
      * Record the TSC and virtual NanoTS pairs.
@@ -61,10 +61,10 @@ VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu)
      * Update VCPUs with this information. The first VCPU's values
      * will be applied to the remaining.
      */
-    RTSemFastMutexRequest(pKvm->hFastMtx);
+    RTSpinlockAcquire(pKvm->hSpinlockR0);
     for (uint32_t i = 0; i < pVM->cCpus; i++)
     {
-        PGIMKVMCPU pKvmCpu   = &pVM->aCpus[i].gim.s.u.KvmCpu;
+        PGIMKVMCPU pKvmCpu = &pVM->aCpus[i].gim.s.u.KvmCpu;
         if (   !pKvmCpu->uTsc
             && !pKvmCpu->uVirtNanoTS)
         {
@@ -72,7 +72,7 @@ VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu)
             pKvmCpu->uVirtNanoTS = uVirtNanoTS;
         }
     }
-    RTSemFastMutexRelease(pKvm->hFastMtx);
+    RTSpinlockRelease(pKvm->hSpinlockR0);
 
     return VINF_SUCCESS;
 }
@@ -90,9 +90,9 @@ VMMR0_INT_DECL(int) gimR0KvmInitVM(PVM pVM)
     Assert(GIMIsEnabled(pVM));
 
     PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
-    Assert(pKvm->hFastMtx == NIL_RTSEMFASTMUTEX);
+    Assert(pKvm->hSpinlockR0 == NIL_RTSPINLOCK);
 
-    int rc = RTSemFastMutexCreate(&pKvm->hFastMtx);
+    int rc = RTSpinlockCreate(&pKvm->hSpinlockR0, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "KVM");
     return rc;
 }
 
@@ -109,8 +109,8 @@ VMMR0_INT_DECL(int) gimR0KvmTermVM(PVM pVM)
     Assert(GIMIsEnabled(pVM));
 
     PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
-    RTSemFastMutexDestroy(pKvm->hFastMtx);
-    pKvm->hFastMtx = NIL_RTSEMFASTMUTEX;
+    RTSpinlockDestroy(pKvm->hSpinlockR0);
+    pKvm->hSpinlockR0 = NIL_RTSPINLOCK;
 
     return VINF_SUCCESS;
 }
