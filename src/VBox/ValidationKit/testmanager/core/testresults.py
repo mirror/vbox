@@ -578,7 +578,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
     ## @}
 
     ## Default sort by map.
-    kdResultSortByMap= {
+    kdResultSortByMap = {
         ksResultsSortByRunningAndStart:  ('', None, None, ''),
         ksResultsSortByBuildRevision: (
             # Sorting tables.
