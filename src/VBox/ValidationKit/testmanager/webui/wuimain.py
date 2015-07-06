@@ -141,14 +141,18 @@ class WuiMain(WuiDispatcherBase):
     ksParamVcsHistoryEntries    = 'cEntries';
     ## @}
 
-    ## Effective time period. one of the first column values in kaoResultPeriods.
-    ksParamEffectivePeriod      = 'sEffectivePeriod'
-
+    ## @name Test result listing parameters.
+    ## @{
     ## If this param is specified, then show only results for this member when results grouped by some parameter.
     ksParamGroupMemberId        = 'GroupMemberId'
-
     ## Optional parameter for indicating whether to restrict the listing to failures only.
     ksParamOnlyFailures         = 'OnlyFailures'
+    ## Result listing sorting.
+    ksParamTestResultsSortBy    = 'enmSortBy'
+    ## @}
+
+    ## Effective time period. one of the first column values in kaoResultPeriods.
+    ksParamEffectivePeriod      = 'sEffectivePeriod'
 
     ## Test result period values.
     kaoResultPeriods = [
@@ -295,6 +299,34 @@ class WuiMain(WuiDispatcherBase):
     # Navigation bar stuff
     #
 
+    def _generateSortBySelector(self, dParams, sPreamble, sPostamble):
+        """
+        Generate HTML code for the sort by selector.
+        """
+        if self.ksParamTestResultsSortBy in dParams:
+            enmResultSortBy = dParams[self.ksParamTestResultsSortBy];
+            del dParams[self.ksParamTestResultsSortBy];
+        else:
+            enmResultSortBy = TestResultLogic.ksResultsSortByRunningAndStart;
+
+        sHtmlSortBy  = '<form name="TimeForm" method="GET"> Sort by\n';
+        sHtmlSortBy += sPreamble;
+        sHtmlSortBy += '\n  <select name="%s" onchange="window.location=' % (self.ksParamTestResultsSortBy,);
+        sHtmlSortBy += '\'?%s&%s=\' + ' % (webutils.encodeUrlParams(dParams), self.ksParamTestResultsSortBy)
+        sHtmlSortBy += 'this.options[this.selectedIndex].value;" title="Sorting by">\n'
+
+        fSelected = False;
+        for enmCode, sTitle in TestResultLogic.kaasResultsSortByTitles:
+            if enmCode == enmResultSortBy:
+                fSelected = True;
+            sHtmlSortBy += '    <option value="%s"%s>%s</option>\n' \
+                         % (enmCode, ' selected="selected"' if enmCode == enmResultSortBy else '', sTitle,);
+        assert fSelected;
+        sHtmlSortBy += '  </select>\n';
+        sHtmlSortBy += sPostamble;
+        sHtmlSortBy += '\n</form>\n'
+        return sHtmlSortBy;
+
     def _generateStatusSelector(self, dParams, fOnlyFailures):
         """
         Generate HTML code for the status code selector.  Currently very simple.
@@ -317,7 +349,6 @@ class WuiMain(WuiDispatcherBase):
         # Forget about page No when changing a period
         if WuiDispatcherBase.ksParamPageNo in dParams:
             del dParams[WuiDispatcherBase.ksParamPageNo]
-
 
         sHtmlTimeSelector  = '<form name="TimeForm" method="GET">\n'
         sHtmlTimeSelector += sPreamble;
@@ -545,6 +576,7 @@ class WuiMain(WuiDispatcherBase):
 
         # Generate the elements.
         sHtmlStatusSelector = self._generateStatusSelector(self.getParameters(), fOnlyFailures);
+        sHtmlSortBySelector = self._generateSortBySelector(self.getParameters(), '', sHtmlStatusSelector);
         sHtmlPeriodSelector = self._generateResultPeriodSelector(self.getParameters(), sCurPeriod)
         sHtmlTimeWalker     = self._generateTimeWalker(self.getParameters(), tsEffective, sCurPeriod);
 
@@ -563,7 +595,7 @@ class WuiMain(WuiDispatcherBase):
                 ' <td width=30% align=right>\n' + sHtmlPeriodSelector + '</td>\n' \
                 '</tr>\n' \
                 '<tr>\n' \
-                ' <td width=30%>' + sHtmlStatusSelector + '</td>\n' \
+                ' <td width=30%>' + sHtmlSortBySelector + '</td>\n' \
                 ' <td width=40% align=center>\n' + sHtmlPager + '</td>\n' \
                 ' <td width=30% align=right>\n' + sHtmlItemsPerPageSelector + '</td>\n'\
                 '</tr>\n' \
@@ -637,14 +669,17 @@ class WuiMain(WuiDispatcherBase):
         oLogicType implements fetchForListing.
         oListContentType is a child of WuiListContentBase.
         """
-        cItemsPerPage     = self.getIntParam(self.ksParamItemsPerPage,  iMin =  2, iMax =   9999, iDefault = 128)
-        iPage             = self.getIntParam(self.ksParamPageNo,        iMin =  0, iMax = 999999, iDefault = 0)
-        tsEffective       = self.getEffectiveDateParam()
-        iGroupMemberId    = self.getIntParam(self.ksParamGroupMemberId, iMin = -1, iMax = 999999, iDefault = -1)
+        cItemsPerPage     = self.getIntParam(self.ksParamItemsPerPage,  iMin =  2, iMax =   9999, iDefault = 128);
+        iPage             = self.getIntParam(self.ksParamPageNo,        iMin =  0, iMax = 999999, iDefault = 0);
+        tsEffective       = self.getEffectiveDateParam();
+        iGroupMemberId    = self.getIntParam(self.ksParamGroupMemberId, iMin = -1, iMax = 999999, iDefault = -1);
         fOnlyFailures     = self.getBoolParam(self.ksParamOnlyFailures, fDefault = False);
+        enmResultSortBy   = self.getStringParam(self.ksParamTestResultsSortBy,
+                                                asValidValues = TestResultLogic.kasResultsSortBy,
+                                                sDefault = TestResultLogic.ksResultsSortByRunningAndStart);
 
         # Get testing results period and validate it
-        asValidValues = [x for (x, _, _) in self.kaoResultPeriods]
+        asValidValues     = [x for (x, _, _) in self.kaoResultPeriods]
         sCurPeriod        = self.getStringParam(self.ksParamEffectivePeriod, asValidValues = asValidValues,
                                                 sDefault = self.ksResultPeriodDefault)
         assert sCurPeriod != ''; # Impossible!
@@ -726,10 +761,10 @@ class WuiMain(WuiDispatcherBase):
                                                             cItemsPerPage,
                                                             tsNow = tsEffective,
                                                             sInterval = sCurPeriod,
+                                                            enmResultSortBy = enmResultSortBy,
                                                             enmResultsGroupingType = enmResultsGroupingType,
                                                             iResultsGroupingValue = idMember,
-                                                            fOnlyFailures = fOnlyFailures)
-
+                                                            fOnlyFailures = fOnlyFailures);
             cEntriesMax = max(cEntriesMax, cEntries)
 
             #

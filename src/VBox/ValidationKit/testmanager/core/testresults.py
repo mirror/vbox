@@ -512,25 +512,173 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
     # Result grinding for displaying in the WUI.
     #
 
-    ksResultsGroupingTypeNone       = 'ResultsGroupingTypeNone'
-    ksResultsGroupingTypeTestGroup  = 'ResultsGroupingTypeTestGroup'
-    ksResultsGroupingTypeBuildRev   = 'ResultsGroupingTypeBuild'
-    ksResultsGroupingTypeTestBox    = 'ResultsGroupingTypeTestBox'
-    ksResultsGroupingTypeTestCase   = 'ResultsGroupingTypeTestCase'
-    ksResultsGroupingTypeSchedGroup = 'ResultsGroupingTypeSchedGroup'
+    ksResultsGroupingTypeNone       = 'ResultsGroupingTypeNone';
+    ksResultsGroupingTypeTestGroup  = 'ResultsGroupingTypeTestGroup';
+    ksResultsGroupingTypeBuildRev   = 'ResultsGroupingTypeBuild';
+    ksResultsGroupingTypeTestBox    = 'ResultsGroupingTypeTestBox';
+    ksResultsGroupingTypeTestCase   = 'ResultsGroupingTypeTestCase';
+    ksResultsGroupingTypeSchedGroup = 'ResultsGroupingTypeSchedGroup';
+
+    #kdResultGroupingMapOld = {
+    #    ksResultsGroupingTypeNone:       ('TestSets',            None,                      None),
+    #    ksResultsGroupingTypeTestGroup:  ('TestSets',            'TestSets.idTestGroup',    None),
+    #    ksResultsGroupingTypeTestBox:    ('TestSets',            'TestSets.idTestBox',      None),
+    #    ksResultsGroupingTypeTestCase:   ('TestSets',            'TestSets.idTestCase',     None),
+    #    ksResultsGroupingTypeBuildRev:   ('TestSets, Builds',    'Builds.iRevision',
+    #                                      ' AND Builds.idBuild      = TestSets.idBuild'
+    #                                      ' AND Builds.tsExpire     > TestSets.tsCreated'
+    #                                      ' AND Builds.tsEffective <= TestSets.tsCreated' ),
+    #    ksResultsGroupingTypeSchedGroup: ('TestSets, TestBoxes', 'TestBoxes.idSchedGroup',
+    #                                      ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox'),
+    #};
+
+    ## @name Result sorting options.
+    ## @{
+    ksResultsSortByRunningAndStart      = 'ResultsSortByRunningAndStart'; ##< Default
+    ksResultsSortByBuildRevision        = 'ResultsSortByBuildRevision';
+    ksResultsSortByTestBoxName          = 'ResultsSortByTestBoxName';
+    ksResultsSortByTestBoxOs            = 'ResultsSortByTestBoxOs';
+    ksResultsSortByTestBoxOsVersion     = 'ResultsSortByTestBoxOsVersion';
+    ksResultsSortByTestBoxOsArch        = 'ResultsSortByTestBoxOsArch';
+    ksResultsSortByTestBoxArch          = 'ResultsSortByTestBoxArch';
+    ksResultsSortByTestBoxCpuVendor     = 'ResultsSortByTestBoxCpuVendor';
+    ksResultsSortByTestBoxCpuName       = 'ResultsSortByTestBoxCpuName';
+    ksResultsSortByTestBoxCpuRev        = 'ResultsSortByTestBoxCpuRev';
+    ksResultsSortByTestBoxCpuFeatures   = 'ResultsSortByTestBoxCpuFeatures';
+    ksResultsSortByTestCaseName         = 'ResultsSortByTestCaseName';
+    kasResultsSortBy = {
+        ksResultsSortByRunningAndStart,
+        ksResultsSortByBuildRevision,
+        ksResultsSortByTestBoxName,
+        ksResultsSortByTestBoxOs,
+        ksResultsSortByTestBoxOsVersion,
+        ksResultsSortByTestBoxOsArch,
+        ksResultsSortByTestBoxArch,
+        ksResultsSortByTestBoxCpuVendor,
+        ksResultsSortByTestBoxCpuName,
+        ksResultsSortByTestBoxCpuRev,
+        ksResultsSortByTestBoxCpuFeatures,
+        ksResultsSortByTestCaseName,
+    };
+    ## Used by the WUI for generating the drop down.
+    kaasResultsSortByTitles = (
+        ( ksResultsSortByRunningAndStart,       'Running & Start TS' ),
+        ( ksResultsSortByBuildRevision,         'Build Revision' ),
+        ( ksResultsSortByTestBoxName,           'TestBox Name' ),
+        ( ksResultsSortByTestBoxOs,             'O/S' ),
+        ( ksResultsSortByTestBoxOsVersion,      'O/S Version' ),
+        ( ksResultsSortByTestBoxOsArch,         'O/S & Architecture' ),
+        ( ksResultsSortByTestBoxArch,           'Architecture' ),
+        ( ksResultsSortByTestBoxCpuVendor,      'CPU Vendor' ),
+        ( ksResultsSortByTestBoxCpuName,        'CPU Vendor & Name' ),
+        ( ksResultsSortByTestBoxCpuRev,         'CPU Vendor & Revision' ),
+        ( ksResultsSortByTestBoxCpuFeatures,    'CPU Features' ),
+        ( ksResultsSortByTestCaseName,          'Test Case Name' ),
+    );
+    ## @}
+
+    ## Default sort by map.
+    kdResultSortByMap= {
+        ksResultsSortByRunningAndStart:  ('', None, None, ''),
+        ksResultsSortByBuildRevision: (
+            # Sorting tables.
+            ', Builds',
+            # Sorting table join(s).
+            ' AND TestSets.idBuild    = Builds.idBuild'
+            ' AND Builds.tsExpire    >= TestSets.tsCreated'
+            ' AND Builds.tsEffective <= TestSets.tsCreated',
+            # Start of ORDER BY statement.
+            ' Builds.iRevision DESC',
+            # Extra columns to fetch for the above ORDER BY to work in a SELECT DISTINCT statement.
+            ''  ),
+        ksResultsSortByTestBoxName: (
+            ', TestBoxes',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            ' TestBoxes.sName DESC',
+            '' ),
+        ksResultsSortByTestBoxOsArch: (
+            ', TestBoxes',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            ' TestBoxes.sOs, TestBoxes.sCpuArch',
+            ''  ),
+        ksResultsSortByTestBoxOs: (
+            ', TestBoxes',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            ' TestBoxes.sOs',
+            ''  ),
+        ksResultsSortByTestBoxOsVersion: (
+            ', TestBoxes',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            ' TestBoxes.sOs, TestBoxes.sOsVersion DESC',
+            ''  ),
+        ksResultsSortByTestBoxArch: (
+            ', TestBoxes',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            ' TestBoxes.sCpuArch',
+            ''  ),
+        ksResultsSortByTestBoxCpuVendor: (
+            ', TestBoxes',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            ' TestBoxes.sCpuVendor',
+            ''  ),
+        ksResultsSortByTestBoxCpuName: (
+            ', TestBoxes',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            ' TestBoxes.sCpuVendor, TestBoxes.sCpuName',
+            ''  ),
+        ksResultsSortByTestBoxCpuRev: (
+            ', TestBoxes',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            ' TestBoxes.sCpuVendor, TestBoxes.lCpuRevision DESC',
+            ', TestBoxes.lCpuRevision'  ),
+        ksResultsSortByTestBoxCpuFeatures: (
+            ', TestBoxes',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            ' TestBoxes.fCpuHwVirt DESC, TestBoxes.fCpuNestedPaging DESC, TestBoxes.fCpu64BitGuest DESC, TestBoxes.cCpus DESC',
+            ', TestBoxes.cCpus' ),
+        ksResultsSortByTestCaseName: (
+            ', TestCases',
+            ' AND TestSets.idGenTestCase = TestCases.idGenTestCase',
+            ' TestCases.sName',
+            ''  ),
+    };
 
     kdResultGroupingMap = {
-        ksResultsGroupingTypeNone:       ('TestSets',            None,                      None),
-        ksResultsGroupingTypeTestGroup:  ('TestSets',            'TestSets.idTestGroup',    None),
-        ksResultsGroupingTypeTestBox:    ('TestSets',            'TestSets.idTestBox',      None),
-        ksResultsGroupingTypeTestCase:   ('TestSets',            'TestSets.idTestCase',     None),
-        ksResultsGroupingTypeBuildRev:   ('TestSets, Builds',    'Builds.iRevision',
-                                          ' AND Builds.idBuild      = TestSets.idBuild'
-                                          ' AND Builds.tsExpire     > TestSets.tsCreated'
-                                          ' AND Builds.tsEffective <= TestSets.tsCreated' ),
-        ksResultsGroupingTypeSchedGroup: ('TestSets, TestBoxes', 'TestBoxes.idSchedGroup',
-                                          ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox'),
-    }
+        ksResultsGroupingTypeNone: (
+            # Grouping tables;     # Grouping field;          # Grouping where addition.  # Sort by overrides.
+            'TestSets',            None,                      None,                       {}
+        ),
+        ksResultsGroupingTypeTestGroup:  ('TestSets',   'TestSets.idTestGroup',     None, {}),
+        ksResultsGroupingTypeTestBox:    ('TestSets',   'TestSets.idTestBox',       None, {}),
+        ksResultsGroupingTypeTestCase:   ('TestSets',   'TestSets.idTestCase',      None, {}),
+        ksResultsGroupingTypeBuildRev: (
+            'TestSets, Builds',
+            'Builds.iRevision',
+            ' AND Builds.idBuild      = TestSets.idBuild'
+            ' AND Builds.tsExpire     > TestSets.tsCreated'
+            ' AND Builds.tsEffective <= TestSets.tsCreated',
+            { ksResultsSortByBuildRevision: ( '', None,  ' Builds.iRevision DESC' ), }
+        ),
+        ksResultsGroupingTypeSchedGroup: (
+            'TestSets, TestBoxes',
+            'TestBoxes.idSchedGroup',
+            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
+            { ksResultsSortByTestBoxName:       ( '', None, ' TestBoxes.sName DESC', '' ),
+              ksResultsSortByTestBoxOsArch:     ( '', None, ' TestBoxes.sOs, TestBoxes.sCpuArch', ''  ),
+              ksResultsSortByTestBoxOs:         ( '', None,  ' TestBoxes.sOs', ''  ),
+              ksResultsSortByTestBoxOsVersion:  ( '', None, ' TestBoxes.sOs, TestBoxes.sOsVersion DESC', ''  ),
+              ksResultsSortByTestBoxArch:       ( '', None, ' TestBoxes.sCpuArch', ''  ),
+              ksResultsSortByTestBoxCpuVendor:  ( '', None, ' TestBoxes.sCpuVendor', ''  ),
+              ksResultsSortByTestBoxCpuName:    ( '', None, ' TestBoxes.sCpuVendor, TestBoxes.sCpuName', ''  ),
+              ksResultsSortByTestBoxCpuRev: (
+                  '', None,  ' TestBoxes.sCpuVendor, TestBoxes.lCpuRevision DESC', ', TestBoxes.lCpuRevision'  ),
+              ksResultsSortByTestBoxCpuFeatures: (
+                  ' TestBoxes.fCpuHwVirt DESC, TestBoxes.fCpuNestedPaging DESC, TestBoxes.fCpu64BitGuest DESC, '
+                  + 'TestBoxes.cCpus DESC',
+                  ', TestBoxes.cCpus' ), }
+        ),
+    };
+
 
     def _getTimePeriodQueryPart(self, tsNow, sInterval):
         """
@@ -554,8 +702,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                      sTsNow, sInterval );
         return sRet
 
-    def fetchResultsForListing(self, iStart, cMaxRows, tsNow, sInterval, enmResultsGroupingType, iResultsGroupingValue,
-                               fOnlyFailures):
+    def fetchResultsForListing(self, iStart, cMaxRows, tsNow, sInterval, enmResultSortBy,
+                               enmResultsGroupingType, iResultsGroupingValue, fOnlyFailures):
         """
         Fetches TestResults table content.
 
@@ -573,11 +721,15 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         #
         # Get SQL query parameters
         #
-        if enmResultsGroupingType is None:
-            raise TMExceptionBase('Unknown grouping type')
-        if enmResultsGroupingType not in self.kdResultGroupingMap:
-            raise TMExceptionBase('Unknown grouping type')
-        sTables, sGroupingField, sGroupingCondition = self.kdResultGroupingMap[enmResultsGroupingType]
+        if enmResultsGroupingType is None or enmResultsGroupingType not in self.kdResultGroupingMap:
+            raise TMExceptionBase('Unknown grouping type');
+        if enmResultSortBy is None or enmResultSortBy not in self.kasResultsSortBy:
+            raise TMExceptionBase('Unknown sorting');
+        sGroupingTables, sGroupingField, sGroupingCondition, dSortingOverrides = self.kdResultGroupingMap[enmResultsGroupingType];
+        if enmResultSortBy in dSortingOverrides:
+            sSortingTables, sSortingWhere, sSortingOrderBy, sSortingColumns = dSortingOverrides[enmResultSortBy];
+        else:
+            sSortingTables, sSortingWhere, sSortingOrderBy, sSortingColumns = self.kdResultSortByMap[enmResultSortBy];
 
         #
         # Construct the query.
@@ -612,7 +764,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '       TestCaseArgs.sArgs,\n' \
                   '       TestSuiteBits.idBuild AS idBuildTestSuite,\n' \
                   '       TestSuiteBits.iRevision AS iRevisionTestSuite,\n' \
-                  '       (TestSets.tsDone IS NULL) SortRunningFirst\n' \
+                  '       (TestSets.tsDone IS NULL) SortRunningFirst' + sSortingColumns + '\n' \
                   'FROM   BuildCategories,\n' \
                   '       Builds,\n' \
                   '       TestBoxes,\n' \
@@ -628,7 +780,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '                 TestSets.idGenTestBox AS idGenTestBox,\n' \
                   '                 TestSets.idGenTestCase AS idGenTestCase,\n' \
                   '                 TestSets.idGenTestCaseArgs AS idGenTestCaseArgs\n' \
-                  '          FROM  ' + sTables + '\n' \
+                  '          FROM  ' + sGroupingTables + sSortingTables + '\n' \
                   '          WHERE ' + self._getTimePeriodQueryPart(tsNow, sInterval);
         if fOnlyFailures:
             sQuery += '            AND TestSets.enmStatus != \'success\'::TestStatus_T' \
@@ -637,7 +789,12 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             sQuery += '            AND %s = %d\n' % (sGroupingField, iResultsGroupingValue,);
         if sGroupingCondition is not None:
             sQuery += sGroupingCondition.replace(' AND ', '            AND ');
-        sQuery += '          ORDER BY (TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n' \
+        if sSortingWhere is not None:
+            sQuery += sSortingWhere.replace(' AND ', '            AND ');
+        sQuery += '          ORDER BY ';
+        if sSortingOrderBy is not None:
+            sQuery += sSortingOrderBy + ',\n                ';
+        sQuery += '(TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n' \
                   '          LIMIT %s OFFSET %s\n' % (cMaxRows, iStart,);
 
         sQuery += '       ) AS TestSets\n' \
@@ -652,7 +809,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '   AND TestSets.idGenTestBox      = TestBoxes.idGenTestBox\n' \
                   '   AND TestSets.idGenTestCase     = TestCases.idGenTestCase\n' \
                   '   AND TestSets.idGenTestCaseArgs = TestCaseArgs.idGenTestCaseArgs\n' \
-                  'ORDER BY (TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n'
+                  'ORDER BY ';
+        if sSortingOrderBy is not None:
+            sQuery += sSortingOrderBy + ',\n       ';
+        sQuery += '(TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n';
 
         #
         # Execute the query and return the wrapped results.
@@ -685,13 +845,13 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
         if enmResultsGroupingType not in self.kdResultGroupingMap:
             raise TMExceptionBase('Unknown grouping type')
-        sTables, sGroupingField, sGroupingCondition  = self.kdResultGroupingMap[enmResultsGroupingType]
+        sGroupingTables, sGroupingField, sGroupingCondition, _  = self.kdResultGroupingMap[enmResultsGroupingType];
 
         #
         # Construct the query.
         #
         sQuery = 'SELECT COUNT(idTestSet)\n' \
-                 'FROM   ' + sTables + '\n' \
+                 'FROM   ' + sGroupingTables + '\n' \
                  'WHERE  ' + self._getTimePeriodQueryPart(tsNow, sInterval);
         if fOnlyFailures:
             sQuery += '   AND TestSets.enmStatus != \'success\'::TestStatus_T' \
