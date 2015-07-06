@@ -534,9 +534,9 @@ dnsproxy_answer(PNATState pData, struct socket *so, struct mbuf *m)
         return;
     }
 
+    /* find corresponding query (XXX: but see below) */
     query = hash_find_request(pData, *((unsigned short *)buf));
 
-    /* find corresponding query */
     if (query == NULL)
     {
         /* XXX: if we haven't found anything for this request ...
@@ -547,6 +547,19 @@ dnsproxy_answer(PNATState pData, struct socket *so, struct mbuf *m)
         Log2(("NAT: query wasn't found\n"));
         return;
     }
+
+    /*
+     * XXX: The whole hash thing is pretty meaningless right now since
+     * we use a separate socket for each request, so we already know
+     * the answer.
+     *
+     * If the answer is not what we expect it to be, then it's
+     * probably a stray or malicious reply and we'd better not free a
+     * query owned by some other socket - that would cause
+     * use-after-free later on.
+     */
+    if (query != so->so_timeout_arg)
+        return;
 
     so->so_timeout = NULL;
     so->so_timeout_arg = NULL;
