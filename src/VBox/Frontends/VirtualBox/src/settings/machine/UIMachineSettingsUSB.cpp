@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -399,12 +399,16 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                 /* Removing USB controllers: */
                 if (!usbData.m_fUSBEnabled)
                 {
-                    if (cXhciCtls)
-                        m_machine.RemoveUSBController("XHCI");
-                    if (cEhciCtls)
-                        m_machine.RemoveUSBController("EHCI");
-                    if (cOhciCtls)
-                        m_machine.RemoveUSBController("OHCI");
+                    if (cXhciCtls | cEhciCtls | cOhciCtls)
+                    {
+                        CUSBControllerVector ctlvec = m_machine.GetUSBControllers();
+                        for (int i = 0; i < ctlvec.size(); ++i)
+                        {
+                            CUSBController ctl = ctlvec[i];
+                            QString strName = ctl.GetName();
+                            m_machine.RemoveUSBController(strName);
+                        }
+                    }
                 }
                 /* Creating/replacing USB controllers: */
                 else
@@ -413,10 +417,20 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                     {
                         case KUSBControllerType_OHCI:
                         {
-                            if (cEhciCtls)
-                                m_machine.RemoveUSBController("EHCI");
-                            if (cXhciCtls)
-                                m_machine.RemoveUSBController("XHCI");
+                            if (cXhciCtls || cEhciCtls)
+                            {
+                                CUSBControllerVector ctlvec = m_machine.GetUSBControllers();
+                                for (int i = 0; i < ctlvec.size(); ++i)
+                                {
+                                    CUSBController ctl = ctlvec[i];
+                                    KUSBControllerType enmType = ctl.GetType();
+                                    if (enmType == KUSBControllerType_XHCI || enmType == KUSBControllerType_EHCI)
+                                    {
+                                        QString strName = ctl.GetName();
+                                        m_machine.RemoveUSBController(strName);
+                                    }
+                                }
+                            }
                             if (!cOhciCtls)
                                 m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
                             break;
@@ -424,7 +438,19 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                         case KUSBControllerType_EHCI:
                         {
                             if (cXhciCtls)
-                                m_machine.RemoveUSBController("XHCI");
+                            {
+                                CUSBControllerVector ctlvec = m_machine.GetUSBControllers();
+                                for (int i = 0; i < ctlvec.size(); ++i)
+                                {
+                                    CUSBController ctl = ctlvec[i];
+                                    KUSBControllerType enmType = ctl.GetType();
+                                    if (enmType == KUSBControllerType_XHCI)
+                                    {
+                                        QString strName = ctl.GetName();
+                                        m_machine.RemoveUSBController(strName);
+                                    }
+                                }
+                            }
                             if (!cOhciCtls)
                                 m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
                             if (!cEhciCtls)
@@ -433,12 +459,22 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                         }
                         case KUSBControllerType_XHCI:
                         {
-                            if (cEhciCtls)
-                                m_machine.RemoveUSBController("EHCI");
-                            if (cOhciCtls)
-                                m_machine.RemoveUSBController("OHCI");
+                            if (cEhciCtls || cOhciCtls)
+                            {
+                                CUSBControllerVector ctlvec = m_machine.GetUSBControllers();
+                                for (int i = 0; i < ctlvec.size(); ++i)
+                                {
+                                    CUSBController ctl = ctlvec[i];
+                                    KUSBControllerType enmType = ctl.GetType();
+                                    if (enmType == KUSBControllerType_EHCI || enmType == KUSBControllerType_OHCI)
+                                    {
+                                        QString strName = ctl.GetName();
+                                        m_machine.RemoveUSBController(strName);
+                                    }
+                                }
+                            }
                             if (!cXhciCtls)
-                                m_machine.AddUSBController("XHCI", KUSBControllerType_XHCI);
+                                m_machine.AddUSBController("xHCI", KUSBControllerType_XHCI);
                             break;
                         }
                         default:

@@ -162,6 +162,7 @@ enum
     MODIFYVM_VRDE_EXTPACK,
     MODIFYVM_VRDE,
     MODIFYVM_RTCUSEUTC,
+    MODIFYVM_USBRENAME,
     MODIFYVM_USBXHCI,
     MODIFYVM_USBEHCI,
     MODIFYVM_USB,
@@ -331,6 +332,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdevideochannelquality",  MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_STRING },
     { "--vrdeextpack",              MODIFYVM_VRDE_EXTPACK,              RTGETOPT_REQ_STRING },
     { "--vrde",                     MODIFYVM_VRDE,                      RTGETOPT_REQ_BOOL_ONOFF },
+    { "--usbrename",                MODIFYVM_USBRENAME,                 RTGETOPT_REQ_STRING },
     { "--usbxhci",                  MODIFYVM_USBXHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_BOOL_ONOFF },
@@ -2524,6 +2526,39 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
+            case MODIFYVM_USBRENAME:
+            {
+                const char *pszName = ValueUnion.psz;
+                int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_STRING);
+                if (RT_FAILURE(vrc))
+                    return errorSyntax(USAGE_MODIFYVM,
+                                       "Missing or Invalid argument to '%s'",
+                                       GetOptState.pDef->pszLong);
+                const char *pszNewName = ValueUnion.psz;
+
+                SafeIfaceArray<IUSBController> ctrls;
+                CHECK_ERROR(sessionMachine, COMGETTER(USBControllers)(ComSafeArrayAsOutParam(ctrls)));
+                bool fRenamed = false;
+                for (size_t i = 0; i < ctrls.size(); i++)
+                {
+                    ComPtr<IUSBController> pCtrl = ctrls[i];
+                    Bstr bstrName;
+                    CHECK_ERROR(pCtrl, COMGETTER(Name)(bstrName.asOutParam()));
+                    if (bstrName == pszName)
+                    {
+                        bstrName = pszNewName;
+                        CHECK_ERROR(pCtrl, COMSETTER(Name)(bstrName.raw()));
+                        fRenamed = true;
+                    }
+                }
+                if (!fRenamed)
+                {
+                    errorArgument("Invalid --usbrename parameters, nothing renamed");
+                    rc = E_FAIL;
+                }
+                break;
+            }
+
             case MODIFYVM_USBXHCI:
             {
                 ULONG cXhciCtrls = 0;
@@ -2533,11 +2568,26 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     if (!cXhciCtrls && ValueUnion.f)
                     {
                         ComPtr<IUSBController> UsbCtl;
-                        CHECK_ERROR(sessionMachine, AddUSBController(Bstr("XHCI").raw(), USBControllerType_XHCI,
+                        CHECK_ERROR(sessionMachine, AddUSBController(Bstr("xHCI").raw(), USBControllerType_XHCI,
                                                               UsbCtl.asOutParam()));
                     }
                     else if (cXhciCtrls && !ValueUnion.f)
-                        CHECK_ERROR(sessionMachine, RemoveUSBController(Bstr("XHCI").raw()));
+                    {
+                        SafeIfaceArray<IUSBController> ctrls;
+                        CHECK_ERROR(sessionMachine, COMGETTER(USBControllers)(ComSafeArrayAsOutParam(ctrls)));
+                        for (size_t i = 0; i < ctrls.size(); i++)
+                        {
+                            ComPtr<IUSBController> pCtrl = ctrls[i];
+                            USBControllerType_T enmType;
+                            CHECK_ERROR(pCtrl, COMGETTER(Type)(&enmType));
+                            if (enmType == USBControllerType_XHCI)
+                            {
+                                Bstr ctrlName;
+                                CHECK_ERROR(pCtrl, COMGETTER(Name)(ctrlName.asOutParam()));
+                                CHECK_ERROR(sessionMachine, RemoveUSBController(ctrlName.raw()));
+                            }
+                        }
+                    }
                 }
                 break;
             }
@@ -2555,7 +2605,22 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                                                               UsbCtl.asOutParam()));
                     }
                     else if (cEhciCtrls && !ValueUnion.f)
-                        CHECK_ERROR(sessionMachine, RemoveUSBController(Bstr("EHCI").raw()));
+                    {
+                        SafeIfaceArray<IUSBController> ctrls;
+                        CHECK_ERROR(sessionMachine, COMGETTER(USBControllers)(ComSafeArrayAsOutParam(ctrls)));
+                        for (size_t i = 0; i < ctrls.size(); i++)
+                        {
+                            ComPtr<IUSBController> pCtrl = ctrls[i];
+                            USBControllerType_T enmType;
+                            CHECK_ERROR(pCtrl, COMGETTER(Type)(&enmType));
+                            if (enmType == USBControllerType_EHCI)
+                            {
+                                Bstr ctrlName;
+                                CHECK_ERROR(pCtrl, COMGETTER(Name)(ctrlName.asOutParam()));
+                                CHECK_ERROR(sessionMachine, RemoveUSBController(ctrlName.raw()));
+                            }
+                        }
+                    }
                 }
                 break;
             }
@@ -2573,7 +2638,22 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                                                               UsbCtl.asOutParam()));
                     }
                     else if (cOhciCtrls && !ValueUnion.f)
-                        CHECK_ERROR(sessionMachine, RemoveUSBController(Bstr("OHCI").raw()));
+                    {
+                        SafeIfaceArray<IUSBController> ctrls;
+                        CHECK_ERROR(sessionMachine, COMGETTER(USBControllers)(ComSafeArrayAsOutParam(ctrls)));
+                        for (size_t i = 0; i < ctrls.size(); i++)
+                        {
+                            ComPtr<IUSBController> pCtrl = ctrls[i];
+                            USBControllerType_T enmType;
+                            CHECK_ERROR(pCtrl, COMGETTER(Type)(&enmType));
+                            if (enmType == USBControllerType_OHCI)
+                            {
+                                Bstr ctrlName;
+                                CHECK_ERROR(pCtrl, COMGETTER(Name)(ctrlName.asOutParam()));
+                                CHECK_ERROR(sessionMachine, RemoveUSBController(ctrlName.raw()));
+                            }
+                        }
+                    }
                 }
                 break;
             }

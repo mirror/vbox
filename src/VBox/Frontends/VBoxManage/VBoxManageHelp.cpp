@@ -850,6 +850,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--usb on|off]\n"
                      "                            [--usbehci on|off]\n"
                      "                            [--usbxhci on|off]\n"
+                     "                            [--usbrename <oldname> <newname>]\n"
                      "                            [--snapshotfolder default|<path>]\n"
                      "                            [--teleporter on|off]\n"
                      "                            [--teleporterport <port>]\n"
