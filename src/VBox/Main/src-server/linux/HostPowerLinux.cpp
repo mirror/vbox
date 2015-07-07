@@ -82,7 +82,8 @@ HostPowerServiceLinux::~HostPowerServiceLinux()
 {
     /* Closing the connection should cause the event loop to exit. */
     LogFunc((": Stopping thread\n"));
-    dbus_connection_close(mpConnection);
+    if (mpConnection)
+        dbus_connection_close(mpConnection);
 
     RTThreadWait(mThread, 5000, NULL);
     mThread = NIL_RTTHREAD;
