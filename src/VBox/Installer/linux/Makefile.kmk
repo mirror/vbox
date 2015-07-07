@@ -85,7 +85,6 @@ linux-scripts_SOURCES = \
 	uninstall.sh \
 	vboxautostart-service.sh \
 	vboxballoonctrl-service.sh \
-	vboxdrv-pardus.py \
 	vboxweb-service.sh
 
 INSTALLS += linux-misc

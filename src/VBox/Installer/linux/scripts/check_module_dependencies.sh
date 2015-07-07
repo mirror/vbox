@@ -347,11 +347,6 @@ get_system_information()
         PATTERN_GCC_MAKE=
         PATTERN_HEADERS=
         PATTERN_HEADERS_META=
-    elif $file_exists /etc/pardus-release; then  # Pardus
-        GET_KERN_PACKAGE=
-        PATTERN_GCC_MAKE=
-        PATTERN_HEADERS=
-        PATTERN_HEADERS_META=
     elif $file_exists /etc/slackware-version; then  # Slackware
         GET_KERN_PACKAGE=
         PATTERN_GCC_MAKE=
