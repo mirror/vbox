@@ -857,7 +857,7 @@ static void ichac97MixerReset(PAC97STATE pThis)
     {
         /* Set a default audio format for our mixer. */
         PDMAUDIOSTREAMCFG streamCfg;
-        streamCfg.uHz           = 41000;
+        streamCfg.uHz           = 44100;
         streamCfg.cChannels     = 2;
         streamCfg.enmFormat     = AUD_FMT_S16;
         streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
