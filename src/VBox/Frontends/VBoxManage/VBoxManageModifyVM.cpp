@@ -200,6 +200,7 @@ enum
     MODIFYVM_VCP_FILENAME,
     MODIFYVM_VCP_WIDTH,
     MODIFYVM_VCP_HEIGHT,
+    MODIFYVM_VCP_RES,
     MODIFYVM_VCP_RATE,
     MODIFYVM_VCP_FPS,
     MODIFYVM_VCP_MAXTIME,
@@ -354,16 +355,25 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VPX
-    { "--vcpenabled",               MODIFYVM_VCP,                       RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vcpscreens",               MODIFYVM_VCP_SCREENS,               RTGETOPT_REQ_STRING },
-    { "--vcpfile",                  MODIFYVM_VCP_FILENAME,              RTGETOPT_REQ_STRING },
-    { "--vcpwidth",                 MODIFYVM_VCP_WIDTH,                 RTGETOPT_REQ_UINT32 },
-    { "--vcpheight",                MODIFYVM_VCP_HEIGHT,                RTGETOPT_REQ_UINT32 },
-    { "--vcprate",                  MODIFYVM_VCP_RATE,                  RTGETOPT_REQ_UINT32 },
-    { "--vcpfps",                   MODIFYVM_VCP_FPS,                   RTGETOPT_REQ_UINT32 },
-    { "--vcpmaxtime",               MODIFYVM_VCP_MAXTIME,               RTGETOPT_REQ_INT32  },
-    { "--vcpmaxsize",               MODIFYVM_VCP_MAXSIZE,               RTGETOPT_REQ_INT32  },
-    { "--vcpoptions",               MODIFYVM_VCP_OPTIONS,               RTGETOPT_REQ_STRING },
+    { "--videocap",                 MODIFYVM_VCP,                       RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vcpenabled",               MODIFYVM_VCP,                       RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
+    { "--videocapscreens",          MODIFYVM_VCP_SCREENS,               RTGETOPT_REQ_STRING },
+    { "--vcpscreens",               MODIFYVM_VCP_SCREENS,               RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--videocapfile",             MODIFYVM_VCP_FILENAME,              RTGETOPT_REQ_STRING },
+    { "--vcpfile",                  MODIFYVM_VCP_FILENAME,              RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--videocapres",              MODIFYVM_VCP_RES,                   RTGETOPT_REQ_STRING },
+    { "--vcpwidth",                 MODIFYVM_VCP_WIDTH,                 RTGETOPT_REQ_UINT32 }, /* deprecated */
+    { "--vcpheight",                MODIFYVM_VCP_HEIGHT,                RTGETOPT_REQ_UINT32 }, /* deprecated */
+    { "--videocaprate",             MODIFYVM_VCP_RATE,                  RTGETOPT_REQ_UINT32 },
+    { "--vcprate",                  MODIFYVM_VCP_RATE,                  RTGETOPT_REQ_UINT32 }, /* deprecated */
+    { "--videocapfps",              MODIFYVM_VCP_FPS,                   RTGETOPT_REQ_UINT32 },
+    { "--vcpfps",                   MODIFYVM_VCP_FPS,                   RTGETOPT_REQ_UINT32 }, /* deprecated */
+    { "--videocapmaxtime",          MODIFYVM_VCP_MAXTIME,               RTGETOPT_REQ_INT32  },
+    { "--vcpmaxtime",               MODIFYVM_VCP_MAXTIME,               RTGETOPT_REQ_INT32  }, /* deprecated */
+    { "--videocapmaxsize",          MODIFYVM_VCP_MAXSIZE,               RTGETOPT_REQ_INT32  },
+    { "--vcpmaxsize",               MODIFYVM_VCP_MAXSIZE,               RTGETOPT_REQ_INT32  }, /* deprecated */
+    { "--videocapopts",             MODIFYVM_VCP_OPTIONS,               RTGETOPT_REQ_STRING },
+    { "--vcpoptions",               MODIFYVM_VCP_OPTIONS,               RTGETOPT_REQ_STRING }, /* deprecated */
 #endif
     { "--autostart-enabled",        MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--autostart-delay",          MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32 },
@@ -2768,6 +2778,29 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_VCP_HEIGHT:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureHeight)(ValueUnion.u32));
+                break;
+            }
+            case MODIFYVM_VCP_RES:
+            {
+                uint32_t uWidth = 0;
+                char *pszNext;
+                int vrc = RTStrToUInt32Ex(ValueUnion.psz, &pszNext, 0, &uWidth);
+                if (RT_FAILURE(vrc) || vrc != VWRN_TRAILING_CHARS || !pszNext || *pszNext != 'x')
+                {
+                    errorArgument("Error parsing geomtry '%s' (expected WIDTHxHEIGHT)", ValueUnion.psz);
+                    rc = E_FAIL;
+                    break;
+                }
+                uint32_t uHeight = 0;
+                vrc = RTStrToUInt32Ex(pszNext+1, NULL, 0, &uHeight);
+                if (vrc != VINF_SUCCESS)
+                {
+                    errorArgument("Error parsing geomtry '%s' (expected WIDTHxHEIGHT)", ValueUnion.psz);
+                    rc = E_FAIL;
+                    break;
+                }
+                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureWidth)(uWidth));
+                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureHeight)(uHeight));
                 break;
             }
             case MODIFYVM_VCP_RATE:
