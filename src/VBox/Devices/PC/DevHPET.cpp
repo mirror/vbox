@@ -445,7 +445,7 @@ static int hpetTimerRegRead32(HPET const *pThis, uint32_t iTimerNo, uint32_t iTi
     if (   iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u32Capabilities)  /* The second check is only to satisfy Parfait; */
         || iTimerNo >= RT_ELEMENTS(pThis->aTimers) )                /* in practice, the number of configured timers */
     {                                                               /* will always be <= aTimers elements. */
-        LogRelMax(10, ("HPET: using timer above configured range: %d\n", iTimerNo));
+        LogRelMax(10, ("HPET: Using timer above configured range: %d\n", iTimerNo));
         *pu32Value = 0;
         return VINF_SUCCESS;
     }
@@ -481,7 +481,7 @@ static int hpetTimerRegRead32(HPET const *pThis, uint32_t iTimerNo, uint32_t iTi
 
         default:
         {
-            LogRelMax(10, ("invalid HPET register read %d on %d\n", iTimerReg, pHpetTimer->idxTimer));
+            LogRelMax(10, ("HPET: Invalid HPET register read %d on %d\n", iTimerReg, pHpetTimer->idxTimer));
             u32Value = 0;
             break;
         }
@@ -510,7 +510,7 @@ static int hpetTimerRegWrite32(HPET *pThis, uint32_t iTimerNo, uint32_t iTimerRe
     if (   iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u32Capabilities)
         || iTimerNo >= RT_ELEMENTS(pThis->aTimers) )    /* Parfait - see above. */
     {
-        LogRelMax(10, ("HPET: using timer above configured range: %d\n", iTimerNo));
+        LogRelMax(10, ("HPET: Using timer above configured range: %d\n", iTimerNo));
         return VINF_SUCCESS;
     }
     HPETTIMER *pHpetTimer = &pThis->aTimers[iTimerNo];
@@ -539,7 +539,7 @@ static int hpetTimerRegWrite32(HPET *pThis, uint32_t iTimerNo, uint32_t iTimerRe
             }
             if ((u32NewValue & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_LEVEL)
             {
-                LogRelMax(10, ("level-triggered config not yet supported\n"));
+                LogRelMax(10, ("HPET: Level-triggered config not yet supported\n"));
                 AssertFailed();
             }
 
@@ -600,7 +600,7 @@ static int hpetTimerRegWrite32(HPET *pThis, uint32_t iTimerNo, uint32_t iTimerRe
             break;
 
         default:
-            LogRelMax(10, ("invalid timer register write: %d\n", iTimerReg));
+            LogRelMax(10, ("HPET: Invalid timer register write: %d\n", iTimerReg));
             break;
     }
 
@@ -795,7 +795,7 @@ static int hpetConfigRegWrite32(HPET *pThis, uint32_t idxReg, uint32_t u32NewVal
         {
             Log(("write HPET_STATUS + 4: %x\n", u32NewValue));
             if (u32NewValue != 0)
-                LogRelMax(10, ("Writing HPET_STATUS + 4 with non-zero, ignored\n"));
+                LogRelMax(10, ("HPET: Writing HPET_STATUS + 4 with non-zero, ignored\n"));
             break;
         }
 
@@ -818,7 +818,7 @@ static int hpetConfigRegWrite32(HPET *pThis, uint32_t idxReg, uint32_t u32NewVal
         }
 
         default:
-            LogRelMax(10, ("invalid HPET config write: %x\n", idxReg));
+            LogRelMax(10, ("HPET: Invalid HPET config write: %x\n", idxReg));
             break;
     }
 
