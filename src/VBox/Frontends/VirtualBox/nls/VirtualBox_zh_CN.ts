@@ -6385,7 +6385,7 @@
     <message>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
+        <translation>选择虚拟盘...</translation>
     </message>
 </context>
 <context>
