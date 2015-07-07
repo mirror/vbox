@@ -16,7 +16,7 @@
 #
 
 
-# chkconfig: 3457 30 70
+# chkconfig: 345 30 70
 # description: VirtualBox Linux Additions kernel modules
 #
 ### BEGIN INIT INFO
