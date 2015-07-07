@@ -238,8 +238,6 @@ do_sysvinit_action()
     name="${1}"
     ## The action to perform, normally "start", "stop" or "status".
     action="${2}"
-    ## The optional expression to check for in the script before starting.
-    expression="${3}"
     test ! -z "${name}" && test ! -z "${action}" || \
         { log "${self}: missing argument" && return 1; }
     if test -x "/etc/rc.d/init.d/${name}"
@@ -252,23 +250,15 @@ do_sysvinit_action()
         log "${self}: error: unknown init type or unknown service ${name}"
         return 1
     fi
-    test -n "${expression}" && ! grep -q "${expression}" "${script}" && return 0
-    case "${action}" in
-    start|stop|reload|restart|try-restart|force-reload|status)
-        if test -x "`which service 2>/dev/null`"
-        then
-            service "${name}" ${action}
-        elif test -x "`which invoke-rc.d 2>/dev/null`"
-        then
-            invoke-rc.d "${name}" ${action}
-        else
-            "${script}" "${action}"
-        fi
-        ;;
-    *)
+    if test -x "`which service 2>/dev/null`"
+    then
+        service "${name}" ${action}
+    elif test -x "`which invoke-rc.d 2>/dev/null`"
+    then
+        invoke-rc.d "${name}" ${action}
+    else
         "${script}" "${action}"
-        ;;
-    esac
+    fi
 }
 
 ## Start a service
@@ -281,18 +271,6 @@ start_init_script()
 stop_init_script()
 {
     do_sysvinit_action "${1}" stop
-}
-
-## Do initial setup of an installed service
-setup_init_script()
-{
-    do_sysvinit_action "${1}" setup '^# *setup_script *$'
-}
-
-## Do pre-removal cleanup of an installed service
-cleanup_init_script()
-{
-    do_sysvinit_action "${1}" cleanup '^# *cleanup_script *$'
 }
 
 ## Extract chkconfig information from a sysvinit script.
