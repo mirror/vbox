@@ -60,6 +60,7 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
  	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/ntoskrnl.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/hal.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/ndis.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/tdi.lib \
  	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
  VBoxNetFlt_LIBS = \
  	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)

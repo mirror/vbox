@@ -18,6 +18,11 @@
 #include <VBox/intnetinline.h>
 #include <iprt/thread.h>
 
+RT_C_DECLS_BEGIN
+#include <tdikrnl.h>
+RT_C_DECLS_END
+#include <mstcpip.h>
+
 /** represents the job element of the job queue
  * see comments for VBOXNETFLT_JOB_QUEUE */
 typedef struct VBOXNETFLT_JOB
@@ -1677,6 +1682,10 @@ DECLHIDDEN(VOID) vboxNetFltWinUnload(IN PDRIVER_OBJECT DriverObject)
 
     vboxNetFltWinMpDeregister(&g_VBoxNetFltGlobalsWin.Mp);
 
+#ifndef VBOXNETADP
+    NdisFreeSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
+#endif /* VBOXNETADP */
+
     LogFlow((__FUNCTION__" <== DO (0x%x)\n", DriverObject));
 
     vboxNetFltWinFiniNetFltBase();
@@ -1728,6 +1737,11 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 
             g_VBoxNetFltGlobalsWin.fPacketIsLoopedBack = NDIS_FLAGS_IS_LOOPBACK_PACKET;
 
+#ifndef VBOXNETADP
+            RTListInit(&g_VBoxNetFltGlobalsWin.listFilters);
+            NdisAllocateSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
+#endif
+
             Status = vboxNetFltWinMpRegister(&g_VBoxNetFltGlobalsWin.Mp, DriverObject, RegistryPath);
             Assert(Status == STATUS_SUCCESS);
             if (Status == NDIS_STATUS_SUCCESS)
@@ -1748,6 +1762,9 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 //#endif
                 }
                 vboxNetFltWinMpDeregister(&g_VBoxNetFltGlobalsWin.Mp);
+#ifndef VBOXNETADP
+                NdisFreeSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
+#endif /* VBOXNETADP */
             }
             vboxNetFltWinJobFiniQueue(&g_VBoxJobQueue);
         }
@@ -3271,9 +3288,197 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     return;
 }
 
+#ifndef VBOXNETADP
+
+DECLINLINE(bool) vboxNetFltWinIsAddrLinkLocal4(PCRTNETADDRIPV4 pAddr)
+{
+    return (pAddr->s.Lo == 0xfea9); /* 169.254 */
+}
+
+DECLINLINE(bool) vboxNetFltWinIsAddrLinkLocal6(PCRTNETADDRIPV6 pAddr)
+{
+    return ((pAddr->au8[0] == 0xfe) && ((pAddr->au8[1] & 0xc0) == 0x80));
+}
+
+void vboxNetFltWinNotifyHostAddress(PTA_ADDRESS pAddress, bool fAdded)
+{
+#ifdef DEBUG
+    char szBuf[128];
+#endif /* DEBUG */
+    void *pvAddr = NULL;
+    INTNETADDRTYPE enmAddrType = kIntNetAddrType_Invalid;
+
+    LogFlow(("==>vboxNetFltWinNotifyHostAddress: AddrType=%d %s\n",
+             pAddress->AddressType, fAdded ? "added" : "deleted"));
+    if (pAddress->AddressType == TDI_ADDRESS_TYPE_IP)
+    {
+        PTDI_ADDRESS_IP pTdiAddrIp = (PTDI_ADDRESS_IP)pAddress->Address;
+        /*
+         * Note that we do not get loopback addresses here. If we did we should
+         * have checked and ignored them too.
+         */
+        if (!vboxNetFltWinIsAddrLinkLocal4((PCRTNETADDRIPV4)(&pTdiAddrIp->in_addr)))
+        {
+            pvAddr = &pTdiAddrIp->in_addr;
+            enmAddrType = kIntNetAddrType_IPv4;
+        }
+    }
+    else if (pAddress->AddressType == TDI_ADDRESS_TYPE_IP6)
+    {
+        PTDI_ADDRESS_IP6 pTdiAddrIp6 = (PTDI_ADDRESS_IP6)pAddress->Address;
+        if (!vboxNetFltWinIsAddrLinkLocal6((PCRTNETADDRIPV6)(pTdiAddrIp6->sin6_addr)))
+        {
+            pvAddr = pTdiAddrIp6->sin6_addr;
+            enmAddrType = kIntNetAddrType_IPv6;
+        }
+    }
+    else
+    {
+        Log2(("vboxNetFltWinNotifyHostAddress: ignoring irrelevant address type %d\n",
+              pAddress->AddressType));
+        LogFlow(("<==vboxNetFltWinNotifyHostAddress\n"));
+        return;
+    }
+    if (pvAddr)
+    {
+        NdisAcquireSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
+        /* At this point the list must contain at least one element. */
+        PVBOXNETFLTWIN pFilter   = NULL;
+        PVBOXNETFLTINS pInstance = NULL;
+        RTListForEach(&g_VBoxNetFltGlobalsWin.listFilters, pFilter, VBOXNETFLTWIN, node)
+        {
+            pInstance = RT_FROM_MEMBER(pFilter, VBOXNETFLTINS, u.s.WinIf);
+            if (vboxNetFltWinReferenceWinIf(pInstance))
+            {
+                if (pInstance->pSwitchPort && pInstance->pSwitchPort->pfnNotifyHostAddress)
+                    break;
+                vboxNetFltWinDereferenceWinIf(pInstance);
+            }
+            else
+                Log2(("vboxNetFltWinNotifyHostAddress: failed to retain filter instance %p\n", pInstance));
+            pInstance = NULL;
+        }
+        NdisReleaseSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
+        if (pInstance)
+        {
+            if (enmAddrType == kIntNetAddrType_IPv4)
+                Log2(("vboxNetFltWin%sAddressHandler: %RTnaipv4\n",
+                      fAdded ? "Add" : "Del", *(PCRTNETADDRIPV4)pvAddr));
+            else
+                Log2(("vboxNetFltWin%sAddressHandler: %RTnaipv6\n",
+                      fAdded ? "Add" : "Del", pvAddr));
+            pInstance->pSwitchPort->pfnNotifyHostAddress(pInstance->pSwitchPort, fAdded,
+                                                         enmAddrType, pvAddr);
+            vboxNetFltWinDereferenceWinIf(pInstance);
+        }
+        else
+            Log2(("vboxNetFltWinNotifyHostAddress: no filters require notification\n"));
+    }
+    else
+        Log2(("vboxNetFltWinNotifyHostAddress: ignoring link-local address (%s)\n", szBuf));
+    LogFlow(("<==vboxNetFltWinNotifyHostAddress\n"));
+}
+
+void vboxNetFltWinAddAddressHandler(PTA_ADDRESS Address,
+                                    PUNICODE_STRING DeviceName,
+                                    PTDI_PNP_CONTEXT Context)
+{
+    vboxNetFltWinNotifyHostAddress(Address, true);
+}
+
+void vboxNetFltWinDelAddressHandler(PTA_ADDRESS Address,
+                                    PUNICODE_STRING DeviceName,
+                                    PTDI_PNP_CONTEXT Context)
+{
+    vboxNetFltWinNotifyHostAddress(Address, false);
+}
+
+void vboxNetFltWinRegisterIpAddrNotifier(PVBOXNETFLTINS pThis)
+{
+    LogFlow(("==>vboxNetFltWinRegisterIpAddrNotifier: instance=%p pThis->pSwitchPort=%p pThis->pSwitchPort->pfnNotifyHostAddress=%p\n",
+             pThis, pThis->pSwitchPort, pThis->pSwitchPort ? pThis->pSwitchPort->pfnNotifyHostAddress : NULL));
+    if (pThis->pSwitchPort && pThis->pSwitchPort->pfnNotifyHostAddress)
+    {
+        NdisAcquireSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
+        bool fRegisterHandlers = RTListIsEmpty(&g_VBoxNetFltGlobalsWin.listFilters);
+        RTListPrepend(&g_VBoxNetFltGlobalsWin.listFilters, &pThis->u.s.WinIf.node);
+        NdisReleaseSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
+
+        if (fRegisterHandlers)
+        {
+            TDI_CLIENT_INTERFACE_INFO Info;
+            UNICODE_STRING ClientName = RTL_CONSTANT_STRING(L"VBoxNetFlt");
+            memset(&Info, 0, sizeof(Info));
+            Info.MajorTdiVersion = 2;
+            Info.MinorTdiVersion = 0;
+            Info.ClientName = &ClientName;
+            Info.AddAddressHandlerV2 = vboxNetFltWinAddAddressHandler;
+            Info.DelAddressHandlerV2 = vboxNetFltWinDelAddressHandler;
+            Assert(!g_VBoxNetFltGlobalsWin.hNotifier);
+            NTSTATUS Status = TdiRegisterPnPHandlers(&Info, sizeof(Info), &g_VBoxNetFltGlobalsWin.hNotifier);
+            Log2(("vboxNetFltWinRegisterIpAddrNotifier: TdiRegisterPnPHandlers returned %d\n", Status));
+        }
+        else
+            Log2(("vboxNetFltWinRegisterIpAddrNotifier: already registed\n"));
+    }
+    else
+        Log2(("vboxNetFltWinRegisterIpAddrNotifier: this instance does not require notifications, ignoring...\n"));
+    LogFlow(("<==vboxNetFltWinRegisterIpAddrNotifier: notifier=%p\n", g_VBoxNetFltGlobalsWin.hNotifier));
+}
+
+void vboxNetFltWinUnregisterIpAddrNotifier(PVBOXNETFLTINS pThis)
+{
+    LogFlow(("==>vboxNetFltWinUnregisterIpAddrNotifier: notifier=%p\n", g_VBoxNetFltGlobalsWin.hNotifier));
+    if (pThis->pSwitchPort && pThis->pSwitchPort->pfnNotifyHostAddress)
+    {
+        NdisAcquireSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
+        /* At this point the list must contain at least one element. */
+        Assert(!RTListIsEmpty(&g_VBoxNetFltGlobalsWin.listFilters));
+        RTListNodeRemove(&pThis->u.s.WinIf.node);
+        HANDLE hNotifier = NULL;
+        if (RTListIsEmpty(&g_VBoxNetFltGlobalsWin.listFilters))
+        {
+            /*
+             * The list has become empty, so we need to deregister handlers. We
+             * grab hNotifier and reset it while still holding the lock. This
+             * guaranties that we won't interfere with setting it in
+             * vboxNetFltWinRegisterIpAddrNotifier(). It is inconceivable that
+             * vboxNetFltWinUnregisterIpAddrNotifier() will be called for the
+             * same filter instance while it is still being processed by
+             * vboxNetFltWinRegisterIpAddrNotifier(). This would require trunk
+             * destruction in the middle of its creation. It is possible that
+             * vboxNetFltWinUnregisterIpAddrNotifier() is called for another
+             * filter instance, but in such case we won't even get here as the
+             * list won't be empty.
+             */
+            hNotifier = g_VBoxNetFltGlobalsWin.hNotifier;
+            g_VBoxNetFltGlobalsWin.hNotifier = NULL;
+        }
+        NdisReleaseSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
+        if (hNotifier)
+        {
+            NTSTATUS Status = TdiDeregisterPnPHandlers(hNotifier);
+            Log2(("vboxNetFltWinUnregisterIpAddrNotifier: TdiDeregisterPnPHandlers(%p) returned %d\n",
+                  hNotifier, Status));
+        }
+        else
+            Log2(("vboxNetFltWinUnregisterIpAddrNotifier: filters remain, do not deregister handlers yet\n"));
+    }
+    else
+        Log2(("vboxNetFltWinUnregisterIpAddrNotifier: this instance did not require notifications, ignoring...\n"));
+    LogFlow(("<==vboxNetFltWinUnregisterIpAddrNotifier\n"));
+}
+#else /* VBOXNETADP */
+#define vboxNetFltWinRegisterIpAddrNotifier(x)
+#define vboxNetFltWinUnregisterIpAddrNotifier(x)
+#endif /* VBOXNETADP */
+
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 {
     NDIS_STATUS Status = vboxNetFltWinDisconnectIt(pThis);
+    Log2(("vboxNetFltOsDisconnectIt: pThis=%p pThis->pSwitchPort=%p pThis->pSwitchPort->pfnNotifyHostAddress=%p\n",
+          pThis, pThis->pSwitchPort, pThis->pSwitchPort ? pThis->pSwitchPort->pfnNotifyHostAddress : NULL));
+    vboxNetFltWinUnregisterIpAddrNotifier(pThis);
     return Status == NDIS_STATUS_SUCCESS ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
@@ -3339,6 +3544,9 @@ static int vboxNetFltWinConnectIt(PVBOXNETFLTINS pThis)
 
 int vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 {
+    Log2(("vboxNetFltOsConnectIt: pThis=%p pThis->pSwitchPort=%p pThis->pSwitchPort->pfnNotifyHostAddress=%p\n",
+          pThis, pThis->pSwitchPort, pThis->pSwitchPort ? pThis->pSwitchPort->pfnNotifyHostAddress : NULL));
+    vboxNetFltWinRegisterIpAddrNotifier(pThis);
     return vboxNetFltWinConnectIt(pThis);
 }
 
