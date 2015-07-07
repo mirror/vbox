@@ -2787,7 +2787,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 int vrc = RTStrToUInt32Ex(ValueUnion.psz, &pszNext, 0, &uWidth);
                 if (RT_FAILURE(vrc) || vrc != VWRN_TRAILING_CHARS || !pszNext || *pszNext != 'x')
                 {
-                    errorArgument("Error parsing geomtry '%s' (expected WIDTHxHEIGHT)", ValueUnion.psz);
+                    errorArgument("Error parsing geomtry '%s' (expected <width>x<height>)", ValueUnion.psz);
                     rc = E_FAIL;
                     break;
                 }
@@ -2795,7 +2795,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 vrc = RTStrToUInt32Ex(pszNext+1, NULL, 0, &uHeight);
                 if (vrc != VINF_SUCCESS)
                 {
-                    errorArgument("Error parsing geomtry '%s' (expected WIDTHxHEIGHT)", ValueUnion.psz);
+                    errorArgument("Error parsing geomtry '%s' (expected <width>x<height>)", ValueUnion.psz);
                     rc = E_FAIL;
                     break;
                 }
