@@ -1161,7 +1161,7 @@ PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t
             case APIC_DM_FIXED:
             {
                 /** @todo implement APIC_DM_FIXED! */
-                LogRelMax(5, ("delivery type APIC_DM_FIXED not implemented. u8Pin=%d u8Level=%d\n", u8Pin, u8Level));
+                LogRelMax(5, ("APIC: Delivery type APIC_DM_FIXED not implemented. u8Pin=%d u8Level=%d\n", u8Pin, u8Level));
                 return  VINF_SUCCESS;
             }
             case APIC_DM_INIT:
