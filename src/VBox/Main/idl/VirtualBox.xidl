@@ -4517,10 +4517,11 @@
 
     <attribute name="videoCaptureMaxTime" type="unsigned long" default="0">
       <desc>
-        This setting determines the maximal number of time video capture
-        will work for. The capture stops as the defined time interval
-        has elapsed. If this value is zero the capturing will not be limited
-        by time. This setting cannot be changed while video capturing is enabled.
+        This setting determines the maximum amount of time in milliseconds
+        the video capture will work for. The capture stops as the defined time
+        interval  has elapsed. If this value is zero the capturing will not be
+        limited by time. This setting cannot be changed while video capturing is
+        enabled.
       </desc>
     </attribute>
 
