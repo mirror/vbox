@@ -638,7 +638,14 @@ typedef struct INTNETTRUNKSWPORT
     uint32_t u32VersionEnd;
 } INTNETTRUNKSWPORT;
 
-/** Version number for the INTNETTRUNKIFPORT::u32Version and INTNETTRUNKIFPORT::u32VersionEnd fields. */
+/**
+ * Version number for the INTNETTRUNKIFPORT::u32Version and
+ * INTNETTRUNKIFPORT::u32VersionEnd fields.
+ *
+ * NB: Version @c 0xA2CDf005 is consumed by 4.x branches for the
+ * backport of pfnNotifyHostAddress.  On the next version bump use
+ * @c 0xA2CDf006 and remove this reminder.
+ */
 # define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf004)
 
 
