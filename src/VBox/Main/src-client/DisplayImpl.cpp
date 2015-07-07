@@ -1114,7 +1114,7 @@ void Display::i_handleUpdateVMMDevSupportsGraphics(bool fSupportsGraphics)
 void Display::i_handleUpdateGuestVBVACapabilities(uint32_t fNewCapabilities)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    bool fNotify = (fNewCapabilities & VBVACAPS_VIDEO_MODE_HINTS) != 0;
+    bool fNotify = (fNewCapabilities & VBVACAPS_VIDEO_MODE_HINTS) != (mfGuestVBVACapabilities & VBVACAPS_VIDEO_MODE_HINTS);
 
     mfGuestVBVACapabilities = fNewCapabilities;
     if (!fNotify)
