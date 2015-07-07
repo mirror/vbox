@@ -5697,8 +5697,12 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVM pVM, PVMCPU pVCpu)
      *        VM-entry. */
     if (fParavirtTsc)
     {
+        /* Currently neither Hyper-V nor KVM need to update their paravirt. TSC
+           information before every VM-entry, hence disable it for performance sake. */
+#if 0
         rc = GIMR0UpdateParavirtTsc(pVM, 0 /* u64Offset */);
         AssertRC(rc);
+#endif
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
 
