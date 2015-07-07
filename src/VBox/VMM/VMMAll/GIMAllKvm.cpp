@@ -99,6 +99,9 @@ VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 #elif defined(IN_RING3)
                 int rc2 = SUPR3CallVMMR0(pVM->pVMR0, pVCpuTarget->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, NULL);
                 AssertRC(rc2);
+#elif defined(IN_RC)
+                /* Nothing to do for raw-mode, shouldn't really be used by raw-mode guests anyway. */
+                Assert(pVM->cCpus == 1);
 #endif
                 uHyperRet = KVM_HYPERCALL_RET_SUCCESS;
             }
