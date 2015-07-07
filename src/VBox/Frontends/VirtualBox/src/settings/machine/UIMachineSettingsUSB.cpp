@@ -399,7 +399,7 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                 /* Removing USB controllers: */
                 if (!usbData.m_fUSBEnabled)
                 {
-                    if (cXhciCtls | cEhciCtls | cOhciCtls)
+                    if (cXhciCtls || cEhciCtls || cOhciCtls)
                     {
                         CUSBControllerVector ctlvec = m_machine.GetUSBControllers();
                         for (int i = 0; i < ctlvec.size(); ++i)
