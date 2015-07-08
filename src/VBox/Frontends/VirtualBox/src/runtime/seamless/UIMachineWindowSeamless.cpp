@@ -79,6 +79,21 @@ void UIMachineWindowSeamless::sltRevokeFocus()
 #endif /* Q_WS_MAC || Q_WS_X11 */
 }
 
+void UIMachineWindowSeamless::showMinimized()
+{
+#ifdef Q_WS_X11
+    /* If there is mini-toolbar: */
+    if (m_pMiniToolBar)
+    {
+        /* Minimize it first: */
+        m_pMiniToolBar->showMinimized();
+    }
+#endif /* Q_WS_X11 */
+
+    /* Call to base-class: */
+    UIMachineWindow::showMinimized();
+}
+
 void UIMachineWindowSeamless::prepareVisualState()
 {
     /* Call to base-class: */
@@ -130,7 +145,7 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     m_pMiniToolBar->show();
     m_pMiniToolBar->addMenus(actionPool()->menus());
-    connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()));
+    connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()), Qt::QueuedConnection);
     connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
             actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SLOT(trigger()));
     connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),

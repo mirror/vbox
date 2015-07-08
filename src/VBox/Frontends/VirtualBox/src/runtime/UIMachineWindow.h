@@ -97,6 +97,9 @@ protected slots:
     /* Session event-handlers: */
     virtual void sltMachineStateChanged();
 
+    /** Shows window minimized. */
+    virtual void showMinimized() { QMainWindow::showMinimized(); }
+
 protected:
 
     /* Constructor: */

@@ -46,6 +46,9 @@ private slots:
     /** Revokes keyboard-focus. */
     void sltRevokeFocus();
 
+    /** Shows window minimized. */
+    void showMinimized();
+
 private:
 
     /* Prepare helpers: */
