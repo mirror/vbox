@@ -127,6 +127,8 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_MacOS107_x64     = 0xB3100,
     VBOXOSTYPE_MacOS108_x64     = 0xB4100,
     VBOXOSTYPE_MacOS109_x64     = 0xB5100,
+    VBOXOSTYPE_MacOS1010_x64    = 0xB6100,
+    VBOXOSTYPE_MacOS1011_x64    = 0xB7100,
     VBOXOSTYPE_JRockitVE        = 0xC0000,
     VBOXOSTYPE_Haiku            = 0xD0000,
     VBOXOSTYPE_Haiku_x64        = 0xD0100,
