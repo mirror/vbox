@@ -416,7 +416,7 @@
     </message>
     <message>
         <source>&amp;Network Settings...</source>
-        <translation>&amp;Einstellungen für Netzwerk...</translation>
+        <translation>&amp;Einstellungen Netzwerk...</translation>
     </message>
     <message>
         <source>&amp;Shared Folders Settings...</source>
@@ -432,7 +432,7 @@
     </message>
     <message>
         <source>&amp;Video Capture Settings...</source>
-        <translation>Einstellungen für &amp;Videoaufzeichnung...</translation>
+        <translation>Einstellungen &amp;Videoaufzeichnung...</translation>
     </message>
     <message>
         <source>Popup Menu</source>
@@ -468,7 +468,7 @@
     </message>
     <message>
         <source>&amp;Status Bar Settings...</source>
-        <translation>&amp;Einstellungen für Statusleiste...</translation>
+        <translation>&amp;Einstellungen Statusleiste...</translation>
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
@@ -484,7 +484,7 @@
     </message>
     <message>
         <source>&amp;Keyboard Settings...</source>
-        <translation>&amp;Einstellungen für Tastatur...</translation>
+        <translation>&amp;Einstellungen Tastatur...</translation>
     </message>
     <message>
         <source>&amp;Mouse</source>
@@ -492,7 +492,7 @@
     </message>
     <message>
         <source>&amp;USB Settings...</source>
-        <translation>&amp;Einstellungen für USB...</translation>
+        <translation>&amp;Einstellungen USB...</translation>
     </message>
     <message>
         <source>&amp;Shared Folders</source>
@@ -680,7 +680,7 @@
     </message>
     <message>
         <source>&amp;Hard Disk Settings...</source>
-        <translation>&amp;Einstellungen für Festplatten...</translation>
+        <translation>&amp;Einstellungen Festplatten...</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure hard disks</source>
@@ -2062,7 +2062,7 @@
     <name>UIGlobalSettingsNetworkDetailsHost</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation>Einstellungen für Host-only Netzwerk</translation>
+        <translation>Einstellungen Host-only Netzwerk</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
@@ -2157,7 +2157,7 @@
     <name>UIGlobalSettingsNetworkDetailsNAT</name>
     <message>
         <source>NAT Network Details</source>
-        <translation>Einstellungen für NAT-Netzwerk</translation>
+        <translation>Einstellungen NAT-Netzwerk</translation>
     </message>
     <message>
         <source>&amp;Enable Network</source>
