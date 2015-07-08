@@ -492,11 +492,11 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     char *pszPathReal = RTPathRealDup(pThis->szFilename);
     if (pszPathReal)
     {
-        LogRel(("Netsniffing to '%s'\n", pszPathReal));
+        LogRel(("NetSniffer: Sniffing to '%s'\n", pszPathReal));
         RTStrFree(pszPathReal);
     }
     else
-        LogRel(("Netsniffing to '%s'\n", pThis->szFilename));
+        LogRel(("NetSniffer: Sniffing to '%s'\n", pThis->szFilename));
 
     /*
      * Write pcap header.
