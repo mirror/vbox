@@ -31,6 +31,7 @@
 #include <linux/in.h>
 #include <linux/ip.h>
 #include <linux/if_vlan.h>
+#include <net/ipv6.h>
 #include <net/if_inet6.h>
 #include <net/addrconf.h>
 
