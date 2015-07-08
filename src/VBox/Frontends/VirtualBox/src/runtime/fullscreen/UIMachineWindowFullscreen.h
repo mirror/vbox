@@ -91,6 +91,8 @@ private:
     /* Show stuff: */
     void placeOnScreen();
     void showInNecessaryMode();
+    /** Shows window minimized. */
+    void showInMinimizedMode();
 
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
