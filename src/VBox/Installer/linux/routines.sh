@@ -184,6 +184,46 @@ check_perl()
     return 0
 }
 
+## Creates a systemd wrapper in /lib for an LSB init script
+systemd_wrap_init_script()
+{
+    self="systemd_wrap_init_script"
+    ## The init script to be installed.  The file may be copied or referenced.
+    script="$(readlink -f -- "${1}")"
+    ## Name for the service.
+    name="$2"
+    test -x "$script" && test ! "$name" = "" || \
+        { log "$self: invalid arguments" && return 1; }
+    test -d /usr/lib/systemd/system && unit_path=/usr/lib/systemd/system
+    test -d /lib/systemd/system && unit_path=/lib/systemd/system
+    test -n "${unit_path}" || \
+        { log "$self: systemd unit path not found" && return 1; }
+    description=`sed -n 's/# *Description: *\(.*\)/\1/p' "${script}"`
+    required=`sed -n 's/# *Required-Start: *\(.*\)/\1/p' "${script}"`
+    runlevels=`sed -n 's/# *Default-Start: *\(.*\)/\1/p' "${script}"`
+    before=`for i in ${runlevels}; do printf "runlevel${i}.target "; done`
+    after=`for i in ${required}; do printf "${i}.service "; done`
+    cat > "${unit_path}/${name}.service" << EOF
+[Unit]
+SourcePath=${script}
+Description=${description}
+Before=${before}shutdown.target
+After=${after}
+Conflicts=shutdown.target
+
+[Service]
+Type=forking
+Restart=no
+TimeoutSec=5min
+IgnoreSIGPIPE=no
+KillMode=process
+GuessMainPID=no
+RemainAfterExit=yes
+ExecStart=${script} start
+ExecStop=${script} stop
+EOF
+}
+
 ## Installs a file containing a shell script as an init script
 install_init_script()
 {
@@ -194,6 +234,7 @@ install_init_script()
     name="$2"
     test -x "$script" && test ! "$name" = "" || \
         { log "$self: invalid arguments" && return 1; }
+    test -d /lib/systemd/system || test -d /usr/lib/systemd/system && systemd_wrap_init_script "$script" "$name"
     if test -d /etc/rc.d/init.d
     then
         cp "$script" "/etc/rc.d/init.d/$name" 2> /dev/null
@@ -202,9 +243,6 @@ install_init_script()
     then
         cp "$script" "/etc/init.d/$name" 2> /dev/null
         chmod 755 "/etc/init.d/$name" 2> /dev/null
-    else
-        log "${self}: error: unknown init type"
-        return 1
     fi
     return 0
 }
@@ -217,15 +255,13 @@ remove_init_script()
     name="$1"
     test ! "$name" = "" || \
         { log "$self: missing argument" && return 1; }
+    rm -f /lib/systemd/system/"$name".service /usr/lib/systemd/system/"$name".service
     if test -d /etc/rc.d/init.d
     then
         rm -f "/etc/rc.d/init.d/$name" > /dev/null 2>&1
     elif test -d /etc/init.d
     then
         rm -f "/etc/init.d/$name" > /dev/null 2>&1
-    else
-        log "${self}: error: unknown init type"
-        return 1
     fi
     return 0
 }
@@ -240,24 +276,21 @@ do_sysvinit_action()
     action="${2}"
     test ! -z "${name}" && test ! -z "${action}" || \
         { log "${self}: missing argument" && return 1; }
-    if test -x "/etc/rc.d/init.d/${name}"
+    if test -x "`which systemctl 2>/dev/null`"
     then
-        script="/etc/rc.d/init.d/${name}"
-    elif test -x "/etc/init.d/${name}"
-    then
-        script="/etc/init.d/${name}"
-    else
-        log "${self}: error: unknown init type or unknown service ${name}"
-        return 1
-    fi
-    if test -x "`which service 2>/dev/null`"
+        systemctl ${action} "${name}"
+    elif test -x "`which service 2>/dev/null`"
     then
         service "${name}" ${action}
     elif test -x "`which invoke-rc.d 2>/dev/null`"
     then
         invoke-rc.d "${name}" ${action}
-    else
-        "${script}" "${action}"
+    elif test -x "/etc/rc.d/init.d/${name}"
+    then
+        "/etc/rc.d/init.d/${name}" "${action}"
+    elif test -x "/etc/init.d/${name}"
+    then
+        "/etc/init.d/${name}" "${action}"
     fi
 }
 
