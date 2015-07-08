@@ -23,7 +23,7 @@ Name:      %NAME%
 Version:   %BUILDVER%_%BUILDREL%
 Release:   1
 URL:       http://www.virtualbox.org/
-Source:    VirtualBox.tar.bz2
+Source:    VirtualBox.tar
 License:   GPLv2
 Group:     Applications/System
 Vendor:    Oracle Corporation

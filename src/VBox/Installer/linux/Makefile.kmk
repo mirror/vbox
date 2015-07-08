@@ -42,10 +42,11 @@ VBOX_LNX_PACKAGE_NAME    = VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).ru
 VBOX_LNX_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
 
 BLDDIRS  += $(VBOX_LNX_INST_OUT_DIR) $(VBOX_LNX_INST_STAGE_DIR)
-PACKING  += $(PATH_STAGE_BIN)/VirtualBox.tar.bz2
 if !defined(VBOX_NO_LINUX_RUN_INSTALLER)
  PACKING += $(PATH_STAGE_BIN)/$(VBOX_LNX_PACKAGE_NAME) \
             $(PATH_STAGE_BIN)/VirtualBox-dbg.tar.bz2
+else
+ PACKING += $(PATH_STAGE_BIN)/VirtualBox.tar
 endif
 
 OTHER_CLEAN   += \
@@ -439,20 +440,13 @@ endif
 #
 # .tar.bz2 for distribution with the files under VirtualBox-<ver>/.
 #
-$(PATH_STAGE_BIN)/VirtualBox.tar.bz2: $(VBOX_LNX_INST_ARCH_DEPS)
+$(PATH_STAGE_BIN)/VirtualBox.tar: $(VBOX_LNX_INST_ARCH_DEPS)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-$(VBOX_VERSION_STRING) $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(LN_SYMLINK) $(VBOX_LNX_INST_OUT_DIR)/archive/ $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-$(VBOX_VERSION_STRING)
-ifdef VBOX_USE_PBZIP2
 	$(QUIET)tar --dereference --owner 0 --group 0 \
-		-cRhf $(patsubst %.bz2,%,$@) -C $(VBOX_LNX_INST_OUT_DIR) \
+		-cRhf $@ -C $(VBOX_LNX_INST_OUT_DIR) \
 		$(addprefix VirtualBox-$(VBOX_VERSION_STRING)/,$(VBOX_LNX_ARCH_FILES))
-	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
-else
-	$(QUIET)tar --dereference --owner 0 --group 0 \
-		-cjRhf $@ -C $(VBOX_LNX_INST_OUT_DIR) \
-		$(addprefix VirtualBox-$(VBOX_VERSION_STRING)/,$(VBOX_LNX_ARCH_FILES))
-endif
 	$(QUIET)$(RM) -f -- $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-$(VBOX_VERSION_STRING)
 
 

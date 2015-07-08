@@ -189,6 +189,7 @@ rpm/build-stamp: rpm/configure-stamp
 clean:
 	rm -rf $(archdir)
 	rm -rf $(builddir) rpm/VirtualBox-*
+	rm -f rpm/VirtualBox.tar
 	rm -f rpm/VirtualBox.tar.bz2
 	rm -f rpm/VirtualBox.spec
 	rm -f rpm/build-stamp rpm/configure-stamp rpm/configure.log
@@ -200,7 +201,7 @@ binary: rpm/build-stamp $(verfile)
 else
 binary: rpm/build-stamp
 	rm -rf rpm/VirtualBox-*
-	tar -xjf $(builddir)/bin/VirtualBox.tar.bz2 -C rpm
+	tar -xf $(builddir)/bin/VirtualBox.tar -C rpm
 	sed \
 	    -e 's|%VER%|$(ver)|g' \
 	    -e 's|%NAME%|$(verpkg)|g' \
@@ -232,10 +233,10 @@ binary: rpm/build-stamp
 	cp vboxweb-service.sh $(archdir)/vboxweb-service.init
 	cp VBox.sh $(archdir)
 	mv rpm/VirtualBox-$(ver) rpm/$(rpmname)
-	tar -cjf rpm/VirtualBox.tar.bz2 -C rpm $(rpmname)
+	tar -cf rpm/VirtualBox.tar -C rpm $(rpmname)
 	rm -f /usr/src/packages/RPMS/*/VirtualBox*rpm
 	rm -f /usr/src/packages/SPECS/*
-	(cd rpm; rpmbuild -tb --clean VirtualBox.tar.bz2)
+	(cd rpm; rpmbuild -tb --clean VirtualBox.tar)
 	mv /usr/src/packages/RPMS/*/$(verpkg)-debug* $(pkgdir) || true
 	file=`find /usr/src/packages/RPMS -name $(verpkg)*rpm -print`; \
 	    mv $$file $(pkgdir)
