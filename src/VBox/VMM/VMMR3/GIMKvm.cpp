@@ -264,6 +264,9 @@ VMMR3_INT_DECL(void) gimR3KvmReset(PVM pVM)
     {
         PGIMKVMCPU pKvmCpu = &pVM->aCpus[iCpu].gim.s.u.KvmCpu;
         pKvmCpu->u64SystemTimeMsr = 0;
+        pKvmCpu->u32SystemTimeVersion = 0;
+        pKvmCpu->fSystemTimeFlags = 0;
+        pKvmCpu->GCPhysSystemTime = 0;
         pKvmCpu->uTsc = 0;
         pKvmCpu->uVirtNanoTS = 0;
     }
