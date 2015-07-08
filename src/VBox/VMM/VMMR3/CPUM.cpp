@@ -2440,6 +2440,8 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM)
         if (fSupportsLongMode)
             pVCpu->cpum.s.fUseFlags |= CPUM_USE_SUPPORTS_LONGMODE;
     }
+
+    cpumR3MsrRegStats(pVM);
     return VINF_SUCCESS;
 }
 

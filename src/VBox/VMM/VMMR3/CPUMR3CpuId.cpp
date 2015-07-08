@@ -3965,7 +3965,6 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM)
 
         pCpum->GuestInfo.paMsrRangesR0 = MMHyperR3ToR0(pVM, pCpum->GuestInfo.paMsrRangesR3);
         pCpum->GuestInfo.paMsrRangesRC = MMHyperR3ToRC(pVM, pCpum->GuestInfo.paMsrRangesR3);
-        cpumR3MsrRegStats(pVM);
 
 
         /*
