@@ -221,6 +221,9 @@ GuessMainPID=no
 RemainAfterExit=yes
 ExecStart=${script} start
 ExecStop=${script} stop
+
+[Install]
+WantedBy=multi-user.target
 EOF
 }
 
@@ -348,8 +351,11 @@ addrunlevel()
         return 1
     fi
     get_chkconfig_info "${init_d_path}/init.d/${name}" || return 1
+    if test -x "`which systemctl 2>/dev/null`"
+    then
+        systemctl enable "${name}"
     # Redhat based sysvinit systems
-    if test -x "`which chkconfig 2>/dev/null`"
+    elif test -x "`which chkconfig 2>/dev/null`"
     then
         chkconfig --add "${name}" || {
             log "Failed to set up init script ${name}" && return 1
@@ -394,8 +400,11 @@ delrunlevel()
     name="${1}"
     test ! -z "${name}" || \
         { log "${self}: missing argument" && return 1; }
+    if test -x "`which systemctl 2>/dev/null`"
+    then
+        systemctl disable "${name}"
     # Redhat-based systems
-    if test -x "/sbin/chkconfig"
+    elif test -x "/sbin/chkconfig"
     then
         /sbin/chkconfig --del "${name}" > /dev/null 2>&1
     # SUSE-based sysvinit systems
