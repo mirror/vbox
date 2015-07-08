@@ -888,8 +888,8 @@ HRESULT NetworkAdapter::setTraceFile(const com::Utf8Str &aTraceFile)
         mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        /* No change in CFGM logic => changeAdapter=FALSE. */
-        mParent->i_onNetworkAdapterChange(this, FALSE);
+        /* We change the 'File' => changeAdapter=TRUE. */
+        mParent->i_onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
