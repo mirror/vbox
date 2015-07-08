@@ -55,9 +55,6 @@ elif [ -f /etc/debian_version ]; then
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
     PIDFILE="/var/run/vboxballoonctrl-service"
-elif [ -f /etc/arch-release ]; then
-     system=arch
-     PIDFILE="/var/run/vboxballoonctrl-service"
 elif [ -f /etc/slackware-version ]; then
     system=slackware
     PIDFILE="/var/run/vboxballoonctrl-service"
@@ -182,32 +179,6 @@ if [ "$system" = "gentoo" ]; then
         if [ "`which $0`" = "/sbin/rc" ]; then
             shift
         fi
-    fi
-fi
-
-if [ "$system" = "arch" ]; then
-    USECOLOR=yes
-    . /etc/rc.d/functions
-    start_daemon() {
-        usr="$1"
-        shift
-        su - $usr -c "$*"
-        test $? -eq 0 && add_daemon rc.`basename $2`
-    }
-    killproc() {
-        killall $@
-        rm_daemon `basename $@`
-    }
-    if [ -n "$NOLSB" ]; then
-        fail_msg() {
-            stat_fail
-        }
-        succ_msg() {
-            stat_done
-        }
-        begin_msg() {
-            stat_busy "$1"
-        }
     fi
 fi
 
