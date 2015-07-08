@@ -340,6 +340,10 @@ addrunlevel()
     self="addrunlevel"
     ## Service name.
     name="${1}"
+    test -n "${name}" || \
+        { log "${self}: missing argument" && return 1; }
+    test -x "`which systemctl 2>/dev/null`" && \
+        { systemctl enable "${name}"; return; }
     if test -x "/etc/rc.d/init.d/${name}"
     then
         init_d_path=/etc/rc.d
@@ -351,11 +355,8 @@ addrunlevel()
         return 1
     fi
     get_chkconfig_info "${init_d_path}/init.d/${name}" || return 1
-    if test -x "`which systemctl 2>/dev/null`"
-    then
-        systemctl enable "${name}"
     # Redhat based sysvinit systems
-    elif test -x "`which chkconfig 2>/dev/null`"
+    if test -x "`which chkconfig 2>/dev/null`"
     then
         chkconfig --add "${name}" || {
             log "Failed to set up init script ${name}" && return 1
@@ -398,7 +399,7 @@ delrunlevel()
     self="delrunlevel"
     ## Service name.
     name="${1}"
-    test ! -z "${name}" || \
+    test -n "${name}" || \
         { log "${self}: missing argument" && return 1; }
     if test -x "`which systemctl 2>/dev/null`"
     then
