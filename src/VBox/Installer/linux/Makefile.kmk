@@ -438,7 +438,7 @@ endif
 	$(QUIET)$(CHMOD) 0644 $@
 
 #
-# .tar.bz2 for distribution with the files under VirtualBox-<ver>/.
+# .tar for distribution with the files under VirtualBox-<ver>/.
 #
 $(PATH_STAGE_BIN)/VirtualBox.tar: $(VBOX_LNX_INST_ARCH_DEPS)
 	$(call MSG_L1,Packing $@)
