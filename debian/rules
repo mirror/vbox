@@ -181,7 +181,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	tar -xjC $(prefix)/opt -f $(builddir)/bin/VirtualBox.tar.bz2
+	tar -xC $(prefix)/opt -f $(builddir)/bin/VirtualBox.tar
 	$(if $(NOQT),,mv $(archdir)/virtualbox.xml debian/$(verpkg).sharedmimeinfo)
 	$(archdir)/scripts/install.sh --package $(package) --root $(prefix) \
 	    --prefix /usr $(if $(NOQT),--no-qt) $(if $(ose),--ose) \
