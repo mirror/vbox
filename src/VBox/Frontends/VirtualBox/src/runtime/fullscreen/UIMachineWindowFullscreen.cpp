@@ -246,7 +246,7 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
                                               gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     m_pMiniToolBar->addMenus(actionPool()->menus());
-    connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), machineLogic(), SLOT(sltMinimizeActiveMachineWindow()), Qt::QueuedConnection);
+    connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()));
     connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
             actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SLOT(trigger()));
     connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
@@ -441,21 +441,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 
     /* Make sure machine-view have focus: */
     m_pMachineView->setFocus();
-}
-
-void UIMachineWindowFullscreen::showInMinimizedMode()
-{
-#ifndef Q_WS_MAC
-    /* If there is mini-toolbar: */
-    if (m_pMiniToolBar)
-    {
-        /* Minimize it first: */
-        m_pMiniToolBar->showMinimized();
-    }
-#endif /* !Q_WS_MAC */
-
-    /* Call to base-class: */
-    UIMachineWindow::showInMinimizedMode();
 }
 
 void UIMachineWindowFullscreen::adjustMachineViewSize()

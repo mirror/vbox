@@ -104,8 +104,6 @@ protected:
 
     /* Show stuff: */
     virtual void showInNecessaryMode() = 0;
-    /** Shows window minimized. */
-    virtual void showInMinimizedMode() { showMinimized(); }
 
     /* Translate stuff: */
     void retranslateUi();
