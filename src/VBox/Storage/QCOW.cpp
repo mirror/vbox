@@ -1310,6 +1310,7 @@ static int qcowAsyncClusterAllocRollback(PQCOWIMAGE pImage, PVDIOCTX pIoCtx, PQC
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->offNextClusterOld);
             qcowL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
             qcowL2TblCacheEntryFree(pImage, pClusterAlloc->pL2Entry); /* Free it, it is not in the cache yet. */
+            break;
         }
         case QCOWCLUSTERASYNCALLOCSTATE_USER_ALLOC:
         case QCOWCLUSTERASYNCALLOCSTATE_USER_LINK:
