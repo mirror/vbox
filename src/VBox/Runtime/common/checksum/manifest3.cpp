@@ -544,10 +544,9 @@ RTDECL(int) RTManifestEntryAddIoStream(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsI
         }
     }
     else
-    {
-        rtManifestHashesDestroy(pHashes);
         rc = VERR_NO_TMP_MEMORY;
-    }
+
+    rtManifestHashesDestroy(pHashes);
     return rc;
 }
 
