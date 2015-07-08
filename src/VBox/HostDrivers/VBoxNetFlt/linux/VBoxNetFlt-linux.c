@@ -1937,7 +1937,7 @@ static int vboxNetFltLinuxEnumeratorCallback(struct notifier_block *self, unsign
 #endif
         {
             if (   dev != pThis->u.s.pDev
-                && ipv6_addr_src_scope(&ifa->addr) <= IPV6_ADDR_SCOPE_LINKLOCAL)
+                && ipv6_addr_type(&ifa->addr) & (IPV6_ADDR_LINKLOCAL | IPV6_ADDR_LOOPBACK))
                 continue;
 
             Log(("%s: %s: IPv6 addr %RTnaipv6/%u\n",
@@ -2020,7 +2020,7 @@ static int vboxNetFltLinuxNotifierIPv6Callback(struct notifier_block *self, unsi
         vboxNetFltLinuxReleaseNetDev(pThis, pDev);
 
     if (   !fMyDev
-        && ipv6_addr_src_scope(&ifa->addr) <= IPV6_ADDR_SCOPE_LINKLOCAL)
+        && ipv6_addr_type(&ifa->addr) & (IPV6_ADDR_LINKLOCAL | IPV6_ADDR_LOOPBACK))
         return NOTIFY_OK;
 
     if (pThis->pSwitchPort->pfnNotifyHostAddress)
