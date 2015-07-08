@@ -1885,6 +1885,10 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
     return rc;
 }
 
+/*
+ * Initial enumeration of netdevs.  Called with NETDEV_REGISTER by
+ * register_netdevice_notifier() under rtnl lock.
+ */
 static int vboxNetFltLinuxEnumeratorCallback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
 {
     PVBOXNETFLTINS pThis = ((PVBOXNETFLTNOTIFIER)self)->pThis;
@@ -1901,7 +1905,11 @@ static int vboxNetFltLinuxEnumeratorCallback(struct notifier_block *self, unsign
     /*
      * IPv4
      */
-    in_dev = __in_dev_get_rcu(dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
+    in_dev = __in_dev_get_rtnl(dev);
+#else
+    in_dev = __in_dev_get(dev);
+#endif
     if (in_dev != NULL)
     {
         for_ifa(in_dev) {
