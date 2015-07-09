@@ -40,12 +40,15 @@
 /**
  * Structure for maintaining a "dropped files" directory
  * on the host or guest. This will contain all received files & directories
- * for a single transfer.
+ * for a single drag and drop operation.
  */
 typedef struct DNDDIRDROPPEDFILES
 {
     /** Directory handle for drop directory. */
     PRTDIR                       hDir;
+    /** Flag indicating whether the drop directory
+     *  has been opened for processing or not. */
+    bool                         fOpen;
     /** Absolute path to drop directory. */
     RTCString                    strPathAbs;
     /** List for holding created directories in the case of a rollback. */
