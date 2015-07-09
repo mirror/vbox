@@ -243,6 +243,8 @@ else
 endif
 	mv $(archdir) $(prefix)/usr/lib/$(package)
 	ln -s ../VBoxVMM.so $(prefix)/usr/lib/$(package)/components/VBoxVMM.so
+	mkdir $(prefix)/sbin
+	ln -s ../etc/init.d/vboxdrv $(prefix)/sbin/rcvboxdrv
 	rmdir $(prefix)/opt
 	dh_desktop
 	$(if $(NOMODS),,dh_installmodules)

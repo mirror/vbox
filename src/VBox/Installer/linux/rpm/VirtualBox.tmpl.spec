@@ -169,9 +169,7 @@ if [ -d accessible ]; then
   mv accessible $RPM_BUILD_ROOT/usr/lib/virtualbox
 fi
 install -D -m 755 vboxdrv.init $RPM_BUILD_ROOT%{_initrddir}/vboxdrv
-%if %{?rpm_suse:1}%{!?rpm_suse:0}
-ln -sf ../etc/init.d/vboxdrv $RPM_BUILD_ROOT/sbin/rcvboxdrv
-%endif
+ln -sf %{_initrddir}/vboxdrv $RPM_BUILD_ROOT/sbin/rcvboxdrv
 install -D -m 755 vboxballoonctrl-service.init $RPM_BUILD_ROOT%{_initrddir}/vboxballoonctrl-service
 install -D -m 755 vboxautostart-service.init $RPM_BUILD_ROOT%{_initrddir}/vboxautostart-service
 install -D -m 755 vboxweb-service.init $RPM_BUILD_ROOT%{_initrddir}/vboxweb-service
@@ -452,7 +450,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_initrddir}/vboxweb-service
 %{?rpm_suse: %{py_sitedir}/*}
 %{!?rpm_suse: %{python_sitelib}/*}
-%{?rpm_suse: /sbin/rcvboxdrv}
+/sbin/rcvboxdrv
 %{?rpm_suse: /sbin/rcvboxballoonctrl-service}
 %{?rpm_suse: /sbin/rcvboxautostart-service}
 %{?rpm_suse: /sbin/rcvboxweb-service}
