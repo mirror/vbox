@@ -224,6 +224,11 @@
       </listitem>
 
       <listitem>
+        <para>Linux hosts / guests: support for Linux distributions using systemd
+          without sysv emulation (e.g. ArchLinux)</para>
+      </listitem>
+
+      <listitem>
         <para>Windows Additions/WDDM: improved video memory utilization and
           allow more/bigger guest screens with large resolutions (including HiDPI)
         </para>
