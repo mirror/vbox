@@ -149,10 +149,10 @@ EOF
     # Stop what we can in the way of services and remove them from the
     # system
     for i in $UNINSTALL_SCRIPTS; do
-        stop_init_script "$i"
+        stop_init_script "$i" 2>> "${LOGFILE}"
         test -z "$NO_CLEANUP" && test -x "./$i" && "./$i" cleanup 1>&2 2>> "$LOGFILE"
-        delrunlevel "$i"
-        remove_init_script "$i"
+        delrunlevel "$i" 2>> "${LOGFILE}"
+        remove_init_script "$i" 2>> "${LOGFILE}"
     done
     for i in "/opt/$PACKAGE-"*/init/*; do
       test -z "$NO_CLEANUP" && grep -q '^# *cleanup_script *$' "${i}" && "${i}" cleanup 1>&2 2>> "$LOGFILE"
@@ -420,10 +420,10 @@ fi
 # Install, set up and start init scripts
 for i in "$INSTALLATION_DIR/init/"*; do
   if test -r "$i"; then
-    install_init_script "$i" "`basename "$i"`"
-    addrunlevel "`basename "$i"`"
-    test -n "$DO_SETUP" && grep -q '^# *setup_script *$' "${i}" && "${i}" setup 1>&2
-    start_init_script "`basename "$i"`"
+    install_init_script "$i" "`basename "$i"`" 2>> "${LOGFILE}"
+    addrunlevel "`basename "$i"`" 2>> "${LOGFILE}"
+    test -n "$DO_SETUP" && grep -q '^# *setup_script *$' "${i}" && "${i}" setup 1>&2 2>> "${LOGFILE}"
+    start_init_script "`basename "$i"`" 2>> "${LOGFILE}"
   fi
 done
 
@@ -461,10 +461,10 @@ test -r "$CONFIG_DIR/$CONFIG_FILES" || abort "Required file $CONFIG_FILES not fo
 # Stop and clean up all services
 for i in "$INSTALLATION_DIR/init/"*; do
     if test -r "\$i"; then
-        stop_init_script "\`basename "\$i"\`"
+        stop_init_script "\`basename "\$i"\`" 2>> "${LOGFILE}"
         test -z "\${NO_CLEANUP}" && grep -q '^# *cleanup_script *$' "\${i}" && "\${i}" cleanup 2>> "\$LOGFILE"
-        delrunlevel "\`basename "\$i"\`"
-        remove_init_script "\`basename "\$i"\`"
+        delrunlevel "\`basename "\$i"\`" 2>> "${LOGFILE}"
+        remove_init_script "\`basename "\$i"\`" 2>> "${LOGFILE}"
     fi
 done
 
