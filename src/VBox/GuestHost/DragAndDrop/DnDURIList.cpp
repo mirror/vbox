@@ -49,7 +49,7 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
     AssertPtrReturn(pcszSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszTarget, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("pcszSource=%s, pcszTarget=%s\n", pcszSource, pcszTarget));
+    LogFlowFunc(("pcszSource=%s, pcszTarget=%s, fFlags=0x%x\n", pcszSource, pcszTarget, fFlags));
 
     RTFSOBJINFO objInfo;
     int rc = RTPathQueryInfo(pcszSource, &objInfo, RTFSOBJATTRADD_NOTHING);
@@ -59,10 +59,20 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
         {
             LogFlowFunc(("File '%s' -> '%s' (%RU64)\n", pcszSource, pcszTarget, (uint64_t)objInfo.cbObject));
 
-            m_lstTree.append(DnDURIObject(DnDURIObject::File, pcszSource, pcszTarget,
-                             objInfo.Attr.fMode, (uint64_t)objInfo.cbObject));
-            m_cTotal++;
-            m_cbTotal += (uint64_t)objInfo.cbObject;
+            DnDURIObject objFile(DnDURIObject::File, pcszSource, pcszTarget);
+            if (fFlags & DNDURILIST_FLAGS_KEEP_OPEN) /* Shall we keep the file open while being added to this list? */
+            {
+                /** @todo Add a standard fOpen mode for this list. */
+                rc = objFile.Open(DnDURIObject::Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, objInfo.Attr.fMode);
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                m_lstTree.append(objFile);
+
+                m_cTotal++;
+                m_cbTotal += (uint64_t)objInfo.cbObject;
+            }
         }
         else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
         {
@@ -70,6 +80,9 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
 
             m_lstTree.append(DnDURIObject(DnDURIObject::Directory, pcszSource, pcszTarget,
                              objInfo.Attr.fMode, 0 /* Size */));
+
+            /** @todo Add DNDURILIST_FLAGS_KEEP_OPEN handling. */
+
             m_cTotal++;
         }
         /* Note: Symlinks already should have been resolved at this point. */
@@ -394,11 +407,13 @@ void DnDURIList::RemoveFirst(void)
     if (m_lstTree.isEmpty())
         return;
 
-    DnDURIObject &curPath = m_lstTree.first();
+    DnDURIObject &curObj = m_lstTree.first();
 
-    uint64_t cbSize = curPath.GetSize();
+    uint64_t cbSize = curObj.GetSize();
     Assert(m_cbTotal >= cbSize);
     m_cbTotal -= cbSize; /* Adjust total size. */
+
+    curObj.Close();
 
     m_lstTree.removeFirst();
 }

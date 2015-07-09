@@ -76,6 +76,12 @@ int DnDPathSanitize(char *pszPath, size_t cbPath);
 #define DNDURILIST_FLAGS_ABSOLUTE_PATHS         RT_BIT(0)
 /** Resolve all symlinks. */
 #define DNDURILIST_FLAGS_RESOLVE_SYMLINKS       RT_BIT(1)
+/** Keep the files + directory entries open while
+ *  being in this list. */
+#define DNDURILIST_FLAGS_KEEP_OPEN              RT_BIT(2)
+/** Lazy loading: Only enumerate sub directories when needed.
+ ** @todo Implement lazy loading.  */
+#define DNDURILIST_FLAGS_LAZY                   RT_BIT(3)
 
 class DnDURIObject
 {
