@@ -1103,7 +1103,7 @@ static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
             break;
         case kIntNetAddrType_IPv6:
             Log(("intnetR0IfAddrCacheDeleteIt: hIf=%#x MAC=%.6Rhxs IPv6 deleted #%d %RTnaipv6 %s\n",
-                pIf->hIf, &pIf->MacAddr, iEntry, pAddr->IPv6, pszMsg));
+                pIf->hIf, &pIf->MacAddr, iEntry, &pAddr->IPv6, pszMsg));
             break;
         default:
             Log(("intnetR0IfAddrCacheDeleteIt: hIf=%RX32 MAC=%.6Rhxs type=%d #%d %.*Rhxs %s\n",
@@ -1446,7 +1446,7 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, INTNETADDRTYPE enmAddrType, 
             break;
         case kIntNetAddrType_IPv6:
             Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs IPv6 added #%d %RTnaipv6 %s\n",
-                 pIf->hIf, &pIf->MacAddr, pCache->cEntries, pAddr->IPv6, pszMsg));
+                 pIf->hIf, &pIf->MacAddr, pCache->cEntries, &pAddr->IPv6, pszMsg));
             break;
         default:
             Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs type=%d added #%d %.*Rhxs %s\n",
