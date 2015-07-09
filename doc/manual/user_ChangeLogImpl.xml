@@ -187,12 +187,12 @@
       </listitem>
 
       <listitem>
-        <para>Main/Properties: properly drop transient guest properties when
-          the VM is powered off</para>
+        <para>VBoxSVC: don't keep the support driver permanently open</para>
       </listitem>
 
       <listitem>
-        <para>Guest Control: several fixes</para>
+        <para>Main/Properties: properly drop transient guest properties when
+          the VM is powered off</para>
       </listitem>
 
       <listitem>
@@ -235,6 +235,10 @@
 
       <listitem>
         <para>NAT: fixed several potential crashes</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: Don't forcibly reset/drop all connections when link goes down</para>
       </listitem>
 
       <listitem>
