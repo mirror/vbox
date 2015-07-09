@@ -370,8 +370,8 @@ VMM_INT_DECL(int) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
     if (!pDis)
     {
         /*
-         * Disassemble the instruction at RIP to figure out if it's the Intel
-         * VMCALL instruction and if so, handle it as a hypercall.
+         * Disassemble the instruction at RIP to figure out if it's the Intel VMCALL instruction
+         * or the AMD VMMCALL instruction and if so, handle it as a hypercall.
          */
         DISCPUSTATE Dis;
         rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, NULL /* pcbInstr */);
@@ -403,7 +403,7 @@ VMM_INT_DECL(int) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
             /*
              * Perform the hypercall and update RIP.
              *
-             * For HM, we can simply resume guest execution without perform the hypercall now and
+             * For HM, we can simply resume guest execution without performing the hypercall now and
              * do it on the next VMCALL/VMMCALL exit handler on the patched instruction.
              *
              * For raw-mode we need to do this now anyway. So we do it here regardless with an added
