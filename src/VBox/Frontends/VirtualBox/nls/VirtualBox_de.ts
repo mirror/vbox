@@ -456,7 +456,7 @@
     </message>
     <message>
         <source>&amp;Menu Bar Settings...</source>
-        <translation>&amp;Einstelungen für Menüleiste...</translation>
+        <translation>&amp;Einstellungen Menüleiste...</translation>
     </message>
     <message>
         <source>Show Menu &amp;Bar</source>
