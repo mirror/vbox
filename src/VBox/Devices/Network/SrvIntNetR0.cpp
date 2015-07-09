@@ -1525,7 +1525,7 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, INTNETADDRTYPE enmAddrTyp
     if (RT_LIKELY(   i > 0
                   && (   intnetR0AddrUIsEqualEx((PCRTNETADDRU)pCache->pbEntries, pAddr, cbAddr)
                       || (i > 1
-                          && intnetR0AddrUIsEqualEx((PCRTNETADDRU)(pCache->pbEntries + pCache->cbEntry * i), pAddr, cbAddr))) ))
+                          && intnetR0AddrUIsEqualEx((PCRTNETADDRU)(pCache->pbEntries + pCache->cbEntry * (i-1)), pAddr, cbAddr))) ))
         return;
 
     intnetR0IfAddrCacheAddSlow(pIf, enmAddrType, pAddr, pszMsg);
