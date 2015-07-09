@@ -285,7 +285,7 @@ if [ "$ACTION" = "install" ]; then
         log "Removing previous installation of VirtualBox $INSTALL_VER$INSTALL_REV from $PREV_INSTALLATION"
         log ""
 
-        stop_init_script vboxnet
+        stop_init_script vboxnet >/dev/null 2>&1  # Do we need this?
         delrunlevel vboxnet > /dev/null 2>&1
         if [ "$BUILD_MODULE" = "true" ]; then
             stop_init_script vboxdrv
