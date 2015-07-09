@@ -376,10 +376,10 @@ if [ "$ACTION" = "install" ]; then
     test -e $INSTALLATION_DIR/VBoxVolInfo && chmod 4511 $INSTALLATION_DIR/VBoxVolInfo
 
     # Install runlevel scripts
-    install_init_script vboxdrv.sh vboxdrv
-    install_init_script vboxballoonctrl-service.sh vboxballoonctrl-service
-    install_init_script vboxautostart-service.sh vboxautostart-service
-    install_init_script vboxweb-service.sh vboxweb-service
+    install_init_script $INSTALLATION_DIR/vboxdrv.sh vboxdrv
+    install_init_script $INSTALLATION_DIR/vboxballoonctrl-service.sh vboxballoonctrl-service
+    install_init_script $INSTALLATION_DIR/vboxautostart-service.sh vboxautostart-service
+    install_init_script $INSTALLATION_DIR/vboxweb-service.sh vboxweb-service
 
     # Write the configuration. Do this before we call /etc/init.d/vboxdrv setup!
     echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
