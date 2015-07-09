@@ -557,8 +557,6 @@ VBOX_WITH_REM = 1
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_XPCOM_NAMESPACE_CLEANUP = 1
 endif
-# Set this to not use COM or XPCOM in places where it can be avoided.
-#VBOX_WITHOUT_COM = 1
 # The webservices api.
 VBOX_WITH_WEBSERVICES = 1
 VBOX_WITH_WEBSERVICES_SSL = 1

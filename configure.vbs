@@ -758,7 +758,6 @@ sub DisableCOM(strReason)
       CfgPrint "VBOX_WITH_QTGUI="
       CfgPrint "VBOX_WITH_VBOXSDL="
       CfgPrint "VBOX_WITH_DEBUGGER_GUI="
-      CfgPrint "VBOX_WITHOUT_COM=1"
    end if
 end sub
 
