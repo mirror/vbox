@@ -37,6 +37,7 @@
  * @param   pVM         Pointer to the VM.
  * @param
  * @thread  EMT.
+ * @remarks Can be called with preemption disabled!
  */
 VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu)
 {
