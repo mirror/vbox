@@ -3,7 +3,7 @@
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
-    <title>Version 5.0.0 Release Candidate 3 (2015-07-03)</title>
+    <title>Version 5.0.0 (2015-07-09)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -97,6 +97,14 @@
       </listitem>
 
       <listitem>
+        <para>VMM: fixed a hang under rare conditions on 32-bit hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: several fixes</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: improved HID LEDs synchronization for Mac and Windows hosts.
           The physical LEDs state now restored together with the VM state.</para>
       </listitem>
@@ -108,6 +116,11 @@
 
       <listitem>
         <para>GUI: provide direct access to storage media in the VM selector</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: allow to save the VM state from the selector even if the VM
+          is already paused</para>
       </listitem>
 
       <listitem>
@@ -165,8 +178,31 @@
       </listitem>
 
       <listitem>
+        <para>API: don't lose the saved state and "current state changed" flag
+          during cloning of a VM</para>
+      </listitem>
+
+      <listitem>
+        <para>API: OS type description consistency fix (bug #14162)</para>
+      </listitem>
+
+      <listitem>
         <para>Main/Properties: properly drop transient guest properties when
           the VM is powered off</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: several fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>VRDP: fixed a couple of races which may cause a crash during
+          VM poweroff</para>
+      </listitem>
+
+      <listitem>
+        <para>ExtPack: don't fail if the TMP directory contains non-latin1
+          characters (bug #14159)</para>
       </listitem>
 
       <listitem>
@@ -198,8 +234,36 @@
       </listitem>
 
       <listitem>
+        <para>NAT: fixed several potential crashes</para>
+      </listitem>
+
+      <listitem>
+        <para>Netsniffer: properly handle changing of the trace file name
+          at VM runtime</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed audio output and input when changing the default audio device
+          more than once on OS X</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed audio input on OS X under certain circumstances</para>
+      </listitem>
+
+      <listitem>
         <para>ICH9: fixed the interrupt disable logic for MSI interrupts; should
           fix old Linux guests with AHCI</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: improve playback with USB sound devices attached to the emulated
+          OHCI controller</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: provide Linux guests a different AC97 audio codec type so Linux
+          ALSA does not mis-detect the link speed (default for new VMs)</para>
       </listitem>
 
       <listitem>
@@ -219,6 +283,24 @@
       </listitem>
 
       <listitem>
+        <para>Linux hosts: fixed a bug which made the netfilter driver ignore
+          certain events (bug #12264)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: El Capitan fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fixed a bug which might trigger a host kernel panic
+          if a VM is started and another hypervisor is active</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris hosts: Solaris 12 installer fix</para>
+      </listitem>
+
+      <listitem>
         <para>Guest Additions: added a heartbeat service
           (see <xref linkend="heartbeatservice" />)</para>
       </listitem>
@@ -232,6 +314,24 @@
         <para>Windows Additions/WDDM: improved video memory utilization and
           allow more/bigger guest screens with large resolutions (including HiDPI)
         </para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: added <emphasis>-s</emphasis> parameter to
+          <emphasis>mount.vboxsf</emphasis> to be sloppy with invalid parameters</para>
+      </listitem>
+
+      <listitem>
+        <para>X11 Additions: fixed wrong DPI value (bug #14151)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X guests: limit the CPU family for legacy guests</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris Additions: added quiesce support to co-operate with Solaris'
+          fast-reboot feature</para>
       </listitem>
 
     </itemizedlist>
