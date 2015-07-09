@@ -131,7 +131,7 @@
       </listitem>
 
       <listitem>
-        <para>VBoxManage: now supports renaming storage and USB controllers</para>
+        <para>VBoxManage: now supports renaming storage controllers and USB controllers</para>
       </listitem>
 
       <listitem>
@@ -228,8 +228,8 @@
       </listitem>
 
       <listitem>
-        <para>Storage: added vbox-img standalone tool for direct manipulation
-          of virtual hard disk images without VBoxManage</para>
+        <para>Storage: added <emphasis>vbox-img</emphasis> standalone tool for
+          direct manipulation of virtual hard disk images without VBoxManage</para>
       </listitem>
 
       <listitem>
@@ -242,7 +242,8 @@
       </listitem>
 
       <listitem>
-        <para>NAT: Don't forcibly reset/drop all connections when link goes down</para>
+        <para>NAT: don't forcibly reset/drop all connections when the link goes
+          down</para>
       </listitem>
 
       <listitem>
