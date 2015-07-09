@@ -353,7 +353,7 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX   pCtx,
 {
     AssertPtrReturn(pCtx,        VERR_INVALID_POINTER);
     AssertPtrReturn(ppvData,     VERR_INVALID_POINTER);
-    AssertPtrReturn(cbData,      VERR_INVALID_PARAMETER);
+    AssertReturn(cbData,         VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbDataRecv, VERR_INVALID_POINTER);
 
     /*
@@ -1262,18 +1262,14 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
 {
     AssertPtrReturn(pCtx,                             VERR_INVALID_POINTER);
     AssertReturn(obj.GetType() == DnDURIObject::File, VERR_INVALID_PARAMETER);
-
-    int rc = obj.Open(DnDURIObject::Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-    if (RT_FAILURE(rc))
-    {
-        LogFunc(("Opening file \"%s\" failed with rc=%Rrc\n", obj.GetSourcePath().c_str(), rc));
-        return rc;
-    }
+    AssertReturn(obj.IsOpen(),                        VERR_INVALID_STATE);
 
     uint32_t cbBuf = _64K;           /** @todo Make this configurable? */
     void *pvBuf = RTMemAlloc(cbBuf); /** @todo Make this buffer part of PVBGLR3GUESTDNDCMDCTX? */
     if (!pvBuf)
         return VERR_NO_MEMORY;
+
+    int rc;
 
     RTCString strPath = obj.GetDestPath();
 
@@ -1377,8 +1373,6 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
         };
     }
 
-    obj.Close();
-
     RTMemFree(pvBuf);
 
     LogFlowFuncLeaveRC(rc);
@@ -1420,8 +1414,12 @@ static int vbglR3DnDGHProcessURIMessages(PVBGLR3GUESTDNDCMDCTX pCtx,
     RTCList<RTCString> lstPaths =
         RTCString((const char *)pvData, cbData).split("\r\n");
 
+    /** @todo Add symlink support (DNDURILIST_FLAGS_RESOLVE_SYMLINKS) here. */
+    /** @todo Add lazy loading (DNDURILIST_FLAGS_LAZY) here. */
+    uint32_t fFlags = DNDURILIST_FLAGS_KEEP_OPEN;
+
     DnDURIList lstURI;
-    int rc = lstURI.AppendURIPathsFromList(lstPaths, 0 /* fFlags */);
+    int rc = lstURI.AppendURIPathsFromList(lstPaths, fFlags);
     if (RT_SUCCESS(rc))
     {
         /* Send metadata; in this case it's the (non-recursive) file/directory
