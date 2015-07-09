@@ -190,13 +190,26 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
             {
                 if (!u.m_hFile)
                 {
-                    /* Open files on the source with RTFILE_O_DENY_WRITE to prevent races
+                    /* 
+                     * Open files on the source with RTFILE_O_DENY_WRITE to prevent races
                      * where the OS writes to the file while the destination side transfers
-                     * it over. */
+                     * it over. 
+                     */ 
                     rc = RTFileOpen(&u.m_hFile, strPath.c_str(), fOpen);
                     LogFlowFunc(("strPath=%s, enmType=%RU32, enmDest=%RU32, rc=%Rrc\n", strPath.c_str(), enmType, enmDest, rc));
+#ifdef DEBUG
                     if (RT_SUCCESS(rc))
-                        rc = RTFileGetSize(u.m_hFile, &m_cbSize);
+                    {
+                        uint64_t cbSize;
+                        rc = RTFileGetSize(u.m_hFile, &cbSize);
+                        if (   RT_SUCCESS(rc)
+                            && m_cbSize)
+                        {
+                            if (cbSize > m_cbSize)
+                                LogFlowFunc(("Estimated file size (%RU64) differs from current size (%RU64)\n", m_cbSize, cbSize));
+                        }
+                    }
+#endif
                     if (RT_SUCCESS(rc)
                         && fMode)
                     {
@@ -227,6 +240,7 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
     if (RT_SUCCESS(rc))
         m_Type = enmType;
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
