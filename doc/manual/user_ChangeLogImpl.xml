@@ -92,7 +92,7 @@
       </listitem>
 
       <listitem>
-        <para>VMM: debug facility now includes includes the guest CPU's
+        <para>VMM: debug facility now includes the guest CPU's
           FPU/SSE/extended state in the core dump</para>
       </listitem>
 
