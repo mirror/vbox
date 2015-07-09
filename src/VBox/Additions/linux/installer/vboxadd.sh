@@ -454,6 +454,9 @@ extra_setup()
 
     # Put mount.vboxsf in the right place
     ln -sf "$lib_path/$PACKAGE/mount.vboxsf" /sbin
+    # And an rc file to re-build the kernel modules and re-set-up the X server.
+    ln -sf "$lib_path/$PACKAGE/vboxadd" /sbin/rcvboxadd
+    ln -sf "$lib_path/$PACKAGE/vboxadd-x11" /sbin/rcvboxadd-x11
     # At least Fedora 11 and Fedora 12 require the correct security context when
     # executing this command from service scripts. Shouldn't hurt for other
     # distributions.
@@ -528,6 +531,8 @@ cleanup()
 
     # Remove other files
     rm /sbin/mount.vboxsf 2>/dev/null
+    rm /sbin/rcvboxadd 2>/dev/null
+    rm /sbin/rcvboxadd-x11 2>/dev/null
     rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
 }
 

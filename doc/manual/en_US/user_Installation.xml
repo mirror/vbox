@@ -391,7 +391,7 @@
             installed. In that case, the kernel module will need to be
             reinstalled by executing (as root):</para>
 
-            <screen>/etc/init.d/vboxdrv setup</screen>
+            <screen>rcvboxdrv setup</screen>
           </listitem>
         </orderedlist></para>
     </sect2>
@@ -428,7 +428,7 @@
         out why the compilation failed. You may have to install the
         appropriate Linux kernel headers (see <xref
         linkend="externalkernelmodules" />). After correcting any problems, do
-        <screen>sudo /etc/init.d/vboxdrv setup</screen>This will start a
+        <screen>sudo rcvboxdrv setup</screen>This will start a
         second attempt to build the module.</para>
 
         <para>If a suitable kernel module was found in the package or the

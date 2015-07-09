@@ -591,20 +591,21 @@ greeter-session=vbox-greeter</screen></para>
       <screen>  sh ./VBoxLinuxAdditions.run no_setup</screen>
 
       <para>After this, you will need to at least compile the kernel modules
-      by running the command <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen>
+      by running the command <screen>  rcvboxadd setup</screen>
       as root (you will need to replace <emphasis>lib</emphasis> by
       <emphasis>lib64</emphasis> on some 64bit guests), and on older guests
       without the udev service you will need to add the
       <emphasis>vboxadd</emphasis> service to the default runlevel to ensure
       that the modules get loaded.</para>
 
-      <para>To setup the time synchronization service, run the command
-      <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-service setup</screen> and
+      <para>To setup the time synchronization service,
       add the service vboxadd-service to the default runlevel. To set up the
-      X11 and OpenGL part of the Guest Additions, run the command <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-x11 setup</screen>
+      X11 and OpenGL part of the Guest Additions, run the command
+      <screen>  rcvboxadd-x11 setup</screen>
       (you do not need to enable any services for this).</para>
 
-      <para>To recompile the guest kernel modules, use this command: <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen>
+      <para>To recompile the guest kernel modules, use this command:
+      <screen>  rcvboxadd setup</screen>
       After compilation you should reboot your guest to ensure that the new
       modules are actually used.</para>
     </sect2>

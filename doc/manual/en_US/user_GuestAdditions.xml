@@ -600,7 +600,7 @@
             installing the Linux Guest Additions. If DKMS is not available
             or not installed, the guest kernel modules will need to be
             recreated manually whenever the guest kernel is updated using
-            the command <screen>/etc/init.d/vboxadd setup</screen> as root.
+            the command <screen>rcvboxadd setup</screen> as root.
             </para>
           </listitem>
 
