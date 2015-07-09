@@ -1476,7 +1476,7 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
     PDBGGUISTATSNODE pNode = m_pUpdateParent->papChildren[m_iUpdateChild];
     PDBGGUISTATSNODE const pPrev = prevDataNode(pNode);
     AssertMsg(strcmp(pszName, getNodePath2(pNode, szStrict, sizeof(szStrict))), ("%s\n", szStrict));
-    AssertMsg(strcmp(pszName, getNodePath2(pPrev, szStrict, sizeof(szStrict))), ("%s\n", szStrict));
+    AssertMsg(!pPrev || strcmp(pszName, getNodePath2(pPrev, szStrict, sizeof(szStrict))), ("%s\n", szStrict));
     Log(("updateCallbackHandleOutOfOrder: pszName='%s' m_szUpdateParent='%s' m_cchUpdateParent=%u pNode='%s'\n",
          pszName, m_szUpdateParent, m_cchUpdateParent, getNodePath2(pNode, szStrict, sizeof(szStrict))));
 
