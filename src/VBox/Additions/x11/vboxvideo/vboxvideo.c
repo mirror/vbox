@@ -568,9 +568,15 @@ vbox_output_get_modes (xf86OutputPtr output)
                          RT_CLAMP(pVBox->pScreens[iScreen].aPreferredSize.cx, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MAX_VIRTUAL),
                          RT_CLAMP(pVBox->pScreens[iScreen].aPreferredSize.cy, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MAX_VIRTUAL),
                          TRUE, FALSE);
+    vbox_output_add_mode(pVBox, &pModes, NULL, 2560, 1600, FALSE, FALSE);
+    vbox_output_add_mode(pVBox, &pModes, NULL, 2560, 1440, FALSE, FALSE);
+    vbox_output_add_mode(pVBox, &pModes, NULL, 2048, 1536, FALSE, FALSE);
+    vbox_output_add_mode(pVBox, &pModes, NULL, 1920, 1600, FALSE, FALSE);
+    vbox_output_add_mode(pVBox, &pModes, NULL, 1920, 1080, FALSE, FALSE);
+    vbox_output_add_mode(pVBox, &pModes, NULL, 1680, 1050, FALSE, FALSE);
     vbox_output_add_mode(pVBox, &pModes, NULL, 1600, 1200, FALSE, FALSE);
-    vbox_output_add_mode(pVBox, &pModes, NULL, 1440, 1050, FALSE, FALSE);
-    vbox_output_add_mode(pVBox, &pModes, NULL, 1280, 960,  FALSE, FALSE);
+    vbox_output_add_mode(pVBox, &pModes, NULL, 1400, 1050, FALSE, FALSE);
+    vbox_output_add_mode(pVBox, &pModes, NULL, 1280, 1024, FALSE, FALSE);
     vbox_output_add_mode(pVBox, &pModes, NULL, 1024, 768,  FALSE, FALSE);
     vbox_output_add_mode(pVBox, &pModes, NULL, 800,  600,  FALSE, FALSE);
     vbox_output_add_mode(pVBox, &pModes, NULL, 640,  480,  FALSE, FALSE);
