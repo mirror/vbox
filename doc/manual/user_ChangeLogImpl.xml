@@ -131,6 +131,10 @@
       </listitem>
 
       <listitem>
+        <para>VBoxManage: now supports renaming storage and USB controllers</para>
+      </listitem>
+
+      <listitem>
         <para>Guest Control: major overhaul, for example fixing wrong parameter quoting
           (bug #13157)</para>
       </listitem>
@@ -836,7 +840,7 @@
 
       <listitem>
         <para>GUI: fix 3D overlay window reparenting issue when VM goes to
-          fullscreen mode on X11 hosts.</para>
+          fullscreen mode on X11 hosts</para>
       </listitem>
 
       <listitem>
@@ -1430,7 +1434,7 @@
 
       <listitem>
         <para>Mac OS X hosts: fixed host shutdown and reboot delay caused by running VBoxSVC
-          process in some cases.</para>
+          process in some cases</para>
       </listitem>
 
       <listitem>
