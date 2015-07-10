@@ -75,23 +75,11 @@ DnDURIObject::~DnDURIObject(void)
 
 void DnDURIObject::closeInternal(void)
 {
-    if (m_Type == File)
-    {
-        if (u.m_hFile)
-        {
-            RTFileClose(u.m_hFile);
-            u.m_hFile = NULL;
-        }
-    }
-}
-
-void DnDURIObject::Close(void)
-{
     switch (m_Type)
     {
         case File:
         {
-            if (u.m_hFile != NULL)
+            if (u.m_hFile)
             {
                 int rc2 = RTFileClose(u.m_hFile);
                 AssertRC(rc2);
@@ -107,6 +95,13 @@ void DnDURIObject::Close(void)
         default:
             break;
     }
+
+    LogFlowThisFuncLeave();
+}
+
+void DnDURIObject::Close(void)
+{
+    closeInternal();
 }
 
 bool DnDURIObject::IsComplete(void) const
@@ -190,34 +185,42 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
             {
                 if (!u.m_hFile)
                 {
-                    /* 
+                    /*
                      * Open files on the source with RTFILE_O_DENY_WRITE to prevent races
                      * where the OS writes to the file while the destination side transfers
-                     * it over. 
-                     */ 
+                     * it over.
+                     */
                     rc = RTFileOpen(&u.m_hFile, strPath.c_str(), fOpen);
-                    LogFlowFunc(("strPath=%s, enmType=%RU32, enmDest=%RU32, rc=%Rrc\n", strPath.c_str(), enmType, enmDest, rc));
-#ifdef DEBUG
+                    LogFlowThisFunc(("strPath=%s, fOpen=0x%x, enmType=%RU32, enmDest=%RU32, rc=%Rrc\n",
+                                     strPath.c_str(), fOpen, enmType, enmDest, rc));
+                    if (RT_SUCCESS(rc))
+                        rc = RTFileGetSize(u.m_hFile, &m_cbSize);
+
                     if (RT_SUCCESS(rc))
                     {
-                        uint64_t cbSize;
-                        rc = RTFileGetSize(u.m_hFile, &cbSize);
-                        if (   RT_SUCCESS(rc)
-                            && m_cbSize)
+                        if (   (fOpen & RTFILE_O_WRITE) /* Only set the file mode on write. */
+                            &&  fMode                   /* Some file mode to set specified? */)
                         {
-                            if (cbSize > m_cbSize)
-                                LogFlowFunc(("Estimated file size (%RU64) differs from current size (%RU64)\n", m_cbSize, cbSize));
+                            rc = RTFileSetMode(u.m_hFile, fMode);
+                            if (RT_SUCCESS(rc))
+                                m_fMode = fMode;
+                        }
+                        else if (fOpen & RTFILE_O_READ)
+                        {
+#if 0 /** @todo Enable this as soon as RTFileGetMode is implemented. */
+                            rc = RTFileGetMode(u.m_hFile, &m_fMode);
+#else
+                            RTFSOBJINFO ObjInfo;
+                            rc = RTFileQueryInfo(u.m_hFile, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+                            if (RT_SUCCESS(rc))
+                                m_fMode = ObjInfo.Attr.fMode;
+#endif
                         }
                     }
-#endif
-                    if (RT_SUCCESS(rc)
-                        && fMode)
-                    {
-                        rc = RTFileSetMode(u.m_hFile, fMode);
-                    }
+
                     if (RT_SUCCESS(rc))
                     {
-                        LogFlowFunc(("cbSize=%RU64, fMode=%RU32\n", m_cbSize, m_fMode));
+                        LogFlowThisFunc(("cbSize=%RU64, fMode=0x%x\n", m_cbSize, m_fMode));
                         m_cbProcessed = 0;
                     }
                 }
