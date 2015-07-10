@@ -1257,7 +1257,15 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
             goto out;
         }
         else
+        {
+            if (fRelative)
+            {
+                RTMsgError("The -relative parameter is invalid for raw images");
+                vrc = VERR_INVALID_PARAMETER;
+                goto out;
+            }
             vrc = VINF_SUCCESS;
+        }
     }
 #elif defined(RT_OS_LINUX)
     struct stat DevStat;
@@ -1617,13 +1625,13 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
             {
                 if (fRelative)
                 {
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
                     /* Refer to the correct partition and use offset 0. */
                     char *psz;
                     RTStrAPrintf(&psz,
 #if defined(RT_OS_LINUX)
                                  "%s%u",
-#elif defined(RT_OS_FREEBSD)
+#elif defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
                                  "%ss%u",
 #endif
                                  rawdisk.c_str(),
@@ -1633,20 +1641,6 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
                         vrc = VERR_NO_STR_MEMORY;
                         RTMsgError("Cannot create reference to individual partition %u, rc=%Rrc",
                                    partitions.aPartitions[i].uIndex, vrc);
-                        goto out;
-                    }
-                    pszRawName = psz;
-                    uStartOffset = 0;
-#elif defined(RT_OS_DARWIN)
-                    /* Refer to the correct partition and use offset 0. */
-                    char *psz;
-                    RTStrAPrintf(&psz, "%ss%u", rawdisk.c_str(),
-                                 partitions.aPartitions[i].uIndex);
-                    if (!psz)
-                    {
-                        vrc = VERR_NO_STR_MEMORY;
-                        RTMsgError("Cannot create reference to individual partition %u, rc=%Rrc",
-                                 partitions.aPartitions[i].uIndex, vrc);
                         goto out;
                     }
                     pszRawName = psz;
