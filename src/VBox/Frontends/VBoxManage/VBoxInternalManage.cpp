@@ -1176,7 +1176,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
             i++;
             pszPartitions = argv[i];
         }
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_WINDOWS)
         else if (strcmp(argv[i], "-relative") == 0)
         {
             fRelative = true;
@@ -1243,6 +1243,13 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
             /* IOCTL_DISK_GET_LENGTH_INFO is supported -- override cbSize. */
             cbSize = DiskLenInfo.Length.QuadPart;
         }
+        if (   fRelative
+            && !rawdisk.startsWith("\\\\.\\PhysicalDrive", Utf8Str::CaseInsensitive))
+        {
+            RTMsgError("The -relative parameter is invalid for raw disk %s", rawdisk.c_str());
+            vrc = VERR_INVALID_PARAMETER;
+            goto out;
+        }
     }
     else
     {
@@ -1269,7 +1276,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
     }
 #elif defined(RT_OS_LINUX)
     struct stat DevStat;
-    if(!fstat(RTFileToNative(hRawFile), &DevStat))
+    if (!fstat(RTFileToNative(hRawFile), &DevStat))
     {
         if (S_ISBLK(DevStat.st_mode))
         {
@@ -1645,6 +1652,21 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
                     }
                     pszRawName = psz;
                     uStartOffset = 0;
+#elif defined(RT_OS_WINDOWS)
+                    /* Refer to the correct partition and use offset 0. */
+                    char *psz;
+                    RTStrAPrintf(&psz, "\\\\.\\Harddisk%sPartition%u",
+                                 rawdisk.c_str() + 17,
+                                 partitions.aPartitions[i].uIndex);
+                    if (!psz)
+                    {
+                        vrc = VERR_NO_STR_MEMORY;
+                        RTMsgError("Cannot create reference to individual partition %u, rc=%Rrc",
+                                   partitions.aPartitions[i].uIndex, vrc);
+                        goto out;
+                    }
+                    pszRawName = psz;
+                    uStartOffset = 0;
 #else
                     /** @todo not implemented for other hosts. Treat just like
                      * not specified (this code is actually never reached). */
@@ -1697,7 +1719,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
                 RawDescriptor.pPartDescs[i].cbData = RT_MIN(RawDescriptor.pPartDescs[i+1].uStart - RawDescriptor.pPartDescs[i].uStart, RawDescriptor.pPartDescs[i].cbData);
                 if (!RawDescriptor.pPartDescs[i].cbData)
                 {
-                    if(RawDescriptor.uPartitioningType == MBR)
+                    if (RawDescriptor.uPartitioningType == MBR)
                     {
                         RTMsgError("MBR/EPT overlaps with data area");
                         vrc = VERR_INVALID_PARAMETER;
@@ -1705,7 +1727,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
                     }
                     else
                     {
-                        if(RawDescriptor.cPartDescs != i+1)
+                        if (RawDescriptor.cPartDescs != i+1)
                         {
                             RTMsgError("GPT overlaps with data area");
                             vrc = VERR_INVALID_PARAMETER;
