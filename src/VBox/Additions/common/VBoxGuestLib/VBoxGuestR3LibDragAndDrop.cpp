@@ -1230,10 +1230,11 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
     return rc;
 }
 
-static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
+static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 {
-    AssertPtrReturn(pCtx,                                  VERR_INVALID_POINTER);
-    AssertReturn(obj.GetType() == DnDURIObject::Directory, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pObj,                                    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,                                    VERR_INVALID_POINTER);
+    AssertReturn(pObj->GetType() == DnDURIObject::Directory, VERR_INVALID_PARAMETER);
 
     DragAndDropSvc::VBOXDNDGHSENDDIRMSG Msg;
     RT_ZERO(Msg);
@@ -1242,13 +1243,13 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
     Msg.hdr.u32Function = DragAndDropSvc::GUEST_DND_GH_SND_DIR;
     Msg.hdr.cParms      = 3;
 
-    RTCString strPath = obj.GetDestPath();
+    RTCString strPath = pObj->GetDestPath();
     LogFlowFunc(("strDir=%s (%zu), fMode=0x%x\n",
-                 strPath.c_str(), strPath.length(), obj.GetMode()));
+                 strPath.c_str(), strPath.length(), pObj->GetMode()));
 
     Msg.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
     Msg.cbName.SetUInt32((uint32_t)(strPath.length() + 1));
-    Msg.fMode.SetUInt32(obj.GetMode());
+    Msg.fMode.SetUInt32(pObj->GetMode());
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -1258,11 +1259,12 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
     return rc;
 }
 
-static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
+static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 {
-    AssertPtrReturn(pCtx,                             VERR_INVALID_POINTER);
-    AssertReturn(obj.GetType() == DnDURIObject::File, VERR_INVALID_PARAMETER);
-    AssertReturn(obj.IsOpen(),                        VERR_INVALID_STATE);
+    AssertPtrReturn(pCtx,                               VERR_INVALID_POINTER);
+    AssertPtrReturn(pObj,                               VERR_INVALID_POINTER);
+    AssertReturn(pObj->GetType() == DnDURIObject::File, VERR_INVALID_PARAMETER);
+    AssertReturn(pObj->IsOpen(),                        VERR_INVALID_STATE);
 
     uint32_t cbBuf = _64K;           /** @todo Make this configurable? */
     void *pvBuf = RTMemAlloc(cbBuf); /** @todo Make this buffer part of PVBGLR3GUESTDNDCMDCTX? */
@@ -1271,9 +1273,10 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
 
     int rc;
 
-    RTCString strPath = obj.GetDestPath();
+    RTCString strPath = pObj->GetDestPath();
 
-    LogFlowFunc(("strFile=%s (%zu), cbSize=%RU64, fMode=0x%x\n", strPath.c_str(), strPath.length(), obj.GetSize(), obj.GetMode()));
+    LogFlowFunc(("strFile=%s (%zu), cbSize=%RU64, fMode=0x%x\n", strPath.c_str(), strPath.length(),
+                 pObj->GetSize(), pObj->GetMode()));
     LogFlowFunc(("uProtocol=%RU32, uClientID=%RU32\n", pCtx->uProtocol, pCtx->uClientID));
 
     if (pCtx->uProtocol >= 2) /* Protocol version 2 and up sends a file header first. */
@@ -1289,8 +1292,8 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
         MsgHdr.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
         MsgHdr.cbName.SetUInt32((uint32_t)(strPath.length() + 1));
         MsgHdr.uFlags.SetUInt32(0);                                                      /* Flags; unused at the moment. */
-        MsgHdr.fMode.SetUInt32(obj.GetMode());                                           /* File mode */
-        MsgHdr.cbTotal.SetUInt64(obj.GetSize());                                         /* File size (in bytes). */
+        MsgHdr.fMode.SetUInt32(pObj->GetMode());                                         /* File mode */
+        MsgHdr.cbTotal.SetUInt64(pObj->GetSize());                                       /* File size (in bytes). */
 
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(MsgHdr)), &MsgHdr, sizeof(MsgHdr));
         if (RT_SUCCESS(rc))
@@ -1318,7 +1321,7 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
 
             Msg.u.v1.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
             Msg.u.v1.cbName.SetUInt32((uint32_t)(strPath.length() + 1));
-            Msg.u.v1.fMode.SetUInt32(obj.GetMode());
+            Msg.u.v1.fMode.SetUInt32(pObj->GetMode());
         }
         else
         {
@@ -1328,14 +1331,14 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
             Msg.u.v2.uContext.SetUInt32(0); /** @todo Set context ID. */
         }
 
-        uint64_t cbToReadTotal  = obj.GetSize();
+        uint64_t cbToReadTotal  = pObj->GetSize();
         uint64_t cbWrittenTotal = 0;
         while (cbToReadTotal)
         {
             uint32_t cbToRead = RT_MIN(cbToReadTotal, cbBuf);
             uint32_t cbRead   = 0;
             if (cbToRead)
-                rc = obj.Read(pvBuf, cbToRead, &cbRead);
+                rc = pObj->Read(pvBuf, cbToRead, &cbRead);
 
             LogFlowFunc(("cbToReadTotal=%RU64, cbToRead=%RU32, cbRead=%RU32, rc=%Rrc\n",
                          cbToReadTotal, cbToRead, cbRead, rc));
@@ -1369,7 +1372,7 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
             cbToReadTotal  -= cbRead;
             cbWrittenTotal += cbRead;
 
-            LogFlowFunc(("%RU64/%RU64 -- %RU8%%\n", cbWrittenTotal, obj.GetSize(), cbWrittenTotal * 100 / obj.GetSize()));
+            LogFlowFunc(("%RU64/%RU64 -- %RU8%%\n", cbWrittenTotal, pObj->GetSize(), cbWrittenTotal * 100 / pObj->GetSize()));
         };
     }
 
@@ -1379,24 +1382,25 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
     return rc;
 }
 
-static int vbglR3DnDGHSendURIObject(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
+static int vbglR3DnDGHSendURIObject(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pObj, VERR_INVALID_POINTER);
 
     int rc;
 
-    switch (obj.GetType())
+    switch (pObj->GetType())
     {
         case DnDURIObject::Directory:
-            rc = vbglR3DnDGHSendDir(pCtx, obj);
+            rc = vbglR3DnDGHSendDir(pCtx, pObj);
             break;
 
         case DnDURIObject::File:
-            rc = vbglR3DnDGHSendFile(pCtx, obj);
+            rc = vbglR3DnDGHSendFile(pCtx, pObj);
             break;
 
         default:
-            AssertMsgFailed(("URI type %ld not implemented\n", obj.GetType()));
+            AssertMsgFailed(("Object type %ld not implemented\n", pObj->GetType()));
             rc = VERR_NOT_IMPLEMENTED;
             break;
     }
@@ -1440,9 +1444,9 @@ static int vbglR3DnDGHProcessURIMessages(PVBGLR3GUESTDNDCMDCTX pCtx,
     {
         while (!lstURI.IsEmpty())
         {
-            DnDURIObject &nextObj = lstURI.First();
+            DnDURIObject *pNextObj = lstURI.First();
 
-            rc = vbglR3DnDGHSendURIObject(pCtx, nextObj);
+            rc = vbglR3DnDGHSendURIObject(pCtx, pNextObj);
             if (RT_FAILURE(rc))
                 break;
 

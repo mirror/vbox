@@ -755,11 +755,12 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     return rc;
 }
 
-int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject &aDirectory)
+int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject *pObject)
 {
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pObject, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
 
-    RTCString strPath = aDirectory.GetDestPath();
+    RTCString strPath = pObject->GetDestPath();
     if (strPath.isEmpty())
         return VERR_INVALID_PARAMETER;
     if (strPath.length() >= RTPATH_MAX) /* Note: Maximum is RTPATH_MAX on guest side. */
@@ -770,16 +771,17 @@ int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURI
     pMsg->setType(DragAndDropSvc::HOST_DND_HG_SND_DIR);
     pMsg->setNextString(strPath.c_str());                  /* path */
     pMsg->setNextUInt32((uint32_t)(strPath.length() + 1)); /* path length - note: Maximum is RTPATH_MAX on guest side. */
-    pMsg->setNextUInt32(aDirectory.GetMode());             /* mode */
+    pMsg->setNextUInt32(pObject->GetMode());             /* mode */
 
     return VINF_SUCCESS;
 }
 
-int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject &aFile)
+int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject *pObject)
 {
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pObject, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
 
-    RTCString strPathSrc = aFile.GetSourcePath();
+    RTCString strPathSrc = pObject->GetSourcePath();
     if (strPathSrc.isEmpty())
         return VERR_INVALID_PARAMETER;
 
@@ -788,11 +790,11 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
     LogFlowFunc(("Sending \"%s\" (%RU32 bytes buffer) using protocol v%RU32 ...\n",
                  strPathSrc.c_str(), mData.mcbBlockSize, mDataBase.mProtocolVersion));
 
-    bool fOpen = aFile.IsOpen();
+    bool fOpen = pObject->IsOpen();
     if (!fOpen)
     {
         LogFlowFunc(("Opening \"%s\" ...\n", strPathSrc.c_str()));
-        rc = aFile.OpenEx(strPathSrc, DnDURIObject::File, DnDURIObject::Source,
+        rc = pObject->OpenEx(strPathSrc, DnDURIObject::File, DnDURIObject::Source,
                           RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
         if (RT_FAILURE(rc))
             LogRel(("DnD: Error opening host file \"%s\", rc=%Rrc\n", strPathSrc.c_str(), rc));
@@ -812,16 +814,16 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
                  */
                 pMsg->setType(DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR);
                 pMsg->setNextUInt32(0);                                            /* context ID */
-                rc = pMsg->setNextString(aFile.GetDestPath().c_str());             /* pvName */
+                rc = pMsg->setNextString(pObject->GetDestPath().c_str());             /* pvName */
                 AssertRC(rc);
-                pMsg->setNextUInt32((uint32_t)(aFile.GetDestPath().length() + 1)); /* cbName */
+                pMsg->setNextUInt32((uint32_t)(pObject->GetDestPath().length() + 1)); /* cbName */
                 pMsg->setNextUInt32(0);                                            /* uFlags */
-                pMsg->setNextUInt32(aFile.GetMode());                              /* fMode */
-                pMsg->setNextUInt64(aFile.GetSize());                              /* uSize */
+                pMsg->setNextUInt32(pObject->GetMode());                              /* fMode */
+                pMsg->setNextUInt64(pObject->GetSize());                              /* uSize */
 
                 LogFlowFunc(("Sending file header ...\n"));
                 LogRel2(("DnD: Transferring host file to guest: %s (%RU64 bytes, mode 0x%x)\n",
-                         strPathSrc.c_str(), aFile.GetSize(), aFile.GetMode()));
+                         strPathSrc.c_str(), pObject->GetSize(), pObject->GetMode()));
 
                 /** @todo Set progress object title to current file being transferred? */
             }
@@ -841,17 +843,18 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
     if (   RT_SUCCESS(rc)
         && fSendFileData)
     {
-        rc = i_sendFileData(pCtx, pMsg, aFile);
+        rc = i_sendFileData(pCtx, pMsg, pObject);
     }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject &aFile)
+int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject *pObject)
 {
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pObject, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pMsg,    VERR_INVALID_POINTER);
 
     GuestDnDResponse *pResp = pCtx->mpResp;
     AssertPtr(pResp);
@@ -876,8 +879,8 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
      * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
     if (mDataBase.mProtocolVersion <= 1)
     {
-        pMsg->setNextString(aFile.GetDestPath().c_str());                  /* pvName */
-        pMsg->setNextUInt32((uint32_t)(aFile.GetDestPath().length() + 1)); /* cbName */
+        pMsg->setNextString(pObject->GetDestPath().c_str());                  /* pvName */
+        pMsg->setNextUInt32((uint32_t)(pObject->GetDestPath().length() + 1)); /* cbName */
     }
     else
     {
@@ -887,7 +890,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
 
     uint32_t cbRead = 0;
 
-    int rc = aFile.Read(pCtx->mURI.pvScratchBuf, pCtx->mURI.cbScratchBuf, &cbRead);
+    int rc = pObject->Read(pCtx->mURI.pvScratchBuf, pCtx->mURI.cbScratchBuf, &cbRead);
     if (RT_SUCCESS(rc))
     {
         pCtx->mData.cbProcessed += cbRead;
@@ -896,7 +899,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
         {
             pMsg->setNextPointer(pCtx->mURI.pvScratchBuf, cbRead);  /* pvData */
             pMsg->setNextUInt32(cbRead);                            /* cbData */
-            pMsg->setNextUInt32(aFile.GetMode());                   /* fMode */
+            pMsg->setNextUInt32(pObject->GetMode());                   /* fMode */
         }
         else
         {
@@ -904,10 +907,10 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
             pMsg->setNextUInt32(cbRead);                           /* cbData */
         }
 
-        if (aFile.IsComplete()) /* Done reading? */
+        if (pObject->IsComplete()) /* Done reading? */
         {
-            LogRel2(("DnD: File transfer to guest complete: %s\n", aFile.GetSourcePath().c_str()));
-            LogFlowFunc(("File \"%s\" complete\n", aFile.GetSourcePath().c_str()));
+            LogRel2(("DnD: File transfer to guest complete: %s\n", pObject->GetSourcePath().c_str()));
+            LogFlowFunc(("File \"%s\" complete\n", pObject->GetSourcePath().c_str()));
             rc = VINF_EOF;
         }
     }
@@ -1260,31 +1263,31 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     }
 
     Assert(!lstURI.IsEmpty());
-    DnDURIObject &curObj = lstURI.First();
+    DnDURIObject *pCurObj = lstURI.First();
 
-    uint32_t fMode = curObj.GetMode();
+    uint32_t fMode = pCurObj->GetMode();
     LogFlowFunc(("Processing srcPath=%s, dstPath=%s, fMode=0x%x, cbSize=%RU32, fIsDir=%RTbool, fIsFile=%RTbool\n",
-                 curObj.GetSourcePath().c_str(), curObj.GetDestPath().c_str(),
-                 fMode, curObj.GetSize(),
+                 pCurObj->GetSourcePath().c_str(), pCurObj->GetDestPath().c_str(),
+                 fMode, pCurObj->GetSize(),
                  RTFS_IS_DIRECTORY(fMode), RTFS_IS_FILE(fMode)));
 
     if (RTFS_IS_DIRECTORY(fMode))
     {
-        rc = i_sendDirectory(pCtx, pMsg, curObj);
+        rc = i_sendDirectory(pCtx, pMsg, pCurObj);
     }
     else if (RTFS_IS_FILE(fMode))
     {
-        rc = i_sendFile(pCtx, pMsg, curObj);
+        rc = i_sendFile(pCtx, pMsg, pCurObj);
     }
     else
     {
         AssertMsgFailed(("fMode=0x%x is not supported for srcPath=%s, dstPath=%s\n",
-                         fMode, curObj.GetSourcePath().c_str(), curObj.GetDestPath().c_str()));
+                         fMode, pCurObj->GetSourcePath().c_str(), pCurObj->GetDestPath().c_str()));
         rc = VERR_NOT_SUPPORTED;
     }
 
     bool fRemove = false; /* Remove current entry? */
-    if (   curObj.IsComplete()
+    if (   pCurObj->IsComplete()
         || RT_FAILURE(rc))
     {
         fRemove = true;
@@ -1292,7 +1295,7 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
 
     if (fRemove)
     {
-        LogFlowFunc(("Removing \"%s\" from list, rc=%Rrc\n", curObj.GetSourcePath().c_str(), rc));
+        LogFlowFunc(("Removing \"%s\" from list, rc=%Rrc\n", pCurObj->GetSourcePath().c_str(), rc));
         lstURI.RemoveFirst();
     }
 
