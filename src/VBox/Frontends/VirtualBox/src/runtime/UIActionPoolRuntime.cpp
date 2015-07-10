@@ -594,11 +594,6 @@ protected:
         return QString("GuestAutoresize");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
-    {
-        return QKeySequence("G");
-    }
-
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Auto-resize &Guest Display"));
@@ -1214,11 +1209,6 @@ protected:
         return QString("MouseIntegration");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
-    {
-        return QKeySequence("I");
-    }
-
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Mouse Integration"));
@@ -1622,11 +1612,6 @@ protected:
     QString shortcutExtraDataID() const
     {
         return QString("InstallGuestAdditions");
-    }
-
-    QKeySequence defaultShortcut(UIActionPoolType) const
-    {
-        return QKeySequence("D");
     }
 
     void retranslateUi()
