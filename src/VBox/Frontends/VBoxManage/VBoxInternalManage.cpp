@@ -93,6 +93,8 @@ typedef struct HOSTPARTITION
 {
     /** partition number */
     unsigned        uIndex;
+    /** partition number (internal only, windows specific numbering) */
+    unsigned        uIndexWin;
     /** partition type */
     unsigned        uType;
     /** CHS/cylinder of the first sector */
@@ -830,6 +832,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 
                 PHOSTPARTITION pCP = &pPart->aPartitions[pPart->cPartitions++];
                 pCP->uIndex = currentEntry + 1;
+                pCP->uIndexWin = currentEntry + 1;
                 pCP->uType = 0;
                 pCP->uStartCylinder = 0;
                 pCP->uStartHead = 0;
@@ -842,6 +845,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
                 if (start==0 || end==0)
                 {
                     pCP->uIndex = 0;
+                    pCP->uIndexWin = 0;
                     --pPart->cPartitions;
                     break;
                 }
@@ -866,6 +870,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             return VERR_INVALID_PARAMETER;
 
         unsigned uExtended = (unsigned)-1;
+        unsigned uIndexWin = 1;
 
         for (unsigned i = 0; i < 4; i++)
         {
@@ -889,12 +894,20 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             if (PARTTYPE_IS_EXTENDED(p[4]))
             {
                 if (uExtended == (unsigned)-1)
+                {
                     uExtended = (unsigned)(pCP - pPart->aPartitions);
+                    pCP->uIndexWin = 0;
+                }
                 else
                 {
                     RTMsgError("More than one extended partition");
                     return VERR_INVALID_PARAMETER;
                 }
+            }
+            else
+            {
+                pCP->uIndexWin = uIndexWin;
+                uIndexWin++;
             }
         }
 
@@ -930,6 +943,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 
                 PHOSTPARTITION pCP = &pPart->aPartitions[pPart->cPartitions++];
                 pCP->uIndex = uIndex;
+                pCP->uIndexWin = uIndexWin;
                 pCP->uType = p[4];
                 pCP->uStartCylinder = (uint32_t)p[3] + ((uint32_t)(p[2] & 0xc0) << 2);
                 pCP->uStartHead = p[1];
@@ -953,7 +967,9 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
                     uExtended = (unsigned)-1;
                 else if (PARTTYPE_IS_EXTENDED(p[4]))
                 {
-                    uExtended = uIndex++;
+                    uExtended = uIndex;
+                    uIndex++;
+                    uIndexWin++;
                     uOffset = RT_MAKE_U32_FROM_U8(p[8], p[9], p[10], p[11]);
                 }
                 else
@@ -1657,12 +1673,12 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
                     char *psz;
                     RTStrAPrintf(&psz, "\\\\.\\Harddisk%sPartition%u",
                                  rawdisk.c_str() + 17,
-                                 partitions.aPartitions[i].uIndex);
+                                 partitions.aPartitions[i].uIndexWin);
                     if (!psz)
                     {
                         vrc = VERR_NO_STR_MEMORY;
-                        RTMsgError("Cannot create reference to individual partition %u, rc=%Rrc",
-                                   partitions.aPartitions[i].uIndex, vrc);
+                        RTMsgError("Cannot create reference to individual partition %u (numbered %u), rc=%Rrc",
+                                   partitions.aPartitions[i].uIndex, partitions.aPartitions[i].uIndexWin, vrc);
                         goto out;
                     }
                     pszRawName = psz;
