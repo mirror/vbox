@@ -914,6 +914,19 @@
 # define RT_THROW(type)
 #endif
 
+/** @def RT_IPRT_FORMAT_ATTR
+ * Identifies a function taking an IPRT format string.
+ * @param   a_iFmt  The index (1-based) of the format string argument.
+ * @param   a_iArgs The index (1-based) of the first format argument, use 0 for
+ *                  va_list.
+ */
+#if defined(__GNUC__) && defined(WITH_IPRT_FORMAT_ATTRIBUTE)
+# define RT_IPRT_FORMAT_ATTR(a_iFmt, a_iArgs)   __attribute__((__iprt_format__(a_iFmt, a_iArgs)))
+#else
+# define RT_IPRT_FORMAT_ATTR(a_iFmt, a_iArgs)
+#endif
+
+
 /** @def RT_GCC_SUPPORTS_VISIBILITY_HIDDEN
  * Indicates that the "hidden" visibility attribute can be used (GCC) */
 #if defined(__GNUC__)

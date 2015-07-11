@@ -98,7 +98,7 @@ RTDECL(void)    RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, const char
  * @param   pszFormat   Printf like format string.
  * @param   ...         Arguments to that string.
  */
-RTDECL(void)    RTAssertMsg2(const char *pszFormat, ...);
+RTDECL(void)    RTAssertMsg2(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 /**
  * Weak version of RTAssertMsg2 that forwards to RTAssertMsg2WeakV.
  *
@@ -106,7 +106,7 @@ RTDECL(void)    RTAssertMsg2(const char *pszFormat, ...);
  *
  * @copydoc RTAssertMsg2
  */
-RTDECL(void)    RTAssertMsg2Weak(const char *pszFormat, ...);
+RTDECL(void)    RTAssertMsg2Weak(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * The 2nd (optional) part of an assert message.
@@ -114,14 +114,14 @@ RTDECL(void)    RTAssertMsg2Weak(const char *pszFormat, ...);
  * @param   pszFormat   Printf like format string.
  * @param   va          Arguments to that string.
  */
-RTDECL(void)    RTAssertMsg2V(const char *pszFormat, va_list va);
+RTDECL(void)    RTAssertMsg2V(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 /**
  * Weak version of RTAssertMsg2V that can be overridden locally in a module to
  * modify, redirect or otherwise mess with the assertion output.
  *
  * @copydoc RTAssertMsg2V
  */
-RTDECL(void)    RTAssertMsg2WeakV(const char *pszFormat, va_list va);
+RTDECL(void)    RTAssertMsg2WeakV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
 /**
  * Additional information which should be appended to the 2nd part of an
@@ -130,7 +130,7 @@ RTDECL(void)    RTAssertMsg2WeakV(const char *pszFormat, va_list va);
  * @param   pszFormat   Printf like format string.
  * @param   ...         Arguments to that string.
  */
-RTDECL(void)    RTAssertMsg2Add(const char *pszFormat, ...);
+RTDECL(void)    RTAssertMsg2Add(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 /**
  * Weak version of RTAssertMsg2Add that forwards to RTAssertMsg2AddWeakV.
  *
@@ -138,7 +138,7 @@ RTDECL(void)    RTAssertMsg2Add(const char *pszFormat, ...);
  *
  * @copydoc RTAssertMsg2Add
  */
-RTDECL(void)    RTAssertMsg2AddWeak(const char *pszFormat, ...);
+RTDECL(void)    RTAssertMsg2AddWeak(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Additional information which should be appended to the 2nd part of an
@@ -147,14 +147,14 @@ RTDECL(void)    RTAssertMsg2AddWeak(const char *pszFormat, ...);
  * @param   pszFormat   Printf like format string.
  * @param   va          Arguments to that string.
  */
-RTDECL(void)    RTAssertMsg2AddV(const char *pszFormat, va_list va);
+RTDECL(void)    RTAssertMsg2AddV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 /**
  * Weak version of RTAssertMsg2AddV that can be overridden locally in a module
  * to modify, redirect or otherwise mess with the assertion output.
  *
  * @copydoc RTAssertMsg2AddV
  */
-RTDECL(void)    RTAssertMsg2AddWeakV(const char *pszFormat, va_list va);
+RTDECL(void)    RTAssertMsg2AddWeakV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
 #ifdef IN_RING0
 /**

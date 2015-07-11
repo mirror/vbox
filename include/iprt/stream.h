@@ -71,7 +71,8 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
  * @param   pszFilenameFmt  Filename path format string.
  * @param   args            Arguments to the format string.
  */
-RTR3DECL(int) RTStrmOpenFV(const char *pszMode, PRTSTREAM *ppStream, const char *pszFilenameFmt, va_list args);
+RTR3DECL(int) RTStrmOpenFV(const char *pszMode, PRTSTREAM *ppStream, const char *pszFilenameFmt,
+                           va_list args) RT_IPRT_FORMAT_ATTR(3, 0);
 
 /**
  * Opens a file stream.
@@ -83,7 +84,7 @@ RTR3DECL(int) RTStrmOpenFV(const char *pszMode, PRTSTREAM *ppStream, const char 
  * @param   pszFilenameFmt  Filename path format string.
  * @param   ...             Arguments to the format string.
  */
-RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *pszFilenameFmt, ...);
+RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
  * Closes the specified stream.
@@ -274,7 +275,7 @@ RTR3DECL(int) RTStrmFlush(PRTSTREAM pStream);
  * @param   pszFormat       Runtime format string.
  * @param   ...             Arguments specified by pszFormat.
  */
-RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...);
+RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Prints a formatted string to the specified stream.
@@ -284,7 +285,7 @@ RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...);
  * @param   pszFormat       Runtime format string.
  * @param   args            Arguments specified by pszFormat.
  */
-RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list args);
+RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Dumper vprintf-like function outputting to a stream.
@@ -293,7 +294,7 @@ RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list ar
  * @param   pszFormat       Runtime format string.
  * @param   va              Arguments specified by pszFormat.
  */
-RTR3DECL(void) RTStrmDumpPrintfV(void *pvUser, const char *pszFormat, va_list va);
+RTR3DECL(void) RTStrmDumpPrintfV(void *pvUser, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Prints a formatted string to the standard output stream (g_pStdOut).
@@ -302,7 +303,7 @@ RTR3DECL(void) RTStrmDumpPrintfV(void *pvUser, const char *pszFormat, va_list va
  * @param   pszFormat       Runtime format string.
  * @param   ...             Arguments specified by pszFormat.
  */
-RTR3DECL(int) RTPrintf(const char *pszFormat, ...);
+RTR3DECL(int) RTPrintf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Prints a formatted string to the standard output stream (g_pStdOut).
@@ -311,7 +312,7 @@ RTR3DECL(int) RTPrintf(const char *pszFormat, ...);
  * @param   pszFormat       Runtime format string.
  * @param   args            Arguments specified by pszFormat.
  */
-RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list args);
+RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(1, 0);
 
 /** @} */
 

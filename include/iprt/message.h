@@ -44,7 +44,7 @@ RT_C_DECLS_BEGIN
  * @param   pszFormat       The program name format string.
  * @param   ...             Format arguments.
  */
-RTDECL(int)  RTMsgSetProgName(const char *pszFormat, ...);
+RTDECL(int)  RTMsgSetProgName(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Print error message to standard error.
@@ -58,7 +58,7 @@ RTDECL(int)  RTMsgSetProgName(const char *pszFormat, ...);
  * @param   pszFormat       The message format string.
  * @param   ...             Format arguments.
  */
-RTDECL(int)  RTMsgError(const char *pszFormat, ...);
+RTDECL(int)  RTMsgError(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Print error message to standard error.
@@ -72,7 +72,7 @@ RTDECL(int)  RTMsgError(const char *pszFormat, ...);
  * @param   pszFormat       The message format string.
  * @param   va              Format arguments.
  */
-RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va);
+RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
 /**
  * Same as RTMsgError() except for the return value.
@@ -83,7 +83,7 @@ RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va);
  * @param   pszFormat       The message format string.
  * @param   ...             Format arguments.
  */
-RTDECL(RTEXITCODE) RTMsgErrorExit(RTEXITCODE enmExitcode, const char *pszFormat, ...);
+RTDECL(RTEXITCODE) RTMsgErrorExit(RTEXITCODE enmExitcode, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Same as RTMsgErrorV() except for the return value.
@@ -94,7 +94,7 @@ RTDECL(RTEXITCODE) RTMsgErrorExit(RTEXITCODE enmExitcode, const char *pszFormat,
  * @param   pszFormat       The message format string.
  * @param   va              Format arguments.
  */
-RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat, va_list va);
+RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Same as RTMsgError() except for the return value.
@@ -105,7 +105,7 @@ RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat
  * @param   pszFormat       The message format string.
  * @param   ...             Format arguments.
  */
-RTDECL(int) RTMsgErrorRc(int rc, const char *pszFormat, ...);
+RTDECL(int) RTMsgErrorRc(int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Same as RTMsgErrorV() except for the return value.
@@ -116,7 +116,7 @@ RTDECL(int) RTMsgErrorRc(int rc, const char *pszFormat, ...);
  * @param   pszFormat       The message format string.
  * @param   va              Format arguments.
  */
-RTDECL(int) RTMsgErrorRcV(int rc, const char *pszFormat, va_list va);
+RTDECL(int) RTMsgErrorRcV(int rc, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Print an error message for a RTR3Init failure and suggest an exit code.
@@ -146,7 +146,7 @@ RTDECL(RTEXITCODE) RTMsgInitFailure(int rcRTR3Init);
  * @param   pszFormat       The message format string.
  * @param   ...             Format arguments.
  */
-RTDECL(int)  RTMsgWarning(const char *pszFormat, ...);
+RTDECL(int)  RTMsgWarning(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Print informational message to standard error.
@@ -160,7 +160,7 @@ RTDECL(int)  RTMsgWarning(const char *pszFormat, ...);
  * @param   pszFormat       The message format string.
  * @param   va              Format arguments.
  */
-RTDECL(int)  RTMsgWarningV(const char *pszFormat, va_list va);
+RTDECL(int)  RTMsgWarningV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
 /**
  * Print informational message to standard output.
@@ -174,7 +174,7 @@ RTDECL(int)  RTMsgWarningV(const char *pszFormat, va_list va);
  * @param   pszFormat       The message format string.
  * @param   ...             Format arguments.
  */
-RTDECL(int)  RTMsgInfo(const char *pszFormat, ...);
+RTDECL(int)  RTMsgInfo(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Print informational message to standard output.
@@ -188,7 +188,7 @@ RTDECL(int)  RTMsgInfo(const char *pszFormat, ...);
  * @param   pszFormat       The message format string.
  * @param   va              Format arguments.
  */
-RTDECL(int)  RTMsgInfoV(const char *pszFormat, va_list va);
+RTDECL(int)  RTMsgInfoV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
 /** @} */
 
