@@ -4081,20 +4081,15 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
             {
                 RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
 
-                /* Simple adaptive timeout. */
-                if (cConsecutiveTimeouts++ == 10)
-                {
-                    if (pDevExt->cMsTscDeltaTimeout == 1)           /* 10 ms */
-                        pDevExt->cMsTscDeltaTimeout = 10;
-                    else if (pDevExt->cMsTscDeltaTimeout == 10)     /* +100 ms */
-                        pDevExt->cMsTscDeltaTimeout = 100;
-                    else if (pDevExt->cMsTscDeltaTimeout == 100)    /* +1000 ms */
-                        pDevExt->cMsTscDeltaTimeout = 500;
-                    cConsecutiveTimeouts = 0;
-                }
-                rc = RTThreadUserWait(pDevExt->hTscDeltaThread, pDevExt->cMsTscDeltaTimeout);
+                /*
+                 * Linux counts uninterruptible sleeps as load, hence we shall do a
+                 * regular, interruptible sleep here and ignore wake ups due to signals.
+                 * See task_contributes_to_load() in include/linux/sched.h in the Linux sources.
+                 */
+                rc = RTThreadUserWaitNoResume(pDevExt->hTscDeltaThread, pDevExt->cMsTscDeltaTimeout);
                 if (   RT_FAILURE(rc)
-                    && rc != VERR_TIMEOUT)
+                    && rc != VERR_TIMEOUT
+                    && rc != VERR_INTERRUPTED)
                     return supdrvTscDeltaThreadButchered(pDevExt, false /* fSpinlockHeld */, "RTThreadUserWait", rc);
                 RTThreadUserReset(pDevExt->hTscDeltaThread);
                 break;
@@ -4107,7 +4102,6 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                 if (RT_FAILURE(rc))
                     return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "RTSemEventSignal", rc);
                 RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-                pDevExt->cMsTscDeltaTimeout = 1;
                 RTThreadSleep(1);
                 /* fall thru */
             }
@@ -4342,7 +4336,7 @@ static int supdrvTscDeltaThreadInit(PSUPDRVDEVEXT pDevExt)
         if (RT_SUCCESS(rc))
         {
             pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_Creating;
-            pDevExt->cMsTscDeltaTimeout = 1;
+            pDevExt->cMsTscDeltaTimeout = 60000;
             rc = RTThreadCreate(&pDevExt->hTscDeltaThread, supdrvTscDeltaThread, pDevExt, 0 /* cbStack */,
                                 RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VBoxTscThread");
             if (RT_SUCCESS(rc))
