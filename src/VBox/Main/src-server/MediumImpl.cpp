@@ -9468,8 +9468,8 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
             vrc = VDPrepareWithFilters(pDisk, task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not prepare disk images for encryption (%Rrc)"),
-                               i_vdError(vrc).c_str());
+                               tr("Could not prepare disk images for encryption (%Rrc): %s"),
+                               vrc, i_vdError(vrc).c_str());
 
             thisLock.acquire();
             /* If everything went well set the new key store. */
