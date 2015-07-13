@@ -1682,21 +1682,21 @@ static int32_t crVBoxServerSaveStatePerform(PSSMHANDLE pSSM)
         }
     }
 
-#ifdef VBOX_WITH_CR_DISPLAY_LISTS
-    if (cr_server.head_spu->dispatch_table.spu_save_state)
-    {
-        rc = cr_server.head_spu->dispatch_table.spu_save_state("NULL");
-        AssertRCReturn(rc, rc);
-    }
-    else
-        crDebug("Do not save %s SPU state: no interface exported.", cr_server.head_spu->name);
-#endif
-
     rc = crServerPendSaveState(pSSM);
     AssertRCReturn(rc, rc);
 
     rc = CrPMgrSaveState(pSSM);
     AssertRCReturn(rc, rc);
+
+#ifdef VBOX_WITH_CR_DISPLAY_LISTS
+    if (cr_server.head_spu->dispatch_table.spu_save_state)
+    {
+        rc = cr_server.head_spu->dispatch_table.spu_save_state((void *)pSSM);
+        AssertRCReturn(rc, rc);
+    }
+    else
+        crDebug("Do not save %s SPU state: no interface exported.", cr_server.head_spu->name);
+#endif
 
     /* all context gl error states should have now be synced with chromium erro states,
      * reset the error if any */
@@ -2479,6 +2479,19 @@ static int32_t crVBoxServerLoadStatePerform(PSSMHANDLE pSSM, uint32_t version)
         rc = CrPMgrLoadState(pSSM, version);
         AssertRCReturn(rc, rc);
     }
+
+#ifdef VBOX_WITH_CR_DISPLAY_LISTS
+    if (version >= SHCROGL_SSM_VERSION_WITH_DISPLAY_LISTS)
+    {
+        if (cr_server.head_spu->dispatch_table.spu_load_state)
+        {
+            rc = cr_server.head_spu->dispatch_table.spu_load_state((void *)pSSM);
+            AssertRCReturn(rc, rc);
+        }
+        else
+            crDebug("Do not load %s SPU state: no interface exported.", cr_server.head_spu->name);
+    }
+#endif
 
     while ((err = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR)
         crWarning("crServer: glGetError %d after loading snapshot", err);

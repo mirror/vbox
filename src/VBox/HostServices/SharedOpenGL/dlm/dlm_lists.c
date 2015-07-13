@@ -6,7 +6,7 @@
  *   glGenLists, glDeleteLists, glNewList, glEndList, glCallList, glCallLists,
  *   glListBase and glIsList.
  *
- * Privide OpenGL IDs mapping between host and guest.
+ * Provide OpenGL IDs mapping between host and guest.
  */
 
 /*
@@ -56,12 +56,6 @@ void crdlmFreeDisplayListResourcesCb(void *pParm1, void *pParam2)
     {
         crdlmFreeDisplayListElements(pListInfo->first);
         pListInfo->first = pListInfo->last = NULL;
-
-        /* The references list has no allocated information; it's
-         * just a set of entries.  So we don't need to free any
-         * information as each entry is deleted.
-         */
-        crFreeHashtable(pListInfo->references, NULL);
 
         /* Free host OpenGL resources. */
         if (dispatchTable)
@@ -190,30 +184,18 @@ crDLMNewList(GLuint list, GLenum mode, SPUDispatchTable *dispatchTable)
                 {
                     listInfo->first = listInfo->last = NULL;
                     listInfo->stateFirst = listInfo->stateLast = NULL;
-                    listInfo->references = crAllocHashtable();
-                    if (listInfo->references)
-                    {
-                        listInfo->numInstances = 0;
-                        listInfo->listSent = GL_FALSE;
-                        listInfo->bbox.xmin = FLT_MAX;
-                        listInfo->bbox.xmax = -FLT_MAX;
-                        listInfo->bbox.ymin = FLT_MAX;
-                        listInfo->bbox.ymax = -FLT_MAX;
-                        listInfo->bbox.zmin = FLT_MAX;
-                        listInfo->bbox.zmax = -FLT_MAX;
 
-                        listState->currentListInfo = listInfo;
-                        listState->currentListIdentifier = list;
-                        listState->currentListMode = mode;
+                    listInfo->numInstances = 0;
 
-                        dispatchTable->NewList(listInfo->hwid, mode);
+                    listState->currentListInfo = listInfo;
+                    listState->currentListIdentifier = list;
+                    listState->currentListMode = mode;
 
-                        crDebug("DLM: create new list with [guest, host] ID pair [%u, %u].", list, listInfo->hwid);
+                    dispatchTable->NewList(listInfo->hwid, mode);
 
-                        return;
-                    }
-                    else
-                        crDebug("DLM: Could not allocate memory in NewList.");
+                    crDebug("DLM: create new list with [guest, host] ID pair [%u, %u].", list, listInfo->hwid);
+
+                    return;
                 }
                 else
                     crDebug("DLM: Requested Display List %u was not previously reserved with glGenLists().", list);

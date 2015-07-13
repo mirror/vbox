@@ -125,110 +125,23 @@ def wrap_struct(functionName):
 	return
 
 def wrap_execute(functionName):
-	params = apiutil.Parameters(functionName)
-	print 'static void execute%s(DLMInstanceList *x, SPUDispatchTable *dispatchTable)' % functionName
-	print '{'
-	if len(params) > 0:
-	    print '\tstruct instance%s *instance = (struct instance%s *)x;' % (functionName, functionName)
-	print '\tif (dispatchTable->%s != NULL) {' % (functionName)
-	print '\t\tdispatchTable->%s(%s);' % (functionName, InstanceCallString(params))
-	print '\t}'
-	print '\telse {'
-	print '\t\tcrWarning("DLM warning: execute%s called with NULL dispatch entry");' % (functionName)
-	print '\t}'
-	print '}'
 
-def generate_bbox_code(functionName):
-	assert functionName[0:6] == "Vertex"
-	pattern = "(VertexAttribs|VertexAttrib|Vertex)(1|2|3|4)(N?)(f|d|i|s|b|ub|us|ui)(v?)"
-	m = re.match(pattern, functionName)
-	if m:
-		name = m.group(1)
-		size = int(m.group(2))
-		normalize = m.group(3)
-		type = m.group(4)
-		vector = m.group(5)
+    params = apiutil.Parameters(functionName)
+    (pointers, _, pointerarg, _, _, _) = GetPointerInfo(functionName)
 
-		# only update bbox for vertex attribs if index == 0
-		if name == "VertexAttrib":
-			test = "if (index == 0) {"
-		elif name == "VertexAttribs":
-			test = "if (index == 0) {"
-		else:
-			assert name == "Vertex"
-			test = "{"
+    print 'static void execute%s(DLMInstanceList *x, SPUDispatchTable *dispatchTable)' % functionName
+    print '{'
+    if len(params) > 0:
+        print '    struct instance%s *instance = (struct instance%s *)x;' % (functionName, functionName)
 
-		# find names of the X, Y, Z, W values
-		xName = ""
-		yName = ""
-		zName = "0.0"
-		wName = ""
-		if vector == "v":
-			xName = "v[0]"
-			if size > 1:
-				yName = "v[1]"
-			if size > 2:
-				zName = "v[2]"
-			if size > 3:
-				wName = "v[3]"
-		else:
-			xName = "x"
-			if size > 1:
-				yName = "y"
-			if size > 2:
-				zName = "z"
-			if size > 3:
-				wName = "w"
+    if len(pointers) == 1:
+        print '    instance->%s = instance->%s;' % (params[pointers[0]][0], pointerarg)
 
-		# start emitting code
-		print '\t%s' % test
-
-		if normalize == "N":
-			if type == "b":
-				denom = "128.0f"
-			elif type == "s":
-				denom = "32768.0f"
-			elif type == "i":
-				denom = "2147483647.0f"
-			elif type == "ub":
-				denom = "255.0f"
-			elif type == "us":
-				denom = "65535.0f"
-			elif type == "ui":
-				denom = "4294967295.0f"
-			
-			print '\t\tGLfloat nx = (GLfloat) %s / %s;' % (xName, denom)
-			xName = "nx"
-			if yName:
-				print '\t\tGLfloat ny = (GLfloat) %s / %s;' % (yName, denom)
-				yName = "ny"
-			if zName:
-				print '\t\tGLfloat nz = (GLfloat) %s / %s;' % (zName, denom)
-				zName = "nz"
-			if 0 and wName:
-				print '\t\tGLfloat nw = (GLfloat) %s / %s;' % (wName, denom)
-				wName = "nw"
-
-		if xName:
-			print '\t\tif (%s < state->currentListInfo->bbox.xmin)' % xName
-			print '\t\t\tstate->currentListInfo->bbox.xmin = %s;' % xName
-			print '\t\tif (%s > state->currentListInfo->bbox.xmax)' % xName
-			print '\t\t\tstate->currentListInfo->bbox.xmax = %s;' % xName
-		if yName:
-			print '\t\tif (%s < state->currentListInfo->bbox.ymin)' % yName
-			print '\t\t\tstate->currentListInfo->bbox.ymin = %s;' % yName
-			print '\t\tif (%s > state->currentListInfo->bbox.ymax)' % yName
-			print '\t\t\tstate->currentListInfo->bbox.ymax = %s;' % yName
-		if zName:
-			print '\t\tif (%s < state->currentListInfo->bbox.zmin)' % zName
-			print '\t\t\tstate->currentListInfo->bbox.zmin = %s;' % zName
-			print '\t\tif (%s > state->currentListInfo->bbox.zmax)' % zName
-			print '\t\t\tstate->currentListInfo->bbox.zmax = %s;' % zName
-		# XXX what about divide by W if we have 4 components?
-		print '\t}'
-			
-	else:
-		print ' /* bbox error for %s !!!!! */' % functionName
+    print '    if (dispatchTable->%s != NULL)' % (functionName)
+    print '        dispatchTable->%s(%s);' % (functionName, InstanceCallString(params))
+    print '    else'
+    print '        crWarning("DLM warning: execute%s called with NULL dispatch entry");' % (functionName)
+    print '}'
 
 # These code snippets isolate the code required to add a given instance
 # to the display list correctly.  They are used during generation, to
@@ -238,10 +151,10 @@ def AddInstanceToList(pad):
     print '%sinstance->next = NULL;' % pad
     print '%sinstance->stateNext = NULL;' % pad
     print '%sif (!state->currentListInfo->first) {' % pad
-    print '%s\tstate->currentListInfo->first = (DLMInstanceList *)instance;' % pad
+    print '%s    state->currentListInfo->first = (DLMInstanceList *)instance;' % pad
     print '%s}' % pad
     print '%selse {' % pad
-    print '%s\tstate->currentListInfo->last->next = (DLMInstanceList *)instance;' % pad
+    print '%s  state->currentListInfo->last->next = (DLMInstanceList *)instance;' % pad
     print '%s}' % pad
     print '%sstate->currentListInfo->last = (DLMInstanceList *)instance;' % pad
     print '%sstate->currentListInfo->numInstances++;' % pad
@@ -249,10 +162,10 @@ def AddInstanceToList(pad):
 def AddInstanceToStateList(pad):
     print '%s/* Instances that change state have to be added to the state list as well. */' % pad
     print '%sif (!state->currentListInfo->stateFirst) {' % pad
-    print '%s\tstate->currentListInfo->stateFirst = (DLMInstanceList *)instance;' % pad
+    print '%s    state->currentListInfo->stateFirst = (DLMInstanceList *)instance;' % pad
     print '%s}' % pad
     print '%selse {' % pad
-    print '%s\tstate->currentListInfo->stateLast->stateNext = (DLMInstanceList *)instance;' % pad
+    print '%s    state->currentListInfo->stateLast->stateNext = (DLMInstanceList *)instance;' % pad
     print '%s}' % pad
     print '%sstate->currentListInfo->stateLast = (DLMInstanceList *)instance;' % pad
 
@@ -261,105 +174,104 @@ def AddInstanceToStateList(pad):
 # element, and adds that element to the end of the display list currently
 # being compiled.
 def wrap_compile(functionName):
-	params = apiutil.Parameters(functionName)
-	return_type = apiutil.ReturnType(functionName)
-	# Make sure the return type is void.  It's nonsensical to compile
-	# an element with any other return type.
-	if return_type != 'void':
-		print '/* Nonsense: DL function %s has a %s return type?!? */' % (functionName, return_type)
-	#	return
-	# Define a structure to hold all the parameters.  Note that the
-	# top parameters must exactly match the DLMInstanceList structure
-	# in include/cr_dlm.h, or everything will break horribly.
-	# Start off by getting all the pointer info we could ever use
-	# from the parameters
-	(pointers, pointername, pointerarg, pointertype, pointersize, pointercomment) = GetPointerInfo(functionName)
+    params = apiutil.Parameters(functionName)
+    return_type = apiutil.ReturnType(functionName)
+    # Make sure the return type is void.  It's nonsensical to compile
+    # an element with any other return type.
+    if return_type != 'void':
+        print '/* Nonsense: DL function %s has a %s return type?!? */' % (functionName, return_type)
 
-	# Finally, the compile wrapper.  This one will diverge strongly
-	# depending on whether or not there are pointer parameters. 
-	callstring = apiutil.MakeCallString(params)
-	argstring = apiutil.MakeDeclarationString(params)
-	props = apiutil.Properties(functionName)
-	if "useclient" in props or "pixelstore" in props:
-		callstring += ", c"
-		argstring += ", CRClientState *c"
-	print 'void DLM_APIENTRY crDLMCompile%s( %s )' % (functionName, argstring)
-	print '{'
-	print '	CRDLMContextState *state = CURRENT_STATE();'
-	print '	struct instance%s *instance;' % (functionName)
-	
-	# The calling SPU is supposed to verify that the element is supposed to be
-	# compiled before it is actually compiled; typically, this is done based
-	# on whether a glNewList has been executed more recently than a glEndList.
-	# But some functions are dual-natured, sometimes being compiled, and sometimes
-	# being executed immediately.  We can check for this here.
-	if "checklist" in apiutil.ChromiumProps(functionName):
-	    print '\tif (crDLMCheckList%s(%s)) {' % (functionName, apiutil.MakeCallString(params))
-	    print '\t\tcrdlm_error(__LINE__, __FILE__, GL_INVALID_OPERATION,'
-	    print '\t\t    "this instance of function %s should not be compiled");' % functionName;
-	    print '\t\treturn;'
-	    print '\t}'
+    # Define a structure to hold all the parameters.  Note that the
+    # top parameters must exactly match the DLMInstanceList structure
+    # in include/cr_dlm.h, or everything will break horribly.
+    # Start off by getting all the pointer info we could ever use
+    # from the parameters
+    (pointers, pointername, pointerarg, pointertype, pointersize, pointercomment) = GetPointerInfo(functionName)
 
-	if len(pointers) > 1 or pointersize == 'special':
-		# Pass NULL, to just allocate space
-		print '\tinstance = crCalloc(sizeof(struct instance%s) + crdlm_pointers_%s(NULL, %s));' % (functionName, functionName, callstring)
-	else:
-		print '\tinstance = crCalloc(sizeof(struct instance%s));' % (functionName)
-	print '\tif (!instance) {'
-	print '\t\tcrdlm_error(__LINE__, __FILE__, GL_OUT_OF_MEMORY,'
-	print '\t\t\t"out of memory adding %s to display list");' % (functionName)
-	print '\t\treturn;'
-	print '\t}'
+    # Finally, the compile wrapper.  This one will diverge strongly
+    # depending on whether or not there are pointer parameters. 
+    callstring = apiutil.MakeCallString(params)
+    argstring = apiutil.MakeDeclarationString(params)
+    props = apiutil.Properties(functionName)
+    if "useclient" in props or "pixelstore" in props:
+        callstring += ", c"
+        argstring += ", CRClientState *c"
+    print 'void DLM_APIENTRY crDLMCompile%s( %s )' % (functionName, argstring)
+    print '{'
+    print '    CRDLMContextState *state = CURRENT_STATE();'
+    print '    struct instance%s *instance;' % (functionName)
 
-	# Put in the fields that must always exist
-	print '\tinstance->execute = execute%s;' % functionName
+    # The calling SPU is supposed to verify that the element is supposed to be
+    # compiled before it is actually compiled; typically, this is done based
+    # on whether a glNewList has been executed more recently than a glEndList.
+    # But some functions are dual-natured, sometimes being compiled, and sometimes
+    # being executed immediately.  We can check for this here.
+    if "checklist" in apiutil.ChromiumProps(functionName):
+        print '    if (crDLMCheckList%s(%s))' % (functionName, apiutil.MakeCallString(params))
+        print '    {'
+        print '        crdlm_error(__LINE__, __FILE__, GL_INVALID_OPERATION,'
+        print '            "this instance of function %s should not be compiled");' % functionName;
+        print '        return;'
+        print '    }'
 
-	# Apply all the simple (i.e. non-pointer) parameters
-	for index in range(len(params)):
-		if index not in pointers:
-			name = params[index][0]
-			print '\tinstance->%s = %s;' % (name, name)
-	
-	# We need to know instance size in bytes in order to save its state later.
-	print '\tinstance->cbInstance = sizeof(struct instance%s);' % functionName
-	
-	# Set OPCODE.
-	print '\tinstance->iVBoxOpCode = VBOX_DL_OPCODE_%s;' % functionName
-	
-	# If there's a pointer parameter, apply it.
-	if len(pointers) == 1:
-		print '\tif (%s == NULL) {' % (params[pointers[0]][0])
-		print '\t\tinstance->%s = NULL;' % (params[pointers[0]][0])
-		print '\t}'
-		print '\telse {'
-		print '\t\tinstance->%s = instance->%s;' % (params[pointers[0]][0], pointerarg)
-		print '\t}'
-		if pointersize == 'special':
-			print '\tinstance->cbInstance += crdlm_pointers_%s(instance, %s);' % (functionName, callstring)
-		else:
-			print '\tcrMemcpy((void *)instance->%s, (void *) %s, %s*sizeof(%s));' % (params[pointers[0]][0], params[pointers[0]][0], pointersize, pointertype)
-	elif len(pointers) == 2:
-		# this seems to work
-		print '\tinstance->cbInstance += crdlm_pointers_%s(instance, %s);' % (functionName, callstring)
-	elif len(pointers) > 2:
-		print "#error don't know how to handle pointer parameters for %s" % (functionName)
-	
-	# Add the element to the current display list
-	AddInstanceToList('\t')
-	# If the element is a state-changing element, add it to the current state list
-	if apiutil.SetsTrackedState(functionName):
-	    AddInstanceToStateList('\t')
+    if len(pointers) > 1 or pointersize == 'special':
+        # Pass NULL, to just allocate space
+        print '    instance = crCalloc(sizeof(struct instance%s) + crdlm_pointers_%s(NULL, %s));' % (functionName, functionName, callstring)
+    else:
+        print '    instance = crCalloc(sizeof(struct instance%s));' % (functionName)
+    print '    if (!instance)'
+    print '    {'
+    print '        crdlm_error(__LINE__, __FILE__, GL_OUT_OF_MEMORY,'
+    print '            "out of memory adding %s to display list");' % (functionName)
+    print '        return;'
+    print '    }'
 
-	# XXX might need a better test here
-	if functionName[0:6] == "Vertex":
-		generate_bbox_code(functionName)
+    # Put in the fields that must always exist
+    print '    instance->execute = execute%s;' % functionName
 
-	print '}'
+    # Apply all the simple (i.e. non-pointer) parameters
+    for index in range(len(params)):
+        if index not in pointers:
+            name = params[index][0]
+            print '    instance->%s = %s;' % (name, name)
+
+    # We need to know instance size in bytes in order to save its state later.
+    print '    instance->cbInstance = sizeof(struct instance%s);' % functionName
+
+    # Set OPCODE.
+    print '    instance->iVBoxOpCode = VBOX_DL_OPCODE_%s;' % functionName
+
+    # If there's a pointer parameter, apply it.
+    if len(pointers) == 1:
+
+        print '    if (%s == NULL)' % (params[pointers[0]][0])
+        print '        instance->%s = NULL;' % (params[pointers[0]][0])
+        print '    else'
+        print '        instance->%s = instance->%s;' % (params[pointers[0]][0], pointerarg)
+
+        if pointersize == 'special':
+            print '    instance->cbInstance += crdlm_pointers_%s(instance, %s);' % (functionName, callstring)
+        else:
+            print '    crMemcpy((void *)instance->%s, (void *) %s, %s*sizeof(%s));' % (params[pointers[0]][0], params[pointers[0]][0], pointersize, pointertype)
+    elif len(pointers) == 2:
+        # this seems to work
+        print '    instance->cbInstance += crdlm_pointers_%s(instance, %s);' % (functionName, callstring)
+    elif len(pointers) > 2:
+        print "#error don't know how to handle pointer parameters for %s" % (functionName)
+
+    # Add the element to the current display list
+    AddInstanceToList('    ')
+    # If the element is a state-changing element, add it to the current state list
+    if apiutil.SetsTrackedState(functionName):
+        AddInstanceToStateList('    ')
+    print '}'
 
 whichfile=sys.argv[1]
 if whichfile == 'headers':
     print """#ifndef _DLM_GENERATED_H
 #define _DLM_GENERATED_H
+
+#include <VBox/VBoxUhgsmi.h>
 
 /* DO NOT EDIT.  This file is auto-generated by dlm_generated.py. */
 """
@@ -416,7 +328,28 @@ for func_name in keys:
 		elif not apiutil.FindSpecial("dlm", func_name):
 		    wrap_execute(func_name)
 		    wrap_compile(func_name)
-		# All others just pass through
+
+
+# Generate mapping between OPCODE and routines to be executed.
+
+if whichfile == "headers":
+    # Execute routine prototype needed to add static array of routines.
+    print ''
+    print 'struct DLMInstanceList;'
+    print 'typedef void (*VBoxDLMExecuteFn)(struct DLMInstanceList *instance, SPUDispatchTable *dispatchTable);'
+    print ''
+    print 'extern VBoxDLMExecuteFn g_VBoxDLMExecuteFns[VBOX_DL_OPCODE_MAX];'
+    print ''
+else:
+    print ''
+    print 'VBoxDLMExecuteFn g_VBoxDLMExecuteFns[] = {'
+
+    for func_name in keys:
+        if apiutil.CanCompile(func_name) and not apiutil.FindSpecial("dlm", func_name):
+            print '    execute%s,' % func_name
+
+    print '};'
+    print ''
 
 if whichfile == 'headers':
     print "#endif /* _DLM_GENERATED_H */"

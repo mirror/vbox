@@ -228,7 +228,6 @@ CRDLMContextState DLM_APIENTRY *crDLMNewContext(CRDLM *dlm)
 	state->currentListInfo = NULL;
 	state->currentListMode = GL_FALSE;
 	state->listBase = 0;
-	state->replayState = CRDLM_IMMEDIATE;
 	
 	/* Increment the use count of the DLM provided.  This guarantees that
 	 * the DLM won't be released until all the contexts have released it.
@@ -320,23 +319,6 @@ CRDLMError DLM_APIENTRY crDLMDeleteListContent(CRDLM *dlm, unsigned long listIde
     return GL_NO_ERROR;
 }
 
-/* Return whether the current thread is involved in playback.
- * This is useful for some routines to selectively choose their
- * unpack state, for example (as replayed DLM functions must be
- * unpacked with crStateNativePixelPacking instead of the 
- * normal unpack state, for example.
- */
-CRDLMReplayState DLM_APIENTRY crDLMGetReplayState(void)
-{
-    CRDLMContextState *listState = CURRENT_STATE();
-    if (listState) {
-	return listState->replayState;
-    }
-    else {
-	return CRDLM_IMMEDIATE;
-    }
-}
-
 /**
  *
  * Playback/execute a list.
@@ -364,12 +346,8 @@ void DLM_APIENTRY crDLMReplayDLMList(CRDLM *dlm, unsigned long listIdentifier, S
 void DLM_APIENTRY crDLMReplayList(unsigned long listIdentifier, SPUDispatchTable *dispatchTable)
 {
     CRDLMContextState *listState = CURRENT_STATE();
-    if (listState) {
-	CRDLMReplayState oldReplayState = listState->replayState;
-	listState->replayState = CRDLM_REPLAY_ALL_FUNCTIONS;
-	crDLMReplayDLMList(listState->dlm, listIdentifier, dispatchTable);
-	listState->replayState = oldReplayState;
-    }
+    if (listState)
+        crDLMReplayDLMList(listState->dlm, listIdentifier, dispatchTable);
 }
 
 /*
@@ -397,12 +375,8 @@ void DLM_APIENTRY crDLMReplayDLMListState(CRDLM *dlm, unsigned long listIdentifi
 void DLM_APIENTRY crDLMReplayListState(unsigned long listIdentifier, SPUDispatchTable *dispatchTable)
 {
     CRDLMContextState *listState = CURRENT_STATE();
-    if (listState) {
-	CRDLMReplayState oldReplayState = listState->replayState;
-	listState->replayState = CRDLM_REPLAY_STATE_FUNCTIONS;
-	crDLMReplayDLMListState(listState->dlm, listIdentifier, dispatchTable);
-	listState->replayState = oldReplayState;
-    }
+    if (listState)
+        crDLMReplayDLMListState(listState->dlm, listIdentifier, dispatchTable);
 }
 
 /* This is a switch statement that lists every "type" value valid for a
@@ -564,50 +538,6 @@ struct getRefsCallbackParms {
     int totalCount;
 };
 
-static void getRefsCallback(unsigned long key, void *data, void *dataPtr2)
-{
-    struct getRefsCallbackParms *cbParms = 
-	(struct getRefsCallbackParms *)dataPtr2;
-
-    /* Count the total number of references */
-    cbParms->totalCount++;
-
-    /* If we haven't yet reached the desired offset, decrement it */
-    if (cbParms->remainingOffset > 0) {
-	cbParms->remainingOffset--;
-    }
-    else if (cbParms->remainingCount > 0) {
-	 /* Store data until we've stored all we can.
-	 */
-	*(cbParms->buffer++) = key;
-	cbParms->remainingCount--;
-    }
-}
-
-int DLM_APIENTRY crDLMGetReferences(CRDLM *dlm, unsigned long listIdentifier,
-    int firstIndex, int sizeofBuffer, unsigned int *buffer)
-{
-    DLMListInfo *listInfo;
-
-    listInfo = (DLMListInfo *) crHashtableSearch(dlm->displayLists, listIdentifier);
-    if (listInfo) {
-	struct getRefsCallbackParms cbParms;
-
-	cbParms.remainingOffset = firstIndex;
-	cbParms.remainingCount = sizeofBuffer;
-	cbParms.buffer = buffer;
-	cbParms.totalCount = 0;
-
-	crHashtableWalk(listInfo->references, getRefsCallback, (void *)&cbParms);
-
-	return cbParms.totalCount;
-    }
-    else {
-	/* No list exists; it therefore has no references */
-	return 0;
-    }
-}
-
 /*
  * Return id of list currently being compiled.  Returns 0 of there's no
  * current DLM state, or if no list is being compiled. 
@@ -642,35 +572,4 @@ void crdlm_error(int line, const char *file, GLenum error, const char *info)
 {
 	if (ErrorCallback)
 		(*ErrorCallback)(line, file, error, info);
-}
-
-static void crDLMSaveListsCb(unsigned long key, void *pData1, void *pData2 /* unused */ )
-{
-    DLMListInfo *pListInfo = (DLMListInfo*)pData1;
-
-    if (pListInfo)
-    {
-        crDebug("Saving Display Lists: found ID=%u, numInstances=%d, references=%p.",
-            key, pListInfo->numInstances, pListInfo->references);
-
-        DLMInstanceList *pInstance = pListInfo->first;
-        while (pInstance) {
-            crDebug("\t%p", pInstance->execute);
-            pInstance = pInstance->next;
-        }
-    }
-    else
-        crError("Saving Display Lists: found record with no data. Skipping.");
-}
-
-int32_t DLM_APIENTRY crDLMSaveState(void)
-{
-    CRDLMContextState *pListState = CURRENT_STATE();
-
-    if (pListState)
-        crHashtableWalk(pListState->dlm->displayLists, crDLMSaveListsCb, (void *)NULL);
-    else
-        crDebug("Saving Display Lists: no data to save.");
-
-    return 0;
 }

@@ -7,7 +7,7 @@ import apiutil
 # mode is "header" or "defs"
 mode = sys.argv[1]
 
-keys = apiutil.GetDispatchedFunctions(sys.argv[2]+"/APIspec.txt")
+keys = apiutil.GetDispatchedFunctions(sys.argv[3]+"/APIspec.txt")
 
 # Any new function implemented in the DLM has to have an entry added here.
 # Each function has its return type, function name, and parameters provided.
@@ -20,7 +20,6 @@ additionalFunctions = [
 	('void DLM_APIENTRY','crDLMFreeDLM', 'CRDLM *dlm, SPUDispatchTable *dispatchTable'),
 	('void DLM_APIENTRY', 'crDLMSetCurrentState', 'CRDLMContextState *state'),
 	('CRDLMContextState DLM_APIENTRY *', 'crDLMGetCurrentState', 'void'),
-	('CRDLMReplayState DLM_APIENTRY', 'crDLMGetReplayState', 'void'),
 	('void DLM_APIENTRY', 'crDLMSetupClientState', 'SPUDispatchTable *dispatchTable'),
 	('void DLM_APIENTRY', 'crDLMRestoreClientState', 'CRClientState *clientState, SPUDispatchTable *dispatchTable'),
 	('void DLM_APIENTRY', 'crDLMSendAllDLMLists', 'CRDLM *dlm, SPUDispatchTable *dispatchTable'),
@@ -36,7 +35,6 @@ additionalFunctions = [
 	('void DLM_APIENTRY', 'crDLMReplayDLMListsState', 'CRDLM *dlm, GLsizei n, GLenum type, const GLvoid *lists, SPUDispatchTable *dispatchTable'),
 	('void DLM_APIENTRY', 'crDLMReplayListsState', 'GLsizei n, GLenum type, const GLvoid *lists, SPUDispatchTable *dispatchTable'),
 	('CRDLMError DLM_APIENTRY', 'crDLMDeleteListContent', 'CRDLM *dlm, unsigned long listIdentifier'),
-	('int DLM_APIENTRY', 'crDLMGetReferences', 'CRDLM *dlm, unsigned long listIdentifier, int firstIndex, int sizeofBuffer, unsigned int *buffer'),
 	('void DLM_APIENTRY', 'crDLMComputeBoundingBox', 'unsigned long listId'),
 	('GLuint DLM_APIENTRY', 'crDLMGetCurrentList', 'void'),
 	('GLenum DLM_APIENTRY', 'crDLMGetCurrentMode', 'void'),
@@ -49,7 +47,8 @@ additionalFunctions = [
 	('void DLM_APIENTRY', 'crDLMListBase', 'GLuint base, SPUDispatchTable *dispatchTable'),
 	('GLboolean DLM_APIENTRY', 'crDLMIsList', 'GLuint list, SPUDispatchTable *dispatchTable'),
 	('GLuint DLM_APIENTRY', 'crDLMGenLists', 'GLsizei range, SPUDispatchTable *dispatchTable'),
-	('int32_t DLM_APIENTRY', 'crDLMSaveState', 'void'),
+	('int32_t DLM_APIENTRY', 'crDLMSaveState', 'CRDLM *dlm, PSSMHANDLE pSSM'),
+	('bool DLM_APIENTRY', 'crDLMLoadState', 'CRDLM *dlm, PSSMHANDLE pSSM, SPUDispatchTable *dispatchTable'),
 	#('void DLM_APIENTRY', 'crDLMListSent', 'CRDLM *dlm, unsigned long listIdentifier'),
 	#('GLboolean DLM_APIENTRY', 'crDLMIsListSent', 'CRDLM *dlm, unsigned long listIdentifier'),
 	#('GLint DLM_APIENTRY', 'crDLMListSize', 'CRDLM *dlm, unsigned long listIdentifier'),
@@ -76,6 +75,7 @@ if mode == 'header':
 #ifdef CHROMIUM_THREADSAFE
 #include "cr_threads.h"
 #endif
+#include <VBox/types.h>
 """ % os.path.basename(sys.argv[0])
 
     # Generate operation codes enum to be used for saving and restoring lists.
@@ -83,8 +83,10 @@ if mode == 'header':
     print "typedef enum {"
 
     for func_name in keys:
-        print "    VBOX_DL_OPCODE_%s," % func_name
+        if apiutil.CanCompile(func_name) and not apiutil.FindSpecial("dlm", func_name):
+            print "    VBOX_DL_OPCODE_%s," % func_name
 
+    print "    VBOX_DL_OPCODE_MAX,"
     print "} VBoxDLOpCode;"
 
     print """
@@ -110,13 +112,10 @@ typedef struct DLMInstanceList {
 } DLMInstanceList;
 
 typedef struct {
-	DLMInstanceList *first, *last;
-	int numInstances;
-	DLMInstanceList *stateFirst, *stateLast;
-	CRHashTable *references; /* display lists that this display list calls */
-	CRDLMBounds bbox;
-	GLboolean listSent;
-	GLuint hwid;
+    DLMInstanceList *first, *last;
+    uint32_t         numInstances;
+    DLMInstanceList *stateFirst, *stateLast;
+    GLuint           hwid;
 } DLMListInfo;
 
 typedef struct {
@@ -159,7 +158,6 @@ typedef struct {
 	DLMListInfo *currentListInfo;	/* open display list data */
 	GLenum currentListMode;		/* GL_COMPILE or GL_COMPILE_AND_EXECUTE */
 	GLuint listBase;
-	CRDLMReplayState replayState;	/* CRDLM_IMMEDIATE, CRDLM_REPLAY_STATE_FUNCTIONS, or CRDLM_REPLAY_ALL_FUNCTIONS */
 
 } CRDLMContextState;
 
