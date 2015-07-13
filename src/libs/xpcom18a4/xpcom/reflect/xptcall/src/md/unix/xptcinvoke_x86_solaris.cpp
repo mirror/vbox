@@ -40,6 +40,9 @@
 
 #include "xptcprivate.h"
 #include "xptc_platforms_unixish_x86.h"
+#ifdef VBOX
+# include <iprt/alloca.h>
+#endif
 
 extern "C" {
 
@@ -106,9 +109,89 @@ XPTC_InvokeByIndex(nsISupports* that, PRUint32 methodIndex,
 #ifdef __GNUC__            /* Gnu compiler. */
   PRUint32 result;
   PRUint32 n = invoke_count_words (paramCount, params) * 4;
-  void (*fn_copy) (unsigned int, nsXPTCVariant *, PRUint32 *) = invoke_copy_to_stack;
   int temp1, temp2, temp3;
- 
+
+# ifdef VBOX
+  /* This is for dealing with gcc 4.5.2 not using registers for 'g' parameters
+     and instead trying to get things like 'that' via %esp after we've changed it. */
+#  if 1  /* safe version. */
+  void (*fn_copy) (unsigned int, nsXPTCVariant *, PRUint32 *) = invoke_copy_to_stack;
+  struct Combined
+  {
+      PRUint32          that;           /* offset: 0  */
+      PRUint32          pfn;            /* offset: 4  */
+      PRUint32          savedEsp;       /* offset: 8  */
+      PRUint32          paramCount;     /* offset: 12 */
+      PRUint32          params;         /* offset: 16 */
+  } Combined;
+#   ifdef CFRONT_STYLE_THIS_ADJUST
+  struct CFRONTVTE { uintptr_t off, pfn } *pVtab = *(struct CFRONTVTE **)that;
+  Combined.that         = (uintptr_t)that + pVtab[methodIndex + 1].off;
+  Combined.pfn          = pVtab[methodIndex + 1].pfn;
+#   elif defined(__GXX_ABI_VERSION) && __GXX_ABI_VERSION >= 100 /* G++ V3 ABI */
+  Combined.that         = (uintptr_t)that;
+  Combined.pfn          = (*(uintptr_t **)that)[methodIndex];
+#   else /* not G++ V3 ABI  */
+  Combined.that         = (uintptr_t)that;
+  Combined.pfn          = (*(uintptr_t **)that)[2 + methodIndex];
+#   endif /* G++ V3 ABI */
+  Combined.paramCount   = paramCount;
+  Combined.params       = (uintptr_t)params;
+
+  __asm__ __volatile__(
+     "mov   %%esp, 8(%%esi)\n\t"    /* savedEsp = %esp */
+     "subl  %1, %%esp\n\t"          /* make room for params */
+
+     /* Call invoke_count_words to copy the parameters. */
+     "pushl %%esp\n\t"              /* arg2: dest */
+     "pushl 16(%%esi)\n\t"          /* arg1: params */
+     "pushl 12(%%esi)\n\t"          /* arg0: paramCount */
+     "call  *%0\n\t"
+     "addl  $0xc, %%esp\n\t"
+
+     /* Push the this pointer. */
+     "pushl (%%esi)\n\t"            /* that */
+     "call  *4(%%esi)\n\t"
+     "mov   8(%%esi), %%esp\n\t"
+     : "=a" (result),        /* %0 */
+       "=c" (temp1),         /* %1 */
+       "=d" (temp2)          /* %2 */
+     : "S"  (&Combined),     /* %3 */
+       "0"  (fn_copy),
+       "1"  (n)
+     : "memory"
+     );
+
+#  else /* Small version; ASSUMES nothing important gets put on the stack after the the alloca. */
+  uintptr_t *pauStack = (uintptr_t *)alloca(n + sizeof(uintptr_t));
+  invoke_copy_to_stack(paramCount, params, &pauStack[1]);
+#   ifdef CFRONT_STYLE_THIS_ADJUST
+  struct CFRONTVTE { uintptr_t off, pfn } *pVtab = *(struct CFRONTVTE **)that;
+  pauStack[0] = (uintptr_t)that + pVtab[methodIndex + 1].off;
+  uintptr_t pfn = pVtab[methodIndex + 1].pfn;
+#   elif defined(__GXX_ABI_VERSION) && __GXX_ABI_VERSION >= 100 /* G++ V3 ABI */
+  pauStack[0] = (uintptr_t)that;
+  uintptr_t pfn = (*(uintptr_t **)that)[methodIndex];
+#   else /* not G++ V3 ABI  */
+  pauStack[0] = (uintptr_t)that;
+  uintptr_t pfn = (*(uintptr_t **)that)[2 + methodIndex];
+#   endif /* G++ V3 ABI */
+
+  __asm__ __volatile__(
+     "xchg  %%esp, %3\n\t"      /* save+load %esp */
+     "call  *%0\n\t"
+     "xchg  %%esp, %3\n\t"      /* restore %esp */
+     : "=a" (result),        /* %0 */
+       "=c" (temp1),         /* %1 */
+       "=d" (temp2)          /* %2 */
+     : "S"  (pauStack),      /* %3 */
+       "0"  (pfn)
+     : "memory"
+     );
+#  endif
+
+# else /* !VBOX */
+  void (*fn_copy) (unsigned int, nsXPTCVariant *, PRUint32 *) = invoke_copy_to_stack;
  __asm__ __volatile__(
     "subl  %8, %%esp\n\t" /* make room for params */
     "pushl %%esp\n\t"
@@ -152,6 +235,7 @@ XPTC_InvokeByIndex(nsISupports* that, PRUint32 methodIndex,
       "0" (fn_copy)         /* %3 */
     : "memory"
     );
+# endif /* !VBOX */
     
   return result;
 #elif defined(__SUNPRO_CC)               /* Sun Workshop Compiler. */
