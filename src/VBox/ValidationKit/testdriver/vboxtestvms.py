@@ -51,15 +51,19 @@ g_dsVirtModeDescs  = {
     'hwvirt-np' : 'NestedPaging'
 };
 
-# Arch constants.
-g_k32    = 32;                          # pylint: disable=C0103
-g_k64    = 64;                          # pylint: disable=C0103
-g_k32_64 = 96;                          # pylint: disable=C0103
+## @name Flags.
+## @{
+g_k32           = 32;                   # pylint: disable=C0103
+g_k64           = 64;                   # pylint: disable=C0103
+g_k32_64        = 96;                   # pylint: disable=C0103
+g_kiArchMask    = 96;
+g_kiNoRaw       = 128;                  ##< No raw mode.
+## @}
 
 # Array indexes.
 g_iGuestOsType = 0;
 g_iKind        = 1;
-g_iArch        = 2;
+g_iFlags       = 2;
 g_iMinCpu      = 3;
 g_iMaxCpu      = 4;
 g_iRegEx       = 5;
@@ -78,10 +82,12 @@ g_aaNameToDetails = \
     [ 'Windows2008_64', 'Windows2008_64',        g_k64,    1,  64, ['w2k8r2', 'w2k8r2sp[0-9]', 'win2k8r2', 'win2k8r2sp[0-9]']], # max cpus/cores??
     [ 'Windows7',       'Windows7',              g_k32,    1,  32, ['w7',     'w7sp[0-9]', 'win7',]],        # max cpus/cores??
     [ 'Windows7_64',    'Windows7_64',           g_k64,    1,  64, ['w7-64',  'w7sp[0-9]-64', 'win7-64',]],  # max cpus/cores??
-    [ 'Windows8',       'Windows8',              g_k32,    1,  32, ['w8',     'w8sp[0-9]', 'win8',]],        # max cpus/cores??
+    [ 'Windows8',       'Windows8',     g_k32 | g_kiNoRaw, 1,  32, ['w8',     'w8sp[0-9]', 'win8',]],        # max cpus/cores??
     [ 'Windows8_64',    'Windows8_64',           g_k64,    1,  64, ['w8-64',  'w8sp[0-9]-64', 'win8-64',]],  # max cpus/cores??
-    [ 'Windows81',      'Windows81',             g_k32,    1,  32, ['w81',    'w81sp[0-9]', 'win81',]],       # max cpus/cores??
+    [ 'Windows81',      'Windows81',    g_k32 | g_kiNoRaw, 1,  32, ['w81',    'w81sp[0-9]', 'win81',]],       # max cpus/cores??
     [ 'Windows81_64',   'Windows81_64',          g_k64,    1,  64, ['w81-64', 'w81sp[0-9]-64', 'win81-64',]], # max cpus/cores??
+    [ 'Windows10',      'Windows10',    g_k32 | g_kiNoRaw, 1,  32, ['w10',    'w10sp[0-9]', 'win10',]],       # max cpus/cores??
+    [ 'Windows10_64',   'Windows10_64',          g_k64,    1,  64, ['w10-64', 'w10sp[0-9]-64', 'win10-64',]], # max cpus/cores??
     [ 'Linux',          'Debian',                g_k32,    1, 256, ['deb[0-9]*', 'debian[0-9]*', ]],
     [ 'Linux_64',       'Debian_64',             g_k64,    1, 256, ['deb[0-9]*-64', 'debian[0-9]*-64', ]],
     [ 'Linux',          'RedHat',                g_k32,    1, 256, ['rhel',   'rhel[0-9]', 'rhel[0-9]u[0-9]']],
@@ -233,7 +239,7 @@ class TestVm(object):
                 reporter.fatal('The OS of test VM "%s" cannot be guessed' % (self.sVmName,));
 
             # Check for 64-bit, if required and supported.
-            if self.aInfo[g_iArch] == g_k32_64  and  _intersects(asSplit, ['64', 'amd64']):
+            if (self.aInfo[g_iFlags] & g_kiArchMask) == g_k32_64  and  _intersects(asSplit, ['64', 'amd64']):
                 self.sKind = self.sKind + '_64';
         else:
             # Lookup the kind.
@@ -260,9 +266,9 @@ class TestVm(object):
         # Restrict modes and such depending on the OS.
         if self.asVirtModesSup is None:
             self.asVirtModesSup = list(g_asVirtModes);
-            if self.sGuestOsType in (g_ksGuestOsTypeOS2, g_ksGuestOsTypeDarwin):
-                self.asVirtModesSup = [sVirtMode for sVirtMode in self.asVirtModesSup if sVirtMode != 'raw'];
-            if self.sKind.find('_64') > 0:
+            if   self.sGuestOsType in (g_ksGuestOsTypeOS2, g_ksGuestOsTypeDarwin) \
+              or self.sKind.find('_64') > 0 \
+              or (self.aInfo is not None and (self.aInfo[g_iFlags] & g_kiNoRaw)):
                 self.asVirtModesSup = [sVirtMode for sVirtMode in self.asVirtModesSup if sVirtMode != 'raw'];
             # TEMPORARY HACK - START
             sHostName = socket.getfqdn();
@@ -360,7 +366,7 @@ class TestVm(object):
 
     def is64bitRequired(self):
         """ Check if 64-bit is required or not. """
-        return (self.aInfo[g_iArch] & g_k64) != 0;
+        return (self.aInfo[g_iFlags] & g_k64) != 0;
 
     def isLoggedOntoDesktop(self):
         """ Checks if the test VM is logging onto a graphical desktop by default. """
