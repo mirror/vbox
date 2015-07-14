@@ -24,24 +24,9 @@
     {
        try
        {
-           test = system.sysctl('hw.machine');
-           system.log("Hardware architecture detected: " + test);
-           result = (test == 'i386' || test == 'x86_64');
-       } catch (e) { system.log(e); result = false; }
-
-       if (!result)
-       {
-           my.result.type = 'Fatal';
-           my.result.title = system.localizedString('UNSUPPORTED_HW_MACHINE_TLE');
-           my.result.message = system.localizedString('UNSUPPORTED_HW_MACHINE_MSG');
-           return result;
-       }
-
-       try
-       {
            test = system.version['ProductVersion'];
            system.log("OS version detected: " + test);
-           result = (system.compareVersions(test, '10.6') >= 0);
+           result = (system.compareVersions(test, '10.8') >= 0);
        } catch (e) { system.log(e); result = false; }
 
        if (!result)
@@ -49,6 +34,21 @@
            my.result.type = 'Fatal';
            my.result.title = system.localizedString('UNSUPPORTED_OS_TLE');
            my.result.message = system.localizedString('UNSUPPORTED_OS_MSG');
+           return result;
+       }
+
+       try
+       {
+           test = system.sysctl('hw.machine');
+           system.log("Hardware architecture detected: " + test);
+           result = (test == 'x86_64');
+       } catch (e) { system.log(e); result = false; }
+
+       if (!result)
+       {
+           my.result.type = 'Fatal';
+           my.result.title = system.localizedString('UNSUPPORTED_HW_MACHINE_TLE');
+           my.result.message = system.localizedString('UNSUPPORTED_HW_MACHINE_MSG');
            return result;
        }
 
