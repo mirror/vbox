@@ -36,8 +36,7 @@ void X11ScreenSaverSettingsInit()
 {
     int     dummy;
     Display *display = QX11Info::display();
-    gX11ScreenSaverDpmsAvailable =
-        DPMSQueryExtension(display, &dummy, &dummy);
+    gX11ScreenSaverDpmsAvailable = DPMSQueryExtension(display, &dummy, &dummy);
 }
 
 void X11ScreenSaverSettingsSave()
@@ -75,36 +74,36 @@ void X11ScreenSaverSettingsRestore()
 
 bool X11IsWindowManagerKWin()
 {
-    Atom typeReturned;
-    Atom utf8Atom;
-    int formatReturned;
-    unsigned long ulNitemsReturned;
+    /* Get display: */
+    Display *pDisplay = QX11Info::display();
+    /* Prepare variables to be reused: */
+    Atom atom_property_name;
+    Atom atom_returned_type;
+    int iReturnedFormat;
+    unsigned long ulReturnedItemCount;
     unsigned long ulDummy;
-    unsigned char *pcData = NULL;
+    unsigned char *pcData = 0;
     bool fIsKWinManaged = false;
-    Display *display = QX11Info::display();
-    Atom propNameAtom;
-    Window WMWindow = None;
 
-    propNameAtom = XInternAtom(display, "_NET_SUPPORTING_WM_CHECK", True);
-    if (XGetWindowProperty(display, QX11Info::appRootWindow(), propNameAtom,
-                           0, 512, False, XA_WINDOW, &typeReturned,
-                           &formatReturned, &ulNitemsReturned, &ulDummy, &pcData)
-                            == Success)
+    /* Ask if root-window supports check for WM name: */
+    atom_property_name = XInternAtom(pDisplay, "_NET_SUPPORTING_WM_CHECK", True);
+    if (XGetWindowProperty(pDisplay, QX11Info::appRootWindow(), atom_property_name,
+                           0, 512, False, XA_WINDOW, &atom_returned_type,
+                           &iReturnedFormat, &ulReturnedItemCount, &ulDummy, &pcData) == Success)
     {
-
-        if (typeReturned == XA_WINDOW && formatReturned == 32)
-            WMWindow = *((Window*) pcData);
+        Window WMWindow = None;
+        if (atom_returned_type == XA_WINDOW && iReturnedFormat == 32)
+            WMWindow = *((Window*)pcData);
         if (pcData)
             XFree(pcData);
         if (WMWindow != None)
         {
-            propNameAtom = XInternAtom(display, "_NET_WM_NAME", True);
-            utf8Atom = XInternAtom(display, "UTF8_STRING", True);
-            if (XGetWindowProperty(QX11Info::display(), WMWindow, propNameAtom,
-                                   0, 512, False, utf8Atom, &typeReturned,
-                                   &formatReturned, &ulNitemsReturned, &ulDummy, &pcData)
-                    == Success)
+            /* Ask root-window for WM name: */
+            atom_property_name = XInternAtom(pDisplay, "_NET_WM_NAME", True);
+            Atom utf8Atom = XInternAtom(pDisplay, "UTF8_STRING", True);
+            if (XGetWindowProperty(pDisplay, WMWindow, atom_property_name,
+                                   0, 512, False, utf8Atom, &atom_returned_type,
+                                   &iReturnedFormat, &ulReturnedItemCount, &ulDummy, &pcData) == Success)
             {
                 fIsKWinManaged = RTStrCmp((const char*)pcData, "KWin") == 0;
                 if (pcData)
