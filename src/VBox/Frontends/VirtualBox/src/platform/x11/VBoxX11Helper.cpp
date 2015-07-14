@@ -36,46 +36,6 @@ static int  gX11ScreenSaverTimeout;
 static BOOL gX11ScreenSaverDpmsAvailable;
 static BOOL gX11DpmsState;
 
-void X11ScreenSaverSettingsInit()
-{
-    int     dummy;
-    Display *display = QX11Info::display();
-    gX11ScreenSaverDpmsAvailable = DPMSQueryExtension(display, &dummy, &dummy);
-}
-
-void X11ScreenSaverSettingsSave()
-{
-    /* Actually this is a big mess. By default the libSDL disables the screen saver
-     * during the SDL_InitSubSystem() call and restores the saved settings during
-     * the SDL_QuitSubSystem() call. This mechanism can be disabled by setting the
-     * environment variable SDL_VIDEO_ALLOW_SCREENSAVER to 1. However, there is a
-     * known bug in the Debian libSDL: If this environment variable is set, the
-     * screen saver is still disabled but the old state is not restored during
-     * SDL_QuitSubSystem()! So the only solution to overcome this problem is to
-     * save and restore the state prior and after each of these function calls. */
-
-    int     dummy;
-    CARD16  dummy2;
-    Display *display = QX11Info::display();
-
-    XGetScreenSaver(display, &gX11ScreenSaverTimeout, &dummy, &dummy, &dummy);
-    if (gX11ScreenSaverDpmsAvailable)
-        DPMSInfo(display, &dummy2, &gX11DpmsState);
-}
-
-void X11ScreenSaverSettingsRestore()
-{
-    int     timeout, interval, preferBlank, allowExp;
-    Display *display = QX11Info::display();
-
-    XGetScreenSaver(display, &timeout, &interval, &preferBlank, &allowExp);
-    timeout = gX11ScreenSaverTimeout;
-    XSetScreenSaver(display, timeout, interval, preferBlank, allowExp);
-
-    if (gX11DpmsState && gX11ScreenSaverDpmsAvailable)
-        DPMSEnable(display);
-}
-
 X11WMType X11WindowManagerType()
 {
     /* Get display: */
@@ -120,5 +80,45 @@ X11WMType X11WindowManagerType()
         }
     }
     return wmType;
+}
+
+void X11ScreenSaverSettingsInit()
+{
+    int     dummy;
+    Display *display = QX11Info::display();
+    gX11ScreenSaverDpmsAvailable = DPMSQueryExtension(display, &dummy, &dummy);
+}
+
+void X11ScreenSaverSettingsSave()
+{
+    /* Actually this is a big mess. By default the libSDL disables the screen saver
+     * during the SDL_InitSubSystem() call and restores the saved settings during
+     * the SDL_QuitSubSystem() call. This mechanism can be disabled by setting the
+     * environment variable SDL_VIDEO_ALLOW_SCREENSAVER to 1. However, there is a
+     * known bug in the Debian libSDL: If this environment variable is set, the
+     * screen saver is still disabled but the old state is not restored during
+     * SDL_QuitSubSystem()! So the only solution to overcome this problem is to
+     * save and restore the state prior and after each of these function calls. */
+
+    int     dummy;
+    CARD16  dummy2;
+    Display *display = QX11Info::display();
+
+    XGetScreenSaver(display, &gX11ScreenSaverTimeout, &dummy, &dummy, &dummy);
+    if (gX11ScreenSaverDpmsAvailable)
+        DPMSInfo(display, &dummy2, &gX11DpmsState);
+}
+
+void X11ScreenSaverSettingsRestore()
+{
+    int     timeout, interval, preferBlank, allowExp;
+    Display *display = QX11Info::display();
+
+    XGetScreenSaver(display, &timeout, &interval, &preferBlank, &allowExp);
+    timeout = gX11ScreenSaverTimeout;
+    XSetScreenSaver(display, timeout, interval, preferBlank, allowExp);
+
+    if (gX11DpmsState && gX11ScreenSaverDpmsAvailable)
+        DPMSEnable(display);
 }
 
