@@ -143,15 +143,21 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
                                               GeometryType_Available,
                                               gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
-    m_pMiniToolBar->show();
-    m_pMiniToolBar->addMenus(actionPool()->menus());
-    connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()), Qt::QueuedConnection);
-    connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
-            actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SLOT(trigger()));
-    connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
-            actionPool()->action(UIActionIndex_M_Application_S_Close), SLOT(trigger()));
-    connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()),
-            this, SLOT(sltRevokeFocus()), Qt::QueuedConnection);
+    AssertPtrReturnVoid(m_pMiniToolBar);
+    {
+        /* Make sure mini-toolbar is always-on-top of machine-window: */
+        VBoxGlobal::setTransientFor(m_pMiniToolBar, this);
+        /* Configure mini-toolbar: */
+        m_pMiniToolBar->addMenus(actionPool()->menus());
+        connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()),
+                this, SLOT(showMinimized()), Qt::QueuedConnection);
+        connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
+                actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SLOT(trigger()));
+        connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
+                actionPool()->action(UIActionIndex_M_Application_S_Close), SLOT(trigger()));
+        connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()),
+                this, SLOT(sltRevokeFocus()), Qt::QueuedConnection);
+    }
 }
 #endif /* !Q_WS_MAC */
 
@@ -241,8 +247,6 @@ void UIMachineWindowSeamless::showInNecessaryMode()
 # elif defined(Q_WS_X11)
         /* Allow mini-toolbar to be located on full-screen area: */
         m_pMiniToolBar->showMaximized();
-        /* Make sure mini-toolbar is always on top of machine-window: */
-        VBoxGlobal::setTransientFor(m_pMiniToolBar, this);
 # endif /* Q_WS_X11 */
     }
 #endif /* !Q_WS_MAC */

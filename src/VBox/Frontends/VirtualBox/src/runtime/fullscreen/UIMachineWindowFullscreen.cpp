@@ -260,14 +260,21 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
                                               GeometryType_Full,
                                               gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
-    m_pMiniToolBar->addMenus(actionPool()->menus());
-    connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()), Qt::QueuedConnection);
-    connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
-            actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SLOT(trigger()));
-    connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
-            actionPool()->action(UIActionIndex_M_Application_S_Close), SLOT(trigger()));
-    connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()),
-            this, SLOT(sltRevokeFocus()), Qt::QueuedConnection);
+    AssertPtrReturnVoid(m_pMiniToolBar);
+    {
+        /* Make sure mini-toolbar is always-on-top of machine-window: */
+        VBoxGlobal::setTransientFor(m_pMiniToolBar, this);
+        /* Configure mini-toolbar: */
+        m_pMiniToolBar->addMenus(actionPool()->menus());
+        connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()),
+                this, SLOT(showMinimized()), Qt::QueuedConnection);
+        connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
+                actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SLOT(trigger()));
+        connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
+                actionPool()->action(UIActionIndex_M_Application_S_Close), SLOT(trigger()));
+        connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()),
+                this, SLOT(sltRevokeFocus()), Qt::QueuedConnection);
+    }
 }
 #endif /* !Q_WS_MAC */
 
@@ -448,8 +455,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
             /* We also can map mini-toolbar directly on corresponding machine-window: */
             VBoxGlobal::setFullScreenMonitorX11(m_pMiniToolBar, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
         }
-        /* Make sure mini-toolbar is always on top of machine-window: */
-        VBoxGlobal::setTransientFor(m_pMiniToolBar, this);
 # endif /* Q_WS_X11 */
     }
 #endif /* !Q_WS_MAC */
