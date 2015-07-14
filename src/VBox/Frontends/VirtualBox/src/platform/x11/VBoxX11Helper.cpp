@@ -74,6 +74,9 @@ X11WMType X11WindowManagerType()
                 else
                 if (QString((const char*)pcData).contains("Mutter", Qt::CaseInsensitive))
                     wmType = X11WMType_Mutter;
+                else
+                if (QString((const char*)pcData).contains("GNOME Shell", Qt::CaseInsensitive))
+                    wmType = X11WMType_GnomeShell;
                 if (pcData)
                     XFree(pcData);
             }
