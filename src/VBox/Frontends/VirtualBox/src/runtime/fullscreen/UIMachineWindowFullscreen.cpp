@@ -262,8 +262,10 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     AssertPtrReturnVoid(m_pMiniToolBar);
     {
+#ifdef Q_WS_X11
         /* Make sure mini-toolbar is always-on-top of machine-window: */
         VBoxGlobal::setTransientFor(m_pMiniToolBar, this);
+#endif /* Q_WS_X11 */
         /* Configure mini-toolbar: */
         m_pMiniToolBar->addMenus(actionPool()->menus());
         connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()),
