@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,9 +32,6 @@ static int  gX11ScreenSaverTimeout;
 static BOOL gX11ScreenSaverDpmsAvailable;
 static BOOL gX11DpmsState;
 
-/**
- * Init the screen saver save/restore mechanism.
- */
 void X11ScreenSaverSettingsInit()
 {
     int     dummy;
@@ -43,19 +40,17 @@ void X11ScreenSaverSettingsInit()
         DPMSQueryExtension(display, &dummy, &dummy);
 }
 
-/**
- * Actually this is a big mess. By default the libSDL disables the screen
- * saver during the SDL_InitSubSystem() call and restores the saved settings
- * during the SDL_QuitSubSystem() call. This mechanism can be disabled by
- * setting the environment variable SDL_VIDEO_ALLOW_SCREENSAVER to 1. However,
- * there is a known bug in the Debian libSDL: If this environment variable is
- * set, the screen saver is still disabled but the old state is not restored
- * during SDL_QuitSubSystem()! So the only solution to overcome this problem
- * is to save and restore the state prior and after each of these function
- * calls.
- */
 void X11ScreenSaverSettingsSave()
 {
+    /* Actually this is a big mess. By default the libSDL disables the screen saver
+     * during the SDL_InitSubSystem() call and restores the saved settings during
+     * the SDL_QuitSubSystem() call. This mechanism can be disabled by setting the
+     * environment variable SDL_VIDEO_ALLOW_SCREENSAVER to 1. However, there is a
+     * known bug in the Debian libSDL: If this environment variable is set, the
+     * screen saver is still disabled but the old state is not restored during
+     * SDL_QuitSubSystem()! So the only solution to overcome this problem is to
+     * save and restore the state prior and after each of these function calls. */
+
     int     dummy;
     CARD16  dummy2;
     Display *display = QX11Info::display();
@@ -65,9 +60,6 @@ void X11ScreenSaverSettingsSave()
         DPMSInfo(display, &dummy2, &gX11DpmsState);
 }
 
-/**
- * Restore previously saved screen saver settings.
- */
 void X11ScreenSaverSettingsRestore()
 {
     int     timeout, interval, preferBlank, allowExp;
@@ -81,9 +73,6 @@ void X11ScreenSaverSettingsRestore()
         DPMSEnable(display);
 }
 
-/**
- * Determine if the current Window manager is KWin (KDE)
- */
 bool X11IsWindowManagerKWin()
 {
     Atom typeReturned;
