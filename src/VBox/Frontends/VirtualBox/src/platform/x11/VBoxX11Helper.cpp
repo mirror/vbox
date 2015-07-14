@@ -15,11 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QX11Info>
+#include <QString>
+
+/* GUI includes: */
 #include "VBoxX11Helper.h"
 
+/* Other VBox includes: */
 #include <iprt/cdefs.h>
-#include <iprt/string.h>
-#include <QX11Info>
 
 /* rhel3 build hack */
 RT_C_DECLS_BEGIN
@@ -72,7 +76,7 @@ void X11ScreenSaverSettingsRestore()
         DPMSEnable(display);
 }
 
-bool X11IsWindowManagerKWin()
+X11WMType X11WindowManagerType()
 {
     /* Get display: */
     Display *pDisplay = QX11Info::display();
@@ -83,7 +87,7 @@ bool X11IsWindowManagerKWin()
     unsigned long ulReturnedItemCount;
     unsigned long ulDummy;
     unsigned char *pcData = 0;
-    bool fIsKWinManaged = false;
+    X11WMType wmType = X11WMType_Unknown;
 
     /* Ask if root-window supports check for WM name: */
     atom_property_name = XInternAtom(pDisplay, "_NET_SUPPORTING_WM_CHECK", True);
@@ -105,12 +109,16 @@ bool X11IsWindowManagerKWin()
                                    0, 512, False, utf8Atom, &atom_returned_type,
                                    &iReturnedFormat, &ulReturnedItemCount, &ulDummy, &pcData) == Success)
             {
-                fIsKWinManaged = RTStrCmp((const char*)pcData, "KWin") == 0;
+                if (QString((const char*)pcData).contains("KWin", Qt::CaseInsensitive))
+                    wmType = X11WMType_KWin;
+                else
+                if (QString((const char*)pcData).contains("Mutter", Qt::CaseInsensitive))
+                    wmType = X11WMType_Mutter;
                 if (pcData)
                     XFree(pcData);
             }
         }
     }
-    return fIsKWinManaged;
+    return wmType;
 }
 

@@ -34,6 +34,9 @@
 #include "UIDefs.h"
 #include "UIMediumDefs.h"
 #include "VBoxGlobalSettings.h"
+#ifdef Q_WS_X11
+# include "VBoxX11Helper.h"
+#endif /* Q_WS_X11 */
 
 /* COM includes: */
 #include "VBox/com/Guid.h"
@@ -148,7 +151,10 @@ public:
     QString managedVMUuid() const { return vmUuid; }
     QList<QUrl> &argUrlList() { return m_ArgUrlList; }
 
-    bool isKWinManaged() const { return mIsKWinManaged; }
+#ifdef Q_WS_X11
+    /** X11: Returns the type of the Window Manager we are running under. */
+    X11WMType typeOfWindowManager() const { return m_enmWindowManagerType; }
+#endif /* Q_WS_X11 */
 
     /** Returns whether we should restore current snapshot before VM started. */
     bool shouldRestoreCurrentSnapshot() const { return mRestoreCurrentSnapshot; }
@@ -479,7 +485,10 @@ private:
     UIMediumEnumerator *m_pMediumEnumerator;
     mutable QReadWriteLock m_mediumEnumeratorDtorRwLock;
 
-    bool mIsKWinManaged;
+#ifdef Q_WS_X11
+    /** X11: Holds the type of the Window Manager we are running under. */
+    X11WMType m_enmWindowManagerType;
+#endif /* Q_WS_X11 */
 
     /** The --aggressive-caching / --no-aggressive-caching option. */
     bool mAgressiveCaching;
