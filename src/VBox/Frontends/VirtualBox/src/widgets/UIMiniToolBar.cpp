@@ -322,6 +322,20 @@ void UIRuntimeMiniToolBar::prepare()
         setAttribute(Qt::WA_TranslucentBackground);
 #endif /* Q_WS_X11 */
 
+#ifdef Q_WS_X11
+    /* Certain WMs requires some X11 magic
+     * to make tool-bar be always-on-top
+     * of corresponding machine-window. */
+    switch (vboxGlobal().typeOfWindowManager())
+    {
+        case X11WMType_Mutter:
+            VBoxGlobal::representAsToolbar(this);
+            break;
+        default:
+            break;
+    }
+#endif /* Q_WS_X11 */
+
     /* Make sure we have no focus: */
     setFocusPolicy(Qt::NoFocus);
 

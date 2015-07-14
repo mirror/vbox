@@ -362,6 +362,8 @@ public:
     static bool setFullScreenMonitorX11(QWidget *pWidget, ulong uScreenId);
     /** X11: Ensures @a pPropWidget become transient for the @a pWidget. */
     static void setTransientFor(QWidget *pWidget, QWidget *pPropWidget);
+    /** X11: Represents @a pWidget as X11 tool-bar. */
+    static void representAsToolbar(QWidget *pWidget);
 #endif /* Q_WS_X11 */
 
     static QString removeAccelMark (const QString &aText);
