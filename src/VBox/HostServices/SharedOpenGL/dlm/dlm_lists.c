@@ -257,10 +257,13 @@ void DLM_APIENTRY crDLMCallList(GLuint list, SPUDispatchTable *dispatchTable)
         if (listState->currentListInfo)
             crDLMCompileCallList(list);
 
-        /* Find hwid for list. */
-        listInfo = (DLMListInfo *)crHashtableSearch(listState->dlm->displayLists, list);
+        /* Find hwid for list.
+         * We need to take into account listBase:
+         * - displayLists hash table contains absolute IDs, so we need to add offset in order to resolve guest ID;
+         * - we also need to substract from hwid in order to execute correct list. */
+        listInfo = (DLMListInfo *)crHashtableSearch(listState->dlm->displayLists, list + listState->listBase);
         if (listInfo)
-            dispatchTable->CallList(listInfo->hwid);
+            dispatchTable->CallList(listInfo->hwid - listState->listBase);
         else
             crDebug("DLM: CallList(%u) issued for non-existent list.", list);
     }
@@ -269,81 +272,108 @@ void DLM_APIENTRY crDLMCallList(GLuint list, SPUDispatchTable *dispatchTable)
 }
 
 
-/* Helper for crDLMCallLists().
- * We need to extract list ID by index from array of given type and cast it to GLuint.
- * Please replece it w/ something more elegant if better solution will be found!
- */
-inline GLuint crDLMGetListByIndex(const GLvoid *aValues, GLsizei index, GLenum type)
+/* This routine translates guest Display List IDs in given format to host IDs.
+ * It is based on TranslateListIDs() function from crserverlib/server_lists.c. */
+static bool
+crDLMConvertListIDs(CRDLMContextState *pListState, GLsizei n, GLenum type, const GLvoid *aGuest, GLuint *aHost)
 {
-    GLuint element = 0;
+#define CRDLM_HANDLE_CONVERSION_CASE(_type, _item) \
+    { \
+        const _type *src = (const _type *)aGuest; \
+        for (i = 0; i < n; i++) \
+        { \
+            GLuint idGuest = (GLuint)(_item) + pListState->listBase; \
+            pListInfo = (DLMListInfo *)crHashtableSearch(pListState->dlm->displayLists, idGuest); \
+            if (pListInfo) \
+            { \
+                aHost[i] = pListInfo->hwid - pListState->listBase; \
+            } \
+            else \
+            { \
+                crDebug("DLM: CallLists() cannot resolve host list ID for guest ID %u.", idGuest); \
+                fSuccess = false; \
+                break; \
+            } \
+        } \
+    }
+
+    GLsizei      i;
+    DLMListInfo *pListInfo;
+    bool         fSuccess = true;
 
     switch (type)
     {
-#define CRDLM_LIST_BY_INDEX_HANDLE_TYPE(_type_name, _size_of_type) \
-        case _type_name: \
-        { \
-            crMemcpy((void *)&element, (void *)((void *)(aValues) + (index * (_size_of_type))) \
-            , (_size_of_type)); \
-            break; \
+        case GL_UNSIGNED_BYTE:  CRDLM_HANDLE_CONVERSION_CASE(GLubyte,  src[i]); break;
+        case GL_BYTE:           CRDLM_HANDLE_CONVERSION_CASE(GLbyte,   src[i]); break;
+        case GL_UNSIGNED_SHORT: CRDLM_HANDLE_CONVERSION_CASE(GLushort, src[i]); break;
+        case GL_SHORT:          CRDLM_HANDLE_CONVERSION_CASE(GLshort,  src[i]); break;
+        case GL_UNSIGNED_INT:   CRDLM_HANDLE_CONVERSION_CASE(GLuint,   src[i]); break;
+        case GL_INT:            CRDLM_HANDLE_CONVERSION_CASE(GLint,    src[i]); break;
+        case GL_FLOAT:          CRDLM_HANDLE_CONVERSION_CASE(GLfloat,  src[i]); break;
+
+        case GL_2_BYTES:
+        {
+            CRDLM_HANDLE_CONVERSION_CASE(GLubyte, src[i * 2 + 0] * 256 +
+                                                  src[i * 2 + 1]);
+            break;
         }
 
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_BYTE,            sizeof(GLbyte));
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_UNSIGNED_BYTE,   sizeof(GLubyte));
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_SHORT,           sizeof(GLshort));
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_UNSIGNED_SHORT,  sizeof(GLushort));
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_INT,             sizeof(GLint));
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_UNSIGNED_INT,    sizeof(GLuint));
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_FLOAT,           sizeof(GLfloat));
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_2_BYTES,         2);
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_3_BYTES,         3);
-        CRDLM_LIST_BY_INDEX_HANDLE_TYPE(GL_4_BYTES,         4);
+        case GL_3_BYTES:
+        {
+            CRDLM_HANDLE_CONVERSION_CASE(GLubyte, src[i * 3 + 0] * 256 * 256 +
+                                                  src[i * 3 + 1] * 256 +
+                                                  src[i * 3 + 2]);
+            break;
+        }
+
+        case GL_4_BYTES:
+        {
+            CRDLM_HANDLE_CONVERSION_CASE(GLubyte, src[i * 4 + 0] * 256 * 256 * 256 +
+                                                  src[i * 4 + 1] * 256 * 256 +
+                                                  src[i * 4 + 2] * 256 +
+                                                  src[i * 4 + 3]);
+            break;
+        }
 
         default:
-            crError("DLM: attempt to pass to crDLMCallLists() unknown type: %u.", index);
-
-#undef CRDLM_LIST_BY_INDEX_HANDLE_TYPE
+            crWarning("DLM: attempt to pass to crDLMCallLists() an unknown type: 0x%x.", type);
     }
 
-    return element;
+    return fSuccess;
+#undef CRDLM_HANDLE_CONVERSION_CASE
 }
 
+
 /**
- * Execute lists on hardware and cach ethis call if we currently recording a list.
+ * Execute lists on hardware and cache this call if we currently recording a list.
  */
 void DLM_APIENTRY crDLMCallLists(GLsizei n, GLenum type, const GLvoid *lists, SPUDispatchTable *dispatchTable)
 {
-    CRDLMContextState *listState = CURRENT_STATE();
+    CRDLMContextState *pListState = CURRENT_STATE();
 
     crDebug("DLM: CallLists(%d, %u, %p).", n, type, lists);
 
-    if (listState)
+    if (pListState)
     {
         GLsizei i;
+        GLuint  *aHostIDs;
 
         /* Add to calls cache if we recording a list. */
-        if (listState->currentListInfo)
+        if (pListState->currentListInfo)
             crDLMCompileCallLists(n, type, lists);
 
-        /* This is sad, but we need to translate guest IDs into host ones.
-         * Since spec does not promise that @param lists conain contiguous set of IDs,
-         * the only way to do that is to iterate over each guest ID and perform translation.
-         * This might have negative performance impact. */
-        for (i = 0; i < n; i++)
+        aHostIDs = (GLuint *)crAlloc(n * sizeof(GLuint));
+        if (aHostIDs)
         {
-            DLMListInfo *listInfo;
-            GLuint guest_id = crDLMGetListByIndex(lists, n, type);
-
-            if (guest_id > 0)
-            {
-                listInfo = (DLMListInfo *)crHashtableSearch(listState->dlm->displayLists, guest_id);
-                if (listInfo)
-                    dispatchTable->CallList(listInfo->hwid);
-                else
-                    crDebug("DLM: CallLists(%d, %u, %p) was unabbe to resolve host ID for guest ID %u.", n, type, lists, guest_id);
-            }
+            if (crDLMConvertListIDs(pListState, n, type, lists, aHostIDs))
+                dispatchTable->CallLists(n, type, aHostIDs);
             else
-                crDebug("DLM: CallLists(%d, %u, %p) received bad array of IDs.", n, type, lists);
+                crDebug("DLM: CallLists() failed.");
+
+            crFree(aHostIDs);
         }
+        else
+            crDebug("DLM: no memory on CallLists().");
     }
     else
         crDebug("DLM: CallLists(%d, %u, %p) called with no current state.", n, type, lists);
