@@ -356,8 +356,9 @@ DECLEXPORT(int) TSTRTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, ui
             if (!fRegistered)
             {
                 RTThreadPreemptRestore(&PreemptState);
+                RTThreadCtxHookDestroy(hThreadCtx);
                 RTMemFree(pCtxData);
-                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHookIsEnabled return false when hooks are supposedly registered");
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHookIsEnabled return false when hooks are supposed to be enabled");
                 break;
             }
 
@@ -431,8 +432,9 @@ DECLEXPORT(int) TSTRTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, ui
             fRegistered = RTThreadCtxHookIsEnabled(hThreadCtx);
             if (fRegistered)
             {
+                RTThreadCtxHookDestroy(hThreadCtx);
                 RTMemFree(pCtxData);
-                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHookIsEnabled return true when hooks are deregistered");
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHookIsEnabled return true when hooks are disabled");
                 break;
             }
 
