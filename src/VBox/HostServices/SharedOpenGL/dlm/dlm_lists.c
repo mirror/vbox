@@ -385,14 +385,19 @@ void DLM_APIENTRY crDLMCallLists(GLsizei n, GLenum type, const GLvoid *lists, SP
  */
 void DLM_APIENTRY crDLMListBase(GLuint base, SPUDispatchTable *dispatchTable)
 {
-    CRDLMContextState *listState = CURRENT_STATE();
+    CRDLMContextState *pListState = CURRENT_STATE();
 
     crDebug("DLM: ListBase(%u).", base);
 
-    if (listState)
+    if (pListState)
     {
-        listState->listBase = base;
-        crDLMCompileListBase(base);
+        pListState->listBase = base;
+
+        /* Only add to cache if we are currently recording a list. */
+        /* TODO: Do we really need to chache it? */
+        if (pListState->currentListInfo)
+            crDLMCompileListBase(base);
+
         dispatchTable->ListBase(base);
     }
     else
