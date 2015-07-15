@@ -197,6 +197,7 @@ SOLARIS_ADD_XORG_DRIVERS = \
 	vboxvideo_drv_112.so \
 	vboxvideo_drv_113.so \
 	vboxvideo_drv_114.so \
+	vboxvideo_drv_117.so \
 	vboxvideo_drv_70.so \
 	vboxvideo_drv_71.so
 
