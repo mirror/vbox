@@ -950,8 +950,17 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 pCur->bcdUSB = 0;                                           /* we've no idea. */
                 pCur->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;    /* just a default, we'll try harder in a bit. */
 
-                AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDeviceClass),           &pCur->bDeviceClass));
-                /* skip hubs */
+                /* Skip hubs. On 10.11 beta 3, the root hub simulations does not have a USBDeviceClass property, so
+                   simply ignore failures to retrieve it. */
+                if (!darwinDictGetU8(PropsRef,         CFSTR(kUSBDeviceClass),          &pCur->bDeviceClass))
+                {
+#ifdef VBOX_STRICT
+                    char szTmp[80];
+                    Assert(   darwinDictGetString(PropsRef, CFSTR("IOClassNameOverride"), szTmp, sizeof(szTmp))
+                           && strcmp(szTmp, "IOUSBRootHubDevice") == 0);
+#endif
+                    break;
+                }
                 if (pCur->bDeviceClass == 0x09 /* hub, find a define! */)
                     break;
                 AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDeviceSubClass),       &pCur->bDeviceSubClass));
@@ -969,7 +978,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 pCur->pszAddress = RTStrDup(szAddress);
                 AssertBreak(pCur->pszAddress);
                 pCur->bBus = u32LocationId >> 24;
-                AssertBreak(darwinDictGetU8(PropsRef,  CFSTR("PortNum"),                &pCur->bPort));
+                darwinDictGetU8(PropsRef, CFSTR("PortNum"), &pCur->bPort); /* Not present in 10.11 beta 3, so ignore failure. (Is set to zero.) */
                 uint8_t bSpeed;
                 AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDevicePropertySpeed),  &bSpeed));
                 Assert(bSpeed <= 3);
