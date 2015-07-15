@@ -250,7 +250,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_VMSVGA3D
   VBoxDD_DEFS           += VBOX_WITH_VMSVGA3D
   VBoxDD_SOURCES        += Graphics/DevVGA-SVGA3d-shared.cpp
-  ifeq ($(KBUILD_TARGET),win) # (Disable this to work with OpenGL on Windows.)
+  if  "$(KBUILD_TARGET)" == "win" && !defined(VBOX_WITH_VMSVGA3D_USE_OPENGL)
    VBoxDD_SOURCES       += Graphics/DevVGA-SVGA3d-win.cpp
    VBoxDD_LIBS.win      += d3d9.lib $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
    VBoxDD_LDFLAGS.win   += /DELAYLOAD:d3d9.dll
