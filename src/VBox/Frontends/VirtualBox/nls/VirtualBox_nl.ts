@@ -26,8 +26,8 @@
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translatorcomment>EG - AdG - RL</translatorcomment>
-        <translation>Ebel Geertsema, Alexander L. de Goeij, Richard E. van der Luit</translation>
+        <translatorcomment>RL - EG - AdG</translatorcomment>
+        <translation>Richard E. van der Luit, Ebel Geertsema, Alexander L. de Goeij</translation>
     </message>
 </context>
 <context>
@@ -260,7 +260,8 @@
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>&amp;Pauze</translation>
+        <translatorcomment>werkwoord, geen zelfstandig naamwoord</translatorcomment>
+        <translation>&amp;Pauzeren</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
@@ -543,7 +544,8 @@
     </message>
     <message>
         <source>S&amp;tart</source>
-        <translation>S&amp;tart</translation>
+        <translatorcomment>werkwoord, geen zelfstandig naamwoord</translatorcomment>
+        <translation>S&amp;tarten</translation>
     </message>
     <message>
         <source>Start the selected virtual machine</source>
@@ -551,7 +553,7 @@
     </message>
     <message>
         <source>S&amp;how</source>
-        <translation>T&amp;oon</translation>
+        <translation>T&amp;onen</translation>
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
@@ -603,7 +605,7 @@
     </message>
     <message>
         <source>Cl&amp;one...</source>
-        <translation>Kl&amp;oon...</translation>
+        <translation>Kl&amp;onen...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
@@ -619,7 +621,7 @@
     </message>
     <message>
         <source>Discard</source>
-        <translation>Verwerp</translation>
+        <translation>Verwerpen</translation>
     </message>
     <message>
         <source>D&amp;iscard saved state...</source>
@@ -651,7 +653,7 @@
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation>Toon &amp;log...</translation>
+        <translation>&amp;Log tonen...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -756,7 +758,8 @@
     </message>
     <message>
         <source>Gro&amp;up</source>
-        <translation>Gro&amp;ep</translation>
+        <translatorcomment>werkwoord, geen zelfstandig naamwoord</translatorcomment>
+        <translation>Gro&amp;eperen</translation>
     </message>
     <message>
         <source>Sort the group of the first selected machine alphabetically</source>
@@ -1224,7 +1227,7 @@
     </message>
     <message>
         <source>Ungroup items of selected virtual machine group</source>
-        <translation>Haal items uit de geselecteerde virtuele machine-groep</translation>
+        <translation>Items uit de geselecteerde virtuele machine-groep verwijderen</translation>
     </message>
     <message>
         <source>&amp;Sort</source>
@@ -1232,7 +1235,7 @@
     </message>
     <message>
         <source>Sort items of selected virtual machine group alphabetically</source>
-        <translation>Sorteer items van geselecteerde virtuele machine-groep alfabetisch</translation>
+        <translation>Items van geselecteerde virtuele machine-groep alfabetisch sorteren</translation>
     </message>
     <message>
         <source>Add new group based on selected virtual machines</source>
@@ -1272,7 +1275,7 @@
     </message>
     <message>
         <source>D&amp;iscard Saved State...</source>
-        <translation>Ver&amp;werp opgeslagen staat...</translation>
+        <translation>Opgeslagen staat ver&amp;werpen...</translation>
     </message>
     <message>
         <source>Discard saved state of selected virtual machines</source>
@@ -1292,7 +1295,7 @@
     </message>
     <message>
         <source>S&amp;how in Finder</source>
-        <translation>To&amp;on in Finder</translation>
+        <translation>T&amp;onen in Finder</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Finder</source>
@@ -1300,7 +1303,7 @@
     </message>
     <message>
         <source>S&amp;how in Explorer</source>
-        <translation>To&amp;on in Explorer</translation>
+        <translation>T&amp;onen in Explorer</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Explorer</source>
@@ -1308,7 +1311,7 @@
     </message>
     <message>
         <source>S&amp;how in File Manager</source>
-        <translation>To&amp;on in Bestandsmanager</translation>
+        <translation>T&amp;onen in Bestandsmanager</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in the File Manager</source>
@@ -1316,15 +1319,15 @@
     </message>
     <message>
         <source>Cr&amp;eate Alias on Desktop</source>
-        <translation>Maak alias op bur&amp;eaublad</translation>
+        <translation>Alias op bur&amp;eaublad maken</translation>
     </message>
     <message>
         <source>Create alias files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation>Maken aliasbestanden naar de VirtualBox-machinedefinitiebestanden op uw bureaublad</translation>
+        <translation>Maak aliasbestanden naar de VirtualBox-machinedefinitiebestanden op uw bureaublad</translation>
     </message>
     <message>
         <source>Cr&amp;eate Shortcut on Desktop</source>
-        <translation>Maak een sn&amp;elkoppeling op bureaublad</translation>
+        <translation>Sn&amp;elkoppeling op bureaublad maken</translation>
     </message>
     <message>
         <source>Create shortcut files to the VirtualBox Machine Definition files on your desktop</source>
@@ -1332,7 +1335,7 @@
     </message>
     <message>
         <source>Sort group of first selected virtual machine alphabetically</source>
-        <translation>Sorteer de groep van de eerst geselecteerde machine alfabetisch</translation>
+        <translation>Groep van de eerst geselecteerde machine alfabetisch sorteren</translation>
     </message>
     <message>
         <source>Save state of selected virtual machines</source>
@@ -1340,11 +1343,11 @@
     </message>
     <message>
         <source>Send ACPI Shutdown signal to selected virtual machines</source>
-        <translation>Stuur ACPI-Shutdownsignaal naar de geselecteerde virtuele machins</translation>
+        <translation>ACPI-Shutdownsignaal naar de geselecteerde virtuele machines sturen</translation>
     </message>
     <message>
         <source>Power off selected virtual machines</source>
-        <translation>Zet de geselecteerde virtuele machines uit</translation>
+        <translation>Geselecteerde virtuele machines uitzetten</translation>
     </message>
 </context>
 <context>
