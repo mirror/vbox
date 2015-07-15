@@ -123,6 +123,7 @@ crServerDispatchCallList( GLuint list )
 }
 
 
+#ifndef VBOX_WITH_CR_DISPLAY_LISTS
 /**
  * Translate an array of display list IDs from various datatypes to GLuint
  * IDs while adding the per-client offset.
@@ -223,11 +224,12 @@ TranslateListIDs(GLsizei n, GLenum type, const GLvoid *lists, GLuint *newLists)
         crWarning("CRServer: invalid display list datatype 0x%x", type);
     }
 }
-
+#endif
 
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchCallLists( GLsizei n, GLenum type, const GLvoid *lists )
 {
+#ifndef VBOX_WITH_CR_DISPLAY_LISTS
     if (!cr_server.sharedDisplayLists) {
         /* need to translate IDs */
         GLuint *newLists = (GLuint *) crAlloc(n * sizeof(GLuint));
@@ -237,6 +239,7 @@ crServerDispatchCallLists( GLsizei n, GLenum type, const GLvoid *lists )
         lists = newLists;
         type = GL_UNSIGNED_INT;
     }
+#endif
 
     if (cr_server.curClient->currentCtxInfo->pContext->lists.mode == 0) {
         /* we're not compiling, so execute the list now */
@@ -249,9 +252,11 @@ crServerDispatchCallLists( GLsizei n, GLenum type, const GLvoid *lists )
         cr_server.head_spu->dispatch_table.CallLists( n, type, lists );
     }
 
+#ifndef VBOX_WITH_CR_DISPLAY_LISTS
     if (!cr_server.sharedDisplayLists) {
         crFree((void *) lists);  /* malloc'd above */
     }
+#endif
 }
 
 
