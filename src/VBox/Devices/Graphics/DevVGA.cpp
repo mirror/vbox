@@ -2215,7 +2215,7 @@ int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned w
  * graphic modes
  */
 static int vmsvga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResize, bool reset_dirty,
-                PDMIDISPLAYCONNECTOR *pDrv)
+                               PDMIDISPLAYCONNECTOR *pDrv)
 {
     int y, page_min, page_max, linesize, y_start;
     int width, height, page0, page1, bwidth, bits;
@@ -2225,8 +2225,11 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnRe
     vga_draw_line_func *vga_draw_line;
 
     if (    pThis->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
+        ||  pThis->svga.uWidth  == 0
         ||  pThis->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
-        ||  pThis->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED)
+        ||  pThis->svga.uHeight == 0
+        ||  pThis->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED
+        ||  pThis->svga.uBpp    == 0)
     {
         /* Intermediate state; skip redraws. */
         return VINF_SUCCESS;
@@ -6932,7 +6935,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
          * Attach status driver (optional).
          */
         rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
-        AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);

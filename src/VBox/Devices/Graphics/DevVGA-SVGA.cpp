@@ -988,7 +988,7 @@ int vmsvgaChangeMode(PVGASTATE pThis)
         ||  pThis->svga.uHeight == 0
         ||  pThis->svga.uBpp == 0)
     {
-        /* Invalid mode change. */
+        /* Invalid mode change - BB does this early in the boot up. */
         Log(("vmsvgaChangeMode: BOGUS sEnable LFB mode and resize to (%d,%d) bpp=%d\n", pThis->svga.uWidth, pThis->svga.uHeight, pThis->svga.uBpp));
         return VINF_SUCCESS;
     }
@@ -3486,7 +3486,9 @@ static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces)
         Log(("vmsvgaSetTraces: enable dirty page handling for the frame buffer only (%x bytes)\n", 0));
         if (pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
         {
+#ifndef DEBUG_bird /* BB-10.3.1 triggers this as it initializes everything to zero. Better just ignore it. */
             Assert(pThis->svga.cbScanline);
+#endif
             /* Hardware enabled; return real framebuffer size .*/
             cbFrameBuffer = (uint32_t)pThis->svga.uHeight * pThis->svga.cbScanline;
             cbFrameBuffer = RT_ALIGN(cbFrameBuffer, PAGE_SIZE);
