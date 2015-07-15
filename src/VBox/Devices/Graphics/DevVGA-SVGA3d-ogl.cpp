@@ -7660,12 +7660,13 @@ int vmsvga3dShaderSet(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, uint32_t cid, 
 
     Log(("vmsvga3dShaderSet cid=%x type=%s shid=%d\n", cid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", shid));
 
-    if (  !pContext
+    if (   !pContext
         && cid < pState->cContexts
         && pState->papContexts[cid]->id == cid)
         pContext = pState->papContexts[cid];
-    else
+    else if (!pContext)
     {
+        AssertMsgFailed(("cid=%#x cContexts=%#x\n", cid, pState->cContexts));
         Log(("vmsvga3dShaderSet invalid context id!\n"));
         return VERR_INVALID_PARAMETER;
     }

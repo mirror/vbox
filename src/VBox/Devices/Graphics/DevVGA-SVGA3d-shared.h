@@ -13,8 +13,9 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef __DEVVMWARE3D_STATE_H__
-#define __DEVVMWARE3D_STATE_H__
+
+#ifndef ___DevVGA_SVGA3d_shared_h___
+#define ___DevVGA_SVGA3d_shared_h___
 
 int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
@@ -809,4 +810,5 @@ static uint32_t vmsvga3dSaveShaderConst(PVMSVGA3DCONTEXT pContext, uint32_t reg,
 }
 
 
-#endif  /* __DEVVMWARE3D_STATE_H__ */
+#endif /* !___DevVGA_SVGA3d_shared_h___ */
+
