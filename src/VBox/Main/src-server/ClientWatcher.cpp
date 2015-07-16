@@ -185,6 +185,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
         if (!autoCaller.isOk())
             break;
 
+        bool fPidRace = false;
         do
         {
             /* release the caller to let uninit() ever proceed */
@@ -193,7 +194,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
             DWORD rc = ::WaitForMultipleObjects((DWORD)(1 + cnt + cntSpawned),
                                                 handles,
                                                 FALSE,
-                                                INFINITE);
+                                                !fPidRace ? INFINITE : 500);
 
             /* Restore the caller before using VirtualBox. If it fails, this
              * means VirtualBox is being uninitialized and we must terminate. */
@@ -201,7 +202,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
             if (!autoCaller.isOk())
                 break;
 
-            bool update = false;
+            bool update = fPidRace;
 
             if (rc == WAIT_OBJECT_0)
             {
@@ -274,6 +275,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
                 LogFlowFunc(("UPDATE: direct session count = %d\n", cnt));
 
                 /* obtain a new set of spawned machines */
+                fPidRace = false;
                 cntSpawned = 0;
                 spawnedMachines.clear();
 
@@ -291,15 +293,19 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
                         HRESULT hrc = (*it)->COMGETTER(SessionPID)(&pid);
                         if (SUCCEEDED(hrc))
                         {
-                            HANDLE ph = OpenProcess(SYNCHRONIZE, FALSE, pid);
-                            AssertMsg(ph != NULL, ("OpenProcess (pid=%d) failed with %d\n",
-                                                   pid, GetLastError()));
-                            if (ph != NULL)
+                            if (pid != NIL_RTPROCESS)
                             {
-                                spawnedMachines.push_back(*it);
-                                handles[1 + cnt + cntSpawned] = ph;
-                                ++cntSpawned;
+                                HANDLE hProc = OpenProcess(SYNCHRONIZE, FALSE, pid);
+                                AssertMsg(hProc != NULL, ("OpenProcess (pid=%d) failed with %d\n", pid, GetLastError()));
+                                if (hProc != NULL)
+                                {
+                                    spawnedMachines.push_back(*it);
+                                    handles[1 + cnt + cntSpawned] = hProc;
+                                    ++cntSpawned;
+                                }
                             }
+                            else
+                                fPidRace = true;
                         }
                     }
                 }
