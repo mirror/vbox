@@ -102,6 +102,8 @@ static void rtThreadCtxHookSolOut(void *pvThreadCtxInt)
  * Hook function for the thread-restore event.
  *
  * @param   pvThreadCtxInt  Opaque pointer to the internal hook object.
+ *
+ * @remarks Called with preemption disabled!
  */
 static void rtThreadCtxHookSolIn(void *pvThreadCtxInt)
 {
