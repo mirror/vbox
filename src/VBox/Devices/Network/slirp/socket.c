@@ -1286,6 +1286,12 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, const struct sockadd
     {
         /* according RFC 793 error messages required copy of initial IP header + 64 bit */
         memcpy(&icp->icmp_ip, ip_copy, old_ip_len);
+
+        /* undo byte order conversions done in ip_input() */
+        HTONS(icp->icmp_ip.ip_len);
+        HTONS(icp->icmp_ip.ip_id);
+        HTONS(icp->icmp_ip.ip_off);
+
         ip->ip_tos = ((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
     }
 
