@@ -1014,7 +1014,7 @@ static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    AssertLogRelMsgReturn(uVersion == 1, ("%d", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    AssertLogRelMsgReturn(uVersion == 1, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     NOREF(pVM); NOREF(uPass);
 
     /*
@@ -1078,7 +1078,7 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uV
  */
 static DECLCALLBACK(int) ssmR3LiveControlLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    AssertLogRelMsgReturn(uVersion == 1, ("%d", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    AssertLogRelMsgReturn(uVersion == 1, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     NOREF(uPass);
 
     uint16_t uPartsPerTenThousand;
@@ -6288,7 +6288,7 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
             if (RT_FAILURE(rc))
                 return pSSM->rc = rc;
         }
-        AssertLogRelMsgReturn(!pSSM->u.Read.fEndOfData, ("cbBuf=%zu", cbBuf), pSSM->rc = VERR_SSM_LOADED_TOO_MUCH);
+        AssertLogRelMsgReturn(!pSSM->u.Read.fEndOfData, ("cbBuf=%zu\n", cbBuf), pSSM->rc = VERR_SSM_LOADED_TOO_MUCH);
 
         /*
          * Read data from the current record.
@@ -6409,7 +6409,7 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
             if (RT_FAILURE(rc))
                 return pSSM->rc = rc;
         }
-        AssertLogRelMsgReturn(!pSSM->u.Read.fEndOfData, ("cbBuf=%zu", cbBuf), pSSM->rc = VERR_SSM_LOADED_TOO_MUCH);
+        AssertLogRelMsgReturn(!pSSM->u.Read.fEndOfData, ("cbBuf=%zu\n", cbBuf), pSSM->rc = VERR_SSM_LOADED_TOO_MUCH);
 
         /*
          * Read data from the current record.
