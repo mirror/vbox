@@ -551,10 +551,37 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGipBySetIndex(PSUPGLOBALINFOPAGE pGip, uint3
 }
 
 
-#if 0 /* Not used anywhere.  Unsure where this would be useful. */
+/**
+ * Worker for SUPIsTscFreqCompatible().
+ *
+ * @param uBaseCpuHz        The reference CPU frequency of the system.
+ * @param uCpuHz            The CPU frequency to compare with the base.
+ *
+ * @returns true if it's compatible, false otherwise.
+ * @remarks Don't use directly, use SUPIsTscFreqCompatible() instead. This is
+ *          to be used by tstGIP-2 (or the like).
+ */
+DECLINLINE(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz)
+{
+    if (uBaseCpuHz != uCpuHz)
+    {
+        /* Arbitrary tolerance threshold, tweak later if required, perhaps
+           more tolerance on lower frequencies and less tolerance on higher. */
+        uint64_t uLo = (uBaseCpuHz << 11) / 2049;
+        uint64_t uHi = uBaseCpuHz + (uBaseCpuHz - uLo);
+        if (   uCpuHz < uLo
+            || uCpuHz > uHi)
+            return false;
+    }
+    return true;
+}
+
+
 /**
  * Checks if the provided TSC frequency is close enough to the computed TSC
  * frequency of the host.
+ *
+ * @param   u64CpuHz        The TSC frequency to check.
  *
  * @returns true if it's compatible, false otherwise.
  */
@@ -563,22 +590,10 @@ DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     if (   pGip
         && pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
-    {
-        if (pGip->u64CpuHz != u64CpuHz)
-        {
-            /* Arbitrary tolerance threshold, tweak later if required, perhaps
-               more tolerance on lower frequencies and less tolerance on higher. */
-            uint64_t uLo = (pGip->u64CpuHz << 10) / 1025;
-            uint64_t uHi = pGip->u64CpuHz + (pGip->u64CpuHz - uLo);
-            if (   u64CpuHz < uLo
-                || u64CpuHz > uHi)
-                return false;
-        }
-        return true;
-    }
+        return SUPIsTscFreqCompatibleEx(pGip->u64CpuHz, u64CpuHz);
     return false;
 }
-#endif
+
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 
