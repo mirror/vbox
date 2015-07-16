@@ -173,6 +173,7 @@ public:
     void cannotOpenURL(const QString &strUrl) const;
     void cannotSetExtraData(const CVirtualBox &vbox, const QString &strKey, const QString &strValue);
     void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
+    void warnAboutInvalidEncryptionPassword(const QString &strPasswordId, QWidget *pParent = 0);
 
     /* API: Selector warnings: */
     void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const;

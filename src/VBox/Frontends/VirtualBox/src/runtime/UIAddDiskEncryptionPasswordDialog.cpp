@@ -34,6 +34,7 @@
 # include "UIMedium.h"
 # include "UIIconPool.h"
 # include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
 # include "QIDialogButtonBox.h"
 # include "QIWithRetranslateUI.h"
 # include "QIStyledItemDelegate.h"
@@ -47,7 +48,6 @@
 /** UIEncryptionDataTable field indexes. */
 enum UIEncryptionDataTableSection
 {
-    UIEncryptionDataTableSection_Status,
     UIEncryptionDataTableSection_Id,
     UIEncryptionDataTableSection_Password,
     UIEncryptionDataTableSection_Max
@@ -78,8 +78,8 @@ public:
 
 private slots:
 
-    /** Handles @s strPassword changes. */
-    void sltPasswordChanged(const QString &strPassword);
+    /** Commits data to the listeners. */
+    void sltCommitData() { emit sigCommitData(this); }
 
 private:
 
@@ -111,9 +111,6 @@ public:
     /** Returns the shallow copy of the encryption password map instance. */
     EncryptionPasswordMap encryptionPasswords() const { return m_encryptionPasswords; }
 
-    /** Returns whether the model is valid. */
-    bool isValid() const;
-
     /** Returns the row count, taking optional @a parent instead of root if necessary. */
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
     /** Returns the column count, taking optional @a parent instead of root if necessary. */
@@ -135,16 +132,11 @@ private:
     /** Prepare routine. */
     void prepare();
 
-    /** Returns whether passed @a strPassword is valid for medium with passed @a strMediumId. */
-    bool isPasswordValid(const QString strMediumId, const QString strPassword);
-
     /** Holds the encrypted medium map reference. */
     const EncryptedMediumMap &m_encryptedMediums;
 
     /** Holds the encryption password map instance. */
     EncryptionPasswordMap m_encryptionPasswords;
-    /** Holds the encryption password status map instance. */
-    EncryptionPasswordStatusMap m_encryptionPasswordStatus;
 };
 
 /** QTableView reimplementation used to
@@ -155,9 +147,6 @@ class UIEncryptionDataTable : public QTableView
     Q_OBJECT;
 
 signals:
-
-    /** Notifies listeners about data change. */
-    void sigDataChanged();
 
     /** Notifies listeners about editor's Enter/Return key triggering. */
     void sigEditorEnterKeyTriggered();
@@ -171,9 +160,6 @@ public:
     /** Returns the shallow copy of the encryption password map
       * acquired from the UIEncryptionDataModel instance. */
     EncryptionPasswordMap encryptionPasswords() const;
-
-    /** Returns whether the table is valid. */
-    bool isValid() const;
 
     /** Initiates the editor for the first index available. */
     void editFirstIndex();
@@ -197,20 +183,13 @@ UIPasswordEditor::UIPasswordEditor(QWidget *pParent)
     prepare();
 }
 
-void UIPasswordEditor::sltPasswordChanged(const QString &strPassword)
-{
-    Q_UNUSED(strPassword);
-    /* Commit data to the listener: */
-    emit sigCommitData(this);
-}
-
 void UIPasswordEditor::prepare()
 {
     /* Set echo mode: */
     setEchoMode(QLineEdit::Password);
     /* Listen for the text changes: */
     connect(this, SIGNAL(textChanged(const QString&)),
-            this, SLOT(sltPasswordChanged(const QString&)));
+            this, SLOT(sltCommitData()));
 }
 
 void UIPasswordEditor::keyPressEvent(QKeyEvent *pEvent)
@@ -238,16 +217,6 @@ UIEncryptionDataModel::UIEncryptionDataModel(QObject *pParent, const EncryptedMe
     prepare();
 }
 
-bool UIEncryptionDataModel::isValid() const
-{
-    /* Check whether the model contains invalid passwords: */
-    foreach (const bool &fValue, m_encryptionPasswordStatus.values())
-        if (!fValue)
-            return false;
-    /* Valid by default: */
-    return true;
-}
-
 int UIEncryptionDataModel::rowCount(const QModelIndex &parent /* = QModelIndex() */) const
 {
     Q_UNUSED(parent);
@@ -268,7 +237,6 @@ Qt::ItemFlags UIEncryptionDataModel::flags(const QModelIndex &index) const
     /* Depending on column index: */
     switch (index.column())
     {
-        case UIEncryptionDataTableSection_Status:   return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
         case UIEncryptionDataTableSection_Id:       return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
         case UIEncryptionDataTableSection_Password: return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
         default: break;
@@ -285,7 +253,6 @@ QVariant UIEncryptionDataModel::headerData(int iSection, Qt::Orientation orienta
     /* Depending on column index: */
     switch (iSection)
     {
-        case UIEncryptionDataTableSection_Status:   return UIAddDiskEncryptionPasswordDialog::tr("Status", "password table field");
         case UIEncryptionDataTableSection_Id:       return UIAddDiskEncryptionPasswordDialog::tr("ID", "password table field");
         case UIEncryptionDataTableSection_Password: return UIAddDiskEncryptionPasswordDialog::tr("Password", "password table field");
         default: break;
@@ -296,25 +263,12 @@ QVariant UIEncryptionDataModel::headerData(int iSection, Qt::Orientation orienta
 
 QVariant UIEncryptionDataModel::data(const QModelIndex &index, int iRole /* = Qt::DisplayRole */) const
 {
-    /* Check index validness: */
+    /* Check argument validness: */
     if (!index.isValid())
         return QVariant();
     /* Depending on role: */
     switch (iRole)
     {
-        case Qt::DecorationRole:
-        {
-            /* Depending on column index: */
-            switch (index.column())
-            {
-                case UIEncryptionDataTableSection_Status:
-                    return m_encryptionPasswordStatus.value(m_encryptionPasswordStatus.keys().at(index.row())) ?
-                           UIIconPool::iconSet(":/status_check_16px.png") : UIIconPool::iconSet(":/status_error_16px.png");
-                default:
-                    return QVariant();
-            }
-            break;
-        }
         case Qt::DisplayRole:
         {
             /* Depending on column index: */
@@ -364,11 +318,8 @@ QVariant UIEncryptionDataModel::data(const QModelIndex &index, int iRole /* = Qt
 
 bool UIEncryptionDataModel::setData(const QModelIndex &index, const QVariant &value, int iRole /* = Qt::EditRole */)
 {
-    /* Check index validness: */
-    if (!index.isValid())
-        return false;
     /* Check argument validness: */
-    if (iRole != Qt::EditRole)
+    if (!index.isValid() || iRole != Qt::EditRole)
         return false;
     /* Depending on column index: */
     switch (index.column())
@@ -380,13 +331,6 @@ bool UIEncryptionDataModel::setData(const QModelIndex &index, const QVariant &va
             const QString strPassword = value.toString();
             const QString strKey = m_encryptionPasswords.keys().at(iRow);
             m_encryptionPasswords[strKey] = strPassword;
-            /* Update password status: */
-            const QString strMediumId = m_encryptedMediums.values(strKey).first();
-            const bool fPasswordStatus = isPasswordValid(strMediumId, strPassword);
-            m_encryptionPasswordStatus[strKey] = fPasswordStatus;
-            /* Initiate explicit password status update: */
-            const QModelIndex statusIndex = createIndex(iRow, UIEncryptionDataTableSection_Status);
-            emit dataChanged(statusIndex, statusIndex);
             break;
         }
         default:
@@ -398,31 +342,9 @@ bool UIEncryptionDataModel::setData(const QModelIndex &index, const QVariant &va
 
 void UIEncryptionDataModel::prepare()
 {
-    /* Populate the map of passwords and statuses. */
+    /* Populate the map of passwords and statuses: */
     foreach (const QString &strPasswordId, m_encryptedMediums.keys())
-    {
         m_encryptionPasswords.insert(strPasswordId, QString());
-        m_encryptionPasswordStatus.insert(strPasswordId, false);
-    }
-}
-
-bool UIEncryptionDataModel::isPasswordValid(const QString strMediumId, const QString strPassword)
-{
-    /* Look for the medium with passed ID: */
-    const UIMedium uimedium = vboxGlobal().medium(strMediumId);
-    if (!uimedium.isNull())
-    {
-        /* Check wrapped medium for validity: */
-        const CMedium medium = uimedium.medium();
-        if (!medium.isNull())
-        {
-            /* Check whether the password is suitable for that medium. */
-            medium.CheckEncryptionPassword(strPassword);
-            return medium.isOk();
-        }
-    }
-    /* False by default: */
-    return false;
 }
 
 UIEncryptionDataTable::UIEncryptionDataTable(const EncryptedMediumMap &encryptedMediums)
@@ -437,12 +359,6 @@ EncryptionPasswordMap UIEncryptionDataTable::encryptionPasswords() const
 {
     AssertPtrReturn(m_pModelEncryptionData, EncryptionPasswordMap());
     return m_pModelEncryptionData->encryptionPasswords();
-}
-
-bool UIEncryptionDataTable::isValid() const
-{
-    AssertPtrReturn(m_pModelEncryptionData, false);
-    return m_pModelEncryptionData->isValid();
 }
 
 void UIEncryptionDataTable::editFirstIndex()
@@ -466,9 +382,6 @@ void UIEncryptionDataTable::prepare()
     {
         /* Assign configured model to table: */
         setModel(m_pModelEncryptionData);
-        /* Configure encryption-data model: */
-        connect(m_pModelEncryptionData, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)),
-                this, SIGNAL(sigDataChanged()));
     }
 
     /* Create item delegate: */
@@ -509,7 +422,6 @@ void UIEncryptionDataTable::prepare()
     verticalHeader()->hide();
     verticalHeader()->setDefaultSectionSize((int)(verticalHeader()->minimumSectionSize() * 1.33));
     horizontalHeader()->setStretchLastSection(false);
-    horizontalHeader()->setResizeMode(UIEncryptionDataTableSection_Status, QHeaderView::ResizeToContents);
     horizontalHeader()->setResizeMode(UIEncryptionDataTableSection_Id, QHeaderView::Interactive);
     horizontalHeader()->setResizeMode(UIEncryptionDataTableSection_Password, QHeaderView::Stretch);
 }
@@ -528,8 +440,6 @@ UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pP
     prepare();
     /* Translate: */
     retranslateUi();
-    /* Validate: */
-    revalidate();
 }
 
 EncryptionPasswordMap UIAddDiskEncryptionPasswordDialog::encryptionPasswords() const
@@ -538,10 +448,18 @@ EncryptionPasswordMap UIAddDiskEncryptionPasswordDialog::encryptionPasswords() c
     return m_pTableEncryptionData->encryptionPasswords();
 }
 
-void UIAddDiskEncryptionPasswordDialog::sltEditorEnterKeyTriggered()
+void UIAddDiskEncryptionPasswordDialog::accept()
 {
-    if (m_pButtonBox->button(QDialogButtonBox::Ok)->isEnabled())
-        accept();
+    /* Validate passwords status: */
+    foreach (const QString &strPasswordId, m_encryptedMediums.uniqueKeys())
+    {
+        const QString strMediumId = m_encryptedMediums.values(strPasswordId).first();
+        const QString strPassword = m_pTableEncryptionData->encryptionPasswords().value(strPasswordId);
+        if (!isPasswordValid(strMediumId, strPassword))
+            return msgCenter().warnAboutInvalidEncryptionPassword(strPasswordId, this);
+    }
+    /* Call to base-class: */
+    QIWithRetranslateUI<QDialog>::accept();
 }
 
 void UIAddDiskEncryptionPasswordDialog::prepare()
@@ -569,8 +487,6 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
             AssertPtrReturnVoid(m_pTableEncryptionData);
             {
                 /* Configure encryption-data table: */
-                connect(m_pTableEncryptionData, SIGNAL(sigDataChanged()),
-                        this, SLOT(sltDataChanged()));
                 connect(m_pTableEncryptionData, SIGNAL(sigEditorEnterKeyTriggered()),
                         this, SLOT(sltEditorEnterKeyTriggered()));
                 m_pTableEncryptionData->setFocus();
@@ -612,11 +528,24 @@ void UIAddDiskEncryptionPasswordDialog::retranslateUi()
                                     m_encryptedMediums.uniqueKeys().size()));
 }
 
-void UIAddDiskEncryptionPasswordDialog::revalidate()
+/* static */
+bool UIAddDiskEncryptionPasswordDialog::isPasswordValid(const QString strMediumId, const QString strPassword)
 {
-    /* Validate: */
-    AssertPtrReturnVoid(m_pButtonBox);
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_pTableEncryptionData->isValid());
+    /* Look for the medium with passed ID: */
+    const UIMedium uimedium = vboxGlobal().medium(strMediumId);
+    if (!uimedium.isNull())
+    {
+        /* Check wrapped medium for validity: */
+        const CMedium medium = uimedium.medium();
+        if (!medium.isNull())
+        {
+            /* Check whether the password is suitable for that medium: */
+            medium.CheckEncryptionPassword(strPassword);
+            return medium.isOk();
+        }
+    }
+    /* False by default: */
+    return false;
 }
 
 #include "UIAddDiskEncryptionPasswordDialog.moc"
