@@ -203,6 +203,7 @@ void UIPasswordEditor::keyPressEvent(QKeyEvent *pEvent)
         case Qt::Key_Enter:
         case Qt::Key_Return:
             emit sigEnterKeyTriggered();
+            pEvent->accept();
             break;
         default:
             break;
@@ -456,7 +457,13 @@ void UIAddDiskEncryptionPasswordDialog::accept()
         const QString strMediumId = m_encryptedMediums.values(strPasswordId).first();
         const QString strPassword = m_pTableEncryptionData->encryptionPasswords().value(strPasswordId);
         if (!isPasswordValid(strMediumId, strPassword))
-            return msgCenter().warnAboutInvalidEncryptionPassword(strPasswordId, this);
+        {
+            msgCenter().warnAboutInvalidEncryptionPassword(strPasswordId, this);
+            AssertPtrReturnVoid(m_pTableEncryptionData);
+            m_pTableEncryptionData->setFocus();
+            m_pTableEncryptionData->editFirstIndex();
+            return;
+        }
     }
     /* Call to base-class: */
     QIWithRetranslateUI<QDialog>::accept();
