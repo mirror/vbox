@@ -508,6 +508,21 @@ ifdef VBOX_WITH_HOSTNETIF_API
  endif
 endif
 
+ifdef VBOX_WITH_MAIN_USB_ID_DATABASE  # Generate a database of USB vendor IDs and device IDs.
+ VBoxSVC_DEFS    += VBOX_WITH_MAIN_USB_ID_DATABASE
+ VBoxSVC_SOURCES += $(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp
+ VBoxSVC_CLEAN   += $(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp
+
+ $$(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp:  $$(USBIdDatabaseGenerator_1_TARGET) \
+ 		$(PATH_SUB_CURRENT)/src-server/usb.ids $(PATH_SUB_CURRENT)/src-server/custom.ids | $$(dir $$@)
+	$(call MSG_GENERATE,SchemaDefs,$@,$<)
+	$(QUIET)$(USBIdDatabaseGenerator_1_TARGET) -o "$@" $(filter %.ids,$^)
+
+ BLDPROGS += USBIdDatabaseGenerator
+ USBIdDatabaseGenerator_TEMPLATE = VBoxAdvBldProg
+ USBIdDatabaseGenerator_SOURCES  = src-server/USBIdDatabaseGenerator.cpp
+endif
+
 src-server/win/VBoxSVC.rc_INCS  = $(VBoxSVC_0_OUTDIR)
 src-server/win/VBoxSVC.rc_DEPS  = $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
 src-server/win/VBoxSVC.rc_CLEAN = $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
