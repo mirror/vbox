@@ -190,6 +190,10 @@ RTDECL(int) RTThreadCtxHookCreate(PRTTHREADCTXHOOK phCtxHook, uint32_t fFlags, P
     pThis->PreemptOps.sched_out = rtThreadCtxHooksLnxSchedOut;
     pThis->PreemptOps.sched_in  = rtThreadCtxHooksLnxSchedIn;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+    preempt_notifier_inc();
+#endif
+
     *phCtxHook = pThis;
     return VINF_SUCCESS;
 }
@@ -219,6 +223,10 @@ RTDECL(int ) RTThreadCtxHookDestroy(RTTHREADCTXHOOK hCtxHook)
         rtThreadCtxHookDisable(pThis);
         Assert(!pThis->fEnabled); /* paranoia */
     }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+    preempt_notifier_dec();
+#endif
 
     ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXHOOKINT_MAGIC);
     RTMemFree(pThis);
