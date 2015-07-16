@@ -193,6 +193,10 @@ ip_input(PNATState pData, struct mbuf *m)
     }
 
     ip->ip_ttl--;
+    if (ip->ip_sum > RT_H2N_U16_C(0xffffU - (1 << 8)))
+        ip->ip_sum += RT_H2N_U16_C(1 << 8) + 1;
+    else
+        ip->ip_sum += RT_H2N_U16_C(1 << 8);
 
     /*
      * Drop multicast (class d) and reserved (class e) here.  The rest
