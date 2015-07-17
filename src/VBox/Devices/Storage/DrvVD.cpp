@@ -51,6 +51,8 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 #endif /* VBOX_WITH_INIP */
 
+#include "HBDMgmt.h"
+
 #include "VBoxDD.h"
 
 #ifdef VBOX_WITH_INIP
@@ -186,6 +188,8 @@ typedef struct VBOXDISK
 
     /** The block cache handle if configured. */
     PPDMBLKCACHE             pBlkCache;
+    /** Host block device manager. */
+    HBDMGR                   hHbdMgr;
 
     /** Cryptographic support
      * @{ */
@@ -349,9 +353,29 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                                           void **ppStorage)
 {
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
-    PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)RTMemAllocZ(sizeof(DRVVDSTORAGEBACKEND));
+    PDRVVDSTORAGEBACKEND pStorageBackend = NULL;
     int rc = VINF_SUCCESS;
 
+    /*
+     * Check whether the backend wants to open a block device and try to prepare it
+     * if we didn't claim it yet.
+     *
+     * We only create a block device manager on demand to not waste any resources.
+     */
+    if (HBDMgrIsBlockDevice(pszLocation))
+    {
+        if (pThis->hHbdMgr == NIL_HBDMGR)
+            rc = HBDMgrCreate(&pThis->hHbdMgr);
+
+        if (   RT_SUCCESS(rc)
+            && !HBDMgrIsBlockDeviceClaimed(pThis->hHbdMgr, pszLocation))
+            rc = HBDMgrClaimBlockDevice(pThis->hHbdMgr, pszLocation);
+
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    pStorageBackend = (PDRVVDSTORAGEBACKEND)RTMemAllocZ(sizeof(DRVVDSTORAGEBACKEND));
     if (pStorageBackend)
     {
         pStorageBackend->fSyncIoPending = false;
@@ -414,11 +438,17 @@ static DECLCALLBACK(int) drvvdAsyncIOClose(void *pvUser, void *pStorage)
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
+    /*
+     * We don't unclaim any block devices on purpose here because they
+     * might get reopened shortly (switching to readonly during suspend)
+     *
+     * Block devices will get unclaimed during destruction of the driver.
+     */
+
     PDMR3AsyncCompletionEpClose(pStorageBackend->pEndpoint);
     PDMR3AsyncCompletionTemplateDestroy(pStorageBackend->pTemplate);
     RTSemEventDestroy(pStorageBackend->EventSem);
     RTMemFree(pStorageBackend);
-
     return VINF_SUCCESS;;
 }
 
@@ -2503,6 +2533,8 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
         MMR3HeapFree(pThis->pszBwGroup);
         pThis->pszBwGroup = NULL;
     }
+    if (pThis->hHbdMgr != NIL_HBDMGR)
+        HBDMgrDestroy(pThis->hHbdMgr);
 }
 
 /**
