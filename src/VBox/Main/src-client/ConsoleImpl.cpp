@@ -567,6 +567,9 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         AssertReturn(mUsbCardReader, E_FAIL);
 #endif
 
+        m_cDisksPwProvided = 0;
+        m_cDisksEncrypted = 0;
+
         unconst(m_pKeyStore) = new SecretKeyStore(true /* fKeyBufNonPageable */);
         AssertReturn(m_pKeyStore, E_FAIL);
 
