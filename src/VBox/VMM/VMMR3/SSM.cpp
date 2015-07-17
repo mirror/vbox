@@ -8227,7 +8227,7 @@ static void ssmR3StrmLogUnitContent(PSSMHANDLE pSSM, SSMFILEUNITHDRV2 const *pUn
                         static char const s_szHex[17] = "0123456789abcdef";
                         uint8_t const b = abLine[offSrc++];
                         *pchDst++ = s_szHex[b >> 4];
-                        *pchDst++ = s_szHex[b & 7];
+                        *pchDst++ = s_szHex[b & 0xf];
                         *pchDst++ = offSrc != 8 ? ' ' : '-';
                     }
                     while (offSrc < sizeof(abLine))
