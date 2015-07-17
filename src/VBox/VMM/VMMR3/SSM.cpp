@@ -8698,7 +8698,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                 }
 
                 /* Try log the unit content, unless it's too big. */
-                if (pSSM->offUnitUser < _512KB)
+                if (pSSM->offUnitUser < _512K)
                     ssmR3StrmLogUnitContent(pSSM, &UnitHdr, offUnit, 0, pSSM->offUnitUser + _16K);
                 else
                     ssmR3StrmLogUnitContent(pSSM, &UnitHdr, offUnit, pSSM->offUnitUser - _256K, pSSM->offUnitUser + _16K);
