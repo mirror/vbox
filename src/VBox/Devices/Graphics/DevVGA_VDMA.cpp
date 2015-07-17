@@ -679,7 +679,7 @@ static int vboxVBVAExHSLoadGuestCtl(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t*
 {
     uint32_t u32;
     int rc = SSMR3GetU32(pSSM, &u32);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
 
     if (!u32)
         return VINF_EOF;
@@ -692,11 +692,11 @@ static int vboxVBVAExHSLoadGuestCtl(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t*
     }
 
     rc = SSMR3GetU32(pSSM, &u32);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
     pHCtl->u.cmd.cbCmd = u32;
 
     rc = SSMR3GetU32(pSSM, &u32);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
     pHCtl->u.cmd.pu8Cmd = pu8VramBase + u32;
 
     RTListAppend(&pCmdVbva->GuestCtlList, &pHCtl->Node);
@@ -718,7 +718,7 @@ static int vboxVBVAExHSLoadStateLocked(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8
 
     do {
         rc = vboxVBVAExHSLoadGuestCtl(pCmdVbva, pu8VramBase, pSSM, u32Version);
-        AssertRCReturn(rc, rc);
+        AssertLogRelRCReturn(rc, rc);
     } while (VINF_EOF != rc);
 
     return VINF_SUCCESS;
@@ -3497,13 +3497,13 @@ int vboxVDMASaveLoadExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM, uin
 {
     uint32_t u32;
     int rc = SSMR3GetU32(pSSM, &u32);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
 
     if (u32 != 0xffffffff)
     {
 #ifdef VBOX_WITH_CRHGSMI
         rc = vdmaVBVACtlEnableSubmitSync(pVdma, u32, true);
-        AssertRCReturn(rc, rc);
+        AssertLogRelRCReturn(rc, rc);
 
         Assert(pVdma->CmdVbva.i32State == VBVAEXHOSTCONTEXT_ESTATE_PAUSED);
 
@@ -3512,10 +3512,10 @@ int vboxVDMASaveLoadExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM, uin
         HCtl.u.state.pSSM = pSSM;
         HCtl.u.state.u32Version = u32Version;
         rc = vdmaVBVACtlSubmitSync(pVdma, &HCtl, VBVAEXHOSTCTL_SOURCE_HOST);
-        AssertRCReturn(rc, rc);
+        AssertLogRelRCReturn(rc, rc);
 
         rc = vdmaVBVAResume(pVdma);
-        AssertRCReturn(rc, rc);
+        AssertLogRelRCReturn(rc, rc);
 
         return VINF_SUCCESS;
 #else
