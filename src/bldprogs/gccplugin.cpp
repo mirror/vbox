@@ -47,6 +47,11 @@ int plugin_is_GPL_compatible;
 # define dprintf(...) do { } while (0)
 #endif
 
+/** Convencience macro not present in earlier gcc versions. */
+#ifndef VAR_P
+# define VAR_P(a_hNode) (TREE_CODE(a_hNode) == VAR_DECL)
+#endif
+
 
 /** For use with messages. */
 #define MY_LOC(a_hPreferred, a_pState) \
@@ -142,6 +147,7 @@ static const struct attribute_spec g_AttribSpecs[] =
  */
 static void dprintScope(tree hDecl)
 {
+# if 0 /* later? */
     tree hScope = CP_DECL_CONTEXT(hDecl);
     if (hScope == global_namespace)
         return;
@@ -153,6 +159,7 @@ static void dprintScope(tree hDecl)
 
     /* name the scope. */
     dprintf("::%s", DECL_NAME(hScope) ? IDENTIFIER_POINTER(DECL_NAME(hScope)) : "<noname>");
+# endif
 }
 
 
@@ -194,9 +201,146 @@ static bool             MyPassGateCallback(void)
 }
 
 
-static void MyCheckFormatWorker(PMYCHECKSTATE pState, tree hFmtArg)
+static void MyCheckFormatCString(PMYCHECKSTATE pState, const char *pszFmt, location_t hFmtLoc)
 {
+    dprintf("checker2: \"%s\"\n", pszFmt);
+}
 
+
+/**
+ * Non-recursive worker for MyCheckFormatRecursive.
+ *
+ * This will attempt to result @a hFmtArg into a string literal which it then
+ * passes on to MyCheckFormatString for the actual analyzis.
+ *
+ * @param   pState              The format string check state.
+ * @param   hFmtArg             The format string node.
+ */
+DECL_NO_INLINE(static, void) MyCheckFormatWorker(PMYCHECKSTATE pState, tree hFmtArg)
+{
+    dprintf("checker: hFmtArg=%p %s\n", hFmtArg, tree_code_name[TREE_CODE(hFmtArg)]);
+    location_t hFmtLoc = MY_LOC(hFmtArg, pState);
+
+    /*
+     * Try resolve variables into constant strings.
+     */
+    if (VAR_P(hFmtArg))
+    {
+        hFmtArg = decl_constant_value(hFmtArg);
+        STRIP_NOPS(hFmtArg); /* Used as argument and assigned call result. */
+        dprintf("checker1: variable => hFmtArg=%p %s\n", hFmtArg, tree_code_name[TREE_CODE(hFmtArg)]);
+    }
+
+    /*
+     * Fend off NULLs.
+     */
+    if (integer_zerop(hFmtArg))
+        warning_at(hFmtLoc, 0, "Format string should not be NULL");
+    /*
+     * Need address expression to get any further.
+     */
+    else if (TREE_CODE(hFmtArg) != ADDR_EXPR)
+        dprintf("checker1: Not address expression (%s)\n", tree_code_name[TREE_CODE(hFmtArg)]);
+    else
+    {
+        hFmtLoc = EXPR_LOC_OR_LOC(hFmtArg, hFmtLoc);
+        hFmtArg = TREE_OPERAND(hFmtArg, 0);
+
+        /*
+         * Deal with fixed string indexing, if possible.
+         */
+        HOST_WIDE_INT off = 0;
+        if (   TREE_CODE(hFmtArg) == ARRAY_REF
+            && TREE_INT_CST(TREE_OPERAND(hFmtArg, 1)).fits_shwi() )
+        {
+            off = TREE_INT_CST(TREE_OPERAND(hFmtArg, 1)).to_shwi();
+            if (off < 0)
+            {
+                dprintf("checker1: ARRAY_REF, off=%ld\n", off);
+                return;
+            }
+            hFmtArg = TREE_OPERAND(hFmtArg, 0);
+            dprintf("checker1: ARRAY_REF => hFmtArg=%p %s, off=%ld\n", hFmtArg, tree_code_name[TREE_CODE(hFmtArg)], off);
+        }
+
+        /*
+         * Deal with static const char g_szFmt[] = "qwerty";  Take care as
+         * the actual string constant may not necessarily include the terminator.
+         */
+        tree hArraySize = NULL_TREE;
+        if (   VAR_P(hFmtArg)
+            && TREE_CODE(TREE_TYPE(hFmtArg)) == ARRAY_TYPE)
+        {
+            tree hArrayInitializer = decl_constant_value(hFmtArg);
+            if (   hArrayInitializer != hFmtArg
+                && TREE_CODE(hArrayInitializer) == STRING_CST)
+            {
+                hArraySize = DECL_SIZE_UNIT(hFmtArg);
+                hFmtArg = hArrayInitializer;
+            }
+        }
+
+        /*
+         * Are we dealing with a string literal now?
+         */
+        if (TREE_CODE(hFmtArg) != STRING_CST)
+            dprintf("checker1: Not string literal (%s)\n", tree_code_name[TREE_CODE(hFmtArg)]);
+        else if (TYPE_MAIN_VARIANT(TREE_TYPE(TREE_TYPE(hFmtArg))) != char_type_node)
+            warning_at(hFmtLoc, 0, "expected 'char' type string literal");
+        else
+        {
+            /*
+             * Yes we are, so get the pointer to the string and its length.
+             */
+            const char *pszFmt = TREE_STRING_POINTER(hFmtArg);
+            int         cchFmt = TREE_STRING_LENGTH(hFmtArg);
+
+            /* Adjust cchFmt to the initialized array size if appropriate. */
+            if (hArraySize != NULL_TREE)
+            {
+                if (TREE_CODE(hArraySize) != INTEGER_CST)
+                    warning_at(hFmtLoc, 0, "Expected integer array size (not %s)", tree_code_name[TREE_CODE(hArraySize)]);
+                else if (!TREE_INT_CST(hArraySize).fits_shwi())
+                    warning_at(hFmtLoc, 0, "Unexpected integer overflow in array size constant");
+                else
+                {
+                    HOST_WIDE_INT cbArray = TREE_INT_CST(hArraySize).to_shwi();
+                    if (   cbArray <= 0
+                        || cbArray != (int)cbArray)
+                        warning_at(hFmtLoc, 0, "Unexpected integer array size constant value: %ld", cbArray);
+                    else if (cchFmt > cbArray)
+                    {
+                        dprintf("checker1: cchFmt=%d => cchFmt=%ld (=cbArray)\n", cchFmt, cbArray);
+                        cchFmt = (int)cbArray;
+                    }
+                }
+            }
+
+            /* Apply the offset, if given. */
+            if (off)
+            {
+                if (off >= cchFmt)
+                {
+                    dprintf("checker1: off=%ld  >=  cchFmt=%d -> skipping\n", off, cchFmt);
+                    return;
+                }
+                pszFmt += off;
+                cchFmt -= (int)off;
+            }
+
+            /*
+             * Check for unterminated strings.
+             */
+            if (   cchFmt < 1
+                || pszFmt[cchFmt - 1] != '\0')
+                warning_at(hFmtLoc, 0, "Unterminated format string (cchFmt=%d)", cchFmt);
+            /*
+             * Call worker to check the actual string.
+             */
+            else
+                MyCheckFormatCString(pState, pszFmt, hFmtLoc);
+        }
+    }
 }
 
 
@@ -210,14 +354,30 @@ static void MyCheckFormatWorker(PMYCHECKSTATE pState, tree hFmtArg)
  */
 static void MyCheckFormatRecursive(PMYCHECKSTATE pState, tree hFmtArg)
 {
+    /*
+     * NULL format strings may cause crashes.
+     */
     if (integer_zerop(hFmtArg))
         warning_at(MY_LOC(hFmtArg, pState), 0, "Format string should not be NULL");
-    else
+    /*
+     * Check both branches of a ternary operator.
+     */
+    else if (TREE_CODE(hFmtArg) == COND_EXPR)
     {
-        /** @todo more to do here. ternary expression, ++. */
-
-        MyCheckFormatWorker(pState, hFmtArg);
+        MyCheckFormatRecursive(pState, TREE_OPERAND(hFmtArg, 1));
+        MyCheckFormatRecursive(pState, TREE_OPERAND(hFmtArg, 2));
     }
+    /*
+     * Strip coercion.
+     */
+    else if (   CONVERT_EXPR_P(hFmtArg)
+             && TYPE_PRECISION(TREE_TYPE(hFmtArg)) == TYPE_PRECISION(TREE_TYPE(TREE_OPERAND(hFmtArg, 0))) )
+        MyCheckFormatRecursive(pState, TREE_OPERAND(hFmtArg, 0));
+    /*
+     * We're good, hand it to the non-recursive worker.
+     */
+    else
+        MyCheckFormatWorker(pState, hFmtArg);
 }
 
 
