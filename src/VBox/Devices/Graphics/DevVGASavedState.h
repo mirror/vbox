@@ -19,10 +19,33 @@
  */
 
 
-#ifndef Graphics_DevVGASavedState_h
-#define Graphics_DevVGASavedState_h
+#ifndef ___Graphics_DevVGASavedState_h
+#define ___Graphics_DevVGASavedState_h
 
-#define VGA_SAVEDSTATE_VERSION              15
+/** Creates an eyecatching marker in the VGA saved state ("<uSub>Marker\n"). */
+#define VGA_SAVED_STATE_MAKE_MARKER(uSub) (UINT64_C(0x0a72656b72614d30) + (uint64_t)(uSub))
+
+/** Puts a marker. Status code is not checked. */
+#define VGA_SAVED_STATE_PUT_MARKER(pSSM, uSub) \
+    do { SSMR3PutU64(pSSM, VGA_SAVED_STATE_MAKE_MARKER(uSub)); } while (0)
+
+/** Retrieves a VGA saved state marker and checks that it matches, if it
+ *  doesn't assert/LogRel and return. */
+#define VGA_SAVED_STATE_GET_MARKER_RETURN_ON_MISMATCH(pSSM, uVersion, uSub) \
+    do { \
+        if (uVersion >= VGA_SAVEDSTATE_VERSION_MARKERS) \
+        { \
+            uint64_t uMarker; \
+            int rcMarker = SSMR3GetU64(pSSM, &uMarker); \
+            AssertLogRelRCReturn(rc, rc); \
+            AssertLogRelMsgReturn(uMarker == VGA_SAVED_STATE_MAKE_MARKER(uSub), \
+                                  ("Bad VGA marker: expected %llx, got %llx\n", VGA_SAVED_STATE_MAKE_MARKER(uSub), uMarker), \
+                                  VERR_SSM_DATA_UNIT_FORMAT_CHANGED); \
+        } \
+    } while (0)
+
+#define VGA_SAVEDSTATE_VERSION              16
+#define VGA_SAVEDSTATE_VERSION_MARKERS      16
 #define VGA_SAVEDSTATE_VERSION_MODE_HINTS   15
 #define VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA 14
 #define VGA_SAVEDSTATE_VERSION_3D           13
@@ -40,3 +63,4 @@
 #define VGA_SAVEDSTATE_VERSION_ANCIENT      1
 
 #endif
+

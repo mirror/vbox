@@ -1602,6 +1602,8 @@ int vboxVBVASaveDevStateExec (PVGASTATE pVGAState, PSSMHANDLE pSSM)
     int rc = HGSMIHostSaveStateExec (pIns, pSSM);
     if (RT_SUCCESS(rc))
     {
+        VGA_SAVED_STATE_PUT_MARKER(pSSM, 2);
+
         /* Save VBVACONTEXT. */
         VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pIns);
 
@@ -1780,9 +1782,9 @@ int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return rc;
 }
 
-int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
+int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    if (u32Version < VGA_SAVEDSTATE_VERSION_HGSMI)
+    if (uVersion < VGA_SAVEDSTATE_VERSION_HGSMI)
     {
         /* Nothing was saved. */
         return VINF_SUCCESS;
@@ -1790,9 +1792,11 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
 
     PVGASTATE pVGAState = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
-    int rc = HGSMIHostLoadStateExec (pIns, pSSM, u32Version);
+    int rc = HGSMIHostLoadStateExec (pIns, pSSM, uVersion);
     if (RT_SUCCESS(rc))
     {
+        VGA_SAVED_STATE_GET_MARKER_RETURN_ON_MISMATCH(pSSM, uVersion, 2);
+
         /* Load VBVACONTEXT. */
         VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pIns);
 
@@ -1878,7 +1882,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                 }
             }
 
-            if (u32Version > VGA_SAVEDSTATE_VERSION_WITH_CONFIG)
+            if (uVersion > VGA_SAVEDSTATE_VERSION_WITH_CONFIG)
             {
                 /* Read mouse pointer shape information. */
                 rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fSet);
@@ -1932,7 +1936,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                     AssertRCReturn(rc, rc);
                 }
 
-                if (u32Version >= VGA_SAVEDSTATE_VERSION_MODE_HINTS)
+                if (uVersion >= VGA_SAVEDSTATE_VERSION_MODE_HINTS)
                 {
                     uint32_t cModeHints, cbModeHints;
                     rc = SSMR3GetU32 (pSSM, &cModeHints);
@@ -1957,11 +1961,11 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
             pCtx->cViews = iView;
             LogFlowFunc(("%d views loaded\n", pCtx->cViews));
 
-            if (u32Version > VGA_SAVEDSTATE_VERSION_WDDM)
+            if (uVersion > VGA_SAVEDSTATE_VERSION_WDDM)
             {
                 bool fLoadCommands;
 
-                if (u32Version < VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA)
+                if (uVersion < VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA)
                 {
                     const char *pcszOsArch = SSMR3HandleHostOSAndArch(pSSM);
                     Assert(pcszOsArch);
@@ -1987,7 +1991,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
 
                     if (fLoadCommands)
                     {
-                        rc = vbvaVHWACommandLoadPending(pVGAState, pSSM, u32Version);
+                        rc = vbvaVHWACommandLoadPending(pVGAState, pSSM, uVersion);
                         AssertRCReturn(rc, rc);
                     }
                 }

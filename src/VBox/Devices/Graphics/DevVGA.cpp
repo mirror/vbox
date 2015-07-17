@@ -5518,6 +5518,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     vgaR3SaveConfig(pThis, pSSM);
     vga_save(pSSM, PDMINS_2_DATA(pDevIns, PVGASTATE));
 
+    VGA_SAVED_STATE_PUT_MARKER(pSSM, 1);
 #ifdef VBOX_WITH_HGSMI
     SSMR3PutBool(pSSM, true);
     int rc = vboxVBVASaveStateExec(pDevIns, pSSM);
@@ -5527,6 +5528,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     AssertRCReturn(rc, rc);
 
+    VGA_SAVED_STATE_PUT_MARKER(pSSM, 3);
 #ifdef VBOX_WITH_VDMA
     rc = SSMR3PutU32(pSSM, 1);
     AssertRCReturn(rc, rc);
@@ -5540,6 +5542,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     vboxVDMASaveStateExecDone(pThis->pVdma, pSSM);
 #endif
 
+    VGA_SAVED_STATE_PUT_MARKER(pSSM, 5);
 #ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
     {
@@ -5547,6 +5550,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         AssertRCReturn(rc, rc);
     }
 #endif
+    VGA_SAVED_STATE_PUT_MARKER(pSSM, 6);
 
     return rc;
 }
@@ -5584,6 +5588,11 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         rc = vga_load(pSSM, pThis, uVersion);
         if (RT_FAILURE(rc))
             return rc;
+
+        /*
+         * Restore the HGSMI state, if present.
+         */
+        VGA_SAVED_STATE_GET_MARKER_RETURN_ON_MISMATCH(pSSM, uVersion, 1);
         bool fWithHgsmi = uVersion == VGA_SAVEDSTATE_VERSION_HGSMI;
         if (uVersion > VGA_SAVEDSTATE_VERSION_HGSMI)
         {
@@ -5600,6 +5609,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 #endif
         }
 
+        VGA_SAVED_STATE_GET_MARKER_RETURN_ON_MISMATCH(pSSM, uVersion, 3);
         if (uVersion >= VGA_SAVEDSTATE_VERSION_3D)
         {
             uint32_t u32;
@@ -5621,6 +5631,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             }
         }
 
+        VGA_SAVED_STATE_GET_MARKER_RETURN_ON_MISMATCH(pSSM, uVersion, 5);
 #ifdef VBOX_WITH_VMSVGA
         if (pThis->fVMSVGAEnabled)
         {
@@ -5628,6 +5639,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             AssertRCReturn(rc, rc);
         }
 #endif
+        VGA_SAVED_STATE_GET_MARKER_RETURN_ON_MISMATCH(pSSM, uVersion, 6);
     }
     return VINF_SUCCESS;
 }

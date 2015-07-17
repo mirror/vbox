@@ -1381,6 +1381,8 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
                 WARN(("VBoxVBVAExHSSaveState failed %d\n", rc));
                 return rc;
             }
+            VGA_SAVED_STATE_PUT_MARKER(pCmd->u.state.pSSM, 4);
+
             return pVdma->CrSrvInfo.pfnSaveState(pVdma->CrSrvInfo.hSvr, pCmd->u.state.pSSM);
         }
         case VBVAEXHOSTCTL_TYPE_HH_LOADSTATE:
@@ -1395,6 +1397,7 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
                 return rc;
             }
 
+            VGA_SAVED_STATE_GET_MARKER_RETURN_ON_MISMATCH(pCmd->u.state.pSSM, pCmd->u.state.u32Version, 4);
             rc = pVdma->CrSrvInfo.pfnLoadState(pVdma->CrSrvInfo.hSvr, pCmd->u.state.pSSM, pCmd->u.state.u32Version);
             if (RT_FAILURE(rc))
             {
