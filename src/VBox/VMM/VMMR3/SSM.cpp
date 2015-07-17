@@ -2916,6 +2916,16 @@ static int ssmR3StrmSeek(PSSMSTRM pStrm, int64_t off, uint32_t uMethod, uint32_t
             ssmR3StrmPutFreeBuf(pStrm, pStrm->pCur);
             pStrm->pCur = NULL;
         }
+        if (pStrm->pPending)
+        {
+            ssmR3StrmDestroyBufList(pStrm->pPending);
+            pStrm->pPending = NULL;
+        }
+        if (pStrm->pHead)
+        {
+            ssmR3StrmDestroyBufList(pStrm->pHead);
+            pStrm->pHead = NULL;
+        }
     }
     return rc;
 }
@@ -3120,6 +3130,38 @@ static void ssmR3StrmStartIoThread(PSSMSTRM pStrm)
     int rc = RTThreadCreate(&hThread, ssmR3StrmIoThread, pStrm, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SSM-IO");
     AssertRCReturnVoid(rc);
     ASMAtomicWriteHandle(&pStrm->hIoThread, hThread); /* paranoia */
+}
+
+
+/**
+ * Stops the I/O thread.
+ *
+ * @param   pStrm       The stream handle.
+ */
+static void ssmR3StrmStopIoThread(PSSMSTRM pStrm)
+{
+    LogFlow(("ssmR3StrmStopIoThread: %p\n", pStrm->hIoThread));
+    if (pStrm->hIoThread != NIL_RTTHREAD)
+    {
+        /*
+         * Signal the I/O thread and wait for it to complete.
+         */
+        ASMAtomicWriteBool(&pStrm->fTerminating, true);
+        if (pStrm->fWrite)
+        {
+            int rc1 = RTSemEventSignal(pStrm->hEvtHead);
+            AssertLogRelRC(rc1);
+        }
+        else
+        {
+            int rc2 = RTSemEventSignal(pStrm->hEvtFree);
+            AssertLogRelRC(rc2);
+        }
+        int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);
+        AssertLogRelRC(rc3);
+        pStrm->hIoThread = NIL_RTTHREAD;
+        pStrm->fTerminating = false; /* Can't read stuff otherwise. */
+    }
 }
 
 #endif /* !SSM_STANDALONE */
@@ -6486,33 +6528,36 @@ DECLINLINE(int) ssmR3DataRead(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     /*
      * Fend off previous errors and V1 data units.
      */
-    if (RT_FAILURE(pSSM->rc))
-        return pSSM->rc;
-    if (RT_UNLIKELY(pSSM->u.Read.uFmtVerMajor == 1))
-        return ssmR3DataReadV1(pSSM, pvBuf, cbBuf);
-
-    /*
-     * Check if the requested data is buffered.
-     */
-    uint32_t off = pSSM->u.Read.offDataBuffer;
-    if (    off + cbBuf > pSSM->u.Read.cbDataBuffer
-        ||  cbBuf > sizeof(pSSM->u.Read.abDataBuffer))
+    if (RT_SUCCESS(pSSM->rc))
     {
-        if (cbBuf <= sizeof(pSSM->u.Read.abDataBuffer) / 8)
-            return ssmR3DataReadBufferedV2(pSSM, pvBuf, cbBuf);
-        return ssmR3DataReadUnbufferedV2(pSSM, pvBuf, cbBuf);
+        if (RT_LIKELY(pSSM->u.Read.uFmtVerMajor != 1))
+        {
+            /*
+             * Check if the requested data is buffered.
+             */
+            uint32_t off = pSSM->u.Read.offDataBuffer;
+            if (   off + cbBuf > pSSM->u.Read.cbDataBuffer
+                || cbBuf > sizeof(pSSM->u.Read.abDataBuffer))
+            {
+                if (cbBuf <= sizeof(pSSM->u.Read.abDataBuffer) / 8)
+                    return ssmR3DataReadBufferedV2(pSSM, pvBuf, cbBuf);
+                return ssmR3DataReadUnbufferedV2(pSSM, pvBuf, cbBuf);
+            }
+
+            memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[off], cbBuf);
+            pSSM->u.Read.offDataBuffer = off + (uint32_t)cbBuf;
+            pSSM->offUnitUser += cbBuf;
+            Log4((cbBuf
+                  ? "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n"
+                  : "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n",
+                  ssmR3StrmTell(&pSSM->Strm), pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
+                  cbBuf, RT_MIN(SSM_LOG_BYTES, cbBuf), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
+
+            return VINF_SUCCESS;
+        }
+        return ssmR3DataReadV1(pSSM, pvBuf, cbBuf);
     }
-
-    memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[off], cbBuf);
-    pSSM->u.Read.offDataBuffer = off + (uint32_t)cbBuf;
-    pSSM->offUnitUser += cbBuf;
-    Log4((cbBuf
-          ? "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n"
-          : "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n",
-          ssmR3StrmTell(&pSSM->Strm), pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
-          cbBuf, RT_MIN(SSM_LOG_BYTES, cbBuf), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
-
-    return VINF_SUCCESS;
+    return pSSM->rc;
 }
 
 
@@ -8080,6 +8125,154 @@ static int ssmR3ValidateDirectory(PSSMFILEDIR pDir, size_t cbDir, uint64_t offDi
 #ifndef SSM_STANDALONE
 
 /**
+ * LogRel the unit content.
+ *
+ * @param   pSSM                The save state handle.
+ * @param   pUnitHdr            The unit head (for cbName).
+ * @param   offUnit             The offset of the unit header.
+ * @param   offStart            Where to start.
+ * @param   offEnd              Where to end.
+ */
+static void ssmR3StrmLogUnitContent(PSSMHANDLE pSSM, SSMFILEUNITHDRV2 const *pUnitHdr, uint64_t offUnit,
+                                    uint64_t offStart, uint64_t offEnd)
+{
+    /*
+     * Stop the I/O thread (if present).
+     */
+    ssmR3StrmStopIoThread(&pSSM->Strm);
+
+    /*
+     * Save the current status, resetting it so we can read + log the unit bytes.
+     */
+    int rcSaved = pSSM->rc;
+    pSSM->rc = VINF_SUCCESS;
+
+    /*
+     * Reverse back to the start of the unit if we can.
+     */
+    uint32_t cbUnitHdr = RT_UOFFSETOF(SSMFILEUNITHDRV2, szName[pUnitHdr->cbName]);
+    int rc = ssmR3StrmSeek(&pSSM->Strm, offUnit/* + cbUnitHdr*/, RTFILE_SEEK_BEGIN, pUnitHdr->u32CurStreamCRC);
+    if (RT_SUCCESS(rc))
+    {
+        SSMFILEUNITHDRV2 UnitHdr2;
+        rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr2, cbUnitHdr);
+        if (   RT_SUCCESS(rc)
+            && memcmp(&UnitHdr2, pUnitHdr, cbUnitHdr) == 0)
+        {
+            pSSM->u.Read.cbDataBuffer = 0; /* avoid assertions */
+            pSSM->u.Read.cbRecLeft    = 0;
+            ssmR3DataReadBeginV2(pSSM);
+
+            /*
+             * Read the unit, dumping the requested bits.
+             */
+            uint8_t     cbLine = 0;
+            uint8_t     abLine[16];
+            uint64_t    offCur = 0;
+            offStart &= ~(uint64_t)(sizeof(abLine) - 1);
+            Assert(offStart < offEnd);
+            LogRel(("SSM: Unit '%s' contents:\n", pUnitHdr->szName));
+
+            do
+            {
+                /*
+                 * Read the next 16 bytes into abLine.  We have to take some care to
+                 * get all the bytes in the unit, since we don't really know its size.
+                 */
+                while (   cbLine < sizeof(abLine)
+                       && !pSSM->u.Read.fEndOfData
+                       && RT_SUCCESS(pSSM->rc))
+                {
+                    uint32_t cbToRead = sizeof(abLine) - cbLine;
+                    if (cbToRead > 1)
+                    {
+                        int32_t cbInBuffer = pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer;
+                        if ((int32_t)cbToRead > cbInBuffer)
+                        {
+                            if (cbInBuffer > 0)
+                                cbToRead = cbInBuffer;
+                            else if (pSSM->u.Read.cbRecLeft)
+                                cbToRead = 1;
+                            else
+                            {
+                                rc = ssmR3DataReadRecHdrV2(pSSM);
+                                if (RT_FAILURE(rc))
+                                {
+                                    pSSM->rc = rc;
+                                    break;
+                                }
+                                if (pSSM->u.Read.fEndOfData)
+                                    break;
+                            }
+                        }
+                    }
+                    rc = ssmR3DataRead(pSSM, &abLine[cbLine], cbToRead);
+                    if (RT_SUCCESS(rc))
+                        cbLine += cbToRead;
+                    else
+                        break;
+                }
+
+                /*
+                 * Display the bytes if in the requested range.
+                 */
+                if (   offCur >= offStart
+                    && offCur <= offEnd)
+                {
+                    char    szLine[132];
+                    char   *pchDst = szLine;
+                    uint8_t offSrc = 0;
+                    while (offSrc < cbLine)
+                    {
+                        static char const s_szHex[17] = "0123456789abcdef";
+                        uint8_t const b = abLine[offSrc++];
+                        *pchDst++ = s_szHex[b >> 4];
+                        *pchDst++ = s_szHex[b & 7];
+                        *pchDst++ = offSrc != 8 ? ' ' : '-';
+                    }
+                    while (offSrc < sizeof(abLine))
+                    {
+                        *pchDst++ = ' ';
+                        *pchDst++ = ' ';
+                        *pchDst++ = offSrc != 7 ? ' ' : '-';
+                        offSrc++;
+                    }
+                    *pchDst++ = ' ';
+
+                    offSrc = 0;
+                    while (offSrc < cbLine)
+                    {
+                        char const ch = (int8_t)abLine[offSrc++];
+                        if (ch < 0x20 || ch >= 0x7f)
+                            *pchDst++ = '.';
+                        else
+                            *pchDst++ = ch;
+                    }
+                    *pchDst = '\0';
+                    Assert((uintptr_t)(pchDst - &szLine[0]) < sizeof(szLine));
+                    Assert(strchr(szLine, '\0') == pchDst);
+
+                    LogRel(("%#010llx: %s\n", offCur, szLine));
+                }
+                offCur += cbLine;
+                cbLine = 0;
+            } while (   !pSSM->u.Read.fEndOfData
+                     && RT_SUCCESS(pSSM->rc));
+            LogRel(("SSM: offCur=%#llx fEndOfData=%d (rc=%Rrc)\n", offCur, pSSM->u.Read.fEndOfData, rc));
+        }
+        else if (RT_SUCCESS(rc))
+            LogRel(("SSM: Cannot dump unit - mismatching unit head\n"));
+        else
+            LogRel(("SSM: Cannot dump unit - unit header read error: %Rrc\n", rc));
+    }
+    else
+        LogRel(("SSM: Cannot dump unit - ssmR3StrmSeek error: %Rrc\n", rc));
+
+    pSSM->rc = rc;
+}
+
+
+/**
  * Find a data unit by name.
  *
  * @returns Pointer to the unit.
@@ -8492,6 +8685,9 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             {
                 LogRel(("SSM: LoadExec failed for '%s' instance #%u (version %u, pass %#x): %Rrc\n",
                         UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Version, UnitHdr.u32Pass, rc));
+                LogRel(("SSM: Unit at %#llx, current position: offUnit=%#llx offUnitUser=%#llx\n",
+                        offUnit, pSSM->offUnit, pSSM->offUnitUser));
+
                 if (!ASMAtomicXchgBool(&pSSM->u.Read.fHaveSetError, true))
                 {
                     if (rc == VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION)
@@ -8500,6 +8696,12 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                     else
                         rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to load unit '%s'"), UnitHdr.szName);
                 }
+
+                /* Try log the unit content, unless it's too big. */
+                if (pSSM->offUnitUser < _512KB)
+                    ssmR3StrmLogUnitContent(pSSM, &UnitHdr, offUnit, 0, pSSM->offUnitUser + _16K);
+                else
+                    ssmR3StrmLogUnitContent(pSSM, &UnitHdr, offUnit, pSSM->offUnitUser - _256K, pSSM->offUnitUser + _16K);
                 return rc;
             }
         }
