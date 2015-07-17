@@ -323,6 +323,20 @@ const char* vbsfMappingsQueryHostRoot(SHFLROOT root)
     return pFolderMapping->pszFolderName;
 }
 
+int vbsfMappingsQueryHostRootEx(SHFLROOT hRoot, const char **ppszRoot, uint32_t *pcbRootLen)
+{
+    MAPPING *pFolderMapping = vbsfMappingGetByRoot(hRoot);
+    AssertReturn(pFolderMapping, VERR_INVALID_PARAMETER);
+    if (pFolderMapping->fMissing)
+        return VERR_NOT_FOUND;
+    if (   pFolderMapping->pszFolderName == NULL
+        || pFolderMapping->pszFolderName[0] == 0)
+        return VERR_NOT_FOUND;
+    *ppszRoot = pFolderMapping->pszFolderName;
+    *pcbRootLen = strlen(pFolderMapping->pszFolderName);
+    return VINF_SUCCESS;
+}
+
 bool vbsfIsGuestMappingCaseSensitive(SHFLROOT root)
 {
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);

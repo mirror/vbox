@@ -56,6 +56,7 @@ int vbsfMapFolder(PSHFLCLIENTDATA pClient, PSHFLSTRING pszMapName, RTUTF16 delim
 int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root);
 
 const char* vbsfMappingsQueryHostRoot(SHFLROOT root);
+int vbsfMappingsQueryHostRootEx(SHFLROOT hRoot, const char **ppszRoot, uint32_t *pcbRootLen);
 bool vbsfIsGuestMappingCaseSensitive(SHFLROOT root);
 bool vbsfIsHostMappingCaseSensitive(SHFLROOT root);
 

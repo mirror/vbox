@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,12 +19,14 @@
 # include "testcase/tstSharedFolderService.h"
 #endif
 
+#include "vbsfpath.h"
 #include "mappings.h"
 #include "vbsf.h"
 #include "shflhandle.h"
 
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/asm.h>
 #include <iprt/fs.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
@@ -106,581 +108,34 @@ void vbsfStripLastComponent(char *pszFullPath, uint32_t cbFullPathRoot)
     LogFlowFunc(("%s, %s, %s\n", pszFullPath, delimLast, delimSecondLast));
 }
 
-/**
- * Corrects the casing of the final component
- *
- * @returns
- * @param   pClient             .
- * @param   pszFullPath         .
- * @param   pszStartComponent   .
- */
-static int vbsfCorrectCasing(SHFLCLIENTDATA *pClient, char *pszFullPath, char *pszStartComponent)
-{
-    Log2(("vbsfCorrectCasing: %s %s\n", pszFullPath, pszStartComponent));
-
-    AssertReturn((uintptr_t)pszFullPath < (uintptr_t)pszStartComponent - 1U, VERR_INTERNAL_ERROR_2);
-    AssertReturn(pszStartComponent[-1] == RTPATH_DELIMITER, VERR_INTERNAL_ERROR_5);
-
-    /*
-     * Allocate a buffer that can hold really long file name entries as well as
-     * the initial search pattern.
-     */
-    size_t cchComponent = strlen(pszStartComponent);
-    size_t cchParentDir = pszStartComponent - pszFullPath;
-    size_t cchFullPath  = cchParentDir + cchComponent;
-    Assert(strlen(pszFullPath) == cchFullPath);
-
-    size_t cbDirEntry   = 4096;
-    if (cchFullPath + 4 > cbDirEntry - RT_OFFSETOF(RTDIRENTRYEX, szName))
-        cbDirEntry = RT_OFFSETOF(RTDIRENTRYEX, szName) + cchFullPath + 4;
-
-    PRTDIRENTRYEX pDirEntry = (PRTDIRENTRYEX)RTMemAlloc(cbDirEntry);
-    if (pDirEntry == NULL)
-        return VERR_NO_MEMORY;
-
-    /*
-     * Construct the search criteria in the szName member of pDirEntry.
-     */
-    /** @todo This is quite inefficient, especially for directories with many
-     *        files.  If any of the typically case sensitive host systems start
-     *        supporting opendir wildcard filters, it would make sense to build
-     *        one here with '?' for case foldable charaters. */
-    /** @todo Use RTDirOpen here and drop the whole uncessary path copying? */
-    int rc = RTPathJoinEx(pDirEntry->szName, cbDirEntry - RT_OFFSETOF(RTDIRENTRYEX, szName),
-                          pszFullPath, cchParentDir,
-                          RT_STR_TUPLE("*"));
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        PRTDIR hSearch = NULL;
-        rc = RTDirOpenFiltered(&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT, 0);
-        if (RT_SUCCESS(rc))
-        {
-            for (;;)
-            {
-                size_t cbDirEntrySize = cbDirEntry;
-
-                rc = RTDirReadEx(hSearch, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
-                if (rc == VERR_NO_MORE_FILES)
-                    break;
-
-                if (   rc != VINF_SUCCESS
-                    && rc != VWRN_NO_DIRENT_INFO)
-                {
-                    AssertFailed();
-                    if (   rc == VERR_NO_TRANSLATION
-                        || rc == VERR_INVALID_UTF8_ENCODING)
-                        continue;
-                    break;
-                }
-
-                Log2(("vbsfCorrectCasing: found %s\n", &pDirEntry->szName[0]));
-                if (    pDirEntry->cbName == cchComponent
-                    &&  !RTStrICmp(pszStartComponent, &pDirEntry->szName[0]))
-                {
-                    Log(("Found original name %s (%s)\n", &pDirEntry->szName[0], pszStartComponent));
-                    strcpy(pszStartComponent, &pDirEntry->szName[0]);
-                    rc = VINF_SUCCESS;
-                    break;
-                }
-            }
-
-            RTDirClose(hSearch);
-        }
-    }
-
-    if (RT_FAILURE(rc))
-        Log(("vbsfCorrectCasing %s failed with %Rrc\n", pszStartComponent, rc));
-
-    RTMemFree(pDirEntry);
-
-    return rc;
-}
-
-/* Temporary stand-in for RTPathExistEx. */
-static int vbsfQueryExistsEx(const char *pszPath, uint32_t fFlags)
-{
-#if 0 /** @todo Fix the symlink issue on windows! */
-    return RTPathExistsEx(pszPath, fFlags);
-#else
-    RTFSOBJINFO IgnInfo;
-    return RTPathQueryInfoEx(pszPath, &IgnInfo, RTFSOBJATTRADD_NOTHING, fFlags);
-#endif
-}
-
-/**
- * Helper for vbsfBuildFullPath that performs case corrections on the path
- * that's being build.
- *
- * @returns VINF_SUCCESS at the moment.
- * @param   pClient                 The client data.
- * @param   pszFullPath             Pointer to the full path.  This is the path
- *                                  which may need case corrections.  The
- *                                  corrections will be applied in place.
- * @param   cchFullPath             The length of the full path.
- * @param   fWildCard               Whether the last component may contain
- *                                  wildcards and thus might require exclusion
- *                                  from the case correction.
- * @param   fPreserveLastComponent  Always exclude the last component from case
- *                                  correction if set.
- */
-static int vbsfCorrectPathCasing(SHFLCLIENTDATA *pClient, char *pszFullPath, size_t cchFullPath,
-                                 bool fWildCard, bool fPreserveLastComponent)
-{
-    /*
-     * Hide the last path component if it needs preserving.  This is required
-     * in the following cases:
-     *    - Contains the wildcard(s).
-     *    - Is a 'rename' target.
-     */
-    char *pszLastComponent = NULL;
-    if (fWildCard || fPreserveLastComponent)
-    {
-        char *pszSrc = pszFullPath + cchFullPath - 1;
-        Assert(strchr(pszFullPath, '\0') == pszSrc + 1);
-        while ((uintptr_t)pszSrc > (uintptr_t)pszFullPath)
-        {
-            if (*pszSrc == RTPATH_DELIMITER)
-                break;
-            pszSrc--;
-        }
-        if (*pszSrc == RTPATH_DELIMITER)
-        {
-            if (   fPreserveLastComponent
-                /* Or does it really have wildcards? */
-                || strchr(pszSrc + 1, '*') != NULL
-                || strchr(pszSrc + 1, '?') != NULL
-                || strchr(pszSrc + 1, '>') != NULL
-                || strchr(pszSrc + 1, '<') != NULL
-                || strchr(pszSrc + 1, '"') != NULL )
-            {
-                pszLastComponent = pszSrc;
-                *pszLastComponent = '\0';
-            }
-        }
-    }
-
-    /*
-     * If the path/file doesn't exist, we need to attempt case correcting it.
-     */
-    /** @todo Don't check when creating files or directories; waste of time. */
-    int rc = vbsfQueryExistsEx(pszFullPath, SHFL_RT_LINK(pClient));
-    if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
-    {
-        Log(("Handle case insensitive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
-
-        /*
-         * Work from the end of the path to find a partial path that's valid.
-         */
-        char *pszSrc = pszLastComponent ? pszLastComponent - 1 : pszFullPath + cchFullPath - 1;
-        Assert(strchr(pszFullPath, '\0') == pszSrc + 1);
-
-        while ((uintptr_t)pszSrc > (uintptr_t)pszFullPath)
-        {
-            if (*pszSrc == RTPATH_DELIMITER)
-            {
-                *pszSrc = '\0';
-                rc = vbsfQueryExistsEx(pszFullPath, SHFL_RT_LINK(pClient));
-                *pszSrc = RTPATH_DELIMITER;
-                if (RT_SUCCESS(rc))
-                {
-#ifdef DEBUG
-                    *pszSrc = '\0';
-                    Log(("Found valid partial path %s\n", pszFullPath));
-                    *pszSrc = RTPATH_DELIMITER;
-#endif
-                    break;
-                }
-            }
-
-            pszSrc--;
-        }
-        Assert(*pszSrc == RTPATH_DELIMITER && RT_SUCCESS(rc));
-        if (   *pszSrc == RTPATH_DELIMITER
-            && RT_SUCCESS(rc))
-        {
-            /*
-             * Turn around and work the other way case correcting the components.
-             */
-            pszSrc++;
-            for (;;)
-            {
-                bool fEndOfString = true;
-
-                /* Find the end of the component. */
-                char *pszEnd = pszSrc;
-                while (*pszEnd)
-                {
-                    if (*pszEnd == RTPATH_DELIMITER)
-                        break;
-                    pszEnd++;
-                }
-
-                if (*pszEnd == RTPATH_DELIMITER)
-                {
-                    fEndOfString = false;
-                    *pszEnd = '\0';
-#if 0 /** @todo Please, double check this. The original code is in the #if 0, what I hold as correct is in the #else. */
-                    rc = RTPathQueryInfoEx(pszSrc, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
-#else
-                    rc = vbsfQueryExistsEx(pszFullPath, SHFL_RT_LINK(pClient));
-#endif
-                    Assert(rc == VINF_SUCCESS || rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
-                }
-                else if (pszEnd == pszSrc)
-                    rc = VINF_SUCCESS;  /* trailing delimiter */
-                else
-                    rc = VERR_FILE_NOT_FOUND;
-
-                if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
-                {
-                    /* Path component is invalid; try to correct the casing. */
-                    rc = vbsfCorrectCasing(pClient, pszFullPath, pszSrc);
-                    if (RT_FAILURE(rc))
-                    {
-                        /* Failed, so don't bother trying any further components. */
-                        if (!fEndOfString)
-                            *pszEnd = RTPATH_DELIMITER; /* Restore the original full path. */
-                        break;
-                    }
-                }
-
-                /* Next (if any). */
-                if (fEndOfString)
-                    break;
-
-                *pszEnd = RTPATH_DELIMITER;
-                pszSrc = pszEnd + 1;
-            }
-            if (RT_FAILURE(rc))
-                Log(("Unable to find suitable component rc=%d\n", rc));
-        }
-        else
-            rc = VERR_FILE_NOT_FOUND;
-
-    }
-
-    /* Restore the final component if it was dropped. */
-    if (pszLastComponent)
-        *pszLastComponent = RTPATH_DELIMITER;
-
-    /* might be a new file so don't fail here! */
-    return VINF_SUCCESS;
-}
-
-
-/** @def VBSF_IS_PATH_SLASH
- * Checks if @a a_ch is a path delimiter (slash, not volume spearator) for the
- * guest or the host.
- * @param   a_pClient   Pointer to the client data (SHFLCLIENTDATA).
- * @param   a_ch        The character to inspect.
- */
-#if 1
-# define VBSF_IS_PATH_SLASH(a_pClient, a_ch)     ( (a_ch) == '\\' || (a_ch) == '/' || RTPATH_IS_SLASH(a_ch) )
-#else
-# define VBSF_IS_PATH_SLASH(a_pClient, a_ch)     ( (RTUTF16)(a_ch) == (a_pClient)->PathDelimiter || RTPATH_IS_SLASH(a_ch) )
-#endif
-
-
-/**
- * Check the given UTF-8 path for root escapes.
- *
- * Verify that the path is within the root directory of the mapping.  Count '..'
- * and other path components and check that we do not go over the root.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS
- * @retval  VERR_INVALID_NAME
- *
- * @param   pszPath         The (UTF-8) path to check.  Slashes has been convert
- *                          to host slashes by this time.
- *
- * @remarks This function assumes that the path will be appended to the root
- *          directory of the shared folder mapping.  Keep that in mind when
- *          checking absolute paths!
- */
-static int vbsfPathCheck(const char *pszPath)
-{
-    /*
-     * Walk the path, component by component and check for escapes.
-     */
-
-    int cComponents = 0; /* How many normal path components. */
-    int cParentDirs = 0; /* How many '..' components. */
-
-    for (;;)
-    {
-        char ch;
-
-        /* Skip leading path delimiters. */
-        do
-            ch = *pszPath++;
-        while (RTPATH_IS_SLASH(ch));
-        if (ch == '\0')
-            return VINF_SUCCESS;
-
-        /* Check if that is a dot component. */
-        int cDots = 0;
-        while (ch == '.')
-        {
-            cDots++;
-            ch = *pszPath++;
-        }
-
-        if (   cDots >= 1
-            && (ch == '\0' || RTPATH_IS_SLASH(ch)) )
-        {
-            if (cDots >= 2) /* Consider all multidots sequences as a 'parent dir'. */
-            {
-                cParentDirs++;
-
-                /* Escaping? */
-                if (cParentDirs > cComponents)
-                    return VERR_INVALID_NAME;
-            }
-            /* else: Single dot, nothing changes. */
-        }
-        else
-        {
-            /* Not a dot component, skip to the end of it. */
-            while (ch != '\0' && !RTPATH_IS_SLASH(ch))
-                ch = *pszPath++;
-            cComponents++;
-        }
-        Assert(cComponents >= cParentDirs);
-
-        /* The end? */
-        Assert(ch == '\0' || RTPATH_IS_SLASH(ch));
-        if (ch == '\0')
-            return VINF_SUCCESS;
-    }
-}
-
 static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING pPath,
                              uint32_t cbPath, char **ppszFullPath, uint32_t *pcbFullPathRoot,
                              bool fWildCard = false, bool fPreserveLastComponent = false)
 {
-    /* Resolve the root prefix into a string. */
-    const char *pszRoot = vbsfMappingsQueryHostRoot(root);
-    if (   !pszRoot
-        || !*pszRoot)
-    {
-        Log(("vbsfBuildFullPath: invalid root!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-    uint32_t cchRoot = (uint32_t)strlen(pszRoot);
-#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
-    Assert(!strchr(pszRoot, '/'));
-#endif
-
-    /*
-     * Combine the root prefix with the guest path into a full UTF-8 path in a
-     * buffer pointed to by pszFullPath.  cchRoot may be adjusted in the process.
-     */
-    int    rc;
-    size_t cchFullPath;
-    char  *pszFullPath = NULL;
+    char *pszHostPath = NULL;
+    uint32_t fu32PathFlags = 0;
+    int rc = vbsfPathGuestToHost(pClient, root, pPath, cbPath,
+                                 &pszHostPath, pcbFullPathRoot, fWildCard, fPreserveLastComponent, &fu32PathFlags);
     if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
     {
-        /* Strip leading slashes from the path the guest specified. */
-        uint32_t    cchSrc = pPath->u16Length;
-        const char *pszSrc = (char *)&pPath->String.utf8[0];
-        Log(("Root %s path %.*s\n", pszRoot, cchSrc, pszSrc));
-
-        while (   cchSrc > 0
-               && VBSF_IS_PATH_SLASH(pClient, *pszSrc))
-        {
-            pszSrc++;
-            cchSrc--;
-        }
-
-        /* Allocate a buffer that will be able to contain the root prefix and
-           the path specified by the guest. */
-        cchFullPath = cchRoot + cchSrc;
-        pszFullPath = (char *)RTMemAlloc(cchFullPath + 1 + 1);
-        if (RT_LIKELY(pszFullPath != NULL))
-        {
-            memcpy(pszFullPath, pszRoot, cchRoot);
-            if (!RTPATH_IS_SLASH(pszRoot[-1]))
-            {
-                pszFullPath[cchRoot++] = RTPATH_DELIMITER;
-                cchFullPath++;
-            }
-
-            if (cchSrc)
-                memcpy(&pszFullPath[cchRoot], pszSrc, cchSrc);
-
-            /* Terminate the string. */
-            pszFullPath[cchRoot + cchSrc] = '\0';
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            Log(("RTMemAlloc %x failed!!\n", cchFullPath + 1));
-            rc = VERR_NO_MEMORY;
-        }
+        LogRel2(("SharedFolders: GuestToHost 0x%RX32 [%.*s]->[%s] %Rrc\n", fu32PathFlags, pPath->u16Length, &pPath->String.utf8[0], pszHostPath, rc));
     }
-    else /* Client speaks UTF-16. */
+    else
     {
-#ifdef RT_OS_DARWIN /* Misplaced hack! See todo! */
-/** @todo This belongs in rtPathToNative or in the windows shared folder file system driver...
- * The question is simply whether the NFD normalization is actually applied on a (virtual) file
- * system level in darwin, or just by the user mode application libs. */
-        SHFLSTRING *pPathParameter = pPath;
-        size_t cbPathLength;
-        CFMutableStringRef inStr = ::CFStringCreateMutable(NULL, 0);
-        uint16_t ucs2Length;
-        CFRange rangeCharacters;
-
-        // Is 8 times length enough for decomposed in worst case...?
-        cbPathLength = sizeof(SHFLSTRING) + pPathParameter->u16Length * 8 + 2;
-        pPath = (SHFLSTRING *)RTMemAllocZ(cbPathLength);
-        if (!pPath)
-        {
-            rc = VERR_NO_MEMORY;
-            Log(("RTMemAllocZ %x failed!!\n", cbPathLength));
-            return rc;
-        }
-
-        ::CFStringAppendCharacters(inStr, (UniChar*)pPathParameter->String.ucs2,
-                                   pPathParameter->u16Length / sizeof(pPathParameter->String.ucs2[0]));
-        ::CFStringNormalize(inStr, kCFStringNormalizationFormD);
-        ucs2Length = ::CFStringGetLength(inStr);
-
-        rangeCharacters.location = 0;
-        rangeCharacters.length = ucs2Length;
-        ::CFStringGetCharacters(inStr, rangeCharacters, pPath->String.ucs2);
-        pPath->String.ucs2[ucs2Length] = 0x0000; // NULL terminated
-        pPath->u16Length = ucs2Length * sizeof(pPath->String.ucs2[0]);
-        pPath->u16Size = pPath->u16Length + sizeof(pPath->String.ucs2[0]);
-
-        CFRelease(inStr);
-#endif
-
-        /* Strip leading slashes and calculate the UTF-8 length. */
-        size_t      cwcSrc  = pPath->u16Length / sizeof(RTUTF16);
-        PRTUTF16    pwszSrc = &pPath->String.ucs2[0];
-        Log(("Root %s path %.*ls\n", pszRoot, cwcSrc, pwszSrc));
-
-        while (   cwcSrc > 0
-               && *pwszSrc < 0x80
-               && VBSF_IS_PATH_SLASH(pClient, (char)*pwszSrc))
-        {
-            pwszSrc++;
-            cwcSrc--;
-        }
-
-        size_t      cchPathAsUtf8 = RTUtf16CalcUtf8Len(pwszSrc);
-#ifdef RT_OS_DARWIN
-        AssertReturnStmt(cchPathAsUtf8 >= cwcSrc, RTMemFree(pPath), VERR_INTERNAL_ERROR_3);
-#else
-        AssertReturn(cchPathAsUtf8 >= cwcSrc, VERR_INTERNAL_ERROR_3);
-#endif
-
-        /* Allocate buffer that will be able to contain the root prefix and
-         * the pPath converted to UTF-8. */
-        cchFullPath = cchRoot + cchPathAsUtf8;
-        pszFullPath = (char *)RTMemAlloc(cchFullPath + 1 + 1);
-        if (RT_LIKELY(pszFullPath != NULL))
-        {
-            /* Copy the root prefix into the result buffer and make sure it
-               ends with a path separator. */
-            memcpy(pszFullPath, pszRoot, cchRoot);
-            if (!RTPATH_IS_SLASH(pszFullPath[cchRoot - 1]))
-            {
-                pszFullPath[cchRoot++] = RTPATH_DELIMITER;
-                cchFullPath++;
-            }
-
-            /* Append the path specified by the guest (if any). */
-            if (cchPathAsUtf8)
-            {
-                size_t cchActual;
-                char *pszDst = &pszFullPath[cchRoot];
-                rc = RTUtf16ToUtf8Ex(pwszSrc, cwcSrc, &pszDst, cchFullPath - cchRoot + 1, &cchActual);
-                AssertRC(rc);
-                AssertStmt(RT_FAILURE(rc) || cchActual == cchPathAsUtf8, rc = VERR_INTERNAL_ERROR_4);
-                Assert(strlen(pszDst) == cchPathAsUtf8);
-            }
-            else
-                rc = VINF_SUCCESS;
-
-            /* Terminate the string. */
-            pszFullPath[cchRoot + cchPathAsUtf8] = '\0';
-        }
-        else
-        {
-            Log(("RTMemAlloc %x failed!!\n", cchFullPath + 1));
-            rc = VERR_NO_MEMORY;
-        }
-
-#ifdef RT_OS_DARWIN
-        RTMemFree(pPath);
-        pPath = pPathParameter;
-#endif
+        LogRel2(("SharedFolders: GuestToHost 0x%RX32 [%.*ls]->[%s] %Rrc\n", fu32PathFlags, pPath->u16Length / 2, &pPath->String.ucs2[0], pszHostPath, rc));
     }
+
     if (RT_SUCCESS(rc))
     {
-        Assert(strlen(pszFullPath) == cchFullPath);
-        Assert(RTPATH_IS_SLASH(pszFullPath[cchRoot - 1])); /* includes delimiter. */
-
-        if (pcbFullPathRoot)
-            *pcbFullPathRoot = cchRoot - 1; /* Must index the path delimiter. */
-
-        /*
-         * Convert guest path delimiters into host ones and check for attempts
-         * to escape the shared folder root directory.
-         *
-         * After this, there will only be RTPATH_DELIMITER slashes in the path!
-         *
-         * ASSUMES that the root path only has RTPATH_DELIMITER as well.
-         */
-        char  ch;
-        char *pszTmp = &pszFullPath[cchRoot];
-        while ((ch = *pszTmp) != '\0')
-        {
-            if (VBSF_IS_PATH_SLASH(pClient, ch))
-                *pszTmp = RTPATH_DELIMITER;
-            pszTmp++;
-        }
-        LogFlow(("Corrected string %s\n", pszFullPath));
-
-        rc = vbsfPathCheck(&pszFullPath[cchRoot]);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * When the host file system is case sensitive and the guest expects
-             * a case insensitive fs, then problems can occur.
-             */
-            if (    vbsfIsHostMappingCaseSensitive(root)
-                && !vbsfIsGuestMappingCaseSensitive(root))
-                rc = vbsfCorrectPathCasing(pClient, pszFullPath, cchFullPath, fWildCard, fPreserveLastComponent);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * We're good.
-                 */
-                *ppszFullPath = pszFullPath;
-                LogFlow(("vbsfBuildFullPath: %s rc=%Rrc\n", pszFullPath, rc));
-                return rc;
-            }
-
-            /* Failed, clean up. */
-            Log(("vbsfBuildFullPath: %s rc=%Rrc\n", pszFullPath, rc));
-        }
-        else
-            Log(("vbsfBuildPath: Caught escape attempt: (%.*s) '%s'\n", cchRoot, pszFullPath, &pszFullPath[cchRoot]));
+        if (ppszFullPath)
+            *ppszFullPath = pszHostPath;
     }
-
-    if (pszFullPath)
-        RTMemFree(pszFullPath);
-    *ppszFullPath = NULL;
     return rc;
 }
 
 static void vbsfFreeFullPath(char *pszFullPath)
 {
-    RTMemFree(pszFullPath);
+    vbsfFreeHostPath(pszFullPath);
 }
 
 /**
@@ -1652,7 +1107,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 
             Assert(pHandle->dir.pLastValidEntry == 0);
 
-            rc = vbsfBuildFullPath(pClient, root, pPath, pPath->u16Size, &pszFullPath, NULL, true);
+            rc = vbsfBuildFullPath(pClient, root, pPath, pPath->u16Size + SHFLSTRING_HEADER_SIZE, &pszFullPath, NULL, true);
 
             if (RT_SUCCESS(rc))
             {
@@ -2056,7 +1511,7 @@ int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t flags, 
 
     ShflStringInitBuffer(&dummy, sizeof(dummy));
     dummy.String.ucs2[0] = '\0';
-    rc = vbsfBuildFullPath(pClient, root, &dummy, 0, &pszFullPath, NULL);
+    rc = vbsfBuildFullPath(pClient, root, &dummy, sizeof(dummy), &pszFullPath, NULL);
 
     if (RT_SUCCESS(rc))
     {
@@ -2334,11 +1789,11 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
     char *pszFullPathSrc = NULL;
     char *pszFullPathDest = NULL;
 
-    rc = vbsfBuildFullPath(pClient, root, pSrc, pSrc->u16Size, &pszFullPathSrc, NULL);
+    rc = vbsfBuildFullPath(pClient, root, pSrc, pSrc->u16Size + SHFLSTRING_HEADER_SIZE, &pszFullPathSrc, NULL);
     if (rc != VINF_SUCCESS)
         return rc;
 
-    rc = vbsfBuildFullPath(pClient, root, pDest, pDest->u16Size, &pszFullPathDest, NULL, false, true);
+    rc = vbsfBuildFullPath(pClient, root, pDest, pDest->u16Size + SHFLSTRING_HEADER_SIZE, &pszFullPathDest, NULL, false, true);
     if (RT_SUCCESS (rc))
     {
         Log(("Rename %s to %s\n", pszFullPathSrc, pszFullPathDest));
@@ -2402,7 +1857,7 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
     if (!fSymlinksCreate)
         return VERR_WRITE_PROTECT; /* XXX or VERR_TOO_MANY_SYMLINKS? */
 
-    rc = vbsfBuildFullPath(pClient, root, pNewPath, pNewPath->u16Size, &pszFullNewPath, NULL);
+    rc = vbsfBuildFullPath(pClient, root, pNewPath, pNewPath->u16Size + SHFLSTRING_HEADER_SIZE, &pszFullNewPath, NULL);
     AssertRCReturn(rc, rc);
 
     rc = RTSymlinkCreate(pszFullNewPath, (const char *)pOldPath->String.utf8,

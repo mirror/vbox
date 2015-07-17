@@ -63,6 +63,7 @@ tstSharedFolderService_SOURCES  = \
     ../mappings.cpp \
     ../service.cpp \
     ../shflhandle.cpp \
+    ../vbsfpath.cpp \
     ../vbsf.cpp
 tstSharedFolderService_LDFLAGS.darwin = \
 	-framework Carbon
