@@ -20,6 +20,8 @@
 *********************************************************************************************************************************/
 #include <stdio.h>
 #include <iprt/cdefs.h>
+#include <iprt/stdarg.h>
+#include <iprt/string.h>
 
 #include "plugin.h"
 #include "basic-block.h"
@@ -58,6 +60,8 @@ int plugin_is_GPL_compatible;
  *       working on gimplified stuff. */
 #define MY_LOC(a_hPreferred, a_pState) EXPR_LOC_OR_LOC(a_hPreferred, (a_pState)->hFmtLoc)
 
+#define MY_ISDIGIT(c) ((c) >= '0' && (c) <= '9')
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -69,6 +73,7 @@ typedef struct MYCHECKSTATE
     long        iFmt;
     long        iArgs;
     location_t  hFmtLoc;
+    const char *pszFmt;
 } MYCHECKSTATE;
 /** Pointer to my checker state. */
 typedef MYCHECKSTATE *PMYCHECKSTATE;
@@ -207,6 +212,55 @@ static bool             MyPassGateCallback(void)
 #define MYSTATE_FMT_LINE(a_pState)      LOCATION_LINE((a_pState)->hFmtLoc)
 #define MYSTATE_FMT_COLUMN(a_pState)    LOCATION_COLUMN((a_pState)->hFmtLoc)
 
+void MyCheckWarnFmt(PMYCHECKSTATE pState, const char *pszLoc, const char *pszFormat, ...)
+{
+    char szTmp[1024];
+    va_list va;
+    va_start(va, pszFormat);
+    vsnprintf(szTmp, sizeof(szTmp), pszFormat, va);
+    va_end(va);
+
+
+    /* Create a location for pszLoc. */
+    location_t hLoc      = pState->hFmtLoc;
+#if __GNUC__ >= 5 /** @todo figure this... */
+    intptr_t   offString = pszLoc - pState->pszFmt;
+    if (   offString > 0
+        && !linemap_location_from_macro_expansion_p(line_table, hLoc))
+    {
+        unsigned            uCol    = 1 + offString;
+        expanded_location   XLoc    = expand_location_to_spelling_point(hLoc);
+        int                 cchLine;
+# if __GNUC__ >= 5 /** @todo figure this... */
+        const char         *pszLine = location_get_source_line(XLoc, &cchLine);
+# else
+        const char         *pszLine = location_get_source_line(XLoc);
+        int                 cchLine = 0;
+        if (pszLine)
+        {
+            const char *pszEol = strpbrk(pszLine, "\n\r");
+            if (!pszEol)
+                pszEol = strchr(pszLine, '\0');
+            cchLine = (int)(pszEol - pszLine);
+        }
+# endif
+        if (pszLine)
+        {
+            /** @todo Adjust the position by parsing the source. */
+            pszLine += XLoc.column - 1;
+            cchLine -= XLoc.column - 1;
+        }
+        location_t hNewLoc = linemap_position_for_loc_and_offset(line_table, hLoc, 0);
+        if (hNewLoc)
+            hLoc = hNewLoc;
+    }
+#endif
+
+    /* display the warning. */
+    warning_at(hLoc, 0, "%s", szTmp);
+}
+
+
 
 /**
  * Checks that @a iFmtArg isn't present or a valid final dummy argument.
@@ -232,7 +286,7 @@ void MyCheckFinalArg(PMYCHECKSTATE pState, unsigned iArg)
             if (cArgs - iArg > 1)
                 warning_at(MY_LOC(hArg, pState), 0, "%u extra arguments not consumed by format string", cArgs - iArg);
             else if (   TREE_CODE(hArg) != INTEGER_CST
-                     || TREE_INT_CST(hArg).fits_shwi()
+                     || !TREE_INT_CST(hArg).fits_shwi()
                      || TREE_INT_CST(hArg).to_shwi() != -99) /* ignore final dummy argument: ..., -99); */
                 warning_at(MY_LOC(hArg, pState), 0, "one extra argument not consumed by format string");
         }
@@ -243,6 +297,12 @@ void MyCheckFinalArg(PMYCHECKSTATE pState, unsigned iArg)
             warning_at(pState->hFmtLoc, 0, "%u arguments too few", iArg - cArgs);
     }
 }
+
+void MyCheckIntArg(PMYCHECKSTATE pState, const char *pszFmt, unsigned iArg, const char *pszMessage)
+{
+
+}
+
 
 
 /**
@@ -257,20 +317,175 @@ void MyCheckFormatCString(PMYCHECKSTATE pState, const char *pszFmt)
 {
     dprintf("checker2: \"%s\" at %s:%d col %d\n", pszFmt,
             MYSTATE_FMT_FILE(pState), MYSTATE_FMT_LINE(pState), MYSTATE_FMT_COLUMN(pState));
+    pState->pszFmt = pszFmt;
+
     unsigned iArg = 0;
     for (;;)
     {
         /*
          * Skip to the next argument.
+         * Quits the loop with the first char following the '%' in 'ch'.
          */
         char ch;
-        while ((ch = *pszFmt++) != '%')
-            if (ch == '\0')
+        for (;;)
+        {
+            ch = *pszFmt++;
+            if (ch == '%')
+            {
+                ch = *pszFmt++;
+                if (ch != '%')
+                    break;
+            }
+            else if (ch == '\0')
             {
                 MyCheckFinalArg(pState, iArg);
                 return;
             }
+        }
 
+        /*
+         * Flags
+         */
+        uint32_t fFlags = 0;
+        for (;;)
+        {
+            uint32_t fFlag;
+            switch (ch)
+            {
+                case '#':   fFlag = RTSTR_F_SPECIAL;      break;
+                case '-':   fFlag = RTSTR_F_LEFT;         break;
+                case '+':   fFlag = RTSTR_F_PLUS;         break;
+                case ' ':   fFlag = RTSTR_F_BLANK;        break;
+                case '0':   fFlag = RTSTR_F_ZEROPAD;      break;
+                case '\'':  fFlag = RTSTR_F_THOUSAND_SEP; break;
+                default:    fFlag = 0;                    break;
+            }
+            if (!fFlag)
+                break;
+            if (fFlags & fFlag)
+                MyCheckWarnFmt(pState, pszFmt - 1, "duplicate flag '%c'", ch);
+            fFlags |= fFlag;
+            ch = *pszFmt++;
+        }
+
+        /*
+         * Width.
+         */
+        int cchWidth = -1;
+        if (MY_ISDIGIT(ch))
+        {
+            cchWidth = ch - '0';
+            while (   (ch = *pszFmt++) != '\0'
+                   && MY_ISDIGIT(ch))
+            {
+                cchWidth *= 10;
+                cchWidth += ch - '0';
+            }
+            fFlags |= RTSTR_F_WIDTH;
+        }
+        else if (ch == '*')
+        {
+            MyCheckIntArg(pState, pszFmt - 1, iArg, "width should be an 'int' sized argument");
+            iArg++;
+            cchWidth = 0;
+            fFlags |= RTSTR_F_WIDTH;
+        }
+
+        /*
+         * Precision
+         */
+        int cchPrecision = -1;
+        if (ch == '.')
+        {
+            ch = *pszFmt++;
+            if (MY_ISDIGIT(ch))
+            {
+                cchPrecision = ch - '0';
+                while (   (ch = *pszFmt++) != '\0'
+                       && MY_ISDIGIT(ch))
+                {
+                    cchPrecision *= 10;
+                    cchPrecision += ch - '0';
+                }
+            }
+            else if (ch == '*')
+            {
+                MyCheckIntArg(pState, pszFmt - 1, iArg, "precision should be an 'int' sized argument");
+                iArg++;
+                cchWidth = 0;
+            }
+            else
+                MyCheckWarnFmt(pState, pszFmt - 1, "Missing precision value, only got the '.'");
+            if (cchPrecision < 0)
+            {
+                MyCheckWarnFmt(pState, pszFmt - 1, "Negative precision value: %d", cchPrecision);
+                cchPrecision = 0;
+            }
+            fFlags |= RTSTR_F_PRECISION;
+        }
+
+        /*
+         * Argument size.
+         */
+        char chArgSize = ch;
+        switch (ch)
+        {
+            default:
+                chArgSize = '\0';
+                break;
+
+            case 'z':
+            case 'L':
+            case 'j':
+            case 't':
+                ch = *pszFmt++;
+                break;
+
+            case 'l':
+                ch = *pszFmt++;
+                if (ch == 'l')
+                {
+                    chArgSize = 'L';
+                    ch = *pszFmt++;
+                }
+                break;
+
+            case 'h':
+                ch = *pszFmt++;
+                if (ch == 'h')
+                {
+                    chArgSize = 'H';
+                    ch = *pszFmt++;
+                }
+                break;
+
+            case 'I': /* Used by Win32/64 compilers. */
+                if (   pszFmt[0] == '6'
+                    && pszFmt[1] == '4')
+                {
+                    pszFmt += 2;
+                    chArgSize = 'L';
+                }
+                else if (   pszFmt[0] == '3'
+                         && pszFmt[1] == '2')
+                {
+                    pszFmt += 2;
+                    chArgSize = 0;
+                }
+                else
+                    chArgSize = 'j';
+                ch = *pszFmt++;
+                break;
+
+            case 'q': /* Used on BSD platforms. */
+                chArgSize = 'L';
+                ch = *pszFmt++;
+                break;
+        }
+
+        /*
+         * The type.
+         */
 
     }
 }
@@ -514,6 +729,7 @@ static unsigned int     MyPassExecuteCallback(void)
                     State.iArgs   = TREE_INT_CST(TREE_VALUE(TREE_CHAIN(hAttrArgs))).to_shwi();
                     State.hStmt   = hStmt;
                     State.hFmtLoc = gimple_location(hStmt);
+                    State.pszFmt  = NULL;
                     dprintf("     %s() __iprt_format__(iFmt=%ld, iArgs=%ld)\n",
                             DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>", State.iFmt, State.iArgs);
 
