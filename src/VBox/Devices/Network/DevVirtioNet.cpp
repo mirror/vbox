@@ -676,8 +676,7 @@ static DECLCALLBACK(int) vnetNetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInte
             rc = VINF_SUCCESS;
             break;
         }
-        Log(("%s vnetNetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n",
-                INSTANCE(pThis), cMillies));
+        Log(("%s vnetNetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", INSTANCE(pThis), cMillies));
         RTSemEventWait(pThis->hEventMoreRxDescAvail, cMillies);
     }
     STAM_PROFILE_STOP(&pThis->StatRxOverflow, a);
@@ -756,8 +755,7 @@ static bool vnetAddressFilter(PVNETSTATE pThis, const void *pvBuf, size_t cb)
 
     if (!memcmp(pThis->config.mac.au8, pvBuf, sizeof(RTMAC)))
         return true;
-    Log4(("%s vnetAddressFilter: %RTmac (conf) != %RTmac (dest)\n",
-          INSTANCE(pThis), pThis->config.mac.au8, pvBuf));
+    Log4(("%s vnetAddressFilter: %RTmac (conf) != %RTmac (dest)\n", INSTANCE(pThis), pThis->config.mac.au8, pvBuf));
 
     for (unsigned i = 0; i < pThis->nMacFilterEntries; i++)
         if (!memcmp(&pThis->aMacFilter[i], pvBuf, sizeof(RTMAC)))
@@ -790,9 +788,8 @@ static int vnetHandleRxPacket(PVNETSTATE pThis, const void *pvBuf, size_t cb,
 
     if (pGso)
     {
-        Log2(("%s vnetHandleRxPacket: gso type=%x cbHdrsTotal=%u cbHdrsSeg=%u mss=%u"
-              " off1=0x%x off2=0x%x\n", INSTANCE(pThis), pGso->u8Type,
-              pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
+        Log2(("%s vnetHandleRxPacket: gso type=%x cbHdrsTotal=%u cbHdrsSeg=%u mss=%u off1=0x%x off2=0x%x\n",
+              INSTANCE(pThis), pGso->u8Type, pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
         Hdr.Hdr.u8Flags = VNETHDR_F_NEEDS_CSUM;
         switch (pGso->u8Type)
         {
@@ -893,16 +890,14 @@ static int vnetHandleRxPacket(PVNETSTATE pThis, const void *pvBuf, size_t cb,
                                        &Hdr, sizeof(Hdr));
         if (RT_FAILURE(rc))
         {
-            Log(("%s vnetHandleRxPacket: Failed to write merged RX buf header: %Rrc\n",
-                 INSTANCE(pThis), rc));
+            Log(("%s vnetHandleRxPacket: Failed to write merged RX buf header: %Rrc\n", INSTANCE(pThis), rc));
             return rc;
         }
     }
     vqueueSync(&pThis->VPCI, pThis->pRxQueue);
     if (uOffset < cb)
     {
-        Log(("%s vnetHandleRxPacket: Packet did not fit into RX queue (packet size=%u)!\n",
-             INSTANCE(pThis), cb));
+        Log(("%s vnetHandleRxPacket: Packet did not fit into RX queue (packet size=%u)!\n", INSTANCE(pThis), cb));
         return VERR_TOO_MUCH_DATA;
     }
 
@@ -940,14 +935,12 @@ static DECLCALLBACK(int) vnetNetworkDown_ReceiveGso(PPDMINETWORKDOWN pInterface,
         }
         if (!uFeatures)
         {
-            Log2(("%s vnetNetworkDown_ReceiveGso: GSO type (0x%x) not supported\n",
-                  INSTANCE(pThis), pGso->u8Type));
+            Log2(("%s vnetNetworkDown_ReceiveGso: GSO type (0x%x) not supported\n", INSTANCE(pThis), pGso->u8Type));
             return VERR_NOT_SUPPORTED;
         }
     }
 
-    Log2(("%s vnetNetworkDown_ReceiveGso: pvBuf=%p cb=%u pGso=%p\n",
-          INSTANCE(pThis), pvBuf, cb, pGso));
+    Log2(("%s vnetNetworkDown_ReceiveGso: pvBuf=%p cb=%u pGso=%p\n", INSTANCE(pThis), pvBuf, cb, pGso));
     int rc = vnetCanReceive(pThis);
     if (RT_FAILURE(rc))
         return rc;
@@ -1150,8 +1143,7 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
 
     if ((pThis->VPCI.uStatus & VPCI_STATUS_DRV_OK) == 0)
     {
-        Log(("%s Ignoring transmit requests from non-existent driver (status=0x%x).\n",
-             INSTANCE(pThis), pThis->VPCI.uStatus));
+        Log(("%s Ignoring transmit requests from non-existent driver (status=0x%x).\n", INSTANCE(pThis), pThis->VPCI.uStatus));
         return;
     }
 
@@ -1173,8 +1165,8 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
     else
         uHdrLen = sizeof(VNETHDR);
 
-    Log3(("%s vnetTransmitPendingPackets: About to transmit %d pending packets\n", INSTANCE(pThis),
-          vringReadAvailIndex(&pThis->VPCI, &pThis->pTxQueue->VRing) - pThis->pTxQueue->uNextAvailIndex));
+    Log3(("%s vnetTransmitPendingPackets: About to transmit %d pending packets\n",
+          INSTANCE(pThis), vringReadAvailIndex(&pThis->VPCI, &pThis->pTxQueue->VRing) - pThis->pTxQueue->uNextAvailIndex));
 
     vpciSetWriteLed(&pThis->VPCI, true);
 
@@ -1199,8 +1191,7 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
             /* Compute total frame size. */
             for (unsigned int i = 1; i < elem.nOut; i++)
                 uSize += elem.aSegsOut[i].cb;
-            Log5(("%s vnetTransmitPendingPackets: complete frame is %u bytes.\n",
-                  INSTANCE(pThis), uSize));
+            Log5(("%s vnetTransmitPendingPackets: complete frame is %u bytes.\n", INSTANCE(pThis), uSize));
             Assert(uSize <= VNET_MAX_FRAME_SIZE);
             if (pThis->pDrv)
             {
@@ -1261,9 +1252,8 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
                             Log4(("%s vnetTransmitPendingPackets: adjusted HdrLen to %d.\n",
                                   INSTANCE(pThis), pGso->cbHdrsTotal));
                         }
-                        Log2(("%s vnetTransmitPendingPackets: gso type=%x cbHdrsTotal=%u cbHdrsSeg=%u mss=%u"
-                              " off1=0x%x off2=0x%x\n", INSTANCE(pThis), pGso->u8Type,
-                              pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
+                        Log2(("%s vnetTransmitPendingPackets: gso type=%x cbHdrsTotal=%u cbHdrsSeg=%u mss=%u off1=0x%x off2=0x%x\n",
+                              INSTANCE(pThis), pGso->u8Type, pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
                         STAM_REL_COUNTER_INC(&pThis->StatTransmitGSO);
                     }
                     else if (Hdr.u8Flags & VNETHDR_F_NEEDS_CSUM)
@@ -1322,8 +1312,7 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
     if (TMTimerIsActive(pThis->CTX_SUFF(pTxTimer)))
     {
         int rc = TMTimerStop(pThis->CTX_SUFF(pTxTimer));
-        Log3(("%s vnetQueueTransmit: Got kicked with notification disabled, "
-              "re-enable notification and flush TX queue\n", INSTANCE(pThis)));
+        Log3(("%s vnetQueueTransmit: Got kicked with notification disabled, re-enable notification and flush TX queue\n", INSTANCE(pThis)));
         vnetTransmitPendingPackets(pThis, pQueue, false /*fOnWorkerThread*/);
         if (RT_FAILURE(vnetCsEnter(pThis, VERR_SEM_BUSY)))
             LogRel(("vnetQueueTransmit: Failed to enter critical section!/n"));
@@ -1362,7 +1351,7 @@ static DECLCALLBACK(void) vnetTxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     pThis->u32AvgDiff = (pThis->u32AvgDiff * pThis->u32i + u32MicroDiff) / (pThis->u32i + 1);
     pThis->u32i++;
     Log3(("vnetTxTimer: Expired, diff %9d usec, avg %9d usec, min %9d usec, max %9d usec\n",
-            u32MicroDiff, pThis->u32AvgDiff, pThis->u32MinDiff, pThis->u32MaxDiff));
+          u32MicroDiff, pThis->u32AvgDiff, pThis->u32MinDiff, pThis->u32MaxDiff));
 
 //    Log3(("%s vnetTxTimer: Expired\n", INSTANCE(pThis)));
     vnetTransmitPendingPackets(pThis, pThis->pTxQueue, false /*fOnWorkerThread*/);
@@ -1421,10 +1410,8 @@ static uint8_t vnetControlMac(PVNETSTATE pThis, PVNETCTLHDR pCtlHdr, PVQUEUEELEM
         || pElem->aSegsOut[1].cb < sizeof(nMacs)
         || pElem->aSegsOut[2].cb < sizeof(nMacs))
     {
-        Log(("%s vnetControlMac: Segment layout is wrong "
-             "(u8Command=%u nOut=%u cb1=%u cb2=%u)\n", INSTANCE(pThis),
-             pCtlHdr->u8Command, pElem->nOut,
-             pElem->aSegsOut[1].cb, pElem->aSegsOut[2].cb));
+        Log(("%s vnetControlMac: Segment layout is wrong (u8Command=%u nOut=%u cb1=%u cb2=%u)\n",
+             INSTANCE(pThis), pCtlHdr->u8Command, pElem->nOut, pElem->aSegsOut[1].cb, pElem->aSegsOut[2].cb));
         return VNET_ERROR;
     }
 
@@ -1435,15 +1422,14 @@ static uint8_t vnetControlMac(PVNETSTATE pThis, PVNETCTLHDR pCtlHdr, PVQUEUEELEM
 
     if (pElem->aSegsOut[1].cb < nMacs * sizeof(RTMAC) + sizeof(nMacs))
     {
-        Log(("%s vnetControlMac: The unicast mac segment is too small "
-             "(nMacs=%u cb=%u)\n", INSTANCE(pThis), pElem->aSegsOut[1].cb));
+        Log(("%s vnetControlMac: The unicast mac segment is too small (nMacs=%u cb=%u)\n",
+             INSTANCE(pThis), nMacs, pElem->aSegsOut[1].cb));
         return VNET_ERROR;
     }
 
     if (nMacs > VNET_MAC_FILTER_LEN)
     {
-        Log(("%s vnetControlMac: MAC table is too big, have to use promiscuous"
-             " mode (nMacs=%u)\n", INSTANCE(pThis), nMacs));
+        Log(("%s vnetControlMac: MAC table is too big, have to use promiscuous mode (nMacs=%u)\n", INSTANCE(pThis), nMacs));
         pThis->fPromiscuous = true;
     }
     else
@@ -1467,15 +1453,14 @@ static uint8_t vnetControlMac(PVNETSTATE pThis, PVNETCTLHDR pCtlHdr, PVQUEUEELEM
 
     if (pElem->aSegsOut[2].cb < nMacs * sizeof(RTMAC) + sizeof(nMacs))
     {
-        Log(("%s vnetControlMac: The multicast mac segment is too small "
-             "(nMacs=%u cb=%u)\n", INSTANCE(pThis), pElem->aSegsOut[2].cb));
+        Log(("%s vnetControlMac: The multicast mac segment is too small (nMacs=%u cb=%u)\n",
+             INSTANCE(pThis), nMacs, pElem->aSegsOut[2].cb));
         return VNET_ERROR;
     }
 
     if (nMacs > VNET_MAC_FILTER_LEN - pThis->nMacFilterEntries)
     {
-        Log(("%s vnetControlMac: MAC table is too big, have to use allmulti"
-             " mode (nMacs=%u)\n", INSTANCE(pThis), nMacs));
+        Log(("%s vnetControlMac: MAC table is too big, have to use allmulti mode (nMacs=%u)\n", INSTANCE(pThis), nMacs));
         pThis->fAllMulti = true;
     }
     else
@@ -1504,9 +1489,8 @@ static uint8_t vnetControlVlan(PVNETSTATE pThis, PVNETCTLHDR pCtlHdr, PVQUEUEELE
 
     if (pElem->nOut != 2 || pElem->aSegsOut[1].cb != sizeof(u16Vid))
     {
-        Log(("%s vnetControlVlan: Segment layout is wrong "
-             "(u8Command=%u nOut=%u cb=%u)\n", INSTANCE(pThis),
-             pCtlHdr->u8Command, pElem->nOut, pElem->aSegsOut[1].cb));
+        Log(("%s vnetControlVlan: Segment layout is wrong (u8Command=%u nOut=%u cb=%u)\n",
+             INSTANCE(pThis), pCtlHdr->u8Command, pElem->nOut, pElem->aSegsOut[1].cb));
         return VNET_ERROR;
     }
 
@@ -1516,13 +1500,11 @@ static uint8_t vnetControlVlan(PVNETSTATE pThis, PVNETCTLHDR pCtlHdr, PVQUEUEELE
 
     if (u16Vid >= VNET_MAX_VID)
     {
-        Log(("%s vnetControlVlan: VLAN ID is out of range "
-             "(VID=%u)\n", INSTANCE(pThis), u16Vid));
+        Log(("%s vnetControlVlan: VLAN ID is out of range (VID=%u)\n", INSTANCE(pThis), u16Vid));
         return VNET_ERROR;
     }
 
-    Log(("%s vnetControlVlan: uCommand=%u VID=%u\n", INSTANCE(pThis),
-         pCtlHdr->u8Command, u16Vid));
+    Log(("%s vnetControlVlan: uCommand=%u VID=%u\n", INSTANCE(pThis), pCtlHdr->u8Command, u16Vid));
 
     switch (pCtlHdr->u8Command)
     {
@@ -1550,18 +1532,15 @@ static DECLCALLBACK(void) vnetQueueControl(void *pvState, PVQUEUE pQueue)
         unsigned int uOffset = 0;
         if (elem.nOut < 1 || elem.aSegsOut[0].cb < sizeof(VNETCTLHDR))
         {
-            Log(("%s vnetQueueControl: The first 'out' segment is not the "
-                 "header! (%u < 1 || %u < %u).\n", INSTANCE(pThis), elem.nOut,
-                 elem.aSegsOut[0].cb,sizeof(VNETCTLHDR)));
+            Log(("%s vnetQueueControl: The first 'out' segment is not the header! (%u < 1 || %u < %u).\n",
+                 INSTANCE(pThis), elem.nOut, elem.aSegsOut[0].cb,sizeof(VNETCTLHDR)));
             break; /* Skip the element and hope the next one is good. */
         }
         else if (   elem.nIn < 1
                  || elem.aSegsIn[elem.nIn - 1].cb < sizeof(VNETCTLACK))
         {
-            Log(("%s vnetQueueControl: The last 'in' segment is too small "
-                 "to hold the acknowledge! (%u < 1 || %u < %u).\n",
-                 INSTANCE(pThis), elem.nIn, elem.aSegsIn[elem.nIn - 1].cb,
-                 sizeof(VNETCTLACK)));
+            Log(("%s vnetQueueControl: The last 'in' segment is too small to hold the acknowledge! (%u < 1 || %u < %u).\n",
+                 INSTANCE(pThis), elem.nIn, elem.aSegsIn[elem.nIn - 1].cb, sizeof(VNETCTLACK)));
             break; /* Skip the element and hope the next one is good. */
         }
         else
@@ -1584,8 +1563,7 @@ static DECLCALLBACK(void) vnetQueueControl(void *pvState, PVQUEUE pQueue)
                 default:
                     u8Ack = VNET_ERROR;
             }
-            Log(("%s Processed control message %u, ack=%u.\n", INSTANCE(pThis),
-                 CtlHdr.u8Class, u8Ack));
+            Log(("%s Processed control message %u, ack=%u.\n", INSTANCE(pThis), CtlHdr.u8Class, u8Ack));
             PDMDevHlpPCIPhysWrite(pThis->VPCI.CTX_SUFF(pDevIns),
                                   elem.aSegsIn[elem.nIn - 1].addr,
                                   &u8Ack, sizeof(u8Ack));
