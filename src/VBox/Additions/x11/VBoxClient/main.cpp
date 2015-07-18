@@ -191,13 +191,13 @@ void VBClCheckXOrgVT(union _XEvent *pEvent)
     {
         rc = (*g_pService)->resume(g_pService);
         if (RT_FAILURE(rc))
-            VBClFatalError(("Error resuming the service: %Rrc\n"));
+            VBClFatalError(("Error resuming the service: %Rrc\n", rc));
     }
     if (!fHasVT)
     {
         rc = (*g_pService)->pause(g_pService);
         if (RT_FAILURE(rc))
-            VBClFatalError(("Error pausing the service: %Rrc\n"));
+            VBClFatalError(("Error pausing the service: %Rrc\n", rc));
     }
 }
 
