@@ -60,7 +60,7 @@ int main(int argc, char **argv)
         RTPrintf("pv=%p\n", pv);
         SUPPAGE aPages[1];
         rc = supR3PageLock(pv, 1, &aPages[0]);
-        RTPrintf("rc=%d aPages[0]=%RHp\n", rc, pv, aPages[0]);
+        RTPrintf("rc=%d pv=%p aPages[0]=%RHp\n", rc, pv, aPages[0]);
         RTThreadSleep(1500);
 #if 0
         RTPrintf("Unlocking...\n");
