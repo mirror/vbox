@@ -140,7 +140,7 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
             {
                 VFmtChkRequireIntArg(pState, pszPct, iArg, "precision should be an 'int' sized argument");
                 iArg++;
-                cchWidth = 0;
+                cchPrecision = 0;
             }
             else
                 VFmtChkWarnFmt(pState, pszPct, "Missing precision value, only got the '.'");
