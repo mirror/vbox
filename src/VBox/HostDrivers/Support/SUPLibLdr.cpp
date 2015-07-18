@@ -129,7 +129,7 @@ SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszMo
     if (RT_SUCCESS(rc))
         rc = supLoadModule(pszFilename, pszModule, pszSrvReqHandler, NULL /*pErrInfo*/, ppvImageBase);
     else
-        LogRel(("SUPR3LoadServiceModule: Verification of \"%s\" failed, rc=%Rrc\n", rc));
+        LogRel(("SUPR3LoadServiceModule: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
     return rc;
 }
 
@@ -378,7 +378,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
     rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_HOST, &hLdrMod);
     if (!RT_SUCCESS(rc))
     {
-        LogRel(("SUP: RTLdrOpen failed for %s (%s)\n", pszModule, pszFilename, rc));
+        LogRel(("SUP: RTLdrOpen failed for %s (%s) %Rrc\n", pszModule, pszFilename, rc));
         return rc;
     }
 
@@ -576,7 +576,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
         {
             if (fIsVMMR0)
                 g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
-            LogRel(("SUP: Opened %s (%s) at %#p.\n", pszModule, pszFilename, OpenReq.u.Out.pvImageBase,
+            LogRel(("SUP: Opened %s (%s) at %#p%s.\n", pszModule, pszFilename, OpenReq.u.Out.pvImageBase,
                     OpenReq.u.Out.fNativeLoader ? " loaded by the native ring-0 loader" : ""));
 #ifdef RT_OS_WINDOWS
             LogRel(("SUP: windbg> .reload /f %s=%#p\n", pszFilename, OpenReq.u.Out.pvImageBase));
