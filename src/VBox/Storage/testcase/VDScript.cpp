@@ -940,7 +940,7 @@ static int vdScriptParsePrimaryExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXP
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     if (vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, '('))
     {
@@ -1022,7 +1022,7 @@ static int vdScriptParseFnCallArgumentList(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEX
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p pFnCall=%p\n", pThis, pFnCall));
 
     rc = vdScriptParseAssignmentExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1069,7 +1069,7 @@ static int vdScriptParsePostfixExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXP
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParsePrimaryExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1199,7 +1199,7 @@ static int vdScriptParseUnaryExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR 
     PVDSCRIPTASTEXPR pExpr = NULL;
     PVDSCRIPTASTEXPR pExprTop = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     /** @todo: Think about a more beautiful way of parsing this. */
     while (true)
@@ -1426,7 +1426,7 @@ static int vdScriptParseCastExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
 #if 0
     if (vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, '('))
@@ -1481,7 +1481,7 @@ static int vdScriptParseMultiplicativeExpression(PVDSCRIPTCTXINT pThis, PVDSCRIP
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseCastExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1544,7 +1544,7 @@ static int vdScriptParseAdditiveExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEX
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseMultiplicativeExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1606,7 +1606,7 @@ static int vdScriptParseShiftExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR 
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseAdditiveExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1670,7 +1670,7 @@ static int vdScriptParseRelationalExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTAST
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseShiftExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1748,7 +1748,7 @@ static int vdScriptParseEqualityExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEX
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseRelationalExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1809,7 +1809,7 @@ static int vdScriptParseBitwiseAndExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTAST
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseEqualityExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1859,7 +1859,7 @@ static int vdScriptParseBitwiseXorExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTAST
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseBitwiseAndExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1909,7 +1909,7 @@ static int vdScriptParseBitwiseOrExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTE
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseBitwiseXorExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -1959,7 +1959,7 @@ static int vdScriptParseLogicalAndExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTAST
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseBitwiseOrExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -2009,7 +2009,7 @@ static int vdScriptParseLogicalOrExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTE
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseLogicalAndExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -2090,7 +2090,7 @@ static int vdScriptParseAssignmentExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTAST
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pExpr;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseLogicalOrExpression(pThis, &pExpr);
     if (RT_SUCCESS(rc))
@@ -2223,7 +2223,7 @@ static int vdScriptParseExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAs
     int rc = VINF_SUCCESS;
     PVDSCRIPTASTEXPR pAssignExpr = NULL;
 
-    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n"));
+    LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
     rc = vdScriptParseAssignmentExpression(pThis, &pAssignExpr);
     if (   RT_SUCCESS(rc)

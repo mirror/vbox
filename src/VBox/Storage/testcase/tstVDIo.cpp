@@ -2808,7 +2808,7 @@ static void tstVDIoScriptExec(const char *pszName, const char *pszScript)
             VDIoBackendDestroy(GlobTest.pIoBackend);
         }
         else
-            RTPrintf("Creating the I/O backend failed rc=%Rrc\n");
+            RTPrintf("Creating the I/O backend failed rc=%Rrc\n", rc);
 
         RTTestSummaryAndDestroy(GlobTest.hTest);
     }
