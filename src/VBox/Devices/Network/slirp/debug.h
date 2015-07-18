@@ -40,13 +40,13 @@ void mbufstats (PNATState);
 void sockstats (PNATState);
 
 #ifdef LOG_ENABLED
-# define TCP_STATE_SWITCH_TO(tp, new_tcp_state)                                                                     \
-do {                                                                                                                \
-    Log2(("%R[tcpcb793] switch to %R[tcpstate] -> %R[tcpstate]\n", (tp), (tp), (tp->t_state) ,(new_tcp_state)));    \
-    if ((tp)->t_socket)                                                                                             \
-        Log2(("%R[tcpcb793] %R[natsock]\n", (tp), (tp)->t_socket));                                                 \
-    (tp)->t_state = (new_tcp_state);                                                                                \
-} while(0)
+# define TCP_STATE_SWITCH_TO(tp, new_tcp_state) \
+  do { \
+      Log2(("%R[tcpcb793] switch to %R[tcpstate] -> %R[tcpstate]\n", (tp), (tp->t_state) ,(new_tcp_state))); \
+      if ((tp)->t_socket) \
+          Log2(("%R[tcpcb793] %R[natsock]\n", (tp), (tp)->t_socket)); \
+      (tp)->t_state = (new_tcp_state); \
+  } while (0)
 #else
 # define TCP_STATE_SWITCH_TO(tp, new_tcp_state) (tp)->t_state = (new_tcp_state)
 #endif
@@ -56,12 +56,10 @@ do {                                                                            
  * TCP_ACCEPTABLE_STATEX(tp, (X-states here))
  */
 #ifdef DEBUG_vvl
-# define TCP_ACCEPTABLE_STATE1(tp, tcp_state1) Assert(((tp)->t_state == (tcp_state)))
-# define TCP_ACCEPTABLE_STATE2(tp, tcp_state1, tcp_state2)                          \
-do {                                                                                \
-    Assert((   ((tp)->t_state == (tcp_state1))                                      \
-            || ((tp)->t_state == (tcp_state2))));                                   \
-} while(0)
+# define TCP_ACCEPTABLE_STATE1(tp, tcp_state1) Assert((tp)->t_state == (tcp_state))
+# define TCP_ACCEPTABLE_STATE2(tp, tcp_state1, tcp_state2) \
+    Assert(   (tp)->t_state == (tcp_state1)  \
+           || (tp)->t_state == (tcp_state2) ); \
 #else
 # define TCP_ACCEPTABLE_STATE1(tp, tcp_state1) do { } while(0)
 # define TCP_ACCEPTABLE_STATE2(tp, tcp_state1, tcp_state2) do { } while(0)

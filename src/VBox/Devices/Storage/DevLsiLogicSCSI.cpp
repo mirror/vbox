@@ -497,12 +497,12 @@ DECLINLINE(void) lsilogicSetIOCFaultCode(PLSILOGICSCSI pThis, uint16_t uIOCFault
 {
     if (pThis->enmState != LSILOGICSTATE_FAULT)
     {
-        Log(("%s: Setting I/O controller into FAULT state: uIOCFaultCode=%u\n", __FUNCTION__, uIOCFaultCode));
+        LogFunc(("Setting I/O controller into FAULT state: uIOCFaultCode=%u\n", uIOCFaultCode));
         pThis->enmState        = LSILOGICSTATE_FAULT;
         pThis->u16IOCFaultCode = uIOCFaultCode;
     }
     else
-        Log(("%s: We are already in FAULT state\n"));
+        LogFunc(("We are already in FAULT state\n"));
 }
 
 /**

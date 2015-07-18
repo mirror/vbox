@@ -300,7 +300,7 @@ static bool vusbDevStdReqSetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
 
     if ((pSetup->bmRequestType & VUSB_RECIP_MASK) != VUSB_TO_DEVICE)
     {
-        Log(("vusb: error: %s: SET_CONFIGURATION - invalid request (dir) !!!\n", pDev->pUsbIns->pszName, iCfg));
+        Log(("vusb: error: %s: SET_CONFIGURATION - invalid request (dir) !!!\n", pDev->pUsbIns->pszName));
         return false;
     }
 

@@ -3337,11 +3337,11 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
     {
         offSrc += src.offset;
         AssertMsgReturn(src.offset < pThis->vram_size,
-                        ("src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbTotal=%#x vram_size=%#x\n",
+                        ("src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x vram_size=%#x\n",
                          src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pThis->vram_size),
                         VERR_INVALID_PARAMETER);
         AssertMsgReturn(offSrc + cbSrcPitch * (cHeight - 1) + cbWidth <= pThis->vram_size,
-                        ("src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbTotal=%#x vram_size=%#x\n",
+                        ("src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x vram_size=%#x\n",
                          src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pThis->vram_size),
                         VERR_INVALID_PARAMETER);
 

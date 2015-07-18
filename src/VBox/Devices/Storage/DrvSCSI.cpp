@@ -1015,10 +1015,10 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumSetLock       = drvscsiSetLock;
 
     rc = VSCSIDeviceCreate(&pThis->hVScsiDevice, drvscsiVScsiReqCompleted, pThis);
-    AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI device rc=%Rrc\n"), rc);
+    AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI device rc=%Rrc\n", rc), rc);
     rc = VSCSILunCreate(&pThis->hVScsiLun, enmLunType, &pThis->VScsiIoCallbacks,
                         pThis);
-    AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI LUN rc=%Rrc\n"), rc);
+    AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI LUN rc=%Rrc\n", rc), rc);
     rc = VSCSIDeviceLunAttach(pThis->hVScsiDevice, pThis->hVScsiLun, 0);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to attached the LUN to the SCSI device\n"), rc);
 
@@ -1056,11 +1056,11 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     {
         /* Create request queue. */
         rc = RTReqQueueCreate(&pThis->hQueueRequests);
-        AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create request queue rc=%Rrc\n"), rc);
+        AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create request queue rc=%Rrc\n", rc), rc);
         /* Create I/O thread. */
         rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pAsyncIOThread, pThis, drvscsiAsyncIOLoop,
                                    drvscsiAsyncIOLoopWakeup, 0, RTTHREADTYPE_IO, "SCSI async IO");
-        AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create async I/O thread rc=%Rrc\n"), rc);
+        AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create async I/O thread rc=%Rrc\n", rc), rc);
 
         LogRel(("SCSI#%d: using normal I/O\n", pDrvIns->iInstance));
     }
@@ -1070,7 +1070,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     if (   pThis->pDrvBlock->pfnDiscard
         || (   pThis->pDrvBlockAsync
             && pThis->pDrvBlockAsync->pfnStartDiscard))
-        LogRel(("SCSI#%d: Enabled UNMAP support\n"));
+        LogRel(("SCSI#%d: Enabled UNMAP support\n", pDrvIns->iInstance));
 
     return VINF_SUCCESS;
 }

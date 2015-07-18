@@ -1889,7 +1889,7 @@ static int usbMsdHandleBulkDevToHost(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
          * Bad states, stall.
          */
         case USBMSDREQSTATE_READY:
-            Log(("usbMsdHandleBulkDevToHost: enmState=READ (cbData=%#x)\n", pReq->enmState, pUrb->cbData));
+            Log(("usbMsdHandleBulkDevToHost: enmState=READ(%d) (cbData=%#x)\n", pReq->enmState, pUrb->cbData));
             return usbMsdCompleteStall(pThis, NULL, pUrb, "Bad state D2H: READY");
 
         default:

@@ -2792,7 +2792,7 @@ static DECLCALLBACK(int)  fdcAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 
     rc = fdConfig (drv, pDevIns, false /*fInit*/);
     AssertMsg (rc != VERR_PDM_NO_ATTACHED_DRIVER,
-               ("Configuration error: failed to configure drive %d, rc=%Rrc\n", rc));
+               ("Configuration error: failed to configure drive %d, rc=%Rrc\n", iLUN, rc));
     if (RT_SUCCESS(rc)) {
         fd_revalidate (drv);
     }
@@ -2997,7 +2997,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         if (   RT_FAILURE(rc)
             && rc != VERR_PDM_NO_ATTACHED_DRIVER)
         {
-            AssertMsgFailed(("Configuration error: failed to configure drive %d, rc=%Rrc\n", rc));
+            AssertMsgFailed(("Configuration error: failed to configure drive %d, rc=%Rrc\n", i, rc));
             return rc;
         }
     }

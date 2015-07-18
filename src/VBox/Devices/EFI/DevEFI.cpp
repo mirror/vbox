@@ -422,7 +422,7 @@ static int nvramLoad(PDEVEFI pThis)
                 rc = VERR_NO_DATA;
             if (RT_FAILURE(rc))
                 LogRel(("EFI/nvramLoad: Bad variable #%u: cbValue=%#x cchName=%#x (strlen=%#x) szName=%.*Rhxs\n",
-                        pEfiVar->cbValue, pEfiVar->cchName, cchName, pEfiVar->cchName + 1, pEfiVar->szName));
+                        iVar, pEfiVar->cbValue, pEfiVar->cchName, cchName, pEfiVar->cchName + 1, pEfiVar->szName));
         }
         if (RT_FAILURE(rc))
         {
@@ -1513,7 +1513,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             }
             pThis->NVRAM.offOpBuffer = 0;
             pThis->NVRAM.enmOp = (EFIVAROP)u32;
-            Log2(("EFI_VARIABLE_OP: enmOp=%#x (%d)\n", u32));
+            Log2(("EFI_VARIABLE_OP: enmOp=%#x (%d)\n", u32, u32));
             break;
         }
 
@@ -1670,7 +1670,7 @@ static DECLCALLBACK(int) efiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(void *) devEfiQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    LogFlowFunc(("ENTER: pIBase: %p, pszIID:%p\n", __FUNCTION__, pInterface, pszIID));
+    LogFlowFunc(("ENTER: pIBase=%p pszIID=%p\n", pInterface, pszIID));
     PDEVEFI  pThis = RT_FROM_MEMBER(pInterface, DEVEFI, Lun0.IBase);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->Lun0.IBase);

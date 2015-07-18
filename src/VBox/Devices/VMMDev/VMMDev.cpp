@@ -971,7 +971,7 @@ static int vmmdevReqHandler_SetPointerShape(PVMMDEV pThis, VMMDevRequestHeader *
     {
         AssertMsg(pReq->header.size == 0x10028 && pReq->header.version == 10000,  /* don't complain about legacy!!! */
                   ("VMMDev mouse shape structure has invalid size %d (%#x) version=%d!\n",
-                   pReq->header.size, pReq->header.size, pReq->header.size, pReq->header.version));
+                   pReq->header.size, pReq->header.size, pReq->header.version));
         return VERR_INVALID_PARAMETER;
     }
 

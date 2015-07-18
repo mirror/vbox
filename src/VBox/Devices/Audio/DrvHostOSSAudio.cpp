@@ -244,7 +244,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         hFile = open(pszDev, (fIn ? O_RDONLY : O_WRONLY) | O_NONBLOCK);
         if (hFile == -1)
         {
-            LogRel(("OSS: Failed to open %s: %s\n", pszDev, strerror(errno)));
+            LogRel(("OSS: Failed to open %s: %s(%d)\n", pszDev, strerror(errno), errno));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
@@ -252,8 +252,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         int iFormat = drvHostOSSAudioFmtToOSS(pReq->enmFormat);
         if (ioctl(hFile, SNDCTL_DSP_SAMPLESIZE, &iFormat))
         {
-            LogRel(("OSS: Failed to set audio format to %ld\n",
-                    iFormat, strerror(errno)));
+            LogRel(("OSS: Failed to set audio format to %ld errno=%s(%d)\n", iFormat, strerror(errno), errno));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
@@ -261,8 +260,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         int cChannels = pReq->cChannels;
         if (ioctl(hFile, SNDCTL_DSP_CHANNELS, &cChannels))
         {
-            LogRel(("OSS: Failed to set number of audio channels (%d): %s\n",
-                     pReq->cChannels, strerror(errno)));
+            LogRel(("OSS: Failed to set number of audio channels (%d): %s(%d)\n", pReq->cChannels, strerror(errno), errno));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
@@ -270,8 +268,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         int freq = pReq->uFreq;
         if (ioctl(hFile, SNDCTL_DSP_SPEED, &freq))
         {
-            LogRel(("OSS: Failed to set audio frequency (%dHZ): %s\n",
-                    pReq->uFreq, strerror(errno)));
+            LogRel(("OSS: Failed to set audio frequency (%dHZ): %s(%d)\n", pReq->uFreq, strerror(errno), errno));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
@@ -280,8 +277,7 @@ static int drvHostOSSAudioOpen(bool fIn,
 #if !(defined(VBOX) && defined(RT_OS_SOLARIS))
         if (ioctl(hFile, SNDCTL_DSP_NONBLOCK))
         {
-            LogRel(("OSS: Failed to set non-blocking mode: %s\n",
-                    strerror(errno)));
+            LogRel(("OSS: Failed to set non-blocking mode: %s(%d)\n", strerror(errno), errno));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
@@ -289,23 +285,21 @@ static int drvHostOSSAudioOpen(bool fIn,
         int mmmmssss = (pReq->cFragments << 16) | lsbindex(pReq->cbFragmentSize);
         if (ioctl(hFile, SNDCTL_DSP_SETFRAGMENT, &mmmmssss))
         {
-            LogRel(("OSS: Failed to set %RU16 fragments to %RU32 bytes each: %s\n",
-                    pReq->cFragments, pReq->cbFragmentSize, strerror(errno)));
+            LogRel(("OSS: Failed to set %RU16 fragments to %RU32 bytes each: %s(%d)\n",
+                    pReq->cFragments, pReq->cbFragmentSize, strerror(errno), errno));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
 
         audio_buf_info abinfo;
-        if (ioctl(hFile, fIn ? SNDCTL_DSP_GETISPACE : SNDCTL_DSP_GETOSPACE,
-                  &abinfo))
+        if (ioctl(hFile, fIn ? SNDCTL_DSP_GETISPACE : SNDCTL_DSP_GETOSPACE, &abinfo))
         {
-            LogRel(("OSS: Failed to retrieve buffer length: %s\n", strerror(errno)));
+            LogRel(("OSS: Failed to retrieve buffer length: %s(%d)\n", strerror(errno), errno));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
 
-        rc = drvHostOSSAudioOSSToFmt(iFormat,
-                                     &pObt->enmFormat, &pObt->enmENDIANNESS);
+        rc = drvHostOSSAudioOSSToFmt(iFormat, &pObt->enmFormat, &pObt->enmENDIANNESS);
         if (RT_SUCCESS(rc))
         {
             pObt->cChannels      = cChannels;

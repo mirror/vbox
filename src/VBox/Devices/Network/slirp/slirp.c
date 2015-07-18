@@ -1782,7 +1782,7 @@ void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
 
 void slirp_set_somaxconn(PNATState pData, int iSoMaxConn)
 {
-    LogFlowFunc(("iSoMaxConn:d\n", iSoMaxConn));
+    LogFlowFunc(("iSoMaxConn:%d\n", iSoMaxConn));
     /* Conditions */
     if (iSoMaxConn > SOMAXCONN)
     {

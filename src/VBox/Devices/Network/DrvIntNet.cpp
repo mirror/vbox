@@ -782,7 +782,7 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                                     rc = drvR3IntNetRecvWaitForSpace(pThis);
                                     if (RT_FAILURE(rc))
                                     {
-                                        Log(("drvR3IntNetRecvRun: drvR3IntNetRecvWaitForSpace -> %Rrc; iSeg=%u cSegs=%u\n", iSeg, cSegs));
+                                        Log(("drvR3IntNetRecvRun: drvR3IntNetRecvWaitForSpace -> %Rrc; iSeg=%u cSegs=%u\n", rc, iSeg, cSegs));
                                         break; /* we drop the rest. */
                                     }
                                     rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pvSegFrame, cbSegFrame);

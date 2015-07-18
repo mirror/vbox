@@ -2354,8 +2354,8 @@ typedef struct CODECDBGINFO
 #define CODECDBG_INDENT   pInfo->uLevel++;
 #define CODECDBG_UNINDENT if (pInfo->uLevel) pInfo->uLevel--;
 
-#define CODECDBG_PRINT(x, ...)  pInfo->pHlp->pfnPrintf(pInfo->pHlp, x);
-#define CODECDBG_PRINTI(x, ...) codecDbgPrintf(pInfo, x);
+#define CODECDBG_PRINT(...)  pInfo->pHlp->pfnPrintf(pInfo->pHlp, __VA_ARGS__)
+#define CODECDBG_PRINTI(...) codecDbgPrintf(pInfo, __VA_ARGS__)
 
 static void codecDbgPrintfIndentV(PCODECDBGINFO pInfo, uint16_t uIndent, const char *pszFormat, va_list va)
 {
@@ -2443,11 +2443,11 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode)
 
     if (pNode->node.id == STAC9220_NID_ROOT)
     {
-        CODECDBG_PRINT("ROOT\n")
+        CODECDBG_PRINT("ROOT\n");
     }
     else if (pNode->node.id == STAC9220_NID_AFG)
     {
-        CODECDBG_PRINT("AFG\n")
+        CODECDBG_PRINT("AFG\n");
         CODECDBG_INDENT
             codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
             codecDbgPrintNodeRegF05(pInfo, pNode->afg.u32F05_param);
@@ -2455,11 +2455,11 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode)
     }
     else if (hdaCodecIsPortNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("PORT\n")
+        CODECDBG_PRINT("PORT\n");
     }
     else if (hdaCodecIsDacNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("DAC\n")
+        CODECDBG_PRINT("DAC\n");
         CODECDBG_INDENT
             codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
             codecDbgPrintNodeRegF05(pInfo, pNode->dac.u32F05_param);
@@ -2469,7 +2469,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode)
     }
     else if (hdaCodecIsAdcVolNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("ADC VOLUME\n")
+        CODECDBG_PRINT("ADC VOLUME\n");
         CODECDBG_INDENT
             codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
             codecDbgPrintNodeRegA  (pInfo, pNode->adcvol.u32A_params);
@@ -2478,7 +2478,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode)
     }
     else if (hdaCodecIsAdcNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("ADC\n")
+        CODECDBG_PRINT("ADC\n");
         CODECDBG_INDENT
             codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
             codecDbgPrintNodeRegF05(pInfo, pNode->adc.u32F05_param);
@@ -2488,7 +2488,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode)
     }
     else if (hdaCodecIsAdcMuxNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("ADC MUX\n")
+        CODECDBG_PRINT("ADC MUX\n");
         CODECDBG_INDENT
             codecDbgPrintNodeRegF00(pInfo, pNode->node.au32F00_param);
             codecDbgPrintNodeRegA  (pInfo, pNode->adcmux.u32A_param);
@@ -2497,35 +2497,35 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode)
     }
     else if (hdaCodecIsPcbeepNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("PC BEEP\n")
+        CODECDBG_PRINT("PC BEEP\n");
     }
     else if (hdaCodecIsSpdifOutNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("SPDIF OUT\n")
+        CODECDBG_PRINT("SPDIF OUT\n");
     }
     else if (hdaCodecIsSpdifInNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("SPDIF IN\n")
+        CODECDBG_PRINT("SPDIF IN\n");
     }
     else if (hdaCodecIsDigInPinNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("DIGITAL IN PIN\n")
+        CODECDBG_PRINT("DIGITAL IN PIN\n");
     }
     else if (hdaCodecIsDigOutPinNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("DIGITAL OUT PIN\n")
+        CODECDBG_PRINT("DIGITAL OUT PIN\n");
     }
     else if (hdaCodecIsCdNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("CD\n")
+        CODECDBG_PRINT("CD\n");
     }
     else if (hdaCodecIsVolKnobNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("VOLUME KNOB\n")
+        CODECDBG_PRINT("VOLUME KNOB\n");
     }
     else if (hdaCodecIsReservedNode(pInfo->pThis, pNode->node.id))
     {
-        CODECDBG_PRINT("RESERVED\n")
+        CODECDBG_PRINT("RESERVED\n");
     }
     else
         CODECDBG_PRINT("UNKNOWN TYPE 0x%x\n", pNode->node.id);
@@ -2686,7 +2686,7 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
         if (RT_FAILURE(rc))
             return rc;
         AssertLogRelMsgReturn(idOld == pThis->paNodes[idxNode].SavedState.Core.id,
-                              ("loaded %#x, expected \n", pThis->paNodes[idxNode].SavedState.Core.id, idOld),
+                              ("loaded %#x, expected %#x\n", pThis->paNodes[idxNode].SavedState.Core.id, idOld),
                               VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
 

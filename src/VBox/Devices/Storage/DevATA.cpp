@@ -5084,14 +5084,14 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     *pcTransfers = cRequested - cAvailable;
                 }
                 else
-                    Log2(("%s: DUMMY/Overflow!\n", __FUNCTION__));
+                    Log2(("ataIOPortReadStr1Data: DUMMY/Overflow!\n"));
             }
             else
             {
                 /*
                  * Dummy read (shouldn't happen) return 0xff like the non-string handler.
                  */
-                Log2(("%s: DUMMY data (%#x bytes)\n", __FUNCTION__, *pcTransfers * cb));
+                Log2(("ataIOPortReadStr1Data: DUMMY data (%#x bytes)\n", *pcTransfers * cb));
                 memset(pbDst, 0xff, *pcTransfers * cb);
                 *pcTransfers = 0;
             }
@@ -5104,7 +5104,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
      */
     else
     {
-        Log2(("%s: 1 byte read (%#x transfers)\n", *pcTransfers));
+        Log2(("ataIOPortReadStr1Data: 1 byte read (%#x transfers)\n", *pcTransfers));
         AssertFailed();
         rc = VINF_SUCCESS;
     }
@@ -5171,11 +5171,11 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
                     *pcTransfers = cRequested - cAvailable;
                 }
                 else
-                    Log2(("%s: DUMMY/Overflow!\n", __FUNCTION__));
+                    Log2(("ataIOPortWriteStr1Data: DUMMY/Overflow!\n"));
             }
             else
             {
-                Log2(("%s: DUMMY data (%#x bytes)\n", __FUNCTION__, *pcTransfers * cb));
+                Log2(("ataIOPortWriteStr1Data: DUMMY data (%#x bytes)\n", *pcTransfers * cb));
                 *pcTransfers = 0;
             }
 
@@ -5187,7 +5187,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
      */
     else
     {
-        Log2(("%s: 1 byte write (%#x transfers)\n", *pcTransfers));
+        Log2(("ataIOPortWriteStr1Data: 1 byte write (%#x transfers)\n", *pcTransfers));
         AssertFailed();
         rc = VINF_SUCCESS;
     }

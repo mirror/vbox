@@ -184,7 +184,7 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     rc = RTFileOpen(&pThis->hOutputFile, pThis->pszLocation, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
     {
-        LogRel(("RawFile%d: CreateFile failed rc=%Rrc\n", pDrvIns->iInstance));
+        LogRel(("RawFile%d: CreateFile failed rc=%Rrc\n", pDrvIns->iInstance, rc));
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawFile#%d failed to create the raw output file %s"), pDrvIns->iInstance, pThis->pszLocation);
     }
 

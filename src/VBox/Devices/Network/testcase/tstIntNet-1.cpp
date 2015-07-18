@@ -562,7 +562,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                 }
                 else
                 {
-                    RTPrintf("tstIntNet-1: Bad GSO frame: %Rhxs\n", sizeof(*pGso), pGso);
+                    RTPrintf("tstIntNet-1: Bad GSO frame: %.*Rhxs\n", sizeof(*pGso), pGso);
                     STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
                     g_cErrors++;
                 }
