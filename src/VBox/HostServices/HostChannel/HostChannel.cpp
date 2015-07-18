@@ -684,8 +684,8 @@ int vboxHostChannelRecv(VBOXHOSTCHCLIENT *pClient,
             rc = pInstance->pProvider->iface.HostChannelRecv(pInstance->pvChannel, pvData, cbData,
                                                              pu32SizeReceived, pu32SizeRemaining);
 
-            HOSTCHLOG(("HostChannel: Recv: (%d) handle %d, rc %Rrc, recv %d, rem %d\n",
-                            pClient->u32ClientID, u32Handle, rc, cbData, *pu32SizeReceived, *pu32SizeRemaining));
+            HOSTCHLOG(("HostChannel: Recv: (%d) handle %d, rc %Rrc, cbData %d, recv %d, rem %d\n",
+                       pClient->u32ClientID, u32Handle, rc, cbData, *pu32SizeReceived, *pu32SizeRemaining));
         }
 
         vhcInstanceRelease(pInstance);
@@ -837,7 +837,7 @@ static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvCh
     {
         vboxHostChannelUnlock();
 
-        HOSTCHLOG(("HostChannel: CallbackEvent[%p]: client gone.\n"));
+        HOSTCHLOG(("HostChannel: CallbackEvent[%p]: client gone.\n", pvEvent));
 
         /* The client does not exist anymore, skip the event. */
         return;
@@ -861,7 +861,7 @@ static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvCh
 
         vboxHostChannelUnlock();
 
-        HOSTCHLOG(("HostChannel: CallbackEvent[%p]: client does not have the context.\n"));
+        HOSTCHLOG(("HostChannel: CallbackEvent[%p]: client does not have the context.\n", pvEvent));
 
         /* The context is not in the list of contexts. Skip the event. */
         return;
