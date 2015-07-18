@@ -870,7 +870,7 @@ static int dbgcCheckAndTypePromoteArgument(PDBGC pDbgc, DBGCVARCAT enmCategory, 
                     return VINF_SUCCESS;
 
                 default:
-                    AssertMsgFailedReturn(("Invalid type %d\n"), VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+                    AssertMsgFailedReturn(("Invalid type %d\n", pArg->enmType), VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
             }
             break;                      /* (not reached) */
 
@@ -924,7 +924,7 @@ static int dbgcCheckAndTypePromoteArgument(PDBGC pDbgc, DBGCVARCAT enmCategory, 
                 }
 
                 default:
-                    AssertMsgFailedReturn(("Invalid type %d\n"), VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+                    AssertMsgFailedReturn(("Invalid type %d\n", pArg->enmType), VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
             }
             break;                      /* (not reached) */
 
@@ -971,7 +971,7 @@ static int dbgcCheckAndTypePromoteArgument(PDBGC pDbgc, DBGCVARCAT enmCategory, 
                 }
 
                 default:
-                    AssertMsgFailedReturn(("Invalid type %d\n"), VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+                    AssertMsgFailedReturn(("Invalid type %d\n", pArg->enmType), VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
             }
             break;                      /* (not reached) */
 
