@@ -1164,7 +1164,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                             ScmVerbose(pState, 3, "no change\n", pszFilename);
                     }
                     else
-                        RTMsgError("%s: stream error %Rrc\n", pszFilename);
+                        RTMsgError("%s: stream error %Rrc\n", pszFilename, rc);
                     ScmStreamDelete(&Stream3);
                 }
                 else
