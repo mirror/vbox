@@ -2039,7 +2039,8 @@ RTDECL(int) RTStrAPrintfVTag(char **ppszBuffer, const char *pszFormat, va_list a
  * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
-DECLINLINE(int) RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3)
+RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...)
 {
     int     cbRet;
     va_list va;
@@ -2062,7 +2063,8 @@ DECLINLINE(int) RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...) RT_I
  * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
-DECLINLINE(int) RTStrAPrintfTag(char **ppszBuffer, const char *pszTag, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(3, 4)
+RTStrAPrintfTag(char **ppszBuffer, const char *pszTag, const char *pszFormat, ...)
 {
     int     cbRet;
     va_list va;
@@ -2101,7 +2103,8 @@ RTDECL(char *) RTStrAPrintf2VTag(const char *pszFormat, va_list args, const char
  * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
-DECLINLINE(char *) RTStrAPrintf2(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2)
+DECLINLINE(char *) RT_IPRT_FORMAT_ATTR(1, 2)
+RTStrAPrintf2(const char *pszFormat, ...)
 {
     char   *pszRet;
     va_list va;
@@ -2120,7 +2123,8 @@ DECLINLINE(char *) RTStrAPrintf2(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR
  * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
-DECLINLINE(char *) RTStrAPrintf2Tag(const char *pszTag, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3)
+DECLINLINE(char *) RT_IPRT_FORMAT_ATTR(2, 3)
+RTStrAPrintf2Tag(const char *pszTag, const char *pszFormat, ...)
 {
     char   *pszRet;
     va_list va;
