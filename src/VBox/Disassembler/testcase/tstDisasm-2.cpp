@@ -450,7 +450,7 @@ static int Usage(const char *argv0)
 "    The assembly output style. Default: default\n"
 "  --undef-op|-u <fail|all|db>\n"
 "    How to treat undefined opcodes. Default: fail\n"
-             , argv0, argv0);
+             , argv0, argv0, argv0);
     return 1;
 }
 
