@@ -180,7 +180,7 @@ int main()
         rc = RTTimerStart(pTimer, 0);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("tstTimer: FAILURE - RTTimerStart(,0) -> %Rrc\n", aTests[i].uMicroInterval, rc);
+            RTPrintf("tstTimer: FAILURE - RTTimerStart(,0) -> %Rrc\n", rc);
             cErrors++;
         }
 #endif
