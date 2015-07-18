@@ -3512,7 +3512,7 @@ static DECLCALLBACK(int) vdPluginRegisterImage(void *pvUser, PCVBOXHDDBACKEND pB
         vdAddBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
-        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize));
+        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize, rc));
         rc = VERR_IGNORED;
     }
 
@@ -3530,7 +3530,7 @@ static DECLCALLBACK(int) vdPluginRegisterCache(void *pvUser, PCVDCACHEBACKEND pB
         vdAddCacheBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
-        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize));
+        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize, rc));
         rc = VERR_IGNORED;
     }
 
@@ -3548,7 +3548,7 @@ static DECLCALLBACK(int) vdPluginRegisterFilter(void *pvUser, PCVDFILTERBACKEND 
         vdAddFilterBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
-        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize));
+        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize, rc));
         rc = VERR_IGNORED;
     }
 
