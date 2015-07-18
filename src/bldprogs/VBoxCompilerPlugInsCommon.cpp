@@ -117,6 +117,7 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
             iArg++;
             cchWidth = 0;
             fFlags |= RTSTR_F_WIDTH;
+            ch = *pszFmt++;
         }
 
         /*
@@ -141,12 +142,13 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
                 VFmtChkRequireIntArg(pState, pszPct, iArg, "precision should be an 'int' sized argument");
                 iArg++;
                 cchPrecision = 0;
+                ch = *pszFmt++;
             }
             else
-                VFmtChkWarnFmt(pState, pszPct, "Missing precision value, only got the '.'");
+                VFmtChkErrFmt(pState, pszPct, "Missing precision value, only got the '.'");
             if (cchPrecision < 0)
             {
-                VFmtChkWarnFmt(pState, pszPct, "Negative precision value: %d", cchPrecision);
+                VFmtChkErrFmt(pState, pszPct, "Negative precision value: %d", cchPrecision);
                 cchPrecision = 0;
             }
             fFlags |= RTSTR_F_PRECISION;
@@ -222,7 +224,7 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
             case 'M': /* replace the format string (not stacked yet). */
             {
                 if (*pszFmt)
-                    VFmtChkWarnFmt(pState, pszFmt, "Characters following '%%M' will be ignored");
+                    VFmtChkErrFmt(pState, pszFmt, "Characters following '%%M' will be ignored");
                 if (chSize != '\0')
                     VFmtChkWarnFmt(pState, pszFmt, "'%%M' does not support any size flags (%c)", chSize);
                 if (fFlags != 0)

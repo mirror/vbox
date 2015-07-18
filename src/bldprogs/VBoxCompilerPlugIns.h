@@ -61,7 +61,8 @@ unsigned int    VFmtChkGetFmtLocColumn(PVFMTCHKSTATE pState);
 /**
  * Implements checking format string replacement (%M).
  *
- * Caller will have checked all that can be checked.
+ * Caller will have checked all that can be checked.  This means that there is a
+ * string argument present, or it won't make the call.
  *
  * @param   pState              The format string checking state.
  * @param   pszPctM             The position of the '%M'.
@@ -79,6 +80,17 @@ void            VFmtChkHandleReplacementFormatString(PVFMTCHKSTATE pState, const
  * @param   ...                 .
  */
 void            VFmtChkWarnFmt(PVFMTCHKSTATE pState, const char *pszLoc, const char *pszFormat, ...);
+
+/**
+ * Error.
+ *
+ * @returns
+ * @param   pState              .
+ * @param   pszLoc              .
+ * @param   pszFormat           .
+ * @param   ...                 .
+ */
+void            VFmtChkErrFmt(PVFMTCHKSTATE pState, const char *pszLoc, const char *pszFormat, ...);
 
 /**
  * Checks that @a iFmtArg isn't present or a valid final dummy argument.

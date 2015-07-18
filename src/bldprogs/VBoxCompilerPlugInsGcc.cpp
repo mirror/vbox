@@ -616,6 +616,19 @@ void VFmtChkWarnFmt(PVFMTCHKSTATE pState, const char *pszLoc, const char *pszFor
 }
 
 
+void VFmtChkErrFmt(PVFMTCHKSTATE pState, const char *pszLoc, const char *pszFormat, ...)
+{
+    char szTmp[1024];
+    va_list va;
+    va_start(va, pszFormat);
+    vsnprintf(szTmp, sizeof(szTmp), pszFormat, va);
+    va_end(va);
+
+    /* display the warning. */
+    error_at(MyGetFormatStringLocation(pState, pszLoc), "%s", szTmp);
+}
+
+
 
 void VFmtChkVerifyEndOfArgs(PVFMTCHKSTATE pState, unsigned iArg)
 {
@@ -630,17 +643,17 @@ void VFmtChkVerifyEndOfArgs(PVFMTCHKSTATE pState, unsigned iArg)
         {
             tree hArg = gimple_call_arg(pState->hStmt, iArg);
             if (cArgs - iArg > 1)
-                warning_at(MY_LOC(hArg, pState), 0, "%u extra arguments not consumed by format string", cArgs - iArg);
+                error_at(MY_LOC(hArg, pState), "%u extra arguments not consumed by format string", cArgs - iArg);
             else if (   TREE_CODE(hArg) != INTEGER_CST
                      || !TREE_INT_CST(hArg).fits_shwi()
                      || TREE_INT_CST(hArg).to_shwi() != -99) /* ignore final dummy argument: ..., -99); */
-                warning_at(MY_LOC(hArg, pState), 0, "one extra argument not consumed by format string");
+                error_at(MY_LOC(hArg, pState), "one extra argument not consumed by format string");
         }
         /* This should be handled elsewhere, but just in case. */
         else if (iArg - 1 == cArgs)
-            warning_at(pState->hFmtLoc, 0, "one argument too few");
+            error_at(pState->hFmtLoc, "one argument too few");
         else
-            warning_at(pState->hFmtLoc, 0, "%u arguments too few", iArg - cArgs);
+            error_at(pState->hFmtLoc, "%u arguments too few", iArg - cArgs);
     }
 }
 
@@ -653,7 +666,7 @@ bool VFmtChkRequirePresentArg(PVFMTCHKSTATE pState, const char *pszLoc, unsigned
         unsigned cArgs = gimple_call_num_args(pState->hStmt);
         if (iArg >= cArgs)
         {
-            VFmtChkWarnFmt(pState, pszLoc, "Missing argument! %s", pszMessage);
+            VFmtChkErrFmt(pState, pszLoc, "Missing argument! %s", pszMessage);
             return false;
         }
     }
@@ -694,13 +707,13 @@ bool VFmtChkRequireVaListPtrArg(PVFMTCHKSTATE pState, const char *pszLoc, unsign
 }
 
 
-
 void VFmtChkHandleReplacementFormatString(PVFMTCHKSTATE pState, const char *pszPctM, unsigned iArg)
 {
     if (pState->iArgs > 0)
     {
-        pState->iArgs += iArg;
-
+        pState->iFmt  = pState->iArgs + iArg;
+        pState->iArgs = pState->iFmt  + 1;
+        MyCheckFormatRecursive(pState, gimple_call_arg(pState->hStmt, pState->iFmt - 1));
     }
 }
 
