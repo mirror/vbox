@@ -71,9 +71,16 @@ VBoxDef2LazyLoad_TEMPLATE = VBoxBldProg
 VBoxDef2LazyLoad_SOURCES  = VBoxDef2LazyLoad.cpp
 
 # temp hack.
-gccplugin.o gccplugin: gccplugin$(SUFF_DLL)
-gccplugin$(SUFF_DLL): gccplugin.cpp
-	g++ -shared -fPIC -g -I$(shell gcc -print-file-name=plugin/include) -I$(PATH_ROOT)/include -DIN_RING3 -o $@ $<
+VBoxCompilerPlugInsGcc.o VBoxCompilerPlugInsCommon.o VBoxCompilerPlugIns.o gccplugin: gccplugin$(SUFF_DLL)
+gccplugin$(SUFF_DLL): VBoxCompilerPlugInsGcc.cpp VBoxCompilerPlugInsCommon.cpp VBoxCompilerPlugIns.h
+	g++ -shared -fPIC -g \
+		-DIN_RING3 \
+		$(if-expr "$(KBUILD_TYPE)" != "release",-DDEBUG,) \
+		-I$(shell gcc -print-file-name=plugin/include) \
+		-I$(PATH_ROOT)/include \
+		-o $@ \
+		VBoxCompilerPlugInsGcc.cpp \
+		VBoxCompilerPlugInsCommon.cpp
 
 
 

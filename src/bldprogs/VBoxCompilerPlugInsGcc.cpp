@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <iprt/cdefs.h>
 #include <iprt/stdarg.h>
-#include <iprt/string.h>
 
 #include "plugin.h"
 #include "basic-block.h"
@@ -29,6 +28,8 @@
 #include "tree.h"
 #include "tree-pass.h"
 #include "cp/cp-tree.h"
+
+#include "VBoxCompilerPlugIns.h"
 
 
 /*********************************************************************************************************************************
@@ -41,14 +42,6 @@ int plugin_is_GPL_compatible;
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define GCCPLUGIN_DEBUG
-/** Debug printf. */
-#ifdef GCCPLUGIN_DEBUG
-# define dprintf(...) do { fprintf(stderr, __VA_ARGS__); } while (0)
-#else
-# define dprintf(...) do { } while (0)
-#endif
-
 /** Convencience macro not present in earlier gcc versions. */
 #ifndef VAR_P
 # define VAR_P(a_hNode) (TREE_CODE(a_hNode) == VAR_DECL)
@@ -60,23 +53,6 @@ int plugin_is_GPL_compatible;
  *       working on gimplified stuff. */
 #define MY_LOC(a_hPreferred, a_pState) EXPR_LOC_OR_LOC(a_hPreferred, (a_pState)->hFmtLoc)
 
-#define MY_ISDIGIT(c) ((c) >= '0' && (c) <= '9')
-
-
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
-/** Checker state. */
-typedef struct MYCHECKSTATE
-{
-    gimple      hStmt;
-    long        iFmt;
-    long        iArgs;
-    location_t  hFmtLoc;
-    const char *pszFmt;
-} MYCHECKSTATE;
-/** Pointer to my checker state. */
-typedef MYCHECKSTATE *PMYCHECKSTATE;
 
 
 /*********************************************************************************************************************************
@@ -146,7 +122,7 @@ static const struct attribute_spec g_AttribSpecs[] =
 };
 
 
-#ifdef GCCPLUGIN_DEBUG
+#ifdef DEBUG
 
 /**
  * Debug function for printing the scope of a decl.
@@ -194,48 +170,79 @@ static void dprintDecl(tree hDecl)
     dprintf(" @%s:%d", DECL_SOURCE_FILE(hDecl),  DECL_SOURCE_LINE(hDecl));
 }
 
-#endif /* GCCPLUGIN_DEBUG */
+#endif /* DEBUG */
 
 
-/**
- * Gate callback for my pass that indicates whether it should execute or not.
- * @returns true to execute.
- */
-static bool             MyPassGateCallback(void)
+static location_t MyGetLocationPlusColumnOffset(location_t hLoc, unsigned int offColumn)
 {
-    dprintf("MyPassGateCallback:\n");
-    return true;
+    /*
+     * Skip NOOPs, reserved locations and macro expansion.
+     */
+    if (   offColumn != 0
+        && hLoc >= RESERVED_LOCATION_COUNT
+        && !linemap_location_from_macro_expansion_p(line_table, hLoc))
+    {
+#if __GNUC__ >= 5 /** @todo figure this... */
+        /*
+         * There is an API for doing this, nice.
+         */
+        location_t hNewLoc = linemap_position_for_loc_and_offset(line_table, hLoc, offColumn);
+        if (hNewLoc && hNewLoc != hLoc)
+        {
+            dprintf("MyGetLocationPlusColumnOffset: hNewLoc=%#x hLoc=%#x offColumn=%u\n", hNewLoc, hLoc, offColumn);
+            return hNewLoc;
+        }
+
+#else
+        /*
+         * Have to do the job ourselves, it seems.  This is a bit hairy...
+         */
+        line_map const *pMap = NULL;
+        location_t hLoc2 = linemap_resolve_location(line_table, hLoc, LRK_SPELLING_LOCATION, &pMap);
+        if (hLoc2)
+            hLoc = hLoc2;
+
+        /* Guard against wrap arounds and overlaps. */
+        if (   hLoc + offColumn > MAP_START_LOCATION(pMap) /** @todo Use MAX_SOURCE_LOCATION? */
+            && (   pMap == LINEMAPS_LAST_ORDINARY_MAP(line_table)
+                || hLoc + offColumn < MAP_START_LOCATION((pMap + 1))))
+        {
+            /* Calc new column and check that it's within the valid range. */
+            unsigned int uColumn = SOURCE_COLUMN(pMap, hLoc) + offColumn;
+            if (uColumn < RT_BIT_32(ORDINARY_MAP_NUMBER_OF_COLUMN_BITS(pMap)))
+            {
+                /* Try add the position.  If we get a valid result, replace the location. */
+                source_location hNewLoc = linemap_position_for_line_and_column((line_map *)pMap, SOURCE_LINE(pMap, hLoc), uColumn);
+                if (   hNewLoc <= line_table->highest_location
+                    && linemap_lookup(line_table, hNewLoc) != NULL)
+                {
+                    dprintf("MyGetLocationPlusColumnOffset: hNewLoc=%#x hLoc=%#x offColumn=%u uColumn=%u\n",
+                            hNewLoc, hLoc, offColumn, uColumn);
+                    return hNewLoc;
+                }
+            }
+        }
+#endif
+    }
+    dprintf("MyGetLocationPlusColumnOffset: taking fallback\n");
+    return hLoc;
 }
 
 
-#define MYSTATE_FMT_FILE(a_pState)      LOCATION_FILE((a_pState)->hFmtLoc)
-#define MYSTATE_FMT_LINE(a_pState)      LOCATION_LINE((a_pState)->hFmtLoc)
-#define MYSTATE_FMT_COLUMN(a_pState)    LOCATION_COLUMN((a_pState)->hFmtLoc)
-
-void MyCheckWarnFmt(PMYCHECKSTATE pState, const char *pszLoc, const char *pszFormat, ...)
+static location_t MyGetFormatStringLocation(PVFMTCHKSTATE pState, const char *pszLoc)
 {
-    char szTmp[1024];
-    va_list va;
-    va_start(va, pszFormat);
-    vsnprintf(szTmp, sizeof(szTmp), pszFormat, va);
-    va_end(va);
-
-
-    /* Create a location for pszLoc. */
-    location_t hLoc      = pState->hFmtLoc;
-#if __GNUC__ >= 5 /** @todo figure this... */
+    location_t hLoc = pState->hFmtLoc;
     intptr_t   offString = pszLoc - pState->pszFmt;
-    if (   offString > 0
+    if (   offString >= 0
         && !linemap_location_from_macro_expansion_p(line_table, hLoc))
     {
         unsigned            uCol    = 1 + offString;
         expanded_location   XLoc    = expand_location_to_spelling_point(hLoc);
-        int                 cchLine;
-# if __GNUC__ >= 5 /** @todo figure this... */
-        const char         *pszLine = location_get_source_line(XLoc, &cchLine);
-# else
-        const char         *pszLine = location_get_source_line(XLoc);
         int                 cchLine = 0;
+#if __GNUC__ >= 5 /** @todo figure this... */
+        const char         *pszLine = location_get_source_line(XLoc, &cchLine);
+#else
+        const char         *pszLine = location_get_source_line(XLoc);
         if (pszLine)
         {
             const char *pszEol = strpbrk(pszLine, "\n\r");
@@ -243,251 +250,17 @@ void MyCheckWarnFmt(PMYCHECKSTATE pState, const char *pszLoc, const char *pszFor
                 pszEol = strchr(pszLine, '\0');
             cchLine = (int)(pszEol - pszLine);
         }
-# endif
+#endif
         if (pszLine)
         {
             /** @todo Adjust the position by parsing the source. */
             pszLine += XLoc.column - 1;
             cchLine -= XLoc.column - 1;
         }
-        location_t hNewLoc = linemap_position_for_loc_and_offset(line_table, hLoc, 0);
-        if (hNewLoc)
-            hLoc = hNewLoc;
+
+        hLoc = MyGetLocationPlusColumnOffset(hLoc, uCol);
     }
-#endif
-
-    /* display the warning. */
-    warning_at(hLoc, 0, "%s", szTmp);
-}
-
-
-
-/**
- * Checks that @a iFmtArg isn't present or a valid final dummy argument.
- *
- * Will issue warning/error if there are more arguments at @a iFmtArg.
- *
- * @param   pState              The format string checking state.
- * @param   iArg                The index of the end of arguments, this is
- *                              relative to MYCHECKSTATE::iArgs.
- */
-void MyCheckFinalArg(PMYCHECKSTATE pState, unsigned iArg)
-{
-    dprintf("MyCheckFinalArg: iArg=%u iArgs=%ld cArgs=%u\n", iArg, pState->iArgs, gimple_call_num_args(pState->hStmt));
-    if (pState->iArgs > 0)
-    {
-        iArg += pState->iArgs - 1;
-        unsigned cArgs = gimple_call_num_args(pState->hStmt);
-        if (iArg == cArgs)
-        { /* fine */ }
-        else if (iArg < cArgs)
-        {
-            tree hArg = gimple_call_arg(pState->hStmt, iArg);
-            if (cArgs - iArg > 1)
-                warning_at(MY_LOC(hArg, pState), 0, "%u extra arguments not consumed by format string", cArgs - iArg);
-            else if (   TREE_CODE(hArg) != INTEGER_CST
-                     || !TREE_INT_CST(hArg).fits_shwi()
-                     || TREE_INT_CST(hArg).to_shwi() != -99) /* ignore final dummy argument: ..., -99); */
-                warning_at(MY_LOC(hArg, pState), 0, "one extra argument not consumed by format string");
-        }
-        /* This should be handled elsewhere, but just in case. */
-        else if (iArg - 1 == cArgs)
-            warning_at(pState->hFmtLoc, 0, "one argument too few");
-        else
-            warning_at(pState->hFmtLoc, 0, "%u arguments too few", iArg - cArgs);
-    }
-}
-
-void MyCheckIntArg(PMYCHECKSTATE pState, const char *pszFmt, unsigned iArg, const char *pszMessage)
-{
-
-}
-
-
-
-/**
- * Does the actual format string checking.
- *
- * @todo    Move this to different file common to both GCC and CLANG later.
- *
- * @param   pState              The format string checking state.
- * @param   pszFmt              The format string.
- */
-void MyCheckFormatCString(PMYCHECKSTATE pState, const char *pszFmt)
-{
-    dprintf("checker2: \"%s\" at %s:%d col %d\n", pszFmt,
-            MYSTATE_FMT_FILE(pState), MYSTATE_FMT_LINE(pState), MYSTATE_FMT_COLUMN(pState));
-    pState->pszFmt = pszFmt;
-
-    unsigned iArg = 0;
-    for (;;)
-    {
-        /*
-         * Skip to the next argument.
-         * Quits the loop with the first char following the '%' in 'ch'.
-         */
-        char ch;
-        for (;;)
-        {
-            ch = *pszFmt++;
-            if (ch == '%')
-            {
-                ch = *pszFmt++;
-                if (ch != '%')
-                    break;
-            }
-            else if (ch == '\0')
-            {
-                MyCheckFinalArg(pState, iArg);
-                return;
-            }
-        }
-
-        /*
-         * Flags
-         */
-        uint32_t fFlags = 0;
-        for (;;)
-        {
-            uint32_t fFlag;
-            switch (ch)
-            {
-                case '#':   fFlag = RTSTR_F_SPECIAL;      break;
-                case '-':   fFlag = RTSTR_F_LEFT;         break;
-                case '+':   fFlag = RTSTR_F_PLUS;         break;
-                case ' ':   fFlag = RTSTR_F_BLANK;        break;
-                case '0':   fFlag = RTSTR_F_ZEROPAD;      break;
-                case '\'':  fFlag = RTSTR_F_THOUSAND_SEP; break;
-                default:    fFlag = 0;                    break;
-            }
-            if (!fFlag)
-                break;
-            if (fFlags & fFlag)
-                MyCheckWarnFmt(pState, pszFmt - 1, "duplicate flag '%c'", ch);
-            fFlags |= fFlag;
-            ch = *pszFmt++;
-        }
-
-        /*
-         * Width.
-         */
-        int cchWidth = -1;
-        if (MY_ISDIGIT(ch))
-        {
-            cchWidth = ch - '0';
-            while (   (ch = *pszFmt++) != '\0'
-                   && MY_ISDIGIT(ch))
-            {
-                cchWidth *= 10;
-                cchWidth += ch - '0';
-            }
-            fFlags |= RTSTR_F_WIDTH;
-        }
-        else if (ch == '*')
-        {
-            MyCheckIntArg(pState, pszFmt - 1, iArg, "width should be an 'int' sized argument");
-            iArg++;
-            cchWidth = 0;
-            fFlags |= RTSTR_F_WIDTH;
-        }
-
-        /*
-         * Precision
-         */
-        int cchPrecision = -1;
-        if (ch == '.')
-        {
-            ch = *pszFmt++;
-            if (MY_ISDIGIT(ch))
-            {
-                cchPrecision = ch - '0';
-                while (   (ch = *pszFmt++) != '\0'
-                       && MY_ISDIGIT(ch))
-                {
-                    cchPrecision *= 10;
-                    cchPrecision += ch - '0';
-                }
-            }
-            else if (ch == '*')
-            {
-                MyCheckIntArg(pState, pszFmt - 1, iArg, "precision should be an 'int' sized argument");
-                iArg++;
-                cchWidth = 0;
-            }
-            else
-                MyCheckWarnFmt(pState, pszFmt - 1, "Missing precision value, only got the '.'");
-            if (cchPrecision < 0)
-            {
-                MyCheckWarnFmt(pState, pszFmt - 1, "Negative precision value: %d", cchPrecision);
-                cchPrecision = 0;
-            }
-            fFlags |= RTSTR_F_PRECISION;
-        }
-
-        /*
-         * Argument size.
-         */
-        char chArgSize = ch;
-        switch (ch)
-        {
-            default:
-                chArgSize = '\0';
-                break;
-
-            case 'z':
-            case 'L':
-            case 'j':
-            case 't':
-                ch = *pszFmt++;
-                break;
-
-            case 'l':
-                ch = *pszFmt++;
-                if (ch == 'l')
-                {
-                    chArgSize = 'L';
-                    ch = *pszFmt++;
-                }
-                break;
-
-            case 'h':
-                ch = *pszFmt++;
-                if (ch == 'h')
-                {
-                    chArgSize = 'H';
-                    ch = *pszFmt++;
-                }
-                break;
-
-            case 'I': /* Used by Win32/64 compilers. */
-                if (   pszFmt[0] == '6'
-                    && pszFmt[1] == '4')
-                {
-                    pszFmt += 2;
-                    chArgSize = 'L';
-                }
-                else if (   pszFmt[0] == '3'
-                         && pszFmt[1] == '2')
-                {
-                    pszFmt += 2;
-                    chArgSize = 0;
-                }
-                else
-                    chArgSize = 'j';
-                ch = *pszFmt++;
-                break;
-
-            case 'q': /* Used on BSD platforms. */
-                chArgSize = 'L';
-                ch = *pszFmt++;
-                break;
-        }
-
-        /*
-         * The type.
-         */
-
-    }
+    return hLoc;
 }
 
 
@@ -500,7 +273,7 @@ void MyCheckFormatCString(PMYCHECKSTATE pState, const char *pszFmt)
  * @param   pState              The format string checking state.
  * @param   hFmtArg             The format string node.
  */
-DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PMYCHECKSTATE pState, tree hFmtArg)
+DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PVFMTCHKSTATE pState, tree hFmtArg)
 {
     dprintf("checker: hFmtArg=%p %s\n", hFmtArg, tree_code_name[TREE_CODE(hFmtArg)]);
 
@@ -635,7 +408,7 @@ DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PMYCHECKSTATE pState, tre
  * @param   pState              The format string checking state.
  * @param   hFmtArg             The format string node.
  */
-static void MyCheckFormatRecursive(PMYCHECKSTATE pState, tree hFmtArg)
+static void MyCheckFormatRecursive(PVFMTCHKSTATE pState, tree hFmtArg)
 {
     /*
      * NULL format strings may cause crashes.
@@ -688,7 +461,7 @@ static unsigned int     MyPassExecuteCallback(void)
         {
             gimple const            hStmt   = gsi_stmt(hStmtItr);
             enum gimple_code const  enmCode = gimple_code(hStmt);
-#ifdef GCCPLUGIN_DEBUG
+#ifdef DEBUG
             unsigned const          cOps    = gimple_num_ops(hStmt);
             dprintf("   hStmt=%p %s (%d) ops=%d\n", hStmt, gimple_code_name[enmCode], enmCode, cOps);
             for (unsigned iOp = 0; iOp < cOps; iOp++)
@@ -708,7 +481,7 @@ static unsigned int     MyPassExecuteCallback(void)
                 tree const hFn       = gimple_call_fn(hStmt);
                 tree const hFnType   = gimple_call_fntype(hStmt);
                 tree const hAttr     = lookup_attribute("iprt_format", TYPE_ATTRIBUTES(hFnType));
-#ifdef GCCPLUGIN_DEBUG
+#ifdef DEBUG
                 tree const hFnDecl   = gimple_call_fndecl(hStmt);
                 dprintf("     hFn    =%p %s(%d); args=%d\n",
                         hFn, tree_code_name[TREE_CODE(hFn)], TREE_CODE(hFn), gimple_call_num_args(hStmt));
@@ -724,7 +497,7 @@ static unsigned int     MyPassExecuteCallback(void)
                      * Yeah, it has the attribute!
                      */
                     tree const hAttrArgs = TREE_VALUE(hAttr);
-                    MYCHECKSTATE State;
+                    VFMTCHKSTATE State;
                     State.iFmt    = TREE_INT_CST(TREE_VALUE(hAttrArgs)).to_shwi();
                     State.iArgs   = TREE_INT_CST(TREE_VALUE(TREE_CHAIN(hAttrArgs))).to_shwi();
                     State.hStmt   = hStmt;
@@ -741,6 +514,16 @@ static unsigned int     MyPassExecuteCallback(void)
     return 0;
 }
 
+
+/**
+ * Gate callback for my pass that indicates whether it should execute or not.
+ * @returns true to execute.
+ */
+static bool             MyPassGateCallback(void)
+{
+    dprintf("MyPassGateCallback:\n");
+    return true;
+}
 
 
 /**
@@ -807,5 +590,135 @@ int plugin_init(plugin_name_args *pPlugInInfo, plugin_gcc_version *pGccVer)
     register_callback(pPlugInInfo->base_name, PLUGIN_INFO, NULL, (void *)&g_PlugInInfo);
 
     return 0;
+}
+
+
+
+
+/*
+ *
+ * Functions used by the common code.
+ * Functions used by the common code.
+ * Functions used by the common code.
+ *
+ */
+
+void VFmtChkWarnFmt(PVFMTCHKSTATE pState, const char *pszLoc, const char *pszFormat, ...)
+{
+    char szTmp[1024];
+    va_list va;
+    va_start(va, pszFormat);
+    vsnprintf(szTmp, sizeof(szTmp), pszFormat, va);
+    va_end(va);
+
+    /* display the warning. */
+    warning_at(MyGetFormatStringLocation(pState, pszLoc), 0, "%s", szTmp);
+}
+
+
+
+void VFmtChkVerifyEndOfArgs(PVFMTCHKSTATE pState, unsigned iArg)
+{
+    dprintf("VFmtChkVerifyFinalArg: iArg=%u iArgs=%ld cArgs=%u\n", iArg, pState->iArgs, gimple_call_num_args(pState->hStmt));
+    if (pState->iArgs > 0)
+    {
+        iArg += pState->iArgs - 1;
+        unsigned cArgs = gimple_call_num_args(pState->hStmt);
+        if (iArg == cArgs)
+        { /* fine */ }
+        else if (iArg < cArgs)
+        {
+            tree hArg = gimple_call_arg(pState->hStmt, iArg);
+            if (cArgs - iArg > 1)
+                warning_at(MY_LOC(hArg, pState), 0, "%u extra arguments not consumed by format string", cArgs - iArg);
+            else if (   TREE_CODE(hArg) != INTEGER_CST
+                     || !TREE_INT_CST(hArg).fits_shwi()
+                     || TREE_INT_CST(hArg).to_shwi() != -99) /* ignore final dummy argument: ..., -99); */
+                warning_at(MY_LOC(hArg, pState), 0, "one extra argument not consumed by format string");
+        }
+        /* This should be handled elsewhere, but just in case. */
+        else if (iArg - 1 == cArgs)
+            warning_at(pState->hFmtLoc, 0, "one argument too few");
+        else
+            warning_at(pState->hFmtLoc, 0, "%u arguments too few", iArg - cArgs);
+    }
+}
+
+
+bool VFmtChkRequirePresentArg(PVFMTCHKSTATE pState, const char *pszLoc, unsigned iArg, const char *pszMessage)
+{
+    if (pState->iArgs > 0)
+    {
+        iArg += pState->iArgs - 1;
+        unsigned cArgs = gimple_call_num_args(pState->hStmt);
+        if (iArg >= cArgs)
+        {
+            VFmtChkWarnFmt(pState, pszLoc, "Missing argument! %s", pszMessage);
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool VFmtChkRequireIntArg(PVFMTCHKSTATE pState, const char *pszLoc, unsigned iArg, const char *pszMessage)
+{
+    if (VFmtChkRequirePresentArg(pState, pszLoc, iArg, pszMessage))
+    {
+        /** @todo type check.  */
+        return true;
+    }
+    return false;
+}
+
+
+bool VFmtChkRequireStringArg(PVFMTCHKSTATE pState, const char *pszLoc, unsigned iArg, const char *pszMessage)
+{
+    if (VFmtChkRequirePresentArg(pState, pszLoc, iArg, pszMessage))
+    {
+        /** @todo type check.  */
+        return true;
+    }
+    return false;
+}
+
+
+bool VFmtChkRequireVaListPtrArg(PVFMTCHKSTATE pState, const char *pszLoc, unsigned iArg, const char *pszMessage)
+{
+    if (VFmtChkRequirePresentArg(pState, pszLoc, iArg, pszMessage))
+    {
+        /** @todo type check.  */
+        return true;
+    }
+    return false;
+}
+
+
+
+void VFmtChkHandleReplacementFormatString(PVFMTCHKSTATE pState, const char *pszPctM, unsigned iArg)
+{
+    if (pState->iArgs > 0)
+    {
+        pState->iArgs += iArg;
+
+    }
+}
+
+
+const char  *VFmtChkGetFmtLocFile(PVFMTCHKSTATE pState)
+{
+    return LOCATION_FILE(pState->hFmtLoc);
+}
+
+
+unsigned int VFmtChkGetFmtLocLine(PVFMTCHKSTATE pState)
+{
+    return LOCATION_LINE(pState->hFmtLoc);
+}
+
+
+unsigned int VFmtChkGetFmtLocColumn(PVFMTCHKSTATE pState)
+{
+    return LOCATION_COLUMN(pState->hFmtLoc);
 }
 
