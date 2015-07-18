@@ -504,7 +504,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
     vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pStrm->VpxConfig, 0);
     if (rcv != VPX_CODEC_OK)
     {
-        LogFlow(("Failed to configure codec\n", vpx_codec_err_to_string(rcv)));
+        LogFlow(("Failed to configure codec: %s\n", vpx_codec_err_to_string(rcv)));
         return VERR_INVALID_PARAMETER;
     }
 

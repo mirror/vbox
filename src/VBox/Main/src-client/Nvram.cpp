@@ -314,7 +314,7 @@ DECLCALLBACK(int) drvNvram_VarQueryByIndex(PPDMINVRAMCONNECTOR pInterface, uint3
  */
 DECLCALLBACK(void *) Nvram::drvNvram_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    LogFlow(("%s pInterface:%p, pszIID:%s\n", __FUNCTION__, pInterface, pszIID));
+    LogFlowFunc(("pInterface=%p pszIID=%s\n", pInterface, pszIID));
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);
 
@@ -330,7 +330,7 @@ DECLCALLBACK(void *) Nvram::drvNvram_QueryInterface(PPDMIBASE pInterface, const 
 DECLCALLBACK(void) Nvram::drvNvram_Destruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    LogFlow(("%s: iInstance/#d\n", __FUNCTION__, pDrvIns->iInstance));
+    LogFlowFunc(("iInstance/#%d\n", pDrvIns->iInstance));
     PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);
     if (pThis->pNvram != NULL)
         pThis->pNvram->mpDrv = NULL;
@@ -343,7 +343,7 @@ DECLCALLBACK(void) Nvram::drvNvram_Destruct(PPDMDRVINS pDrvIns)
 DECLCALLBACK(int) Nvram::drvNvram_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    LogFlowFunc(("iInstance/#d, pCfg:%p, fFlags:%x\n", pDrvIns->iInstance, pCfg, fFlags));
+    LogFlowFunc(("iInstance/#%d pCfg=%p fFlags=%x\n", pDrvIns->iInstance, pCfg, fFlags));
     PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);
 
     /*

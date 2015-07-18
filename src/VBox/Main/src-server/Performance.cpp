@@ -401,7 +401,7 @@ CollectorGuestManager::CollectorGuestManager()
                             this, 0, RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE,
                             "CGMgr");
     NOREF(rc);
-    Log7(("{%p} " LOG_FN_FMT ": RTThreadCreate returned %u (mThread=%p)\n", this, __PRETTY_FUNCTION__, rc));
+    Log7(("{%p} " LOG_FN_FMT ": RTThreadCreate returned %Rrc (mThread=%p)\n", this, __PRETTY_FUNCTION__, rc, mThread));
 }
 
 CollectorGuestManager::~CollectorGuestManager()
@@ -819,7 +819,7 @@ void HostDiskLoadRaw::collect()
         mTotalPrev = total;
     }
     else
-        LogFlowThisFunc(("Failed to collect data: %Rrc (%d).\n", rc));
+        LogFlowThisFunc(("Failed to collect data: %Rrc (%d)\n", rc, rc));
 }
 
 void HostCpuMhz::init(ULONG period, ULONG length)

@@ -181,7 +181,6 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
                 &aIID,
                 pcszComponent,
                 aText.c_str(),
-                aWarning,
                 preserve,
                 aResultDetail));
 

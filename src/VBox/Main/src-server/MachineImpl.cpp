@@ -4656,7 +4656,7 @@ HRESULT Machine::attachDeviceWithoutMedium(const com::Utf8Str &aName,
 {
      HRESULT rc = S_OK;
 
-     LogFlowThisFunc(("aName=\"%s\" aControllerPort=%d aDevice=%d aType=%d aMedium=%p\n",
+     LogFlowThisFunc(("aName=\"%s\" aControllerPort=%d aDevice=%d aType=%d\n",
                       aName.c_str(), aControllerPort, aDevice, aType));
 
      rc = AttachDevice(Bstr(aName).raw(), aControllerPort, aDevice, aType, NULL);

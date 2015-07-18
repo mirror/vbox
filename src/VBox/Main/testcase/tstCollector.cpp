@@ -50,26 +50,28 @@
 #define RUN_TIME_MS        1000
 
 #define N_CALLS(n, fn) \
+  do {\
     for (int call = 0; call < n; ++call) \
         rc = collector->fn; \
     if (RT_FAILURE(rc)) \
-        RTPrintf("tstCollector: "#fn" -> %Rrc\n", rc)
+        RTPrintf("tstCollector: "#fn" -> %Rrc\n", rc); \
+  } while (0)
 
-#define CALLS_PER_SECOND(fn) \
+#define CALLS_PER_SECOND(fn, args) \
+  do { \
     nCalls = 0; \
     start = RTTimeMilliTS(); \
     do { \
-        rc = collector->fn; \
+        rc = collector->fn args; \
         if (RT_FAILURE(rc)) \
             break; \
         ++nCalls; \
     } while (RTTimeMilliTS() - start < RUN_TIME_MS); \
     if (RT_FAILURE(rc)) \
-    { \
         RTPrintf("tstCollector: "#fn" -> %Rrc\n", rc); \
-    } \
     else \
-        RTPrintf("%70s -- %u calls per second\n", #fn, nCalls)
+        RTPrintf("%70s -- %u calls per second\n", #fn, nCalls); \
+  } while (0)
 
 void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cVMs)
 {
@@ -105,17 +107,17 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
     uint64_t start;
     unsigned int nCalls;
     /* Pre-collect */
-    CALLS_PER_SECOND(preCollect(hints, 0));
+    CALLS_PER_SECOND(preCollect, (hints, 0));
     /* Host CPU load */
-    CALLS_PER_SECOND(getRawHostCpuLoad(&tmp64, &tmp64, &tmp64));
+    CALLS_PER_SECOND(getRawHostCpuLoad, (&tmp64, &tmp64, &tmp64));
     /* Process CPU load */
-    CALLS_PER_SECOND(getRawProcessCpuLoad(processes[nCalls%cVMs], &tmp64, &tmp64, &tmp64));
+    CALLS_PER_SECOND(getRawProcessCpuLoad, (processes[nCalls % cVMs], &tmp64, &tmp64, &tmp64));
     /* Host CPU speed */
-    CALLS_PER_SECOND(getHostCpuMHz(&tmp));
+    CALLS_PER_SECOND(getHostCpuMHz, (&tmp));
     /* Host RAM usage */
-    CALLS_PER_SECOND(getHostMemoryUsage(&tmp, &tmp, &tmp));
+    CALLS_PER_SECOND(getHostMemoryUsage, (&tmp, &tmp, &tmp));
     /* Process RAM usage */
-    CALLS_PER_SECOND(getProcessMemoryUsage(processes[nCalls%cVMs], &tmp));
+    CALLS_PER_SECOND(getProcessMemoryUsage, (processes[nCalls % cVMs], &tmp));
 
     start = RTTimeNanoTS();
 

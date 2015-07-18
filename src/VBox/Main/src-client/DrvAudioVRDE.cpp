@@ -183,8 +183,7 @@ static DECLCALLBACK(int) drvAudioVRDECaptureIn(PPDMIHOSTAUDIO pInterface, PPDMAU
         pVRDEStrmIn->cSamplesCaptured -= cProcessed;
     }
 
-    LogFlowFunc(("cSamplesCaptured=%RU32, cProcessed=%RU32\n",
-                 pVRDEStrmIn->cSamplesCaptured, cProcessed, rc));
+    LogFlowFunc(("cSamplesCaptured=%RU32, cProcessed=%RU32 rc=%Rrc\n", pVRDEStrmIn->cSamplesCaptured, cProcessed, rc));
     return rc;
 }
 

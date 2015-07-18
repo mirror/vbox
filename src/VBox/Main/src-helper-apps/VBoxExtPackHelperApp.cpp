@@ -1419,7 +1419,7 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
     char *pszCmdLine;
     int rc = RTGetOptArgvToString(&pszCmdLine, &papszArgs[cSuArgs], RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvToString failed: %Rrc");
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvToString failed: %Rrc", rc);
 
     /*
      * Look for various standard stuff for executing a program as root.

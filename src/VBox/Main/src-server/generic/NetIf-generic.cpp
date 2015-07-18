@@ -74,8 +74,7 @@ static int NetIfAdpCtl(const char * pcszIfName, const char *pszAddr, const char 
             return VINF_SUCCESS;
     }
     else
-        LogRel(("NetIfAdpCtl: failed to create process for %.\n",
-                szAdpCtl));
+        LogRel(("NetIfAdpCtl: failed to create process for %s: %Rrc\n", szAdpCtl, rc));
     return rc;
 }
 
