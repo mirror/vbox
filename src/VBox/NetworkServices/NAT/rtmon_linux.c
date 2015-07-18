@@ -170,7 +170,7 @@ rtmon_check_defaults(const void *buf, size_t len)
         size_t gwlen;
         int oif;
 
-        DPRINTF2(("nlmsg type %d flags 0x%x\n",
+        DPRINTF2(("nlmsg seq %d type %d flags 0x%x\n",
                   nh->nlmsg_seq, nh->nlmsg_type, nh->nlmsg_flags));
 
         if (nh->nlmsg_type == NLMSG_DONE) {
