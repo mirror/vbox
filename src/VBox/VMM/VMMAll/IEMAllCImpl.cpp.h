@@ -2254,7 +2254,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             && IEM_IS_LONG_MODE(pIemCpu))
         {
             Log(("retf %04x:%08RX64 %04x:%08RX64 - SS has both L & D set -> #GP(SS).\n",
-                 uNewCs, uNewRip, uNewOuterSs, uNewOuterRsp, DescSs.Legacy.Gen.u1DescType, DescSs.Legacy.Gen.u4Type));
+                 uNewCs, uNewRip, uNewOuterSs, uNewOuterRsp));
             return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewOuterSs);
         }
 
@@ -3905,7 +3905,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     /* Check GPs first. */
     if (!Desc.Legacy.Gen.u1DescType)
     {
-        Log(("load sreg %d - system selector (%#x) -> #GP\n", iSegReg, uSel, Desc.Legacy.Gen.u4Type));
+        Log(("load sreg %d (=%#x) - system selector (%#x) -> #GP\n", iSegReg, uSel, Desc.Legacy.Gen.u4Type));
         return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
     }
     if (iSegReg == X86_SREG_SS) /* SS gets different treatment */
@@ -5303,7 +5303,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
  * @param   GCPtrPage       The effective address of the page to invalidate.
  * @remarks Updates the RIP.
  */
-IEM_CIMPL_DEF_1(iemCImpl_invlpg, uint8_t, GCPtrPage)
+IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
 {
     /* ring-0 only. */
     if (pIemCpu->uCpl != 0)
@@ -5319,7 +5319,7 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, uint8_t, GCPtrPage)
         return iemSetPassUpStatus(pIemCpu, rc);
 
     AssertMsg(rc == VINF_EM_RAW_EMULATE_INSTR || RT_FAILURE_NP(rc), ("%Rrc\n", rc));
-    Log(("PGMInvalidatePage(%RGv) -> %Rrc\n", rc));
+    Log(("PGMInvalidatePage(%RGv) -> %Rrc\n", GCPtrPage, rc));
     return rc;
 }
 
