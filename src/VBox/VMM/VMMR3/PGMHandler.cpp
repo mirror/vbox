@@ -158,7 +158,7 @@ VMMR3DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmK
                                                 const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
 {
     LogFlow(("PGMR3HandlerPhysicalTypeRegister: enmKind=%d pfnHandlerR3=%RHv pszModR0=%s pszHandlerR0=%s pszPfHandlerR0=%s pszModRC=%s pszHandlerRC=%s pszPfHandlerRC=%s pszDesc=%s\n",
-             enmKind, pfnHandlerR3, pszModR0, pszHandlerR0, pszPfHandlerR0, pszModRC, pszHandlerRC, pszDesc, pszPfHandlerRC, pszDesc));
+             enmKind, pfnHandlerR3, pszModR0, pszHandlerR0, pszPfHandlerR0, pszModRC, pszHandlerRC, pszPfHandlerRC, pszDesc));
 
     /*
      * Validate input.

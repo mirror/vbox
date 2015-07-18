@@ -1289,7 +1289,7 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
     PCCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeafEx(pVM, uLeaf, uSubLeaf, &fExactSubLeafHit);
     if (pLeaf)
     {
-        AssertMsg(pLeaf->uLeaf == uLeaf, ("%#x\n", pLeaf->uLeaf, uLeaf));
+        AssertMsg(pLeaf->uLeaf == uLeaf, ("%#x %#x\n", pLeaf->uLeaf, uLeaf));
         if (fExactSubLeafHit)
         {
             *pEax = pLeaf->uEax;

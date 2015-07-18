@@ -380,7 +380,7 @@ static DECLCALLBACK(int) dbgfR3PlugInLoad(PUVM pUVM, const char *pszName, const 
         }
 
         RTErrInfoSet(pErrInfo, rc, "Plug-in init failed");
-        LogRel(("DBGF: Plug-in '%s' failed during init: %Rrc\n", pPlugIn->szName));
+        LogRel(("DBGF: Plug-in '%s' failed during init: %Rrc\n", pPlugIn->szName, rc));
         RTLdrClose(pPlugIn->hLdrMod);
     }
     MMR3HeapFree(pPlugIn);

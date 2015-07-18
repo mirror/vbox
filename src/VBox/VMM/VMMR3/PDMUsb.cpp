@@ -224,7 +224,7 @@ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSB
     AssertMsgReturn(    pReg->szName[0]
                     &&  strlen(pReg->szName) < sizeof(pReg->szName)
                     &&  pdmR3IsValidName(pReg->szName),
-                    ("Invalid name '%.s'\n", sizeof(pReg->szName), pReg->szName),
+                    ("Invalid name '%.*s'\n", sizeof(pReg->szName), pReg->szName),
                     VERR_PDM_INVALID_USB_REGISTRATION);
     AssertMsgReturn((pReg->fFlags & ~(PDM_USBREG_HIGHSPEED_CAPABLE | PDM_USBREG_SUPERSPEED_CAPABLE | PDM_USBREG_SAVED_STATE_SUPPORTED)) == 0,
                     ("fFlags=%#x\n", pReg->fFlags), VERR_PDM_INVALID_USB_REGISTRATION);
@@ -1388,7 +1388,7 @@ VMMR3DECL(int)  PDMR3UsbDriverDetach(PUVM pUVM, const char *pszDevice, unsigned 
                                      const char *pszDriver, unsigned iOccurance, uint32_t fFlags)
 {
     LogFlow(("PDMR3UsbDriverDetach: pszDevice=%p:{%s} iDevIns=%u iLun=%u pszDriver=%p:{%s} iOccurance=%u fFlags=%#x\n",
-             pszDevice, pszDevice, iDevIns, iLun, pszDriver, iOccurance, fFlags));
+             pszDevice, pszDevice, iDevIns, iLun, pszDriver, pszDriver, iOccurance, fFlags));
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
@@ -1688,7 +1688,7 @@ static DECLCALLBACK(int) pdmR3UsbHlp_SSMRegister(PPDMUSBINS pUsbIns, uint32_t uV
 {
     PDMUSB_ASSERT_USBINS(pUsbIns);
     VM_ASSERT_EMT(pUsbIns->Internal.s.pVM);
-    LogFlow(("pdmR3UsbHlp_SSMRegister: caller='%s'/%d: uVersion=#x cbGuess=%#x\n"
+    LogFlow(("pdmR3UsbHlp_SSMRegister: caller='%s'/%d: uVersion=%#x cbGuess=%#x\n"
              "    pfnLivePrep=%p pfnLiveExec=%p pfnLiveVote=%p pfnSavePrep=%p pfnSaveExec=%p pfnSaveDone=%p pszLoadPrep=%p pfnLoadExec=%p pfnLoadDone=%p\n",
              pUsbIns->pReg->szName, pUsbIns->iInstance, uVersion, cbGuess,
              pfnLivePrep, pfnLiveExec, pfnLiveVote,

@@ -492,7 +492,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrDefType(PVMCPU pVCpu, uint32
 {
     if ((uValue & 0xff) >= 7)
     {
-        Log(("CPUM: Invalid MTRR default type value: %#llx (%#llx)\n", pRange->szName, uValue, uValue & 0xff));
+        Log(("CPUM: Invalid MTRR default type value on %s: %#llx (%#llx)\n", pRange->szName, uValue, uValue & 0xff));
         return VERR_CPUM_RAISE_GP_0;
     }
 
@@ -1410,7 +1410,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64LongSyscallTarget(PVMCPU pVCpu,
 {
     if (!X86_IS_CANONICAL(uValue))
     {
-        Log(("CPUM: wrmsr %s(%#x), %#llx -> %#GP - not canonical\n", pRange->szName, idMsr, uValue));
+        Log(("CPUM: wrmsr %s(%#x), %#llx -> #GP - not canonical\n", pRange->szName, idMsr, uValue));
         return VERR_CPUM_RAISE_GP_0;
     }
     pVCpu->cpum.s.Guest.msrLSTAR = uValue;
@@ -1431,7 +1431,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64CompSyscallTarget(PVMCPU pVCpu,
 {
     if (!X86_IS_CANONICAL(uValue))
     {
-        Log(("CPUM: wrmsr %s(%#x), %#llx -> %#GP - not canonical\n", pRange->szName, idMsr, uValue));
+        Log(("CPUM: wrmsr %s(%#x), %#llx -> #GP - not canonical\n", pRange->szName, idMsr, uValue));
         return VERR_CPUM_RAISE_GP_0;
     }
     pVCpu->cpum.s.Guest.msrCSTAR = uValue;
@@ -1802,7 +1802,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchFromN(PVMCPU pVCpu, u
      *        Investigate! */
     if (!X86_IS_CANONICAL(uValue))
     {
-        Log(("CPUM: wrmsr %s(%#x), %#llx -> %#GP - not canonical\n", pRange->szName, idMsr, uValue));
+        Log(("CPUM: wrmsr %s(%#x), %#llx -> #GP - not canonical\n", pRange->szName, idMsr, uValue));
         return VERR_CPUM_RAISE_GP_0;
     }
     return VINF_SUCCESS;
@@ -1827,7 +1827,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchToN(PVMCPU pVCpu, uin
      *        Investigate! */
     if (!X86_IS_CANONICAL(uValue))
     {
-        Log(("CPUM: wrmsr %s(%#x), %#llx -> %#GP - not canonical\n", pRange->szName, idMsr, uValue));
+        Log(("CPUM: wrmsr %s(%#x), %#llx -> #GP - not canonical\n", pRange->szName, idMsr, uValue));
         return VERR_CPUM_RAISE_GP_0;
     }
     return VINF_SUCCESS;
@@ -4266,7 +4266,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpRip(PVMCPU pVCpu, uint
     /** @todo AMD IBS. */
     if (!X86_IS_CANONICAL(uValue))
     {
-        Log(("CPUM: wrmsr %s(%#x), %#llx -> %#GP - not canonical\n", pRange->szName, idMsr, uValue));
+        Log(("CPUM: wrmsr %s(%#x), %#llx -> #GP - not canonical\n", pRange->szName, idMsr, uValue));
         return VERR_CPUM_RAISE_GP_0;
     }
     return VINF_SUCCESS;
@@ -4339,7 +4339,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsDcLinAddr(PVMCPU pVCpu, 
     /** @todo AMD IBS. */
     if (!X86_IS_CANONICAL(uValue))
     {
-        Log(("CPUM: wrmsr %s(%#x), %#llx -> %#GP - not canonical\n", pRange->szName, idMsr, uValue));
+        Log(("CPUM: wrmsr %s(%#x), %#llx -> #GP - not canonical\n", pRange->szName, idMsr, uValue));
         return VERR_CPUM_RAISE_GP_0;
     }
     return VINF_SUCCESS;
@@ -4395,7 +4395,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam14hIbsBrTarget(PVMCPU pVCpu, u
     /** @todo AMD IBS. */
     if (!X86_IS_CANONICAL(uValue))
     {
-        Log(("CPUM: wrmsr %s(%#x), %#llx -> %#GP - not canonical\n", pRange->szName, idMsr, uValue));
+        Log(("CPUM: wrmsr %s(%#x), %#llx -> #GP - not canonical\n", pRange->szName, idMsr, uValue));
         return VERR_CPUM_RAISE_GP_0;
     }
     return VINF_SUCCESS;

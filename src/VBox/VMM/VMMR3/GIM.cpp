@@ -529,7 +529,7 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCP
 
     if (!pRegion->fRegistered)
     {
-        LogFunc(("%s: Region has not been registered.\n"));
+        LogFunc(("%s: Region has not been registered.\n", pRegion->szDescription));
         return VERR_GIM_IPE_1;
     }
 

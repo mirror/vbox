@@ -1940,7 +1940,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
         {
             cbMonitoredTss = Tss.offIoBitmap;
             AssertMsgReturn(pVM->selm.s.offGuestIoBitmap == Tss.offIoBitmap,
-                            ("#x %#x\n", pVM->selm.s.offGuestIoBitmap, Tss.offIoBitmap),
+                            ("%#x %#x\n", pVM->selm.s.offGuestIoBitmap, Tss.offIoBitmap),
                             false);
 
             /* check the bitmap */

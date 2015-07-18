@@ -409,7 +409,7 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu)
     if (!PGMPhysIsGCPhysNormal(pVM, pKvmCpu->GCPhysSystemTime))
     {
         LogRel(("GIM: KVM: VCPU%3d: Invalid physical addr requested for mapping system-time struct. GCPhysSystemTime=%#RGp\n",
-                pKvmCpu->GCPhysSystemTime));
+               pVCpu->idCpu, pKvmCpu->GCPhysSystemTime));
         return VERR_GIM_OPERATION_FAILED;
     }
 
@@ -461,7 +461,8 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu)
         TMR3CpuTickParavirtEnable(pVM);
     }
     else
-        LogRel(("GIM: KVM: VCPU%3d: Failed to write system-time struct. at %#RGp. rc=%Rrc\n", pKvmCpu->GCPhysSystemTime, rc));
+        LogRel(("GIM: KVM: VCPU%3d: Failed to write system-time struct. at %#RGp. rc=%Rrc\n",
+                pVCpu->idCpu, pKvmCpu->GCPhysSystemTime, rc));
 
     return rc;
 }

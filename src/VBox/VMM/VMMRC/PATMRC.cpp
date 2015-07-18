@@ -113,12 +113,12 @@ VMMRC_INT_DECL(VBOXSTRICTRC) PATMRCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE 
             /* This part of the page was not patched; try to emulate the instruction / tell the caller to do so. */
             if (!pRegFrame)
             {
-                LogFlow(("PATMHandleWriteToPatchPage: Allow writing %RRv LB %#x\n", pRegFrame->eip, GCPtr, cbWrite));
+                LogFlow(("PATMHandleWriteToPatchPage: Allow %#x writing %RRv LB %#x\n", pRegFrame->eip, GCPtr, cbWrite));
                 STAM_COUNTER_INC(&pVM->patm.s.StatPatchWriteInterpreted);
                 STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatPatchWriteDetect, a);
                 return VINF_PGM_HANDLER_DO_DEFAULT;
             }
-            LogFlow(("PATMHandleWriteToPatchPage: Interpret %x accessing %RRv\n", pRegFrame->eip, GCPtr));
+            LogFlow(("PATMHandleWriteToPatchPage: Interpret %#x accessing %RRv\n", pRegFrame->eip, GCPtr));
             int rc = VBOXSTRICTRC_TODO(EMInterpretInstruction(VMMGetCpu0(pVM), pRegFrame, (RTGCPTR)(RTRCUINTPTR)GCPtr));
             if (rc == VINF_SUCCESS)
             {

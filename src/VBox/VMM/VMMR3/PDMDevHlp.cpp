@@ -585,7 +585,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, uint32_t uV
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_SSMRegister: caller='%s'/%d: uVersion=#x cbGuess=%#x pszBefore=%p:{%s}\n"
+    LogFlow(("pdmR3DevHlp_SSMRegister: caller='%s'/%d: uVersion=%#x cbGuess=%#x pszBefore=%p:{%s}\n"
              "    pfnLivePrep=%p pfnLiveExec=%p pfnLiveVote=%p pfnSavePrep=%p pfnSaveExec=%p pfnSaveDone=%p pszLoadPrep=%p pfnLoadExec=%p pfnLoadDone=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uVersion, cbGuess, pszBefore, pszBefore,
              pfnLivePrep, pfnLiveExec, pfnLiveVote,
@@ -644,7 +644,7 @@ static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_TMUtcNow(PPDMDEVINS pDevIns, PRTTIM
 static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGet(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_TMTimeVirtGet: caller='%s'\n",
+    LogFlow(("pdmR3DevHlp_TMTimeVirtGet: caller='%s'/%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance));
 
     uint64_t u64Time = TMVirtualSyncGet(pDevIns->Internal.s.pVMR3);
@@ -658,7 +658,7 @@ static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGet(PPDMDEVINS pDevIns)
 static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGetFreq(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_TMTimeVirtGetFreq: caller='%s'\n",
+    LogFlow(("pdmR3DevHlp_TMTimeVirtGetFreq: caller='%s'/%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance));
 
     uint64_t u64Freq = TMVirtualGetFreq(pDevIns->Internal.s.pVMR3);
@@ -672,7 +672,7 @@ static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGetFreq(PPDMDEVINS pDevIns)
 static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGetNano(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_TMTimeVirtGetNano: caller='%s'\n",
+    LogFlow(("pdmR3DevHlp_TMTimeVirtGetNano: caller='%s'/%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance));
 
     uint64_t u64Time = TMVirtualGet(pDevIns->Internal.s.pVMR3);
@@ -687,7 +687,7 @@ static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGetNano(PPDMDEVINS pDevIns)
 static DECLCALLBACK(PSUPDRVSESSION) pdmR3DevHlp_GetSupDrvSession(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_GetSupDrvSession: caller='%s'\n",
+    LogFlow(("pdmR3DevHlp_GetSupDrvSession: caller='%s'/%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance));
 
     PSUPDRVSESSION pSession = pDevIns->Internal.s.pVMR3->pSession;
@@ -3102,7 +3102,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETRE
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d:\n"));
+    LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
 
     /*
      * Validate input.
@@ -3133,7 +3133,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PciRawRegister(PPDMDEVINS pDevIns, PPDMPCIR
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_PciRawRegister: caller='%s'/%d:\n"));
+    LogFlow(("pdmR3DevHlp_PciRawRegister: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
 
     /*
      * Validate input.

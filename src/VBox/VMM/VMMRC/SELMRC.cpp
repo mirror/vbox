@@ -161,7 +161,7 @@ static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uns
                     Log(("GDT write to selector in %s register %04X (no important change)\n", g_aszSRegNms[iSReg], paSReg[iSReg].Sel));
             }
             else
-                Log(("GDT write to selector in %s register %04X (out of sync)\n", paSReg[iSReg].Sel));
+                Log(("GDT write to selector in %s register %04X (out of sync)\n", g_aszSRegNms[iSReg], paSReg[iSReg].Sel));
         }
     }
 

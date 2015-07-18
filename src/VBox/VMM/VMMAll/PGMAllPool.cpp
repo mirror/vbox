@@ -195,7 +195,8 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
             PX86PML4        pPML4;
         } uShw;
 
-        LogFlow(("pgmPoolMonitorChainChanging: page idx=%d phys=%RGp (next=%d) kind=%s\n", pPage->idx, pPage->GCPhys, pPage->iMonitoredNext, pgmPoolPoolKindToStr(pPage->enmKind), cbWrite));
+        LogFlow(("pgmPoolMonitorChainChanging: page idx=%d phys=%RGp (next=%d) kind=%s write=%#x\n",
+                 pPage->idx, pPage->GCPhys, pPage->iMonitoredNext, pgmPoolPoolKindToStr(pPage->enmKind), cbWrite));
 
         uShw.pv = NULL;
         switch (pPage->enmKind)
@@ -2966,7 +2967,7 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
  */
 static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable)
 {
-    Log3(("pgmPoolTrackAddUser: GCPhys=%RGp iUser=%%x iUserTable=%x\n", pPage->GCPhys, iUser, iUserTable));
+    Log3(("pgmPoolTrackAddUser: GCPhys=%RGp iUser=%x iUserTable=%x\n", pPage->GCPhys, iUser, iUserTable));
     PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
     Assert(iUser != NIL_PGMPOOL_IDX);
 
@@ -3483,7 +3484,7 @@ static void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, bool fFlushP
     bool     fKeepList = false;
 
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPTs, f);
-    Log2(("pgmPoolTrackFlushGCPhysPTs: pPhysPage=%RHp iPhysExt\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iPhysExt));
+    Log2(("pgmPoolTrackFlushGCPhysPTs: pPhysPage=%RHp iPhysExt=%u\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iPhysExt));
 
     const uint16_t iPhysExtStart = iPhysExt;
     PPGMPOOLPHYSEXT pPhysExt;

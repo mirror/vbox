@@ -680,7 +680,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
         PIOMIOPORTRANGER3 pRange = (PIOMIOPORTRANGER3)RTAvlroIOPortRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortTreeR3, Port);
         if (!pRange)
         {
-            AssertMsgFailed(("No R3! Port=#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
+            AssertMsgFailed(("No R3! Port=%#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
             IOM_UNLOCK_EXCL(pVM);
             return VERR_IOM_NO_R3_IOPORT_RANGE;
         }
@@ -795,7 +795,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
         PIOMIOPORTRANGER3 pRange = (PIOMIOPORTRANGER3)RTAvlroIOPortRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortTreeR3, Port);
         if (!pRange)
         {
-            AssertMsgFailed(("No R3! Port=#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
+            AssertMsgFailed(("No R3! Port=%#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
             IOM_UNLOCK_EXCL(pVM);
             return VERR_IOM_NO_R3_IOPORT_RANGE;
         }
@@ -1466,7 +1466,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %RGp LB%#x %s\n", GCPhysStart, cbRange));
+        AssertMsgFailed(("No callbacks! %RGp LB%#x\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
     PVMCPU pVCpu = VMMGetCpu(pVM); Assert(pVCpu);
@@ -1525,7 +1525,7 @@ IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %RGp LB%#x %s\n", GCPhysStart, cbRange));
+        AssertMsgFailed(("No callbacks! %RGp LB%#x\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
     PVMCPU pVCpu = VMMGetCpu(pVM); Assert(pVCpu);

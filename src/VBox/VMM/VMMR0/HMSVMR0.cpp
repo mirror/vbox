@@ -4099,7 +4099,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                 if (   hmR0SvmIsContributoryXcpt(uIdtVector)
                     && uExitVector == X86_XCPT_PF)
                 {
-                    Log4(("IDT: Contributory #PF uCR2=%#RX64\n", pVCpu->idCpu, pCtx->cr2));
+                    Log4(("IDT: Contributory #PF idCpu=%#x uCR2=%#RX64\n", pVCpu->idCpu, pCtx->cr2));
                 }
 #endif
                 if (   uExitVector == X86_XCPT_PF
@@ -4532,8 +4532,8 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
                 break;
 
             default:
-                AssertMsgFailed(("hmR0SvmExitWriteCRx: Invalid/Unexpected Write-CRx exit. u64ExitCode=%#RX64 %#x CRx=%#RX64\n",
-                                pSvmTransient->u64ExitCode, pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0));
+                AssertMsgFailed(("hmR0SvmExitWriteCRx: Invalid/Unexpected Write-CRx exit. u64ExitCode=%#RX64 %#x\n",
+                                 pSvmTransient->u64ExitCode, pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0));
                 break;
         }
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);

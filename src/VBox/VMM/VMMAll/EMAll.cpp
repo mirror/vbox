@@ -1162,7 +1162,7 @@ static int emInterpretIret(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
             rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &ss,       (RTGCPTR)(pIretStack + 16), 4);
             AssertRCReturn(rc, VERR_EM_INTERPRETER);
             Log(("emInterpretIret: return to different privilege level (rpl=%d cpl=%d)\n", rpl, cpl));
-            Log(("emInterpretIret: SS:ESP=%04X:08X\n", ss, esp));
+            Log(("emInterpretIret: SS:ESP=%04x:%08x\n", ss, esp));
             pRegFrame->ss.Sel = ss;
             pRegFrame->esp    = esp;
         }
@@ -3123,7 +3123,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
         return VERR_EM_INTERPRETER;
     }
 
-    LogFlow(("%s %RGv=%08x eax=%08x\n", emGetMnemonic(pDis), pvParam1, pRegFrame->eax));
+    LogFlow(("%s %RGv=%p eax=%08x\n", emGetMnemonic(pDis), GCPtrPar1, pvParam1, pRegFrame->eax));
 
 #ifndef VBOX_COMPARE_IEM_AND_EM
     if (pDis->fPrefix & DISPREFIX_LOCK)
@@ -3136,7 +3136,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
     int rc2 = emRamWrite(pVM, pVCpu, pRegFrame, GCPtrPar1, &u64, sizeof(u64)); AssertRCSuccess(rc2);
 #endif /* VBOX_COMPARE_IEM_AND_EM */
 
-    LogFlow(("%s %RGv=%08x eax=%08x ZF=%d\n", emGetMnemonic(pDis), pvParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
+    LogFlow(("%s %RGv=%p eax=%08x ZF=%d\n", emGetMnemonic(pDis), GCPtrPar1, pvParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
 
     /* Update guest's eflags and finish; note that *only* ZF is affected. */
     pRegFrame->eflags.u32 =   (pRegFrame->eflags.u32 & ~(X86_EFL_ZF))

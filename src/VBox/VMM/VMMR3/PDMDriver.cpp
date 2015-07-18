@@ -92,7 +92,7 @@ VMMR3DECL(int) PDMR3DrvStaticRegistration(PVM pVM, FNPDMVBOXDRIVERSREGISTER pfnC
 
     int rc = pfnCallback(&RegCB.Core, VBOX_VERSION);
     if (RT_FAILURE(rc))
-        AssertMsgFailed(("VBoxDriversRegister failed with rc=%Rrc\n"));
+        AssertMsgFailed(("VBoxDriversRegister failed with rc=%Rrc\n", rc));
 
     return rc;
 }
@@ -243,7 +243,7 @@ static int pdmR3DrvLoad(PVM pVM, PPDMDRVREGCBINT pRegCB, const char *pszFilename
             if (RT_SUCCESS(rc))
                 Log(("PDM: Successfully loaded driver module %s (%s).\n", pszName, pszFilename));
             else
-                AssertMsgFailed(("VBoxDriversRegister failed with rc=%Rrc\n"));
+                AssertMsgFailed(("VBoxDriversRegister failed with rc=%Rrc\n", rc));
         }
         else
         {
@@ -272,7 +272,7 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
     AssertMsgReturn(RTStrEnd(pReg->szName, sizeof(pReg->szName)),
                     ("%.*s\n", sizeof(pReg->szName), pReg->szName),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
-    AssertMsgReturn(pdmR3IsValidName(pReg->szName), ("%.*s\n", pReg->szName),
+    AssertMsgReturn(pdmR3IsValidName(pReg->szName), ("%.*s\n", sizeof(pReg->szName), pReg->szName),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
     AssertMsgReturn(    !(pReg->fFlags & PDM_DRVREG_FLAGS_R0)
                     ||  (   pReg->szR0Mod[0]
@@ -309,7 +309,7 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
                     ("%s: %p\n", pReg->szName, pReg->pfnSoftReset),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
     AssertMsgReturn(pReg->u32VersionEnd == PDM_DRVREG_VERSION,
-                    ("%s: #x\n", pReg->szName, pReg->u32VersionEnd),
+                    ("%s: %#x\n", pReg->szName, pReg->u32VersionEnd),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
 
     /*
@@ -1258,7 +1258,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_QueueCreate(PPDMDRVINS pDrvIns, uint32_t cb
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p pszName=%p:{%s} ppQueue=%p\n",
-             pDrvIns->pReg->szName, pDrvIns->iInstance, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, pszName, ppQueue, ppQueue));
+             pDrvIns->pReg->szName, pDrvIns->iInstance, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, pszName, ppQueue));
     PVM pVM = pDrvIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
 
@@ -1316,7 +1316,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SSMRegister(PPDMDRVINS pDrvIns, uint32_t uV
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DrvHlp_SSMRegister: caller='%s'/%d: uVersion=#x cbGuess=%#x \n"
+    LogFlow(("pdmR3DrvHlp_SSMRegister: caller='%s'/%d: uVersion=%#x cbGuess=%#x \n"
              "    pfnLivePrep=%p pfnLiveExec=%p pfnLiveVote=%p  pfnSavePrep=%p pfnSaveExec=%p pfnSaveDone=%p pszLoadPrep=%p pfnLoadExec=%p pfnLoaddone=%p\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, uVersion, cbGuess,
              pfnLivePrep, pfnLiveExec, pfnLiveVote,
@@ -1366,8 +1366,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_DBGFInfoRegister(PPDMDRVINS pDrvIns, const 
 static DECLCALLBACK(int) pdmR3DrvHlp_DBGFInfoDeregister(PPDMDRVINS pDrvIns, const char *pszName)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    LogFlow(("pdmR3DrvHlp_DBGFInfoDeregister: caller='%s'/%d: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p\n",
-             pDrvIns->pReg->szName, pDrvIns->iInstance, pszName));
+    LogFlow(("pdmR3DrvHlp_DBGFInfoDeregister: caller='%s'/%d: pszName=%p:{%s}\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, pszName, pszName));
 
     int rc = DBGFR3InfoDeregisterDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, pszName);
 

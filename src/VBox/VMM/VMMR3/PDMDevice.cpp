@@ -313,7 +313,7 @@ int pdmR3DevInit(PVM pVM)
             rc = MMHyperAlloc(pVM, sizeof(*pCritSect), 0, MM_TAG_PDM_DEVICE, (void **)&pCritSect);
         else
             rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DEVICE, sizeof(*pCritSect), (void **)&pCritSect);
-        AssertLogRelMsgRCReturn(rc, ("Failed to allocate a critical section for the device\n",  rc), rc);
+        AssertLogRelMsgRCReturn(rc, ("Failed to allocate a critical section for the device (%Rrc)\n",  rc), rc);
 
         /*
          * Initialize it.
@@ -643,7 +643,7 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
     AssertMsgReturn(    pReg->szName[0]
                     &&  strlen(pReg->szName) < sizeof(pReg->szName)
                     &&  pdmR3IsValidName(pReg->szName),
-                    ("Invalid name '%.s'\n", sizeof(pReg->szName), pReg->szName),
+                    ("Invalid name '%.*s'\n", sizeof(pReg->szName), pReg->szName),
                     VERR_PDM_INVALID_DEVICE_REGISTRATION);
     AssertMsgReturn(   !(pReg->fFlags & PDM_DEVREG_FLAGS_RC)
                     || (   pReg->szRCMod[0]

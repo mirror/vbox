@@ -3239,7 +3239,7 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
     {
         /** @todo R0 -> VM request */
         /* The chunk can be mapped by more than one VM if fBoundMemoryMode is false! */
-        Log(("gmmR0FreeChunk: chunk still has %d/%d mappings; don't free!\n", pChunk->cMappingsX));
+        Log(("gmmR0FreeChunk: chunk still has %d mappings; don't free!\n", pChunk->cMappingsX));
         gmmR0ChunkMutexRelease(&MtxState, pChunk);
         return false;
     }
@@ -4378,7 +4378,7 @@ static int gmmR0ShModNewGlobal(PGMM pGMM, uint32_t uHash, uint32_t cbModule, VBO
                                uint32_t cRegions, const char *pszModuleName, const char *pszVersion,
                                struct VMMDEVSHAREDREGIONDESC const *paRegions, PGMMSHAREDMODULE *ppGblMod)
 {
-    Log(("gmmR0ShModNewGlobal: %s %s size %#x os %u rgn %u\n", pszModuleName, pszVersion, cbModule, cRegions));
+    Log(("gmmR0ShModNewGlobal: %s %s size %#x os %u rgn %u\n", pszModuleName, pszVersion, cbModule, enmGuestOS, cRegions));
     if (pGMM->cShareableModules >= GMM_MAX_SHARED_GLOBAL_MODULES)
     {
         Log(("gmmR0ShModNewGlobal: Too many modules\n"));
@@ -4971,7 +4971,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
     pPageDesc->u32StrictChecksum = RTCrc32(pbSharedPage, PAGE_SIZE);
     uint32_t uChecksum = pPageDesc->u32StrictChecksum & UINT32_C(0x00003fff);
     AssertMsg(!uChecksum || uChecksum == pPage->Shared.u14Checksum || !pPage->Shared.u14Checksum,
-              ("%#x vs %#x - idPage=%# - %s %s\n", uChecksum, pPage->Shared.u14Checksum,
+              ("%#x vs %#x - idPage=%#x - %s %s\n", uChecksum, pPage->Shared.u14Checksum,
                pGlobalRegion->paidPages[idxPage], pModule->szName, pModule->szVersion));
 #endif
 

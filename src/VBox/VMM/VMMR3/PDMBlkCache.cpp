@@ -1143,7 +1143,7 @@ int pdmR3BlkCacheInit(PVM pVM)
     if (pBlkCacheGlobal)
         RTMemFree(pBlkCacheGlobal);
 
-    LogFlowFunc((": returns rc=%Rrc\n", pVM, rc));
+    LogFlowFunc((": returns rc=%Rrc\n", rc));
     return rc;
 }
 
