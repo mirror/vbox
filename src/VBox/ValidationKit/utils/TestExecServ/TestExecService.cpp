@@ -1930,7 +1930,7 @@ static int txsDoExecHlp2(PTXSEXEC pTxsExec)
          */
         uint32_t idPollHnd;
         uint32_t fPollEvt;
-        Log3(("Calling RTPollNoResume(,%u,)...\n"));
+        Log3(("Calling RTPollNoResume(,%u,)...\n", cMsPollCur));
         rc2 = RTPollNoResume(pTxsExec->hPollSet, cMsPollCur, &fPollEvt, &idPollHnd);
         Log3(("RTPollNoResume -> fPollEvt=%#x idPollHnd=%u\n", fPollEvt, idPollHnd));
         if (g_fTerminate)
