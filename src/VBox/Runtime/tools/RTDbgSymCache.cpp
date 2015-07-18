@@ -591,7 +591,7 @@ static int rtDbgSymCacheAddDebugMachO(const char *pszPath, PCRTDBGSYMCACHEADDCFG
  */
 static int rtDbgSymCacheAddDebugPdb(const char *pszPath, PCRTDBGSYMCACHEADDCFG pCfg, RTFILE hFile)
 {
-    return RTMsgErrorRc(VERR_NOT_IMPLEMENTED, "PDB support not implemented: '%s'");
+    return RTMsgErrorRc(VERR_NOT_IMPLEMENTED, "PDB support not implemented: '%s'", pszPath);
 }
 
 
@@ -1159,7 +1159,7 @@ static RTEXITCODE rtDbgSymCacheAddFileOrDir(const char *pszPath, const char *psz
         }
 
         case RTDBGSYMCACHEFILETYPE_IGNORE:
-            rc = RTMsgErrorRc(VERR_INVALID_PARAMETER, "Invalid file: '%s'");
+            rc = RTMsgErrorRc(VERR_INVALID_PARAMETER, "Invalid file: '%s'", pszPath);
             break;
     }
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;

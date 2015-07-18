@@ -306,7 +306,8 @@ int main(int argc, char **argv)
                                      aMappings[iMapping].Address + SegInfo.cb,
                                      SegInfo.iSeg, SegInfo.szName);
                         else
-                            RTPrintf("  mapping #%u: %RTptr-???????? (segment #%u)", iMapping, aMappings[iMapping].Address);
+                            RTPrintf("  mapping #%u: %RTptr-???????? (segment #%u)",
+                                     iMapping, aMappings[iMapping].Address, aMappings[iMapping].iSeg);
                     }
 
                     if (cVerbosityLevel > 1)
@@ -380,7 +381,7 @@ int main(int argc, char **argv)
                     if (iSeg != UINT32_MAX)
                         RTStrmPrintf(pOutput, "=[%s:%u", RTDbgModName(hDbgMod), iSeg);
                     else
-                        RTStrmPrintf(pOutput, "=[%s", RTDbgModName(hDbgMod), iSeg);
+                        RTStrmPrintf(pOutput, "=[%s", RTDbgModName(hDbgMod));
 
                     /*
                      * Do we have symbols?

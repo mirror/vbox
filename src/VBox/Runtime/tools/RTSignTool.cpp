@@ -789,7 +789,7 @@ static RTEXITCODE HandleMakeTaInfo(int cArgs, char **papszArgs)
                         if (RT_SUCCESS(rc))
                             RTMsgInfo("Successfully wrote TrustedAnchorInfo to '%s'.", State.pszOutput);
                         else
-                            RTMsgError("RTStrmClose failed: %Rrc");
+                            RTMsgError("RTStrmClose failed: %Rrc", rc);
                     }
                     else
                     {

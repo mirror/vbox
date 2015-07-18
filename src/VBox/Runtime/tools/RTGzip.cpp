@@ -397,7 +397,7 @@ static RTEXITCODE gzipOpenInput(const char *pszFile, PRTGZIPCMDOPTS pOpts, PRTVF
             if (pszError && *pszError)
                 return RTMsgErrorExit(RTEXITCODE_FAILURE,
                                       "RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
-                                      "    '%s'\n",
+                                      "    '%s'\n"
                                       "     %*s^\n",
                                       rc, pszFile, pszError - pszFile, "");
             return RTMsgErrorExit(RTEXITCODE_FAILURE,

@@ -1298,7 +1298,7 @@ RTDECL(int) RTManifestReadStandardEx(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos
         {
             if (rc == VERR_EOF)
                 return VINF_SUCCESS;
-            RTStrPrintf(pszErr, cbErr, "Error reading line #u: %Rrc", iLine, rc);
+            RTStrPrintf(pszErr, cbErr, "Error reading line #%u: %Rrc", iLine, rc);
             return rc;
         }
         if (rc != VINF_SUCCESS)

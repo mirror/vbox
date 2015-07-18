@@ -181,7 +181,7 @@ static DECLCALLBACK(int) rtDbgModContainer_LineByAddr(PRTDBGMODINT pMod, RTDBGSE
      * Validate the input address.
      */
     AssertMsgReturn(iSeg < pThis->cSegs,
-                    ("iSeg=%#x cSegs=%#x\n", pThis->cSegs),
+                    ("iSeg=%#x cSegs=%#x\n", iSeg, pThis->cSegs),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
     AssertMsgReturn(off < pThis->paSegs[iSeg].cb,
                     ("off=%RTptr cbSeg=%RTptr\n", off, pThis->paSegs[iSeg].cb),
@@ -252,7 +252,7 @@ static DECLCALLBACK(int) rtDbgModContainer_LineAdd(PRTDBGMODINT pMod, const char
     /*
      * Validate the input address.
      */
-    AssertMsgReturn(iSeg < pThis->cSegs,          ("iSeg=%#x cSegs=%#x\n", pThis->cSegs),
+    AssertMsgReturn(iSeg < pThis->cSegs,          ("iSeg=%#x cSegs=%#x\n", iSeg, pThis->cSegs),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
     AssertMsgReturn(off < pThis->paSegs[iSeg].cb, ("off=%RTptr cbSeg=%RTptr\n", off, pThis->paSegs[iSeg].cb),
                     VERR_DBG_INVALID_SEGMENT_OFFSET);
@@ -315,7 +315,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolByAddr(PRTDBGMODINT pMod, RTDBG
      */
     AssertMsgReturn(    iSeg == RTDBGSEGIDX_ABS
                     ||  iSeg < pThis->cSegs,
-                    ("iSeg=%#x cSegs=%#x\n", pThis->cSegs),
+                    ("iSeg=%#x cSegs=%#x\n", iSeg, pThis->cSegs),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
     AssertMsgReturn(    iSeg >= RTDBGSEGIDX_SPECIAL_FIRST
                     ||  off <= pThis->paSegs[iSeg].cb,
@@ -397,7 +397,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
      */
     AssertMsgReturn(    iSeg == RTDBGSEGIDX_ABS
                     ||  iSeg < pThis->cSegs,
-                    ("iSeg=%#x cSegs=%#x\n", pThis->cSegs),
+                    ("iSeg=%#x cSegs=%#x\n", iSeg, pThis->cSegs),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
     AssertMsgReturn(    iSeg >= RTDBGSEGIDX_SPECIAL_FIRST
                     ||  off <= pThis->paSegs[iSeg].cb,

@@ -290,7 +290,7 @@ RT_EXPORT_SYMBOL(RTLdrRelocate);
 RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR BaseAddress,
                              uint32_t iOrdinal, const char *pszSymbol, PRTLDRADDR pValue)
 {
-    LogFlow(("RTLdrGetSymbolEx: hLdrMod=%RTldrm pvBits=%p BaseAddress=%RTptr iOrdinal=%#x pszSymbol=%p:{%s} pValue\n",
+    LogFlow(("RTLdrGetSymbolEx: hLdrMod=%RTldrm pvBits=%p BaseAddress=%RTptr iOrdinal=%#x pszSymbol=%p:{%s} pValue=%p\n",
              hLdrMod, pvBits, BaseAddress, iOrdinal, pszSymbol, pszSymbol, pValue));
 
     /*
@@ -526,8 +526,7 @@ RT_EXPORT_SYMBOL(RTLdrLinkAddressToRva);
 
 RTDECL(int) RTLdrSegOffsetToRva(RTLDRMOD hLdrMod, uint32_t iSeg, RTLDRADDR offSeg, PRTLDRADDR pRva)
 {
-    LogFlow(("RTLdrSegOffsetToRva: hLdrMod=%RTldrm LinkAddress=%RTptr iSeg=%#x offSeg=%RTptr pRva=%p\n",
-             hLdrMod, iSeg, offSeg, pRva));
+    LogFlow(("RTLdrSegOffsetToRva: hLdrMod=%RTldrm iSeg=%#x offSeg=%RTptr pRva=%p\n", hLdrMod, iSeg, offSeg, pRva));
 
     /*
      * Validate input.

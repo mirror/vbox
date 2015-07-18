@@ -695,7 +695,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSymbols)(PRTLDRMODINTERNAL pMod, unsi
      * Validate the input.
      */
     Elf_Addr BaseAddr = (Elf_Addr)BaseAddress;
-    AssertMsgReturn((RTUINTPTR)BaseAddr == BaseAddress, ("#RTptr", BaseAddress), VERR_IMAGE_BASE_TOO_HIGH);
+    AssertMsgReturn((RTUINTPTR)BaseAddr == BaseAddress, ("%RTptr", BaseAddress), VERR_IMAGE_BASE_TOO_HIGH);
 
     /*
      * Make sure we've got the string and symbol tables. (We don't need the pvBits.)
@@ -856,7 +856,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *p
      * Validate the input.
      */
     Elf_Addr BaseAddr = (Elf_Addr)NewBaseAddress;
-    AssertMsgReturn((RTUINTPTR)BaseAddr == NewBaseAddress, ("#RTptr", NewBaseAddress), VERR_IMAGE_BASE_TOO_HIGH);
+    AssertMsgReturn((RTUINTPTR)BaseAddr == NewBaseAddress, ("%RTptr", NewBaseAddress), VERR_IMAGE_BASE_TOO_HIGH);
 
     /*
      * Map the image bits if not already done and setup pointer into it.
@@ -961,7 +961,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetSymbolEx)(PRTLDRMODINTERNAL pMod, cons
      * Validate the input.
      */
     Elf_Addr uBaseAddr = (Elf_Addr)BaseAddress;
-    AssertMsgReturn((RTUINTPTR)uBaseAddr == BaseAddress, ("#RTptr", BaseAddress), VERR_IMAGE_BASE_TOO_HIGH);
+    AssertMsgReturn((RTUINTPTR)uBaseAddr == BaseAddress, ("%RTptr", BaseAddress), VERR_IMAGE_BASE_TOO_HIGH);
 
     /*
      * Map the image bits if not already done and setup pointer into it.
@@ -1474,12 +1474,12 @@ static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *p
     }
     if (pEhdr->e_ident[EI_DATA] != ELFDATA2LSB)
     {
-        Log(("RTLdrELF: %s: ELF endian %x is unsupported\n", pEhdr->e_ident[EI_DATA]));
+        Log(("RTLdrELF: %s: ELF endian %x is unsupported\n", pszLogName, pEhdr->e_ident[EI_DATA]));
         return VERR_LDRELF_ODD_ENDIAN;
     }
     if (pEhdr->e_version != EV_CURRENT)
     {
-        Log(("RTLdrELF: %s: ELF version %x is unsupported\n", pEhdr->e_version));
+        Log(("RTLdrELF: %s: ELF version %x is unsupported\n", pszLogName, pEhdr->e_version));
         return VERR_LDRELF_VERSION;
     }
 
@@ -1528,7 +1528,7 @@ static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *p
             break;
 #endif
         default:
-            Log(("RTLdrELF: %s: machine type %u is not supported!\n", pEhdr->e_machine));
+            Log(("RTLdrELF: %s: machine type %u is not supported!\n", pszLogName, pEhdr->e_machine));
             return VERR_LDRELF_MACHINE;
     }
 
@@ -1720,7 +1720,7 @@ static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned i
         if (pShdr->sh_offset < sizeof(Elf_Ehdr))
         {
             Log(("RTLdrELF: %s: Shdr #%d: sh_offset (" FMT_ELF_OFF ") + sh_size (" FMT_ELF_XWORD ") is starting in the ELF header!\n",
-                 pszLogName, iShdr, pShdr->sh_offset, pShdr->sh_size, cbRawImage));
+                 pszLogName, iShdr, pShdr->sh_offset, pShdr->sh_size));
             return VERR_BAD_EXE_FORMAT;
         }
     }
@@ -1862,7 +1862,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                         {
                             Elf_Addr uAddr = RT_ALIGN_T(uNextAddr, paShdrs[i].sh_addralign, Elf_Addr);
                             Log(("RTLdrElf: Out of order section #%d; adjusting sh_addr from " FMT_ELF_ADDR " to " FMT_ELF_ADDR "\n",
-                                 paShdrs[i].sh_addr, uAddr));
+                                 i, paShdrs[i].sh_addr, uAddr));
                             paShdrs[i].sh_addr = uAddr;
                         }
                         uNextAddr = paShdrs[i].sh_addr + paShdrs[i].sh_size;

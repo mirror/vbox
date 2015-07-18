@@ -264,7 +264,7 @@ static RTEXITCODE rtZipUnzipCmdOpenInputArchive(PRTZIPUNZIPCMDOPS pOpts, PRTVFSF
         if (pszError && *pszError)
             return RTMsgErrorExit(RTEXITCODE_FAILURE,
                                   "RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
-                                  "    '%s'\n",
+                                  "    '%s'\n"
                                   "     %*s^\n",
                                   rc, pOpts->pszFile, pszError - pOpts->pszFile, "");
         return RTMsgErrorExit(RTEXITCODE_FAILURE,

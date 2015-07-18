@@ -201,7 +201,7 @@ static RTEXITCODE rtZipTarCmdOpenInputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSSTR
             if (pszError && *pszError)
                 return RTMsgErrorExit(RTEXITCODE_FAILURE,
                                       "RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
-                                      "    '%s'\n",
+                                      "    '%s'\n"
                                       "     %*s^\n",
                                       rc, pOpts->pszFile, pszError - pOpts->pszFile, "");
             return RTMsgErrorExit(RTEXITCODE_FAILURE,
