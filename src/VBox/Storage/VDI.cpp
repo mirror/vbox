@@ -556,7 +556,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
         if (RT_FAILURE(rc))
         {
             rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
-                           N_("VDI: Getting data alignment for '%s' failed (%Rrc)"), pImage->pszFilename);
+                           N_("VDI: Getting data alignment for '%s' failed (%Rrc)"), pImage->pszFilename, rc);
             goto out;
         }
     }

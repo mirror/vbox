@@ -1073,7 +1073,8 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
-        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not read grain directory in '%s': %Rrc"), pExtent->pszFullname);
+        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                       N_("VMDK: could not read grain directory in '%s': %Rrc"), pExtent->pszFullname, rc);
         goto out;
     }
     for (i = 0, pGDTmp = pExtent->pGD; i < pExtent->cGDEntries; i++, pGDTmp++)
@@ -1090,7 +1091,8 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
-            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not read redundant grain directory in '%s'"), pExtent->pszFullname);
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                           N_("VMDK: could not read redundant grain directory in '%s'"), pExtent->pszFullname);
             goto out;
         }
         for (i = 0, pRGDTmp = pExtent->pRGD; i < pExtent->cGDEntries; i++, pRGDTmp++)

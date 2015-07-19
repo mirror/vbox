@@ -1227,7 +1227,7 @@ static int vhdxLoadBatRegion(PVHDXIMAGE pImage, uint64_t offRegion,
         else
             rc = vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
                            "VHDX: Out of memory allocating memory for %u BAT entries of image \'%s\'",
-                           cBatEntries);
+                           cBatEntries, pImage->pszFilename);
     }
     else
         rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
