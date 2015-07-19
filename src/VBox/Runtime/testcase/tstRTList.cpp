@@ -100,7 +100,7 @@ static void tstRTListOrder(RTTEST hTest, PRTLISTNODE pList, unsigned cElements,
         idx -= idxStep;
     }
     RTTEST_CHECK_MSG_RETV(hTest, idx == idxFirst - idxStep || (idx == idxLast && idxFirst == idxLast),
-                          (hTest, "idx=%u idxFirst=%u idxLast idxStep=%u\n", idx, idxFirst, idxLast, idxStep));
+                          (hTest, "idx=%u idxFirst=%u idxLast=%u idxStep=%u\n", idx, idxFirst, idxLast, idxStep));
 }
 
 static void tstRTListCreate(RTTEST hTest, unsigned cElements)

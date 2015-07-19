@@ -1258,7 +1258,7 @@ RTR3DECL(RTEXITCODE) RTTestSummaryAndDestroy(RTTEST hTest)
     RTEXITCODE enmExitCode;
     if (!pTest->cErrors)
     {
-        RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "SUCCESS\n", pTest->cErrors);
+        RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "SUCCESS\n");
         enmExitCode = RTEXITCODE_SUCCESS;
     }
     else
@@ -1286,7 +1286,7 @@ RTR3DECL(RTEXITCODE) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFm
     {
         if (pszReasonFmt)
             RTTestPrintfNlV(hTest, RTTESTLVL_FAILURE, pszReasonFmt, va);
-        RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "SKIPPED\n", pTest->cErrors);
+        RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "SKIPPED\n");
         enmExitCode = RTEXITCODE_SKIPPED;
     }
     else

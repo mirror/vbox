@@ -92,8 +92,8 @@ static void tstBase64(const void *pvData, size_t cbData,
         RTTestIFailed("RTBase64Encode returned %zu bytes, expected %zu.\n",
                       cchOut, cchEnc);
     else if (fNormalEnc && memcmp(szOut, pszEnc, cchOut + 1))
-        RTTestIFailed("RTBase64Encode returned:\n%*s\nexpected:\n%s\n",
-                      szOut, pszEnc);
+        RTTestIFailed("RTBase64Encode returned:\n%.*s\nexpected:\n%s\n",
+                      sizeof(szOut), szOut, pszEnc);
 
     size_t cchOut2 = RTBase64EncodedLength(cbData);
     if (cchOut != cchOut2)

@@ -505,7 +505,7 @@ RTDECL(int)         RTErrInfoSet(PRTERRINFO pErrInfo, int rc, const char *pszMsg
  * @param   pszFormat           The format string.
  * @param   ...                 The format arguments.
  */
-RTDECL(int)         RTErrInfoSetF(PRTERRINFO pErrInfo, int rc, const char *pszFormat, ...);
+RTDECL(int)         RTErrInfoSetF(PRTERRINFO pErrInfo, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
  * Fills in the error info details, with a vsprintf style message.
@@ -517,7 +517,7 @@ RTDECL(int)         RTErrInfoSetF(PRTERRINFO pErrInfo, int rc, const char *pszFo
  * @param   pszFormat           The format string.
  * @param   va                  The format arguments.
  */
-RTDECL(int)         RTErrInfoSetV(PRTERRINFO pErrInfo, int rc, const char *pszFormat, va_list va);
+RTDECL(int)         RTErrInfoSetV(PRTERRINFO pErrInfo, int rc, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
 /**
  * Adds more error info details.
@@ -540,7 +540,7 @@ RTDECL(int)         RTErrInfoAdd(PRTERRINFO pErrInfo, int rc, const char *pszMsg
  * @param   pszFormat           The format string to add.
  * @param   ...                 The format arguments.
  */
-RTDECL(int)         RTErrInfoAddF(PRTERRINFO pErrInfo, int rc, const char *pszFormat, ...);
+RTDECL(int)         RTErrInfoAddF(PRTERRINFO pErrInfo, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
  * Adds more error info details, with a vsprintf style message.
@@ -552,7 +552,7 @@ RTDECL(int)         RTErrInfoAddF(PRTERRINFO pErrInfo, int rc, const char *pszFo
  * @param   pszFormat           The format string to add.
  * @param   va                  The format arguments.
  */
-RTDECL(int)         RTErrInfoAddV(PRTERRINFO pErrInfo, int rc, const char *pszFormat, va_list va);
+RTDECL(int)         RTErrInfoAddV(PRTERRINFO pErrInfo, int rc, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
 /**
  * Checks if the error info is set.

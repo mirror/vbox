@@ -931,8 +931,7 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_CheckSanity)(RT_CONCAT(PC,RT
 # define RTASN1TMPL_MEMBER_DYN_END(a_enmType, a_enmMembNm, a_Allocation) \
             case RT_CONCAT(a_enmType,_NOT_PRESENT): \
                 rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE, \
-                                   "%s: Invalid " #a_enmMembNm " value: " #a_enmType "_NOT_PRESENT", \
-                                   pszErrorTag, pThis->a_enmMembNm); \
+                                   "%s: Invalid " #a_enmMembNm " value: " #a_enmType "_NOT_PRESENT", pszErrorTag); \
                 break; \
         }
 # define RTASN1TMPL_MEMBER_OPT_EX(a_Name, a_Type, a_Api, a_Constraints) \

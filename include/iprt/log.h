@@ -1955,7 +1955,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void);
  */
 RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                         const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
-                        uint32_t fDestFlags, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR(8, 9);
+                        uint32_t fDestFlags, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(8, 9);
 
 /**
  * Create a logger instance.
@@ -1991,8 +1991,8 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
 RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                           const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                           uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                          uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
-                          char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR(14, 15);
+                          uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot, char *pszErrorMsg, size_t cchErrorMsg,
+                          const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(14, 15);
 
 /**
  * Create a logger instance.
@@ -2030,9 +2030,8 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
 RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                            const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                            uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                           uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
-                           char *pszErrorMsg, size_t cchErrorMsg,
-                           const char *pszFilenameFmt, va_list args) RT_IPRT_FORMAT_ATTR(14, 0);
+                           uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot, char *pszErrorMsg, size_t cchErrorMsg,
+                           const char *pszFilenameFmt, va_list args) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(14, 0);
 
 /**
  * Create a logger instance for singled threaded ring-0 usage.

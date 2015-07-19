@@ -71,7 +71,8 @@ RTDECL(int)  RTConvVarCreate(PRTCONDVAR phCondVar);
  *                              optional (NULL).  Max length is 32 bytes.
  * @param   ...                 Format string arguments.
  */
-RTDECL(int)  RTConvVarCreateEx(PRTCONDVAR phCondVar, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...);
+RTDECL(int)  RTConvVarCreateEx(PRTCONDVAR phCondVar, uint32_t fFlags, RTLOCKVALCLASS hClass,
+                               const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 
 /** @name RTConvVarCreateEx flags
  * @{ */

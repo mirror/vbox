@@ -518,7 +518,8 @@ RTDECL(int) RTDbgAsCreate(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastA
  * @param   pszNameFmt      The name format of the address space.
  * @param   va              Format arguments.
  */
-RTDECL(int) RTDbgAsCreateV(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastAddr, const char *pszNameFmt, va_list va);
+RTDECL(int) RTDbgAsCreateV(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastAddr,
+                           const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
 
 /**
  * Variant of RTDbgAsCreate that takes a name format string.
@@ -531,7 +532,8 @@ RTDECL(int) RTDbgAsCreateV(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR Last
  * @param   pszNameFmt      The name format of the address space.
  * @param   ...             Format arguments.
  */
-RTDECL(int) RTDbgAsCreateF(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastAddr, const char *pszNameFmt, ...);
+RTDECL(int) RTDbgAsCreateF(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastAddr,
+                           const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 
 /**
  * Retains a reference to the address space.

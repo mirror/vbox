@@ -135,8 +135,8 @@ RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect);
  *                          (NULL).  Max length is 32 bytes.
  * @param   ...             Format string arguments.
  */
-RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags,
-                             RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...);
+RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                             const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(5, 6);
 
 /**
  * Changes the lock validator sub-class of the critical section.
@@ -483,8 +483,8 @@ RTDECL(int) RTCritSectRwInit(PRTCRITSECTRW pThis);
  *                          (NULL).  Max length is 32 bytes.
  * @param   ...             Format string arguments.
  */
-RTDECL(int) RTCritSectRwInitEx(PRTCRITSECTRW pThis, uint32_t fFlags,
-                               RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...);
+RTDECL(int) RTCritSectRwInitEx(PRTCRITSECTRW pThis, uint32_t fFlags, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                               const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(5, 6);
 
 /**
  * Changes the lock validator sub-class of the critical section.

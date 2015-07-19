@@ -359,10 +359,10 @@ static int netperfSendStats(NETPERFSTATS const *pStats, RTSOCKET hSocket)
      */
     rc = RTTcpRead(hSocket, szBuf, sizeof(g_szAck) - 1, NULL);
     if (RT_FAILURE(rc))
-        return RTTestIFailedRc(rc, "stats: failed to write stats: %Rrc\n", szBuf, rc);
+        return RTTestIFailedRc(rc, "stats: failed to write stats: %Rrc\n", rc);
     szBuf[sizeof(g_szAck) - 1] = '\0';
     if (!strcmp(szBuf, g_szNegative))
-        return RTTestIFailedRc(rc, "stats: client failed to parse them\n", szBuf);
+        return RTTestIFailedRc(rc, "stats: client failed to parse them\n");
     if (strcmp(szBuf, g_szAck))
         return RTTestIFailedRc(rc, "stats: got '%s' in instead of ack/nack\n", szBuf);
 
@@ -1722,7 +1722,7 @@ static RTEXITCODE netperfClient(NETPERFPROTO enmProto, const char *pszServer, vo
         }
 
         default:
-            RTTestIFailed("Protocol not supported.\n", g_pStdErr);
+            RTTestIFailed("Protocol not supported.\n");
             return RTEXITCODE_FAILURE;
     }
 }

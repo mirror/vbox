@@ -279,6 +279,7 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
                          "Unable to local imported symbol '%s%s%s' for module '%s'",
                          pszModule ? pszModule : "",
                          pszModule && *pszModule ? "." : "",
+                         pszSymbol,
                          pArgs->pszModule);
 }
 

@@ -1,6 +1,5 @@
 /** @file
- * IPRT - Vector
- * STL-inspired vector implementation in C
+ * IPRT - Vector - STL-inspired vector implementation in C.
  */
 
 /*
@@ -64,8 +63,9 @@
  *       Only using vectors in code files and keeping them out of interfaces
  *       (or passing them as anonymously) makes it easier to take care of this.
  */
+
 #ifndef ___iprt_vector_h
-# define ___iprt_vector_h
+#define ___iprt_vector_h
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -372,4 +372,5 @@ DECLINLINE(void *) rtvecReallocDefTag(void *pv, size_t cbNew)
     RTVEC_DECL_ALLOCATOR_DELETE_BY_VALUE(name, type, rtvecReallocDefTag,   \
                                          pfnDelete)
 
-#endif /* ___iprt_vector_h */
+#endif /* !___iprt_vector_h */
+

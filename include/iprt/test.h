@@ -261,7 +261,7 @@ RTR3DECL(int) RTTestGuardedFree(RTTEST hTest, void *pv);
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
 /**
  * Test printf making sure the output starts on a new line.
@@ -273,7 +273,7 @@ RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszF
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestPrintfNl(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, ...);
+RTR3DECL(int) RTTestPrintfNl(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
  * Test vprintf, makes sure lines are prefixed and so forth.
@@ -285,7 +285,7 @@ RTR3DECL(int) RTTestPrintfNl(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFo
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestPrintfV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestPrintfV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
 /**
  * Test printf, makes sure lines are prefixed and so forth.
@@ -297,7 +297,7 @@ RTR3DECL(int) RTTestPrintfV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFor
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestPrintf(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, ...);
+RTR3DECL(int) RTTestPrintf(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
  * Prints the test banner.
@@ -326,7 +326,7 @@ RTR3DECL(RTEXITCODE) RTTestSummaryAndDestroy(RTTEST hTest);
  * @param   pszReasonFmt    Text explaining why, optional (NULL).
  * @param   va              Arguments for the reason format string.
  */
-RTR3DECL(RTEXITCODE) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFmt, va_list va);
+RTR3DECL(RTEXITCODE) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Skips the test, destroys the test instance and return an exit code.
@@ -337,7 +337,7 @@ RTR3DECL(RTEXITCODE) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFm
  * @param   pszReasonFmt    Text explaining why, optional (NULL).
  * @param   ...             Arguments for the reason format string.
  */
-RTR3DECL(RTEXITCODE) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReasonFmt, ...);
+RTR3DECL(RTEXITCODE) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReasonFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Starts a sub-test.
@@ -363,7 +363,7 @@ RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest);
  * @param   pszSubTestFmt   The sub-test name format string.
  * @param   ...             Arguments.
  */
-RTR3DECL(int) RTTestSubF(RTTEST hTest, const char *pszSubTestFmt, ...);
+RTR3DECL(int) RTTestSubF(RTTEST hTest, const char *pszSubTestFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Format string version of RTTestSub.
@@ -376,7 +376,7 @@ RTR3DECL(int) RTTestSubF(RTTEST hTest, const char *pszSubTestFmt, ...);
  * @param   pszSubTestFmt   The sub-test name format string.
  * @param   va              Arguments.
  */
-RTR3DECL(int) RTTestSubV(RTTEST hTest, const char *pszSubTestFmt, va_list va);
+RTR3DECL(int) RTTestSubV(RTTEST hTest, const char *pszSubTestFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Completes a sub-test.
@@ -399,7 +399,7 @@ RTR3DECL(int) RTTestSubDone(RTTEST hTest);
  * @param   pszFormat   The message. No trailing newline.
  * @param   va          The arguments.
  */
-RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Prints an extended PASSED message, optional.
@@ -413,7 +413,7 @@ RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va);
  * @param   pszFormat   The message. No trailing newline.
  * @param   ...         The arguments.
  */
-RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...);
+RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Marks the current test as 'SKIPPED' and optionally displays a message
@@ -425,7 +425,7 @@ RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...);
  * @param   pszFormat   The message. No trailing newline.  Can be NULL or empty.
  * @param   ...         The arguments.
  */
-RTR3DECL(int) RTTestSkipped(RTTEST hTest, const char *pszFormat, ...);
+RTR3DECL(int) RTTestSkipped(RTTEST hTest, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(2, 3);
 
 /**
  * Marks the current test as 'SKIPPED' and optionally displays a message
@@ -437,7 +437,7 @@ RTR3DECL(int) RTTestSkipped(RTTEST hTest, const char *pszFormat, ...);
  * @param   pszFormat   The message. No trailing newline.  Can be NULL or empty.
  * @param   va          The arguments.
  */
-RTR3DECL(int) RTTestSkippedV(RTTEST hTest, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestSkippedV(RTTEST hTest, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(2, 0);
 
 
 /**
@@ -526,7 +526,8 @@ RTR3DECL(int) RTTestValue(RTTEST hTest, const char *pszName, uint64_t u64Value, 
  * @param   pszNameFmt  The value name format string.
  * @param   ...         String arguments.
  */
-RTR3DECL(int) RTTestValueF(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, ...);
+RTR3DECL(int) RTTestValueF(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit,
+                           const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 
 /**
  * Same as RTTestValue, except that the name is now a format string.
@@ -540,7 +541,8 @@ RTR3DECL(int) RTTestValueF(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit, 
  * @param   pszNameFmt  The value name format string.
  * @param   va_list     String arguments.
  */
-RTR3DECL(int) RTTestValueV(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, va_list va);
+RTR3DECL(int) RTTestValueV(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit,
+                           const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
 
 /**
  * Increments the error counter.
@@ -578,7 +580,7 @@ RTR3DECL(uint32_t) RTTestSubErrorCount(RTTEST hTest);
  * @param   pszFormat   The message. No trailing newline.
  * @param   va          The arguments.
  */
-RTR3DECL(int) RTTestFailedV(RTTEST hTest, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestFailedV(RTTEST hTest, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Increments the error counter and prints a failure message.
@@ -589,7 +591,7 @@ RTR3DECL(int) RTTestFailedV(RTTEST hTest, const char *pszFormat, va_list va);
  * @param   pszFormat   The message. No trailing newline.
  * @param   ...         The arguments.
  */
-RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...);
+RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Same as RTTestPrintfV with RTTESTLVL_FAILURE.
@@ -600,7 +602,7 @@ RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...);
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestFailureDetailsV(RTTEST hTest, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestFailureDetailsV(RTTEST hTest, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Same as RTTestPrintf with RTTESTLVL_FAILURE.
@@ -611,7 +613,7 @@ RTR3DECL(int) RTTestFailureDetailsV(RTTEST hTest, const char *pszFormat, va_list
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
+RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 
 /** @def RTTEST_CHECK
@@ -877,7 +879,7 @@ RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestIPrintfV(RTTESTLVL enmLevel, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestIPrintfV(RTTESTLVL enmLevel, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Test printf, makes sure lines are prefixed and so forth.
@@ -887,7 +889,7 @@ RTR3DECL(int) RTTestIPrintfV(RTTESTLVL enmLevel, const char *pszFormat, va_list 
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestIPrintf(RTTESTLVL enmLevel, const char *pszFormat, ...);
+RTR3DECL(int) RTTestIPrintf(RTTESTLVL enmLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Starts a sub-test.
@@ -909,7 +911,7 @@ RTR3DECL(int) RTTestISub(const char *pszSubTest);
  * @param   pszSubTestFmt   The sub-test name format string.
  * @param   ...             Arguments.
  */
-RTR3DECL(int) RTTestISubF(const char *pszSubTestFmt, ...);
+RTR3DECL(int) RTTestISubF(const char *pszSubTestFmt, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Format string version of RTTestSub.
@@ -920,7 +922,7 @@ RTR3DECL(int) RTTestISubF(const char *pszSubTestFmt, ...);
  * @param   pszSubTestFmt   The sub-test name format string.
  * @param   va              Arguments.
  */
-RTR3DECL(int) RTTestISubV(const char *pszSubTestFmt, va_list va);
+RTR3DECL(int) RTTestISubV(const char *pszSubTestFmt, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
 /**
  * Completes a sub-test.
@@ -939,7 +941,7 @@ RTR3DECL(int) RTTestISubDone(void);
  * @param   pszFormat   The message. No trailing newline.
  * @param   va          The arguments.
  */
-RTR3DECL(int) RTTestIPassedV(const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestIPassedV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
 /**
  * Prints an extended PASSED message, optional.
@@ -951,7 +953,7 @@ RTR3DECL(int) RTTestIPassedV(const char *pszFormat, va_list va);
  * @param   pszFormat   The message. No trailing newline.
  * @param   ...         The arguments.
  */
-RTR3DECL(int) RTTestIPassed(const char *pszFormat, ...);
+RTR3DECL(int) RTTestIPassed(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Report a named test result value.
@@ -978,7 +980,7 @@ RTR3DECL(int) RTTestIValue(const char *pszName, uint64_t u64Value, RTTESTUNIT en
  * @param   pszNameFmt  The value name format string.
  * @param   ...         String arguments.
  */
-RTR3DECL(int) RTTestIValueF(uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, ...);
+RTR3DECL(int) RTTestIValueF(uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
  * Same as RTTestValue, except that the name is now a format string.
@@ -990,7 +992,7 @@ RTR3DECL(int) RTTestIValueF(uint64_t u64Value, RTTESTUNIT enmUnit, const char *p
  * @param   pszNameFmt  The value name format string.
  * @param   va_list     String arguments.
  */
-RTR3DECL(int) RTTestIValueV(uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, va_list va);
+RTR3DECL(int) RTTestIValueV(uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
 /**
  * Increments the error counter.
@@ -1013,7 +1015,7 @@ RTR3DECL(uint32_t) RTTestIErrorCount(void);
  * @param   pszFormat   The message. No trailing newline.
  * @param   va          The arguments.
  */
-RTR3DECL(int) RTTestIFailedV(const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestIFailedV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
 /**
  * Increments the error counter and prints a failure message.
@@ -1022,7 +1024,7 @@ RTR3DECL(int) RTTestIFailedV(const char *pszFormat, va_list va);
  * @param   pszFormat   The message. No trailing newline.
  * @param   ...         The arguments.
  */
-RTR3DECL(int) RTTestIFailed(const char *pszFormat, ...);
+RTR3DECL(int) RTTestIFailed(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Increments the error counter, prints a failure message and returns the
@@ -1036,7 +1038,7 @@ RTR3DECL(int) RTTestIFailed(const char *pszFormat, ...);
  * @param   pszFormat   The message. No trailing newline.
  * @param   va          The arguments.
  */
-RTR3DECL(int) RTTestIFailedRcV(int rcRet, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestIFailedRcV(int rcRet, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Increments the error counter, prints a failure message and returns the
@@ -1050,7 +1052,7 @@ RTR3DECL(int) RTTestIFailedRcV(int rcRet, const char *pszFormat, va_list va);
  * @param   pszFormat   The message. No trailing newline.
  * @param   ...         The arguments.
  */
-RTR3DECL(int) RTTestIFailedRc(int rcRet, const char *pszFormat, ...);
+RTR3DECL(int) RTTestIFailedRc(int rcRet, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Same as RTTestIPrintfV with RTTESTLVL_FAILURE.
@@ -1059,7 +1061,7 @@ RTR3DECL(int) RTTestIFailedRc(int rcRet, const char *pszFormat, ...);
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestIFailureDetailsV(const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestIFailureDetailsV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
 /**
  * Same as RTTestIPrintf with RTTESTLVL_FAILURE.
@@ -1068,7 +1070,7 @@ RTR3DECL(int) RTTestIFailureDetailsV(const char *pszFormat, va_list va);
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
+RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 
 /** @def RTTESTI_CHECK

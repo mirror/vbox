@@ -270,7 +270,7 @@ RTDECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen);
  *                          be opened. (UTF-8)
  * @param   ...             Arguments to the format string.
  */
-RTDECL(int)  RTFileOpenF(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameFmt, ...);
+RTDECL(int)  RTFileOpenF(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
  * Open a file given as a format string.
@@ -283,7 +283,7 @@ RTDECL(int)  RTFileOpenF(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameF
  *                          be opened. (UTF-8)
  * @param   va              Arguments to the format string.
  */
-RTDECL(int)  RTFileOpenV(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameFmt, va_list va);
+RTDECL(int)  RTFileOpenV(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameFmt, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
 /**
  * Open the bit bucket (aka /dev/null or nul).

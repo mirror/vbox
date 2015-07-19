@@ -54,7 +54,8 @@ RT_C_DECLS_BEGIN
  * @param   pszQuery            The query part of the URI (optional).
  * @param   pszFragment         The fragment part of the URI (optional).
  */
-RTR3DECL(char *) RTUriCreate(const char *pszScheme, const char *pszAuthority, const char *pszPath, const char *pszQuery, const char *pszFragment);
+RTR3DECL(char *) RTUriCreate(const char *pszScheme, const char *pszAuthority, const char *pszPath, const char *pszQuery,
+                             const char *pszFragment);
 
 /**
  * Check an string for a specific URI scheme.

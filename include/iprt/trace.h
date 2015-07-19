@@ -175,15 +175,15 @@ RTDECL(bool)        RTTraceBufEnable(RTTRACEBUF hTraceBuf);
 
 
 RTDECL(int)         RTTraceBufAddMsg(      RTTRACEBUF hTraceBuf, const char *pszMsg);
-RTDECL(int)         RTTraceBufAddMsgF(     RTTRACEBUF hTraceBuf, const char *pszMsgFmt, ...);
-RTDECL(int)         RTTraceBufAddMsgV(     RTTRACEBUF hTraceBuf, const char *pszMsgFmt, va_list va);
+RTDECL(int)         RTTraceBufAddMsgF(     RTTRACEBUF hTraceBuf, const char *pszMsgFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+RTDECL(int)         RTTraceBufAddMsgV(     RTTRACEBUF hTraceBuf, const char *pszMsgFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 RTDECL(int)         RTTraceBufAddMsgEx(    RTTRACEBUF hTraceBuf, const char *pszMsg, size_t cbMaxMsg);
 
 RTDECL(int)         RTTraceBufAddPos(      RTTRACEBUF hTraceBuf, RT_SRC_POS_DECL);
 RTDECL(int)         RTTraceBufAddPosMsg(   RTTRACEBUF hTraceBuf, RT_SRC_POS_DECL, const char *pszMsg);
 RTDECL(int)         RTTraceBufAddPosMsgEx( RTTRACEBUF hTraceBuf, RT_SRC_POS_DECL, const char *pszMsg, size_t cbMaxMsg);
-RTDECL(int)         RTTraceBufAddPosMsgF(  RTTRACEBUF hTraceBuf, RT_SRC_POS_DECL, const char *pszMsgFmt, ...);
-RTDECL(int)         RTTraceBufAddPosMsgV(  RTTRACEBUF hTraceBuf, RT_SRC_POS_DECL, const char *pszMsgFmt, va_list va);
+RTDECL(int)         RTTraceBufAddPosMsgF(  RTTRACEBUF hTraceBuf, RT_SRC_POS_DECL, const char *pszMsgFmt, ...) RT_IPRT_FORMAT_ATTR(5, 6);
+RTDECL(int)         RTTraceBufAddPosMsgV(  RTTRACEBUF hTraceBuf, RT_SRC_POS_DECL, const char *pszMsgFmt, va_list va) RT_IPRT_FORMAT_ATTR(5, 0);
 
 
 RTDECL(int)         RTTraceSetDefaultBuf(RTTRACEBUF hTraceBuf);
