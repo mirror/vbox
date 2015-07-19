@@ -955,6 +955,7 @@ const SVGA3dLightData vmsvga3d_default_light =
 *******************************************************************************/
 static int  vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext, PVMSVGA3DSURFACE pSurface);
 static int  vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags);
+static int  vmsvga3dContextDestroyOgl(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, uint32_t cid);
 static void vmsvgaColor2GLFloatArray(uint32_t color, GLfloat *pRed, GLfloat *pGreen, GLfloat *pBlue, GLfloat *pAlpha);
 static void vmsvga3dSetPackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
                                   PVMSVGAPACKPARAMS pSave);
@@ -1833,6 +1834,10 @@ int vmsvga3dReset(PVGASTATE pThis)
         if (pState->papContexts[i]->id != SVGA3D_INVALID_ID)
             vmsvga3dContextDestroy(pThis, pState->papContexts[i]->id);
     }
+
+    if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
+        vmsvga3dContextDestroyOgl(pThis, &pState->SharedCtx, VMSVGA3D_SHARED_CTX_ID);
+
     return VINF_SUCCESS;
 }
 
@@ -4021,8 +4026,8 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
         float left, right, top, bottom; /* Texture coordinates */
         int   vertexLeft, vertexRight, vertexTop, vertexBottom;
 
-        pRect[i].srcx = RT_MAX(pRect[i].srcx, srcViewPort.x);
-        pRect[i].srcy = RT_MAX(pRect[i].srcy, srcViewPort.y);
+        pRect[i].srcx = RT_MAX(pRect[i].srcx, (uint32_t)RT_MAX(srcViewPort.x, 0));
+        pRect[i].srcy = RT_MAX(pRect[i].srcy, (uint32_t)RT_MAX(srcViewPort.y, 0));
         pRect[i].x    = RT_MAX(pRect[i].x, pThis->svga.viewport.x) - pThis->svga.viewport.x;
         pRect[i].y    = RT_MAX(pRect[i].y, pThis->svga.viewport.y) - pThis->svga.viewport.y;
         pRect[i].w    = pThis->svga.viewport.cx;
@@ -4572,6 +4577,137 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
     return vmsvga3dContextDefineOgl(pThis, cid, 0/*fFlags*/);
 }
 
+/**
+ * Destroys a 3d context.
+ *
+ * @returns VBox status code.
+ * @param   pThis           VGA device instance data.
+ * @param   pContext        The context to destroy.
+ * @param   cid             Context id
+ */
+static int vmsvga3dContextDestroyOgl(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, uint32_t cid)
+{
+    PVMSVGA3DSTATE pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
+    AssertReturn(pState, VERR_NO_MEMORY);
+    AssertReturn(pContext, VERR_INVALID_PARAMETER);
+    AssertReturn(pContext->id == cid, VERR_INVALID_PARAMETER);
+    Log(("vmsvga3dContextDestroyOgl id %x\n", cid));
+
+    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+
+    /* Destroy all leftover pixel shaders. */
+    for (uint32_t i = 0; i < pContext->cPixelShaders; i++)
+    {
+        if (pContext->paPixelShader[i].id != SVGA3D_INVALID_ID)
+            vmsvga3dShaderDestroy(pThis, pContext->paPixelShader[i].cid, pContext->paPixelShader[i].id, pContext->paPixelShader[i].type);
+    }
+    if (pContext->paPixelShader)
+        RTMemFree(pContext->paPixelShader);
+
+    /* Destroy all leftover vertex shaders. */
+    for (uint32_t i = 0; i < pContext->cVertexShaders; i++)
+    {
+        if (pContext->paVertexShader[i].id != SVGA3D_INVALID_ID)
+            vmsvga3dShaderDestroy(pThis, pContext->paVertexShader[i].cid, pContext->paVertexShader[i].id, pContext->paVertexShader[i].type);
+    }
+    if (pContext->paVertexShader)
+        RTMemFree(pContext->paVertexShader);
+
+    if (pContext->state.paVertexShaderConst)
+        RTMemFree(pContext->state.paVertexShaderConst);
+    if (pContext->state.paPixelShaderConst)
+        RTMemFree(pContext->state.paPixelShaderConst);
+
+    if (pContext->pShaderContext)
+    {
+        int rc = ShaderContextDestroy(pContext->pShaderContext);
+        AssertRC(rc);
+    }
+
+#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX /* This is done on windows - prevents various assertions at runtime, as well as shutdown & reset assertions when destroying surfaces. */
+    /* Check for all surfaces that are associated with this context to remove all dependencies */
+    for (uint32_t sid = 0; sid < pState->cSurfaces; sid++)
+    {
+        PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
+        if (    pSurface->idAssociatedContext == cid
+            &&  pSurface->id == sid)
+        {
+            int rc;
+
+            Log(("vmsvga3dContextDestroy: remove all dependencies for surface %x\n", sid));
+
+            uint32_t            surfaceFlags = pSurface->flags;
+            SVGA3dSurfaceFormat format = pSurface->format;
+            SVGA3dSurfaceFace   face[SVGA3D_MAX_SURFACE_FACES];
+            uint32_t            multisampleCount = pSurface->multiSampleCount;
+            SVGA3dTextureFilter autogenFilter = pSurface->autogenFilter;
+            SVGA3dSize         *pMipLevelSize;
+            uint32_t            cFaces = pSurface->cFaces;
+
+            pMipLevelSize = (SVGA3dSize *)RTMemAllocZ(pSurface->faces[0].numMipLevels * pSurface->cFaces * sizeof(SVGA3dSize));
+            AssertReturn(pMipLevelSize, VERR_NO_MEMORY);
+
+            for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
+            {
+                for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
+                {
+                    uint32_t idx = i + iFace * pSurface->faces[0].numMipLevels;
+                    memcpy(&pMipLevelSize[idx], &pSurface->pMipmapLevels[idx].size, sizeof(SVGA3dSize));
+                }
+            }
+            memcpy(face, pSurface->faces, sizeof(pSurface->faces));
+
+            /* Recreate the surface with the original settings; destroys the contents, but that seems fairly safe since the context is also destroyed. */
+            rc = vmsvga3dSurfaceDestroy(pThis, sid);
+            AssertRC(rc);
+
+            rc = vmsvga3dSurfaceDefine(pThis, sid, surfaceFlags, format, face, multisampleCount, autogenFilter, face[0].numMipLevels * cFaces, pMipLevelSize);
+            AssertRC(rc);
+        }
+    }
+#endif
+
+    if (pContext->idFramebuffer != OPENGL_INVALID_ID)
+    {
+        /* Unbind the object from the framebuffer target. */
+        pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, 0 /* back buffer */);
+        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+        pState->ext.glDeleteFramebuffers(1, &pContext->idFramebuffer);
+        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+        if (pContext->idReadFramebuffer != OPENGL_INVALID_ID)
+        {
+            pState->ext.glDeleteFramebuffers(1, &pContext->idReadFramebuffer);
+            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+        }
+        if (pContext->idDrawFramebuffer != OPENGL_INVALID_ID)
+        {
+            pState->ext.glDeleteFramebuffers(1, &pContext->idDrawFramebuffer);
+            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+        }
+    }
+#ifdef RT_OS_WINDOWS
+    wglMakeCurrent(pContext->hdc, NULL);
+    wglDeleteContext(pContext->hglrc);
+    ReleaseDC(pContext->hwnd, pContext->hdc);
+
+    /* Destroy the window we've created. */
+    int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_DESTROYWINDOW, (WPARAM)pContext->hwnd, 0);
+    AssertRC(rc);
+#elif defined(RT_OS_DARWIN)
+    vmsvga3dCocoaDestroyViewAndContext(pContext->cocoaView, pContext->cocoaContext);
+#elif defined(RT_OS_LINUX)
+    glXMakeCurrent(pState->display, None, NULL);
+    glXDestroyContext(pState->display, pContext->glxContext);
+    XDestroyWindow(pState->display, pContext->window);
+#endif
+
+    memset(pContext, 0, sizeof(*pContext));
+    pContext->id = SVGA3D_INVALID_ID;
+
+    VMSVGA3D_CLEAR_CURRENT_CONTEXT(pState);
+    return VINF_SUCCESS;
+}
 
 /**
  * Destroy an existing 3d context
@@ -4583,134 +4719,16 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
 int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
 {
     PVMSVGA3DSTATE pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
-    AssertReturn(pState, VERR_NO_MEMORY);
+    AssertReturn(pState, VERR_WRONG_ORDER);
+
+    /*
+     * Resolve the context and hand it to the common worker function.
+     */
+    if (   cid < pState->cContexts
+        && pState->papContexts[cid]->id == cid)
+        return vmsvga3dContextDestroyOgl(pThis, pState->papContexts[cid], cid);
 
     AssertReturn(cid < SVGA3D_MAX_CONTEXT_IDS, VERR_INVALID_PARAMETER);
-
-    if (    cid < pState->cContexts
-        &&  pState->papContexts[cid]->id == cid)
-    {
-        PVMSVGA3DCONTEXT pContext = pState->papContexts[cid];
-
-        Log(("vmsvga3dContextDestroy id %x\n", cid));
-
-        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-
-        /* Destroy all leftover pixel shaders. */
-        for (uint32_t i = 0; i < pContext->cPixelShaders; i++)
-        {
-            if (pContext->paPixelShader[i].id != SVGA3D_INVALID_ID)
-                vmsvga3dShaderDestroy(pThis, pContext->paPixelShader[i].cid, pContext->paPixelShader[i].id, pContext->paPixelShader[i].type);
-        }
-        if (pContext->paPixelShader)
-            RTMemFree(pContext->paPixelShader);
-
-        /* Destroy all leftover vertex shaders. */
-        for (uint32_t i = 0; i < pContext->cVertexShaders; i++)
-        {
-            if (pContext->paVertexShader[i].id != SVGA3D_INVALID_ID)
-                vmsvga3dShaderDestroy(pThis, pContext->paVertexShader[i].cid, pContext->paVertexShader[i].id, pContext->paVertexShader[i].type);
-        }
-        if (pContext->paVertexShader)
-            RTMemFree(pContext->paVertexShader);
-
-        if (pContext->state.paVertexShaderConst)
-            RTMemFree(pContext->state.paVertexShaderConst);
-        if (pContext->state.paPixelShaderConst)
-            RTMemFree(pContext->state.paPixelShaderConst);
-
-        if (pContext->pShaderContext)
-        {
-            int rc = ShaderContextDestroy(pContext->pShaderContext);
-            AssertRC(rc);
-        }
-
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX /* This is done on windows - prevents various assertions at runtime, as well as shutdown & reset assertions when destroying surfaces. */
-        /* Check for all surfaces that are associated with this context to remove all dependencies */
-        for (uint32_t sid = 0; sid < pState->cSurfaces; sid++)
-        {
-            PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
-            if (    pSurface->idAssociatedContext == cid
-                &&  pSurface->id == sid)
-            {
-                int rc;
-
-                Log(("vmsvga3dContextDestroy: remove all dependencies for surface %x\n", sid));
-
-                uint32_t            surfaceFlags = pSurface->flags;
-                SVGA3dSurfaceFormat format = pSurface->format;
-                SVGA3dSurfaceFace   face[SVGA3D_MAX_SURFACE_FACES];
-                uint32_t            multisampleCount = pSurface->multiSampleCount;
-                SVGA3dTextureFilter autogenFilter = pSurface->autogenFilter;
-                SVGA3dSize         *pMipLevelSize;
-                uint32_t            cFaces = pSurface->cFaces;
-
-                pMipLevelSize = (SVGA3dSize *)RTMemAllocZ(pSurface->faces[0].numMipLevels * pSurface->cFaces * sizeof(SVGA3dSize));
-                AssertReturn(pMipLevelSize, VERR_NO_MEMORY);
-
-                for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
-                {
-                    for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
-                    {
-                        uint32_t idx = i + iFace * pSurface->faces[0].numMipLevels;
-                        memcpy(&pMipLevelSize[idx], &pSurface->pMipmapLevels[idx].size, sizeof(SVGA3dSize));
-                    }
-                }
-                memcpy(face, pSurface->faces, sizeof(pSurface->faces));
-
-                /* Recreate the surface with the original settings; destroys the contents, but that seems fairly safe since the context is also destroyed. */
-                rc = vmsvga3dSurfaceDestroy(pThis, sid);
-                AssertRC(rc);
-
-                rc = vmsvga3dSurfaceDefine(pThis, sid, surfaceFlags, format, face, multisampleCount, autogenFilter, face[0].numMipLevels * cFaces, pMipLevelSize);
-                AssertRC(rc);
-            }
-        }
-#endif
-
-        if (pContext->idFramebuffer != OPENGL_INVALID_ID)
-        {
-            /* Unbind the object from the framebuffer target. */
-            pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, 0 /* back buffer */);
-            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            pState->ext.glDeleteFramebuffers(1, &pContext->idFramebuffer);
-            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-
-            if (pContext->idReadFramebuffer != OPENGL_INVALID_ID)
-            {
-                pState->ext.glDeleteFramebuffers(1, &pContext->idReadFramebuffer);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            }
-            if (pContext->idDrawFramebuffer != OPENGL_INVALID_ID)
-            {
-                pState->ext.glDeleteFramebuffers(1, &pContext->idDrawFramebuffer);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            }
-        }
-#ifdef RT_OS_WINDOWS
-        wglMakeCurrent(pContext->hdc, NULL);
-        wglDeleteContext(pContext->hglrc);
-        ReleaseDC(pContext->hwnd, pContext->hdc);
-
-        /* Destroy the window we've created. */
-        int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_DESTROYWINDOW, (WPARAM)pContext->hwnd, 0);
-        AssertRC(rc);
-#elif defined(RT_OS_DARWIN)
-        vmsvga3dCocoaDestroyViewAndContext(pContext->cocoaView, pContext->cocoaContext);
-#elif defined(RT_OS_LINUX)
-        glXMakeCurrent(pState->display, None, NULL);
-        glXDestroyContext(pState->display, pContext->glxContext);
-        XDestroyWindow(pState->display, pContext->window);
-#endif
-
-        memset(pContext, 0, sizeof(*pContext));
-        pContext->id = SVGA3D_INVALID_ID;
-
-        VMSVGA3D_CLEAR_CURRENT_CONTEXT(pState);
-    }
-    else
-        AssertFailed();
-
     return VINF_SUCCESS;
 }
 
