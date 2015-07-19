@@ -40,6 +40,7 @@ typedef struct VFMTCHKSTATE
     long        iFmt;
     long        iArgs;
     const char *pszFmt;
+    bool        fMaybeNull;
 #if defined(__GNUC__) && !defined(VBOX_COMPILER_PLUG_IN_AGNOSTIC)
     gimple      hStmt;
     location_t  hFmtLoc;

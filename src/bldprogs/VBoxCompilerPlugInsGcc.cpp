@@ -105,7 +105,7 @@ static const struct register_pass_info  g_MyPassInfo =
 };
 
 
-/** Attribute specification. */
+/** Attribute specifications. */
 static const struct attribute_spec g_AttribSpecs[] =
 {
     {
@@ -118,7 +118,17 @@ static const struct attribute_spec g_AttribSpecs[] =
         .handler                = AttributeHandler,
         .affects_type_identity  = false
     },
-    {   NULL, 0, 0, false, false, false, NULL, false }
+    {
+        .name                   = "iprt_format_maybe_null",
+        .min_length             = 2,
+        .max_length             = 2,
+        .decl_required          = false,
+        .type_required          = true,
+        .function_type_required = true,
+        .handler                = AttributeHandler,
+        .affects_type_identity  = false
+    },
+    {   NULL, 0, 0, false, false, false, NULL, false } /* just in case */
 };
 
 
@@ -291,7 +301,12 @@ DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PVFMTCHKSTATE pState, tre
      * Fend off NULLs.
      */
     if (integer_zerop(hFmtArg))
-        warning_at(MY_LOC(hFmtArg, pState), 0, "Format string should not be NULL");
+    {
+        if (pState->fMaybeNull)
+            VFmtChkVerifyEndOfArgs(pState, 0);
+        else
+            error_at(MY_LOC(hFmtArg, pState), "Format string should not be NULL");
+    }
     /*
      * Need address expression to get any further.
      */
@@ -411,10 +426,20 @@ DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PVFMTCHKSTATE pState, tre
 static void MyCheckFormatRecursive(PVFMTCHKSTATE pState, tree hFmtArg)
 {
     /*
+     * Catch wrong attribute use.
+     */
+    if (hFmtArg == NULL_TREE)
+        error_at(pState->hFmtLoc, "IPRT format attribute is probably used incorrectly (hFmtArg is NULL)");
+    /*
      * NULL format strings may cause crashes.
      */
-    if (integer_zerop(hFmtArg))
-        warning_at(MY_LOC(hFmtArg, pState), 0, "Format string should not be NULL");
+    else if (integer_zerop(hFmtArg))
+    {
+        if (pState->fMaybeNull)
+            VFmtChkVerifyEndOfArgs(pState, 0);
+        else
+            error_at(MY_LOC(hFmtArg, pState), "Format string should not be NULL");
+    }
     /*
      * Check both branches of a ternary operator.
      */
@@ -478,11 +503,12 @@ static unsigned int     MyPassExecuteCallback(void)
                 /*
                  * Check if the function type has the __iprt_format__ attribute.
                  */
-                tree const hFn       = gimple_call_fn(hStmt);
-                tree const hFnType   = gimple_call_fntype(hStmt);
-                tree const hAttr     = lookup_attribute("iprt_format", TYPE_ATTRIBUTES(hFnType));
+                tree const hFn          = gimple_call_fn(hStmt);
+                tree const hFnType      = gimple_call_fntype(hStmt);
+                tree const hAttr        = lookup_attribute("iprt_format", TYPE_ATTRIBUTES(hFnType));
+                tree const hAttrMaybe0  = lookup_attribute("iprt_format_maybe_null", TYPE_ATTRIBUTES(hFnType));
 #ifdef DEBUG
-                tree const hFnDecl   = gimple_call_fndecl(hStmt);
+                tree const hFnDecl      = gimple_call_fndecl(hStmt);
                 dprintf("     hFn    =%p %s(%d); args=%d\n",
                         hFn, tree_code_name[TREE_CODE(hFn)], TREE_CODE(hFn), gimple_call_num_args(hStmt));
                 if (hFnDecl)
@@ -491,20 +517,22 @@ static unsigned int     MyPassExecuteCallback(void)
                 if (hFnType)
                     dprintf("     hFnType=%p %s(%d)\n", hFnType, tree_code_name[TREE_CODE(hFnType)], TREE_CODE(hFnType));
 #endif
-                if (hAttr)
+                if (hAttr || hAttrMaybe0)
                 {
                     /*
                      * Yeah, it has the attribute!
                      */
-                    tree const hAttrArgs = TREE_VALUE(hAttr);
+                    tree const hAttrArgs = hAttr ? TREE_VALUE(hAttr) : TREE_VALUE(hAttrMaybe0);
                     VFMTCHKSTATE State;
-                    State.iFmt    = TREE_INT_CST(TREE_VALUE(hAttrArgs)).to_shwi();
-                    State.iArgs   = TREE_INT_CST(TREE_VALUE(TREE_CHAIN(hAttrArgs))).to_shwi();
-                    State.hStmt   = hStmt;
-                    State.hFmtLoc = gimple_location(hStmt);
-                    State.pszFmt  = NULL;
-                    dprintf("     %s() __iprt_format__(iFmt=%ld, iArgs=%ld)\n",
-                            DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>", State.iFmt, State.iArgs);
+                    State.iFmt          = TREE_INT_CST(TREE_VALUE(hAttrArgs)).to_shwi();
+                    State.iArgs         = TREE_INT_CST(TREE_VALUE(TREE_CHAIN(hAttrArgs))).to_shwi();
+                    State.pszFmt        = NULL;
+                    State.fMaybeNull    = hAttr == NULL_TREE;
+                    State.hStmt         = hStmt;
+                    State.hFmtLoc       = gimple_location(hStmt);
+                    dprintf("     %s() __iprt_format%s__(iFmt=%ld, iArgs=%ld)\n",
+                            DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
+                            State.fMaybeNull ? "_maybe_null" : "", State.iFmt, State.iArgs);
 
                     MyCheckFormatRecursive(&State, gimple_call_arg(hStmt, State.iFmt - 1));
                 }
@@ -564,6 +592,7 @@ static void RegisterAttributesEvent(void *pvEventData, void *pvUser)
     dprintf("RegisterAttributesEvent: pvEventData=%p\n", pvEventData);
 
     register_attribute(&g_AttribSpecs[0]);
+    register_attribute(&g_AttribSpecs[1]);
 }
 
 
@@ -632,7 +661,7 @@ void VFmtChkErrFmt(PVFMTCHKSTATE pState, const char *pszLoc, const char *pszForm
 
 void VFmtChkVerifyEndOfArgs(PVFMTCHKSTATE pState, unsigned iArg)
 {
-    dprintf("VFmtChkVerifyFinalArg: iArg=%u iArgs=%ld cArgs=%u\n", iArg, pState->iArgs, gimple_call_num_args(pState->hStmt));
+    dprintf("VFmtChkVerifyEndOfArgs: iArg=%u iArgs=%ld cArgs=%u\n", iArg, pState->iArgs, gimple_call_num_args(pState->hStmt));
     if (pState->iArgs > 0)
     {
         iArg += pState->iArgs - 1;
@@ -711,8 +740,9 @@ void VFmtChkHandleReplacementFormatString(PVFMTCHKSTATE pState, const char *pszP
 {
     if (pState->iArgs > 0)
     {
-        pState->iFmt  = pState->iArgs + iArg;
-        pState->iArgs = pState->iFmt  + 1;
+        pState->iFmt        = pState->iArgs + iArg;
+        pState->iArgs       = pState->iFmt  + 1;
+        pState->fMaybeNull  = false;
         MyCheckFormatRecursive(pState, gimple_call_arg(pState->hStmt, pState->iFmt - 1));
     }
 }
