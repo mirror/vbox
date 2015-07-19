@@ -502,7 +502,8 @@ typedef struct PDMUSBHLP
      * @param   pszFormat           Message. (optional)
      * @param   va                  Message parameters.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDBGFStopV,(PPDMUSBINS pUsbIns, const char *pszFile, unsigned iLine, const char *pszFunction, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(int, pfnDBGFStopV,(PPDMUSBINS pUsbIns, const char *pszFile, unsigned iLine, const char *pszFunction,
+                                            const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(5, 0));
 
     /**
      * Register a info handler with DBGF,
@@ -594,8 +595,9 @@ typedef struct PDMUSBHLP
      * @param   pszName             The sample name format string.
      * @param   va                  Arguments to the format string.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterV,(PPDMUSBINS pUsbIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
-                                                 STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list va));
+    DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterV,(PPDMUSBINS pUsbIns, void *pvSample, STAMTYPE enmType,
+                                                 STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc,
+                                                 const char *pszName, va_list va)  RT_IPRT_FORMAT_ATTR(7, 0));
 
     /**
      * Creates a timer.
@@ -623,7 +625,8 @@ typedef struct PDMUSBHLP
      * @param   pszFormat           Error message format string.
      * @param   va                  Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMUSBINS pUsbIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMUSBINS pUsbIns, int rc, RT_SRC_POS_DECL,
+                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
 
     /**
      * Set the VM runtime error message
@@ -635,7 +638,8 @@ typedef struct PDMUSBHLP
      * @param   pszFormat           Error message format string.
      * @param   va                  Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMUSBINS pUsbIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMUSBINS pUsbIns, uint32_t fFlags, const char *pszErrorId,
+                                                     const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0));
 
     /**
      * Gets the VM state.
@@ -891,7 +895,7 @@ DECLINLINE(int) PDMUsbHlpDriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun, PPDMIBASE
  * @param   pszFormat           Message. (optional)
  * @param   ...                 Message parameters.
  */
-DECLINLINE(int) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *pszFormat, ...)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(5, 6) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *pszFormat, ...)
 {
 #ifdef VBOX_STRICT
     int rc;
@@ -954,7 +958,8 @@ DECLINLINE(void) PDMUsbHlpAsyncNotificationCompleted(PPDMUSBINS pUsbIns)
  * @param   pszFormat           Error message format string.
  * @param   ...                 Error message arguments.
  */
-DECLINLINE(int) PDMUsbHlpVMSetError(PPDMUSBINS pUsbIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(6, 7) PDMUsbHlpVMSetError(PPDMUSBINS pUsbIns, int rc, RT_SRC_POS_DECL,
+                                                              const char *pszFormat, ...)
 {
     va_list     va;
     va_start(va, pszFormat);

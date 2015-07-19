@@ -58,7 +58,8 @@ VMM_INT_DECL(void)      PDMCritSectBothFF(PVMCPU pVCpu);
 
 VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNames);
 
-VMMR3DECL(int)      PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, ...);
+VMMR3DECL(int)      PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
+                                      const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(6, 7);
 VMMR3DECL(int)      PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3);
 VMMR3DECL(bool)     PDMR3CritSectYield(PPDMCRITSECT pCritSect);
 VMMR3DECL(const char *) PDMR3CritSectName(PCPDMCRITSECT pCritSect);

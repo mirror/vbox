@@ -413,7 +413,8 @@ typedef struct DBGCCMDHLP
      *                      well as the debugger ones.
      * @param   ...         Arguments specified in the format string.
      */
-    DECLCALLBACKMEMBER(int, pfnPrintf)(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, ...);
+    DECLCALLBACKMEMBER(int, pfnPrintf)(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten,
+                                       const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
     /**
      * Command helper for writing formatted text to the debug console.
@@ -425,7 +426,8 @@ typedef struct DBGCCMDHLP
      *                      well as the debugger ones.
      * @param   args        Arguments specified in the format string.
      */
-    DECLCALLBACKMEMBER(int, pfnPrintfV)(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, va_list args);
+    DECLCALLBACKMEMBER(int, pfnPrintfV)(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten,
+                                        const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(3, 0);
 
     /**
      * Command helper for formatting a string with debugger format specifiers.
@@ -438,7 +440,8 @@ typedef struct DBGCCMDHLP
      *                      well as the debugger ones.
      * @param   ...         Arguments specified in the format string.
      */
-    DECLCALLBACKMEMBER(size_t, pfnStrPrintf)(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf, const char *pszFormat, ...);
+    DECLCALLBACKMEMBER(size_t, pfnStrPrintf)(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf,
+                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 
     /**
      * Command helper for formatting a string with debugger format specifiers.
@@ -452,7 +455,7 @@ typedef struct DBGCCMDHLP
      * @param   va          Arguments specified in the format string.
      */
     DECLCALLBACKMEMBER(size_t, pfnStrPrintfV)(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf,
-                                              const char *pszFormat, va_list va);
+                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
 
     /**
      * Command helper for formatting and error message for a VBox status code.
@@ -463,7 +466,7 @@ typedef struct DBGCCMDHLP
      * @param   pszFormat   Format string for additional messages. Can be NULL.
      * @param   ...         Format arguments, optional.
      */
-    DECLCALLBACKMEMBER(int, pfnVBoxError)(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...);
+    DECLCALLBACKMEMBER(int, pfnVBoxError)(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
     /**
      * Command helper for formatting and error message for a VBox status code.
@@ -475,7 +478,8 @@ typedef struct DBGCCMDHLP
      * @param   pszFormat   Format string for additional messages. Can be NULL.
      * @param   args        Format arguments, optional.
      */
-    DECLCALLBACKMEMBER(int, pfnVBoxErrorV)(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, va_list args);
+    DECLCALLBACKMEMBER(int, pfnVBoxErrorV)(PDBGCCMDHLP pCmdHlp, int rc,
+                                           const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(3, 0);
 
     /**
      * Command helper for reading memory specified by a DBGC variable.
@@ -516,7 +520,7 @@ typedef struct DBGCCMDHLP
      * @param   pszExpr     The expression. Format string with the format DBGC extensions.
      * @param   ...         Format arguments.
      */
-    DECLCALLBACKMEMBER(int, pfnExec)(PDBGCCMDHLP pCmdHlp, const char *pszExpr, ...);
+    DECLCALLBACKMEMBER(int, pfnExec)(PDBGCCMDHLP pCmdHlp, const char *pszExpr, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
     /**
      * Evaluates an expression.
@@ -528,7 +532,8 @@ typedef struct DBGCCMDHLP
      * @param   pszExpr     The expression. Format string with the format DBGC extensions.
      * @param   va          Format arguments.
      */
-    DECLCALLBACKMEMBER(int, pfnEvalV)(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, const char *pszExpr, va_list va);
+    DECLCALLBACKMEMBER(int, pfnEvalV)(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult,
+                                      const char *pszExpr, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
     /**
      * Print an error and fail the current command.
@@ -540,7 +545,8 @@ typedef struct DBGCCMDHLP
      * @param   pszFormat   The error message format string.
      * @param   va          Format arguments.
      */
-    DECLCALLBACKMEMBER(int, pfnFailV)(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *pszFormat, va_list va);
+    DECLCALLBACKMEMBER(int, pfnFailV)(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd,
+                                      const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
     /**
      * Print an error and fail the current command.
@@ -556,7 +562,8 @@ typedef struct DBGCCMDHLP
      *
      * @see     DBGCCmdHlpFailRc
      */
-    DECLCALLBACKMEMBER(int, pfnFailRcV)(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int rc, const char *pszFormat, va_list va);
+    DECLCALLBACKMEMBER(int, pfnFailRcV)(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int rc,
+                                        const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
 
     /**
      * Parser error.
@@ -678,7 +685,7 @@ typedef struct DBGCCMDHLP
 /**
  * @copydoc DBGCCMDHLP::pfnPrintf
  */
-DECLINLINE(int) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, const char *pszFormat, ...)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, const char *pszFormat, ...)
 {
     va_list va;
     int     rc;
@@ -694,7 +701,8 @@ DECLINLINE(int) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, const char *pszFormat, ...
 /**
  * @copydoc DBGCCMDHLP::pfnStrPrintf
  */
-DECLINLINE(size_t) DBGCCmdHlpStrPrintf(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf, const char *pszFormat, ...)
+DECLINLINE(size_t) RT_IPRT_FORMAT_ATTR(4, 5) DBGCCmdHlpStrPrintf(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf,
+                                                                 const char *pszFormat, ...)
 {
     va_list va;
     size_t  cch;
@@ -709,7 +717,7 @@ DECLINLINE(size_t) DBGCCmdHlpStrPrintf(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t
 /**
  * @copydoc FNDBGCHLPVBOXERROR
  */
-DECLINLINE(int) DBGCCmdHlpVBoxError(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(3, 4) DBGCCmdHlpVBoxError(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...)
 {
     va_list va;
 
@@ -738,7 +746,7 @@ DECLINLINE(int) DBGCCmdHlpMemRead(PDBGCCMDHLP pCmdHlp, void *pvBuffer, size_t cb
  * @param   pszExpr     The expression. Format string with the format DBGC extensions.
  * @param   ...         Format arguments.
  */
-DECLINLINE(int) DBGCCmdHlpEval(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, const char *pszExpr, ...)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(3, 4) DBGCCmdHlpEval(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, const char *pszExpr, ...)
 {
     va_list va;
     int     rc;
@@ -760,7 +768,7 @@ DECLINLINE(int) DBGCCmdHlpEval(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, const char
  * @param   pszFormat   The error message format string.
  * @param   ...         Format arguments.
  */
-DECLINLINE(int) DBGCCmdHlpFail(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *pszFormat, ...)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(3, 4) DBGCCmdHlpFail(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *pszFormat, ...)
 {
     va_list va;
     int     rc;
@@ -791,7 +799,8 @@ DECLINLINE(int) DBGCCmdHlpFail(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *
  * @param   pszFormat   The error message format string.
  * @param   ...         Format arguments.
  */
-DECLINLINE(int) DBGCCmdHlpFailRc(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int rc, const char *pszFormat, ...)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(4, 5) DBGCCmdHlpFailRc(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int rc,
+                                                           const char *pszFormat, ...)
 {
     va_list va;
 

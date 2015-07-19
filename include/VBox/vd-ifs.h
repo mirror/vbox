@@ -243,7 +243,8 @@ typedef struct VDINTERFACEERROR
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(void, pfnError, (void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(void, pfnError, (void *pvUser, int rc, RT_SRC_POS_DECL,
+                                          const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
 
     /**
      * Informational message callback. May be NULL. Used e.g. in
@@ -254,7 +255,7 @@ typedef struct VDINTERFACEERROR
      * @param   pszFormat       Message format string.
      * @param   va              Message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMessage, (void *pvUser, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(int, pfnMessage, (void *pvUser, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0));
 
 } VDINTERFACEERROR, *PVDINTERFACEERROR;
 
@@ -287,8 +288,8 @@ DECLINLINE(PVDINTERFACEERROR) VDIfErrorGet(PVDINTERFACE pVDIfs)
  * @param   pszFormat          The format string to pass.
  * @param   ...                Arguments to the format string.
  */
-DECLINLINE(int) vdIfError(PVDINTERFACEERROR pIfError, int rc, RT_SRC_POS_DECL,
-                          const char *pszFormat, ...)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(6, 7) vdIfError(PVDINTERFACEERROR pIfError, int rc, RT_SRC_POS_DECL,
+                                                    const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -306,7 +307,7 @@ DECLINLINE(int) vdIfError(PVDINTERFACEERROR pIfError, int rc, RT_SRC_POS_DECL,
  * @param   pszFormat          The format string to pass.
  * @param   ...                Arguments to the format string.
  */
-DECLINLINE(int) vdIfErrorMessage(PVDINTERFACEERROR pIfError, const char *pszFormat, ...)
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) vdIfErrorMessage(PVDINTERFACEERROR pIfError, const char *pszFormat, ...)
 {
     int rc = VINF_SUCCESS;
     va_list va;

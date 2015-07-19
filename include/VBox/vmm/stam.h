@@ -1164,13 +1164,13 @@ VMMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVI
     STAM_STATS({ STAM_REL_REG_USED(pVM, pvSample, enmType, pszName, enmUnit, pszDesc); })
 
 VMMR3DECL(int)  STAMR3RegisterFU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                 const char *pszDesc, const char *pszName, ...);
+                                 const char *pszDesc, const char *pszName, ...) RT_IPRT_FORMAT_ATTR(7, 8);
 VMMR3DECL(int)  STAMR3RegisterF(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                const char *pszDesc, const char *pszName, ...);
+                                const char *pszDesc, const char *pszName, ...) RT_IPRT_FORMAT_ATTR(7, 8);
 VMMR3DECL(int)  STAMR3RegisterVU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                 const char *pszDesc, const char *pszName, va_list args);
+                                 const char *pszDesc, const char *pszName, va_list args) RT_IPRT_FORMAT_ATTR(7, 0);
 VMMR3DECL(int)  STAMR3RegisterV(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                const char *pszDesc, const char *pszName, va_list args);
+                                const char *pszDesc, const char *pszName, va_list args) RT_IPRT_FORMAT_ATTR(7, 0);
 
 /**
  * Resets the sample.
@@ -1195,13 +1195,13 @@ typedef FNSTAMR3CALLBACKPRINT *PFNSTAMR3CALLBACKPRINT;
 
 VMMR3DECL(int)  STAMR3RegisterCallback(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
                                        PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
-                                       const char *pszDesc, const char *pszName, ...);
+                                       const char *pszDesc, const char *pszName, ...) RT_IPRT_FORMAT_ATTR(8, 9);
 VMMR3DECL(int)  STAMR3RegisterCallbackV(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
                                         PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
-                                        const char *pszDesc, const char *pszName, va_list args);
+                                        const char *pszDesc, const char *pszName, va_list args) RT_IPRT_FORMAT_ATTR(8, 0);
 VMMR3DECL(int)  STAMR3Deregister(PUVM pUVM, const char *pszPat);
-VMMR3DECL(int)  STAMR3DeregisterF(PUVM pUVM, const char *pszPatFmt, ...);
-VMMR3DECL(int)  STAMR3DeregisterV(PUVM pUVM, const char *pszPatFmt, va_list va);
+VMMR3DECL(int)  STAMR3DeregisterF(PUVM pUVM, const char *pszPatFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+VMMR3DECL(int)  STAMR3DeregisterV(PUVM pUVM, const char *pszPatFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 VMMR3DECL(int)  STAMR3DeregisterByAddr(PUVM pUVM, void *pvSample);
 
 VMMR3DECL(int)  STAMR3Reset(PUVM pUVM, const char *pszPat);

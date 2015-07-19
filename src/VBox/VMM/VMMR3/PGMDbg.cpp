@@ -1042,7 +1042,7 @@ static int pgmR3DumpHierarchyShwMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
         if (!pvPage)
         {
             pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! PT mapping %s at HCPhys=%RHp was not found in the page pool!\n",
-                                    pState->cchAddress, pState->u64Address, HCPhys);
+                                    pState->cchAddress, pState->u64Address, pszDesc, HCPhys);
             return VERR_INVALID_PARAMETER;
         }
     }
@@ -2353,7 +2353,7 @@ static int pgmR3DumpHierarchyGstDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t c
                                                  - W U - - - -- -- -- -- -- 010 */
                                     ,
                                     cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "",
-                                    cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address");
+                                    cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address");
         if (pState->fLme)
             rc = pgmR3DumpHierarchyGstPaePML4(pState, cr3 & cr3Mask, cMaxDepth);
         else if (pState->fPae)

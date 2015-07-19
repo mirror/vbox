@@ -3451,7 +3451,7 @@ static int vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, .
             }
             LogRel((" failed, because the VM state is actually %s\n", VMR3GetStateName(enmStateCur)));
             VMSetError(pVM, VERR_VM_INVALID_VM_STATE, RT_SRC_POS,
-                       N_("%s failed because the current VM state, %s, was not found in the state transition table"),
+                       N_("%s failed because the current VM state, %s, was not found in the state transition table (old state %s)"),
                        pszWho, VMR3GetStateName(enmStateCur), VMR3GetStateName(enmStateOld));
             AssertMsgFailed(("%s - state=%s, see release log for full details. Check the cTransitions passed us.\n",
                              pszWho, VMR3GetStateName(enmStateCur)));

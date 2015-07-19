@@ -3658,7 +3658,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         {
             /* If we hotplug a USB device create a new CFGM tree. */
             if (!fHotplug)
-                pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "USB/%s/", pcszDevice, uInstance);
+                pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "USB/%s/", pcszDevice);
             else
                 pCtlInst = CFGMR3CreateTree(pUVM);
         }

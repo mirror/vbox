@@ -1033,7 +1033,8 @@ typedef enum SUPINITOP
  * @param   pszMsgFmt       Error message format string.
  * @param   va              The message format arguments.
  */
-typedef DECLCALLBACK(void) FNSUPTRUSTEDERROR(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va);
+typedef DECLCALLBACK(void) FNSUPTRUSTEDERROR(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                             const char *pszMsgFmt, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
 /** Pointer to FNSUPTRUSTEDERROR. */
 typedef FNSUPTRUSTEDERROR *PFNSUPTRUSTEDERROR;
 
@@ -1836,7 +1837,7 @@ SUPR0DECL(int) SUPR0GetSvmUsability(bool fInitSvm);
 SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous);
 SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
-SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
+SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
 SUPR0DECL(RTCCUINTREG) SUPR0ChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask);

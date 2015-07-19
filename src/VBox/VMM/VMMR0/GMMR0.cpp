@@ -1459,7 +1459,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
                         ||  pChunk->cShared != cShared))
         {
             SUPR0Printf("gmmR0CleanupVMScanChunk: Chunk %p/%#x has bogus stats - free=%d/%d private=%d/%d shared=%d/%d\n",
-                        pChunk->cFree, cFree, pChunk->cPrivate, cPrivate, pChunk->cShared, cShared);
+                        pChunk, pChunk->Core.Key, pChunk->cFree, cFree, pChunk->cPrivate, cPrivate, pChunk->cShared, cShared);
             pChunk->cFree = cFree;
             pChunk->cPrivate = cPrivate;
             pChunk->cShared = cShared;

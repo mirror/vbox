@@ -1434,7 +1434,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
                 break;
             case VERR_DBGC_PARSE_NO_MEMORY:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
-                    "Error: Out memory in the regular heap! Expect odd stuff to happen...\n", cArgs);
+                    "Error: Out memory in the regular heap! Expect odd stuff to happen...\n");
                 break;
             case VERR_DBGC_PARSE_INCORRECT_ARG_TYPE:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,

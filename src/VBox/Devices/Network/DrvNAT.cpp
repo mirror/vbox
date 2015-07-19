@@ -1497,16 +1497,15 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     char szNetwork[32]; /* xxx.xxx.xxx.xxx/yy */
     GET_STRING(rc, pThis, pCfg, "Network", szNetwork[0], sizeof(szNetwork));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT%d: Configuration error: "
-                                   "missing network"),
-                                   pDrvIns->iInstance, szNetwork);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT%d: Configuration error: missing network"),
+                                   pDrvIns->iInstance);
 
     RTNETADDRIPV4 Network, Netmask;
 
     rc = RTCidrStrToIPv4(szNetwork, &Network, &Netmask);
     if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: Configuration error: "
-                                   "network '%s' describes not a valid IPv4 network"),
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("NAT#%d: Configuration error: network '%s' describes not a valid IPv4 network"),
                                    pDrvIns->iInstance, szNetwork);
 
     /*

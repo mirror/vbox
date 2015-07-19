@@ -7502,7 +7502,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 SSMR3GetU32(pSSM, (uint32_t*)&pThis->ahciPort[i].MediaEventStatus);
             }
             else if (pThis->ahciPort[i].fATAPI)
-                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: atapi - saved=%false config=true"));
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: atapi - saved=false config=true"));
 
             /* Check if we have tasks pending. */
             uint32_t fTasksOutstanding = pAhciPort->regCI & ~pAhciPort->u32TasksFinished;

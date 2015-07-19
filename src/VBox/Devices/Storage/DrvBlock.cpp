@@ -1029,8 +1029,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
         rc = RTUuidFromStr(&pThis->Uuid, psz);
         if (RT_FAILURE(rc))
         {
-            PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, "%s",
-                                N_("Uuid from string failed on \"%s\""), psz);
+            PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Uuid from string failed on \"%s\""), psz);
             MMR3HeapFree(psz);
             return rc;
         }

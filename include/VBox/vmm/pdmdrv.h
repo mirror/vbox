@@ -580,7 +580,8 @@ typedef struct PDMDRVHLPRC
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetError,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetError,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
+                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7));
 
     /**
      * Set the VM error message
@@ -592,7 +593,8 @@ typedef struct PDMDRVHLPRC
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
+                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
 
     /**
      * Set the VM runtime error message
@@ -604,7 +606,8 @@ typedef struct PDMDRVHLPRC
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
+                                                    const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(4, 5));
 
     /**
      * Set the VM runtime error message
@@ -616,7 +619,8 @@ typedef struct PDMDRVHLPRC
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
+                                                     const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0));
 
     /**
      * Assert that the current thread is the emulation thread.
@@ -676,7 +680,8 @@ typedef struct PDMDRVHLPR0
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetError,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...));
+    DECLR0CALLBACKMEMBER(int, pfnVMSetError,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
+                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7));
 
     /**
      * Set the VM error message
@@ -688,7 +693,8 @@ typedef struct PDMDRVHLPR0
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va));
+    DECLR0CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
+                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
 
     /**
      * Set the VM runtime error message
@@ -700,7 +706,8 @@ typedef struct PDMDRVHLPR0
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...));
+    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
+                                                    const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(4, 5));
 
     /**
      * Set the VM runtime error message
@@ -712,7 +719,8 @@ typedef struct PDMDRVHLPR0
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
+    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
+                                                     const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0));
 
     /**
      * Assert that the current thread is the emulation thread.
@@ -842,7 +850,8 @@ typedef struct PDMDRVHLPR3
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetError,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetError,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
+                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7));
 
     /**
      * Set the VM error message
@@ -854,7 +863,8 @@ typedef struct PDMDRVHLPR3
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
+                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
 
     /**
      * Set the VM runtime error message
@@ -866,7 +876,8 @@ typedef struct PDMDRVHLPR3
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
+                                                    const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5));
 
     /**
      * Set the VM runtime error message
@@ -878,7 +889,8 @@ typedef struct PDMDRVHLPR3
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
+                                                     const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0));
 
     /**
      * Gets the VM state.
@@ -1047,7 +1059,8 @@ typedef struct PDMDRVHLPR3
      * @param   ...         Arguments to the format string.
      */
     DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterF,(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
-                                                 STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...));
+                                                 STAMUNIT enmUnit, const char *pszDesc,
+                                                 const char *pszName, ...) RT_IPRT_FORMAT_ATTR(7, 8));
 
     /**
      * Same as pfnSTAMRegister except that the name is specified in a
@@ -1063,7 +1076,8 @@ typedef struct PDMDRVHLPR3
      * @param   args            Arguments to the format string.
      */
     DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterV,(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
-                                                 STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args));
+                                                 STAMUNIT enmUnit, const char *pszDesc,
+                                                 const char *pszName, va_list args) RT_IPRT_FORMAT_ATTR(7, 0));
 
     /**
      * Deregister a statistic item previously registered with pfnSTAMRegister,
@@ -1341,7 +1355,8 @@ typedef struct PDMDRVHLPR3
 /**
  * @copydoc PDMDRVHLP::pfnVMSetError
  */
-DECLINLINE(int) PDMDrvHlpVMSetError(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+DECLINLINE(int)  RT_IPRT_FORMAT_ATTR(6, 7) PDMDrvHlpVMSetError(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS_DECL,
+                                                               const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -1359,7 +1374,8 @@ DECLINLINE(int) PDMDrvHlpVMSetError(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS
 /**
  * @copydoc PDMDRVHLP::pfnVMSetErrorV
  */
-DECLINLINE(int) PDMDrvHlpVMSetErrorV(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+DECLINLINE(int)  RT_IPRT_FORMAT_ATTR(6, 0) PDMDrvHlpVMSetErrorV(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS_DECL,
+                                                                const char *pszFormat, va_list va)
 {
     return pDrvIns->CTX_SUFF(pHlp)->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
 }
@@ -1368,7 +1384,8 @@ DECLINLINE(int) PDMDrvHlpVMSetErrorV(PPDMDRVINS pDrvIns, const int rc, RT_SRC_PO
 /**
  * @copydoc PDMDRVHLP::pfnVMSetRuntimeError
  */
-DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
+DECLINLINE(int)  RT_IPRT_FORMAT_ATTR(4, 5) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
+                                                                      const char *pszFormat, ...)
 {
     va_list va;
     int rc;
@@ -1387,7 +1404,8 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, 
 /**
  * @copydoc PDMDRVHLP::pfnVMSetRuntimeErrorV
  */
-DECLINLINE(int) PDMDrvHlpVMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
+DECLINLINE(int)  RT_IPRT_FORMAT_ATTR(4, 0) PDMDrvHlpVMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags,
+                                                                       const char *pszErrorId,  const char *pszFormat, va_list va)
 {
     return pDrvIns->CTX_SUFF(pHlp)->pfnVMSetRuntimeErrorV(pDrvIns, fFlags, pszErrorId, pszFormat, va);
 }
@@ -1599,8 +1617,9 @@ DECLINLINE(void) PDMDrvHlpSTAMRegister(PPDMDRVINS pDrvIns, void *pvSample, STAMT
 /**
  * @copydoc PDMDRVHLP::pfnSTAMRegisterF
  */
-DECLINLINE(void) PDMDrvHlpSTAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                        const char *pszDesc, const char *pszName, ...)
+DECLINLINE(void)  RT_IPRT_FORMAT_ATTR(7, 8) PDMDrvHlpSTAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType,
+                                                                   STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
+                                                                   const char *pszDesc, const char *pszName, ...)
 {
     va_list va;
     va_start(va, pszName);

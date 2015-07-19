@@ -3947,10 +3947,10 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
      * Show info.
      */
     pHlp->pfnPrintf(pHlp,
-                    "pcnet #%d: port=%RTiop mmio=%RX32 mac-cfg=%RTmac %s\n",
+                    "pcnet #%d: port=%RTiop mmio=%RX32 mac-cfg=%RTmac %s%s%s\n",
                     pDevIns->iInstance,
                     pThis->IOPortBase, pThis->MMIOBase, &pThis->MacConfigured,
-                    pThis->fAm79C973 ? "Am79C973" : "Am79C970A", pThis->fGCEnabled ? " GC" : "", pThis->fR0Enabled ? " R0" : "");
+                    pThis->fAm79C973 ? "Am79C973" : "Am79C970A", pThis->fGCEnabled ? " RC" : "", pThis->fR0Enabled ? " R0" : "");
 
     PDMCritSectEnter(&pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
 
@@ -4117,10 +4117,12 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                             "ERR=%d NOFCS=%d LTINT=%d ONE=%d DEF=%d STP=%d ENP=%d BPE=%d "
                             "BUFF=%d UFLO=%d EXDEF=%d LCOL=%d LCAR=%d RTRY=%d TDR=%03x TRC=%#x ONES=%#x\n"
                             ,
-                            i, GCPhys, i + 1 == CSR_XMTRC(pThis) ? '*' : ' ', GCPhys == CSR_CXDA(pThis) ? '*' : ' ',
-                            tmd.tmd0.tbadr, 4096 - tmd.tmd1.bcnt,
-                            tmd.tmd2.tdr,
-                            tmd.tmd2.trc,
+                            i,
+                            GCPhys,
+                            i + 1 == CSR_XMTRC(pThis) ? '*' : ' ',
+                            GCPhys == CSR_CXDA(pThis) ? '*' : ' ',
+                            tmd.tmd0.tbadr,
+                            4096 - tmd.tmd1.bcnt,
                             tmd.tmd1.own,
                             tmd.tmd1.err,
                             tmd.tmd1.nofcs,
@@ -5152,7 +5154,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,  "",                                   "/Devices/PCNet%d/XmitChainCounts/%d", iInstance, i + 1);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,      "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "",                                   "/Devices/PCNet%d/Xmit/Skipped", iInstance, i + 1);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "",                                   "/Devices/PCNet%d/Xmit/Skipped", iInstance);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling interrupt checks",         "/Devices/PCNet%d/UpdateIRQ", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatPollTimer,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling poll timer",               "/Devices/PCNet%d/PollTimer", iInstance);

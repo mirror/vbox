@@ -288,9 +288,9 @@ VMMR3_INT_DECL(void)    DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)     DBGFR3VMMForcedAction(PVM pVM);
 VMMR3DECL(int)          DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent);
 VMMR3DECL(int)          DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine,
-                                       const char *pszFunction, const char *pszFormat, ...);
+                                       const char *pszFunction, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(6, 7);
 VMMR3DECL(int)          DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine,
-                                        const char *pszFunction, const char *pszFormat, va_list args);
+                                        const char *pszFunction, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(6, 0);
 VMMR3_INT_DECL(int)     DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszMsg1, const char *pszMsg2);
 VMMR3_INT_DECL(int)     DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent);
 VMMR3_INT_DECL(int)     DBGFR3PrgStep(PVMCPU pVCpu);
@@ -445,7 +445,7 @@ typedef struct DBGFINFOHLP
      * @param   pszFormat   The format string.
      * @param   ...         Arguments.
      */
-    DECLCALLBACKMEMBER(void, pfnPrintf)(PCDBGFINFOHLP pHlp, const char *pszFormat, ...);
+    DECLCALLBACKMEMBER(void, pfnPrintf)(PCDBGFINFOHLP pHlp, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
     /**
      * Print formatted string.
@@ -454,7 +454,7 @@ typedef struct DBGFINFOHLP
      * @param   pszFormat   The format string.
      * @param   args        Argument list.
      */
-    DECLCALLBACKMEMBER(void, pfnPrintfV)(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args);
+    DECLCALLBACKMEMBER(void, pfnPrintfV)(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(2, 0);
 } DBGFINFOHLP;
 
 

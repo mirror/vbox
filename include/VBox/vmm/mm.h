@@ -320,10 +320,10 @@ VMMR3DECL(int)      MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, vo
 VMMR3DECL(void *)   MMR3HeapRealloc(void *pv, size_t cbNewSize);
 VMMR3DECL(char *)   MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz);
 VMMR3DECL(char *)   MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz);
-VMMR3DECL(char *)   MMR3HeapAPrintf(PVM pVM, MMTAG enmTag, const char *pszFormat, ...);
-VMMR3DECL(char *)   MMR3HeapAPrintfU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, ...);
-VMMR3DECL(char *)   MMR3HeapAPrintfV(PVM pVM, MMTAG enmTag, const char *pszFormat, va_list va);
-VMMR3DECL(char *)   MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, va_list va);
+VMMR3DECL(char *)   MMR3HeapAPrintf(PVM pVM, MMTAG enmTag, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+VMMR3DECL(char *)   MMR3HeapAPrintfU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+VMMR3DECL(char *)   MMR3HeapAPrintfV(PVM pVM, MMTAG enmTag, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+VMMR3DECL(char *)   MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 VMMR3DECL(void)     MMR3HeapFree(void *pv);
 /** @} */
 
