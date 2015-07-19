@@ -243,7 +243,7 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pSVGAState),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, p3dState),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pFrameBufferBackup),
-    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pFIFOExtCmdParam),
+    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pvFIFOExtCmdParam),
     SSMFIELD_ENTRY_IGN_GCPHYS(      VMSVGAState, GCPhysFIFO),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, cbFIFO),
     SSMFIELD_ENTRY(                 VMSVGAState, u32SVGAId),
@@ -275,6 +275,7 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY(                 VMSVGAState, f3DEnabled),
     SSMFIELD_ENTRY(                 VMSVGAState, fVRAMTracking),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, u8FIFOExtCommand),
+    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, fFifoExtCommandWakeup),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -2019,6 +2020,172 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
 #ifdef IN_RING3
 
 /**
+ * Worker for vmsvgaR3FifoThread that handles an external command.
+ *
+ * @param   pThis           VGA device instance data.
+ */
+static void vmsvgaR3FifoHandleExtCmd(PVGASTATE pThis)
+{
+    uint8_t uExtCmd = pThis->svga.u8FIFOExtCommand;
+    switch (pThis->svga.u8FIFOExtCommand)
+    {
+        case VMSVGA_FIFO_EXTCMD_RESET:
+            Log(("vmsvgaFIFOLoop: reset the fifo thread.\n"));
+            Assert(pThis->svga.pvFIFOExtCmdParam == NULL);
+# ifdef VBOX_WITH_VMSVGA3D
+            if (pThis->svga.f3DEnabled)
+            {
+                /* The 3d subsystem must be reset from the fifo thread. */
+                vmsvga3dReset(pThis);
+            }
+# endif
+            break;
+
+        case VMSVGA_FIFO_EXTCMD_TERMINATE:
+            Log(("vmsvgaFIFOLoop: terminate the fifo thread.\n"));
+            Assert(pThis->svga.pvFIFOExtCmdParam == NULL);
+# ifdef VBOX_WITH_VMSVGA3D
+            if (pThis->svga.f3DEnabled)
+            {
+                /* The 3d subsystem must be shut down from the fifo thread. */
+                vmsvga3dTerminate(pThis);
+            }
+# endif
+            break;
+
+        case VMSVGA_FIFO_EXTCMD_SAVESTATE:
+        {
+            Log(("vmsvgaFIFOLoop: VMSVGA_FIFO_EXTCMD_SAVESTATE.\n"));
+# ifdef VBOX_WITH_VMSVGA3D
+            PSSMHANDLE pSSM = (PSSMHANDLE)pThis->svga.pvFIFOExtCmdParam;
+            AssertLogRelMsgBreak(RT_VALID_PTR(pSSM), ("pSSM=%p\n", pSSM));
+            vmsvga3dSaveExec(pThis, pSSM);
+# endif
+            break;
+        }
+
+        case VMSVGA_FIFO_EXTCMD_LOADSTATE:
+        {
+            Log(("vmsvgaFIFOLoop: VMSVGA_FIFO_EXTCMD_LOADSTATE.\n"));
+# ifdef VBOX_WITH_VMSVGA3D
+            PVMSVGA_STATE_LOAD pLoadState = (PVMSVGA_STATE_LOAD)pThis->svga.pvFIFOExtCmdParam;
+            AssertLogRelMsgBreak(RT_VALID_PTR(pLoadState), ("pLoadState=%p\n", pLoadState));
+            vmsvga3dLoadExec(pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
+# endif
+            break;
+        }
+
+        default:
+            AssertLogRelMsgFailed(("uExtCmd=%#x pvFIFOExtCmdParam=%p\n", uExtCmd, pThis->svga.pvFIFOExtCmdParam));
+            break;
+    }
+
+    /*
+     * Signal the end of the external command.
+     */
+    pThis->svga.pvFIFOExtCmdParam = NULL;
+    pThis->svga.u8FIFOExtCommand  = VMSVGA_FIFO_EXTCMD_NONE;
+    ASMMemoryFence(); /* paranoia^2 */
+    int rc = RTSemEventSignal(pThis->svga.FIFOExtCmdSem);
+    AssertLogRelRC(rc);
+}
+
+/**
+ * Worker for vmsvgaR3Destruct, vmsvgaR3Reset, vmsvgaR3Save and vmsvgaR3Load for
+ * doing a job on the FIFO thread (even when it's officially suspended).
+ *
+ * @returns VBox status code (fully asserted).
+ * @param   pThis           VGA device instance data.
+ * @param   uExtCmd         The command to execute on the FIFO thread.
+ * @param   pvParam         Pointer to command parameters.
+ * @param   cMsWait         The time to wait for the command, given in
+ *                          milliseconds.
+ */
+static int vmsvgaR3RunExtCmdOnFifoThread(PVGASTATE pThis, uint8_t uExtCmd, void *pvParam, RTMSINTERVAL cMsWait)
+{
+    Assert(cMsWait >= RT_MS_1SEC * 5);
+    AssertLogRelMsg(pThis->svga.u8FIFOExtCommand == VMSVGA_FIFO_EXTCMD_NONE,
+                    ("old=%d new=%d\n", pThis->svga.u8FIFOExtCommand, uExtCmd));
+
+    int rc;
+    PPDMTHREAD      pThread  = pThis->svga.pFIFOIOThread;
+    PDMTHREADSTATE  enmState = pThread->enmState;
+    if (enmState == PDMTHREADSTATE_SUSPENDED)
+    {
+        /*
+         * The thread is suspended, we have to temporarily wake it up so it can
+         * perform the task.
+         * (We ASSUME not racing code here, both wrt thread state and ext commands.)
+         */
+        Log(("vmsvgaR3RunExtCmdOnFifoThread: uExtCmd=%d enmState=SUSPENDED\n", uExtCmd));
+        /* Post the request. */
+        pThis->svga.fFifoExtCommandWakeup = true;
+        pThis->svga.pvFIFOExtCmdParam     = pvParam;
+        pThis->svga.u8FIFOExtCommand      = uExtCmd;
+        ASMMemoryFence(); /* paranoia^3 */
+
+        /* Resume the thread. */
+        rc = PDMR3ThreadResume(pThread);
+        AssertLogRelRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            /* Wait. Take care in case the semaphore was already posted (same as below). */
+            rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, cMsWait);
+            if (   rc == VINF_SUCCESS
+                && pThis->svga.u8FIFOExtCommand == uExtCmd)
+                rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, cMsWait);
+            AssertLogRelMsg(pThis->svga.u8FIFOExtCommand != uExtCmd || RT_FAILURE_NP(rc),
+                            ("%#x %Rrc\n", pThis->svga.u8FIFOExtCommand, rc));
+
+            /* suspend the thread */
+            pThis->svga.fFifoExtCommandWakeup = false;
+            int rc2 = PDMR3ThreadSuspend(pThread);
+            AssertLogRelRC(rc2);
+            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                rc = rc2;
+        }
+        pThis->svga.fFifoExtCommandWakeup = false;
+        pThis->svga.pvFIFOExtCmdParam     = NULL;
+    }
+    else if (enmState == PDMTHREADSTATE_RUNNING)
+    {
+        /*
+         * The thread is running, should only happen during reset.
+         * We ASSUME not racing code here, both wrt thread state and ext commands.
+         */
+        Log(("vmsvgaR3RunExtCmdOnFifoThread: uExtCmd=%d enmState=RUNNING\n", uExtCmd));
+        Assert(uExtCmd == VMSVGA_FIFO_EXTCMD_RESET);
+
+        /* Post the request. */
+        pThis->svga.pvFIFOExtCmdParam = pvParam;
+        pThis->svga.u8FIFOExtCommand  = uExtCmd;
+        ASMMemoryFence(); /* paranoia^2 */
+        rc = SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+        AssertLogRelRC(rc);
+
+        /* Wait. Take care in case the semaphore was already posted (same as above). */
+        rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, cMsWait);
+        if (   rc == VINF_SUCCESS
+            && pThis->svga.u8FIFOExtCommand == uExtCmd)
+            rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, cMsWait); /* it was already posted, retry the wait. */
+        AssertLogRelMsg(pThis->svga.u8FIFOExtCommand != uExtCmd || RT_FAILURE_NP(rc),
+                        ("%#x %Rrc\n", pThis->svga.u8FIFOExtCommand, rc));
+
+        pThis->svga.pvFIFOExtCmdParam = NULL;
+    }
+    else
+    {
+        /*
+         * Something is wrong with the thread!
+         */
+        AssertLogRelMsgFailed(("uExtCmd=%d enmState=%d\n", uExtCmd, enmState));
+        rc = VERR_INVALID_STATE;
+    }
+    return rc;
+}
+
+
+/**
  * Marks the FIFO non-busy, notifying any waiting EMTs.
  *
  * @param   pThis           The VGA state.
@@ -2215,6 +2382,23 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         return VINF_SUCCESS;
 
     /*
+     * Special mode where we only execute an external command and the go back
+     * to being suspended.  Currently, all ext cmds ends up here, with the reset
+     * one also being eligble for runtime execution further down as well.
+     */
+    if (pThis->svga.fFifoExtCommandWakeup)
+    {
+        vmsvgaR3FifoHandleExtCmd(pThis);
+        while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+            if (pThis->svga.u8FIFOExtCommand == VMSVGA_FIFO_EXTCMD_NONE)
+                SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, RT_MS_1MIN);
+            else
+                vmsvgaR3FifoHandleExtCmd(pThis);
+        return VINF_SUCCESS;
+    }
+
+
+    /*
      * Signal the semaphore to make sure we don't wait for 250 after a
      * suspend & resume scenario (see vmsvgaFIFOGetCmdPayload).
      */
@@ -2265,64 +2449,22 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         Log(("vmsvgaFIFOLoop: next %x stop %x\n", pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
 
         /*
-         * Handle external commands.
+         * Handle external commands (currently only reset).
          */
         if (pThis->svga.u8FIFOExtCommand != VMSVGA_FIFO_EXTCMD_NONE)
         {
-            switch (pThis->svga.u8FIFOExtCommand)
-            {
-            case VMSVGA_FIFO_EXTCMD_RESET:
-                Log(("vmsvgaFIFOLoop: reset the fifo thread.\n"));
-# ifdef VBOX_WITH_VMSVGA3D
-                if (pThis->svga.f3DEnabled)
-                {
-                    /* The 3d subsystem must be reset from the fifo thread. */
-                    vmsvga3dReset(pThis);
-                }
-# endif
-                break;
-
-            case VMSVGA_FIFO_EXTCMD_TERMINATE:
-                Log(("vmsvgaFIFOLoop: terminate the fifo thread.\n"));
-# ifdef VBOX_WITH_VMSVGA3D
-                if (pThis->svga.f3DEnabled)
-                {
-                    /* The 3d subsystem must be shut down from the fifo thread. */
-                    vmsvga3dTerminate(pThis);
-                }
-# endif
-                break;
-
-            case VMSVGA_FIFO_EXTCMD_SAVESTATE:
-                Log(("vmsvgaFIFOLoop: VMSVGA_FIFO_EXTCMD_SAVESTATE.\n"));
-# ifdef VBOX_WITH_VMSVGA3D
-                vmsvga3dSaveExec(pThis, (PSSMHANDLE)pThis->svga.pFIFOExtCmdParam);
-# endif
-                break;
-
-            case VMSVGA_FIFO_EXTCMD_LOADSTATE:
-            {
-                Log(("vmsvgaFIFOLoop: VMSVGA_FIFO_EXTCMD_LOADSTATE.\n"));
-# ifdef VBOX_WITH_VMSVGA3D
-                PVMSVGA_STATE_LOAD pLoadState = (PVMSVGA_STATE_LOAD)pThis->svga.pFIFOExtCmdParam;
-                vmsvga3dLoadExec(pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
-# endif
-                break;
-            }
-            }
-
-            pThis->svga.u8FIFOExtCommand = VMSVGA_FIFO_EXTCMD_NONE;
-
-            /* Signal the end of the external command. */
-            RTSemEventSignal(pThis->svga.FIFOExtCmdSem);
+            vmsvgaR3FifoHandleExtCmd(pThis);
             continue;
         }
 
-        if (    !pThis->svga.fEnabled
-            ||  !pThis->svga.fConfigured)
+        /*
+         * The device must be enabled and configured.
+         */
+        if (   !pThis->svga.fEnabled
+            || !pThis->svga.fConfigured)
         {
             vmsvgaFifoSetNotBusy(pThis, pSVGAState, pFIFO[SVGA_FIFO_MIN]);
-            continue;   /* device not enabled. */
+            continue;
         }
 
         /*
@@ -2409,7 +2551,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 # else
                 {/*nothing*/}
 # endif
-            /* Check for pending external commands. */
+            /* Check for pending external commands (reset). */
             if (pThis->svga.u8FIFOExtCommand != VMSVGA_FIFO_EXTCMD_NONE)
                 break;
 
@@ -3614,6 +3756,7 @@ static DECLCALLBACK(void) vmsvgaInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp, "FIFO address:       %RGp\n", pThis->svga.GCPhysFIFO);
     pHlp->pfnPrintf(pHlp, "FIFO size:          %u (%#x)\n", pThis->svga.cbFIFO, pThis->svga.cbFIFO);
     pHlp->pfnPrintf(pHlp, "FIFO external cmd:  %#x\n", pThis->svga.u8FIFOExtCommand);
+    pHlp->pfnPrintf(pHlp, "FIFO extcmd wakeup: %u\n", pThis->svga.fFifoExtCommandWakeup);
     pHlp->pfnPrintf(pHlp, "Busy:               %#x\n", pThis->svga.fBusy);
     pHlp->pfnPrintf(pHlp, "Traces:             %RTbool (effective: %RTbool)\n", pThis->svga.fTraces, pThis->svga.fVRAMTracking);
     pHlp->pfnPrintf(pHlp, "Guest ID:           %#x (%d)\n", pThis->svga.u32GuestId, pThis->svga.u32GuestId);
@@ -3697,24 +3840,12 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
 # ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
-        VMSVGA_STATE_LOAD loadstate;
-
-        loadstate.pSSM     = pSSM;
-        loadstate.uVersion = uVersion;
-        loadstate.uPass    = uPass;
-
-        /* Save the 3d state in the FIFO thread. */
-        pThis->svga.u8FIFOExtCommand = VMSVGA_FIFO_EXTCMD_LOADSTATE;
-        pThis->svga.pFIFOExtCmdParam = (void *)&loadstate;
-        /* Hack alert: resume the IO thread as it has been suspended before the destruct callback.
-         * The PowerOff notification isn't working, so not an option in this case.
-         */
-        PDMR3ThreadResume(pThis->svga.pFIFOIOThread);
-        SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
-        /* Wait for the end of the command. */
-        rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, RT_INDEFINITE_WAIT);
-        AssertRC(rc);
-        PDMR3ThreadSuspend(pThis->svga.pFIFOIOThread);
+        VMSVGA_STATE_LOAD LoadState;
+        LoadState.pSSM     = pSSM;
+        LoadState.uVersion = uVersion;
+        LoadState.uPass    = uPass;
+        rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_LOADSTATE, &LoadState, RT_INDEFINITE_WAIT);
+        AssertLogRelRCReturn(rc, rc);
     }
 # endif
 
@@ -3761,51 +3892,44 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     /* Save our part of the VGAState */
     rc = SSMR3PutStructEx(pSSM, &pThis->svga, sizeof(pThis->svga), 0, g_aVGAStateSVGAFields, NULL);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
 
     /* Save the framebuffer backup. */
     rc = SSMR3PutMem(pSSM, pThis->svga.pFrameBufferBackup, VMSVGA_FRAMEBUFFER_BACKUP_SIZE);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
 
     /* Save the VMSVGA state. */
     rc = SSMR3PutStructEx(pSSM, pSVGAState, sizeof(*pSVGAState), 0, g_aVMSVGASTATEFields, NULL);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
 
     /* Save the active cursor bitmaps. */
     if (pSVGAState->Cursor.fActive)
     {
         rc = SSMR3PutMem(pSSM, pSVGAState->Cursor.pData, pSVGAState->Cursor.cbData);
-        AssertRCReturn(rc, rc);
+        AssertLogRelRCReturn(rc, rc);
     }
 
     /* Save the GMR state */
     for (uint32_t i = 0; i < RT_ELEMENTS(pSVGAState->aGMR); i++)
     {
         rc = SSMR3PutStructEx(pSSM, &pSVGAState->aGMR[i], sizeof(pSVGAState->aGMR[i]), 0, g_aGMRFields, NULL);
-        AssertRCReturn(rc, rc);
+        AssertLogRelRCReturn(rc, rc);
 
         for (uint32_t j = 0; j < pSVGAState->aGMR[i].numDescriptors; j++)
         {
             rc = SSMR3PutStructEx(pSSM, &pSVGAState->aGMR[i].paDesc[j], sizeof(pSVGAState->aGMR[i].paDesc[j]), 0, g_aVMSVGAGMRDESCRIPTORFields, NULL);
-            AssertRCReturn(rc, rc);
+            AssertLogRelRCReturn(rc, rc);
         }
     }
 
 # ifdef VBOX_WITH_VMSVGA3D
+    /*
+     * Must save the 3d state in the FIFO thread.
+     */
     if (pThis->svga.f3DEnabled)
     {
-        /* Save the 3d state in the FIFO thread. */
-        pThis->svga.u8FIFOExtCommand = VMSVGA_FIFO_EXTCMD_SAVESTATE;
-        pThis->svga.pFIFOExtCmdParam = (void *)pSSM;
-        /* Hack alert: resume the IO thread as it has been suspended before the destruct callback.
-         * The PowerOff notification isn't working, so not an option in this case.
-         */
-        PDMR3ThreadResume(pThis->svga.pFIFOIOThread);
-        SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
-        /* Wait for the end of the external command. */
-        rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, RT_INDEFINITE_WAIT);
-        AssertRC(rc);
-        PDMR3ThreadSuspend(pThis->svga.pFIFOIOThread);
+        rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_SAVESTATE, pSSM, RT_INDEFINITE_WAIT);
+        AssertLogRelRCReturn(rc, rc);
     }
 # endif
     return VINF_SUCCESS;
@@ -3828,15 +3952,12 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
 
     Log(("vmsvgaReset\n"));
 
-    pThis->svga.pFIFOR3[SVGA_FIFO_NEXT_CMD]         = pThis->svga.pFIFOR3[SVGA_FIFO_STOP]                 = 0;
 
-    /* Reset the FIFO thread. */
-    pThis->svga.u8FIFOExtCommand = VMSVGA_FIFO_EXTCMD_RESET;
-    SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
-    /* Wait for the end of the termination sequence. */
-    int rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, 10000);
-    AssertRC(rc);
+    /* Reset the FIFO processing as well as the 3d state (if we have one). */
+    pThis->svga.pFIFOR3[SVGA_FIFO_NEXT_CMD] = pThis->svga.pFIFOR3[SVGA_FIFO_STOP] = 0; /** @todo should probably let the FIFO thread do this ... */
+    int rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_RESET, NULL /*pvParam*/, 10000 /*ms*/);
 
+    /* Reset other stuff. */
     pThis->svga.cScratchRegion = VMSVGA_SCRATCH_SIZE;
     memset(pThis->svga.au32ScratchRegion, 0, sizeof(pThis->svga.au32ScratchRegion));
     memset(pThis->svga.pSVGAState, 0, sizeof(VMSVGASTATE));
@@ -3876,22 +3997,24 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
 int vmsvgaDestruct(PPDMDEVINS pDevIns)
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    PVMSVGASTATE pSVGAState = (PVMSVGASTATE)pThis->svga.pSVGAState;
-    int          rc;
 
-    /* Stop the FIFO thread. */
-    pThis->svga.u8FIFOExtCommand = VMSVGA_FIFO_EXTCMD_TERMINATE;
-    /* Hack alert: resume the IO thread as it has been suspended before the destruct callback.
-     * The PowerOff notification isn't working, so not an option in this case.
+    /*
+     * Ask the FIFO thread to terminate the 3d state and then terminate it.
      */
-    PDMR3ThreadResume(pThis->svga.pFIFOIOThread);
-    SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+    if (pThis->svga.pFIFOIOThread)
+    {
+        int rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_TERMINATE, NULL /*pvParam*/, 30000 /*ms*/);
+        AssertLogRelRC(rc);
 
-    /* Wait for the end of the termination sequence. */
-    rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, 10000);
-    AssertRC(rc);
-    PDMR3ThreadSuspend(pThis->svga.pFIFOIOThread);
+        rc = PDMR3ThreadDestroy(pThis->svga.pFIFOIOThread, NULL);
+        AssertLogRelRC(rc);
+        pThis->svga.pFIFOIOThread = NULL;
+    }
 
+    /*
+     * Destroy the special SVGA state.
+     */
+    PVMSVGASTATE pSVGAState = (PVMSVGASTATE)pThis->svga.pSVGAState;
     if (pSVGAState)
     {
 # ifndef VMSVGA_USE_EMT_HALT_CODE
@@ -3905,12 +4028,16 @@ int vmsvgaDestruct(PPDMDEVINS pDevIns)
             RTMemFree(pSVGAState->Cursor.pData);
 
         for (unsigned i = 0; i < RT_ELEMENTS(pSVGAState->aGMR); i++)
-        {
             if (pSVGAState->aGMR[i].paDesc)
                 RTMemFree(pSVGAState->aGMR[i].paDesc);
-        }
+
         RTMemFree(pSVGAState);
+        pThis->svga.pSVGAState = NULL;
     }
+
+    /*
+     * Free our resources residing in the VGA state.
+     */
     if (pThis->svga.pFrameBufferBackup)
         RTMemFree(pThis->svga.pFrameBufferBackup);
     if (pThis->svga.FIFOExtCmdSem != NIL_RTSEMEVENT)
