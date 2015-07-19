@@ -533,7 +533,7 @@ public:
      *                          specified by the format string.
      * @sa      RTCString::printfV
      */
-    Utf8Str(const char *a_pszFormat, va_list a_va)
+    Utf8Str(const char *a_pszFormat, va_list a_va) RT_IPRT_FORMAT_ATTR(1, 0)
         : RTCString(a_pszFormat, a_va)
     {
     }
@@ -749,7 +749,7 @@ public:
      * @param   ...             Ellipsis containing the arguments specified by
      *                          the format string.
      */
-    explicit Utf8StrFmt(const char *a_pszFormat, ...)
+    explicit Utf8StrFmt(const char *a_pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2)
     {
         va_list va;
         va_start(va, a_pszFormat);
@@ -780,7 +780,7 @@ public:
      * @param aFormat   printf-like format string (in UTF-8 encoding).
      * @param ...       List of the arguments for the format string.
      */
-    explicit BstrFmt(const char *aFormat, ...)
+    explicit BstrFmt(const char *aFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2)
     {
         va_list args;
         va_start(args, aFormat);
@@ -805,7 +805,7 @@ public:
      * @param aFormat   printf-like format string (in UTF-8 encoding).
      * @param aArgs     List of arguments for the format string
      */
-    BstrFmtVA(const char *aFormat, va_list aArgs)
+    BstrFmtVA(const char *aFormat, va_list aArgs) RT_IPRT_FORMAT_ATTR(1, 0)
     {
         copyFrom(Utf8Str(aFormat, aArgs).c_str());
     }

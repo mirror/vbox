@@ -171,7 +171,7 @@ public:
      * @sa      printfV
      * @remarks Not part of std::string.
      */
-    RTCString(const char *a_pszFormat, va_list a_va)
+    RTCString(const char *a_pszFormat, va_list a_va) RT_IPRT_FORMAT_ATTR(1, 0)
         : m_psz(NULL),
           m_cch(0),
           m_cbAllocated(0)
@@ -340,7 +340,7 @@ public:
      *
      * @returns Reference to the object.
      */
-    RTCString &printf(const char *pszFormat, ...);
+    RTCString &printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
     /**
      * Assigns the output of the string format operation (RTStrPrintfV).
@@ -354,7 +354,7 @@ public:
      *
      * @returns Reference to the object.
      */
-    RTCString &printfV(const char *pszFormat, va_list va);
+    RTCString &printfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
     /**
      * Appends the string "that" to "this".
@@ -1059,7 +1059,7 @@ public:
      * @param   ...             Ellipsis containing the arguments specified by
      *                          the format string.
      */
-    explicit RTCStringFmt(const char *a_pszFormat, ...)
+    explicit RTCStringFmt(const char *a_pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2)
     {
         va_list va;
         va_start(va, a_pszFormat);
