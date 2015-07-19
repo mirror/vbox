@@ -48,6 +48,7 @@
 #include <VBox/sup.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/version.h>
 
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
@@ -75,7 +76,7 @@ static FNPGMR3VIRTINVALIDATE csamR3CodePageInvalidate;
 
 bool                csamIsCodeScanned(PVM pVM, RTRCPTR pInstr, PCSAMPAGE *pPage);
 int                 csamR3CheckPageRecord(PVM pVM, RTRCPTR pInstr);
-static PCSAMPAGE    csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bool fCode32, bool fMonitorInvalidation = false);
+static PCSAMPAGE    csamR3CreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bool fCode32, bool fMonitorInvalidation = false);
 static int          csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr);
 static int          csamReinit(PVM pVM);
 static void         csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTRCPTR pInstr, uint32_t opsize, bool fScanned);
@@ -105,9 +106,98 @@ static const DBGCCMD    g_aCmds[] =
 #endif
 
 /**
- * SSM descriptor table for the CSAM structure.
+ * SSM descriptor table for the CSAM structure (save + restore).
  */
 static const SSMFIELD g_aCsamFields[] =
+{
+    SSMFIELD_ENTRY(             CSAM, aDangerousInstr),        /* didn't used to restored */
+    SSMFIELD_ENTRY(             CSAM, cDangerousInstr),        /* didn't used to restored */
+    SSMFIELD_ENTRY(             CSAM, iDangerousInstr),        /* didn't used to restored */
+    SSMFIELD_ENTRY(             CSAM, savedstate.cPageRecords),
+    SSMFIELD_ENTRY(             CSAM, savedstate.cPatchPageRecords),
+    SSMFIELD_ENTRY(             CSAM, cDirtyPages),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvDirtyBasePage),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvDirtyFaultPage),
+    SSMFIELD_ENTRY(             CSAM, cPossibleCodePages),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvPossibleCodePage),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvCallInstruction),       /* didn't used to be restored */
+    SSMFIELD_ENTRY(             CSAM, iCallInstruction),        /* didn't used to be restored */
+    SSMFIELD_ENTRY(             CSAM, fScanningStarted),
+    SSMFIELD_ENTRY(             CSAM, fGatesChecked),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * SSM descriptor table for the version 5.0.0 CSAM structure.
+ */
+static const SSMFIELD g_aCsamFields500[] =
+{
+    SSMFIELD_ENTRY_IGNORE(      CSAM, offVM),
+    SSMFIELD_ENTRY_PAD_HC64(    CSAM, Alignment0, sizeof(uint32_t)),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, pPageTree),
+    SSMFIELD_ENTRY(             CSAM, aDangerousInstr),
+    SSMFIELD_ENTRY(             CSAM, cDangerousInstr),
+    SSMFIELD_ENTRY(             CSAM, iDangerousInstr),
+    SSMFIELD_ENTRY_RCPTR(       CSAM, pPDBitmapGC),   /// @todo ignore this?
+    SSMFIELD_ENTRY_RCPTR(       CSAM, pPDHCBitmapGC), /// @todo ignore this?
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, pPDBitmapHC),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, pPDGCBitmapHC),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, savedstate.pSSM),
+    SSMFIELD_ENTRY(             CSAM, savedstate.cPageRecords),
+    SSMFIELD_ENTRY(             CSAM, savedstate.cPatchPageRecords),
+    SSMFIELD_ENTRY(             CSAM, cDirtyPages),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvDirtyBasePage),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvDirtyFaultPage),
+    SSMFIELD_ENTRY(             CSAM, cPossibleCodePages),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvPossibleCodePage),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvCallInstruction),
+    SSMFIELD_ENTRY(             CSAM, iCallInstruction),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, hCodePageWriteType),          /* added in 5.0 */
+    SSMFIELD_ENTRY_IGNORE(      CSAM, hCodePageWriteAndInvPgType),  /* added in 5.0 */
+    SSMFIELD_ENTRY(             CSAM, fScanningStarted),
+    SSMFIELD_ENTRY(             CSAM, fGatesChecked),
+    SSMFIELD_ENTRY_PAD_HC(      CSAM, Alignment1, 6, 2),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrTraps),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPagesInv),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrRemovedPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPatchPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPageNPHC),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPageNPGC),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrFlushes),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrFlushesSkipped),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrKnownPagesHC),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrKnownPagesGC),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrInstr),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrBytesRead),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrOpcodeRead),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTime),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTimeCheckAddr),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTimeAddrConv),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTimeFlushPage),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTimeDisasm),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatFlushDirtyPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatCheckGates),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatCodePageModified),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatDangerousWrite),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatInstrCacheHit),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatInstrCacheMiss),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPagePATM),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPageCSAM),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPageREM),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrUserPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPageMonitor),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPageRemoveREMFlush),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatBitmapAlloc),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatScanNextFunction),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatScanNextFunctionFailed),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * SSM descriptor table for the pre 5.0.0 CSAM structure.
+ */
+static const SSMFIELD g_aCsamFieldsBefore500[] =
 {
     /** @todo there are more fields that can be ignored here. */
     SSMFIELD_ENTRY_IGNORE(      CSAM, offVM),
@@ -170,6 +260,7 @@ static const SSMFIELD g_aCsamFields[] =
     SSMFIELD_ENTRY_TERM()
 };
 
+
 /** Fake type to simplify g_aCsamPDBitmapArray construction. */
 typedef struct
 {
@@ -185,8 +276,27 @@ static SSMFIELD const g_aCsamPDBitmapArray[] =
     SSMFIELD_ENTRY_TERM()
 };
 
+
 /**
- * SSM descriptor table for the CSAMPAGEREC structure.
+ * SSM descriptor table for the CSAMPAGE structure.
+ */
+static const SSMFIELD g_aCsamPageFields[] =
+{
+    SSMFIELD_ENTRY_RCPTR(       CSAMPAGE, pPageGC),
+    SSMFIELD_ENTRY_GCPHYS(      CSAMPAGE, GCPhys),
+    SSMFIELD_ENTRY(             CSAMPAGE, fFlags),
+    SSMFIELD_ENTRY(             CSAMPAGE, uSize),
+    SSMFIELD_ENTRY_HCPTR_NI(    CSAMPAGE, pBitmap),
+    SSMFIELD_ENTRY(             CSAMPAGE, fCode32),
+    SSMFIELD_ENTRY(             CSAMPAGE, fMonitorActive),
+    SSMFIELD_ENTRY(             CSAMPAGE, fMonitorInvalidation),
+    SSMFIELD_ENTRY(             CSAMPAGE, enmTag),
+    SSMFIELD_ENTRY(             CSAMPAGE, u64Hash),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * SSM descriptor table for the CSAMPAGEREC structure, putmem fashion.
  */
 static const SSMFIELD g_aCsamPageRecFields[] =
 {
@@ -494,39 +604,31 @@ VMMR3_INT_DECL(int) CSAMR3Reset(PVM pVM)
  * @param   pNode           Current node
  * @param   pcPatches       Pointer to patch counter
  */
-static DECLCALLBACK(int) CountRecord(PAVLPVNODECORE pNode, void *pcPatches)
+static DECLCALLBACK(int) csamR3SaveCountRecord(PAVLPVNODECORE pNode, void *pcPatches)
 {
     NOREF(pNode);
-    *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
+    *(uint32_t *)pcPatches += 1;
     return VINF_SUCCESS;
 }
 
 /**
- * Callback function for RTAvlPVDoWithAll
- *
- * Saves the state of the page record
+ * Callback function for RTAvlPVDoWithAll for saving a page record.
  *
  * @returns VBox status code.
  * @param   pNode           Current node
- * @param   pVM1            Pointer to the VM
+ * @param   pvVM            Pointer to the VM
  */
-static DECLCALLBACK(int) SavePageState(PAVLPVNODECORE pNode, void *pVM1)
+static DECLCALLBACK(int) csamR3SavePageState(PAVLPVNODECORE pNode, void *pvVM)
 {
-    PVM           pVM    = (PVM)pVM1;
     PCSAMPAGEREC  pPage  = (PCSAMPAGEREC)pNode;
-    CSAMPAGEREC   page   = *pPage;
+    PVM           pVM    = (PVM)pvVM;
     PSSMHANDLE    pSSM   = pVM->csam.s.savedstate.pSSM;
-    int           rc;
 
-    /* Save the page record itself */
-    rc = SSMR3PutMem(pSSM, &page, sizeof(page));
-    AssertRCReturn(rc, rc);
+    int rc = SSMR3PutStructEx(pSSM, &pPage->page, sizeof(pPage->page), 0 /*fFlags*/, &g_aCsamPageFields[0], NULL);
+    AssertLogRelRCReturn(rc, rc);
 
-    if (page.page.pBitmap)
-    {
-        rc = SSMR3PutMem(pSSM, page.page.pBitmap, CSAM_PAGE_BITMAP_SIZE);
-        AssertRCReturn(rc, rc);
-    }
+    if (pPage->page.pBitmap)
+        SSMR3PutMem(pSSM, pPage->page.pBitmap, CSAM_PAGE_BITMAP_SIZE);
 
     return VINF_SUCCESS;
 }
@@ -540,43 +642,42 @@ static DECLCALLBACK(int) SavePageState(PAVLPVNODECORE pNode, void *pVM1)
  */
 static DECLCALLBACK(int) csamR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    CSAM csamInfo = pVM->csam.s;
     int  rc;
 
     /*
      * Count the number of page records in the tree (feeling lazy)
      */
-    csamInfo.savedstate.cPageRecords = 0;
-    RTAvlPVDoWithAll(&pVM->csam.s.pPageTree, true, CountRecord, &csamInfo.savedstate.cPageRecords);
+    pVM->csam.s.savedstate.cPageRecords = 0;
+    RTAvlPVDoWithAll(&pVM->csam.s.pPageTree, true, csamR3SaveCountRecord, &pVM->csam.s.savedstate.cPageRecords);
 
     /*
-     * Save CSAM structure
+     * Save CSAM structure.
      */
     pVM->csam.s.savedstate.pSSM = pSSM;
-    rc = SSMR3PutMem(pSSM, &csamInfo, sizeof(csamInfo));
-    AssertRCReturn(rc, rc);
+    rc = SSMR3PutStructEx(pSSM, &pVM->csam.s, sizeof(pVM->csam.s), 0 /*fFlags*/, g_aCsamFields, NULL);
+    AssertLogRelRCReturn(rc, rc);
 
-    /* Save pgdir bitmap */
-    rc = SSMR3PutMem(pSSM, csamInfo.pPDBitmapHC, CSAM_PGDIRBMP_CHUNKS*sizeof(RTHCPTR));
-    AssertRCReturn(rc, rc);
-
-    for (unsigned i = 0; i < CSAM_PGDIRBMP_CHUNKS; i++)
-    {
-        if(csamInfo.pPDBitmapHC[i])
+    /*
+     * Save pgdir bitmap.
+     */
+    SSMR3PutU32(pSSM, CSAM_PGDIRBMP_CHUNKS);
+    SSMR3PutU32(pSSM, CSAM_PAGE_BITMAP_SIZE);
+    for (uint32_t i = 0; i < CSAM_PGDIRBMP_CHUNKS; i++)
+        if (pVM->csam.s.pPDBitmapHC[i])
         {
-            /* Save the page bitmap. */
-            rc = SSMR3PutMem(pSSM, csamInfo.pPDBitmapHC[i], CSAM_PAGE_BITMAP_SIZE);
-            AssertRCReturn(rc, rc);
+            SSMR3PutU32(pSSM, i);
+            SSMR3PutMem(pSSM, pVM->csam.s.pPDBitmapHC[i], CSAM_PAGE_BITMAP_SIZE);
         }
-    }
+    SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
 
     /*
      * Save page records
      */
-    rc = RTAvlPVDoWithAll(&pVM->csam.s.pPageTree, true, SavePageState, pVM);
+    pVM->csam.s.savedstate.pSSM = pSSM;
+    rc = RTAvlPVDoWithAll(&pVM->csam.s.pPageTree, true, csamR3SavePageState, pVM);
     AssertRCReturn(rc, rc);
 
-    /** @note we don't restore aDangerousInstr; it will be recreated automatically. */
+    pVM->csam.s.savedstate.pSSM = NULL;
     return VINF_SUCCESS;
 }
 
@@ -592,108 +693,187 @@ static DECLCALLBACK(int) csamR3Save(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) csamR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    int  rc;
-    CSAM csamInfo;
+    int rc;
 
+    /*
+     * Check preconditions.
+     */
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
-    if (uVersion != CSAM_SAVED_STATE_VERSION)
+    Assert(pVM->csam.s.savedstate.pSSM == NULL);
+    AssertLogRelMsgReturn(uVersion >= CSAM_SAVED_STATE_VERSION_PUT_MEM && uVersion <= CSAM_SAVED_STATE_VERSION,
+                          ("uVersion=%d (%#x)\n", uVersion),
+                          VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+
+    if (uVersion >= CSAM_SAVED_STATE_VERSION_PUT_STRUCT)
     {
-        AssertMsgFailed(("csamR3Load: Invalid version uVersion=%d!\n", uVersion));
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    }
+        /*
+         * Restore the SSMR3PutStructEx fashioned state.
+         */
+        rc = SSMR3GetStructEx(pSSM, &pVM->csam.s, sizeof(pVM->csam.s), 0 /*fFlags*/, &g_aCsamFields[0], NULL);
 
-    pVM->csam.s.savedstate.pSSM = pSSM;
-
-    /*
-     * Restore CSAM structure
-     */
-    RT_ZERO(csamInfo);
-    rc = SSMR3GetStructEx(pSSM, &csamInfo, sizeof(csamInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aCsamFields[0], NULL);
-    AssertRCReturn(rc, rc);
-
-    pVM->csam.s.fGatesChecked    = csamInfo.fGatesChecked;
-    pVM->csam.s.fScanningStarted = csamInfo.fScanningStarted;
-
-     /* Restore dirty code page info. */
-    pVM->csam.s.cDirtyPages = csamInfo.cDirtyPages;
-    memcpy(pVM->csam.s.pvDirtyBasePage,  csamInfo.pvDirtyBasePage, sizeof(pVM->csam.s.pvDirtyBasePage));
-    memcpy(pVM->csam.s.pvDirtyFaultPage, csamInfo.pvDirtyFaultPage, sizeof(pVM->csam.s.pvDirtyFaultPage));
-
-     /* Restore possible code page  */
-    pVM->csam.s.cPossibleCodePages = csamInfo.cPossibleCodePages;
-    memcpy(pVM->csam.s.pvPossibleCodePage,  csamInfo.pvPossibleCodePage, sizeof(pVM->csam.s.pvPossibleCodePage));
-
-    /* Restore pgdir bitmap (we'll change the pointers next). */
-    rc = SSMR3GetStructEx(pSSM, pVM->csam.s.pPDBitmapHC, sizeof(uint8_t *) * CSAM_PGDIRBMP_CHUNKS,
-                          SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aCsamPDBitmapArray[0], NULL);
-    AssertRCReturn(rc, rc);
-
-    /*
-     * Restore page bitmaps
-     */
-    for (unsigned i=0;i<CSAM_PGDIRBMP_CHUNKS;i++)
-    {
-        if(pVM->csam.s.pPDBitmapHC[i])
+        /*
+         * Restore page bitmaps
+         */
+        uint32_t cPgDirBmpChunks = 0;
+        rc = SSMR3GetU32(pSSM, &cPgDirBmpChunks);
+        uint32_t cbPgDirBmpChunk = 0;
+        rc = SSMR3GetU32(pSSM, &cbPgDirBmpChunk);
+        AssertRCReturn(rc, rc);
+        AssertLogRelMsgReturn(cPgDirBmpChunks <= CSAM_PGDIRBMP_CHUNKS,
+                              ("cPgDirBmpChunks=%#x (vs %#x)\n", cPgDirBmpChunks, CSAM_PGDIRBMP_CHUNKS),
+                              VERR_SSM_UNEXPECTED_DATA);
+        AssertLogRelMsgReturn(cbPgDirBmpChunk <= CSAM_PAGE_BITMAP_SIZE,
+                              ("cbPgDirBmpChunk=%#x (vs %#x)\n", cbPgDirBmpChunk, CSAM_PAGE_BITMAP_SIZE),
+                              VERR_SSM_UNEXPECTED_DATA);
+        for (uint32_t i = 0; i < CSAM_PGDIRBMP_CHUNKS; i++)
         {
-            rc = MMHyperAlloc(pVM, CSAM_PAGE_BITMAP_SIZE, 0, MM_TAG_CSAM, (void **)&pVM->csam.s.pPDBitmapHC[i]);
-            if (RT_FAILURE(rc))
-            {
-                Log(("MMHyperAlloc failed with %Rrc\n", rc));
-                return rc;
-            }
-            /* Convert to GC pointer. */
-            pVM->csam.s.pPDGCBitmapHC[i] = MMHyperR3ToRC(pVM, pVM->csam.s.pPDBitmapHC[i]);
-            Assert(pVM->csam.s.pPDGCBitmapHC[i]);
-
-            /* Restore the bitmap. */
-            rc = SSMR3GetMem(pSSM, pVM->csam.s.pPDBitmapHC[i], CSAM_PAGE_BITMAP_SIZE);
-            AssertRCReturn(rc, rc);
-        }
-        else
-        {
+            Assert(!pVM->csam.s.pPDBitmapHC[i]);
             Assert(!pVM->csam.s.pPDGCBitmapHC[i]);
-            pVM->csam.s.pPDGCBitmapHC[i] = 0;
+        }
+        for (uint32_t iNext = 0;;)
+        {
+            uint32_t iThis;
+            rc = SSMR3GetU32(pSSM, &iThis);
+            AssertLogRelRCReturn(rc, rc);
+            AssertLogRelMsgReturn(iThis >= iNext, ("iThis=%#x iNext=%#x\n", iThis, iNext), VERR_SSM_UNEXPECTED_DATA);
+            if (iThis == UINT32_MAX)
+                break;
+
+            rc = MMHyperAlloc(pVM, CSAM_PAGE_BITMAP_SIZE, 0, MM_TAG_CSAM, (void **)&pVM->csam.s.pPDBitmapHC[iThis]);
+            AssertLogRelRCReturn(rc, rc);
+            pVM->csam.s.pPDGCBitmapHC[iThis] = MMHyperR3ToRC(pVM, pVM->csam.s.pPDBitmapHC[iThis]);
+
+            rc = SSMR3GetMem(pSSM, pVM->csam.s.pPDBitmapHC[iThis], CSAM_PAGE_BITMAP_SIZE);
+            AssertLogRelRCReturn(rc, rc);
+            iNext = iThis + 1;
+        }
+
+        /*
+         * Restore page records
+         */
+        uint32_t const cPageRecords = pVM->csam.s.savedstate.cPageRecords + pVM->csam.s.savedstate.cPatchPageRecords;
+        for (uint32_t iPageRec = 0; iPageRec < cPageRecords; iPageRec++)
+        {
+            CSAMPAGE PageRec;
+            RT_ZERO(PageRec);
+            rc = SSMR3GetStructEx(pSSM, &PageRec, sizeof(PageRec), 0 /*fFlags*/, &g_aCsamPageFields[0], NULL);
+            AssertLogRelRCReturn(rc, rc);
+
+            /* Recreate the page record. */
+            PCSAMPAGE pPage = csamR3CreatePageRecord(pVM, PageRec.pPageGC, PageRec.enmTag, PageRec.fCode32,
+                                                     PageRec.fMonitorInvalidation);
+            AssertReturn(pPage, VERR_NO_MEMORY);
+            pPage->GCPhys  = PageRec.GCPhys;
+            pPage->fFlags  = PageRec.fFlags;
+            pPage->u64Hash = PageRec.u64Hash;
+            if (PageRec.pBitmap)
+            {
+                rc = SSMR3GetMem(pSSM, pPage->pBitmap, CSAM_PAGE_BITMAP_SIZE);
+                AssertLogRelRCReturn(rc, rc);
+            }
+            else
+            {
+                MMR3HeapFree(pPage->pBitmap);
+                pPage->pBitmap = NULL;
+            }
         }
     }
-
-    /*
-     * Restore page records
-     */
-    for (uint32_t i=0;i<csamInfo.savedstate.cPageRecords + csamInfo.savedstate.cPatchPageRecords;i++)
+    else
     {
-        CSAMPAGEREC  page;
-        PCSAMPAGE    pPage;
+        /*
+         * Restore the old SSMR3PutMem fashioned state.
+         */
 
-        RT_ZERO(page);
-        rc = SSMR3GetStructEx(pSSM, &page, sizeof(page), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aCsamPageRecFields[0], NULL);
+        /* CSAM structure first. */
+        CSAM csamInfo;
+        RT_ZERO(csamInfo);
+        if (   SSMR3HandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(4, 3, 51)
+            && SSMR3HandleRevision(pSSM) >= 100346)
+            rc = SSMR3GetStructEx(pSSM, &csamInfo, sizeof(csamInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID,
+                                  &g_aCsamFields500[0], NULL);
+        else
+            rc = SSMR3GetStructEx(pSSM, &csamInfo, sizeof(csamInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED,
+                                  &g_aCsamFieldsBefore500[0], NULL);
+        AssertRCReturn(rc, rc);
+
+        pVM->csam.s.fGatesChecked    = csamInfo.fGatesChecked;
+        pVM->csam.s.fScanningStarted = csamInfo.fScanningStarted;
+
+         /* Restore dirty code page info. */
+        pVM->csam.s.cDirtyPages = csamInfo.cDirtyPages;
+        memcpy(pVM->csam.s.pvDirtyBasePage,  csamInfo.pvDirtyBasePage, sizeof(pVM->csam.s.pvDirtyBasePage));
+        memcpy(pVM->csam.s.pvDirtyFaultPage, csamInfo.pvDirtyFaultPage, sizeof(pVM->csam.s.pvDirtyFaultPage));
+
+         /* Restore possible code page  */
+        pVM->csam.s.cPossibleCodePages = csamInfo.cPossibleCodePages;
+        memcpy(pVM->csam.s.pvPossibleCodePage,  csamInfo.pvPossibleCodePage, sizeof(pVM->csam.s.pvPossibleCodePage));
+
+        /*
+         * Restore pgdir bitmap (we'll change the pointers next).
+         */
+        rc = SSMR3GetStructEx(pSSM, pVM->csam.s.pPDBitmapHC, sizeof(uint8_t *) * CSAM_PGDIRBMP_CHUNKS,
+                              SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aCsamPDBitmapArray[0], NULL);
         AssertRCReturn(rc, rc);
 
         /*
-         * Recreate the page record
+         * Restore page bitmaps
          */
-        pPage = csamCreatePageRecord(pVM, page.page.pPageGC, page.page.enmTag, page.page.fCode32, page.page.fMonitorInvalidation);
-        AssertReturn(pPage, VERR_NO_MEMORY);
+        for (unsigned i = 0; i < CSAM_PGDIRBMP_CHUNKS; i++)
+            if (pVM->csam.s.pPDBitmapHC[i])
+            {
+                rc = MMHyperAlloc(pVM, CSAM_PAGE_BITMAP_SIZE, 0, MM_TAG_CSAM, (void **)&pVM->csam.s.pPDBitmapHC[i]);
+                AssertLogRelRCReturn(rc, rc);
+                pVM->csam.s.pPDGCBitmapHC[i] = MMHyperR3ToRC(pVM, pVM->csam.s.pPDBitmapHC[i]);
 
-        pPage->GCPhys  = page.page.GCPhys;
-        pPage->fFlags  = page.page.fFlags;
-        pPage->u64Hash = page.page.u64Hash;
+                /* Restore the bitmap. */
+                rc = SSMR3GetMem(pSSM, pVM->csam.s.pPDBitmapHC[i], CSAM_PAGE_BITMAP_SIZE);
+                AssertRCReturn(rc, rc);
+            }
+            else
+            {
+                Assert(!pVM->csam.s.pPDGCBitmapHC[i]);
+                pVM->csam.s.pPDGCBitmapHC[i] = 0;
+            }
 
-        if (page.page.pBitmap)
+        /*
+         * Restore page records
+         */
+        for (uint32_t i=0;i<csamInfo.savedstate.cPageRecords + csamInfo.savedstate.cPatchPageRecords;i++)
         {
-            rc = SSMR3GetMem(pSSM, pPage->pBitmap, CSAM_PAGE_BITMAP_SIZE);
+            CSAMPAGEREC  page;
+            PCSAMPAGE    pPage;
+
+            RT_ZERO(page);
+            rc = SSMR3GetStructEx(pSSM, &page, sizeof(page), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aCsamPageRecFields[0], NULL);
             AssertRCReturn(rc, rc);
-        }
-        else
-        {
-            MMR3HeapFree(pPage->pBitmap);
-            pPage->pBitmap = 0;
-        }
-    }
 
-    /* Note: we don't restore aDangerousInstr; it will be recreated automatically. */
-    memset(&pVM->csam.s.aDangerousInstr, 0, sizeof(pVM->csam.s.aDangerousInstr));
-    pVM->csam.s.cDangerousInstr = 0;
-    pVM->csam.s.iDangerousInstr  = 0;
+            /*
+             * Recreate the page record
+             */
+            pPage = csamR3CreatePageRecord(pVM, page.page.pPageGC, page.page.enmTag, page.page.fCode32, page.page.fMonitorInvalidation);
+            AssertReturn(pPage, VERR_NO_MEMORY);
+
+            pPage->GCPhys  = page.page.GCPhys;
+            pPage->fFlags  = page.page.fFlags;
+            pPage->u64Hash = page.page.u64Hash;
+
+            if (page.page.pBitmap)
+            {
+                rc = SSMR3GetMem(pSSM, pPage->pBitmap, CSAM_PAGE_BITMAP_SIZE);
+                AssertRCReturn(rc, rc);
+            }
+            else
+            {
+                MMR3HeapFree(pPage->pBitmap);
+                pPage->pBitmap = NULL;
+            }
+        }
+
+        /* Note: we don't restore aDangerousInstr; it will be recreated automatically. */
+        memset(&pVM->csam.s.aDangerousInstr, 0, sizeof(pVM->csam.s.aDangerousInstr));
+        pVM->csam.s.cDangerousInstr = 0;
+        pVM->csam.s.iDangerousInstr = 0;
+    }
     return VINF_SUCCESS;
 }
 
@@ -1116,7 +1296,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
             if (pPage == NULL)
             {
                 /* New address; let's take a look at it. */
-                pPage = csamCreatePageRecord(pVM, pCurInstrGC, CSAM_TAG_CSAM, fCode32);
+                pPage = csamR3CreatePageRecord(pVM, pCurInstrGC, CSAM_TAG_CSAM, fCode32);
                 if (pPage == NULL)
                 {
                     rc = VERR_NO_MEMORY;
@@ -1329,7 +1509,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             if (pPage == NULL)
             {
                 /* New address; let's take a look at it. */
-                pPage = csamCreatePageRecord(pVM, pCurInstrGC, CSAM_TAG_CSAM, fCode32);
+                pPage = csamR3CreatePageRecord(pVM, pCurInstrGC, CSAM_TAG_CSAM, fCode32);
                 if (pPage == NULL)
                 {
                     rc = VERR_NO_MEMORY;
@@ -1461,7 +1641,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
                 if (pJmpPage == NULL)
                 {
                     /* New branch target; let's take a look at it. */
-                    pJmpPage = csamCreatePageRecord(pVM, addr, CSAM_TAG_CSAM, fCode32);
+                    pJmpPage = csamR3CreatePageRecord(pVM, addr, CSAM_TAG_CSAM, fCode32);
                     if (pJmpPage == NULL)
                     {
                         rc = VERR_NO_MEMORY;
@@ -1527,7 +1707,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
                         if (pJmpPage == NULL)
                         {
                             /* New branch target; let's take a look at it. */
-                            pJmpPage = csamCreatePageRecord(pVM, addr, CSAM_TAG_CSAM, fCode32);
+                            pJmpPage = csamR3CreatePageRecord(pVM, addr, CSAM_TAG_CSAM, fCode32);
                             if (pJmpPage == NULL)
                             {
                                 rc = VERR_NO_MEMORY;
@@ -1832,7 +2012,7 @@ const char *csamGetMonitorDescription(CSAMTAG enmTag)
  * @param   fCode32                 16 or 32 bits code
  * @param   fMonitorInvalidation    Monitor page invalidation flag
  */
-static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bool fCode32, bool fMonitorInvalidation)
+static PCSAMPAGE csamR3CreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bool fCode32, bool fMonitorInvalidation)
 {
     PCSAMPAGEREC pPage;
     int          rc;
@@ -1845,7 +2025,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
     pPage = (PCSAMPAGEREC)MMR3HeapAllocZ(pVM, MM_TAG_CSAM_PATCH, sizeof(CSAMPAGEREC));
     if (pPage == NULL)
     {
-        AssertMsgFailed(("csamCreatePageRecord: Out of memory!!!!\n"));
+        AssertMsgFailed(("csamR3CreatePageRecord: Out of memory!!!!\n"));
         return NULL;
     }
     /* Round down to page boundary. */
@@ -1901,7 +2081,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
         break; /* to shut up GCC */
     }
 
-    Log(("csamCreatePageRecord %RRv GCPhys=%RGp\n", GCPtr, pPage->page.GCPhys));
+    Log(("csamR3CreatePageRecord %RRv GCPhys=%RGp\n", GCPtr, pPage->page.GCPhys));
 
 # ifdef VBOX_WITH_STATISTICS
     switch (enmTag)
@@ -1974,7 +2154,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
             return VINF_SUCCESS;
         }
 
-        csamCreatePageRecord(pVM, pPageAddrGC, enmTag, true /* 32 bits code */, fMonitorInvalidation);
+        csamR3CreatePageRecord(pVM, pPageAddrGC, enmTag, true /* 32 bits code */, fMonitorInvalidation);
 
         pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)pPageAddrGC);
         Assert(pPageRec);
