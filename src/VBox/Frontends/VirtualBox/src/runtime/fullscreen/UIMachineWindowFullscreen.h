@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,10 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineWindowFullscreen_h__
-#define __UIMachineWindowFullscreen_h__
+#ifndef ___UIMachineWindowFullscreen_h___
+#define ___UIMachineWindowFullscreen_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIMachineWindow.h"
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
@@ -26,7 +26,8 @@
 class UIMiniToolBar;
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
-/* Fullscreen machine-window implementation: */
+/** UIMachineWindow reimplementation,
+  * providing GUI with machine-window for the full-screen mode. */
 class UIMachineWindowFullscreen : public UIMachineWindow
 {
     Q_OBJECT;
@@ -47,7 +48,7 @@ signals:
 
 protected:
 
-    /* Constructor: */
+    /** Constructor, passes @a pMachineLogic and @a uScreenId to the UIMachineWindow constructor. */
     UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId);
 
 #ifdef Q_WS_MAC
@@ -60,7 +61,7 @@ protected:
 private slots:
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
-    /* Session event-handlers: */
+    /** Handles machine state change event. */
     void sltMachineStateChanged();
 
     /** Revokes keyboard-focus. */
@@ -76,27 +77,30 @@ private slots:
 
 private:
 
-    /* Prepare helpers: */
+    /** Prepare visual-state routine. */
     void prepareVisualState();
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
+    /** Prepare mini-toolbar routine. */
     void prepareMiniToolbar();
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
-    /* Cleanup helpers: */
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
+    /** Cleanup mini-toolbar routine. */
     void cleanupMiniToolbar();
 #endif /* Q_WS_WIN || Q_WS_X11 */
+    /** Cleanup visual-state routine. */
     void cleanupVisualState();
 
-    /* Show stuff: */
+    /** Updates geometry according to visual-state. */
     void placeOnScreen();
+    /** Updates visibility according to visual-state. */
     void showInNecessaryMode();
 
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
-    /* Update routines: */
+    /** Common update routine. */
     void updateAppearanceOf(int iElement);
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
@@ -112,9 +116,9 @@ private:
     friend class UIMachineLogicFullscreen;
 #endif /* Q_WS_MAC */
 
-    /* Factory support: */
+    /** Factory support. */
     friend class UIMachineWindow;
 };
 
-#endif // __UIMachineWindowFullscreen_h__
+#endif /* !___UIMachineWindowFullscreen_h___ */
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,10 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineWindowSeamless_h__
-#define __UIMachineWindowSeamless_h__
+#ifndef ___UIMachineWindowSeamless_h___
+#define ___UIMachineWindowSeamless_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIMachineWindow.h"
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
@@ -26,20 +26,21 @@
 class UIMiniToolBar;
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
-/* Seamless machine-window implementation: */
+/** UIMachineWindow reimplementation,
+  * providing GUI with machine-window for the seamless mode. */
 class UIMachineWindowSeamless : public UIMachineWindow
 {
     Q_OBJECT;
 
 protected:
 
-    /* Constructor: */
+    /** Constructor, passes @a pMachineLogic and @a uScreenId to the UIMachineWindow constructor. */
     UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId);
 
 private slots:
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
-    /* Session event-handlers: */
+    /** Handles machine state change event. */
     void sltMachineStateChanged();
 
     /** Revokes keyboard-focus. */
@@ -48,32 +49,35 @@ private slots:
 
 private:
 
-    /* Prepare helpers: */
+    /** Prepare visual-state routine. */
     void prepareVisualState();
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
+    /** Prepare mini-toolbar routine. */
     void prepareMiniToolbar();
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
-    /* Cleanup helpers: */
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
+    /** Cleanup mini-toolbar routine. */
     void cleanupMiniToolbar();
 #endif /* Q_WS_WIN || Q_WS_X11 */
+    /** Cleanup visual-state routine. */
     void cleanupVisualState();
 
-    /* Show stuff: */
+    /** Updates geometry according to visual-state. */
     void placeOnScreen();
+    /** Updates visibility according to visual-state. */
     void showInNecessaryMode();
 
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
-    /* Update routines: */
+    /** Common update routine. */
     void updateAppearanceOf(int iElement);
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
-    /* Handler: Translucency stuff: */
+    /** Windows: Translucency stuff workaround. */
     void showEvent(QShowEvent *pEvent);
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
 
@@ -94,9 +98,9 @@ private:
     QRegion m_maskGuest;
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
-    /* Factory support: */
+    /** Factory support. */
     friend class UIMachineWindow;
 };
 
-#endif // __UIMachineWindowSeamless_h__
+#endif /* !___UIMachineWindowSeamless_h___ */
 
