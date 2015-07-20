@@ -21,10 +21,10 @@
 /* Local includes: */
 #include "UIMachineWindow.h"
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 /* Forward declarations: */
 class UIRuntimeMiniToolBar;
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 /* Seamless machine-window implementation: */
 class UIMachineWindowSeamless : public UIMachineWindow
@@ -38,26 +38,26 @@ protected:
 
 private slots:
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* Session event-handlers: */
     void sltMachineStateChanged();
-#endif /* !Q_WS_MAC */
 
     /** Revokes keyboard-focus. */
     void sltRevokeFocus();
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 private:
 
     /* Prepare helpers: */
     void prepareVisualState();
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     void prepareMiniToolbar();
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
     /* Cleanup helpers: */
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     void cleanupMiniToolbar();
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
     void cleanupVisualState();
 
     /* Show stuff: */
@@ -67,10 +67,10 @@ private:
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* Update routines: */
     void updateAppearanceOf(int iElement);
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
     /* Handler: Translucency stuff: */
@@ -82,10 +82,10 @@ private:
     void setMask(const QRegion &maskGuest);
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /** Holds the mini-toolbar instance. */
     UIRuntimeMiniToolBar *m_pMiniToolBar;
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
     /** Holds the full seamless mask. */

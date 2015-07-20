@@ -39,9 +39,6 @@
 # include "UIAnimationFramework.h"
 # include "UIIconPool.h"
 # include "VBoxGlobal.h"
-# ifdef Q_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif /* Q_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -289,27 +286,20 @@ void UIRuntimeMiniToolBar::sltHoverLeave()
 
 void UIRuntimeMiniToolBar::prepare()
 {
-#if defined(Q_WS_MAC) || defined (Q_WS_X11)
+#if defined (Q_WS_X11)
     /* Install own event filter: */
     installEventFilter(this);
-#endif /* Q_WS_MAC || Q_WS_X11 */
+#endif /* Q_WS_X11 */
 
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if   defined(Q_WS_WIN)
     /* Make sure we have no background
      * until the first one paint-event: */
     setAttribute(Qt::WA_NoSystemBackground);
-# if defined(Q_WS_MAC)
-    /* Using native API to enable translucent background:
-     * - Under Mac host Qt doesn't allows to disable window-shadows
-     *   until version 4.8, but minimum supported version is 4.7.1. */
-    ::darwinSetShowsWindowTransparent(this, true);
-# elif defined(Q_WS_WIN)
     /* Using Qt API to enable translucent background:
      * - Under Mac host Qt doesn't allows to disable window-shadows
      *   until version 4.8, but minimum supported version is 4.7.1.
      * - Under x11 host Qt has broken XComposite support (black background): */
     setAttribute(Qt::WA_TranslucentBackground);
-# endif /* Q_WS_WIN */
 #elif defined(Q_WS_X11)
     /* Use Qt API to enable translucency if allowed: */
     if (QX11Info::isCompositingManagerRunning())
@@ -354,9 +344,7 @@ void UIRuntimeMiniToolBar::prepare()
         /* Configure child connections: */
         connect(m_pToolbar, SIGNAL(sigResized()), this, SLOT(sltHandleToolbarResize()));
         connect(m_pToolbar, SIGNAL(sigAutoHideToggled()), this, SLOT(sltAutoHideToggled()));
-#ifndef RT_OS_DARWIN
         connect(m_pToolbar, SIGNAL(sigMinimizeAction()), this, SIGNAL(sigMinimizeAction()));
-#endif /* !RT_OS_DARWIN */
         connect(m_pToolbar, SIGNAL(sigExitAction()), this, SIGNAL(sigExitAction()));
         connect(m_pToolbar, SIGNAL(sigCloseAction()), this, SIGNAL(sigCloseAction()));
         /* Add child to mdi-area: */
@@ -451,12 +439,12 @@ bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
     if (pWatched && m_pEmbeddedToolbar && pWatched == m_pEmbeddedToolbar &&
         pEvent->type() == QEvent::FocusIn)
         emit sigNotifyAboutFocusStolen();
-#elif defined(Q_WS_MAC) || defined(Q_WS_X11)
+#elif defined(Q_WS_X11)
     /* Detect if we have window activation stolen. */
     if (pWatched == this &&
         pEvent->type() == QEvent::WindowActivate)
         emit sigNotifyAboutFocusStolen();
-#endif /* Q_WS_MAC || Q_WS_X11 */
+#endif /* Q_WS_X11 */
 
     /* Call to base-class: */
     return QWidget::eventFilter(pWatched, pEvent);
@@ -498,9 +486,7 @@ UIMiniToolBar::UIMiniToolBar()
     /* Variables: Contents stuff: */
     , m_pAutoHideAction(0)
     , m_pLabel(0)
-#ifndef RT_OS_DARWIN
     , m_pMinimizeAction(0)
-#endif /* !RT_OS_DARWIN */
     , m_pRestoreAction(0)
     , m_pCloseAction(0)
     /* Variables: Menu stuff: */
@@ -674,14 +660,12 @@ void UIMiniToolBar::prepare()
     /* Right label margin: */
     m_margins << widgetForAction(addWidget(new QWidget));
 
-#ifndef RT_OS_DARWIN
     /* Minimize action: */
     m_pMinimizeAction = new QAction(this);
     m_pMinimizeAction->setIcon(UIIconPool::iconSet(":/minimize_16px.png"));
     m_pMinimizeAction->setToolTip(tr("Minimize Window"));
     connect(m_pMinimizeAction, SIGNAL(triggered()), this, SIGNAL(sigMinimizeAction()));
     addAction(m_pMinimizeAction);
-#endif /* !RT_OS_DARWIN */
 
     /* Exit action: */
     m_pRestoreAction = new QAction(this);

@@ -21,10 +21,10 @@
 /* Local includes: */
 #include "UIMachineWindow.h"
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 /* Forward declarations: */
 class UIRuntimeMiniToolBar;
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 /* Fullscreen machine-window implementation: */
 class UIMachineWindowFullscreen : public UIMachineWindow
@@ -59,10 +59,13 @@ protected:
 
 private slots:
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* Session event-handlers: */
     void sltMachineStateChanged();
-#endif /* !Q_WS_MAC */
+
+    /** Revokes keyboard-focus. */
+    void sltRevokeFocus();
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Commands @a pMachineWindow to enter native 'fullscreen' mode if possible. */
@@ -71,21 +74,18 @@ private slots:
     void sltExitNativeFullscreen(UIMachineWindow *pMachineWindow);
 #endif /* RT_OS_DARWIN */
 
-    /** Revokes keyboard-focus. */
-    void sltRevokeFocus();
-
 private:
 
     /* Prepare helpers: */
     void prepareVisualState();
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     void prepareMiniToolbar();
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
     /* Cleanup helpers: */
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     void cleanupMiniToolbar();
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
     void cleanupVisualState();
 
     /* Show stuff: */
@@ -95,15 +95,15 @@ private:
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* Update routines: */
     void updateAppearanceOf(int iElement);
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /** Holds the mini-toolbar instance. */
     UIRuntimeMiniToolBar *m_pMiniToolBar;
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 #ifdef Q_WS_MAC
     /** Mac OS X: Reflects whether window is in 'fullscreen' transition. */

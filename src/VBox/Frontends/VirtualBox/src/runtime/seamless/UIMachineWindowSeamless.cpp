@@ -32,10 +32,10 @@
 # include "UIMachineLogicSeamless.h"
 # include "UIMachineWindowSeamless.h"
 # include "UIMachineView.h"
-# ifndef Q_WS_MAC
+# if   defined(Q_WS_WIN) || defined(Q_WS_X11)
 #  include "UIMachineDefs.h"
 #  include "UIMiniToolBar.h"
-# else  /* Q_WS_MAC*/
+# elif defined(Q_WS_MAC)
 #  include "VBoxUtils.h"
 # endif /* Q_WS_MAC */
 
@@ -47,13 +47,13 @@
 
 UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     , m_pMiniToolBar(0)
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 {
 }
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 void UIMachineWindowSeamless::sltMachineStateChanged()
 {
     /* Call to base-class: */
@@ -62,7 +62,6 @@ void UIMachineWindowSeamless::sltMachineStateChanged()
     /* Update mini-toolbar: */
     updateAppearanceOf(UIVisualElement_MiniToolBar);
 }
-#endif /* !Q_WS_MAC */
 
 void UIMachineWindowSeamless::sltRevokeFocus()
 {
@@ -70,14 +69,15 @@ void UIMachineWindowSeamless::sltRevokeFocus()
     if (!isVisible() || isMinimized())
         return;
 
-#if   defined(Q_WS_WIN)
+# if   defined(Q_WS_WIN)
     /* Revoke stolen focus: */
     m_pMachineView->setFocus();
-#elif defined(Q_WS_MAC) || defined(Q_WS_X11)
+# elif defined(Q_WS_X11)
     /* Revoke stolen activation: */
     activateWindow();
-#endif /* Q_WS_MAC || Q_WS_X11 */
+# endif /* Q_WS_X11 */
 }
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 void UIMachineWindowSeamless::prepareVisualState()
 {
@@ -110,13 +110,13 @@ void UIMachineWindowSeamless::prepareVisualState()
     setMask(m_maskGuest);
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* Prepare mini-toolbar: */
     prepareMiniToolbar();
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 }
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 void UIMachineWindowSeamless::prepareMiniToolbar()
 {
     /* Make sure mini-toolbar is not restricted: */
@@ -146,9 +146,9 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
                 this, SLOT(sltRevokeFocus()), Qt::QueuedConnection);
     }
 }
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 void UIMachineWindowSeamless::cleanupMiniToolbar()
 {
     /* Make sure mini-toolbar was created: */
@@ -161,14 +161,14 @@ void UIMachineWindowSeamless::cleanupMiniToolbar()
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;
 }
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 void UIMachineWindowSeamless::cleanupVisualState()
 {
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* Cleanup mini-toolbar: */
     cleanupMiniToolbar();
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
     /* Call to base-class: */
     UIMachineWindow::cleanupVisualState();
@@ -198,14 +198,14 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     if (!uisession()->isScreenVisible(m_uScreenId) ||
         !pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
         /* If there is mini-toolbar: */
         if (m_pMiniToolBar)
         {
             /* Just hide mini-toolbar: */
             m_pMiniToolBar->hide();
         }
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
         /* Hide window: */
         hide();
         return;
@@ -224,7 +224,7 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     /* Adjust machine-view size if necessary: */
     adjustMachineViewSize();
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* If there is mini-toolbar: */
     if (m_pMiniToolBar)
     {
@@ -236,7 +236,7 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         m_pMiniToolBar->showMaximized();
 # endif /* Q_WS_X11 */
     }
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
     /* Make sure machine-view have focus: */
     m_pMachineView->setFocus();
@@ -247,7 +247,7 @@ void UIMachineWindowSeamless::adjustMachineViewSize()
     /* Call to base-class: */
     UIMachineWindow::adjustMachineViewSize();
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* If mini-toolbar present: */
     if (m_pMiniToolBar)
     {
@@ -261,10 +261,10 @@ void UIMachineWindowSeamless::adjustMachineViewSize()
         /* Move mini-toolbar into appropriate place: */
         m_pMiniToolBar->adjustGeometry(iHostScreen);
     }
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 }
 
-#ifndef Q_WS_MAC
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
 {
     /* Call to base-class: */
@@ -287,7 +287,7 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
         }
     }
 }
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
 void UIMachineWindowSeamless::showEvent(QShowEvent *pShowEvent)
