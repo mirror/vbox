@@ -78,6 +78,7 @@ gccplugin$(SUFF_DLL): VBoxCompilerPlugInsGcc.cpp VBoxCompilerPlugInsCommon.cpp V
 		$(if-expr "$(KBUILD_TYPE)" != "release",-DDEBUG,) \
 		-I$(shell gcc -print-file-name=plugin/include) \
 		-I$(PATH_ROOT)/include \
+		$(if-expr "$(KBUILD_HOST)" == "solaris", -I/usr/include/gmp -I$(PATH_ROOT)/src/bldprogs/solgcc/,) \
 		-o $@ \
 		VBoxCompilerPlugInsGcc.cpp \
 		VBoxCompilerPlugInsCommon.cpp
