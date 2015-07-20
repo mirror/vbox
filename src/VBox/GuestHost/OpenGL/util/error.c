@@ -163,7 +163,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 # ifdef IN_GUEST
             rc = VbglR3Init();
 # endif
-            LogRel(("crUtill DLL loaded.\n"));
+            LogRel(("crUtil DLL loaded.\n"));
 # if defined(DEBUG_misha)
             char aName[MAX_PATH];
             GetModuleFileNameA(hDLLInst, aName, RT_ELEMENTS(aName));
@@ -174,7 +174,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 
         case DLL_PROCESS_DETACH:
         {
-            LogRel(("crUtill DLL unloaded."));
+            LogRel(("crUtil DLL unloaded."));
 # ifdef IN_GUEST
             VbglR3Term();
 # endif
