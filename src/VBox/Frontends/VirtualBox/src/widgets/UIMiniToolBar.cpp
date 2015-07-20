@@ -424,7 +424,7 @@ void UIMiniToolBar::setAlignment(Qt::Alignment alignment)
     /* Update alignment: */
     m_alignment = alignment;
 
-    /* Re-initialize: */
+    /* Adjust geometry: */
     adjustGeometry();
 
     /* Propagate to child to update shape: */
@@ -443,7 +443,7 @@ void UIMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /* = true
     /* Update auto-hide: */
     m_fAutoHide = fAutoHide;
 
-    /* Re-initialize: */
+    /* Adjust geometry: */
     adjustGeometry();
 
     /* Propagate to child to update action if necessary: */
@@ -592,7 +592,7 @@ void UIMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
 
 void UIMiniToolBar::sltHandleToolbarResize()
 {
-    /* Re-initialize: */
+    /* Adjust geometry: */
     adjustGeometry();
 }
 
@@ -625,21 +625,18 @@ void UIMiniToolBar::sltHoverLeave()
 void UIMiniToolBar::prepare()
 {
 #if defined (Q_WS_X11)
-    /* Install own event filter: */
+    /* Install own event-filter
+     * to handle focus stealing: */
     installEventFilter(this);
 #endif /* Q_WS_X11 */
 
 #if   defined(Q_WS_WIN)
-    /* Make sure we have no background
-     * until the first one paint-event: */
+    /* No background until first paint-event: */
     setAttribute(Qt::WA_NoSystemBackground);
-    /* Using Qt API to enable translucent background:
-     * - Under Mac host Qt doesn't allows to disable window-shadows
-     *   until version 4.8, but minimum supported version is 4.7.1.
-     * - Under x11 host Qt has broken XComposite support (black background): */
+    /* Enable translucency through Qt API: */
     setAttribute(Qt::WA_TranslucentBackground);
 #elif defined(Q_WS_X11)
-    /* Use Qt API to enable translucency if allowed: */
+    /* Enable translucency through Qt API if supported: */
     if (QX11Info::isCompositingManagerRunning())
         setAttribute(Qt::WA_TranslucentBackground);
 #endif /* Q_WS_X11 */
@@ -690,7 +687,7 @@ void UIMiniToolBar::prepare()
         /* Make sure we have no focus: */
         m_pEmbeddedToolbar->setFocusPolicy(Qt::NoFocus);
 #ifdef Q_WS_WIN
-        /* Install embedded-toolbar event filter: */
+        /* Install embedded-toolbar event-filter: */
         m_pEmbeddedToolbar->installEventFilter(this);
 #endif /* Q_WS_WIN */
     }
@@ -716,7 +713,7 @@ void UIMiniToolBar::prepare()
                                                          SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()),
                                                          true);
 
-    /* Adjust geometry finally: */
+    /* Adjust geometry first time: */
     adjustGeometry();
 }
 
@@ -762,7 +759,7 @@ void UIMiniToolBar::leaveEvent(QEvent*)
 #ifdef Q_WS_X11
 void UIMiniToolBar::resizeEvent(QResizeEvent*)
 {
-    /* Adjust mini-toolbar on resize: */
+    /* Adjust geometry: */
     adjustGeometry();
 }
 #endif /* Q_WS_X11 */
