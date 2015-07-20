@@ -285,7 +285,7 @@ void UIMiniToolBarPrivate::prepare()
     /* Prepare push-pin: */
     m_pAutoHideAction = new QAction(this);
     m_pAutoHideAction->setIcon(UIIconPool::iconSet(":/pin_16px.png"));
-    m_pAutoHideAction->setToolTip(tr("Always show the toolbar"));
+    m_pAutoHideAction->setToolTip(UIMiniToolBar::tr("Always show the toolbar"));
     m_pAutoHideAction->setCheckable(true);
     connect(m_pAutoHideAction, SIGNAL(toggled(bool)), this, SIGNAL(sigAutoHideToggled()));
     addAction(m_pAutoHideAction);
@@ -311,21 +311,21 @@ void UIMiniToolBarPrivate::prepare()
     /* Minimize action: */
     m_pMinimizeAction = new QAction(this);
     m_pMinimizeAction->setIcon(UIIconPool::iconSet(":/minimize_16px.png"));
-    m_pMinimizeAction->setToolTip(tr("Minimize Window"));
+    m_pMinimizeAction->setToolTip(UIMiniToolBar::tr("Minimize Window"));
     connect(m_pMinimizeAction, SIGNAL(triggered()), this, SIGNAL(sigMinimizeAction()));
     addAction(m_pMinimizeAction);
 
     /* Exit action: */
     m_pRestoreAction = new QAction(this);
     m_pRestoreAction->setIcon(UIIconPool::iconSet(":/restore_16px.png"));
-    m_pRestoreAction->setToolTip(tr("Exit Full Screen or Seamless Mode"));
+    m_pRestoreAction->setToolTip(UIMiniToolBar::tr("Exit Full Screen or Seamless Mode"));
     connect(m_pRestoreAction, SIGNAL(triggered()), this, SIGNAL(sigExitAction()));
     addAction(m_pRestoreAction);
 
     /* Close action: */
     m_pCloseAction = new QAction(this);
     m_pCloseAction->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-    m_pCloseAction->setToolTip(tr("Close VM"));
+    m_pCloseAction->setToolTip(UIMiniToolBar::tr("Close VM"));
     connect(m_pCloseAction, SIGNAL(triggered()), this, SIGNAL(sigCloseAction()));
     addAction(m_pCloseAction);
 
