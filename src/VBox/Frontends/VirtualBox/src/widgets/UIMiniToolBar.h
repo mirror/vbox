@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMiniToolBar class declaration (fullscreen/seamless).
+ * VBox Qt GUI - UIMiniToolBar class declaration.
  */
 
 /*
- * Copyright (C) 2009-2013 Oracle Corporation
+ * Copyright (C) 2009-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,21 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMiniToolBar_h__
-#define __UIMiniToolBar_h__
-
-/* Qt includes: */
-#include <QMainWindow>
+#ifndef ___UIMiniToolBar_h___
+#define ___UIMiniToolBar_h___
 
 /* GUI includes: */
 #include "UIToolBar.h"
 
 /* Forward declarations: */
+class QMenu;
 class QTimer;
 class QLabel;
-class QMenu;
 class QMdiArea;
-class UIMiniToolBar;
 class QMdiSubWindow;
 class UIAnimation;
 class UIMiniToolBarPrivate;
@@ -41,7 +37,8 @@ enum GeometryType
     GeometryType_Full
 };
 
-/* Runtime mini-toolbar frameless-window prototype: */
+/** QWidget reimplementation
+  * providing GUI with slideable mini-toolbar used in full-screen/seamless modes. */
 class UIMiniToolBar : public QWidget
 {
     Q_OBJECT;
@@ -51,13 +48,16 @@ class UIMiniToolBar : public QWidget
 
 signals:
 
-    /* Notifiers: Action stuff: */
+    /** Notifies listeners about action triggered to minimize. */
     void sigMinimizeAction();
+    /** Notifies listeners about action triggered to exit. */
     void sigExitAction();
+    /** Notifies listeners about action triggered to close. */
     void sigCloseAction();
 
-    /* Notifiers: Hover stuff: */
+    /** Notifies listeners about we are hovered. */
     void sigHoverEnter();
+    /** Notifies listeners about we are unhovered. */
     void sigHoverLeave();
 
     /** Notifies listeners about we stole focus. */
@@ -65,49 +65,66 @@ signals:
 
 public:
 
-    /* Constructor/destructor: */
+    /** Constructor, passes @a pParent to the QWidget constructor.
+      * @param geometryType determines the geometry type,
+      * @param alignment    determines the alignment type,
+      * @param fAutoHide    determines whether we should auto-hide. */
     UIMiniToolBar(QWidget *pParent,
                   GeometryType geometryType,
                   Qt::Alignment alignment,
                   bool fAutoHide = true);
+    /** Destructor. */
     ~UIMiniToolBar();
 
-    /* API: Alignment stuff: */
+    /** Defines @a alignment. */
     void setAlignment(Qt::Alignment alignment);
 
-    /* API: Auto-hide stuff: */
+    /** Returns whether internal widget do auto-hide. */
     bool autoHide() const { return m_fAutoHide; }
+    /** Defines whether internal widget do @a fAutoHide.
+      * @param fPropagateToChild determines should we propagate defined
+      *                          option value to internal widget. */
     void setAutoHide(bool fAutoHide, bool fPropagateToChild = true);
 
-    /* API: Text stuff: */
+    /** Defines @a strText for internal widget. */
     void setText(const QString &strText);
 
-    /* API: Menu stuff: */
+    /** Adds @a menus to internal widget. */
     void addMenus(const QList<QMenu*> &menus);
 
-    /* API: Geometry stuff: */
+    /** Adjusts geometry according to @a iHostScreen. */
     void adjustGeometry(int iHostScreen = -1);
 
 private slots:
 
-    /* Handlers: Toolbar stuff: */
+    /** Handles internal widget resize event. */
     void sltHandleToolbarResize();
+
+    /** Handles internal widget auto-hide toggling. */
     void sltAutoHideToggled();
+
+    /** Handles hovering. */
     void sltHoverEnter();
+    /** Handles unhovering. */
     void sltHoverLeave();
+
+    /** Notifies listeners about we stole focus. */
+    void sltNotifyAboutFocusStolen() { emit sigNotifyAboutFocusStolen(); }
 
 private:
 
-    /* Helpers: Prepare/cleanup stuff: */
+    /** Prepare routine. */
     void prepare();
+    /** Cleanup routine. */
     void cleanup();
 
-    /* Handlers: Event-processing stuff: */
+    /** Mouse enter @a pEvent handler. */
     void enterEvent(QEvent *pEvent);
+    /** Mouse leave @a pEvent handler. */
     void leaveEvent(QEvent *pEvent);
 
 #ifdef Q_WS_X11
-    /** X11: Resize event handler. */
+    /** X11: Resize @a pEvent handler. */
     void resizeEvent(QResizeEvent *pEvent);
 #endif /* Q_WS_X11 */
 
@@ -115,33 +132,46 @@ private:
       * installed as an event-filter for the @a pWatched. */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
-    /* Helper: Hover stuff: */
+    /** Simulates auto-hide animation. */
     void simulateToolbarAutoHiding();
 
-    /* Property: Hover stuff: */
-    void setToolbarPosition(QPoint point);
+    /** Defines internal widget @a position. */
+    void setToolbarPosition(QPoint position);
+    /** Returns internal widget position. */
     QPoint toolbarPosition() const;
+    /** Returns internal widget position when it's hidden. */
     QPoint hiddenToolbarPosition() const { return m_hiddenToolbarPosition; }
+    /** Returns internal widget position when it's shown. */
     QPoint shownToolbarPosition() const { return m_shownToolbarPosition; }
 
-    /* Variables: General stuff: */
+    /** Holds the geometry type. */
     const GeometryType m_geometryType;
+    /** Holds the alignment type. */
     Qt::Alignment m_alignment;
+    /** Holds whether we should auto-hide. */
     bool m_fAutoHide;
 
-    /* Variables: Contents stuff: */
+    /** Holds the MDI-area. */
     QMdiArea *m_pMdiArea;
+    /** Holds the internal widget. */
     UIMiniToolBarPrivate *m_pToolbar;
+    /** Holds the pointer to the wrapped
+      * internal widget inside the MDI-area. */
     QMdiSubWindow *m_pEmbeddedToolbar;
 
-    /* Variables: Hover stuff: */
+    /** Holds whether we are hovered. */
     bool m_fHovered;
+    /** Holds the hover timer. */
     QTimer *m_pHoverEnterTimer;
+    /** Holds the unhover timer. */
     QTimer *m_pHoverLeaveTimer;
+    /** Holds the internal widget position when it's hidden. */
     QPoint m_hiddenToolbarPosition;
+    /** Holds the internal widget position when it's shown. */
     QPoint m_shownToolbarPosition;
+    /** Holds the animation framework object. */
     UIAnimation *m_pAnimation;
 };
 
-#endif // __UIMiniToolBar_h__
+#endif /* !___UIMiniToolBar_h___ */
 

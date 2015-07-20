@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMiniToolBar class implementation (fullscreen/seamless).
+ * VBox Qt GUI - UIMiniToolBar class implementation.
  */
 
 /*
- * Copyright (C) 2009-2013 Oracle Corporation
+ * Copyright (C) 2009-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,73 +42,88 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Mini-toolbar widget prototype: */
+/** UIToolBar reimplementation
+  * providing UIMiniToolBar with mini-toolbar. */
 class UIMiniToolBarPrivate : public UIToolBar
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifier: Resize stuff: */
+    /** Notifies listeners about we are resized. */
     void sigResized();
 
-    /* Notifiers: Action stuff: */
+    /** Notifies listeners about action triggered to toggle auto-hide. */
     void sigAutoHideToggled();
+    /** Notifies listeners about action triggered to minimize. */
     void sigMinimizeAction();
+    /** Notifies listeners about action triggered to exit. */
     void sigExitAction();
+    /** Notifies listeners about action triggered to close. */
     void sigCloseAction();
 
 public:
 
-    /* Constructor: */
+    /** Constructor. */
     UIMiniToolBarPrivate();
 
-    /* API: Alignment stuff: */
+    /** Defines @a alignment. */
     void setAlignment(Qt::Alignment alignment);
 
-    /* API: Auto-hide stuff: */
+    /** Returns whether we do auto-hide. */
     bool autoHide() const;
+    /** Defines whether we do @a fAutoHide. */
     void setAutoHide(bool fAutoHide);
 
-    /* API: Text stuff: */
+    /** Defines our @a strText. */
     void setText(const QString &strText);
 
-    /* API: Menu aggregator: */
+    /** Adds our @a menus. */
     void addMenus(const QList<QMenu*> &menus);
 
 protected:
 
-    /* Handlers: Event-processing stuff: */
+    /** Show @a pEvent handler. */
     virtual void showEvent(QShowEvent *pEvent);
+    /** Polish @a pEvent handler. */
     virtual void polishEvent(QShowEvent *pEvent);
+    /** Resize @a pEvent handler. */
     virtual void resizeEvent(QResizeEvent *pEvent);
+    /** Paint @a pEvent handler. */
     virtual void paintEvent(QPaintEvent *pEvent);
 
 private:
 
-    /* Helper: Prepare stuff: */
+    /** Prepare routine. */
     void prepare();
 
-    /* Helper: Shape stuff: */
+    /** Rebuilds our shape. */
     void rebuildShape();
 
-    /* Variables: General stuff: */
+    /** Holds whether this widget was polished. */
     bool m_fPolished;
+    /** Holds the alignment type. */
     Qt::Alignment m_alignment;
+    /** Holds the shape. */
     QPainterPath m_shape;
 
-    /* Variables: Contents stuff: */
+    /** Holds the action to toggle auto-hide. */
     QAction *m_pAutoHideAction;
+    /** Holds the name label. */
     QLabel *m_pLabel;
+    /** Holds the action to trigger minimize. */
     QAction *m_pMinimizeAction;
+    /** Holds the action to trigger exit. */
     QAction *m_pRestoreAction;
+    /** Holds the action to trigger close. */
     QAction *m_pCloseAction;
 
-    /* Variables: Menu stuff: */
+    /** Holds the pointer to the place to insert menu. */
     QAction *m_pMenuInsertPosition;
 
-    /* Variables: Spacers stuff: */
+    /** Holds the spacings. */
     QList<QWidget*> m_spacings;
+    /** Holds the margins. */
     QList<QWidget*> m_margins;
 };
 
