@@ -112,6 +112,262 @@ private:
     QList<QWidget*> m_margins;
 };
 
+UIMiniToolBarPrivate::UIMiniToolBarPrivate()
+    /* Variables: General stuff: */
+    : m_fPolished(false)
+    , m_alignment(Qt::AlignBottom)
+    /* Variables: Contents stuff: */
+    , m_pAutoHideAction(0)
+    , m_pLabel(0)
+    , m_pMinimizeAction(0)
+    , m_pRestoreAction(0)
+    , m_pCloseAction(0)
+    /* Variables: Menu stuff: */
+    , m_pMenuInsertPosition(0)
+{
+    /* Prepare: */
+    prepare();
+}
+
+void UIMiniToolBarPrivate::setAlignment(Qt::Alignment alignment)
+{
+    /* Make sure alignment really changed: */
+    if (m_alignment == alignment)
+        return;
+
+    /* Update alignment: */
+    m_alignment = alignment;
+
+    /* Rebuild shape: */
+    rebuildShape();
+}
+
+bool UIMiniToolBarPrivate::autoHide() const
+{
+    /* Return auto-hide: */
+    return !m_pAutoHideAction->isChecked();
+}
+
+void UIMiniToolBarPrivate::setAutoHide(bool fAutoHide)
+{
+    /* Make sure auto-hide really changed: */
+    if (m_pAutoHideAction->isChecked() == !fAutoHide)
+        return;
+
+    /* Update auto-hide: */
+    m_pAutoHideAction->setChecked(!fAutoHide);
+}
+
+void UIMiniToolBarPrivate::setText(const QString &strText)
+{
+    /* Make sure text really changed: */
+    if (m_pLabel->text() == strText)
+        return;
+
+    /* Update text: */
+    m_pLabel->setText(strText);
+
+    /* Resize to sizehint: */
+    resize(sizeHint());
+}
+
+void UIMiniToolBarPrivate::addMenus(const QList<QMenu*> &menus)
+{
+    /* For each of the passed menu items: */
+    for (int i = 0; i < menus.size(); ++i)
+    {
+        /* Get corresponding menu-action: */
+        QAction *pAction = menus[i]->menuAction();
+        /* Insert it into corresponding place: */
+        insertAction(m_pMenuInsertPosition, pAction);
+        /* Configure corresponding tool-button: */
+        if (QToolButton *pButton = qobject_cast<QToolButton*>(widgetForAction(pAction)))
+        {
+            pButton->setPopupMode(QToolButton::InstantPopup);
+            pButton->setAutoRaise(true);
+        }
+        /* Add some spacing: */
+        if (i != menus.size() - 1)
+            m_spacings << widgetForAction(insertWidget(m_pMenuInsertPosition, new QWidget(this)));
+    }
+
+    /* Resize to sizehint: */
+    resize(sizeHint());
+}
+
+void UIMiniToolBarPrivate::showEvent(QShowEvent *pEvent)
+{
+    /* Make sure we should polish dialog: */
+    if (m_fPolished)
+        return;
+
+    /* Call to polish-event: */
+    polishEvent(pEvent);
+
+    /* Mark dialog as polished: */
+    m_fPolished = true;
+}
+
+void UIMiniToolBarPrivate::polishEvent(QShowEvent*)
+{
+    /* Toolbar spacings: */
+    foreach(QWidget *pSpacing, m_spacings)
+        pSpacing->setMinimumWidth(5);
+
+    /* Title spacings: */
+    foreach(QWidget *pLableMargin, m_margins)
+        pLableMargin->setMinimumWidth(15);
+
+    /* Resize to sizehint: */
+    resize(sizeHint());
+}
+
+void UIMiniToolBarPrivate::resizeEvent(QResizeEvent*)
+{
+    /* Rebuild shape: */
+    rebuildShape();
+
+    /* Notify listeners: */
+    emit sigResized();
+}
+
+void UIMiniToolBarPrivate::paintEvent(QPaintEvent*)
+{
+    /* Prepare painter: */
+    QPainter painter(this);
+
+    /* Fill background: */
+    if (!m_shape.isEmpty())
+    {
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setClipPath(m_shape);
+    }
+    QRect backgroundRect = rect();
+    QColor backgroundColor = palette().color(QPalette::Window);
+    QLinearGradient headerGradient(backgroundRect.bottomLeft(), backgroundRect.topLeft());
+    headerGradient.setColorAt(0, backgroundColor.darker(120));
+    headerGradient.setColorAt(1, backgroundColor.darker(90));
+    painter.fillRect(backgroundRect, headerGradient);
+}
+
+void UIMiniToolBarPrivate::prepare()
+{
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+
+    /* Configure toolbar: */
+    setIconSize(QSize(iIconMetric, iIconMetric));
+
+    /* Left margin: */
+#ifdef Q_WS_X11
+    if (QX11Info::isCompositingManagerRunning())
+        m_spacings << widgetForAction(addWidget(new QWidget));
+#else /* !Q_WS_X11 */
+    m_spacings << widgetForAction(addWidget(new QWidget));
+#endif /* !Q_WS_X11 */
+
+    /* Prepare push-pin: */
+    m_pAutoHideAction = new QAction(this);
+    m_pAutoHideAction->setIcon(UIIconPool::iconSet(":/pin_16px.png"));
+    m_pAutoHideAction->setToolTip(tr("Always show the toolbar"));
+    m_pAutoHideAction->setCheckable(true);
+    connect(m_pAutoHideAction, SIGNAL(toggled(bool)), this, SIGNAL(sigAutoHideToggled()));
+    addAction(m_pAutoHideAction);
+
+    /* Left menu margin: */
+    m_spacings << widgetForAction(addWidget(new QWidget));
+
+    /* Right menu margin: */
+    m_pMenuInsertPosition = addWidget(new QWidget);
+    m_spacings << widgetForAction(m_pMenuInsertPosition);
+
+    /* Left label margin: */
+    m_margins << widgetForAction(addWidget(new QWidget));
+
+    /* Insert a label for VM Name: */
+    m_pLabel = new QLabel;
+    m_pLabel->setAlignment(Qt::AlignCenter);
+    addWidget(m_pLabel);
+
+    /* Right label margin: */
+    m_margins << widgetForAction(addWidget(new QWidget));
+
+    /* Minimize action: */
+    m_pMinimizeAction = new QAction(this);
+    m_pMinimizeAction->setIcon(UIIconPool::iconSet(":/minimize_16px.png"));
+    m_pMinimizeAction->setToolTip(tr("Minimize Window"));
+    connect(m_pMinimizeAction, SIGNAL(triggered()), this, SIGNAL(sigMinimizeAction()));
+    addAction(m_pMinimizeAction);
+
+    /* Exit action: */
+    m_pRestoreAction = new QAction(this);
+    m_pRestoreAction->setIcon(UIIconPool::iconSet(":/restore_16px.png"));
+    m_pRestoreAction->setToolTip(tr("Exit Full Screen or Seamless Mode"));
+    connect(m_pRestoreAction, SIGNAL(triggered()), this, SIGNAL(sigExitAction()));
+    addAction(m_pRestoreAction);
+
+    /* Close action: */
+    m_pCloseAction = new QAction(this);
+    m_pCloseAction->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+    m_pCloseAction->setToolTip(tr("Close VM"));
+    connect(m_pCloseAction, SIGNAL(triggered()), this, SIGNAL(sigCloseAction()));
+    addAction(m_pCloseAction);
+
+    /* Right margin: */
+#ifdef Q_WS_X11
+    if (QX11Info::isCompositingManagerRunning())
+        m_spacings << widgetForAction(addWidget(new QWidget));
+#else /* !Q_WS_X11 */
+    m_spacings << widgetForAction(addWidget(new QWidget));
+#endif /* !Q_WS_X11 */
+
+    /* Resize to sizehint: */
+    resize(sizeHint());
+}
+
+void UIMiniToolBarPrivate::rebuildShape()
+{
+#ifdef Q_WS_X11
+    if (!QX11Info::isCompositingManagerRunning())
+        return;
+#endif /* Q_WS_X11 */
+
+    /* Rebuild shape: */
+    QPainterPath shape;
+    switch (m_alignment)
+    {
+        case Qt::AlignTop:
+        {
+            shape.moveTo(0, 0);
+            shape.lineTo(shape.currentPosition().x(), height() - 10);
+            shape.arcTo(QRectF(shape.currentPosition(), QSizeF(20, 20)).translated(0, -10), 180, 90);
+            shape.lineTo(width() - 10, shape.currentPosition().y());
+            shape.arcTo(QRectF(shape.currentPosition(), QSizeF(20, 20)).translated(-10, -20), 270, 90);
+            shape.lineTo(shape.currentPosition().x(), 0);
+            shape.closeSubpath();
+            break;
+        }
+        case Qt::AlignBottom:
+        {
+            shape.moveTo(0, height());
+            shape.lineTo(shape.currentPosition().x(), 10);
+            shape.arcTo(QRectF(shape.currentPosition(), QSizeF(20, 20)).translated(0, -10), 180, -90);
+            shape.lineTo(width() - 10, shape.currentPosition().y());
+            shape.arcTo(QRectF(shape.currentPosition(), QSizeF(20, 20)).translated(-10, 0), 90, -90);
+            shape.lineTo(shape.currentPosition().x(), height());
+            shape.closeSubpath();
+            break;
+        }
+        default:
+            break;
+    }
+    m_shape = shape;
+
+    /* Update: */
+    update();
+}
+
 UIMiniToolBar::UIMiniToolBar(QWidget *pParent,
                              GeometryType geometryType,
                              Qt::Alignment alignment,
@@ -545,263 +801,6 @@ QPoint UIMiniToolBar::toolbarPosition() const
     /* Return position: */
     AssertPtrReturn(m_pEmbeddedToolbar, QPoint());
     return m_pEmbeddedToolbar->pos();
-}
-
-
-UIMiniToolBarPrivate::UIMiniToolBarPrivate()
-    /* Variables: General stuff: */
-    : m_fPolished(false)
-    , m_alignment(Qt::AlignBottom)
-    /* Variables: Contents stuff: */
-    , m_pAutoHideAction(0)
-    , m_pLabel(0)
-    , m_pMinimizeAction(0)
-    , m_pRestoreAction(0)
-    , m_pCloseAction(0)
-    /* Variables: Menu stuff: */
-    , m_pMenuInsertPosition(0)
-{
-    /* Prepare: */
-    prepare();
-}
-
-void UIMiniToolBarPrivate::setAlignment(Qt::Alignment alignment)
-{
-    /* Make sure alignment really changed: */
-    if (m_alignment == alignment)
-        return;
-
-    /* Update alignment: */
-    m_alignment = alignment;
-
-    /* Rebuild shape: */
-    rebuildShape();
-}
-
-bool UIMiniToolBarPrivate::autoHide() const
-{
-    /* Return auto-hide: */
-    return !m_pAutoHideAction->isChecked();
-}
-
-void UIMiniToolBarPrivate::setAutoHide(bool fAutoHide)
-{
-    /* Make sure auto-hide really changed: */
-    if (m_pAutoHideAction->isChecked() == !fAutoHide)
-        return;
-
-    /* Update auto-hide: */
-    m_pAutoHideAction->setChecked(!fAutoHide);
-}
-
-void UIMiniToolBarPrivate::setText(const QString &strText)
-{
-    /* Make sure text really changed: */
-    if (m_pLabel->text() == strText)
-        return;
-
-    /* Update text: */
-    m_pLabel->setText(strText);
-
-    /* Resize to sizehint: */
-    resize(sizeHint());
-}
-
-void UIMiniToolBarPrivate::addMenus(const QList<QMenu*> &menus)
-{
-    /* For each of the passed menu items: */
-    for (int i = 0; i < menus.size(); ++i)
-    {
-        /* Get corresponding menu-action: */
-        QAction *pAction = menus[i]->menuAction();
-        /* Insert it into corresponding place: */
-        insertAction(m_pMenuInsertPosition, pAction);
-        /* Configure corresponding tool-button: */
-        if (QToolButton *pButton = qobject_cast<QToolButton*>(widgetForAction(pAction)))
-        {
-            pButton->setPopupMode(QToolButton::InstantPopup);
-            pButton->setAutoRaise(true);
-        }
-        /* Add some spacing: */
-        if (i != menus.size() - 1)
-            m_spacings << widgetForAction(insertWidget(m_pMenuInsertPosition, new QWidget(this)));
-    }
-
-    /* Resize to sizehint: */
-    resize(sizeHint());
-}
-
-void UIMiniToolBarPrivate::showEvent(QShowEvent *pEvent)
-{
-    /* Make sure we should polish dialog: */
-    if (m_fPolished)
-        return;
-
-    /* Call to polish-event: */
-    polishEvent(pEvent);
-
-    /* Mark dialog as polished: */
-    m_fPolished = true;
-}
-
-void UIMiniToolBarPrivate::polishEvent(QShowEvent*)
-{
-    /* Toolbar spacings: */
-    foreach(QWidget *pSpacing, m_spacings)
-        pSpacing->setMinimumWidth(5);
-
-    /* Title spacings: */
-    foreach(QWidget *pLableMargin, m_margins)
-        pLableMargin->setMinimumWidth(15);
-
-    /* Resize to sizehint: */
-    resize(sizeHint());
-}
-
-void UIMiniToolBarPrivate::resizeEvent(QResizeEvent*)
-{
-    /* Rebuild shape: */
-    rebuildShape();
-
-    /* Notify listeners: */
-    emit sigResized();
-}
-
-void UIMiniToolBarPrivate::paintEvent(QPaintEvent*)
-{
-    /* Prepare painter: */
-    QPainter painter(this);
-
-    /* Fill background: */
-    if (!m_shape.isEmpty())
-    {
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setClipPath(m_shape);
-    }
-    QRect backgroundRect = rect();
-    QColor backgroundColor = palette().color(QPalette::Window);
-    QLinearGradient headerGradient(backgroundRect.bottomLeft(), backgroundRect.topLeft());
-    headerGradient.setColorAt(0, backgroundColor.darker(120));
-    headerGradient.setColorAt(1, backgroundColor.darker(90));
-    painter.fillRect(backgroundRect, headerGradient);
-}
-
-void UIMiniToolBarPrivate::prepare()
-{
-    /* Determine icon metric: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-
-    /* Configure toolbar: */
-    setIconSize(QSize(iIconMetric, iIconMetric));
-
-    /* Left margin: */
-#ifdef Q_WS_X11
-    if (QX11Info::isCompositingManagerRunning())
-        m_spacings << widgetForAction(addWidget(new QWidget));
-#else /* !Q_WS_X11 */
-    m_spacings << widgetForAction(addWidget(new QWidget));
-#endif /* !Q_WS_X11 */
-
-    /* Prepare push-pin: */
-    m_pAutoHideAction = new QAction(this);
-    m_pAutoHideAction->setIcon(UIIconPool::iconSet(":/pin_16px.png"));
-    m_pAutoHideAction->setToolTip(tr("Always show the toolbar"));
-    m_pAutoHideAction->setCheckable(true);
-    connect(m_pAutoHideAction, SIGNAL(toggled(bool)), this, SIGNAL(sigAutoHideToggled()));
-    addAction(m_pAutoHideAction);
-
-    /* Left menu margin: */
-    m_spacings << widgetForAction(addWidget(new QWidget));
-
-    /* Right menu margin: */
-    m_pMenuInsertPosition = addWidget(new QWidget);
-    m_spacings << widgetForAction(m_pMenuInsertPosition);
-
-    /* Left label margin: */
-    m_margins << widgetForAction(addWidget(new QWidget));
-
-    /* Insert a label for VM Name: */
-    m_pLabel = new QLabel;
-    m_pLabel->setAlignment(Qt::AlignCenter);
-    addWidget(m_pLabel);
-
-    /* Right label margin: */
-    m_margins << widgetForAction(addWidget(new QWidget));
-
-    /* Minimize action: */
-    m_pMinimizeAction = new QAction(this);
-    m_pMinimizeAction->setIcon(UIIconPool::iconSet(":/minimize_16px.png"));
-    m_pMinimizeAction->setToolTip(tr("Minimize Window"));
-    connect(m_pMinimizeAction, SIGNAL(triggered()), this, SIGNAL(sigMinimizeAction()));
-    addAction(m_pMinimizeAction);
-
-    /* Exit action: */
-    m_pRestoreAction = new QAction(this);
-    m_pRestoreAction->setIcon(UIIconPool::iconSet(":/restore_16px.png"));
-    m_pRestoreAction->setToolTip(tr("Exit Full Screen or Seamless Mode"));
-    connect(m_pRestoreAction, SIGNAL(triggered()), this, SIGNAL(sigExitAction()));
-    addAction(m_pRestoreAction);
-
-    /* Close action: */
-    m_pCloseAction = new QAction(this);
-    m_pCloseAction->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-    m_pCloseAction->setToolTip(tr("Close VM"));
-    connect(m_pCloseAction, SIGNAL(triggered()), this, SIGNAL(sigCloseAction()));
-    addAction(m_pCloseAction);
-
-    /* Right margin: */
-#ifdef Q_WS_X11
-    if (QX11Info::isCompositingManagerRunning())
-        m_spacings << widgetForAction(addWidget(new QWidget));
-#else /* !Q_WS_X11 */
-    m_spacings << widgetForAction(addWidget(new QWidget));
-#endif /* !Q_WS_X11 */
-
-    /* Resize to sizehint: */
-    resize(sizeHint());
-}
-
-void UIMiniToolBarPrivate::rebuildShape()
-{
-#ifdef Q_WS_X11
-    if (!QX11Info::isCompositingManagerRunning())
-        return;
-#endif /* Q_WS_X11 */
-
-    /* Rebuild shape: */
-    QPainterPath shape;
-    switch (m_alignment)
-    {
-        case Qt::AlignTop:
-        {
-            shape.moveTo(0, 0);
-            shape.lineTo(shape.currentPosition().x(), height() - 10);
-            shape.arcTo(QRectF(shape.currentPosition(), QSizeF(20, 20)).translated(0, -10), 180, 90);
-            shape.lineTo(width() - 10, shape.currentPosition().y());
-            shape.arcTo(QRectF(shape.currentPosition(), QSizeF(20, 20)).translated(-10, -20), 270, 90);
-            shape.lineTo(shape.currentPosition().x(), 0);
-            shape.closeSubpath();
-            break;
-        }
-        case Qt::AlignBottom:
-        {
-            shape.moveTo(0, height());
-            shape.lineTo(shape.currentPosition().x(), 10);
-            shape.arcTo(QRectF(shape.currentPosition(), QSizeF(20, 20)).translated(0, -10), 180, -90);
-            shape.lineTo(width() - 10, shape.currentPosition().y());
-            shape.arcTo(QRectF(shape.currentPosition(), QSizeF(20, 20)).translated(-10, 0), 90, -90);
-            shape.lineTo(shape.currentPosition().x(), height());
-            shape.closeSubpath();
-            break;
-        }
-        default:
-            break;
-    }
-    m_shape = shape;
-
-    /* Update: */
-    update();
 }
 
 #include "UIMiniToolBar.moc"
