@@ -176,7 +176,7 @@ void UIMachineWindowFullscreen::sltExitNativeFullscreen(UIMachineWindow *pMachin
 void UIMachineWindowFullscreen::sltRevokeFocus()
 {
     /* Make sure window is visible: */
-    if (!isVisible())
+    if (!isVisible() || isMinimized())
         return;
 
 #if   defined(Q_WS_WIN)
@@ -186,21 +186,6 @@ void UIMachineWindowFullscreen::sltRevokeFocus()
     /* Revoke stolen activation: */
     activateWindow();
 #endif /* Q_WS_MAC || Q_WS_X11 */
-}
-
-void UIMachineWindowFullscreen::showMinimized()
-{
-#ifdef Q_WS_X11
-    /* If there is mini-toolbar: */
-    if (m_pMiniToolBar)
-    {
-        /* Minimize it first: */
-        m_pMiniToolBar->showMinimized();
-    }
-#endif /* Q_WS_X11 */
-
-    /* Call to base-class: */
-    UIMachineWindow::showMinimized();
 }
 
 void UIMachineWindowFullscreen::prepareVisualState()
