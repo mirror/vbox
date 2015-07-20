@@ -1097,11 +1097,6 @@
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
     <message>
-        <source>Status</source>
-        <comment>password table field</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>ID</source>
         <comment>password table field</comment>
         <translation type="unfinished"></translation>
@@ -8053,6 +8048,10 @@ medium</comment>
     </message>
     <message>
         <source>Drag and drop operation from guest to host failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

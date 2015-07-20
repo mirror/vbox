@@ -1493,7 +1493,7 @@
     <message>
         <source>Status</source>
         <comment>password table field</comment>
-        <translation>Статус</translation>
+        <translation type="obsolete">Статус</translation>
     </message>
     <message>
         <source>ID</source>
@@ -10022,6 +10022,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p&gt;Could not switch the guest display to full-screen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to full-screen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не може да се премине в режим на цял екран, поради недостиг на виртуална видео памет.&lt;/p&gt;&lt;p&gt;Трябва да конфигурирате виртуалната машина с поне &lt;b&gt;%1&lt;/b&gt; видео памет.&lt;/p&gt;&lt;p&gt;Натиснете &lt;b&gt;Игнориране&lt;/b&gt;, за да превключите към цял екран все пак, или натиснете &lt;b&gt;Отказ&lt;/b&gt;, за да откажете тази операция.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

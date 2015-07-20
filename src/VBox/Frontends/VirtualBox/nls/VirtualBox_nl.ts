@@ -1392,7 +1392,7 @@
     <message>
         <source>Status</source>
         <comment>password table field</comment>
-        <translation>Status</translation>
+        <translation type="obsolete">Status</translation>
     </message>
     <message>
         <source>ID</source>
@@ -8677,6 +8677,10 @@
     <message>
         <source>&lt;p&gt;Could not switch the guest display to full-screen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to full-screen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Kan het gastscherm niet laten overschakelen op schermvullend omdat de gast te weinig videogeheugen heeft.&lt;/p&gt;&lt;p&gt;U moet bij de configuratie de virtuele machine minimaal &lt;b&gt;%1&lt;/b&gt; videogeheugen meegeven.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Negeren&lt;/b&gt; om toch op volledig beeld over te schakelen of klik op&lt;b&gt;Annuleren&lt;/b&gt; om niet over te schakelen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

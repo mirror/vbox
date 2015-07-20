@@ -1467,7 +1467,7 @@
     <message>
         <source>Status</source>
         <comment>password table field</comment>
-        <translation>Státusz</translation>
+        <translation type="obsolete">Státusz</translation>
     </message>
     <message>
         <source>ID</source>
@@ -9997,6 +9997,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Drag and drop operation from guest to host failed.</source>
         <translation>A fogd és vidd művelet sikertelen a gazda gép irányában.</translation>
+    </message>
+    <message>
+        <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
