@@ -242,10 +242,10 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
         return;
 
     /* Create mini-toolbar: */
-    m_pMiniToolBar = new UIRuntimeMiniToolBar(this,
-                                              GeometryType_Full,
-                                              gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
-                                              gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
+    m_pMiniToolBar = new UIMiniToolBar(this,
+                                       GeometryType_Full,
+                                       gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
+                                       gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     AssertPtrReturnVoid(m_pMiniToolBar);
     {
 #ifdef Q_WS_X11

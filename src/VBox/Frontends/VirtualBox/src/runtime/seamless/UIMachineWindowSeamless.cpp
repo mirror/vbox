@@ -124,10 +124,10 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
         return;
 
     /* Create mini-toolbar: */
-    m_pMiniToolBar = new UIRuntimeMiniToolBar(this,
-                                              GeometryType_Available,
-                                              gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
-                                              gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
+    m_pMiniToolBar = new UIMiniToolBar(this,
+                                       GeometryType_Available,
+                                       gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
+                                       gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     AssertPtrReturnVoid(m_pMiniToolBar);
     {
 #ifdef Q_WS_X11

@@ -32,6 +32,7 @@ class QMdiArea;
 class UIMiniToolBar;
 class QMdiSubWindow;
 class UIAnimation;
+class UIMiniToolBarPrivate;
 
 /** Geometry types. */
 enum GeometryType
@@ -41,7 +42,7 @@ enum GeometryType
 };
 
 /* Runtime mini-toolbar frameless-window prototype: */
-class UIRuntimeMiniToolBar : public QWidget
+class UIMiniToolBar : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(QPoint toolbarPosition READ toolbarPosition WRITE setToolbarPosition);
@@ -65,11 +66,11 @@ signals:
 public:
 
     /* Constructor/destructor: */
-    UIRuntimeMiniToolBar(QWidget *pParent,
-                         GeometryType geometryType,
-                         Qt::Alignment alignment,
-                         bool fAutoHide = true);
-    ~UIRuntimeMiniToolBar();
+    UIMiniToolBar(QWidget *pParent,
+                  GeometryType geometryType,
+                  Qt::Alignment alignment,
+                  bool fAutoHide = true);
+    ~UIMiniToolBar();
 
     /* API: Alignment stuff: */
     void setAlignment(Qt::Alignment alignment);
@@ -130,7 +131,7 @@ private:
 
     /* Variables: Contents stuff: */
     QMdiArea *m_pMdiArea;
-    UIMiniToolBar *m_pToolbar;
+    UIMiniToolBarPrivate *m_pToolbar;
     QMdiSubWindow *m_pEmbeddedToolbar;
 
     /* Variables: Hover stuff: */
@@ -140,76 +141,6 @@ private:
     QPoint m_hiddenToolbarPosition;
     QPoint m_shownToolbarPosition;
     UIAnimation *m_pAnimation;
-};
-
-/* Mini-toolbar widget prototype: */
-class UIMiniToolBar : public UIToolBar
-{
-    Q_OBJECT;
-
-signals:
-
-    /* Notifier: Resize stuff: */
-    void sigResized();
-
-    /* Notifiers: Action stuff: */
-    void sigAutoHideToggled();
-    void sigMinimizeAction();
-    void sigExitAction();
-    void sigCloseAction();
-
-public:
-
-    /* Constructor: */
-    UIMiniToolBar();
-
-    /* API: Alignment stuff: */
-    void setAlignment(Qt::Alignment alignment);
-
-    /* API: Auto-hide stuff: */
-    bool autoHide() const;
-    void setAutoHide(bool fAutoHide);
-
-    /* API: Text stuff: */
-    void setText(const QString &strText);
-
-    /* API: Menu aggregator: */
-    void addMenus(const QList<QMenu*> &menus);
-
-protected:
-
-    /* Handlers: Event-processing stuff: */
-    virtual void showEvent(QShowEvent *pEvent);
-    virtual void polishEvent(QShowEvent *pEvent);
-    virtual void resizeEvent(QResizeEvent *pEvent);
-    virtual void paintEvent(QPaintEvent *pEvent);
-
-private:
-
-    /* Helper: Prepare stuff: */
-    void prepare();
-
-    /* Helper: Shape stuff: */
-    void rebuildShape();
-
-    /* Variables: General stuff: */
-    bool m_fPolished;
-    Qt::Alignment m_alignment;
-    QPainterPath m_shape;
-
-    /* Variables: Contents stuff: */
-    QAction *m_pAutoHideAction;
-    QLabel *m_pLabel;
-    QAction *m_pMinimizeAction;
-    QAction *m_pRestoreAction;
-    QAction *m_pCloseAction;
-
-    /* Variables: Menu stuff: */
-    QAction *m_pMenuInsertPosition;
-
-    /* Variables: Spacers stuff: */
-    QList<QWidget*> m_spacings;
-    QList<QWidget*> m_margins;
 };
 
 #endif // __UIMiniToolBar_h__

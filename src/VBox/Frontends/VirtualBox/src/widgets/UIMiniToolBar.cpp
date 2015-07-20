@@ -42,11 +42,80 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Mini-toolbar widget prototype: */
+class UIMiniToolBarPrivate : public UIToolBar
+{
+    Q_OBJECT;
 
-UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
-                                           GeometryType geometryType,
-                                           Qt::Alignment alignment,
-                                           bool fAutoHide /* = true */)
+signals:
+
+    /* Notifier: Resize stuff: */
+    void sigResized();
+
+    /* Notifiers: Action stuff: */
+    void sigAutoHideToggled();
+    void sigMinimizeAction();
+    void sigExitAction();
+    void sigCloseAction();
+
+public:
+
+    /* Constructor: */
+    UIMiniToolBarPrivate();
+
+    /* API: Alignment stuff: */
+    void setAlignment(Qt::Alignment alignment);
+
+    /* API: Auto-hide stuff: */
+    bool autoHide() const;
+    void setAutoHide(bool fAutoHide);
+
+    /* API: Text stuff: */
+    void setText(const QString &strText);
+
+    /* API: Menu aggregator: */
+    void addMenus(const QList<QMenu*> &menus);
+
+protected:
+
+    /* Handlers: Event-processing stuff: */
+    virtual void showEvent(QShowEvent *pEvent);
+    virtual void polishEvent(QShowEvent *pEvent);
+    virtual void resizeEvent(QResizeEvent *pEvent);
+    virtual void paintEvent(QPaintEvent *pEvent);
+
+private:
+
+    /* Helper: Prepare stuff: */
+    void prepare();
+
+    /* Helper: Shape stuff: */
+    void rebuildShape();
+
+    /* Variables: General stuff: */
+    bool m_fPolished;
+    Qt::Alignment m_alignment;
+    QPainterPath m_shape;
+
+    /* Variables: Contents stuff: */
+    QAction *m_pAutoHideAction;
+    QLabel *m_pLabel;
+    QAction *m_pMinimizeAction;
+    QAction *m_pRestoreAction;
+    QAction *m_pCloseAction;
+
+    /* Variables: Menu stuff: */
+    QAction *m_pMenuInsertPosition;
+
+    /* Variables: Spacers stuff: */
+    QList<QWidget*> m_spacings;
+    QList<QWidget*> m_margins;
+};
+
+UIMiniToolBar::UIMiniToolBar(QWidget *pParent,
+                             GeometryType geometryType,
+                             Qt::Alignment alignment,
+                             bool fAutoHide /* = true */)
     : QWidget(pParent, Qt::Tool | Qt::FramelessWindowHint)
     /* Variables: General stuff: */
     , m_geometryType(geometryType)
@@ -66,13 +135,13 @@ UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
     prepare();
 }
 
-UIRuntimeMiniToolBar::~UIRuntimeMiniToolBar()
+UIMiniToolBar::~UIMiniToolBar()
 {
     /* Cleanup: */
     cleanup();
 }
 
-void UIRuntimeMiniToolBar::setAlignment(Qt::Alignment alignment)
+void UIMiniToolBar::setAlignment(Qt::Alignment alignment)
 {
     /* Make sure toolbar created: */
     AssertPtrReturnVoid(m_pToolbar);
@@ -91,7 +160,7 @@ void UIRuntimeMiniToolBar::setAlignment(Qt::Alignment alignment)
     m_pToolbar->setAlignment(m_alignment);
 }
 
-void UIRuntimeMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /* = true */)
+void UIMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /* = true */)
 {
     /* Make sure toolbar created: */
     AssertPtrReturnVoid(m_pToolbar);
@@ -111,7 +180,7 @@ void UIRuntimeMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /*
         m_pToolbar->setAutoHide(m_fAutoHide);
 }
 
-void UIRuntimeMiniToolBar::setText(const QString &strText)
+void UIMiniToolBar::setText(const QString &strText)
 {
     /* Make sure toolbar created: */
     AssertPtrReturnVoid(m_pToolbar);
@@ -120,7 +189,7 @@ void UIRuntimeMiniToolBar::setText(const QString &strText)
     m_pToolbar->setText(strText);
 }
 
-void UIRuntimeMiniToolBar::addMenus(const QList<QMenu*> &menus)
+void UIMiniToolBar::addMenus(const QList<QMenu*> &menus)
 {
     /* Make sure toolbar created: */
     AssertPtrReturnVoid(m_pToolbar);
@@ -129,7 +198,7 @@ void UIRuntimeMiniToolBar::addMenus(const QList<QMenu*> &menus)
     m_pToolbar->addMenus(menus);
 }
 
-void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
+void UIMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
 {
 #ifndef Q_WS_X11
     /* This method could be called before parent-widget
@@ -252,19 +321,19 @@ void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
 #endif /* Q_WS_X11 */
 }
 
-void UIRuntimeMiniToolBar::sltHandleToolbarResize()
+void UIMiniToolBar::sltHandleToolbarResize()
 {
     /* Re-initialize: */
     adjustGeometry();
 }
 
-void UIRuntimeMiniToolBar::sltAutoHideToggled()
+void UIMiniToolBar::sltAutoHideToggled()
 {
     /* Propagate from child: */
     setAutoHide(m_pToolbar->autoHide(), false);
 }
 
-void UIRuntimeMiniToolBar::sltHoverEnter()
+void UIMiniToolBar::sltHoverEnter()
 {
     /* Mark as 'hovered' if necessary: */
     if (!m_fHovered)
@@ -274,7 +343,7 @@ void UIRuntimeMiniToolBar::sltHoverEnter()
     }
 }
 
-void UIRuntimeMiniToolBar::sltHoverLeave()
+void UIMiniToolBar::sltHoverLeave()
 {
     /* Mark as 'unhovered' if necessary: */
     if (m_fHovered)
@@ -284,7 +353,7 @@ void UIRuntimeMiniToolBar::sltHoverLeave()
     }
 }
 
-void UIRuntimeMiniToolBar::prepare()
+void UIMiniToolBar::prepare()
 {
 #if defined (Q_WS_X11)
     /* Install own event filter: */
@@ -330,7 +399,7 @@ void UIRuntimeMiniToolBar::prepare()
     }
 
     /* Prepare mini-toolbar: */
-    m_pToolbar = new UIMiniToolBar;
+    m_pToolbar = new UIMiniToolBarPrivate;
     {
         /* Make sure we have no focus: */
         m_pToolbar->setFocusPolicy(Qt::NoFocus);
@@ -382,7 +451,7 @@ void UIRuntimeMiniToolBar::prepare()
     adjustGeometry();
 }
 
-void UIRuntimeMiniToolBar::cleanup()
+void UIMiniToolBar::cleanup()
 {
     /* Stop hover-enter/leave timers: */
     if (m_pHoverEnterTimer && m_pHoverEnterTimer->isActive())
@@ -399,7 +468,7 @@ void UIRuntimeMiniToolBar::cleanup()
     m_pEmbeddedToolbar = 0;
 }
 
-void UIRuntimeMiniToolBar::enterEvent(QEvent*)
+void UIMiniToolBar::enterEvent(QEvent*)
 {
     /* Stop the hover-leave timer if necessary: */
     if (m_pHoverLeaveTimer && m_pHoverLeaveTimer->isActive())
@@ -410,7 +479,7 @@ void UIRuntimeMiniToolBar::enterEvent(QEvent*)
         m_pHoverEnterTimer->start();
 }
 
-void UIRuntimeMiniToolBar::leaveEvent(QEvent*)
+void UIMiniToolBar::leaveEvent(QEvent*)
 {
     /* Stop the hover-enter timer if necessary: */
     if (m_pHoverEnterTimer && m_pHoverEnterTimer->isActive())
@@ -422,14 +491,14 @@ void UIRuntimeMiniToolBar::leaveEvent(QEvent*)
 }
 
 #ifdef Q_WS_X11
-void UIRuntimeMiniToolBar::resizeEvent(QResizeEvent*)
+void UIMiniToolBar::resizeEvent(QResizeEvent*)
 {
     /* Adjust mini-toolbar on resize: */
     adjustGeometry();
 }
 #endif /* Q_WS_X11 */
 
-bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
+bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
 #if   defined(Q_WS_WIN)
     /* Due to Qt bug QMdiArea can
@@ -450,7 +519,7 @@ bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
     return QWidget::eventFilter(pWatched, pEvent);
 }
 
-void UIRuntimeMiniToolBar::simulateToolbarAutoHiding()
+void UIMiniToolBar::simulateToolbarAutoHiding()
 {
     /* This simulation helps user to notice
      * toolbar location, so it will be used only
@@ -464,14 +533,14 @@ void UIRuntimeMiniToolBar::simulateToolbarAutoHiding()
     m_pHoverLeaveTimer->start();
 }
 
-void UIRuntimeMiniToolBar::setToolbarPosition(QPoint point)
+void UIMiniToolBar::setToolbarPosition(QPoint point)
 {
     /* Update position: */
     AssertPtrReturnVoid(m_pEmbeddedToolbar);
     m_pEmbeddedToolbar->move(point);
 }
 
-QPoint UIRuntimeMiniToolBar::toolbarPosition() const
+QPoint UIMiniToolBar::toolbarPosition() const
 {
     /* Return position: */
     AssertPtrReturn(m_pEmbeddedToolbar, QPoint());
@@ -479,7 +548,7 @@ QPoint UIRuntimeMiniToolBar::toolbarPosition() const
 }
 
 
-UIMiniToolBar::UIMiniToolBar()
+UIMiniToolBarPrivate::UIMiniToolBarPrivate()
     /* Variables: General stuff: */
     : m_fPolished(false)
     , m_alignment(Qt::AlignBottom)
@@ -496,7 +565,7 @@ UIMiniToolBar::UIMiniToolBar()
     prepare();
 }
 
-void UIMiniToolBar::setAlignment(Qt::Alignment alignment)
+void UIMiniToolBarPrivate::setAlignment(Qt::Alignment alignment)
 {
     /* Make sure alignment really changed: */
     if (m_alignment == alignment)
@@ -509,13 +578,13 @@ void UIMiniToolBar::setAlignment(Qt::Alignment alignment)
     rebuildShape();
 }
 
-bool UIMiniToolBar::autoHide() const
+bool UIMiniToolBarPrivate::autoHide() const
 {
     /* Return auto-hide: */
     return !m_pAutoHideAction->isChecked();
 }
 
-void UIMiniToolBar::setAutoHide(bool fAutoHide)
+void UIMiniToolBarPrivate::setAutoHide(bool fAutoHide)
 {
     /* Make sure auto-hide really changed: */
     if (m_pAutoHideAction->isChecked() == !fAutoHide)
@@ -525,7 +594,7 @@ void UIMiniToolBar::setAutoHide(bool fAutoHide)
     m_pAutoHideAction->setChecked(!fAutoHide);
 }
 
-void UIMiniToolBar::setText(const QString &strText)
+void UIMiniToolBarPrivate::setText(const QString &strText)
 {
     /* Make sure text really changed: */
     if (m_pLabel->text() == strText)
@@ -538,7 +607,7 @@ void UIMiniToolBar::setText(const QString &strText)
     resize(sizeHint());
 }
 
-void UIMiniToolBar::addMenus(const QList<QMenu*> &menus)
+void UIMiniToolBarPrivate::addMenus(const QList<QMenu*> &menus)
 {
     /* For each of the passed menu items: */
     for (int i = 0; i < menus.size(); ++i)
@@ -562,7 +631,7 @@ void UIMiniToolBar::addMenus(const QList<QMenu*> &menus)
     resize(sizeHint());
 }
 
-void UIMiniToolBar::showEvent(QShowEvent *pEvent)
+void UIMiniToolBarPrivate::showEvent(QShowEvent *pEvent)
 {
     /* Make sure we should polish dialog: */
     if (m_fPolished)
@@ -575,7 +644,7 @@ void UIMiniToolBar::showEvent(QShowEvent *pEvent)
     m_fPolished = true;
 }
 
-void UIMiniToolBar::polishEvent(QShowEvent*)
+void UIMiniToolBarPrivate::polishEvent(QShowEvent*)
 {
     /* Toolbar spacings: */
     foreach(QWidget *pSpacing, m_spacings)
@@ -589,7 +658,7 @@ void UIMiniToolBar::polishEvent(QShowEvent*)
     resize(sizeHint());
 }
 
-void UIMiniToolBar::resizeEvent(QResizeEvent*)
+void UIMiniToolBarPrivate::resizeEvent(QResizeEvent*)
 {
     /* Rebuild shape: */
     rebuildShape();
@@ -598,7 +667,7 @@ void UIMiniToolBar::resizeEvent(QResizeEvent*)
     emit sigResized();
 }
 
-void UIMiniToolBar::paintEvent(QPaintEvent*)
+void UIMiniToolBarPrivate::paintEvent(QPaintEvent*)
 {
     /* Prepare painter: */
     QPainter painter(this);
@@ -617,7 +686,7 @@ void UIMiniToolBar::paintEvent(QPaintEvent*)
     painter.fillRect(backgroundRect, headerGradient);
 }
 
-void UIMiniToolBar::prepare()
+void UIMiniToolBarPrivate::prepare()
 {
     /* Determine icon metric: */
     const QStyle *pStyle = QApplication::style();
@@ -693,7 +762,7 @@ void UIMiniToolBar::prepare()
     resize(sizeHint());
 }
 
-void UIMiniToolBar::rebuildShape()
+void UIMiniToolBarPrivate::rebuildShape()
 {
 #ifdef Q_WS_X11
     if (!QX11Info::isCompositingManagerRunning())
@@ -734,4 +803,6 @@ void UIMiniToolBar::rebuildShape()
     /* Update: */
     update();
 }
+
+#include "UIMiniToolBar.moc"
 

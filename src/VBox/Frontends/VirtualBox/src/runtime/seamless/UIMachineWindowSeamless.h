@@ -23,7 +23,7 @@
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
 /* Forward declarations: */
-class UIRuntimeMiniToolBar;
+class UIMiniToolBar;
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
 /* Seamless machine-window implementation: */
@@ -84,7 +84,7 @@ private:
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /** Holds the mini-toolbar instance. */
-    UIRuntimeMiniToolBar *m_pMiniToolBar;
+    UIMiniToolBar *m_pMiniToolBar;
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
