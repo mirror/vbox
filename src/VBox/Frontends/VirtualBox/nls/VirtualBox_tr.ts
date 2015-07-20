@@ -7420,7 +7420,7 @@
     <message>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Ciddi Hata</translation>
+        <translation>VirtualBox - Önemli Hata</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
@@ -9151,7 +9151,7 @@
     </message>
     <message>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; için şifreleme parolası geçersiz.</translation>
     </message>
 </context>
 <context>

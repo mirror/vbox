@@ -635,7 +635,7 @@
     </message>
     <message>
         <source>Take guest display screenshot</source>
-        <translation>取得客體顯示螢幕擷取畫面</translation>
+        <translation>取得客體顯示快照</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure video capture</source>
@@ -906,11 +906,6 @@
         <translation>
             <numerusform>這個虛擬機器受到密碼保護。 請在下方輸入 %n 加密密碼。</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>Status</source>
-        <comment>password table field</comment>
-        <translation type="obsolete">狀態</translation>
     </message>
     <message>
         <source>ID</source>
@@ -5247,7 +5242,7 @@
     </message>
     <message>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; 的加密密碼無效。</translation>
     </message>
 </context>
 <context>

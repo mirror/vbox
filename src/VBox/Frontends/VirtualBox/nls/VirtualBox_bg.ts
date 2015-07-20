@@ -10025,7 +10025,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Криптиращата парола за &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; е невалидна.</translation>
     </message>
 </context>
 <context>

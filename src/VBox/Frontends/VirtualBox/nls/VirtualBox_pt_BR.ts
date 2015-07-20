@@ -10748,7 +10748,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Senha de criptografia inválida para &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt;.</translation>
     </message>
 </context>
 <context>
