@@ -517,12 +517,11 @@ void UIMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
     }
     m_pAnimation->update();
 
-    /* Update toolbar geometry if necessary: */
-    const QString strAnimationState = property("AnimationState").toString();
-    if (strAnimationState == "Start")
-        m_pEmbeddedToolbar->move(m_hiddenToolbarPosition);
-    else if (strAnimationState == "Final")
+    /* Update embedded-toolbar geometry if known: */
+    if (property("AnimationState").toString() == "Final")
         m_pEmbeddedToolbar->move(m_shownToolbarPosition);
+    else
+        m_pEmbeddedToolbar->move(m_hiddenToolbarPosition);
 
     /* Simulate toolbar auto-hiding: */
     simulateToolbarAutoHiding();
@@ -578,11 +577,10 @@ void UIMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
     m_pAnimation->update();
 
     /* Update embedded-toolbar geometry if known: */
-    const QString strAnimationState = property("AnimationState").toString();
-    if (strAnimationState == "Start")
-        m_pEmbeddedToolbar->move(m_hiddenToolbarPosition);
-    else if (strAnimationState == "Final")
+    if (property("AnimationState").toString() == "Final")
         m_pEmbeddedToolbar->move(m_shownToolbarPosition);
+    else
+        m_pEmbeddedToolbar->move(m_hiddenToolbarPosition);
 
     /* Adjust window mask: */
     setMask(m_pEmbeddedToolbar->geometry());
@@ -809,6 +807,11 @@ void UIMiniToolBar::setToolbarPosition(QPoint point)
     /* Update position: */
     AssertPtrReturnVoid(m_pEmbeddedToolbar);
     m_pEmbeddedToolbar->move(point);
+
+#ifdef Q_WS_X11
+    /* Update window mask: */
+    setMask(m_pEmbeddedToolbar->geometry());
+#endif /* Q_WS_X11 */
 }
 
 QPoint UIMiniToolBar::toolbarPosition() const
