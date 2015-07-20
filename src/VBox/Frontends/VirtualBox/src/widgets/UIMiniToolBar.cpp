@@ -50,13 +50,7 @@ UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
                                            GeometryType geometryType,
                                            Qt::Alignment alignment,
                                            bool fAutoHide /* = true */)
-    : QWidget(pParent,
-#if   defined(Q_WS_WIN)
-              Qt::Tool | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint
-#elif defined(Q_WS_MAC) || defined(Q_WS_X11)
-              Qt::Window | Qt::FramelessWindowHint
-#endif /* Q_WS_MAC || Q_WS_X11 */
-              )
+    : QWidget(pParent, Qt::Tool | Qt::FramelessWindowHint)
     /* Variables: General stuff: */
     , m_geometryType(geometryType)
     , m_alignment(alignment)
@@ -320,21 +314,6 @@ void UIRuntimeMiniToolBar::prepare()
     /* Use Qt API to enable translucency if allowed: */
     if (QX11Info::isCompositingManagerRunning())
         setAttribute(Qt::WA_TranslucentBackground);
-#endif /* Q_WS_X11 */
-
-#ifdef Q_WS_X11
-    /* Certain WMs requires some X11 magic
-     * to make tool-bar be always-on-top
-     * of corresponding machine-window. */
-    switch (vboxGlobal().typeOfWindowManager())
-    {
-        case X11WMType_Mutter:
-        case X11WMType_GnomeShell:
-            VBoxGlobal::representAsToolbar(this);
-            break;
-        default:
-            break;
-    }
 #endif /* Q_WS_X11 */
 
     /* Make sure we have no focus: */
