@@ -1039,12 +1039,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM: Host EFER                       = %#RX64\n", pVM->hm.s.vmx.u64HostEfer));
     LogRel(("HM: MSR_IA32_FEATURE_CONTROL        = %#RX64\n", pVM->hm.s.vmx.Msrs.u64FeatureCtrl));
     if (!(pVM->hm.s.vmx.Msrs.u64FeatureCtrl & MSR_IA32_FEATURE_CONTROL_LOCK))
-    {
-        uint32_t fFeaturesECX, uDummy;
-        ASMCpuId(1, &uDummy, &uDummy, &fFeaturesECX, &uDummy);
-        bool fHvp = RT_BOOL(fFeaturesECX & X86_CPUID_FEATURE_ECX_HVP);
-        LogRel(("HM:   IA32_FEATURE_CONTROL lock bit not set, buggy %s\n", fHvp ? "hypervisor" : "hardware"));
-    }
+        LogRel(("HM:   IA32_FEATURE_CONTROL lock bit not set, possibly bad hardware!\n"));
     LogRel(("HM: MSR_IA32_VMX_BASIC_INFO         = %#RX64\n", pVM->hm.s.vmx.Msrs.u64BasicInfo));
     LogRel(("HM:   VMCS id                             = %#x\n", MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
     LogRel(("HM:   VMCS size                           = %u bytes\n", MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
