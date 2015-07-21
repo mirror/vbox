@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -176,33 +176,31 @@ void UIMachineWindowSeamless::cleanupVisualState()
 
 void UIMachineWindowSeamless::placeOnScreen()
 {
-    /* Get corresponding screen: */
-    int iScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
-    /* Calculate working area: */
-    QRect workingArea = QApplication::desktop()->availableGeometry(iScreen);
+    /* Get corresponding host-screen: */
+    const int iHostScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
+    /* And corresponding working area: */
+    const QRect workingArea = QApplication::desktop()->availableGeometry(iHostScreen);
 
-    /* Move to the appropriate position: */
+    /* Set appropriate geometry for window: */
     move(workingArea.topLeft());
-
-    /* Resize to the appropriate size: */
     resize(workingArea.size());
 }
 
 void UIMachineWindowSeamless::showInNecessaryMode()
 {
-    /* Make sure this window has seamless logic: */
+    /* Make sure window has seamless logic: */
     UIMachineLogicSeamless *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic());
     AssertPtrReturnVoid(pSeamlessLogic);
 
-    /* Make sure this window should be shown and mapped to some host-screen: */
+    /* Make sure window should be shown and mapped to some host-screen: */
     if (!uisession()->isScreenVisible(m_uScreenId) ||
         !pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
-        /* If there is mini-toolbar: */
+        /* If there is a mini-toolbar: */
         if (m_pMiniToolBar)
         {
-            /* Just hide mini-toolbar: */
+            /* Hide mini-toolbar: */
             m_pMiniToolBar->hide();
         }
 #endif /* Q_WS_WIN || Q_WS_X11 */
@@ -211,11 +209,11 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         return;
     }
 
-    /* Make sure this window is not minimized: */
+    /* Ignore if window minimized: */
     if (isMinimized())
         return;
 
-    /* Make sure this window is maximized and placed on valid screen: */
+    /* Make sure window have appropriate geometry: */
     placeOnScreen();
 
     /* Show in normal mode: */
@@ -225,14 +223,14 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     adjustMachineViewSize();
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
-    /* If there is mini-toolbar: */
+    /* If there is a mini-toolbar: */
     if (m_pMiniToolBar)
     {
 # if   defined(Q_WS_WIN)
-        /* Just show mini-toolbar: */
+        /* Show mini-toolbar: */
         m_pMiniToolBar->show();
 # elif defined(Q_WS_X11)
-        /* Allow mini-toolbar to be located on full-screen area: */
+        /* Allow mini-toolbar to be located on available area: */
         m_pMiniToolBar->showMaximized();
 # endif /* Q_WS_X11 */
     }
@@ -273,6 +271,7 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
     /* Update mini-toolbar: */
     if (iElement & UIVisualElement_MiniToolBar)
     {
+        /* If there is a mini-toolbar: */
         if (m_pMiniToolBar)
         {
             /* Get snapshot(s): */
