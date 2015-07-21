@@ -68,9 +68,6 @@ private:
     /** Updates visibility according to visual-state. */
     void showInNecessaryMode();
 
-    /** Adjusts machine-view size to correspond current machine-window size. */
-    virtual void adjustMachineViewSize();
-
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /** Common update routine. */
     void updateAppearanceOf(int iElement);

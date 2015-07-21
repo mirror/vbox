@@ -469,101 +469,18 @@ void UIMiniToolBar::addMenus(const QList<QMenu*> &menus)
     m_pToolbar->addMenus(menus);
 }
 
-void UIMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
+void UIMiniToolBar::adjustGeometry()
 {
-#ifndef Q_WS_X11
-    /* This method could be called before parent-widget
-     * become visible, we should skip everything in that case: */
-    if (QApplication::desktop()->screenNumber(parentWidget()) == -1)
-        return;
-
-    /* Determine host-screen number if necessary: */
-    if (iHostScreen == -1)
-        iHostScreen = QApplication::desktop()->screenNumber(parentWidget());
-
-    /* Reset toolbar geometry: */
-    m_pEmbeddedToolbar->move(0, 0);
-    m_pEmbeddedToolbar->resize(m_pEmbeddedToolbar->sizeHint());
-
-    /* Adjust window geometry: */
-    resize(m_pEmbeddedToolbar->size());
-    QRect screenRect;
-    int iX = 0, iY = 0;
-    switch (m_geometryType)
-    {
-        case GeometryType_Available: screenRect = QApplication::desktop()->availableGeometry(iHostScreen); break;
-        case GeometryType_Full:      screenRect = QApplication::desktop()->screenGeometry(iHostScreen); break;
-        default: break;
-    }
-    iX = screenRect.x() + screenRect.width() / 2 - width() / 2;
-    switch (m_alignment)
-    {
-        case Qt::AlignTop:    iY = screenRect.y(); break;
-        case Qt::AlignBottom: iY = screenRect.y() + screenRect.height() - height(); break;
-        default: break;
-    }
-    move(iX, iY);
-
-    /* Recalculate auto-hide animation: */
-    m_shownToolbarPosition = m_pEmbeddedToolbar->pos();
-    switch (m_alignment)
-    {
-        case Qt::AlignTop:
-            m_hiddenToolbarPosition = m_shownToolbarPosition - QPoint(0, m_pEmbeddedToolbar->height() - 3);
-            break;
-        case Qt::AlignBottom:
-            m_hiddenToolbarPosition = m_shownToolbarPosition + QPoint(0, m_pEmbeddedToolbar->height() - 3);
-            break;
-    }
-    m_pAnimation->update();
-
-    /* Update embedded-toolbar geometry if known: */
-    if (property("AnimationState").toString() == "Final")
-        m_pEmbeddedToolbar->move(m_shownToolbarPosition);
-    else
-        m_pEmbeddedToolbar->move(m_hiddenToolbarPosition);
-
-    /* Simulate toolbar auto-hiding: */
-    simulateToolbarAutoHiding();
-
-#else /* Q_WS_X11 */
-
-    /* This method could be called before parent-widget
-     * become visible, we should skip everything in that case: */
-    if (QApplication::desktop()->screenNumber(parentWidget()) == -1)
-        return;
-
-    /* Determine host-screen number if necessary: */
-    bool fMoveToHostScreen = true;
-    if (iHostScreen == -1)
-    {
-        fMoveToHostScreen = false;
-        iHostScreen = QApplication::desktop()->screenNumber(this);
-    }
-
-    /* Choose window geometry: */
-    QRect screenRect;
-    switch (m_geometryType)
-    {
-        case GeometryType_Available: screenRect = QApplication::desktop()->availableGeometry(iHostScreen); break;
-        case GeometryType_Full:      screenRect = QApplication::desktop()->screenGeometry(iHostScreen); break;
-        default: break;
-    }
-
-    /* Move to corresponding host-screen: */
-    if (fMoveToHostScreen)
-        move(screenRect.topLeft());
-
     /* Resize embedded-toolbar to minimum size: */
     m_pEmbeddedToolbar->resize(m_pEmbeddedToolbar->sizeHint());
 
     /* Calculate embedded-toolbar position: */
     int iX = 0, iY = 0;
-    iX = screenRect.width() / 2 - m_pEmbeddedToolbar->width() / 2;
+    iX = width() / 2 - m_pEmbeddedToolbar->width() / 2;
     switch (m_alignment)
     {
         case Qt::AlignTop:    iY = 0; break;
-        case Qt::AlignBottom: iY = screenRect.height() - m_pEmbeddedToolbar->height(); break;
+        case Qt::AlignBottom: iY = height() - m_pEmbeddedToolbar->height(); break;
         default: break;
     }
 
@@ -582,12 +499,13 @@ void UIMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
     else
         m_pEmbeddedToolbar->move(m_hiddenToolbarPosition);
 
+#ifdef Q_WS_X11
     /* Adjust window mask: */
     setMask(m_pEmbeddedToolbar->geometry());
+#endif /* Q_WS_X11 */
 
     /* Simulate toolbar auto-hiding: */
     simulateToolbarAutoHiding();
-#endif /* Q_WS_X11 */
 }
 
 void UIMiniToolBar::sltHandleToolbarResize()
@@ -756,13 +674,11 @@ void UIMiniToolBar::leaveEvent(QEvent*)
         m_pHoverLeaveTimer->start();
 }
 
-#ifdef Q_WS_X11
 void UIMiniToolBar::resizeEvent(QResizeEvent*)
 {
     /* Adjust geometry: */
     adjustGeometry();
 }
-#endif /* Q_WS_X11 */
 
 bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 {

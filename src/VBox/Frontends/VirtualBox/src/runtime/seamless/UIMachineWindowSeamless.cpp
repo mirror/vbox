@@ -180,6 +180,16 @@ void UIMachineWindowSeamless::placeOnScreen()
     /* Set appropriate geometry for window: */
     move(workingArea.topLeft());
     resize(workingArea.size());
+
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+    /* If there is a mini-toolbar: */
+    if (m_pMiniToolBar)
+    {
+        /* Set appropriate geometry for mini-toolbar: */
+        m_pMiniToolBar->move(workingArea.topLeft());
+        m_pMiniToolBar->resize(workingArea.size());
+    }
+#endif /* Q_WS_WIN || Q_WS_X11 */
 }
 
 void UIMachineWindowSeamless::showInNecessaryMode()
@@ -216,48 +226,18 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         /* Show window in normal mode: */
         show();
 
-        /* Adjust machine-view size if necessary: */
-        adjustMachineViewSize();
-
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
         /* If there is a mini-toolbar: */
         if (m_pMiniToolBar)
         {
-# if   defined(Q_WS_WIN)
             /* Show mini-toolbar in normal mode: */
             m_pMiniToolBar->show();
-# elif defined(Q_WS_X11)
-            /* Show mini-toolbar in maximized mode: */
-            m_pMiniToolBar->showMaximized();
-# endif /* Q_WS_X11 */
         }
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
         /* Make sure machine-view have focus: */
         m_pMachineView->setFocus();
     }
-}
-
-void UIMachineWindowSeamless::adjustMachineViewSize()
-{
-    /* Call to base-class: */
-    UIMachineWindow::adjustMachineViewSize();
-
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
-    /* If mini-toolbar present: */
-    if (m_pMiniToolBar)
-    {
-        /* Make sure this window has seamless logic: */
-        const UIMachineLogicSeamless *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic());
-        AssertPtrReturnVoid(pSeamlessLogic);
-
-        /* Which host-screen should that machine-window located on? */
-        const int iHostScreen = pSeamlessLogic->hostScreenForGuestScreen(m_uScreenId);
-
-        /* Move mini-toolbar into appropriate place: */
-        m_pMiniToolBar->adjustGeometry(iHostScreen);
-    }
-#endif /* Q_WS_WIN || Q_WS_X11 */
 }
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
