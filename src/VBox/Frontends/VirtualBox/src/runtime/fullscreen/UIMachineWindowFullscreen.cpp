@@ -439,6 +439,9 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         }
 #endif /* Q_WS_X11 */
 
+        /* Adjust machine-view size if necessary: */
+        adjustMachineViewSize();
+
         /* Make sure machine-view have focus: */
         m_pMachineView->setFocus();
     }
