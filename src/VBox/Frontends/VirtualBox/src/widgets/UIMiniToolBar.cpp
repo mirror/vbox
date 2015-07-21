@@ -542,11 +542,9 @@ void UIMiniToolBar::sltHoverLeave()
 
 void UIMiniToolBar::prepare()
 {
-#if defined (Q_WS_X11)
     /* Install own event-filter
-     * to handle focus stealing: */
+     * to handle window activation stealing: */
     installEventFilter(this);
-#endif /* Q_WS_X11 */
 
 #if   defined(Q_WS_WIN)
     /* No background until first paint-event: */
@@ -604,10 +602,6 @@ void UIMiniToolBar::prepare()
         m_pEmbeddedToolbar = m_pMdiArea->addSubWindow(m_pToolbar, Qt::Window | Qt::FramelessWindowHint);
         /* Make sure we have no focus: */
         m_pEmbeddedToolbar->setFocusPolicy(Qt::NoFocus);
-#ifdef Q_WS_WIN
-        /* Install embedded-toolbar event-filter: */
-        m_pEmbeddedToolbar->installEventFilter(this);
-#endif /* Q_WS_WIN */
     }
 
     /* Prepare hover-enter/leave timers: */
@@ -682,20 +676,9 @@ void UIMiniToolBar::resizeEvent(QResizeEvent*)
 
 bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-#if   defined(Q_WS_WIN)
-    /* Due to Qt bug QMdiArea can
-     * 1. steal focus from current application focus-widget
-     * 3. and even request focus stealing if QMdiArea hidden yet.
-     * We have to notify listeners about such facts.. */
-    if (pWatched && m_pEmbeddedToolbar && pWatched == m_pEmbeddedToolbar &&
-        pEvent->type() == QEvent::FocusIn)
-        emit sigNotifyAboutFocusStolen();
-#elif defined(Q_WS_X11)
-    /* Detect if we have window activation stolen. */
-    if (pWatched == this &&
-        pEvent->type() == QEvent::WindowActivate)
-        emit sigNotifyAboutFocusStolen();
-#endif /* Q_WS_X11 */
+    /* Detect if we have window activation stolen: */
+    if (pWatched == this && pEvent->type() == QEvent::WindowActivate)
+        emit sigNotifyAboutWindowActivationStolen();
 
     /* Call to base-class: */
     return QWidget::eventFilter(pWatched, pEvent);

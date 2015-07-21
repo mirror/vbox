@@ -64,8 +64,8 @@ private slots:
     /** Handles machine state change event. */
     void sltMachineStateChanged();
 
-    /** Revokes keyboard-focus. */
-    void sltRevokeFocus();
+    /** Revokes window activation. */
+    void sltRevokeWindowActivation();
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
 #ifdef RT_OS_DARWIN

@@ -122,19 +122,14 @@ void UIMachineWindowFullscreen::sltMachineStateChanged()
     updateAppearanceOf(UIVisualElement_MiniToolBar);
 }
 
-void UIMachineWindowFullscreen::sltRevokeFocus()
+void UIMachineWindowFullscreen::sltRevokeWindowActivation()
 {
     /* Make sure window is visible: */
     if (!isVisible() || isMinimized())
         return;
 
-# if   defined(Q_WS_WIN)
-    /* Revoke stolen focus: */
-    m_pMachineView->setFocus();
-# elif defined(Q_WS_X11)
     /* Revoke stolen activation: */
     activateWindow();
-# endif /* Q_WS_X11 */
 }
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
@@ -256,8 +251,8 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
                 actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SLOT(trigger()));
         connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
                 actionPool()->action(UIActionIndex_M_Application_S_Close), SLOT(trigger()));
-        connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()),
-                this, SLOT(sltRevokeFocus()), Qt::QueuedConnection);
+        connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutWindowActivationStolen()),
+                this, SLOT(sltRevokeWindowActivation()), Qt::QueuedConnection);
     }
 }
 #endif /* Q_WS_WIN || Q_WS_X11 */

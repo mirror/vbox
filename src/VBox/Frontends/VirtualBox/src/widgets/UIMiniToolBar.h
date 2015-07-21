@@ -60,8 +60,8 @@ signals:
     /** Notifies listeners about we are unhovered. */
     void sigHoverLeave();
 
-    /** Notifies listeners about we stole focus. */
-    void sigNotifyAboutFocusStolen();
+    /** Notifies listeners about we stole window activation. */
+    void sigNotifyAboutWindowActivationStolen();
 
 public:
 
@@ -108,8 +108,8 @@ private slots:
     /** Handles unhovering. */
     void sltHoverLeave();
 
-    /** Notifies listeners about we stole focus. */
-    void sltNotifyAboutFocusStolen() { emit sigNotifyAboutFocusStolen(); }
+    /** Notifies listeners about we stole window activation. */
+    void sltNotifyAboutWindowActivationStolen() { emit sigNotifyAboutWindowActivationStolen(); }
 
 private:
 
