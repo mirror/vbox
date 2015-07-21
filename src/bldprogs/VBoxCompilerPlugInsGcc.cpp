@@ -566,10 +566,10 @@ static unsigned int     MyPassExecuteCallback(void)
                             DECL_SOURCE_FILE(hFn), DECL_SOURCE_LINE(hFn));
                 tree const hFnDecl = gimple_call_fndecl(hStmt);
                 if (hFnDecl)
-                    dprintf("     hFnDecl=%p %s(%d) %s type=%p %s:%d\n", hFnDecl, tree_code_name[TREE_CODE(hFnDecl)],
-                            TREE_CODE(hFnDecl), TREE_TYPE(hFnDecl),
+                    dprintf("     hFnDecl=%p %s(%d) %s type=%p %s:%d\n",
+                            hFnDecl, tree_code_name[TREE_CODE(hFnDecl)], TREE_CODE(hFnDecl),
                             DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
-                            DECL_SOURCE_FILE(hFnDecl), DECL_SOURCE_LINE(hFnDecl));
+                            TREE_TYPE(hFnDecl), DECL_SOURCE_FILE(hFnDecl), DECL_SOURCE_LINE(hFnDecl));
 #endif
                 tree const hFnType = gimple_call_fntype(hStmt);
                 if (hFnType == NULL_TREE)
