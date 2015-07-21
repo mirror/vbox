@@ -3833,45 +3833,60 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
          * Set both the VMXON and SMX_VMXON bits (if supported) as we can't determine SMX mode
          * accurately. See @bugref{6873}.
          *
-         * The reason we are being paranoid here and (re)checking is that we don't assume all callers
-         * of this function to check it like SUPR0QueryVTCaps() currently does. If we get something
-         * wrong here, we can throw a #GP and panic the box. This isn't a performance critical path.
+         * We need to check for VMX-in-SMX hardware support here, before writing the MSR as
+         * otherwise we risk #GP faulting on CPUs that do not support it. Callers do not check
+         * for it.
          */
         uint32_t fFeaturesECX, uDummy;
-        uint32_t uMaxId, uVendorEBX, uVendorECX, uVendorEDX;
+        uint32_t uVendorEBX, uVendorECX, uVendorEDX;
+#ifdef VBOX_STRICT
+        /* Callers should have verified these at some point. */
+        uint32_t uMaxId;
         ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
+        Assert(ASMIsValidStdRange(uMaxId));
+        Assert(   ASMIsIntelCpuEx(     uVendorEBX, uVendorECX, uVendorEDX)
+               || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX));
+#endif
         ASMCpuId(1, &uDummy, &uDummy, &fFeaturesECX, &uDummy);
-        if (   ASMIsValidStdRange(uMaxId)
-            && (   ASMIsIntelCpuEx(     uVendorEBX, uVendorECX, uVendorEDX)
-                || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX)))
+        bool fSmxVmxHwSupport = false;
+        if (   (fFeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
+            && (fFeaturesECX & X86_CPUID_FEATURE_ECX_SMX))
+            fSmxVmxHwSupport = true;
+
+        u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_LOCK
+                    | MSR_IA32_FEATURE_CONTROL_VMXON;
+        if (fSmxVmxHwSupport)
+            u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_SMX_VMXON;
+
+        /*
+         * Commit.
+         */
+        ASMWrMsr(MSR_IA32_FEATURE_CONTROL, u64FeatMsr);
+
+        /*
+         * Verify.
+         */
+        u64FeatMsr = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+        /* Workaround for what is really a KVM bug. See @bugref{6208} comment #48. */
+        if (fFeaturesECX & X86_CPUID_FEATURE_ECX_HVP)
         {
-            bool fSmxVmxHwSupport = false;
-            if (   (fFeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
-                && (fFeaturesECX & X86_CPUID_FEATURE_ECX_SMX))
-                fSmxVmxHwSupport = true;
-
-            u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_LOCK
-                        | MSR_IA32_FEATURE_CONTROL_VMXON;
-            if (fSmxVmxHwSupport)
-                u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_SMX_VMXON;
-
-            /* Commit. */
-            ASMWrMsr(MSR_IA32_FEATURE_CONTROL, u64FeatMsr);
-
-            /* Verify. */
-            u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-            fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
-            fSmxVmxAllowed = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
-            fVmxAllowed    = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
-            if (   fVmxAllowed
-                && (   !fSmxVmxHwSupport
-                    || fSmxVmxAllowed))
-                rc = VINF_SUCCESS;
-            else
-                rc = VERR_VMX_MSR_LOCKING_FAILED;
+            uint32_t uEax, uEbx, uEcx, uEdx;
+            ASMCpuId(0x40000000, &uDummy, &uVendorEBX, &uVendorECX, &uVendorEDX);
+            if (   uEbx == 0x4B4D564B    /* 'KVMK' */
+                && uEcx == 0x564B4D56    /* 'VMKV' */
+                && uEdx == 0x0000004D)   /* 'M000' */
+                fMsrLocked = true;
         }
         else
-            rc = VERR_VMX_IPE_5;
+            fMsrLocked = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
+        fSmxVmxAllowed = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+        fVmxAllowed    = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
+        if (   fVmxAllowed
+            && (   !fSmxVmxHwSupport
+                || fSmxVmxAllowed))
+            rc = VINF_SUCCESS;
+        else
+            rc = VERR_VMX_MSR_LOCKING_FAILED;
     }
 
     if (pfIsSmxModeAmbiguous)
