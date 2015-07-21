@@ -23,6 +23,7 @@
 #include "HostImpl.h"
 #include "VirtualBoxErrorInfoImpl.h"
 #include "USBProxyService.h"
+#include "USBIdDatabase.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -166,7 +167,12 @@ HRESULT HostUSBDevice::getManufacturer(com::Utf8Str &aManufacturer)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aManufacturer = mUsb->pszManufacturer;
-
+    if (mUsb->pszManufacturer == NULL || mUsb->pszManufacturer[0] == 0)
+    {
+        const char* vendorName = AliasDictionary::findVendor(mUsb->idVendor);
+        if (vendorName)
+            aManufacturer = vendorName;
+    }
     return S_OK;
 }
 
@@ -176,7 +182,12 @@ HRESULT HostUSBDevice::getProduct(com::Utf8Str &aProduct)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aProduct = mUsb->pszProduct;
-
+    if (mUsb->pszProduct == NULL || mUsb->pszProduct[0] == 0)
+    {
+        const char* productName = AliasDictionary::findProduct(mUsb->idVendor, mUsb->idProduct);
+        if (productName)
+            aProduct = productName;
+    }
     return S_OK;
 }
 
@@ -327,7 +338,20 @@ com::Utf8Str HostUSBDevice::i_getName()
     else if (haveProduct)
         name = Utf8StrFmt("%s", mUsb->pszProduct);
     else
-        name = "<unknown>";
+    {
+        const char* vendorName = AliasDictionary::findVendor(mUsb->idVendor);
+        const char* productName = AliasDictionary::findProduct(mUsb->idVendor, mUsb->idProduct);
+        if (vendorName && productName)
+        {
+            name = Utf8StrFmt("%s %s", vendorName, productName);
+        }
+        else
+        {
+            name = "<unknown>";
+            LogRel(("USB: Unknown USB device detected ( idVendor: 0x%04x, idProduct: 0x%04x ). \
+                Please, report the idVendor and idProduct to vbox.org.\n", vendorName, productName)); 
+        }
+    }
 
     return name;
 }
