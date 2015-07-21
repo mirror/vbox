@@ -353,11 +353,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
     AssertPtrReturnVoid(pFullscreenLogic);
 
-#ifdef Q_WS_MAC
-    /* ML and next using native stuff: */
-    const bool fSupportsNativeFullScreen = vboxGlobal().osRelease() > MacOSXRelease_Lion;
-#endif /* Q_WS_MAC */
-
     /* Make sure window should be shown and mapped to some host-screen: */
     if (!uisession()->isScreenVisible(m_uScreenId) ||
         !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
@@ -381,44 +376,44 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
             return;
 
 #ifdef Q_WS_X11
-        /* On X11 calling placeOnScreen() is only needed for legacy window managers
-         * which we do not test, so this is 'best effort' code. With window managers which
-         * support the _NET_WM_FULLSCREEN_MONITORS protocol this would interfere unreliable. */
+        /* If WM doesn't support native stuff, we need to call for placeOnScreen(): */
         const bool fSupportsNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
                                                !gEDataManager->legacyFullscreenModeRequested();
         if (!fSupportsNativeFullScreen)
+        {
+            /* Make sure window have appropriate geometry: */
             placeOnScreen();
+        }
 #else /* !Q_WS_X11 */
-        /* Make sure window is maximized and placed on valid screen: */
+        /* Make sure window have appropriate geometry: */
         placeOnScreen();
 #endif /* !Q_WS_X11 */
 
 #ifdef Q_WS_MAC
         /* ML and next using native stuff, so we can call for simple show(),
          * Lion and previous using Qt stuff, so we should call for showFullScreen(): */
+        const bool fSupportsNativeFullScreen = vboxGlobal().osRelease() > MacOSXRelease_Lion;
         if (fSupportsNativeFullScreen)
+        {
+            /* Show window in normal mode: */
             show();
+        }
         else
+        {
+            /* Show window in fullscreen mode: */
             showFullScreen();
+        }
 #else /* !Q_WS_MAC */
-        /* Show in fullscreen mode: */
+        /* Show window in fullscreen mode: */
         showFullScreen();
 #endif /* !Q_WS_MAC */
 
 #ifdef Q_WS_X11
+        /* If WM supports native stuff, we need to map window to corresponding host-screen. */
         if (fSupportsNativeFullScreen)
         {
-            /* Tell recent window managers which screen this window should be mapped to.
-             * Apparently some window managers will not respond to requests for
-             * unmapped windows, so do this *after* the call to showFullScreen(). */
+            /* Tell recent window managers which host-screen this window should be mapped to: */
             VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
-        }
-        else
-        {
-            /* On X11 calling placeOnScreen() is only needed for legacy window managers
-             * which we do not test, so this is 'best effort' code. With window managers which
-             * support the _NET_WM_FULLSCREEN_MONITORS protocol this would interfere unreliable. */
-            placeOnScreen();
         }
 #endif /* Q_WS_X11 */
 
