@@ -958,11 +958,11 @@ static int hmR3InitFinalizeR0(PVM pVM)
             case VERR_VMX_NO_VMX:
                 return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is not available.");
             case VERR_VMX_MSR_VMXON_DISABLED:
-                return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is disabled in the BIOS.");
+                return VM_SET_ERROR(pVM, VERR_VMX_MSR_VMXON_DISABLED, "VT-x is disabled in the BIOS.");
             case VERR_VMX_MSR_ALL_VMXON_DISABLED:
-                return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is disabled in the BIOS for all CPU modes.");
+                return VM_SET_ERROR(pVM, VERR_VMX_MSR_ALL_VMXON_DISABLED, "VT-x is disabled in the BIOS for all CPU modes.");
             case VERR_VMX_MSR_LOCKING_FAILED:
-                return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "Failed to enable and lock VT-x features.");
+                return VM_SET_ERROR(pVM, VERR_VMX_MSR_LOCKING_FAILED, "Failed to enable and lock VT-x features.");
 
             case VERR_SVM_IN_USE:
                 return VM_SET_ERROR(pVM, VERR_SVM_IN_USE, "AMD-V is being used by another hypervisor.");
