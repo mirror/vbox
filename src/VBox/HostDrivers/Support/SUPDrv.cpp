@@ -3834,7 +3834,7 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
          * accurately. See @bugref{6873}.
          *
          * We need to check for VMX-in-SMX hardware support here, before writing the MSR as
-         * otherwise we risk #GP faulting on CPUs that do not support it. Callers do not check
+         * otherwise we will #GP fault on CPUs that do not support it. Callers do not check
          * for it.
          */
         uint32_t fFeaturesECX, uDummy;
