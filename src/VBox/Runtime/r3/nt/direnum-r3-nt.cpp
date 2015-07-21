@@ -257,12 +257,30 @@ static int rtDirNtFetchMore(PRTDIR pThis)
      * Allocate the buffer the first time around.
      * We do this in lazy fashion as some users of RTDirOpen will not actually
      * list any files, just open it for various reasons.
+     *
+     * We also reduce the buffer size for networked devices as the windows 7-8.1,
+     * server 2012, ++ CIFS servers or/and IFSes screws up buffers larger than 64KB.
+     * There is an alternative hack below, btw.  We'll leave both in for now.
      */
     bool fFirst = false;
     if (!pThis->pabBuffer)
     {
-        fFirst = false;
         pThis->cbBufferAlloc = _256K;
+        if (true) /** @todo skip for known local devices, like the boot device? */
+        {
+            IO_STATUS_BLOCK Ios2 = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            FILE_FS_DEVICE_INFORMATION Info = { 0, 0 };
+            NTSTATUS rcNt2 = NtQueryVolumeInformationFile(pThis->hDir, &Ios2, &Info, sizeof(Info), FileFsDeviceInformation);
+            if (   !NT_SUCCESS(rcNt2)
+                || (Info.Characteristics & FILE_REMOTE_DEVICE)
+                || Info.DeviceType == FILE_DEVICE_NETWORK
+                || Info.DeviceType == FILE_DEVICE_NETWORK_FILE_SYSTEM
+                || Info.DeviceType == FILE_DEVICE_NETWORK_REDIRECTOR
+                || Info.DeviceType == FILE_DEVICE_SMB)
+                pThis->cbBufferAlloc = _64K;
+        }
+
+        fFirst = false;
         pThis->pabBuffer = (uint8_t *)RTMemAlloc(pThis->cbBufferAlloc);
         if (!pThis->pabBuffer)
         {
@@ -347,6 +365,7 @@ static int rtDirNtFetchMore(PRTDIR pThis)
         { /* likely */ }
         else
         {
+            bool fRestartScan = false;
             for (unsigned iRetry = 0; iRetry < 2; iRetry++)
             {
                 if (   rcNt == STATUS_INVALID_INFO_CLASS
@@ -357,8 +376,12 @@ static int rtDirNtFetchMore(PRTDIR pThis)
                 uint32_t cbBuffer = pThis->cbBufferAlloc;
                 if (   rcNt == STATUS_INVALID_PARAMETER
                     || rcNt == STATUS_INVALID_PARAMETER_7
+                    || rcNt == STATUS_INVALID_NETWORK_RESPONSE
                     || iRetry != 0)
-                    cbBuffer = RT_MIN(cbBuffer / 2, 0x10000);
+                {
+                    cbBuffer = RT_MIN(cbBuffer / 2, _64K);
+                    fRestartScan = true;
+                }
 
                 for (;;)
                 {
@@ -372,7 +395,7 @@ static int rtDirNtFetchMore(PRTDIR pThis)
                                                 pThis->enmInfoClass,
                                                 RTDIR_NT_SINGLE_RECORD /*ReturnSingleEntry */,
                                                 pThis->pNtFilterStr,
-                                                FALSE /*RestartScan */);
+                                                fRestartScan);
                     if (   NT_SUCCESS(rcNt)
                         || cbBuffer == pThis->cbBufferAlloc
                         || cbBuffer <= sizeof(*pThis->uCurData.pBothId) + sizeof(WCHAR) * 260)
