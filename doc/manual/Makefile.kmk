@@ -949,6 +949,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp.ts \
                ''
 	$(QUIET)$(CP) --changed -- "$@" "$(patsubst %.ts,%,$@)"
 # The above APPEND stuff trigger some kind of problem on some boxes when not split up...
+# update: Fixed in SVN (strcpy -> memmove in new_job(), job.c - r2591). Just need to rebuild all platforms.
 
 $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.h.ts \
 +| $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.h: \
