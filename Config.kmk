@@ -2404,7 +2404,9 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 		$(VBOX_GCC_PATH_CC) \
 		$(VBOX_GCC_PATH_CXX) \
 		$(VBOX_GCC32_PATH_CC) \
-		$(VBOX_GCC32_PATH_CXX)
+		$(VBOX_GCC32_PATH_CXX) \
+		$(if-expr "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "solaris.amd64" && $(KBUILD_HOST_VERSION_MINOR) >= 11 \
+			, /platform/i86pc/kernel/$(KBUILD_HOST_ARCH)/unix,)
 	$(call MSG_GENERATE,,$@,)
 	$(QUIET)$(RM) -f '$@'
 	$(QUIET)$(MKDIR) -p $(@D)
@@ -2528,6 +2530,18 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_FLEX    ?= $(if $(which flex),1,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_BISON   ?= $(if $(which bison),1,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_XMLLINT ?= $(which xmllint)'
+if "$(KBUILD_HOST)" == "solaris" && $(KBUILD_HOST_VERSION_MAJOR) == 5 && $(KBUILD_HOST_VERSION_MINOR) == 11
+# uname -v can report "snv_XYZ" or "11.X"
+	$(QUIET)$(APPEND) '$@' 'VBOX_SOLARIS_11_VERSION ?= $(shell uname -v | sed "s/snv_//" | cut -f1 -d".")'
+# FULLVERSION format e.g. "5.11-0.175.1.0.0.16.0", we're interested in 175 (VERSION), 1 (UPDATE), 16 (BUILD).
+	$(QUIET)$(APPEND) '$@' "VBOX_SOLARIS_11_FULLVERSION := $(shell pkg contents -H -t set -o pkg.fmri system/kernel | $(SED_EXT) -e '1!d' -e 's/^.*\@//;s/\:.*//;s/.*,//')"
+	$(QUIET)$(APPEND) '$@' 'ifeq ($$(VBOX_SOLARIS_11_VERSION),11)'
+	$(QUIET)$(APPEND) '$@' '   VBOX_SOLARIS_11_VERSION        := $$(word 2, $$(subst ., ,$$(word 2,$$(subst -, ,$$(VBOX_SOLARIS_11_FULLVERSION)))))'
+	$(QUIET)$(APPEND) '$@' 'endif'
+	$(QUIET)$(APPEND) '$@' 'VBOX_SOLARIS_11_UPDATE_VERSION := $$(word 3, $$(subst ., ,$$(word 2,$$(subst -, ,$$(VBOX_SOLARIS_11_FULLVERSION)))))'
+	$(QUIET)$(APPEND) '$@' 'VBOX_SOLARIS_11_BUILD_VERSION  := $$(word 6, $$(subst ., ,$$(word 2,$$(subst -, ,$$(VBOX_SOLARIS_11_FULLVERSION)))))'
+endif
+
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
 	$(QUIET)$(CAT) $@
 	$(QUIET)$(ECHO) '=========== END OF $@ ========='
@@ -3300,9 +3314,7 @@ endif
 # Determine Solaris version.
 #
 ifeq ($(KBUILD_TARGET),solaris)
- ifeq ($(origin VBOX_SOLARIS_VERSION),undefined)
-  $(eval export VBOX_SOLARIS_VERSION := $(shell uname -r | $(SED_EXT) 's|\([0-9]*\)\.\([0-9]*\)|$$(int-add $$(int-mul 100, \1), \2)|' ))
- endif
+ VBOX_SOLARIS_VERSION := $(expr $(KBUILD_HOST_VERSION_MAJOR) * 100 + $(KBUILD_HOST_VERSION_MINOR))
  ifeq ($(VBOX_SOLARIS_VERSION),510)
   DEFS.solaris += RT_OS_SOLARIS_10
   # Solaris 10 does not include crossbow.
@@ -3311,16 +3323,6 @@ ifeq ($(KBUILD_TARGET),solaris)
   VBOX_WITHOUT_ADDITIONS := 1
   VBOX_WITH_ADDITIONS =
  else ifeq ($(VBOX_SOLARIS_VERSION),511)
-  # uname -v can report "snv_XYZ" or "11.X"
-  VBOX_SOLARIS_11_VERSION = $(shell uname -v | sed 's/snv_//' | cut -f1 -d'.')
-  ifeq ($(VBOX_SOLARIS_11_VERSION),11)
-   VBOX_SOLARIS_11_FULLVERSION = $(shell pkg contents -H -t set -o pkg.fmri system/kernel | $(SED_EXT) -e '1!d' -e 's/^.*\@//;s/\:.*//;s/.*,//')
-   # FULLVERSION format e.g. "5.11-0.175.1.0.0.16.0", we're interested in 175 (VERSION), 1 (UPDATE), 16 (BUILD).
-   VBOX_SOLARIS_11_VERSION = $(word 2, $(subst ., ,$(word 2,$(subst -, ,$(VBOX_SOLARIS_11_FULLVERSION)))))
-   VBOX_SOLARIS_11_UPDATE_VERSION = $(word 3, $(subst ., ,$(word 2,$(subst -, ,$(VBOX_SOLARIS_11_FULLVERSION)))))
-   VBOX_SOLARIS_11_BUILD_VERSION = $(word 6, $(subst ., ,$(word 2,$(subst -, ,$(VBOX_SOLARIS_11_FULLVERSION)))))
-  endif
-
   # OSS audio support for Solaris
   VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_11_VERSION) >= 115,1,)
  endif
