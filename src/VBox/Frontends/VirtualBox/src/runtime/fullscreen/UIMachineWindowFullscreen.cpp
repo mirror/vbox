@@ -312,7 +312,11 @@ void UIMachineWindowFullscreen::placeOnScreen()
     /* And corresponding working area: */
     const QRect workingArea = QApplication::desktop()->screenGeometry(iHostScreen);
 
-#ifdef Q_WS_MAC
+#ifndef Q_WS_MAC
+    /* Set appropriate geometry for window: */
+    move(workingArea.topLeft());
+    resize(workingArea.size());
+#else /* Q_WS_MAC */
     /* Make sure this window has fullscreen logic: */
     UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
     AssertPtrReturnVoid(pFullscreenLogic);
@@ -344,11 +348,7 @@ void UIMachineWindowFullscreen::placeOnScreen()
         geo.moveCenter(workingArea.center());
         setGeometry(geo);
     }
-#else /* !Q_WS_MAC */
-    /* Set appropriate geometry for window: */
-    move(workingArea.topLeft());
-    resize(workingArea.size());
-#endif /* !Q_WS_MAC */
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineWindowFullscreen::showInNecessaryMode()
@@ -374,82 +374,84 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
             m_pMiniToolBar->hide();
         }
 #endif /* Q_WS_WIN || Q_WS_X11 */
+
         /* Hide window: */
         hide();
-        return;
-    }
-
-    /* Ignore if window minimized: */
-    if (isMinimized())
-        return;
-
-#ifdef Q_WS_X11
-    /* On X11 calling placeOnScreen() is only needed for legacy window managers
-     * which we do not test, so this is 'best effort' code. With window managers which
-     * support the _NET_WM_FULLSCREEN_MONITORS protocol this would interfere unreliable. */
-    const bool fSupportsNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
-                                           !gEDataManager->legacyFullscreenModeRequested();
-    if (!fSupportsNativeFullScreen)
-        placeOnScreen();
-#else /* !Q_WS_X11 */
-    /* Make sure window is maximized and placed on valid screen: */
-    placeOnScreen();
-#endif /* !Q_WS_X11 */
-
-#ifdef Q_WS_MAC
-    /* ML and next using native stuff, so we can call for simple show(),
-     * Lion and previous using Qt stuff, so we should call for showFullScreen(): */
-    if (fSupportsNativeFullScreen)
-        show();
-    else
-        showFullScreen();
-#else /* !Q_WS_MAC */
-    /* Show in fullscreen mode: */
-    showFullScreen();
-#endif /* !Q_WS_MAC */
-
-#ifdef Q_WS_X11
-    if (fSupportsNativeFullScreen)
-    {
-        /* Tell recent window managers which screen this window should be mapped to.
-         * Apparently some window managers will not respond to requests for
-         * unmapped windows, so do this *after* the call to showFullScreen(). */
-        VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
     }
     else
     {
+        /* Ignore if window minimized: */
+        if (isMinimized())
+            return;
+
+#ifdef Q_WS_X11
         /* On X11 calling placeOnScreen() is only needed for legacy window managers
          * which we do not test, so this is 'best effort' code. With window managers which
          * support the _NET_WM_FULLSCREEN_MONITORS protocol this would interfere unreliable. */
+        const bool fSupportsNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
+                                               !gEDataManager->legacyFullscreenModeRequested();
+        if (!fSupportsNativeFullScreen)
+            placeOnScreen();
+#else /* !Q_WS_X11 */
+        /* Make sure window is maximized and placed on valid screen: */
         placeOnScreen();
-    }
+#endif /* !Q_WS_X11 */
+
+#ifdef Q_WS_MAC
+        /* ML and next using native stuff, so we can call for simple show(),
+         * Lion and previous using Qt stuff, so we should call for showFullScreen(): */
+        if (fSupportsNativeFullScreen)
+            show();
+        else
+            showFullScreen();
+#else /* !Q_WS_MAC */
+        /* Show in fullscreen mode: */
+        showFullScreen();
+#endif /* !Q_WS_MAC */
+
+#ifdef Q_WS_X11
+        if (fSupportsNativeFullScreen)
+        {
+            /* Tell recent window managers which screen this window should be mapped to.
+             * Apparently some window managers will not respond to requests for
+             * unmapped windows, so do this *after* the call to showFullScreen(). */
+            VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+        }
+        else
+        {
+            /* On X11 calling placeOnScreen() is only needed for legacy window managers
+             * which we do not test, so this is 'best effort' code. With window managers which
+             * support the _NET_WM_FULLSCREEN_MONITORS protocol this would interfere unreliable. */
+            placeOnScreen();
+        }
 #endif /* Q_WS_X11 */
 
     /* Adjust machine-view size if necessary: */
     adjustMachineViewSize();
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
-    /* If there is a mini-toolbar: */
-    if (m_pMiniToolBar)
-    {
-# if   defined(Q_WS_WIN)
-        /* Show mini-toolbar: */
-        m_pMiniToolBar->show();
-# elif defined(Q_WS_X11)
-        /* Allow mini-toolbar to be located on full-screen area: */
-        m_pMiniToolBar->showFullScreen();
-        /* On modern window managers: */
-        if (fSupportsNativeFullScreen)
+        /* If there is a mini-toolbar: */
+        if (m_pMiniToolBar)
         {
-            /* We also can map mini-toolbar directly on corresponding machine-window: */
-            VBoxGlobal::setFullScreenMonitorX11(m_pMiniToolBar, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
-        }
+# if   defined(Q_WS_WIN)
+            /* Show mini-toolbar: */
+            m_pMiniToolBar->show();
+# elif defined(Q_WS_X11)
+            /* Allow mini-toolbar to be located on full-screen area: */
+            m_pMiniToolBar->showFullScreen();
+            /* On modern window managers: */
+            if (fSupportsNativeFullScreen)
+            {
+                /* We also can map mini-toolbar directly on corresponding machine-window: */
+                VBoxGlobal::setFullScreenMonitorX11(m_pMiniToolBar, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+            }
 # endif /* Q_WS_X11 */
-    }
+        }
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
-    /* Make sure machine-view have focus: */
-    m_pMachineView->setFocus();
+        /* Make sure machine-view have focus: */
+        m_pMachineView->setFocus();
+    }
 }
 
 void UIMachineWindowFullscreen::adjustMachineViewSize()

@@ -204,40 +204,42 @@ void UIMachineWindowSeamless::showInNecessaryMode()
             m_pMiniToolBar->hide();
         }
 #endif /* Q_WS_WIN || Q_WS_X11 */
+
         /* Hide window: */
         hide();
-        return;
     }
+    else
+    {
+        /* Ignore if window minimized: */
+        if (isMinimized())
+            return;
 
-    /* Ignore if window minimized: */
-    if (isMinimized())
-        return;
+        /* Make sure window have appropriate geometry: */
+        placeOnScreen();
 
-    /* Make sure window have appropriate geometry: */
-    placeOnScreen();
+        /* Show in normal mode: */
+        show();
 
-    /* Show in normal mode: */
-    show();
-
-    /* Adjust machine-view size if necessary: */
-    adjustMachineViewSize();
+        /* Adjust machine-view size if necessary: */
+        adjustMachineViewSize();
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
-    /* If there is a mini-toolbar: */
-    if (m_pMiniToolBar)
-    {
+        /* If there is a mini-toolbar: */
+        if (m_pMiniToolBar)
+        {
 # if   defined(Q_WS_WIN)
-        /* Show mini-toolbar: */
-        m_pMiniToolBar->show();
+            /* Show mini-toolbar: */
+            m_pMiniToolBar->show();
 # elif defined(Q_WS_X11)
-        /* Allow mini-toolbar to be located on available area: */
-        m_pMiniToolBar->showMaximized();
+            /* Allow mini-toolbar to be located on available area: */
+            m_pMiniToolBar->showMaximized();
 # endif /* Q_WS_X11 */
-    }
+        }
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
-    /* Make sure machine-view have focus: */
-    m_pMachineView->setFocus();
+        /* Make sure machine-view have focus: */
+        m_pMachineView->setFocus();
+    }
 }
 
 void UIMachineWindowSeamless::adjustMachineViewSize()
