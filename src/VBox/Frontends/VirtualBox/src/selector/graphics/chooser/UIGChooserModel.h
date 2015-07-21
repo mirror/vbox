@@ -305,6 +305,9 @@ private:
     /* Variables: Lookup stuff: */
     QTimer *m_pLookupTimer;
     QString m_strLookupString;
+
+    /** Holds the Id of last VM created from the GUI side. */
+    QString m_strLastCreatedMachineId;
 };
 
 /* Allows to save group definitions asynchronously: */

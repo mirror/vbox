@@ -61,6 +61,33 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QStr
 #endif /* Q_WS_MAC */
 }
 
+void UIWizardNewVM::prepare()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case WizardMode_Basic:
+        {
+            setPage(Page1, new UIWizardNewVMPageBasic1(m_strGroup));
+            setPage(Page2, new UIWizardNewVMPageBasic2);
+            setPage(Page3, new UIWizardNewVMPageBasic3);
+            break;
+        }
+        case WizardMode_Expert:
+        {
+            setPage(PageExpert, new UIWizardNewVMPageExpert(m_strGroup));
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
+    }
+    /* Call to base-class: */
+    UIWizard::prepare();
+}
+
 bool UIWizardNewVM::createVM()
 {
     /* Get VBox object: */
@@ -292,33 +319,6 @@ void UIWizardNewVM::retranslateUi()
     /* Translate wizard: */
     setWindowTitle(tr("Create Virtual Machine"));
     setButtonText(QWizard::FinishButton, tr("Create"));
-}
-
-void UIWizardNewVM::prepare()
-{
-    /* Create corresponding pages: */
-    switch (mode())
-    {
-        case WizardMode_Basic:
-        {
-            setPage(Page1, new UIWizardNewVMPageBasic1(m_strGroup));
-            setPage(Page2, new UIWizardNewVMPageBasic2);
-            setPage(Page3, new UIWizardNewVMPageBasic3);
-            break;
-        }
-        case WizardMode_Expert:
-        {
-            setPage(PageExpert, new UIWizardNewVMPageExpert(m_strGroup));
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed(("Invalid mode: %d", mode()));
-            break;
-        }
-    }
-    /* Call to base-class: */
-    UIWizard::prepare();
 }
 
 QString UIWizardNewVM::getNextControllerName(KStorageBus type)
