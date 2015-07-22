@@ -3793,8 +3793,8 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
     u64FeatMsr          = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
     fMaybeSmxMode       = RT_BOOL(ASMGetCR4() & X86_CR4_SMXE);
     fMsrLocked          = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
-    fSmxVmxAllowed      = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
-    fVmxAllowed         = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
+    fSmxVmxAllowed      = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMX);
+    fVmxAllowed         = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMX);
     fIsSmxModeAmbiguous = false;
     rc                  = VERR_INTERNAL_ERROR_5;
 
@@ -3804,13 +3804,13 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
         if (fVmxAllowed && fSmxVmxAllowed)
             rc = VINF_SUCCESS;
         else if (!fVmxAllowed && !fSmxVmxAllowed)
-            rc = VERR_VMX_MSR_ALL_VMXON_DISABLED;
+            rc = VERR_VMX_MSR_ALL_VMX_DISABLED;
         else if (!fMaybeSmxMode)
         {
             if (fVmxAllowed)
                 rc = VINF_SUCCESS;
             else
-                rc = VERR_VMX_MSR_VMXON_DISABLED;
+                rc = VERR_VMX_MSR_VMX_DISABLED;
         }
         else
         {
@@ -3830,10 +3830,10 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
          * MSR is not yet locked; we can change it ourselves here. Once the lock bit is set,
          * this MSR can no longer be modified.
          *
-         * Set both the VMXON and SMX_VMXON bits (if supported) as we can't determine SMX mode
+         * Set both the VMX and SMX_VMX bits (if supported) as we can't determine SMX mode
          * accurately. See @bugref{6873}.
          *
-         * We need to check for VMX-in-SMX hardware support here, before writing the MSR as
+         * We need to check for SMX hardware support here, before writing the MSR as
          * otherwise we will #GP fault on CPUs that do not support it. Callers do not check
          * for it.
          */
@@ -3854,9 +3854,9 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
             fSmxVmxHwSupport = true;
 
         u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_LOCK
-                    | MSR_IA32_FEATURE_CONTROL_VMXON;
+                    | MSR_IA32_FEATURE_CONTROL_VMX;
         if (fSmxVmxHwSupport)
-            u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_SMX_VMXON;
+            u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_SMX_VMX;
 
         /*
          * Commit.
@@ -3879,12 +3879,20 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
         }
         else
             fMsrLocked = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
-        fSmxVmxAllowed = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
-        fVmxAllowed    = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
-        if (   fVmxAllowed
-            && (   !fSmxVmxHwSupport
-                || fSmxVmxAllowed))
-            rc = VINF_SUCCESS;
+
+        if (fMsrLocked)
+        {
+            fSmxVmxAllowed = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMX);
+            fVmxAllowed    = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMX);
+            if (   fVmxAllowed
+                && (   !fSmxVmxHwSupport
+                    || fSmxVmxAllowed))
+            {
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = !fSmxVmxHwSupport ? VERR_VMX_MSR_VMX_ENABLE_FAILED : VERR_VMX_MSR_SMX_VMX_ENABLE_FAILED;
+        }
         else
             rc = VERR_VMX_MSR_LOCKING_FAILED;
     }
@@ -3948,9 +3956,11 @@ SUPR0DECL(int) SUPR0GetSvmUsability(bool fInitSvm)
  *
  * @returns VBox status code.
  * @retval  VERR_VMX_NO_VMX
- * @retval  VERR_VMX_MSR_ALL_VMXON_DISABLED
- * @retval  VERR_VMX_MSR_VMXON_DISABLED
+ * @retval  VERR_VMX_MSR_ALL_VMX_DISABLED
+ * @retval  VERR_VMX_MSR_VMX_DISABLED
  * @retval  VERR_VMX_MSR_LOCKING_FAILED
+ * @retval  VERR_VMX_MSR_VMX_ENABLE_FAILED
+ * @retval  VERR_VMX_MSR_SMX_VMX_ENABLE_FAILED
  * @retval  VERR_SVM_NO_SVM
  * @retval  VERR_SVM_DISABLED
  * @retval  VERR_UNSUPPORTED_CPU if not identifiable as an AMD, Intel or VIA
@@ -4054,9 +4064,11 @@ int VBOXCALL supdrvQueryVTCapsInternal(uint32_t *pfCaps)
  *
  * @returns VBox status code.
  * @retval  VERR_VMX_NO_VMX
- * @retval  VERR_VMX_MSR_ALL_VMXON_DISABLED
- * @retval  VERR_VMX_MSR_VMXON_DISABLED
+ * @retval  VERR_VMX_MSR_ALL_VMX_DISABLED
+ * @retval  VERR_VMX_MSR_VMX_DISABLED
  * @retval  VERR_VMX_MSR_LOCKING_FAILED
+ * @retval  VERR_VMX_MSR_VMX_ENABLE_FAILED
+ * @retval  VERR_VMX_MSR_SMX_VMX_ENABLE_FAILED
  * @retval  VERR_SVM_NO_SVM
  * @retval  VERR_SVM_DISABLED
  * @retval  VERR_UNSUPPORTED_CPU if not identifiable as an AMD, Intel or VIA

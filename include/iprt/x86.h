@@ -1057,8 +1057,8 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** CPU Feature control. */
 #define MSR_IA32_FEATURE_CONTROL            0x3A
 #define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT(0)
-#define MSR_IA32_FEATURE_CONTROL_SMX_VMXON  RT_BIT(1)
-#define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT(2)
+#define MSR_IA32_FEATURE_CONTROL_SMX_VMX    RT_BIT(1)
+#define MSR_IA32_FEATURE_CONTROL_VMX        RT_BIT(2)
 
 /** Per-processor TSC adjust MSR. */
 #define MSR_IA32_TSC_ADJUST                 0x3B

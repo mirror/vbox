@@ -2017,9 +2017,9 @@
 /** Internal VMX processing error no 5. */
 #define VERR_VMX_IPE_5                              (-4027)
 /** VT-x features for all modes (SMX and non-SMX) disabled by the BIOS. */
-#define VERR_VMX_MSR_ALL_VMXON_DISABLED             (-4028)
+#define VERR_VMX_MSR_ALL_VMX_DISABLED               (-4028)
 /** VT-x features disabled by the BIOS. */
-#define VERR_VMX_MSR_VMXON_DISABLED                 (-4029)
+#define VERR_VMX_MSR_VMX_DISABLED                   (-4029)
 /** VM-Entry Controls internal cache invalid. */
 #define VERR_VMX_ENTRY_CTLS_CACHE_INVALID           (-4030)
 /** VM-Exit Controls internal cache invalid. */
@@ -2032,6 +2032,10 @@
 /** VM-Execution Secondary Processor-based Controls internal
  *  cache invalid. */
 #define VERR_VMX_PROC_EXEC2_CTLS_CACHE_INVALID      (-4034)
+/** Failed to enable VMX bit while enabling through the MSR. */
+#define VERR_VMX_MSR_VMX_ENABLE_FAILED              (-4035)
+/** Failed to enable VMX-in-SMX bit while enabling through the MSR. */
+#define VERR_VMX_MSR_SMX_VMX_ENABLE_FAILED          (-4036)
 /** @} */
 
 
