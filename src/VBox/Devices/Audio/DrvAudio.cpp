@@ -1760,23 +1760,13 @@ static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface, const c
  */
 static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
 {
-    drvAudioStateHandler(pDrvIns, PDMAUDIOSTREAMCMD_DISABLE);
-}
-
-/**
- * Destructs an audio driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
-{
     LogFlowFuncEnter();
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+
+    if (!pThis->pHostDrvAudio)
+        return;
 
     /* Tear down all host output streams. */
     PPDMAUDIOHSTSTRMOUT pHstStrmOut = NULL;
@@ -1916,7 +1906,7 @@ const PDMDRVREG g_DrvAUDIO =
     /* pfnConstruct */
     drvAudioConstruct,
     /* pfnDestruct */
-    drvAudioDestruct,
+    NULL,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
