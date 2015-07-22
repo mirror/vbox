@@ -2032,9 +2032,9 @@
 /** VM-Execution Secondary Processor-based Controls internal
  *  cache invalid. */
 #define VERR_VMX_PROC_EXEC2_CTLS_CACHE_INVALID      (-4034)
-/** Failed to enable VMX bit while enabling through the MSR. */
+/** Failed to set VMXON enable bit while enabling VT-x through the MSR. */
 #define VERR_VMX_MSR_VMX_ENABLE_FAILED              (-4035)
-/** Failed to enable VMX-in-SMX bit while enabling through the MSR. */
+/** Failed to enable VMXON-in-SMX bit while enabling VT-x through the MSR. */
 #define VERR_VMX_MSR_SMX_VMX_ENABLE_FAILED          (-4036)
 /** @} */
 

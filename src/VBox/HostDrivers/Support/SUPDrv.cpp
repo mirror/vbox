@@ -3793,8 +3793,8 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
     u64FeatMsr          = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
     fMaybeSmxMode       = RT_BOOL(ASMGetCR4() & X86_CR4_SMXE);
     fMsrLocked          = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
-    fSmxVmxAllowed      = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMX);
-    fVmxAllowed         = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMX);
+    fSmxVmxAllowed      = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+    fVmxAllowed         = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
     fIsSmxModeAmbiguous = false;
     rc                  = VERR_INTERNAL_ERROR_5;
 
@@ -3854,9 +3854,9 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
             fSmxVmxHwSupport = true;
 
         u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_LOCK
-                    | MSR_IA32_FEATURE_CONTROL_VMX;
+                    | MSR_IA32_FEATURE_CONTROL_VMXON;
         if (fSmxVmxHwSupport)
-            u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_SMX_VMX;
+            u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_SMX_VMXON;
 
         /*
          * Commit.
@@ -3867,25 +3867,11 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
          * Verify.
          */
         u64FeatMsr = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-#if 0
-        /* Workaround for what is really a KVM bug. See @bugref{6208} comment #48. */
-        if (fFeaturesECX & X86_CPUID_FEATURE_ECX_HVP)
-        {
-            uint32_t uEax, uEbx, uEcx, uEdx;
-            ASMCpuId(0x40000000, &uDummy, &uVendorEBX, &uVendorECX, &uVendorEDX);
-            if (   uEbx == 0x4B4D564B    /* 'KVMK' */
-                && uEcx == 0x564B4D56    /* 'VMKV' */
-                && uEdx == 0x0000004D)   /* 'M000' */
-                fMsrLocked = true;
-        }
-        else
-#endif
-            fMsrLocked = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
-
+        fMsrLocked = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
         if (fMsrLocked)
         {
-            fSmxVmxAllowed = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMX);
-            fVmxAllowed    = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMX);
+            fSmxVmxAllowed = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+            fVmxAllowed    = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
             if (   fVmxAllowed
                 && (   !fSmxVmxHwSupport
                     || fSmxVmxAllowed))
