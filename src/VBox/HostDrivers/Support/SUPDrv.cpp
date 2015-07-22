@@ -3867,6 +3867,7 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
          * Verify.
          */
         u64FeatMsr = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+#if 0
         /* Workaround for what is really a KVM bug. See @bugref{6208} comment #48. */
         if (fFeaturesECX & X86_CPUID_FEATURE_ECX_HVP)
         {
@@ -3878,6 +3879,7 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
                 fMsrLocked = true;
         }
         else
+#endif
             fMsrLocked = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
 
         if (fMsrLocked)
