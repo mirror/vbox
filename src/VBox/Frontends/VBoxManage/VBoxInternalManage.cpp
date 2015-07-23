@@ -1501,17 +1501,18 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
     RawDescriptor.szSignature[3] = '\0';
     if (!pszPartitions)
     {
-        RawDescriptor.fRawDisk = true;
+        RawDescriptor.uFlags = VBOXHDDRAW_DISK;
         RawDescriptor.pszRawDisk = rawdisk.c_str();
     }
     else
     {
-        RawDescriptor.fRawDisk = false;
+        RawDescriptor.uFlags = VBOXHDDRAW_NORMAL;
         RawDescriptor.pszRawDisk = NULL;
         RawDescriptor.cPartDescs = 0;
         RawDescriptor.pPartDescs = NULL;
 
         uint32_t uPartitions = 0;
+        uint32_t uPartitionsRO = 0;
 
         const char *p = pszPartitions;
         char *pszNext;
@@ -1526,6 +1527,11 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
             }
             uPartitions |= RT_BIT(u32);
             p = pszNext;
+            if (*p == 'r')
+            {
+                uPartitionsRO |= RT_BIT(u32);
+                p++;
+            }
             if (*p == ',')
                 p++;
             else if (*p != '\0')
@@ -1646,6 +1652,9 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
 
             if (uPartitions & RT_BIT(partitions.aPartitions[i].uIndex))
             {
+                if (uPartitionsRO & RT_BIT(partitions.aPartitions[i].uIndex))
+                    pPartDesc->uFlags |= VBOXHDDRAW_READONLY;
+
                 if (fRelative)
                 {
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
@@ -1758,7 +1767,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
     RTFileClose(hRawFile);
 
 #ifdef DEBUG_klaus
-    if (!RawDescriptor.fRawDisk)
+    if (!(RawDescriptor.uFlags & VBOXHDDRAW_DISK))
     {
         RTPrintf("#            start         length    startoffset  partdataptr  device\n");
         for (unsigned i = 0; i < RawDescriptor.cPartDescs; i++)

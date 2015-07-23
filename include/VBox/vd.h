@@ -126,6 +126,19 @@ RT_C_DECLS_BEGIN
 #define VD_VFSFILE_FLAGS_MASK                   (VD_VFSFILE_DESTROY_ON_RELEASE)
 /** @} */
 
+/** @name VBox raw disk or partition flags
+ * @{
+ */
+/** No special treatment. */
+#define VBOXHDDRAW_NORMAL       0
+/** Whether this is a raw disk (where the partition information is ignored) or
+ * not. Valid only in the raw disk descriptor. */
+#define VBOXHDDRAW_DISK         RT_BIT(0)
+/** Open the corresponding raw disk or partition for reading only, no matter
+ * how the image is created or opened. */
+#define VBOXHDDRAW_READONLY     RT_BIT(1)
+/** @} */
+
 /**
  * Auxiliary type for describing partitions on raw disks. The entries must be
  * in ascending order (as far as uStart is concerned), and must not overlap.
@@ -149,6 +162,8 @@ typedef struct VBOXHDDRAWPARTDESC
     uint64_t        uStart;
     /** Size of the data area. */
     uint64_t        cbData;
+    /** Flags for special treatment, see VBOXHDDRAW_FLAGS_*. */
+    uint32_t        uFlags;
 } VBOXHDDRAWPARTDESC, *PVBOXHDDRAWPARTDESC;
 
 /**
@@ -169,9 +184,10 @@ typedef struct VBOXHDDRAW
     /** Signature for structure. Must be 'R', 'A', 'W', '\\0'. Actually a trick
      * to make logging of the comment string produce sensible results. */
     char            szSignature[4];
+    /** Flags for special treatment, see VBOXHDDRAW_FLAGS_*. */
     /** Flag whether access to full disk should be given (ignoring the
      * partition information below). */
-    bool            fRawDisk;
+    uint32_t        uFlags;
     /** Filename for the raw disk. Ignored for partitioned raw disks.
      * For Linux e.g. /dev/sda, and for Windows e.g. \\\\.\\PhysicalDisk0. */
     const char      *pszRawDisk;
@@ -181,7 +197,6 @@ typedef struct VBOXHDDRAW
     PVBOXHDDRAWPARTDESC pPartDescs;
     /** Partitioning type of the disk */
     VBOXHDDPARTTYPE uPartitioningType;
-
 } VBOXHDDRAW, *PVBOXHDDRAW;
 
 
