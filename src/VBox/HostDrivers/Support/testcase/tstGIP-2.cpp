@@ -83,11 +83,13 @@ int main(int argc, char **argv)
     uint32_t cIterations = 40;
     bool fHex = true;
     bool fSpin = false;
+    bool fCompat = true;
     int ch;
     uint64_t uCpuHzRef = 0;
     uint64_t uCpuHzOverallDeviation = 0;
+    uint32_t cCpuHzNotCompat = 0;
     int64_t  iCpuHzMaxDeviation = 0;
-    int32_t cCpuHzOverallDevCnt = 0;
+    int32_t  cCpuHzOverallDevCnt = 0;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -142,7 +144,7 @@ int main(int argc, char **argv)
             RTPrintf(fHex
                      ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId      CpuHz      %sTSC Interval History...\n"
                      : "tstGIP-2:     it: u64NanoTS        delta     u64TSC             UpIntTSC H    TransId      CpuHz      %sTSC Interval History...\n",
-                     uCpuHzRef ? "  CpuHz deviation  " : "");
+                     uCpuHzRef ? "  CpuHz deviation  Compat  " : "");
             static SUPGIPCPU s_aaCPUs[2][256];
             for (uint32_t i = 0; i < cIterations; i++)
             {
@@ -174,9 +176,13 @@ int main(int argc, char **argv)
                                     uCpuHzOverallDeviation += uCpuHzDeviation;
                                     cCpuHzOverallDevCnt++;
                                 }
+                                bool fCurHzCompat = SUPIsTscFreqCompatibleEx(uCpuHzRef, pCpu->u64CpuHz, false /* fRelax */);
                                 uint32_t uPct = (uint32_t)(uCpuHzDeviation * 100000 / uCpuHzRef + 5);
-                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64%3d.%02d%%  ",
-                                            iCpuHzDeviation, uPct / 1000, (uPct % 1000) / 10);
+                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64%3d.%02d%%  %RTbool   ",
+                                            iCpuHzDeviation, uPct / 1000, (uPct % 1000) / 10, fCurHzCompat);
+                                if (!fCurHzCompat)
+                                    ++cCpuHzNotCompat;
+                                fCompat &= fCurHzCompat;
                             }
                         }
                         else
@@ -261,6 +267,9 @@ int main(int argc, char **argv)
                 uint32_t uMaxPct = (uint32_t)(RT_ABS(iCpuHzMaxDeviation) * 100000 / uCpuHzRef + 5);
                 RTPrintf("tstGIP-2: Maximum CpuHz deviation: %d.%02d%% (%RI64 ticks)\n",
                          uMaxPct / 1000, (uMaxPct % 1000) / 10, iCpuHzMaxDeviation);
+
+                RTPrintf("tstGIP-2: CpuHz compatibility: %RTbool (incompatible %u of %u times w/ %RU64 Hz)\n", fCompat,
+                         cCpuHzNotCompat, cIterations * g_pSUPGlobalInfoPage->cCpus, uCpuHzRef);
             }
         }
         else
