@@ -554,21 +554,24 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGipBySetIndex(PSUPGLOBALINFOPAGE pGip, uint3
 /**
  * Worker for SUPIsTscFreqCompatible().
  *
- * @param uBaseCpuHz        The reference CPU frequency of the system.
- * @param uCpuHz            The CPU frequency to compare with the base.
+ * @param   uBaseCpuHz      The reference CPU frequency of the system.
+ * @param   uCpuHz          The CPU frequency to compare with the base.
+ * @param   fRelax          Whether to use a more relaxed threshold (like
+ *                          for when running in a virtualized environment).
  *
  * @returns true if it's compatible, false otherwise.
  * @remarks Don't use directly, use SUPIsTscFreqCompatible() instead. This is
- *          to be used by tstGIP-2 (or the like).
+ *          to be used by tstGIP-2 or the like.
  */
-DECLINLINE(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz)
+DECLINLINE(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz, bool fRelax)
 {
     if (uBaseCpuHz != uCpuHz)
     {
         /* Arbitrary tolerance threshold, tweak later if required, perhaps
            more tolerance on lower frequencies and less tolerance on higher. */
-        uint64_t uLo = (uBaseCpuHz << 11) / 2049;
-        uint64_t uHi = uBaseCpuHz + (uBaseCpuHz - uLo);
+        uint16_t uThr = !fRelax ? 666 /* 0.15% */ : 125 /* 0.8% */;
+        uint64_t uLo  = uBaseCpuHz / uThr;
+        uint64_t uHi  = uBaseCpuHz + (uBaseCpuHz - uLo);
         if (   uCpuHz < uLo
             || uCpuHz > uHi)
             return false;
@@ -582,15 +585,17 @@ DECLINLINE(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz)
  * frequency of the host.
  *
  * @param   u64CpuHz        The TSC frequency to check.
+ * @param   fRelax          Whether to use a more relaxed threshold (like
+ *                          for when running in a virtualized environment).
  *
  * @returns true if it's compatible, false otherwise.
  */
-DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
+DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz, bool fRelax)
 {
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     if (   pGip
         && pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
-        return SUPIsTscFreqCompatibleEx(pGip->u64CpuHz, u64CpuHz);
+        return SUPIsTscFreqCompatibleEx(pGip->u64CpuHz, u64CpuHz, fRelax);
     return false;
 }
 
