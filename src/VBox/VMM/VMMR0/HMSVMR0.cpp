@@ -983,7 +983,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
     }
 
     AssertMsg(pVCpu->hm.s.idLastCpu == pCpu->idCpu,
-              ("vcpu idLastCpu=%x pcpu idCpu=%u\n", pVCpu->hm.s.idLastCpu, pCpu->idCpu));
+              ("vcpu idLastCpu=%u pcpu idCpu=%u\n", pVCpu->hm.s.idLastCpu, pCpu->idCpu));
     AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %u (%u vs %u)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
     AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
