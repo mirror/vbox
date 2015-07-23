@@ -983,9 +983,9 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
     }
 
     AssertMsg(pVCpu->hm.s.idLastCpu == pCpu->idCpu,
-              ("vcpu idLastCpu=%x pcpu idCpu=%x\n", pVCpu->hm.s.idLastCpu, pCpu->idCpu));
+              ("vcpu idLastCpu=%x pcpu idCpu=%u\n", pVCpu->hm.s.idLastCpu, pCpu->idCpu));
     AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
-              ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
+              ("Flush count mismatch for cpu %u (%u vs %u)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
     AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("cpu%d uCurrentAsid = %x\n", pCpu->idCpu, pCpu->uCurrentAsid));
     AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
@@ -4099,7 +4099,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                 if (   hmR0SvmIsContributoryXcpt(uIdtVector)
                     && uExitVector == X86_XCPT_PF)
                 {
-                    Log4(("IDT: Contributory #PF idCpu=%#x uCR2=%#RX64\n", pVCpu->idCpu, pCtx->cr2));
+                    Log4(("IDT: Contributory #PF idCpu=%u uCR2=%#RX64\n", pVCpu->idCpu, pCtx->cr2));
                 }
 #endif
                 if (   uExitVector == X86_XCPT_PF
