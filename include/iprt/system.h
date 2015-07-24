@@ -242,6 +242,20 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
  */
 RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char *pszLogMsg);
 
+/**
+ * Checks if we're executing inside a virtual machine (VM).
+ *
+ * The current implemention is very simplistic and won't try to detect the
+ * precense of a virtual machien monitor (VMM) unless it openly tells us it is
+ * there.
+ *
+ * @returns true if inside a VM, false if on real hardware.
+ *
+ * @todo    If more information is needed, like which VMM it is and which
+ *          version and stuch, add one or two  new APIs.
+ */
+RTDECL(bool) RTSystemIsInsideVM(void);
+
 /** @} */
 
 RT_C_DECLS_END

@@ -34,7 +34,6 @@
 #include <iprt/cpuset.h>
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 # include <iprt/asm-amd64-x86.h>
-# include <iprt/x86.h>
 #endif
 
 RT_C_DECLS_BEGIN
@@ -555,14 +554,17 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGipBySetIndex(PSUPGLOBALINFOPAGE pGip, uint3
 /**
  * Worker for SUPIsTscFreqCompatible().
  *
+ * @returns true if it's compatible, false otherwise.
  * @param   uBaseCpuHz      The reference CPU frequency of the system.
  * @param   uCpuHz          The CPU frequency to compare with the base.
  * @param   fRelax          Whether to use a more relaxed threshold (like
  *                          for when running in a virtualized environment).
  *
- * @returns true if it's compatible, false otherwise.
  * @remarks Don't use directly, use SUPIsTscFreqCompatible() instead. This is
  *          to be used by tstGIP-2 or the like.
+ *
+ * @todo    r=bird: There is no need to inline this, is there? Move to
+ *          SUPLibAll.cpp
  */
 DECLINLINE(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz, bool fRelax)
 {
@@ -585,13 +587,15 @@ DECLINLINE(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz, 
  * Checks if the provided TSC frequency is close enough to the computed TSC
  * frequency of the host.
  *
+ * @returns true if it's compatible, false otherwise.
  * @param   uCpuHz          The TSC frequency to check.
  * @param   puGipCpuHz      Where to store the GIP TSC frequency used
- *                          during the compatibility test (can be NULL).
+ *                          during the compatibility test - optional.
  * @param   fRelax          Whether to use a more relaxed threshold (like
  *                          for when running in a virtualized environment).
  *
- * @returns true if it's compatible, false otherwise.
+ * @todo    r=bird: There is no need to inline this, is there? Move to
+ *          SUPLibAll.cpp
  */
 DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t uCpuHz, uint64_t *puGipCpuHz, bool fRelax)
 {
@@ -612,17 +616,6 @@ DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t uCpuHz, uint64_t *puGipCpuHz, b
 
 /** @internal */
 SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE pGip);
-
-/**
- * Checks if we are may be running in a virtualized environment.
- *
- * @returns true if the host system may be virtualized, false otherwise.
- */
-DECLINLINE(bool) SUPIsHostVirtualized(void)
-{
-    Assert(ASMHasCpuId());
-    return RT_BOOL(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_HVP);
-}
 
 /**
  * Read the host TSC value and applies the TSC delta if appropriate.
