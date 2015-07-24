@@ -584,6 +584,11 @@
                 <para>Experimental support for PCI passthrough on Linux hosts;
                   see <xref linkend="pcipassthrough" />.</para>
               </listitem>
+
+              <listitem>
+                <para>Disk image encryption with AES algorithm;
+                  see <xref linkend="vrde-crypt" />.</para>
+              </listitem>
             </orderedlist></para>
 
           <para>VirtualBox extension packages have a
