@@ -210,9 +210,9 @@ static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   GCVirt      Page to invalidate
+ * @param   GCVirt      Page to invalidate.
  */
-VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
+VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt)
 {
     /*
      * The VT-x/AMD-V code will be flushing TLB each time a VCPU migrates to a different
@@ -234,10 +234,10 @@ VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
             continue;
 
         if (pVCpu->idCpu == idCurCpu)
-            HMInvalidatePage(pVCpu, GCPtr);
+            HMInvalidatePage(pVCpu, GCVirt);
         else
         {
-            hmQueueInvlPage(pVCpu, GCPtr);
+            hmQueueInvlPage(pVCpu, GCVirt);
             hmPokeCpuForTlbFlush(pVCpu, false /* fAccountFlushStat */);
         }
     }
