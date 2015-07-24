@@ -60,7 +60,7 @@ UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *
 UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
 {
     /* Delete multiscreen layout: */
-    actionPool()->toRuntime()->setMultiScreenLayout(0);
+    actionPool()->toRuntime()->unsetMultiScreenLayout(m_pScreenLayout);
     delete m_pScreenLayout;
 }
 

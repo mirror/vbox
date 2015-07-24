@@ -1856,26 +1856,36 @@ void UIActionPoolRuntime::setSession(UISession *pSession)
 
 void UIActionPoolRuntime::setMultiScreenLayout(UIMultiScreenLayout *pMultiScreenLayout)
 {
-    /* Disconnect old stuff: */
-    if (m_pMultiScreenLayout)
-    {
-        disconnect(this, SIGNAL(sigNotifyAboutTriggeringViewScreenRemap(int, int)),
-                   m_pMultiScreenLayout, SLOT(sltHandleScreenLayoutChange(int, int)));
-        disconnect(m_pMultiScreenLayout, SIGNAL(sigScreenLayoutUpdate()),
-                   this, SLOT(sltHandleScreenLayoutUpdate()));
-    }
+    /* Do not allow NULL pointers: */
+    AssertPtrReturnVoid(pMultiScreenLayout);
 
     /* Assign new multi-screen layout: */
     m_pMultiScreenLayout = pMultiScreenLayout;
 
     /* Connect new stuff: */
-    if (m_pMultiScreenLayout)
-    {
-        connect(this, SIGNAL(sigNotifyAboutTriggeringViewScreenRemap(int, int)),
-                m_pMultiScreenLayout, SLOT(sltHandleScreenLayoutChange(int, int)));
-        connect(m_pMultiScreenLayout, SIGNAL(sigScreenLayoutUpdate()),
-                this, SLOT(sltHandleScreenLayoutUpdate()));
-    }
+    connect(this, SIGNAL(sigNotifyAboutTriggeringViewScreenRemap(int, int)),
+            m_pMultiScreenLayout, SLOT(sltHandleScreenLayoutChange(int, int)));
+    connect(m_pMultiScreenLayout, SIGNAL(sigScreenLayoutUpdate()),
+            this, SLOT(sltHandleScreenLayoutUpdate()));
+
+    /* Invalidate View menu: */
+    m_invalidations << UIActionIndexRT_M_View;
+}
+
+void UIActionPoolRuntime::unsetMultiScreenLayout(UIMultiScreenLayout *pMultiScreenLayout)
+{
+    /* Do not allow NULL pointers: */
+    AssertPtrReturnVoid(pMultiScreenLayout);
+
+    /* Disconnect old stuff: */
+    disconnect(this, SIGNAL(sigNotifyAboutTriggeringViewScreenRemap(int, int)),
+               pMultiScreenLayout, SLOT(sltHandleScreenLayoutChange(int, int)));
+    disconnect(pMultiScreenLayout, SIGNAL(sigScreenLayoutUpdate()),
+               this, SLOT(sltHandleScreenLayoutUpdate()));
+
+    /* Unset old multi-screen layout: */
+    if (m_pMultiScreenLayout == pMultiScreenLayout)
+        m_pMultiScreenLayout = 0;
 
     /* Invalidate View menu: */
     m_invalidations << UIActionIndexRT_M_View;

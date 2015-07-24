@@ -58,7 +58,7 @@ UIMachineLogicSeamless::UIMachineLogicSeamless(QObject *pParent, UISession *pSes
 UIMachineLogicSeamless::~UIMachineLogicSeamless()
 {
     /* Delete multiscreen layout: */
-    actionPool()->toRuntime()->setMultiScreenLayout(0);
+    actionPool()->toRuntime()->unsetMultiScreenLayout(m_pScreenLayout);
     delete m_pScreenLayout;
 }
 

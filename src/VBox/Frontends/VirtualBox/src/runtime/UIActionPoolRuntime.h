@@ -153,6 +153,9 @@ public:
     /** Defines UI multi-screen layout object reference.
       * @note For menus which uses it to build contents. */
     void setMultiScreenLayout(UIMultiScreenLayout *pMultiScreenLayout);
+    /** Undefines UI multi-screen layout object reference.
+      * @note For menus which uses it to build contents. */
+    void unsetMultiScreenLayout(UIMultiScreenLayout *pMultiScreenLayout);
     /** Returns UI multi-screen layout object reference. */
     UIMultiScreenLayout* multiScreenLayout() const { return m_pMultiScreenLayout; }
 
