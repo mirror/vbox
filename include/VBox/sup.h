@@ -34,6 +34,7 @@
 #include <iprt/cpuset.h>
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 # include <iprt/asm-amd64-x86.h>
+# include <iprt/x86.h>
 #endif
 
 RT_C_DECLS_BEGIN
@@ -584,18 +585,25 @@ DECLINLINE(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz, 
  * Checks if the provided TSC frequency is close enough to the computed TSC
  * frequency of the host.
  *
- * @param   u64CpuHz        The TSC frequency to check.
+ * @param   uCpuHz          The TSC frequency to check.
+ * @param   puGipCpuHz      Where to store the GIP TSC frequency used
+ *                          during the compatibility test (can be NULL).
  * @param   fRelax          Whether to use a more relaxed threshold (like
  *                          for when running in a virtualized environment).
  *
  * @returns true if it's compatible, false otherwise.
  */
-DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz, bool fRelax)
+DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t uCpuHz, uint64_t *puGipCpuHz, bool fRelax)
 {
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     if (   pGip
-        && pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
-        return SUPIsTscFreqCompatibleEx(pGip->u64CpuHz, u64CpuHz, fRelax);
+        && pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+    {
+        uint64_t uGipCpuHz = pGip->u64CpuHz;
+        if (puGipCpuHz)
+            *puGipCpuHz = uGipCpuHz;
+        return SUPIsTscFreqCompatibleEx(uGipCpuHz, uCpuHz, fRelax);
+    }
     return false;
 }
 
@@ -604,6 +612,17 @@ DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz, bool fRelax)
 
 /** @internal */
 SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE pGip);
+
+/**
+ * Checks if we are may be running in a virtualized environment.
+ *
+ * @returns true if the host system may be virtualized, false otherwise.
+ */
+DECLINLINE(bool) SUPIsHostVirtualized(void)
+{
+    Assert(ASMHasCpuId());
+    return RT_BOOL(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_HVP);
+}
 
 /**
  * Read the host TSC value and applies the TSC delta if appropriate.
