@@ -11,6 +11,15 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: fixed an issue causing artifically high load averages on Linux hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed a kernel panic with thread-context hooks caused by incompatible
+          changes made to Linux 4.2 kernels</para>
+      </listitem>
+
+      <listitem>
         <para>VRDP: allow Windows 10 RDP client (bug #14216)</para>
       </listitem>
 
