@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -527,7 +527,7 @@ public:
  *
  *  @param      cls     class to declare a ctor and dtor for
  */
-#define DECLARE_EMPTY_CTOR_DTOR(cls) cls(); ~cls();
+#define DECLARE_EMPTY_CTOR_DTOR(cls) cls(); virtual ~cls();
 
 /**
  *  Defines an empty constructor and destructor for the given class.
