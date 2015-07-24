@@ -1578,6 +1578,7 @@
 # define RTSymlinkIsDangling                            RT_MANGLER(RTSymlinkIsDangling)
 # define RTSymlinkRead                                  RT_MANGLER(RTSymlinkRead)
 # define RTSymlinkReadA                                 RT_MANGLER(RTSymlinkReadA)
+# define RTSystemIsInsideVM                             RT_MANGLER(RTSystemIsInsideVM)
 # define RTSystemQueryAvailableRam                      RT_MANGLER(RTSystemQueryAvailableRam)
 # define RTSystemQueryDmiString                         RT_MANGLER(RTSystemQueryDmiString)
 # define RTSystemQueryOSInfo                            RT_MANGLER(RTSystemQueryOSInfo)
