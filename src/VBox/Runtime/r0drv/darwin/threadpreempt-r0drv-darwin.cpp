@@ -173,7 +173,11 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
         {
             lck_spin_t *pSpinLock = g_aPreemptHacks[idCpu].pSpinLock;
             if (pSpinLock)
+            {
+                IPRT_DARWIN_SAVE_EFL_AC();
                 lck_spin_unlock(pSpinLock);
+                IPRT_DARWIN_RESTORE_EFL_AC();
+            }
             else
                 AssertFailed();
         }

@@ -88,7 +88,9 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     else
     {
 
+        IPRT_DARWIN_SAVE_EFL_AC();
         pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
+        IPRT_DARWIN_RESTORE_EFL_AC();
         if (RT_UNLIKELY(!pHdr))
         {
             printf("rtR0MemAllocEx(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
@@ -118,7 +120,11 @@ DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
         AssertRC(rc);
     }
     else
+    {
+        IPRT_DARWIN_SAVE_EFL_AC();
         IOFree(pHdr, pHdr->cb + sizeof(*pHdr));
+        IPRT_DARWIN_RESTORE_EFL_AC();
+    }
 }
 
 
@@ -130,6 +136,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
     AssertPtr(pPhys);
     Assert(cb > 0);
     RT_ASSERT_PREEMPTIBLE();
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     /*
      * Allocate the memory and ensure that the API is still providing
@@ -145,6 +152,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
             if (!((uintptr_t)pv & PAGE_OFFSET_MASK))
             {
                 *pPhys = PhysAddr;
+                IPRT_DARWIN_RESTORE_EFL_AC();
                 return pv;
             }
             AssertMsgFailed(("IOMallocContiguous didn't return a page aligned address - %p!\n", pv));
@@ -153,6 +161,8 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
             AssertMsgFailed(("IOMallocContiguous returned high address! PhysAddr=%RX64 cb=%#zx\n", (uint64_t)PhysAddr, cb));
         IOFreeContiguous(pv, cb);
     }
+
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return NULL;
 }
 
@@ -164,9 +174,12 @@ RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
     {
         Assert(cb > 0);
         AssertMsg(!((uintptr_t)pv & PAGE_OFFSET_MASK), ("pv=%p\n", pv));
+        IPRT_DARWIN_SAVE_EFL_AC();
 
         cb = RT_ALIGN_Z(cb, PAGE_SIZE);
         IOFreeContiguous(pv, cb);
+
+        IPRT_DARWIN_RESTORE_EFL_AC();
     }
 }
 

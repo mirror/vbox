@@ -110,8 +110,11 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX hFastMtx)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMFASTMUTEX_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     RT_ASSERT_PREEMPTIBLE();
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     lck_mtx_lock(pThis->pMtx);
+
+    IPRT_DARWIN_RESTORE_EFL_ONLY_AC();
     return VINF_SUCCESS;
 }
 
@@ -122,8 +125,11 @@ RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX hFastMtx)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMFASTMUTEX_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     RT_ASSERT_PREEMPTIBLE();
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     lck_mtx_unlock(pThis->pMtx);
+
+    IPRT_DARWIN_RESTORE_EFL_ONLY_AC();
     return VINF_SUCCESS;
 }
 

@@ -322,6 +322,7 @@ static int rtR0SemEventMultiDarwinWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t 
                 /*
                  * Do the actual waiting.
                  */
+                IPRT_DARWIN_SAVE_EFL_AC();
                 ASMAtomicWriteBool(&pThis->fHaveBlockedThreads, true);
                 wait_interrupt_t fInterruptible = fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE ? THREAD_ABORTSAFE : THREAD_UNINT;
                 wait_result_t    rcWait;
@@ -334,6 +335,7 @@ static int rtR0SemEventMultiDarwinWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t 
                     rcWait = lck_spin_sleep_deadline(pThis->pSpinlock, LCK_SLEEP_DEFAULT,
                                                      (event_t)pThis, fInterruptible, u64AbsTime);
                 }
+                IPRT_DARWIN_RESTORE_EFL_AC();
 
                 /*
                  * Deal with the wait result.

@@ -170,6 +170,7 @@ static int rtR0SemMutexDarwinRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVA
     /*
      * Go to sleep, use the address of the mutex instance as sleep/blocking/event id.
      */
+    IPRT_DARWIN_SAVE_EFL_AC();
     wait_result_t rcWait;
     if (cMillies == RT_INDEFINITE_WAIT)
         rcWait = lck_spin_sleep(pThis->pSpinlock, LCK_SLEEP_DEFAULT, (event_t)pThis, fInterruptible);
@@ -182,6 +183,8 @@ static int rtR0SemMutexDarwinRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVA
         rcWait = lck_spin_sleep_deadline(pThis->pSpinlock, LCK_SLEEP_DEFAULT,
                                          (event_t)pThis, fInterruptible, u64AbsTime);
     }
+    IPRT_DARWIN_RESTORE_EFL_AC();
+
     /*
      * Translate the rc.
      */
