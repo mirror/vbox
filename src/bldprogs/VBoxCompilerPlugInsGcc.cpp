@@ -765,6 +765,20 @@ bool VFmtChkRequirePresentArg(PVFMTCHKSTATE pState, const char *pszLoc, unsigned
             VFmtChkErrFmt(pState, pszLoc, "Missing argument! %s", pszMessage);
             return false;
         }
+
+        tree hArg  = gimple_call_arg(pState->hStmt, iArg);
+        tree hType = TREE_TYPE(hArg);
+        dprintf("arg%u: hArg=%p [%s] hType=%p [%s] cls=%s\n", iArg, hArg, tree_code_name[TREE_CODE(hArg)],
+                hType, tree_code_name[TREE_CODE(hType)], tree_code_class_strings[TREE_CODE_CLASS(TREE_CODE(hType))]);
+        dprintf("      nm=%p\n", TYPE_NAME(hType));
+        dprintf("      cb=%p %s value=%ld\n", TYPE_SIZE(hType), tree_code_name[TREE_CODE(TYPE_SIZE(hType))],
+                MY_INT_TO_SHWI(TREE_INT_CST(TYPE_SIZE(hType))) );
+        dprintf("      unit=%p %s value=%ld\n", TYPE_SIZE_UNIT(hType), tree_code_name[TREE_CODE(TYPE_SIZE_UNIT(hType))],
+                MY_INT_TO_SHWI(TREE_INT_CST(TYPE_SIZE_UNIT(hType))) );
+        tree hTypeNm = TYPE_NAME(hType);
+        if (hTypeNm)
+            dprintf("      typenm=%p %s '%s'\n", hTypeNm, tree_code_name[TREE_CODE(hTypeNm)],
+                    IDENTIFIER_POINTER(DECL_NAME(hTypeNm)));
     }
     return true;
 }
