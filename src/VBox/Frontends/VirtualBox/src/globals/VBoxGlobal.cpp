@@ -146,7 +146,6 @@
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include <QNetworkProxy>
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#include <QReadLocker>
 #include <QSettings>
 #include <QStyleOptionSpinBox>
 
@@ -1547,18 +1546,24 @@ void VBoxGlobal::reloadProxySettings()
 
 void VBoxGlobal::createMedium(const UIMedium &medium)
 {
-    /* Create medium in medium-enumerator: */
-    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
-    if (m_pMediumEnumerator)
-        m_pMediumEnumerator->createMedium(medium);
+    if (m_mediumEnumeratorDtorRwLock.tryLockForRead())
+    {
+        /* Create medium in medium-enumerator: */
+        if (m_pMediumEnumerator)
+            m_pMediumEnumerator->createMedium(medium);
+        m_mediumEnumeratorDtorRwLock.unlock();
+    }
 }
 
 void VBoxGlobal::deleteMedium(const QString &strMediumID)
 {
-    /* Delete medium from medium-enumerator: */
-    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
-    if (m_pMediumEnumerator)
-        m_pMediumEnumerator->deleteMedium(strMediumID);
+    if (m_mediumEnumeratorDtorRwLock.tryLockForRead())
+    {
+        /* Delete medium from medium-enumerator: */
+        if (m_pMediumEnumerator)
+            m_pMediumEnumerator->deleteMedium(strMediumID);
+        m_mediumEnumeratorDtorRwLock.unlock();
+    }
 }
 
 /* Open some external medium using file open dialog
@@ -1733,10 +1738,13 @@ void VBoxGlobal::startMediumEnumeration(bool fForceStart /* = true*/)
     if (!fForceStart && !agressiveCaching())
         return;
 
-    /* Redirect request to medium-enumerator: */
-    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
-    if (m_pMediumEnumerator)
-        m_pMediumEnumerator->enumerateMediums();
+    if (m_mediumEnumeratorDtorRwLock.tryLockForRead())
+    {
+        /* Redirect request to medium-enumerator: */
+        if (m_pMediumEnumerator)
+            m_pMediumEnumerator->enumerateMediums();
+        m_mediumEnumeratorDtorRwLock.unlock();
+    }
 }
 
 bool VBoxGlobal::isMediumEnumerationInProgress() const
@@ -1748,19 +1756,29 @@ bool VBoxGlobal::isMediumEnumerationInProgress() const
 
 UIMedium VBoxGlobal::medium(const QString &strMediumID) const
 {
-    /* Redirect call to medium-enumerator: */
-    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
-    if (m_pMediumEnumerator)
-        return m_pMediumEnumerator->medium(strMediumID);
+    if (m_mediumEnumeratorDtorRwLock.tryLockForRead())
+    {
+        /* Redirect call to medium-enumerator: */
+        UIMedium result;
+        if (m_pMediumEnumerator)
+            result = m_pMediumEnumerator->medium(strMediumID);
+        m_mediumEnumeratorDtorRwLock.unlock();
+        return result;
+    }
     return UIMedium();
 }
 
 QList<QString> VBoxGlobal::mediumIDs() const
 {
-    /* Redirect call to medium-enumerator: */
-    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
-    if (m_pMediumEnumerator)
-        return m_pMediumEnumerator->mediumIDs();
+    if (m_mediumEnumeratorDtorRwLock.tryLockForRead())
+    {
+        /* Redirect call to medium-enumerator: */
+        QList<QString> result;
+        if (m_pMediumEnumerator)
+            result = m_pMediumEnumerator->mediumIDs();
+        m_mediumEnumeratorDtorRwLock.unlock();
+        return result;
+    }
     return QList<QString>();
 }
 
