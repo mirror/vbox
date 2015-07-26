@@ -1869,7 +1869,7 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
         vga_draw_glyph8 = vga_draw_glyph8_table[depth_index];
     vga_draw_glyph9 = vga_draw_glyph9_table[depth_index];
 
-    dest = pDrv->pu8Data;
+    dest = pDrv->pbData;
     linesize = pDrv->cbScanline;
     ch_attr_ptr = pThis->last_ch_attr;
     cy_start = -1;
@@ -2196,7 +2196,7 @@ int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned c
     uint32_t offSrc = (xStart * cBits) / 8 + s->svga.cbScanline * yStart;
     uint32_t offDst = (xStart * RT_ALIGN(s->pDrv->cBits, 8)) / 8 + s->pDrv->cbScanline * yStart;
 
-    uint8_t       *pbDst = s->pDrv->pu8Data      + offDst;
+    uint8_t       *pbDst = s->pDrv->pbData       + offDst;
     uint8_t const *pbSrc = s->CTX_SUFF(vram_ptr) + offSrc;
 
     for (unsigned y = yStart; y < yStart + cy; y++)
@@ -2273,7 +2273,7 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnRe
     y_start = -1;
     page_min = 0x7fffffff;
     page_max = -1;
-    d = pDrv->pu8Data;
+    d = pDrv->pbData;
     linesize = pDrv->cbScanline;
 
     for(y = 0; y < height; y++)
@@ -2451,7 +2451,7 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
     y_start = -1;
     page_min = 0x7fffffff;
     page_max = -1;
-    d = pDrv->pu8Data;
+    d = pDrv->pbData;
     linesize = pDrv->cbScanline;
 
     y1 = 0;
@@ -2530,7 +2530,7 @@ static void vga_draw_blank(PVGASTATE pThis, int full_update, PDMIDISPLAYCONNECTO
     uint8_t *d;
     uint32_t cbScanline = pDrv->cbScanline;
 
-    if (pDrv->pu8Data == pThis->vram_ptrR3) /* Do not clear the VRAM itself. */
+    if (pDrv->pbData == pThis->vram_ptrR3) /* Do not clear the VRAM itself. */
         return;
     if (!full_update)
         return;
@@ -2541,7 +2541,7 @@ static void vga_draw_blank(PVGASTATE pThis, int full_update, PDMIDISPLAYCONNECTO
     else
         val = 0;
     w = pThis->last_scr_width * ((pDrv->cBits + 7) >> 3);
-    d = pDrv->pu8Data;
+    d = pDrv->pbData;
     if (pThis->fRenderVRAM)
     {
         for(i = 0; i < (int)pThis->last_scr_height; i++) {
@@ -4830,7 +4830,7 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
             /* The display connector interface is temporarily replaced with the fake one. */
             PDMIDISPLAYCONNECTOR Connector;
             RT_ZERO(Connector);
-            Connector.pu8Data       = pbData;
+            Connector.pbData        = pbData;
             Connector.cBits         = 32;
             Connector.cx            = pThis->last_scr_width;
             Connector.cy            = pThis->last_scr_height;
@@ -4968,7 +4968,7 @@ static DECLCALLBACK(int) vgaPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const vo
             size_t      cbLineSrc   = cx * 4; /* 32 bits per pixel. */
             uint8_t    *pbSrc       = (uint8_t *)pvData;
             size_t      cbLineDst   = pThis->pDrv->cbScanline;
-            uint8_t    *pbDst       = pThis->pDrv->pu8Data + y * cbLineDst + x * cbPixelDst;
+            uint8_t    *pbDst       = pThis->pDrv->pbData + y * cbLineDst + x * cbPixelDst;
             uint32_t    cyLeft      = cy;
             vga_draw_line_func *pfnVgaDrawLine = vga_draw_line_table[VGA_DRAW_LINE32 * 4 + get_depth_index(pThis->pDrv->cBits)];
             Assert(pfnVgaDrawLine);
@@ -5030,7 +5030,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
     }
 
     Assert(pThis->pDrv);
-    Assert(pThis->pDrv->pu8Data);
+    Assert(pThis->pDrv->pbData);
 
     /* Correct negative x and y coordinates. */
     if (x < 0)
@@ -5113,7 +5113,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
     /* Compute source and destination addresses and pitches. */
     cbPixelDst = (pThis->pDrv->cBits + 7) / 8;
     cbLineDst  = pThis->pDrv->cbScanline;
-    pbDst      = pThis->pDrv->pu8Data + y * cbLineDst + x * cbPixelDst;
+    pbDst      = pThis->pDrv->pbData + y * cbLineDst + x * cbPixelDst;
 
     cbPixelSrc = (pThis->get_bpp(pThis) + 7) / 8;
     uint32_t offSrc, u32Dummy;
@@ -5144,29 +5144,21 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
 #endif /* DEBUG_sunlover */
 }
 
-static DECLCALLBACK(int) vgaPortCopyRect (PPDMIDISPLAYPORT pInterface,
-                                          uint32_t w,
-                                          uint32_t h,
-                                          const uint8_t *pbSrc,
-                                          int32_t xSrc,
-                                          int32_t ySrc,
-                                          uint32_t u32SrcWidth,
-                                          uint32_t u32SrcHeight,
-                                          uint32_t u32SrcLineSize,
-                                          uint32_t u32SrcBitsPerPixel,
-                                          uint8_t *pbDst,
-                                          int32_t xDst,
-                                          int32_t yDst,
-                                          uint32_t u32DstWidth,
-                                          uint32_t u32DstHeight,
-                                          uint32_t u32DstLineSize,
-                                          uint32_t u32DstBitsPerPixel)
+
+static DECLCALLBACK(int)
+vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
+                uint32_t cx,
+                uint32_t cy,
+                const uint8_t *pbSrc, int32_t xSrc, int32_t ySrc, uint32_t cxSrc, uint32_t cySrc,
+                uint32_t cbSrcLine, uint32_t cSrcBitsPerPixel,
+                uint8_t *pbDst, int32_t xDst, int32_t yDst, uint32_t cxDst, uint32_t cyDst,
+                uint32_t cbDstLine, uint32_t cDstBitsPerPixel)
 {
     uint32_t v;
     vga_draw_line_func *vga_draw_line;
 
 #ifdef DEBUG_sunlover
-    LogFlow(("vgaPortCopyRect: %d,%d %dx%d -> %d,%d\n", xSrc, ySrc, w, h, xDst, yDst));
+    LogFlow(("vgaPortCopyRect: %d,%d %dx%d -> %d,%d\n", xSrc, ySrc, cx, cy, xDst, yDst));
 #endif /* DEBUG_sunlover */
 
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
@@ -5174,49 +5166,49 @@ static DECLCALLBACK(int) vgaPortCopyRect (PPDMIDISPLAYPORT pInterface,
     Assert(pInterface);
     Assert(pThis->pDrv);
 
-    int32_t xSrcCorrected = xSrc;
-    int32_t ySrcCorrected = ySrc;
-    uint32_t wCorrected = w;
-    uint32_t hCorrected = h;
+    int32_t  xSrcCorrected = xSrc;
+    int32_t  ySrcCorrected = ySrc;
+    uint32_t cxCorrected = cx;
+    uint32_t cyCorrected = cy;
 
     /* Correct source coordinates to be within the source bitmap. */
     if (xSrcCorrected < 0)
     {
-        xSrcCorrected += wCorrected; /* Compute xRight which is also the new width. */
-        wCorrected = (xSrcCorrected < 0) ? 0 : xSrcCorrected;
+        xSrcCorrected += cxCorrected; /* Compute xRight which is also the new width. */
+        cxCorrected = (xSrcCorrected < 0) ? 0 : xSrcCorrected;
         xSrcCorrected = 0;
     }
 
     if (ySrcCorrected < 0)
     {
-        ySrcCorrected += hCorrected; /* Compute yBottom, which is also the new height. */
-        hCorrected = (ySrcCorrected < 0) ? 0 : ySrcCorrected;
+        ySrcCorrected += cyCorrected; /* Compute yBottom, which is also the new height. */
+        cyCorrected = (ySrcCorrected < 0) ? 0 : ySrcCorrected;
         ySrcCorrected = 0;
     }
 
     /* Also check if coords are greater than the display resolution. */
-    if (xSrcCorrected + wCorrected > u32SrcWidth)
+    if (xSrcCorrected + cxCorrected > cxSrc)
     {
         /* xSrcCorrected < 0 is not possible here */
-        wCorrected = u32SrcWidth > (uint32_t)xSrcCorrected? u32SrcWidth - xSrcCorrected: 0;
+        cxCorrected = cxSrc > (uint32_t)xSrcCorrected ? cxSrc - xSrcCorrected : 0;
     }
 
-    if (ySrcCorrected + hCorrected > u32SrcHeight)
+    if (ySrcCorrected + cyCorrected > cySrc)
     {
         /* y < 0 is not possible here */
-        hCorrected = u32SrcHeight > (uint32_t)ySrcCorrected? u32SrcHeight - ySrcCorrected: 0;
+        cyCorrected = cySrc > (uint32_t)ySrcCorrected ? cySrc - ySrcCorrected : 0;
     }
 
 #ifdef DEBUG_sunlover
-    LogFlow(("vgaPortCopyRect: %d,%d %dx%d (corrected coords)\n", xSrcCorrected, ySrcCorrected, wCorrected, hCorrected));
+    LogFlow(("vgaPortCopyRect: %d,%d %dx%d (corrected coords)\n", xSrcCorrected, ySrcCorrected, cxCorrected, cyCorrected));
 #endif /* DEBUG_sunlover */
 
     /* Check if there is something to do at all. */
-    if (wCorrected == 0 || hCorrected == 0)
+    if (cxCorrected == 0 || cyCorrected == 0)
     {
         /* Empty rectangle. */
 #ifdef DEBUG_sunlover
-        LogFlow(("vgaPortUpdateDisplayRectEx: nothing to do: %dx%d\n", wCorrected, hCorrected));
+        LogFlow(("vgaPortUpdateDisplayRectEx: nothing to do: %dx%d\n", cxCorrected, cyCorrected));
 #endif /* DEBUG_sunlover */
         return VINF_SUCCESS;
     }
@@ -5226,14 +5218,14 @@ static DECLCALLBACK(int) vgaPortCopyRect (PPDMIDISPLAYPORT pInterface,
      */
     if (   xDst < 0
         || yDst < 0
-        || xDst + wCorrected > u32DstWidth
-        || yDst + hCorrected > u32DstHeight)
+        || xDst + cxCorrected > cxDst
+        || yDst + cyCorrected > cyDst)
     {
         return VERR_INVALID_PARAMETER;
     }
 
     /* Choose the rendering function. */
-    switch(u32SrcBitsPerPixel)
+    switch (cSrcBitsPerPixel)
     {
         default:
         case 0:
@@ -5266,24 +5258,24 @@ static DECLCALLBACK(int) vgaPortCopyRect (PPDMIDISPLAYPORT pInterface,
         return VERR_INVALID_STATE;
     }
 
-    vga_draw_line = vga_draw_line_table[v * 4 + get_depth_index(u32DstBitsPerPixel)];
+    vga_draw_line = vga_draw_line_table[v * 4 + get_depth_index(cDstBitsPerPixel)];
 
     /* Compute source and destination addresses and pitches. */
-    uint32_t cbPixelDst = (u32DstBitsPerPixel + 7) / 8;
-    uint32_t cbLineDst  = u32DstLineSize;
+    uint32_t cbPixelDst = (cDstBitsPerPixel + 7) / 8;
+    uint32_t cbLineDst  = cbDstLine;
     uint8_t *pbDstCur   = pbDst + yDst * cbLineDst + xDst * cbPixelDst;
 
-    uint32_t cbPixelSrc = (u32SrcBitsPerPixel + 7) / 8;
-    uint32_t cbLineSrc  = u32SrcLineSize;
+    uint32_t cbPixelSrc = (cSrcBitsPerPixel + 7) / 8;
+    uint32_t cbLineSrc  = cbSrcLine;
     const uint8_t *pbSrcCur = pbSrc + ySrcCorrected * cbLineSrc + xSrcCorrected * cbPixelSrc;
 
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortCopyRect: dst: %p, %d, %d. src: %p, %d, %d\n", pbDstCur, cbLineDst, cbPixelDst, pbSrcCur, cbLineSrc, cbPixelSrc));
 #endif /* DEBUG_sunlover */
 
-    while (hCorrected-- > 0)
+    while (cyCorrected-- > 0)
     {
-        vga_draw_line (pThis, pbDstCur, pbSrcCur, wCorrected);
+        vga_draw_line(pThis, pbDstCur, pbSrcCur, cxCorrected);
         pbDstCur += cbLineDst;
         pbSrcCur += cbLineSrc;
     }
@@ -5801,7 +5793,7 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
                 pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIDISPLAYCONNECTOR);
                 if (pThis->pDrv)
                 {
-                    /* pThis->pDrv->pu8Data can be NULL when there is no framebuffer. */
+                    /* pThis->pDrv->pbData can be NULL when there is no framebuffer. */
                     if (    pThis->pDrv->pfnRefresh
                         &&  pThis->pDrv->pfnResize
                         &&  pThis->pDrv->pfnUpdateRect)

@@ -447,11 +447,10 @@ private:
 
 public:
 
-    static int i_displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppu8Data, size_t *pcbData,
-                                          uint32_t *pu32Width, uint32_t *pu32Height);
-
+    static int i_displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppbData, size_t *pcbData,
+                                          uint32_t *pcx, uint32_t *pcy, bool *pfMemFree);
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-    static BOOL  i_displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId, uint8_t *pu8Data,
+    static BOOL  i_displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId, uint8_t *pbData,
                                                    uint32_t u32Width, uint32_t u32Height);
     int i_crCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion);
     int i_crCtlSubmitSync(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
@@ -512,7 +511,7 @@ void BitmapScale32(uint8_t *dst, int dstW, int dstH,
                    const uint8_t *src, int iDeltaLine, int srcW, int srcH);
 
 /* helper function, code in DisplayPNGUtul.cpp */
-int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
+int DisplayMakePNG(uint8_t *pbData, uint32_t cx, uint32_t cy,
                    uint8_t **ppu8PNG, uint32_t *pcbPNG, uint32_t *pcxPNG, uint32_t *pcyPNG,
                      uint8_t fLimitSize);
 
