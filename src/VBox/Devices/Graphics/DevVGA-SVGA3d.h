@@ -22,19 +22,6 @@
 #include "vmsvga/svga_escape.h"
 #include "vmsvga/svga_overlay.h"
 
-#if defined(RT_OS_WINDOWS) && defined(IN_RING3)
-# include <Windows.h>
-
-# define WM_VMSVGA3D_WAKEUP                     (WM_APP+1)
-# define WM_VMSVGA3D_CREATEWINDOW               (WM_APP+2)
-# define WM_VMSVGA3D_DESTROYWINDOW              (WM_APP+3)
-# define WM_VMSVGA3D_RESIZEWINDOW               (WM_APP+4)
-# define WM_VMSVGA3D_EXIT                       (WM_APP+5)
-
-DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD ThreadSelf, void *pvUser);
-int vmsvga3dSendThreadMessage(RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, UINT msg, WPARAM wParam, LPARAM lParam);
-
-#endif
 
 /** Arbitrary limit */
 #define SVGA3D_MAX_SHADER_IDS                   0x800
@@ -43,10 +30,24 @@ int vmsvga3dSendThreadMessage(RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, 
 /** Arbitrary upper limit; seen 8 so far. */
 #define SVGA3D_MAX_LIGHTS                       32
 
+
+/**@def FLOAT_FMT_STR
+ * Format string bits to go with FLOAT_FMT_ARGS. */
+#define FLOAT_FMT_STR                           "%d.%06d"
+/** @def FLOAT_FMT_ARGS
+ * Format arguments for a float value, corresponding to FLOAT_FMT_STR.
+ * @param   r       The floating point value to format.  */
+#define FLOAT_FMT_ARGS(r)                       (int)(r), ((unsigned)((r) * 1000000) % 1000000U)
+
+
+/* DevVGA-SVGA.cpp: */
 void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR);
 int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType, uint8_t *pDest, int32_t cbDestPitch,
                       SVGAGuestPtr src, uint32_t offSrc, int32_t cbSrcPitch, uint32_t cbWidth, uint32_t cHeight);
+void vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(PVGASTATE pThis, uint32_t sid);
 
+
+/* DevVGA-SVGA3d-ogl.cpp & DevVGA-SVGA3d-win.cpp: */
 int vmsvga3dInit(PVGASTATE pThis);
 int vmsvga3dPowerOn(PVGASTATE pThis);
 int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
@@ -92,6 +93,77 @@ int vmsvga3dQueryBegin(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type);
 int vmsvga3dQueryEnd(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult);
 int vmsvga3dQueryWait(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult);
 
+/* DevVGA-SVGA3d-shared.h: */
+#if defined(RT_OS_WINDOWS) && defined(IN_RING3)
+# include <Windows.h>
+
+# define WM_VMSVGA3D_WAKEUP                     (WM_APP+1)
+# define WM_VMSVGA3D_CREATEWINDOW               (WM_APP+2)
+# define WM_VMSVGA3D_DESTROYWINDOW              (WM_APP+3)
+# define WM_VMSVGA3D_RESIZEWINDOW               (WM_APP+4)
+# define WM_VMSVGA3D_EXIT                       (WM_APP+5)
+
+DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD ThreadSelf, void *pvUser);
+int vmsvga3dSendThreadMessage(RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, UINT msg, WPARAM wParam, LPARAM lParam);
+
+#endif
+
+void vmsvga3dUpdateHeapBuffersForSurfaces(PVGASTATE pThis, uint32_t sid);
+void vmsvga3dInfoContextWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t cid, bool fVerbose);
+void vmsvga3dInfoSurfaceWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid, bool fVerbose, uint32_t cxAscii, bool fInvY);
+
+
+/* DevVGA-SVGA3d-shared.cpp: */
+
+/**
+ * Structure for use with vmsvga3dInfoU32Flags.
+ */
+typedef struct VMSVGAINFOFLAGS32
+{
+    /** The flags. */
+    uint32_t    fFlags;
+    /** The corresponding mnemonic. */
+    const char *pszJohnny;
+} VMSVGAINFOFLAGS32;
+/** Pointer to a read-only flag translation entry. */
+typedef VMSVGAINFOFLAGS32 const *PCVMSVGAINFOFLAGS32;
+void vmsvga3dInfoU32Flags(PCDBGFINFOHLP pHlp, uint32_t fFlags, const char *pszPrefix, PCVMSVGAINFOFLAGS32 paFlags, uint32_t cFlags);
+
+/**
+ * Structure for use with vmsvgaFormatEnumValueEx and vmsvgaFormatEnumValue.
+ */
+typedef struct VMSVGAINFOENUM
+{
+    /** The enum value. */
+    int32_t     iValue;
+    /** The corresponding value name. */
+    const char *pszName;
+} VMSVGAINFOENUM;
+/** Pointer to a read-only enum value translation entry. */
+typedef VMSVGAINFOENUM const *PCVMSVGAINFOENUM;
+char *vmsvgaFormatEnumValueEx(char *pszBuffer, size_t cbBuffer, const char *pszName, int32_t iValue,
+                              const char *pszPrefix, PCVMSVGAINFOENUM paValues, size_t cValues);
+char *vmsvgaFormatEnumValue(char *pszBuffer, size_t cbBuffer, const char *pszName, uint32_t uValue,
+                            const char *pszPrefix, const char * const *papszValues, size_t cValues);
+
+/**
+ * ASCII "art" scanline printer callback.
+ *
+ * @param   pszLine         The line to output.
+ * @param   pvUser          The user argument.
+ */
+typedef DECLCALLBACK(void) FMVMSVGAASCIIPRINTLN(const char *pszLine, void *pvUser);
+/** Pointer to an ASCII "art" print line callback. */
+typedef FMVMSVGAASCIIPRINTLN *PFMVMSVGAASCIIPRINTLN;
+void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void const *pvImage, size_t cbImage,
+                        uint32_t cx, uint32_t cy, uint32_t cbScanline, SVGA3dSurfaceFormat enmFormat, bool fInvY,
+                        uint32_t cchMaxX, uint32_t cchMaxY);
+DECLCALLBACK(void) vmsvga3dAsciiPrintlnInfo(const char *pszLine, void *pvUser);
+DECLCALLBACK(void) vmsvga3dAsciiPrintlnLog(const char *pszLine, void *pvUser);
+
+char *vmsvga3dFormatRenderState(char *pszBuffer, size_t cbBuffer, SVGA3dRenderState const *pRenderState);
+char *vmsvga3dFormatTextureState(char *pszBuffer, size_t cbBuffer, SVGA3dTextureState const *pTextureState);
+void vmsvga3dInfoHostWindow(PCDBGFINFOHLP pHlp, uint64_t idHostWindow);
 
 uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format);
 

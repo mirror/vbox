@@ -213,11 +213,12 @@ typedef struct _VBOX_VHWA_PENDINGCMD
 
 #ifdef VBOX_WITH_VMSVGA
 
-#define VMSVGA_FIFO_EXTCMD_NONE                 0
-#define VMSVGA_FIFO_EXTCMD_TERMINATE            1
-#define VMSVGA_FIFO_EXTCMD_SAVESTATE            2
-#define VMSVGA_FIFO_EXTCMD_LOADSTATE            3
-#define VMSVGA_FIFO_EXTCMD_RESET                4
+#define VMSVGA_FIFO_EXTCMD_NONE                         0
+#define VMSVGA_FIFO_EXTCMD_TERMINATE                    1
+#define VMSVGA_FIFO_EXTCMD_SAVESTATE                    2
+#define VMSVGA_FIFO_EXTCMD_LOADSTATE                    3
+#define VMSVGA_FIFO_EXTCMD_RESET                        4
+#define VMSVGA_FIFO_EXTCMD_UPDATE_SURFACE_HEAP_BUFFERS  5
 
 /** Size of the region to backup when switching into svga mode. */
 #define VMSVGA_FRAMEBUFFER_BACKUP_SIZE  (32*1024)
@@ -229,7 +230,14 @@ typedef struct
     uint32_t        uPass;
 } VMSVGA_STATE_LOAD, *PVMSVGA_STATE_LOAD;
 
-typedef struct
+/** Pointer to the private VMSVGA ring-3 state structure.
+ * @todo Still not entirely satisfired with the type name, but better than
+ *       the previous lower/upper case only distinction. */
+typedef struct VMSVGAR3STATE *PVMSVGAR3STATE;
+/** Pointer to the private (implementation specific) VMSVGA3d state. */
+typedef struct VMSVGA3DSTATE *PVMSVGA3DSTATE;
+
+typedef struct VMSVGAState
 {
     /** The host window handle */
     uint64_t                    u64HostWindowId;
@@ -238,9 +246,9 @@ typedef struct
     /** The R0 FIFO pointer. */
     R0PTRTYPE(uint32_t *)       pFIFOR0;
     /** R3 Opaque pointer to svga state. */
-    R3PTRTYPE(void *)           pSVGAState;
+    R3PTRTYPE(PVMSVGAR3STATE)   pSvgaR3State;
     /** R3 Opaque pointer to 3d state. */
-    R3PTRTYPE(void *)           p3dState;
+    R3PTRTYPE(PVMSVGA3DSTATE)   p3dState;
     /** R3 Opaque pointer to a copy of the first 32k of the framebuffer before switching into svga mode. */
     R3PTRTYPE(void *)           pFrameBufferBackup;
     /** R3 Opaque pointer to an external fifo cmd parameter. */
