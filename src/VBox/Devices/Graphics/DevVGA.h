@@ -524,7 +524,7 @@ typedef struct VGAState {
 
 # ifdef VBE_NEW_DYN_LIST
     /** The VBE BIOS extra data. */
-    R3PTRTYPE(uint8_t *)        pu8VBEExtraData;
+    R3PTRTYPE(uint8_t *)        pbVBEExtraData;
     /** The size of the VBE BIOS extra data. */
     uint16_t                    cbVBEExtraData;
     /** The VBE BIOS current memory address. */
@@ -533,11 +533,11 @@ typedef struct VGAState {
 # endif
 
     /** The BIOS logo data. */
-    R3PTRTYPE(uint8_t *)        pu8Logo;
+    R3PTRTYPE(uint8_t *)        pbLogo;
     /** The name of the logo file. */
     R3PTRTYPE(char *)           pszLogoFile;
     /** Bitmap image data. */
-    R3PTRTYPE(uint8_t *)        pu8LogoBitmap;
+    R3PTRTYPE(uint8_t *)        pbLogoBitmap;
     /** Current logo data offset. */
     uint32_t                    offLogoData;
     /** The size of the BIOS logo data. */
@@ -565,7 +565,7 @@ typedef struct VGAState {
     uint32_t                    au32LogoPalette[256];
 
     /** The VGA BIOS ROM data. */
-    R3PTRTYPE(uint8_t *)        pu8VgaBios;
+    R3PTRTYPE(uint8_t *)        pbVgaBios;
     /** The size of the VGA BIOS ROM. */
     uint64_t                    cbVgaBios;
     /** The name of the VGA BIOS ROM file. */
