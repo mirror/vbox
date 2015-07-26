@@ -443,7 +443,7 @@ const char *vmsvgaLookupEnum(int32_t iValue, PCVMSVGAINFOENUMMAP pEnumMap)
      * Binary search
      */
     uint32_t iStart = 0;
-    uint32_t iEnd   = pEnumMap->cValues;
+    uint32_t iEnd   = (uint32_t)pEnumMap->cValues;
     for (;;)
     {
         uint32_t i = iStart + (iEnd - iStart) / 2;

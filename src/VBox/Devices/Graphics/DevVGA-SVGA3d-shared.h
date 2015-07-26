@@ -1507,6 +1507,7 @@ static VMSVGAINFOENUM const g_aD3DFormats[] =
     { D3DFMT_R8G8_B8G8      , "R8G8_B8G8" },
     { D3DFMT_FORCE_DWORD    , "FORCE_DWORD" },
 };
+VMSVGAINFOENUMMAP_MAKE(static, g_D3DFormat2String, g_aD3DFormats, "D3DFMT_");
 
 /** Values for D3DMULTISAMPLE_TYPE, prefix D3DMULTISAMPLE_. */
 static VMSVGAINFOENUM const g_aD3DMultiSampleTypes[] =
@@ -1530,6 +1531,7 @@ static VMSVGAINFOENUM const g_aD3DMultiSampleTypes[] =
     { D3DMULTISAMPLE_16_SAMPLES     , "16_SAMPLES" },
     { D3DMULTISAMPLE_FORCE_DWORD    , "FORCE_DWORD" },
 };
+VMSVGAINFOENUMMAP_MAKE(static, g_D3DMultiSampleType2String, g_aD3DMultiSampleTypes, "D3DMULTISAMPLE_");
 
 /** D3DUSAGE_XXX flag value, prefix D3DUSAGE_. */
 static VMSVGAINFOFLAGS32 const g_aD3DUsageFlags[] =
@@ -1624,14 +1626,13 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
 
 #ifdef VMSVGA3D_DIRECT3D
     pHlp->pfnPrintf(pHlp, "formatD3D:               %s\n",
-                    vmsvgaFormatEnumValueEx(szTmp, sizeof(szTmp), NULL, pSurface->formatD3D,
-                                            "D3DFMT_", g_aD3DFormats, RT_ELEMENTS(g_aD3DFormats)));
+                    vmsvgaFormatEnumValueEx(szTmp, sizeof(szTmp), NULL, pSurface->formatD3D, true, &g_D3DFormat2String));
     pHlp->pfnPrintf(pHlp, "fUsageD3D:               %#x", pSurface->fUsageD3D);
     vmsvga3dInfoU32Flags(pHlp, pSurface->fUsageD3D, "D3DUSAGE_", g_aD3DUsageFlags, RT_ELEMENTS(g_aD3DUsageFlags));
     pHlp->pfnPrintf(pHlp, "\n");
     pHlp->pfnPrintf(pHlp, "multiSampleTypeD3D:      %s\n",
                     vmsvgaFormatEnumValueEx(szTmp, sizeof(szTmp), NULL, pSurface->multiSampleTypeD3D,
-                                            "D3DMULTISAMPLE", g_aD3DMultiSampleTypes, RT_ELEMENTS(g_aD3DMultiSampleTypes)));
+                                            true, &g_D3DMultiSampleType2String));
     if (pSurface->hSharedObject != NULL)
         pHlp->pfnPrintf(pHlp, "hSharedObject:           %p\n", pSurface->hSharedObject);
     if (pSurface->pQuery)
