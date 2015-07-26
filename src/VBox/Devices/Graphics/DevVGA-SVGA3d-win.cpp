@@ -1391,7 +1391,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     AssertReturn(pState, VERR_NO_MEMORY);
 
     Log(("vmsvga3dSurfaceDefine: sid=%x surfaceFlags=%x format=%s (%x) multiSampleCount=%d autogenFilter=%d, cMipLevels=%d size=(%d,%d,%d)\n",
-         sid, surfaceFlags, vmsvgaSurfaceType2String(format), format, multisampleCount, autogenFilter, cMipLevels, pMipLevelSize->width, pMipLevelSize->height, pMipLevelSize->depth));
+         sid, surfaceFlags, vmsvgaLookupEnum((int)format, &g_SVGA3dSurfaceFormat2String), format, multisampleCount, autogenFilter, cMipLevels, pMipLevelSize->width, pMipLevelSize->height, pMipLevelSize->depth));
 
     AssertReturn(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
     AssertReturn(cMipLevels >= 1, VERR_INVALID_PARAMETER);

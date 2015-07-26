@@ -141,8 +141,45 @@ typedef struct VMSVGAINFOENUM
 } VMSVGAINFOENUM;
 /** Pointer to a read-only enum value translation entry. */
 typedef VMSVGAINFOENUM const *PCVMSVGAINFOENUM;
+/**
+ * Structure for use with vmsvgaFormatEnumValueEx and vmsvgaFormatEnumValue.
+ */
+typedef struct VMSVGAINFOENUMMAP
+{
+    /** Pointer to the value mapping array. */
+    PCVMSVGAINFOENUM    paValues;
+    /** The number of value mappings. */
+    size_t              cValues;
+    /** The prefix. */
+    const char         *pszPrefix;
+#ifdef RT_STRICT
+    /** Indicates whether we've checked that it's sorted or not. */
+    bool               *pfAsserted;
+#endif
+} VMSVGAINFOENUMMAP;
+typedef VMSVGAINFOENUMMAP const *PCVMSVGAINFOENUMMAP;
+/** @def VMSVGAINFOENUMMAP_MAKE
+ * Macro for defining a VMSVGAINFOENUMMAP, silently dealing with pfAsserted.
+ *
+ * @param   a_Scope     The scope. RT_NOTHING or static.
+ * @param   a_VarName   The variable name for this map.
+ * @param   a_aValues   The variable name of the value mapping array.
+ * @param   a_pszPrefix The value name prefix.
+ */
+#ifdef VBOX_STRICT
+# define VMSVGAINFOENUMMAP_MAKE(a_Scope, a_VarName, a_aValues, a_pszPrefix) \
+    static bool RT_CONCAT(a_VarName,_AssertedSorted) = false; \
+    a_Scope VMSVGAINFOENUMMAP const a_VarName = { \
+        a_aValues, RT_ELEMENTS(a_aValues), a_pszPrefix, &RT_CONCAT(a_VarName,_AssertedSorted) \
+    }
+#else
+# define VMSVGAINFOENUMMAP_MAKE(a_Scope, a_VarName, a_aValues, a_pszPrefix) \
+    a_Scope VMSVGAINFOENUMMAP const a_VarName = { a_aValues, RT_ELEMENTS(a_aValues), a_pszPrefix }
+#endif
+extern VMSVGAINFOENUMMAP const g_SVGA3dSurfaceFormat2String;
+const char *vmsvgaLookupEnum(int32_t iValue, PCVMSVGAINFOENUMMAP pEnumMap);
 char *vmsvgaFormatEnumValueEx(char *pszBuffer, size_t cbBuffer, const char *pszName, int32_t iValue,
-                              const char *pszPrefix, PCVMSVGAINFOENUM paValues, size_t cValues);
+                              bool fPrefix, PCVMSVGAINFOENUMMAP pEnumMap);
 char *vmsvgaFormatEnumValue(char *pszBuffer, size_t cbBuffer, const char *pszName, uint32_t uValue,
                             const char *pszPrefix, const char * const *papszValues, size_t cValues);
 

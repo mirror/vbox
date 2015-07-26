@@ -55,6 +55,68 @@
 static LONG WINAPI vmsvga3dWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 #endif
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Enum value to string mappings for SVGA3dSurfaceFormat, prefix "SVGA3D_". */
+static const VMSVGAINFOENUM g_aSVGA3dSurfaceFormats[] =
+{
+    { SVGA3D_FORMAT_INVALID     , "FORMAT_INVALID" },
+    { SVGA3D_X8R8G8B8           , "X8R8G8B8" },
+    { SVGA3D_A8R8G8B8           , "A8R8G8B8" },
+    { SVGA3D_R5G6B5             , "R5G6B5" },
+    { SVGA3D_X1R5G5B5           , "X1R5G5B5" },
+    { SVGA3D_A1R5G5B5           , "A1R5G5B5" },
+    { SVGA3D_A4R4G4B4           , "A4R4G4B4" },
+    { SVGA3D_Z_D32              , "Z_D32" },
+    { SVGA3D_Z_D16              , "Z_D16" },
+    { SVGA3D_Z_D24S8            , "Z_D24S8" },
+    { SVGA3D_Z_D15S1            , "Z_D15S1" },
+    { SVGA3D_LUMINANCE8         , "LUMINANCE8" },
+    { SVGA3D_LUMINANCE4_ALPHA4  , "LUMINANCE4_ALPHA4" },
+    { SVGA3D_LUMINANCE16        , "LUMINANCE16" },
+    { SVGA3D_LUMINANCE8_ALPHA8  , "LUMINANCE8_ALPHA8" },
+    { SVGA3D_DXT1               , "DXT1" },
+    { SVGA3D_DXT2               , "DXT2" },
+    { SVGA3D_DXT3               , "DXT3" },
+    { SVGA3D_DXT4               , "DXT4" },
+    { SVGA3D_DXT5               , "DXT5" },
+    { SVGA3D_BUMPU8V8           , "BUMPU8V8" },
+    { SVGA3D_BUMPL6V5U5         , "BUMPL6V5U5" },
+    { SVGA3D_BUMPX8L8V8U8       , "BUMPX8L8V8U8" },
+    { SVGA3D_BUMPL8V8U8         , "BUMPL8V8U8" },
+    { SVGA3D_ARGB_S10E5         , "ARGB_S10E5" },
+    { SVGA3D_ARGB_S23E8         , "ARGB_S23E8" },
+    { SVGA3D_A2R10G10B10        , "A2R10G10B10" },
+    { SVGA3D_V8U8               , "V8U8" },
+    { SVGA3D_Q8W8V8U8           , "Q8W8V8U8" },
+    { SVGA3D_CxV8U8             , "CxV8U8" },
+    { SVGA3D_X8L8V8U8           , "X8L8V8U8" },
+    { SVGA3D_A2W10V10U10        , "A2W10V10U10" },
+    { SVGA3D_ALPHA8             , "ALPHA8" },
+    { SVGA3D_R_S10E5            , "R_S10E5" },
+    { SVGA3D_R_S23E8            , "R_S23E8" },
+    { SVGA3D_RG_S10E5           , "RG_S10E5" },
+    { SVGA3D_RG_S23E8           , "RG_S23E8" },
+    { SVGA3D_BUFFER             , "BUFFER" },
+    { SVGA3D_Z_D24X8            , "Z_D24X8" },
+    { SVGA3D_V16U16             , "V16U16" },
+    { SVGA3D_G16R16             , "G16R16" },
+    { SVGA3D_A16B16G16R16       , "A16B16G16R16" },
+    { SVGA3D_UYVY               , "UYVY" },
+    { SVGA3D_YUY2               , "YUY2" },
+    { SVGA3D_NV12               , "NV12" },
+    { SVGA3D_AYUV               , "AYUV" },
+    { SVGA3D_BC4_UNORM          , "BC4_UNORM" },
+    { SVGA3D_BC5_UNORM          , "BC5_UNORM" },
+    { SVGA3D_Z_DF16             , "Z_DF16" },
+    { SVGA3D_Z_DF24             , "Z_DF24" },
+    { SVGA3D_Z_D24S8_INT        , "Z_D24S8_INT" },
+};
+VMSVGAINFOENUMMAP_MAKE(RT_NOTHING, g_SVGA3dSurfaceFormat2String, g_aSVGA3dSurfaceFormats, "SVGA3D_");
+
+
 #ifdef RT_OS_WINDOWS
 
 /**
@@ -355,6 +417,59 @@ void vmsvga3dInfoHostWindow(PCDBGFINFOHLP pHlp, uint64_t idHostWindow)
 
 
 /**
+ * Looks up an enum value in a translation table.
+ *
+ * @returns The value name.
+ * @param   iValue              The value to name.
+ * @param   pEnumMap            Enum value to string mapping.
+ */
+const char *vmsvgaLookupEnum(int32_t iValue, PCVMSVGAINFOENUMMAP pEnumMap)
+{
+    PCVMSVGAINFOENUM paValues = pEnumMap->paValues;
+
+#ifdef VBOX_STRICT
+    /*
+     * Check that it's really sorted, or the binary lookup won't work right.
+     */
+    if (!*pEnumMap->pfAsserted)
+    {
+        *pEnumMap->pfAsserted = true;
+        for (uint32_t i = 1; i < pEnumMap->cValues; i++)
+            Assert(paValues[i - 1].iValue <= paValues[i].iValue);
+    }
+#endif
+
+    /*
+     * Binary search
+     */
+    uint32_t iStart = 0;
+    uint32_t iEnd   = pEnumMap->cValues;
+    for (;;)
+    {
+        uint32_t i = iStart + (iEnd - iStart) / 2;
+        if (iValue < paValues[i].iValue)
+        {
+            if (i > iStart)
+                iEnd = i;
+            else
+                break;
+        }
+        else if (iValue > paValues[i].iValue)
+        {
+            i++;
+            if (i < iEnd)
+                iStart = i;
+            else
+                break;
+        }
+        else
+            return paValues[i].pszName;
+    }
+    return NULL;
+}
+
+
+/**
  * Formats an enum value as a string, sparse mapping table.
  *
  * @returns pszBuffer.
@@ -362,24 +477,22 @@ void vmsvga3dInfoHostWindow(PCDBGFINFOHLP pHlp, uint64_t idHostWindow)
  * @param   cbBuffer            The size of the output buffer.
  * @param   pszName             The variable name, optional.
  * @param   iValue              The enum value.
- * @param   pszPrefix           The prefix of the enum values.  Empty string if
- *                              none.  This helps reduce the memory footprint
- *                              as well as the source code size.
- * @param   papszValues         One to one string mapping of the enum values.
- * @param   cValues             The number of values in the mapping.
+ * @param   fPrefix             Whether to prepend the prefix or not.
+ * @param   pEnumMap            Enum value to string mapping.
  */
 char *vmsvgaFormatEnumValueEx(char *pszBuffer, size_t cbBuffer, const char *pszName, int32_t iValue,
-                              const char *pszPrefix, PCVMSVGAINFOENUM paValues, size_t cValues)
+                              bool fPrefix, PCVMSVGAINFOENUMMAP pEnumMap)
 {
-    for (uint32_t i = 0; i < cValues; i++)
-        if (paValues[i].iValue == iValue)
-        {
-            if (pszName)
-                RTStrPrintf(pszBuffer, cbBuffer, "%s = %s%s (%#x)", pszName, pszPrefix, paValues[i].pszName, iValue);
-            else
-                RTStrPrintf(pszBuffer, cbBuffer, "%s%s (%#x)", pszPrefix, paValues[i].pszName, iValue);
-            return pszBuffer;
-        }
+    const char *pszValueName = vmsvgaLookupEnum(iValue, pEnumMap);
+    const char *pszPrefix    = fPrefix ? pEnumMap->pszPrefix : "";
+    if (pszValueName)
+    {
+        if (pszName)
+            RTStrPrintf(pszBuffer, cbBuffer, "%s = %s%s (%#x)", pszName, pszPrefix, pszValueName, iValue);
+        else
+            RTStrPrintf(pszBuffer, cbBuffer, "%s%s (%#x)", pszPrefix, pszValueName, iValue);
+        return pszBuffer;
+    }
 
     if (pszName)
         RTStrPrintf(pszBuffer, cbBuffer, "%s = %sUNKNOWN_%d (%#x)", pszName, pszPrefix, iValue, iValue);
@@ -474,6 +587,8 @@ void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
         /* Generic. */
         case SVGA3D_BUFFER:
             return;
+        default:
+            break; /* ok */
     }
 
     /*
@@ -518,10 +633,11 @@ void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
          * all we've got to work with.
          * Color to 8-bit grayscale conversion is done by averaging.
          */
-#define CONVERT_SCANLINE(a_AddExpr) \
+#define CONVERT_SCANLINE(a_RdExpr, a_AddExpr) \
             do { \
                 for (uint32_t xSrc = 0, xDst = 0, cxLeftInChar = cxPerChar; xSrc < cx; xSrc++) \
                 { \
+                    a_RdExpr; \
                     pauScanline[xDst] += (a_AddExpr) & 0xff; \
                     Assert(pauScanline[xDst] <= cPixelsWeightPerChar); \
                     if (--cxLeftInChar == 0) \
@@ -532,50 +648,57 @@ void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
                 } \
             } while (0)
 
-        uint32_t u32Tmp;
         switch (enmFormat)
         {
             /* Unsigned RGB and super/subsets. */
             case SVGA3D_X8R8G8B8:
             case SVGA3D_A8R8G8B8:
-                CONVERT_SCANLINE( (  ((u32Tmp = uSrc.pu32[xSrc]) & 0xff) /* B */
-                                   + ((u32Tmp >>  8) & 0xff)             /* G */
-                                   + ((u32Tmp >> 16) & 0xff)             /* R */) / 3);
+                CONVERT_SCANLINE(uint32_t const u32Tmp = uSrc.pu32[xSrc],
+                                 (  ( u32Tmp        & 0xff) /* B */
+                                  + ((u32Tmp >>  8) & 0xff) /* G */
+                                  + ((u32Tmp >> 16) & 0xff) /* R */) / 3);
                 break;
             case SVGA3D_R5G6B5:
-                CONVERT_SCANLINE( (  ( uSrc.pu16[xSrc]         & 0x1f) * 8
-                                   + ((uSrc.pu16[xSrc] >>  5)  & 0x3f) * 4
-                                   + ( uSrc.pu16[xSrc] >> 11)          * 8 ) / 3 );
+                CONVERT_SCANLINE(uint16_t const u16Tmp = uSrc.pu16[xSrc],
+                                 ( ( u16Tmp         & 0x1f) * 8
+                                 + ((u16Tmp >>  5)  & 0x3f) * 4
+                                 + ( u16Tmp >> 11)          * 8 ) / 3 );
                 break;
             case SVGA3D_X1R5G5B5:
             case SVGA3D_A1R5G5B5:
-                CONVERT_SCANLINE( (  ( uSrc.pu16[xSrc]        & 0x1f) * 8
-                                   + ((uSrc.pu16[xSrc] >> 5)  & 0x1f) * 8
-                                   + ((uSrc.pu16[xSrc] >> 10) & 0x1f) * 8) / 3 );
+                CONVERT_SCANLINE(uint16_t const u16Tmp = uSrc.pu16[xSrc],
+                                 (  ( u16Tmp        & 0x1f) * 8
+                                  + ((u16Tmp >> 5)  & 0x1f) * 8
+                                  + ((u16Tmp >> 10) & 0x1f) * 8) / 3 );
                 break;
             case SVGA3D_A4R4G4B4:
-                CONVERT_SCANLINE( (  ( uSrc.pu16[xSrc]        & 0xf) * 16
-                                   + ((uSrc.pu16[xSrc] >> 4)  & 0xf) * 16
-                                   + ((uSrc.pu16[xSrc] >> 8)  & 0xf) * 16) / 3 );
+                CONVERT_SCANLINE(uint16_t const u16Tmp = uSrc.pu16[xSrc],
+                                 (  ( u16Tmp        & 0xf) * 16
+                                  + ((u16Tmp >> 4)  & 0xf) * 16
+                                  + ((u16Tmp >> 8)  & 0xf) * 16) / 3 );
                 break;
             case SVGA3D_A16B16G16R16:
-                CONVERT_SCANLINE( (  ((uSrc.pu64[xSrc] >>  8) & 0xff) /* R */
-                                   + ((uSrc.pu64[xSrc] >> 24) & 0xff) /* G */
-                                   + ((uSrc.pu64[xSrc] >> 40) & 0xff) /* B */ ) / 3);
+                CONVERT_SCANLINE(uint64_t const u64Tmp = uSrc.pu64[xSrc],
+                                 (  ((u64Tmp >>  8) & 0xff) /* R */
+                                  + ((u64Tmp >> 24) & 0xff) /* G */
+                                  + ((u64Tmp >> 40) & 0xff) /* B */ ) / 3);
                 break;
             case SVGA3D_A2R10G10B10:
-                CONVERT_SCANLINE( (  ((uSrc.pu32[xSrc]      ) & 0x3ff) /* B */
-                                   + ((uSrc.pu32[xSrc] >> 10) & 0x3ff) /* G */
-                                   + ((uSrc.pu32[xSrc] >> 20) & 0x3ff) /* R */ ) / (3 * 4));
+                CONVERT_SCANLINE(uint32_t const u32Tmp = uSrc.pu32[xSrc],
+                                 (  ( u32Tmp        & 0x3ff) /* B */
+                                  + ((u32Tmp >> 10) & 0x3ff) /* G */
+                                  + ((u32Tmp >> 20) & 0x3ff) /* R */ ) / (3 * 4));
                 break;
             case SVGA3D_G16R16:
-                CONVERT_SCANLINE( (  (uSrc.pu32[xSrc] & 0xffff) /* R */
-                                   + (uSrc.pu32[xSrc] >> 16 )   /* G */) / 0x200);
+                CONVERT_SCANLINE(uint32_t const u32Tmp = uSrc.pu32[xSrc],
+                                 (  (u32Tmp & 0xffff) /* R */
+                                  + (u32Tmp >>   16 ) /* G */) / 0x200);
                 break;
 
             /* Depth. */
             case SVGA3D_Z_D32:
-                CONVERT_SCANLINE(  (((u32Tmp = ~(( uSrc.pu32[xSrc] >> 1) | uSrc.pu32[xSrc]) & UINT32_C(0x44444444)) >> 2) & 1)
+                CONVERT_SCANLINE(uint32_t const u32Tmp = ~((uSrc.pu32[xSrc] >> 1) | uSrc.pu32[xSrc]) & UINT32_C(0x44444444),
+                                   (( u32Tmp >> (2 - 0)) & RT_BIT_32(0))
                                  | ((u32Tmp >> ( 6 - 1)) & RT_BIT_32(1))
                                  | ((u32Tmp >> (10 - 2)) & RT_BIT_32(2))
                                  | ((u32Tmp >> (14 - 3)) & RT_BIT_32(3))
@@ -585,41 +708,44 @@ void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
                                  | ((u32Tmp >> (30 - 7)) & RT_BIT_32(7)) );
                 break;
             case SVGA3D_Z_D16:
-                CONVERT_SCANLINE(  (((u32Tmp = ~uSrc.pu16[xSrc]) >> 1) & 1)
-                                 | ((u32Tmp >> ( 3 - 1)) & RT_BIT_32(1))
-                                 | ((u32Tmp >> ( 5 - 2)) & RT_BIT_32(2))
-                                 | ((u32Tmp >> ( 7 - 3)) & RT_BIT_32(3))
-                                 | ((u32Tmp >> ( 9 - 4)) & RT_BIT_32(4))
-                                 | ((u32Tmp >> (11 - 5)) & RT_BIT_32(5))
-                                 | ((u32Tmp >> (13 - 6)) & RT_BIT_32(6))
-                                 | ((u32Tmp >> (15 - 7)) & RT_BIT_32(7)) );
+                CONVERT_SCANLINE(uint16_t const u16Tmp = ~uSrc.pu16[xSrc],
+                                   ((u16Tmp >> ( 1 - 0)) & RT_BIT_32(0))
+                                 | ((u16Tmp >> ( 3 - 1)) & RT_BIT_32(1))
+                                 | ((u16Tmp >> ( 5 - 2)) & RT_BIT_32(2))
+                                 | ((u16Tmp >> ( 7 - 3)) & RT_BIT_32(3))
+                                 | ((u16Tmp >> ( 9 - 4)) & RT_BIT_32(4))
+                                 | ((u16Tmp >> (11 - 5)) & RT_BIT_32(5))
+                                 | ((u16Tmp >> (13 - 6)) & RT_BIT_32(6))
+                                 | ((u16Tmp >> (15 - 7)) & RT_BIT_32(7)) );
                 break;
             case SVGA3D_Z_D24S8:
-                CONVERT_SCANLINE(  ((u32Tmp = uSrc.pu16[xSrc]) & 0xff) /* stencile */
+                CONVERT_SCANLINE(uint32_t const u32Tmp = uSrc.pu32[xSrc],
+                                   (  u32Tmp        & 0xff) /* stencile */
                                  | ((~u32Tmp >> 18) & 0x3f));
                 break;
             case SVGA3D_Z_D15S1:
-                CONVERT_SCANLINE(  (((u32Tmp = uSrc.pu16[xSrc]) & 0x01) << 7) /* stencile */
-                                 | ((~u32Tmp >> 8) & 0x7f));
+                CONVERT_SCANLINE(uint16_t const u16Tmp = uSrc.pu16[xSrc],
+                                   ( (u16Tmp & 0x01) << 7) /* stencile */
+                                 | ((~u16Tmp >> 8) & 0x7f));
                 break;
 
             /* Pure alpha. */
             case SVGA3D_ALPHA8:
-                CONVERT_SCANLINE(uSrc.pu8[xSrc]);
+                CONVERT_SCANLINE(RT_NOTHING, uSrc.pu8[xSrc]);
                 break;
 
             /* Luminance */
             case SVGA3D_LUMINANCE8:
-                CONVERT_SCANLINE(uSrc.pu8[xSrc]);
+                CONVERT_SCANLINE(RT_NOTHING, uSrc.pu8[xSrc]);
                 break;
             case SVGA3D_LUMINANCE4_ALPHA4:
-                CONVERT_SCANLINE(uSrc.pu8[xSrc] & 0xf0);
+                CONVERT_SCANLINE(RT_NOTHING, uSrc.pu8[xSrc] & 0xf0);
                 break;
             case SVGA3D_LUMINANCE16:
-                CONVERT_SCANLINE(uSrc.pu16[xSrc] >> 8);
+                CONVERT_SCANLINE(RT_NOTHING, uSrc.pu16[xSrc] >> 8);
                 break;
             case SVGA3D_LUMINANCE8_ALPHA8:
-                CONVERT_SCANLINE(uSrc.pu16[xSrc] >> 8);
+                CONVERT_SCANLINE(RT_NOTHING, uSrc.pu16[xSrc] >> 8);
                 break;
 
             /* Not supported. */
@@ -660,28 +786,31 @@ void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
             case SVGA3D_Z_D24S8_INT:
                 if (!fHitFormatAssert)
                 {
-                    AssertMsgFailed(("%s is not implemented\n", vmsvgaSurfaceType2String(enmFormat)));
+                    AssertMsgFailed(("%s is not implemented\n", vmsvgaLookupEnum((int)enmFormat, &g_SVGA3dSurfaceFormat2String)));
                     fHitFormatAssert = true;
                 }
                 /* fall thru */
             default:
                 /* Lazy programmer fallbacks. */
                 if (cbSrcPixel == 4)
-                    CONVERT_SCANLINE( (  ((u32Tmp = uSrc.pu32[xSrc]) & 0xff)
-                                       + ((u32Tmp >>  8) & 0xff)
-                                       + ((u32Tmp >> 16) & 0xff)
-                                       + ((u32Tmp >> 24) & 0xff) ) / 4);
+                    CONVERT_SCANLINE(uint32_t const u32Tmp = uSrc.pu32[xSrc],
+                                     (  ( u32Tmp        & 0xff)
+                                      + ((u32Tmp >>  8) & 0xff)
+                                      + ((u32Tmp >> 16) & 0xff)
+                                      + ((u32Tmp >> 24) & 0xff) ) / 4);
                 else if (cbSrcPixel == 3)
-                    CONVERT_SCANLINE( (  (uint32_t)uSrc.pu8[xSrc * 4]
-                                       + (uint32_t)uSrc.pu8[xSrc * 4 + 1]
-                                       + (uint32_t)uSrc.pu8[xSrc * 4 + 2] ) / 3);
+                    CONVERT_SCANLINE(RT_NOTHING,
+                                     (  (uint32_t)uSrc.pu8[xSrc * 4]
+                                      + (uint32_t)uSrc.pu8[xSrc * 4 + 1]
+                                      + (uint32_t)uSrc.pu8[xSrc * 4 + 2] ) / 3);
                 else if (cbSrcPixel == 2)
-                    CONVERT_SCANLINE( (  ((u32Tmp = uSrc.pu16[xSrc]) & 0xf) * 16
-                                       + ((u32Tmp >>  4) & 0xf)             * 16
-                                       + ((u32Tmp >>  8) & 0xf)             * 16
-                                       + ((u32Tmp >> 12) & 0xf)             * 16 ) / 4);
+                    CONVERT_SCANLINE(uint16_t const u16Tmp = uSrc.pu16[xSrc],
+                                     (  ( u16Tmp        & 0xf)
+                                      + ((u16Tmp >>  4) & 0xf)
+                                      + ((u16Tmp >>  8) & 0xf)
+                                      + ((u16Tmp >> 12) & 0xf) ) * 4 /* mul 16 div 4 */ );
                 else if (cbSrcPixel == 1)
-                    CONVERT_SCANLINE(uSrc.pu8[xSrc]);
+                    CONVERT_SCANLINE(RT_NOTHING, uSrc.pu8[xSrc]);
                 else
                     AssertFailed();
                 break;
@@ -1837,114 +1966,6 @@ const char *vmsvgaDeclType2String(SVGA3dDeclType type)
     default:
         return "UNKNOWN!!";
     }
-}
-
-const char *vmsvgaSurfaceType2String(SVGA3dSurfaceFormat format)
-{
-    switch (format)
-    {
-    case SVGA3D_X8R8G8B8:
-        return "SVGA3D_X8R8G8B8";
-    case SVGA3D_A8R8G8B8:
-        return "SVGA3D_A8R8G8B8";
-    case SVGA3D_R5G6B5:
-        return "SVGA3D_R5G6B5";
-    case SVGA3D_X1R5G5B5:
-        return "SVGA3D_X1R5G5B5";
-    case SVGA3D_A1R5G5B5:
-        return "SVGA3D_A1R5G5B5";
-    case SVGA3D_A4R4G4B4:
-        return "SVGA3D_A4R4G4B4";
-    case SVGA3D_Z_D32:
-        return "SVGA3D_Z_D32";
-    case SVGA3D_Z_D16:
-        return "SVGA3D_Z_D16";
-    case SVGA3D_Z_D24S8:
-        return "SVGA3D_Z_D24S8";
-    case SVGA3D_Z_D15S1:
-        return "SVGA3D_Z_D15S1";
-    case SVGA3D_Z_D24X8:
-        return "SVGA3D_Z_D24X8";
-    case SVGA3D_Z_DF16:
-        return "SVGA3D_Z_DF16";
-    case SVGA3D_Z_DF24:
-        return "SVGA3D_Z_DF24";
-    case SVGA3D_Z_D24S8_INT:
-        return "SVGA3D_Z_D24S8_INT";
-    case SVGA3D_LUMINANCE8:
-        return "SVGA3D_LUMINANCE8";
-    case SVGA3D_LUMINANCE4_ALPHA4:
-        return "SVGA3D_LUMINANCE4_ALPHA4";
-    case SVGA3D_LUMINANCE16:
-        return "SVGA3D_LUMINANCE16";
-    case SVGA3D_LUMINANCE8_ALPHA8:
-        return "SVGA3D_LUMINANCE8_ALPHA8";
-    case SVGA3D_DXT1:
-        return "SVGA3D_DXT1";
-    case SVGA3D_DXT2:
-        return "SVGA3D_DXT2";
-    case SVGA3D_DXT3:
-        return "SVGA3D_DXT3";
-    case SVGA3D_DXT4:
-        return "SVGA3D_DXT4";
-    case SVGA3D_DXT5:
-        return "SVGA3D_DXT5";
-    case SVGA3D_BUMPU8V8:
-        return "SVGA3D_BUMPU8V8";
-    case SVGA3D_BUMPL6V5U5:
-        return "SVGA3D_BUMPL6V5U5";
-    case SVGA3D_BUMPX8L8V8U8:
-        return "SVGA3D_BUMPX8L8V8U8";
-    case SVGA3D_BUMPL8V8U8:
-        return "SVGA3D_BUMPL8V8U8";
-    case SVGA3D_V8U8:
-        return "SVGA3D_V8U8";
-    case SVGA3D_Q8W8V8U8:
-        return "SVGA3D_Q8W8V8U8";
-    case SVGA3D_CxV8U8:
-        return "SVGA3D_CxV8U8";
-    case SVGA3D_X8L8V8U8:
-        return "SVGA3D_X8L8V8U8";
-    case SVGA3D_A2W10V10U10:
-        return "SVGA3D_A2W10V10U10";
-    case SVGA3D_ARGB_S10E5:
-        return "SVGA3D_ARGB_S10E5";
-    case SVGA3D_ARGB_S23E8:
-        return "SVGA3D_ARGB_S23E8";
-    case SVGA3D_A2R10G10B10:
-        return "SVGA3D_A2R10G10B10";
-    case SVGA3D_ALPHA8:
-        return "SVGA3D_ALPHA8";
-    case SVGA3D_R_S10E5:
-        return "SVGA3D_R_S10E5";
-    case SVGA3D_R_S23E8:
-        return "SVGA3D_R_S23E8";
-    case SVGA3D_RG_S10E5:
-        return "SVGA3D_RG_S10E5";
-    case SVGA3D_RG_S23E8:
-        return "SVGA3D_RG_S23E8";
-    case SVGA3D_BUFFER:
-        return "SVGA3D_BUFFER";
-    case SVGA3D_V16U16:
-        return "SVGA3D_V16U16";
-    case SVGA3D_G16R16:
-        return "SVGA3D_G16R16";
-    case SVGA3D_A16B16G16R16:
-        return "SVGA3D_A16B16G16R16";
-    case SVGA3D_UYVY:
-        return "SVGA3D_UYVY";
-    case SVGA3D_YUY2:
-        return "SVGA3D_YUY2";
-    case SVGA3D_NV12:
-        return "SVGA3D_NV12";
-    case SVGA3D_AYUV:
-        return "SVGA3D_AYUV";
-    case SVGA3D_BC4_UNORM:
-        return "SVGA3D_BC4_UNORM";
-    case SVGA3D_BC5_UNORM:
-        return "SVGA3D_BC5_UNORM";
-    }
-    return "UNKNOWN!!";
 }
 
 const char *vmsvga3dPrimitiveType2String(SVGA3dPrimitiveType PrimitiveType)
