@@ -257,12 +257,7 @@ bool UISession::initialize()
 bool UISession::powerUp()
 {
     /* Power UP machine: */
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
-                         console().PowerUpPaused() : console().PowerUp();
-#else /* !VBOX_WITH_DEBUGGER_GUI */
-    CProgress progress = console().PowerUp();
-#endif /* !VBOX_WITH_DEBUGGER_GUI */
+    CProgress progress = vboxGlobal().shouldStartPaused() ? console().PowerUpPaused() : console().PowerUp();
 
     /* Check for immediate failure: */
     if (!console().isOk() || progress.isNull())

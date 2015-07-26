@@ -80,6 +80,14 @@ public:
         LaunchMode_Separate
     };
 
+    /** Whether to start the VM running. */
+    enum StartRunning
+    {
+        StartRunning_Default,   /**< Default (depends on debug settings). */
+        StartRunning_No,        /**< Start the VM paused. */
+        StartRunning_Yes        /**< Start the VM running. */
+    };
+
     /* Static API: Create/destroy stuff: */
     static VBoxGlobal* instance();
     static void create();
@@ -181,9 +189,16 @@ public:
     bool isDebuggerAutoShowStatisticsEnabled() const;
 
     RTLDRMOD getDebuggerModule() const { return m_hVBoxDbg; }
-
-    bool isStartPausedEnabled() const { return mStartPaused; }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+    bool shouldStartPaused() const
+    {
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        return m_enmStartRunning == StartRunning_Default ? isDebuggerAutoShowEnabled() : m_enmStartRunning == StartRunning_No;
+#else
+        return false;
+#endif
+    }
 
     /* VBox enum to/from string/icon/color convertors */
 
@@ -530,8 +545,8 @@ private:
     /** VBoxDbg module handle. */
     RTLDRMOD m_hVBoxDbg;
 
-    /** Whether to start the VM in paused state or not. */
-    bool mStartPaused;
+    /** Whether --start-running, --start-paused or nothing was given. */
+    enum StartRunning m_enmStartRunning;
 #endif
 
 #if defined (Q_WS_WIN32)

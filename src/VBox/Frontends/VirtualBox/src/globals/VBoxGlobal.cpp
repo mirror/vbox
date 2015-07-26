@@ -3970,7 +3970,7 @@ void VBoxGlobal::prepare()
 # endif
     initDebuggerVar(&m_fDbgAutoShow, "VBOX_GUI_DBG_AUTO_SHOW", GUI_Dbg_AutoShow, false);
     m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = m_fDbgAutoShow;
-    mStartPaused = false;
+    m_enmStartRunning = StartRunning_Default;
 #endif
 
     mShowStartVMErrors = true;
@@ -4108,21 +4108,18 @@ void VBoxGlobal::prepare()
             setDebuggerVar(&m_fDbgAutoShow, true);
             setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
             setDebuggerVar(&m_fDbgAutoShowStatistics, true);
-            mStartPaused = true;
         }
         else if (!::strcmp(arg, "--debug-command-line"))
         {
             setDebuggerVar(&m_fDbgEnabled, true);
             setDebuggerVar(&m_fDbgAutoShow, true);
             setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
-            mStartPaused = true;
         }
         else if (!::strcmp(arg, "--debug-statistics"))
         {
             setDebuggerVar(&m_fDbgEnabled, true);
             setDebuggerVar(&m_fDbgAutoShow, true);
             setDebuggerVar(&m_fDbgAutoShowStatistics, true);
-            mStartPaused = true;
         }
         else if (!::strcmp(arg, "-no-debug") || !::strcmp(arg, "--no-debug"))
         {
@@ -4133,9 +4130,9 @@ void VBoxGlobal::prepare()
         }
         /* Not quite debug options, but they're only useful with the debugger bits. */
         else if (!::strcmp(arg, "--start-paused"))
-            mStartPaused = true;
+            m_enmStartRunning = StartRunning_No;
         else if (!::strcmp(arg, "--start-running"))
-            mStartPaused = false;
+            m_enmStartRunning = StartRunning_Yes;
 #endif
         /** @todo add an else { msgbox(syntax error); exit(1); } here, pretty please... */
         i++;
@@ -4205,7 +4202,7 @@ void VBoxGlobal::prepare()
         if (RT_FAILURE(vrc))
         {
             m_hVBoxDbg = NIL_RTLDRMOD;
-            m_fDbgAutoShow =  m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
+            m_fDbgAutoShow = m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
             LogRel(("Failed to load VBoxDbg, rc=%Rrc - %s\n", vrc, ErrInfo.Core.pszMsg));
         }
     }
@@ -4390,7 +4387,7 @@ void VBoxGlobal::initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const 
                  || pStr->startsWith("d")  // disable
                  || pStr->startsWith("f")  // false
                  || pStr->startsWith("off")
-                 || pStr->contains("veto")
+                 || pStr->contains("veto") /* paranoia */
                  || pStr->toLongLong() == 0)
             *piDbgCfgVar = VBOXGLOBAL_DBG_CFG_VAR_FALSE;
         else
