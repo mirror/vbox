@@ -1495,17 +1495,18 @@ static VMSVGAINFOENUM const g_aD3DFormats[] =
     { D3DFMT_G32R32F        , "G32R32F" },
     { D3DFMT_A32B32G32R32F  , "A32B32G32R32F" },
     { D3DFMT_CxV8U8         , "CxV8U8" },
-    { D3DFMT_UYVY           , "UYVY" },
-    { D3DFMT_YUY2           , "YUY2" },
+    /* Fourcc values, MSB is in the right most char:  */
+    { D3DFMT_MULTI2_ARGB8   , "MULTI2_ARGB8" },
     { D3DFMT_DXT1           , "DXT1" },
     { D3DFMT_DXT2           , "DXT2" },
+    { D3DFMT_YUY2           , "YUY2" },
     { D3DFMT_DXT3           , "DXT3" },
     { D3DFMT_DXT4           , "DXT4" },
     { D3DFMT_DXT5           , "DXT5" },
-    { D3DFMT_MULTI2_ARGB8   , "MULTI2_ARGB8" },
     { D3DFMT_G8R8_G8B8      , "G8R8_G8B8" },
     { D3DFMT_R8G8_B8G8      , "R8G8_B8G8" },
-    { D3DFMT_FORCE_DWORD    , "FORCE_DWORD" },
+    { D3DFMT_UYVY           , "UYVY" },
+    { D3DFMT_FORCE_DWORD    , "FORCE_DWORD" }, /* UINT32_MAX */
 };
 VMSVGAINFOENUMMAP_MAKE(static, g_D3DFormat2String, g_aD3DFormats, "D3DFMT_");
 
