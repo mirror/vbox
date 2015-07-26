@@ -375,13 +375,13 @@ int main()
 # endif
 #endif
 #ifdef VBE_NEW_DYN_LIST
-    GEN_CHECK_OFF(VGASTATE, pu8VBEExtraData);
+    GEN_CHECK_OFF(VGASTATE, pbVBEExtraData);
     GEN_CHECK_OFF(VGASTATE, cbVBEExtraData);
     GEN_CHECK_OFF(VGASTATE, u16VBEExtraAddress);
 #endif
-    GEN_CHECK_OFF(VGASTATE, pu8Logo);
+    GEN_CHECK_OFF(VGASTATE, pbLogo);
     GEN_CHECK_OFF(VGASTATE, pszLogoFile);
-    GEN_CHECK_OFF(VGASTATE, pu8LogoBitmap);
+    GEN_CHECK_OFF(VGASTATE, pbLogoBitmap);
     GEN_CHECK_OFF(VGASTATE, offLogoData);
     GEN_CHECK_OFF(VGASTATE, cbLogo);
     GEN_CHECK_OFF(VGASTATE, LogoCommand);
@@ -394,7 +394,7 @@ int main()
     GEN_CHECK_OFF(VGASTATE, cLogoPalEntries);
     GEN_CHECK_OFF(VGASTATE, fLogoClearScreen);
     GEN_CHECK_OFF(VGASTATE, au32LogoPalette);
-    GEN_CHECK_OFF(VGASTATE, pu8VgaBios);
+    GEN_CHECK_OFF(VGASTATE, pbVgaBios);
     GEN_CHECK_OFF(VGASTATE, cbVgaBios);
     GEN_CHECK_OFF(VGASTATE, pszVgaBiosFile);
 #ifdef VBOX_WITH_HGSMI
