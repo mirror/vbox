@@ -45,7 +45,8 @@
           <glossdef>
             <para>All versions, editions and service packs are fully supported
             (including 64-bit versions, under the preconditions listed below).
-            Guest Additions are available.</para>
+            Guest Additions are available. Windows 8 and later requires hardware
+            virtualization to be enabled.</para>
           </glossdef>
         </glossentry>
 
