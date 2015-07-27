@@ -491,6 +491,9 @@ SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
 
 /** @internal  */
 SUPDECL(uint64_t) SUPGetCpuHzFromGipForAsyncMode(PSUPGLOBALINFOPAGE pGip);
+SUPDECL(bool)     SUPIsTscFreqCompatible(uint64_t uCpuHz, uint64_t *puGipCpuHz, bool fRelax);
+SUPDECL(bool)     SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz, bool fRelax);
+
 
 /**
  * Gets the TSC frequency of the calling CPU.
@@ -548,67 +551,6 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGipBySetIndex(PSUPGLOBALINFOPAGE pGip, uint3
     }
     AssertFailed();
     return UINT64_MAX;
-}
-
-
-/**
- * Worker for SUPIsTscFreqCompatible().
- *
- * @returns true if it's compatible, false otherwise.
- * @param   uBaseCpuHz      The reference CPU frequency of the system.
- * @param   uCpuHz          The CPU frequency to compare with the base.
- * @param   fRelax          Whether to use a more relaxed threshold (like
- *                          for when running in a virtualized environment).
- *
- * @remarks Don't use directly, use SUPIsTscFreqCompatible() instead. This is
- *          to be used by tstGIP-2 or the like.
- *
- * @todo    r=bird: There is no need to inline this, is there? Move to
- *          SUPLibAll.cpp
- */
-DECLINLINE(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz, bool fRelax)
-{
-    if (uBaseCpuHz != uCpuHz)
-    {
-        /* Arbitrary tolerance threshold, tweak later if required, perhaps
-           more tolerance on lower frequencies and less tolerance on higher. */
-        uint16_t uThr = !fRelax ? 666 /* 0.15% */ : 125 /* 0.8% */;
-        uint64_t uLo  = uBaseCpuHz / uThr;
-        uint64_t uHi  = uBaseCpuHz + (uBaseCpuHz - uLo);
-        if (   uCpuHz < uLo
-            || uCpuHz > uHi)
-            return false;
-    }
-    return true;
-}
-
-
-/**
- * Checks if the provided TSC frequency is close enough to the computed TSC
- * frequency of the host.
- *
- * @returns true if it's compatible, false otherwise.
- * @param   uCpuHz          The TSC frequency to check.
- * @param   puGipCpuHz      Where to store the GIP TSC frequency used
- *                          during the compatibility test - optional.
- * @param   fRelax          Whether to use a more relaxed threshold (like
- *                          for when running in a virtualized environment).
- *
- * @todo    r=bird: There is no need to inline this, is there? Move to
- *          SUPLibAll.cpp
- */
-DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t uCpuHz, uint64_t *puGipCpuHz, bool fRelax)
-{
-    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    if (   pGip
-        && pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-    {
-        uint64_t uGipCpuHz = pGip->u64CpuHz;
-        if (puGipCpuHz)
-            *puGipCpuHz = uGipCpuHz;
-        return SUPIsTscFreqCompatibleEx(uGipCpuHz, uCpuHz, fRelax);
-    }
-    return false;
 }
 
 
