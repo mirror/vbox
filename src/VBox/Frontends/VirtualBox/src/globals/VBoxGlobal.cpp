@@ -3336,6 +3336,85 @@ bool VBoxGlobal::setFullScreenMonitorX11(QWidget *pWidget, ulong uScreenId)
                                uScreenId, uScreenId, uScreenId, uScreenId,
                                1 /* Source indication (1 = normal application) */);
 }
+
+/* static */
+QVector<Atom> VBoxGlobal::flagsNetWmState(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = pWidget->x11Info().display();
+
+    /* Prepare atoms: */
+    QVector<Atom> resultNetWmState;
+    Atom net_wm_state = XInternAtom(pDisplay, "_NET_WM_STATE", True /* only if exists */);
+
+    /* Get the size of the property data: */
+    Atom actual_type;
+    int iActualFormat;
+    ulong uPropertyLength;
+    ulong uBytesLeft;
+    uchar *pPropertyData = 0;
+    if (XGetWindowProperty(pDisplay, pWidget->window()->winId(),
+                           net_wm_state, 0, 0, False, XA_ATOM, &actual_type, &iActualFormat,
+                           &uPropertyLength, &uBytesLeft, &pPropertyData) == Success &&
+        actual_type == XA_ATOM && iActualFormat == 32)
+    {
+        resultNetWmState.resize(uBytesLeft / 4);
+        XFree((char*)pPropertyData);
+        pPropertyData = 0;
+
+        /* Fetch all data: */
+        if (XGetWindowProperty(pDisplay, pWidget->window()->winId(),
+                               net_wm_state, 0, resultNetWmState.size(), False, XA_ATOM, &actual_type, &iActualFormat,
+                               &uPropertyLength, &uBytesLeft, &pPropertyData) != Success)
+            resultNetWmState.clear();
+        else if (uPropertyLength != (ulong)resultNetWmState.size())
+            resultNetWmState.resize(uPropertyLength);
+
+        /* Put it into resultNetWmState: */
+        if (!resultNetWmState.isEmpty())
+            memcpy(resultNetWmState.data(), pPropertyData, resultNetWmState.size() * sizeof(Atom));
+        if (pPropertyData)
+            XFree((char*)pPropertyData);
+    }
+
+    /* Return result: */
+    return resultNetWmState;
+}
+
+/* static */
+bool VBoxGlobal::isFullScreenFlagSet(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = pWidget->x11Info().display();
+
+    /* Prepare atoms: */
+    Atom net_wm_state_fullscreen = XInternAtom(pDisplay, "_NET_WM_STATE_FULLSCREEN", True /* only if exists */);
+
+    /* Check if flagsNetWmState(pWidget) contains full-screen flag: */
+    return flagsNetWmState(pWidget).contains(net_wm_state_fullscreen);
+}
+
+/* static */
+void VBoxGlobal::setFullScreenFlag(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = pWidget->x11Info().display();
+
+    /* Prepare atoms: */
+    QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
+    Atom net_wm_state = XInternAtom(pDisplay, "_NET_WM_STATE", True /* only if exists */);
+    Atom net_wm_state_fullscreen = XInternAtom(pDisplay, "_NET_WM_STATE_FULLSCREEN", True /* only if exists */);
+
+    /* Append resultNetWmState with full-screen flag if necessary: */
+    if (!resultNetWmState.contains(net_wm_state_fullscreen))
+    {
+        resultNetWmState.append(net_wm_state_fullscreen);
+        /* Apply property to widget again: */
+        XChangeProperty(pDisplay, pWidget->window()->winId(),
+                        net_wm_state, XA_ATOM, 32, PropModeReplace,
+                        (unsigned char*)resultNetWmState.data(), resultNetWmState.size());
+    }
+}
 #endif /* Q_WS_X11 */
 
 /**

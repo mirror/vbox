@@ -46,6 +46,11 @@
 #include "CSession.h"
 #include "CGuestOSType.h"
 
+/* Other includes: */
+#ifdef Q_WS_X11
+# include <X11/Xdefs.h>
+#endif /* Q_WS_X11 */
+
 /* Forward declarations: */
 class QAction;
 class QLabel;
@@ -375,6 +380,13 @@ public:
     static bool supportsFullScreenMonitorsProtocolX11();
     /** X11: Performs mapping of the passed @a pWidget to host-screen with passed @a uScreenId. */
     static bool setFullScreenMonitorX11(QWidget *pWidget, ulong uScreenId);
+
+    /** X11: Returns a list of current _NET_WM_STATE flags for passed @a pWidget. */
+    static QVector<Atom> flagsNetWmState(QWidget *pWidget);
+    /** X11: Check whether _NET_WM_STATE_FULLSCREEN flag is set for passed @a pWidget. */
+    static bool isFullScreenFlagSet(QWidget *pWidget);
+    /** X11: Sets _NET_WM_STATE_FULLSCREEN flag for passed @a pWidget. */
+    static void setFullScreenFlag(QWidget *pWidget);
 #endif /* Q_WS_X11 */
 
     static QString removeAccelMark (const QString &aText);
