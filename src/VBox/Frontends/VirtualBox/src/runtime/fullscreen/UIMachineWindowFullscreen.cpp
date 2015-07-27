@@ -129,6 +129,9 @@ void UIMachineWindowFullscreen::sltRevokeWindowActivation()
         return;
 
     /* Revoke stolen activation: */
+#ifdef Q_WS_X11
+    raise();
+#endif /* Q_WS_X11 */
     activateWindow();
 }
 #endif /* Q_WS_WIN || Q_WS_X11 */
