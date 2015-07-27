@@ -5253,7 +5253,7 @@
     </message>
     <message>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Passwort für &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; ist falsch.</translation>
     </message>
 </context>
 <context>
