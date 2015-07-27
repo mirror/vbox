@@ -312,15 +312,17 @@ SUPDECL(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz, boo
 SUPDECL(bool) SUPIsTscFreqCompatible(uint64_t uCpuHz, uint64_t *puGipCpuHz, bool fRelax)
 {
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    bool     fCompat = false;
+    uint64_t uGipCpuHz = 0;
     if (   pGip
         && pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
     {
-        uint64_t uGipCpuHz = pGip->u64CpuHz;
-        if (puGipCpuHz)
-            *puGipCpuHz = uGipCpuHz;
-        return SUPIsTscFreqCompatibleEx(uGipCpuHz, uCpuHz, fRelax);
+        uGipCpuHz = pGip->u64CpuHz;
+        fCompat   = SUPIsTscFreqCompatibleEx(uGipCpuHz, uCpuHz, fRelax);
     }
-    return false;
+    if (puGipCpuHz)
+        *puGipCpuHz = uGipCpuHz;
+    return fCompat;
 }
 
 #endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
