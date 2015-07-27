@@ -94,6 +94,9 @@ public:
 
 protected slots:
 
+    /** Performs machine-window activation. */
+    void sltActivateWindow() { activateWindow(); }
+
     /* Session event-handlers: */
     virtual void sltMachineStateChanged();
 

@@ -678,7 +678,31 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     /* Detect if we have window activation stolen: */
     if (pWatched == this && pEvent->type() == QEvent::WindowActivate)
+    {
+#if   defined(Q_WS_WIN)
         emit sigNotifyAboutWindowActivationStolen();
+#elif defined(Q_WS_X11)
+        switch (vboxGlobal().typeOfWindowManager())
+        {
+            case X11WMType_GNOMEShell:
+            case X11WMType_Mutter:
+            {
+                // WORKAROUND:
+                // Under certain WMs we can receive stolen activation event too early,
+                // returning activation to initial source immediately makes no sense.
+                // In fact, Qt is not become aware of actual window activation later,
+                // so we are going to return window activation in let's say 100ms.
+                QTimer::singleShot(100, this, SLOT(sltNotifyAboutWindowActivationStolen()));
+                break;
+            }
+            default:
+            {
+                emit sigNotifyAboutWindowActivationStolen();
+                break;
+            }
+        }
+#endif /* Q_WS_X11 */
+    }
 
     /* Call to base-class: */
     return QWidget::eventFilter(pWatched, pEvent);
