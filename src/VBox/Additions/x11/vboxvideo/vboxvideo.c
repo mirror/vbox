@@ -284,8 +284,9 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
                        adjustedWidth, height, (unsigned) pVBox->cbFBMax / 1024);
             return FALSE;
         }
-        vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * (pScrn->bitsPerPixel / 8),
-                      ((size_t)adjustedWidth) * height * (pScrn->bitsPerPixel / 8));
+        if (pScrn->vtSema)
+            vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * (pScrn->bitsPerPixel / 8),
+                          ((size_t)adjustedWidth) * height * (pScrn->bitsPerPixel / 8));
         pScreen->ModifyPixmapHeader(pPixmap, adjustedWidth, height, pScrn->depth, pScrn->bitsPerPixel, cbLine, pVBox->base);
     }
     pScrn->displayWidth = pScrn->virtualX = adjustedWidth;
@@ -299,7 +300,7 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
 
 /** Set a video mode to the hardware, RandR 1.1 version.  Since we no longer do
  * virtual frame buffers, adjust the screen pixmap dimensions to match. */
-static void setModeRandR11(ScrnInfoPtr pScrn, DisplayModePtr pMode, bool fScreenInitTime)
+static void setModeRandR11(ScrnInfoPtr pScrn, DisplayModePtr pMode, bool fScreenInitTime, bool fEnterVTTime)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     struct vbvxFrameBuffer frameBuffer = { 0, 0, pMode->HDisplay, pMode->VDisplay, pScrn->bitsPerPixel};
@@ -316,9 +317,18 @@ static void setModeRandR11(ScrnInfoPtr pScrn, DisplayModePtr pMode, bool fScreen
     {
         xf86ScrnToScreen(pScrn)->width = pMode->HDisplay;
         xf86ScrnToScreen(pScrn)->height = pMode->VDisplay;
+        /* This prevents a crash in CentOS 3.  I was unable to debug it to
+         * satisfaction, partly due to the lack of symbols.  My guess is that
+         * pScrn->ModifyPixmapHeader() expects certain things to be set up when
+         * it sees pScrn->vtSema set to true which are not quite done at this
+         * point of the VT switch. */
+        if (fEnterVTTime)
+            pScrn->vtSema = FALSE;
         adjustScreenPixmap(pScrn, pMode->HDisplay, pMode->VDisplay);
+        if (fEnterVTTime)
+            pScrn->vtSema = TRUE;
     }
-    if (pMode->HDisplay != 0 && pMode->VDisplay != 0)
+    if (pMode->HDisplay != 0 && pMode->VDisplay != 0 && pScrn->vtSema)
         vbvxSetMode(pScrn, 0, pMode->HDisplay, pMode->VDisplay, 0, 0, true, true, &frameBuffer);
     pScrn->currentMode = pMode;
 }
@@ -347,7 +357,7 @@ static void setModeRandR12(ScrnInfoPtr pScrn, unsigned cScreen)
     VBVXASSERT(originalX == VBOX_VIDEO_MAX_VIRTUAL && originalY == VBOX_VIDEO_MAX_VIRTUAL, ("OriginalSize=%dx%d",
                originalX, originalY));
     for (i = cFirst; i < cLast; ++i)
-        if (pVBox->pScreens[i].paCrtcs->mode.HDisplay != 0 && pVBox->pScreens[i].paCrtcs->mode.VDisplay != 0)
+        if (pVBox->pScreens[i].paCrtcs->mode.HDisplay != 0 && pVBox->pScreens[i].paCrtcs->mode.VDisplay != 0 && pScrn->vtSema)
             vbvxSetMode(pScrn, i, pVBox->pScreens[i].paCrtcs->mode.HDisplay, pVBox->pScreens[i].paCrtcs->mode.VDisplay,
                         pVBox->pScreens[i].paCrtcs->x, pVBox->pScreens[i].paCrtcs->y, pVBox->pScreens[i].fPowerOn,
                         pVBox->pScreens[i].paOutputs->status == XF86OutputStatusConnected, &frameBuffer);
@@ -371,13 +381,6 @@ static Bool vbox_config_resize(ScrnInfoPtr pScrn, int cw, int ch)
     unsigned i;
 
     TRACE_LOG("width=%d, height=%d\n", cw, ch);
-    /* Don't fiddle with the hardware if we are switched
-     * to a virtual terminal. */
-    if (!pScrn->vtSema) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                   "We do not own the active VT, exiting.\n");
-        return TRUE;
-    }
     rc = adjustScreenPixmap(pScrn, cw, ch);
     /* Power-on all screens (the server expects this) and set the new pitch to them. */
     for (i = 0; i < pVBox->cScreens; ++i)
@@ -438,14 +441,6 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
     pVBox->pScreens[cDisplay].aScreenLocation.cy = adjusted_mode->VDisplay;
     pVBox->pScreens[cDisplay].aScreenLocation.x = x;
     pVBox->pScreens[cDisplay].aScreenLocation.y = y;
-    /* Don't fiddle with the hardware if we are switched
-     * to a virtual terminal. */
-    if (!crtc->scrn->vtSema)
-    {
-        xf86DrvMsg(crtc->scrn->scrnIndex, X_ERROR,
-                   "We do not own the active VT, exiting.\n");
-        return;
-    }
     setModeRandR12(crtc->scrn, cDisplay);
 }
 
@@ -1168,6 +1163,7 @@ static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime
 #else
     setSizesRandR11(pScrn);
 #endif
+    /* This calls EnableDisableFBAccess(), so only use when switched in. */
     if (pScrn->vtSema)
         vbvxReprobeCursor(pScrn);
 }
@@ -1340,7 +1336,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     setSizesAndCursorIntegration(pScrn, true);
 #else
     /* set first video mode */
-    setModeRandR11(pScrn, pScrn->currentMode, true);
+    setModeRandR11(pScrn, pScrn->currentMode, true, false);
 #endif
 
     /* Register block and wake-up handlers for getting new screen size hints. */
@@ -1413,14 +1409,7 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
     vbvxReadSizesAndCursorIntegrationFromProperties(pScrn, NULL);
     setSizesAndCursorIntegration(pScrn, false);
 #else
-    /* This prevents a crash in CentOS 3.  I was unable to debug it to
-     * satisfaction, partly due to the lack of symbols.  My guess is that
-     * pScrn->ModifyPixmapHeader() expects certain things to be set up when
-     * it sees pScrn->vtSema set to true which are not quite done at this
-     * point of the VT switch. */
-    pScrn->vtSema = FALSE;
-    setModeRandR11(pScrn, pScrn->currentMode, false);
-    pScrn->vtSema = TRUE;
+    setModeRandR11(pScrn, pScrn->currentMode, false, true);
 #endif
 #ifdef SET_HAVE_VT_PROPERTY
     updateHasVTProperty(pScrn, TRUE);
@@ -1512,16 +1501,10 @@ static Bool VBOXSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     Bool rc = TRUE;
 
     TRACE_LOG("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
-    if (!pScrn->vtSema)
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                   "We do not own the active VT, exiting.\n");
-        return TRUE;
-    }
 #ifdef VBOXVIDEO_13
     rc = xf86SetSingleMode(pScrn, pMode, RR_Rotate_0);
 #else
-    setModeRandR11(pScrn, pMode, false);
+    setModeRandR11(pScrn, pMode, false, false);
 #endif
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
