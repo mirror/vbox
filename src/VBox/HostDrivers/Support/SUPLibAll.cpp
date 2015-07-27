@@ -269,7 +269,6 @@ SUPDECL(uint64_t) SUPGetCpuHzFromGipForAsyncMode(PSUPGLOBALINFOPAGE pGip)
 }
 
 
-
 /**
  * Worker for SUPIsTscFreqCompatible().
  *
