@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
- 
+
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
@@ -11,16 +11,59 @@
     <itemizedlist>
 
       <listitem>
-        <para>VMM: fixed an issue causing artifically high load averages on Linux hosts</para>
+        <para>VMM: fixed an issue causing artifically high load averages on
+          Linux hosts</para>
       </listitem>
 
       <listitem>
-        <para>VMM: fixed a kernel panic with thread-context hooks caused by incompatible
-          changes made to Linux 4.2 kernels</para>
+        <para>VMM: fixed a kernel panic with thread-context hooks caused by
+          incompatible changes made to Linux 4.2 kernels</para>
       </listitem>
 
       <listitem>
-        <para>VRDP: allow Windows 10 RDP client (bug #14216)</para>
+        <para>VMM: fixed saved state issue with VT-x/AMD-V disabled
+          (5.0 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed behavior when checking for the correct disk encryption
+          password</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: don't switch the highlight bar in the VM selector to the newly
+          created VM if the VM was created by another client (e.g. VBoxManage)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: don't deny changing the network adapter type at
+          VM runtime (5.0 regression; bug #14308)</para>
+      </listitem>
+
+      <listitem>
+        <para>VRDP: allow Windows 10 RDP clients (bug #14216)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fix a possible crash on VM process termination
+          (5.0 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>3D: basic support for saving/restoring display lists</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: El Capitan fixes (USB)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed a potential crash in the WDDM driver
+          with Windows 10 (bug #14190)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris Additions: added support for X.Org Server 1.17</para>
       </listitem>
 
     </itemizedlist>
