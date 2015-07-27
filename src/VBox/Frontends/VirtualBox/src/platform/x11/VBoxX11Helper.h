@@ -22,10 +22,11 @@
 enum X11WMType
 {
     X11WMType_Unknown,
-    X11WMType_KWin,
     X11WMType_Compiz,
+    X11WMType_GNOMEShell,
+    X11WMType_KWin,
     X11WMType_Mutter,
-    X11WMType_GnomeShell,
+    X11WMType_Xfwm4,
 };
 
 /** X11: Determines and returns current Window Manager type. */

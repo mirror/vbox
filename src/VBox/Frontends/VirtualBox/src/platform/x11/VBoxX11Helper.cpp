@@ -69,17 +69,20 @@ X11WMType X11WindowManagerType()
                                    0, 512, False, utf8Atom, &atom_returned_type,
                                    &iReturnedFormat, &ulReturnedItemCount, &ulDummy, &pcData) == Success)
             {
-                if (QString((const char*)pcData).contains("KWin", Qt::CaseInsensitive))
-                    wmType = X11WMType_KWin;
-                else
                 if (QString((const char*)pcData).contains("Compiz", Qt::CaseInsensitive))
                     wmType = X11WMType_Compiz;
+                else
+                if (QString((const char*)pcData).contains("GNOME Shell", Qt::CaseInsensitive))
+                    wmType = X11WMType_GNOMEShell;
+                else
+                if (QString((const char*)pcData).contains("KWin", Qt::CaseInsensitive))
+                    wmType = X11WMType_KWin;
                 else
                 if (QString((const char*)pcData).contains("Mutter", Qt::CaseInsensitive))
                     wmType = X11WMType_Mutter;
                 else
-                if (QString((const char*)pcData).contains("GNOME Shell", Qt::CaseInsensitive))
-                    wmType = X11WMType_GnomeShell;
+                if (QString((const char*)pcData).contains("Xfwm4", Qt::CaseInsensitive))
+                    wmType = X11WMType_Xfwm4;
                 if (pcData)
                     XFree(pcData);
             }
