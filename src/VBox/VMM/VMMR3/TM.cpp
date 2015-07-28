@@ -1359,22 +1359,26 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
      * saved state of the VM, fall back to emulating TSC and disallow TSC mode
      * switches during VM runtime (e.g. by GIM).
      */
-    uint64_t uGipCpuHz;
-    bool fRelax  = RTSystemIsInsideVM();
-    bool fCompat = SUPIsTscFreqCompatible(pVM->tm.s.cTSCTicksPerSecond, &uGipCpuHz, fRelax);
-    if (!fCompat)
+    if (   GIMIsEnabled(pVM)
+        || pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
     {
-        pVM->tm.s.enmTSCMode = TMTSCMODE_VIRT_TSC_EMULATED;
-        pVM->tm.s.fTSCModeSwitchAllowed = false;
-        if (g_pSUPGlobalInfoPage->u32Mode != SUPGIPMODE_ASYNC_TSC)
+        uint64_t uGipCpuHz;
+        bool fRelax  = RTSystemIsInsideVM();
+        bool fCompat = SUPIsTscFreqCompatible(pVM->tm.s.cTSCTicksPerSecond, &uGipCpuHz, fRelax);
+        if (!fCompat)
         {
-            LogRel(("TM: TSC frequency incompatible! uGipCpuHz=%#RX64 (%'RU64) enmTSCMode=%d (%s) fTSCModeSwitchAllowed=%RTbool (state load)\n",
-                    uGipCpuHz, uGipCpuHz, pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM), pVM->tm.s.fTSCModeSwitchAllowed));
-        }
-        else
-        {
-            LogRel(("TM: GIP is async, enmTSCMode=%d (%s) fTSCModeSwitchAllowed=%RTbool (state load)\n",
-                    uGipCpuHz, uGipCpuHz, pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM), pVM->tm.s.fTSCModeSwitchAllowed));
+            pVM->tm.s.enmTSCMode = TMTSCMODE_VIRT_TSC_EMULATED;
+            pVM->tm.s.fTSCModeSwitchAllowed = false;
+            if (g_pSUPGlobalInfoPage->u32Mode != SUPGIPMODE_ASYNC_TSC)
+            {
+                LogRel(("TM: TSC frequency incompatible! uGipCpuHz=%#RX64 (%'RU64) enmTSCMode=%d (%s) fTSCModeSwitchAllowed=%RTbool (state load)\n",
+                        uGipCpuHz, uGipCpuHz, pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM), pVM->tm.s.fTSCModeSwitchAllowed));
+            }
+            else
+            {
+                LogRel(("TM: GIP is async, enmTSCMode=%d (%s) fTSCModeSwitchAllowed=%RTbool (state load)\n",
+                        uGipCpuHz, uGipCpuHz, pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM), pVM->tm.s.fTSCModeSwitchAllowed));
+            }
         }
     }
 #endif
