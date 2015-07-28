@@ -4,7 +4,7 @@
 <context>
     <name>@@@</name>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+2076"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+2094"/>
         <source>English</source>
         <comment>Native language name</comment>
         <translation>Euskara</translation>
@@ -526,7 +526,7 @@
         <translation type="unfinished">Erakutsi O&amp;harra...</translation>
     </message>
     <message>
-        <location line="+839"/>
+        <location line="+849"/>
         <source>%1%</source>
         <comment>scale-factor</comment>
         <translation type="unfinished">%1%</translation>
@@ -556,7 +556,7 @@
         <translation type="obsolete">&amp;USB Gailuak</translation>
     </message>
     <message>
-        <location line="-1187"/>
+        <location line="-1197"/>
         <source>&amp;Webcams</source>
         <translation>&amp;Webkamerak</translation>
     </message>
@@ -6180,7 +6180,7 @@
     </message>
     <message>
         <location filename="../src/UIVMInfoDialog.cpp" line="+707"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-723"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-742"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-505"/>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="-1720"/>
         <source>Controller: %1</source>
@@ -8534,17 +8534,17 @@
 <context>
     <name>UIMiniToolBar</name>
     <message>
-        <location filename="../src/widgets/UIMiniToolBar.cpp" line="+675"/>
+        <location filename="../src/widgets/UIMiniToolBar.cpp" line="+288"/>
         <source>Always show the toolbar</source>
         <translation>Betik erakutsi tresnabarra</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+26"/>
         <source>Minimize Window</source>
         <translation>Txikiengotu Leihoa</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+7"/>
         <source>Exit Full Screen or Seamless Mode</source>
         <translation>Irten Ikusleiho Osotik edo Irudizko Modutik</translation>
     </message>
@@ -8557,7 +8557,7 @@
 <context>
     <name>UIMultiScreenLayout</name>
     <message>
-        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+2094"/>
+        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+2104"/>
         <location line="+15"/>
         <location line="+47"/>
         <source>Virtual Screen %1</source>
@@ -8898,7 +8898,7 @@
 <context>
     <name>UISession</name>
     <message>
-        <location filename="../src/runtime/UISession.cpp" line="+525"/>
+        <location filename="../src/runtime/UISession.cpp" line="+520"/>
         <source>Updating Guest Additions</source>
         <translation>Gonbidatu Gehigarriak Eguneratzen</translation>
     </message>
@@ -10408,7 +10408,7 @@
 <context>
     <name>UIWizardNewVM</name>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+293"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+320"/>
         <source>Create Virtual Machine</source>
         <translation>Sortu Makina Birtuala</translation>
     </message>
@@ -11168,14 +11168,14 @@
         <translation>Hostalari Gailua</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+688"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+707"/>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>Erabiltzaileak-zehaztuta</translation>
     </message>
     <message>
         <location filename="../src/UIVMInfoDialog.cpp" line="-176"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-1055"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-1074"/>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-9"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
@@ -11439,14 +11439,14 @@
         <translation>Ezarrita</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+1017"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+1036"/>
         <source>Differencing</source>
         <comment>DiskType</comment>
         <translation>Bereizlea</translation>
     </message>
     <message>
         <location filename="../src/UIVMInfoDialog.cpp" line="-1"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-1052"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-1071"/>
         <source>Nested Paging</source>
         <comment>details report</comment>
         <translation>Nested Orrialdeztapena</translation>
@@ -11790,7 +11790,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="+203"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="+218"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n urte</numerusform>
@@ -11864,7 +11864,7 @@
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+76"/>
         <location line="+19"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+1602"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+1621"/>
         <location line="+32"/>
         <source>B</source>
         <comment>size suffix Bytes</comment>
@@ -11944,7 +11944,7 @@
         <translation>Mugagabeko Exekuzioa</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-1931"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-1950"/>
         <source>Unknown device</source>
         <comment>USB device details</comment>
         <translation>Gailu ezezaguna</translation>
@@ -11969,7 +11969,7 @@
         <translation>Ezgaituta</translation>
     </message>
     <message>
-        <location line="+439"/>
+        <location line="+445"/>
         <source>Please choose a virtual hard disk file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12054,7 +12054,7 @@
         <translation>ICH9</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-565"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-571"/>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Execution Cap</source>
         <comment>details report</comment>
@@ -12485,7 +12485,7 @@
         <translation type="obsolete">Diska gogor birtual agiri guztiak (%1)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+315"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+321"/>
         <source>Please choose a virtual optical disk file</source>
         <translation>Mesedez hautatu diska optiko birtual agiri bat</translation>
     </message>
@@ -12505,7 +12505,7 @@
         <translation>Disketa birtual agiri guztiak (%1)</translation>
     </message>
     <message>
-        <location line="+1989"/>
+        <location line="+1972"/>
         <source>VDI (VirtualBox Disk Image)</source>
         <translation>VDI (VirtualBox Diska Irudia)</translation>
     </message>
