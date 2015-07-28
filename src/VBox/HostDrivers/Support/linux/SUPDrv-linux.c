@@ -1106,14 +1106,15 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 }
 
 
-/**
- * Returns configuration flags of the host kernel.
- */
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 {
     uint32_t fFlags = 0;
 #ifdef CONFIG_PAX_KERNEXEC
     fFlags |= SUPKERNELFEATURES_GDT_READ_ONLY;
+#endif
+#ifdef CONFIG_X86_SMAP
+    if (ASMGetCR4() & X86_CR4_SMAP)
+        fFlags |= SUPKERNELFEATURES_SMAP;
 #endif
     return fFlags;
 }

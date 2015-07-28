@@ -101,6 +101,8 @@ typedef enum SUPPAGINGMODE
  */
 /** GDT is read-only. */
 #define SUPKERNELFEATURES_GDT_READ_ONLY     RT_BIT(0)
+/** SMAP is possibly enabled. */
+#define SUPKERNELFEATURES_SMAP              RT_BIT(1)
 /** @} */
 
 
@@ -1798,7 +1800,6 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
-SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
 SUPR0DECL(RTCCUINTREG) SUPR0ChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask);
 SUPR0DECL(int) SUPR0EnableVTx(bool fEnable);
 SUPR0DECL(bool) SUPR0SuspendVTxOnCpu(void);
@@ -1808,6 +1809,14 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended);
 #define SUP_TSCDELTA_MEASURE_F_VALID_MASK   UINT32_C(0x00000003)
 SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t iCpuSet, uint32_t fFlags,
                                               RTMSINTERVAL cMsWaitRetry, RTMSINTERVAL cMsWaitThread, uint32_t cTries);
+
+/**
+ * Returns configuration flags of the host kernel.
+ *
+ * @returns Combination of SUPKERNELFEATURES_XXX flags.
+ */
+SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
+
 
 /** @name Absolute symbols
  * Take the address of these, don't try call them.

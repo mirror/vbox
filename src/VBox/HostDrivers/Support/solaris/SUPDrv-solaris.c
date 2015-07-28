@@ -1285,9 +1285,6 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 }
 
 
-/**
- * Returns configuration flags of the host kernel.
- */
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 {
     return 0;
