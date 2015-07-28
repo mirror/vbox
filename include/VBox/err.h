@@ -1172,6 +1172,9 @@
 #define VERR_VMM_SWITCHER_STUB              (-2715)
 /** HM returned in the wrong state. */
 #define VERR_VMM_WRONG_HM_VMCPU_STATE       (-2716)
+/** SMAP enabled, but the AC flag was found to be clear - check the kernel
+ * log for details. */
+#define VERR_VMM_SMAP_BUT_AC_CLEAR          (-2717)
 /** @} */
 
 

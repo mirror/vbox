@@ -62,6 +62,37 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** SMAP check setup. */
+#define VMM_CHECK_SMAP_SETUP() uint32_t const fKernelFeatures = SUPR0GetKernelFeatures()
+/** Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it
+ * will be logged and @a a_BadExpr is executed. */
+#define VMM_CHECK_SMAP_CHECK(a_BadExpr) \
+    do { \
+        if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
+        { \
+            RTCCUINTREG uEFlags = ASMGetFlags(); \
+            if (RT_LIKELY(uEFlags & X86_EFL_AC)) \
+            { /* likely */ } \
+            else \
+            { \
+                SUPR0Printf("%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)uEFlags); \
+                a_BadExpr; \
+            } \
+        } \
+    } while (0)
+/** Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it
+ * will be logged, written to the VMs assertion text buffer, and @a a_BadExpr is
+ * executed. */
+#define VMM_CHECK_SMAP_CHECK2(a_pVM, a_BadExpr) \
+    VMM_CHECK_SMAP_CHECK( \
+        RTStrPrintf(pVM->vmm.s.szRing0AssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1), \
+                    "%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)uEFlags); \
+        a_BadExpr)
+
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 RT_C_DECLS_BEGIN
@@ -105,6 +136,9 @@ extern "C" { char _depends_on[] = "vboxdrv"; }
  */
 DECLEXPORT(int) ModuleInit(void *hMod)
 {
+    VMM_CHECK_SMAP_SETUP();
+    VMM_CHECK_SMAP_CHECK(RT_NOTHING);
+
 #ifdef VBOX_WITH_DTRACE_R0
     /*
      * The first thing to do is register the static tracepoints.
@@ -132,41 +166,54 @@ DECLEXPORT(int) ModuleInit(void *hMod)
     int rc = vmmInitFormatTypes();
     if (RT_SUCCESS(rc))
     {
+        VMM_CHECK_SMAP_CHECK(RT_NOTHING);
         rc = GVMMR0Init();
         if (RT_SUCCESS(rc))
         {
+            VMM_CHECK_SMAP_CHECK(RT_NOTHING);
             rc = GMMR0Init();
             if (RT_SUCCESS(rc))
             {
+                VMM_CHECK_SMAP_CHECK(RT_NOTHING);
                 rc = HMR0Init();
                 if (RT_SUCCESS(rc))
                 {
+                    VMM_CHECK_SMAP_CHECK(RT_NOTHING);
                     rc = PGMRegisterStringFormatTypes();
                     if (RT_SUCCESS(rc))
                     {
+                        VMM_CHECK_SMAP_CHECK(RT_NOTHING);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
                         rc = PGMR0DynMapInit();
 #endif
                         if (RT_SUCCESS(rc))
                         {
+                            VMM_CHECK_SMAP_CHECK(RT_NOTHING);
                             rc = IntNetR0Init();
                             if (RT_SUCCESS(rc))
                             {
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
+                                VMM_CHECK_SMAP_CHECK(RT_NOTHING);
                                 rc = PciRawR0Init();
 #endif
                                 if (RT_SUCCESS(rc))
                                 {
+                                    VMM_CHECK_SMAP_CHECK(RT_NOTHING);
                                     rc = CPUMR0ModuleInit();
                                     if (RT_SUCCESS(rc))
                                     {
 #ifdef VBOX_WITH_TRIPLE_FAULT_HACK
+                                        VMM_CHECK_SMAP_CHECK(RT_NOTHING);
                                         rc = vmmR0TripleFaultHackInit();
                                         if (RT_SUCCESS(rc))
 #endif
                                         {
-                                            LogFlow(("ModuleInit: returns success.\n"));
-                                            return VINF_SUCCESS;
+                                            VMM_CHECK_SMAP_CHECK(rc = VERR_VMM_SMAP_BUT_AC_CLEAR);
+                                            if (RT_SUCCESS(rc))
+                                            {
+                                                LogFlow(("ModuleInit: returns success.\n"));
+                                                return VINF_SUCCESS;
+                                            }
                                         }
 
                                         /*
@@ -280,6 +327,9 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
  */
 static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
 {
+    VMM_CHECK_SMAP_SETUP();
+    VMM_CHECK_SMAP_CHECK(return VERR_VMM_SMAP_BUT_AC_CLEAR);
+
     /*
      * Match the SVN revisions and build type.
      */
@@ -355,6 +405,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
     /*
      * Initialize the per VM data for GVMM and GMM.
      */
+    VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
     int rc = GVMMR0InitVM(pVM);
 //    if (RT_SUCCESS(rc))
 //        rc = GMMR0InitPerVMData(pVM);
@@ -363,30 +414,42 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
         /*
          * Init HM, CPUM and PGM (Darwin only).
          */
+        VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
         rc = HMR0InitVM(pVM);
+        if (RT_SUCCESS(rc))
+            VMM_CHECK_SMAP_CHECK2(pVM, rc = VERR_VMM_RING0_ASSERTION); /* CPUR0InitVM will otherwise panic the host */
         if (RT_SUCCESS(rc))
         {
             rc = CPUMR0InitVM(pVM);
             if (RT_SUCCESS(rc))
             {
+                VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
                 rc = PGMR0DynMapInitVM(pVM);
 #endif
                 if (RT_SUCCESS(rc))
                 {
+                    VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
                     rc = PciRawR0InitVM(pVM);
 #endif
                     if (RT_SUCCESS(rc))
                     {
+                        VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
                         rc = GIMR0InitVM(pVM);
                         if (RT_SUCCESS(rc))
                         {
-                            GVMMR0DoneInitVM(pVM);
-                            return rc;
-                        }
+                            VMM_CHECK_SMAP_CHECK2(pVM, rc = VERR_VMM_RING0_ASSERTION);
+                            if (RT_SUCCESS(rc))
+                            {
+                                GVMMR0DoneInitVM(pVM);
+                                VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+                                return rc;
+                            }
 
-                        /* bail out*/
+                            /* bail out*/
+                            GIMR0TermVM(pVM);
+                        }
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
                         PciRawR0TermVM(pVM);
 #endif
@@ -396,7 +459,6 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
             HMR0TermVM(pVM);
         }
     }
-
 
     RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pVM->pSession);
     return rc;

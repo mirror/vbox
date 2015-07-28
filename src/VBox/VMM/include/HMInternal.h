@@ -368,7 +368,7 @@ typedef struct HM
     bool                        u8Alignment[3];
 
     /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
-    uint32_t                    uHostKernelFeatures;
+    uint32_t                    fHostKernelFeatures;
 
     /** Maximum ASID allowed. */
     uint32_t                    uMaxAsid;
