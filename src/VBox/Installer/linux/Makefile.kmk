@@ -328,13 +328,13 @@ endif
 
 # Icons
 VBOX_MIME_ICONS = \
-	$(addprefix $(PATH_ROOT)/src/VBox/Resources/other/,\
+	$(addprefix $(PATH_ROOT)/src/VBox/Artwork/other/,\
 	    $(foreach f,ova ovf vbox vbox-extpack vdi vmdk vhd hdd, \
 	        $(foreach s,16 20 24 32 48 64 72 96 128 256,\
 		    virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/virtualbox-$(f).png)))
 
 VBOX_DESKTOP_ICONS = \
-	$(addprefix $(PATH_ROOT)/src/VBox/Resources/$(if $(VBOX_OSE),OSE,NonOSE)/,\
+	$(addprefix $(PATH_ROOT)/src/VBox/Artwork/$(if $(VBOX_OSE),OSE,NonOSE)/,\
 	    $(foreach s,16 20 32 40 48 64 128,\
 		virtualbox-$(s)px.png=>$(s)x$(s)/virtualbox.png) \
 		virtualbox.svg=>scalable/virtualbox.svg)

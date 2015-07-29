@@ -870,7 +870,7 @@ VBOX_BRAND_GUI_VBOX_32PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualB
 VBOX_BRAND_GUI_VBOX_40PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_40px.png
 VBOX_BRAND_GUI_VBOX_48PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_48px.png
 VBOX_BRAND_GUI_VBOX_64PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_64px.png
-VBOX_BRAND_GUI_VBOX_SVG              := $(PATH_ROOT)/src/VBox/Resources/NonOSE/virtualbox.svg
+VBOX_BRAND_GUI_VBOX_SVG              := $(PATH_ROOT)/src/VBox/Artwork/NonOSE/virtualbox.svg
 VBOX_BRAND_WIN_INST_DLGJPG           := $(PATH_ROOT)/src/VBox/Installer/win/Binary/Dialog.jpg
 VBOX_BRAND_WIN_INST_EXT              :=
 VBOX_BRAND_WIN_ADD_INST_DLGBMP       := $(PATH_ROOT)/src/VBox/Additions/WINNT/Installer/welcome.bmp
@@ -1109,7 +1109,7 @@ ifdef VBOX_OSE
  VBOX_BRAND_GUI_VBOX_48PX_PNG        := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_48px.png
  VBOX_BRAND_GUI_VBOX_64PX_PNG        := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_64px.png
  VBOX_BRAND_GUI_CUBE_42PX_PNG        := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_cube_42px.png
- VBOX_BRAND_GUI_VBOX_SVG             := $(PATH_ROOT)/src/VBox/Resources/OSE/virtualbox.svg
+ VBOX_BRAND_GUI_VBOX_SVG             := $(PATH_ROOT)/src/VBox/Artwork/OSE/virtualbox.svg
 endif
 
 #
@@ -2275,24 +2275,24 @@ endif
 
 # The icons to use.
 ifdef VBOX_OSE
- VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
- VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
- VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
- VBOX_MACOSX_ICON_FILE            ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox.icns
+ VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/win/OSE/VirtualBox_win.ico
+ VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/win/OSE/VirtualBox_win.ico
+ VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/win/OSE/VirtualBox_win.ico
+ VBOX_MACOSX_ICON_FILE            ?= $(PATH_ROOT)/src/VBox/Artwork/win/OSE/VirtualBox.icns
 else
  ifeq ($(KBUILD_HOST),win)
-  VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-vista.ico
-  VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-vista.ico
-  VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-nsis.ico
-  TOOL_VCC80X86_RC    := $(KBUILD_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
-  TOOL_VCC80AMD64_RC  := $(KBUILD_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
-  TOOL_VCC70_RC       := $(KBUILD_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/win/NonOSE/VirtualBox-vista.ico
+  VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/win/NonOSE/VirtualBoxGA-vista.ico
+  VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/win/NonOSE/VirtualBoxGA-nsis.ico
+  TOOL_VCC80X86_RC                 := $(KBUILD_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC80AMD64_RC               := $(KBUILD_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC70_RC                    := $(KBUILD_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
  else
-  VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-winxp.ico
-  VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-winxp.ico
-  VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-nsis.ico
+  VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/win/NonOSE/VirtualBox-winxp.ico
+  VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/win/NonOSE/VirtualBoxGA-winxp.ico
+  VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/win/NonOSE/VirtualBox-nsis.ico
  endif
- VBOX_MACOSX_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox.icns
+ VBOX_MACOSX_ICON_FILE             ?= $(PATH_ROOT)/src/VBox/Artwork/win/NonOSE/VirtualBox.icns
 endif
 
 
@@ -3033,11 +3033,11 @@ VBOX_RESIGN_DLL_FN =
 # @remarks     ASSUMES RCFLAGS isn't a simple variable (var := value).
 define VBOX_SET_VER_INFO_INTERNAL
 ifeq ($(KBUILD_TARGET),win)
-$(1)_SOURCES.win += $(PATH_ROOT)/src/VBox/Resources/win/$(4)
+$(1)_SOURCES.win += $(PATH_ROOT)/src/VBox/Artwork/win/$(4)
 $(1)_RCFLAGS += /nologo /dIN_INTERNAL_NAME="\"$(1)\"" /dIN_FILE_DESCRIPTION="\"$(2)\"" \
 	/dIN_ORIGINAL_NAME="\"$$(notdir $$($(1)_1_INST_TARGET))\"" \
 	$(if $(3), /dIN_ICON_FILE="\"$(subst \\,/,$(strip $(3)))\"") $(5)
-$$$$($(1)_0_OUTDIR)/src/VBox/Resources/win/$(basename $(4)).res: \
+$$$$($(1)_0_OUTDIR)/src/VBox/Artwork/win/$(basename $(4)).res: \
 	$(PATH_ROOT)/include/VBox/version.h $$$$(VBOX_VERSION_HEADER)
 endif
 endef

@@ -1016,14 +1016,14 @@ VirtualBox.app_SOURCES = \
 	$(VirtualBox.app_0_OUTDIR)/Info.plist \
 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns \
 	$(VBOX_BRAND_GUI_VBOX_64PX_PNG)=>Resources/virtualbox.png \
-	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
-	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vbox-extpack.icns=>Resources/virtualbox-vbox-extpack.icns \
-	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
-	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns \
-	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vdi.icns=>Resources/virtualbox-vdi.icns \
-	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vmdk.icns=>Resources/virtualbox-vmdk.icns \
-	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vhd.icns=>Resources/virtualbox-vhd.icns \
-	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-hdd.icns=>Resources/virtualbox-hdd.icns
+	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
+	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vbox-extpack.icns=>Resources/virtualbox-vbox-extpack.icns \
+	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
+	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns \
+	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vdi.icns=>Resources/virtualbox-vdi.icns \
+	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vmdk.icns=>Resources/virtualbox-vmdk.icns \
+	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vhd.icns=>Resources/virtualbox-vhd.icns \
+	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-hdd.icns=>Resources/virtualbox-hdd.icns
 
 $$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)

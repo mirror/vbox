@@ -88,7 +88,7 @@ solaris-doc_MODE    = a+r,u+w
 solaris-doc_SOURCES = \
 	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_64px.png=>VBox.png \
-	$(PATH_ROOT)/src/VBox/Resources/$(if $(VBOX_OSE),OSE,NonOSE)/virtualbox-128px.png=>virtualbox.png
+	$(PATH_ROOT)/src/VBox/Artwork/$(if $(VBOX_OSE),OSE,NonOSE)/virtualbox-128px.png=>virtualbox.png
 
 solaris-bin_INST = bin/
 solaris-bin_MODE = a+rx,u+w
@@ -114,7 +114,7 @@ solaris-drv-confs_SOURCES = \
 solaris-icons_INST = bin/icons/
 solaris-icons_MODE = a+r,u+w
 solaris-icons_SOURCES = $(foreach f,$(VBOX_SI_ICON_TYPES), $(foreach s,$(VBOX_SI_ICON_SIZES)\
-	,$(PATH_ROOT)/src/VBox/Resources/other/virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/mimetypes/virtualbox-$(f).png))
+	,$(PATH_ROOT)/src/VBox/Artwork/other/virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/mimetypes/virtualbox-$(f).png))
 
 
 #
@@ -546,7 +546,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(foreach var, $(SOLARIS_FILE_LIST_VARS),$(foreach file, $($(var)), $($(var).SRC)/$(file))) \
 		\
 		$(foreach size, $(VBOX_SI_ICON_SIZES), $(foreach type, $(VBOX_SI_ICON_TYPES) \
-		,$(PATH_ROOT)/src/VBox/Resources/other/virtualbox-$(type)-$(size)px.png)) \
+		,$(PATH_ROOT)/src/VBox/Artwork/other/virtualbox-$(type)-$(size)px.png)) \
 		\
 		$(VBOX_SI_DEP_ON_MAKEFILE) \
 		| $$(dir $$@)
@@ -645,7 +645,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 # Icons stuff under /usr/share/icons/hicolor/<size>x<size>/mimetypes/.
 	$(foreach size, $(VBOX_SI_ICON_SIZES), $(foreach type, $(VBOX_SI_ICON_TYPES) \
 		,$(NLTAB)$(INSTALL) -m 0644 \
-			$(PATH_ROOT)/src/VBox/Resources/other/virtualbox-$(type)-$(size)px.png \
+			$(PATH_ROOT)/src/VBox/Artwork/other/virtualbox-$(type)-$(size)px.png \
 			$(VBOX_PATH_SI_SCRATCH_PKG)/usr/share/icons/hicolor/$(size)x$(size)/mimetypes/virtualbox-$(type).png))
 
 # Files related to package creation.
