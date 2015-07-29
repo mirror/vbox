@@ -3709,7 +3709,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       while the VM is not running:
     </para>
 
-    <screen>VBoxManage setextradata "VM name" VBoxInternal/Devices/usb-ehci/LUN#0/Config/CaptureFilename "filename"</screen>
+    <screen>VBoxManage setextradata "VM name" VBoxInternal/Devices/usb-ehci/0/LUN#0/Config/CaptureFilename "filename"</screen>
 
     <para>The command above enables capturing on the root hub attached to the EHCI controller.
     To enable it for the OHCI or XHCI controller replace <computeroutput>usb-ehci</computeroutput>
