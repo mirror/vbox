@@ -54,6 +54,11 @@
       </listitem>
 
       <listitem>
+        <para>Shared Folders: fixed a problem with accessing CIFS shares
+          (bug #14252)</para>
+      </listitem>
+
+      <listitem>
         <para>Mac OS X hosts: El Capitan fixes (USB)</para>
       </listitem>
 
