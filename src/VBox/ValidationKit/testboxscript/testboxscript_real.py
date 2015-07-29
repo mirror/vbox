@@ -222,7 +222,7 @@ class TestBoxScript(object):
         os.environ['TESTBOX_MEM_SIZE']          = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_MEM_SIZE);
         os.environ['TESTBOX_SCRATCH_SIZE']      = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_SCRATCH_SIZE);
         #TODO: os.environ['TESTBOX_WITH_RAW_MODE']     = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_WITH_RAW_MODE);
-        os.environ['TESTBOX_WITH_RAW_MODE']     = self._withRawModeSupport();
+        os.environ['TESTBOX_WITH_RAW_MODE']     = str(self._withRawModeSupport());
         os.environ['TESTBOX_MANAGER_URL']       = self._oOptions.sTestManagerUrl;
         os.environ['TESTBOX_UUID']              = self._sTestBoxUuid;
         os.environ['TESTBOX_REPORTER']          = 'remote';
