@@ -1848,10 +1848,27 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
     Log(("VBoxNetFlt: got event %s(0x%lx) on %s, pDev=%p pThis=%p pThis->u.s.pDev=%p\n",
          vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType, pDev->name, pDev, pThis, pMyDev));
 
-    if (    ulEventType == NETDEV_REGISTER
-        && !strcmp(pDev->name, pThis->szName))
+    if (ulEventType == NETDEV_REGISTER)
     {
-        vboxNetFltLinuxAttachToInterface(pThis, pDev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) /* cgroups/namespaces introduced */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
+#  define VBOX_DEV_NET(dev)             dev_net(dev)
+#  define VBOX_NET_EQ(n1, n2)           net_eq((n1), (n2))
+# else
+#  define VBOX_DEV_NET(dev)             ((dev)->nd_net)
+#  define VBOX_NET_EQ(n1, n2)           ((n1) == (n2))
+# endif
+        struct net *pMyNet = current->nsproxy->net_ns;
+        struct net *pDevNet = VBOX_DEV_NET(pDev);
+
+        if (VBOX_NET_EQ(pDevNet, pMyNet))
+#endif  /* namespaces */
+        {
+            if (strcmp(pDev->name, pThis->szName) == 0)
+            {
+                vboxNetFltLinuxAttachToInterface(pThis, pDev);
+            }
+        }
     }
     else
     {
