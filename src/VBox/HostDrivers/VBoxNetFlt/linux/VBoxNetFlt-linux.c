@@ -23,6 +23,9 @@
 #include "the-linux-kernel.h"
 #include "version-generated.h"
 #include "product-generated.h"
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#include <linux/nsproxy.h>
+#endif
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/rtnetlink.h>
