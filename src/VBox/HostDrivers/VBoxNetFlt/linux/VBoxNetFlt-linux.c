@@ -1804,7 +1804,7 @@ static int vboxNetFltLinuxDeviceMtuChange(PVBOXNETFLTINS pThis, struct net_devic
 /** Stringify the NETDEV_XXX constants. */
 static const char *vboxNetFltLinuxGetNetDevEventName(unsigned long ulEventType)
 {
-    const char *pszEvent = "NETDRV_<unknown>";
+    const char *pszEvent = "NETDEV_<unknown>";
     switch (ulEventType)
     {
         case NETDEV_REGISTER: pszEvent = "NETDEV_REGISTER"; break;
