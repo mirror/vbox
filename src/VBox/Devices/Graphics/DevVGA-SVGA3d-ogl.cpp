@@ -4469,7 +4469,12 @@ static int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFla
     NativeNSOpenGLContextRef pShareContext = pSharedCtx ? pSharedCtx->cocoaContext : NULL;
     NativeNSViewRef          pHostView    = (NativeNSViewRef)pThis->svga.u64HostWindowId;
     vmsvga3dCocoaCreateViewAndContext(&pContext->cocoaView, &pContext->cocoaContext,
-                                      pHostView, pThis->svga.uWidth, pThis->svga.uHeight,
+# if defined(VMSVGA3D_OGL_WITH_SHARED_CTX) && !defined(VMSVGA3D_OGL_WITH_SHARED_CTX_EXPERIMENT_1) /* Only attach one subview, the one we'll present in. */
+                                      pSharedCtx ? NULL : pHostView, /** @todo screen objects and stuff. */
+# else
+                                      pHostView,
+# endif
+                                      pThis->svga.uWidth, pThis->svga.uHeight,
                                       pShareContext, pContext->fOtherProfile);
 
 #else

@@ -77,28 +77,42 @@
 #endif
 {
 @private
-    NSView          *m_pParentView;
-    /** Set if the buffers needs clearing. */
-    bool            m_fClear;
+    /** This points to the parent view, if there is one.  If there isn't a parent
+     * the view will be hidden and never used for displaying stuff.  We only have 
+     * one visible context per guest screen that is visible to the user and 
+     * subject to buffer swapping. */ 
+    NSView         *m_pParentView;
+    /** Indicates that buffers (back+front) needs clearing before use because
+     * the view changed size.  There are two buffers, so this is set to two 
+     * each time when the view area increases. */ 
+    uint32_t        m_cClears;
+    /** Set if the OpenGL context needs updating after a resize. */
+    bool            m_fUpdateCtx;
 
 #ifndef USE_NSOPENGLVIEW
     /** The OpenGL context associated with this view. */
     NSOpenGLContext *m_pCtx;
 #endif
 
-    /* Position/Size tracking */
-    NSPoint          m_Pos;
-    NSSize           m_Size;
-
-    /** This is necessary for clipping on the root window */
-    NSRect           m_RootRect;
+    /** The desired view position relative to super. */
+    NSPoint         m_Pos;
+    /** The desired view size. */
+    NSSize          m_Size;
 }
 + (void)createViewAndContext:(VMSVGA3DCreateViewAndContext *)pParams;
 - (id)initWithFrameAndFormat:(NSRect)frame parentView:(NSView*)pparentView pixelFormat:(NSOpenGLPixelFormat *)pFmt;
-- (void)setPos:(NSPoint)pos;
-- (void)setSize:(NSSize)size;
+- (void)vboxSetPos:(NSPoint)pos;
+- (void)vboxSetSize:(NSSize)size;
+- (void)vboxReshapePerform;
 - (void)vboxReshape;
+#if 0 // doesn't work or isn't needed :/
+- (void)vboxFrameDidChange;
+- (BOOL)postsFrameChangedNotifications;
+#endif
+- (void)vboxRemoveFromSuperviewAndHide;
 - (void)vboxClearBuffers;
+- (void)vboxUpdateCtxIfNecessary;
+- (void)vboxClearBackBufferIfNecessary;
 - (NSOpenGLContext *)makeCurrentGLContext;
 - (void)restoreSavedGLContext:(NSOpenGLContext *)pSavedCtx;
 
@@ -190,14 +204,17 @@
             if (pCtx)
             {
                 /*
-                 * Attach the view to the parent.
+                 * Attach the view to the parent if we have one.  Otherwise make sure its invisible.
                  */
-                [pParams->pParentView addSubview:pView];
+                if (pParams->pParentView)
+                    [pParams->pParentView addSubview:pView];
+                else
+                    [pView setHidden:YES];
 
                 /*
                  * Resize and return.
                  */
-                //[pView setSize:Frame.size];
+                //[pView vboxSetSize:Frame.size];
 
                 NSOpenGLContext *pSavedCtx = [pView makeCurrentGLContext];
 
@@ -207,7 +224,10 @@
                 //x = 1; [pCtx setValues:&x forParameter:NSOpenGLCPSurfaceOrder];
                 x = 0; [pCtx setValues:&x forParameter:NSOpenGLCPSurfaceOpacity];
 
-                [pView setHidden:NO];
+                if (pParams->pParentView)
+                    [pView setHidden:NO];
+                else
+                    [pView setHidden:YES];
 
                 [pView restoreSavedGLContext:pSavedCtx];
 
@@ -216,6 +236,20 @@
                 [pCtx retain]; //??
 
                 [pFmt release];
+
+#if 0 // doesn't work or isn't needed :/
+                /*
+                 * Get notifications when we're moved...
+                 */
+                if (pParams->pParentView)
+                {
+                    [[NSNotificationCenter defaultCenter] addObserver:self 
+                                                             selector:@selector(vboxFrameDidChange) 
+                                                                 name:NSViewFrameDidChangeNotification
+                                                               object:self];
+                }
+#endif
+
                 LogFlow(("OvlView createViewAndContext: returns successfully\n"));
                 return;
             }
@@ -238,7 +272,8 @@
     /* Make some reasonable defaults */
     m_Pos            = NSZeroPoint;
     m_Size           = frame.size;
-    m_RootRect       = NSMakeRect(0, 0, m_Size.width, m_Size.height);
+    m_cClears        = 2;
+    m_fUpdateCtx     = true;
 
 #ifdef USE_NSOPENGLVIEW
     self = [super initWithFrame:frame pixelFormat:pFmt];
@@ -247,7 +282,8 @@
 #endif
     if (self)
     {
-        self.autoresizingMask = NSViewMinXMargin | NSViewMaxXMargin | NSViewMinYMargin | NSViewMaxYMargin;
+        //self.autoresizingMask = NSViewMinXMargin | NSViewMaxXMargin | NSViewMinYMargin | NSViewMaxYMargin;
+        self.autoresizingMask = NSViewNotSizable;
     }
     LogFlow(("OvlView(%p) initWithFrameAndFormat: returns %p\n", (void *)self, (void *)self));
     return self;
@@ -274,23 +310,23 @@
 }
 
 
-- (void)setPos:(NSPoint)pos
+- (void)vboxSetPos:(NSPoint)pos
 {
-    Log(("OvlView(%p) setPos: (%d,%d)\n", (void *)self, (int)pos.x, (int)pos.y));
+    Log(("OvlView(%p) vboxSetPos: (%d,%d)\n", (void *)self, (int)pos.x, (int)pos.y));
 
     m_Pos = pos;
     [self vboxReshape];
 
-    LogFlow(("OvlView(%p) setPos: returns\n", (void *)self));
+    LogFlow(("OvlView(%p) vboxSetPos: returns\n", (void *)self));
 }
 
 
-- (void)setSize:(NSSize)size
+- (void)vboxSetSize:(NSSize)size
 {
-    Log(("OvlView(%p) setSize: (%d,%d):\n", (void *)self, (int)size.width, (int)size.height));
+    Log(("OvlView(%p) vboxSetSize: (%d,%d):\n", (void *)self, (int)size.width, (int)size.height));
     m_Size = size;
     [self vboxReshape];
-    LogFlow(("OvlView(%p) setSize: returns\n", (void *)self));
+    LogFlow(("OvlView(%p) vboxSetSize: returns\n", (void *)self));
 }
 
 
@@ -304,17 +340,125 @@
         Log(("OvlView(%p) vboxClearBuffers: clears\n", (void *)self));
         NSOpenGLContext *pSavedCtx = [self makeCurrentGLContext];
 
+        /* Clear errors. */
+        GLenum rc;
+        while ((rc = glGetError()) != GL_NO_ERROR)
+            continue;
+
+        /* Save the old buffer setting and make it GL_BACK (shall be GL_BACK already actually). */
         GLint iOldDrawBuf = GL_BACK;
         glGetIntegerv(GL_DRAW_BUFFER, &iOldDrawBuf);
-        glDrawBuffer(GL_FRONT_AND_BACK);
+        glDrawBuffer(GL_BACK);
+        while ((rc = glGetError()) != GL_NO_ERROR)
+            AssertMsgFailed(("rc=%x\n", rc));
+
+        /* Clear the current GL_BACK. */
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT /*|GL_DEPTH_BUFFER_BIT*/ );
         [[self openGLContext] flushBuffer];
+        while ((rc = glGetError()) != GL_NO_ERROR)
+            AssertMsgFailed(("rc=%x\n", rc));
+
+        /* Clear the previous GL_FRONT. */
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT /*|GL_DEPTH_BUFFER_BIT*/ );
+        [[self openGLContext] flushBuffer];
+        while ((rc = glGetError()) != GL_NO_ERROR)
+            AssertMsgFailed(("rc=%x\n", rc));
+
+        /* We're back to the orignal back buffer now. Just restore GL_DRAW_BUFFER. */
         glDrawBuffer(iOldDrawBuf);
+
+        while ((rc = glGetError()) != GL_NO_ERROR)
+            AssertMsgFailed(("rc=%x\n", rc));
 
         [self restoreSavedGLContext:pSavedCtx];
     }
 #endif
+}
+
+- (void)vboxUpdateCtxIfNecessary
+{
+    if (m_fUpdateCtx)
+    {
+        Log(("OvlView(%p) vboxUpdateCtxIfNecessary: m_fUpdateCtx\n", (void *)self));
+        [[self openGLContext] update];
+        m_fUpdateCtx = false;
+    }
+}
+
+
+- (void)vboxClearBackBufferIfNecessary
+{
+#if 1 /* experiment */
+    if (m_cClears > 0)
+    {
+        Assert(![NSThread isMainThread]);
+        Assert([self openGLContext] == [NSOpenGLContext currentContext]);
+        Log(("OvlView(%p) vboxClearBackBufferIfNecessary: m_cClears=%d\n", (void *)self, m_cClears));
+        m_cClears--;
+
+        /* Clear errors. */
+        GLenum rc;
+        while ((rc = glGetError()) != GL_NO_ERROR)
+            continue;
+
+        /* Save the old buffer setting and make it GL_BACK (shall be GL_BACK already actually). */
+        GLint iOldDrawBuf = GL_BACK;
+        glGetIntegerv(GL_DRAW_BUFFER, &iOldDrawBuf);
+        if (iOldDrawBuf != GL_BACK)
+            glDrawBuffer(GL_BACK);
+        while ((rc = glGetError()) != GL_NO_ERROR)
+            AssertMsgFailed(("rc=%x\n", rc));
+
+        /* Clear the current GL_BACK. */
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT /*|GL_DEPTH_BUFFER_BIT*/ );
+        while ((rc = glGetError()) != GL_NO_ERROR)
+            AssertMsgFailed(("rc=%x\n", rc));
+
+        /* We're back to the orignal back buffer now. Just restore GL_DRAW_BUFFER. */
+        if (iOldDrawBuf != GL_BACK)
+            glDrawBuffer(iOldDrawBuf);
+
+        while ((rc = glGetError()) != GL_NO_ERROR)
+            AssertMsgFailed(("rc=%x\n", rc));
+    }
+#endif
+}
+
+
+
+- (void)vboxReshapePerform
+{
+    /*
+     * Change the size and position if necessary.
+     */
+    NSRect CurFrameRect = [self frame];
+    /** @todo conversions?   */
+    if (   m_Pos.x != CurFrameRect.origin.x
+        || m_Pos.y != CurFrameRect.origin.y)
+    {
+        LogFlow(("OvlView(%p) vboxReshapePerform: moving (%d,%d) -> (%d,%d)\n", 
+                 (void *)self,  CurFrameRect.origin.x, CurFrameRect.origin.y, m_Pos.x, m_Pos.y));
+        [self setFrameOrigin:m_Pos];
+    }
+
+    if (   CurFrameRect.size.width != m_Size.width
+        || CurFrameRect.size.height != m_Size.height)
+    {                    
+        LogFlow(("OvlView(%p) vboxReshapePerform: resizing (%d,%d) -> (%d,%d)\n", 
+                 (void *)self,  CurFrameRect.size.width, CurFrameRect.size.height, m_Size.width, m_Size.height));
+        [self setFrameSize:m_Size];
+
+        /* 
+         * Schedule two clears and a context update for now. 
+         * Really though, we should just clear any new surface area.
+         */
+        m_cClears = 2;
+    }
+    m_fUpdateCtx = true;
+    LogFlow(("OvlView(%p) vboxReshapePerform: returns\n", self));
 }
 
 
@@ -323,19 +467,51 @@
     LogFlow(("OvlView(%p) vboxReshape:\n", (void *)self));
 
     /*
-     * Not doing any complicate stuff here yet, hoping that we'll get correctly
-     * resized when the parent view changes...
+     * Resize the view.
      */
+    if ([NSThread isMainThread])
+        [self vboxReshapePerform];
+    else
+    {
+        [self performSelectorOnMainThread:@selector(vboxReshapePerform) withObject:nil waitUntilDone:NO];
+        vmsvga3dCocoaServiceRunLoop();
 
-    /*
-     * Tell the GL context.
-     */
-    //[[self openGLContext] setView:self];
-    [[self openGLContext] update];
-
-    [self vboxClearBuffers];
+        /*
+         * Try update the opengl context.
+         */
+        [[self openGLContext] update];
+    }
 
     LogFlow(("OvlView(%p) vboxReshape: returns\n", (void *)self));
+}
+
+#if 0 // doesn't work or isn't needed :/
+- (void)vboxFrameDidChange
+{
+    LogFlow(("OvlView(%p) vboxFrameDidChange:\n", (void *)self));
+}
+
+- (BOOL)postsFrameChangedNotifications
+{
+    LogFlow(("OvlView(%p) postsFrameChangedNotifications:\n", (void *)self));
+    return YES;
+}
+#endif
+
+/**
+ * Removes the view from the parent, if it has one, and makes sure it's hidden. 
+ *  
+ * This is callbed before destroying it. 
+ */
+- (void)vboxRemoveFromSuperviewAndHide
+{
+    LogFlow(("OvlView(%p) vboxRemoveFromSuperviewAndHide:\n", (void *)self));
+    if (m_pParentView)
+    {
+        [self removeFromSuperview];
+        [self setHidden:YES];
+        [[NSNotificationCenter defaultCenter] removeObserver:self];
+    }
 }
 
 
@@ -418,6 +594,7 @@
  * Overridden NSOpenGLView / NSView methods:
  */
 
+/** @todo do we need this?  */
 -(void)viewDidMoveToWindow
 {
     LogFlow(("OvlView(%p) viewDidMoveToWindow: new win: %p\n", (void *)self, (void *)[self window]));
@@ -442,11 +619,11 @@
 
 - (void)drawRect:(NSRect)rect
 {
-    if (m_fClear)
-    {
-        m_fClear = false;
-        [self vboxClearBuffers];
-    }
+//    if (m_fClear)
+//    {
+//        m_fClear = false;
+//        [self vboxClearBuffers];
+//    }
 }
 
 @end /* VMSVGA3DOverlayView */
@@ -469,6 +646,12 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaServiceRunLoop(void)
 }
 
 
+/**
+ * Document me later.
+ * 
+ * @param   pParentView     The parent view if this is a context we'll be 
+ *                          presenting to.
+ */
 VMSVGA3DCOCOA_DECL(bool) vmsvga3dCocoaCreateViewAndContext(NativeNSViewRef *ppView, NativeNSOpenGLContextRef *ppCtx,
                                                            NativeNSViewRef pParentView, uint32_t cx, uint32_t cy,
                                                            NativeNSOpenGLContextRef pSharedCtx, bool fOtherProfile)
@@ -512,8 +695,8 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaDestroyViewAndContext(NativeNSViewRef pVie
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
     /* The view */
-    [pView removeFromSuperview];
-    [pView setHidden: YES];
+    [(VMSVGA3DOverlayView *)pView vboxRemoveFromSuperviewAndHide];
+
     Log(("vmsvga3dCocoaDestroyViewAndContext: view %p ref count=%d\n", (void *)pView, [pView retainCount]));
     [pView release];
 
@@ -526,12 +709,13 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaDestroyViewAndContext(NativeNSViewRef pVie
 }
 
 
+/** @note Not currently used. */
 VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y)
 {
     LogFlow(("vmsvga3dCocoaViewSetPosition: pView=%p pParentView=%p (%d,%d)\n", (void *)pView, (void *)pParentView, x, y));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-    [(VMSVGA3DOverlayView *)pView setPos:NSMakePoint(x, y)];
+    [(VMSVGA3DOverlayView *)pView vboxSetPos:NSMakePoint(x, y)];
 
     [pPool release];
     LogFlow(("vmsvga3dCocoaViewSetPosition: returns\n"));
@@ -544,7 +728,7 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int cx,
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
     VMSVGA3DOverlayView *pOverlayView = (VMSVGA3DOverlayView *)pView;
 
-    [pOverlayView setSize:NSMakeSize(cx, cy)];
+    [pOverlayView vboxSetSize:NSMakeSize(cx, cy)];
 
     [pPool release];
     LogFlow(("vmsvga3dCocoaViewSetSize: returns\n"));
@@ -553,7 +737,7 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int cx,
 
 void vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
 {
-    LogFlow(("vmsvga3dCocoaViewSetSize: pView=%p, pCtx=%p\n", (void*)pView, (void*)pCtx));
+    LogFlow(("vmsvga3dCocoaViewMakeCurrentContext: pView=%p, pCtx=%p\n", (void*)pView, (void*)pCtx));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
     VMSVGA3DOverlayView *pOverlayView = (VMSVGA3DOverlayView *)pView;
 
@@ -568,6 +752,7 @@ void vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLCo
            sideeffect of the openGLContext method call. (hack alert!) */
         AssertRelease([pOverlayView openGLContext] == pCtx);
         [pCtx makeCurrentContext];
+        [pOverlayView vboxUpdateCtxIfNecessary];
     }
     else
         [NSOpenGLContext clearCurrentContext];
@@ -581,14 +766,12 @@ void vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pC
 {
     LogFlow(("vmsvga3dCocoaSwapBuffers: pView=%p, pCtx=%p\n", (void*)pView, (void*)pCtx));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    VMSVGA3DOverlayView *pMyView = (VMSVGA3DOverlayView *)pView;
 
 #ifndef USE_NSOPENGLVIEW
     /* Hack alert! setView fails early on so call openGLContext to try again. */
-    VMSVGA3DOverlayView *pMyView = (VMSVGA3DOverlayView *)pView;
     if ([pCtx view] == NULL)
         [pMyView openGLContext];
-#elif defined(RT_STRICT)
-    NSOpenGLView *pMyView = (NSOpenGLView *)pView;
 #endif
 
     Assert(pCtx == [NSOpenGLContext currentContext]);
@@ -598,6 +781,10 @@ void vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pC
     [pCtx flushBuffer];
     //[pView setNeedsDisplay:YES];
     vmsvga3dCocoaServiceRunLoop();
+
+    /* If buffer clearing or/and context updates are pending, execute that now. */
+    [pMyView vboxUpdateCtxIfNecessary];
+    [pMyView vboxClearBackBufferIfNecessary];
 
     [pPool release];
     LogFlow(("vmsvga3dCocoaSwapBuffers: returns\n"));
