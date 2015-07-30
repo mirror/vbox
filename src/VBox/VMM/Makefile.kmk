@@ -179,6 +179,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/PDMThread.cpp \
 	VMMR3/PGM.cpp \
 	VMMR3/PGMDbg.cpp \
+	VMMR3/PGMR3DbgA.asm \
 	VMMR3/PGMHandler.cpp \
 	VMMR3/PGMMap.cpp \
 	VMMR3/PGMPhys.cpp \

@@ -93,6 +93,31 @@ typedef struct PGMR3DUMPHIERARCHYSTATE
 typedef PGMR3DUMPHIERARCHYSTATE *PPGMR3DUMPHIERARCHYSTATE;
 
 
+/**
+ * Assembly scanning function.
+ *
+ * @returns Pointer to possible match or NULL.
+ * @param   pvHaystack      Pointer to what we search in.
+ * @param   cbHaystack      Number of bytes to search.
+ * @param   pvNeedle        Pointer to what we search for.
+ * @param   cbNeedle        Size of what we're searching for.
+ */
+typedef DECLCALLBACK(uint8_t const *) FNPGMR3DBGFIXEDMEMSCAN(void const *pvHaystack, uint32_t cbHaystack,
+                                                             void const *pvNeedle, size_t cbNeedle);
+/** Pointer to an fixed size and step assembly scanner function. */
+typedef FNPGMR3DBGFIXEDMEMSCAN *PFNPGMR3DBGFIXEDMEMSCAN;
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan8Wide8Step(void const *, uint32_t, void const *, size_t cbNeedle);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan4Wide4Step(void const *, uint32_t, void const *, size_t cbNeedle);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan2Wide2Step(void const *, uint32_t, void const *, size_t cbNeedle);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan1Wide1Step(void const *, uint32_t, void const *, size_t cbNeedle);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan4Wide1Step(void const *, uint32_t, void const *, size_t cbNeedle);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan8Wide1Step(void const *, uint32_t, void const *, size_t cbNeedle);
+
 
 /**
  * Converts a R3 pointer to a GC physical address.
@@ -469,7 +494,7 @@ static const uint8_t *pgmR3DbgAlignedMemChr(const uint8_t *pb, uint8_t b, size_t
  *                          Initialize to 0 before the first call to this function.
  */
 static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb, uint32_t uAlign,
-                             const uint8_t *pabNeedle, size_t cbNeedle,
+                             const uint8_t *pabNeedle, size_t cbNeedle, PFNPGMR3DBGFIXEDMEMSCAN pfnFixedMemScan,
                              uint8_t *pabPrev, size_t *pcbPrev)
 {
     /*
@@ -516,10 +541,14 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb, 
      * Match the body of the page.
      */
     const uint8_t *pb = pbPage + *poff;
-    const uint8_t *pbEnd = pb + cb;
+    const uint8_t * const pbEnd = pb + cb;
     for (;;)
     {
-        pb = pgmR3DbgAlignedMemChr(pb, *pabNeedle, cb, uAlign);
+        AssertMsg(((uintptr_t)pb & (uAlign - 1)) == 0, ("%#p %#x\n", pb, uAlign));
+        if (pfnFixedMemScan)
+            pb = pfnFixedMemScan(pb, cb, pabNeedle, cbNeedle);
+        else
+            pb = pgmR3DbgAlignedMemChr(pb, *pabNeedle, cb, uAlign);
         if (!pb)
             break;
         cb = pbEnd - pb;
@@ -553,6 +582,36 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb, 
 
     return false;
 }
+
+
+static void pgmR3DbgSelectMemScanFunction(PFNPGMR3DBGFIXEDMEMSCAN *ppfnMemScan, uint32_t GCPhysAlign, size_t cbNeedle)
+{
+    *ppfnMemScan = NULL;
+    switch (GCPhysAlign)
+    {
+        case 1:
+            if (cbNeedle >= 8)
+                *ppfnMemScan = pgmR3DbgFixedMemScan8Wide1Step;
+            else if (cbNeedle >= 4)
+                *ppfnMemScan = pgmR3DbgFixedMemScan8Wide1Step;
+            else
+                *ppfnMemScan = pgmR3DbgFixedMemScan1Wide1Step;
+            break;
+        case 2:
+            if (cbNeedle >= 2)
+                *ppfnMemScan = pgmR3DbgFixedMemScan2Wide2Step;
+            break;
+        case 4:
+            if (cbNeedle >= 4)
+                *ppfnMemScan = pgmR3DbgFixedMemScan4Wide4Step;
+            break;
+        case 8:
+            if (cbNeedle >= 8)
+                *ppfnMemScan = pgmR3DbgFixedMemScan8Wide8Step;
+            break;
+    }
+}
+
 
 
 /**
@@ -621,6 +680,9 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
                                ? GCPhys + cbRange - 1
                                : ~(RTGCPHYS)0;
 
+    PFNPGMR3DBGFIXEDMEMSCAN pfnMemScan;
+    pgmR3DbgSelectMemScanFunction(&pfnMemScan, (uint32_t)GCPhysAlign, cbNeedle);
+
     /*
      * Search the memory - ignore MMIO and zero pages, also don't
      * bother to match across ranges.
@@ -676,7 +738,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
                                               ? PAGE_SIZE                           - (uint32_t)offPage
                                               : (GCPhysLast & PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
                             fRc = pgmR3DbgScanPage((uint8_t const *)pvPage, &offHit, cbSearch, (uint32_t)GCPhysAlign,
-                                                   pabNeedle, cbNeedle, &abPrev[0], &cbPrev);
+                                                   pabNeedle, cbNeedle, pfnMemScan, &abPrev[0], &cbPrev);
                         }
                         else
                             fRc = memcmp(pvPage, pabNeedle, cbNeedle) == 0
@@ -795,6 +857,12 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
     RTGCPTR         cPages    = (((GCPtrLast - GCPtr) + (GCPtr & PAGE_OFFSET_MASK)) >> PAGE_SHIFT) + 1;
     uint32_t        offPage   = GCPtr & PAGE_OFFSET_MASK;
     GCPtr &= ~(RTGCPTR)PAGE_OFFSET_MASK;
+
+    PFNPGMR3DBGFIXEDMEMSCAN pfnMemScan;
+    pgmR3DbgSelectMemScanFunction(&pfnMemScan, (uint32_t)GCPtrAlign, cbNeedle);
+
+    uint32_t        cYieldCountDown = 4096;
+    pgmLock(pVM);
     for (;; offPage = 0)
     {
         PGMPTWALKGST Walk;
@@ -821,7 +889,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
                                           ? PAGE_SIZE                          - (uint32_t)offPage
                                           : (GCPtrLast & PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
                         fRc = pgmR3DbgScanPage((uint8_t const *)pvPage, &offHit, cbSearch, (uint32_t)GCPtrAlign,
-                                               pabNeedle, cbNeedle, &abPrev[0], &cbPrev);
+                                               pabNeedle, cbNeedle, pfnMemScan, &abPrev[0], &cbPrev);
                     }
                     else
                         fRc = memcmp(pvPage, pabNeedle, cbNeedle) == 0
@@ -830,6 +898,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
                     if (fRc)
                     {
                         *pGCPtrHit = GCPtr + offHit;
+                        pgmUnlock(pVM);
                         return VINF_SUCCESS;
                     }
                 }
@@ -904,7 +973,15 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
             break;
         cPages -= cIncPages;
         GCPtr += (RTGCPTR)cIncPages << X86_PT_PAE_SHIFT;
+
+        /* Yield the PGM lock every now and then. */
+        if (!--cYieldCountDown)
+        {
+            PDMR3CritSectYield(&pVM->pgm.s.CritSectX);
+            cYieldCountDown = 4096;
+        }
     }
+    pgmUnlock(pVM);
     return VERR_DBGF_MEM_NOT_FOUND;
 }
 
