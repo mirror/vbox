@@ -70,10 +70,7 @@ typedef struct NTMTE32
 typedef NTMTE32 *PNTMTE32;
 
 /**
- * PsLoadedModuleList entry for 32-bit NT aka LDR_DATA_TABLE_ENTRY.
- * Tested with XP.
- *
- * @todo This is incomplete and just to get rid of warnings.
+ * PsLoadedModuleList entry for 64-bit NT aka LDR_DATA_TABLE_ENTRY.
  */
 typedef struct NTMTE64
 {
@@ -952,7 +949,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
      * success.
      */
     CPUMMODE        enmMode = DBGFR3CpuGetMode(pUVM, 0 /*idCpu*/);
-    uint64_t const  uStart  = enmMode == CPUMMODE_LONG ? UINT64_C(0xfffff80000000000) : UINT32_C(0x80001000);
+    uint64_t const  uStart  = enmMode == CPUMMODE_LONG ? UINT64_C(0xffff080000000000) : UINT32_C(0x80001000);
     uint64_t const  uEnd    = enmMode == CPUMMODE_LONG ? UINT64_C(0xffffffffffff0000) : UINT32_C(0xffff0000);
     DBGFADDRESS     KernelAddr;
     for (DBGFR3AddrFromFlat(pUVM, &KernelAddr, uStart);
@@ -1060,7 +1057,8 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                     &&  pHdrs->FileHeader.Machine                   == IMAGE_FILE_MACHINE_AMD64
                     &&  pHdrs->FileHeader.SizeOfOptionalHeader      == sizeof(pHdrs->OptionalHeader)
                     &&  pHdrs->FileHeader.NumberOfSections          >= 10 /* the kernel has lots */
-                    &&  (pHdrs->FileHeader.Characteristics & (IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_DLL)) == IMAGE_FILE_EXECUTABLE_IMAGE
+                    &&      (pHdrs->FileHeader.Characteristics & (IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_DLL))
+                         == IMAGE_FILE_EXECUTABLE_IMAGE
                     &&  pHdrs->OptionalHeader.Magic                 == IMAGE_NT_OPTIONAL_HDR64_MAGIC
                     &&  pHdrs->OptionalHeader.NumberOfRvaAndSizes   == IMAGE_NUMBEROF_DIRECTORY_ENTRIES
                     )
@@ -1076,7 +1074,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                                        uEnd - uStart, 8 /*align*/, &uMte.v64.DllBase, 5 * sizeof(uint32_t), &HitAddr);
                     while (RT_SUCCESS(rc))
                     {
-                        /* check the name. */
+                        /* Read the start of the MTE and check some basic members. */
                         DBGFADDRESS MteAddr = HitAddr;
                         rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrSub(&MteAddr, RT_OFFSETOF(NTMTE64, DllBase)),
                                            &uMte2.v64, sizeof(uMte2.v64));
@@ -1091,6 +1089,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                             &&  uMte2.v64.FullDllName.Length <= 260
                             )
                         {
+                            /* Try read the base name and compare with known NT kernel names. */
                             rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, uMte2.v64.BaseDllName.Buffer),
                                                u.wsz, uMte2.v64.BaseDllName.Length);
                             u.wsz[uMte2.v64.BaseDllName.Length / 2] = '\0';
@@ -1100,6 +1099,8 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                                     )
                                )
                             {
+                                /* Read the link entry of the previous entry in the list and check that its
+                                   forward pointer points at the MTE we've found. */
                                 rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
                                                    DBGFR3AddrFromFlat(pUVM, &Addr, uMte2.v64.InLoadOrderLinks.Blink),
                                                    &uMte3.v64, RT_SIZEOFMEMB(NTMTE64, InLoadOrderLinks));
