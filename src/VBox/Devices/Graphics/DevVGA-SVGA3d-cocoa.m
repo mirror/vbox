@@ -464,9 +464,35 @@
     LogFlow(("OvlView(%p) vboxRemoveFromSuperviewAndHide:\n", (void *)self));
     if (m_pParentView)
     {
-        [self removeFromSuperview];
-        [self setHidden:YES];
-        [[NSNotificationCenter defaultCenter] removeObserver:self];
+        /*
+         * The removeFromSuperview has been frequently seen to deadlock thing like this: 
+         *   #0  0x00007fff8db440fa in __psynch_cvwait ()
+         *   #1  0x00007fff8d0acfb9 in _pthread_cond_wait ()
+         *   #2  0x00007fff8a1bc8f0 in -[NSViewHierarchyLock _lockForWriting:handler:] ()
+         *   #3  0x00007fff8a1bc171 in -[NSView removeFromSuperview] ()
+         *   #4  0x000000010cffb2bb in -[VMSVGA3DOverlayView vboxRemoveFromSuperviewAndHide] (self=0x10a1da550, _cmd=0x10cffd734) at DevVGA-SVGA3d-cocoa.m:467
+         *   #5  0x000000010cffbed3 in vmsvga3dCocoaDestroyViewAndContext (pView=0x10a1da550, pCtx=0x10a1da630) at DevVGA-SVGA3d-cocoa.m:662
+         * (This is from OS X 10.8.5.)
+         */
+        if ([NSThread isMainThread])
+        {
+            LogFlow(("OvlView(%p) vboxRemoveFromSuperviewAndHide: calling removeFromSuperview\n", (void *)self));
+            [self removeFromSuperview];
+            LogFlow(("OvlView(%p) vboxRemoveFromSuperviewAndHide: calling setHidden\n", (void *)self));
+            [self setHidden:YES];
+#if 0 /* doesn't work, or isn't really needed (scroll bar mess). */
+            LogFlow(("OvlView(%p) vboxRemoveFromSuperviewAndHide: calling setHidden\n", (void *)self));
+            [[NSNotificationCenter defaultCenter] removeObserver:self];
+#endif
+        }
+        else
+        {
+            LogFlow(("OvlView(%p) vboxRemoveFromSuperviewAndHide: defering to main thread\n", (void *)self));
+            vmsvga3dCocoaServiceRunLoop();
+            [self performSelectorOnMainThread:@selector(vboxRemoveFromSuperviewAndHide) withObject:nil waitUntilDone:YES];
+            vmsvga3dCocoaServiceRunLoop();
+            LogFlow(("OvlView(%p) vboxRemoveFromSuperviewAndHide: main thread done\n", (void *)self));
+        }
     }
 }
 
@@ -659,10 +685,11 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaDestroyViewAndContext(NativeNSViewRef pVie
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
     /* The view */
-    [(VMSVGA3DOverlayView *)pView vboxRemoveFromSuperviewAndHide];
+    VMSVGA3DOverlayView *pOvlView = (VMSVGA3DOverlayView *)pView;
+    [pOvlView vboxRemoveFromSuperviewAndHide];
 
-    Log(("vmsvga3dCocoaDestroyViewAndContext: view %p ref count=%d\n", (void *)pView, [pView retainCount]));
-    [pView release];
+    Log(("vmsvga3dCocoaDestroyViewAndContext: view %p ref count=%d\n", (void *)pOvlView, [pOvlView retainCount]));
+    [pOvlView release];
 
     /* The OpenGL context. */
     Log(("vmsvga3dCocoaDestroyViewAndContext: ctx  %p ref count=%d\n", (void *)pCtx, [pCtx retainCount]));
