@@ -443,7 +443,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
 
 void UIMachineWindow::prepareSessionConnections()
 {
-    /* Machine state-change updater: */
+    /* We should watch for console events: */
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
 }
 
@@ -522,6 +522,12 @@ void UIMachineWindow::cleanupMachineView()
     /* Destroy machine-view: */
     UIMachineView::destroy(m_pMachineView);
     m_pMachineView = 0;
+}
+
+void UIMachineWindow::cleanupSessionConnections()
+{
+    /* We should stop watching for console events: */
+    disconnect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
 }
 
 void UIMachineWindow::updateAppearanceOf(int iElement)

@@ -147,7 +147,7 @@ protected:
     virtual void cleanupStatusBar() {}
     virtual void cleanupMenu() {}
     virtual void cleanupMainLayout() {}
-    virtual void cleanupSessionConnections() {}
+    virtual void cleanupSessionConnections();
 
     /* Update stuff: */
     virtual void updateAppearanceOf(int iElement);
