@@ -790,6 +790,7 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
             { RT_STR_TUPLE("Windows_Winmain.8400"),             6, 2, 0, 8400 }, /* RC */
             { RT_STR_TUPLE("Windows_Win8.9200"),                6, 2, 0, 9200 }, /* RTM */
             { RT_STR_TUPLE("en_windows_8_1"),                   6, 3, 0, 9600 }, /* RTM */
+            { RT_STR_TUPLE("en_windows_10_symbols_"),          10, 0, 0,10240 }, /* RTM */
         };
 
         const char *pszComp  = u.Split.apszComps[i];
