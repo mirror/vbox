@@ -188,33 +188,39 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
  */
 #ifdef RT_OS_WINDOWS
 # define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext) \
-    if ((pState)->idActiveContext != (pContext)->id) \
-    { \
-        BOOL fMakeCurrentRc = wglMakeCurrent((pContext)->hdc, (pContext)->hglrc); \
-        Assert(fMakeCurrentRc == TRUE); \
-        LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
-        (pState)->idActiveContext = (pContext)->id; \
-    } else do { } while (0)
+    do {  \
+        if ((pState)->idActiveContext != (pContext)->id) \
+        { \
+            BOOL fMakeCurrentRc = wglMakeCurrent((pContext)->hdc, (pContext)->hglrc); \
+            Assert(fMakeCurrentRc == TRUE); \
+            LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
+            (pState)->idActiveContext = (pContext)->id; \
+        } \
+    } while (0)
 
 #elif defined(RT_OS_DARWIN)
 # define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext) \
-    if ((pState)->idActiveContext != (pContext)->id) \
-    { \
-        vmsvga3dCocoaViewMakeCurrentContext((pContext)->cocoaView, (pContext)->cocoaContext); \
-        LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
-        (pState)->idActiveContext = (pContext)->id; \
-    } else do { } while (0)
+    do {  \
+        if ((pState)->idActiveContext != (pContext)->id) \
+        { \
+            vmsvga3dCocoaViewMakeCurrentContext((pContext)->cocoaView, (pContext)->cocoaContext); \
+            LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
+            (pState)->idActiveContext = (pContext)->id; \
+        } \
+    } while (0)
 #else
 # define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext) \
-    if ((pState)->idActiveContext != (pContext)->id) \
-    { \
-        Bool fMakeCurrentRc = glXMakeCurrent((pState)->display, \
-                                             (pContext)->window, \
-                                             (pContext)->glxContext); \
-        Assert(fMakeCurrentRc == True); \
-        LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
-        (pState)->idActiveContext = (pContext)->id; \
-    } else do { } while (0)
+    do {  \
+        if ((pState)->idActiveContext != (pContext)->id) \
+        { \
+            Bool fMakeCurrentRc = glXMakeCurrent((pState)->display, \
+                                                 (pContext)->window, \
+                                                 (pContext)->glxContext); \
+            Assert(fMakeCurrentRc == True); \
+            LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
+            (pState)->idActiveContext = (pContext)->id; \
+        }
+    } while (0)
 #endif
 
 /** @def VMSVGA3D_CLEAR_GL_ERRORS
@@ -4738,23 +4744,24 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
 /**
  * Worker for vmsvga3dChangeMode that resizes a context.
  *
- * @param   pThis               The VMSVGA state.
+ * @param   pThis               The VGA device instance data.
+ * @param   pState              The VMSVGA3d state.
  * @param   pContext            The context.
  */
-static void vmsvga3dChangeModeOneContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
+static void vmsvga3dChangeModeOneContext(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
 #ifdef RT_OS_WINDOWS
+    /* Resize the window. */
     CREATESTRUCT          cs;
-
-    memset(&cs, 0, sizeof(cs));
+    RT_ZERO(cs);
     cs.cx = pThis->svga.uWidth;
     cs.cy = pThis->svga.uHeight;
-
-    /* Resize the window. */
     int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_RESIZEWINDOW, (WPARAM)pContext->hwnd, (LPARAM)&cs);
     AssertRC(rc);
+
 #elif defined(RT_OS_DARWIN)
     vmsvga3dCocoaViewSetSize(pContext->cocoaView, pThis->svga.uWidth, pThis->svga.uHeight);
+
 #elif defined(RT_OS_LINUX)
     XWindowChanges wc;
     wc.width = pThis->svga.uWidth;
@@ -4772,7 +4779,7 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
 #ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
     /* Resize the shared context too. */
     if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
-        vmsvga3dChangeModeOneContext(pThis, &pState->SharedCtx);
+        vmsvga3dChangeModeOneContext(pThis, pState, &pState->SharedCtx);
 #endif
 
     /* Resize all active contexts. */
@@ -4780,7 +4787,7 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
     {
         PVMSVGA3DCONTEXT pContext = pState->papContexts[i];
         if (pContext->id != SVGA3D_INVALID_ID)
-            vmsvga3dChangeModeOneContext(pThis, pContext);
+            vmsvga3dChangeModeOneContext(pThis, pState, pContext);
     }
 
     return VINF_SUCCESS;
