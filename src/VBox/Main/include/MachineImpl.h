@@ -565,12 +565,17 @@ public:
 
     bool i_isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
                          ComPtr<IInternalSessionControl> *aControl = NULL,
+                         bool aRequireVM = false,
                          bool aAllowClosing = false);
     bool i_isSessionSpawning();
 
     bool i_isSessionOpenOrClosing(ComObjPtr<SessionMachine> &aMachine,
                                   ComPtr<IInternalSessionControl> *aControl = NULL)
-    { return i_isSessionOpen(aMachine, aControl, true /* aAllowClosing */); }
+    { return i_isSessionOpen(aMachine, aControl, false /* aRequireVM */, true /* aAllowClosing */); }
+
+    bool i_isSessionOpenVM(ComObjPtr<SessionMachine> &aMachine,
+                           ComPtr<IInternalSessionControl> *aControl = NULL)
+    { return i_isSessionOpen(aMachine, aControl, true /* aRequireVM */, false /* aAllowClosing */); }
 
     bool i_checkForSpawnFailure();
 
