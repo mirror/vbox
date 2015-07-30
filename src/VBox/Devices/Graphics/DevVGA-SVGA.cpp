@@ -3949,6 +3949,10 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
 # ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
+#  ifdef RT_OS_DARWIN  /** @todo r=bird: this is normally done on the EMT, so for DARWIN we do that when loading saved state too now. See DevVGA-SVGA3d-shared.h. */
+        vmsvga3dPowerOn(pThis);
+#  endif
+
         VMSVGA_STATE_LOAD LoadState;
         LoadState.pSSM     = pSSM;
         LoadState.uVersion = uVersion;

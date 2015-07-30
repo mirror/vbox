@@ -92,6 +92,8 @@
 #ifndef USE_NSOPENGLVIEW
     /** The OpenGL context associated with this view. */
     NSOpenGLContext *m_pCtx;
+    /** Number of times we've tried to set the view (shut up noisy NSLog). */
+    uint32_t        m_cSetViewAttempts;
 #endif
 
     /** The desired view position relative to super. */
@@ -110,7 +112,6 @@
 - (BOOL)postsFrameChangedNotifications;
 #endif
 - (void)vboxRemoveFromSuperviewAndHide;
-- (void)vboxClearBuffers;
 - (void)vboxUpdateCtxIfNecessary;
 - (void)vboxClearBackBufferIfNecessary;
 - (NSOpenGLContext *)makeCurrentGLContext;
@@ -172,8 +173,8 @@
         NSRect Frame;
         Frame.origin.x    = 0;
         Frame.origin.y    = 0;
-        Frame.size.width  = pParams->cx < _1M ? pParams->cx : 0;
-        Frame.size.height = pParams->cy < _1M ? pParams->cy : 0;
+        Frame.size.width  = pParams->cx < _1M && pParams->cx > 0 ? pParams->cx : 1; /* 'invalid drawable' if 0,0 size? */
+        Frame.size.height = pParams->cy < _1M && pParams->cy > 0 ? pParams->cy : 1;
         VMSVGA3DOverlayView *pView = [[VMSVGA3DOverlayView alloc] initWithFrameAndFormat:Frame
                                                                               parentView:pParams->pParentView
                                                                              pixelFormat:pFmt];
@@ -264,7 +265,7 @@
     return;
 }
 
-- (id)initWithFrameAndFormat:(NSRect) frame parentView:(NSView*)pParentView pixelFormat:(NSOpenGLPixelFormat *)pFmt
+- (id)initWithFrameAndFormat:(NSRect) frame parentView:(NSView *)pParentView pixelFormat:(NSOpenGLPixelFormat *)pFmt
 {
     LogFlow(("OvlView(%p) initWithFrameAndFormat:\n", (void *)self));
 
@@ -278,6 +279,8 @@
 #ifdef USE_NSOPENGLVIEW
     self = [super initWithFrame:frame pixelFormat:pFmt];
 #else
+    m_cSetViewAttempts = 0;
+    m_pCtx = NULL;
     self = [super initWithFrame:frame];
 #endif
     if (self)
@@ -329,53 +332,6 @@
     LogFlow(("OvlView(%p) vboxSetSize: returns\n", (void *)self));
 }
 
-
-- (void)vboxClearBuffers
-{
-#if 1 /* experiment */
-    if ([NSThread isMainThread])
-        Log(("OvlView(%p) vboxClearBuffers: skip, main thread\n", (void *)self));
-    else
-    {
-        Log(("OvlView(%p) vboxClearBuffers: clears\n", (void *)self));
-        NSOpenGLContext *pSavedCtx = [self makeCurrentGLContext];
-
-        /* Clear errors. */
-        GLenum rc;
-        while ((rc = glGetError()) != GL_NO_ERROR)
-            continue;
-
-        /* Save the old buffer setting and make it GL_BACK (shall be GL_BACK already actually). */
-        GLint iOldDrawBuf = GL_BACK;
-        glGetIntegerv(GL_DRAW_BUFFER, &iOldDrawBuf);
-        glDrawBuffer(GL_BACK);
-        while ((rc = glGetError()) != GL_NO_ERROR)
-            AssertMsgFailed(("rc=%x\n", rc));
-
-        /* Clear the current GL_BACK. */
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT /*|GL_DEPTH_BUFFER_BIT*/ );
-        [[self openGLContext] flushBuffer];
-        while ((rc = glGetError()) != GL_NO_ERROR)
-            AssertMsgFailed(("rc=%x\n", rc));
-
-        /* Clear the previous GL_FRONT. */
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT /*|GL_DEPTH_BUFFER_BIT*/ );
-        [[self openGLContext] flushBuffer];
-        while ((rc = glGetError()) != GL_NO_ERROR)
-            AssertMsgFailed(("rc=%x\n", rc));
-
-        /* We're back to the orignal back buffer now. Just restore GL_DRAW_BUFFER. */
-        glDrawBuffer(iOldDrawBuf);
-
-        while ((rc = glGetError()) != GL_NO_ERROR)
-            AssertMsgFailed(("rc=%x\n", rc));
-
-        [self restoreSavedGLContext:pSavedCtx];
-    }
-#endif
-}
 
 - (void)vboxUpdateCtxIfNecessary
 {
@@ -578,9 +534,17 @@
 
 - (NSOpenGLContext *)openGLContext
 {
-    /* Stupid hack to work around setView failing early. */
+    /* Stupid hacks to work around setView failing early.  This can get kind of
+       noisy on some OS versions, so shut it up a little bit. */
+    /** @todo use NSOpenGLView for the non-visible contexts. */
     if (m_pCtx && [m_pCtx view] != self)
-        [m_pCtx setView:self];
+    {
+        m_cSetViewAttempts++;
+        if (   m_pParentView 
+            || m_cSetViewAttempts < 64 
+            || (m_cSetViewAttempts & (m_cSetViewAttempts < _64K ? 0xfff : 0x7fff)) == 0 )
+            [m_pCtx setView:self];
+    }
     return m_pCtx;
 }
 
@@ -758,7 +722,7 @@ void vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLCo
         [NSOpenGLContext clearCurrentContext];
 
     [pPool release];
-    LogFlow(("vmsvga3dCocoaSwapBuffers: returns\n"));
+    LogFlow(("vmsvga3dCocoaViewMakeCurrentContext: returns\n"));
 }
 
 

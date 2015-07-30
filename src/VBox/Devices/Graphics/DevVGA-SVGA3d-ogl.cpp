@@ -4735,40 +4735,54 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
     return VINF_SUCCESS;
 }
 
+/**
+ * Worker for vmsvga3dChangeMode that resizes a context.
+ *
+ * @param   pThis               The VMSVGA state.
+ * @param   pContext            The context.
+ */
+static void vmsvga3dChangeModeOneContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
+{
+#ifdef RT_OS_WINDOWS
+    CREATESTRUCT          cs;
+
+    memset(&cs, 0, sizeof(cs));
+    cs.cx = pThis->svga.uWidth;
+    cs.cy = pThis->svga.uHeight;
+
+    /* Resize the window. */
+    int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_RESIZEWINDOW, (WPARAM)pContext->hwnd, (LPARAM)&cs);
+    AssertRC(rc);
+#elif defined(RT_OS_DARWIN)
+    vmsvga3dCocoaViewSetSize(pContext->cocoaView, pThis->svga.uWidth, pThis->svga.uHeight);
+#elif defined(RT_OS_LINUX)
+    XWindowChanges wc;
+    wc.width = pThis->svga.uWidth;
+    wc.height = pThis->svga.uHeight;
+    XConfigureWindow(pState->display, pContext->window, CWWidth | CWHeight, &wc);
+#endif
+}
+
 /* Handle resize */
 int vmsvga3dChangeMode(PVGASTATE pThis)
 {
     PVMSVGA3DSTATE pState = pThis->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
 
+#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+    /* Resize the shared context too. */
+    if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
+        vmsvga3dChangeModeOneContext(pThis, &pState->SharedCtx);
+#endif
+
     /* Resize all active contexts. */
     for (uint32_t i = 0; i < pState->cContexts; i++)
     {
         PVMSVGA3DCONTEXT pContext = pState->papContexts[i];
-        uint32_t cid = pContext->id;
-
-        if (cid != SVGA3D_INVALID_ID)
-        {
-#ifdef RT_OS_WINDOWS
-            CREATESTRUCT          cs;
-
-            memset(&cs, 0, sizeof(cs));
-            cs.cx = pThis->svga.uWidth;
-            cs.cy = pThis->svga.uHeight;
-
-            /* Resize the window. */
-            int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_RESIZEWINDOW, (WPARAM)pContext->hwnd, (LPARAM)&cs);
-            AssertRC(rc);
-#elif defined(RT_OS_DARWIN)
-            vmsvga3dCocoaViewSetSize(pContext->cocoaView, pThis->svga.uWidth, pThis->svga.uHeight);
-#elif defined(RT_OS_LINUX)
-            XWindowChanges wc;
-            wc.width = pThis->svga.uWidth;
-            wc.height = pThis->svga.uHeight;
-            XConfigureWindow(pState->display, pContext->window, CWWidth | CWHeight, &wc);
-#endif
-        }
+        if (pContext->id != SVGA3D_INVALID_ID)
+            vmsvga3dChangeModeOneContext(pThis, pContext);
     }
+
     return VINF_SUCCESS;
 }
 
@@ -4965,7 +4979,7 @@ static GLenum vmsvga3dBlendEquation2GL(uint32_t blendEq)
     case SVGA3D_BLENDEQ_MAXIMUM:
         return GL_MAX;
     default:
-        AssertFailed();
+        AssertMsgFailed(("blendEq=%d (%#x)\n", blendEq, blendEq));
         return GL_FUNC_ADD;
     }
 }
