@@ -2015,7 +2015,7 @@ HRESULT Medium::setIds(AutoCaller &autoCaller,
     Guid imageId, parentId;
     if (aSetImageId)
     {
-        if (aImageId.toUtf16().isEmpty())
+        if (aImageId.isZero())
             imageId.create();
         else
         {
@@ -2026,7 +2026,7 @@ HRESULT Medium::setIds(AutoCaller &autoCaller,
     }
     if (aSetParentId)
     {
-        if (aParentId.toUtf16().isEmpty())
+        if (aParentId.isZero())
             parentId.create();
         else
             parentId = aParentId;

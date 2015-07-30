@@ -59,6 +59,11 @@
       </listitem>
 
       <listitem>
+        <para>API: fixed method for setting medium IDs which used zero (invalid)
+          UUIDs instead random (valid) UUIDs if no UUIDs were passed (bug #14350)</para>
+      </listitem>
+
+      <listitem>
         <para>Mac OS X hosts: El Capitan fixes (USB)</para>
       </listitem>
 
