@@ -219,7 +219,7 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
             Assert(fMakeCurrentRc == True); \
             LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
             (pState)->idActiveContext = (pContext)->id; \
-        }
+        } \
     } while (0)
 #endif
 
