@@ -73,6 +73,10 @@
       </listitem>
 
       <listitem>
+        <para>Linux Additions: Linux 4.2 fixes (bug #14227)</para>
+      </listitem>
+
+      <listitem>
         <para>Windows Additions: fixed a potential crash in the WDDM driver
           with Windows 10 (bug #14190)</para>
       </listitem>
