@@ -242,6 +242,9 @@ void UIMachineLogic::cleanup()
     cleanupActionConnections();
     /* Cleanup action groups: */
     cleanupActionGroups();
+
+    /* Cleanup session connections: */
+    cleanupSessionConnections();
 }
 
 void UIMachineLogic::initializePostPowerUp()
@@ -892,49 +895,35 @@ void UIMachineLogic::prepareRequiredFeatures()
 
 void UIMachineLogic::prepareSessionConnections()
 {
-    /* We should watch for the VBoxSVC availability changes: */
+    /* We should watch for VBoxSVC availability changes: */
     connect(&vboxGlobal(), SIGNAL(sigVBoxSVCAvailabilityChange()),
             this, SLOT(sltHandleVBoxSVCAvailabilityChange()));
 
-    /* We should check for entering/exiting requested modes: */
+    /* We should watch for requested modes: */
     connect(uisession(), SIGNAL(sigInitialized()), this, SLOT(sltCheckForRequestedVisualStateType()));
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltCheckForRequestedVisualStateType()));
 
-    /* Machine state-change updater: */
+    /* We should watch for console events: */
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
-
-    /* Guest additions state-change updater: */
     connect(uisession(), SIGNAL(sigAdditionsStateActualChange()), this, SLOT(sltAdditionsStateChanged()));
-
-    /* Mouse capability state-change updater: */
     connect(uisession(), SIGNAL(sigMouseCapabilityChange()), this, SLOT(sltMouseCapabilityChanged()));
-
-    /* Keyboard LEDs state-change updater: */
     connect(uisession(), SIGNAL(sigKeyboardLedsChange()), this, SLOT(sltKeyboardLedsChanged()));
-
-    /* USB devices state-change updater: */
     connect(uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
             this, SLOT(sltUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)));
-
-    /* Runtime errors notifier: */
     connect(uisession(), SIGNAL(sigRuntimeError(bool, const QString &, const QString &)),
             this, SLOT(sltRuntimeError(bool, const QString &, const QString &)));
-
 #ifdef Q_WS_MAC
-    /* Show windows: */
     connect(uisession(), SIGNAL(sigShowWindows()), this, SLOT(sltShowWindows()));
 #endif /* Q_WS_MAC */
-
-    /* Guest-monitor-change updater: */
     connect(uisession(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
             this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 
-    /* Host-screen-change updaters: */
+    /* We should watch for host-screen-change events: */
     connect(uisession(), SIGNAL(sigHostScreenCountChange()), this, SLOT(sltHostScreenCountChange()));
     connect(uisession(), SIGNAL(sigHostScreenGeometryChange()), this, SLOT(sltHostScreenGeometryChange()));
     connect(uisession(), SIGNAL(sigHostScreenAvailableAreaChange()), this, SLOT(sltHostScreenAvailableAreaChange()));
 
-    /* Frame-buffer connections: */
+    /* We should notify about frame-buffer events: */
     connect(this, SIGNAL(sigFrameBufferResize()), uisession(), SIGNAL(sigFrameBufferResize()));
 }
 
@@ -1279,6 +1268,40 @@ void UIMachineLogic::cleanupHandlers()
 
     /* Cleanup keyboard-handler: */
     UIKeyboardHandler::destroy(keyboardHandler());
+}
+
+void UIMachineLogic::cleanupSessionConnections()
+{
+    /* We should stop watching for VBoxSVC availability changes: */
+    disconnect(&vboxGlobal(), SIGNAL(sigVBoxSVCAvailabilityChange()),
+               this, SLOT(sltHandleVBoxSVCAvailabilityChange()));
+
+    /* We should stop watching for requested modes: */
+    disconnect(uisession(), SIGNAL(sigInitialized()), this, SLOT(sltCheckForRequestedVisualStateType()));
+    disconnect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltCheckForRequestedVisualStateType()));
+
+    /* We should stop watching for console events: */
+    disconnect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
+    disconnect(uisession(), SIGNAL(sigAdditionsStateActualChange()), this, SLOT(sltAdditionsStateChanged()));
+    disconnect(uisession(), SIGNAL(sigMouseCapabilityChange()), this, SLOT(sltMouseCapabilityChanged()));
+    disconnect(uisession(), SIGNAL(sigKeyboardLedsChange()), this, SLOT(sltKeyboardLedsChanged()));
+    disconnect(uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
+               this, SLOT(sltUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)));
+    disconnect(uisession(), SIGNAL(sigRuntimeError(bool, const QString &, const QString &)),
+               this, SLOT(sltRuntimeError(bool, const QString &, const QString &)));
+#ifdef Q_WS_MAC
+    disconnect(uisession(), SIGNAL(sigShowWindows()), this, SLOT(sltShowWindows()));
+#endif /* Q_WS_MAC */
+    disconnect(uisession(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+               this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+
+    /* We should stop watching for host-screen-change events: */
+    disconnect(uisession(), SIGNAL(sigHostScreenCountChange()), this, SLOT(sltHostScreenCountChange()));
+    disconnect(uisession(), SIGNAL(sigHostScreenGeometryChange()), this, SLOT(sltHostScreenGeometryChange()));
+    disconnect(uisession(), SIGNAL(sigHostScreenAvailableAreaChange()), this, SLOT(sltHostScreenAvailableAreaChange()));
+
+    /* We should stop notify about frame-buffer events: */
+    disconnect(this, SIGNAL(sigFrameBufferResize()), uisession(), SIGNAL(sigFrameBufferResize()));
 }
 
 bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)

@@ -238,7 +238,7 @@ protected:
     //virtual void cleanupOtherConnections() {}
     virtual void cleanupActionConnections() {}
     virtual void cleanupActionGroups() {}
-    //virtual void cleanupSessionConnections() {}
+    virtual void cleanupSessionConnections();
     //virtual void cleanupRequiredFeatures() {}
 
     /* Handler: Event-filter stuff: */
