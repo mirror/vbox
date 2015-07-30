@@ -280,11 +280,14 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
 #define HMVMX_REPORT_FEATURE(allowed1, disallowed0, featflag) \
     do { \
         if ((allowed1) & (featflag)) \
-            LogRel(("HM:   " #featflag "\n")); \
+        { \
+            if ((disallowed0) & (featflag)) \
+                LogRel(("HM:   " #featflag " (must be set)\n")); \
+            else \
+                LogRel(("HM:   " #featflag "\n")); \
+        } \
         else \
             LogRel(("HM:   " #featflag " (must be cleared)\n")); \
-        if ((disallowed0) & (featflag)) \
-            LogRel(("HM:   " #featflag " (must be set)\n")); \
     } while (0)
 
 #define HMVMX_REPORT_ALLOWED_FEATURE(allowed1, featflag) \
