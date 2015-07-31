@@ -3023,12 +3023,12 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
     /* return the network connection GUID on success */
     if (SUCCEEDED(hrc))
     {
-        WCHAR ConnectoinName[128];
-        ULONG cbName = sizeof(ConnectoinName);
+        WCHAR ConnectionName[128];
+        ULONG cbName = sizeof(ConnectionName);
 
-        HRESULT hr = VBoxNetCfgWinGenHostonlyConnectionName(DevName, ConnectoinName, &cbName);
+        HRESULT hr = VBoxNetCfgWinGenHostonlyConnectionName(DevName, ConnectionName, &cbName);
         if (SUCCEEDED(hr))
-            hr = VBoxNetCfgWinRenameConnection(pWCfgGuidString, ConnectoinName);
+            hr = VBoxNetCfgWinRenameConnection(pWCfgGuidString, ConnectionName);
 
         if (lppszName)
         {
