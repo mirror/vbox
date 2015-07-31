@@ -36,6 +36,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI: improve the quality in scaling mode under some circumstances
+          (5.0 regression; bug #14303)</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: don't deny changing the network adapter type at
           VM runtime (5.0 regression; bug #14308)</para>
       </listitem>
