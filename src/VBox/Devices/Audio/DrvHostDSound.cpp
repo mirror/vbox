@@ -639,7 +639,7 @@ static void dsoundCaptureInterfaceRelease(PDSOUNDSTREAMIN pDSoundStrmIn)
 {
     if (pDSoundStrmIn->pDSC)
     {
-        IDirectSoundCapture8_Release(pDSoundStrmIn->pDSC);
+        IDirectSoundCapture_Release(pDSoundStrmIn->pDSC);
         pDSoundStrmIn->pDSC = NULL;
     }
 }
@@ -661,7 +661,7 @@ static int dsoundCaptureInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pD
     else
     {
         LPCGUID pGUID = dsoundCaptureSelectDevice(pThis, pDSoundStrmIn);
-        hr = IDirectSoundCapture8_Initialize(pDSoundStrmIn->pDSC, pGUID);
+        hr = IDirectSoundCapture_Initialize(pDSoundStrmIn->pDSC, pGUID);
         if (FAILED(hr))
         {
             if (hr == DSERR_NODRIVER)
@@ -685,7 +685,7 @@ static void dsoundCaptureClose(PDSOUNDSTREAMIN pDSoundStrmIn)
 
     if (pDSoundStrmIn->pDSCB)
     {
-        HRESULT hr = IDirectSoundCaptureBuffer8_Stop(pDSoundStrmIn->pDSCB);
+        HRESULT hr = IDirectSoundCaptureBuffer_Stop(pDSoundStrmIn->pDSCB);
         if (FAILED (hr))
         {
             DSLOG(("DSound: close capture buffer stop %Rhrc\n", hr));
@@ -734,8 +734,8 @@ static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn
         bd.dwSize = sizeof(bd);
         bd.lpwfxFormat = &wfx;
         bd.dwBufferBytes = pThis->cfg.cbBufferIn;
-        hr = IDirectSoundCapture8_CreateCaptureBuffer(pDSoundStrmIn->pDSC,
-                                                      &bd, &pDSCB, NULL);
+        hr = IDirectSoundCapture_CreateCaptureBuffer(pDSoundStrmIn->pDSC,
+                                                     &bd, &pDSCB, NULL);
 
         if (FAILED(hr))
         {
@@ -745,7 +745,7 @@ static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn
         }
 
         hr = IDirectSoundCaptureBuffer_QueryInterface(pDSCB, IID_IDirectSoundCaptureBuffer8, (void **)&pDSCB);
-        IDirectSoundCaputreBuffer_Release(pDSCB);
+        IDirectSoundCaptureBuffer_Release(pDSCB);
         if (FAILED(hr))
         {
             DSLOGREL(("DSound: querying capture buffer %Rhrc\n", hr));
@@ -831,7 +831,7 @@ static void dsoundCaptureStop(PDSOUNDSTREAMIN pDSoundStrmIn)
     {
         DSLOG(("DSound: capture stop\n"));
 
-        HRESULT hr = IDirectSoundCaptureBuffer8_Stop(pDSoundStrmIn->pDSCB);
+        HRESULT hr = IDirectSoundCaptureBuffer_Stop(pDSoundStrmIn->pDSCB);
         if (FAILED(hr))
         {
             DSLOG(("DSound: stop capture buffer %Rhrc\n", hr));
@@ -1318,7 +1318,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
 {
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAMIN pDSoundStrmIn = (PDSOUNDSTREAMIN)pHstStrmIn;
-    LPDIRECTSOUNDCAPTUREBUFFER pDSCB = pDSoundStrmIn->pDSCB;
+    LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB = pDSoundStrmIn->pDSCB;
 
     int rc;
 
