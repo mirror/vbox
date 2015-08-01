@@ -39,6 +39,67 @@
 #include "DevVGA-SVGA3d-internal.h"
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Enum value to string mappings for SVGA3dSurfaceFormat, prefix "SVGA3D_". */
+static const VMSVGAINFOENUM g_aSVGA3dSurfaceFormats[] =
+{
+    { SVGA3D_FORMAT_INVALID     , "FORMAT_INVALID" },
+    { SVGA3D_X8R8G8B8           , "X8R8G8B8" },
+    { SVGA3D_A8R8G8B8           , "A8R8G8B8" },
+    { SVGA3D_R5G6B5             , "R5G6B5" },
+    { SVGA3D_X1R5G5B5           , "X1R5G5B5" },
+    { SVGA3D_A1R5G5B5           , "A1R5G5B5" },
+    { SVGA3D_A4R4G4B4           , "A4R4G4B4" },
+    { SVGA3D_Z_D32              , "Z_D32" },
+    { SVGA3D_Z_D16              , "Z_D16" },
+    { SVGA3D_Z_D24S8            , "Z_D24S8" },
+    { SVGA3D_Z_D15S1            , "Z_D15S1" },
+    { SVGA3D_LUMINANCE8         , "LUMINANCE8" },
+    { SVGA3D_LUMINANCE4_ALPHA4  , "LUMINANCE4_ALPHA4" },
+    { SVGA3D_LUMINANCE16        , "LUMINANCE16" },
+    { SVGA3D_LUMINANCE8_ALPHA8  , "LUMINANCE8_ALPHA8" },
+    { SVGA3D_DXT1               , "DXT1" },
+    { SVGA3D_DXT2               , "DXT2" },
+    { SVGA3D_DXT3               , "DXT3" },
+    { SVGA3D_DXT4               , "DXT4" },
+    { SVGA3D_DXT5               , "DXT5" },
+    { SVGA3D_BUMPU8V8           , "BUMPU8V8" },
+    { SVGA3D_BUMPL6V5U5         , "BUMPL6V5U5" },
+    { SVGA3D_BUMPX8L8V8U8       , "BUMPX8L8V8U8" },
+    { SVGA3D_BUMPL8V8U8         , "BUMPL8V8U8" },
+    { SVGA3D_ARGB_S10E5         , "ARGB_S10E5" },
+    { SVGA3D_ARGB_S23E8         , "ARGB_S23E8" },
+    { SVGA3D_A2R10G10B10        , "A2R10G10B10" },
+    { SVGA3D_V8U8               , "V8U8" },
+    { SVGA3D_Q8W8V8U8           , "Q8W8V8U8" },
+    { SVGA3D_CxV8U8             , "CxV8U8" },
+    { SVGA3D_X8L8V8U8           , "X8L8V8U8" },
+    { SVGA3D_A2W10V10U10        , "A2W10V10U10" },
+    { SVGA3D_ALPHA8             , "ALPHA8" },
+    { SVGA3D_R_S10E5            , "R_S10E5" },
+    { SVGA3D_R_S23E8            , "R_S23E8" },
+    { SVGA3D_RG_S10E5           , "RG_S10E5" },
+    { SVGA3D_RG_S23E8           , "RG_S23E8" },
+    { SVGA3D_BUFFER             , "BUFFER" },
+    { SVGA3D_Z_D24X8            , "Z_D24X8" },
+    { SVGA3D_V16U16             , "V16U16" },
+    { SVGA3D_G16R16             , "G16R16" },
+    { SVGA3D_A16B16G16R16       , "A16B16G16R16" },
+    { SVGA3D_UYVY               , "UYVY" },
+    { SVGA3D_YUY2               , "YUY2" },
+    { SVGA3D_NV12               , "NV12" },
+    { SVGA3D_AYUV               , "AYUV" },
+    { SVGA3D_BC4_UNORM          , "BC4_UNORM" },
+    { SVGA3D_BC5_UNORM          , "BC5_UNORM" },
+    { SVGA3D_Z_DF16             , "Z_DF16" },
+    { SVGA3D_Z_DF24             , "Z_DF24" },
+    { SVGA3D_Z_D24S8_INT        , "Z_D24S8_INT" },
+};
+VMSVGAINFOENUMMAP_MAKE(RT_NOTHING, g_SVGA3dSurfaceFormat2String, g_aSVGA3dSurfaceFormats, "SVGA3D_");
+
+
 /**
  * Worker for vmsvga3dUpdateHeapBuffersForSurfaces.
  *
