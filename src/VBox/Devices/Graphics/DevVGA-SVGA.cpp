@@ -3053,7 +3053,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         cMipLevels = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dSize);
-                        rc = vmsvga3dSurfaceDefine(pThis, pCmd->sid, (uint32_t)pCmd->surfaceFlags, pCmd->format, pCmd->face, 0, SVGA3D_TEX_FILTER_NONE, cMipLevels, (SVGA3dSize *)(pCmd + 1));
+                        rc = vmsvga3dSurfaceDefine(pThis, pCmd->sid, (uint32_t)pCmd->surfaceFlags, pCmd->format, pCmd->face, 0,
+                                                   SVGA3D_TEX_FILTER_NONE, cMipLevels, (SVGA3dSize *)(pCmd + 1));
 #  ifdef DEBUG_GMR_ACCESS
                         VMR3ReqCallWait(PDMDevHlpGetVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaResetGMRHandlers, 1, pThis);
 #  endif
@@ -3067,7 +3068,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         cMipLevels = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dSize);
-                        rc = vmsvga3dSurfaceDefine(pThis, pCmd->sid, pCmd->surfaceFlags, pCmd->format, pCmd->face, pCmd->multisampleCount, pCmd->autogenFilter, cMipLevels, (SVGA3dSize *)(pCmd + 1));
+                        rc = vmsvga3dSurfaceDefine(pThis, pCmd->sid, pCmd->surfaceFlags, pCmd->format, pCmd->face,
+                                                   pCmd->multisampleCount, pCmd->autogenFilter,
+                                                   cMipLevels, (SVGA3dSize *)(pCmd + 1));
                         break;
                     }
 
@@ -3095,7 +3098,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         SVGA3dCmdSurfaceStretchBlt *pCmd = (SVGA3dCmdSurfaceStretchBlt *)(pHdr + 1);
                         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
-                        rc = vmsvga3dSurfaceStretchBlt(pThis, pCmd->dest, pCmd->boxDest, pCmd->src, pCmd->boxSrc, pCmd->mode);
+                        rc = vmsvga3dSurfaceStretchBlt(pThis, &pCmd->dest, &pCmd->boxDest, &pCmd->src, &pCmd->boxSrc, pCmd->mode);
                         break;
                     }
 

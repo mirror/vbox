@@ -320,7 +320,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
 
                             /* Set row length and alignment of the output data. */
                             VMSVGAPACKPARAMS SavedParams;
-                            vmsvga3dSetPackParams(pState, pContext, pSurface, &SavedParams);
+                            vmsvga3dOglSetPackParams(pState, pContext, pSurface, &SavedParams);
 
                             glGetTexImage(GL_TEXTURE_2D,
                                           i,
@@ -329,7 +329,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                                           pbDst);
                             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
-                            vmsvga3dRestorePackParams(pState, pContext, pSurface, &SavedParams);
+                            vmsvga3dOglRestorePackParams(pState, pContext, pSurface, &SavedParams);
 
                             /* Restore the old active texture. */
                             glBindTexture(GL_TEXTURE_2D, activeTexture);

@@ -609,6 +609,25 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 };
 #endif
 
+/** Mask we frequently apply to VMSVGA3DSURFACE::flags for decing what kind
+ * of surface we're dealing. */
+#define VMSVGA3D_SURFACE_HINT_SWITCH_MASK \
+    (   SVGA3D_SURFACE_HINT_INDEXBUFFER  | SVGA3D_SURFACE_HINT_VERTEXBUFFER \
+      | SVGA3D_SURFACE_HINT_TEXTURE      | SVGA3D_SURFACE_HINT_RENDERTARGET \
+      | SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_CUBEMAP )
+
+/** @def VMSVGA3DSURFACE_HAS_HW_SURFACE
+ * Checks whether the surface has a host hardware/library surface.
+ * @returns true/false
+ * @param   a_pSurface      The VMSVGA3d surface.
+ */
+#ifdef VMSVGA3D_DIRECT3D
+# define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->u.pSurface != NULL)
+#else
+# define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->oglId.texture != OPENGL_INVALID_ID)
+#endif
+
+
 
 typedef struct VMSVGA3DSHADER
 {
@@ -965,6 +984,14 @@ static SSMFIELD const g_aVMSVGA3DSTATEFields[] =
 #endif /* VMSVGA3D_INCL_STRUCTURE_DESCRIPTORS */
 
 
+#ifdef VMSVGA3D_DIRECT3D
+D3DFORMAT vmsvga3dSurfaceFormat2D3D(SVGA3dSurfaceFormat format);
+D3DMULTISAMPLE_TYPE vmsvga3dMultipeSampleCount2D3D(uint32_t multisampleCount);
+DECLCALLBACK(int) vmsvga3dSharedSurfaceDestroyTree(PAVLU32NODECORE pNode, void *pvParam);
+int vmsvga3dSurfaceFlush(PVGASTATE pThis, PVMSVGA3DSURFACE pSurface);
+#endif /* VMSVGA3D_DIRECT3D */
+
+
 #ifdef VMSVGA3D_OPENGL
 /** Save and setup everything. */
 # define VMSVGA3D_PARANOID_TEXTURE_PACKING
@@ -976,36 +1003,43 @@ typedef struct VMSVGAPACKPARAMS
 {
     GLint       iAlignment;
     GLint       cxRow;
-#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
+# ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
     GLint       cyImage;
     GLboolean   fSwapBytes;
     GLboolean   fLsbFirst;
     GLint       cSkipRows;
     GLint       cSkipPixels;
     GLint       cSkipImages;
-#endif
+# endif
 } VMSVGAPACKPARAMS;
 /** Pointer to saved texture packing parameters. */
 typedef VMSVGAPACKPARAMS *PVMSVGAPACKPARAMS;
 /** Pointer to const saved texture packing parameters. */
 typedef VMSVGAPACKPARAMS const *PCVMSVGAPACKPARAMS;
 
-void vmsvga3dSetPackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface, PVMSVGAPACKPARAMS pSave);
-void vmsvga3dRestorePackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+void vmsvga3dOglSetPackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+                              PVMSVGAPACKPARAMS pSave);
+void vmsvga3dOglRestorePackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
                                PCVMSVGAPACKPARAMS pSave);
+void vmsvga3dOglSetUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+                                PVMSVGAPACKPARAMS pSave);
+void vmsvga3dOglRestoreUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+                                    PCVMSVGAPACKPARAMS pSave);
 
 /** @name VMSVGA3D_DEF_CTX_F_XXX - vmsvga3dContextDefineOgl flags.
  * @{ */
 /** When clear, the  context is created using the default OpenGL profile.
  * When set, it's created using the alternative profile.  The latter is only
  * allowed if the VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE is set.  */
-#define VMSVGA3D_DEF_CTX_F_OTHER_PROFILE    RT_BIT_32(0)
+# define VMSVGA3D_DEF_CTX_F_OTHER_PROFILE   RT_BIT_32(0)
 /** Defining the shared context.  */
-#define VMSVGA3D_DEF_CTX_F_SHARED_CTX       RT_BIT_32(1)
+# define VMSVGA3D_DEF_CTX_F_SHARED_CTX      RT_BIT_32(1)
 /** Defining the init time context (EMT).  */
-#define VMSVGA3D_DEF_CTX_F_INIT             RT_BIT_32(2)
+# define VMSVGA3D_DEF_CTX_F_INIT            RT_BIT_32(2)
 /** @} */
 int  vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags);
+void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat format);
+
 #endif /* VMSVGA3D_OPENGL */
 
 
@@ -1013,6 +1047,20 @@ int  vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags);
 uint32_t vmsvga3dSaveShaderConst(PVMSVGA3DCONTEXT pContext, uint32_t reg, SVGA3dShaderType type, SVGA3dShaderConstType ctype,
                                  uint32_t val1, uint32_t val2, uint32_t val3, uint32_t val4);
 
+
+
+/* Command implementation workers. */
+void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface);
+int  vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
+                                   PVMSVGA3DSURFACE pDstSurface, uint32_t uDstMipmap, SVGA3dBox const *pDstBox,
+                                   PVMSVGA3DSURFACE pSrcSurface, uint32_t uSrcMipmap, SVGA3dBox const *pSrcBox,
+                                   SVGA3dStretchBltMode enmMode, PVMSVGA3DCONTEXT pContext);
+int  vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface, uint32_t uHostMimap,
+                                   SVGAGuestPtr GuestPtr, uint32_t cbSrcPitch, SVGA3dTransferType transfer,
+                                   SVGA3dCopyBox const *pBox, PVMSVGA3DCONTEXT pContext, int rc, int iBox);
+
+int  vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext,
+                               PVMSVGA3DSURFACE pSurface);
 
 #endif
 
