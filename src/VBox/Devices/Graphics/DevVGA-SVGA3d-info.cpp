@@ -99,6 +99,153 @@ static const VMSVGAINFOENUM g_aSVGA3dSurfaceFormats[] =
 };
 VMSVGAINFOENUMMAP_MAKE(RT_NOTHING, g_SVGA3dSurfaceFormat2String, g_aSVGA3dSurfaceFormats, "SVGA3D_");
 
+/** Values for SVGA3dTextureFilter, prefix SVGA3D_TEX_FILTER_. */
+static const char * const g_apszTexureFilters[] =
+{
+    "NONE",
+    "NEAREST",
+    "LINEAR",
+    "ANISOTROPIC",
+    "FLATCUBIC",
+    "GAUSSIANCUBIC",
+    "PYRAMIDALQUAD",
+    "GAUSSIANQUAD",
+};
+
+/** SVGA3dSurfaceFlags values, prefix SVGA3D_SURFACE_. */
+static VMSVGAINFOFLAGS32 const g_aSvga3DSurfaceFlags[] =
+{
+    { SVGA3D_SURFACE_CUBEMAP            , "CUBEMAP" },
+    { SVGA3D_SURFACE_HINT_STATIC        , "HINT_STATIC" },
+    { SVGA3D_SURFACE_HINT_DYNAMIC       , "HINT_DYNAMIC" },
+    { SVGA3D_SURFACE_HINT_INDEXBUFFER   , "HINT_INDEXBUFFER" },
+    { SVGA3D_SURFACE_HINT_VERTEXBUFFER  , "HINT_VERTEXBUFFER" },
+    { SVGA3D_SURFACE_HINT_TEXTURE       , "HINT_TEXTURE" },
+    { SVGA3D_SURFACE_HINT_RENDERTARGET  , "HINT_RENDERTARGET" },
+    { SVGA3D_SURFACE_HINT_DEPTHSTENCIL  , "HINT_DEPTHSTENCIL" },
+    { SVGA3D_SURFACE_HINT_WRITEONLY     , "HINT_WRITEONLY" },
+    { SVGA3D_SURFACE_MASKABLE_ANTIALIAS , "MASKABLE_ANTIALIAS" },
+    { SVGA3D_SURFACE_AUTOGENMIPMAPS     , "AUTOGENMIPMAPS" },
+};
+
+
+#ifdef VMSVGA3D_DIRECT3D
+
+/** Values for D3DFORMAT, prefix D3DFMT_. */
+static VMSVGAINFOENUM const g_aD3DFormats[] =
+{
+    { D3DFMT_UNKNOWN        , "UNKNOWN" },
+    { D3DFMT_R8G8B8         , "R8G8B8" },
+    { D3DFMT_A8R8G8B8       , "A8R8G8B8" },
+    { D3DFMT_X8R8G8B8       , "X8R8G8B8" },
+    { D3DFMT_R5G6B5         , "R5G6B5" },
+    { D3DFMT_X1R5G5B5       , "X1R5G5B5" },
+    { D3DFMT_A1R5G5B5       , "A1R5G5B5" },
+    { D3DFMT_A4R4G4B4       , "A4R4G4B4" },
+    { D3DFMT_R3G3B2         , "R3G3B2" },
+    { D3DFMT_A8             , "A8" },
+    { D3DFMT_A8R3G3B2       , "A8R3G3B2" },
+    { D3DFMT_X4R4G4B4       , "X4R4G4B4" },
+    { D3DFMT_A2B10G10R10    , "A2B10G10R10" },
+    { D3DFMT_A8B8G8R8       , "A8B8G8R8" },
+    { D3DFMT_X8B8G8R8       , "X8B8G8R8" },
+    { D3DFMT_G16R16         , "G16R16" },
+    { D3DFMT_A2R10G10B10    , "A2R10G10B10" },
+    { D3DFMT_A16B16G16R16   , "A16B16G16R16" },
+    { D3DFMT_A8P8           , "A8P8" },
+    { D3DFMT_P8             , "P8" },
+    { D3DFMT_L8             , "L8" },
+    { D3DFMT_A8L8           , "A8L8" },
+    { D3DFMT_A4L4           , "A4L4" },
+    { D3DFMT_V8U8           , "V8U8" },
+    { D3DFMT_L6V5U5         , "L6V5U5" },
+    { D3DFMT_X8L8V8U8       , "X8L8V8U8" },
+    { D3DFMT_Q8W8V8U8       , "Q8W8V8U8" },
+    { D3DFMT_V16U16         , "V16U16" },
+    { D3DFMT_A2W10V10U10    , "A2W10V10U10" },
+    { D3DFMT_D16_LOCKABLE   , "D16_LOCKABLE" },
+    { D3DFMT_D32            , "D32" },
+    { D3DFMT_D15S1          , "D15S1" },
+    { D3DFMT_D24S8          , "D24S8" },
+    { D3DFMT_D24X8          , "D24X8" },
+    { D3DFMT_D24X4S4        , "D24X4S4" },
+    { D3DFMT_D16            , "D16" },
+    { D3DFMT_L16            , "L16" },
+    { D3DFMT_D32F_LOCKABLE  , "D32F_LOCKABLE" },
+    { D3DFMT_D24FS8         , "D24FS8" },
+    { D3DFMT_VERTEXDATA     , "VERTEXDATA" },
+    { D3DFMT_INDEX16        , "INDEX16" },
+    { D3DFMT_INDEX32        , "INDEX32" },
+    { D3DFMT_Q16W16V16U16   , "Q16W16V16U16" },
+    { D3DFMT_R16F           , "R16F" },
+    { D3DFMT_G16R16F        , "G16R16F" },
+    { D3DFMT_A16B16G16R16F  , "A16B16G16R16F" },
+    { D3DFMT_R32F           , "R32F" },
+    { D3DFMT_G32R32F        , "G32R32F" },
+    { D3DFMT_A32B32G32R32F  , "A32B32G32R32F" },
+    { D3DFMT_CxV8U8         , "CxV8U8" },
+    /* Fourcc values, MSB is in the right most char:  */
+    { D3DFMT_MULTI2_ARGB8   , "MULTI2_ARGB8" },
+    { D3DFMT_DXT1           , "DXT1" },
+    { D3DFMT_DXT2           , "DXT2" },
+    { D3DFMT_YUY2           , "YUY2" },
+    { D3DFMT_DXT3           , "DXT3" },
+    { D3DFMT_DXT4           , "DXT4" },
+    { D3DFMT_DXT5           , "DXT5" },
+    { D3DFMT_G8R8_G8B8      , "G8R8_G8B8" },
+    { D3DFMT_R8G8_B8G8      , "R8G8_B8G8" },
+    { D3DFMT_UYVY           , "UYVY" },
+    { D3DFMT_FORCE_DWORD    , "FORCE_DWORD" }, /* UINT32_MAX */
+};
+VMSVGAINFOENUMMAP_MAKE(static, g_D3DFormat2String, g_aD3DFormats, "D3DFMT_");
+
+/** Values for D3DMULTISAMPLE_TYPE, prefix D3DMULTISAMPLE_. */
+static VMSVGAINFOENUM const g_aD3DMultiSampleTypes[] =
+{
+    { D3DMULTISAMPLE_NONE           , "NONE" },
+    { D3DMULTISAMPLE_NONMASKABLE    , "NONMASKABLE" },
+    { D3DMULTISAMPLE_2_SAMPLES      , "2_SAMPLES" },
+    { D3DMULTISAMPLE_3_SAMPLES      , "3_SAMPLES" },
+    { D3DMULTISAMPLE_4_SAMPLES      , "4_SAMPLES" },
+    { D3DMULTISAMPLE_5_SAMPLES      , "5_SAMPLES" },
+    { D3DMULTISAMPLE_6_SAMPLES      , "6_SAMPLES" },
+    { D3DMULTISAMPLE_7_SAMPLES      , "7_SAMPLES" },
+    { D3DMULTISAMPLE_8_SAMPLES      , "8_SAMPLES" },
+    { D3DMULTISAMPLE_9_SAMPLES      , "9_SAMPLES" },
+    { D3DMULTISAMPLE_10_SAMPLES     , "10_SAMPLES" },
+    { D3DMULTISAMPLE_11_SAMPLES     , "11_SAMPLES" },
+    { D3DMULTISAMPLE_12_SAMPLES     , "12_SAMPLES" },
+    { D3DMULTISAMPLE_13_SAMPLES     , "13_SAMPLES" },
+    { D3DMULTISAMPLE_14_SAMPLES     , "14_SAMPLES" },
+    { D3DMULTISAMPLE_15_SAMPLES     , "15_SAMPLES" },
+    { D3DMULTISAMPLE_16_SAMPLES     , "16_SAMPLES" },
+    { D3DMULTISAMPLE_FORCE_DWORD    , "FORCE_DWORD" },
+};
+VMSVGAINFOENUMMAP_MAKE(static, g_D3DMultiSampleType2String, g_aD3DMultiSampleTypes, "D3DMULTISAMPLE_");
+
+/** D3DUSAGE_XXX flag value, prefix D3DUSAGE_. */
+static VMSVGAINFOFLAGS32 const g_aD3DUsageFlags[] =
+{
+    { D3DUSAGE_RENDERTARGET                     , "RENDERTARGET" },
+    { D3DUSAGE_DEPTHSTENCIL                     , "DEPTHSTENCIL" },
+    { D3DUSAGE_WRITEONLY                        , "WRITEONLY" },
+    { D3DUSAGE_SOFTWAREPROCESSING               , "SOFTWAREPROCESSING" },
+    { D3DUSAGE_DONOTCLIP                        , "DONOTCLIP" },
+    { D3DUSAGE_POINTS                           , "POINTS" },
+    { D3DUSAGE_RTPATCHES                        , "RTPATCHES" },
+    { D3DUSAGE_NPATCHES                         , "NPATCHES" },
+    { D3DUSAGE_DYNAMIC                          , "DYNAMIC" },
+    { D3DUSAGE_AUTOGENMIPMAP                    , "AUTOGENMIPMAP" },
+    { D3DUSAGE_RESTRICTED_CONTENT               , "RESTRICTED_CONTENT" },
+    { D3DUSAGE_RESTRICT_SHARED_RESOURCE_DRIVER  , "RESTRICT_SHARED_RESOURCE_DRIVER" },
+    { D3DUSAGE_RESTRICT_SHARED_RESOURCE         , "RESTRICT_SHARED_RESOURCE" },
+    { D3DUSAGE_DMAP                             , "DMAP" },
+    { D3DUSAGE_NONSECURE                        , "NONSECURE" },
+    { D3DUSAGE_TEXTAPI                          , "TEXTAPI" },
+};
+
+#endif /* VMSVGA3D_DIRECT3D */
+
 
 /**
  * Worker for vmsvga3dUpdateHeapBuffersForSurfaces.
@@ -131,21 +278,8 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
         /*
          * Change OpenGL context to the one the surface is associated with.
          */
-# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
         PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-# else
-        /** @todo stricter checks for associated context */
-        uint32_t cid = pSurface->idAssociatedContext;
-        if (    cid >= pState->cContexts
-            ||  pState->papContexts[cid]->id != cid)
-        {
-            Log(("vmsvga3dSurfaceUpdateHeapBuffers: invalid context id (%x - %x)!\n", cid, (cid >= pState->cContexts) ? -1 : pState->papContexts[cid]->id));
-            AssertFailedReturn(VERR_INVALID_PARAMETER);
-        }
-        PVMSVGA3DCONTEXT pContext = pState->papContexts[cid];
-        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-# endif
 #endif
 
         /*
@@ -951,127 +1085,6 @@ void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
 }
 
 
-/**
- * List of render state names with type prefix.
- *
- * First char in the name is a type indicator:
- *      - '*' = requires special handling.
- *      - 'f' = SVGA3dbool
- *      - 'd' = uint32_t
- *      - 'r' = float
- *      - 'b' = SVGA3dBlendOp
- *      - 'c' = SVGA3dColor, SVGA3dColorMask
- *      - 'e' = SVGA3dBlendEquation
- *      - 'm' = SVGA3dColorMask
- *      - 'p' = SVGA3dCmpFunc
- *      - 's' = SVGA3dStencilOp
- *      - 'v' = SVGA3dVertexMaterial
- *      - 'w' = SVGA3dWrapFlags
- */
-static const char * const g_apszRenderStateNamesAndType[] =
-{
-   "*" "INVALID",                       /*  invalid  */
-   "f" "ZENABLE",                       /*  SVGA3dBool  */
-   "f" "ZWRITEENABLE",                  /*  SVGA3dBool  */
-   "f" "ALPHATESTENABLE",               /*  SVGA3dBool  */
-   "f" "DITHERENABLE",                  /*  SVGA3dBool  */
-   "f" "BLENDENABLE",                   /*  SVGA3dBool  */
-   "f" "FOGENABLE",                     /*  SVGA3dBool  */
-   "f" "SPECULARENABLE",                /*  SVGA3dBool  */
-   "f" "STENCILENABLE",                 /*  SVGA3dBool  */
-   "f" "LIGHTINGENABLE",                /*  SVGA3dBool  */
-   "f" "NORMALIZENORMALS",              /*  SVGA3dBool  */
-   "f" "POINTSPRITEENABLE",             /*  SVGA3dBool  */
-   "f" "POINTSCALEENABLE",              /*  SVGA3dBool  */
-   "x" "STENCILREF",                    /*  uint32_t  */
-   "x" "STENCILMASK",                   /*  uint32_t  */
-   "x" "STENCILWRITEMASK",              /*  uint32_t  */
-   "r" "FOGSTART",                      /*  float  */
-   "r" "FOGEND",                        /*  float  */
-   "r" "FOGDENSITY",                    /*  float  */
-   "r" "POINTSIZE",                     /*  float  */
-   "r" "POINTSIZEMIN",                  /*  float  */
-   "r" "POINTSIZEMAX",                  /*  float  */
-   "r" "POINTSCALE_A",                  /*  float  */
-   "r" "POINTSCALE_B",                  /*  float  */
-   "r" "POINTSCALE_C",                  /*  float  */
-   "c" "FOGCOLOR",                      /*  SVGA3dColor  */
-   "c" "AMBIENT",                       /*  SVGA3dColor  */
-   "*" "CLIPPLANEENABLE",               /*  SVGA3dClipPlanes  */
-   "*" "FOGMODE",                       /*  SVGA3dFogMode  */
-   "*" "FILLMODE",                      /*  SVGA3dFillMode  */
-   "*" "SHADEMODE",                     /*  SVGA3dShadeMode  */
-   "*" "LINEPATTERN",                   /*  SVGA3dLinePattern  */
-   "b" "SRCBLEND",                      /*  SVGA3dBlendOp  */
-   "b" "DSTBLEND",                      /*  SVGA3dBlendOp  */
-   "e" "BLENDEQUATION",                 /*  SVGA3dBlendEquation  */
-   "*" "CULLMODE",                      /*  SVGA3dFace  */
-   "p" "ZFUNC",                         /*  SVGA3dCmpFunc  */
-   "p" "ALPHAFUNC",                     /*  SVGA3dCmpFunc  */
-   "p" "STENCILFUNC",                   /*  SVGA3dCmpFunc  */
-   "s" "STENCILFAIL",                   /*  SVGA3dStencilOp  */
-   "s" "STENCILZFAIL",                  /*  SVGA3dStencilOp  */
-   "s" "STENCILPASS",                   /*  SVGA3dStencilOp  */
-   "r" "ALPHAREF",                      /*  float  */
-   "*" "FRONTWINDING",                  /*  SVGA3dFrontWinding  */
-   "*" "COORDINATETYPE",                /*  SVGA3dCoordinateType  */
-   "r" "ZBIAS",                         /*  float  */
-   "f" "RANGEFOGENABLE",                /*  SVGA3dBool  */
-   "c" "COLORWRITEENABLE",              /*  SVGA3dColorMask  */
-   "f" "VERTEXMATERIALENABLE",          /*  SVGA3dBool  */
-   "v" "DIFFUSEMATERIALSOURCE",         /*  SVGA3dVertexMaterial  */
-   "v" "SPECULARMATERIALSOURCE",        /*  SVGA3dVertexMaterial  */
-   "v" "AMBIENTMATERIALSOURCE",         /*  SVGA3dVertexMaterial  */
-   "v" "EMISSIVEMATERIALSOURCE",        /*  SVGA3dVertexMaterial  */
-   "c" "TEXTUREFACTOR",                 /*  SVGA3dColor  */
-   "f" "LOCALVIEWER",                   /*  SVGA3dBool  */
-   "f" "SCISSORTESTENABLE",             /*  SVGA3dBool  */
-   "c" "BLENDCOLOR",                    /*  SVGA3dColor  */
-   "f" "STENCILENABLE2SIDED",           /*  SVGA3dBool  */
-   "p" "CCWSTENCILFUNC",                /*  SVGA3dCmpFunc  */
-   "s" "CCWSTENCILFAIL",                /*  SVGA3dStencilOp  */
-   "s" "CCWSTENCILZFAIL",               /*  SVGA3dStencilOp  */
-   "s" "CCWSTENCILPASS",                /*  SVGA3dStencilOp  */
-   "*" "VERTEXBLEND",                   /*  SVGA3dVertexBlendFlags  */
-   "r" "SLOPESCALEDEPTHBIAS",           /*  float  */
-   "r" "DEPTHBIAS",                     /*  float  */
-   "r" "OUTPUTGAMMA",                   /*  float  */
-   "f" "ZVISIBLE",                      /*  SVGA3dBool  */
-   "f" "LASTPIXEL",                     /*  SVGA3dBool  */
-   "f" "CLIPPING",                      /*  SVGA3dBool  */
-   "w" "WRAP0",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP1",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP2",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP3",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP4",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP5",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP6",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP7",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP8",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP9",                         /*  SVGA3dWrapFlags  */
-   "w" "WRAP10",                        /*  SVGA3dWrapFlags  */
-   "w" "WRAP11",                        /*  SVGA3dWrapFlags  */
-   "w" "WRAP12",                        /*  SVGA3dWrapFlags  */
-   "w" "WRAP13",                        /*  SVGA3dWrapFlags  */
-   "w" "WRAP14",                        /*  SVGA3dWrapFlags  */
-   "w" "WRAP15",                        /*  SVGA3dWrapFlags  */
-   "f" "MULTISAMPLEANTIALIAS",          /*  SVGA3dBool  */
-   "x" "MULTISAMPLEMASK",               /*  uint32_t  */
-   "f" "INDEXEDVERTEXBLENDENABLE",      /*  SVGA3dBool  */
-   "r" "TWEENFACTOR",                   /*  float  */
-   "f" "ANTIALIASEDLINEENABLE",         /*  SVGA3dBool  */
-   "c" "COLORWRITEENABLE1",             /*  SVGA3dColorMask  */
-   "c" "COLORWRITEENABLE2",             /*  SVGA3dColorMask  */
-   "c" "COLORWRITEENABLE3",             /*  SVGA3dColorMask  */
-   "f" "SEPARATEALPHABLENDENABLE",      /*  SVGA3dBool  */
-   "b" "SRCBLENDALPHA",                 /*  SVGA3dBlendOp  */
-   "b" "DSTBLENDALPHA",                 /*  SVGA3dBlendOp  */
-   "e" "BLENDEQUATIONALPHA",            /*  SVGA3dBlendEquation  */
-   "*" "TRANSPARENCYANTIALIAS",         /*  SVGA3dTransparencyAntialiasType  */
-   "f" "LINEAA",                        /*  SVGA3dBool  */
-   "r" "LINEWIDTH",                     /*  float  */
-};
-
 
 /**
  * Formats a SVGA3dRenderState structure as a string.
@@ -1083,12 +1096,133 @@ static const char * const g_apszRenderStateNamesAndType[] =
  */
 char *vmsvga3dFormatRenderState(char *pszBuffer, size_t cbBuffer, SVGA3dRenderState const *pRenderState)
 {
+    /*
+     * List of render state names with type prefix.
+     *
+     * First char in the name is a type indicator:
+     *      - '*' = requires special handling.
+     *      - 'f' = SVGA3dbool
+     *      - 'd' = uint32_t
+     *      - 'r' = float
+     *      - 'b' = SVGA3dBlendOp
+     *      - 'c' = SVGA3dColor, SVGA3dColorMask
+     *      - 'e' = SVGA3dBlendEquation
+     *      - 'm' = SVGA3dColorMask
+     *      - 'p' = SVGA3dCmpFunc
+     *      - 's' = SVGA3dStencilOp
+     *      - 'v' = SVGA3dVertexMaterial
+     *      - 'w' = SVGA3dWrapFlags
+     */
+    static const char * const s_apszRenderStateNamesAndType[] =
+    {
+       "*" "INVALID",                       /*  invalid  */
+       "f" "ZENABLE",                       /*  SVGA3dBool  */
+       "f" "ZWRITEENABLE",                  /*  SVGA3dBool  */
+       "f" "ALPHATESTENABLE",               /*  SVGA3dBool  */
+       "f" "DITHERENABLE",                  /*  SVGA3dBool  */
+       "f" "BLENDENABLE",                   /*  SVGA3dBool  */
+       "f" "FOGENABLE",                     /*  SVGA3dBool  */
+       "f" "SPECULARENABLE",                /*  SVGA3dBool  */
+       "f" "STENCILENABLE",                 /*  SVGA3dBool  */
+       "f" "LIGHTINGENABLE",                /*  SVGA3dBool  */
+       "f" "NORMALIZENORMALS",              /*  SVGA3dBool  */
+       "f" "POINTSPRITEENABLE",             /*  SVGA3dBool  */
+       "f" "POINTSCALEENABLE",              /*  SVGA3dBool  */
+       "x" "STENCILREF",                    /*  uint32_t  */
+       "x" "STENCILMASK",                   /*  uint32_t  */
+       "x" "STENCILWRITEMASK",              /*  uint32_t  */
+       "r" "FOGSTART",                      /*  float  */
+       "r" "FOGEND",                        /*  float  */
+       "r" "FOGDENSITY",                    /*  float  */
+       "r" "POINTSIZE",                     /*  float  */
+       "r" "POINTSIZEMIN",                  /*  float  */
+       "r" "POINTSIZEMAX",                  /*  float  */
+       "r" "POINTSCALE_A",                  /*  float  */
+       "r" "POINTSCALE_B",                  /*  float  */
+       "r" "POINTSCALE_C",                  /*  float  */
+       "c" "FOGCOLOR",                      /*  SVGA3dColor  */
+       "c" "AMBIENT",                       /*  SVGA3dColor  */
+       "*" "CLIPPLANEENABLE",               /*  SVGA3dClipPlanes  */
+       "*" "FOGMODE",                       /*  SVGA3dFogMode  */
+       "*" "FILLMODE",                      /*  SVGA3dFillMode  */
+       "*" "SHADEMODE",                     /*  SVGA3dShadeMode  */
+       "*" "LINEPATTERN",                   /*  SVGA3dLinePattern  */
+       "b" "SRCBLEND",                      /*  SVGA3dBlendOp  */
+       "b" "DSTBLEND",                      /*  SVGA3dBlendOp  */
+       "e" "BLENDEQUATION",                 /*  SVGA3dBlendEquation  */
+       "*" "CULLMODE",                      /*  SVGA3dFace  */
+       "p" "ZFUNC",                         /*  SVGA3dCmpFunc  */
+       "p" "ALPHAFUNC",                     /*  SVGA3dCmpFunc  */
+       "p" "STENCILFUNC",                   /*  SVGA3dCmpFunc  */
+       "s" "STENCILFAIL",                   /*  SVGA3dStencilOp  */
+       "s" "STENCILZFAIL",                  /*  SVGA3dStencilOp  */
+       "s" "STENCILPASS",                   /*  SVGA3dStencilOp  */
+       "r" "ALPHAREF",                      /*  float  */
+       "*" "FRONTWINDING",                  /*  SVGA3dFrontWinding  */
+       "*" "COORDINATETYPE",                /*  SVGA3dCoordinateType  */
+       "r" "ZBIAS",                         /*  float  */
+       "f" "RANGEFOGENABLE",                /*  SVGA3dBool  */
+       "c" "COLORWRITEENABLE",              /*  SVGA3dColorMask  */
+       "f" "VERTEXMATERIALENABLE",          /*  SVGA3dBool  */
+       "v" "DIFFUSEMATERIALSOURCE",         /*  SVGA3dVertexMaterial  */
+       "v" "SPECULARMATERIALSOURCE",        /*  SVGA3dVertexMaterial  */
+       "v" "AMBIENTMATERIALSOURCE",         /*  SVGA3dVertexMaterial  */
+       "v" "EMISSIVEMATERIALSOURCE",        /*  SVGA3dVertexMaterial  */
+       "c" "TEXTUREFACTOR",                 /*  SVGA3dColor  */
+       "f" "LOCALVIEWER",                   /*  SVGA3dBool  */
+       "f" "SCISSORTESTENABLE",             /*  SVGA3dBool  */
+       "c" "BLENDCOLOR",                    /*  SVGA3dColor  */
+       "f" "STENCILENABLE2SIDED",           /*  SVGA3dBool  */
+       "p" "CCWSTENCILFUNC",                /*  SVGA3dCmpFunc  */
+       "s" "CCWSTENCILFAIL",                /*  SVGA3dStencilOp  */
+       "s" "CCWSTENCILZFAIL",               /*  SVGA3dStencilOp  */
+       "s" "CCWSTENCILPASS",                /*  SVGA3dStencilOp  */
+       "*" "VERTEXBLEND",                   /*  SVGA3dVertexBlendFlags  */
+       "r" "SLOPESCALEDEPTHBIAS",           /*  float  */
+       "r" "DEPTHBIAS",                     /*  float  */
+       "r" "OUTPUTGAMMA",                   /*  float  */
+       "f" "ZVISIBLE",                      /*  SVGA3dBool  */
+       "f" "LASTPIXEL",                     /*  SVGA3dBool  */
+       "f" "CLIPPING",                      /*  SVGA3dBool  */
+       "w" "WRAP0",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP1",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP2",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP3",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP4",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP5",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP6",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP7",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP8",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP9",                         /*  SVGA3dWrapFlags  */
+       "w" "WRAP10",                        /*  SVGA3dWrapFlags  */
+       "w" "WRAP11",                        /*  SVGA3dWrapFlags  */
+       "w" "WRAP12",                        /*  SVGA3dWrapFlags  */
+       "w" "WRAP13",                        /*  SVGA3dWrapFlags  */
+       "w" "WRAP14",                        /*  SVGA3dWrapFlags  */
+       "w" "WRAP15",                        /*  SVGA3dWrapFlags  */
+       "f" "MULTISAMPLEANTIALIAS",          /*  SVGA3dBool  */
+       "x" "MULTISAMPLEMASK",               /*  uint32_t  */
+       "f" "INDEXEDVERTEXBLENDENABLE",      /*  SVGA3dBool  */
+       "r" "TWEENFACTOR",                   /*  float  */
+       "f" "ANTIALIASEDLINEENABLE",         /*  SVGA3dBool  */
+       "c" "COLORWRITEENABLE1",             /*  SVGA3dColorMask  */
+       "c" "COLORWRITEENABLE2",             /*  SVGA3dColorMask  */
+       "c" "COLORWRITEENABLE3",             /*  SVGA3dColorMask  */
+       "f" "SEPARATEALPHABLENDENABLE",      /*  SVGA3dBool  */
+       "b" "SRCBLENDALPHA",                 /*  SVGA3dBlendOp  */
+       "b" "DSTBLENDALPHA",                 /*  SVGA3dBlendOp  */
+       "e" "BLENDEQUATIONALPHA",            /*  SVGA3dBlendEquation  */
+       "*" "TRANSPARENCYANTIALIAS",         /*  SVGA3dTransparencyAntialiasType  */
+       "f" "LINEAA",                        /*  SVGA3dBool  */
+       "r" "LINEWIDTH",                     /*  float  */
+    };
+
     uint32_t iState = pRenderState->state;
     if (iState != SVGA3D_RS_INVALID)
     {
-        if (iState < RT_ELEMENTS(g_apszRenderStateNamesAndType))
+        if (iState < RT_ELEMENTS(s_apszRenderStateNamesAndType))
         {
-            const char *pszName = g_apszRenderStateNamesAndType[iState];
+            const char *pszName = s_apszRenderStateNamesAndType[iState];
             char const  chType  = *pszName++;
 
             union
@@ -1144,42 +1278,6 @@ char *vmsvga3dFormatRenderState(char *pszBuffer, size_t cbBuffer, SVGA3dRenderSt
     return pszBuffer;
 }
 
-/**
- * Texture state names with type prefix.
- */
-static const char * const g_apszTextureStateNamesAndType[] =
-{
-    "*" "INVALID",                      /*  invalid  */
-    "x" "BIND_TEXTURE",                 /*  SVGA3dSurfaceId  */
-    "m" "COLOROP",                      /*  SVGA3dTextureCombiner  */
-    "a" "COLORARG1",                    /*  SVGA3dTextureArgData  */
-    "a" "COLORARG2",                    /*  SVGA3dTextureArgData  */
-    "m" "ALPHAOP",                      /*  SVGA3dTextureCombiner  */
-    "a" "ALPHAARG1",                    /*  SVGA3dTextureArgData  */
-    "a" "ALPHAARG2",                    /*  SVGA3dTextureArgData  */
-    "e" "ADDRESSU",                     /*  SVGA3dTextureAddress  */
-    "e" "ADDRESSV",                     /*  SVGA3dTextureAddress  */
-    "l" "MIPFILTER",                    /*  SVGA3dTextureFilter  */
-    "l" "MAGFILTER",                    /*  SVGA3dTextureFilter  */
-    "m" "MINFILTER",                    /*  SVGA3dTextureFilter  */
-    "c" "BORDERCOLOR",                  /*  SVGA3dColor  */
-    "r" "TEXCOORDINDEX",                /*  uint32_t  */
-    "t" "TEXTURETRANSFORMFLAGS",        /*  SVGA3dTexTransformFlags  */
-    "g" "TEXCOORDGEN",                  /*  SVGA3dTextureCoordGen  */
-    "r" "BUMPENVMAT00",                 /*  float  */
-    "r" "BUMPENVMAT01",                 /*  float  */
-    "r" "BUMPENVMAT10",                 /*  float  */
-    "r" "BUMPENVMAT11",                 /*  float  */
-    "x" "TEXTURE_MIPMAP_LEVEL",         /*  uint32_t  */
-    "r" "TEXTURE_LOD_BIAS",             /*  float  */
-    "x" "TEXTURE_ANISOTROPIC_LEVEL",    /*  uint32_t  */
-    "e" "ADDRESSW",                     /*  SVGA3dTextureAddress  */
-    "r" "GAMMA",                        /*  float  */
-    "r" "BUMPENVLSCALE",                /*  float  */
-    "r" "BUMPENVLOFFSET",               /*  float  */
-    "a" "COLORARG0",                    /*  SVGA3dTextureArgData  */
-    "a" "ALPHAARG0"                     /*  SVGA3dTextureArgData */
-};
 
 /**
  * Formats a SVGA3dTextureState structure as a string.
@@ -1191,6 +1289,40 @@ static const char * const g_apszTextureStateNamesAndType[] =
  */
 char *vmsvga3dFormatTextureState(char *pszBuffer, size_t cbBuffer, SVGA3dTextureState const *pTextureState)
 {
+    static const char * const s_apszTextureStateNamesAndType[] =
+    {
+        "*" "INVALID",                      /*  invalid  */
+        "x" "BIND_TEXTURE",                 /*  SVGA3dSurfaceId  */
+        "m" "COLOROP",                      /*  SVGA3dTextureCombiner  */
+        "a" "COLORARG1",                    /*  SVGA3dTextureArgData  */
+        "a" "COLORARG2",                    /*  SVGA3dTextureArgData  */
+        "m" "ALPHAOP",                      /*  SVGA3dTextureCombiner  */
+        "a" "ALPHAARG1",                    /*  SVGA3dTextureArgData  */
+        "a" "ALPHAARG2",                    /*  SVGA3dTextureArgData  */
+        "e" "ADDRESSU",                     /*  SVGA3dTextureAddress  */
+        "e" "ADDRESSV",                     /*  SVGA3dTextureAddress  */
+        "l" "MIPFILTER",                    /*  SVGA3dTextureFilter  */
+        "l" "MAGFILTER",                    /*  SVGA3dTextureFilter  */
+        "m" "MINFILTER",                    /*  SVGA3dTextureFilter  */
+        "c" "BORDERCOLOR",                  /*  SVGA3dColor  */
+        "r" "TEXCOORDINDEX",                /*  uint32_t  */
+        "t" "TEXTURETRANSFORMFLAGS",        /*  SVGA3dTexTransformFlags  */
+        "g" "TEXCOORDGEN",                  /*  SVGA3dTextureCoordGen  */
+        "r" "BUMPENVMAT00",                 /*  float  */
+        "r" "BUMPENVMAT01",                 /*  float  */
+        "r" "BUMPENVMAT10",                 /*  float  */
+        "r" "BUMPENVMAT11",                 /*  float  */
+        "x" "TEXTURE_MIPMAP_LEVEL",         /*  uint32_t  */
+        "r" "TEXTURE_LOD_BIAS",             /*  float  */
+        "x" "TEXTURE_ANISOTROPIC_LEVEL",    /*  uint32_t  */
+        "e" "ADDRESSW",                     /*  SVGA3dTextureAddress  */
+        "r" "GAMMA",                        /*  float  */
+        "r" "BUMPENVLSCALE",                /*  float  */
+        "r" "BUMPENVLOFFSET",               /*  float  */
+        "a" "COLORARG0",                    /*  SVGA3dTextureArgData  */
+        "a" "ALPHAARG0"                     /*  SVGA3dTextureArgData */
+    };
+
     /*
      * Format the stage first.
      */
@@ -1210,9 +1342,9 @@ char *vmsvga3dFormatTextureState(char *pszBuffer, size_t cbBuffer, SVGA3dTexture
     uint32_t iName = pTextureState->name;
     if (iName != SVGA3D_TS_INVALID)
     {
-        if (iName < RT_ELEMENTS(g_apszTextureStateNamesAndType))
+        if (iName < RT_ELEMENTS(s_apszTextureStateNamesAndType))
         {
-            const char *pszName = g_apszTextureStateNamesAndType[iName];
+            const char *pszName = s_apszTextureStateNamesAndType[iName];
             char        chType  = *pszName++;
 
             union
@@ -1580,10 +1712,34 @@ void vmsvga3dInfoContextWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t cid
                     return;
                 }
             }
+#ifdef VMSVGA3D_OPENGL
+            else if (   cid == VMSVGA3D_SHARED_CTX_ID
+                     && pState->SharedCtx.id == cid)
+            {
+                vmsvga3dInfoContextWorkerOne(pHlp, &((PVMSVGA3DSTATE)pState)->SharedCtx, fVerbose);
+                return;
+            }
+#endif
             pHlp->pfnPrintf(pHlp, "Context ID %#x not found.\n", cid);
         }
         else
         {
+#ifdef VMSVGA3D_OPENGL
+            /*
+             * Dump the shared context.
+             */
+            if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
+            {
+                pHlp->pfnPrintf(pHlp, "Shared context:\n");
+                vmsvga3dInfoContextWorkerOne(pHlp, &((PVMSVGA3DSTATE)pState)->SharedCtx, fVerbose);
+            }
+#endif
+
+            /*
+             * Dump the per-screen contexts.
+             */
+            /** @todo multi screen   */
+
             /*
              * Dump all.
              */
@@ -1602,152 +1758,8 @@ void vmsvga3dInfoContextWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t cid
     }
 }
 
-/** Values for SVGA3dTextureFilter, prefix SVGA3D_TEX_FILTER_. */
-static const char * const g_apszTexureFilters[] =
-{
-    "NONE",
-    "NEAREST",
-    "LINEAR",
-    "ANISOTROPIC",
-    "FLATCUBIC",
-    "GAUSSIANCUBIC",
-    "PYRAMIDALQUAD",
-    "GAUSSIANQUAD",
-};
-
-/** SVGA3dSurfaceFlags values, prefix SVGA3D_SURFACE_. */
-static VMSVGAINFOFLAGS32 const g_aSvga3DSurfaceFlags[] =
-{
-    { SVGA3D_SURFACE_CUBEMAP            , "CUBEMAP" },
-    { SVGA3D_SURFACE_HINT_STATIC        , "HINT_STATIC" },
-    { SVGA3D_SURFACE_HINT_DYNAMIC       , "HINT_DYNAMIC" },
-    { SVGA3D_SURFACE_HINT_INDEXBUFFER   , "HINT_INDEXBUFFER" },
-    { SVGA3D_SURFACE_HINT_VERTEXBUFFER  , "HINT_VERTEXBUFFER" },
-    { SVGA3D_SURFACE_HINT_TEXTURE       , "HINT_TEXTURE" },
-    { SVGA3D_SURFACE_HINT_RENDERTARGET  , "HINT_RENDERTARGET" },
-    { SVGA3D_SURFACE_HINT_DEPTHSTENCIL  , "HINT_DEPTHSTENCIL" },
-    { SVGA3D_SURFACE_HINT_WRITEONLY     , "HINT_WRITEONLY" },
-    { SVGA3D_SURFACE_MASKABLE_ANTIALIAS , "MASKABLE_ANTIALIAS" },
-    { SVGA3D_SURFACE_AUTOGENMIPMAPS     , "AUTOGENMIPMAPS" },
-};
-
 
 #ifdef VMSVGA3D_DIRECT3D
-
-/** Values for D3DFORMAT, prefix D3DFMT_. */
-static VMSVGAINFOENUM const g_aD3DFormats[] =
-{
-    { D3DFMT_UNKNOWN        , "UNKNOWN" },
-    { D3DFMT_R8G8B8         , "R8G8B8" },
-    { D3DFMT_A8R8G8B8       , "A8R8G8B8" },
-    { D3DFMT_X8R8G8B8       , "X8R8G8B8" },
-    { D3DFMT_R5G6B5         , "R5G6B5" },
-    { D3DFMT_X1R5G5B5       , "X1R5G5B5" },
-    { D3DFMT_A1R5G5B5       , "A1R5G5B5" },
-    { D3DFMT_A4R4G4B4       , "A4R4G4B4" },
-    { D3DFMT_R3G3B2         , "R3G3B2" },
-    { D3DFMT_A8             , "A8" },
-    { D3DFMT_A8R3G3B2       , "A8R3G3B2" },
-    { D3DFMT_X4R4G4B4       , "X4R4G4B4" },
-    { D3DFMT_A2B10G10R10    , "A2B10G10R10" },
-    { D3DFMT_A8B8G8R8       , "A8B8G8R8" },
-    { D3DFMT_X8B8G8R8       , "X8B8G8R8" },
-    { D3DFMT_G16R16         , "G16R16" },
-    { D3DFMT_A2R10G10B10    , "A2R10G10B10" },
-    { D3DFMT_A16B16G16R16   , "A16B16G16R16" },
-    { D3DFMT_A8P8           , "A8P8" },
-    { D3DFMT_P8             , "P8" },
-    { D3DFMT_L8             , "L8" },
-    { D3DFMT_A8L8           , "A8L8" },
-    { D3DFMT_A4L4           , "A4L4" },
-    { D3DFMT_V8U8           , "V8U8" },
-    { D3DFMT_L6V5U5         , "L6V5U5" },
-    { D3DFMT_X8L8V8U8       , "X8L8V8U8" },
-    { D3DFMT_Q8W8V8U8       , "Q8W8V8U8" },
-    { D3DFMT_V16U16         , "V16U16" },
-    { D3DFMT_A2W10V10U10    , "A2W10V10U10" },
-    { D3DFMT_D16_LOCKABLE   , "D16_LOCKABLE" },
-    { D3DFMT_D32            , "D32" },
-    { D3DFMT_D15S1          , "D15S1" },
-    { D3DFMT_D24S8          , "D24S8" },
-    { D3DFMT_D24X8          , "D24X8" },
-    { D3DFMT_D24X4S4        , "D24X4S4" },
-    { D3DFMT_D16            , "D16" },
-    { D3DFMT_L16            , "L16" },
-    { D3DFMT_D32F_LOCKABLE  , "D32F_LOCKABLE" },
-    { D3DFMT_D24FS8         , "D24FS8" },
-    { D3DFMT_VERTEXDATA     , "VERTEXDATA" },
-    { D3DFMT_INDEX16        , "INDEX16" },
-    { D3DFMT_INDEX32        , "INDEX32" },
-    { D3DFMT_Q16W16V16U16   , "Q16W16V16U16" },
-    { D3DFMT_R16F           , "R16F" },
-    { D3DFMT_G16R16F        , "G16R16F" },
-    { D3DFMT_A16B16G16R16F  , "A16B16G16R16F" },
-    { D3DFMT_R32F           , "R32F" },
-    { D3DFMT_G32R32F        , "G32R32F" },
-    { D3DFMT_A32B32G32R32F  , "A32B32G32R32F" },
-    { D3DFMT_CxV8U8         , "CxV8U8" },
-    /* Fourcc values, MSB is in the right most char:  */
-    { D3DFMT_MULTI2_ARGB8   , "MULTI2_ARGB8" },
-    { D3DFMT_DXT1           , "DXT1" },
-    { D3DFMT_DXT2           , "DXT2" },
-    { D3DFMT_YUY2           , "YUY2" },
-    { D3DFMT_DXT3           , "DXT3" },
-    { D3DFMT_DXT4           , "DXT4" },
-    { D3DFMT_DXT5           , "DXT5" },
-    { D3DFMT_G8R8_G8B8      , "G8R8_G8B8" },
-    { D3DFMT_R8G8_B8G8      , "R8G8_B8G8" },
-    { D3DFMT_UYVY           , "UYVY" },
-    { D3DFMT_FORCE_DWORD    , "FORCE_DWORD" }, /* UINT32_MAX */
-};
-VMSVGAINFOENUMMAP_MAKE(static, g_D3DFormat2String, g_aD3DFormats, "D3DFMT_");
-
-/** Values for D3DMULTISAMPLE_TYPE, prefix D3DMULTISAMPLE_. */
-static VMSVGAINFOENUM const g_aD3DMultiSampleTypes[] =
-{
-    { D3DMULTISAMPLE_NONE           , "NONE" },
-    { D3DMULTISAMPLE_NONMASKABLE    , "NONMASKABLE" },
-    { D3DMULTISAMPLE_2_SAMPLES      , "2_SAMPLES" },
-    { D3DMULTISAMPLE_3_SAMPLES      , "3_SAMPLES" },
-    { D3DMULTISAMPLE_4_SAMPLES      , "4_SAMPLES" },
-    { D3DMULTISAMPLE_5_SAMPLES      , "5_SAMPLES" },
-    { D3DMULTISAMPLE_6_SAMPLES      , "6_SAMPLES" },
-    { D3DMULTISAMPLE_7_SAMPLES      , "7_SAMPLES" },
-    { D3DMULTISAMPLE_8_SAMPLES      , "8_SAMPLES" },
-    { D3DMULTISAMPLE_9_SAMPLES      , "9_SAMPLES" },
-    { D3DMULTISAMPLE_10_SAMPLES     , "10_SAMPLES" },
-    { D3DMULTISAMPLE_11_SAMPLES     , "11_SAMPLES" },
-    { D3DMULTISAMPLE_12_SAMPLES     , "12_SAMPLES" },
-    { D3DMULTISAMPLE_13_SAMPLES     , "13_SAMPLES" },
-    { D3DMULTISAMPLE_14_SAMPLES     , "14_SAMPLES" },
-    { D3DMULTISAMPLE_15_SAMPLES     , "15_SAMPLES" },
-    { D3DMULTISAMPLE_16_SAMPLES     , "16_SAMPLES" },
-    { D3DMULTISAMPLE_FORCE_DWORD    , "FORCE_DWORD" },
-};
-VMSVGAINFOENUMMAP_MAKE(static, g_D3DMultiSampleType2String, g_aD3DMultiSampleTypes, "D3DMULTISAMPLE_");
-
-/** D3DUSAGE_XXX flag value, prefix D3DUSAGE_. */
-static VMSVGAINFOFLAGS32 const g_aD3DUsageFlags[] =
-{
-    { D3DUSAGE_RENDERTARGET                     , "RENDERTARGET" },
-    { D3DUSAGE_DEPTHSTENCIL                     , "DEPTHSTENCIL" },
-    { D3DUSAGE_WRITEONLY                        , "WRITEONLY" },
-    { D3DUSAGE_SOFTWAREPROCESSING               , "SOFTWAREPROCESSING" },
-    { D3DUSAGE_DONOTCLIP                        , "DONOTCLIP" },
-    { D3DUSAGE_POINTS                           , "POINTS" },
-    { D3DUSAGE_RTPATCHES                        , "RTPATCHES" },
-    { D3DUSAGE_NPATCHES                         , "NPATCHES" },
-    { D3DUSAGE_DYNAMIC                          , "DYNAMIC" },
-    { D3DUSAGE_AUTOGENMIPMAP                    , "AUTOGENMIPMAP" },
-    { D3DUSAGE_RESTRICTED_CONTENT               , "RESTRICTED_CONTENT" },
-    { D3DUSAGE_RESTRICT_SHARED_RESOURCE_DRIVER  , "RESTRICT_SHARED_RESOURCE_DRIVER" },
-    { D3DUSAGE_RESTRICT_SHARED_RESOURCE         , "RESTRICT_SHARED_RESOURCE" },
-    { D3DUSAGE_DMAP                             , "DMAP" },
-    { D3DUSAGE_NONSECURE                        , "NONSECURE" },
-    { D3DUSAGE_TEXTAPI                          , "TEXTAPI" },
-};
-
-
 /**
  * Release all shared surface objects.
  */
@@ -1760,13 +1772,7 @@ static DECLCALLBACK(int) vmsvga3dInfoSharedObjectCallback(PAVLU32NODECORE pNode,
 
     return 0;
 }
-
-#elif defined(VMSVGA3D_OPENGL)
-    /** @todo   */
-
-#else
-# error "Build config error."
-#endif
+#endif /* VMSVGA3D_DIRECT3D */
 
 
 static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
@@ -1775,7 +1781,7 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
     char szTmp[128];
 
     pHlp->pfnPrintf(pHlp, "*** VMSVGA 3d surface %#x (%d)%s ***\n", pSurface->id, pSurface->id, pSurface->fDirty ? " - dirty" : "");
-#if defined(VMSVGA3D_OPENGL) && defined(VMSVGA3D_OGL_WITH_SHARED_CTX)
+#ifdef VMSVGA3D_OPENGL
     pHlp->pfnPrintf(pHlp, "idWeakContextAssociation: %#x\n", pSurface->idWeakContextAssociation);
 #else
     pHlp->pfnPrintf(pHlp, "idAssociatedContext:     %#x\n", pSurface->idAssociatedContext);

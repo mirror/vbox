@@ -89,8 +89,9 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** Experimental: Create a dedicated context for handling surfaces in, thus
- * avoiding orphaned surfaces after context destruction.
+#ifdef VMSVGA3D_OPENGL
+/** OpenGL: Create a dedicated context for handling surfaces in, thus
+ *          avoiding orphaned surfaces after context destruction.
  *
  * This cures, for instance, an assertion on fedora 21 that happens in
  * vmsvga3dSurfaceStretchBlt if the login screen and the desktop has different
@@ -101,16 +102,11 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
  * @remarks This probably comes at a slight preformance expense, as we currently
  *          switches context when setting up the surface the first time.  Not sure
  *          if we really need to, but as this is an experiment, I'm playing it safe.
+ * @remarks The define has been made default, thus should no longer be used.
  */
-#ifdef VMSVGA3D_OPENGL
 # define VMSVGA3D_OGL_WITH_SHARED_CTX
-#endif
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
 /** Fake surface ID for the shared context. */
 # define VMSVGA3D_SHARED_CTX_ID        UINT32_C(0xffffeeee)
-#endif
-
-#ifdef VMSVGA3D_OPENGL
 
 /** @def VBOX_VMSVGA3D_GL_HACK_LEVEL
  * Turns out that on Linux gl.h may often define the first 2-4 OpenGL versions
@@ -506,7 +502,7 @@ typedef VMSVGA3DSHAREDSURFACE *PVMSVGA3DSHAREDSURFACE;
 typedef struct VMSVGA3DSURFACE
 {
     uint32_t                id;
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+#ifdef VMSVGA3D_OPENGL
     uint32_t                idWeakContextAssociation;
 #else
     uint32_t                idAssociatedContext;
@@ -571,7 +567,7 @@ typedef VMSVGA3DSURFACE *PVMSVGA3DSURFACE;
 static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 {
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, id),
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+# ifdef VMSVGA3D_OPENGL
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, idWeakContextAssociation),
 # else
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, idAssociatedContext),
@@ -959,7 +955,7 @@ typedef struct VMSVGA3DSTATE
     /** Shader talk back interface. */
     VBOXVMSVGASHADERIF      ShaderIf;
 
-# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+# ifdef VMSVGA3D_OPENGL
     /** The shared context. */
     VMSVGA3DCONTEXT         SharedCtx;
 # endif

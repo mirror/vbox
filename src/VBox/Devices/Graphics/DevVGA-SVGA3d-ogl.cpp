@@ -1817,35 +1817,8 @@ D3DMULTISAMPLE_TYPE vmsvga3dMultipeSampleCount2D3D(uint32_t multisampleCount)
  */
 void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface)
 {
-#if defined(VMSVGA3D_OGL_WITH_SHARED_CTX)
     PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#else
-    /** @todo stricter checks for associated context */
-    PVMSVGA3DCONTEXT pContext;
-    uint32_t cid = pSurface->idAssociatedContext;
-    if (    cid <= pState->cContexts
-        &&  pState->papContexts[cid]->id == cid)
-    {
-        pContext = pState->papContexts[cid];
-        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-    }
-    /* If there is a GL buffer or something associated with the surface, we
-       really need something here, so pick any active context. */
-    else if (pSurface->oglId.buffer != OPENGL_INVALID_ID)
-    {
-        for (cid = 0; cid < pState->cContexts; cid++)
-        {
-            if (pState->papContexts[cid]->id == cid)
-            {
-                pContext = pState->papContexts[cid];
-                VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-                break;
-            }
-        }
-        AssertReturn(pContext, VERR_INTERNAL_ERROR); /* otherwise crashes/fails; create temp context if this ever triggers! */
-    }
-#endif
 
     switch (pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
     {
@@ -2049,11 +2022,9 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                               PVMSVGA3DSURFACE pSurface)
 {
     GLint activeTexture = 0;
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
     uint32_t idPrevCtx = pState->idActiveContext;
     pContext = &pState->SharedCtx;
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#endif
 
     glGenTextures(1, &pSurface->oglId.texture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -2112,16 +2083,9 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     pSurface->flags              |= SVGA3D_SURFACE_HINT_TEXTURE;
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-    LogFlow(("vmsvga3dBackCreateTexture: sid=%x idAssociatedContext %#x -> %#x; oglId.texture=%#x\n",
-             pSurface->id, pSurface->idAssociatedContext, idAssociatedContext, pSurface->oglId.texture));
-    pSurface->idAssociatedContext = idAssociatedContext;
-#endif
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
     if (idPrevCtx < pState->cContexts && pState->papContexts[idPrevCtx]->id == idPrevCtx)
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pState->papContexts[idPrevCtx]);
-#endif
     return VINF_SUCCESS;
 }
 
@@ -2479,13 +2443,8 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                 GLint cbStrictBufSize;
                 glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &cbStrictBufSize);
                 Assert(VMSVGA3D_GL_IS_SUCCESS(pContext));
-# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
                 AssertMsg(cbStrictBufSize >= (int32_t)pMipLevel->cbSurface,
                           ("cbStrictBufSize=%#x cbSurface=%#x pContext->id=%#x\n", (uint32_t)cbStrictBufSize, pMipLevel->cbSurface, pContext->id));
-# else
-                AssertMsg(cbStrictBufSize >= (int32_t)pMipLevel->cbSurface,
-                          ("cbStrictBufSize=%#x cbSurface=%#x isAssociatedContext=%#x pContext->id=%#x\n", (uint32_t)cbStrictBufSize, pMipLevel->cbSurface, pSurface->idAssociatedContext, pContext->id));
-# endif
 #endif
 
                 unsigned offDst = pBox->x * pSurface->cbBlock + pBox->y * pMipLevel->cbSurfacePitch;
@@ -2627,9 +2586,6 @@ int vmsvga3dGenerateMipmaps(PVGASTATE pThis, uint32_t sid, SVGA3dTextureFilter f
     AssertReturn(sid < pState->cSurfaces && pState->papSurfaces[sid]->id == sid, VERR_INVALID_PARAMETER);
 
     pSurface = pState->papSurfaces[sid];
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-    AssertReturn(pSurface->idAssociatedContext != SVGA3D_INVALID_ID, VERR_INTERNAL_ERROR);
-#endif
 
     Assert(filter != SVGA3D_TEX_FILTER_FLATCUBIC);
     Assert(filter != SVGA3D_TEX_FILTER_GAUSSIANCUBIC);
@@ -2637,23 +2593,9 @@ int vmsvga3dGenerateMipmaps(PVGASTATE pThis, uint32_t sid, SVGA3dTextureFilter f
 
     Log(("vmsvga3dGenerateMipmaps: sid=%x filter=%d\n", sid, filter));
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
     cid = SVGA3D_INVALID_ID;
     pContext = &pState->SharedCtx;
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#else
-    /* @todo stricter checks for associated context */
-    cid = pSurface->idAssociatedContext;
-
-    if (    cid >= pState->cContexts
-        ||  pState->papContexts[cid]->id != cid)
-    {
-        Log(("vmsvga3dGenerateMipmaps invalid context id!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-    pContext = pState->papContexts[cid];
-    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#endif
 
     if (pSurface->oglId.texture == OPENGL_INVALID_ID)
     {
@@ -2699,42 +2641,15 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     AssertReturn(sid < pState->cSurfaces && pState->papSurfaces[sid]->id == sid, VERR_INVALID_PARAMETER);
 
     pSurface = pState->papSurfaces[sid];
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-    AssertReturn(pSurface->idAssociatedContext != SVGA3D_INVALID_ID, VERR_INTERNAL_ERROR);
-#endif
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
     /* @todo stricter checks for associated context */
     Log(("vmsvga3dCommandPresent: sid=%x cRects=%d\n", sid, cRects));
     for (uint32_t i=0; i < cRects; i++)
         Log(("vmsvga3dCommandPresent: rectangle %d src=(%d,%d) (%d,%d)(%d,%d)\n", i, pRect[i].srcx, pRect[i].srcy, pRect[i].x, pRect[i].y, pRect[i].x + pRect[i].w, pRect[i].y + pRect[i].h));
 
     pContext = &pState->SharedCtx;
-# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX_EXPERIMENT_1
-    if (   pSurface->idWeakContextAssociation < pState->cContexts
-        && pState->papContexts[pSurface->idWeakContextAssociation]->id == pSurface->idWeakContextAssociation)
-        pContext = pState->papContexts[pSurface->idWeakContextAssociation];
-# endif
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
     cid = pContext->id;
-#else
-    /* @todo stricter checks for associated context */
-    cid = pSurface->idAssociatedContext;
-    Log(("vmsvga3dCommandPresent: sid=%x cRects=%d cid=%x\n", sid, cRects, cid));
-    for (uint32_t i=0; i < cRects; i++)
-    {
-        Log(("vmsvga3dCommandPresent: rectangle %d src=(%d,%d) (%d,%d)(%d,%d)\n", i, pRect[i].srcx, pRect[i].srcy, pRect[i].x, pRect[i].y, pRect[i].x + pRect[i].w, pRect[i].y + pRect[i].h));
-    }
-
-    if (    cid >= pState->cContexts
-        ||  pState->papContexts[cid]->id != cid)
-    {
-        Log(("vmsvga3dCommandPresent invalid context id!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-    pContext = pState->papContexts[cid];
-    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#endif
     VMSVGA3D_CLEAR_GL_ERRORS();
 
     /*
@@ -3108,12 +3023,8 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     PVMSVGA3DSTATE          pState = pThis->svga.p3dState;
 
     AssertReturn(pState, VERR_NO_MEMORY);
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
     AssertReturn(   cid < SVGA3D_MAX_CONTEXT_IDS
                  || (cid == VMSVGA3D_SHARED_CTX_ID && (fFlags & VMSVGA3D_DEF_CTX_F_SHARED_CTX)), VERR_INVALID_PARAMETER);
-#else
-    AssertReturn(cid < SVGA3D_MAX_CONTEXT_IDS, VERR_INVALID_PARAMETER);
-#endif
 #if !defined(VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE) || !(defined(RT_OS_DARWIN))
     AssertReturn(!(fFlags & VMSVGA3D_DEF_CTX_F_OTHER_PROFILE), VERR_INTERNAL_ERROR_3);
 #endif
@@ -3128,11 +3039,9 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     }
 #endif
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
     if (cid == VMSVGA3D_SHARED_CTX_ID)
         pContext = &pState->SharedCtx;
     else
-#endif
     {
         if (cid >= pState->cContexts)
         {
@@ -3157,9 +3066,8 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     }
 
     /*
-     * Find the shared context (necessary for sharing e.g. textures between contexts).
+     * Find or create the shared context if needed (necessary for sharing e.g. textures between contexts).
      */
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
     PVMSVGA3DCONTEXT pSharedCtx = NULL;
     if (!(fFlags & (VMSVGA3D_DEF_CTX_F_INIT | VMSVGA3D_DEF_CTX_F_SHARED_CTX)))
     {
@@ -3170,23 +3078,6 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
             AssertLogRelRCReturn(rc, rc);
         }
     }
-#else
-    // TODO isn't this default on Linux since OpenGL 1.1?
-    /* Find the first active context to share the display list with (necessary for sharing e.g. textures between contexts). */
-    PVMSVGA3DCONTEXT pSharedCtx = NULL;
-    for (uint32_t i = 0; i < pState->cContexts; i++)
-        if (   pState->papContexts[i]->id != SVGA3D_INVALID_ID
-            && i != cid
-# ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
-            && pState->papContexts[i]->fOtherProfile == RT_BOOL(fFlags & VMSVGA3D_DEF_CTX_F_OTHER_PROFILE)
-# endif
-           )
-        {
-            Log(("Sharing display lists between cid=%d and cid=%d\n", pContext->id, i));
-            pSharedCtx = pState->papContexts[i];
-            break;
-        }
-#endif
 
     /*
      * Initialize the context.
@@ -3288,11 +3179,7 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     NativeNSOpenGLContextRef pShareContext = pSharedCtx ? pSharedCtx->cocoaContext : NULL;
     NativeNSViewRef          pHostView    = (NativeNSViewRef)pThis->svga.u64HostWindowId;
     vmsvga3dCocoaCreateViewAndContext(&pContext->cocoaView, &pContext->cocoaContext,
-# if defined(VMSVGA3D_OGL_WITH_SHARED_CTX) && !defined(VMSVGA3D_OGL_WITH_SHARED_CTX_EXPERIMENT_1) /* Only attach one subview, the one we'll present in. */
-                                      pSharedCtx ? NULL : pHostView, /** @todo screen objects and stuff. */
-# else
-                                      pHostView,
-# endif
+                                      pSharedCtx ? NULL : pHostView, /* Only attach one subview, the one we'll present in. */ /** @todo screen objects and stuff. */
                                       pThis->svga.uWidth, pThis->svga.uHeight,
                                       pShareContext, pContext->fOtherProfile);
 
@@ -3446,49 +3333,6 @@ static int vmsvga3dContextDestroyOgl(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext,
         AssertRC(rc);
     }
 
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX /* This is done on windows - prevents various assertions at runtime, as well as shutdown & reset assertions when destroying surfaces. */
-    /* Check for all surfaces that are associated with this context to remove all dependencies */
-    for (uint32_t sid = 0; sid < pState->cSurfaces; sid++)
-    {
-        PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
-        if (    pSurface->idAssociatedContext == cid
-            &&  pSurface->id == sid)
-        {
-            int rc;
-
-            Log(("vmsvga3dContextDestroy: remove all dependencies for surface %x\n", sid));
-
-            uint32_t            surfaceFlags = pSurface->flags;
-            SVGA3dSurfaceFormat format = pSurface->format;
-            SVGA3dSurfaceFace   face[SVGA3D_MAX_SURFACE_FACES];
-            uint32_t            multisampleCount = pSurface->multiSampleCount;
-            SVGA3dTextureFilter autogenFilter = pSurface->autogenFilter;
-            SVGA3dSize         *pMipLevelSize;
-            uint32_t            cFaces = pSurface->cFaces;
-
-            pMipLevelSize = (SVGA3dSize *)RTMemAllocZ(pSurface->faces[0].numMipLevels * pSurface->cFaces * sizeof(SVGA3dSize));
-            AssertReturn(pMipLevelSize, VERR_NO_MEMORY);
-
-            for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
-            {
-                for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
-                {
-                    uint32_t idx = i + iFace * pSurface->faces[0].numMipLevels;
-                    memcpy(&pMipLevelSize[idx], &pSurface->pMipmapLevels[idx].size, sizeof(SVGA3dSize));
-                }
-            }
-            memcpy(face, pSurface->faces, sizeof(pSurface->faces));
-
-            /* Recreate the surface with the original settings; destroys the contents, but that seems fairly safe since the context is also destroyed. */
-            rc = vmsvga3dSurfaceDestroy(pThis, sid);
-            AssertRC(rc);
-
-            rc = vmsvga3dSurfaceDefine(pThis, sid, surfaceFlags, format, face, multisampleCount, autogenFilter, face[0].numMipLevels * cFaces, pMipLevelSize);
-            AssertRC(rc);
-        }
-    }
-#endif
-
     if (pContext->idFramebuffer != OPENGL_INVALID_ID)
     {
         /* Unbind the object from the framebuffer target. */
@@ -3589,11 +3433,9 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
     PVMSVGA3DSTATE pState = pThis->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
     /* Resize the shared context too. */
     if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
         vmsvga3dChangeModeOneContext(pThis, pState, &pState->SharedCtx);
-#endif
 
     /* Resize all active contexts. */
     for (uint32_t i = 0; i < pState->cContexts; i++)
@@ -4753,10 +4595,9 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         if (pRenderTarget->oglId.texture == OPENGL_INVALID_ID)
         {
             Log(("vmsvga3dSetRenderTarget: create renderbuffer to be used as render target; surface id=%x type=%d format=%d\n", target.sid, pRenderTarget->flags, pRenderTarget->internalFormatGL));
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
             pContext = &pState->SharedCtx;
             VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#endif
+
             pState->ext.glGenRenderbuffers(1, &pRenderTarget->oglId.renderbuffer);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
@@ -4769,30 +4610,16 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                                               pRenderTarget->pMipmapLevels[0].size.height);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
             pState->ext.glBindRenderbuffer(GL_RENDERBUFFER, OPENGL_INVALID_ID);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
             pContext = pState->papContexts[cid];
             VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX_EXPERIMENT_1
             pRenderTarget->idWeakContextAssociation = cid;
-# endif
-#else
-            LogFlow(("vmsvga3dSetRenderTarget: sid=%x idAssociatedContext %#x -> %#x\n", pRenderTarget->id, pRenderTarget->idAssociatedContext, cid));
-            pRenderTarget->idAssociatedContext = cid;
-#endif
         }
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-        else
-#endif
-        {
-            pState->ext.glBindRenderbuffer(GL_RENDERBUFFER, pRenderTarget->oglId.renderbuffer);
-            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-        }
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-        Assert(pRenderTarget->idAssociatedContext == cid);
-#endif
+
+        pState->ext.glBindRenderbuffer(GL_RENDERBUFFER, pRenderTarget->oglId.renderbuffer);
+        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
         Assert(!pRenderTarget->fDirty);
         AssertReturn(pRenderTarget->oglId.texture != OPENGL_INVALID_ID, VERR_INVALID_PARAMETER);
 
@@ -5130,9 +4957,6 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 
                 if (pSurface->oglId.texture == OPENGL_INVALID_ID)
                 {
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-                    Assert(pSurface->idAssociatedContext == SVGA3D_INVALID_ID);
-#endif
                     Log(("CreateTexture (%d,%d) level=%d\n", pSurface->pMipmapLevels[0].size.width, pSurface->pMipmapLevels[0].size.height, pSurface->faces[0].numMipLevels));
                     int rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurface);
                     AssertRCReturn(rc, rc);
@@ -5882,11 +5706,9 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
     if (pVertexSurface->oglId.buffer == OPENGL_INVALID_ID)
     {
         Log(("vmsvga3dDrawPrimitives: create vertex buffer fDirty=%d size=%x bytes\n", pVertexSurface->fDirty, pVertexSurface->pMipmapLevels[0].cbSurface));
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
         PVMSVGA3DCONTEXT pSavedCtx = pContext;
         pContext = &pState->SharedCtx;
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#endif
 
         pState->ext.glGenBuffers(1, &pVertexSurface->oglId.buffer);
         VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -5904,26 +5726,16 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
 
         pVertexSurface->flags |= SVGA3D_SURFACE_HINT_VERTEXBUFFER;
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
         pState->ext.glBindBuffer(GL_ARRAY_BUFFER, OPENGL_INVALID_ID);
         VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
         pContext = pSavedCtx;
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#endif
     }
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-    else
-#endif
-    {
-        Assert(pVertexSurface->fDirty == false);
-        pState->ext.glBindBuffer(GL_ARRAY_BUFFER, pVertexSurface->oglId.buffer);
-        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-    }
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-    pVertexSurface->idAssociatedContext = pContext->id;
-    LogFlow(("vmsvga3dDrawPrimitivesProcessVertexDecls: sid=%x idAssociatedContext %#x -> %#x\n", pVertexSurface->id, pVertexSurface->idAssociatedContext, pContext->id));
-#endif
+
+    Assert(pVertexSurface->fDirty == false);
+    pState->ext.glBindBuffer(GL_ARRAY_BUFFER, pVertexSurface->oglId.buffer);
+    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     /* Setup the vertex declarations. */
     for (unsigned iVertex = 0; iVertex < numVertexDecls; iVertex++)
@@ -6200,10 +6012,8 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
             if (pIndexSurface->oglId.buffer == OPENGL_INVALID_ID)
             {
                 Log(("vmsvga3dDrawPrimitives: create index buffer fDirty=%d size=%x bytes\n", pIndexSurface->fDirty, pIndexSurface->pMipmapLevels[0].cbSurface));
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
                 pContext = &pState->SharedCtx;
                 VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#endif
 
                 pState->ext.glGenBuffers(1, &pIndexSurface->oglId.buffer);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -6222,27 +6032,16 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
 
                 pIndexSurface->flags |= SVGA3D_SURFACE_HINT_INDEXBUFFER;
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
                 pState->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OPENGL_INVALID_ID);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
                 pContext = pState->papContexts[cid];
                 VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#endif
             }
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-            else
-#endif
-            {
-                Assert(pIndexSurface->fDirty == false);
+            Assert(pIndexSurface->fDirty == false);
 
-                pState->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pIndexSurface->oglId.buffer);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            }
-#ifndef VMSVGA3D_OGL_WITH_SHARED_CTX
-            LogFlow(("vmsvga3dDrawPrimitives: sid=%x idAssociatedContext %#x -> %#x\n", pIndexSurface->id, pIndexSurface->idAssociatedContext, pContext->id));
-            pIndexSurface->idAssociatedContext = pContext->id;
-#endif
+            pState->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pIndexSurface->oglId.buffer);
+            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
         }
 
         if (!pIndexSurface)

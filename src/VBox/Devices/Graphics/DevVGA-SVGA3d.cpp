@@ -96,7 +96,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
 
     RT_ZERO(*pSurface);
     pSurface->id                    = sid;
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+#ifdef VMSVGA3D_OPENGL
     pSurface->idWeakContextAssociation = SVGA3D_INVALID_ID;
 #else
     pSurface->idAssociatedContext   = SVGA3D_INVALID_ID;
@@ -367,7 +367,7 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId const *pDstS
     AssertReturn(pDstSfcImg->mipmap < pDstSurface->faces[0].numMipLevels, VERR_INVALID_PARAMETER);
 
     PVMSVGA3DCONTEXT pContext;
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+#ifdef VMSVGA3D_OPENGL
     Log(("vmsvga3dSurfaceStretchBlt: src sid=%x (%d,%d)(%d,%d) dest sid=%x (%d,%d)(%d,%d) mode=%x\n",
          sidSrc, pSrcBox->x, pSrcBox->y, pSrcBox->x + pSrcBox->w, pSrcBox->y + pSrcBox->h,
          sidDst, pDstBox->x, pDstBox->y, pDstBox->x + pDstBox->w, pDstBox->y + pDstBox->h, enmMode));
@@ -390,9 +390,6 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId const *pDstS
         AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
     pContext = pState->papContexts[cid];
-# ifdef VMSVGA3D_OPENGL
-    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-# endif
 #endif
 
     int rc;
@@ -533,19 +530,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
         PVMSVGA3DCONTEXT pContext = NULL;
 
 #else /* VMSVGA3D_OPENGL */
-# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
         PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
-# else
-        /** @todo stricter checks for associated context */
-        uint32_t cid = pSurface->idAssociatedContext;
-        if (    cid >= pState->cContexts
-            ||  pState->papContexts[cid]->id != cid)
-        {
-            Log(("vmsvga3dSurfaceDMA invalid context id (%x - %x)!\n", cid, (cid >= pState->cContexts) ? -1 : pState->papContexts[cid]->id));
-            AssertFailedReturn(VERR_INVALID_PARAMETER);
-        }
-        PVMSVGA3DCONTEXT pContext = pState->papContexts[cid];
-# endif
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 #endif
 

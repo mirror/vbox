@@ -183,7 +183,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
             uint32_t cPixelShaderConst, cVertexShaderConst, cPixelShaders, cVertexShaders;
             LogFlow(("vmsvga3dLoadExec: Loading cid=%#x\n", cid));
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+#ifdef VMSVGA3D_OPENGL
             if (cid == VMSVGA3D_SHARED_CTX_ID)
             {
                 i--; /* Not included in cContexts. */
@@ -310,7 +310,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
         }
     }
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+#ifdef VMSVGA3D_OPENGL
     /* Make the shared context the current one. */
     if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, &pState->SharedCtx);
@@ -398,7 +398,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
         }
     }
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+#ifdef VMSVGA3D_OPENGL
     /* Reinitialize the shared context. */
     LogFlow(("vmsvga3dLoadExec: pState->SharedCtx.id=%#x\n", pState->SharedCtx.id));
     if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
@@ -513,7 +513,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
     rc = SSMR3PutStructEx(pSSM, pState, sizeof(*pState), 0, g_aVMSVGA3DSTATEFields, NULL);
     AssertRCReturn(rc, rc);
 
-#ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+#ifdef VMSVGA3D_OPENGL
     /* Save the shared context. */
     if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
     {
@@ -744,21 +744,8 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
 #elif defined(VMSVGA3D_OPENGL)
                         void *pData = NULL;
 
-# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
                         PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
                         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-# else
-                        /* @todo stricter checks for associated context */
-                        uint32_t cid = pSurface->idAssociatedContext;
-                        if (    cid >= pState->cContexts
-                            ||  pState->papContexts[cid]->id != cid)
-                        {
-                            Log(("vmsvga3dSaveExec: invalid context id (%x - %x)!\n", cid, (cid >= pState->cContexts) ? -1 : pState->papContexts[cid]->id));
-                            AssertFailedReturn(VERR_INVALID_PARAMETER);
-                        }
-                        PVMSVGA3DCONTEXT pContext = pState->papContexts[cid];
-                        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-# endif
 
                         Assert(pMipmapLevel->cbSurface);
 
