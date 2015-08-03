@@ -355,6 +355,11 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     pHv->u64GuestOsIdMsr = 0;
     pHv->u64HypercallMsr = 0;
     pHv->u64TscPageMsr   = 0;
+    pHv->uCrashP0        = 0;
+    pHv->uCrashP1        = 0;
+    pHv->uCrashP2        = 0;
+    pHv->uCrashP3        = 0;
+    pHv->uCrashP4        = 0;
 }
 
 
