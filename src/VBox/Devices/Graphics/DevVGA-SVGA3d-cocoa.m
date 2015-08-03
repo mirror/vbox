@@ -23,12 +23,14 @@
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
 #include "DevVGA-SVGA3d-cocoa.h"
 #import <Cocoa/Cocoa.h>
+#undef PVM /* Stupid namespace pollution from outdated sys/param.h header file. */
 #import <OpenGL/gl.h>
 
 #include <iprt/thread.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
+#include <VBox/vmm/dbgf.h>
 
 
 /*******************************************************************************
@@ -41,6 +43,15 @@
 #if 0
 #define USE_NSOPENGLVIEW
 #endif
+
+/**@def FLOAT_FMT_STR
+ * Format string bits to go with FLOAT_FMT_ARGS. */
+#define FLOAT_FMT_STR                           "%d.%06d"
+/** @def FLOAT_FMT_ARGS
+ * Format arguments for a float value, corresponding to FLOAT_FMT_STR.
+ * @param   r       The floating point value to format.  */
+#define FLOAT_FMT_ARGS(r)                       (int)(r), ((unsigned)((r) * 1000000) % 1000000U)
+
 
 
 /*******************************************************************************
@@ -697,6 +708,78 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaDestroyViewAndContext(NativeNSViewRef pVie
 
     [pPool release];
     LogFlow(("vmsvga3dCocoaDestroyViewAndContext: returns\n"));
+}
+
+
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewInfo(PCDBGFINFOHLP pHlp, NativeNSViewRef pView)
+{
+    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    if (pView != nil)
+    {
+        VMSVGA3DOverlayView *pOvlView = (VMSVGA3DOverlayView *)pView;
+                                                                                                 
+        NSRect FrameRect = [pOvlView frame];
+        pHlp->pfnPrintf(pHlp, "     Frame rect:            x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
+                        FLOAT_FMT_ARGS(FrameRect.origin.x), FLOAT_FMT_ARGS(FrameRect.origin.y),
+                        FLOAT_FMT_ARGS(FrameRect.size.width), FLOAT_FMT_ARGS(FrameRect.size.height));
+        NSRect BoundsRect = [pOvlView bounds];
+        pHlp->pfnPrintf(pHlp, "     Bounds rect:           x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
+                        FLOAT_FMT_ARGS(BoundsRect.origin.x), FLOAT_FMT_ARGS(BoundsRect.origin.y), 
+                        FLOAT_FMT_ARGS(BoundsRect.size.width), FLOAT_FMT_ARGS(BoundsRect.size.height));
+        NSRect VisibleRect = [pOvlView visibleRect];
+        pHlp->pfnPrintf(pHlp, "     Visible rect:          x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
+                        FLOAT_FMT_ARGS(VisibleRect.origin.x), FLOAT_FMT_ARGS(VisibleRect.origin.y), 
+                        FLOAT_FMT_ARGS(VisibleRect.size.width), FLOAT_FMT_ARGS(VisibleRect.size.height));
+        pHlp->pfnPrintf(pHlp, "     isHidden:              %RTbool\n", [pOvlView isHidden] != NO);
+        pHlp->pfnPrintf(pHlp, "     canDraw:               %RTbool\n", [pOvlView canDraw] != NO);
+        pHlp->pfnPrintf(pHlp, "     wantsDefaultClipping:  %RTbool\n", [pOvlView wantsDefaultClipping] != NO);
+        pHlp->pfnPrintf(pHlp, "     wantsLayer:            %RTbool\n", [pOvlView wantsLayer] != NO); 
+        if ([pOvlView layer] != nil)
+            pHlp->pfnPrintf(pHlp, "     Layer:                 %p\n", [pOvlView layer] != nil);
+        pHlp->pfnPrintf(pHlp, "     isOpaque:              %RTbool\n", [pOvlView isOpaque] != NO);
+        pHlp->pfnPrintf(pHlp, "     autoresizingMask:      %#x\n", [pOvlView autoresizingMask]); 
+        pHlp->pfnPrintf(pHlp, "     isRotatedOrScaledFromBase: %RTbool\n", [pOvlView isRotatedOrScaledFromBase] != NO);
+
+        NSView *pEnclosingScrollView = [pOvlView enclosingScrollView];
+        NSView *pCurView = [pOvlView superview];
+        uint32_t iLevel;
+        for (iLevel = 1; pCurView && iLevel < 7; iLevel++)
+        {
+            NSView *pNextView = [pCurView superview];
+            pHlp->pfnPrintf(pHlp, "     Superview#%u:           %p, super=%p\n", iLevel, pCurView, pNextView);
+            FrameRect = [pCurView frame];
+            pHlp->pfnPrintf(pHlp, "     Superview#%u frame:     x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
+                            iLevel,
+                            FLOAT_FMT_ARGS(FrameRect.origin.x), FLOAT_FMT_ARGS(FrameRect.origin.y), 
+                            FLOAT_FMT_ARGS(FrameRect.size.width), FLOAT_FMT_ARGS(FrameRect.size.height));
+            BoundsRect = [pCurView bounds];
+            pHlp->pfnPrintf(pHlp, "     Superview#%u bounds:    x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
+                            iLevel,
+                            FLOAT_FMT_ARGS(BoundsRect.origin.x), FLOAT_FMT_ARGS(BoundsRect.origin.y), 
+                            FLOAT_FMT_ARGS(BoundsRect.size.width), FLOAT_FMT_ARGS(BoundsRect.size.height));
+            if (pEnclosingScrollView == pCurView)
+                pHlp->pfnPrintf(pHlp, "     Superview#%u is enclosing scroll view\n", iLevel);
+            if ([pCurView enclosingScrollView])
+                pHlp->pfnPrintf(pHlp, "     Superview#%u has an enclosing scroll view: %p\n", [pCurView enclosingScrollView]);
+            pCurView = pNextView;
+        }
+        if (pCurView)
+            pHlp->pfnPrintf(pHlp, "     (There are more super views)\n");
+
+        NSWindow *pWindow = [pOvlView window];
+        if (pWindow != nil)
+        {
+            pHlp->pfnPrintf(pHlp, "     Window:                %p\n", pWindow);
+            FrameRect = [pWindow frame];
+            pHlp->pfnPrintf(pHlp, "     Window frame:          x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
+                            FLOAT_FMT_ARGS(FrameRect.origin.x), FLOAT_FMT_ARGS(FrameRect.origin.y), 
+                            FLOAT_FMT_ARGS(FrameRect.size.width), FLOAT_FMT_ARGS(FrameRect.size.height));
+            CGFloat rFactor = [pWindow backingScaleFactor];
+            pHlp->pfnPrintf(pHlp, "     W.backingScaleFactor:  " FLOAT_FMT_STR "\n", FLOAT_FMT_ARGS(rFactor));
+        }
+
+    }
+    [pPool release];
 }
 
 

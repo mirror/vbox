@@ -645,10 +645,17 @@ void vmsvga3dInfoHostWindow(PCDBGFINFOHLP pHlp, uint64_t idHostWindow)
         else
             pHlp->pfnPrintf(pHlp, "     GetWindowInfo: last error %d\n", GetLastError());
     }
+
+#elif defined(RT_OS_DARWIN)
+    int rc = ExplicitlyLoadVBoxSVGA3DObjC(false /*fResolveAllImports*/, NULL /*pErrInfo*/);
+    if (RT_SUCCESS(rc))
+        vmsvga3dCocoaViewInfo(pHlp, (NativeNSViewRef)(uintptr_t)idHostWindow);
+    else
+        pHlp->pfnPrintf(pHlp, "    Windows info:   vmsvga3dCocoaViewInfo failed to load (%Rrc)\n", rc);
+
 #else
     pHlp->pfnPrintf(pHlp, "    Windows info:   Not implemented on this platform\n");
 #endif
-
 }
 
 
@@ -1512,8 +1519,22 @@ static void vmsvga3dInfoContextWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DCONTEXT pC
     pHlp->pfnPrintf(pHlp, "hdc:                     %p\n", pContext->hdc);
     pHlp->pfnPrintf(pHlp, "hglrc:                   %p\n", pContext->hglrc);
 # endif
+
+#elif defined(RT_OS_DARWIN)
+    pHlp->pfnPrintf(pHlp, "cocoaView:               %p\n", pContext->cocoaView);
+    if (pContext->cocoaView)
+        vmsvga3dInfoHostWindow(pHlp, (uintptr_t)pContext->cocoaView);
+    pHlp->pfnPrintf(pHlp, "cocoaContext:            %p\n", pContext->cocoaContext);
+    if (pContext->fOtherProfile)
+        pHlp->pfnPrintf(pHlp, "fOtherProfile:           true\n");
+
 #else
-/** @todo Other hosts... */
+    pHlp->pfnPrintf(pHlp, "window:                  %p\n", pContext->window);
+    pHlp->pfnPrintf(pHlp, "fMapped:                 %RTbool\n", pContext->fMapped);
+    if (pContext->window)
+        vmsvga3dInfoHostWindow(pHlp, (uintptr_t)pContext->window);
+    pHlp->pfnPrintf(pHlp, "glxContext:              %p\n", pContext->glxContext);
+
 #endif
     pHlp->pfnPrintf(pHlp, "sidRenderTarget:         %#x\n", pContext->sidRenderTarget);
 

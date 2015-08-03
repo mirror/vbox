@@ -698,7 +698,7 @@ typedef struct VMSVGA3DCONTEXT
     /* OpenGL rendering context */
     NativeNSOpenGLContextRef cocoaContext;
     NativeNSViewRef          cocoaView;
-    bool                    fOtherProfile;
+    bool                     fOtherProfile;
 #else
     /** XGL rendering context handle */
     GLXContext              glxContext;

@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VirtualBox OpenGL Cocoa Window System Helper Implementation.
  */
@@ -17,7 +18,7 @@
 #ifndef __DevVGA_SVGA3d_cocoa_h
 #define __DevVGA_SVGA3d_cocoa_h
 
-#include <iprt/types.h>
+#include <VBox/types.h>
 #include <VBox/VBoxCocoa.h>
 
 RT_C_DECLS_BEGIN
@@ -38,10 +39,13 @@ VMSVGA3DCOCOA_DECL(bool) vmsvga3dCocoaCreateViewAndContext(NativeNSViewRef *ppVi
                                                            NativeNSViewRef pParentView, uint32_t cx, uint32_t cy,
                                                            NativeNSOpenGLContextRef pSharedCtx, bool fOtherProfile);
 VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaDestroyViewAndContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewInfo(PCDBGFINFOHLP pHlp, NativeNSViewRef pView);
 VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y);
 VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int w, int h);
 VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
 VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
+
+int ExplicitlyLoadVBoxSVGA3DObjC(bool fResolveAllImports, PRTERRINFO pErrInfo);
 
 RT_C_DECLS_END
 
