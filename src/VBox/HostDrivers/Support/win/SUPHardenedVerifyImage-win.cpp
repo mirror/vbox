@@ -782,7 +782,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
         if (supHardViUtf16PathIsEqual(pwsz, "apisetschema.dll"))
             return IS_W70() ? VINF_LDRVI_NOT_SIGNED : rc;
         if (supHardViUtf16PathIsEqual(pwsz, "apphelp.dll"))
-            return uNtVer < SUP_MAKE_NT_VER_SIMPLE(6, 4) ? VINF_LDRVI_NOT_SIGNED : rc;
+            return VINF_LDRVI_NOT_SIGNED; /* So far, never signed... */
 #ifdef VBOX_PERMIT_VERIFIER_DLL
         if (supHardViUtf16PathIsEqual(pwsz, "verifier.dll"))
             return uNtVer < SUP_NT_VER_W81 ? VINF_LDRVI_NOT_SIGNED : rc;
@@ -1253,7 +1253,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
             supHardNtViRdrDestroy(&pNtViRdr->Core);
     }
     SUP_DPRINTF(("supHardenedWinVerifyImageByHandle: -> %d (%ls)%s\n",
-                 rc, pwszName, pfWinVerifyTrust && *pfWinVerifyTrust ? "WinVerifyTrust" : ""));
+                 rc, pwszName, pfWinVerifyTrust && *pfWinVerifyTrust ? " WinVerifyTrust" : ""));
     return rc;
 }
 
