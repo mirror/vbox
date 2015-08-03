@@ -420,6 +420,32 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 #define MSR_GIM_HV_REF_TSC_IS_ENABLED(a)          RT_BOOL((a) & MSR_GIM_HV_REF_TSC_ENABLE_BIT)
 /** @} */
 
+/** @name Hyper-V MSR - Guest crash control (MSR_GIM_HV_CRASH_CTL).
+ * @{
+ */
+/** The Crash Notify bit. */
+#define MSR_GIM_HV_CRASH_CTL_NOTIFY_BIT           RT_BIT_64(63)
+/** @} */
+
+/** @name Hyper-V MSR - Guest OS ID (MSR_GIM_HV_GUEST_OS_ID).
+ * @{
+ */
+/** An open-source operating system. */
+#define MSR_GIM_HV_GUEST_OS_ID_IS_OPENSOURCE(a)   RT_BOOL((a) & RT_BIT_64(63))
+/** Vendor ID. */
+#define MSR_GIM_HV_GUEST_OS_ID_VENDOR(a)          (((a) >> 48) & 0xfff)
+/** Guest OS variant, depending on the vendor ID.  */
+#define MSR_GIM_HV_GUEST_OS_ID_OS_VARIANT(a)      (((a) >> 40) & 0xff)
+/** Guest OS major version. */
+#define MSR_GIM_HV_GUEST_OS_ID_MAJOR_VERSION(a)   (((a) >> 32) & 0xff)
+/** Guest OS minor version. */
+#define MSR_GIM_HV_GUEST_OS_ID_MINOR_VERSION(a)   (((a) >> 24) & 0xff)
+/** Guest OS service version (e.g. service pack number in case of Windows). */
+#define MSR_GIM_HV_GUEST_OS_ID_SERVICE_VERSION(a) (((a) >> 16) & 0xff)
+/** Guest OS build number. */
+#define MSR_GIM_HV_GUEST_OS_ID_BUILD(a)           ((a) & 0xffff)
+/** @} */
+
 /** Hyper-V page size.  */
 #define GIM_HV_PAGE_SIZE                          0x1000
 
@@ -480,6 +506,23 @@ typedef struct GIMHV
     uint32_t                    uHyperHints;
     /** Hypervisor capabilities. */
     uint32_t                    uHyperCaps;
+    /** @} */
+
+    /** @name Guest Crash MSRs.
+     *  @{
+     */
+    /** Guest crash control MSR. */
+    uint64_t                    uCrashCtl;
+    /** Guest crash parameter 0 MSR. */
+    uint64_t                    uCrashP0;
+    /** Guest crash parameter 1 MSR. */
+    uint64_t                    uCrashP1;
+    /** Guest crash parameter 2 MSR. */
+    uint64_t                    uCrashP2;
+    /** Guest crash parameter 3 MSR. */
+    uint64_t                    uCrashP3;
+    /** Guest crash parameter 4 MSR. */
+    uint64_t                    uCrashP4;
     /** @} */
 
     /** Per-VM R0 Spinlock for protecting EMT writes to the TSC page. */

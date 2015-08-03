@@ -1145,7 +1145,7 @@ typedef struct VM
 #ifdef ___GIMInternal_h
         struct GIM s;
 #endif
-        uint8_t     padding[256];        /* multiple of 64 */
+        uint8_t     padding[320];        /* multiple of 64 */
     } gim;
 
     /* ---- begin small stuff ---- */
@@ -1170,7 +1170,7 @@ typedef struct VM
 
 
     /** Padding for aligning the cpu array on a page boundary. */
-    uint8_t         abAlignment2[94];
+    uint8_t         abAlignment2[30];
 
     /* ---- end small stuff ---- */
 

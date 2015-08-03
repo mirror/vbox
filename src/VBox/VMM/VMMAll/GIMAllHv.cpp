@@ -78,6 +78,35 @@ VMM_INT_DECL(bool) gimHvIsParavirtTscEnabled(PVM pVM)
 
 
 /**
+ * Gets the descriptive OS ID variant as identified via the
+ * MSR_GIM_HV_GUEST_OS_ID MSR.
+ *
+ * @returns The name.
+ * @param   uGuestOsIdMsr     The MSR_GIM_HV_GUEST_OS_ID MSR.
+ */
+static const char *gimHvGetGuestOsIdVariantName(uint64_t uGuestOsIdMsr)
+{
+    /* Refer the Hyper-V spec, section 3.6 "Reporting the Guest OS Identity". */
+    uint32_t uVendor = MSR_GIM_HV_GUEST_OS_ID_VENDOR(uGuestOsIdMsr);
+    if (uVendor == 1 /* Microsoft */)
+    {
+        uint32_t uOsVariant = MSR_GIM_HV_GUEST_OS_ID_OS_VARIANT(uGuestOsIdMsr);
+        switch (uOsVariant)
+        {
+            case 0:  return "Undefined";
+            case 1:  return "MS-DOS";
+            case 2:  return "Windows 3.x";
+            case 3:  return "Windows 9x";
+            case 4:  return "Windows NT or derivative";
+            case 5:  return "Windows CE";
+            default: return "Unknown";
+        }
+    }
+    return "Unknown";
+}
+
+
+/**
  * MSR read handler for Hyper-V.
  *
  * @returns Strict VBox status code like CPUMQueryGuestMsr().
@@ -151,6 +180,16 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
             *puValue = 0;
             return VINF_SUCCESS;
 
+        case MSR_GIM_HV_CRASH_CTL:
+            *puValue = pHv->uCrashCtl;
+            return VINF_SUCCESS;
+
+        case MSR_GIM_HV_CRASH_P0: *puValue = pHv->uCrashP0;   return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P1: *puValue = pHv->uCrashP1;   return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P2: *puValue = pHv->uCrashP2;   return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P3: *puValue = pHv->uCrashP3;   return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P4: *puValue = pHv->uCrashP4;   return VINF_SUCCESS;
+
         default:
         {
 #ifdef IN_RING3
@@ -209,6 +248,15 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             {
                 gimR3HvDisableHypercallPage(pVM);
                 pHv->u64HypercallMsr &= ~MSR_GIM_HV_HYPERCALL_ENABLE_BIT;
+            }
+            else
+            {
+                LogRel(("GIM: HyperV: Guest OS reported ID %#RX64\n", uRawValue));
+                LogRel(("GIM: HyperV: Open-source=%RTbool Vendor=%#x OS=%#x (%s) Major=%u Minor=%u ServicePack=%u Build=%u\n",
+                        MSR_GIM_HV_GUEST_OS_ID_IS_OPENSOURCE(uRawValue),   MSR_GIM_HV_GUEST_OS_ID_VENDOR(uRawValue),
+                        MSR_GIM_HV_GUEST_OS_ID_OS_VARIANT(uRawValue),      gimHvGetGuestOsIdVariantName(uRawValue),
+                        MSR_GIM_HV_GUEST_OS_ID_MAJOR_VERSION(uRawValue),   MSR_GIM_HV_GUEST_OS_ID_MINOR_VERSION(uRawValue),
+                        MSR_GIM_HV_GUEST_OS_ID_SERVICE_VERSION(uRawValue), MSR_GIM_HV_GUEST_OS_ID_BUILD(uRawValue)));
             }
             pHv->u64GuestOsIdMsr = uRawValue;
             return VINF_SUCCESS;
@@ -297,7 +345,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #else
             if (MSR_GIM_HV_RESET_IS_SET(uRawValue))
             {
-                LogRel(("GIM: HyperV: Reset initiated through MSR.\n"));
+                LogRel(("GIM: HyperV: Reset initiated through MSR\n"));
                 int rc = PDMDevHlpVMReset(pVM->gim.s.pDevInsR3);
                 AssertRC(rc);
             }
@@ -305,6 +353,26 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             return VINF_SUCCESS;
 #endif /* IN_RING3 */
         }
+
+        case MSR_GIM_HV_CRASH_CTL:
+        {
+#ifndef IN_RING3
+            return VINF_CPUM_R3_MSR_WRITE;
+#else
+            if (uRawValue & MSR_GIM_HV_CRASH_CTL_NOTIFY_BIT)
+            {
+                LogRel(("GIM: HyperV: Guest indicates a fatal condition! P0=%#RX64 P1=%#RX64 P2=%#RX64 P3=%#RX64 P4=%#RX64\n",
+                        pHv->uCrashP0, pHv->uCrashP1, pHv->uCrashP2, pHv->uCrashP3, pHv->uCrashP4));
+            }
+            return VINF_SUCCESS;
+#endif
+        }
+
+        case MSR_GIM_HV_CRASH_P0:  pHv->uCrashP0 = uRawValue;  return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P1:  pHv->uCrashP1 = uRawValue;  return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P2:  pHv->uCrashP2 = uRawValue;  return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P3:  pHv->uCrashP3 = uRawValue;  return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P4:  pHv->uCrashP4 = uRawValue;  return VINF_SUCCESS;
 
         case MSR_GIM_HV_TIME_REF_COUNT:     /* Read-only MSRs. */
         case MSR_GIM_HV_VP_INDEX:
