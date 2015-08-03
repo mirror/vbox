@@ -584,13 +584,13 @@ endif
 		call	hard_drive_post
 
 		C_SETUP			; in case assembly code changed things
-		call	_print_bios_banner
-
 		;; Scan for additional ROMs in the C800-EFFF range
 		mov	ax, 0C800h
 		mov	dx, 0F000h
 		call	rom_scan_
-
+		
+		call	_print_bios_banner
+		
 		;; El Torito floppy/hard disk emulation
 		call	_cdemu_init
 
