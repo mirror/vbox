@@ -1540,6 +1540,7 @@ static DECLCALLBACK(void *) drvHostDSoundQueryInterface(PPDMIBASE pInterface, co
 
 static int dsoundConfigQueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
 {
+    /** @todo r=bird: What's wrong with CFGMR3QueryStringAlloc ??   */
     size_t cbString;
     int rc = CFGMR3QuerySize(pNode, pszName, &cbString);
     if (RT_SUCCESS(rc))
@@ -1601,10 +1602,11 @@ static void dSoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
 static DECLCALLBACK(void) drvHostDSoundDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVHOSTDSOUND pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTDSOUND);
-
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     LogFlowFuncEnter();
 
-    CoUninitialize();
+    if (pThis->pDrvIns)
+        CoUninitialize();
 
     LogFlowFuncLeave();
 }
@@ -1617,12 +1619,13 @@ static DECLCALLBACK(void) drvHostDSoundDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVHOSTDSOUND pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTDSOUND);
-    DSLOGREL(("Audio: Initializing DirectSound audio driver\n"));
+    LogRel(("Audio: Initializing DirectSound audio driver\n"));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(hr))
     {
-        DSLOGREL(("DSound: COM initialize %Rhrc\n", hr));
+        LogRel(("DSound: COM initialize %Rhrc\n", hr));
         return VERR_NOT_SUPPORTED;
     }
 
