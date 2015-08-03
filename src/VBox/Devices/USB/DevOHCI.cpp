@@ -3953,8 +3953,8 @@ static DECLCALLBACK(int) ohciR3ThreadFrame(PPDMDEVINS pDevIns, PPDMTHREAD pThrea
             else if (tsBeginServicing + (cFramesProcessed + 100) * RT_NS_1MS < tsNow)
             {
                 /* If we lag to far behind stop trying to catch up. */
-                LogRel(("OHCI#%u: Lagging too far behind, not trying to catch up anymore. Expect glitches with USB devices\n",
-                        pThis->pDevInsR3->iInstance));
+                LogRelMax(10, ("OHCI#%u: Lagging too far behind, not trying to catch up anymore. Expect glitches with USB devices\n",
+                               pThis->pDevInsR3->iInstance));
                 tsBeginServicing = tsNow;
                 cFramesProcessed = 0;
             }
