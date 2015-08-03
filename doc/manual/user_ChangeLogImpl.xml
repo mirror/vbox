@@ -73,6 +73,11 @@
       </listitem>
 
       <listitem>
+        <para>Windows hosts: fixed crash when opening Windows dialogs
+          from the VM process on Windows 10 (bug #14351)</para>
+      </listitem>
+
+      <listitem>
         <para>Linux hosts: check then name space before attaching to a host
           network interface (bug #13795)</para>
       </listitem>
