@@ -352,7 +352,7 @@ static void setModeRandR12(ScrnInfoPtr pScrn, unsigned cScreen)
     int originalX, originalY;
 
     /* Check that this code cannot trigger the resizing bug in X.Org Server 1.3.
-     * See the work-around in PreInit. */
+     * See the work-around in ScreenInit. */
     xf86RandR12GetOriginalVirtualSize(pScrn, &originalX, &originalY);
     VBVXASSERT(originalX == VBOX_VIDEO_MAX_VIRTUAL && originalY == VBOX_VIDEO_MAX_VIRTUAL, ("OriginalSize=%dx%d",
                originalX, originalY));
@@ -930,10 +930,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     vboxAddModes(pScrn);
 
 #ifdef VBOXVIDEO_13
-    /* Work around a bug in the original X server modesetting code, which took
-     * the first valid values set to these two as maxima over the server
-     * lifetime.  This bug was introduced on Feb 15 2007 and was fixed in commit
-     * fa877d7f three months later, so it was present in X.Org Server 1.3. */
     pScrn->virtualX = VBOX_VIDEO_MAX_VIRTUAL;
     pScrn->virtualY = VBOX_VIDEO_MAX_VIRTUAL;
 #else
@@ -1326,6 +1322,13 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Initial CRTC configuration failed!\n");
         return (FALSE);
     }
+
+    /* Work around a bug in the original X server modesetting code, which took
+     * the first valid values set to these two as maxima over the server
+     * lifetime.  This bug was introduced on Feb 15 2007 and was fixed in commit
+     * fa877d7f three months later, so it was present in X.Org Server 1.3. */
+    pScrn->virtualX = VBOX_VIDEO_MAX_VIRTUAL;
+    pScrn->virtualY = VBOX_VIDEO_MAX_VIRTUAL;
 
     /* Initialise randr 1.2 mode-setting functions. */
     if (!xf86CrtcScreenInit(pScreen)) {
