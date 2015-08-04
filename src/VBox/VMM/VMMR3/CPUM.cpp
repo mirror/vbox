@@ -2472,3 +2472,15 @@ VMMR3DECL(void) CPUMR3LogCpuIds(PVM pVM)
     LogRel(("******************** End of CPUID dump **********************\n"));
 }
 
+
+/**
+ * Get the size of the guest FPU/extended state area.
+ *
+ * @returns The size of the CPU FPU/extended state in bytes.
+ * @param   pVM         Pointer to the VM.
+ */
+VMMR3DECL(uint16_t) CPUMR3GetGuestFpuExtStateSize(PVM pVM)
+{
+    return pVM->cpum.s.GuestFeatures.cbMaxExtendedState;
+}
+
