@@ -3726,6 +3726,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     PSUPGIPCPU          pGipCpuWorker = &pGip->aCPUs[idxWorker];
     PSUPGIPCPU          pGipCpuMaster;
     uint32_t            iGipCpuMaster;
+    uint32_t            u32Tmp;
 
     /* Validate input a bit. */
     AssertReturn(pGip, VERR_INVALID_PARAMETER);
@@ -3768,11 +3769,14 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     AssertReturn(iGipCpuMaster < pGip->cCpus, VERR_INVALID_CPU_ID);
     pGipCpuMaster = &pGip->aCPUs[iGipCpuMaster];
     if (   (   (pGipCpuMaster->idApic & ~1) == (pGipCpuWorker->idApic & ~1)
+            && pGip->cOnlineCpus > 2
             && ASMHasCpuId()
             && ASMIsValidStdRange(ASMCpuId_EAX(0))
             && (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_HTT)
-            && !ASMIsAmdCpu()
-            && pGip->cOnlineCpus > 2)
+            && (   !ASMIsAmdCpu()
+                || ASMGetCpuFamily(u32Tmp = ASMCpuId_EAX(1)) > 0x15
+                || (   ASMGetCpuFamily(u32Tmp)   == 0x15           /* Piledriver+, not bulldozer (FX-4150 didn't like it). */
+                    && ASMGetCpuModelAMD(u32Tmp) >= 0x02) ) )
         || !RTMpIsCpuOnline(idMaster) )
     {
         uint32_t i;
