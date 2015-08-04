@@ -111,11 +111,34 @@ static int sf_dir_release(struct inode *inode, struct file *file)
 }
 
 /**
+ * Translate RTFMODE into DT_xxx (in conjunction to rtDirType())
+ * @param fMode     file mode
+ * returns d_type
+ */
+static int sf_get_d_type(RTFMODE fMode)
+{
+    int d_type;
+    switch (fMode & RTFS_TYPE_MASK)
+    {
+        case RTFS_TYPE_FIFO:      d_type = DT_FIFO;    break;
+        case RTFS_TYPE_DEV_CHAR:  d_type = DT_CHR;     break;
+        case RTFS_TYPE_DIRECTORY: d_type = DT_DIR;     break;
+        case RTFS_TYPE_DEV_BLOCK: d_type = DT_BLK;     break;
+        case RTFS_TYPE_FILE:      d_type = DT_REG;     break;
+        case RTFS_TYPE_SYMLINK:   d_type = DT_LNK;     break;
+        case RTFS_TYPE_SOCKET:    d_type = DT_SOCK;    break;
+        case RTFS_TYPE_WHITEOUT:  d_type = DT_WHT;     break;
+        default:                  d_type = DT_UNKNOWN; break;
+    }
+    return d_type;
+}
+
+/**
  * Extract element ([dir]->f_pos) from the directory [dir] into [d_name].
  *
  * @returns 0 for success, 1 for end reached, Linux error code otherwise.
  */
-static int sf_getdent(struct file *dir, char d_name[NAME_MAX])
+static int sf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
 {
     loff_t cur;
     struct sf_glob_info *sf_g;
@@ -201,6 +224,8 @@ static int sf_getdent(struct file *dir, char d_name[NAME_MAX])
             info = (SHFLDIRINFO *) ((uintptr_t) info + size);
         }
 
+        *d_type = sf_get_d_type(info->Info.Attr.fMode);
+
         return sf_nlscpy(sf_g, d_name, NAME_MAX,
                          info->name.String.utf8, info->name.u16Length);
     }
@@ -244,8 +269,9 @@ static int sf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
         ino_t fake_ino;
         loff_t sanity;
         char d_name[NAME_MAX];
+        int d_type = DT_UNKNOWN;
 
-        err = sf_getdent(dir, d_name);
+        err = sf_getdent(dir, d_name, &d_type);
         switch (err)
         {
             case 1:
@@ -280,13 +306,13 @@ static int sf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
         }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-        if (!dir_emit(ctx, d_name, strlen(d_name), fake_ino, DT_UNKNOWN))
+        if (!dir_emit(ctx, d_name, strlen(d_name), fake_ino, d_type))
         {
             LogFunc(("dir_emit failed\n"));
             return 0;
         }
 #else
-        err = filldir(opaque, d_name, strlen(d_name), dir->f_pos, fake_ino, DT_UNKNOWN);
+        err = filldir(opaque, d_name, strlen(d_name), dir->f_pos, fake_ino, d_type);
         if (err)
         {
             LogFunc(("filldir returned error %d\n", err));
