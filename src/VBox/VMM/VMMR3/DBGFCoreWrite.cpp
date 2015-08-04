@@ -312,10 +312,11 @@ static uint32_t dbgfR3GetRamRangeCount(PVM pVM)
 /**
  * Gets the guest-CPU context suitable for dumping into the core file.
  *
+ * @param   pVM         Pointer to the VM.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pDbgfCpu    Where to dump the guest-CPU data.
  */
-static void dbgfR3GetCoreCpu(PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
+static void dbgfR3GetCoreCpu(PVM pVM, PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
 {
 #define DBGFCOPYSEL(a_dbgfsel, a_cpumselreg) \
     do { \
@@ -375,7 +376,9 @@ static void dbgfR3GetCoreCpu(PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
     pDbgfCpu->aXcr[0]         = pCtx->aXcr[0];
     pDbgfCpu->aXcr[1]         = pCtx->aXcr[1];
     AssertCompile(sizeof(pDbgfCpu->ext) == sizeof(*pCtx->pXStateR3));
-    memcpy(&pDbgfCpu->ext, pCtx->pXStateR3, sizeof(pDbgfCpu->ext));
+    pDbgfCpu->cbExt = CPUMR3GetGuestFpuExtStateSize(pVM);
+    if (RT_LIKELY(pDbgfCpu->cbExt))
+        memcpy(&pDbgfCpu->ext, pCtx->pXStateR3, cbExt);
 
 #undef DBGFCOPYSEL
 }
@@ -521,7 +524,7 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
         }
 
         RT_BZERO(pDbgfCoreCpu, sizeof(*pDbgfCoreCpu));
-        dbgfR3GetCoreCpu(pCtx, pDbgfCoreCpu);
+        dbgfR3GetCoreCpu(pVM, pCtx, pDbgfCoreCpu);
         rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, g_pcszCoreVBoxCpu, pDbgfCoreCpu, sizeof(*pDbgfCoreCpu));
         if (RT_FAILURE(rc))
         {
