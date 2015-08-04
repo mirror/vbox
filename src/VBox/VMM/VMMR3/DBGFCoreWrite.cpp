@@ -378,7 +378,7 @@ static void dbgfR3GetCoreCpu(PVM pVM, PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
     AssertCompile(sizeof(pDbgfCpu->ext) == sizeof(*pCtx->pXStateR3));
     pDbgfCpu->cbExt = CPUMR3GetGuestFpuExtStateSize(pVM);
     if (RT_LIKELY(pDbgfCpu->cbExt))
-        memcpy(&pDbgfCpu->ext, pCtx->pXStateR3, cbExt);
+        memcpy(&pDbgfCpu->ext, pCtx->pXStateR3, pDbgfCpu->cbExt);
 
 #undef DBGFCOPYSEL
 }
