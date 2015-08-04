@@ -293,6 +293,9 @@ void UIMachine::cleanupSession()
 
 void UIMachine::cleanup()
 {
+    /* Preprocess all the meta-events: */
+    QApplication::sendPostedEvents(0, QEvent::MetaCall);
+
     /* Cleanup machine-logic: */
     cleanupMachineLogic();
 
