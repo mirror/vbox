@@ -11,6 +11,11 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: added support for guest-crash report MSRs with Hyper-V
+          paravirtualization</para>
+      </listitem>
+
+      <listitem>
         <para>VMM: fixed an issue causing artifically high load averages on
           Linux hosts</para>
       </listitem>
