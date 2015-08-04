@@ -139,10 +139,14 @@ public:
     UIMachineView* dockPreviewView() const;
 #endif /* Q_WS_MAC */
 
-    /* API: Close actions: */
+    /** Save VM state, then close Runtime UI. */
     void saveState();
+    /** Call for guest shutdown to close Runtime UI. */
     void shutdown();
+    /** Power off VM, then close Runtime UI. */
     void powerOff(bool fDiscardingState);
+    /** Close Runtime UI. */
+    void closeRuntimeUI();
 
     /* API: 3D overlay visibility stuff: */
     virtual void notifyAbout3DOverlayVisibilityChange(bool fVisible);
@@ -315,6 +319,9 @@ private slots:
 
     /** Show Global Preferences. */
     void sltShowGlobalPreferences();
+
+    /** Close Runtime UI. */
+    void sltCloseRuntimeUI() { closeRuntimeUI(); }
 
 private:
 

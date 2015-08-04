@@ -97,7 +97,6 @@ public:
     bool shutdown();
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
     bool restoreCurrentSnapshot();
-    void closeRuntimeUI();
 
     /** Returns the session instance. */
     CSession& session() { return m_session; }
@@ -243,9 +242,6 @@ public:
 
 signals:
 
-    /* Notifier: Close Runtime UI stuff: */
-    void sigCloseRuntimeUI();
-
     /** Notifies about frame-buffer resize. */
     void sigFrameBufferResize();
 
@@ -299,7 +295,7 @@ private slots:
     /** Marks machine started. */
     void sltMarkInitialized() { m_fInitialized = true; }
 
-    /* Handler: Close Runtime UI stuff: */
+    /** Close Runtime UI. */
     void sltCloseRuntimeUI();
 
 #ifdef RT_OS_DARWIN

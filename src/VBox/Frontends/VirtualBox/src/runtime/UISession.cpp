@@ -455,12 +455,6 @@ bool UISession::restoreCurrentSnapshot()
     return fResult;
 }
 
-void UISession::closeRuntimeUI()
-{
-    /* Start corresponding slot asynchronously: */
-    emit sigCloseRuntimeUI();
-}
-
 UIMachineLogic* UISession::machineLogic() const
 {
     return uimachine() ? uimachine()->machineLogic() : 0;
@@ -617,28 +611,8 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 
 void UISession::sltCloseRuntimeUI()
 {
-    /* First, we have to hide any opened modal/popup widgets.
-     * They then should unlock their event-loops synchronously.
-     * If all such loops are unlocked, we can close Runtime UI: */
-    if (QWidget *pWidget = QApplication::activeModalWidget() ?
-                           QApplication::activeModalWidget() :
-                           QApplication::activePopupWidget() ?
-                           QApplication::activePopupWidget() : 0)
-    {
-        /* First we should try to close this widget: */
-        pWidget->close();
-        /* If widget rejected the 'close-event' we can
-         * still hide it and hope it will behave correctly
-         * and unlock his event-loop if any: */
-        if (!pWidget->isHidden())
-            pWidget->hide();
-        /* Restart this slot: */
-        emit sigCloseRuntimeUI();
-        return;
-    }
-
-    /* Finally close the Runtime UI: */
-    UIMachine::destroy();
+    /* Ask UIMachine to close Runtime UI: */
+    uimachine()->closeRuntimeUI();
 }
 
 #ifdef RT_OS_DARWIN
@@ -1173,7 +1147,6 @@ void UISession::prepareActions()
 void UISession::prepareConnections()
 {
     connect(this, SIGNAL(sigInitialized()), this, SLOT(sltMarkInitialized()));
-    connect(this, SIGNAL(sigCloseRuntimeUI()), this, SLOT(sltCloseRuntimeUI()));
 
 #ifdef Q_WS_MAC
     /* Install native display reconfiguration callback: */

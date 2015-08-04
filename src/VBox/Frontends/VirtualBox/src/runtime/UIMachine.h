@@ -69,6 +69,9 @@ public:
     /** Requests async visual-state change. */
     void asyncChangeVisualState(UIVisualStateType visualStateType);
 
+    /** Close Runtime UI. */
+    void closeRuntimeUI() { destroy(); }
+
 private slots:
 
     /** Visual state-change handler. */

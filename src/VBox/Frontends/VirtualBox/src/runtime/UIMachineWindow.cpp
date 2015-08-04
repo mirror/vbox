@@ -414,7 +414,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         case MachineCloseAction_Detach:
         {
             /* Just close Runtime UI: */
-            uisession()->closeRuntimeUI();
+            machineLogic()->closeRuntimeUI();
             break;
         }
         case MachineCloseAction_SaveState:
