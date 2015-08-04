@@ -268,15 +268,15 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     Log(("NAT: DHCP: bp_file:%s\n", &rbp->bp_file));
     /* Address/port of the DHCP server. */
     rbp->bp_yiaddr = bc->addr; /* Client IP address */
-    Log(("NAT: DHCP: bp_yiaddr:%RTnaipv4\n", rbp->bp_yiaddr));
+    Log(("NAT: DHCP: bp_yiaddr:%RTnaipv4\n", rbp->bp_yiaddr.s_addr));
     rbp->bp_siaddr = pData->tftp_server; /* Next Server IP address, i.e. TFTP */
-    Log(("NAT: DHCP: bp_siaddr:%RTnaipv4\n", rbp->bp_siaddr));
+    Log(("NAT: DHCP: bp_siaddr:%RTnaipv4\n", rbp->bp_siaddr.s_addr));
     if (fDhcpRequest)
     {
         rbp->bp_ciaddr.s_addr = bc->addr.s_addr; /* Client IP address */
     }
     saddr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
-    Log(("NAT: DHCP: s_addr:%RTnaipv4\n", saddr));
+    Log(("NAT: DHCP: s_addr:%RTnaipv4\n", saddr.s_addr));
 
 #define FILL_BOOTP_EXT(q, tag, len, pvalue)                     \
     do {                                                        \
@@ -484,7 +484,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, struct mbuf 
             {
                if ((bp->bp_ciaddr.s_addr & RT_H2N_U32(pData->netmask)) != pData->special_addr.s_addr)
                {
-                   LogRel(("NAT: Client %RTnaipv4 requested IP -- sending NAK\n", bp->bp_ciaddr));
+                   LogRel(("NAT: Client %RTnaipv4 requested IP -- sending NAK\n", bp->bp_ciaddr.s_addr));
                    offReply = dhcp_send_nack(pData, bp, bc, m);
                    return offReply;
                }
@@ -559,7 +559,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, struct mbuf 
             break;
     }
 
-    LogRel(("NAT: DHCP offered IP address %RTnaipv4\n", bc->addr));
+    LogRel(("NAT: DHCP offered IP address %RTnaipv4\n", bc->addr.s_addr));
     offReply = dhcp_send_ack(pData, bp, bc, m, /* fDhcpRequest=*/ 1);
     return offReply;
 }
@@ -586,7 +586,7 @@ static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, int fDhcpDi
         }
 
         bc->xid = bp->bp_xid;
-        LogRel(("NAT: DHCP offered IP address %RTnaipv4\n", bc->addr));
+        LogRel(("NAT: DHCP offered IP address %RTnaipv4\n", bc->addr.s_addr));
         offReply = dhcp_send_offer(pData, bp, bc, m);
         return offReply;
     }
@@ -599,7 +599,7 @@ static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, int fDhcpDi
             return -1;
         }
 
-        LogRel(("NAT: DHCP offered IP address %RTnaipv4\n", bc->addr));
+        LogRel(("NAT: DHCP offered IP address %RTnaipv4\n", bc->addr.s_addr));
         offReply = dhcp_send_ack(pData, bp, bc, m, /* fDhcpRequest=*/ 0);
         return offReply;
     }
@@ -612,7 +612,7 @@ static int dhcp_decode_release(PNATState pData, struct bootp_t *bp)
     int rc = release_addr(pData, &bp->bp_ciaddr);
     LogRel(("NAT: %s %RTnaipv4\n",
             RT_SUCCESS(rc) ? "DHCP released IP address" : "Ignored DHCP release for IP address",
-            &bp->bp_ciaddr));
+            bp->bp_ciaddr.s_addr));
     return 0;
 }
 /**
