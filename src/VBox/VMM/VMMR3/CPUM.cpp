@@ -2447,7 +2447,7 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM)
 
 
 /**
- * Called when the ring-0 init phases comleted.
+ * Called when the ring-0 init phases completed.
  *
  * @param   pVM                 Pointer to the VM.
  */
