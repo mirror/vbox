@@ -508,12 +508,12 @@
         <note>
           <para>As a special exception, immutable images are
           <emphasis>not</emphasis> reset if they are attached to a machine
-          whose last snapshot was taken while the machine was running (a
-          so-called "online" snapshot). As a result, if the machine's current
-          snapshot is such an "online" snapshot, its immutable images behave
-          exactly like the "normal" images described previously. To re-enable
-          the automatic resetting of such images, delete the current snapshot
-          of the machine.</para>
+          in saved state or whose last snapshot was taken while the machine
+          was running (a so-called "online" snapshot). As a result, if the
+          machine's current snapshot is such an "online" snapshot, its
+          immutable images behave exactly like the "normal" images described
+          previously. To re-enable the automatic resetting of such images,
+          delete the current snapshot of the machine.</para>
         </note>
 
         <para>Again, technically, VirtualBox never writes to an immutable
