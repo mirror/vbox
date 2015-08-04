@@ -376,7 +376,7 @@ static void dbgfR3GetCoreCpu(PVM pVM, PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
     pDbgfCpu->aXcr[0]         = pCtx->aXcr[0];
     pDbgfCpu->aXcr[1]         = pCtx->aXcr[1];
     AssertCompile(sizeof(pDbgfCpu->ext) == sizeof(*pCtx->pXStateR3));
-    pDbgfCpu->cbExt = CPUMR3GetGuestFpuExtStateSize(pVM);
+    pDbgfCpu->cbExt = pVM->cpum.ro.GuestFeatures.cbMaxExtendedState;
     if (RT_LIKELY(pDbgfCpu->cbExt))
         memcpy(&pDbgfCpu->ext, pCtx->pXStateR3, pDbgfCpu->cbExt);
 
