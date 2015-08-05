@@ -578,6 +578,7 @@ static int dsoundPlayStart(PDSOUNDSTREAMOUT pDSoundStrmOut)
         if (RT_FAILURE(rc2))
         {
             DSLOG(("DSound: playback start GetStatus %Rrc\n", rc2));
+            rc = rc2;   /* Propagate error. */
         }
         else
         {
