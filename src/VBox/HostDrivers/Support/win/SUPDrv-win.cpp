@@ -845,14 +845,14 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                     {
                         LogRel(("vboxdrv: %p is not a budding VM process (enmProcessKind=%d).\n",
                                 PsGetProcessId(PsGetCurrentProcess()), pNtProtect->enmProcessKind));
-                        rc = VERR_ACCESS_DENIED;
+                        rc = VERR_SUPDRV_NOT_BUDDING_VM_PROCESS_2;
                     }
                     supdrvNtProtectRelease(pNtProtect);
                 }
                 else
                 {
                     LogRel(("vboxdrv: %p is not a budding VM process.\n", PsGetProcessId(PsGetCurrentProcess())));
-                    rc = VERR_ACCESS_DENIED;
+                    rc = VERR_SUPDRV_NOT_BUDDING_VM_PROCESS_1;
                 }
             }
             /*
@@ -1478,7 +1478,7 @@ NTSTATUS _stdcall VBoxDrvNtRead(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                 /*
                  * Did we find error info and is the caller requesting data within it?
-                 * If so, cehck the destination buffer and copy the data into it.
+                 * If so, check the destination buffer and copy the data into it.
                  */
                 if (   pCur
                     && pStack->Parameters.Read.ByteOffset.QuadPart < pCur->cchErrorInfo
@@ -1488,12 +1488,11 @@ NTSTATUS _stdcall VBoxDrvNtRead(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                     if (pvDstBuf)
                     {
                         uint32_t offRead  = (uint32_t)pStack->Parameters.Read.ByteOffset.QuadPart;
-                        uint32_t cbToRead = pCur->cchErrorInfo - (uint32_t)offRead;
-                        if (cbToRead > pStack->Parameters.Read.Length)
-                        {
-                            cbToRead = pStack->Parameters.Read.Length;
+                        uint32_t cbToRead = pCur->cchErrorInfo - offRead;
+                        if (cbToRead < pStack->Parameters.Read.Length)
                             RT_BZERO((uint8_t *)pvDstBuf + cbToRead, pStack->Parameters.Read.Length - cbToRead);
-                        }
+                        else
+                            cbToRead = pStack->Parameters.Read.Length;
                         memcpy(pvDstBuf, &pCur->szErrorInfo[offRead], cbToRead);
                         pIrp->IoStatus.Information = cbToRead;
 
@@ -1521,6 +1520,15 @@ NTSTATUS _stdcall VBoxDrvNtRead(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
             else
                 rcNt = STATUS_UNSUCCESSFUL;
+
+            /* Paranoia: Clear the buffer on failure. */
+            if (!NT_SUCCESS(rcNt))
+            {
+                PVOID pvDstBuf = pIrp->AssociatedIrp.SystemBuffer;
+                if (   pvDstBuf
+                    && pStack->Parameters.Read.Length)
+                    RT_BZERO(pvDstBuf, pStack->Parameters.Read.Length);
+            }
         }
         else
             rcNt = STATUS_INVALID_PARAMETER;
@@ -4164,8 +4172,7 @@ static int supdrvNtProtectVerifyProcess(PSUPDRVNTPROTECT pNtProtect)
         if (!pErrorInfo->cchErrorInfo)
             pErrorInfo->cchErrorInfo = (uint32_t)RTStrPrintf(pErrorInfo->szErrorInfo, sizeof(pErrorInfo->szErrorInfo),
                                                              "supdrvNtProtectVerifyProcess: rc=%d", rc);
-        if (RT_FAILURE(rc))
-            RTLogWriteDebugger(pErrorInfo->szErrorInfo, pErrorInfo->cchErrorInfo);
+        RTLogWriteDebugger(pErrorInfo->szErrorInfo, pErrorInfo->cchErrorInfo);
 
         int rc2 = RTSemMutexRequest(g_hErrorInfoLock, RT_INDEFINITE_WAIT);
         if (RT_SUCCESS(rc2))
