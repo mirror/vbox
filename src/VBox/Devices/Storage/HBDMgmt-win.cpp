@@ -46,10 +46,10 @@ typedef struct HBDMGRDEV
     RTLISTNODE         ListNode;
     /** The block device name. */
     char              *pszDevice;
-    /** Number of mountpoint handles in the array below. */
-    unsigned           cMountpointHandles;
-    /** Array of mountpoint handles for a particular volume or disk, variable size. */
-    HANDLE             aMountpointHandles[1];
+    /** Number of volumes for this block device. */
+    unsigned           cVolumes;
+    /** Array of handle to the volumes for unmounting and taking it offline. */
+    HANDLE             ahVolumes[1];
 } HBDMGRDEV;
 /** Pointer to a claimed block device. */
 typedef HBDMGRDEV *PHBDMGRDEV;
@@ -86,13 +86,19 @@ typedef HBDMGRINT *PHBDMGRINT;
  */
 static void hbdMgrDevUnclaim(PHBDMGRDEV pDev)
 {
-    for (unsigned i = 0; i < pDev->cMountpointHandles; i++)
+    LogFlowFunc(("pDev=%p{%s} cVolumes=%u\n", pDev, pDev->pszDevice, pDev->cVolumes));
+
+    for (unsigned i = 0; i < pDev->cVolumes; i++)
     {
         DWORD dwReturned = 0;
-        BOOL bRet = DeviceIoControl(pDev->aMountpointHandles[i], IOCTL_VOLUME_ONLINE, NULL, 0, NULL, 0, &dwReturned, NULL);
+
+        LogFlowFunc(("Taking volume %u online\n", i));
+        BOOL bRet = DeviceIoControl(pDev->ahVolumes[i], IOCTL_VOLUME_ONLINE, NULL, 0, NULL, 0, &dwReturned, NULL);
         if (!bRet)
             LogRel(("HBDMgmt: Failed to take claimed volume online during cleanup: %s{%Rrc}\n",
                     pDev->pszDevice, RTErrConvertFromWin32(GetLastError())));
+
+        CloseHandle(pDev->ahVolumes[i]);
     }
 
     RTListNodeRemove(&pDev->ListNode);
@@ -204,171 +210,8 @@ static int hbdMgrQueryNtName(PRTUTF16 pwszDriveWin32, PRTUTF16 *ppwszDriveNt)
     return hbdMgrQueryNtLinkTarget(awszFileNt, ppwszDriveNt);
 }
 
-/**
- * Splits the given mount point buffer into individual entries.
- *
- * @returns VBox status code.
- * @param   pwszMountpoints    The buffer holding the list of mountpoints separated by a null terminator,
- *                             the end of the list is marked with an extra null terminator.
- * @param   ppapwszMountpoints Where to store the array of mount points on success.
- * @param   pcMountpoints      Where to store the returned number of mount points on success.
- */
-static int hbdMgrSplitMountpointBuffer(PRTUTF16 pwszMountpoints, PRTUTF16 **ppapwszMountpoints, unsigned *pcMountpoints)
-{
-    int rc = VINF_SUCCESS;
-    unsigned cMountpoints = 0;
-
-    *pcMountpoints = 0;
-    *ppapwszMountpoints = NULL;
-
-    /* First round, count the number of mountpoints. */
-    PRTUTF16 pwszMountpointCur = pwszMountpoints;
-    while (*pwszMountpointCur != L'\0')
-    {
-        pwszMountpointCur = (PRTUTF16)RTUtf16End(pwszMountpointCur, RTSTR_MAX);
-        pwszMountpointCur++;
-        cMountpoints++;
-    }
-
-    PRTUTF16 *papwszMountpoints = (PRTUTF16 *)RTMemAllocZ(cMountpoints * sizeof(PRTUTF16));
-    if (RT_LIKELY(papwszMountpoints))
-    {
-        unsigned idxMountpoint = 0;
-
-        pwszMountpointCur = pwszMountpoints;
-
-        /* Split the buffer now. */
-        while (   *pwszMountpointCur != L'\0'
-               && RT_SUCCESS(rc)
-               && idxMountpoint < cMountpoints)
-        {
-            papwszMountpoints[idxMountpoint] = RTUtf16Dup(pwszMountpointCur);
-            if (!papwszMountpoints[idxMountpoint])
-            {
-                rc = VERR_NO_STR_MEMORY;
-                break;
-            }
-
-            pwszMountpointCur = (PRTUTF16)RTUtf16End(pwszMountpointCur, RTSTR_MAX);
-            pwszMountpointCur++;
-            idxMountpoint++;
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            *pcMountpoints = cMountpoints;
-            *ppapwszMountpoints = papwszMountpoints;
-        }
-        else
-        {
-            /* Undo everything. */
-            while (idxMountpoint-- > 0)
-                RTUtf16Free(papwszMountpoints[idxMountpoint]);
-            RTMemFree(papwszMountpoints);
-        }
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
-}
-
-/**
- * Queries all available mount points for a given volume.
- *
- * @returns VBox status code.
- * @param   pwszVolNt          The volume to query the mount points for (NT namespace).
- * @param   ppapwszMountpoints Where to store the array of mount points on success.
- * @param   pcMountpoints      Where to store the returned number of mount points on success.
- */
-static int hbdMgrQueryMountpointsForVolume(PRTUTF16 pwszVolNt, PRTUTF16 **ppapwszMountpoints, unsigned *pcMountpoints)
-{
-    int rc = VINF_SUCCESS;
-    RTUTF16 awszVolume[64];
-
-    /*
-     * Volume names returned by FindFirstVolume/FindNextVolume have a very strict format looking
-     * like \\?\Volume{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}, so the buffer for the name can be static.
-     */
-    RT_ZERO(awszVolume);
-
-    HANDLE hVol = FindFirstVolumeW(&awszVolume[0], RT_ELEMENTS(awszVolume));
-    if (hVol != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            PRTUTF16 pwszVolNtCur = NULL;
-            rc = hbdMgrQueryNtName(awszVolume, &pwszVolNtCur);
-            if (RT_SUCCESS(rc))
-            {
-                /* If both volume names match we found the right one. */
-                if (!RTUtf16Cmp(pwszVolNtCur, pwszVolNt))
-                {
-                    DWORD cchBufferLength = 100;
-                    DWORD cchBufRequired = 0;
-                    PRTUTF16 pwszVolumeMountpoints = RTUtf16Alloc(cchBufferLength * sizeof(RTUTF16));
-                    if (pwszVolumeMountpoints)
-                    {
-                        BOOL bRet = GetVolumePathNamesForVolumeNameW(awszVolume, pwszVolumeMountpoints,
-                                                                     cchBufferLength, &cchBufRequired);
-                        if (   !bRet
-                            && GetLastError() == ERROR_MORE_DATA)
-                        {
-                            /* Realloc and try again. */
-                            RTUtf16Free(pwszVolumeMountpoints);
-                            pwszVolumeMountpoints = RTUtf16Alloc(cchBufRequired * sizeof(RTUTF16));
-                            if (pwszVolumeMountpoints)
-                            {
-                                cchBufferLength = cchBufRequired;
-                                bRet = GetVolumePathNamesForVolumeNameW(awszVolume, pwszVolumeMountpoints,
-                                                                        cchBufferLength, &cchBufRequired);
-                            }
-                            else
-                                rc = VERR_NO_STR_MEMORY;
-                        }
-
-                        if (   RT_SUCCESS(rc)
-                            && bRet)
-                            rc = hbdMgrSplitMountpointBuffer(pwszVolumeMountpoints, ppapwszMountpoints,
-                                                             pcMountpoints);
-                        else if (RT_SUCCESS(rc))
-                            rc = RTErrConvertFromWin32(GetLastError());
-
-                        RTUtf16Free(pwszVolumeMountpoints);
-                    }
-                    else
-                        rc = VERR_NO_STR_MEMORY;
-
-                    break;
-                }
-                else
-                {
-                    RTUtf16Free(pwszVolNtCur);
-                    RT_ZERO(awszVolume);
-                    BOOL bRet = FindNextVolumeW(hVol, &awszVolume[0], RT_ELEMENTS(awszVolume));
-                    if (!bRet)
-                    {
-                        DWORD dwRet = GetLastError();
-                        if (dwRet == ERROR_NO_MORE_FILES)
-                            rc = VERR_NOT_FOUND;
-                        else
-                            rc = RTErrConvertFromWin32(dwRet);
-                        break;
-                    }
-                }
-            }
-        } while (RT_SUCCESS(rc));
-
-        FindVolumeClose(hVol);
-    }
-    else
-        rc = RTErrConvertFromWin32(GetLastError());
-
-    return rc;
-}
-
-static int hbdMgrQueryAllMountpointsForDisk(PRTUTF16 pwszDiskNt, PRTUTF16 **ppapwszMountpoints,
-                                            unsigned *pcMountpoints)
+static int hbdMgrQueryAllMountpointsForDisk(PRTUTF16 pwszDiskNt, PRTUTF16 **ppapwszVolumes,
+                                            unsigned *pcVolumes)
 {
     /*
      * Try to get the symlink target for every partition, we will take the easy approach
@@ -380,8 +223,12 @@ static int hbdMgrQueryAllMountpointsForDisk(PRTUTF16 pwszDiskNt, PRTUTF16 **ppap
      */
     int rc = VINF_SUCCESS;
     char *pszDiskNt = NULL;
-    unsigned cMountpoints = 0;
-    PRTUTF16 *papwszMountpoints = NULL;
+    unsigned cVolumes = 0;
+    unsigned cVolumesMax = 10;
+    PRTUTF16 *papwszVolumes = (PRTUTF16 *)RTMemAllocZ(cVolumesMax * sizeof(PRTUTF16));
+
+    if (!papwszVolumes)
+        return VERR_NO_MEMORY;
 
     rc = RTUtf16ToUtf8(pwszDiskNt, &pszDiskNt);
     if (RT_SUCCESS(rc))
@@ -414,43 +261,28 @@ static int hbdMgrQueryAllMountpointsForDisk(PRTUTF16 pwszDiskNt, PRTUTF16 **ppap
                             rc = hbdMgrQueryNtLinkTarget(pwszDisk, &pwszTargetNt);
                             if (RT_SUCCESS(rc))
                             {
-                                unsigned cMountpointsCur = 0;
-                                PRTUTF16 *papwszMountpointsCur = NULL;
-
-                                rc = hbdMgrQueryMountpointsForVolume(pwszTargetNt, &papwszMountpointsCur,
-                                                                     &cMountpointsCur);
-                                if (RT_SUCCESS(rc))
+                                if (cVolumes == cVolumesMax)
                                 {
-                                    if (!papwszMountpoints)
+                                    /* Increase array of volumes. */
+                                    PRTUTF16 *papwszVolumesNew = (PRTUTF16 *)RTMemAllocZ((cVolumesMax + 10) * sizeof(PRTUTF16));
+                                    if (papwszVolumesNew)
                                     {
-                                        papwszMountpoints = papwszMountpointsCur;
-                                        cMountpoints = cMountpointsCur;
+                                        cVolumesMax += 10;
+                                        papwszVolumes = papwszVolumesNew;
                                     }
                                     else
                                     {
-                                        PRTUTF16 *papwszMountpointsNew = (PRTUTF16 *)RTMemRealloc(papwszMountpoints,
-                                                                                                  (cMountpoints + cMountpointsCur) * sizeof(PRTUTF16));
-                                        if (papwszMountpointsNew)
-                                        {
-                                            for (unsigned i = cMountpoints; i < cMountpoints + cMountpointsCur; i++)
-                                                papwszMountpointsNew[i] = papwszMountpointsCur[i - cMountpoints];
-
-                                            papwszMountpoints = papwszMountpointsNew;
-                                        }
-                                        else
-                                        {
-                                            for (unsigned i = 0; i < cMountpointsCur; i++)
-                                                RTUtf16Free(papwszMountpointsCur[i]);
-
-                                            rc = VERR_NO_MEMORY;
-                                        }
+                                        RTUtf16Free(pwszTargetNt);
+                                        rc = VERR_NO_MEMORY;
                                     }
-
-                                    RTMemFree(papwszMountpointsCur);
                                 }
 
-                                iPart++;
-                                RTUtf16Free(pwszTargetNt);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    Assert(cVolumes < cVolumesMax);
+                                    papwszVolumes[cVolumes++] = pwszTargetNt;
+                                    iPart++;
+                                }
                             }
                             else if (rc == VERR_FILE_NOT_FOUND)
                             {
@@ -476,18 +308,52 @@ static int hbdMgrQueryAllMountpointsForDisk(PRTUTF16 pwszDiskNt, PRTUTF16 **ppap
 
     if (RT_SUCCESS(rc))
     {
-        *pcMountpoints = cMountpoints;
-        *ppapwszMountpoints = papwszMountpoints;
+        *pcVolumes = cVolumes;
+        *ppapwszVolumes = papwszVolumes;
+        LogFlowFunc(("rc=%Rrc cVolumes=%u ppapwszVolumes=%p\n", rc, cVolumes, papwszVolumes));
     }
     else
     {
-        for (unsigned i = 0; i < cMountpoints; i++)
-            RTUtf16Free(papwszMountpoints[i]);
+        for (unsigned i = 0; i < cVolumes; i++)
+            RTUtf16Free(papwszVolumes[i]);
 
-        RTMemFree(papwszMountpoints);
+        RTMemFree(papwszVolumes);
     }
 
     return rc;
+}
+
+static NTSTATUS hbdMgrNtCreateFileWrapper(PRTUTF16 pwszVolume, HANDLE *phVolume)
+{
+    HANDLE          hVolume = RTNT_INVALID_HANDLE_VALUE;
+    IO_STATUS_BLOCK Ios     = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    UNICODE_STRING  NtName;
+
+    NtName.Buffer        = (PWSTR)pwszVolume;
+    NtName.Length        = (USHORT)(RTUtf16Len(pwszVolume) * sizeof(RTUTF16));
+    NtName.MaximumLength = NtName.Length + sizeof(WCHAR);
+
+    OBJECT_ATTRIBUTES ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+    NTSTATUS rcNt = NtCreateFile(&hVolume,
+                                 FILE_READ_DATA | FILE_WRITE_DATA | SYNCHRONIZE,
+                                 &ObjAttr,
+                                 &Ios,
+                                 NULL /* Allocation Size*/,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                 FILE_OPEN,
+                                 FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
+                                 NULL /*EaBuffer*/,
+                                 0 /*EaLength*/);
+    if (NT_SUCCESS(rcNt))
+        rcNt = Ios.Status;
+
+    if (NT_SUCCESS(rcNt))
+        *phVolume = hVolume;
+
+    return rcNt;
 }
 
 DECLHIDDEN(int) HBDMgrCreate(PHBDMGR phHbdMgr)
@@ -535,6 +401,8 @@ DECLHIDDEN(bool) HBDMgrIsBlockDevice(const char *pszFilename)
     bool fIsBlockDevice = RTStrNICmp(pszFilename, "\\\\.\\PhysicalDrive", sizeof("\\\\.\\PhysicalDrive") - 1) == 0 ? true : false;
     if (!fIsBlockDevice)
         fIsBlockDevice = RTStrNICmp(pszFilename, "\\\\.\\Harddisk", sizeof("\\\\.\\Harddisk") - 1) == 0 ? true : false;
+
+    LogFlowFunc(("returns %s -> %RTbool\n", pszFilename, fIsBlockDevice));
     return fIsBlockDevice;
 }
 
@@ -558,26 +426,98 @@ DECLHIDDEN(int) HBDMgrClaimBlockDevice(HBDMGR hHbdMgr, const char *pszFilename)
             rc = hbdMgrQueryNtName(pwszVolume, &pwszVolNt);
             if (RT_SUCCESS(rc))
             {
-                PRTUTF16 *papwszMountpoints = NULL;
-                unsigned cMountpoints = 0;
+                PRTUTF16 *papwszVolumes = NULL;
+                unsigned cVolumes = 0;
 
                 /* Complete disks need to be handled differently. */
                 if (!RTStrNCmp(pszFilename, "\\\\.\\PhysicalDrive", sizeof("\\\\.\\PhysicalDrive") - 1))
-                    rc = hbdMgrQueryAllMountpointsForDisk(pwszVolNt, &papwszMountpoints, &cMountpoints);
+                {
+                    rc = hbdMgrQueryAllMountpointsForDisk(pwszVolNt, &papwszVolumes, &cVolumes);
+                    RTUtf16Free(pwszVolNt);
+                }
                 else
-                    rc = hbdMgrQueryMountpointsForVolume(pwszVolNt, &papwszMountpoints, &cMountpoints);
+                {
+                    papwszVolumes = &pwszVolNt;
+                    cVolumes = 1;
+                }
 
                 if (RT_SUCCESS(rc))
                 {
-                    /** @todo: Unmount everything and take volume offline. */
+#ifdef LOG_ENABLED
+                    for (unsigned i = 0; i < cVolumes; i++)
+                        LogFlowFunc(("Volume %u: %ls\n", i, papwszVolumes[i]));
+#endif
+                    pDev = (PHBDMGRDEV)RTMemAllocZ(RT_OFFSETOF(HBDMGRDEV, ahVolumes[cVolumes]));
+                    if (pDev)
+                    {
+                        pDev->cVolumes = 0;
+                        pDev->pszDevice = RTStrDup(pszFilename);
+                        if (pDev->pszDevice)
+                        {
+                            for (unsigned i = 0; i < cVolumes; i++)
+                            {
+                                HANDLE hVolume;
 
-                    for (unsigned i = 0; i < cMountpoints; i++)
-                        RTUtf16Free(papwszMountpoints[i]);
+                                NTSTATUS rcNt = hbdMgrNtCreateFileWrapper(papwszVolumes[i], &hVolume);
+                                if (NT_SUCCESS(rcNt))
+                                {
+                                    DWORD dwReturned = 0;
 
-                    RTMemFree(papwszMountpoints);
+                                    Assert(hVolume != INVALID_HANDLE_VALUE);
+                                    BOOL bRet = DeviceIoControl(hVolume, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &dwReturned, NULL);
+                                    if (bRet)
+                                    {
+                                         bRet = DeviceIoControl(hVolume, IOCTL_VOLUME_OFFLINE, NULL, 0, NULL, 0, &dwReturned, NULL);
+                                         if (bRet)
+                                            pDev->ahVolumes[pDev->cVolumes++] = hVolume;
+                                         else
+                                            rc = RTErrConvertFromWin32(GetLastError());
+                                    }
+                                    else
+                                        rc = RTErrConvertFromWin32(GetLastError());
+
+                                    if (RT_FAILURE(rc))
+                                        CloseHandle(hVolume);
+                                }
+                                else
+                                    rc = RTErrConvertFromNtStatus(rcNt);
+                            }
+                        }
+                        else
+                            rc = VERR_NO_STR_MEMORY;
+
+                        if (RT_SUCCESS(rc))
+                        {
+                            RTSemFastMutexRequest(pThis->hMtxList);
+                            RTListAppend(&pThis->ListClaimed, &pDev->ListNode);
+                            RTSemFastMutexRelease(pThis->hMtxList);
+                        }
+                        else
+                        {
+                            /* Close all open handles and take the volumes online again. */
+                            for (unsigned i = 0; i < pDev->cVolumes; i++)
+                            {
+                                DWORD dwReturned = 0;
+                                BOOL bRet = DeviceIoControl(pDev->ahVolumes[i], IOCTL_VOLUME_ONLINE, NULL, 0, NULL, 0, &dwReturned, NULL);
+                                if (!bRet)
+                                    LogRel(("HBDMgmt: Failed to take claimed volume online during cleanup: %s{%Rrc}\n",
+                                            pDev->pszDevice, RTErrConvertFromWin32(GetLastError())));
+
+                                CloseHandle(pDev->ahVolumes[i]);
+                            }
+                            if (pDev->pszDevice)
+                                RTStrFree(pDev->pszDevice);
+                            RTMemFree(pDev);
+                        }
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+
+                    for (unsigned i = 0; i < cVolumes; i++)
+                        RTUtf16Free(papwszVolumes[i]);
+
+                    RTMemFree(papwszVolumes);
                 }
-
-                RTUtf16Free(pwszVolNt);
             }
 
             RTUtf16Free(pwszVolume);
