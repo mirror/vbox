@@ -93,7 +93,7 @@
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
         <translation>警告：看起来，您没有安装基础的 GStreamer 插件。
-    所有的音频和视频支持都已经被关闭。</translation>
+    所有的音频和视频支持都已经被关闭</translation>
     </message>
 </context>
 <context>
@@ -574,7 +574,7 @@ to
     </message>
     <message>
         <source>Contains commands to manipulate the window</source>
-        <translation>包含操作窗口的命令。</translation>
+        <translation>包含操作窗口的命令</translation>
     </message>
     <message>
         <source>Puts a minimized back to normal</source>
@@ -2234,7 +2234,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;关于 Qt&lt;/h3&gt;%1&lt;p&gt;Qt 是一种开发跨平台应用的 C++ 工具包。&lt;/p&gt;&lt;p&gt;Qt 提供单一代码移植性，适用于MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, 及主要的商业Unix。 Qt 亦可用于嵌入式设备，有 Qt Linux 嵌入版和 Qt Windows CE 版。&lt;/p&gt;&lt;p&gt;Qt 为 Nokia 产品。 访问 &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; 获取更多信息。&lt;b&gt;注意&lt;/b&gt;Qt新版位于 &lt;a href=&quot;http://qt-project.org/&quot;&gt;qt-project.org/&lt;/a&gt; &lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2359,7 +2359,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
-        <translation>对于这个操作代理类型是无效的。</translation>
+        <translation>对于这个操作代理类型是无效的</translation>
     </message>
 </context>
 <context>
@@ -2512,7 +2512,7 @@ Do you want to delete it anyway?</source>
     <name>QODBCResult</name>
     <message>
         <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
-        <translation>QODBCResult::reset: 不能把“SQL_CURSOR_STATIC”设置为语句属性。请检查你的ODBC驱动程序设置。</translation>
+        <translation>QODBCResult::reset: 不能把“SQL_CURSOR_STATIC”设置为语句属性。请检查你的ODBC驱动程序设置</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -2851,7 +2851,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Executive</source>
-        <translation type="unfinished">决策文书</translation>
+        <translation>决策文书</translation>
     </message>
     <message>
         <source>Folio</source>
@@ -4582,7 +4582,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Encoding %1 is unsupported</source>
-        <translation>编码%1不被支持。</translation>
+        <translation>编码%1不被支持</translation>
     </message>
     <message>
         <source>Standalone accepts only yes or no.</source>
@@ -4901,15 +4901,15 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1</source>
-        <translation>对于前缀 %1，没有存在绑定的命名空间。</translation>
+        <translation>对于前缀 %1，没有存在绑定的命名空间</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1 in %2</source>
-        <translation>对于 %2 中的前缀 %1，没有存在绑定的命名空间。</translation>
+        <translation>对于 %2 中的前缀 %1，没有存在绑定的命名空间</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
-        <translation>%1 是一个无效的 %2。</translation>
+        <translation>%1 是一个无效的 %2</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
@@ -5041,7 +5041,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
-        <translation>没有名称为 %1 的变量存在。</translation>
+        <translation>没有名称为 %1 的变量存在</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
@@ -5057,7 +5057,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No function with signature %1 is available</source>
-        <translation>没有签名为 %1 的可用函数。</translation>
+        <translation>没有签名为 %1 的可用函数</translation>
     </message>
     <message>
         <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
@@ -5137,11 +5137,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
-        <translation>不支持任何编译指示表达式(pragma expression)。因此，必须呈现一个回调表达式(fallback expression)。</translation>
+        <translation>不支持任何编译指示表达式(pragma expression)。因此，必须呈现一个回调表达式(fallback expression)</translation>
     </message>
     <message>
         <source>The %1-axis is unsupported in XQuery</source>
-        <translation>这个 %1 轴在 XQuery 中是不被支持的。</translation>
+        <translation>这个 %1 轴在 XQuery 中是不被支持的</translation>
     </message>
     <message>
         <source>%1 is not a valid numeric literal.</source>
@@ -5161,7 +5161,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>It is not possible to bind to the prefix %1</source>
-        <translation>无法绑定到这个前缀 %1。</translation>
+        <translation>无法绑定到这个前缀 %1</translation>
     </message>
     <message>
         <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
@@ -5261,7 +5261,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation type="unfinished"></translation>
+        <translation>自定义函数的命名空间不能为空(请试试预定义的前缀 %1，它就是用于这种情况的)</translation>
     </message>
 </context>
 <context>

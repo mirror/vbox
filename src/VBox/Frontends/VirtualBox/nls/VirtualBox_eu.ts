@@ -1448,12 +1448,12 @@
         <translation>Oharleiho Menua</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="+842"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="+874"/>
         <source>Preview Monitor %1</source>
         <translation type="unfinished">Aurreikuspen Monitorea %1</translation>
     </message>
     <message>
-        <location line="+1366"/>
+        <location line="+1386"/>
         <source>&amp;Connect Network Adapter</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8898,7 +8898,7 @@
 <context>
     <name>UISession</name>
     <message>
-        <location filename="../src/runtime/UISession.cpp" line="+520"/>
+        <location filename="../src/runtime/UISession.cpp" line="+514"/>
         <source>Updating Guest Additions</source>
         <translation>Gonbidatu Gehigarriak Eguneratzen</translation>
     </message>
@@ -11790,7 +11790,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="+218"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="+223"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n urte</numerusform>
@@ -12505,7 +12505,7 @@
         <translation>Disketa birtual agiri guztiak (%1)</translation>
     </message>
     <message>
-        <location line="+1972"/>
+        <location line="+2051"/>
         <source>VDI (VirtualBox Disk Image)</source>
         <translation>VDI (VirtualBox Diska Irudia)</translation>
     </message>

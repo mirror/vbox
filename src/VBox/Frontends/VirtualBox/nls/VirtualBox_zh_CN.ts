@@ -6542,7 +6542,7 @@
     </message>
     <message>
         <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation type="obsolete">如果选中，将支持绝对指点设备(USB平板)。否则，将只模拟标准的PS/2鼠标。</translation>
+        <translation type="obsolete">如果选中，将支持绝对指点设备(USB触控板)。否则，将只模拟标准的PS/2鼠标。</translation>
     </message>
     <message>
         <source>Enable &amp;absolute pointing device</source>
@@ -6596,7 +6596,7 @@
     </message>
     <message>
         <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
-        <translation>确定模拟的指点设备为标准的 PS/2 鼠标、USB平板或USB多点触摸平板。</translation>
+        <translation>确定模拟的指点设备为标准的 PS/2 鼠标、USB触控板或USB多点触控板。</translation>
     </message>
     <message>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
@@ -7586,7 +7586,7 @@
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;虚拟电脑在运行中发生一个严重错误，现在将被关闭.&lt;/p&gt;&lt;p&gt;请联系您的供应商. 并提供日志文件 &lt;tt&gt;VBox.log&lt;/tt&gt; 和映像文件 &lt;tt&gt;VBox.png&lt;/tt&gt;, 它们位于 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 文件夹, 同时就该错误是如何发生的提供一份详细说明. &lt;/p&gt;&lt;p&gt;按&lt;b&gt;确定&lt;/b&gt; 如果您想关闭该虚拟电脑，或者按 &lt;b&gt;忽略&lt;/b&gt; 如果您想调试它. 请注意调试需要专业的知识和工具, 因此建议您按 &lt;b&gt;确定&lt;/b&gt; .&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;虚拟电脑在运行中发生一个严重错误，现在将被关闭.&lt;/p&gt;&lt;p&gt;请联系您的供应商. 并提供日志文件 &lt;tt&gt;VBox.log&lt;/tt&gt; 和图片文件 &lt;tt&gt;VBox.png&lt;/tt&gt;, 它们位于 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 文件夹, 同时就该错误是如何发生的提供一份详细说明. &lt;/p&gt;&lt;p&gt;按&lt;b&gt;确定&lt;/b&gt; 如果您想关闭该虚拟电脑，或者按 &lt;b&gt;忽略&lt;/b&gt; 如果您想调试它. 请注意调试需要专业的知识和工具, 因此建议您按 &lt;b&gt;确定&lt;/b&gt; .&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
@@ -8648,7 +8648,7 @@
     </message>
     <message>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; 的加密密钥无效。</translation>
     </message>
 </context>
 <context>
@@ -12299,12 +12299,12 @@
     <message>
         <source>USB Tablet</source>
         <comment>PointingHIDType</comment>
-        <translation>USB平板</translation>
+        <translation>USB触控板</translation>
     </message>
     <message>
         <source>USB Multi-Touch Tablet</source>
         <comment>PointingHIDType</comment>
-        <translation>USB多点触摸平板</translation>
+        <translation>USB多点触控板</translation>
     </message>
     <message>
         <source>NAT Network</source>
