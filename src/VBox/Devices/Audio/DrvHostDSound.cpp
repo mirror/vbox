@@ -154,6 +154,22 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
     return VINF_SUCCESS;
 }
 
+static char *dsoundGUIDToUtf8StrA(LPCGUID lpGUID)
+{
+    LPOLESTR lpOLEStr;
+    HRESULT hr = StringFromCLSID(*lpGUID, &lpOLEStr);
+    if (SUCCEEDED(hr))
+    {
+        char *pszGUID;
+        int rc = RTUtf16ToUtf8(lpOLEStr, &pszGUID);
+        CoTaskMemFree(lpOLEStr);
+
+        return RT_SUCCESS(rc) ? pszGUID : NULL;
+    }
+
+    return NULL;
+}
+
 static void dsoundFreeDeviceLists(PDRVHOSTDSOUND pThis)
 {
     PDSOUNDDEV pDev;
@@ -604,7 +620,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
 
     if (!pGUID)
     {
-        PDSOUNDDEV pDev = NULL;
+        PDSOUNDDEV  pDev = NULL;
 
         switch (pDSoundStrmIn->enmRecSource)
         {
@@ -612,9 +628,11 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
             {
                 RTListForEach(&pThis->lstDevInput, pDev, DSOUNDDEV, Node)
                 {
-                    if (RTStrIStr(pDev->pszName, "Mic") == 0) /** @todo what is with non en_us windows versions? */
+                    if (RTStrIStr(pDev->pszName, "Mic"))    /** @todo what is with non en_us windows versions? */
                         break;
                 }
+                if (RTListNodeIsDummy(&pThis->lstDevInput, pDev, DSOUNDDEV, Node))
+                    pDev = NULL;    /* Found nothing. */
             } break;
 
             case PDMAUDIORECSOURCE_LINE_IN:
@@ -631,6 +649,11 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
             pGUID = &pDev->Guid;
         }
     }
+
+    char *pszGUID = dsoundGUIDToUtf8StrA(pGUID);
+    LogRel(("DSound: Guest \"%s\" is using host device with GUID: %s\n",
+           drvAudioRecSourceToString(pDSoundStrmIn->enmRecSource), pszGUID ? pszGUID : "NULL"));
+    RTStrFree(pszGUID);
 
     return pGUID;
 }
@@ -914,27 +937,11 @@ static void dsoundDevRemove(PDSOUNDDEV pDev)
     }
 }
 
-static char *dsoundGUIDToUtf8StrA(LPCGUID lpGUID)
-{
-    LPOLESTR lpOLEStr;
-    HRESULT hr = StringFromCLSID(*lpGUID, &lpOLEStr);
-    if (SUCCEEDED(hr))
-    {
-        char *pszGUID;
-        int rc = RTUtf16ToUtf8(lpOLEStr, &pszGUID);
-        CoTaskMemFree(lpOLEStr);
-
-        return RT_SUCCESS(rc) ? pszGUID : NULL;
-    }
-
-    return NULL;
-}
-
 static void dsoundLogDevice(const char *pszType, LPGUID lpGUID, LPCWSTR lpwstrDescription, LPCWSTR lpwstrModule)
 {
     char *pszGUID = dsoundGUIDToUtf8StrA(lpGUID);
 
-    DSLOG(("DSound: %s: GUID: %s [%ls] (Module: %ls)\n",
+    LogRel(("DSound: %s: GUID: %s [%ls] (Module: %ls)\n",
            pszType, pszGUID? pszGUID: "no GUID", lpwstrDescription, lpwstrModule));
 
     RTStrFree(pszGUID);
