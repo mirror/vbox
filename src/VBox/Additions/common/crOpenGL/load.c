@@ -584,6 +584,8 @@ static void stubInitVars(void)
 }
 
 
+#if 0 /* unused */
+
 /**
  * Return a free port number for the mothership to use, or -1 if we
  * can't find one.
@@ -711,6 +713,8 @@ MothershipPhoneHome(int signo)
     crDebug("Got signal %d: mothership is awake!", signo);
     Mothership_Awake = 1;
 }
+
+#endif /* 0 */
 
 void stubSetDefaultConfigurationOptions(void)
 {
