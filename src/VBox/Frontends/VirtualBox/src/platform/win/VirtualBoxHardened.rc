@@ -18,7 +18,7 @@
 #include <windows.h>
 #include <VBox/version.h>
 
-#if 0 /* Causes more DLLs to be loaded, don't enable it! */
+#if 1 /* Causes more DLLs to be loaded, don't enable it! */
 VS_VERSION_INFO VERSIONINFO
   FILEVERSION      VBOX_RC_FILE_VERSION
   PRODUCTVERSION   VBOX_RC_FILE_VERSION
