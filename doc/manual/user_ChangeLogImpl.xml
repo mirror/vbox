@@ -31,6 +31,11 @@
       </listitem>
 
       <listitem>
+        <para>VMM: fixed <emphasis>VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED</emphasis>
+          Guru Meditations on certain AMD CPUs (5.0 regression; bug #14370)</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: fixed behavior when checking for the correct disk encryption
           password</para>
       </listitem>
