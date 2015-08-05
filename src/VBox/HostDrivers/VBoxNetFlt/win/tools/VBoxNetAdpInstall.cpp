@@ -18,8 +18,9 @@
 #include <VBox/VBoxNetCfg-win.h>
 #include <VBox/VBoxDrvCfg-win.h>
 #include <stdio.h>
-
 #include <devguid.h>
+
+#define VBOX_NETADP_APP_NAME L"NetAdpInstall"
 
 #define VBOX_NETADP_HWID L"sun_VBoxNetAdp"
 #ifdef NDIS60
@@ -40,7 +41,7 @@ static int VBoxNetAdpInstall(void)
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
     {
-        printf("adding host-only interface..\n");
+        wprintf(L"adding host-only interface..\n");
 
         DWORD dwErr = ERROR_SUCCESS;
         WCHAR MpInf[MAX_PATH];
@@ -50,6 +51,28 @@ static int VBoxNetAdpInstall(void)
 
         if (dwErr == ERROR_SUCCESS)
         {
+            INetCfg *pnc;
+            LPWSTR lpszLockedBy = NULL;
+            hr = VBoxNetCfgWinQueryINetCfg(&pnc, TRUE, VBOX_NETADP_APP_NAME, 10000, &lpszLockedBy);
+            if(hr == S_OK)
+            {
+
+                hr = VBoxNetCfgWinNetAdpInstall(pnc, MpInf);
+
+                if(hr == S_OK)
+                {
+                    wprintf(L"installed successfully\n");
+                }
+                else
+                {
+                    wprintf(L"error installing VBoxNetAdp (0x%x)\n", hr);
+                }
+
+                VBoxNetCfgWinReleaseINetCfg(pnc, TRUE);
+            }
+            else
+                wprintf(L"VBoxNetCfgWinQueryINetCfg failed: hr = 0x%x\n", hr);
+            /*
             hr = VBoxDrvCfgInfInstall(MpInf);
             if (FAILED(hr))
                 printf("VBoxDrvCfgInfInstall failed %#x\n", hr);
@@ -64,8 +87,8 @@ static int VBoxNetAdpInstall(void)
                 hr = VBoxNetCfgWinGenHostOnlyNetworkNetworkIp(&ip, &mask);
                 if (SUCCEEDED(hr))
                 {
-                    /* ip returned by VBoxNetCfgWinGenHostOnlyNetworkNetworkIp is a network ip,
-                     * i.e. 192.168.xxx.0, assign  192.168.xxx.1 for the hostonly adapter */
+                    // ip returned by VBoxNetCfgWinGenHostOnlyNetworkNetworkIp is a network ip,
+                    // i.e. 192.168.xxx.0, assign  192.168.xxx.1 for the hostonly adapter
                     ip = ip | (1 << 24);
                     hr = VBoxNetCfgWinEnableStaticIpConfig(&guid, ip, mask);
                     if (SUCCEEDED(hr))
@@ -80,17 +103,18 @@ static int VBoxNetAdpInstall(void)
             }
             else
                 printf("VBoxNetCfgWinCreateHostOnlyNetworkInterface failed: hr = 0x%x\n", hr);
+            */
         }
         else
         {
-            printf("GetFullPathNameW failed: winEr = %d\n", dwErr);
+            wprintf(L"GetFullPathNameW failed: winEr = %d\n", dwErr);
             hr = HRESULT_FROM_WIN32(dwErr);
 
         }
         CoUninitialize();
     }
     else
-        printf("Error initializing COM (0x%x)\n", hr);
+        wprintf(L"Error initializing COM (0x%x)\n", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 

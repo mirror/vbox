@@ -2087,6 +2087,18 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, IN LPC
     return vboxNetCfgWinNetAdpUninstall(pNc, pwszId, SUOI_FORCEDELETE);
 }
 
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpInstall(IN INetCfg *pNc,
+                                                       IN LPCWSTR const pInfFullPath)
+{
+    NonStandardLog("NetAdp will be installed ...\n");
+    HRESULT hr = vboxNetCfgWinInstallInfAndComponent(pNc, VBOXNETCFGWIN_NETADP_ID,
+                                             &GUID_DEVCLASS_NET,
+                                             &pInfFullPath,
+                                             1,
+                                             NULL);
+    return hr;
+}
+
 #define VBOXNETCFGWIN_NETLWF_ID    L"oracle_VBoxNetLwf"
 
 static HRESULT vboxNetCfgWinNetLwfUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
