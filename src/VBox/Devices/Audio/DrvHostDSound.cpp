@@ -574,10 +574,10 @@ static int dsoundPlayStart(PDSOUNDSTREAMOUT pDSoundStrmOut)
     if (pDSoundStrmOut->pDSB != NULL)
     {
         DWORD dwStatus;
-        int rc = dsoundPlayGetStatus(pDSoundStrmOut->pDSB, &dwStatus);
-        if (RT_FAILURE(rc))
+        int rc2 = dsoundPlayGetStatus(pDSoundStrmOut->pDSB, &dwStatus);
+        if (RT_FAILURE(rc2))
         {
-            DSLOG(("DSound: playback start GetStatus %Rrc\n", rc));
+            DSLOG(("DSound: playback start GetStatus %Rrc\n", rc2));
         }
         else
         {
