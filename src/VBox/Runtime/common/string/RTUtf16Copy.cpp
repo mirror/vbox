@@ -37,13 +37,13 @@ RTDECL(int) RTUtf16Copy(PRTUTF16 pwszDst, size_t cwcDst, PCRTUTF16 pwszSrc)
     size_t wcwSrc = RTUtf16Len(pwszSrc);
     if (RT_LIKELY(wcwSrc < cwcDst))
     {
-        memcpy(pwszDst, pwszSrc, wcwSrc + 1);
+        memcpy(pwszDst, pwszSrc, (wcwSrc + 1) * sizeof(RTUTF16));
         return VINF_SUCCESS;
     }
 
     if (cwcDst != 0)
     {
-        memcpy(pwszDst, pwszSrc, cwcDst - 1);
+        memcpy(pwszDst, pwszSrc, (cwcDst - 1) * sizeof(RTUTF16));
         pwszDst[cwcDst - 1] = '\0';
     }
     return VERR_BUFFER_OVERFLOW;
