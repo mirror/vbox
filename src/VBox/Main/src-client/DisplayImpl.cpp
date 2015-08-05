@@ -1287,6 +1287,7 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
 {
     RTRECT *pVisibleRegion = (RTRECT *)RTMemTmpAlloc(  RT_MAX(cRect, 1)
                                                      * sizeof(RTRECT));
+    LogRel2(("%s: cRect=%u\n", __PRETTY_FUNCTION__, cRect));
     if (!pVisibleRegion)
     {
         return VERR_NO_TMP_MEMORY;
