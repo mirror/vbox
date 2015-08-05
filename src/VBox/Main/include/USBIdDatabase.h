@@ -10,7 +10,7 @@
 * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 */
 
-#pragma once 
+#pragma once
 
 #include <vector>
 #include <algorithm>
@@ -19,7 +19,7 @@
 /**
 * Macros to make key of alias table
 */
-#define USBKEY(vendorId, productId) (((vendorId) << 16) | (productId))
+#define USBKEY(vendorId, productId) (((uint32_t)(vendorId) << 16) | (productId))
 
 /** 
 * Elements of Aliases table
@@ -27,7 +27,7 @@
 class Product
 {
 public:
-    size_t key;
+    uint32_t key;
     const char* product;
 };
 
