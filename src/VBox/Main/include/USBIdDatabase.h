@@ -15,6 +15,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <iprt/stdint.h>
 
 /**
 * Macros to make key of alias table
