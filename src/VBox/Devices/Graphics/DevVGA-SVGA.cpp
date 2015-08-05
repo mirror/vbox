@@ -535,18 +535,9 @@ static const char *vmsvgaFIFOCmdToString(uint32_t u32Cmd)
 #endif
 
 /**
- * Inform the VGA device of viewport changes (as a result of e.g. scrolling)
- *
- * @param   pInterface          Pointer to this interface.
- * @param
- * @param   uScreenId           The screen updates are for.
- * @param   x                   The upper left corner x coordinate of the new viewport rectangle
- * @param   y                   The upper left corner y coordinate of the new viewport rectangle
- * @param   cx                  The width of the new viewport rectangle
- * @param   cy                  The height of the new viewport rectangle
- * @thread  The emulation thread.
+ * @interface_method_impl{PDMIDISPLAYPORT::pfnSetViewport}
  */
-DECLCALLBACK(void) vmsvgaPortSetViewPort(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
+DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
 {
     PVGASTATE pThis = RT_FROM_MEMBER(pInterface, VGASTATE, IPort);
 

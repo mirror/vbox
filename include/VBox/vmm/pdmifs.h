@@ -649,20 +649,21 @@ typedef struct PDMIDISPLAYPORT
         const uint8_t *pbSrc, int32_t xSrc, int32_t ySrc, uint32_t cxSrc, uint32_t cySrc, uint32_t cbSrcLine, uint32_t cSrcBitsPerPixel,
         uint8_t       *pbDst, int32_t xDst, int32_t yDst, uint32_t cxDst, uint32_t cyDst, uint32_t cbDstLine, uint32_t cDstBitsPerPixel));
 
-#ifdef VBOX_WITH_VMSVGA
     /**
-     * Inform the VGA device of viewport changes (as a result of e.g. scrolling)
+     * Inform the VGA device of viewport changes (as a result of e.g. scrolling).
      *
      * @param   pInterface          Pointer to this interface.
-     * @param   uScreenId           The screen updates are for.
+     * @param   idScreen            The screen updates are for.
      * @param   x                   The upper left corner x coordinate of the new viewport rectangle
      * @param   y                   The upper left corner y coordinate of the new viewport rectangle
      * @param   cx                  The width of the new viewport rectangle
      * @param   cy                  The height of the new viewport rectangle
-     * @thread  The emulation thread.
+     * @thread  GUI thread?
+     *
+     * @remarks Is allowed to be NULL.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetViewPort,(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy));
-#endif
+    DECLR3CALLBACKMEMBER(void, pfnSetViewport,(PPDMIDISPLAYPORT pInterface,
+                                               uint32_t idScreen, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy));
 
     /**
      * Send a video mode hint to the VGA device.

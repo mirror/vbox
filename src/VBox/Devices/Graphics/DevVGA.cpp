@@ -6112,7 +6112,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->IPort.pfnCopyRect            = vgaPortCopyRect;
     pThis->IPort.pfnSetRenderVRAM       = vgaPortSetRenderVRAM;
 #ifdef VBOX_WITH_VMSVGA
-    pThis->IPort.pfnSetViewPort         = vmsvgaPortSetViewPort;
+    pThis->IPort.pfnSetViewport         = vmsvgaPortSetViewport;
+#else
+    pThis->IPort.pfnSetViewport         = NULL;
 #endif
     pThis->IPort.pfnSendModeHint        = vbvaPortSendModeHint;
     pThis->IPort.pfnReportHostCursorCapabilities
