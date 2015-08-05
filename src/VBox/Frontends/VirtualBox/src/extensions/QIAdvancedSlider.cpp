@@ -94,13 +94,20 @@ public:
         ticks.setRect((s.width() - available) / 2, ticks.bottom() + 1, available, s.height() - ticks.bottom() - 1);
 #endif /* Q_WS_MAC */
 
+        /* Calculating half of tick-width as it is required to adjust the colors range geometry
+         * for sliders which have tick-interval and single-step equal like CPU and Monitor count sliders.
+         * It is used in below code to draw correct boundaries. */
+        qreal dHalfTickWidth = 0;
+        if (tickInterval() == singleStep())
+            dHalfTickWidth = (qreal)ticks.width() / (maximum() - minimum()) / 2;
+
         if ((m_minOpt != -1 &&
              m_maxOpt != -1) &&
             m_minOpt != m_maxOpt)
         {
             int posMinOpt = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_minOpt, available);
             int posMaxOpt = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_maxOpt, available);
-            p.fillRect(ticks.x() + posMinOpt, ticks.y(), posMaxOpt - posMinOpt + 1, ticks.height(), m_optColor);
+            p.fillRect(ticks.x() + posMinOpt, ticks.y(), posMaxOpt - posMinOpt + 1 + dHalfTickWidth, ticks.height(), m_optColor);
         }
         if ((m_minWrn != -1 &&
              m_maxWrn != -1) &&
@@ -108,7 +115,10 @@ public:
         {
             int posMinWrn = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_minWrn, available);
             int posMaxWrn = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_maxWrn, available);
-            p.fillRect(ticks.x() + posMinWrn, ticks.y(), posMaxWrn - posMinWrn + 1, ticks.height(), m_wrnColor);
+            if (maximum() > m_maxWrn)
+                p.fillRect(ticks.x() + posMinWrn + dHalfTickWidth, ticks.y(), posMaxWrn - posMinWrn + 1, ticks.height(), m_wrnColor);
+            else
+                p.fillRect(ticks.x() + posMinWrn + dHalfTickWidth, ticks.y(), posMaxWrn - posMinWrn + 1 - dHalfTickWidth, ticks.height(), m_wrnColor);
         }
         if ((m_minErr != -1 &&
              m_maxErr != -1) &&
@@ -116,7 +126,7 @@ public:
         {
             int posMinErr = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_minErr, available);
             int posMaxErr = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_maxErr, available);
-            p.fillRect(ticks.x() + posMinErr, ticks.y(), posMaxErr - posMinErr + 1, ticks.height(), m_errColor);
+            p.fillRect(ticks.x() + posMinErr + dHalfTickWidth, ticks.y(), posMaxErr - posMinErr + 1 - dHalfTickWidth, ticks.height(), m_errColor);
         }
         p.end();
 
