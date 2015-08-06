@@ -121,7 +121,7 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
     IPRT_DARWIN_SAVE_EFL_AC();
 
     Assert(g_pDarwinLockGroup);
-    lck_spin_destroy(pThis->pSpinLock, g_pDarwinLockGroup);
+    lck_spin_free(pThis->pSpinLock, g_pDarwinLockGroup);
     pThis->pSpinLock = NULL;
 
     RTMemFree(pThis);
