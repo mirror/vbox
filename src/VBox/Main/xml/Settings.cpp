@@ -94,7 +94,7 @@ using namespace settings;
 #define VBOX_XML_NAMESPACE      "http://www.innotek.de/VirtualBox-settings"
 
 /** VirtualBox XML settings version number substring ("x.y")  */
-#define VBOX_XML_VERSION        "1.12"
+#define VBOX_XML_VERSION        "1.15"
 
 /** VirtualBox XML settings version platform substring */
 #if defined (RT_OS_DARWIN)
@@ -354,7 +354,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     {
         // creating new settings file:
         m->strSettingsVersionFull = VBOX_XML_VERSION_FULL;
-        m->sv = SettingsVersion_v1_12;
+        m->sv = SettingsVersion_v1_15;
     }
 }
 
