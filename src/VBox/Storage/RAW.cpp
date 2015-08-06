@@ -208,7 +208,7 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
         goto out;
     if (pImage->cbSize % 512)
     {
-        rc = VERR_VD_RAW_INVALID_HEADER;
+        rc = VERR_VD_RAW_SIZE_MODULO_512;
         goto out;
     }
     pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED;
@@ -385,13 +385,15 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
              * between raw floppy and CD images based on their size (and cannot be reliably done
              * based on contents, either).
              */
-            if (cbFile > 32768 && !(cbFile % 2048))
+            if (cbFile % 2048)
+                rc = VERR_VD_RAW_SIZE_MODULO_2048;
+            else if (cbFile <= 32768)
+                rc = VERR_VD_RAW_SIZE_OPTICAL_TOO_SMALL;
+            else
             {
                 *penmType = VDTYPE_DVD;
                 rc = VINF_SUCCESS;
             }
-            else
-                rc = VERR_VD_RAW_INVALID_HEADER;
         }
         else if (   !RTStrICmp(pszSuffix, ".img")
                  || !RTStrICmp(pszSuffix, ".ima")
@@ -399,13 +401,15 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                  || !RTStrICmp(pszSuffix, ".flp")
                  || !RTStrICmp(pszSuffix, ".vfd")) /* Floppy images */
         {
-            if (!(cbFile % 512) && cbFile <= RAW_MAX_FLOPPY_IMG_SIZE)
+            if (cbFile % 512)
+                rc = VERR_VD_RAW_SIZE_MODULO_512;
+            else if (cbFile > RAW_MAX_FLOPPY_IMG_SIZE)
+                rc = VERR_VD_RAW_SIZE_FLOPPY_TOO_BIG;
+            else
             {
                 *penmType = VDTYPE_FLOPPY;
                 rc = VINF_SUCCESS;
             }
-            else
-                rc = VERR_VD_RAW_INVALID_HEADER;
         }
         else
             rc = VERR_VD_RAW_INVALID_HEADER;

@@ -6153,6 +6153,10 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                      && rc != VERR_VD_ISCSI_INVALID_HEADER
                      && rc != VERR_VD_VHD_INVALID_HEADER
                      && rc != VERR_VD_RAW_INVALID_HEADER
+                     && rc != VERR_VD_RAW_SIZE_MODULO_512
+                     && rc != VERR_VD_RAW_SIZE_MODULO_2048
+                     && rc != VERR_VD_RAW_SIZE_OPTICAL_TOO_SMALL
+                     && rc != VERR_VD_RAW_SIZE_FLOPPY_TOO_BIG
                      && rc != VERR_VD_PARALLELS_INVALID_HEADER
                      && rc != VERR_VD_DMG_INVALID_HEADER))
             {
