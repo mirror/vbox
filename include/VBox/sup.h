@@ -1705,7 +1705,6 @@ SUPR3DECL(int) SUPR3MsrProberModifyEx(uint32_t uMsr, RTCPUID idCpu, uint64_t fAn
  */
 SUPR3DECL(int) SUPR3ResumeSuspendedKeyboards(void);
 
-
 /**
  * Measure the TSC-delta for the specified CPU.
  *
@@ -1722,7 +1721,6 @@ SUPR3DECL(int) SUPR3ResumeSuspendedKeyboards(void);
  */
 SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uint8_t cRetries, uint8_t cMsWaitRetry);
 
-
 /**
  * Reads the delta-adjust TSC value.
  *
@@ -1733,15 +1731,15 @@ SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uin
  */
 SUPR3DECL(int) SUPR3ReadTsc(uint64_t *puTsc, uint16_t *pidApic);
 
-
 /**
- * Sets the GIP flags.
+ * Modifies the GIP flags.
  *
  * @returns VBox status code.
  * @param   fOrMask         The OR mask of the GIP flags, see SUPGIP_FLAGS_XXX.
  * @param   fAndMask        The AND mask of the GIP flags, see SUPGIP_FLAGS_XXX.
  */
 SUPR3DECL(int) SUPR3GipSetFlags(uint32_t fOrMask, uint32_t fAndMask);
+
 /** @} */
 #endif /* IN_RING3 */
 
