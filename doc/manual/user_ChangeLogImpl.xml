@@ -84,6 +84,11 @@
       </listitem>
 
       <listitem>
+        <para>OVF: properly export all VBox features including the setting
+          for paravirtualization (bug #14390)</para>
+      </listitem>
+
+      <listitem>
         <para>Mac OS X hosts: El Capitan fixes (USB)</para>
       </listitem>
 
