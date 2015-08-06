@@ -508,7 +508,7 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
     PDBGFCORECPU pDbgfCoreCpu = (PDBGFCORECPU)RTMemAlloc(sizeof(*pDbgfCoreCpu));
     if (RT_UNLIKELY(!pDbgfCoreCpu))
     {
-        LogRel((DBGFLOG_NAME ": failed to alloc %u bytes for DBGFCORECPU\n", sizeof(*pDbgfCoreCpu)));
+        LogRel((DBGFLOG_NAME ": Failed to alloc %u bytes for DBGFCORECPU\n", sizeof(*pDbgfCoreCpu)));
         return VERR_NO_MEMORY;
     }
 

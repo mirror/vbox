@@ -1084,7 +1084,7 @@ DECLINLINE(int) pdmR3PowerOnDrv(PPDMDRVINS pDrvIns, const char *pszDevName, uint
         int rc = VINF_SUCCESS; pDrvIns->pReg->pfnPowerOn(pDrvIns);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3PowerOn: driver '%s'/%d on LUN#%d of device '%s'/%d -> %Rrc\n",
+            LogRel(("PDMR3PowerOn: Driver '%s'/%d on LUN#%d of device '%s'/%d -> %Rrc\n",
                     pDrvIns->pReg->szName, pDrvIns->iInstance, iLun, pszDevName, iDevInstance, rc));
             return rc;
         }
@@ -1109,7 +1109,7 @@ DECLINLINE(int) pdmR3PowerOnUsb(PPDMUSBINS pUsbIns)
         int rc = VINF_SUCCESS; pUsbIns->pReg->pfnVMPowerOn(pUsbIns);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3PowerOn: device '%s'/%d -> %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));
+            LogRel(("PDMR3PowerOn: Device '%s'/%d -> %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));
             return rc;
         }
     }
@@ -1135,7 +1135,7 @@ DECLINLINE(int) pdmR3PowerOnDev(PPDMDEVINS pDevIns)
         PDMCritSectLeave(pDevIns->pCritSectRoR3);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3PowerOn: device '%s'/%d -> %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+            LogRel(("PDMR3PowerOn: Device '%s'/%d -> %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
             return rc;
         }
     }
@@ -1442,7 +1442,7 @@ DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
             PDMCritSectLeave(pDevIns->pCritSectRoR3);
             cNsElapsed = RTTimeNanoTS() - cNsElapsed;
             if (cNsElapsed >= PDMSUSPEND_WARN_AT_NS)
-                LogRel(("PDMR3Reset: device '%s'/%d took %'llu ns to reset\n",
+                LogRel(("PDMR3Reset: Device '%s'/%d took %'llu ns to reset\n",
                         pDevIns->pReg->szName, pDevIns->iInstance, cNsElapsed));
         }
     }
@@ -1719,7 +1719,7 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync
             PDMCritSectLeave(pDevIns->pCritSectRoR3);
             cNsElapsed = RTTimeNanoTS() - cNsElapsed;
             if (cNsElapsed >= PDMSUSPEND_WARN_AT_NS)
-                LogRel(("PDMR3Suspend: device '%s'/%d took %'llu ns to suspend\n",
+                LogRel(("PDMR3Suspend: Device '%s'/%d took %'llu ns to suspend\n",
                         pDevIns->pReg->szName, pDevIns->iInstance, cNsElapsed));
         }
     }
@@ -1828,7 +1828,7 @@ DECLINLINE(int) pdmR3ResumeDrv(PPDMDRVINS pDrvIns, const char *pszDevName, uint3
         int rc = VINF_SUCCESS; pDrvIns->pReg->pfnResume(pDrvIns);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3Resume: driver '%s'/%d on LUN#%d of device '%s'/%d -> %Rrc\n",
+            LogRel(("PDMR3Resume: Driver '%s'/%d on LUN#%d of device '%s'/%d -> %Rrc\n",
                     pDrvIns->pReg->szName, pDrvIns->iInstance, iLun, pszDevName, iDevInstance, rc));
             return rc;
         }
@@ -1853,7 +1853,7 @@ DECLINLINE(int) pdmR3ResumeUsb(PPDMUSBINS pUsbIns)
         int rc = VINF_SUCCESS; pUsbIns->pReg->pfnVMResume(pUsbIns);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3Resume: device '%s'/%d -> %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));
+            LogRel(("PDMR3Resume: Device '%s'/%d -> %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));
             return rc;
         }
     }
@@ -1879,7 +1879,7 @@ DECLINLINE(int) pdmR3ResumeDev(PPDMDEVINS pDevIns)
         PDMCritSectLeave(pDevIns->pCritSectRoR3);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3Resume: device '%s'/%d -> %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+            LogRel(("PDMR3Resume: Device '%s'/%d -> %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
             return rc;
         }
     }

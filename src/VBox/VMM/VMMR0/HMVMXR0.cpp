@@ -2359,7 +2359,7 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
 
     if ((val & zap) != val)
     {
-        LogRel(("hmR0VmxSetupPinCtls: invalid pin-based VM-execution controls combo! cpu=%#RX64 val=%#RX64 zap=%#RX64\n",
+        LogRel(("hmR0VmxSetupPinCtls: Invalid pin-based VM-execution controls combo! cpu=%#RX64 val=%#RX64 zap=%#RX64\n",
                 pVM->hm.s.vmx.Msrs.VmxPinCtls.n.disallowed0, val, zap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PIN_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
@@ -2401,7 +2401,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
     if (   !(pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT)
         ||  (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.disallowed0 & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT))
     {
-        LogRel(("hmR0VmxSetupProcCtls: unsupported VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT combo!"));
+        LogRel(("hmR0VmxSetupProcCtls: Unsupported VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT combo!"));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_MOV_DRX_EXIT;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
@@ -2482,7 +2482,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
 
     if ((val & zap) != val)
     {
-        LogRel(("hmR0VmxSetupProcCtls: invalid processor-based VM-execution controls combo! cpu=%#RX64 val=%#RX64 zap=%#RX64\n",
+        LogRel(("hmR0VmxSetupProcCtls: Invalid processor-based VM-execution controls combo! cpu=%#RX64 val=%#RX64 zap=%#RX64\n",
                 pVM->hm.s.vmx.Msrs.VmxProcCtls.n.disallowed0, val, zap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
@@ -2540,7 +2540,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
 
         if ((val & zap) != val)
         {
-            LogRel(("hmR0VmxSetupProcCtls: invalid secondary processor-based VM-execution controls combo! "
+            LogRel(("hmR0VmxSetupProcCtls: Invalid secondary processor-based VM-execution controls combo! "
                     "cpu=%#RX64 val=%#RX64 zap=%#RX64\n", pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.disallowed0, val, zap));
             pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC2;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
@@ -2738,7 +2738,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         &&  (   !pVM->hm.s.vmx.pNonPagingModeEPTPageTable
              || !pVM->hm.s.vmx.pRealModeTSS))
     {
-        LogRel(("VMXR0SetupVM: invalid real-on-v86 state.\n"));
+        LogRel(("VMXR0SetupVM: Invalid real-on-v86 state.\n"));
         return VERR_INTERNAL_ERROR;
     }
 
@@ -3337,7 +3337,7 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
         if ((val & zap) != val)
         {
-            LogRel(("hmR0VmxLoadGuestEntryCtls: invalid VM-entry controls combo! cpu=%RX64 val=%RX64 zap=%RX64\n",
+            LogRel(("hmR0VmxLoadGuestEntryCtls: Invalid VM-entry controls combo! cpu=%RX64 val=%RX64 zap=%RX64\n",
                     pVM->hm.s.vmx.Msrs.VmxEntry.n.disallowed0, val, zap));
             pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_ENTRY;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
@@ -3424,7 +3424,7 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
         if ((val & zap) != val)
         {
-            LogRel(("hmR0VmxSetupProcCtls: invalid VM-exit controls combo! cpu=%RX64 val=%RX64 zap=%RX64\n",
+            LogRel(("hmR0VmxSetupProcCtls: Invalid VM-exit controls combo! cpu=%RX64 val=%RX64 zap=%RX64\n",
                     pVM->hm.s.vmx.Msrs.VmxExit.n.disallowed0, val, zap));
             pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_EXIT;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;

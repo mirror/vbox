@@ -572,7 +572,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
                                 else
                                     rc = pVtgHdr ? VERR_INVALID_MAGIC : VERR_INVALID_POINTER;
                                 if (RT_FAILURE(rc))
-                                    LogRel(("PDM: Failed to register tracepoints for '%s': %Rrc\n", pModule->szName, rc));
+                                    LogRel(("PDMLdr: Failed to register tracepoints for '%s': %Rrc\n", pModule->szName, rc));
                             }
 #endif
 
@@ -717,7 +717,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName,
 
     RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
     RTMemFree(pModule);
-    LogRel(("pdmR3LoadR0U: pszName=\"%s\" rc=%Rrc szErr=\"%s\"\n", pszName, rc, ErrInfo.Core.pszMsg));
+    LogRel(("PDMLdr: pdmR3LoadR0U: pszName=\"%s\" rc=%Rrc szErr=\"%s\"\n", pszName, rc, ErrInfo.Core.pszMsg));
 
     /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
     if (RT_FAILURE(rc) && pUVM->pVM) /** @todo VMR3SetErrorU. */
@@ -826,7 +826,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *p
             if (RT_FAILURE(rc))
             {
                 AssertMsgRC(rc, ("Couldn't find symbol '%s' in module '%s'\n", pszSymbol, pszModule));
-                LogRel(("PDMGetSymbol: Couldn't find symbol '%s' in module '%s'\n", pszSymbol, pszModule));
+                LogRel(("PDMLdr: PDMGetSymbol: Couldn't find symbol '%s' in module '%s'\n", pszSymbol, pszModule));
             }
             return rc;
         }

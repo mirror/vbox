@@ -117,7 +117,7 @@ int pdmR3UsbRegisterHub(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_
     /* The driver must be in the USB class. */
     if (!(pDrvIns->pReg->fClass & PDM_DRVREG_CLASS_USB))
     {
-        LogRel(("pdmR3UsbRegisterHub: fClass=%#x expected %#x to be set\n", pDrvIns->pReg->fClass, PDM_DRVREG_CLASS_USB));
+        LogRel(("PDMUsb: pdmR3UsbRegisterHub: fClass=%#x expected %#x to be set\n", pDrvIns->pReg->fClass, PDM_DRVREG_CLASS_USB));
         return VERR_INVALID_PARAMETER;
     }
     AssertMsgReturn(!(fVersions & ~(VUSB_STDVER_11 | VUSB_STDVER_20 | VUSB_STDVER_30)), ("%#x\n", fVersions), VERR_INVALID_PARAMETER);
@@ -674,7 +674,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
             return VINF_SUCCESS;
         }
 
-        LogRel(("PDM: Failed to attach USB device '%s' instance %d to hub %p: %Rrc\n",
+        LogRel(("PDMUsb: Failed to attach USB device '%s' instance %d to hub %p: %Rrc\n",
                 pUsbIns->pReg->szName, pUsbIns->iInstance, pHub, rc));
     }
     else
@@ -930,7 +930,7 @@ VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName
     PPDMUSB pUsbDev = pdmR3UsbLookup(pVM, pszDeviceName);
     if (!pUsbDev)
     {
-        LogRel(("PDMR3UsbCreateEmulatedDevice: The '%s' device wasn't found\n", pszDeviceName));
+        LogRel(("PDMUsb: PDMR3UsbCreateEmulatedDevice: The '%s' device wasn't found\n", pszDeviceName));
         return VERR_PDM_NO_USBPROXY;
     }
 
@@ -1010,7 +1010,7 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
     PPDMUSB pUsbDev = pdmR3UsbLookup(pVM, "USBProxy");
     if (!pUsbDev)
     {
-        LogRel(("PDMR3UsbCreateProxyDevice: The USBProxy device class wasn't found\n"));
+        LogRel(("PDMUsb: PDMR3UsbCreateProxyDevice: The USBProxy device class wasn't found\n"));
         return VERR_PDM_NO_USBPROXY;
     }
 
@@ -1047,7 +1047,7 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
     if (RT_FAILURE(rc))
     {
         CFGMR3RemoveNode(pInstance);
-        LogRel(("PDMR3UsbCreateProxyDevice: failed to setup CFGM config, rc=%Rrc\n", rc));
+        LogRel(("PDMUsb: PDMR3UsbCreateProxyDevice: failed to setup CFGM config, rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -1197,7 +1197,7 @@ VMMR3DECL(int) PDMR3UsbDetachDevice(PUVM pUVM, PCRTUUID pUuid)
         int rc = pHub->Reg.pfnDetachDevice(pHub->pDrvIns, pUsbIns, pUsbIns->Internal.s.iPort);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDM: Failed to detach USB device '%s' instance %d from %p: %Rrc\n",
+            LogRel(("PDMUsb: Failed to detach USB device '%s' instance %d from %p: %Rrc\n",
                     pUsbIns->pReg->szName, pUsbIns->iInstance, pHub, rc));
             return rc;
         }

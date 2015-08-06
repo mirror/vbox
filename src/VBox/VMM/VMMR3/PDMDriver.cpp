@@ -479,7 +479,7 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
                               ,
                               ("Action='%s', valid values are 'inject', 'mergeconfig', 'replace', 'replacetree', 'remove', 'removetree'.\n", szAction),
                               VERR_PDM_MISCONFIGURED_DRV_TRANSFORMATION);
-        LogRel(("Applying '%s' to '%s'::[%s]...'%s': %s\n", szCurTransNm, pszDevice, szLun, pszThisDrv, szAction));
+        LogRel(("PDMDriver: Applying '%s' to '%s'::[%s]...'%s': %s\n", szCurTransNm, pszDevice, szLun, pszThisDrv, szAction));
         CFGMR3Dump(*ppNode);
         CFGMR3Dump(pCurTrans);
 
@@ -600,14 +600,14 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
         if (*ppNode)
             CFGMR3Dump(*ppNode);
         else
-            LogRel(("The transformation removed the driver.\n"));
+            LogRel(("PDMDriver: The transformation removed the driver.\n"));
     }
 
     /*
      * Note what happened in the release log.
      */
     if (cTransformations > 0)
-        LogRel(("Transformations done. Applied %u driver transformations.\n", cTransformations));
+        LogRel(("PDMDriver: Transformations done. Applied %u driver transformations.\n", cTransformations));
 
     return rc;
 }
