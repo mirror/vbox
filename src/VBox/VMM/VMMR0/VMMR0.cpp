@@ -72,12 +72,12 @@
     do { \
         if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
         { \
-            RTCCUINTREG uEFlags = ASMGetFlags(); \
-            if (RT_LIKELY(uEFlags & X86_EFL_AC)) \
+            RTCCUINTREG fEflCheck = ASMGetFlags(); \
+            if (RT_LIKELY(fEflCheck & X86_EFL_AC)) \
             { /* likely */ } \
             else \
             { \
-                SUPR0Printf("%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)uEFlags); \
+                SUPR0Printf("%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)fEflCheck); \
                 a_BadExpr; \
             } \
         } \
@@ -86,10 +86,21 @@
  * will be logged, written to the VMs assertion text buffer, and @a a_BadExpr is
  * executed. */
 #define VMM_CHECK_SMAP_CHECK2(a_pVM, a_BadExpr) \
-    VMM_CHECK_SMAP_CHECK( \
-        RTStrPrintf(pVM->vmm.s.szRing0AssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1), \
-                    "%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)uEFlags); \
-        a_BadExpr)
+    do { \
+        if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
+        { \
+            RTCCUINTREG fEflCheck = ASMGetFlags(); \
+            if (RT_LIKELY(fEflCheck & X86_EFL_AC)) \
+            { /* likely */ } \
+            else \
+            { \
+                SUPR0BadContext((a_pVM)->pSession, __FILE__, __LINE__, "EFLAGS.AC is zero!"); \
+                RTStrPrintf(pVM->vmm.s.szRing0AssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1), \
+                            "%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)fEflCheck); \
+                a_BadExpr; \
+            } \
+        } \
+    } while (0)
 
 
 /*******************************************************************************

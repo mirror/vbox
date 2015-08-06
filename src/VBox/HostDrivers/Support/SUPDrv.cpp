@@ -106,23 +106,23 @@
  * will be logged and @a a_BadExpr is executed. */
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
 # define SUPDRV_CHECK_SMAP_SETUP() uint32_t const fKernelFeatures = SUPR0GetKernelFeatures()
-# define SUPDRV_CHECK_SMAP_CHECK(a_BadExpr) \
+# define SUPDRV_CHECK_SMAP_CHECK(a_pDevExt, a_BadExpr) \
     do { \
         if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
         { \
-            RTCCUINTREG uEFlags = ASMGetFlags(); \
-            if (RT_LIKELY(uEFlags & X86_EFL_AC)) \
+            RTCCUINTREG fEfl = ASMGetFlags(); \
+            if (RT_LIKELY(fEfl & X86_EFL_AC)) \
             { /* likely */ } \
             else \
             { \
-                SUPR0Printf("%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)uEFlags); \
+                supdrvBadContext(a_pDevExt, "SUPDrv.cpp", __LINE__, "EFLAGS.AC is 0!"); \
                 a_BadExpr; \
             } \
         } \
     } while (0)
 #else
-# define SUPDRV_CHECK_SMAP_SETUP()          uint32_t const fKernelFeatures = 0
-# define SUPDRV_CHECK_SMAP_CHECK(a_BadExpr) NOREF(fKernelFeatures)
+# define SUPDRV_CHECK_SMAP_SETUP()                      uint32_t const fKernelFeatures = 0
+# define SUPDRV_CHECK_SMAP_CHECK(a_pDevExt, a_BadExpr)  NOREF(fKernelFeatures)
 #endif
 
 
@@ -188,6 +188,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPGetCpuHzFromGipForAsyncMode",         (void *)SUPGetCpuHzFromGipForAsyncMode },
     { "SUPIsTscFreqCompatible",                 (void *)SUPIsTscFreqCompatible },
     { "SUPIsTscFreqCompatibleEx",               (void *)SUPIsTscFreqCompatibleEx },
+    { "SUPR0BadContext",                        (void *)SUPR0BadContext },
     { "SUPR0ComponentDeregisterFactory",        (void *)SUPR0ComponentDeregisterFactory },
     { "SUPR0ComponentQueryFactory",             (void *)SUPR0ComponentQueryFactory },
     { "SUPR0ComponentRegisterFactory",          (void *)SUPR0ComponentRegisterFactory },
@@ -3641,6 +3642,66 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 
 
 /**
+ * Reports a bad context, currenctly that means EFLAGS.AC is 0 instead of 1.
+ *
+ * @param   pSession        The session of the caller.
+ * @param   pszFile         The source file where the caller detected the bad
+ *                          context.
+ * @param   uLine           The line number in @a pszFile.
+ * @param   pszExtra        Optional additional message to give further hints.
+ */
+void VBOXCALL supdrvBadContext(PSUPDRVDEVEXT pDevExt, const char *pszFile, uint32_t uLine, const char *pszExtra)
+{
+    uint32_t cCalls;
+
+    /*
+     * Shorten the filename before displaying the message.
+     */
+    for (;;)
+    {
+        const char *pszTmp = strchr(pszFile, '/');
+        if (!pszTmp)
+            pszTmp = strchr(pszFile, '\\');
+        if (!pszTmp)
+            break;
+        pszFile = pszTmp + 1;
+    }
+    if (RT_VALID_PTR(pszExtra) && *pszExtra)
+        SUPR0Printf("vboxdrv: Bad CPU context error at line %u in %s: %s\n", uLine, pszFile, pszExtra);
+    else
+        SUPR0Printf("vboxdrv: Bad CPU context error at line %u in %s!\n", uLine, pszFile);
+
+    /*
+     * Record the incident so that we stand a chance of blocking I/O controls
+     * before panicing the system.
+     */
+    cCalls = ASMAtomicIncU32(&pDevExt->cBadContextCalls);
+    if (cCalls > UINT32_MAX - _1K)
+        ASMAtomicWriteU32(&pDevExt->cBadContextCalls, UINT32_MAX - _1K);
+}
+
+
+/**
+ * Reports a bad context, currenctly that means EFLAGS.AC is 0 instead of 1.
+ *
+ * @param   pSession        The session of the caller.
+ * @param   pszFile         The source file where the caller detected the bad
+ *                          context.
+ * @param   uLine           The line number in @a pszFile.
+ * @param   pszExtra        Optional additional message to give further hints.
+ */
+SUPR0DECL(void) SUPR0BadContext(PSUPDRVSESSION pSession, const char *pszFile, uint32_t uLine, const char *pszExtra)
+{
+    PSUPDRVDEVEXT pDevExt;
+
+    AssertReturnVoid(SUP_IS_SESSION_VALID(pSession));
+    pDevExt = pSession->pDevExt;
+
+    supdrvBadContext(pDevExt, pszFile, uLine, pszExtra);
+}
+
+
+/**
  * Gets the paging mode of the current CPU.
  *
  * @returns Paging mode, SUPPAGEINGMODE_INVALID on error.
@@ -4474,14 +4535,14 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     void           *pv;
     size_t          cchName = strlen(pReq->u.In.szName); /* (caller checked < 32). */
     SUPDRV_CHECK_SMAP_SETUP();
-    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     LogFlow(("supdrvIOCtl_LdrOpen: szName=%s cbImageWithTabs=%d\n", pReq->u.In.szName, pReq->u.In.cbImageWithTabs));
 
     /*
      * Check if we got an instance of the image already.
      */
     supdrvLdrLock(pDevExt);
-    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     for (pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
     {
         if (    pImage->szName[cchName] == '\0'
@@ -4496,7 +4557,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                 pReq->u.Out.fNativeLoader = pImage->fNative;
                 supdrvLdrAddUsage(pSession, pImage);
                 supdrvLdrUnlock(pDevExt);
-                SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+                SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
                 return VINF_SUCCESS;
             }
             supdrvLdrUnlock(pDevExt);
@@ -4525,7 +4586,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         Log(("supdrvIOCtl_LdrOpen: RTMemAlloc() failed\n"));
         return /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_2;
     }
-    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
 
     /*
      * Setup and link in the LDR stuff.
@@ -4559,7 +4620,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pImage->pvImage     = RT_ALIGN_P(pImage->pvImageAlloc, 32);
         pImage->fNative     = false;
         rc = pImage->pvImageAlloc ? VINF_SUCCESS : VERR_NO_EXEC_MEMORY;
-        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     }
     if (RT_FAILURE(rc))
     {
@@ -4584,7 +4645,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     supdrvOSLdrNotifyOpened(pDevExt, pImage);
 
     supdrvLdrUnlock(pDevExt);
-    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     return VINF_SUCCESS;
 }
 
@@ -4646,13 +4707,13 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     int             rc;
     SUPDRV_CHECK_SMAP_SETUP();
     LogFlow(("supdrvIOCtl_LdrLoad: pvImageBase=%p cbImageWithBits=%d\n", pReq->u.In.pvImageBase, pReq->u.In.cbImageWithTabs));
-    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
 
     /*
      * Find the ldr image.
      */
     supdrvLdrLock(pDevExt);
-    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
 
     pUsage = pSession->pLdrUsage;
     while (pUsage && pUsage->pImage->pvImage != pReq->u.In.pvImageBase)
@@ -4741,7 +4802,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleTerm, true, pReq->u.In.abImage, "pfnModuleTerm");
     if (RT_FAILURE(rc))
         return rc;
-    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
 
     /*
      * Allocate and copy the tables.
@@ -4755,7 +4816,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             memcpy(pImage->pachStrTab, &pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
         else
             rc = /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_3;
-        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     }
 
     pImage->cSymbols = pReq->u.In.cSymbols;
@@ -4767,7 +4828,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             memcpy(pImage->paSymbols, &pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
         else
             rc = /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_4;
-        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     }
 
     /*
@@ -4786,7 +4847,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             memcpy(pImage->pvImage, &pReq->u.In.abImage[0], pImage->cbImageBits);
             Log(("vboxdrv: Loaded '%s' at %p\n", pImage->szName, pImage->pvImage));
         }
-        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     }
 
     /*
@@ -4820,9 +4881,9 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         Log(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
         pDevExt->pLdrInitImage  = pImage;
         pDevExt->hLdrInitThread = RTThreadNativeSelf();
-        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
         rc = pImage->pfnModuleInit(pImage);
-        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
         pDevExt->pLdrInitImage  = NULL;
         pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
         if (RT_FAILURE(rc) && pDevExt->pvVMMR0 == pImage->pvImage)
@@ -4848,7 +4909,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
 
     supdrvLdrUnlock(pDevExt);
-    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     return rc;
 }
 

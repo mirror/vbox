@@ -1821,7 +1821,6 @@ SUPR0DECL(int) SUPR0GetSvmUsability(bool fInitSvm);
 SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous);
 SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
-SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
 SUPR0DECL(RTCCUINTREG) SUPR0ChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask);
 SUPR0DECL(int) SUPR0EnableVTx(bool fEnable);
@@ -1832,6 +1831,20 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended);
 #define SUP_TSCDELTA_MEASURE_F_VALID_MASK   UINT32_C(0x00000003)
 SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t iCpuSet, uint32_t fFlags,
                                               RTMSINTERVAL cMsWaitRetry, RTMSINTERVAL cMsWaitThread, uint32_t cTries);
+
+SUPR0DECL(void) SUPR0BadContext(PSUPDRVSESSION pSession, const char *pszFile, uint32_t uLine, const char *pszExpr);
+
+/**
+ * Writes to the debugger and/or kernel log.
+ *
+ * The length of the formatted message is somewhat limited, so keep things short
+ * and to the point.
+ *
+ * @returns Number of bytes written, mabye.
+ * @param   pszFormat       IPRT format string.
+ * @param   ...             Arguments referenced by the format string.
+ */
+SUPR0DECL(int)  SUPR0Printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
  * Returns configuration flags of the host kernel.

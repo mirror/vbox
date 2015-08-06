@@ -624,6 +624,9 @@ typedef struct SUPDRVDEVEXT
     RTNATIVETHREAD volatile         hLdrInitThread;
     /** @} */
 
+    /** Number of times someone reported bad execution context via SUPR0BadContext.
+     * (This is times EFLAGS.AC is zero when we expected it to be 1.) */
+    uint32_t volatile               cBadContextCalls;
 
     /** GIP mutex.
      * Any changes to any of the GIP members requires ownership of this mutex,
@@ -951,6 +954,7 @@ PSUPDRVSESSION VBOXCALL supdrvSessionHashTabLookup(PSUPDRVDEVEXT pDevExt, RTPROC
                                                    PSUPDRVSESSION *ppOsSessionPtr);
 uint32_t VBOXCALL supdrvSessionRetain(PSUPDRVSESSION pSession);
 uint32_t VBOXCALL supdrvSessionRelease(PSUPDRVSESSION pSession);
+void VBOXCALL   supdrvBadContext(PSUPDRVDEVEXT pDevExt, const char *pszFile, uint32_t uLine, const char *pszExtra);
 int VBOXCALL    supdrvQueryVTCapsInternal(uint32_t *pfCaps);
 
 /* SUPDrvGip.cpp */

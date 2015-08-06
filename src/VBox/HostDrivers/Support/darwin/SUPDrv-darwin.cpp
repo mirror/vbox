@@ -78,10 +78,16 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 #endif
 
-/* Temporary debugging. */
+/* The following macros are duplicated in the-darwin-kernel.h. */
+#define IPRT_DARWIN_SAVE_EFL_AC()           RTCCUINTREG const fSavedEfl = ASMGetFlags();
+#define IPRT_DARWIN_RESTORE_EFL_AC()        ASMSetFlags(fSavedEfl)
+#define IPRT_DARWIN_RESTORE_EFL_ONLY_AC()   ASMChangeFlags(~X86_EFL_AC, fSavedEfl & X86_EFL_AC)
+
+
+/* Temporary debugging - very temporary... */
 #define VBOX_PROC_SELFNAME_LEN  (20)
-#define VBOX_RETRIEVE_CUR_PROC_NAME(_name)    char _name[VBOX_PROC_SELFNAME_LEN]; \
-                                              proc_selfname(pszProcName, VBOX_PROC_SELFNAME_LEN)
+#define VBOX_RETRIEVE_CUR_PROC_NAME(_name)  char _name[VBOX_PROC_SELFNAME_LEN]; \
+                                            proc_selfname(pszProcName, VBOX_PROC_SELFNAME_LEN)
 
 
 /*******************************************************************************
@@ -585,6 +591,20 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
     const unsigned      iHash = SESSION_HASH(Process);
     PSUPDRVSESSION      pSession;
 
+#ifdef VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV
+    /*
+     * Refuse all I/O control calls if we've ever detected EFLAGS.AC being cleared.
+     *
+     * This isn't a problem, as there is absolutely nothing in the kernel context that
+     * depend on user context triggering cleanups.  That would be pretty wild, right?
+     */
+    if (RT_UNLIKELY(g_DevExt.cBadContextCalls > 0))
+    {
+        SUPR0Printf("VBoxDrvDarwinIOCtl: EFLAGS.AC=0 detected %u times, refusing all I/O controls!\n", g_DevExt.cBadContextCalls);
+        return EDEVERR;
+    }
+#endif
+
     /*
      * Find the session.
      */
@@ -650,7 +670,7 @@ static int VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFl
 
 #if defined(VBOX_STRICT) || defined(VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV)
     if (RT_UNLIKELY(!(ASMGetFlags() & X86_EFL_AC)))
-        SUPR0Printf("VBoxDrvDarwinIOCtlSMAP: someone cleared AC handling iCmd=%#lx\n", iCmd);
+        supdrvBadContext(&g_DevExt, "SUPDrv-darwin.cpp",  __LINE__, "VBoxDrvDarwinIOCtlSMAP");
 #endif
     ASMSetFlags(fSavedEfl);
     return rc;
@@ -1434,6 +1454,7 @@ static bool vboxdrvDarwinCpuHasSMAP(void)
 
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
     va_list     va;
     char        szMsg[512];
 
@@ -1443,6 +1464,8 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     szMsg[sizeof(szMsg) - 1] = '\0';
 
     printf("%s", szMsg);
+
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return 0;
 }
 
