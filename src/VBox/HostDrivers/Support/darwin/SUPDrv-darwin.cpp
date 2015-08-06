@@ -489,7 +489,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
      * The process issuing the request must be the current process.
      */
     RTPROCESS Process = RTProcSelf();
-    if (Process != proc_pid(pProcess))
+    if ((int)Process != proc_pid(pProcess))
         return EIO;
 
     /*
@@ -639,10 +639,20 @@ static int VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFl
      * Allow VBox R0 code to touch R3 memory. Setting the AC bit disables the
      * SMAP check.
      */
-    RTCCUINTREG uFlags = ASMGetFlags();
+#ifdef VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV
+    RTCCUINTREG fSavedEfl = ASMAddFlags(X86_EFL_AC);
+#else
+    RTCCUINTREG fSavedEfl = ASMGetFlags();
     ASMSetAC();
+#endif
+
     int rc = VBoxDrvDarwinIOCtl(Dev, iCmd, pData, fFlags, pProcess);
-    ASMSetFlags(uFlags);
+
+#if defined(VBOX_STRICT) || defined(VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV)
+    if (RT_UNLIKELY(!(ASMGetFlags() & X86_EFL_AC)))
+        SUPR0Printf("VBoxDrvDarwinIOCtlSMAP: someone cleared AC handling iCmd=%#lx\n", iCmd);
+#endif
+    ASMSetFlags(fSavedEfl);
     return rc;
 }
 
@@ -1414,7 +1424,11 @@ static bool vboxdrvDarwinCpuHasSMAP(void)
         if (uEBX & X86_CPUID_STEXT_FEATURE_EBX_SMAP)
             return true;
     }
+#ifdef VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV
+    return true;
+#else
     return false;
+#endif
 }
 
 
@@ -1436,8 +1450,10 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 {
     uint32_t fFlags = 0;
-    if (ASMGetCR4() & X86_CR4_SMAP)
+    if (g_DevCW.d_ioctl == VBoxDrvDarwinIOCtlSMAP)
         fFlags |= SUPKERNELFEATURES_SMAP;
+    else
+        Assert(!(ASMGetCR4() & X86_CR4_SMAP));
     return fFlags;
 }
 

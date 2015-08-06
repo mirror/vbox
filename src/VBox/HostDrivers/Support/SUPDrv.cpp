@@ -99,6 +99,32 @@
 # define VBOX_SVN_REV 0
 #endif
 
+/** @ SUPDRV_CHECK_SMAP_SETUP
+ * SMAP check setup. */
+/** @def SUPDRV_CHECK_SMAP_CHECK
+ * Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it
+ * will be logged and @a a_BadExpr is executed. */
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
+# define SUPDRV_CHECK_SMAP_SETUP() uint32_t const fKernelFeatures = SUPR0GetKernelFeatures()
+# define SUPDRV_CHECK_SMAP_CHECK(a_BadExpr) \
+    do { \
+        if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
+        { \
+            RTCCUINTREG uEFlags = ASMGetFlags(); \
+            if (RT_LIKELY(uEFlags & X86_EFL_AC)) \
+            { /* likely */ } \
+            else \
+            { \
+                SUPR0Printf("%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)uEFlags); \
+                a_BadExpr; \
+            } \
+        } \
+    } while (0)
+#else
+# define SUPDRV_CHECK_SMAP_SETUP()          uint32_t const fKernelFeatures = 0
+# define SUPDRV_CHECK_SMAP_CHECK(a_BadExpr) NOREF(fKernelFeatures)
+#endif
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -4447,12 +4473,15 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     PSUPDRVLDRIMAGE pImage;
     void           *pv;
     size_t          cchName = strlen(pReq->u.In.szName); /* (caller checked < 32). */
+    SUPDRV_CHECK_SMAP_SETUP();
+    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
     LogFlow(("supdrvIOCtl_LdrOpen: szName=%s cbImageWithTabs=%d\n", pReq->u.In.szName, pReq->u.In.cbImageWithTabs));
 
     /*
      * Check if we got an instance of the image already.
      */
     supdrvLdrLock(pDevExt);
+    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
     for (pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
     {
         if (    pImage->szName[cchName] == '\0'
@@ -4467,6 +4496,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                 pReq->u.Out.fNativeLoader = pImage->fNative;
                 supdrvLdrAddUsage(pSession, pImage);
                 supdrvLdrUnlock(pDevExt);
+                SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
                 return VINF_SUCCESS;
             }
             supdrvLdrUnlock(pDevExt);
@@ -4495,6 +4525,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         Log(("supdrvIOCtl_LdrOpen: RTMemAlloc() failed\n"));
         return /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_2;
     }
+    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
 
     /*
      * Setup and link in the LDR stuff.
@@ -4528,6 +4559,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pImage->pvImage     = RT_ALIGN_P(pImage->pvImageAlloc, 32);
         pImage->fNative     = false;
         rc = pImage->pvImageAlloc ? VINF_SUCCESS : VERR_NO_EXEC_MEMORY;
+        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
     }
     if (RT_FAILURE(rc))
     {
@@ -4552,6 +4584,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     supdrvOSLdrNotifyOpened(pDevExt, pImage);
 
     supdrvLdrUnlock(pDevExt);
+    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
     return VINF_SUCCESS;
 }
 
@@ -4611,12 +4644,16 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     PSUPDRVLDRUSAGE pUsage;
     PSUPDRVLDRIMAGE pImage;
     int             rc;
+    SUPDRV_CHECK_SMAP_SETUP();
     LogFlow(("supdrvIOCtl_LdrLoad: pvImageBase=%p cbImageWithBits=%d\n", pReq->u.In.pvImageBase, pReq->u.In.cbImageWithTabs));
+    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
 
     /*
      * Find the ldr image.
      */
     supdrvLdrLock(pDevExt);
+    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
+
     pUsage = pSession->pLdrUsage;
     while (pUsage && pUsage->pImage->pvImage != pReq->u.In.pvImageBase)
         pUsage = pUsage->pNext;
@@ -4704,6 +4741,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleTerm, true, pReq->u.In.abImage, "pfnModuleTerm");
     if (RT_FAILURE(rc))
         return rc;
+    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
 
     /*
      * Allocate and copy the tables.
@@ -4717,6 +4755,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             memcpy(pImage->pachStrTab, &pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
         else
             rc = /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_3;
+        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
     }
 
     pImage->cSymbols = pReq->u.In.cSymbols;
@@ -4728,6 +4767,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             memcpy(pImage->paSymbols, &pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
         else
             rc = /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_4;
+        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
     }
 
     /*
@@ -4746,6 +4786,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             memcpy(pImage->pvImage, &pReq->u.In.abImage[0], pImage->cbImageBits);
             Log(("vboxdrv: Loaded '%s' at %p\n", pImage->szName, pImage->pvImage));
         }
+        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
     }
 
     /*
@@ -4779,7 +4820,9 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         Log(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
         pDevExt->pLdrInitImage  = pImage;
         pDevExt->hLdrInitThread = RTThreadNativeSelf();
+        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
         rc = pImage->pfnModuleInit(pImage);
+        SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
         pDevExt->pLdrInitImage  = NULL;
         pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
         if (RT_FAILURE(rc) && pDevExt->pvVMMR0 == pImage->pvImage)
@@ -4805,6 +4848,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
 
     supdrvLdrUnlock(pDevExt);
+    SUPDRV_CHECK_SMAP_CHECK(RT_NOTHING);
     return rc;
 }
 

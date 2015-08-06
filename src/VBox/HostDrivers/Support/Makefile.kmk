@@ -579,6 +579,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  ifdef VBOX_WITH_HARDENING
   VBoxDrv_ASDEFS         += VBOX_WITH_HARDENING
  endif
+ if ($(VBOX_VERSION_BUILD) % 2) == 1
+  VBoxDrv_DEFS           += VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV
+ endif
 
  VBoxDrv_INCS             = . $(VBoxDrv_0_OUTDIR)
  VBoxDrv_INCS.darwin      = ./darwin
