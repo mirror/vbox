@@ -397,7 +397,7 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
         /* Without having VBOX_WITH_DRAG_AND_DROP_PROMISES enabled drag and drop
          * will not work on OS X! It also requires some handcrafted patches within Qt
          * (which also needs VBOX_WITH_DRAG_AND_DROP_PROMISES set there). */
-        dropAction = DropAction::IgnoreAction;
+        dropAction = Qt::IgnoreAction;
         rc = VERR_NOT_SUPPORTED;
 #    endif
 #  else /* !RT_OS_DARWIN */
