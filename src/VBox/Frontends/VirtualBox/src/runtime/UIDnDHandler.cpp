@@ -61,12 +61,22 @@
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
+#if 1
+# ifdef DEBUG
+#  include <QTextStream>
+/** Enable this to log debug output of a Qt debug build to a file defined by DEBUG_DND_QT_LOGFILE. */
+#  define DEBUG_DND_QT
+/** File to log Qt debug output to. */
+#  define DEBUG_DND_QT_LOGFILE "/var/tmp/qt.log"
+# endif /* DEBUG */
+#endif
 
 UIDnDHandler::UIDnDHandler(UISession *pSession, QWidget *pParent)
     : m_pSession(pSession)
     , m_pParent(pParent)
     , m_enmMode(DNDMODE_UNKNOWN)
     , m_fIsPending(false)
+    , m_fDataRetrieved(false)
 #ifndef RT_OS_WINDOWS
     , m_pMIMEData(NULL)
 #endif
@@ -263,6 +273,37 @@ void UIDnDHandler::dragLeave(ulong screenID)
     }
 }
 
+#ifdef DEBUG_DND_QT
+QTextStream *g_pStrmLogQt = NULL; /* Output stream for Qt debug logging. */
+
+/* static */
+void UIDnDHandler::debugOutputQt(QtMsgType type, const char *pszMsg)
+{
+    AssertPtr(pszMsg);
+
+    QString strMsg;
+    switch (type)
+    {
+    case QtWarningMsg:
+        strMsg += "[W]";
+        break;
+    case QtCriticalMsg:
+        strMsg += "[C]";
+        break;
+    case QtFatalMsg:
+        strMsg += "[F]";
+        break;
+    case QtDebugMsg:
+    default:
+        strMsg += "[D]";
+        break;
+    }
+
+    if (g_pStrmLogQt)
+        (*g_pStrmLogQt) << strMsg << " " << pszMsg << endl;
+}
+#endif /* DEBUG_DND_QT */
+
 /*
  * Source -> Frontend.
  */
@@ -326,9 +367,16 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
         return VERR_NO_MEMORY;
     }
 
-    /* Invoke this handler as data needs to be retrieved. */
-    connect(m_pMIMEData, SIGNAL(getData(QString, QVariant::Type, QVariant&)),
-            this, SLOT(sltGetData(QString, QVariant::Type, QVariant&)));
+#ifdef DEBUG_DND_QT
+    QFile *pFileDebugQt = new QFile(DEBUG_DND_QT_LOGFILE);
+    if (pFileDebugQt->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+    {
+        g_pStrmLogQt = new QTextStream(pFileDebugQt);
+
+        qInstallMsgHandler(UIDnDHandler::debugOutputQt);
+        qDebug("========================================================================");
+    }
+#endif
 
     /* Inform the MIME data object of any changes in the current action. */
     connect(pDrag, SIGNAL(actionChanged(Qt::DropAction)),
@@ -340,7 +388,21 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
      */
     pDrag->setMimeData(m_pMIMEData);
     LogFlowFunc(("Executing modal drag'n drop operation ...\n"));
-    Qt::DropAction dropAction = pDrag->exec(actions, defAction);
+
+    Qt::DropAction dropAction;
+#ifdef RT_OS_DARWIN
+# ifdef VBOX_WITH_DRAG_AND_DROP_PROMISES
+    dropAction = pDrag->exec(actions, defAction, true /* fUsePromises */);
+# else
+    /* Without having VBOX_WITH_DRAG_AND_DROP_PROMISES enabled drag and drop
+     * will not work on OS X! It also requires some handcrafted patches within Qt
+     * (which also needs VBOX_WITH_DRAG_AND_DROP_PROMISES set there). */
+    dropAction = DropAction::IgnoreAction;
+    rc = VERR_NOT_SUPPORTED;
+# endif
+#else /* !RT_OS_DARWIN */
+    dropAction = pDrag->exec(actions, defAction);
+#endif
     LogRel3(("DnD: Ended with dropAction=%ld\n", UIDnDHandler::toVBoxDnDAction(dropAction)));
 
     /* Note: The UIDnDMimeData object will not be not accessible here anymore,
@@ -356,6 +418,22 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     rc = VERR_NOT_SUPPORTED;
 
 #endif
+
+#ifdef DEBUG_DND_QT
+    if (g_pStrmLogQt)
+    {
+        delete g_pStrmLogQt;
+        g_pStrmLogQt = NULL;
+    }
+
+    if (pFileDebugQt)
+    {
+        pFileDebugQt->close();
+        delete pFileDebugQt;
+    }
+#endif
+
+    reset();
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -404,16 +482,16 @@ int UIDnDHandler::dragCheckPending(ulong screenID)
     QVector<QString> vecFormats;
     m_dataSource.defaultAction = m_dndSource.DragIsPending(screenID, vecFormats, m_dataSource.vecActions);
 
-    LogRel3(("DnD: Default action is: 0x%x\n", m_dataSource.defaultAction));
-    LogRel3(("DnD: Number of supported guest actions: %d\n", m_dataSource.vecActions.size()));
+    LogRelMax3(10, ("DnD: Default action is: 0x%x\n", m_dataSource.defaultAction));
+    LogRelMax3(10, ("DnD: Number of supported guest actions: %d\n", m_dataSource.vecActions.size()));
         for (int i = 0; i < m_dataSource.vecActions.size(); i++)
-            LogRel3(("DnD: \tAction %d: 0x%x\n", i, m_dataSource.vecActions.at(i)));
+            LogRelMax3(10, ("DnD: \tAction %d: 0x%x\n", i, m_dataSource.vecActions.at(i)));
 
-    LogRel3(("DnD: Number of supported guest formats: %d\n", vecFormats.size()));
+    LogRelMax3(10, ("DnD: Number of supported guest formats: %d\n", vecFormats.size()));
         for (int i = 0; i < vecFormats.size(); i++)
         {
             const QString &strFmtGuest = vecFormats.at(i);
-            LogRel3(("DnD: \tFormat %d: %s\n", i, strFmtGuest.toAscii().constData()));
+            LogRelMax3(10, ("DnD: \tFormat %d: %s\n", i, strFmtGuest.toAscii().constData()));
         }
 
     LogFlowFunc(("defaultAction=0x%x, vecFormatsSize=%d, vecActionsSize=%d\n",
@@ -490,7 +568,7 @@ int UIDnDHandler::dragStop(ulong screenID)
 
     NOREF(screenID);
 
-    m_fIsPending = false;
+    reset();
     rc = VINF_SUCCESS;
 
 #else /* !VBOX_WITH_DRAG_AND_DROP_GH */
@@ -505,36 +583,87 @@ int UIDnDHandler::dragStop(ulong screenID)
     return rc;
 }
 
+void UIDnDHandler::reset(void)
+{
+    LogFlowFuncEnter();
+
+    m_fDataRetrieved = false;
+    m_fIsPending = false;
+
+    setMode(DNDMODE_UNKNOWN);
+}
+
+int UIDnDHandler::retrieveData(Qt::DropAction          dropAction,
+                               const QString          &strMIMEType,
+                                     QVector<uint8_t> &vecData)
+{
+    if (!strMIMEType.compare("application/x-qt-mime-type-name", Qt::CaseInsensitive))
+        return VINF_SUCCESS;
+
+    int rc;
+    if (!m_fDataRetrieved)
+    {
+        /*
+         * Retrieve the actual data from the guest.
+         */
+        rc = retrieveDataInternal(dropAction, strMIMEType, m_vecData);
+        LogRel3(("DnD: Received data, rc=%Rrc\n", rc));
+
+        if (RT_SUCCESS(rc))
+            m_fDataRetrieved = true;
+    }
+    else /* Data already received, supply cached version. */
+        rc = VINF_SUCCESS;
+
+    if (RT_SUCCESS(rc))
+        vecData = m_vecData;
+
+    return rc;
+}
+
 int UIDnDHandler::retrieveData(      Qt::DropAction  dropAction,
-                               const QString        &strMimeType,
+                               const QString        &strMIMEType,
                                      QVariant::Type  vaType,
                                      QVariant       &vaData)
 {
-    return retrieveDataInternal(dropAction, strMimeType, vaType, vaData);
+    QVector<uint8_t> vecData;
+    int rc = retrieveData(dropAction, strMIMEType, vecData);
+    if (RT_SUCCESS(rc))
+    {
+        /* If no/an invalid variant is set, try to guess the variant type.
+         * This can happen on OS X. */
+        if (vaType == QVariant::Invalid)
+            vaType = UIDnDMIMEData::getVariantType(strMIMEType);
+
+        rc = UIDnDMIMEData::getDataAsVariant(vecData, strMIMEType, vaType, vaData);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
-                                       const QString        &strMimeType,
-                                             QVariant::Type  vaType,
-                                             QVariant       &vaData)
+int UIDnDHandler::retrieveDataInternal(      Qt::DropAction    dropAction,
+                                       const QString          &strMIMEType,
+                                             QVector<uint8_t> &vecData)
 {
-    LogFlowFunc(("Retrieving data as type=%s (variant type=%RU32)\n",
-                 strMimeType.toAscii().constData(), vaType));
+    LogFlowFunc(("Retrieving data as '%s', dropAction=%d\n", qPrintable(strMIMEType), dropAction));
 
     int rc = VINF_SUCCESS;
 
     /* Start getting the data from the source. Request and transfer data
      * from the source and display a modal progress dialog while doing this. */
     Assert(!m_dndSource.isNull());
-    CProgress progress = m_dndSource.Drop(strMimeType,
+    CProgress progress = m_dndSource.Drop(strMIMEType,
                                           UIDnDHandler::toVBoxDnDAction(dropAction));
+
+    LogFlowFunc(("Source: isOk=%RTbool\n", m_dndSource.isOk()));
     if (m_dndSource.isOk())
     {
         msgCenter().showModalProgressDialog(progress,
                                             tr("Retrieving data ..."), ":/progress_dnd_gh_90px.png",
                                             m_pParent);
 
-        LogFlowFunc(("fCanceled=%RTbool, fCompleted=%RTbool, isOk=%RTbool, hrc=%Rhrc\n",
+        LogFlowFunc(("Progress: fCanceled=%RTbool, fCompleted=%RTbool, isOk=%RTbool, hrc=%Rhrc\n",
                      progress.GetCanceled(), progress.GetCompleted(), progress.isOk(), progress.GetResultCode()));
 
         if (!progress.GetCanceled())
@@ -546,43 +675,8 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
             if (RT_SUCCESS(rc))
             {
                 /* After we successfully retrieved data from the source we query it from Main. */
-                QVector<uint8_t> vecData = m_dndSource.ReceiveData();
-                if (!vecData.isEmpty())
-                {
-                    switch (vaType)
-                    {
-                        case QVariant::String:
-                        {
-                            vaData = QVariant::fromValue(QString(reinterpret_cast<const char *>(vecData.constData())));
-                            Assert(vaData.type() == QVariant::String);
-                            break;
-                        }
-
-                        case QVariant::ByteArray:
-                        {
-                            QByteArray ba(reinterpret_cast<const char*>(vecData.constData()), vecData.size());
-
-                            vaData = QVariant::fromValue(ba);
-                            Assert(vaData.type() == QVariant::ByteArray);
-                            break;
-                        }
-
-                        case QVariant::StringList:
-                        {
-                            QString strData = QString(reinterpret_cast<const char*>(vecData.constData()));
-                            QStringList lstString = strData.split("\r\n", QString::SkipEmptyParts);
-
-                            vaData = QVariant::fromValue(lstString);
-                            Assert(vaData.type() == QVariant::StringList);
-                            break;
-                        }
-
-                        default:
-                            rc = VERR_NOT_SUPPORTED;
-                            break;
-                    }
-                }
-                else
+                vecData = m_dndSource.ReceiveData(); /** @todo QVector.size() is "int" only!? */
+                if (vecData.isEmpty())
                     rc = VERR_NO_DATA;
             }
             else
@@ -608,15 +702,6 @@ void UIDnDHandler::setMode(DNDMODE enmMode)
     QMutexLocker AutoWriteLock(&m_WriteLock);
     m_enmMode = enmMode;
     LogFlowFunc(("Mode is now: %RU32\n", m_enmMode));
-}
-
-int UIDnDHandler::sltGetData(const QString        &strMimeType,
-                                   QVariant::Type  vaType,
-                                   QVariant       &vaData)
-{
-    int rc = retrieveDataInternal(Qt::CopyAction, strMimeType, vaType, vaData);
-    LogFlowFuncLeaveRC(rc);
-    return rc;
 }
 
 /*

@@ -64,27 +64,26 @@ public:
 
 signals:
 
-     int getData(const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData) const;
+    /**
+     * Signal which gets emitted if this object is ready to retrieve data
+     * in the specified MIME type.
+     *
+     * @returns IPRT status code.
+     * @param strMIMEType               MIME type to retrieve data for.
+     */
+    int getData(const QString &strMIMEType) const;
 
 #ifdef RT_OS_DARWIN
-     void notifyDropped(void) const;
+    void notifyDropped(void) const;
 #endif
 
 public slots:
 
     /**
-     * Slot indicating that the current drop target has been changed. 
-     * @note Does not work on OS X. 
+     * Slot indicating that the current drop target has been changed.
+     * @note Does not work on OS X.
      */
     void sltDropActionChanged(Qt::DropAction dropAction);
-
-#ifdef RT_OS_DARWIN
-    /**
-     * Slot indicating that the host wants us to drop the 
-     * data from the guest to the host. 
-     */
-    void sltDropped(void);
-#endif
 
 protected:
     /** @name Overridden functions of QMimeData.
@@ -96,42 +95,46 @@ protected:
     virtual QVariant retrieveData(const QString &strMIMEType, QVariant::Type vaType) const;
     /** @}  */
 
-protected:
+public:
 
     /** @name Internal helper functions.
      * @{ */
 
     /**
-     * Sets the object's MIME data according to the given
-     * MIME type and data.
+     * Returns the matching variant type of a given MIME type.
+     *
+     * @returns Variant type.
+     * @param strMIMEType               MIME type to retrieve variant type for.
+     */
+    static QVariant::Type getVariantType(const QString &strMIMEType);
+
+    /**
+     * Fills a QVariant with data according to the given type and data.
      *
      * @returns IPRT status code.
-     * @param   strMIMEType             MIME type to set.
-     * @param   vaData                  Data to set.
-     * @remark
+     * @param   vecData                 Bytes data to set.
+     * @param   strMIMEType             MIME type to handle.
+     * @param   vaType                  Variant type to set the variant to.
+     * @param   vaData                  Variant holding the transformed result.
+     *                                  Note: The variant's type might be different from the input vaType!
      */
-    int setData(const QString &strMIMEType, const QVariant &vaData);
+    static int getDataAsVariant(const QVector<uint8_t> &vecData, const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData);
     /** @}  */
 
 protected:
 
+    /** Pointer to the parent. */
     UIDnDHandler     *m_pDnDHandler;
-
+    /** Available formats. */
     QStringList       m_lstFormats;
     /** Default action on successful drop operation. */
     Qt::DropAction    m_defAction;
     /** Current action, based on QDrag's status. */
     Qt::DropAction    m_curAction;
+    /** Available actions. */
     Qt::DropActions   m_actions;
-
+    /** The current dragging state. */
     mutable State     m_enmState;
-    mutable QVariant  m_vaData;
-
-#ifdef RT_OS_DARWIN
-    /** Flag indicating whether we can drop data from the
-     *  guest to the host or not. */
-    bool              m_fCanDrop;
-#endif
 };
 
 #endif /* ___UIDnDMIMEData_h___ */

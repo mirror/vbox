@@ -176,7 +176,7 @@ HRESULT GuestDnDTarget::isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSu
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-HRESULT GuestDnDTarget::getFormats(std::vector<com::Utf8Str> &aFormats)
+HRESULT GuestDnDTarget::getFormats(GuestDnDMIMEList &aFormats)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
     ReturnComNotImplemented();
@@ -191,7 +191,7 @@ HRESULT GuestDnDTarget::getFormats(std::vector<com::Utf8Str> &aFormats)
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-HRESULT GuestDnDTarget::addFormats(const std::vector<com::Utf8Str> &aFormats)
+HRESULT GuestDnDTarget::addFormats(const GuestDnDMIMEList &aFormats)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
     ReturnComNotImplemented();
@@ -206,7 +206,7 @@ HRESULT GuestDnDTarget::addFormats(const std::vector<com::Utf8Str> &aFormats)
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-HRESULT GuestDnDTarget::removeFormats(const std::vector<com::Utf8Str> &aFormats)
+HRESULT GuestDnDTarget::removeFormats(const GuestDnDMIMEList &aFormats)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
     ReturnComNotImplemented();
@@ -242,7 +242,7 @@ HRESULT GuestDnDTarget::getProtocolVersion(ULONG *aProtocolVersion)
 HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
                               DnDAction_T                      aDefaultAction,
                               const std::vector<DnDAction_T>  &aAllowedActions,
-                              const std::vector<com::Utf8Str> &aFormats,
+                              const GuestDnDMIMEList           &aFormats,
                               DnDAction_T                     *aResultAction)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
@@ -275,12 +275,14 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     if (isDnDIgnoreAction(uDefAction))
         return S_OK;
 
-    /* Make a flat data string out of the supported format list. */
-    Utf8Str strFormats = GuestDnD::toFormatString(m_vecFmtSup, aFormats);
-
-    /* If there is no valid supported format, ignore this request. */
+    /*
+     * Make a flat data string out of the supported format list.
+     * In the GuestDnDTarget case the source formats are from the host,
+     * as GuestDnDTarget acts as a source for the guest.
+     */
+    Utf8Str strFormats = GuestDnD::toFormatString(GuestDnD::toFilteredFormatList(m_lstFmtSupported, aFormats));
     if (strFormats.isEmpty())
-        return setError(E_INVALIDARG, tr("Specified format(s) not supported"));
+        return setError(E_INVALIDARG, tr("No or not supported format(s) specified"));
 
     LogRel2(("DnD: Offered formats to guest:\n"));
     RTCList<RTCString> lstFormats = strFormats.split("\r\n");
@@ -289,8 +291,8 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
 
     /* Save the formats offered to the guest. This is needed to later
      * decide what to do with the data when sending stuff to the guest. */
-    m_vecFmtOff = aFormats;
-    Assert(m_vecFmtOff.size());
+    m_lstFmtOffered = aFormats;
+    Assert(m_lstFmtOffered.size());
 
     HRESULT hr = S_OK;
 
@@ -334,7 +336,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
 HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
                              DnDAction_T                      aDefaultAction,
                              const std::vector<DnDAction_T>  &aAllowedActions,
-                             const std::vector<com::Utf8Str> &aFormats,
+                             const GuestDnDMIMEList          &aFormats,
                              DnDAction_T                     *aResultAction)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
@@ -358,11 +360,14 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     if (isDnDIgnoreAction(uDefAction))
         return S_OK;
 
-    /* Make a flat data string out of the supported format list. */
-    RTCString strFormats = GuestDnD::toFormatString(m_vecFmtSup, aFormats);
-    /* If there is no valid supported format, ignore this request. */
+    /*
+     * Make a flat data string out of the supported format list.
+     * In the GuestDnDTarget case the source formats are from the host,
+     * as GuestDnDTarget acts as a source for the guest.
+     */
+    Utf8Str strFormats = GuestDnD::toFormatString(GuestDnD::toFilteredFormatList(m_lstFmtSupported, aFormats));
     if (strFormats.isEmpty())
-        return setError(E_INVALIDARG, tr("Specified format(s) not supported"));
+        return setError(E_INVALIDARG, tr("No or not supported format(s) specified"));
 
     HRESULT hr = S_OK;
 
@@ -432,7 +437,7 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
 HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
                              DnDAction_T                      aDefaultAction,
                              const std::vector<DnDAction_T>  &aAllowedActions,
-                             const std::vector<com::Utf8Str> &aFormats,
+                             const GuestDnDMIMEList          &aFormats,
                              com::Utf8Str                    &aFormat,
                              DnDAction_T                     *aResultAction)
 {
@@ -440,20 +445,24 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
-    /* Input validation. */
-
-    /* Everything else is optional. */
+    if (aDefaultAction == DnDAction_Ignore)
+        return setError(E_INVALIDARG, tr("Invalid default action specified"));
+    if (!aAllowedActions.size())
+        return setError(E_INVALIDARG, tr("Invalid allowed actions specified"));
+    if (!aFormats.size())
+        return setError(E_INVALIDARG, tr("No drop format(s) specified"));
+    /* aResultAction is optional. */
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Default action is ignoring. */
-    DnDAction_T resAction = DnDAction_Ignore;
+    DnDAction_T resAction    = DnDAction_Ignore;
 
-    /* Check & convert the drag & drop actions. */
-    uint32_t uDefAction      = 0;
+    /* Check & convert the drag & drop actions to HGCM codes. */
+    uint32_t uDefAction      = DND_IGNORE_ACTION;
     uint32_t uAllowedActions = 0;
-    GuestDnD::toHGCMActions(aDefaultAction, &uDefAction,
+    GuestDnD::toHGCMActions(aDefaultAction,  &uDefAction,
                             aAllowedActions, &uAllowedActions);
     /* If there is no usable action, ignore this request. */
     if (isDnDIgnoreAction(uDefAction))
@@ -464,17 +473,18 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         return S_OK;
     }
 
-    /* Make a flat data string out of the supported format list. */
-    Utf8Str strFormats = GuestDnD::toFormatString(m_vecFmtSup, aFormats);
-    /* If there is no valid supported format, ignore this request. */
+    /*
+     * Make a flat data string out of the supported format list.
+     * In the GuestDnDTarget case the source formats are from the host,
+     * as GuestDnDTarget acts as a source for the guest.
+     */
+    Utf8Str strFormats = GuestDnD::toFormatString(GuestDnD::toFilteredFormatList(m_lstFmtSupported, aFormats));
     if (strFormats.isEmpty())
-        return setError(E_INVALIDARG, tr("Specified format(s) not supported"));
-
-    HRESULT hr = S_OK;
+        return setError(E_INVALIDARG, tr("No or not supported format(s) specified"));
 
     /* Adjust the coordinates in a multi-monitor setup. */
-    int rc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
-    if (RT_SUCCESS(rc))
+    HRESULT hr = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
+    if (SUCCEEDED(hr))
     {
         GuestDnDMsg Msg;
         Msg.setType(DragAndDropSvc::HOST_DND_HG_EVT_DROPPED);
@@ -486,23 +496,34 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextPointer((void*)strFormats.c_str(), strFormats.length() + 1);
         Msg.setNextUInt32(strFormats.length() + 1);
 
-        rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
             GuestDnDResponse *pResp = GuestDnDInst()->response();
-            if (pResp && RT_SUCCESS(pResp->waitForGuestResponse()))
+            AssertPtr(pResp);
+
+            rc = pResp->waitForGuestResponse();
+            if (RT_SUCCESS(rc))
             {
                 resAction = GuestDnD::toMainAction(pResp->defAction());
-                aFormat = pResp->fmtReq();
 
-                LogFlowFunc(("resFormat=%s, resAction=%RU32\n",
-                             pResp->fmtReq().c_str(), pResp->defAction()));
+                GuestDnDMIMEList lstFormats = pResp->formats();
+                if (lstFormats.size() == 1) /* Exactly one format to use specified? */
+                {
+                    aFormat = lstFormats.at(0);
+                    LogFlowFunc(("resFormat=%s, resAction=%RU32\n", aFormat.c_str(), pResp->defAction()));
+                }
+                else
+                    hr = setError(VBOX_E_IPRT_ERROR, tr("Guest returned invalid drop formats (%zu formats)"), lstFormats.size());
             }
+            else
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Waiting for response of dropped event failed (%Rrc)"), rc);
         }
+        else
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Sending dropped event to guest failed (%Rrc)"), rc);
     }
-
-    if (RT_FAILURE(rc))
-        hr = VBOX_E_IPRT_ERROR;
+    else
+        hr = setError(hr, tr("Retrieving drop coordinates failed"));
 
     if (SUCCEEDED(hr))
     {
@@ -736,8 +757,8 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
      *       instead of an URI list (pointing to a file on the guest itself).
      *
      ** @todo Support more than one format; add a format<->function handler concept. Later. */
-    bool fHasURIList = std::find(m_vecFmtOff.begin(),
-                                 m_vecFmtOff.end(), "text/uri-list") != m_vecFmtOff.end();
+    bool fHasURIList = std::find(m_lstFmtOffered.begin(),
+                                 m_lstFmtOffered.end(), "text/uri-list") != m_lstFmtOffered.end();
     if (fHasURIList)
     {
         rc = i_sendURIData(pCtx, msTimeout);

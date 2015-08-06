@@ -96,7 +96,7 @@ typedef struct GuestDnDURIData
 {
     GuestDnDURIData(void)
         : pvScratchBuf(NULL)
-        , cbScratchBuf(0) 
+        , cbScratchBuf(0)
     {
         RT_ZERO(mDropDir);
     }
@@ -136,6 +136,9 @@ typedef struct GuestDnDURIData
 
 } GuestDnDURIData;
 
+/** List (vector) of MIME types. */
+typedef std::vector<com::Utf8Str> GuestDnDMIMEList;
+
 /**
  * Context structure for sending data to the guest.
  */
@@ -174,8 +177,19 @@ typedef struct RECVDATACTX
     /** Flag indicating whether a file transfer is active and
      *  initiated by the host. */
     bool                                mIsActive;
-    /** Drag'n drop format to send. */
-    com::Utf8Str                        mFormat;
+    /** Formats offered by the guest (and supported by the host). */
+    GuestDnDMIMEList                    mFmtOffered;
+    /** Original drop format requested to receive from the guest. */
+    com::Utf8Str                        mFmtReq;
+    /** Intermediate drop format to be received from the host.
+     *  Some original drop formats require a different intermediate
+     *  drop format:
+     *
+     *  Receiving a file link as "text/plain"  requires still to
+     *  receive the file from the guest as "text/uri-list" first,
+     *  then pointing to the file path on the host in the "text/plain"
+     *  data returned. */
+    com::Utf8Str                        mFmtRecv;
     /** Desired drop action to perform on the host.
      *  Needed to tell the guest if data has to be
      *  deleted e.g. when moving instead of copying. */
@@ -364,8 +378,8 @@ public:
     void setDefAction(uint32_t a) { m_defAction = a; }
     uint32_t defAction(void) const { return m_defAction; }
 
-    void setFmtReq(const Utf8Str &strFormat) { m_strFmtReq = strFormat; }
-    Utf8Str fmtReq(void) const { return m_strFmtReq; }
+    void setFormats(const GuestDnDMIMEList &lstFormats) { m_lstFormats = lstFormats; }
+    GuestDnDMIMEList formats(void) const { return m_lstFormats; }
 
     void reset(void);
 
@@ -394,8 +408,8 @@ protected:
     /** Actions supported by the guest in case of
      *  a successful drop. */
     uint32_t              m_allActions;
-    /** Format requested by the guest. */
-    Utf8Str               m_strFmtReq;
+    /** Format(s) requested/supported from the guest. */
+    GuestDnDMIMEList      m_lstFormats;
     /** Pointer to IGuest parent object. */
     ComObjPtr<Guest>      m_parent;
     /** Pointer to associated progress object. Optional. */
@@ -444,7 +458,7 @@ public:
 
     /** @name Public helper functions.
      * @{ */
-    int                        adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
+    HRESULT                    adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
     int                        hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
     GuestDnDResponse          *response(void) { return m_pResponse; }
     std::vector<com::Utf8Str>  defaultFormats(void) const { return m_strDefaultFormats; }
@@ -459,12 +473,15 @@ public:
 
     /** @name Static helper methods.
      * @{ */
-    static com::Utf8Str        toFormatString(const std::vector<com::Utf8Str> &lstSupportedFormats, const std::vector<com::Utf8Str> &lstWantedFormats);
-    static void                toFormatVector(const std::vector<com::Utf8Str> &lstSupportedFormats, const com::Utf8Str &strFormats, std::vector<com::Utf8Str> &vecformats);
-    static DnDAction_T         toMainAction(uint32_t uAction);
-    static void                toMainActions(uint32_t uActions, std::vector<DnDAction_T> &vecActions);
-    static uint32_t            toHGCMAction(DnDAction_T enmAction);
-    static void                toHGCMActions(DnDAction_T enmDefAction, uint32_t *puDefAction, const std::vector<DnDAction_T> vecAllowedActions, uint32_t *puAllowedActions);
+    static bool                     isFormatInFormatList(const com::Utf8Str &strFormat, const GuestDnDMIMEList &lstFormats);
+    static GuestDnDMIMEList         toFormatList(const com::Utf8Str &strFormats);
+    static com::Utf8Str             toFormatString(const GuestDnDMIMEList &lstFormats);
+    static GuestDnDMIMEList         toFilteredFormatList(const GuestDnDMIMEList &lstFormatsSupported, const GuestDnDMIMEList &lstFormatsWanted);
+    static GuestDnDMIMEList         toFilteredFormatList(const GuestDnDMIMEList &lstFormatsSupported, const com::Utf8Str &strFormatsWanted);
+    static DnDAction_T              toMainAction(uint32_t uAction);
+    static std::vector<DnDAction_T> toMainActions(uint32_t uActions);
+    static uint32_t                 toHGCMAction(DnDAction_T enmAction);
+    static void                     toHGCMActions(DnDAction_T enmDefAction, uint32_t *puDefAction, const std::vector<DnDAction_T> vecAllowedActions, uint32_t *puAllowedActions);
     /** @}  */
 
 protected:
@@ -507,9 +524,9 @@ protected:
     /** Shared (internal) IDnDBase method implementations.
      * @{ */
     HRESULT i_isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported);
-    HRESULT i_getFormats(std::vector<com::Utf8Str> &aFormats);
-    HRESULT i_addFormats(const std::vector<com::Utf8Str> &aFormats);
-    HRESULT i_removeFormats(const std::vector<com::Utf8Str> &aFormats);
+    HRESULT i_getFormats(GuestDnDMIMEList &aFormats);
+    HRESULT i_addFormats(const GuestDnDMIMEList &aFormats);
+    HRESULT i_removeFormats(const GuestDnDMIMEList &aFormats);
 
     HRESULT i_getProtocolVersion(ULONG *puVersion);
     /** @}  */
@@ -535,11 +552,10 @@ protected:
      * @{ */
     /** Pointer to guest implementation. */
     const ComObjPtr<Guest>          m_pGuest;
-    /** List of supported MIME/Content-type formats. */
-    std::vector<com::Utf8Str>       m_vecFmtSup;
-    /** List of offered/compatible MIME/Content-type formats to the
-     *  counterpart. */
-    std::vector<com::Utf8Str>       m_vecFmtOff;
+    /** List of supported MIME types by the source. */
+    GuestDnDMIMEList                m_lstFmtSupported;
+    /** List of offered MIME types to the counterpart. */
+    GuestDnDMIMEList                m_lstFmtOffered;
     /** @}  */
 
     struct

@@ -45,16 +45,16 @@ private:
     /** Private wrapped @name IDnDBase methods.
      * @{ */
     HRESULT isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported);
-    HRESULT getFormats(std::vector<com::Utf8Str> &aFormats);
-    HRESULT addFormats(const std::vector<com::Utf8Str> &aFormats);
-    HRESULT removeFormats(const std::vector<com::Utf8Str> &aFormats);
+    HRESULT getFormats(GuestDnDMIMEList &aFormats);
+    HRESULT addFormats(const GuestDnDMIMEList &aFormats);
+    HRESULT removeFormats(const GuestDnDMIMEList &aFormats);
 
     HRESULT getProtocolVersion(ULONG *aProtocolVersion);
     /** @}  */
 
     /** Private wrapped @name IDnDSource methods.
      * @{ */
-    HRESULT dragIsPending(ULONG uScreenId, std::vector<com::Utf8Str> &aFormats, std::vector<DnDAction_T> &aAllowedActions, DnDAction_T *aDefaultAction);
+    HRESULT dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormats, std::vector<DnDAction_T> &aAllowedActions, DnDAction_T *aDefaultAction);
     HRESULT drop(const com::Utf8Str &aFormat, DnDAction_T aAction, ComPtr<IProgress> &aProgress);
     HRESULT receiveData(std::vector<BYTE> &aData);
     /** @}  */

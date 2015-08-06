@@ -97,11 +97,14 @@ DEFINE_EMPTY_CTOR_DTOR(GuestDnDSource)
 
 HRESULT GuestDnDSource::FinalConstruct(void)
 {
-    /* Set the maximum block size this source can handle to 64K. This always has
-     * been hardcoded until now. */
-    /* Note: Never ever rely on information from the guest; the host dictates what and
-     *       how to do something, so try to negogiate a sensible value here later. */
-    mData.mcbBlockSize    = _64K; /** @todo Make this configurable. */
+    /*
+     * Set the maximum block size this source can handle to 64K. This always has
+     * been hardcoded until now.
+     *
+     * Note: Never ever rely on information from the guest; the host dictates what and
+     *       how to do something, so try to negogiate a sensible value here later.
+     */
+    mData.mcbBlockSize = _64K; /** @todo Make this configurable. */
 
     LogFlowThisFunc(("\n"));
     return BaseFinalConstruct();
@@ -166,7 +169,7 @@ HRESULT GuestDnDSource::isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSu
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-HRESULT GuestDnDSource::getFormats(std::vector<com::Utf8Str> &aFormats)
+HRESULT GuestDnDSource::getFormats(GuestDnDMIMEList &aFormats)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
@@ -181,7 +184,7 @@ HRESULT GuestDnDSource::getFormats(std::vector<com::Utf8Str> &aFormats)
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-HRESULT GuestDnDSource::addFormats(const std::vector<com::Utf8Str> &aFormats)
+HRESULT GuestDnDSource::addFormats(const GuestDnDMIMEList &aFormats)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
@@ -196,7 +199,7 @@ HRESULT GuestDnDSource::addFormats(const std::vector<com::Utf8Str> &aFormats)
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-HRESULT GuestDnDSource::removeFormats(const std::vector<com::Utf8Str> &aFormats)
+HRESULT GuestDnDSource::removeFormats(const GuestDnDMIMEList &aFormats)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
@@ -229,12 +232,14 @@ HRESULT GuestDnDSource::getProtocolVersion(ULONG *aProtocolVersion)
 // implementation of wrapped IDnDSource methods.
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, std::vector<com::Utf8Str> &aFormats,
+HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormats,
                                       std::vector<DnDAction_T> &aAllowedActions, DnDAction_T *aDefaultAction)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
+
+    /* aDefaultAction is optional. */
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -255,31 +260,53 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, std::vector<com::Utf8Str>
     if (RT_SUCCESS(rc))
     {
         GuestDnDResponse *pResp = GuestDnDInst()->response();
-        if (pResp)
+        AssertPtr(pResp);
+
+        bool fFetchResult = true;
+
+        rc = pResp->waitForGuestResponse(5000 /* Timeout in ms */);
+        if (RT_FAILURE(rc))
+            fFetchResult = false;
+
+        if (   fFetchResult
+            && isDnDIgnoreAction(pResp->defAction()))
+            fFetchResult = false;
+
+        /* Fetch the default action to use. */
+        if (fFetchResult)
         {
-            bool fFetchResult = true;
+            defaultAction   = GuestDnD::toMainAction(pResp->defAction());
+            aAllowedActions = GuestDnD::toMainActions(pResp->allActions());
 
-            if (pResp->waitForGuestResponse(5000 /* Timeout in ms */) == VERR_TIMEOUT)
-                fFetchResult = false;
+            /*
+             * In the GuestDnDSource case the source formats are from the guest,
+             * as GuestDnDSource acts as a target for the guest. The host always
+             * dictates what's supported and what's not, so filter out all formats
+             * which are not supported by the host.
+             */
+            aFormats        = GuestDnD::toFilteredFormatList(m_lstFmtSupported, pResp->formats());
 
-            if (isDnDIgnoreAction(pResp->defAction()))
-                fFetchResult = false;
+            /* Save the (filtered) formats. */
+            m_lstFmtOffered = aFormats;
 
-            /* Fetch the default action to use. */
-            if (fFetchResult)
+            if (m_lstFmtOffered.size())
             {
-                defaultAction = GuestDnD::toMainAction(pResp->defAction());
-
-                GuestDnD::toFormatVector(m_vecFmtSup, pResp->fmtReq(), aFormats);
-                GuestDnD::toMainActions(pResp->allActions(), aAllowedActions);
+                LogRelMax(3, ("DnD: Offered formats:\n"));
+                for (size_t i = 0; i < m_lstFmtOffered.size(); i++)
+                    LogRelMax(3, ("DnD:\tFormat #%zu: %s\n", i, m_lstFmtOffered.at(i).c_str()));
             }
+            else
+                LogRelMax(3, ("DnD: No compatible format between guest and host found, drag and drop to host not possible\n"));
         }
+
+        LogFlowFunc(("fFetchResult=%RTbool, defaultAction=0x%x, allActions=0x%x\n",
+                     fFetchResult, defaultAction, pResp->allActions()));
 
         if (aDefaultAction)
             *aDefaultAction = defaultAction;
     }
 
-    LogFlowFunc(("hr=%Rhrc, defaultAction=0x%x\n", hr, defaultAction));
+    LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
@@ -296,6 +323,10 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
     /* Input validation. */
     if (RT_UNLIKELY((aFormat.c_str()) == NULL || *(aFormat.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No drop format specified"));
+
+    /* Is the specified format in our list of (left over) offered formats? */
+    if (!GuestDnD::isFormatInFormatList(aFormat, m_lstFmtOffered))
+        return setError(E_INVALIDARG, tr("Specified format '%s' is not supported"), aFormat.c_str());
 
     uint32_t uAction = GuestDnD::toHGCMAction(aAction);
     if (isDnDIgnoreAction(uAction)) /* If there is no usable action, ignore this request. */
@@ -318,10 +349,13 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
 
     try
     {
-        mData.mRecvCtx.mIsActive = false;
-        mData.mRecvCtx.mpSource  = this;
-        mData.mRecvCtx.mpResp    = pResp;
-        mData.mRecvCtx.mFormat   = aFormat;
+        mData.mRecvCtx.mIsActive   = false;
+        mData.mRecvCtx.mpSource    = this;
+        mData.mRecvCtx.mpResp      = pResp;
+        mData.mRecvCtx.mFmtReq     = aFormat;
+        mData.mRecvCtx.mFmtOffered = m_lstFmtOffered;
+
+        LogRel2(("DnD: Requesting data from guest in format: %s\n", aFormat.c_str()));
 
         RecvDataTask *pTask = new RecvDataTask(this, &mData.mRecvCtx);
         AssertReturn(pTask->isOk(), pTask->getRC());
@@ -381,7 +415,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
 
     try
     {
-        bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFormat.c_str(), pCtx->mFormat.length());
+        bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFmtRecv.c_str(), pCtx->mFmtRecv.length());
         if (fHasURIList)
         {
             Utf8Str strURIs = pCtx->mURI.lstURI.RootToString(RTCString(DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir)));
@@ -522,7 +556,7 @@ int GuestDnDSource::i_onReceiveData(PRECVDATACTX pCtx, const void *pvData, uint3
             Assert(cbData <= pCtx->mData.vecData.size());
             if (cbData == pCtx->mData.vecData.size())
             {
-                bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFormat.c_str(), pCtx->mFormat.length());
+                bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFmtRecv.c_str(), pCtx->mFmtRecv.length());
                 LogFlowFunc(("fHasURIList=%RTbool, cbTotalSize=%RU32\n", fHasURIList, cbTotalSize));
                 if (fHasURIList)
                 {
@@ -761,14 +795,40 @@ int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
      */
     pCtx->mData.Reset();
     pCtx->mURI.Reset();
-
-    /* Set the format we are going to retrieve to have it around
-     * when retrieving the data later. */
     pResp->reset();
-    pResp->setFmtReq(pCtx->mFormat);
 
-    bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFormat.c_str(), pCtx->mFormat.length());
-    LogFlowFunc(("strFormat=%s, uAction=0x%x, fHasURIList=%RTbool\n", pCtx->mFormat.c_str(), pCtx->mAction, fHasURIList));
+    /*
+     * Do we need to receive a different format than initially requested?
+     *
+     * For example, receiving a file link as "text/plain"  requires still to receive
+     * the file from the guest as "text/uri-list" first, then pointing to
+     * the file path on the host in the "text/plain" data returned.
+     */
+
+    /* Plain text needed? */
+    if (pCtx->mFmtReq.equalsIgnoreCase("text/plain"))
+    {
+        /* Did the guest offer a file? Receive a file instead. */
+        if (GuestDnD::isFormatInFormatList("text/uri-list", pCtx->mFmtOffered))
+            pCtx->mFmtRecv = "text/uri-list";
+
+        /** @todo Add more conversions here. */
+    }
+
+    if (pCtx->mFmtRecv.isEmpty())
+        pCtx->mFmtRecv = pCtx->mFmtReq;
+
+    if (!pCtx->mFmtRecv.equals(pCtx->mFmtReq))
+        LogRel3(("DnD: Requested data in format '%s', receiving in intermediate format '%s' now\n",
+                 pCtx->mFmtReq.c_str(), pCtx->mFmtRecv.c_str()));
+
+    /*
+     * Call the appropriate receive handler based on the data format to handle.
+     */
+    bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFmtRecv.c_str(), pCtx->mFmtRecv.length());
+    LogFlowFunc(("strFormatReq=%s, strFormatRecv=%s, uAction=0x%x, fHasURIList=%RTbool\n",
+                 pCtx->mFmtReq.c_str(), pCtx->mFmtRecv.c_str(), pCtx->mAction, fHasURIList));
+
     if (fHasURIList)
     {
         rc = i_receiveURIData(pCtx, msTimeout);
@@ -849,8 +909,8 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
          */
         GuestDnDMsg Msg;
         Msg.setType(DragAndDropSvc::HOST_DND_GH_EVT_DROPPED);
-        Msg.setNextPointer((void*)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
-        Msg.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
+        Msg.setNextPointer((void*)pCtx->mFmtRecv.c_str(), (uint32_t)pCtx->mFmtRecv.length() + 1);
+        Msg.setNextUInt32((uint32_t)pCtx->mFmtRecv.length() + 1);
         Msg.setNextUInt32(pCtx->mAction);
 
         /* Make the initial call to the guest by telling that we initiated the "dropped" event on
@@ -944,8 +1004,8 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
          */
         GuestDnDMsg Msg;
         Msg.setType(DragAndDropSvc::HOST_DND_GH_EVT_DROPPED);
-        Msg.setNextPointer((void*)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
-        Msg.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
+        Msg.setNextPointer((void*)pCtx->mFmtRecv.c_str(), (uint32_t)pCtx->mFmtRecv.length() + 1);
+        Msg.setNextUInt32((uint32_t)pCtx->mFmtRecv.length() + 1);
         Msg.setNextUInt32(pCtx->mAction);
 
         /* Make the initial call to the guest by telling that we initiated the "dropped" event on

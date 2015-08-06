@@ -650,6 +650,14 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  if1of ($(KBUILD_TARGET), darwin linux solaris win)
   VBOX_WITH_DRAG_AND_DROP_GH = $(VBOX_WITH_DRAG_AND_DROP)
  endif
+ ifdef VBOX_WITH_DRAG_AND_DROP_GH
+  ifeq ($(KBUILD_TARGET),darwin)
+   # On OS X (Darwin) this needs to be set in order to get proper
+   # guest->host support.
+   # Note: Setting this requires Qt also having this feature enabled!
+   VBOX_WITH_DRAG_AND_DROP_PROMISES = $(VBOX_WITH_DRAG_AND_DROP)
+  endif
+ endif
 endif
 # Enables use of merge modules in the windows installer. This will increase
 # the overall installer size significantly because merge modules are not able

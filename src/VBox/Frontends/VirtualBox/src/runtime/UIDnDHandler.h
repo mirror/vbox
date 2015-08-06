@@ -75,6 +75,8 @@ public:
 
     } UIDnDDataSource;
 
+    void                       reset(void);
+
     /* Frontend -> Target. */
     Qt::DropAction             dragEnter(ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData);
     Qt::DropAction             dragMove (ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData);
@@ -85,7 +87,10 @@ public:
     int                        dragCheckPending(ulong screenId);
     int                        dragStart(ulong screenId);
     int                        dragStop(ulong screenID);
-    int                        retrieveData(Qt::DropAction  dropAction, const QString &strMimeType, QVariant::Type vaType, QVariant &vaData);
+
+    /* Data access. */
+    int                        retrieveData(Qt::DropAction dropAction, const QString &strMIMEType, QVector<uint8_t> &vecData);
+    int                        retrieveData(Qt::DropAction dropAction, const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData);
 
 public:
 
@@ -94,24 +99,16 @@ public:
     static Qt::DropAction      toQtDnDAction(KDnDAction action);
     static Qt::DropActions     toQtDnDActions(const QVector<KDnDAction> &vecActions);
 
-public slots:
+protected:
 
-    /**
-     * Called by UIDnDMIMEData (Linux, OS X, Solaris) to start retrieving the actual data
-     * from the guest. This function will block and show a modal progress dialog until
-     * the data transfer is complete.
-     *
-     * @return IPRT status code.
-     * @param strMimeType           MIME data type.
-     * @param vaType                Qt's variant type of the MIME data.
-     * @param vaData                Reference to QVariant where to store the retrieved data.
-     */
-    int                        sltGetData(const QString &strMimeType, QVariant::Type vaType, QVariant &vaData);
+#ifdef DEBUG
+    static void                debugOutputQt(QtMsgType type, const char *pszMsg);
+#endif
 
 protected:
 
     int                        dragStartInternal(const QStringList &lstFormats, Qt::DropAction defAction, Qt::DropActions actions);
-    int                        retrieveDataInternal(Qt::DropAction dropAction, const QString &strMimeType, QVariant::Type vaType, QVariant &vaData);
+    int                        retrieveDataInternal(Qt::DropAction dropAction, const QString &strMIMEType, QVector<uint8_t> &vecData);
     void                       setMode(DNDMODE enmMode);
 
 protected:
@@ -132,8 +129,13 @@ protected:
     UIDnDDataSource   m_dataSource;
     /** Flag indicating if a drag operation is pending currently. */
     bool              m_fIsPending;
+    /** Flag indicating whether data has been retrieved from
+     *  the guest already or not. */
+    bool              m_fDataRetrieved;
     QMutex            m_ReadLock;
     QMutex            m_WriteLock;
+    /** Data received from the guest. */
+    QVector<uint8_t>  m_vecData;
 
 #ifndef RT_OS_WINDOWS
     /** Pointer to MIMEData instance used for handling

@@ -220,7 +220,7 @@ void GuestDnDResponse::reset(void)
     m_defAction  = 0;
     m_allActions = 0;
 
-    m_strFmtReq  = "";
+    m_lstFormats.clear();
 }
 
 HRESULT GuestDnDResponse::resetProgress(const ComObjPtr<Guest>& pParent)
@@ -387,8 +387,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             }
             else
             {
-                setFmtReq(pCBData->pszFormat);
-
+                setFormats(GuestDnD::toFormatList(pCBData->pszFormat));
                 rc = VINF_SUCCESS;
             }
 
@@ -427,7 +426,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             }
             else
             {
-                setFmtReq    (pCBData->pszFormat);
+                setFormats   (GuestDnD::toFormatList(pCBData->pszFormat));
                 setDefAction (pCBData->uDefAction);
                 setAllActions(pCBData->uAllActions);
 
@@ -508,7 +507,7 @@ GuestDnD::~GuestDnD(void)
         delete m_pResponse;
 }
 
-int GuestDnD::adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) const
+HRESULT GuestDnD::adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) const
 {
     /** @todo r=andy Save the current screen's shifting coordinates to speed things up.
      *               Only query for new offsets when the screen ID has changed. */
@@ -534,11 +533,8 @@ int GuestDnD::adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) c
     if (puY)
         *puY += yShift;
 
-#ifdef DEBUG_andy
-    LogFlowFunc(("uScreenId=%RU32, x=%RU32, y=%RU32\n",
-                 uScreenId, puX ? *puX : 0, puY ? *puY : 0));
-#endif
-    return VINF_SUCCESS;
+    LogFlowFunc(("uScreenId=%RU32, x=%RU32, y=%RU32\n", uScreenId, puX ? *puX : 0, puY ? *puY : 0));
+    return S_OK;
 }
 
 int GuestDnD::hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const
@@ -552,9 +548,7 @@ int GuestDnD::hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM p
     if (!pVMMDev)
         return VERR_COM_OBJECT_NOT_FOUND;
 
-    int rc = pVMMDev->hgcmHostCall("VBoxDragAndDropSvc", u32Function, cParms, paParms);
-    LogFlowFunc(("uMsg=%RU32, cParms=%RU32, rc=%Rrc\n", u32Function, cParms, rc));
-    return rc;
+    return pVMMDev->hgcmHostCall("VBoxDragAndDropSvc", u32Function, cParms, paParms);
 }
 
 /* static */
@@ -577,48 +571,74 @@ DECLCALLBACK(int) GuestDnD::notifyDnDDispatcher(void *pvExtension, uint32_t u32F
     return VERR_NOT_SUPPORTED;
 }
 
+/* static */
+bool GuestDnD::isFormatInFormatList(const com::Utf8Str &strFormat, const GuestDnDMIMEList &lstFormats)
+{
+    return std::find(lstFormats.begin(), lstFormats.end(), strFormat) != lstFormats.end();
+}
 
 /* static */
-com::Utf8Str GuestDnD::toFormatString(const std::vector<com::Utf8Str> &lstSupportedFormats,
-                                      const std::vector<com::Utf8Str> &lstWantedFormats)
+GuestDnDMIMEList GuestDnD::toFormatList(const com::Utf8Str &strFormats)
+{
+    GuestDnDMIMEList lstFormats;
+    RTCList<RTCString> lstFormatsTmp = strFormats.split("\r\n");
+
+    for (size_t i = 0; i < lstFormatsTmp.size(); i++)
+        lstFormats.push_back(com::Utf8Str(lstFormatsTmp.at(i)));
+
+    return lstFormats;
+}
+
+/* static */
+com::Utf8Str GuestDnD::toFormatString(const GuestDnDMIMEList &lstFormats)
 {
     com::Utf8Str strFormat;
-    for (size_t i = 0; i < lstWantedFormats.size(); ++i)
+    for (size_t i = 0; i < lstFormats.size(); i++)
     {
-        const com::Utf8Str &f = lstWantedFormats.at(i);
-        /* Only keep allowed format types. */
-        if (std::find(lstSupportedFormats.begin(),
-                      lstSupportedFormats.end(), f) != lstSupportedFormats.end())
-            strFormat += f + "\r\n";
+        const com::Utf8Str &f = lstFormats.at(i);
+        strFormat += f + "\r\n";
     }
 
     return strFormat;
 }
 
 /* static */
-void GuestDnD::toFormatVector(const std::vector<com::Utf8Str> &lstSupportedFormats,
-                              const com::Utf8Str &strFormats,
-                              std::vector<com::Utf8Str> &vecformats)
+GuestDnDMIMEList GuestDnD::toFilteredFormatList(const GuestDnDMIMEList &lstFormatsSupported, const GuestDnDMIMEList &lstFormatsWanted)
 {
-    RTCList<RTCString> lstFormats = strFormats.split("\r\n");
+    GuestDnDMIMEList lstFormats;
+
+    for (size_t i = 0; i < lstFormatsWanted.size(); i++)
+    {
+        /* Only keep allowed format types. */
+        if (std::find(lstFormatsSupported.begin(),
+                      lstFormatsSupported.end(), lstFormatsWanted.at(i)) != lstFormatsSupported.end())
+        {
+            lstFormats.push_back(lstFormatsWanted[i]);
+        }
+    }
+
+    return lstFormats;
+}
+
+/* static */
+GuestDnDMIMEList GuestDnD::toFilteredFormatList(const GuestDnDMIMEList &lstFormatsSupported, const com::Utf8Str &strFormatsWanted)
+{
+    GuestDnDMIMEList lstFmt;
+
+    RTCList<RTCString> lstFormats = strFormatsWanted.split("\r\n");
     size_t i = 0;
     while (i < lstFormats.size())
     {
         /* Only keep allowed format types. */
-        if (std::find(lstSupportedFormats.begin(),
-                      lstSupportedFormats.end(), lstFormats.at(i)) == lstSupportedFormats.end())
-            lstFormats.removeAt(i);
-        else
-            ++i;
+        if (std::find(lstFormatsSupported.begin(),
+                      lstFormatsSupported.end(), lstFormats.at(i)) != lstFormatsSupported.end())
+        {
+            lstFmt.push_back(lstFormats[i]);
+        }
+        i++;
     }
 
-    for (i = 0; i < lstFormats.size(); i++)
-    {
-        const Utf8Str &f = lstFormats.at(i);
-        if (std::find(lstSupportedFormats.begin(),
-                      lstSupportedFormats.end(), f) != lstSupportedFormats.end())
-            vecformats.push_back(lstFormats[i]);
-    }
+    return lstFmt;
 }
 
 /* static */
@@ -692,9 +712,10 @@ DnDAction_T GuestDnD::toMainAction(uint32_t uAction)
 }
 
 /* static */
-void GuestDnD::toMainActions(uint32_t uActions,
-                             std::vector<DnDAction_T> &vecActions)
+std::vector<DnDAction_T> GuestDnD::toMainActions(uint32_t uActions)
 {
+    std::vector<DnDAction_T> vecActions;
+
     /* For now it doesn't seems useful to allow a
      * link action between host & guest. Maybe later! */
     RTCList<DnDAction_T> lstActions;
@@ -705,6 +726,8 @@ void GuestDnD::toMainActions(uint32_t uActions,
 
     for (size_t i = 0; i < lstActions.size(); ++i)
         vecActions.push_back(lstActions.at(i));
+
+    return vecActions;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -716,48 +739,48 @@ GuestDnDBase::GuestDnDBase(void)
     /*
      * Initialize public attributes.
      */
-    m_vecFmtSup = GuestDnDInst()->defaultFormats();
+    m_lstFmtSupported = GuestDnDInst()->defaultFormats();
 }
 
 HRESULT GuestDnDBase::i_isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported)
 {
-    *aSupported = std::find(m_vecFmtSup.begin(),
-                            m_vecFmtSup.end(), aFormat) != m_vecFmtSup.end()
+    *aSupported = std::find(m_lstFmtSupported.begin(),
+                            m_lstFmtSupported.end(), aFormat) != m_lstFmtSupported.end()
                 ? TRUE : FALSE;
     return S_OK;
 }
 
-HRESULT GuestDnDBase::i_getFormats(std::vector<com::Utf8Str> &aFormats)
+HRESULT GuestDnDBase::i_getFormats(GuestDnDMIMEList &aFormats)
 {
-    aFormats = m_vecFmtSup;
+    aFormats = m_lstFmtSupported;
 
     return S_OK;
 }
 
-HRESULT GuestDnDBase::i_addFormats(const std::vector<com::Utf8Str> &aFormats)
+HRESULT GuestDnDBase::i_addFormats(const GuestDnDMIMEList &aFormats)
 {
     for (size_t i = 0; i < aFormats.size(); ++i)
     {
         Utf8Str strFormat = aFormats.at(i);
-        if (std::find(m_vecFmtSup.begin(),
-                      m_vecFmtSup.end(), strFormat) == m_vecFmtSup.end())
+        if (std::find(m_lstFmtSupported.begin(),
+                      m_lstFmtSupported.end(), strFormat) == m_lstFmtSupported.end())
         {
-            m_vecFmtSup.push_back(strFormat);
+            m_lstFmtSupported.push_back(strFormat);
         }
     }
 
     return S_OK;
 }
 
-HRESULT GuestDnDBase::i_removeFormats(const std::vector<com::Utf8Str> &aFormats)
+HRESULT GuestDnDBase::i_removeFormats(const GuestDnDMIMEList &aFormats)
 {
     for (size_t i = 0; i < aFormats.size(); ++i)
     {
         Utf8Str strFormat = aFormats.at(i);
-        std::vector<com::Utf8Str>::iterator itFormat = std::find(m_vecFmtSup.begin(),
-                                                                 m_vecFmtSup.end(), strFormat);
-        if (itFormat != m_vecFmtSup.end())
-            m_vecFmtSup.erase(itFormat);
+        GuestDnDMIMEList::iterator itFormat = std::find(m_lstFmtSupported.begin(),
+                                                        m_lstFmtSupported.end(), strFormat);
+        if (itFormat != m_lstFmtSupported.end())
+            m_lstFmtSupported.erase(itFormat);
     }
 
     return S_OK;

@@ -48,19 +48,19 @@ private:
     /** Private wrapped @name IDnDBase methods.
      * @{ */
     HRESULT isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported);
-    HRESULT getFormats(std::vector<com::Utf8Str> &aFormats);
-    HRESULT addFormats(const std::vector<com::Utf8Str> &aFormats);
-    HRESULT removeFormats(const std::vector<com::Utf8Str> &aFormats);
+    HRESULT getFormats(GuestDnDMIMEList &aFormats);
+    HRESULT addFormats(const GuestDnDMIMEList &aFormats);
+    HRESULT removeFormats(const GuestDnDMIMEList &aFormats);
 
     HRESULT getProtocolVersion(ULONG *aProtocolVersion);
     /** @}  */
 
     /** Private wrapped @name IDnDTarget methods.
      * @{ */
-    HRESULT enter(ULONG aScreenId, ULONG ax, ULONG aY, DnDAction_T aDefaultAction, const std::vector<DnDAction_T> &aAllowedActions, const std::vector<com::Utf8Str> &aFormats, DnDAction_T *aResultAction);
-    HRESULT move(ULONG aScreenId, ULONG aX, ULONG aY, DnDAction_T aDefaultAction, const std::vector<DnDAction_T> &aAllowedActions, const std::vector<com::Utf8Str> &aFormats, DnDAction_T *aResultAction);
+    HRESULT enter(ULONG aScreenId, ULONG ax, ULONG aY, DnDAction_T aDefaultAction, const std::vector<DnDAction_T> &aAllowedActions, const GuestDnDMIMEList &aFormats, DnDAction_T *aResultAction);
+    HRESULT move(ULONG aScreenId, ULONG aX, ULONG aY, DnDAction_T aDefaultAction, const std::vector<DnDAction_T> &aAllowedActions, const GuestDnDMIMEList &aFormats, DnDAction_T *aResultAction);
     HRESULT leave(ULONG aScreenId);
-    HRESULT drop(ULONG aScreenId, ULONG aX, ULONG aY, DnDAction_T aDefaultAction, const std::vector<DnDAction_T> &aAllowedActions, const std::vector<com::Utf8Str> &aFormats, com::Utf8Str &aFormat, DnDAction_T *aResultAction);
+    HRESULT drop(ULONG aScreenId, ULONG aX, ULONG aY, DnDAction_T aDefaultAction, const std::vector<DnDAction_T> &aAllowedActions, const GuestDnDMIMEList &aFormats, com::Utf8Str &aFormat, DnDAction_T *aResultAction);
     HRESULT sendData(ULONG aScreenId, const com::Utf8Str &aFormat, const std::vector<BYTE> &aData, ComPtr<IProgress> &aProgress);
     HRESULT cancel(BOOL *aVeto);
     /** @}  */
