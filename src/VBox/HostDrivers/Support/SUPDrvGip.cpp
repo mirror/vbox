@@ -634,9 +634,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
     if (   pSession->fGipTestMode
         && pDevExt->pGip)
     {
-        uint32_t fFlags = pDevExt->pGip->fFlags;
-        fFlags &= ~SUPGIP_FLAGS_TESTING_ENABLE;
-        supdrvGipSetFlags(pDevExt, pSession, 0, fFlags);
+        supdrvGipSetFlags(pDevExt, pSession, 0, ~SUPGIP_FLAGS_TESTING_ENABLE);
         Assert(!pSession->fGipTestMode);
     }
 
@@ -2100,16 +2098,9 @@ void VBOXCALL supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
  */
 static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
 {
-    uint64_t    u64TSCDelta;
-    uint32_t    u32UpdateIntervalTSC;
-    uint32_t    u32UpdateIntervalTSCSlack;
-    unsigned    iTSCHistoryHead;
-    bool        fUpdateCpuHz;
-    uint32_t    fGipFlags;
-    uint64_t    u64CpuHz;
-    uint32_t    u32TransactionId;
-
-    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    uint64_t            u64TSCDelta;
+    bool                fUpdateCpuHz;
+    PSUPGLOBALINFOPAGE  pGip = pDevExt->pGip;
     AssertPtrReturnVoid(pGip);
 
     /* Delta between this and the previous update. */
@@ -2126,17 +2117,18 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
     u64TSCDelta = u64TSC - pGipCpu->u64TSC;
     ASMAtomicWriteU64(&pGipCpu->u64TSC, u64TSC);
 
-    /* Determine when we need to update the TSC frequency. */
-    fUpdateCpuHz = pGip->u32Mode != SUPGIPMODE_INVARIANT_TSC;
-
     /*
-     * Handle GIP test mode toggle.
+     * Determine if we need to update the CPU (TSC) frequency calculation.
+     *
+     * We don't need to keep realculating the frequency when it's invariant,
+     * unless the special tstGIP-2 testing mode is enabled.
      */
-    fGipFlags = pGip->fFlags;
-    if (!(fGipFlags & SUPGIP_FLAGS_TESTING))
+    fUpdateCpuHz = pGip->u32Mode != SUPGIPMODE_INVARIANT_TSC;
+    if (!(pGip->fFlags & SUPGIP_FLAGS_TESTING))
     { /* likely*/ }
     else
     {
+        uint32_t fGipFlags = pGip->fFlags;
         if (fGipFlags & (SUPGIP_FLAGS_TESTING_ENABLE | SUPGIP_FLAGS_TESTING_START))
         {
             if (fGipFlags & SUPGIP_FLAGS_TESTING_START)
@@ -2144,8 +2136,7 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
                 /* Cache the TSC frequency before forcing updates due to test mode. */
                 if (!fUpdateCpuHz)
                     pDevExt->uGipTestModeInvariantCpuHz = pGip->aCPUs[0].u64CpuHz;
-                fGipFlags &= ~SUPGIP_FLAGS_TESTING_START;
-                ASMAtomicWriteU32(&pGip->fFlags, fGipFlags);
+                ASMAtomicAndU32(&pGip->fFlags, ~SUPGIP_FLAGS_TESTING_START);
             }
             fUpdateCpuHz = true;
         }
@@ -2157,17 +2148,21 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
                 Assert(pDevExt->uGipTestModeInvariantCpuHz);
                 ASMAtomicWriteU64(&pGip->aCPUs[0].u64CpuHz, pDevExt->uGipTestModeInvariantCpuHz);
             }
-            fGipFlags &= ~(SUPGIP_FLAGS_TESTING_STOP | SUPGIP_FLAGS_TESTING);
-            ASMAtomicWriteU32(&pGip->fFlags, fGipFlags);
+            ASMAtomicAndU32(&pGip->fFlags, ~(SUPGIP_FLAGS_TESTING_STOP | SUPGIP_FLAGS_TESTING));
         }
     }
 
     /*
-     * We don't need to keep realculating the frequency when it's invariant, so
-     * the remainder of this function is only for the sync and async TSC modes.
+     * Calculate the CPU (TSC) frequency if necessary.
      */
     if (fUpdateCpuHz)
     {
+        uint64_t    u64CpuHz;
+        uint32_t    u32UpdateIntervalTSC;
+        uint32_t    u32UpdateIntervalTSCSlack;
+        uint32_t    u32TransactionId;
+        unsigned    iTSCHistoryHead;
+
         if (u64TSCDelta >> 32)
         {
             u64TSCDelta = pGipCpu->u32UpdateIntervalTSC;
@@ -2197,7 +2192,7 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
          * Validate the NanoTS deltas between timer fires with an arbitrary threshold of 0.5%.
          * Wait until we have at least one full history since the above history reset. The
          * assumption is that the majority of the previous history values will be tolerable.
-         * See @bugref{6710} comment #67.
+         * See @bugref{6710#c67}.
          */
         /** @todo Could we drop the fuding there now that we initializes the history
          *        with nominal TSC frequency values?  */
@@ -4777,10 +4772,15 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
  * Worker for supdrvIOCtl_GipSetFlags.
  *
  * @returns VBox status code.
+ * @retval  VERR_WRONG_ORDER if an enable-once-per-session flag is set again for
+ *          a session.
+ *
  * @param   pDevExt         Pointer to the device instance data.
  * @param   pSession        The support driver session.
  * @param   fOrMask         The OR mask of the GIP flags, see SUPGIP_FLAGS_XXX.
  * @param   fAndMask        The AND mask of the GIP flags, see SUPGIP_FLAGS_XXX.
+ *
+ * @remarks Caller must own the GIP mutex.
  *
  * @remarks This function doesn't validate any of the flags.
  */
@@ -4788,32 +4788,50 @@ static int supdrvGipSetFlags(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uin
 {
     uint32_t           cRefs;
     PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    AssertMsg((fOrMask & fAndMask) == fOrMask, ("%#x & %#x\n", fOrMask, fAndMask)); /* ASSUMED by code below */
 
     /*
      * Compute GIP test-mode flags.
      */
     if (fOrMask & SUPGIP_FLAGS_TESTING_ENABLE)
     {
-        pSession->fGipTestMode = true;
-        cRefs = ASMAtomicIncU32(&pDevExt->cGipTestModeRefs);
-        if (cRefs == 1)
-            fOrMask |= SUPGIP_FLAGS_TESTING | SUPGIP_FLAGS_TESTING_START;
+        if (!pSession->fGipTestMode)
+        {
+            Assert(pDevExt->cGipTestModeRefs < _64K);
+            pSession->fGipTestMode = true;
+            cRefs = ++pDevExt->cGipTestModeRefs;
+            if (cRefs == 1)
+            {
+                fOrMask  |= SUPGIP_FLAGS_TESTING | SUPGIP_FLAGS_TESTING_START;
+                fAndMask &= ~SUPGIP_FLAGS_TESTING_STOP;
+            }
+        }
+        else
+        {
+            LogRelMax(10, ("supdrvGipSetFlags: SUPGIP_FLAGS_TESTING_ENABLE already set for this session\n"));
+            return VERR_WRONG_ORDER;
+        }
     }
-    else
+    else if (   !(fAndMask & SUPGIP_FLAGS_TESTING_ENABLE)
+             && pSession->fGipTestMode)
     {
-        cRefs = ASMAtomicDecU32(&pDevExt->cGipTestModeRefs);
+        Assert(pDevExt->cGipTestModeRefs > 0);
+        Assert(pDevExt->cGipTestModeRefs < _64K);
         pSession->fGipTestMode = false;
+        cRefs = --pDevExt->cGipTestModeRefs;
         if (!cRefs)
             fOrMask |= SUPGIP_FLAGS_TESTING_STOP;
+        else
+            fAndMask |= SUPGIP_FLAGS_TESTING_ENABLE;
     }
 
     /*
-     * Commit the flags.
+     * Commit the flags.  This should be done as atomically as possible
+     * since the flag consumers won't be holding the GIP mutex.
      */
-    uint32_t fFlags = ASMAtomicUoReadU32(&pGip->fFlags);
-    fFlags |= fOrMask;
-    fFlags &= fAndMask;
-    ASMAtomicWriteU32(&pGip->fFlags, fFlags);
+    ASMAtomicOrU32(&pGip->fFlags, fOrMask);
+    ASMAtomicAndU32(&pGip->fFlags, fAndMask);
+
     return VINF_SUCCESS;
 }
 
@@ -4830,6 +4848,7 @@ static int supdrvGipSetFlags(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uin
 int VBOXCALL supdrvIOCtl_GipSetFlags(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uint32_t fOrMask, uint32_t fAndMask)
 {
     PSUPGLOBALINFOPAGE pGip;
+    int                rc;
 
     /*
      * Validate.  We require the client to have mapped GIP (no asserting on
@@ -4846,6 +4865,29 @@ int VBOXCALL supdrvIOCtl_GipSetFlags(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSess
     if ((fAndMask & ~SUPGIP_FLAGS_VALID_MASK) != ~SUPGIP_FLAGS_VALID_MASK)
         return VERR_INVALID_PARAMETER;
 
-    return supdrvGipSetFlags(pDevExt, pSession, fOrMask, fAndMask);
+    /*
+     * Don't confuse supdrvGipSetFlags or anyone else by both setting
+     * and clearing the same flags.  AND takes precedence.
+     */
+    fOrMask &= fAndMask;
+
+    /*
+     * Take the loader lock to avoid having to think about races between two
+     * clients changing the flags at the same time (state is not simple).
+     */
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSemMutexRequest(pDevExt->mtxGip, RT_INDEFINITE_WAIT);
+#else
+    RTSemFastMutexRequest(pDevExt->mtxGip);
+#endif
+
+    rc = supdrvGipSetFlags(pDevExt, pSession, fOrMask, fAndMask);
+
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSemMutexRelease(pDevExt->mtxGip);
+#else
+    RTSemFastMutexRelease(pDevExt->mtxGip);
+#endif
+    return rc;
 }
 

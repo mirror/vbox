@@ -756,7 +756,7 @@ typedef struct SUPDRVDEVEXT
     /** @name GIP test mode.
      *  @{ */
     /** Reference counter for GIP test-mode sessions. */
-    uint32_t volatile               cGipTestModeRefs;
+    uint32_t                        cGipTestModeRefs;
     /** Cache of TSC frequency before enabling test-mode on invariant GIP systems. */
     uint64_t                        uGipTestModeInvariantCpuHz;
     /** @} */
