@@ -372,7 +372,7 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX   pCtx,
      * Create and query the (unique) drop target directory in the user's temporary directory.
      */
     DNDDIRDROPPEDFILES dirDroppedFiles;
-    const char *pszDropDir;
+    const char *pszDropDir = NULL;
     int rc = DnDDirDroppedFilesCreateAndOpenTemp(&dirDroppedFiles);
     if (RT_SUCCESS(rc))
         pszDropDir = DnDDirDroppedFilesGetDirAbs(&dirDroppedFiles);
