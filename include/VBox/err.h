@@ -1812,9 +1812,9 @@
 /** A TSC-delta measurement request is currently being serviced. */
 #define VERR_SUPDRV_TSC_DELTA_MEASUREMENT_BUSY      (-3747)
 /** The process trying to open VBoxDrv is not a budding VM process (1). */
-#define VERR_SUPDRV_NOT_BUDDING_VM_PROCESS_1          (-3748)
+#define VERR_SUPDRV_NOT_BUDDING_VM_PROCESS_1        (-3748)
 /** The process trying to open VBoxDrv is not a budding VM process (2). */
-#define VERR_SUPDRV_NOT_BUDDING_VM_PROCESS_2          (-3748)
+#define VERR_SUPDRV_NOT_BUDDING_VM_PROCESS_2        (-3749)
 /** @} */
 
 
