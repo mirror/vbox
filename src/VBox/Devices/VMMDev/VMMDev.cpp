@@ -743,7 +743,7 @@ static int vmmdevReqHandler_ReportGuestStatus(PVMMDEV pThis, VMMDevRequestHeader
         PVMMDEVFACILITYSTATUSENTRY pEntry = vmmdevGetFacilityStatusEntry(pThis, pStatus->facility);
         if (!pEntry)
         {
-            LogRelMax(10, ("VMMDev: Facility table is full - facility=%u status=%u.\n", pStatus->facility, pStatus->status));
+            LogRelMax(10, ("VMMDev: Facility table is full - facility=%u status=%u\n", pStatus->facility, pStatus->status));
             return VERR_OUT_OF_RESOURCES;
         }
 
@@ -2732,7 +2732,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     }
     else
     {
-        LogRelMax(50, ("VMMDev: Request packet too big (%x). Refusing operation.\n", requestHeader.size));
+        LogRelMax(50, ("VMMDev: Request packet too big (%x), refusing operation\n", requestHeader.size));
         requestHeader.rc = VERR_NOT_SUPPORTED;
     }
 
@@ -3128,7 +3128,7 @@ vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32
 
     if (!fSameResolution)
     {
-        LogRel(("VMMDev::SetVideoModeHint: got a video mode hint (%dx%dx%d)@(%dx%d),(%d;%d) at %d\n",
+        LogRel(("VMMDev: SetVideoModeHint: Got a video mode hint (%dx%dx%d)@(%dx%d),(%d;%d) at %d\n",
                 cx, cy, cBits, xOrigin, yOrigin, fEnabled, fChangeOrigin, idxDisplay));
 
         /* IRQ so the guest knows what's going on */
