@@ -274,7 +274,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             rc = vbsfMappingLoaded (&mapping, i);
             if (RT_FAILURE(rc))
             {
-                LogRel(("SharedFolders: %Rrc loading %d [%ls] -> [%s]\n",
+                LogRel(("SharedFolders host service: %Rrc loading %d [%ls] -> [%s]\n",
                         rc, i, pMapName->String.ucs2, pszFolderName));
             }
 
@@ -1301,7 +1301,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     case SHFL_FN_ADD_MAPPING:
     {
         Log(("SharedFolders host service: svcCall: SHFL_FN_ADD_MAPPING\n"));
-        LogRel(("SharedFolders host service: adding host mapping\n"));
+        LogRel(("SharedFolders host service: Adding host mapping\n"));
         /* Verify parameter count and types. */
         if (   (cParms != SHFL_CPARMS_ADD_MAPPING)
            )
@@ -1353,14 +1353,14 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             }
         }
         if (RT_FAILURE(rc))
-            LogRel(("SharedFolders host service: adding host mapping failed with rc=%Rrc\n", rc));
+            LogRel(("SharedFolders host service: Adding host mapping failed with rc=%Rrc\n", rc));
         break;
     }
 
     case SHFL_FN_REMOVE_MAPPING:
     {
         Log(("SharedFolders host service: svcCall: SHFL_FN_REMOVE_MAPPING\n"));
-        LogRel(("SharedFolders host service: removing host mapping '%ls'\n",
+        LogRel(("SharedFolders host service: Removing host mapping '%ls'\n",
                 ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2));
 
         /* Verify parameter count and types. */
@@ -1396,7 +1396,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             }
         }
         if (RT_FAILURE(rc))
-            LogRel(("SharedFolders host service: removing host mapping failed with rc=%Rrc\n", rc));
+            LogRel(("SharedFolders host service: Removing host mapping failed with rc=%Rrc\n", rc));
         break;
     }
 
@@ -1453,7 +1453,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
     if (!VALID_PTR(ptable))
     {
-        LogRelFunc(("SharedFolders host service: bad value of ptable (%p)\n", ptable));
+        LogRelFunc(("SharedFolders host service: Bad value of ptable (%p)\n", ptable));
         rc = VERR_INVALID_PARAMETER;
     }
     else
@@ -1464,7 +1464,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         if (    ptable->cbSize != sizeof (VBOXHGCMSVCFNTABLE)
             ||  ptable->u32Version != VBOX_HGCM_SVC_VERSION)
         {
-            LogRelFunc(("SharedFolders host service: version mismatch while loading: ptable->cbSize = %u (should be %u), ptable->u32Version = 0x%08X (should be 0x%08X)\n",
+            LogRelFunc(("SharedFolders host service: Version mismatch while loading: ptable->cbSize = %u (should be %u), ptable->u32Version = 0x%08X (should be 0x%08X)\n",
                         ptable->cbSize, sizeof (VBOXHGCMSVCFNTABLE), ptable->u32Version, VBOX_HGCM_SVC_VERSION));
             rc = VERR_VERSION_MISMATCH;
         }
