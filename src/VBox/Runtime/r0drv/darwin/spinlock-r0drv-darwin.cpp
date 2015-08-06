@@ -69,6 +69,7 @@ typedef struct RTSPINLOCKINTERNAL
 RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char *pszName)
 {
     RT_ASSERT_PREEMPTIBLE();
+    IPRT_DARWIN_SAVE_EFL_AC();
     AssertReturn(fFlags == RTSPINLOCK_FLAGS_INTERRUPT_SAFE || fFlags == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, VERR_INVALID_PARAMETER);
 
     /*
@@ -76,26 +77,28 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char
      */
     AssertCompile(sizeof(RTSPINLOCKINTERNAL) > sizeof(void *));
     PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)RTMemAlloc(sizeof(*pThis));
-    if (!pThis)
-        return VERR_NO_MEMORY;
-
-    /*
-     * Initialize & return.
-     */
-    pThis->u32Magic  = RTSPINLOCK_MAGIC;
-    pThis->fIntSaved = 0;
-    pThis->fFlags    = fFlags;
-    pThis->pszName   = pszName;
-    Assert(g_pDarwinLockGroup);
-    pThis->pSpinLock = lck_spin_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
-    if (!pThis->pSpinLock)
+    if (pThis)
     {
-        RTMemFree(pThis);
-        return VERR_NO_MEMORY;
-    }
+        /*
+         * Initialize & return.
+         */
+        pThis->u32Magic  = RTSPINLOCK_MAGIC;
+        pThis->fIntSaved = 0;
+        pThis->fFlags    = fFlags;
+        pThis->pszName   = pszName;
+        Assert(g_pDarwinLockGroup);
+        pThis->pSpinLock = lck_spin_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
+        if (pThis->pSpinLock)
+        {
+            *pSpinlock = pThis;
+            IPRT_DARWIN_RESTORE_EFL_AC();
+            return VINF_SUCCESS;
+        }
 
-    *pSpinlock = pThis;
-    return VINF_SUCCESS;
+        RTMemFree(pThis);
+    }
+    IPRT_DARWIN_RESTORE_EFL_AC();
+    return VERR_NO_MEMORY;
 }
 
 
@@ -115,12 +118,15 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
      * Make the lock invalid and release the memory.
      */
     ASMAtomicIncU32(&pThis->u32Magic);
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     Assert(g_pDarwinLockGroup);
     lck_spin_destroy(pThis->pSpinLock, g_pDarwinLockGroup);
     pThis->pSpinLock = NULL;
 
     RTMemFree(pThis);
+
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 
@@ -137,9 +143,14 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
         ASMIntDisable();
         lck_spin_lock(pThis->pSpinLock);
         pThis->fIntSaved = fIntSaved;
+        IPRT_DARWIN_RESTORE_EFL_ONLY_AC_EX(fIntSaved);
     }
     else
+    {
+        IPRT_DARWIN_SAVE_EFL_AC();
         lck_spin_lock(pThis->pSpinLock);
+        IPRT_DARWIN_RESTORE_EFL_ONLY_AC();
+    }
 }
 
 
@@ -157,6 +168,10 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
         ASMSetFlags(fIntSaved);
     }
     else
+    {
+        IPRT_DARWIN_SAVE_EFL_AC();
         lck_spin_unlock(pThis->pSpinLock);
+        IPRT_DARWIN_RESTORE_EFL_ONLY_AC();
+    }
 }
 

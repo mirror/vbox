@@ -35,7 +35,8 @@
 
 RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
     kprintf("%.*s", (int)cb, pch);
-    return;
+    IPRT_DARWIN_RESTORE_EFL_AC();
 }
 

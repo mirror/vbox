@@ -67,6 +67,8 @@ typedef RTMEMDARWINHDREX *PRTMEMDARWINHDREX;
  */
 DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
+
     if (RT_UNLIKELY(fFlags & RTMEMHDR_FLAG_ANY_CTX))
         return VERR_NOT_SUPPORTED;
 
@@ -76,7 +78,10 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
         RTR0MEMOBJ hMemObj;
         int rc = RTR0MemObjAllocPage(&hMemObj, cb + sizeof(RTMEMDARWINHDREX), true /*fExecutable*/);
         if (RT_FAILURE(rc))
+        {
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return rc;
+        }
         PRTMEMDARWINHDREX pExHdr = (PRTMEMDARWINHDREX)RTR0MemObjAddress(hMemObj);
         pExHdr->hMemObj = hMemObj;
         pHdr = &pExHdr->Hdr;
@@ -87,13 +92,11 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     }
     else
     {
-
-        IPRT_DARWIN_SAVE_EFL_AC();
         pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
-        IPRT_DARWIN_RESTORE_EFL_AC();
         if (RT_UNLIKELY(!pHdr))
         {
             printf("rtR0MemAllocEx(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return VERR_NO_MEMORY;
         }
     }
@@ -102,7 +105,9 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     pHdr->fFlags    = fFlags;
     pHdr->cb        = cb;
     pHdr->cbReq     = cb;
-    *ppHdr = pHdr;;
+    *ppHdr = pHdr;
+
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 
@@ -112,6 +117,8 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
  */
 DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
+
     pHdr->u32Magic += 1;
     if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
     {
@@ -120,11 +127,9 @@ DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
         AssertRC(rc);
     }
     else
-    {
-        IPRT_DARWIN_SAVE_EFL_AC();
         IOFree(pHdr, pHdr->cb + sizeof(*pHdr));
-        IPRT_DARWIN_RESTORE_EFL_AC();
-    }
+
+    IPRT_DARWIN_RESTORE_EFL_AC();
 }
 
 

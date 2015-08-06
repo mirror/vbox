@@ -42,15 +42,18 @@
 
 DECLHIDDEN(void) rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
     printf("\r\n!!Assertion Failed!!\r\n"
            "Expression: %s\r\n"
            "Location  : %s(%u) %s\r\n",
            pszExpr, pszFile, uLine, pszFunction);
+    IPRT_DARWIN_RESTORE_EFL_AC();
 }
 
 
 DECLHIDDEN(void) rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_list va)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
     char szMsg[256];
 
     RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
@@ -58,6 +61,7 @@ DECLHIDDEN(void) rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_
     printf("%s", szMsg);
 
     NOREF(fInitial);
+    IPRT_DARWIN_RESTORE_EFL_AC();
 }
 
 

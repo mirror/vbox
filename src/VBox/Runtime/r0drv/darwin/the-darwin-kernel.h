@@ -96,9 +96,10 @@
  * @{ */
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/x86.h>
-#define IPRT_DARWIN_SAVE_EFL_AC()           RTCCUINTREG fSavedEfl = ASMGetFlags();
-#define IPRT_DARWIN_RESTORE_EFL_AC()        ASMSetFlags(fSavedEfl)
-#define IPRT_DARWIN_RESTORE_EFL_ONLY_AC()   ASMSetFlags((ASMGetFlags() & ~X86_EFL_AC) | (fSavedEfl & X86_EFL_AC))
+#define IPRT_DARWIN_SAVE_EFL_AC()                       RTCCUINTREG const fSavedEfl = ASMGetFlags();
+#define IPRT_DARWIN_RESTORE_EFL_AC()                    ASMSetFlags(fSavedEfl)
+#define IPRT_DARWIN_RESTORE_EFL_ONLY_AC()               ASMChangeFlags(~X86_EFL_AC, fSavedEfl & X86_EFL_AC)
+#define IPRT_DARWIN_RESTORE_EFL_ONLY_AC_EX(a_fSavedEfl) ASMChangeFlags(~X86_EFL_AC, (a_fSavedEfl) & X86_EFL_AC)
 /** @} */
 
 
