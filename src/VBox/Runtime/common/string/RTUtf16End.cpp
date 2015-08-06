@@ -42,5 +42,5 @@ RTDECL(PCRTUTF16) RTUtf16End(PCRTUTF16 pwszString, size_t cwcMax)
     }
     return NULL;
 }
-RT_EXPORT_SYMBOL(RTUtf16Cat);
+RT_EXPORT_SYMBOL(RTUtf16End);
 
