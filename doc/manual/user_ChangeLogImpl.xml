@@ -36,6 +36,11 @@
       </listitem>
 
       <listitem>
+        <para>VMM: fixed a crash while creating a guest core dumps via the VM
+          debug facility (5.0 regression)</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: fixed behavior when checking for the correct disk encryption
           password</para>
       </listitem>
