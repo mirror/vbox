@@ -61,7 +61,7 @@
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
-#if 1
+#if 0
 # ifdef DEBUG
 #  include <QTextStream>
 /** Enable this to log debug output of a Qt debug build to a file defined by DEBUG_DND_QT_LOGFILE. */
@@ -322,6 +322,17 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
         LogFlowFunc(("\tFormat %d: %s\n", i, lstFormats.at(i).toAscii().constData()));
 # endif
 
+# ifdef DEBUG_DND_QT
+    QFile *pFileDebugQt = new QFile(DEBUG_DND_QT_LOGFILE);
+    if (pFileDebugQt->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+    {
+        g_pStrmLogQt = new QTextStream(pFileDebugQt);
+
+        qInstallMsgHandler(UIDnDHandler::debugOutputQt);
+        qDebug("========================================================================");
+    }
+# endif
+
 # ifdef RT_OS_WINDOWS
 
     UIDnDDropSource *pDropSource = new UIDnDDropSource(m_pParent);
@@ -367,17 +378,6 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
         return VERR_NO_MEMORY;
     }
 
-#ifdef DEBUG_DND_QT
-    QFile *pFileDebugQt = new QFile(DEBUG_DND_QT_LOGFILE);
-    if (pFileDebugQt->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
-    {
-        g_pStrmLogQt = new QTextStream(pFileDebugQt);
-
-        qInstallMsgHandler(UIDnDHandler::debugOutputQt);
-        qDebug("========================================================================");
-    }
-#endif
-
     /* Inform the MIME data object of any changes in the current action. */
     connect(pDrag, SIGNAL(actionChanged(Qt::DropAction)),
             m_pMIMEData, SLOT(sltDropActionChanged(Qt::DropAction)));
@@ -390,19 +390,19 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     LogFlowFunc(("Executing modal drag'n drop operation ...\n"));
 
     Qt::DropAction dropAction;
-#ifdef RT_OS_DARWIN
-# ifdef VBOX_WITH_DRAG_AND_DROP_PROMISES
-    dropAction = pDrag->exec(actions, defAction, true /* fUsePromises */);
-# else
-    /* Without having VBOX_WITH_DRAG_AND_DROP_PROMISES enabled drag and drop
-     * will not work on OS X! It also requires some handcrafted patches within Qt
-     * (which also needs VBOX_WITH_DRAG_AND_DROP_PROMISES set there). */
-    dropAction = DropAction::IgnoreAction;
-    rc = VERR_NOT_SUPPORTED;
-# endif
-#else /* !RT_OS_DARWIN */
+#  ifdef RT_OS_DARWIN
+#    ifdef VBOX_WITH_DRAG_AND_DROP_PROMISES
+        dropAction = pDrag->exec(actions, defAction, true /* fUsePromises */);
+#    else
+        /* Without having VBOX_WITH_DRAG_AND_DROP_PROMISES enabled drag and drop
+         * will not work on OS X! It also requires some handcrafted patches within Qt
+         * (which also needs VBOX_WITH_DRAG_AND_DROP_PROMISES set there). */
+        dropAction = DropAction::IgnoreAction;
+        rc = VERR_NOT_SUPPORTED;
+#    endif
+#  else /* !RT_OS_DARWIN */
     dropAction = pDrag->exec(actions, defAction);
-#endif
+#  endif /* RT_OS_DARWIN */
     LogRel3(("DnD: Ended with dropAction=%ld\n", UIDnDHandler::toVBoxDnDAction(dropAction)));
 
     /* Note: The UIDnDMimeData object will not be not accessible here anymore,
@@ -413,11 +413,7 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
 
 # endif /* !RT_OS_WINDOWS */
 
-#else /* VBOX_WITH_DRAG_AND_DROP_GH */
-
-    rc = VERR_NOT_SUPPORTED;
-
-#endif
+    reset();
 
 #ifdef DEBUG_DND_QT
     if (g_pStrmLogQt)
@@ -431,9 +427,13 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
         pFileDebugQt->close();
         delete pFileDebugQt;
     }
-#endif
+#endif /* DEBUG_DND_QT */
 
-    reset();
+#else /* !VBOX_WITH_DRAG_AND_DROP_GH */
+
+    rc = VERR_NOT_SUPPORTED;
+
+#endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
     LogFlowFuncLeaveRC(rc);
     return rc;
