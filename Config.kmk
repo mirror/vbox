@@ -655,7 +655,7 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
    # On OS X (Darwin) this needs to be set in order to get proper
    # guest->host support.
    # Note: Setting this requires Qt also having this feature enabled!
-   VBOX_WITH_DRAG_AND_DROP_PROMISES = $(VBOX_WITH_DRAG_AND_DROP)
+   # Disabled until Qt 4.8.6-r3 is built: VBOX_WITH_DRAG_AND_DROP_PROMISES = $(VBOX_WITH_DRAG_AND_DROP)
   endif
  endif
 endif
