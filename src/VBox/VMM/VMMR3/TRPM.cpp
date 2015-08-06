@@ -487,7 +487,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
 
     /* write config summary to log */
     if (pVM->trpm.s.fSafeToDropGuestIDTMonitoring)
-        LogRel(("TRPM: Dropping Guest IDT Monitoring.\n"));
+        LogRel(("TRPM: Dropping Guest IDT Monitoring\n"));
 
     /*
      * Initialize the IDT.

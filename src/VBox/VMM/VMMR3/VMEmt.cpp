@@ -445,7 +445,7 @@ static int vmR3HaltMethod12ReadConfigU(PUVM pUVM)
             pUVM->vm.s.Halt.Method12.u32StartSpinningCfg = u32;
         if (RT_SUCCESS(CFGMR3QueryU32(pCfg, "StopSpinning", &u32)))
             pUVM->vm.s.Halt.Method12.u32StopSpinningCfg = u32;
-        LogRel(("HaltedMethod1 config: %d/%d/%d/%d/%d\n",
+        LogRel(("VMEmt: HaltedMethod1 config: %d/%d/%d/%d/%d\n",
                 pUVM->vm.s.Halt.Method12.u32LagBlockIntervalDivisorCfg,
                 pUVM->vm.s.Halt.Method12.u32MinBlockIntervalCfg,
                 pUVM->vm.s.Halt.Method12.u32MaxBlockIntervalCfg,
@@ -650,7 +650,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Init(PUVM pUVM)
         if (RT_SUCCESS(CFGMR3QueryU32(pCfg, "SpinBlockThreshold", &u32)))
             pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = u32;
     }
-    LogRel(("HaltedGlobal1 config: cNsSpinBlockThresholdCfg=%u\n",
+    LogRel(("VMEmt: HaltedGlobal1 config: cNsSpinBlockThresholdCfg=%u\n",
             pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg));
     return VINF_SUCCESS;
 }
@@ -1279,7 +1279,7 @@ int vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod)
             //enmHaltMethod = VMHALTMETHOD_1;
             //enmHaltMethod = VMHALTMETHOD_OLD;
     }
-    LogRel(("VM: Halt method %s (%d)\n", vmR3GetHaltMethodName(enmHaltMethod), enmHaltMethod));
+    LogRel(("VMEmt: Halt method %s (%d)\n", vmR3GetHaltMethodName(enmHaltMethod), enmHaltMethod));
 
     /*
      * Find the descriptor.

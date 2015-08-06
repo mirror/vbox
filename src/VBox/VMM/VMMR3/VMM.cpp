@@ -533,7 +533,7 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
 
     if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
     {
-        LogRel(("R0 init failed, rc=%Rra\n", rc));
+        LogRel(("VMM: R0 init failed, rc=%Rra\n", rc));
         if (RT_SUCCESS(rc))
             rc = VERR_IPE_UNEXPECTED_INFO_STATUS;
     }
@@ -770,7 +770,7 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
     }
     if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
     {
-        LogRel(("VMMR3Term: R0 term failed, rc=%Rra. (warning)\n", rc));
+        LogRel(("VMM: VMMR3Term: R0 term failed, rc=%Rra. (warning)\n", rc));
         if (RT_SUCCESS(rc))
             rc = VERR_IPE_UNEXPECTED_INFO_STATUS;
     }
