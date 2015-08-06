@@ -79,7 +79,8 @@ struc SUPGLOBALINFOPAGE
     .idCpuMax                   resd 1
     .enmUseTscDelta             resd 1
     .fGetGipCpu                 resd 1
-    .au32Padding1               resd 25
+    .fFlags                     resd 1
+    .au32Padding1               resd 24
     .aiCpuFromApicId            resw 256
     .aiCpuFromCpuSetIdx         resw 256
     .aCPUs                      resb SUPGIPCPU_size

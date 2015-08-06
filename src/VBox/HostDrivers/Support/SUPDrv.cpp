@@ -2256,6 +2256,16 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             return 0;
         }
 
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_GIP_SET_FLAGS):
+        {
+            /* validate */
+            PSUPGIPSETFLAGS pReq = (PSUPGIPSETFLAGS)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_GIP_SET_FLAGS);
+
+            pReqHdr->rc = supdrvIOCtl_GipSetFlags(pDevExt, pSession, pReq->u.In.fOrMask, pReq->u.In.fAndMask);
+            return 0;
+        }
+
         default:
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
             break;

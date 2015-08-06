@@ -388,9 +388,11 @@ typedef struct SUPGLOBALINFOPAGE
     /** Mask of SUPGIPGETCPU_XXX values that indicates different ways that aCPU
      * can be accessed from ring-3 and raw-mode context. */
     uint32_t            fGetGipCpu;
+    /** GIP flags, see SUPGIP_FLAGS_XXX. */
+    volatile uint32_t   fFlags;
 
     /** Padding / reserved space for future data. */
-    uint32_t            au32Padding1[25];
+    uint32_t            au32Padding1[24];
 
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
     uint16_t            aiCpuFromApicId[256];
@@ -423,7 +425,7 @@ typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** The GIP version.
  * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
-#define SUPGLOBALINFOPAGE_VERSION   0x00060000
+#define SUPGLOBALINFOPAGE_VERSION   0x00060001
 
 /**
  * SUPGLOBALINFOPAGE::u32Mode values.
@@ -490,6 +492,19 @@ extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
  */
 SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
 
+/** @name SUPGIP_FLAGS_XXX - SUPR3GipSetFlags flags.
+ * @{ */
+/** Enable GIP test mode. */
+#define SUPGIP_FLAGS_TESTING_ENABLE          RT_BIT_32(0)
+/** Valid mask of flags that can be set through the ioctl. */
+#define SUPGIP_FLAGS_VALID_MASK              RT_BIT_32(0)
+/** GIP test mode needs to be checked (e.g. when enabled or being disabled). */
+#define SUPGIP_FLAGS_TESTING                 RT_BIT_32(24)
+/** Prepare to start GIP test mode. */
+#define SUPGIP_FLAGS_TESTING_START           RT_BIT_32(25)
+/** Prepare to stop GIP test mode. */
+#define SUPGIP_FLAGS_TESTING_STOP            RT_BIT_32(26)
+/** @} */
 
 /** @internal  */
 SUPDECL(uint64_t) SUPGetCpuHzFromGipForAsyncMode(PSUPGLOBALINFOPAGE pGip);
@@ -1707,6 +1722,7 @@ SUPR3DECL(int) SUPR3ResumeSuspendedKeyboards(void);
  */
 SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uint8_t cRetries, uint8_t cMsWaitRetry);
 
+
 /**
  * Reads the delta-adjust TSC value.
  *
@@ -1717,6 +1733,15 @@ SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uin
  */
 SUPR3DECL(int) SUPR3ReadTsc(uint64_t *puTsc, uint16_t *pidApic);
 
+
+/**
+ * Sets the GIP flags.
+ *
+ * @returns VBox status code.
+ * @param   fOrMask         The OR mask of the GIP flags, see SUPGIP_FLAGS_XXX.
+ * @param   fAndMask        The AND mask of the GIP flags, see SUPGIP_FLAGS_XXX.
+ */
+SUPR3DECL(int) SUPR3GipSetFlags(uint32_t fOrMask, uint32_t fAndMask);
 /** @} */
 #endif /* IN_RING3 */
 

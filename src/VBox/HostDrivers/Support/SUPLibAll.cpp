@@ -287,9 +287,10 @@ SUPDECL(bool) SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz, boo
     {
         /* Arbitrary tolerance threshold, tweak later if required, perhaps
            more tolerance on lower frequencies and less tolerance on higher. */
-        uint16_t uThr = !fRelax ? 666 /* 0.15% */ : 125 /* 0.8% */;
-        uint64_t uLo  = uBaseCpuHz / uThr;
-        uint64_t uHi  = uBaseCpuHz + (uBaseCpuHz - uLo);
+        uint16_t uFact = !fRelax ? 666 /* 0.15% */ : 125 /* 0.8% */;
+        uint64_t uThr  = uBaseCpuHz / uFact;
+        uint64_t uLo   = uBaseCpuHz - uThr;
+        uint64_t uHi   = uBaseCpuHz + uThr;
         if (   uCpuHz < uLo
             || uCpuHz > uHi)
             return false;

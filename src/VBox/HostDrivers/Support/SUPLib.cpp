@@ -2247,3 +2247,28 @@ SUPR3DECL(int) SUPR3ReadTsc(uint64_t *puTsc, uint16_t *pidApic)
     return rc;
 }
 
+
+SUPR3DECL(int) SUPR3GipSetFlags(uint32_t fOrMask, uint32_t fAndMask)
+{
+    AssertMsgReturn(!(fOrMask & ~SUPGIP_FLAGS_VALID_MASK),
+                    ("fOrMask=%#x ValidMask=%#x\n", fOrMask, SUPGIP_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertMsgReturn((fAndMask & ~SUPGIP_FLAGS_VALID_MASK) == ~SUPGIP_FLAGS_VALID_MASK,
+                    ("fAndMask=%#x ValidMask=%#x\n", fAndMask, SUPGIP_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
+
+    SUPGIPSETFLAGS Req;
+    Req.Hdr.u32Cookie        = g_u32Cookie;
+    Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+    Req.Hdr.cbIn             = SUP_IOCTL_GIP_SET_FLAGS_SIZE_IN;
+    Req.Hdr.cbOut            = SUP_IOCTL_GIP_SET_FLAGS_SIZE_OUT;
+    Req.Hdr.fFlags           = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc               = VERR_INTERNAL_ERROR;
+
+    Req.u.In.fAndMask        = fAndMask;
+    Req.u.In.fOrMask         = fOrMask;
+
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_GIP_SET_FLAGS, &Req, SUP_IOCTL_GIP_SET_FLAGS_SIZE);
+    if (RT_SUCCESS(rc))
+        rc = Req.Hdr.rc;
+    return rc;
+}
+

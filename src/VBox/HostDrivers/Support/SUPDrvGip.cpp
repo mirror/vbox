@@ -124,6 +124,7 @@ AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS < GIP_T
 *******************************************************************************/
 static DECLCALLBACK(void)   supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void)   supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+static int                  supdrvGipSetFlags(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uint32_t fOrMask, uint32_t fAndMask);
 static void                 supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t u64NanoTS, uint64_t uCpuHz);
 static void                 supdrvTscResetSamples(PSUPDRVDEVEXT pDevExt, bool fClearDeltas);
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
@@ -626,6 +627,18 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 #else
     RTSemFastMutexRequest(pDevExt->mtxGip);
 #endif
+
+    /*
+     * GIP test-mode session?
+     */
+    if (   pSession->fGipTestMode
+        && pDevExt->pGip)
+    {
+        uint32_t fFlags = pDevExt->pGip->fFlags;
+        fFlags &= ~SUPGIP_FLAGS_TESTING_ENABLE;
+        supdrvGipSetFlags(pDevExt, pSession, 0, fFlags);
+        Assert(!pSession->fGipTestMode);
+    }
 
     /*
      * Unmap anything?
@@ -2091,6 +2104,8 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
     uint32_t    u32UpdateIntervalTSC;
     uint32_t    u32UpdateIntervalTSCSlack;
     unsigned    iTSCHistoryHead;
+    bool        fUpdateCpuHz;
+    uint32_t    fGipFlags;
     uint64_t    u64CpuHz;
     uint32_t    u32TransactionId;
 
@@ -2111,11 +2126,47 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
     u64TSCDelta = u64TSC - pGipCpu->u64TSC;
     ASMAtomicWriteU64(&pGipCpu->u64TSC, u64TSC);
 
+    /* Determine when we need to update the TSC frequency. */
+    fUpdateCpuHz = pGip->u32Mode != SUPGIPMODE_INVARIANT_TSC;
+
+    /*
+     * Handle GIP test mode toggle.
+     */
+    fGipFlags = pGip->fFlags;
+    if (!(fGipFlags & SUPGIP_FLAGS_TESTING))
+    { /* likely*/ }
+    else
+    {
+        if (fGipFlags & (SUPGIP_FLAGS_TESTING_ENABLE | SUPGIP_FLAGS_TESTING_START))
+        {
+            if (fGipFlags & SUPGIP_FLAGS_TESTING_START)
+            {
+                /* Cache the TSC frequency before forcing updates due to test mode. */
+                if (!fUpdateCpuHz)
+                    pDevExt->uGipTestModeInvariantCpuHz = pGip->aCPUs[0].u64CpuHz;
+                fGipFlags &= ~SUPGIP_FLAGS_TESTING_START;
+                ASMAtomicWriteU32(&pGip->fFlags, fGipFlags);
+            }
+            fUpdateCpuHz = true;
+        }
+        else if (fGipFlags & SUPGIP_FLAGS_TESTING_STOP)
+        {
+            /* Restore the cached TSC frequency if any. */
+            if (!fUpdateCpuHz)
+            {
+                Assert(pDevExt->uGipTestModeInvariantCpuHz);
+                ASMAtomicWriteU64(&pGip->aCPUs[0].u64CpuHz, pDevExt->uGipTestModeInvariantCpuHz);
+            }
+            fGipFlags &= ~(SUPGIP_FLAGS_TESTING_STOP | SUPGIP_FLAGS_TESTING);
+            ASMAtomicWriteU32(&pGip->fFlags, fGipFlags);
+        }
+    }
+
     /*
      * We don't need to keep realculating the frequency when it's invariant, so
      * the remainder of this function is only for the sync and async TSC modes.
      */
-    if (pGip->u32Mode != SUPGIPMODE_INVARIANT_TSC)
+    if (fUpdateCpuHz)
     {
         if (u64TSCDelta >> 32)
         {
@@ -2979,13 +3030,13 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
  * It must be noted that the computed minimum read time is mostly to
  * eliminate huge deltas when the worker is too early and doesn't by
  * itself help produce more accurate deltas. We allow two times the
- * computed minimum as an arbibtrary acceptable threshold. Therefore,
+ * computed minimum as an arbitrary acceptable threshold. Therefore,
  * it is still possible to get negative deltas where there are none
  * when the worker is earlier. As long as these occasional negative
  * deltas are lower than the time it takes to exit guest-context and
- * the OS to reschedule EMT on a different CPU we won't expose a TSC
- * that jumped backwards. It is because of the existence of the
- * negative deltas we don't recompute the delta with the master and
+ * the OS to reschedule EMT on a different CPU, we won't expose a TSC
+ * that jumped backwards. It is due to the existence of the negative
+ * deltas that we don't recompute the delta with the master and
  * worker interchanged to eliminate the remaining measurement error.
  *
  *
@@ -4719,5 +4770,82 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
     }
 
     return rc;
+}
+
+
+/**
+ * Worker for supdrvIOCtl_GipSetFlags.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         Pointer to the device instance data.
+ * @param   pSession        The support driver session.
+ * @param   fOrMask         The OR mask of the GIP flags, see SUPGIP_FLAGS_XXX.
+ * @param   fAndMask        The AND mask of the GIP flags, see SUPGIP_FLAGS_XXX.
+ *
+ * @remarks This function doesn't validate any of the flags.
+ */
+static int supdrvGipSetFlags(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uint32_t fOrMask, uint32_t fAndMask)
+{
+    uint32_t           cRefs;
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+
+    /*
+     * Compute GIP test-mode flags.
+     */
+    if (fOrMask & SUPGIP_FLAGS_TESTING_ENABLE)
+    {
+        pSession->fGipTestMode = true;
+        cRefs = ASMAtomicIncU32(&pDevExt->cGipTestModeRefs);
+        if (cRefs == 1)
+            fOrMask |= SUPGIP_FLAGS_TESTING | SUPGIP_FLAGS_TESTING_START;
+    }
+    else
+    {
+        cRefs = ASMAtomicDecU32(&pDevExt->cGipTestModeRefs);
+        pSession->fGipTestMode = false;
+        if (!cRefs)
+            fOrMask |= SUPGIP_FLAGS_TESTING_STOP;
+    }
+
+    /*
+     * Commit the flags.
+     */
+    uint32_t fFlags = ASMAtomicUoReadU32(&pGip->fFlags);
+    fFlags |= fOrMask;
+    fFlags &= fAndMask;
+    ASMAtomicWriteU32(&pGip->fFlags, fFlags);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets GIP test mode parameters.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         Pointer to the device instance data.
+ * @param   pSession        The support driver session.
+ * @param   fOrMask         The OR mask of the GIP flags, see SUPGIP_FLAGS_XXX.
+ * @param   fAndMask        The AND mask of the GIP flags, see SUPGIP_FLAGS_XXX.
+ */
+int VBOXCALL supdrvIOCtl_GipSetFlags(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uint32_t fOrMask, uint32_t fAndMask)
+{
+    PSUPGLOBALINFOPAGE pGip;
+
+    /*
+     * Validate.  We require the client to have mapped GIP (no asserting on
+     * ring-3 preconditions).
+     */
+    AssertPtr(pDevExt); AssertPtr(pSession); /* paranoia^2 */
+    if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
+        return VERR_WRONG_ORDER;
+    pGip = pDevExt->pGip;
+    AssertReturn(pGip, VERR_INTERNAL_ERROR_3);
+
+    if (fOrMask & ~SUPGIP_FLAGS_VALID_MASK)
+        return VERR_INVALID_PARAMETER;
+    if ((fAndMask & ~SUPGIP_FLAGS_VALID_MASK) != ~SUPGIP_FLAGS_VALID_MASK)
+        return VERR_INVALID_PARAMETER;
+
+    return supdrvGipSetFlags(pDevExt, pSession, fOrMask, fAndMask);
 }
 

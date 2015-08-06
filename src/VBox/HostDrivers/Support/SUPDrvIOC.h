@@ -1522,6 +1522,7 @@ AssertCompileMemberAlignment(SUPTSCDELTAMEASURE, u, 8);
 AssertCompileSize(SUPTSCDELTAMEASURE, 6*4 + 4+1+1+1+1);
 /** @} */
 
+
 /** @name SUP_IOCTL_TSC_READ
  * Reads the TSC and apply TSC-delta if applicable, determining the delta if
  * necessary (i64TSCDelta = INT64_MAX).
@@ -1556,6 +1557,33 @@ typedef struct SUPTSCREAD
 } SUPTSCREAD, *PSUPTSCREAD;
 AssertCompileMemberAlignment(SUPTSCREAD, u, 8);
 AssertCompileSize(SUPTSCREAD, 6*4 + 2*8);
+/** @} */
+
+
+/** @name SUP_IOCTL_GIP_SET_FLAGS
+ * Set GIP flags.
+ *
+ * @{
+ */
+#define SUP_IOCTL_GIP_SET_FLAGS                         SUP_CTL_CODE_SIZE(39, SUP_IOCTL_GIP_SET_FLAGS_SIZE)
+#define SUP_IOCTL_GIP_SET_FLAGS_SIZE                    sizeof(SUPGIPSETFLAGS)
+#define SUP_IOCTL_GIP_SET_FLAGS_SIZE_IN                 sizeof(SUPGIPSETFLAGS)
+#define SUP_IOCTL_GIP_SET_FLAGS_SIZE_OUT                sizeof(SUPREQHDR)
+typedef struct SUPGIPSETFLAGS
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The AND flags mask, see SUPGIP_FLAGS_XXX. */
+            uint32_t        fAndMask;
+            /** The OR flags mask, see SUPGIP_FLAGS_XXX. */
+            uint32_t        fOrMask;
+        } In;
+    } u;
+} SUPGIPSETFLAGS, *PSUPGIPSETFLAGS;
 /** @} */
 
 #pragma pack()                          /* paranoia */
