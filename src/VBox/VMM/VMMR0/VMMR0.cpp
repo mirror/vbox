@@ -1489,11 +1489,14 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             if (RT_UNLIKELY(!SUPIsTscDeltaAvailableForCpuSetIndex(iHostCpuSet)))
             {
                 ASMSetFlags(fFlags);
-                int rc = SUPR0TscDeltaMeasureBySetIndex(pVM->pSession, iHostCpuSet, 0 /*fFlags*/,
-                                                        2 /*cMsWaitRetry*/, 5*RT_MS_1SEC /*cMsWaitThread*/,
-                                                        0 /*default cTries*/);
+                rc = SUPR0TscDeltaMeasureBySetIndex(pVM->pSession, iHostCpuSet, 0 /*fFlags*/,
+                                                    2 /*cMsWaitRetry*/, 5*RT_MS_1SEC /*cMsWaitThread*/,
+                                                    0 /*default cTries*/);
                 if (RT_FAILURE(rc) && rc != VERR_CPU_OFFLINE)
+                {
+                    VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
                     return rc;
+                }
             }
 
             /*
