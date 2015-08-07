@@ -146,6 +146,8 @@ ifeq (1,1)
 	$(LN) -s /Applications/                                             $(VBOX_PATH_PACK_TMP)/DiskImage/Applications
  endif
 endif
+	@# hdiutil of OS X 10.10 adds a .Trashes directory and some suggest this may upset the image size calculations (-5341).
+	$(MKDIR) -m 1333  $(VBOX_PATH_PACK_TMP)/DiskImage/.Trashes
 	@# Change the owners.
 	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/DiskImage
 	@# Create the image.
