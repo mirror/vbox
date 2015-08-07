@@ -154,7 +154,7 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_UFC_CTRL_PIN_EXEC                                   0
 /** Unsupported processor-based VM-execution controls combo. */
 #define VMX_UFC_CTRL_PROC_EXEC                                  1
-/** Unsupported pin-based VM-execution controls combo. */
+/** Unsupported move debug register VM-exit combo. */
 #define VMX_UFC_CTRL_PROC_MOV_DRX_EXIT                          2
 /** Unsupported VM-entry controls combo. */
 #define VMX_UFC_CTRL_ENTRY                                      3
