@@ -23,7 +23,6 @@ CPDIR="${CP} -R"
 #
 # Install the Python bindings
 #
-
 VBOX_INSTALL_PATH=/Applications/VirtualBox.app/Contents/MacOS
 PYTHON="python python2.3 python2.5 python2.6 python2.7"
 if [ -e "${VBOX_INSTALL_PATH}/sdk/installer/vboxapisetup.py" ]; then
@@ -80,6 +79,15 @@ if [ -d "${INSTALLER_TEMP}/ExtensionPacks" ]; then
     cp -r "${INSTALLER_TEMP}/ExtensionPacks" "${VBOX_INSTALL_PATH}"
     rm -rf "${INSTALLER_TEMP}/ExtensionPacks"
 fi
+
+#
+# Workaround for 10.11 beta 6 in which the set-uid bit isn't set by the installer.
+#
+SET_UID_BINARIES="VBoxNetAdpCtl"
+SET_UID_BINARIES="${SET_UID_BINARIES} VBoxHeadless VirtualBox VirtualBoxVM VBoxNetDHCP VBoxNetNAT" # WITH_HARDENING
+for bin in ${SET_UID_BINARIES}; do
+    chmod u+s "/Applications/VirtualBox.app/Contents/MacOS/${bin}"
+done
 
 #
 # Correct the ownership of the directories in case there
