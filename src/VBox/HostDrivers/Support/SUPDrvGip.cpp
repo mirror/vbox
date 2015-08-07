@@ -2194,7 +2194,7 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
          * assumption is that the majority of the previous history values will be tolerable.
          * See @bugref{6710#c67}.
          */
-        /** @todo Could we drop the fuding there now that we initializes the history
+        /** @todo Could we drop the fudging there now that we initializes the history
          *        with nominal TSC frequency values?  */
         if (   u32TransactionId > 23 /* 7 + (8 * 2) */
             && pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
@@ -2285,8 +2285,8 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
  * Updates the GIP.
  *
  * @param   pDevExt         The device extension.
- * @param   u64NanoTS       The current nanosecond timesamp.
- * @param   u64TSC          The current TSC timesamp.
+ * @param   u64NanoTS       The current nanosecond timestamp.
+ * @param   u64TSC          The current TSC timestamp.
  * @param   idCpu           The CPU ID.
  * @param   iTick           The current timer tick.
  *
@@ -2328,7 +2328,7 @@ static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t 
     /*
      * Recalc the update frequency every 0x800th time.
      */
-    if (   pGip->u32Mode != SUPGIPMODE_INVARIANT_TSC   /* cuz we're not recalculating the frequency on invariants hosts. */
+    if (   pGip->u32Mode != SUPGIPMODE_INVARIANT_TSC   /* cuz we're not recalculating the frequency on invariant hosts. */
         && !(pGipCpu->u32TransactionId & (GIP_UPDATEHZ_RECALC_FREQ * 2 - 2)))
     {
         if (pGip->u64NanoTSLastUpdateHz)
@@ -2366,8 +2366,8 @@ static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t 
  * Updates the per cpu GIP data for the calling cpu.
  *
  * @param   pDevExt         The device extension.
- * @param   u64NanoTS       The current nanosecond timesamp.
- * @param   u64TSC          The current TSC timesamp.
+ * @param   u64NanoTS       The current nanosecond timestamp.
+ * @param   u64TSC          The current TSC timesaver.
  * @param   idCpu           The CPU ID.
  * @param   idApic          The APIC id for the CPU index.
  * @param   iTick           The current timer tick.
@@ -2450,7 +2450,7 @@ static DECLCALLBACK(void) supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *
          *
          * We could maybe on some platforms try cross calling a CPU with a
          * working delta here, but it's not worth the hassle since the
-         * likelyhood of this happening is really low.  On Windows, Linux, and
+         * likelihood of this happening is really low.  On Windows, Linux, and
          * Solaris timers fire on the CPU they were registered/started on.
          * Darwin timers doesn't necessarily (they are high priority threads).
          */
@@ -2527,7 +2527,7 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
 
 
 /**
- * TSC delta measurment algorithm \#2 result entry.
+ * TSC delta measurement algorithm \#2 result entry.
  */
 typedef struct SUPDRVTSCDELTAMETHOD2ENTRY
 {
@@ -2537,7 +2537,7 @@ typedef struct SUPDRVTSCDELTAMETHOD2ENTRY
 } SUPDRVTSCDELTAMETHOD2ENTRY;
 
 /**
- * TSC delta measurment algorithm \#2 Data.
+ * TSC delta measurement algorithm \#2 Data.
  */
 typedef struct SUPDRVTSCDELTAMETHOD2
 {
@@ -2550,14 +2550,14 @@ typedef struct SUPDRVTSCDELTAMETHOD2
     /** Result table. */
     SUPDRVTSCDELTAMETHOD2ENTRY  aResults[64];
 } SUPDRVTSCDELTAMETHOD2;
-/** Pointer to the data for TSC delta mesurment algorithm \#2 .*/
+/** Pointer to the data for TSC delta measurement algorithm \#2 .*/
 typedef SUPDRVTSCDELTAMETHOD2 *PSUPDRVTSCDELTAMETHOD2;
 
 
 /**
  * The TSC delta synchronization struct, version 2.
  *
- * The syncrhonization variable is completely isolated in its own cache line
+ * The synchronization variable is completely isolated in its own cache line
  * (provided our max cache line size estimate is correct).
  */
 typedef struct SUPTSCDELTASYNC2
@@ -2591,7 +2591,7 @@ typedef SUPTSCDELTASYNC2 *PSUPTSCDELTASYNC2;
 #define GIP_TSC_DELTA_SYNC2_STEADY           UINT32_C(0x1001)
 /** Go! */
 #define GIP_TSC_DELTA_SYNC2_GO               UINT32_C(0x1002)
-/** Used by the verfication test. */
+/** Used by the verification test. */
 #define GIP_TSC_DELTA_SYNC2_GO_GO            UINT32_C(0x1003)
 
 /** We reached the time limit. */
@@ -3010,7 +3010,7 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
 
 #ifdef GIP_TSC_DELTA_METHOD_1
 /**
- * TSC delta measurment algorithm \#1 (GIP_TSC_DELTA_METHOD_1).
+ * TSC delta measurement algorithm \#1 (GIP_TSC_DELTA_METHOD_1).
  *
  *
  * We ignore the first few runs of the loop in order to prime the
@@ -3203,7 +3203,7 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
 
 
 /**
- * The core function of the 2nd TSC delta mesurment algorithm.
+ * The core function of the 2nd TSC delta measurement algorithm.
  *
  * The idea here is that we have the two CPUs execute the exact same code
  * collecting a largish set of TSC samples.  The code has one data dependency on
@@ -3212,7 +3212,7 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
  *
  * The @a fLag parameter is used to modify the execution a tiny bit on one or
  * both of the CPUs.  When @a fLag differs between the CPUs, it is thought that
- * it will help with making the CPUs enter lock step execution occationally.
+ * it will help with making the CPUs enter lock step execution occasionally.
  *
  */
 static void supdrvTscDeltaMethod2CollectData(PSUPDRVTSCDELTAMETHOD2 pMyData, uint32_t volatile *piOtherSeqNo, bool fLag)
@@ -3245,7 +3245,7 @@ static void supdrvTscDeltaMethod2CollectData(PSUPDRVTSCDELTAMETHOD2 pMyData, uin
 
 
 /**
- * TSC delta measurment algorithm \#2 (GIP_TSC_DELTA_METHOD_2).
+ * TSC delta measurement algorithm \#2 (GIP_TSC_DELTA_METHOD_2).
  *
  * See supdrvTscDeltaMethod2CollectData for algorithm details.
  *
@@ -3709,7 +3709,7 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
     }
 
     /*
-     * End the synchroniziation dance.  We tell the other that we're done,
+     * End the synchronization dance.  We tell the other that we're done,
      * then wait for the same kind of reply.
      */
     ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_FINAL);
@@ -3790,7 +3790,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     }
 
     /*
-     * One measurement at at time, at least for now.  We might be using
+     * One measurement at a time, at least for now.  We might be using
      * broadcast IPIs so, so be nice to the rest of the system.
      */
 #ifdef SUPDRV_USE_MUTEX_FOR_GIP
@@ -3806,7 +3806,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
      * try pick a different master.  (This fudge only works with multi core systems.)
      * ASSUMES related threads have adjacent APIC IDs.  ASSUMES two threads per core.
      *
-     * We skip this on AMDs for now as their HTT is different from intel's and
+     * We skip this on AMDs for now as their HTT is different from Intel's and
      * it doesn't seem to have any favorable effect on the results.
      *
      * If the master is offline, we need a new master too, so share the code.
@@ -4454,7 +4454,7 @@ static void supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt)
  * @returns VBox status code.
  * @retval  VERR_INTERRUPTED if interrupted while waiting.
  * @retval  VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED if we were unable to get a
- *          measurment.
+ *          measurement.
  * @retval  VERR_CPU_OFFLINE if the specified CPU is offline.
  *
  * @param   pSession        The caller's session.  GIP must've been mapped.
@@ -4711,7 +4711,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
                 ASMSetFlags(fEFlags);
 
                 /*
-                 * If we're lucky we've got a delta, but no predicitions here
+                 * If we're lucky we've got a delta, but no predictions here
                  * as this I/O control is normally only used when the TSC delta
                  * is set to INT64_MAX.
                  */
