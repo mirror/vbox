@@ -172,7 +172,11 @@ void SeamlessX11::addClients(const Window hRoot)
         return;
     phChildren = phChildrenRaw;
     for (unsigned i = 0; i < cChildren; ++i)
-        addClientWindow(phChildren[i]);
+        if (!mGuestWindows.find(phChildren[i]))
+        {
+            addClientWindow(phChildren[i]);
+            mChanged = true;
+        }
     XFree(phChildrenRaw);
     LogRelFlowFunc(("returning\n"));
 }
@@ -183,10 +187,8 @@ void SeamlessX11::addClientWindow(const Window hWin)
     LogRelFlowFunc(("\n"));
     XWindowAttributes winAttrib;
     bool fAddWin = true;
-    Window hClient = XmuClientWindow(mDisplay, hWin);
+    Window hClient = 0;
 
-    if (isVirtualRoot(hClient))
-        fAddWin = false;
     if (fAddWin && !XGetWindowAttributes(mDisplay, hWin, &winAttrib))
     {
         LogRelFunc(("VBoxClient: Failed to get the window attributes for window %d\n", hWin));
@@ -194,6 +196,12 @@ void SeamlessX11::addClientWindow(const Window hWin)
     }
     if (fAddWin && (winAttrib.map_state == IsUnmapped))
         fAddWin = false;
+    if (fAddWin)
+    {
+        hClient = XmuClientWindow(mDisplay, hWin);
+        if (isVirtualRoot(hClient))
+            fAddWin = false;
+    }
     XSizeHints dummyHints;
     long dummyLong;
     if (fAddWin && (!XGetWMNormalHints(mDisplay, hClient, &dummyHints,
@@ -303,6 +311,7 @@ void SeamlessX11::nextConfigurationEvent(void)
     }
     mChanged = false;
     XNextEvent(mDisplay, &event);
+    addClients(DefaultRootWindow(mDisplay));
     switch (event.type)
     {
     case ConfigureNotify:
