@@ -670,7 +670,11 @@ static int VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFl
 
 #if defined(VBOX_STRICT) || defined(VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV)
     if (RT_UNLIKELY(!(ASMGetFlags() & X86_EFL_AC)))
-        supdrvBadContext(&g_DevExt, "SUPDrv-darwin.cpp",  __LINE__, "VBoxDrvDarwinIOCtlSMAP");
+    {
+        char szTmp[32];
+        RTStrPrintf(szTmp, sizeof(szTmp), "iCmd=%#x!", iCmd);
+        supdrvBadContext(&g_DevExt, "SUPDrv-darwin.cpp",  __LINE__, szTmp);
+    }
 #endif
     ASMSetFlags(fSavedEfl);
     return rc;
