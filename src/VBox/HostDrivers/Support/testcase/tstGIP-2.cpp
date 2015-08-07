@@ -261,8 +261,9 @@ int main(int argc, char **argv)
                 RTPrintf("tstGIP-2: Maximum CpuHz deviation: %d.%02d%% (%RI64 ticks)\n",
                          uMaxPct / 1000, (uMaxPct % 1000) / 10, iCpuHzMaxDeviation);
 
-                RTPrintf("tstGIP-2: CpuHz compatibility: %RTbool (incompatible %u of %u times w/ %RU64 Hz)\n", fCompat,
-                         cCpuHzNotCompat, cIterations * g_pSUPGlobalInfoPage->cCpus, uCpuHzRef);
+                RTPrintf("tstGIP-2: CpuHz compatibility: %RTbool (incompatible %u of %u times w/ %RU64 Hz %s GIP)\n", fCompat,
+                         cCpuHzNotCompat, cIterations * g_pSUPGlobalInfoPage->cCpus, uCpuHzRef,
+                         SUPGetGIPModeName(g_pSUPGlobalInfoPage));
 
                 if (   !fCompat
                     && g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_INVARIANT_TSC)
