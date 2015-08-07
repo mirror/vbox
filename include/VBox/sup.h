@@ -1065,7 +1065,6 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
  */
 SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession);
 
-
 /**
  * Initializes the support library, extended version.
  *
@@ -1639,7 +1638,6 @@ SUPR3DECL(int) SUPR3TracerDeregisterModule(struct VTGOBJHDR *pVtgHdr);
  */
 SUPDECL(void)  SUPTracerFireProbe(struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                   uintptr_t uArg3, uintptr_t uArg4);
-
 
 /**
  * Attempts to read the value of an MSR.
