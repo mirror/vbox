@@ -66,6 +66,7 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX phFastMtx)
     AssertCompile(sizeof(RTSEMFASTMUTEXINTERNAL) > sizeof(void *));
     AssertPtrReturn(phFastMtx, VERR_INVALID_POINTER);
     RT_ASSERT_PREEMPTIBLE();
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     PRTSEMFASTMUTEXINTERNAL pThis = (PRTSEMFASTMUTEXINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (pThis)
@@ -76,11 +77,13 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX phFastMtx)
         if (pThis->pMtx)
         {
             *phFastMtx = pThis;
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return VINF_SUCCESS;
         }
 
         RTMemFree(pThis);
     }
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return VERR_NO_MEMORY;
 }
 
@@ -93,6 +96,7 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX hFastMtx)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMFASTMUTEX_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     ASMAtomicWriteU32(&pThis->u32Magic, RTSEMFASTMUTEX_MAGIC_DEAD);
     Assert(g_pDarwinLockGroup);
@@ -100,6 +104,7 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX hFastMtx)
     pThis->pMtx = NULL;
     RTMemFree(pThis);
 
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 

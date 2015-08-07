@@ -100,6 +100,7 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
     Assert(!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK) || (fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL));
     AssertPtrReturn(phEventSem, VERR_INVALID_POINTER);
     RT_ASSERT_PREEMPTIBLE();
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (pThis)
@@ -114,12 +115,14 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
         if (pThis->pSpinlock)
         {
             *phEventSem = pThis;
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return VINF_SUCCESS;
         }
 
         pThis->u32Magic = 0;
         RTMemFree(pThis);
     }
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return VERR_NO_MEMORY;
 }
 
@@ -146,8 +149,12 @@ DECLINLINE(void) rtR0SemEventDarwinRelease(PRTSEMEVENTINTERNAL pThis)
     if (RT_UNLIKELY(ASMAtomicDecU32(&pThis->cRefs) == 0))
     {
         Assert(pThis->u32Magic != RTSEMEVENT_MAGIC);
+        IPRT_DARWIN_SAVE_EFL_AC();
+
         lck_spin_destroy(pThis->pSpinlock, g_pDarwinLockGroup);
         RTMemFree(pThis);
+
+        IPRT_DARWIN_RESTORE_EFL_AC();
     }
 }
 
@@ -159,6 +166,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     lck_spin_lock(pThis->pSpinlock);
 
@@ -176,6 +184,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
     lck_spin_unlock(pThis->pSpinlock);
     rtR0SemEventDarwinRelease(pThis);
 
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 
@@ -189,6 +198,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
                     VERR_INVALID_HANDLE);
     RT_ASSERT_PREEMPT_CPUID_VAR();
     RT_ASSERT_INTS_ON();
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     rtR0SemEventDarwinRetain(pThis);
 
@@ -217,6 +227,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
     rtR0SemEventDarwinRelease(pThis);
 
     RT_ASSERT_PREEMPT_CPUID();
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 
@@ -239,6 +250,7 @@ static int rtR0SemEventDarwinWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, ui
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
     AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     rtR0SemEventDarwinRetain(pThis);
     lck_spin_lock(pThis->pSpinlock);
@@ -307,7 +319,6 @@ static int rtR0SemEventDarwinWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, ui
                  * Do the actual waiting.
                  */
                 ASMAtomicWriteBool(&pThis->fHaveBlockedThreads, true);
-                IPRT_DARWIN_SAVE_EFL_AC();
                 wait_interrupt_t fInterruptible = fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE ? THREAD_ABORTSAFE : THREAD_UNINT;
                 wait_result_t    rcWait;
                 if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
@@ -319,7 +330,6 @@ static int rtR0SemEventDarwinWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, ui
                     rcWait = lck_spin_sleep_deadline(pThis->pSpinlock, LCK_SLEEP_DEFAULT,
                                                      (event_t)&Waiter, fInterruptible, u64AbsTime);
                 }
-                IPRT_DARWIN_RESTORE_EFL_AC();
 
                 /*
                  * Deal with the wait result.
@@ -369,6 +379,7 @@ static int rtR0SemEventDarwinWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, ui
 
     lck_spin_unlock(pThis->pSpinlock);
     rtR0SemEventDarwinRelease(pThis);
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 }
 
