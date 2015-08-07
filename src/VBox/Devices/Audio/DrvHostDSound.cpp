@@ -192,7 +192,7 @@ static int dsoundPlayRestore(LPDIRECTSOUNDBUFFER8 pDSB)
     if (SUCCEEDED(hr))
         return VINF_SUCCESS;
 
-    DSLOGREL(("DSound: restore playback buffer %Rhrc\n", hr));
+    DSLOGREL(("DSound: Restore playback buffer %Rhrc\n", hr));
     return VERR_INVALID_STATE;
 }
 
@@ -337,7 +337,7 @@ static int dsoundPlayInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSo
             hr = IDirectSound8_SetCooperativeLevel(pDSoundStrmOut->pDS, hwnd, DSSCL_PRIORITY);
             if (FAILED (hr))
             {
-                DSLOGREL(("DSound: set cooperative level for window %p %Rhrc\n", hwnd, hr));
+                DSLOGREL(("DSound: Set cooperative level for window %p %Rhrc\n", hwnd, hr));
             }
         }
         if (FAILED(hr))
@@ -366,7 +366,7 @@ static void dsoundPlayClose(PDSOUNDSTREAMOUT pDSoundStrmOut)
         HRESULT hr = IDirectSoundBuffer8_Stop(pDSoundStrmOut->pDSB);
         if (FAILED(hr))
         {
-            DSLOGREL(("DSound: playback close Stop %Rhrc\n", hr));
+            DSLOGREL(("DSound: Playback close Stop %Rhrc\n", hr));
         }
 
         IDirectSoundBuffer8_Release(pDSoundStrmOut->pDSB);
@@ -417,7 +417,7 @@ static int dsoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
                                             &bd, &pDSB, NULL);
         if (FAILED(hr))
         {
-            DSLOGREL(("DSound: playback CreateSoundBuffer %Rhrc\n", hr));
+            DSLOGREL(("DSound: Playback CreateSoundBuffer %Rhrc\n", hr));
             break;
         }
 
@@ -425,7 +425,7 @@ static int dsoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
         pDSB->Release();
         if (FAILED(hr))
         {
-            DSLOGREL(("DSound: playback QueryInterface %Rhrc\n", hr));
+            DSLOGREL(("DSound: Playback QueryInterface %Rhrc\n", hr));
             break;
         }
 
@@ -434,7 +434,7 @@ static int dsoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
         hr = IDirectSoundBuffer8_GetFormat(pDSoundStrmOut->pDSB, &wfx, sizeof(wfx), NULL);
         if (FAILED(hr))
         {
-            DSLOGREL(("DSound: playback GetFormat %Rhrc\n", hr));
+            DSLOGREL(("DSound: Playback GetFormat %Rhrc\n", hr));
             break;
         }
 
@@ -444,7 +444,7 @@ static int dsoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
         hr = IDirectSoundBuffer8_GetCaps(pDSoundStrmOut->pDSB, &bc);
         if (FAILED(hr))
         {
-            DSLOGREL(("DSound: playback GetCaps %Rhrc\n", hr));
+            DSLOGREL(("DSound: Playback GetCaps %Rhrc\n", hr));
             break;
         }
 
@@ -467,13 +467,13 @@ static int dsoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
 
         if (bc.dwBufferBytes & pDSoundStrmOut->hw.Props.uAlign)
         {
-            DSLOGREL(("DSound: playback GetCaps returned misaligned buffer size %ld, alignment %d\n",
+            DSLOGREL(("DSound: Playback GetCaps returned misaligned buffer size %ld, alignment %d\n",
                       bc.dwBufferBytes, pDSoundStrmOut->hw.Props.uAlign + 1));
         }
 
         if (bc.dwBufferBytes != pThis->cfg.cbBufferOut)
         {
-            DSLOGREL(("DSound: playback buffer size mismatch dsound %d, requested %d bytes\n",
+            DSLOGREL(("DSound: Playback buffer size mismatch dsound %d, requested %d bytes\n",
                       bc.dwBufferBytes, pThis->cfg.cbBufferOut));
         }
 
@@ -597,7 +597,7 @@ static int dsoundPlayStart(PDSOUNDSTREAMOUT pDSoundStrmOut)
                 HRESULT hr = IDirectSoundBuffer8_Play(pDSoundStrmOut->pDSB, 0, 0, DSBPLAY_LOOPING);
                 if (FAILED(hr))
                 {
-                    DSLOGREL(("DSound: playback start %Rhrc\n", hr));
+                    DSLOGREL(("DSound: Playback start %Rhrc\n", hr));
                     rc = VERR_NOT_SUPPORTED;
                 }
             }
@@ -763,7 +763,7 @@ static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn
 
         if (FAILED(hr))
         {
-            DSLOGREL(("DSound: create capture buffer %Rhrc\n", hr));
+            DSLOGREL(("DSound: Create capture buffer %Rhrc\n", hr));
             pDSoundStrmIn->pDSCB = NULL;
             break;
         }
@@ -772,7 +772,7 @@ static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn
         IDirectSoundCaptureBuffer_Release(pDSCB);
         if (FAILED(hr))
         {
-            DSLOGREL(("DSound: querying capture buffer %Rhrc\n", hr));
+            DSLOGREL(("DSound: Querying capture buffer %Rhrc\n", hr));
             break;
         }
 
@@ -790,7 +790,7 @@ static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn
         hr = IDirectSoundCaptureBuffer8_GetFormat(pDSoundStrmIn->pDSCB, &wfx, sizeof(wfx), NULL);
         if (FAILED(hr))
         {
-            DSLOGREL(("DSound: capture buffer GetFormat %Rhrc\n", hr));
+            DSLOGREL(("DSound: Capture buffer GetFormat %Rhrc\n", hr));
             break;
         }
 
@@ -800,7 +800,7 @@ static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn
         hr = IDirectSoundCaptureBuffer8_GetCaps(pDSoundStrmIn->pDSCB, &bc);
         if (FAILED (hr))
         {
-            DSLOGREL(("DSound: capture buffer GetCaps %Rhrc\n", hr));
+            DSLOGREL(("DSound: Capture buffer GetCaps %Rhrc\n", hr));
             break;
         }
 
@@ -829,7 +829,7 @@ static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn
 
         if (bc.dwBufferBytes != pThis->cfg.cbBufferIn)
         {
-            DSLOGREL(("DSound: buffer size mismatch dsound %u, requested %u bytes\n",
+            DSLOGREL(("DSound: Buffer size mismatch dsound %u, requested %u bytes\n",
                       bc.dwBufferBytes, pThis->cfg.cbBufferIn));
         }
 
@@ -888,7 +888,7 @@ static int dsoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmI
                 hr = IDirectSoundCaptureBuffer8_Start(pDSoundStrmIn->pDSCB, DSCBSTART_LOOPING);
                 if (FAILED (hr))
                 {
-                    DSLOGREL(("DSound: start %Rhrc\n", hr));
+                    DSLOGREL(("DSound: Start %Rhrc\n", hr));
                 }
             }
         }
@@ -1528,7 +1528,7 @@ static DECLCALLBACK(int) drvHostDSoundInit(PPDMIHOSTAUDIO pInterface)
     if (SUCCEEDED(hr))
         IDirectSound_Release(pDirectSound);
     else
-        DSLOGREL(("DSound: not available %Rhrc\n", hr));
+        DSLOGREL(("DSound: Not available %Rhrc\n", hr));
 
     int rc = SUCCEEDED(hr) ? VINF_SUCCESS: VERR_NOT_SUPPORTED;
 
