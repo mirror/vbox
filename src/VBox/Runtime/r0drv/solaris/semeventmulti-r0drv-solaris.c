@@ -214,7 +214,7 @@ RTDECL(int) RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
 
     rtR0SemEventMultiSolRelease(pThis);
 #ifdef DEBUG_ramshankar
-    /** See @bugref{6318} comment #11. */
+    /** See @bugref{6318#c11}. */
     return VINF_SUCCESS;
 #endif
     RT_ASSERT_PREEMPT_CPUID();
@@ -246,7 +246,7 @@ RTDECL(int) RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
     rtR0SemEventMultiSolRelease(pThis);
 
 #ifdef DEBUG_ramshankar
-    /** See @bugref{6318} comment #11. */
+    /** See @bugref{6318#c11}. */
     return VINF_SUCCESS;
 #endif
     RT_ASSERT_PREEMPT_CPUID();

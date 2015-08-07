@@ -2507,7 +2507,7 @@ iemTaskSwitch(PIEMCPU         pIemCpu,
 
     /* Update CR2 in case it's a page-fault. */
     /** @todo This should probably be done much earlier in IEM/PGM. See
-     *        @bugref{5653} comment #49. */
+     *        @bugref{5653#c49}. */
     if (fFlags & IEM_XCPT_FLAGS_CR2)
         pCtx->cr2 = uCr2;
 

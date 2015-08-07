@@ -271,7 +271,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             /*
              * For now ignore writes to the hypercall MSR (i.e. keeps it disabled).
              * This is required to boot FreeBSD 10.1 (with Hyper-V enabled ofc),
-             * see @bugref{7270} comment #116.
+             * see @bugref{7270#c116}.
              */
             return VINF_SUCCESS;
 # if 0

@@ -546,7 +546,7 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
             /** @todo r=bird: I don't believe the above. The linux code is clearly enabling
              *        preemption after doing the callout (one or two functions up the
              *        call chain). */
-            /** @todo r=ramshankar: See @bugref{5313} comment #30. */
+            /** @todo r=ramshankar: See @bugref{5313#c30}. */
             RTTHREADPREEMPTSTATE ParanoidPreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&ParanoidPreemptState);
 
@@ -647,7 +647,7 @@ VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPU pVCpu)
 {
     /*
      * Clear the VCPU <-> host CPU mapping as we've left HM context.
-     * @bugref{7726} comment #19 explains the need for this trick:
+     * @bugref{7726#c19} explains the need for this trick:
      *
      *      hmR0VmxCallRing3Callback/hmR0SvmCallRing3Callback &
      *      hmR0VmxLeaveSession/hmR0SvmLeaveSession disables context hooks during

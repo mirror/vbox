@@ -531,7 +531,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         /*
          * Use a large interval (1 hour) so that we don't get a timer-callback between
          * cyclic_add() and cyclic_bind(). Program the correct interval once cyclic_bind() is done.
-         * See @bugref{7691} comment #20.
+         * See @bugref{7691#c20}.
          */
         if (!pTimer->fSpecificCpu)
             FireTime.cyt_when = RTTimeSystemNanoTS() + u64First;
