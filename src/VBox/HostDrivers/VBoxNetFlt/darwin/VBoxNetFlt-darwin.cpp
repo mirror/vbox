@@ -1013,6 +1013,7 @@ static void vboxNetFltSendDummy(ifnet_t pIfNet)
 static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRediscovery)
 {
     LogFlow(("vboxNetFltDarwinAttachToInterface: pThis=%p (%s)\n", pThis, pThis->szName));
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     /*
      * Locate the interface first.
@@ -1030,6 +1031,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
             LogRel(("VBoxFltDrv: failed to find ifnet '%s' (err=%d)\n", pThis->szName, err));
         else
             Log(("VBoxFltDrv: failed to find ifnet '%s' (err=%d)\n", pThis->szName, err));
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return VERR_INTNET_FLT_IF_NOT_FOUND;
     }
 
@@ -1097,6 +1099,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
         LogRel(("VBoxFltDrv: attached to '%s' / %RTmac\n", pThis->szName, &pThis->u.s.MacAddr));
     else
         LogRel(("VBoxFltDrv: failed to attach to ifnet '%s' (err=%d)\n", pThis->szName, err));
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 }
 
@@ -1110,6 +1113,7 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 
 int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
     NOREF(pvIfData);
 
     int rc = VINF_SUCCESS;
@@ -1162,12 +1166,14 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
         vboxNetFltDarwinReleaseIfNet(pThis, pIfNet);
     }
 
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 }
 
 
 void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
     ifnet_t pIfNet = vboxNetFltDarwinRetainIfNet(pThis);
     if (pIfNet)
     {
@@ -1266,6 +1272,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 
         vboxNetFltDarwinReleaseIfNet(pThis, pIfNet);
     }
+    IPRT_DARWIN_RESTORE_EFL_AC();
 }
 
 
@@ -1285,13 +1292,13 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 
 void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 {
-    interface_filter_t pIfFilter;
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     /*
      * Carefully obtain the interface filter reference and detach it.
      */
     RTSpinlockAcquire(pThis->hSpinlock);
-    pIfFilter = ASMAtomicUoReadPtrT(&pThis->u.s.pIfFilter, interface_filter_t);
+    interface_filter_t pIfFilter = ASMAtomicUoReadPtrT(&pThis->u.s.pIfFilter, interface_filter_t);
     if (pIfFilter)
         ASMAtomicUoWriteNullPtr(&pThis->u.s.pIfFilter);
     RTSpinlockRelease(pThis->hSpinlock);
@@ -1304,6 +1311,8 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
         sock_close(pThis->u.s.pSysSock);
         pThis->u.s.pSysSock = NULL;
     }
+
+    IPRT_DARWIN_RESTORE_EFL_AC();
 }
 
 
@@ -1327,14 +1336,17 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
      * XXX: This should probably be global, since the only thing
      * specific to ifnet here is its IPv6 link-local address.
      */
+    IPRT_DARWIN_SAVE_EFL_AC();
     errno_t error;
 
+    /** @todo reorg code to not have numerous returns with duplicate code... */
     error = sock_socket(PF_SYSTEM, SOCK_RAW, SYSPROTO_EVENT,
                         vboxNetFltDarwinSysSockUpcall, pThis,
                         &pThis->u.s.pSysSock);
     if (error != 0)
     {
         LogRel(("sock_socket(SYSPROTO_EVENT): error %d\n", error));
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return rc;
     }
 
@@ -1344,6 +1356,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     {
         LogRel(("FIONBIO: error %d\n", error));
         sock_close(pThis->u.s.pSysSock);
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return rc;
     }
 
@@ -1351,6 +1364,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     {
         LogRel(("FIONBIO ok, but socket is blocking?!\n"));
         sock_close(pThis->u.s.pSysSock);
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return rc;
     }
 
@@ -1364,6 +1378,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     {
         LogRel(("SIOCSKEVFILT: error %d\n", error));
         sock_close(pThis->u.s.pSysSock);
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return rc;
     }
 
@@ -1374,6 +1389,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     if (error != 0)
     {
         LogRel(("ifnet_get_address_list: error %d\n", error));
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return rc;
     }
 
@@ -1430,6 +1446,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
      */
     vboxNetFltDarwinSysSockUpcall(pThis->u.s.pSysSock, pThis, MBUF_DONTWAIT);
 
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 }
 
