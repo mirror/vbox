@@ -1462,28 +1462,27 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
     ifnet_family_t if_family = ifnet_family(pIfNet);
     u_int32_t if_unit = ifnet_unit(pIfNet);
 
-    for (;;) {
+    for (;;)
+    {
         mbuf_t m;
-        size_t len = sizeof(struct kern_event_msg) - sizeof(u_int32_t)
-            + sizeof(struct kev_in6_data);
+        size_t len = sizeof(struct kern_event_msg) - sizeof(u_int32_t) + sizeof(struct kev_in6_data);
 
         error = sock_receivembuf(pSysSock, NULL, &m, 0, &len);
-        if (error == EWOULDBLOCK)
+        if (error != 0)
         {
-            Log(("vboxNetFltDarwinSysSockUpcall: EWOULDBLOCK - we are done\n"));
-            error = 0;
-            break;
-        }
-        else if (error != 0)
-        {
-            Log(("sock_receivembuf: error %d\n", error));
+            if (error == EWOULDBLOCK)
+            {
+                Log(("vboxNetFltDarwinSysSockUpcall: EWOULDBLOCK - we are done\n"));
+                error = 0;
+            }
+            else
+                Log(("sock_receivembuf: error %d\n", error));
             break;
         }
 
         if (len < sizeof(struct kern_event_msg) - sizeof(u_int32_t))
         {
-            Log(("vboxNetFltDarwinSysSockUpcall: %u bytes is too short\n",
-                 (unsigned int)len));
+            Log(("vboxNetFltDarwinSysSockUpcall: %u bytes is too short\n", (unsigned int)len));
             mbuf_freem(m);
             return;
         }
@@ -1520,19 +1519,13 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
             switch (msg->event_code)
             {
                 case KEV_INET_NEW_ADDR:
-                    Log(("KEV_INET_NEW_ADDR %.*s%d: %RTnaipv4\n",
-                         IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4.u));
-
-                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
-                        /* :fAdded */ true, kIntNetAddrType_IPv4, pAddr);
+                    Log(("KEV_INET_NEW_ADDR %.*s%d: %RTnaipv4\n", IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4.u));
+                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, true /*fAdded*/, kIntNetAddrType_IPv4, pAddr);
                     break;
 
                 case KEV_INET_ADDR_DELETED:
-                    Log(("KEV_INET_ADDR_DELETED %.*s%d: %RTnaipv4\n",
-                         IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4.u));
-
-                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
-                        /* :fAdded */ false, kIntNetAddrType_IPv4, pAddr);
+                    Log(("KEV_INET_ADDR_DELETED %.*s%d: %RTnaipv4\n", IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4.u));
+                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, false /*fAdded*/, kIntNetAddrType_IPv4, pAddr);
                     break;
 
                 default:
@@ -1567,8 +1560,6 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
                 mbuf_freem(m);
                 continue;
             }
-
-
 
             switch (msg->event_code)
             {
@@ -1607,10 +1598,7 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
             }
         }
         else
-        {
-            Log(("vboxNetFltDarwinSysSockUpcall: subclass %u ignored\n",
-                 (unsigned)msg->kev_subclass));
-        }
+            Log(("vboxNetFltDarwinSysSockUpcall: subclass %u ignored\n", (unsigned)msg->kev_subclass));
 
         mbuf_freem(m);
     }
