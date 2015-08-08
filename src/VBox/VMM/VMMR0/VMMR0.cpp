@@ -64,11 +64,18 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** SMAP check setup. */
-#define VMM_CHECK_SMAP_SETUP() uint32_t const fKernelFeatures = SUPR0GetKernelFeatures()
-/** Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it
- * will be logged and @a a_BadExpr is executed. */
-#define VMM_CHECK_SMAP_CHECK(a_BadExpr) \
+/** @def VMM_CHECK_SMAP_SETUP
+ * SMAP check setup. */
+/** @def VMM_CHECK_SMAP_CHECK
+ * Checks that the AC flag is set if SMAP is enabled. If AC is not set,
+ * it will be logged and @a a_BadExpr is executed. */
+/** @def VMM_CHECK_SMAP_CHECK2
+ * Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it will
+ * be logged, written to the VMs assertion text buffer, and @a a_BadExpr is
+ * executed. */
+#if defined(VBOX_STRICT) || 1
+# define VMM_CHECK_SMAP_SETUP() uint32_t const fKernelFeatures = SUPR0GetKernelFeatures()
+# define VMM_CHECK_SMAP_CHECK(a_BadExpr) \
     do { \
         if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
         { \
@@ -82,10 +89,7 @@
             } \
         } \
     } while (0)
-/** Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it
- * will be logged, written to the VMs assertion text buffer, and @a a_BadExpr is
- * executed. */
-#define VMM_CHECK_SMAP_CHECK2(a_pVM, a_BadExpr) \
+# define VMM_CHECK_SMAP_CHECK2(a_pVM, a_BadExpr) \
     do { \
         if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
         { \
@@ -101,6 +105,11 @@
             } \
         } \
     } while (0)
+#else
+# define VMM_CHECK_SMAP_SETUP()            uint32_t const fKernelFeatures = 0
+# define VMM_CHECK_SMAP_CHECK(a_BadExpr)            NOREF(fKernelFeatures)
+# define VMM_CHECK_SMAP_CHECK2(a_pVM, a_BadExpr)    NOREF(fKernelFeatures)
+#endif
 
 
 /*******************************************************************************
@@ -1373,6 +1382,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
         case VMMR0_DO_GVMM_SCHED_HALT:
             if (pReqHdr)
                 return VERR_INVALID_PARAMETER;
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             rc = GVMMR0SchedHalt(pVM, idCpu, u64Arg);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
@@ -1380,6 +1390,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
         case VMMR0_DO_GVMM_SCHED_WAKE_UP:
             if (pReqHdr || u64Arg)
                 return VERR_INVALID_PARAMETER;
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             rc = GVMMR0SchedWakeUp(pVM, idCpu);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
