@@ -617,9 +617,9 @@ DECLINLINE(RTCCUINTREG) ASMChangeFlags(RTCCUINTREG fAndEfl, RTCCUINTREG fOrEfl)
                          "mov   %1, (%%rsp)\n\t"
                          "popfq\n\t"
                          : "=r" (fOldEfl),
-                           "=g" (fAndEfl)
+                           "=r" (fAndEfl)
                          : "1" (fAndEfl),
-                           "g" (fOrEfl) );
+                           "r" (fOrEfl) );
 #  else
     __asm__ __volatile__("pushfl\n\t"
                          "movl  (%%esp), %0\n\t"
@@ -627,8 +627,8 @@ DECLINLINE(RTCCUINTREG) ASMChangeFlags(RTCCUINTREG fAndEfl, RTCCUINTREG fOrEfl)
                          "orl   %2, (%%esp)\n\t"
                          "popfl\n\t"
                          : "=r" (fOldEfl)
-                         : "g" (fAndEfl),
-                           "g" (fOrEfl) );
+                         : "r" (fAndEfl),
+                           "r" (fOrEfl) );
 #  endif
 # elif RT_INLINE_ASM_USES_INTRIN >= 15
     fOldEfl = __readeflags();
@@ -682,14 +682,14 @@ DECLINLINE(RTCCUINTREG) ASMAddFlags(RTCCUINTREG fOrEfl)
                          "orq   %1, (%%rsp)\n\t"
                          "popfq\n\t"
                          : "=r" (fOldEfl)
-                         : "g" (fOrEfl) );
+                         : "r" (fOrEfl) );
 #  else
     __asm__ __volatile__("pushfl\n\t"
                          "movl  (%%esp), %0\n\t"
                          "orl   %1, (%%esp)\n\t"
                          "popfl\n\t"
                          : "=r" (fOldEfl)
-                         : "g" (fOrEfl) );
+                         : "r" (fOrEfl) );
 #  endif
 # elif RT_INLINE_ASM_USES_INTRIN >= 15
     fOldEfl = __readeflags();
@@ -737,14 +737,14 @@ DECLINLINE(RTCCUINTREG) ASMClearFlags(RTCCUINTREG fAndEfl)
                          "andq  %1, (%%rsp)\n\t"
                          "popfq\n\t"
                          : "=r" (fOldEfl)
-                         : "g" (fAndEfl) );
+                         : "r" (fAndEfl) );
 #  else
     __asm__ __volatile__("pushfl\n\t"
                          "movl  (%%esp), %0\n\t"
                          "andl  %1, (%%esp)\n\t"
                          "popfl\n\t"
                          : "=r" (fOldEfl)
-                         : "g" (fAndEfl) );
+                         : "r" (fAndEfl) );
 #  endif
 # elif RT_INLINE_ASM_USES_INTRIN >= 15
     fOldEfl = __readeflags();
