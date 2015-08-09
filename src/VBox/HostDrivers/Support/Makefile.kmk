@@ -704,11 +704,10 @@ if1of ($(KBUILD_TARGET), linux freebsd)
 		$$(if $$(eq $$(Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
- ifndef VBOX_WITH_HARDENING
-	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
- else
-	$(QUIET)$(CP) -f $< $@
- endif
+	$(QUIET)$(SED) -e "" \
+		$(if-expr !defined(VBOX_WITH_HARDENING)   ,-e "s;-DVBOX_WITH_HARDENING;;g",) \
+		$(if-expr ($(VBOX_VERSION_BUILD) % 2) == 0,-e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g",) \
+		--output $@ $<
 	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/vboxdrv-mod-1.dep' \
 		'Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 endif # linux freebsd

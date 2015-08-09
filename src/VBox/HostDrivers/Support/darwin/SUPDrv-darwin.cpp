@@ -644,23 +644,24 @@ static int VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFl
      * Allow VBox R0 code to touch R3 memory. Setting the AC bit disables the
      * SMAP check.
      */
-#ifdef VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV
     RTCCUINTREG fSavedEfl = ASMAddFlags(X86_EFL_AC);
-#else
-    RTCCUINTREG fSavedEfl = ASMGetFlags();
-    ASMSetAC();
-#endif
 
     int rc = VBoxDrvDarwinIOCtl(Dev, iCmd, pData, fFlags, pProcess);
 
 #if defined(VBOX_STRICT) || defined(VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV)
-    if (RT_UNLIKELY(!(ASMGetFlags() & X86_EFL_AC)))
+    /*
+     * Before we restore AC and the rest of EFLAGS, check if the IOCtl handler code
+     * accidentially modified it or some other important flag.
+     */
+    if (RT_UNLIKELY(   (ASMGetFlags() & (X86_EFL_AC | X86_EFL_IF | X86_EFL_DF | X86_EFL_IOPL))
+                    != ((fSavedEfl    & (X86_EFL_AC | X86_EFL_IF | X86_EFL_DF | X86_EFL_IOPL)) | X86_EFL_AC) ))
     {
-        char szTmp[32];
-        RTStrPrintf(szTmp, sizeof(szTmp), "iCmd=%#x!", iCmd);
+        char szTmp[48];
+        RTStrPrintf(szTmp, sizeof(szTmp), "iCmd=%#x: %#x->%#x!", iCmd, (uint32_t)fSavedEfl, (uint32_t)ASMGetFlags());
         supdrvBadContext(&g_DevExt, "SUPDrv-darwin.cpp",  __LINE__, szTmp);
     }
 #endif
+
     ASMSetFlags(fSavedEfl);
     return rc;
 }
