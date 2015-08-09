@@ -89,11 +89,18 @@
 # error "CONFIG_X86_HIGH_ENTRY is not supported by VBoxDrv at this time."
 #endif
 
-/* to include the version number of VirtualBox into kernel backtraces */
+/* We cannot include x86.h, so we copy the defines we need here: */
+#define X86_EFL_IF          RT_BIT(9)
+#define X86_EFL_AC          RT_BIT(18)
+#define X86_EFL_DF          RT_BIT(10)
+#define X86_EFL_IOPL        (RT_BIT(12) | RT_BIT(13))
+
+/* To include the version number of VirtualBox into kernel backtraces: */
 #define VBoxDrvLinuxVersion RT_CONCAT3(RT_CONCAT(VBOX_VERSION_MAJOR, _), \
                                        RT_CONCAT(VBOX_VERSION_MINOR, _), \
                                        VBOX_VERSION_BUILD)
 #define VBoxDrvLinuxIOCtl RT_CONCAT(VBoxDrvLinuxIOCtl_,VBoxDrvLinuxVersion)
+
 
 
 /*******************************************************************************
@@ -661,7 +668,7 @@ static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned 
     if (RT_UNLIKELY(g_DevExt.cBadContextCalls > 0))
     {
         SUPR0Printf("VBoxDrvDarwinIOCtl: EFLAGS.AC=0 detected %u times, refusing all I/O controls!\n", g_DevExt.cBadContextCalls);
-        return EDEVERR;
+        return ESPIPE;
     }
 
     fSavedEfl = ASMAddFlags(X86_EFL_AC);
