@@ -125,6 +125,12 @@
         <para>Solaris Additions: added support for X.Org Server 1.17</para>
       </listitem>
 
+      <listitem>
+        <para>Storage: improved raw disk access on OS X and Windows by unmounting
+          any accessed volume before first use and prevent any mount attempt
+          by the host (bug #14219)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
