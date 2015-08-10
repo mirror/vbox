@@ -1387,9 +1387,10 @@ static void supdrvDarwinResumeBuiltinKbd(void)
  */
 int VBOXCALL    supdrvDarwinResumeSuspendedKbds(void)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
     supdrvDarwinResumeBuiltinKbd();
     supdrvDarwinResumeBluetoothKbd();
-
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return 0;
 }
 
