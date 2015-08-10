@@ -243,8 +243,6 @@ public:
     /* Methods to handle X11 events.  These are public so that the unit test
      * can call them. */
     void doConfigureEvent(Window hWin);
-    void doMapEvent(Window hWin);
-    void doUnmapEvent(Window hWin);
     void doShapeEvent(Window hWin);
 
     SeamlessX11(void)

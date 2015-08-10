@@ -128,7 +128,7 @@ void SeamlessX11::stop(void)
 void SeamlessX11::monitorClientList(void)
 {
     LogRelFlowFunc(("called\n"));
-    XSelectInput(mDisplay, DefaultRootWindow(mDisplay), SubstructureNotifyMask);
+    XSelectInput(mDisplay, DefaultRootWindow(mDisplay), PropertyChangeMask | SubstructureNotifyMask);
 }
 
 void SeamlessX11::unmonitorClientList(void)
@@ -196,6 +196,8 @@ void SeamlessX11::addClientWindow(const Window hWin)
         fAddWin = false;
     XSizeHints dummyHints;
     long dummyLong;
+    /* Apparently (?) some old kwin versions had unwanted client windows
+     * without normal hints. */
     if (fAddWin && (!XGetWMNormalHints(mDisplay, hClient, &dummyHints,
                                        &dummyLong)))
     {
@@ -267,7 +269,6 @@ DECLCALLBACK(int) VBoxGuestWinFree(VBoxGuestWinInfo *pInfo, void *pvParam)
 {
     Display *pDisplay = (Display *)pvParam;
 
-    XShapeSelectInput(pDisplay, pInfo->Core.Key, 0);
     delete pInfo;
     return VINF_SUCCESS;
 }
@@ -319,7 +320,14 @@ void SeamlessX11::nextConfigurationEvent(void)
         LogRelFlowFunc(("map event, window=%lu, send_event=%RTbool\n",
                        (unsigned long) event.xmap.window,
                        event.xmap.send_event));
-        doMapEvent(event.xmap.window);
+        rebuildWindowTree();
+        break;
+    case PropertyNotify:
+        if (   event.xproperty.atom != XInternAtom(mDisplay, "_NET_CLIENT_LIST", True /* only_if_exists */)
+            || event.xproperty.window != DefaultRootWindow(mDisplay))
+            break;
+        LogRelFlowFunc(("_NET_CLIENT_LIST property event on root window.\n"));
+        rebuildWindowTree();
         break;
     case VBoxShapeNotify:  /* This is defined wrong in my X11 header files! */
         LogRelFlowFunc(("shape event, window=%lu, send_event=%RTbool\n",
@@ -332,7 +340,7 @@ void SeamlessX11::nextConfigurationEvent(void)
         LogRelFlowFunc(("unmap event, window=%lu, send_event=%RTbool\n",
                        (unsigned long) event.xunmap.window,
                        event.xunmap.send_event));
-        doUnmapEvent(event.xunmap.window);
+        rebuildWindowTree();
         break;
     default:
         break;
@@ -358,41 +366,9 @@ void SeamlessX11::doConfigureEvent(Window hWin)
         pInfo->mY = winAttrib.y;
         pInfo->mWidth = winAttrib.width;
         pInfo->mHeight = winAttrib.height;
-        if (pInfo->mhasShape)
-        {
-            XRectangle *pRects;
-            int cRects = 0, iOrdering;
-
-            pRects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding,
-                                         &cRects, &iOrdering);
-            if (!pRects)
-                cRects = 0;
-            if (pInfo->mpRects)
-                XFree(pInfo->mpRects);
-            pInfo->mcRects = cRects;
-            pInfo->mpRects = pRects;
-        }
         mChanged = true;
     }
 }
-
-/**
- * Handle a map event in the seamless event thread.
- *
- * @param event the X11 event structure
- */
-void SeamlessX11::doMapEvent(Window hWin)
-{
-    LogRelFlowFunc(("\n"));
-    VBoxGuestWinInfo *pInfo = mGuestWindows.find(hWin);
-    if (!pInfo)
-    {
-        addClientWindow(hWin);
-        mChanged = true;
-    }
-    LogRelFlowFunc(("returning\n"));
-}
-
 
 /**
  * Handle a window shape change event in the seamless event thread.
@@ -417,23 +393,6 @@ void SeamlessX11::doShapeEvent(Window hWin)
             XFree(pInfo->mpRects);
         pInfo->mcRects = cRects;
         pInfo->mpRects = pRects;
-        mChanged = true;
-    }
-    LogRelFlowFunc(("returning\n"));
-}
-
-/**
- * Handle an unmap event in the seamless event thread.
- *
- * @param event the X11 event structure
- */
-void SeamlessX11::doUnmapEvent(Window hWin)
-{
-    LogRelFlowFunc(("\n"));
-    VBoxGuestWinInfo *pInfo = mGuestWindows.removeWindow(hWin);
-    if (pInfo)
-    {
-        VBoxGuestWinFree(pInfo, mDisplay);
         mChanged = true;
     }
     LogRelFlowFunc(("returning\n"));
