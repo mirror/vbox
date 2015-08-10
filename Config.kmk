@@ -225,9 +225,9 @@ VBOX_VERSION_STRING = $(VBOX_VERSION_STRING_RAW)$(VBOX_BUILD_PUBLISHER)
 VBOX_VERSION_PRERELEASE =
 
 # Force the additions.sh script to get an exact additions build when we're doing the release.
-ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
+#ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
   VBOX_RELEASE_EXACT_MATCH=1
-endif
+#endif
 ifneq ($(VBOX_RELEASE_EXACT_MATCH),)
  export VBOX_ADDITIONS_SH_MODE     = release
  export VBOX_DOCUMENTATION_SH_MODE = release
@@ -662,7 +662,7 @@ endif
 # Enables use of merge modules in the windows installer. This will increase
 # the overall installer size significantly because merge modules are not able
 # to use a common .cab file to reduce their size.
-#VBOX_WITH_MSM_INSTALL = 1
+VBOX_WITH_MSM_INSTALL = 1
 ## @}
 
 
