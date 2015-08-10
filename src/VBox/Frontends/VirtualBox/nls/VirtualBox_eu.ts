@@ -69,7 +69,7 @@
     <message>
         <location line="+473"/>
         <source>VirtualBox - Runtime Error</source>
-        <translation>VirtualBox - Runtime Akatsa</translation>
+        <translation>VirtualBox - Jarduera Akatsa</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -79,7 +79,7 @@
     <message>
         <location line="+23"/>
         <source>Unknown error %2 during initialization of the Runtime</source>
-        <translation>%2 akats ezezaguna Runtime abiarazpenean</translation>
+        <translation>%2 akats ezezaguna Jarduera abiarazpenean</translation>
     </message>
     <message>
         <location line="-10"/>
@@ -104,7 +104,7 @@
     <message>
         <location line="+5"/>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Linux kernel gidatzailea (vboxdrv) ez dago gertatuta edo baimen arazo bat dago /dev/vboxdrv-rekin. Mesedez ber-ezarri kernel moduloa &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;exekutatuz erro bezala. Zure banaketan eskuragarri badago, lehenik DKMS paketea ezarri behar duzu. Pakete honek Linux kernelaren aldaketak aztarnatzen ditu eta vboxdrv kernel moduloa berbiltzen du beharrezkoa bada.</translation>
     </message>
 </context>
 <context>
@@ -1232,12 +1232,12 @@
     <message>
         <location line="+29"/>
         <source>&amp;Normal Start</source>
-        <translation>&amp;Abiarazte Arrunta</translation>
+        <translation>Abiarazte &amp;Arrunta</translation>
     </message>
     <message>
         <location line="+23"/>
         <source>&amp;Headless Start</source>
-        <translation>&amp;Burugabeko Abiatzea</translation>
+        <translation>Abiarazte &amp;Burugabea</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1247,7 +1247,7 @@
     <message>
         <location line="+22"/>
         <source>&amp;Detachable Start</source>
-        <translation>&amp;Abiatze Deseransgarria</translation>
+        <translation>Abiarazte &amp;Deseransgarria</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2650,7 +2650,7 @@
     <message>
         <location line="+23"/>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation>Hautatutakoa, makinaren leihoak jaso egingo dira saguaren punta gainean mugitzerakoan.</translation>
+        <translation>Hautatutakoan, makinaren leihoak jaso egingo dira saguaren punta gainean mugitzerakoan.</translation>
     </message>
     <message>
         <source>Specifies the maximum width which we would like the guest to use.</source>
@@ -2803,7 +2803,7 @@
     <message>
         <location line="+19"/>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Makina birtualaren berezko agiritegi helburua erakusten du. Agiritegi hau erabiltzen da, ez bada besterik adierazten, makina birtual berriak sortzerakoan.</translation>
+        <translation>Makina birtualaren berezko agiritegi helburua zehazten du. Agiritegi hau erabiltzen da, ez bada besterik adierazten, makina birtual berriak sortzerakoan.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -2930,7 +2930,7 @@
         <location line="+1"/>
         <location line="+1"/>
         <source>Holds a sequence to filter the shortcut list.</source>
-        <translation>Lastertekla zerrenda iragazteko sekuentzia bat du.</translation>
+        <translation>Lastertekla zerrenda iragazteko sekuentzia bat zehazten du.</translation>
     </message>
     <message>
         <source>Lists all the available shortcuts which can be configured.</source>
@@ -3534,7 +3534,7 @@
     <message>
         <location line="+19"/>
         <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation>Hostalariaren IPv6 sare mozorro aurrizki luzera zehazten du egokitzaile honentzat IPv6 sostengatzen bada.</translation>
+        <translation>Hostalariaren IPv6 sare mozorro aurrizki luzera erakusten du egokitzaile honentzat IPv6 sostengatzen bada.</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -3559,7 +3559,7 @@
     <message>
         <location line="+19"/>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hostalaria-bakarrik egokitzailearekin elkartutako sarea zerbitzatzen duen DHCP zerbitzariaren helbidea erakusten du.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -3569,7 +3569,7 @@
     <message>
         <location line="+19"/>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hostalaria-bakarrik egokitzailearekin elkartutako sarea zerbitzatzen duen DHCP zerbitzariak eskaintzen duen sare mozorroa erakusten du.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -3579,7 +3579,7 @@
     <message>
         <location line="+19"/>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hostalaria-bakarrik egokitzailearekin elkartutako sarea zerbitzatzen duen DHCP zerbitzariak eskaintzen duen beheren helbide muga erakusten du.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -3589,7 +3589,7 @@
     <message>
         <location line="+19"/>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hostalaria-bakarrik egokitzailearekin elkartutako sarea zerbitzatzen duen DHCP zerbitzariak eskaintzen duen goren helbide muga erakusten du.</translation>
     </message>
 </context>
 <context>
@@ -3725,7 +3725,7 @@
     <message>
         <location line="+13"/>
         <source>Holds the proxy host.</source>
-        <translation>Proxy hostalaria mantentzen du.</translation>
+        <translation>Proxy hostalaria zehazten du.</translation>
     </message>
     <message>
         <location line="+20"/>
@@ -4513,7 +4513,7 @@
     <message>
         <location line="+9"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Hautatutakoan, MB Hurruneko Mahaigain Protokolo (RDP) zerbitzari bat bezala jokatuko du, hurruneko bezeroei MB-ra (ekinean dagoenean) elkartzea eta eragiketak egitea ahalbidetuz RDP bezero estandarra erabiliz.</translation>
+        <translation>Hautatutakoan, MB-k Hurruneko Mahaigain Protokolo (RDP) zerbitzari bat bezala jokatuko du, hurruneko bezeroei MB-ra (ekinean dagoenean) elkartzea eta eragiketak egitea ahalbidetuz RDP bezero estandarra erabiliz.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -4528,7 +4528,7 @@
     <message>
         <location line="+13"/>
         <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDP Zerbitzariaren ataka zenbakia zehazten du. &lt;tt&gt;0&lt;/tt&gt; (huts) adierazi dezakezu, 3389 ataka hautatzeko, RDP-rako ataka estandarra.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -4543,7 +4543,7 @@
     <message>
         <location line="+20"/>
         <source>Holds the timeout for guest authentication, in milliseconds.</source>
-        <translation>Gonbidatu egiaztapenerako epemuga adierazten du, segundumilaenetan.</translation>
+        <translation>Gonbidatu egiaztapenerako epemuga zehazten du, segundumilaenetan.</translation>
     </message>
     <message>
         <location line="+23"/>
@@ -4553,7 +4553,7 @@
     <message>
         <location line="+87"/>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox-ek grabatutako edukia gordetzeko erabiltzen duen agirizena zehazten du.</translation>
     </message>
     <message>
         <location line="+26"/>
@@ -4752,7 +4752,7 @@
     <message>
         <location line="+19"/>
         <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Hautatzen du zein gakoko zein datu kopiatuko diren gonbidatuaren eta hostalari SE-ren artean. Ezaugarri honek gonbidatu SE-n Gonbidatu Gehigarriak ezarrita behar ditu.</translation>
+        <translation>Gonbidatuaren eta hostalari SE-ren artean gakoko zein datu kopiatuko diren hautatzen du. Ezaugarri honek gonbidatu SE-n Gonbidatu Gehigarriak ezarrita behar ditu.</translation>
     </message>
     <message>
         <location line="+20"/>
@@ -4797,7 +4797,7 @@
     <message>
         <location line="+13"/>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation>Makina birtualari esleitutako sarhitza baieztatzen du.</translation>
+        <translation>Makina birtualari esleitutako sarhitza zehazten du.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -4849,7 +4849,7 @@
     <message>
         <location line="+127"/>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation>Makina birtualaren azalpen erakusen du. Azalpen eremu hau erabilgarria da ezarritako gonbidatu SE-ren itxurapen xehetasunen aipamenak egiteko.</translation>
+        <translation>Makina birtualaren azalpen zehazten du. Azalpen eremu hau erabilgarria da ezarritako gonbidatu SE-ren itxurapen xehetasunen aipamenak egiteko.</translation>
     </message>
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
@@ -4901,7 +4901,7 @@
     <message>
         <location line="+43"/>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makina birtual honen berehalakoak biltegiratuko diren helburua zehazten du. Kontuz ibili berehalakoak biltegi toki asko hartu dezakeelako.</translation>
     </message>
     <message>
         <location line="+18"/>
@@ -5071,7 +5071,7 @@
     <message>
         <location line="+10"/>
         <source>Holds the configuration settings for the network attachment driver. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sare eranspen gidagailuaren itxurapen ezarpenak zehazten ditu. Ezarpenak &lt;b&gt;izena=balioa&lt;/b&gt; forman izan behar dira eta gidagailuaren mendekoak izango dira. Erabili&lt;b&gt;aldatu-sartu&lt;/b&gt; sarrera berri bat gehitzeko.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -5139,7 +5139,7 @@
     <message>
         <location line="+169"/>
         <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sare txartel hau elkartuko den barneko sarearen izena zehazten du. Barneko sare berri bat sortu dezakezu makina birtual honetan edo beste batean beste sare txartelek erabiltzen ez duten izen bat hautatuz.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -5154,7 +5154,7 @@
     <message>
         <location line="+6"/>
         <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sare txartel hau elkartzen den NAT sarearen izena zehazten du. Sareak sortu eta kendu ditzakezu sare ezarpen orokorrak erabiliz makina birtual kudeatzailearen leihoan.</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="-53"/>
@@ -5217,7 +5217,7 @@
     <message>
         <location line="+13"/>
         <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Ataka paralelo zenbakia erakusten du. Ataka paraleko estandar bat hautatu dezakezu edo hautatu &lt;b&gt;Erabiltzaileak-zehaztuta&lt;/b&gt; eta adierazi ataka parametroak eskuz.</translation>
+        <translation>Ataka paralelo zenbakia zehazten du. Ataka paraleko estandar bat hautatu dezakezu edo hautatu &lt;b&gt;Erabiltzaileak-zehaztuta&lt;/b&gt; eta adierazi ataka parametroak eskuz.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -5227,7 +5227,7 @@
     <message>
         <location line="+16"/>
         <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ataka paralelo honen IRQ zenbakia zehazten du. Hau &lt;tt&gt;0&lt;/tt&gt; eta &lt;tt&gt;255&lt;/tt&gt; arteko zenbaki oso bat izan behar da. &lt;tt&gt;15&lt;/tt&gt; baino balio handiagoak makina birtual honentzat &lt;b&gt;I/O APIC&lt;/b&gt; ezarpena gaituta badago bakarrik erabili daitezke.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -5237,7 +5237,7 @@
     <message>
         <location line="+16"/>
         <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ataka paralelo honen ohinarri S/I ataka helbideak zehazten ditu. Baliozko balioak  &lt;tt&gt;0&lt;/tt&gt; eta &lt;tt&gt;0xFFFF&lt;/tt&gt; arteko zenbaki osoak dira.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -5247,7 +5247,7 @@
     <message>
         <location line="+13"/>
         <source>Holds the host parallel device name.</source>
-        <translation>Hostalari paraleloaren gailu izena erakusten du.</translation>
+        <translation>Hostalari paraleloaren gailu izena zehazten du.</translation>
     </message>
     <message>
         <source>Displays the host parallel device name.</source>
@@ -5343,7 +5343,7 @@
     <message>
         <location line="+3"/>
         <source> Transient Folders</source>
-        <translation> Aldaketa giritegiak</translation>
+        <translation> Aldaketa agiritegiak</translation>
     </message>
     <message>
         <location line="-273"/>
@@ -5403,7 +5403,7 @@
     <message>
         <location line="+5"/>
         <source>Auto-mount</source>
-        <translation>Berez-osatu</translation>
+        <translation>Berez-muntatu</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -5490,7 +5490,7 @@
     <message>
         <location line="-13"/>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
-        <translation>Hautatzen bada, gonbidatu SE-a berezgaitasunez saiatuko da agiritegi elkarbanatua osatzen hasterakoan.</translation>
+        <translation>Hautatzen bada, gonbidatu SE-a berezgaitasunez saiatuko da agiritegi elkarbanatua muntatzen hasterakoan.</translation>
     </message>
     <message>
         <source>Window</source>
@@ -5499,12 +5499,12 @@
     <message>
         <location line="-17"/>
         <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished"></translation>
+        <translation>Elkarbanatutako agiritegiaren izena zehazten du (gonbidatu SE-k ikusiko duen bezala).</translation>
     </message>
     <message>
         <location line="+20"/>
         <source>&amp;Auto-mount</source>
-        <translation>&amp;Berez-Osatu</translation>
+        <translation>&amp;Berez-muntatu</translation>
     </message>
     <message>
         <source>If checked, this shared folder will be permanent.</source>
@@ -5576,7 +5576,7 @@
     <message>
         <location line="+10"/>
         <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Serie ataka honen IRQ zenbakia zehazten du. Hau &lt;tt&gt;0&lt;/tt&gt; eta &lt;tt&gt;255&lt;/tt&gt; arteko zenbaki oso bat izan behar da. &lt;tt&gt;15&lt;/tt&gt; baino balio handiagoak makina birtual honentzat &lt;b&gt;I/O APIC&lt;/b&gt; ezarpena gaituta badago bakarrik erabili daitezke.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -5586,7 +5586,7 @@
     <message>
         <location line="+10"/>
         <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Serieko ataka honen ohinarri S/I ataka helbidea zehazten du. Baliozko balioak &lt;tt&gt;0&lt;/tt&gt; eta &lt;tt&gt;0xFFFF&lt;/tt&gt; arteko zenbaki osoak dira.</translation>
     </message>
     <message>
         <location line="+26"/>
@@ -5601,7 +5601,7 @@
     <message>
         <location line="+20"/>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation>Hautatutakoa, makina birtualak &lt;b&gt;Helburua/Helbidea&lt;/b&gt; eremuan adierazitako hodia edo socketa badagoela eta hura erabiltzen saiatuko da. Bestela, hodia edo socketa makina birtualak berak sortuko du abiatzen denean.</translation>
+        <translation>Hautatutakoan, makina birtualak &lt;b&gt;Helburua/Helbidea&lt;/b&gt; eremuan adierazitako hodia edo socketa badagoela eta hura erabiltzen saiatuko da. Bestela, hodia edo socketa makina birtualak berak sortuko du abiatzen denean.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -5616,7 +5616,7 @@
     <message>
         <location line="+13"/>
         <source>&lt;p&gt;In &lt;b&gt;Host Pipe&lt;/b&gt; mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Host Device&lt;/b&gt; mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Raw File&lt;/b&gt; mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;TCP&lt;/b&gt; mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Hostalari Hodia&lt;/b&gt; moduan: Hostalariko serie ataka hodiaren helburua zehazten du. Adibideak: &quot;\\.\pipe\myvbox&quot; edo &quot;/tmp/myvbox&quot;, Windows eta UNIX-erako sistementzat bataz-beste.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Hostalari Gailua &lt;/b&gt; moduan: Hostalariaren serie gailuaren izena zehazten du. Adibideak: &quot;COM1&quot; edo &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Raw Agiria&lt;/b&gt; moduan: Hostalari sistemako agiri-helburua zehazten du, non serie irteera irauli daitekeen.&lt;/p&gt;&lt;p&gt;&lt;b&gt;TCP&lt;/b&gt; moduan: TCP &quot;ataka&quot; zehazten du zerbitzari moduan, edo &quot;hostname:port&quot; bezero moduan.</translation>
     </message>
     <message>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
@@ -5877,7 +5877,7 @@
     <message>
         <location line="+112"/>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation>Biltegiratze Zuhaitzean hautaturiko biltegiratze kontrolatzailearen izena erakusten du.</translation>
+        <translation>Biltegiratze Zuhaitzean hautaturiko biltegiratze kontrolatzailearen izena zehazten du.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -6473,7 +6473,7 @@
     <message>
         <location line="+17"/>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation>Hautatutakoan, RTC gailuak orduan UTC moduan jakinaraziko du, bestela tokiko (hostalaria) orduan. Unix-ek arrunt ordularia UTC-an ezarrita egotea itxaroten du.</translation>
+        <translation>Hautatutakoan, RTC gailuak ordua UTC moduan jakinaraziko du, bestela tokiko (hostalaria) orduan. Unix-ek arrunt ordularia UTC-an ezarrita egotea itxaroten du.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6767,7 +6767,7 @@
     <message>
         <location line="+13"/>
         <source>Holds the filter name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Iragazki izena zehazten du.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -6812,7 +6812,7 @@
     <message>
         <location line="+26"/>
         <source>Holds whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Iragazki hau hostalari ordenagailuari tokian erantsitako USB gailuei ezartzen zaien zehazten du (&lt;i&gt;Ez&lt;/i&gt;), VRDP bezereroaren ordenagailuari (&lt;i&gt;Bai&lt;/i&gt;), edo biei (&lt;i&gt;Edozein&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
@@ -7045,12 +7045,12 @@
     <message>
         <location line="+146"/>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Berehalakoa ezabatzeak bertan gordetako egoera argibideak galtzea eragingo du, eta VirtualBox-ek berehalakoarekin batera sortu dituen irudi agiri ugarietan dauden biltegiratze datu barreiatuak agiri batean batuko dira. Hau prozesu luzea izan daiteke, eta berehalakoan dauden argibideak ezingo dira berreskuratu. &lt;/p&gt;&lt;/p&gt;Zihur zaude hautaturiko &lt;b&gt;%1&lt;/b&gt; berehalakoa ezabatzea nahi duzula?&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+15"/>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;%1 berehalako ezabatzeak biltegiratze toki gehiago beharko du aldibaterako. Kasu okerrenean %2 irudiaren neurria %3 haziko da, horrela ere agiri-sistema honek %4 besterik ez ditu aske.&lt;/p&gt;&lt;p&gt;Batze eragiketan zehar biltegiratze tokirik gabe gelditzeak irudiaren eta MB-ren itxurapena hondatzea eragin dezake, adib. MB eta bere datuak galtzea.&lt;/p&gt;&lt;p&gt;Berehalakoaren ezabatzearekin jarraitu dezakezu zeure arriskupean.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+62"/>
@@ -7427,7 +7427,7 @@
     <message>
         <location line="+61"/>
         <source>&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ezabatzea nahi duzu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; diska gogor birtualaren biltegiratze unitatea?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Ezabatu&lt;/b&gt; hautatzen baduzu adierazitako biltegiratze unitatea betirako ezabatuko da. Eragiketa hau &lt;b&gt;ezin da desegin&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Heutsi&lt;/b&gt; hautatzen baduzu diska gogorra diska gogor ezagunen zerrendatik besterik ez da kenduko, baina biltegiratze unitateak ikutugabe jarraituko du diska gogor hau geroago berriro zerrendara gehitu ahal izateko.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+45"/>
@@ -7463,7 +7463,7 @@
     <message>
         <location line="-284"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Akats larri bat gertatu da makina birtualaren jardunean eta makinaren exekuzioa gelditu egin da.&lt;/p&gt;&lt;p&gt;Laguntza lortzeko, mesedez ikusi Herkidegoa atala &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; edo zure sostengu itunean. Mesedez hornitu &lt;tt&gt;VBox.log&lt;/tt&gt; ohar agiriaren edukiak, hau makina birtualaren ohar zuzenbidean aurkitu dezakezu, eta baita azalpen bat akatsa gertatu denean egiten ari zinenaz. Ohartu gaineko agirietara &lt;b&gt;Erakutsi Oharra&lt;/b&gt; bidez sartu zaitezkeela VirtualBox leiho nagusiaren &lt;b&gt;Makina&lt;/b&gt; menutik.&lt;/p&gt;&lt;p&gt;Sakatu &lt;b&gt;Ongi&lt;/b&gt; makina itzaltzeko.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+106"/>
@@ -7848,7 +7848,7 @@
     <message>
         <location line="+218"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Akats larri bat gertatu da makina birtualaren jardunean eta makinaren exekuzioa gelditu egin da.&lt;/p&gt;&lt;p&gt;Laguntza lortzeko, mesedez ikusi Herkidegoa atala &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; edo zure sostengu itunean. Mesedez hornitu &lt;tt&gt;VBox.log&lt;/tt&gt; ohar agiriaren edukiak eta &lt;tt&gt;VBox.png&lt;/tt&gt; irudi agiria, hauek &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zuzenbidean aurkitu ditzakezu, eta baita azalpen bat akatsa gertatu denean egiten ari zinenaz. Ohartu gaineko agirietara &lt;b&gt;Erakutsi Oharra&lt;/b&gt; bidez sartu zaitezkeela VirtualBox leiho nagusiaren &lt;b&gt;Makina&lt;/b&gt; menutik.&lt;/p&gt;&lt;p&gt;Sakatu &lt;b&gt;Ongi&lt;/b&gt; makina itzaltzea nahi baduzu edo sakatu &lt;b&gt;Ezikusi&lt;/b&gt; dagoen bezala uztea nahi baduzu garbiketarako. Mesedez ohartu garbiketak ezagupen eta tresna bereziak behar dituela, hortaz orain &lt;b&gt;Ongi&lt;/b&gt; sakatzea gomendatzen dugu.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+675"/>
@@ -7935,7 +7935,7 @@
     <message>
         <location line="-660"/>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hostalaria-bakarrik sare hau ezabatzeak sare honek ohinarri duen hostalaria-bakarrik interfazea kenduko du. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; (hostalaria-bakarrik sarea) interfazea kentzea nahi duzu?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Oharra:&lt;/b&gt; egokitzaile birtual bat baino gehiago egon daiteke interfaze hau erabiltzen zure MB-etan. Kendu ondoren, egokitzaile hauek ezingo dira gehiago erabili beren ezarpenak zuzentzen dituzun arte beste interfaze izen bat edo egokitzaile eranspen mota ezberdin bat hautatuz.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+1437"/>
@@ -8043,7 +8043,7 @@
     <message>
         <location line="+493"/>
         <source>Force Unmount</source>
-        <translation>Behartu Desosatzea</translation>
+        <translation>Behartu Demuntatzea</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -8316,7 +8316,7 @@
     <message>
         <location line="-14"/>
         <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation>Aldatzen ari zaren makina birtuala abiarazi egin da. Zenbati ezarpen bakarrik aldatu daitezke makina ekinean dagoela. Beste aldaketa guztiak galdu egingo dira leiho hau orain isten baduzu.</translation>
+        <translation>Aldatzen ari zaren makina birtuala abiarazi egin da. Zenbait ezarpen bakarrik aldatu daitezke makina ekinean dagoela. Beste aldaketa guztiak galdu egingo dira leiho hau orain isten baduzu.</translation>
     </message>
     <message>
         <location line="+413"/>
@@ -8583,7 +8583,7 @@
     <message>
         <location line="+1"/>
         <source>Holds the name of the virtual machine.</source>
-        <translation>Makina birtualaren izena erakusten du.</translation>
+        <translation>Makina birtualaren izena zehazten du.</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -9218,7 +9218,7 @@
     <message>
         <location line="+3"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Makina birtualaren oraingo exekuzio egoera gordetzen du hostalari PC-aren diska gogor fisikoan.&lt;/p&gt;&lt;p&gt;Makina abiarazten den hurrengoan, gordetako egoeratik leheneratuko da eta exekuzioa jarraituko du gorde duzun toki berdinetik, zure lanarekin berehala jarraitzea ahalbidetuz.&lt;/p&gt;&lt;p&gt;Ohartu makinaren egoera gordetzeak luze hartu dezakeela, gonbidatuko sistema eragile motaren eta makina birtualari esleitutako oroimen kopuruaren arabera.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="-1"/>
@@ -9228,7 +9228,7 @@
     <message>
         <location line="+7"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;ACPI Indar Botoi sakatze gertaerak bildatzen ditu makina birtualera.&lt;/p&gt;&lt;p&gt;Arrunt, makina birtualaren barnean jarduten duen gonbidatu sistemak gertaera hau atzeman eta itzaltze prozedura garbi bat egingo du. Hau da makina birtuala itzaltzeko gomendatzen den bidea, horrela barnean jardunean dauden aplikazio guztiek beren datuak eta egoera gordetzeko aukera izango dutelako.&lt;/p&gt;&lt;p&gt;Makinak ez badio ekintza honi erantzuten gonbidatuko sistema eragilea desitxuratuta egon daiteke edo ez ditu ACPI Indar Botoi gertaerak ulertzen. Horrela bada &lt;b&gt;Itzali makina&lt;/b&gt; ekintza hautatu behar duzu makina birtualaren exekuzioa geldirazteko.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="-1"/>
@@ -9238,7 +9238,7 @@
     <message>
         <location line="+9"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Itzali makina birtuala.&lt;/p&gt;&lt;p&gt;Ohartu ekintza honek makinaren exekuzioa berehala geldiaraziko duela hortaz barnean jardunean dagoen gonbidatu sistema eragileak ezingo du itzaltze prozedura garbi bat egin eta &lt;i&gt;datu galera&lt;/i&gt; bat gertatu daiteke makina birtualaren barnean. Ekintza hau makina birtualak &lt;b&gt;Bidali itzaltze seinalea&lt;/b&gt; ekintzari ez badio erantzuten bakarrik hautatzea gomendatzen da.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="-1"/>
@@ -9253,7 +9253,7 @@
     <message>
         <location line="+1"/>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hautatutakoan, makina oraingo berehalakoan biltegiratutako egoerara itzuliko da itzali ondoren. Hau erabilgarria da azken saioetako emaitzak baztertzeaz eta argazki berri bat hasteaz zihur bazaude.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Hautatutakoan, makina oraingo berehalakoan biltegiratutako egoerara itzuliko da itzali ondoren. Hau erabilgarria da azken saioetako emaitzak baztertzea eta berehalako berri bat hasteaz zihur bazaude.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="-2"/>
@@ -9289,7 +9289,7 @@
     <message>
         <location line="+1"/>
         <source>&amp;Runtime Information</source>
-        <translation>&amp;Runtime Argibideak</translation>
+        <translation>&amp;Jarduera Argibideak</translation>
     </message>
     <message>
         <location line="+23"/>
@@ -9347,7 +9347,7 @@
     <message>
         <location line="+16"/>
         <source>Runtime Attributes</source>
-        <translation>Runtime Ezaugarriak</translation>
+        <translation>Jarduera Ezaugarriak</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -9648,7 +9648,7 @@
     <message>
         <location line="+2"/>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation>&lt;p&gt;Hautatu dezakezu ere diska gogorra agiri anitzetan &lt;b&gt;banantzea&lt;/b&gt; bakoitza bi gigabyte arte. Hau erabilgarria da nagusiki makina birtuala USB gailu kengarri batean edo sistema zaharretan biltegiratzea nahi baduzu, hauetako batzuek ezin dute agiri oso handika kudeatu.</translation>
+        <translation>&lt;p&gt;Hautatu dezakezu ere diska gogorra agiri anitzetan &lt;b&gt;banantzea&lt;/b&gt; bakoitza bi gigabyte arte. Hau erabilgarria da nagusiki makina birtuala USB gailu kengarri batean edo sistema zaharretan biltegiratzea nahi baduzu, hauetako batzuek ezin dituzte agiri oso handiak kudeatu.</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -9797,7 +9797,7 @@
     <message>
         <location line="+3"/>
         <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mesedez hautatu makina birtual berriarentzako izen bat. Makina berria &lt;b&gt;%1&lt;/b&gt; makinaren klon bat izando da.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Mesedez hautatu makina birtual berriarentzako izen bat. Makina berria &lt;b&gt;%1&lt;/b&gt; makinaren klon bat izango da.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -9820,12 +9820,12 @@
     <message>
         <location line="+3"/>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Mesedez hautatu sortzea nahi duzun klon mota.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Klon osoa&lt;/b&gt; hautatzen baduzu, jatorrizko makina birtualaren kopia zehatz bat (diska gogor birtual agiri guztiak barne) sortuko da.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Loturiko klona&lt;/b&gt; hautatzen baduzu, makina berri bat sortuko da, baina diska gogor birtual agiriak jatorrizko makinaren diska gogor birtual agirietara lotuko dira eta makina birtual berria ezingo duzu beste ordenagailu batera mugitu jatorrizkoa ere mugitu gabe.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Loturaturiko klona&lt;/b&gt; sortzen baduzu argazki berri bat sortuko da jatorrizko makina birtualean klonazio aurrerabidearen atal bezala.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;Loturiko klona&lt;/b&gt; sortzen baduzu berehalako berri bat sortuko da jatorrizko makina birtualean klonatze aurrerabidearen atal bezala.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -9846,22 +9846,22 @@
     <message>
         <location line="+3"/>
         <source>&lt;p&gt;Please choose which parts of the snapshot tree should be cloned with the machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mesedez hautatu argazki zuhaitzaren zein atal klonatu behar diren makinarekin.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Mesedez hautatu berehalako zuhaitzaren zein atal klonatu behar diren makinarekin.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Oraingo makina egoera&lt;/b&gt; hautatzen baduzu, makina berriak jatorrizko makinaren uneko egoera isladatuko du eta ez du argazkirik izango.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;Oraingo makina egoera&lt;/b&gt; hautatzen baduzu, makina berriak jatorrizko makinaren uneko egoera isladatuko du eta ez du berehalakorik izango.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Oraingo berehalako zuhaitzaren adarra&lt;/b&gt; hautatzen baduzu, makina berriak jatorrizko makinaren uneko egoera isladatuko du eta zuhaitz adarreko berehalako guztiekin bat datozen berehalakoak izango ditu jatorrizko makinaren oraingo egoeratik hasita.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Guztia&lt;/b&gt; hautatzen baduzu, makina berriak jatorrizko makinaren uneko egoera isladatuko du eta jatorrizko makinako berehalako guztiekin bat datozen berehalakoak izango ditu.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -10134,7 +10134,7 @@
     <message>
         <location line="+73"/>
         <source>&lt;p&gt;Please choose a filename to export the OVF/OVA to.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ova&lt;/i&gt; extension, then all the files will be combined into one Open Virtualization Format Archive.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately.&lt;/p&gt;&lt;p&gt;Other extensions are not allowed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Mesedez hautatu agirizen bat OVF/OVA bertara esportatzeko.&lt;/p&gt;&lt;p&gt;&lt;i&gt;ova&lt;/i&gt; hedapen bat erabiltzen baduzu agiri guztiak Birtualizazio Heuskarri Artxibo Irekia (OVFA) batean nahastuko dira.&lt;/p&gt;&lt;p&gt;&lt;i&gt;ovf&lt;/i&gt; hedapen bat erabiltzen baduzu agiri banandu ugari idatziko dira.&lt;/p&gt;&lt;p&gt;Beste hedapenak ez daude ahalbidetuta.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -10160,7 +10160,7 @@
     <message>
         <location filename="../src/wizards/firstrun/UIWizardFirstRun.cpp" line="+101"/>
         <source>Select start-up disk</source>
-        <translation>Hautatu Hasiera diska</translation>
+        <translation>Hautatu hasiera diska</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -10170,12 +10170,12 @@
     <message>
         <location filename="../src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp" line="+113"/>
         <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from and should contain the operating system you wish to install on the virtual machine if you want to do that now. The disk will be ejected from the virtual drive automatically next time you switch the virtual machine off, but you can also do this yourself if needed using the Devices menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Mesedez hautatu zure makina birtual berria bertatik abiarazteko diska optiko birtual agiri bat edo diska duen gidagailu optiko fisiko bat.&lt;/p&gt;&lt;p&gt;Diska bertatik ordenagailu bat abiarazteko bezala egon behar da eta makina birtualean ezartzea nahi duzun sistema eragilea eduki behar du orain egitea nahi baduzu. Diska gidagailu birtualetik berezgaitasunez aterako da makina birtuala itzaltzen duzun hurrengoan, baina hau zeuk ere egin dezakezu beharrezkoa bada Gailuak menua erabiliz.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from. As this virtual machine has no hard drive you will not be able to install an operating system on it at the moment.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Mesedez hautatu zure makina birtual berria bertatik abiarazteko diska optiko birtual agiri bat edo diska duen gidagailu optiko fisiko bat.&lt;/p&gt;&lt;p&gt;Diska bertatik ordenagailu bat abiarazteko bezala egon behar da. Makina birtual honek diska gogorrik ez duenez oraingoz ezingo duzu sistema eragile bat ezarri bertan.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -10204,7 +10204,7 @@
     <message>
         <location line="+3"/>
         <source>&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox-ek Open Virtualization Format (OVF) heuskarrian gordetako gailuak inportatzea sostengatzen du. Jarraitzeko, hautatu inportatzeko agiri bat behean.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VirtualBox-ek Britualizazio Heuskarri Irekia (OVF) heuskarrian gordetako gailuak inportatzea sostengatzen du. Jarraitzeko, hautatu inportatzeko agiri bat azpian.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -10317,7 +10317,7 @@
     <message>
         <location line="+2"/>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation>&lt;p&gt;Hautatu dezakezu ere diska gogorra agiri anitzetan &lt;b&gt;banantzea&lt;/b&gt; bakoitza bi gigabyte arte. Hau erabilgarria da nagusiki makina birtuala USB gailu kengarri batean edo sistema zaharretan biltegiratzea nahi baduzu, hauetako batzuek ezin dute agiri oso handika kudeatu.</translation>
+        <translation>&lt;p&gt;Hautatu dezakezu ere diska gogorra agiri anitzetan &lt;b&gt;banantzea&lt;/b&gt; bakoitza bi gigabyte arte. Hau erabilgarria da nagusiki makina birtuala USB gailu kengarri batean edo sistema zaharretan biltegiratzea nahi baduzu, hauetako batzuek ezin dituzte agiri oso handiak kudeatu.</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -10582,7 +10582,7 @@
     <message>
         <location line="+186"/>
         <source>Holds the folder path.</source>
-        <translation>Agiritegi helburua erakusten du.</translation>
+        <translation>Agiritegi helburua zehazten du.</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -10912,7 +10912,7 @@
         <location line="+25"/>
         <source>Spawning</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Errutean</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -11781,7 +11781,7 @@
         <location line="+88"/>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
         <comment>medium</comment>
-        <translation>Diska gogor kate honetako zenbati agiri eskuraezinak dira. Mesedez erabii Medio Birtual Kudeatzailea agiri hauek aztertzeko.</translation>
+        <translation>Diska gogor kate honetako zenbait agiri eskuraezinak dira. Mesedez erabii Medio Birtual Kudeatzailea agiri hauek aztertzeko.</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -12624,7 +12624,7 @@
         <location line="+44"/>
         <location line="+33"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Not&amp;nbsp;Erantsita&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Ez&amp;nbsp;Erantsita&lt;/i&gt;</translation>
     </message>
     <message>
         <location line="+649"/>
@@ -12640,7 +12640,7 @@
     <message>
         <location line="-114"/>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Not&amp;nbsp;Enkriptatuta&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Ez&amp;nbsp;Enkriptatuta&lt;/i&gt;</translation>
     </message>
     <message>
         <location line="+125"/>
@@ -12982,7 +12982,7 @@
     <message>
         <location line="+20"/>
         <source>Snapshot &amp;Description</source>
-        <translation>Argazki &amp;Azalpena</translation>
+        <translation>Berehalakoaren &amp;Azalpena</translation>
     </message>
     <message numerus="yes">
         <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="+72"/>
