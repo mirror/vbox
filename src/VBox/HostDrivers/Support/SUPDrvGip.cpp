@@ -705,7 +705,7 @@ SUPDECL(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
  * to update the TSC frequency related GIP variables.
  *
  * @param   pGip                The GIP.
- * @param   nsElapsed           The number of nano seconds elapsed.
+ * @param   nsElapsed           The number of nanoseconds elapsed.
  * @param   cElapsedTscTicks    The corresponding number of TSC ticks.
  * @param   iTick               The tick number for debugging.
  */
@@ -1019,7 +1019,7 @@ DECLCALLBACK(void) supdrvGipInitReadTscAndNanoTsOnCpu(RTCPUID idCpu, void *pvUse
  * @param   pGip            Pointer to the GIP.
  * @param   fRough          Set if we're doing the rough calculation that the
  *                          TSC measuring code needs, where accuracy isn't all
- *                          that important (too high is better than to low).
+ *                          that important (too high is better than too low).
  *                          When clear we try for best accuracy that we can
  *                          achieve in reasonably short time.
  */
@@ -1098,8 +1098,8 @@ static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
         ASMSetFlags(fEFlags);
 
         /*
-         * If the CPU changes things get a bit complicated and what we
-         * can get away with depends on the GIP mode / TSC reliablity.
+         * If the CPU changes, things get a bit complicated and what we
+         * can get away with depends on the GIP mode / TSC reliability.
          */
         if (idCpuStop != idCpuStart)
         {
@@ -1165,7 +1165,7 @@ static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
                     /*
                      * No valid deltas.  We retry, if we're on our last retry
                      * we do the cross call instead just to get a result.  The
-                     * frequency will be refined in a few seconds anyways.
+                     * frequency will be refined in a few seconds anyway.
                      */
                     else if (cTriesLeft > 0)
                         continue;
@@ -1174,7 +1174,7 @@ static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
                 }
             }
             /*
-             * Asynchronous TSC mode: This is bad as the reason we usually
+             * Asynchronous TSC mode: This is bad, as the reason we usually
              * use this mode is to deal with variable TSC frequencies and
              * deltas.  So, we need to get the TSC from the same CPU as
              * started it, we also need to keep that CPU busy.  So, retry
@@ -1665,7 +1665,7 @@ static SUPGIPMODE supdrvGipInitDetermineTscMode(PSUPDRVDEVEXT pDevExt)
  * Initializes per-CPU GIP information.
  *
  * @param   pGip        Pointer to the GIP.
- * @param   pCpu        Pointer to which GIP CPU to initalize.
+ * @param   pCpu        Pointer to which GIP CPU to initialize.
  * @param   u64NanoTS   The current nanosecond timestamp.
  * @param   uCpuHz      The CPU frequency to set, 0 if the caller doesn't know.
  */
@@ -2120,7 +2120,7 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
     /*
      * Determine if we need to update the CPU (TSC) frequency calculation.
      *
-     * We don't need to keep realculating the frequency when it's invariant,
+     * We don't need to keep recalculating the frequency when it's invariant,
      * unless the special tstGIP-2 testing mode is enabled.
      */
     fUpdateCpuHz = pGip->u32Mode != SUPGIPMODE_INVARIANT_TSC;
