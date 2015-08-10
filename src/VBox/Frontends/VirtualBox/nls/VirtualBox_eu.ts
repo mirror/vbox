@@ -264,7 +264,7 @@
     <message>
         <location line="-434"/>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Hartu makina birtualaren argazki bat</translation>
+        <translation>Hartu makina birtualaren berehalako bat</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
@@ -857,7 +857,7 @@
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="-399"/>
         <source>Take Sn&amp;apshot...</source>
-        <translation>Hartu &amp;Argazki bat...</translation>
+        <translation>Hartu &amp;Berehalako bat...</translation>
     </message>
     <message>
         <location line="+137"/>
@@ -952,7 +952,7 @@
     <message>
         <location line="+27"/>
         <source>&amp;Export Appliance...</source>
-        <translation>&amp;Esportatu Makina Birtuala...</translation>
+        <translation>Esp&amp;ortatu Makina Birtuala...</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -994,7 +994,7 @@
         <location line="+22"/>
         <location line="+539"/>
         <source>&amp;Sort</source>
-        <translation>&amp;Antolatu</translation>
+        <translation>A&amp;ntolatu</translation>
     </message>
     <message>
         <location line="-538"/>
@@ -1049,7 +1049,7 @@
     <message>
         <location line="+2"/>
         <source>S&amp;how in Explorer</source>
-        <translation>E&amp;rakutsi Explorer-en</translation>
+        <translation>Er&amp;akutsi Explorer-en</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1079,7 +1079,7 @@
     <message>
         <location line="+2"/>
         <source>Cr&amp;eate Shortcut on Desktop</source>
-        <translation>S&amp;ortu Lasterbidea Mahaigainean</translation>
+        <translation>Sortu &amp;Lasterbidea Mahaigainean</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1281,7 +1281,7 @@
     <message>
         <location line="-126"/>
         <source>Show &amp;Log...</source>
-        <translation>Erakutsi O&amp;harra...</translation>
+        <translation>Erakut&amp;si Oharra...</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="-159"/>
@@ -2137,7 +2137,7 @@
     <message>
         <location line="+2"/>
         <source>Exit group</source>
-        <translation>Irten taldetik</translation>
+        <translation>Atera taldetik</translation>
     </message>
 </context>
 <context>
@@ -2572,7 +2572,7 @@
         <location line="+244"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation>Gailu Iragakiak</translation>
+        <translation>Gailu Iragazkiak</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -2701,7 +2701,7 @@
         <location line="+2"/>
         <source>Hint</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zehaztu</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -2808,7 +2808,7 @@
     <message>
         <location line="+7"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation>V&amp;RDP Egiaztapen Liburutegia:</translation>
+        <translation>VRDP &amp;Egiaztapen Liburutegia:</translation>
     </message>
     <message>
         <location line="+19"/>
@@ -3800,7 +3800,7 @@
     <message>
         <location line="+15"/>
         <source>Selects how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>Bertsio egiaztapenaren zein maiz egin behar den hautatzen du. Ohartu egiaztapen hau erabat ezgaitzea nahi baduzu, garbitu gaineko hauta-kutxatila.</translation>
+        <translation>Bertsio egiaztapena zein maiz egin behar den hautatzen du. Ohartu egiaztapen hau erabat ezgaitzea nahi baduzu, garbitu gaineko hauta-kutxatila.</translation>
     </message>
     <message>
         <location line="+28"/>
@@ -3830,7 +3830,7 @@
     <message>
         <location line="+10"/>
         <source>All New Releases and &amp;Pre-Releases</source>
-        <translation>Argitalpen Berri eta &amp;Aurre-Argitapen Guztiak</translation>
+        <translation>Argitalpen Berri eta A&amp;urre-Argitapen Guztiak</translation>
     </message>
     <message>
         <source>&amp;Stable release versions</source>
@@ -3944,7 +3944,7 @@
     <message>
         <location line="+17"/>
         <source>Host+</source>
-        <translation>Host+</translation>
+        <translation>Hostalaria+</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -4049,7 +4049,7 @@
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportApp.cpp" line="+123"/>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;&quot;%1&quot; sistema birtualak azpian erakusten den software baimen itunaren neurriak eta baldintzak onartzea behar du.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Klikatu &lt;b&gt;Onartu&lt;/b&gt; jarraitzeko edo klikatu &lt;b&gt;Baztertu&lt;/b&gt; inportazioa ezeztatzeko.</translation>
     </message>
     <message>
         <location line="-2"/>
@@ -4217,12 +4217,12 @@
     <message>
         <location line="+56"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>SE gonbidatuak hostalari saguaren punta nola hartzen duen adierazten du:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;punta ez da hartzen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;punta hartzen da&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;sagu baterapena (SB) Piztuta dago&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;SB Itzalita dago, punta hartzen da&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;SB Itzalita dago, punta ez da hartzen&lt;/nobr&gt;&lt;br&gt;Ohartu sagu baterapen ezaugarriak Gonbidatu Gehigarriak ezarrita behar dituela gonbidatu SE-n.</translation>
     </message>
     <message>
         <location line="+42"/>
         <source>Indicates whether the host keyboard is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is captured&lt;/nobr&gt;</source>
-        <translation>SE gonbidatuak hostalari teklatua hartzen duen adierazten du:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is captured&lt;/nobr&gt;</translation>
+        <translation>SE gonbidatuak hostalari teklatua hartzen duen adierazten du:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;teklatua ez da hartzen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;teklatua hartzen da&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
@@ -4308,7 +4308,7 @@
     <message>
         <location line="+29"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation>Hostalariko Audio &amp;Gidagailua:</translation>
+        <translation>&amp;Hostalariko Audio Gidagailua:</translation>
     </message>
     <message>
         <location line="+19"/>
@@ -4318,7 +4318,7 @@
     <message>
         <location line="+7"/>
         <source>Audio &amp;Controller:</source>
-        <translation>Audio &amp;Kontrolatzailea:</translation>
+        <translation>&amp;Audio Kontrolatzailea:</translation>
     </message>
     <message>
         <location line="+19"/>
@@ -4336,12 +4336,12 @@
     <message>
         <location line="+24"/>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for High Definition Video to be played efficiently.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makina birtualak une honetan Bereizmen Handiko Bideoa eraginkortasunez irakurria izateko behar den kopuru gutxiena baino &lt;b&gt;%1&lt;/b&gt; bideo oroimen gutxiago du esleituta.</translation>
     </message>
     <message>
         <location line="+31"/>
         <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makina birtuala Bideo Jario Bizkorpena erabiltzeko ezarrita dago. Ezaugarri honek Windows gonbidatu sistemekin besterik lan egiten ez duenez ezgaitua izango da.</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -4376,30 +4376,30 @@
     <message>
         <location line="-152"/>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makina birtualak une honetan ikusleiho-osoko edo irudizko modura aldatzeko behar den kopuru gutxiena baino &lt;b&gt;%1&lt;/b&gt; bideo oroimen gutxiago du esleituta.</translation>
     </message>
     <message>
         <location line="+28"/>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makina birtuala hardware grafiko bizkorpena erabiltzeko ezarrita dago eta sistema eragilea Windows Vista edo berriagoan zehaztua dago. Egintza hoberenearako makinaren bideo oroimena gutxienez &lt;b&gt;%1&lt;/b&gt; balioan ezarri behar duzu.</translation>
     </message>
     <message>
         <location line="+35"/>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hurruneko Erakuspena une honetan gaituta dago makina birtual honentzat. Horrela ere, honek &lt;i&gt;%1&lt;/i&gt; ezarrita behar du. Mesedez ezarri Hedapen Paketea VirtualBox jeisketa gunetik bestela zure MB Hurruneko Erakuspen ezgaituta duela abiatuko da.</translation>
     </message>
     <message>
         <location line="+76"/>
         <location line="+1"/>
         <location line="+482"/>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <location line="-479"/>
         <location line="+1"/>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -4513,7 +4513,7 @@
     <message>
         <location line="+9"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hautatutakoan, MB Hurruneko Mahaigain Protokolo (RDP) zerbitzari bat bezala jokatuko du, hurruneko bezeroei MB-ra (ekinean dagoenean) elkartzea eta eragiketak egitea ahalbidetuz RDP bezero estandarra erabiliz.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -4602,7 +4602,7 @@
     <message>
         <location line="+66"/>
         <source>Video &amp;Capture</source>
-        <translation>Bideo &amp;Harpena</translation>
+        <translation>&amp;Bideo Harpena</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -4782,7 +4782,7 @@
     <message>
         <location line="+44"/>
         <source>Encryption C&amp;ipher:</source>
-        <translation>Enkriptaketa Zi&amp;fratua:</translation>
+        <translation>&amp;Enkriptaketa Zifratua:</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -4915,7 +4915,7 @@
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsInterface.ui" line="+35"/>
         <source>Allows to modify VM menu-bar contents.</source>
-        <translation>BM-ren menu-barrako edukiak aldatzea ahalbidetzen du.</translation>
+        <translation>MB-ren menu-barrako edukiak aldatzea ahalbidetzen du.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -4930,7 +4930,7 @@
     <message>
         <location line="+3"/>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation>Erakutsi &amp;Ikusleiho-osoa/Irudizkoan</translation>
+        <translation>Erakutsi Ikusleiho-&amp;osoan/Irudizkoan</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -4945,7 +4945,7 @@
     <message>
         <location line="+29"/>
         <source>Allows to modify VM status-bar contents.</source>
-        <translation>BM-ren menu-barrako edukiak aldatzea ahalbidetzen du.</translation>
+        <translation>MB-ren menu-barrako edukiak aldatzea ahalbidetzen du.</translation>
     </message>
 </context>
 <context>
@@ -4977,7 +4977,7 @@
     <message>
         <location line="+79"/>
         <source>Adapter &amp;Type:</source>
-        <translation>Egokitzaile &amp;Mota:</translation>
+        <translation>&amp;Egokitzaile Mota:</translation>
     </message>
     <message>
         <source>no bridged network adapter is selected</source>
@@ -5056,7 +5056,7 @@
     <message>
         <location line="+54"/>
         <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sare egokitzailearen modu promiskuoa hautatzen du barneko sare batera, hostalaria bakarrik sare batera edo zubi batera erantsita dagoenean.</translation>
     </message>
     <message>
         <location line="+26"/>
@@ -5099,7 +5099,7 @@
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="-310"/>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sare txartel honetara eta honetatik igaroko den trafikoa hostalari sistemako sare egokitzailea hautatzen du.</translation>
     </message>
     <message>
         <location line="-220"/>
@@ -5144,7 +5144,7 @@
     <message>
         <location line="+9"/>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sare txartel honetara eta honetatik igaroko den trafikoa hostalari sistemako sare egokitzailea hautatzen du. Egokitzaileak sortu eta kendu ditzakezu sare ezarpen orokorrak erabiliz makina birtualaren kudeatzaile leihoan.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -5177,22 +5177,22 @@
     <message>
         <location line="+227"/>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished">Ez dago IRQ-rik adierazita.</translation>
+        <translation>Ez dago IRQ-rik adierazita.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished">Ez dago S/I atakarik adierazita.</translation>
+        <translation>Ez dago S/I atakarik adierazita.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished">Bi ataka edo gehiagok ezarpen berdinak dituzte.</translation>
+        <translation>Bi ataka edo gehiagok ezarpen berdinak dituzte.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished">Ez dago ataka helbururik adierazita.</translation>
+        <translation>Ez dago ataka helbururik adierazita.</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -5232,7 +5232,7 @@
     <message>
         <location line="+7"/>
         <source>I/O Po&amp;rt:</source>
-        <translation>S/I &amp;Ataka:</translation>
+        <translation>&amp;S/I Ataka:</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -5388,7 +5388,7 @@
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.ui" line="+69"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makina honetatik eskuragarri dauden elkarbanatutako agiritegi guztiak zerrendatzen ditu. Erabili  &apos;net use x: \\vboxsvr\share&apos; &lt;i&gt;share&lt;/i&gt; izeneko elkarbanatutako agiritegi batera sarbidea izateko, edo  &apos;mount -t vboxsf share mount_point&apos; Linux SE batetik sarbidea izateko. Ezaugarri honek Gonbidatu Gehigarriak behar ditu.</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -5557,7 +5557,7 @@
     <message>
         <location line="+41"/>
         <source>Port &amp;Number:</source>
-        <translation>&amp;Ataka Zenbakia:</translation>
+        <translation>Ataka &amp;Zenbakia:</translation>
     </message>
     <message>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
@@ -5601,12 +5601,12 @@
     <message>
         <location line="+20"/>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hautatutakoa, makina birtualak &lt;b&gt;Helburua/Helbidea&lt;/b&gt; eremuan adierazitako hodia edo socketa badagoela eta hura erabiltzen saiatuko da. Bestela, hodia edo socketa makina birtualak berak sortuko du abiatzen denean.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>&amp;Connect to existing pipe/socket</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Elkartu badagoen hodi/socket batera</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -5902,12 +5902,12 @@
     <message>
         <location line="+70"/>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eranspen honek erabiltzen duen biltegi kontrolatzaile eslota hautatzen du. Eslot eskuragarria kontrolatzaile motaren edo bertako beste eranspenen araberakoa da.</translation>
     </message>
     <message>
         <location line="+36"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hautatutakoan, gonbidatuak hostalari-gidagailura ATAPI aginduak zuzenean bidaltzea ahalbidetzen du, honek makina birtualaren barnean elkartutako CD/DVD idazgailuak erabili ahal izatea egiten du. Ohartu oraindik ez dagoela sostengatua audio CD-ak idaztea MB-ren barnean.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6028,7 +6028,7 @@
     <message>
         <location line="+27"/>
         <source>The machine currently has more storage controllers assigned than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Makina birtualak une honetan %1 txipsetak sostengatzen dituen baino biltegiratze kontrolatzaile gehiago ditu esleituta. Mesedez aldatu txipset mota Sistema ezarpenak orrialdean edo gutxitu hurrengo biltegiratze kontrolatzaile zenbatekoa Biltegia ezarpenak orrialdean: %2</translation>
     </message>
     <message>
         <location line="+36"/>
@@ -6176,7 +6176,7 @@
     <message>
         <location line="+13"/>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Biltegi Zuhaitzean hautatutako SATA biltegiratze kontrolatzailearen ataka kopurua hautatzen du. Hau gutxienez izan behar da erabiltzea behar duzun ataka zenbateko gehiena baino bat gehiago.</translation>
     </message>
     <message>
         <location filename="../src/UIVMInfoDialog.cpp" line="+707"/>
@@ -6226,28 +6226,28 @@
     <message>
         <location line="+10"/>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9 you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O APIC ezaugarria une honetan ez dago gaituta Sistema orrialdeko ohinplaka atalean. Hau beharrezkoa da MB honentzat gaituta duzun ICH9 motako txipset bat sostengatzerako orduan. Berezgaitasunez egingo da zure aldaketak baieztatzen badituzu.</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB kontrolatzaile emulazioa ez dago gaituta USB orrialdean. Hau beharrezkoa da MB honentzat gaituta duzun emulatutako USB sarrera gailu bat sostengatzeko. Hau berezgaitasunez egingo aldaketak baieztatzen badituzu.</translation>
     </message>
     <message>
         <location line="+38"/>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O APIC ezaugarria une honetan ez dago gaituta Ohinplaka ataleko Sistema orrialdean. Hau beharrezkoa da MB honentzat gaituta duzun ICH9 motako txipset bat sostengatzerako orduan. Hau berezgaitasunez egingo da zure aldaketak baieztatzen badituzu.</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hardware birtualizazioa une honetan ez dago gaituta Bizkorpena ataleko Sistema orrialdean. Hau beharrezkoa da MB honentzat hautatuta duzun prozesagailu birtual bat baino gehiago sostengatzerako orduan. Hau berezgaitasunez egingo da zure aldaketak baieztatzen badituzu.</translation>
     </message>
     <message>
         <location line="+60"/>
         <location line="+1"/>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6299,7 +6299,7 @@
     <message>
         <location line="+6"/>
         <source>Base &amp;Memory:</source>
-        <translation>&amp;Ohinarri Oroimena:</translation>
+        <translation>O&amp;hinarri Oroimena:</translation>
     </message>
     <message>
         <location line="+25"/>
@@ -6408,7 +6408,7 @@
     <message>
         <location line="+13"/>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>Huatutakoan, makina birtuala Intel VT-x eta AMD-V nested orrialdeztapen hedapena erabiltzen saiatuko da.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6423,7 +6423,7 @@
     <message>
         <location line="-295"/>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hautatutakoan, gonbidatuak Firmware Hedatu Interfazea (EFI) sostengatuko du, hau beharrezkoa da zenbait gonbidatu SE abiarazteko. Ez-EFI SE-ak ez dira abiatzeko gai izango aukera hau gaituta badago.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6443,27 +6443,27 @@
     <message>
         <location line="-210"/>
         <source>&amp;Chipset:</source>
-        <translation>&amp;Chipseta:</translation>
+        <translation>&amp;Txipseta:</translation>
     </message>
     <message>
         <location line="+21"/>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makina birtual honetan emulatuko den txipseta hautatzen du. Ohartu ICH9 txipset emulazioa esperimentala dela eta ez dago gomendatua hori behar duten gonbidatu sistementzat ezik (MAC OS X bezalakoak).</translation>
     </message>
     <message>
         <location line="+22"/>
         <source>&amp;Pointing Device:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zuzentze Gailua:</translation>
     </message>
     <message>
         <location line="+21"/>
         <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulatutako zuzentze gailua PS/2 sagu estandar bat, USB tablet bat edo ikutu-anitzeko USB tablet bat den zehazten du.</translation>
     </message>
     <message>
         <location line="+32"/>
         <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation>Hautatutakoan, makina birtualak Sarrera Irteera APIC (I/O APIC) sostengatuko du, honek apur bat gutxitu dezake egintza. &lt;b&gt;Oharra:&lt;/b&gt; ez ezgaitu ezaugarri hau Windows gonbidatu sistema eragile bat ezarri ondoren!</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6473,7 +6473,7 @@
     <message>
         <location line="+17"/>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hautatutakoan, RTC gailuak orduan UTC moduan jakinaraziko du, bestela tokiko (hostalaria) orduan. Unix-ek arrunt ordularia UTC-an ezarrita egotea itxaroten du.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6489,7 +6489,7 @@
         <location line="+18"/>
         <location line="+38"/>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU birtual bakoitzak ekiteko duen denbora kopurua mugatzen du. CPU birtual bakoitza CPU fisiko batean eskuragarri dagoen prozesapen denbora ehuneko honetara arte erabiltzeko ahalbidetuko da. Exekuzio muga ezgaitu egin daiteke hura 100%-ean ezarriz. Muga oso txikia ezarriz gero makina erantzuteko motela dela iruditzea egin dezake.</translation>
     </message>
     <message>
         <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
@@ -6579,7 +6579,7 @@
     <message>
         <location line="+56"/>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hautatutakoan, USB OHCI birtual kontrolatzailea gaitzen du makina honetan. USB OHCI kontrolatzaileak USB 1.0 sostengua hornitzen du.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6624,7 +6624,7 @@
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="-52"/>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0/3.0 une honetan gaituta dago makina birtual honetan. Horrela ere, &lt;i&gt;%1&lt;/i&gt; ezarrita behar du. Mesedez ezarri Hedapen Paketea VirtualBox jeisketa gunetik edo ezgaitu USB 2.0/3.0 makina abiatu ahal izateko.</translation>
     </message>
     <message>
         <location line="+29"/>
@@ -6659,12 +6659,12 @@
     <message>
         <location line="+2"/>
         <source>Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB iragazki berri bat gehitzen du hasiera batean eremu guztiak kate hutsetan ezarrita daudela. Ohartu iragazki honek erantsitako edozein USB gailu aurkituko duela.</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Adds new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB iragazki berri bat gehitzen du eremu guztiak hautaturiko hostalari PC-ari erantsitako USB gailuaren balioetan ezarrita.</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -6896,7 +6896,7 @@
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+41"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Orain esleitutako Hostalari tekla erakusten du.&lt;br&gt;Tekla hau, bera bakarrik sakatzen denean, teklatuaren eta saguaren hartze egoerak aldatzen ditu. Beste tekla batzuekin konbinatuta edo erabili daiteke menu nagusitik ekintza azkarrak burutzeko.</translation>
     </message>
 </context>
 <context>
@@ -6913,7 +6913,7 @@
     <message>
         <location line="+1405"/>
         <source>&amp;Hard disks</source>
-        <translation>&amp;Diska Gogorrak</translation>
+        <translation>Diska &amp;gogorrak</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -7040,7 +7040,7 @@
     <message>
         <location line="+162"/>
         <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Diska irudi agiri bat edo gehiago ez daude eskuragarri. Ondorioz, ezingo duzu agiri hauek erabiltzen dituzten makina birtualekin jardun geroago eskuragarri egon arte.&lt;/p&gt;&lt;p&gt;Sakatu &lt;b&gt;Egiaztatu&lt;/b&gt; Media Birtual Kudeatzailea leihoa irekitzeko eta agiri eskuragarriak ikusteko edo sakatu &lt;b&gt;Ezikusi&lt;/b&gt; mezu hau ezikusteko.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+146"/>
@@ -7060,7 +7060,7 @@
     <message>
         <location line="+7"/>
         <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kentzea nahi duzu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; NAT sarea?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Sare hau makina birtual sare egokitzaile batek edo gehiagok erabiltzen badute egokitzaile hauek ez dira erabilgarriak izango beren ezarpenak zuzentzen dituzun arte sare izen edo egokitzaile eranspen mota ezberdin bat hautatuz.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+30"/>
@@ -7176,9 +7176,9 @@
         <location line="+181"/>
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;p&gt;Hurrengo %n makina birtuala gordeta egoeran dago: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Jardunean jarraitzen baduzu esportatutako makinaren egoera baztertu egingo da. Beste makina(k) ez d(ir)a aldatuko.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;Hurrengo %n makina birtualak gordeta egoeran daude: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Jardunean jarraitzen baduzu esportatutako makinaren egoera baztertu egingo da. Beste makina(k) ez d(ir)a aldatuko.&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
@@ -7186,12 +7186,12 @@
         <location line="+13"/>
         <location line="+13"/>
         <source>Switch</source>
-        <translation type="unfinished">Aldatu</translation>
+        <translation>Aldatu</translation>
     </message>
     <message>
         <location line="-7"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Makina birtualaren leihoa orain &lt;b&gt;Eskalatua&lt;/b&gt; modura aldatuko da. Leihotu modura itzuli zaitezke &lt;b&gt;%1&lt;/b&gt; sakatuz.&lt;/p&gt;&lt;p&gt;Ohartu &lt;i&gt;Host&lt;/i&gt; tekla &lt;b&gt;%2&lt;/b&gt; bezala zehaztua dagoela.&lt;/p&gt;&lt;p&gt;Ohartu ere menu barra nagusia ezkutatu egiten dela eskalatua moduan. Bertara &lt;b&gt;Host+Home&lt;/b&gt; sakatuz sartu zaitezke.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+87"/>
@@ -7226,7 +7226,7 @@
     <message>
         <location line="+25"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox Gonbidatu Gehigarriak ez dira eskuragarri bezala agertzen makina birtual honetan, eta elkarbanatutako agiritegiak ezingo dira erabili horiek gabe. Elkarbanatutako agiritegiak makina birtualaren barnean erabiltzeko, mesedez ezarri Gonbidatu Gehigarriak ezarrita ez badaude, edo ber-ezarri zuzen lan egiten ez badute, &lt;b&gt;Txertatu Gonbidatu Gehigarriak CD irudia&lt;/b&gt; hautatuz &lt;b&gt;Gailuak&lt;/b&gt; menuan. Ezarrita badaude baina makina oraindik ez badago erabat abiatuta elkarbanatutako agiritegiak behin egindakoan egongo dira eskuragarri.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+58"/>
@@ -7353,7 +7353,7 @@
         <location line="+84"/>
         <location line="+8"/>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren argazki bat sortzerakoan.</translation>
+        <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren berehalako bat sortzerakoan.</translation>
     </message>
     <message>
         <location line="-76"/>
@@ -7402,12 +7402,12 @@
     <message>
         <location line="+22"/>
         <source>Failed to attach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hutsegitea (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) diska optikoa &lt;b&gt;%3&lt;/b&gt; makinaren &lt;i&gt;%2&lt;/i&gt; eslotera eranstearakoan.</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Failed to attach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hutsegitea (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) disketea &lt;b&gt;%3&lt;/b&gt; makinaren &lt;i&gt;%2&lt;/i&gt; eslotera eranstearakoan.</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -7422,7 +7422,7 @@
     <message>
         <location line="+82"/>
         <source>&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Zihur zaude &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; diska irudi agiria askatzea nahi duzula?&lt;/p&gt;&lt;p&gt;Honek hurrengo makina birtuale(ta)tik deserantsiko du: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+61"/>
@@ -7432,27 +7432,27 @@
     <message>
         <location line="+45"/>
         <source>Failed to detach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hutsegitea (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) diska optikoa &lt;b&gt;%3&lt;/b&gt; makinaren &lt;i&gt;%2&lt;/i&gt; eslotetik deseranstearakoan.</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Failed to detach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hutsegitea (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) disketea &lt;b&gt;%3&lt;/b&gt; makinaren &lt;i&gt;%2&lt;/i&gt; eslotetik deseranstearakoan.</translation>
     </message>
     <message>
         <location line="+69"/>
         <source>Failed to open the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hutsegitea &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; diska irudi agiria irekitzerakoan.</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Failed to close the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hutsegitea &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; diska irudi agiria isterakoan.</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>You are about to create a new virtual machine without a hard disk. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makina birtual berri bat diska gogor bat gabe sortzear zaude. Ezingo duzu sistema eragilerik ezarri makinan bat gehitu arte. Bitartean makina diska optiko birtual bat erabiliz edo saretik bakarrik abiatu ahalko duzu.</translation>
     </message>
     <message>
         <location line="+188"/>
@@ -7468,12 +7468,12 @@
     <message>
         <location line="+106"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;full-screen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in full-screen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Makina birtualaren leihoa orain &lt;b&gt;Ikusleiho-osoko&lt;/b&gt; modura aldatuko da. Leihotu modura itzuli zaitezke &lt;b&gt;%1&lt;/b&gt; sakatuz.&lt;/p&gt;&lt;p&gt;Ohartu &lt;i&gt;Host&lt;/i&gt; tekla &lt;b&gt;%2&lt;/b&gt; bezala zehaztua dagoela.&lt;/p&gt;&lt;p&gt;Ohartu ere menu barra nagusia ezkutatu egiten dela ikusleiho-osoko moduan. Bertara &lt;b&gt;Host+Home&lt;/b&gt; sakatuz sartu zaitezke.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+39"/>
         <source>&lt;p&gt;Could not switch the guest display to full-screen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to full-screen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ezin da gonbidatu erakuspena ikusleiho-osoko modura aldatu gonbidatuak ez duelako nahikoa bideo oroimen.&lt;/p&gt;&lt;p&gt;Makina birtuala gutxienez &lt;b&gt;%1&lt;/b&gt; bideo oroimenarekin itxuratu behar duzu.&lt;/p&gt;&lt;p&gt;Sakatu &lt;b&gt;Ezikusi&lt;/b&gt; edonola ikusleiho-osoko modura aldatzeko edo sakatu&lt;b&gt;Ezeztatu&lt;/b&gt; eragiketa ezeztatzeko.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+42"/>
@@ -7500,17 +7500,17 @@
     <message>
         <location filename="../src/globals/UIPopupCenter.cpp" line="+201"/>
         <source>Close</source>
-        <translation type="unfinished">Itxi</translation>
+        <translation>Itxi</translation>
     </message>
     <message>
         <location line="+45"/>
         <source>Ok</source>
-        <translation type="unfinished">Ongi</translation>
+        <translation>Ongi</translation>
     </message>
     <message>
         <location line="+213"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Makina Birtualak jakinarazi du gonbidatu SE-k ez duela &lt;b&gt;sagu punta baterapena&lt;/b&gt; sostengatzen oraingo bideo moduan. Sagua hartu behar duzu (MB-ren gainean klikatuz edo host tekla sakatuz) sagua erabiltzeko gonbidatu SE-ren barnean.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -7520,7 +7520,7 @@
     <message>
         <location line="+14"/>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ikusleiho birtuala une honetan &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; margo modu batean ezarrita dago. Egintza hoberako mesedez aldatu hau &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;-ra. Hau arrunt gonbidatu sistema eragilearen Aginte Panela edo Sistema Ezarpenak-ko &lt;b&gt;Erakuspena&lt;/b&gt; ataletik egin daiteke.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -7584,12 +7584,12 @@
     <message>
         <location line="+18"/>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ezin da &lt;b&gt;VirtualBox Gonbidatu Gehigarriak&lt;/b&gt; diska irudi agiria txertatu &lt;b&gt;%1&lt;/b&gt; makina birtualean, makinak ez duelako gidagailu optikorik. Mesedez gehitu gidagailu bat biltegia orrialdea erabiliz makina birtualaren ezarpenak leihoan.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+76"/>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;VirtualBox Gonbidatu Gehigarriak&lt;/b&gt; diska irudi agiria ongi jeitsi da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt;-tik eta tokian bertan gorde da &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; bezala.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Nahi duzu diska irudi agiria erregistratzea eta gidagailu optiko birtualean txertatzea?&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+242"/>
@@ -7631,13 +7631,13 @@
         <location line="+9"/>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Deitua: </translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Deitua&amp;nbsp;RC: </translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -7669,7 +7669,7 @@
     <message>
         <location line="-1577"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hutsegitea ACPI Indar Botoi sakatze gertaera &lt;b&gt;%1&lt;/b&gt; makina birtualera bildatzerakoan.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
@@ -7760,7 +7760,7 @@
     <message>
         <location line="+463"/>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ezin da irudizko modura sartu gonbidatuan ez dagoela nahikoa bideo oroimen.&lt;/p&gt;&lt;p&gt;Makina birtuala itxuratu behar duzu gutxienez&lt;b&gt;%1&lt;/b&gt; bideo oroimen izateko.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+152"/>
@@ -7770,17 +7770,17 @@
     <message>
         <location line="-227"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Makina Birtualaren erakusleiho barnean &lt;b&gt;sagua klikatuta&lt;/b&gt; edo &lt;b&gt;hostalari tekla&lt;/b&gt; sakatuta  duzu. Honek Makina Birtualak hostalariaren sagu punta (sagu punta baterapena sostengatua ez badago gonbidatu SE-n) eta teklatua, zure hostalari makinan ekinean dauden beste aplikazioentzat eskuraezina egingo duena &lt;b&gt;hartzea&lt;/b&gt; eragiten du.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Hostalari tekla&lt;/b&gt; sakatu dezakezu edonoiz teklatua eta sagua (hartuta badago) &lt;b&gt;deshartzeko&lt;/b&gt; eta eragiketa modu arruntera itzularazi. Orain esleitutako hostalari tekla egoera barran erakusten da Makina Birtualaren beheren, &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikurretik hurbil. Ikur honek, hurbil dagoen sagu ikurrarekin batera, teklatuaren eta saguaren uneko hartze egoera adierazten du.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIPopupCenter.cpp" line="-13"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Berez hartu teklatua&lt;/b&gt; aukera piztuta duzu. Honek Makina Birtualak teklatua berezgaitasunez &lt;b&gt;hartzea&lt;/b&gt; eragiten du MB-ren leihoa gaitua den bakoitzean eta eskuraezina egiten du zure hostalari makinan ekinean dauden beste aplikazioentzat: teklatua hartzen denean, teklatuko eragiketa guztiak (sistemaren Alt-Tab bezalakoak barne) MB-ra zuzenduko dira.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Hostalari tekla&lt;/b&gt; sakatu dezakezu edonoiz teklatua eta sagua (hartuta badago) &lt;b&gt;deshartzeko&lt;/b&gt; eta eragiketa modu arruntera itzularazi. Orain esleitutako hostalari tekla egoera barran erakusten da Makina Birtualaren beheren, &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikurretik hurbil. Ikur honek, hurbil dagoen sagu ikurrarekin batera, teklatuaren eta saguaren uneko hartze egoera adierazten du.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+24"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;p&gt;Makina Birtualak jakinarazi du gonbidatu SE-k ez duela &lt;b&gt;sagu punta baterapena&lt;/b&gt; sostengatzen. Honek esanahi du sagu punta &lt;i&gt;hartu&lt;/i&gt;  egin behar duzula gonbidatu SE-ren barnean erabiltzeko.&lt;/p&gt; -- Makina Birtualaren erakusleihoaren gainean egiten dituzun sagu punta ekintza guztiak zuzenean bidaltzen dira gonbidatu SE-ra. Sagua hartuta badago, berezgaitasunez deshartuko da.&lt;/p&gt;&lt;p&gt;Sagu ikurra egoera barran honelakoa da&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;sagu punta baterapena gonbidatu SE-n sostengatua eta piztuta dagoela jakinarazteko.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Oharra&lt;/b&gt;: Zenbait aplikazioek badaiteke jokabide okerra izatea sagu punta baterapen moduan. Betik ezgaitu dezakezu oraingo saiorako (eta berriro gaitu) dagokion ekintza hautatuz menu barratik.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="+217"/>
@@ -7806,7 +7806,7 @@
     <message>
         <location line="+182"/>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Jadanik badago &lt;b&gt;%1&lt;/b&gt; diska gogor biltegi unitate kokalekua. Ezin duzu diska gogor birtual berri bat sortu kokaleku hau erabiliz jadanik beste diska gogor birtual batek erabili ahal dezakeelako.&lt;/p&gt;&lt;p&gt;Mesedez adierazi beste kokaleku bat.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="-165"/>
@@ -7868,7 +7868,7 @@
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="+1379"/>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V hardware bizkorpena gaitu egin da, baina ez dago eraginkor. Zure 64-biteko gonbidatuak huts egingo du 64-bit CPU bat atzematerakoan eta ez da abiatzeko gai izango.&lt;/p&gt;&lt;p&gt;Mesedez zihurtatu VT-x/AMD-V egoki gaituta duzula zure hostalari ordenagailuaren BIOS-ean.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -7945,7 +7945,7 @@
     <message>
         <location line="-598"/>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V hardware bizkorpena gaitu egin da, baina ez dago eraginkor. Zenbait gonbidatuk (adib. OS/2 eta QNX) ezaugarri hau behar dute.&lt;/p&gt;&lt;p&gt;Mesedez zihurtatu VT-x/AMD-V egoki gaituta duzula zure hostalari ordenagailuaren BIOS-ean.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
@@ -7968,7 +7968,7 @@
     <message>
         <location line="-1197"/>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dirudienez USBFS agiri-sistema duzu muntatuta honela: /sys/bus/usb/drivers. Hau aldatzea gomendatzen dizugu, zure sistemaren itxurapen-oker larria denez eta USB gailuek ustekabeko moduan huts egitea eragin dezakeelako.</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -7983,12 +7983,12 @@
     <message>
         <location line="+35"/>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ezin da &lt;b&gt;%1&lt;/b&gt; hizkuntzarako hizkuntza agiria aurkitu &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; zuzenbidean.&lt;/p&gt;&lt;p&gt;Hizkuntza aldibaterako sistemaren berezko hizkuntzan berrezarriko da. Mesedez joan &lt;b&gt;Hobespenak&lt;/b&gt; leihora VirtualBox Kudeatzaile leihoko &lt;b&gt;Agiria&lt;/b&gt; menutik ireki dezakezuna, eta hautatu &lt;b&gt;Hizkuntza&lt;/b&gt; orrialdean badagoen hizkuntzetako bat.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ezin da &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; hizkuntza agiria gertatu. &lt;p&gt;Hizkuntza aldibaterako Ingeleran (barne-eraikia) berrezarriko da. Mesedez joan &lt;b&gt;Hobespenak&lt;/b&gt; leihora VirtualBox Kudeatzaile leihoko &lt;b&gt;Agiria&lt;/b&gt; menutik ireki dezakezuna, eta hautatu &lt;b&gt;Hizkuntza&lt;/b&gt; orrialdean badagoen hizkuntzetako bat.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+36"/>
@@ -8098,12 +8098,12 @@
     <message>
         <location line="+132"/>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ezin da gonbidatu ikusleihoa hostalari ikusleihora aldatu ez dagoelako nahikoa bideo oroimen gonbidatuan.&lt;/p&gt;&lt;p&gt;Makina birtuala itxuratu behar duzu gutxienez &lt;b&gt;%1&lt;/b&gt; bideo oroimen izateko.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="-11"/>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ezin da gonbidatu ikusleihoa hostalari ikusleihora aldatu ez dagoelako nahikoa bideo oroimen gonbidatuan.&lt;/p&gt;&lt;p&gt;Makina birtuala itxuratu behar duzu gutxienez &lt;b&gt;%1&lt;/b&gt; bideo oroimen izateko.&lt;/p&gt;&gt;&lt;p&gt;Sakatu &lt;b&gt;Ezikusi&lt;/b&gt; horrela ere ikusleihoa aldatzeko edo sakatu &lt;b&gt;Ezeztatu&lt;/b&gt; eragiketa ezeztatzeko.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
@@ -8178,7 +8178,7 @@
     <message>
         <location line="+251"/>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hutsegitea (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) diska gogorra &lt;b&gt;%3&lt;/b&gt; makinaren &lt;i&gt;%2&lt;/i&gt; eslotetik deseranstearakoan.</translation>
     </message>
     <message>
         <location line="+960"/>
@@ -8210,18 +8210,18 @@
     <message>
         <location line="-50"/>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hutsegitea (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) diska gogorra &lt;b&gt;%3&lt;/b&gt; makinaren &lt;i&gt;%2&lt;/i&gt; eslotera eranstearakoan.</translation>
     </message>
     <message>
         <location line="+160"/>
         <location line="+8"/>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ohartu medio honen biltegi unitatea ez dela ezabatuko eta berriro erabili ahal izango dela geroago.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+582"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Makina birtualaren leihoa orain &lt;b&gt;Irudizkoa&lt;/b&gt; modura aldatuko da. Leihotu modura itzuli zaitezke &lt;b&gt;%1&lt;/b&gt; sakatuz.&lt;/p&gt;&lt;p&gt;Ohartu &lt;i&gt;Host&lt;/i&gt; tekla &lt;b&gt;%2&lt;/b&gt; bezala zehaztua dagoela.&lt;/p&gt;&lt;p&gt;Ohartu ere menu barra nagusia ezkutatu egiten dela irudizko moduan. Bertara &lt;b&gt;Host+Home&lt;/b&gt; sakatuz sartu zaitezke.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Switch</source>
@@ -8237,7 +8237,7 @@
     <message>
         <location line="-92"/>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox hedapen pakete bat ezartzear zaude. Hedapen paketeek VirtualBox-en eginkizunak osatzen dituzte eta zure sistemarentzat potentzialki kaltergarria izan daitekeen sistema mailako softwarea eduki dezakete. Mesedez berrikusi azpiko azalpena eta jarraitu hedapen paketea iturri fidagarri batetik lortu baduzu bakarrik.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
@@ -8246,7 +8246,7 @@
     <message>
         <location line="+19"/>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hedapen paketeek VirtualBox-en eginkizunak osatzen dituzte eta zure sistemarentzat potentzialki kaltergarria izan daitekeen sistema mailako softwarea eduki dezakete. Mesedez berrikusi azpiko azalpena eta jarraitu hedapen paketea iturri fidagarri batetik lortu baduzu bakarrik.</translation>
     </message>
     <message>
         <location line="+14"/>
@@ -8327,7 +8327,7 @@
     <message>
         <location line="-641"/>
         <source>Create a snapshot of the current machine state</source>
-        <translation>Sortu makinaren oraingo egoeraren argazki bat</translation>
+        <translation>Sortu makinaren oraingo egoeraren berehalako bat</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
@@ -8412,7 +8412,7 @@
     <message>
         <location line="-1658"/>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hutsegitea COM abiarazterakoan &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; VirtualBox-en itxurapen orokorraren zuzenbidea ez dagoelako eskuragarri. Mesedez egiaztatu zuzenbide honen eta bere gaineko zuzenbidearen baimenak.&lt;/p&gt;&lt;p&gt;Aplikazioak orain amaitu egingo du.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+192"/>
@@ -8427,12 +8427,12 @@
     <message>
         <location line="+5"/>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hurrengo makina birtualak kentzear zaude makina zerrendatik:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Makina birtuala duten agiriak zure diska gogorretik ere ezabatzea nahi dituzu? Hau egiteak makina birtualaren diska gogorrak dituzten agiriak ere kenduko ditu ez baditu erabiltzen beste makina batek.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hurrengo makina birtualak kentzear zaude makina zerrendatik:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Makina birtuala duten agiriak zure diska gogorretik ere ezabatzea nahi dituzu?&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+1380"/>
@@ -8464,7 +8464,7 @@
     <message>
         <location line="-805"/>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Zihur zaude hurrengo makina birtualen gordetako egoera baztertzea nahi duzula?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Eragiketa hau gonbidatu SE-ren itzaltze egoki bat egin gabe makina itzaltzea edo berrezartzearen baliokidea da.&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -8499,7 +8499,7 @@
     <message>
         <location line="+248"/>
         <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; berehalakoa leheneratzear zaude.&lt;/p&gt;&lt;p&gt;Makina birtualaren oraingo egoeraren berehalako bat sortu dezakezu lehenik azpiko kutxatila hautatuz; ez baduzu hau egiten oraingo egoera betirako galduko da. Jarraitzea nahi duzu?&lt;/p&gt;</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -8528,7 +8528,7 @@
     <message>
         <location filename="../src/widgets/UIPopupPaneButtonPane.cpp" line="-1"/>
         <source>Do not show this message again</source>
-        <translation type="unfinished">Ez erakutsi mezu hau berriro</translation>
+        <translation>Ez erakutsi mezu hau berriro</translation>
     </message>
 </context>
 <context>
@@ -8719,7 +8719,7 @@
     <message>
         <location line="+2"/>
         <source>Unknown reason</source>
-        <translation>Zergaitik ezezaguna</translation>
+        <translation>Zergaiti ezezaguna</translation>
     </message>
 </context>
 <context>
@@ -9010,7 +9010,7 @@
     <message>
         <location line="+3"/>
         <source>Display</source>
-        <translation>Erakutsi</translation>
+        <translation>Erakuspena</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -9055,7 +9055,7 @@
     <message>
         <location line="+3"/>
         <source>User Interface</source>
-        <translation>Erabiltzaile interfazea</translation>
+        <translation>Erabiltzaile Interfazea</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -9096,7 +9096,7 @@
     <message>
         <location line="+3"/>
         <source>Enable Status Bar</source>
-        <translation>Gaitu Menu Barra</translation>
+        <translation>Gaitu Egoera Barra</translation>
     </message>
 </context>
 <context>
@@ -9873,7 +9873,7 @@
         <location line="+1"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+1"/>
         <source>Current &amp;snapshot tree branch</source>
-        <translation>Oraingo &amp;argazki zuhaitz adarra</translation>
+        <translation>Oraingo &amp;berehalako zuhaitz adarra</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -10152,7 +10152,7 @@
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+8"/>
         <source>Choose a file to export the virtual appliance to...</source>
-        <translation type="unfinished">Hautatu agiri bat gailu birtuala esportatzeko...</translation>
+        <translation>Hautatu agiri bat gailu birtuala esportatzeko...</translation>
     </message>
 </context>
 <context>
@@ -10199,7 +10199,7 @@
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp" line="+66"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="+101"/>
         <source>Appliance to import</source>
-        <translation>Inportatzeko makina birtuala</translation>
+        <translation>Inportatzeko gailua</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -10236,12 +10236,12 @@
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="+61"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="+1"/>
         <source>Appliance settings</source>
-        <translation>Makina birtual ezarpenak</translation>
+        <translation>Gailu ezarpenak</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hauek dira gailuak dituen makina birtualak eta inportatutako VirtualBox makinen iradokitako ezarpenak. Erakusten diren ezaugarrietako asko aldatu ditzakezu klik-bikoitza eginez gaietan eta beste batzuk ezgaitu ditzakezu azpiko hauta kutxatilak erabiliz.</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportApp.cpp" line="-2"/>
@@ -11384,7 +11384,7 @@
         <location line="+5"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Serial Zbk.: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Serie Zbk.: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -12608,7 +12608,7 @@
     <message>
         <location line="+6"/>
         <source>Re&amp;fresh</source>
-        <translation>&amp;Berritu</translation>
+        <translation>B&amp;erritu</translation>
     </message>
     <message>
         <location line="+85"/>
@@ -12734,16 +12734,17 @@
     <message>
         <location line="-102"/>
         <source>&amp;Copy...</source>
-        <translation>&amp;Kopiatu...</translation>
+        <translation>K&amp;opiatu...</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>&amp;Modify...</source>
-        <translation>&amp;Aldatu...</translation>
+        <translation>A&amp;ldatu...</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">Sortu diska gogor birtual berri bat</translation>
+        <translation type="obsolete">Sortu diska gogor birtual berri bat
+</translation>
     </message>
 </context>
 <context>
@@ -12821,7 +12822,7 @@
     <message>
         <location filename="../src/selector/VBoxSnapshotsWgt.ui" line="+26"/>
         <source>VBoxSnapshotsWgt</source>
-        <translation>VBoxArgazkiWgta</translation>
+        <translation>VBoxBerehalakoWgta</translation>
     </message>
     <message>
         <location filename="../src/selector/VBoxSnapshotsWgt.cpp" line="+175"/>
@@ -12919,7 +12920,7 @@
     <message>
         <location line="+7"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation>Hautu oraingo makina birtualaren egoera argazki bat</translation>
+        <translation>Hautu oraingo makina birtualaren egoera berehalako bat</translation>
     </message>
     <message>
         <source>Show the details of the selected snapshot</source>
@@ -12971,7 +12972,7 @@
     <message>
         <location filename="../src/VBoxTakeSnapshotDlg.ui" line="+26"/>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Hartu Makina Birtualaren Argazki bat</translation>
+        <translation>Hartu Makina Birtualaren Berehalako bat</translation>
     </message>
     <message>
         <location line="+41"/>
@@ -12986,9 +12987,9 @@
     <message numerus="yes">
         <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="+72"/>
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Kontuz: Ekinean dagoen makina baten berehalako bat hartzen ari zara berari %n irudi aldaezin erantsita dituela. Berehalako honetatik lanean ari zaren bitartean irudi aldaezinak ez dira berrezarriko datuak galtzea saihesteko.</numerusform>
+            <numerusform>Kontuz: Ekinean dagoen makina baten berehalako bat hartzen ari zara berari %n irudi aldaezin erantsita dituela. Berehalako honetatik lanean ari zaren bitartean irudi aldaezinak ez dira berrezarriko datuak galtzea saihesteko.</numerusform>
         </translation>
     </message>
     <message>
