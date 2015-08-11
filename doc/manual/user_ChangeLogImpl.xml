@@ -11,7 +11,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>VMM: added support for guest-crash report MSRs with Hyper-V
+        <para>VMM: added support for guest crash report MSRs with Hyper-V
           paravirtualization</para>
       </listitem>
 
