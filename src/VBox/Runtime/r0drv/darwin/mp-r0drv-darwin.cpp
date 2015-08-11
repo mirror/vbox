@@ -48,6 +48,8 @@ static int32_t volatile g_cMaxCpus = -1;
 
 static int rtMpDarwinInitMaxCpus(void)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
+
     int32_t cCpus = -1;
     size_t  oldLen = sizeof(cCpus);
     int rc = sysctlbyname("hw.ncpu", &cCpus, &oldLen, NULL, NULL);
@@ -58,6 +60,8 @@ static int rtMpDarwinInitMaxCpus(void)
     }
 
     ASMAtomicWriteS32(&g_cMaxCpus, cCpus);
+
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return cCpus;
 }
 
@@ -293,7 +297,9 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 
     if (g_pfnR0DarwinCpuInterrupt == NULL)
         return VERR_NOT_SUPPORTED;
+    IPRT_DARWIN_SAVE_EFL_AC(); /* paranoia */
     g_pfnR0DarwinCpuInterrupt(idCpu);
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 

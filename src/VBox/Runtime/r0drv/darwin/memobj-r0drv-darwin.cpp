@@ -1053,12 +1053,15 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
 
 DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
 {
+    IPRT_DARWIN_SAVE_EFL_AC();
+
     /* Get the map for the object. */
     vm_map_t pVmMap = rtR0MemObjDarwinGetMap(pMem);
     if (!pVmMap)
+    {
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return VERR_NOT_SUPPORTED;
-
-    IPRT_DARWIN_SAVE_EFL_AC();
+    }
 
     /*
      * Convert the protection.
@@ -1153,6 +1156,7 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
 {
     RTHCPHYS            PhysAddr;
     PRTR0MEMOBJDARWIN   pMemDarwin = (PRTR0MEMOBJDARWIN)pMem;
+    IPRT_DARWIN_SAVE_EFL_AC();
 
 #ifdef USE_VM_MAP_WIRE
     /*
@@ -1195,6 +1199,7 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
             PgNo = pmap_find_phys(Pmap, (uintptr_t)pMemDarwin->Core.pv + iPage * PAGE_SIZE);
         }
 
+        IPRT_DARWIN_RESTORE_EFL_AC();
         AssertReturn(PgNo, NIL_RTHCPHYS);
         PhysAddr = (RTHCPHYS)PgNo << PAGE_SHIFT;
         Assert((PhysAddr >> PAGE_SHIFT) == PgNo);
@@ -1218,6 +1223,7 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
 #else
         addr64_t Addr = pMemDesc->getPhysicalSegment64(iPage * PAGE_SIZE, NULL);
 #endif
+        IPRT_DARWIN_RESTORE_EFL_AC();
         AssertMsgReturn(Addr, ("iPage=%u\n", iPage), NIL_RTHCPHYS);
         PhysAddr = Addr;
         AssertMsgReturn(PhysAddr == Addr, ("PhysAddr=%RHp Addr=%RX64\n", PhysAddr, (uint64_t)Addr), NIL_RTHCPHYS);

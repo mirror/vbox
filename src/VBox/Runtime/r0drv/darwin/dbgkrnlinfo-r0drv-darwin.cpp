@@ -215,6 +215,7 @@ RTDECL(int) RTFileOpen(PRTFILE phFile, const char *pszFilename, uint64_t fOpen)
     RTFILEINT *pThis = (RTFILEINT *)RTMemAllocZ(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
+    IPRT_DARWIN_SAVE_EFL_AC();
 
     errno_t rc;
     pThis->u32Magic = RTFILE_MAGIC;
@@ -256,6 +257,7 @@ RTDECL(int) RTFileOpen(PRTFILE phFile, const char *pszFilename, uint64_t fOpen)
                 break;
             default:
                 AssertMsgFailed(("RTFileOpen received an invalid RW value, fOpen=%#x\n", fOpen));
+                IPRT_DARWIN_RESTORE_EFL_AC();
                 return VERR_INVALID_PARAMETER;
         }
 
@@ -264,6 +266,7 @@ RTDECL(int) RTFileOpen(PRTFILE phFile, const char *pszFilename, uint64_t fOpen)
         if (rc == 0)
         {
             *phFile = pThis;
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return VINF_SUCCESS;
         }
 
@@ -273,6 +276,7 @@ RTDECL(int) RTFileOpen(PRTFILE phFile, const char *pszFilename, uint64_t fOpen)
         rc = VERR_INTERNAL_ERROR_5;
     RTMemFree(pThis);
 
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 }
 
@@ -287,7 +291,9 @@ RTDECL(int) RTFileClose(RTFILE hFile)
     AssertReturn(pThis->u32Magic == RTFILE_MAGIC, VERR_INVALID_HANDLE);
     pThis->u32Magic = ~RTFILE_MAGIC;
 
+    IPRT_DARWIN_SAVE_EFL_AC();
     errno_t rc = vnode_close(pThis->hVnode, pThis->fOpenMode & (FREAD | FWRITE), pThis->hVfsCtx);
+    IPRT_DARWIN_RESTORE_EFL_AC();
 
     RTMemFree(pThis);
     return RTErrConvertFromErrno(rc);
@@ -302,6 +308,7 @@ RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead,
 
     off_t offNative = (off_t)off;
     AssertReturn((RTFOFF)offNative == off, VERR_OUT_OF_RANGE);
+    IPRT_DARWIN_SAVE_EFL_AC();
 
 #if 0 /* Added in 10.6, grr. */
     errno_t rc;
@@ -315,12 +322,16 @@ RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead,
                      vfs_context_ucred(pThis->hVfsCtx), &cbLeft, vfs_context_proc(pThis->hVfsCtx));
         *pcbRead = cbToRead - cbLeft;
     }
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return !rc ? VINF_SUCCESS : RTErrConvertFromErrno(rc);
 
 #else
     uio_t hUio = uio_create(1, offNative, UIO_SYSSPACE, UIO_READ);
     if (!hUio)
+    {
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return VERR_NO_MEMORY;
+    }
     errno_t rc;
     if (uio_addiov(hUio, (user_addr_t)(uintptr_t)pvBuf, cbToRead) == 0)
     {
@@ -333,6 +344,7 @@ RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead,
     else
         rc = VERR_INTERNAL_ERROR_3;
     uio_free(hUio);
+    IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 
 #endif
