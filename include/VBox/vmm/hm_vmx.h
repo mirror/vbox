@@ -382,8 +382,8 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_IGS_INTERRUPTIBILITY_STATE_SMI_INVALID              98
 /** Interruptibility state block-by-SMI invalid when trying to enter SMM. */
 #define VMX_IGS_INTERRUPTIBILITY_STATE_SMI_SMM_INVALID          99
-/** Interruptibilty state block-by-STI (maybe) invalid when trying to deliver
- *  an NMI. */
+/** Interruptibility state block-by-STI (maybe) invalid when trying to
+ *  deliver an NMI. */
 #define VMX_IGS_INTERRUPTIBILITY_STATE_STI_INVALID              100
 /** Interruptibility state block-by-NMI invalid when virtual-NMIs control is
  *  active. */
@@ -483,7 +483,7 @@ typedef struct EPTPML4EBITS
     uint64_t    u4Available     : 4;
     /** Physical address of the next level (PD). Restricted by maximum physical address width of the cpu. */
     uint64_t    u40PhysAddr     : 40;
-    /** Availabe for software. */
+    /** Available for software. */
     uint64_t    u12Available    : 12;
 } EPTPML4EBITS;
 AssertCompileSize(EPTPML4EBITS, 8);
@@ -545,7 +545,7 @@ typedef struct EPTPDPTEBITS
     uint64_t    u4Available     : 4;
     /** Physical address of the next level (PD). Restricted by maximum physical address width of the cpu. */
     uint64_t    u40PhysAddr     : 40;
-    /** Availabe for software. */
+    /** Available for software. */
     uint64_t    u12Available    : 12;
 } EPTPDPTEBITS;
 AssertCompileSize(EPTPDPTEBITS, 8);
@@ -610,7 +610,7 @@ typedef struct EPTPDEBITS
     uint64_t    u4Available     : 4;
     /** Physical address of page table. Restricted by maximum physical address width of the cpu. */
     uint64_t    u40PhysAddr     : 40;
-    /** Availabe for software. */
+    /** Available for software. */
     uint64_t    u12Available    : 12;
 } EPTPDEBITS;
 AssertCompileSize(EPTPDEBITS, 8);
@@ -645,7 +645,7 @@ typedef struct EPTPDE2MBITS
     uint64_t    u9Reserved      : 9;
     /** Physical address of the 2MB page. Restricted by maximum physical address width of the cpu. */
     uint64_t    u31PhysAddr     : 31;
-    /** Availabe for software. */
+    /** Available for software. */
     uint64_t    u12Available    : 12;
 } EPTPDE2MBITS;
 AssertCompileSize(EPTPDE2MBITS, 8);
@@ -822,7 +822,7 @@ typedef union
 {
     struct
     {
-        /** Bits set here -must- be set in the correpsonding VM-execution controls. */
+        /** Bits set here -must- be set in the corresponding VM-execution controls. */
         uint32_t        disallowed0;
         /** Bits cleared here -must- be cleared in the corresponding VM-execution
          *  controls. */
@@ -1088,7 +1088,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define MSR_IA32_VMX_MISC_ACTIVITY_STATES(a)                    (((a) >> 6) & 0x7)
 /** Number of CR3 target values supported by the processor. (0-256) */
 #define MSR_IA32_VMX_MISC_CR3_TARGET(a)                         (((a) >> 16) & 0x1FF)
-/** Maximum nr of MSRs in the VMCS. (N+1)*512. */
+/** Maximum number of MSRs in the VMCS. (N+1)*512. */
 #define MSR_IA32_VMX_MISC_MAX_MSR(a)                            (((((a) >> 25) & 0x7) + 1) * 512)
 /** Whether RDMSR can be used to read IA32_SMBASE_MSR in SMM. */
 #define MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM(a)               (((a) >> 15) & 1)
@@ -1240,7 +1240,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_CTRL_EPTP_LIST_FULL                          0x2024
 #define VMX_VMCS64_CTRL_EPTP_LIST_HIGH                          0x2025
 
-/** VM-exit guest phyiscal address. */
+/** VM-exit guest physical address. */
 #define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL                    0x2400
 #define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_HIGH                    0x2401
 /** @} */
@@ -1372,7 +1372,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT                    RT_BIT(6)
 /** Unrestricted guest execution. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST             RT_BIT(7)
-/** A specified nr of pause loops cause a VM-exit. */
+/** A specified number of pause loops cause a VM-exit. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT                RT_BIT(10)
 /** VM-exit when executing RDRAND instructions. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT                    RT_BIT(11)
@@ -1386,7 +1386,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT                    RT_BIT_64(16)
 /** Controls whether EPT-violations may cause \#VE instead of exits. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_EPT_VE                         RT_BIT_64(18)
-/** Enables XSAVES/SRSTORS. */
+/** Enables XSAVES/XRSTORS. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_XSAVES                         RT_BIT_64(20)
 
 /** @} */
@@ -1683,7 +1683,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_QUALIFICATION_EPT_DATA_READ                    RT_BIT(0)
 /** Set if the violation was caused by a data write. */
 #define VMX_EXIT_QUALIFICATION_EPT_DATA_WRITE                   RT_BIT(1)
-/** Set if the violation was caused by an insruction fetch. */
+/** Set if the violation was caused by an instruction fetch. */
 #define VMX_EXIT_QUALIFICATION_EPT_INSTR_FETCH                  RT_BIT(2)
 /** AND of the present bit of all EPT structures. */
 #define VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT                RT_BIT(3)
@@ -1847,15 +1847,15 @@ DECLASM(int) VMXDispatchHostNmi(void);
 
 
 /**
- * Executes VMXON
+ * Executes VMXON.
  *
- * @returns VBox status code
- * @param   pVMXOn      Physical address of VMXON structure
+ * @returns VBox status code.
+ * @param   HCPhysVmxOn      Physical address of VMXON structure.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-DECLASM(int) VMXEnable(RTHCPHYS pVMXOn);
+DECLASM(int) VMXEnable(RTHCPHYS HCPhysVmxOn);
 #else
-DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
+DECLINLINE(int) VMXEnable(RTHCPHYS HCPhysVmxOn)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
@@ -1873,14 +1873,14 @@ DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
        "add      $8, %%esp                                      \n\t"
        :"=rm"(rc)
        :"0"(VINF_SUCCESS),
-        "ir"((uint32_t)pVMXOn),        /* don't allow direct memory reference here, */
-        "ir"((uint32_t)(pVMXOn >> 32)) /* this would not work with -fomit-frame-pointer */
+        "ir"((uint32_t)HCPhysVmxOn),        /* don't allow direct memory reference here, */
+        "ir"((uint32_t)(HCPhysVmxOn >> 32)) /* this would not work with -fomit-frame-pointer */
        :"memory"
        );
     return rc;
 
 # elif VMX_USE_MSC_INTRINSICS
-    unsigned char rcMsc = __vmx_on(&pVMXOn);
+    unsigned char rcMsc = __vmx_on(&HCPhysVmxOn);
     if (RT_LIKELY(rcMsc == 0))
         return VINF_SUCCESS;
     return rcMsc == 2 ? VERR_VMX_INVALID_VMXON_PTR : VERR_VMX_VMXON_FAILED;
@@ -1889,8 +1889,8 @@ DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
     int rc = VINF_SUCCESS;
     __asm
     {
-        push    dword ptr [pVMXOn+4]
-        push    dword ptr [pVMXOn]
+        push    dword ptr [HCPhysVmxOn + 4]
+        push    dword ptr [HCPhysVmxOn]
         _emit   0xF3
         _emit   0x0F
         _emit   0xC7
@@ -1913,7 +1913,7 @@ the_end:
 
 
 /**
- * Executes VMXOFF
+ * Executes VMXOFF.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(void) VMXDisable(void);
@@ -1941,15 +1941,15 @@ DECLINLINE(void) VMXDisable(void)
 
 
 /**
- * Executes VMCLEAR
+ * Executes VMCLEAR.
  *
- * @returns VBox status code
- * @param   pVMCS       Physical address of VM control structure
+ * @returns VBox status code.
+ * @param   HCPhysVmcs       Physical address of VM control structure.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-DECLASM(int) VMXClearVmcs(RTHCPHYS pVMCS);
+DECLASM(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs);
 #else
-DECLINLINE(int) VMXClearVmcs(RTHCPHYS pVMCS)
+DECLINLINE(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
@@ -1963,14 +1963,14 @@ DECLINLINE(int) VMXClearVmcs(RTHCPHYS pVMCS)
        "add     $8, %%esp                                       \n\t"
        :"=rm"(rc)
        :"0"(VINF_SUCCESS),
-        "ir"((uint32_t)pVMCS),        /* don't allow direct memory reference here, */
-        "ir"((uint32_t)(pVMCS >> 32)) /* this would not work with -fomit-frame-pointer */
+        "ir"((uint32_t)HCPhysVmcs),        /* don't allow direct memory reference here, */
+        "ir"((uint32_t)(HCPhysVmcs >> 32)) /* this would not work with -fomit-frame-pointer */
        :"memory"
        );
     return rc;
 
 # elif VMX_USE_MSC_INTRINSICS
-    unsigned char rcMsc = __vmx_vmclear(&pVMCS);
+    unsigned char rcMsc = __vmx_vmclear(&HCPhysVmcs);
     if (RT_LIKELY(rcMsc == 0))
         return VINF_SUCCESS;
     return VERR_VMX_INVALID_VMCS_PTR;
@@ -1979,8 +1979,8 @@ DECLINLINE(int) VMXClearVmcs(RTHCPHYS pVMCS)
     int rc = VINF_SUCCESS;
     __asm
     {
-        push    dword ptr [pVMCS+4]
-        push    dword ptr [pVMCS]
+        push    dword ptr [HCPhysVmcs + 4]
+        push    dword ptr [HCPhysVmcs]
         _emit   0x66
         _emit   0x0F
         _emit   0xC7
@@ -1998,15 +1998,15 @@ success:
 
 
 /**
- * Executes VMPTRLD
+ * Executes VMPTRLD.
  *
- * @returns VBox status code
- * @param   pVMCS       Physical address of VMCS structure
+ * @returns VBox status code.
+ * @param   HCPhysVmcs       Physical address of VMCS structure.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-DECLASM(int) VMXActivateVmcs(RTHCPHYS pVMCS);
+DECLASM(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs);
 #else
-DECLINLINE(int) VMXActivateVmcs(RTHCPHYS pVMCS)
+DECLINLINE(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
@@ -2020,13 +2020,13 @@ DECLINLINE(int) VMXActivateVmcs(RTHCPHYS pVMCS)
        "add     $8, %%esp                                       \n\t"
        :"=rm"(rc)
        :"0"(VINF_SUCCESS),
-        "ir"((uint32_t)pVMCS),        /* don't allow direct memory reference here, */
-        "ir"((uint32_t)(pVMCS >> 32)) /* this will not work with -fomit-frame-pointer */
+        "ir"((uint32_t)HCPhysVmcs),        /* don't allow direct memory reference here, */
+        "ir"((uint32_t)(HCPhysVmcs >> 32)) /* this will not work with -fomit-frame-pointer */
        );
     return rc;
 
 # elif VMX_USE_MSC_INTRINSICS
-    unsigned char rcMsc = __vmx_vmptrld(&pVMCS);
+    unsigned char rcMsc = __vmx_vmptrld(&HCPhysVmcs);
     if (RT_LIKELY(rcMsc == 0))
         return VINF_SUCCESS;
     return VERR_VMX_INVALID_VMCS_PTR;
@@ -2035,8 +2035,8 @@ DECLINLINE(int) VMXActivateVmcs(RTHCPHYS pVMCS)
     int rc = VINF_SUCCESS;
     __asm
     {
-        push    dword ptr [pVMCS+4]
-        push    dword ptr [pVMCS]
+        push    dword ptr [HCPhysVmcs + 4]
+        push    dword ptr [HCPhysVmcs]
         _emit   0x0F
         _emit   0xC7
         _emit   0x34
@@ -2053,25 +2053,26 @@ success:
 #endif
 
 /**
- * Executes VMPTRST
+ * Executes VMPTRST.
  *
- * @returns VBox status code
- * @param pVMCS    Address that will receive the current pointer
+ * @returns VBox status code.
+ * @param   pHCPhysVmcs    Where to store the physical address of the current
+ *                         VMCS.
  */
-DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pVMCS);
+DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pHCPhysVmcs);
 
 /**
- * Executes VMWRITE
+ * Executes VMWRITE.
  *
- * @returns VBox status code
- * @retval  VINF_SUCCESS
- * @retval  VERR_VMX_INVALID_VMCS_PTR
- * @retval  VERR_VMX_INVALID_VMCS_FIELD
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS.
+ * @retval  VERR_VMX_INVALID_VMCS_PTR.
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD.
  *
- * @param   idxField        VMCS index
- * @param   u32Val          32 bits value
+ * @param   idxField        VMCS index.
+ * @param   u32Val          32-bit value.
  *
- * @remarks The values of the two status codes can be ORed together, the result
+ * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2129,17 +2130,17 @@ the_end:
 #endif
 
 /**
- * Executes VMWRITE
+ * Executes VMWRITE.
  *
- * @returns VBox status code
- * @retval  VINF_SUCCESS
- * @retval  VERR_VMX_INVALID_VMCS_PTR
- * @retval  VERR_VMX_INVALID_VMCS_FIELD
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS.
+ * @retval  VERR_VMX_INVALID_VMCS_PTR.
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD.
  *
- * @param   idxField        VMCS index
- * @param   u64Val          16, 32 or 64 bits value
+ * @param   idxField        VMCS index.
+ * @param   u64Val          16, 32 or 64-bit value.
  *
- * @remarks The values of the two status codes can be ORed together, the result
+ * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if !defined(RT_ARCH_X86) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2176,33 +2177,35 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 
 
 /**
- * Invalidate a page using invept
- * @returns VBox status code
- * @param   enmFlush    Type of flush
- * @param   pDescriptor Descriptor
+ * Invalidate a page using INVEPT.
+ *
+ * @returns VBox status code.
+ * @param   enmFlush        Type of flush.
+ * @param   pDescriptor     Pointer to the descriptor.
  */
 DECLASM(int) VMXR0InvEPT(VMXFLUSHEPT enmFlush, uint64_t *pDescriptor);
 
 /**
- * Invalidate a page using invvpid
- * @returns VBox status code
- * @param   enmFlush    Type of flush
- * @param   pDescriptor Descriptor
+ * Invalidate a page using INVVPID.
+ *
+ * @returns VBox status code.
+ * @param   enmFlush        Type of flush.
+ * @param   pDescriptor     Pointer to the descriptor.
  */
 DECLASM(int) VMXR0InvVPID(VMXFLUSHVPID enmFlush, uint64_t *pDescriptor);
 
 /**
- * Executes VMREAD
+ * Executes VMREAD.
  *
- * @returns VBox status code
- * @retval  VINF_SUCCESS
- * @retval  VERR_VMX_INVALID_VMCS_PTR
- * @retval  VERR_VMX_INVALID_VMCS_FIELD
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS.
+ * @retval  VERR_VMX_INVALID_VMCS_PTR.
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD.
  *
- * @param   idxField        VMCS index
- * @param   pData           Ptr to store VM field value
+ * @param   idxField        VMCS index.
+ * @param   pData           Where to store VM field value.
  *
- * @remarks The values of the two status codes can be ORed together, the result
+ * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2270,17 +2273,17 @@ the_end:
 #endif
 
 /**
- * Executes VMREAD
+ * Executes VMREAD.
  *
- * @returns VBox status code
- * @retval  VINF_SUCCESS
- * @retval  VERR_VMX_INVALID_VMCS_PTR
- * @retval  VERR_VMX_INVALID_VMCS_FIELD
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS.
+ * @retval  VERR_VMX_INVALID_VMCS_PTR.
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD.
  *
- * @param   idxField        VMCS index
- * @param   pData           Ptr to store VM field value
+ * @param   idxField        VMCS index.
+ * @param   pData           Where to store VM field value.
  *
- * @remarks The values of the two status codes can be ORed together, the result
+ * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if (!defined(RT_ARCH_X86) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2319,9 +2322,9 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
 #endif
 
 /**
- * Gets the last instruction error value from the current VMCS
+ * Gets the last instruction error value from the current VMCS.
  *
- * @returns error value
+ * @returns VBox status code.
  */
 DECLINLINE(uint32_t) VMXGetLastError(void)
 {

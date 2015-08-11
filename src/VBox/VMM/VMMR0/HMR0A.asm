@@ -375,9 +375,9 @@ ENDPROC VMXDispatchHostNmi
 ;/**
 ; * Executes VMWRITE, 64-bit value.
 ; *
-; * @returns VBox status code
-; * @param   idxField   x86: [ebp + 08h]  msc: rcx  gcc: rdi   VMCS index
-; * @param   u64Data    x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value
+; * @returns VBox status code.
+; * @param   idxField   x86: [ebp + 08h]  msc: rcx  gcc: rdi   VMCS index.
+; * @param   u64Data    x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value.
 ; */
 ALIGNCODE(16)
 BEGINPROC VMXWriteVmcs64
@@ -439,11 +439,11 @@ ENDPROC VMXWriteVmcs64
 
 
 ;/**
-; * Executes VMREAD, 64-bit value
+; * Executes VMREAD, 64-bit value.
 ; *
-; * @returns VBox status code
-; * @param   idxField        VMCS index
-; * @param   pData           Ptr to store VM field value
+; * @returns VBox status code.
+; * @param   idxField        VMCS index.
+; * @param   pData           Where to store VM field value.
 ; */
 ;DECLASM(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData);
 ALIGNCODE(16)
@@ -508,9 +508,9 @@ ENDPROC VMXReadVmcs64
 ;/**
 ; * Executes VMREAD, 32-bit value.
 ; *
-; * @returns VBox status code
-; * @param   idxField        VMCS index
-; * @param   pu32Data        Ptr to store VM field value
+; * @returns VBox status code.
+; * @param   idxField        VMCS index.
+; * @param   pu32Data        Where to store VM field value.
 ; */
 ;DECLASM(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pu32Data);
 ALIGNCODE(16)
@@ -573,9 +573,9 @@ ENDPROC VMXReadVmcs32
 ;/**
 ; * Executes VMWRITE, 32-bit value.
 ; *
-; * @returns VBox status code
-; * @param   idxField        VMCS index
-; * @param   u32Data         Ptr to store VM field value
+; * @returns VBox status code.
+; * @param   idxField        VMCS index.
+; * @param   u32Data         Where to store VM field value.
 ; */
 ;DECLASM(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Data);
 ALIGNCODE(16)
@@ -635,10 +635,10 @@ ENDPROC VMXWriteVmcs32
 
 
 ;/**
-; * Executes VMXON
+; * Executes VMXON.
 ; *
-; * @returns VBox status code
-; * @param   HCPhysVMXOn      Physical address of VMXON structure
+; * @returns VBox status code.
+; * @param   HCPhysVMXOn      Physical address of VMXON structure.
 ; */
 ;DECLASM(int) VMXEnable(RTHCPHYS HCPhysVMXOn);
 BEGINPROC VMXEnable
@@ -696,7 +696,7 @@ ENDPROC VMXEnable
 
 
 ;/**
-; * Executes VMXOFF
+; * Executes VMXOFF.
 ; */
 ;DECLASM(void) VMXDisable(void);
 BEGINPROC VMXDisable
@@ -725,10 +725,10 @@ ENDPROC VMXDisable
 
 
 ;/**
-; * Executes VMCLEAR
+; * Executes VMCLEAR.
 ; *
-; * @returns VBox status code
-; * @param   HCPhysVmcs     Physical address of VM control structure
+; * @returns VBox status code.
+; * @param   HCPhysVmcs     Physical address of VM control structure.
 ; */
 ;DECLASM(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs);
 ALIGNCODE(16)
@@ -779,10 +779,10 @@ ENDPROC VMXClearVmcs
 
 
 ;/**
-; * Executes VMPTRLD
+; * Executes VMPTRLD.
 ; *
-; * @returns VBox status code
-; * @param   HCPhysVmcs     Physical address of VMCS structure
+; * @returns VBox status code.
+; * @param   HCPhysVmcs     Physical address of VMCS structure.
 ; */
 ;DECLASM(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs);
 ALIGNCODE(16)
@@ -833,10 +833,10 @@ ENDPROC VMXActivateVmcs
 
 
 ;/**
-; * Executes VMPTRST
+; * Executes VMPTRST.
 ; *
-; * @returns VBox status code
-; * @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - Address that will receive the current pointer
+; * @returns VBox status code.
+; * @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - Address that will receive the current pointer.
 ; */
 ;DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pVMCS);
 BEGINPROC VMXGetActivatedVmcs
@@ -881,9 +881,9 @@ BITS 32
 ENDPROC VMXGetActivatedVmcs
 
 ;/**
-; * Invalidate a page using invept
-; @param   enmFlush     msc:ecx  gcc:edi  x86:[esp+04]  Type of flush
-; @param   pDescriptor  msc:edx  gcc:esi  x86:[esp+08]  Descriptor pointer
+; * Invalidate a page using INVEPT.
+; @param   enmFlush     msc:ecx  gcc:edi  x86:[esp+04]  Type of flush.
+; @param   pDescriptor  msc:edx  gcc:esi  x86:[esp+08]  Descriptor pointer.
 ; */
 ;DECLASM(int) VMXR0InvEPT(VMX_FLUSH enmFlush, uint64_t *pDescriptor);
 BEGINPROC VMXR0InvEPT
