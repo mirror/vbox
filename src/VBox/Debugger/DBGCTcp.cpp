@@ -101,6 +101,8 @@ static DECLCALLBACK(int) dbgcTcpBackRead(PDBGCBACK pBack, void *pvBuf, size_t cb
     if (!pDbgcTcp->fAlive)
         return VERR_INVALID_HANDLE;
     int rc = RTTcpRead(pDbgcTcp->Sock, pvBuf, cbBuf, pcbRead);
+    if (RT_SUCCESS(rc) && pcbRead != NULL && *pcbRead == 0)
+        rc = VERR_NET_SHUTDOWN;
     if (RT_FAILURE(rc))
         pDbgcTcp->fAlive = false;
     return rc;
