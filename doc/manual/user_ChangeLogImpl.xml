@@ -26,7 +26,7 @@
       </listitem>
 
       <listitem>
-        <para>VMM: fixed saved state issue with VT-x/AMD-V disabled
+        <para>VMM: fixed a saved state issue with VT-x/AMD-V disabled
           (5.0 regression; bug #14304)</para>
       </listitem>
 
