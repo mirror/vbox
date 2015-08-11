@@ -173,12 +173,14 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
 DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 {
     int rc;
+    IPRT_LINUX_SAVE_EFL_AC();
 
 # ifdef CPU_DOWN_FAILED
     RTCpuSetEmpty(&g_MpPendingOfflineSet);
 # endif
 
     rc = register_cpu_notifier(&g_NotifierBlock);
+    IPRT_LINUX_RESTORE_EFL_AC();
     AssertMsgReturn(!rc, ("%d\n", rc), RTErrConvertFromErrno(rc));
     return VINF_SUCCESS;
 }
@@ -186,7 +188,9 @@ DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 
 DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void)
 {
+    IPRT_LINUX_SAVE_EFL_AC();
     unregister_cpu_notifier(&g_NotifierBlock);
+    IPRT_LINUX_RESTORE_EFL_AC();
 }
 
 #else   /* Not supported / Not needed */

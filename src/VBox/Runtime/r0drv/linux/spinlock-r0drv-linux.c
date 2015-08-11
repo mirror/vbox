@@ -73,6 +73,7 @@ typedef struct RTSPINLOCKINTERNAL
 
 RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char *pszName)
 {
+    IPRT_LINUX_SAVE_EFL_AC();
     PRTSPINLOCKINTERNAL pThis;
     AssertReturn(fFlags == RTSPINLOCK_FLAGS_INTERRUPT_SAFE || fFlags == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, VERR_INVALID_PARAMETER);
 
@@ -97,6 +98,7 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char
     spin_lock_init(&pThis->Spinlock);
 
     *pSpinlock = pThis;
+    IPRT_LINUX_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSpinlockCreate);
@@ -140,7 +142,11 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
         pThis->fIntSaved = fIntSaved;
     }
     else
+    {
+        IPRT_LINUX_SAVE_EFL_AC();
         spin_lock(&pThis->Spinlock);
+        IPRT_LINUX_RESTORE_EFL_ONLY_AC();
+    }
 #ifdef CONFIG_PROVE_LOCKING
     lockdep_on();
 #endif
@@ -168,7 +174,11 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
         spin_unlock_irqrestore(&pThis->Spinlock, fIntSaved);
     }
     else
+    {
+        IPRT_LINUX_SAVE_EFL_AC();
         spin_unlock(&pThis->Spinlock);
+        IPRT_LINUX_RESTORE_EFL_ONLY_AC();
+    }
 #ifdef CONFIG_PROVE_LOCKING
     lockdep_on();
 #endif

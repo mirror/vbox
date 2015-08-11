@@ -166,6 +166,8 @@ DECLINLINE(void) rtThreadCtxHookDisable(PRTTHREADCTXHOOKINT pThis)
 
 RTDECL(int) RTThreadCtxHookCreate(PRTTHREADCTXHOOK phCtxHook, uint32_t fFlags, PFNRTTHREADCTXHOOK pfnCallback, void *pvUser)
 {
+    IPRT_LINUX_SAVE_EFL_AC();
+
     /*
      * Validate input.
      */
@@ -180,7 +182,10 @@ RTDECL(int) RTThreadCtxHookCreate(PRTTHREADCTXHOOK phCtxHook, uint32_t fFlags, P
      */
     pThis = (PRTTHREADCTXHOOKINT)RTMemAllocZ(sizeof(*pThis));
     if (RT_UNLIKELY(!pThis))
+    {
+        IPRT_LINUX_RESTORE_EFL_AC();
         return VERR_NO_MEMORY;
+    }
     pThis->u32Magic     = RTTHREADCTXHOOKINT_MAGIC;
     pThis->hOwner       = RTThreadNativeSelf();
     pThis->fEnabled     = false;
@@ -195,6 +200,7 @@ RTDECL(int) RTThreadCtxHookCreate(PRTTHREADCTXHOOK phCtxHook, uint32_t fFlags, P
 #endif
 
     *phCtxHook = pThis;
+    IPRT_LINUX_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTThreadCtxHookCreate);
@@ -202,6 +208,8 @@ RT_EXPORT_SYMBOL(RTThreadCtxHookCreate);
 
 RTDECL(int ) RTThreadCtxHookDestroy(RTTHREADCTXHOOK hCtxHook)
 {
+    IPRT_LINUX_SAVE_EFL_AC();
+
     /*
      * Validate input.
      */
@@ -231,6 +239,7 @@ RTDECL(int ) RTThreadCtxHookDestroy(RTTHREADCTXHOOK hCtxHook)
     ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXHOOKINT_MAGIC);
     RTMemFree(pThis);
 
+    IPRT_LINUX_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTThreadCtxHookDestroy);
@@ -249,6 +258,7 @@ RTDECL(int) RTThreadCtxHookEnable(RTTHREADCTXHOOK hCtxHook)
     Assert(!pThis->fEnabled);
     if (!pThis->fEnabled)
     {
+        IPRT_LINUX_SAVE_EFL_AC();
         Assert(pThis->PreemptOps.sched_out == rtThreadCtxHooksLnxSchedOut);
         Assert(pThis->PreemptOps.sched_in == rtThreadCtxHooksLnxSchedIn);
 
@@ -259,6 +269,8 @@ RTDECL(int) RTThreadCtxHookEnable(RTTHREADCTXHOOK hCtxHook)
         pThis->fEnabled = true;
         preempt_notifier_register(&pThis->LnxPreemptNotifier);
         preempt_enable();
+
+        IPRT_LINUX_RESTORE_EFL_AC();
     }
 
     return VINF_SUCCESS;
@@ -283,7 +295,11 @@ RTDECL(int) RTThreadCtxHookDisable(RTTHREADCTXHOOK hCtxHook)
          * Deregister the callback.
          */
         if (pThis->fEnabled)
+        {
+            IPRT_LINUX_SAVE_EFL_AC();
             rtThreadCtxHookDisable(pThis);
+            IPRT_LINUX_RESTORE_EFL_AC();
+        }
     }
     return VINF_SUCCESS;
 }

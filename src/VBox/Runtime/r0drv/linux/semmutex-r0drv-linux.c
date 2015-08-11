@@ -86,6 +86,8 @@ typedef struct RTSEMMUTEXINTERNAL
 
 RTDECL(int) RTSemMutexCreate(PRTSEMMUTEX phMtx)
 {
+    IPRT_LINUX_SAVE_EFL_AC();
+
     /*
      * Allocate.
      */
@@ -115,6 +117,7 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
     PRTSEMMUTEXINTERNAL     pThis = hMtx;
     PRTSEMMUTEXLNXWAITER    pCur;
     unsigned long           fSavedIrq;
+    IPRT_LINUX_SAVE_EFL_AC();
 
     /*
      * Validate.
@@ -250,6 +253,7 @@ DECLINLINE(int) rtSemMutexLinuxRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMilli
     struct task_struct *pSelf = current;
     unsigned long       fSavedIrq;
     int                 rc;
+    IPRT_LINUX_SAVE_EFL_AC();
 
     /*
      * Validate.
@@ -289,10 +293,15 @@ DECLINLINE(int) rtSemMutexLinuxRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMilli
      * No, so go to sleep.
      */
     else
-        return rtSemMutexLinuxRequestSleep(pThis, cMillies, fInterruptible, fSavedIrq);
+    {
+        rc = rtSemMutexLinuxRequestSleep(pThis, cMillies, fInterruptible, fSavedIrq);
+        IPRT_LINUX_RESTORE_EFL_ONLY_AC();
+        return rc;
+    }
 
     IPRT_DEBUG_SEMS_STATE_RC(pThis, 'M', rc);
     spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
+    IPRT_LINUX_RESTORE_EFL_ONLY_AC();
     return rc;
 }
 
@@ -331,6 +340,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX hMtx)
     struct task_struct *pSelf = current;
     unsigned long       fSavedIrq;
     int                 rc;
+    IPRT_LINUX_SAVE_EFL_AC();
 
     /*
      * Validate.
@@ -366,6 +376,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX hMtx)
     spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
 
     AssertRC(rc);
+    IPRT_LINUX_RESTORE_EFL_AC();
     return rc;
 }
 RT_EXPORT_SYMBOL(RTSemMutexRelease);
@@ -376,6 +387,7 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem)
     PRTSEMMUTEXINTERNAL pThis = hMutexSem;
     unsigned long       fSavedIrq;
     bool                fOwned;
+    IPRT_LINUX_SAVE_EFL_AC();
 
     /*
      * Validate.
@@ -391,6 +403,7 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem)
     fOwned = pThis->pOwnerTask != NULL;
     spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
 
+    IPRT_LINUX_RESTORE_EFL_AC();
     return fOwned;
 
 }

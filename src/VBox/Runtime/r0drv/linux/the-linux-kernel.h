@@ -385,7 +385,7 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 #ifdef CONFIG_X86_SMAP
 # include <iprt/asm-amd64-x86.h>
 # define IPRT_X86_EFL_AC                    RT_BIT(18)
-# define IPRT_LINUX_SAVE_EFL_AC()           RTCCUINTREG fSavedEfl = ASMGetFlags();
+# define IPRT_LINUX_SAVE_EFL_AC()           RTCCUINTREG fSavedEfl = ASMGetFlags()
 # define IPRT_LINUX_RESTORE_EFL_AC()        ASMSetFlags(fSavedEfl)
 # define IPRT_LINUX_RESTORE_EFL_ONLY_AC()   ASMSetFlags((ASMGetFlags() & ~IPRT_X86_EFL_AC) | (fSavedEfl & IPRT_X86_EFL_AC))
 #else
