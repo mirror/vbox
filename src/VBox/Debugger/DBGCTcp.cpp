@@ -137,7 +137,7 @@ static DECLCALLBACK(int) dbgcTcpBackWrite(PDBGCBACK pBack, const void *pvBuf, si
         /* write newlines */
         if (*(const char *)pvBuf == '\n')
         {
-            rc = RTTcpWrite(pDbgcTcp->Sock, "\n\r", 2);
+            rc = RTTcpWrite(pDbgcTcp->Sock, "\r\n", 2);
             cb = 1;
         }
         /* write till next newline */
