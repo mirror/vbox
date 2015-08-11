@@ -1872,7 +1872,8 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     pelmVBoxMachine->createChild("ovf:Info")->addContent("Complete VirtualBox machine configuration in VirtualBox format");
 
     // create an empty machine config
-    settings::MachineConfigFile *pConfig = new settings::MachineConfigFile(NULL);
+    // use the same settings version as the current VM settings file
+    settings::MachineConfigFile *pConfig = new settings::MachineConfigFile(&vsdescThis->m->pMachine->i_getSettingsFileFull());
 
     writeLock.release();
     try
