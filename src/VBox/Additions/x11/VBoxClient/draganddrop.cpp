@@ -570,6 +570,9 @@ protected:
     RTCRITSECT                  m_dataCS;
     /** List of allowed formats. */
     RTCList<RTCString>          m_lstAllowedFormats;
+    /** Number of failed attempts by the host
+     *  to query for an active drag and drop operation on the guest. */
+    uint16_t                    m_cFailedPendingAttempts;
 };
 
 /*******************************************************************************
@@ -691,6 +694,7 @@ void DragInstance::reset(void)
         m_enmState  = Initialized;
         m_enmMode   = Unknown;
         m_eventQueueList.clear();
+        m_cFailedPendingAttempts = 0;
 
         /* Reset the selection request buffer. */
         if (m_pvSelReqData)
@@ -1053,6 +1057,12 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
             else if (   e.xclient.message_type == xAtom(XA_XdndPosition)
                      && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndPositionWindow]))
             {
+                if (m_enmState != Dragging) /* Wrong mode? Bail out. */
+                {
+                    reset();
+                    break;
+                }
+
                 int32_t lPos      = e.xclient.data.l[XdndPositionXY];
                 Atom    atmAction = m_curVer >= 2 /* Actions other than "copy" or only supported since protocol version 2. */
                                   ? e.xclient.data.l[XdndPositionAction] : xAtom(XA_XdndActionCopy);
@@ -1102,20 +1112,26 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                      && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndDropWindow]))
             {
                 LogFlowThisFunc(("XA_XdndDrop\n"));
-                /* Can occur when dragging from guest->host, but then back in to the guest again. */
-                logInfo("Could not drop on own proxy window\n"); /* Not fatal. */
 
-                /* Let the source know. */
-                rc = m_wndProxy.sendFinished(m_wndCur, DND_IGNORE_ACTION);
+                if (m_enmState != Dropped) /* Wrong mode? Bail out. */
+                {
+                    /* Can occur when dragging from guest->host, but then back in to the guest again. */
+                    logInfo("Could not drop on own proxy window\n"); /* Not fatal. */
 
-                /* Start over. */
-                reset();
+                    /* Let the source know. */
+                    rc = m_wndProxy.sendFinished(m_wndCur, DND_IGNORE_ACTION);
+
+                    /* Start over. */
+                    reset();
+                    break;
+                }
+
+                m_eventQueueList.append(e);
+                rc = RTSemEventSignal(m_eventQueueEvent);
             }
-            else if (   e.xclient.message_type == xAtom(XA_XdndFinished)
-                     && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndFinishedWindow]))
+            else
             {
-                LogFlowThisFunc(("XA_XdndFinished\n"));
-                logInfo("Finished drop on own proxy window\n"); /* Not fatal. */
+                logInfo("Unhandled event from wnd=%#x, msg=%s\n", e.xclient.window, xAtomToString(e.xclient.message_type).c_str());
 
                 /* Let the source know. */
                 rc = m_wndProxy.sendFinished(m_wndCur, DND_IGNORE_ACTION);
@@ -1353,14 +1369,17 @@ int DragInstance::onX11Event(const XEvent &e)
     LogFlowThisFunc(("X11 event, type=%d\n", e.type));
     switch (e.type)
     {
+        /*
+         * This can happen if a guest->host drag operation
+         * goes back from the host to the guest. This is not what
+         * we want and thus resetting everything.
+         */
         case ButtonPress:
-            LogFlowThisFunc(("ButtonPress\n"));
-            rc = VINF_SUCCESS;
-            break;
-
         case ButtonRelease:
-            LogFlowThisFunc(("ButtonRelease\n"));
+            LogFlowThisFunc(("Mouse button press/release\n"));
             rc = VINF_SUCCESS;
+
+            reset();
             break;
 
         case ClientMessage:
@@ -1962,7 +1981,8 @@ int DragInstance::ghIsDnDPending(void)
                  || m_enmState == Dropped)
             )
     {
-        rc = VERR_INVALID_STATE;
+        /* No need to query for the source window again. */
+        rc = VINF_SUCCESS;
     }
     else
     {
@@ -1983,22 +2003,50 @@ int DragInstance::ghIsDnDPending(void)
 
             /* Map the window on the current cursor position, which should provoke
              * an XdndEnter event. */
-            rc = proxyWinShow(NULL, NULL);
+            rc = proxyWinShow();
             if (RT_SUCCESS(rc))
             {
                 rc = mouseCursorFakeMove();
                 if (RT_SUCCESS(rc))
                 {
+                    bool fWaitFailed = false; /* Waiting for status changed failed? */
+
                     /* Wait until we're in "Dragging" state. */
-                    rc = waitForStatusChange(Dragging, 1000 /* 1s timeout */);
+                    rc = waitForStatusChange(Dragging, 100 /* 100ms timeout */);
+
+                    /*
+                     * Note: Don't wait too long here, as this mostly will make
+                     *       the drag and drop experience on the host being laggy
+                     *       and unresponsive.
+                     *
+                     *       Instead, let the host query multiple times with 100ms
+                     *       timeout each (see above) and only report an error if
+                     *       the overall querying time has been exceeded.<
+                     */
+                    if (RT_SUCCESS(rc))
+                    {
+                        m_enmMode = GH;
+                    }
+                    else if (rc == VERR_TIMEOUT)
+                    {
+                        /** @todo Make m_cFailedPendingAttempts configurable. For slower window managers? */
+                        if (m_cFailedPendingAttempts++ > 50) /* Tolerate up to 5s total (100ms for each slot). */
+                            fWaitFailed = true;
+                        else
+                            rc = VINF_SUCCESS;
+                    }
+                    else if (RT_FAILURE(rc))
+                        fWaitFailed = true;
+
+                    if (fWaitFailed)
+                    {
+                        logError("Error mapping proxy window to guest source window %#x ('%s'), rc=%Rrc\n",
+                                 wndSelection, pszWndName, rc);
+
+                        /* Reset the counter in any case. */
+                        m_cFailedPendingAttempts = 0;
+                    }
                 }
-                if (RT_SUCCESS(rc))
-                {
-                    m_enmMode = GH;
-                }
-                else
-                    logError("Error mapping proxy window to guest source window %#x ('%s'), rc=%Rrc\n",
-                             wndSelection, pszWndName, rc);
             }
 
             RTStrFree(pszWndName);
@@ -2069,24 +2117,19 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 
     m_enmState = Dropped;
 
-    /* Show the proxy window, so that the current source window will find it. */
-    int iRootX, iRootY;
-    proxyWinShow(&iRootX, &iRootY);
-
 #ifdef DEBUG
     XWindowAttributes xwa;
     XGetWindowAttributes(m_pDisplay, m_wndCur, &xwa);
     LogFlowThisFunc(("wndProxy=%#x, wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n",
                      m_wndProxy.hWnd, m_wndCur, xwa.x, xwa.y, xwa.width, xwa.height));
+
+    Window wndSelection = XGetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection));
+    LogFlowThisFunc(("wndSelection=%#x\n", wndSelection));
 #endif
 
-    /* We send a fake release event to the current window, cause
+    /* We send a fake mouse move event to the current window, cause
      * this should have the grab. */
-#if 0
-    //mouseButtonSet(m_wndCur /* Destination window */, xwa.x + (xwa.width / 2), xwa.y + (xwa.height / 2), 1 /* Button */, false /* fPress */);
-#else
-    mouseButtonSet(m_wndCur /* Destination window */, -1 /* Root X */, -1 /* Root Y */, 1 /* Button */, false /* fPress */);
-#endif
+    mouseCursorFakeMove();
 
     /**
      * The fake button release event above should lead to a XdndDrop event from the
@@ -2365,13 +2408,15 @@ void DragInstance::mouseButtonSet(Window wndDest, int rx, int ry, int iButton, b
 #endif
         LogFlowThisFunc(("Note: XText extension not available or disabled\n"));
 
+        unsigned int mask;
+
         if (   rx == -1
             && ry == -1)
         {
-            Window wndTemp, wndChild;
-            int wx, wy; unsigned int mask;
-            XQueryPointer(m_pDisplay, m_wndRoot, &wndTemp, &wndChild, &rx, &ry, &wx, &wy, &mask);
-            LogFlowThisFunc(("cursorRootX=%d, cursorRootY=%d\n", rx, ry));
+            Window wndRoot, wndChild;
+            int wx, wy;
+            XQueryPointer(m_pDisplay, m_wndRoot, &wndRoot, &wndChild, &rx, &ry, &wx, &wy, &mask);
+            LogFlowThisFunc(("Mouse pointer is at root x=%d, y=%d\n", rx, ry));
         }
 
         XButtonEvent eBtn;
@@ -2384,31 +2429,26 @@ void DragInstance::mouseButtonSet(Window wndDest, int rx, int ry, int iButton, b
         eBtn.same_screen  = True;
         eBtn.time         = CurrentTime;
         eBtn.button       = iButton;
-        eBtn.state       |= iButton == 1 ? Button1Mask /*:
-                            iButton == 2 ? Button2MotionMask :
-                            iButton == 3 ? Button3MotionMask :
-                            iButton == 4 ? Button4MotionMask :
-                            iButton == 5 ? Button5MotionMask*/ : 0;
+        eBtn.state        = mask | (iButton == 1 ? Button1MotionMask :
+                                    iButton == 2 ? Button2MotionMask :
+                                    iButton == 3 ? Button3MotionMask :
+                                    iButton == 4 ? Button4MotionMask :
+                                    iButton == 5 ? Button5MotionMask : 0);
         eBtn.type         = fPress ? ButtonPress : ButtonRelease;
         eBtn.send_event   = False;
         eBtn.x_root       = rx;
         eBtn.y_root       = ry;
 
         XTranslateCoordinates(m_pDisplay, eBtn.root, eBtn.window, eBtn.x_root, eBtn.y_root, &eBtn.x, &eBtn.y, &eBtn.subwindow);
-        LogFlowThisFunc(("x=%d, y=%d\n", eBtn.x, eBtn.y));
-#if 1
+        LogFlowThisFunc(("state=0x%x, x=%d, y=%d\n", eBtn.state, eBtn.x, eBtn.y));
+
         int xRc = XSendEvent(m_pDisplay, wndDest, True /* fPropagate */,
-                               fPress
-                             ? ButtonPressMask : ButtonReleaseMask,
+                             ButtonPressMask,
                              reinterpret_cast<XEvent*>(&eBtn));
         if (xRc == 0)
             logError("Error sending XButtonEvent event to window=%#x: %s\n", wndDest, gX11->xErrorToString(xRc).c_str());
-#else
-        int xRc = XSendEvent(m_pDisplay, eBtn.window, False /* fPropagate */,
-                             0 /* Mask */, reinterpret_cast<XEvent*>(&eBtn));
-        if (xRc == 0)
-            logError("Error sending XButtonEvent event to window=%#x: %s\n", wndDest, gX11->xErrorToString(xRc).c_str());
-#endif
+
+        XFlush(m_pDisplay);
 
 #ifdef VBOX_DND_WITH_XTEST
     }
@@ -2860,6 +2900,8 @@ int VBoxDnDProxyWnd::sendFinished(Window hWndSource, uint32_t uAction)
     /* Was the drop accepted by the host? That is, anything than ignoring. */
     bool fDropAccepted = uAction > DND_IGNORE_ACTION;
 
+    LogFlowFunc(("uAction=%RU32\n", uAction));
+
     /* Confirm the result of the transfer to the target window. */
     XClientMessageEvent m;
     RT_ZERO(m);
@@ -2876,7 +2918,7 @@ int VBoxDnDProxyWnd::sendFinished(Window hWndSource, uint32_t uAction)
     if (xRc == 0)
     {
         LogRel(("DnD: Error sending XA_XdndFinished event to source window=%#x: %s\n",
-               hWndSource, gX11->xErrorToString(xRc).c_str()));
+                hWndSource, gX11->xErrorToString(xRc).c_str()));
 
         return VERR_GENERAL_FAILURE; /** @todo Fudge. */
     }
