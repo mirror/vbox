@@ -71,9 +71,9 @@
 #define USBIP_XFER_FLAGS_FSBR                RT_BIT_32(4)
 
 /** URB direction - input. */
-#define USBIP_DIR_IN                         UINT32_C(0)
+#define USBIP_DIR_IN                         UINT32_C(1)
 /** URB direction - output. */
-#define USBIP_DIR_OUT                        UINT32_C(1)
+#define USBIP_DIR_OUT                        UINT32_C(0)
 
 /** @name USB/IP error codes.
  * @{ */
@@ -332,8 +332,6 @@ typedef struct USBPROXYDEVUSBIP
     RTPIPE            hPipeR;
     /** Pipe endpoint - write. */
     RTPIPE            hPipeW;
-    /** Flag whether the reaper thread was woken up. */
-    volatile bool     fWokenUp;
     /** Next sequence number to use for identifying submitted URBs. */
     volatile uint32_t u32SeqNumNext;
     /** Fast mutex protecting the lists below against concurrent access. */
@@ -342,6 +340,8 @@ typedef struct USBPROXYDEVUSBIP
     RTLISTANCHOR      ListUrbsInFlight;
     /** List of landed URBs. */
     RTLISTANCHOR      ListUrbsLanded;
+    /** List of URBs to submit. */
+    RTLISTANCHOR      ListUrbsToQueue;
     /** Port of the USB/IP host to connect to. */
     uint32_t          uPort;
     /** USB/IP host address. */
@@ -371,6 +371,11 @@ typedef struct USBPROXYDEVUSBIP
 #define USBIP_URI_PREFIX     "usbip://"
 /** USB/IP address prefix length. */
 #define USBIP_URI_PREFIX_LEN (sizeof(USBIP_URI_PREFIX) - 1)
+
+/** Waking reason for the USB I/P reaper: New URBs to queue. */
+#define USBIP_REAPER_WAKEUP_REASON_QUEUE 'Q'
+/** Waking reason for the USB I/P reaper: External wakeup. */
+#define USBIP_REAPER_WAKEUP_REASON_EXTERNAL 'E'
 
 /**
  * Converts a request/reply header from network to host endianness.
@@ -809,6 +814,303 @@ static void usbProxyUsbIpResetRecvState(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
     pProxyDevUsbIp->cbLeft    = sizeof(UsbIpReqRetHdr);
 }
 
+/**
+ * Handles reception of a USB/IP PDU.
+ *
+ * @returns VBox status code.
+ * @param  pProxyDevUsbIp    The USB/IP proxy device data.
+ * @param  ppUrbUsbIp        Where to store the pointer to the USB/IP URB which completed.
+ *                           Will be NULL if the received PDU is not complete and we have
+ *                           have to wait for more data or on failure.
+ */
+static int usbProxyUsbIpRecvPdu(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPROXYURBUSBIP *ppUrbUsbIp)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbRead = 0;
+    PUSBPROXYURBUSBIP pUrbUsbIp = NULL;
+
+    if (pProxyDevUsbIp->fRecvData)
+    {
+        /* Read data into the URB. */
+        rc = RTTcpReadNB(pProxyDevUsbIp->hSocket, &pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->abData[pProxyDevUsbIp->cbRecv], pProxyDevUsbIp->cbLeft, &cbRead);
+        if (RT_SUCCESS(rc))
+        {
+            pProxyDevUsbIp->cbRecv += cbRead;
+            pProxyDevUsbIp->cbLeft -= cbRead;
+
+            if (!pProxyDevUsbIp->cbLeft)
+            {
+                pUrbUsbIp = pProxyDevUsbIp->pUrbUsbIp;
+                usbProxyUsbIpResetRecvState(pProxyDevUsbIp);
+            }
+        }
+        else
+        {
+            pUrbUsbIp = pProxyDevUsbIp->pUrbUsbIp;
+            pUrbUsbIp->pVUsbUrb->enmStatus = VUSBSTATUS_DNR;
+            usbProxyUsbIpResetRecvState(pProxyDevUsbIp);
+        }
+    }
+    else
+    {
+        rc = RTTcpReadNB(pProxyDevUsbIp->hSocket, &pProxyDevUsbIp->BufRet.abReply[pProxyDevUsbIp->cbRecv], pProxyDevUsbIp->cbLeft, &cbRead);
+        if (RT_SUCCESS(rc))
+        {
+            pProxyDevUsbIp->cbRecv += cbRead;
+            pProxyDevUsbIp->cbLeft -= cbRead;
+        }
+
+        /* Check whether we received a complete header. */
+        if (!pProxyDevUsbIp->cbLeft)
+        {
+            if (pProxyDevUsbIp->cbRecv == sizeof(UsbIpReqRetHdr))
+            {
+                /*
+                 * Determine the residual amount of data to receive until
+                 * the complete reply header was received.
+                 */
+                switch (RT_N2H_U32(pProxyDevUsbIp->BufRet.Hdr.u32ReqRet))
+                {
+                    case USBIP_RET_SUBMIT:
+                        pProxyDevUsbIp->cbLeft = sizeof(UsbIpRetSubmit) - sizeof(UsbIpReqRetHdr);
+                        break;
+                    case USBIP_RET_UNLINK:
+                        pProxyDevUsbIp->cbLeft = sizeof(UsbIpRetUnlink) - sizeof(UsbIpReqRetHdr);
+                        break;
+                    default:
+                        AssertLogRelMsgFailed(("Invalid reply header received: %d\n",
+                                               pProxyDevUsbIp->BufRet.Hdr.u32ReqRet));
+                        usbProxyUsbIpResetRecvState(pProxyDevUsbIp);
+                }
+            }
+            else
+            {
+                AssertMsg(pProxyDevUsbIp->cbRecv > sizeof(UsbIpReqRetHdr), ("Invalid state\n"));
+
+                /* Get the URB from the in flight list. */
+                pProxyDevUsbIp->pUrbUsbIp = usbProxyUsbIpGetUrbFromSeqNum(pProxyDevUsbIp, RT_N2H_U32(pProxyDevUsbIp->BufRet.Hdr.u32SeqNum));
+                if (pProxyDevUsbIp->pUrbUsbIp)
+                {
+                    /** @todo: Verify that the directions match, verify that the length doesn't exceed the buffer. */
+
+                    switch (RT_N2H_U32(pProxyDevUsbIp->BufRet.Hdr.u32ReqRet))
+                    {
+                        case USBIP_RET_SUBMIT:
+                            usbProxyUsbIpRetSubmitN2H(&pProxyDevUsbIp->BufRet.RetSubmit);
+                            pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmStatus = usbProxyUsbIpVUsbStatusConvertFromStatus(pProxyDevUsbIp->BufRet.RetSubmit.u32Status);
+                            if (   pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmDir == VUSBDIRECTION_IN
+                                && pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmStatus == VUSBSTATUS_OK)
+                            {
+                                pProxyDevUsbIp->fRecvData = true;
+                                if (pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmType == VUSBXFERTYPE_MSG)
+                                {
+                                    /* Preserve the setup request. */
+                                    pProxyDevUsbIp->cbRecv = sizeof(VUSBSETUP);
+                                    pProxyDevUsbIp->cbLeft = pProxyDevUsbIp->BufRet.RetSubmit.u32ActualLength;
+                                    pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->cbData = pProxyDevUsbIp->BufRet.RetSubmit.u32ActualLength + sizeof(VUSBSETUP);
+                                }
+                                else
+                                {
+                                    pProxyDevUsbIp->cbRecv = 0;
+                                    pProxyDevUsbIp->cbLeft = pProxyDevUsbIp->BufRet.RetSubmit.u32ActualLength;
+                                    pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->cbData = pProxyDevUsbIp->BufRet.RetSubmit.u32ActualLength;
+                                }
+                            }
+                            else
+                            {
+                                Assert(   pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmDir == VUSBDIRECTION_OUT
+                                       || pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmStatus != VUSBSTATUS_OK);
+                                pUrbUsbIp = pProxyDevUsbIp->pUrbUsbIp;
+                                usbProxyUsbIpResetRecvState(pProxyDevUsbIp);
+                            }
+                            break;
+                        case USBIP_RET_UNLINK:
+                            usbProxyUsbIpRetUnlinkN2H(&pProxyDevUsbIp->BufRet.RetUnlink);
+                            pUrbUsbIp = pProxyDevUsbIp->pUrbUsbIp;
+                            pUrbUsbIp->pVUsbUrb->enmStatus = usbProxyUsbIpVUsbStatusConvertFromStatus(pProxyDevUsbIp->BufRet.RetUnlink.u32Status);
+                            usbProxyUsbIpResetRecvState(pProxyDevUsbIp);
+                            break;
+                    }
+                }
+                else
+                {
+                    LogRel(("USB/IP: Received reply with sequence number doesn't match any local URB\n", pProxyDevUsbIp->BufRet.Hdr.u32SeqNum));
+                    usbProxyUsbIpResetRecvState(pProxyDevUsbIp);
+                }
+            }
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+        *ppUrbUsbIp = pUrbUsbIp;
+
+    return rc;
+}
+
+/**
+ * Worker for queueing an URB on the main I/O thread.
+ *
+ * @returns VBox status code.
+ * @param   pProxyDevUsbIp    The USB/IP proxy device data.
+ * @param   pUrbUsbIp         The USB/IP URB to queue.
+ */
+static int usbProxyUsbIpUrbQueueWorker(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPROXYURBUSBIP pUrbUsbIp)
+{
+    size_t cbData = 0;
+    void  *pvData = NULL;
+    PVUSBURB pUrb = pUrbUsbIp->pVUsbUrb;
+
+    pUrbUsbIp->u32SeqNumUrb = usbProxyUsbIpSeqNumGet(pProxyDevUsbIp);
+
+    UsbIpReqSubmit ReqSubmit;
+    ReqSubmit.Hdr.u32ReqRet           = USBIP_CMD_SUBMIT;
+    ReqSubmit.Hdr.u32SeqNum           = pUrbUsbIp->u32SeqNumUrb;
+    ReqSubmit.Hdr.u32DevId            = pProxyDevUsbIp->u32DevId;
+    ReqSubmit.Hdr.u32Endpoint         = pUrb->EndPt;
+    ReqSubmit.Hdr.u32Direction        = pUrb->enmDir == VUSBDIRECTION_IN ? USBIP_DIR_IN : USBIP_DIR_OUT;
+    ReqSubmit.u32XferFlags            = 0;
+    if (pUrb->enmDir == VUSBDIRECTION_IN && pUrb->fShortNotOk)
+        ReqSubmit.u32XferFlags |= USBIP_XFER_FLAGS_SHORT_NOT_OK;
+
+    ReqSubmit.u32TransferBufferLength = pUrb->cbData;
+    ReqSubmit.u32StartFrame           = 0;
+    ReqSubmit.u32NumIsocPkts          = 0;
+    ReqSubmit.u32Interval             = 0;
+
+    switch (pUrb->enmType)
+    {
+        case VUSBXFERTYPE_MSG:
+            memcpy(&ReqSubmit.Setup, &pUrb->abData, sizeof(ReqSubmit.Setup));
+            if (pUrb->enmDir == VUSBDIRECTION_OUT)
+            {
+                cbData = pUrb->cbData - sizeof(VUSBSETUP);
+                pvData = pUrb->abData + sizeof(VUSBSETUP);
+            }
+            else
+                cbData = 0;
+            LogFlowFunc(("Message (Control) URB\n"));
+            break;
+        case VUSBXFERTYPE_ISOC:
+            cbData = pUrb->cbData;
+            pvData = pUrb->abData;
+
+            ReqSubmit.u32XferFlags |= USBIP_XFER_FLAGS_ISO_ASAP;
+            ReqSubmit.u32NumIsocPkts = pUrb->cIsocPkts;
+#if 0
+            for (unsigned i = 0; i < pUrb->cIsocPkts; i++)
+            {
+                pUrbLnx->KUrb.iso_frame_desc[i].length = pUrb->aIsocPkts[i].cb;
+                pUrbLnx->KUrb.iso_frame_desc[i].actual_length = 0;
+                pUrbLnx->KUrb.iso_frame_desc[i].status = 0x7fff;
+            }
+#else /** @todo: Implement isochronous support */
+            usbProxyUsbIpUrbFree(pProxyDevUsbIp, pUrbUsbIp);
+            return VERR_NOT_SUPPORTED;
+#endif
+            break;
+        case VUSBXFERTYPE_BULK:
+        case VUSBXFERTYPE_INTR:
+            if (pUrb->enmDir == VUSBDIRECTION_OUT)
+            {
+                cbData = pUrb->cbData;
+                pvData = pUrb->abData;
+            }
+            else
+                cbData = 0;
+            break;
+        default:
+            usbProxyUsbIpUrbFree(pProxyDevUsbIp, pUrbUsbIp);
+            return VERR_INVALID_PARAMETER; /** @todo: better status code. */
+    }
+
+    usbProxyUsbIpReqSubmitH2N(&ReqSubmit);
+
+    /* Send the command. */
+    RTSGBUF SgBufReq;
+    RTSGSEG aSegReq[2];
+    aSegReq[0].pvSeg = &ReqSubmit;
+    aSegReq[0].cbSeg = sizeof(ReqSubmit);
+    aSegReq[1].pvSeg = pvData;
+    aSegReq[1].cbSeg = cbData;
+    RTSgBufInit(&SgBufReq, &aSegReq[0], RT_ELEMENTS(aSegReq));
+
+    int rc = RTTcpSgWrite(pProxyDevUsbIp->hSocket, &SgBufReq);
+    if (RT_SUCCESS(rc))
+    {
+        /* Link the URB into the list of in flight URBs. */
+        usbProxyUsbIpLinkUrb(pProxyDevUsbIp, &pProxyDevUsbIp->ListUrbsInFlight, pUrbUsbIp);
+    }
+
+    return rc;
+}
+
+/**
+ * Queues all pending URBs from the list.
+ *
+ * @returns VBox status code.
+ * @param   pProxyDevUsbIp    The USB/IP proxy device data.
+ */
+static int usbProxyUsbIpUrbsQueuePending(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
+{
+    RTLISTANCHOR ListUrbsPending;
+
+    RTListInit(&ListUrbsPending);
+    int rc = RTSemFastMutexRequest(pProxyDevUsbIp->hMtxLists);
+    AssertRC(rc);
+    RTListMove(&ListUrbsPending, &pProxyDevUsbIp->ListUrbsToQueue);
+    RTSemFastMutexRelease(pProxyDevUsbIp->hMtxLists);
+
+    PUSBPROXYURBUSBIP pIter = NULL;
+    PUSBPROXYURBUSBIP pIterNext = NULL;
+    RTListForEachSafe(&ListUrbsPending, pIter, pIterNext, USBPROXYURBUSBIP, NodeList)
+    {
+        RTListNodeRemove(&pIter->NodeList);
+        rc = usbProxyUsbIpUrbQueueWorker(pProxyDevUsbIp, pIter);
+        if (RT_FAILURE(rc))
+        {
+            /** @todo:  Complete the URB with an error. */
+            usbProxyUsbIpUrbFree(pProxyDevUsbIp, pIter);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Kick the reaper thread.
+ *
+ * @returns VBox status code.
+ * @param   pProxyDevUsbIp    The USB/IP proxy device data.
+ * @param   bReason           The wakeup reason.
+ */
+static char usbProxyReaperKick(PUSBPROXYDEVUSBIP pProxyDevUsbIp, char bReason)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbWritten = 0;
+
+    rc = RTPipeWrite(pProxyDevUsbIp->hPipeW, &bReason, 1, &cbWritten);
+    Assert(RT_SUCCESS(rc) || cbWritten == 0);
+
+    return rc;
+}
+
+/**
+ * Drain the wakeup pipe.
+ *
+ * @returns Wakeup reason.
+ * @param   pProxyDevUsbIp    The USB/IP proxy device data.
+ */
+static char usbProxyUsbIpWakeupPipeDrain(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
+{
+    char bRead = 0;
+    size_t cbRead = 0;
+
+    int rc = RTPipeRead(pProxyDevUsbIp->hPipeR, &bRead, 1, &cbRead);
+    Assert(RT_SUCCESS(rc) && cbRead == 1);
+
+    return bRead;
+}
+
 /*
  * The USB proxy device functions.
  */
@@ -822,11 +1124,11 @@ static DECLCALLBACK(int) usbProxyUsbIpOpen(PUSBPROXYDEV pProxyDev, const char *p
 
     RTListInit(&pDevUsbIp->ListUrbsInFlight);
     RTListInit(&pDevUsbIp->ListUrbsLanded);
+    RTListInit(&pDevUsbIp->ListUrbsToQueue);
     pDevUsbIp->hSocket       = NIL_RTSOCKET;
     pDevUsbIp->hPollSet      = NIL_RTPOLLSET;
     pDevUsbIp->hPipeW        = NIL_RTPIPE;
     pDevUsbIp->hPipeR        = NIL_RTPIPE;
-    pDevUsbIp->fWokenUp      = false;
     pDevUsbIp->u32SeqNumNext = 0;
     pDevUsbIp->pszHost       = NULL;
     pDevUsbIp->pszBusId      = NULL;
@@ -928,7 +1230,7 @@ static DECLCALLBACK(int) usbProxyUsbIpReset(PUSBPROXYDEV pProxyDev, bool fResetO
 {
     LogFlowFunc(("pProxyDev = %p\n", pProxyDev));
 
-    PUSBPROXYDEVUSBIP pDev = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
+    PUSBPROXYDEVUSBIP pProxyDevUsbIp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
     return VINF_SUCCESS; /* No way to reset the device with the current protocol. */
 }
 
@@ -936,7 +1238,7 @@ static DECLCALLBACK(int) usbProxyUsbIpSetConfig(PUSBPROXYDEV pProxyDev, int iCfg
 {
     LogFlowFunc(("pProxyDev=%s cfg=%#x\n", pProxyDev->pUsbIns->pszName, iCfg));
 
-    PUSBPROXYDEVUSBIP pDev = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
+    PUSBPROXYDEVUSBIP pProxyDevUsbIp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
     VUSBSETUP Setup;
 
     Setup.bmRequestType = 0;
@@ -944,7 +1246,7 @@ static DECLCALLBACK(int) usbProxyUsbIpSetConfig(PUSBPROXYDEV pProxyDev, int iCfg
     Setup.wValue        = iCfg;
     Setup.wIndex        = 0;
     Setup.wLength       = 0;
-    return usbProxyUsbIpCtrlUrbExchangeSync(pDev, &Setup);
+    return usbProxyUsbIpCtrlUrbExchangeSync(pProxyDevUsbIp, &Setup);
 }
 
 static DECLCALLBACK(int) usbProxyUsbIpClaimInterface(PUSBPROXYDEV pProxyDev, int ifnum)
@@ -963,7 +1265,7 @@ static DECLCALLBACK(int) usbProxyUsbIpSetInterface(PUSBPROXYDEV pProxyDev, int i
 {
     LogFlowFunc(("pProxyDev=%p ifnum=%#x setting=%#x\n", pProxyDev, ifnum, setting));
 
-    PUSBPROXYDEVUSBIP pDev = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
+    PUSBPROXYDEVUSBIP pProxyDevUsbIp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
     VUSBSETUP Setup;
 
     Setup.bmRequestType = 0x1;
@@ -971,14 +1273,14 @@ static DECLCALLBACK(int) usbProxyUsbIpSetInterface(PUSBPROXYDEV pProxyDev, int i
     Setup.wValue        = setting;
     Setup.wIndex        = ifnum;
     Setup.wLength       = 0;
-    return usbProxyUsbIpCtrlUrbExchangeSync(pDev, &Setup);
+    return usbProxyUsbIpCtrlUrbExchangeSync(pProxyDevUsbIp, &Setup);
 }
 
 static DECLCALLBACK(int) usbProxyUsbIpClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int iEp)
 {
     LogFlowFunc(("pProxyDev=%s ep=%u\n", pProxyDev->pUsbIns->pszName, iEp));
 
-    PUSBPROXYDEVUSBIP pDev = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
+    PUSBPROXYDEVUSBIP pProxyDevUsbIp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
     VUSBSETUP Setup;
 
     Setup.bmRequestType = 0x2;
@@ -986,7 +1288,7 @@ static DECLCALLBACK(int) usbProxyUsbIpClearHaltedEp(PUSBPROXYDEV pProxyDev, unsi
     Setup.wValue        = 0x00; /* ENDPOINT_HALT */
     Setup.wIndex        = iEp;
     Setup.wLength       = 0;
-    return usbProxyUsbIpCtrlUrbExchangeSync(pDev, &Setup);
+    return usbProxyUsbIpCtrlUrbExchangeSync(pProxyDevUsbIp, &Setup);
 }
 
 static DECLCALLBACK(int) usbProxyUsbIpUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
@@ -1000,218 +1302,61 @@ static DECLCALLBACK(int) usbProxyUsbIpUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB 
     if (!pUrbUsbIp)
         return VERR_NO_MEMORY;
 
-    pUrbUsbIp->u32SeqNumUrb = usbProxyUsbIpSeqNumGet(pProxyDevUsbIp);
+    pUrbUsbIp->pVUsbUrb = pUrb;
+    pUrb->Dev.pvPrivate = pUrbUsbIp;
 
-    UsbIpReqSubmit ReqSubmit;
-    ReqSubmit.Hdr.u32ReqRet           = USBIP_CMD_SUBMIT;
-    ReqSubmit.Hdr.u32SeqNum           = pUrbUsbIp->u32SeqNumUrb;
-    ReqSubmit.Hdr.u32DevId            = pProxyDevUsbIp->u32DevId;
-    ReqSubmit.Hdr.u32Endpoint         = pUrb->EndPt;
-    ReqSubmit.Hdr.u32Direction        = pUrb->enmDir == VUSBDIRECTION_IN ? USBIP_DIR_IN : USBIP_DIR_OUT;
-    ReqSubmit.u32XferFlags            = 0;
-    if (pUrb->enmDir == VUSBDIRECTION_IN && pUrb->fShortNotOk)
-        ReqSubmit.u32XferFlags |= USBIP_XFER_FLAGS_SHORT_NOT_OK;
+    int rc = RTSemFastMutexRequest(pProxyDevUsbIp->hMtxLists);
+    AssertRC(rc);
+    RTListAppend(&pProxyDevUsbIp->ListUrbsToQueue, &pUrbUsbIp->NodeList);
+    RTSemFastMutexRelease(pProxyDevUsbIp->hMtxLists);
 
-    ReqSubmit.u32TransferBufferLength = pUrb->cbData;
-    ReqSubmit.u32StartFrame           = 0;
-    ReqSubmit.u32NumIsocPkts          = 0;
-    ReqSubmit.u32Interval             = 0;
-
-    switch (pUrb->enmType)
-    {
-        case VUSBXFERTYPE_MSG:
-            memcpy(&ReqSubmit.Setup, &pUrb->abData, sizeof(ReqSubmit.Setup));
-            LogFlowFunc(("Message (Control) URB\n"));
-            break;
-        case VUSBXFERTYPE_ISOC:
-            ReqSubmit.u32XferFlags |= USBIP_XFER_FLAGS_ISO_ASAP;
-            ReqSubmit.u32NumIsocPkts = pUrb->cIsocPkts;
-#if 0
-            for (unsigned i = 0; i < pUrb->cIsocPkts; i++)
-            {
-                pUrbLnx->KUrb.iso_frame_desc[i].length = pUrb->aIsocPkts[i].cb;
-                pUrbLnx->KUrb.iso_frame_desc[i].actual_length = 0;
-                pUrbLnx->KUrb.iso_frame_desc[i].status = 0x7fff;
-            }
-#else /** @todo: Implement isochronous support */
-            usbProxyUsbIpUrbFree(pProxyDevUsbIp, pUrbUsbIp);
-            return VERR_NOT_SUPPORTED;
-#endif
-            break;
-        case VUSBXFERTYPE_BULK:
-        case VUSBXFERTYPE_INTR:
-            break;
-        default:
-            usbProxyUsbIpUrbFree(pProxyDevUsbIp, pUrbUsbIp);
-            return VERR_INVALID_PARAMETER; /** @todo: better status code. */
-    }
-    usbProxyUsbIpReqSubmitH2N(&ReqSubmit);
-
-    /* Send the command. */
-    RTSGBUF SgBufReq;
-    RTSGSEG aSegReq[2];
-    aSegReq[0].pvSeg = &ReqSubmit;
-    aSegReq[0].cbSeg = sizeof(ReqSubmit);
-    aSegReq[1].pvSeg = &pUrb->abData[0];
-    aSegReq[1].cbSeg = pUrb->cbData;
-    RTSgBufInit(&SgBufReq, &aSegReq[0], RT_ELEMENTS(aSegReq));
-
-    int rc = RTTcpSgWrite(pProxyDevUsbIp->hSocket, &SgBufReq);
-    if (RT_SUCCESS(rc))
-    {
-        /* Link the URB into the list of in flight URBs. */
-        pUrb->Dev.pvPrivate = pUrbUsbIp;
-        pUrbUsbIp->pVUsbUrb = pUrb;
-        usbProxyUsbIpLinkUrb(pProxyDevUsbIp, &pProxyDevUsbIp->ListUrbsInFlight, pUrbUsbIp);
-    }
-    else
-        usbProxyUsbIpUrbFree(pProxyDevUsbIp, pUrbUsbIp);
-
-    return rc;
+    return usbProxyReaperKick(pProxyDevUsbIp, USBIP_REAPER_WAKEUP_REASON_QUEUE);
 }
 
 static DECLCALLBACK(PVUSBURB) usbProxyUsbIpUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
 {
     LogFlowFunc(("pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
 
-    PUSBPROXYDEVUSBIP pDev = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
+    PUSBPROXYDEVUSBIP pProxyDevUsbIp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
     PUSBPROXYURBUSBIP pUrbUsbIp = NULL;
     PVUSBURB pUrb = NULL;
     int rc = VINF_SUCCESS;
 
+    /* Queue new URBs first. */
+    rc = usbProxyUsbIpUrbsQueuePending(pProxyDevUsbIp);
+    AssertRC(rc);
+
     /* Any URBs pending delivery? */
-    if (!RTListIsEmpty(&pDev->ListUrbsLanded))
-        pUrbUsbIp = RTListGetFirst(&pDev->ListUrbsLanded, USBPROXYURBUSBIP, NodeList);
+    if (!RTListIsEmpty(&pProxyDevUsbIp->ListUrbsLanded))
+        pUrbUsbIp = RTListGetFirst(&pProxyDevUsbIp->ListUrbsLanded, USBPROXYURBUSBIP, NodeList);
 
     while (!pUrbUsbIp && RT_SUCCESS(rc) && cMillies)
     {
-        if (!ASMAtomicXchgBool(&pDev->fWokenUp, false))
+        uint32_t uIdReady = 0;
+        uint32_t fEventsRecv = 0;
+        RTMSINTERVAL msStart = RTTimeMilliTS();
+        RTMSINTERVAL msNow;
+
+        rc = RTPoll(pProxyDevUsbIp->hPollSet, cMillies, &fEventsRecv, &uIdReady);
+        Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
+        if (RT_SUCCESS(rc))
         {
-            uint32_t uIdReady = 0;
-            uint32_t fEventsRecv = 0;
-            RTMSINTERVAL msStart = RTTimeMilliTS();
-            RTMSINTERVAL msNow;
-
-            rc = RTPoll(pDev->hPollSet, cMillies, &fEventsRecv, &uIdReady);
-            Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
-
             msNow = RTTimeMilliTS();
             cMillies = msNow - msStart >= cMillies ? 0 : cMillies - (msNow - msStart);
 
-            if (RT_SUCCESS(rc))
+            if (uIdReady == USBIP_POLL_ID_SOCKET)
+                rc = usbProxyUsbIpRecvPdu(pProxyDevUsbIp, &pUrbUsbIp);
+            else
             {
-                if (uIdReady == USBIP_POLL_ID_SOCKET)
-                {
-                    size_t cbRead = 0;
+                AssertLogRelMsg(uIdReady == USBIP_POLL_ID_PIPE, ("Invalid pollset ID given\n"));
 
-                    if (pDev->fRecvData)
-                    {
-                        /* Read data into the URB. */
-                        rc = RTTcpReadNB(pDev->hSocket, &pDev->pUrbUsbIp->pVUsbUrb->abData[pDev->cbRecv], pDev->cbLeft, &cbRead);
-                        if (RT_SUCCESS(rc))
-                        {
-                            if (!pDev->cbLeft)
-                            {
-                                pUrbUsbIp = pDev->pUrbUsbIp;
-                                usbProxyUsbIpResetRecvState(pDev);
-                            }
-                        }
-                        else
-                        {
-                            pUrbUsbIp = pDev->pUrbUsbIp;
-                            pUrbUsbIp->pVUsbUrb->enmStatus = VUSBSTATUS_DNR;
-                            usbProxyUsbIpResetRecvState(pDev);
-                        }
-                    }
-                    else
-                    {
-                        rc = RTTcpReadNB(pDev->hSocket, &pDev->BufRet.abReply[pDev->cbRecv], pDev->cbLeft, &cbRead);
-                        if (RT_SUCCESS(rc))
-                        {
-                            pDev->cbRecv += cbRead;
-                            pDev->cbLeft -= cbRead;
-                        }
-
-                        /* Check whether we received a complete header. */
-                        if (!pDev->cbLeft)
-                        {
-                            if (pDev->cbRecv == sizeof(UsbIpReqRetHdr))
-                            {
-                                /*
-                                 * Determine the residual amount of data to receive until
-                                 * the complete reply header was received.
-                                 */
-                                switch (RT_N2H_U32(pDev->BufRet.Hdr.u32ReqRet))
-                                {
-                                    case USBIP_RET_SUBMIT:
-                                        pDev->cbLeft = sizeof(UsbIpRetSubmit) - sizeof(UsbIpReqRetHdr);
-                                        break;
-                                    case USBIP_RET_UNLINK:
-                                        pDev->cbLeft = sizeof(UsbIpRetUnlink) - sizeof(UsbIpReqRetHdr);
-                                        break;
-                                    default:
-                                        AssertLogRelMsgFailed(("Invalid reply header received: %d\n",
-                                                               pDev->BufRet.Hdr.u32ReqRet));
-                                        usbProxyUsbIpResetRecvState(pDev);
-                                }
-                            }
-                            else
-                            {
-                                AssertMsg(pDev->cbRecv > sizeof(UsbIpReqRetHdr), ("Invalid state\n"));
-
-                                /* Get the URB from the in flight list. */
-                                pDev->pUrbUsbIp = usbProxyUsbIpGetUrbFromSeqNum(pDev, RT_N2H_U32(pDev->BufRet.Hdr.u32SeqNum));
-                                if (pDev->pUrbUsbIp)
-                                {
-                                    /** @todo: Verify that the directions match. */
-
-                                    switch (RT_N2H_U32(pDev->BufRet.Hdr.u32ReqRet))
-                                    {
-                                        case USBIP_RET_SUBMIT:
-                                            usbProxyUsbIpRetSubmitN2H(&pDev->BufRet.RetSubmit);
-                                            pDev->pUrbUsbIp->pVUsbUrb->enmStatus = usbProxyUsbIpVUsbStatusConvertFromStatus(pDev->BufRet.RetSubmit.u32Status);
-                                            if (   pDev->BufRet.Hdr.u32Direction == USBIP_DIR_IN
-                                                && pDev->pUrbUsbIp->pVUsbUrb->enmStatus == VUSBSTATUS_OK)
-                                            {
-                                                pDev->fRecvData = true;
-                                                pDev->cbRecv = 0;
-                                                pDev->cbLeft = pDev->BufRet.RetSubmit.u32ActualLength;
-                                            }
-                                            else
-                                            {
-                                                Assert(   pDev->BufRet.Hdr.u32Direction == USBIP_DIR_OUT
-                                                       || pDev->pUrbUsbIp->pVUsbUrb->enmStatus != VUSBSTATUS_OK);
-                                                pUrbUsbIp = pDev->pUrbUsbIp;
-                                                usbProxyUsbIpResetRecvState(pDev);
-                                            }
-                                            break;
-                                        case USBIP_RET_UNLINK:
-                                            usbProxyUsbIpRetUnlinkN2H(&pDev->BufRet.RetUnlink);
-                                            pUrbUsbIp = pDev->pUrbUsbIp;
-                                            pUrbUsbIp->pVUsbUrb->enmStatus = usbProxyUsbIpVUsbStatusConvertFromStatus(pDev->BufRet.RetUnlink.u32Status);
-                                            usbProxyUsbIpResetRecvState(pDev);
-                                            break;
-                                    }
-                                }
-                                else
-                                {
-                                    LogRel(("USB/IP: Received reply with sequence number doesn't match any local URB\n", pDev->BufRet.Hdr.u32SeqNum));
-                                    usbProxyUsbIpResetRecvState(pDev);
-                                }
-                            }
-                        }
-                    }
-                }
+                char bReason = usbProxyUsbIpWakeupPipeDrain(pProxyDevUsbIp);
+                if (bReason == USBIP_REAPER_WAKEUP_REASON_QUEUE)
+                    usbProxyUsbIpUrbsQueuePending(pProxyDevUsbIp);
                 else
                 {
-                    uint8_t bRead = 0;
-
-                    AssertLogRelMsg(uIdReady == USBIP_POLL_ID_PIPE, ("Invalid pollset ID given\n"));
-                    AssertMsg(pDev->fWokenUp, ("Pipe is not empty but no one woke the reaper thread\n"));
-
-                    rc = RTPipeRead(pDev->hPipeR, &bRead, 1, NULL);
-                    AssertRC(rc);
-                    ASMAtomicXchgBool(&pDev->fWokenUp, false);
+                    Assert(bReason == USBIP_REAPER_WAKEUP_REASON_EXTERNAL);
+                    break;
                 }
             }
         }
@@ -1222,8 +1367,8 @@ static DECLCALLBACK(PVUSBURB) usbProxyUsbIpUrbReap(PUSBPROXYDEV pProxyDev, RTMSI
         pUrb = pUrbUsbIp->pVUsbUrb;
 
         /* unlink from the pending delivery list */
-        usbProxyUsbIpUnlinkUrb(pDev, pUrbUsbIp);
-        usbProxyUsbIpUrbFree(pDev, pUrbUsbIp);
+        usbProxyUsbIpUnlinkUrb(pProxyDevUsbIp, pUrbUsbIp);
+        usbProxyUsbIpUrbFree(pProxyDevUsbIp, pUrbUsbIp);
     }
 
     return pUrb;
@@ -1245,6 +1390,7 @@ static DECLCALLBACK(int) usbProxyUsbIpUrbCancel(PUSBPROXYDEV pProxyDev, PVUSBURB
     ReqUnlink.Hdr.u32Endpoint         = pUrb->EndPt;
     ReqUnlink.u32SeqNum               = pUrbUsbIp->u32SeqNumUrb;
 
+    usbProxyUsbIpReqUnlinkH2N(&ReqUnlink);
     return RTTcpWrite(pProxyDevUsbIp->hSocket, &ReqUnlink, sizeof(ReqUnlink));
 }
 
@@ -1252,18 +1398,8 @@ static DECLCALLBACK(int) usbProxyUsbIpWakeup(PUSBPROXYDEV pProxyDev)
 {
     LogFlowFunc(("pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
 
-    PUSBPROXYDEVUSBIP pDevUsbIp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
-    int rc = VINF_SUCCESS;
-
-    if (!ASMAtomicXchgBool(&pDevUsbIp->fWokenUp, true))
-    {
-        size_t cbWritten = 0;
-
-        rc = RTPipeWrite(pDevUsbIp->hPipeW, "", 1, &cbWritten);
-        Assert(RT_SUCCESS(rc) || cbWritten == 0);
-    }
-
-    return rc;
+    PUSBPROXYDEVUSBIP pProxyDevUsbIp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVUSBIP);
+    return usbProxyReaperKick(pProxyDevUsbIp, USBIP_REAPER_WAKEUP_REASON_EXTERNAL);
 }
 
 /**
