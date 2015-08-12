@@ -184,6 +184,12 @@ int main()
     {
         RTTestSub(g_hTest, "Write");
         RTFILE hFile;
+        RTFSTYPE enmType;
+        bool fAsyncMayFail = false;
+        rc = RTFsQueryType("tstFileAio#1.tst", &enmType);
+        if (   RT_SUCCESS(rc)
+            && enmType == RTFSTYPE_TMPFS)
+            fAsyncMayFail = true;
         RTTESTI_CHECK_RC(rc = RTFileOpen(&hFile, "tstFileAio#1.tst",
                                          RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_ASYNC_IO),
                          VINF_SUCCESS);
