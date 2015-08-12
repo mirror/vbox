@@ -170,9 +170,9 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstSupSem': '',           # failed: SRE Timeout Accuracy (ms) : FAILED (1 errors)
         'testcase/tstCryptoPkcs7Sign': '',# failed: 29330:error:02001002:lib(2):func(1):reason(2):NA:0:fopen('server.pem': '','r')
         'testcase/tstCompressionBenchmark': '', # failed: error: RTZipBlockCompress failed
-                                        # for 'RTZipBlock/LZJB' (#4): VERR_NOT_SUPPORTED
+                                                # for 'RTZipBlock/LZJB' (#4): VERR_NOT_SUPPORTED
         'testcase/tstLdr-4': '',            # failed: Failed to get bits for '/home/vbox/test/tmp/bin/testcase/tstLdrObjR0.r0'/0,
-                                        # rc=VERR_SYMBOL_VALUE_TOO_BIG. aborting test
+                                            # rc=VERR_SYMBOL_VALUE_TOO_BIG. aborting test
         'tstPDMAsyncCompletionStress': '',  # VERR_INVALID_PARAMETER (cbSize = 0)
         'tstMicro': '',                     # doesn't work on solaris, fix later if we care.
         'tstVMM-HwAccm': '',                # failed: Only checked AMD-V on linux
@@ -621,7 +621,7 @@ class tdUnitTest1(vbox.TestDriver):
                     oChild = subprocess.Popen(      asArgs, stdin = oDevNull, stdout = sys.stdout, stderr = sys.stdout);
             except:
                 if sName in [ 'tstAsmStructsRC',    # 32-bit, may fail to start on 64-bit linux. Just ignore.
-                              ]:
+                            ]:
                     reporter.logXcpt();
                     fSkipped = True;
                 else:

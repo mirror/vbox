@@ -423,9 +423,10 @@ class tdNetBenchmark1(vbox.TestDriver):                                         
         reporter.testStart('TCP latency');
         if fRc and 'tcp-latency' in self.asTests and sAddr is not None:
             for cbPkt in self.acbLatencyPkts:
-                fRc = self.txsRunTest(oTxsSession, '%u bytes' % (cbPkt), self.cSecsRun * 1000 * 4, \
-                    '${CDROM}/${OS/ARCH}/NetPerf${EXESUFF}',
-                        ('NetPerf', '--client', sAddr, '--interval', self.cSecsRun, '--len', cbPkt, '--mode', 'latency'));
+                fRc = self.txsRunTest(oTxsSession, '%u bytes' % (cbPkt), self.cSecsRun * 1000 * 4,
+                                      '${CDROM}/${OS/ARCH}/NetPerf${EXESUFF}',
+                                      ('NetPerf', '--client', sAddr, '--interval', self.cSecsRun, '--len', cbPkt,
+                                       '--mode', 'latency'));
                 if not fRc:
                     break;
             reporter.testDone();
@@ -435,9 +436,10 @@ class tdNetBenchmark1(vbox.TestDriver):                                         
         reporter.testStart('TCP throughput');
         if fRc and 'tcp-throughput' in self.asTests and sAddr is not None:
             for cbPkt in self.acbThroughputPkts:
-                fRc = self.txsRunTest(oTxsSession, '%u bytes' % (cbPkt), self.cSecsRun * 2 * 1000 * 4, \
-                    '${CDROM}/${OS/ARCH}/NetPerf${EXESUFF}',
-                        ('NetPerf', '--client', sAddr, '--interval', self.cSecsRun, '--len', cbPkt, '--mode', 'throughput'));
+                fRc = self.txsRunTest(oTxsSession, '%u bytes' % (cbPkt), self.cSecsRun * 2 * 1000 * 4,
+                                      '${CDROM}/${OS/ARCH}/NetPerf${EXESUFF}',
+                                      ('NetPerf', '--client', sAddr, '--interval', self.cSecsRun, '--len', cbPkt,
+                                       '--mode', 'throughput'));
                 if not fRc:
                     break;
             reporter.testDone();
@@ -586,7 +588,7 @@ class tdNetBenchmark1(vbox.TestDriver):                                         
 
             # Start the test servers on it.
             fRc = self.oGuestToGuestTxs.syncExec('${CDROM}/${OS/ARCH}/NetPerf${EXESUFF}',
-                    ('NetPerf', '--server', '--daemonize'), fWithTestPipe=False);
+                                                 ('NetPerf', '--server', '--daemonize'), fWithTestPipe=False);
 
         # Loop thru the test VMs.
         if fRc:

@@ -208,10 +208,10 @@ class tdStorageStress(vbox.TestDriver):                                      # p
     def actionConfig(self):
         # Some stupid trickery to guess the location of the iso. ## fixme - testsuite unzip ++
         sVBoxValidationKit_iso = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                 '../../VBoxValidationKitStorIo.iso'));
+                                                              '../../VBoxValidationKitStorIo.iso'));
         if not os.path.isfile(sVBoxValidationKit_iso):
             sVBoxValidationKit_iso = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                     '../../VBoxValidationKitStorIo.iso'));
+                                                                  '../../VBoxValidationKitStorIo.iso'));
         if not os.path.isfile(sVBoxValidationKit_iso):
             sVBoxValidationKit_iso = '/mnt/ramdisk/vbox/svn/trunk/validationkit/VBoxValidationKitStorIo.iso';
         if not os.path.isfile(sVBoxValidationKit_iso):
@@ -313,11 +313,11 @@ class tdStorageStress(vbox.TestDriver):                                      # p
         # of the xfstests directory...)
         reporter.testStart('xfstests');
         if fRc and 'xfstests' in self.asTests:
-            fRc = self.txsRunTest(oTxsSession, 'xfstests', 3600000, \
-                '/bin/sh',
-                    ('sh', '-c', '(cd /tmp/xfstests && ./check -g auto)'), \
-                    ('TEST_DIR=/mnt/test', 'TEST_DEV=/dev/sdb', 'SCRATCH_MNT=/mnt/scratch', 'SCRATCH_DEV=/dev/sdc', \
-                     'FSTYP=' + sGuestFs));
+            fRc = self.txsRunTest(oTxsSession, 'xfstests', 3600000,
+                                  '/bin/sh',
+                                  ('sh', '-c', '(cd /tmp/xfstests && ./check -g auto)'),
+                                  ('TEST_DIR=/mnt/test', 'TEST_DEV=/dev/sdb', 'SCRATCH_MNT=/mnt/scratch', 'SCRATCH_DEV=/dev/sdc',
+                                   'FSTYP=' + sGuestFs));
             reporter.testDone();
         else:
             reporter.testDone(fSkipped = True);

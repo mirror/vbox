@@ -408,24 +408,25 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         # Prepare test disk, just create filesystem without partition
         reporter.testStart('mkfs.ext4');
-        fRc = self.txsRunTest(oTxsSession, 'Create FS', 60000, \
-            '/sbin/mkfs.ext4',
-                ('mkfs.ext4', '-F', '/dev/vboxtest'));
+        fRc = self.txsRunTest(oTxsSession, 'Create FS', 60000,
+                              '/sbin/mkfs.ext4',
+                              ('mkfs.ext4', '-F', '/dev/vboxtest'));
         reporter.testDone();
 
         reporter.testStart('mount');
-        fRc = self.txsRunTest(oTxsSession, 'Mount FS', 30000, \
-            '/bin/mount',
-                ('mount', '/dev/vboxtest', '/mnt'));
+        fRc = self.txsRunTest(oTxsSession, 'Mount FS', 30000,
+                              '/bin/mount',
+                              ('mount', '/dev/vboxtest', '/mnt'));
         reporter.testDone();
 
         reporter.testStart('iozone');
         if fRc and 'iozone' in self.asTests:
             oStdOut = IozoneStdOutWrapper();
-            fRc = self.txsRunTestRedirectStd(oTxsSession, '2G', 3600000, \
-                '/usr/bin/iozone',
-                    ('iozone', '-r', '64k', '-s', '2g', '-t', '1', '-T', '-I', '-H', '32','-F', '/mnt/iozone'), \
-                (), '', '/dev/null', oStdOut, '/dev/null', '/dev/null');
+            fRc = self.txsRunTestRedirectStd(oTxsSession, '2G', 3600000,
+                                             '/usr/bin/iozone',
+                                             ('iozone', '-r', '64k', '-s', '2g', '-t', '1', '-T', '-I',
+                                              '-H', '32','-F', '/mnt/iozone'),
+                                             (), '', '/dev/null', oStdOut, '/dev/null', '/dev/null');
             if fRc is True:
                 reporter.log("Initial writer: " + str(oStdOut.getInitWriter()));
                 reporter.log("Rewriter:       " + str(oStdOut.getRewriter()));
@@ -446,9 +447,9 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         if fRc and 'fio' in self.asTests:
             oFioWrapper = FioWrapper('64k', '2g', '32', '/mnt');
             fRc = self.txsUploadString(oSession, oTxsSession, oFioWrapper.getConfig(), '${SCRATCH}/aio-test');
-            fRc = fRc and self.txsRunTestRedirectStd(oTxsSession, '2G', 3600000, \
-                '/usr/bin/fio', ('fio', '${SCRATCH}/aio-test'), \
-                (), '', '/dev/null', oFioWrapper, '/dev/null', '/dev/null');
+            fRc = fRc and self.txsRunTestRedirectStd(oTxsSession, '2G', 3600000,
+                                                     '/usr/bin/fio', ('fio', '${SCRATCH}/aio-test'),
+                                                     (), '', '/dev/null', oFioWrapper, '/dev/null', '/dev/null');
         else:
             reporter.testDone(fSkipped = True);
 

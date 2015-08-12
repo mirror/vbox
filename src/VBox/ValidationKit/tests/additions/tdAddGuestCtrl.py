@@ -1510,97 +1510,98 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aoTests = [
             # Check basic operations.
             tdTestSessionEx([ # Initial environment is empty.
-                              tdStepSessionCheckEnv(),
-                              # Check clearing empty env.
-                              tdStepSessionClearEnv(),
-                              tdStepSessionCheckEnv(),
-                              # Check set.
-                              tdStepSessionSetEnv('FOO', 'BAR'),
-                              tdStepSessionCheckEnv(['FOO=BAR',]),
-                              tdStepRequireMinimumApiVer(5.0), # 4.3 can't cope with the remainder.
-                              tdStepSessionClearEnv(),
-                              tdStepSessionCheckEnv(),
-                              # Check unset.
-                              tdStepSessionUnsetEnv('BAR'),
-                              tdStepSessionCheckEnv(['BAR']),
-                              tdStepSessionClearEnv(),
-                              tdStepSessionCheckEnv(),
-                              # Set + unset.
-                              tdStepSessionSetEnv('FOO', 'BAR'),
-                              tdStepSessionCheckEnv(['FOO=BAR',]),
-                              tdStepSessionUnsetEnv('FOO'),
-                              tdStepSessionCheckEnv(['FOO']),
-                              # Bulk environment changes (via attrib) (shall replace existing 'FOO').
-                              tdStepSessionBulkEnv( ['PATH=/bin:/usr/bin', 'TMPDIR=/var/tmp', 'USER=root']),
-                              tdStepSessionCheckEnv(['PATH=/bin:/usr/bin', 'TMPDIR=/var/tmp', 'USER=root']),
-                              ]),
+                tdStepSessionCheckEnv(),
+                # Check clearing empty env.
+                tdStepSessionClearEnv(),
+                tdStepSessionCheckEnv(),
+                # Check set.
+                tdStepSessionSetEnv('FOO', 'BAR'),
+                tdStepSessionCheckEnv(['FOO=BAR',]),
+                tdStepRequireMinimumApiVer(5.0), # 4.3 can't cope with the remainder.
+                tdStepSessionClearEnv(),
+                tdStepSessionCheckEnv(),
+                # Check unset.
+                tdStepSessionUnsetEnv('BAR'),
+                tdStepSessionCheckEnv(['BAR']),
+                tdStepSessionClearEnv(),
+                tdStepSessionCheckEnv(),
+                # Set + unset.
+                tdStepSessionSetEnv('FOO', 'BAR'),
+                tdStepSessionCheckEnv(['FOO=BAR',]),
+                tdStepSessionUnsetEnv('FOO'),
+                tdStepSessionCheckEnv(['FOO']),
+                # Bulk environment changes (via attrib) (shall replace existing 'FOO').
+                tdStepSessionBulkEnv( ['PATH=/bin:/usr/bin', 'TMPDIR=/var/tmp', 'USER=root']),
+                tdStepSessionCheckEnv(['PATH=/bin:/usr/bin', 'TMPDIR=/var/tmp', 'USER=root']),
+                ]),
             tdTestSessionEx([ # Check that setting the same value several times works.
-                              tdStepSessionSetEnv('FOO','BAR'),
-                              tdStepSessionCheckEnv([ 'FOO=BAR',]),
-                              tdStepSessionSetEnv('FOO','BAR2'),
-                              tdStepSessionCheckEnv([ 'FOO=BAR2',]),
-                              tdStepSessionSetEnv('FOO','BAR3'),
-                              tdStepSessionCheckEnv([ 'FOO=BAR3',]),
-                              tdStepRequireMinimumApiVer(5.0), # 4.3 can't cope with the remainder.
-                              # Add a little unsetting to the mix.
-                              tdStepSessionSetEnv('BAR', 'BEAR'),
-                              tdStepSessionCheckEnv([ 'FOO=BAR3', 'BAR=BEAR',]),
-                              tdStepSessionUnsetEnv('FOO'),
-                              tdStepSessionCheckEnv([ 'FOO', 'BAR=BEAR',]),
-                              tdStepSessionSetEnv('FOO','BAR4'),
-                              tdStepSessionCheckEnv([ 'FOO=BAR4', 'BAR=BEAR',]),
-                              # The environment is case sensitive.
-                              tdStepSessionSetEnv('foo','BAR5'),
-                              tdStepSessionCheckEnv([ 'FOO=BAR4', 'BAR=BEAR', 'foo=BAR5']),
-                              tdStepSessionUnsetEnv('foo'),
-                              tdStepSessionCheckEnv([ 'FOO=BAR4', 'BAR=BEAR', 'foo']),
-                              ]),
+                tdStepSessionSetEnv('FOO','BAR'),
+                tdStepSessionCheckEnv([ 'FOO=BAR',]),
+                tdStepSessionSetEnv('FOO','BAR2'),
+                tdStepSessionCheckEnv([ 'FOO=BAR2',]),
+                tdStepSessionSetEnv('FOO','BAR3'),
+                tdStepSessionCheckEnv([ 'FOO=BAR3',]),
+                tdStepRequireMinimumApiVer(5.0), # 4.3 can't cope with the remainder.
+                # Add a little unsetting to the mix.
+                tdStepSessionSetEnv('BAR', 'BEAR'),
+                tdStepSessionCheckEnv([ 'FOO=BAR3', 'BAR=BEAR',]),
+                tdStepSessionUnsetEnv('FOO'),
+                tdStepSessionCheckEnv([ 'FOO', 'BAR=BEAR',]),
+                tdStepSessionSetEnv('FOO','BAR4'),
+                tdStepSessionCheckEnv([ 'FOO=BAR4', 'BAR=BEAR',]),
+                # The environment is case sensitive.
+                tdStepSessionSetEnv('foo','BAR5'),
+                tdStepSessionCheckEnv([ 'FOO=BAR4', 'BAR=BEAR', 'foo=BAR5']),
+                tdStepSessionUnsetEnv('foo'),
+                tdStepSessionCheckEnv([ 'FOO=BAR4', 'BAR=BEAR', 'foo']),
+                ]),
             tdTestSessionEx([ # Bulk settings merges stuff, last entry standing.
-                              tdStepSessionBulkEnv(['FOO=bar', 'foo=bar', 'FOO=doofus', 'TMPDIR=/tmp', 'foo=bar2']),
-                              tdStepSessionCheckEnv(['FOO=doofus', 'TMPDIR=/tmp', 'foo=bar2']),
-                              tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy!
-                              tdStepSessionBulkEnv(['2=1+1', 'FOO=doofus2', ]),
-                              tdStepSessionCheckEnv(['2=1+1', 'FOO=doofus2' ]),
-                              ]),
+                tdStepSessionBulkEnv(['FOO=bar', 'foo=bar', 'FOO=doofus', 'TMPDIR=/tmp', 'foo=bar2']),
+                tdStepSessionCheckEnv(['FOO=doofus', 'TMPDIR=/tmp', 'foo=bar2']),
+                tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy!
+                tdStepSessionBulkEnv(['2=1+1', 'FOO=doofus2', ]),
+                tdStepSessionCheckEnv(['2=1+1', 'FOO=doofus2' ]),
+                ]),
             # Invalid variable names.
-            tdTestSessionEx([ tdStepSessionSetEnv('', 'FOO', vbox.ComError.E_INVALIDARG),
-                              tdStepSessionCheckEnv(),
-                              tdStepRequireMinimumApiVer(5.0), # 4.3 is too relaxed checking input!
-                              tdStepSessionSetEnv('=', '===', vbox.ComError.E_INVALIDARG),
-                              tdStepSessionCheckEnv(),
-                              tdStepSessionSetEnv('FOO=', 'BAR', vbox.ComError.E_INVALIDARG),
-                              tdStepSessionCheckEnv(),
-                              tdStepSessionSetEnv('=FOO', 'BAR', vbox.ComError.E_INVALIDARG),
-                              tdStepSessionCheckEnv(),
-                              tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy and too relaxed!
-                              tdStepSessionBulkEnv(['', 'foo=bar'], vbox.ComError.E_INVALIDARG),
-                              tdStepSessionCheckEnv(),
-                              tdStepSessionBulkEnv(['=', 'foo=bar'], vbox.ComError.E_INVALIDARG),
-                              tdStepSessionCheckEnv(),
-                              tdStepSessionBulkEnv(['=FOO', 'foo=bar'], vbox.ComError.E_INVALIDARG),
-                              tdStepSessionCheckEnv(),
-                              ]),
+            tdTestSessionEx([
+                tdStepSessionSetEnv('', 'FOO', vbox.ComError.E_INVALIDARG),
+                tdStepSessionCheckEnv(),
+                tdStepRequireMinimumApiVer(5.0), # 4.3 is too relaxed checking input!
+                tdStepSessionSetEnv('=', '===', vbox.ComError.E_INVALIDARG),
+                tdStepSessionCheckEnv(),
+                tdStepSessionSetEnv('FOO=', 'BAR', vbox.ComError.E_INVALIDARG),
+                tdStepSessionCheckEnv(),
+                tdStepSessionSetEnv('=FOO', 'BAR', vbox.ComError.E_INVALIDARG),
+                tdStepSessionCheckEnv(),
+                tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy and too relaxed!
+                tdStepSessionBulkEnv(['', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                tdStepSessionCheckEnv(),
+                tdStepSessionBulkEnv(['=', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                tdStepSessionCheckEnv(),
+                tdStepSessionBulkEnv(['=FOO', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                tdStepSessionCheckEnv(),
+                ]),
             # A bit more weird keys/values.
             tdTestSessionEx([ tdStepSessionSetEnv('$$$', ''),
                               tdStepSessionCheckEnv([ '$$$=',]), ]),
             tdTestSessionEx([ tdStepSessionSetEnv('$$$', '%%%'),
                               tdStepSessionCheckEnv([ '$$$=%%%',]),
-                              ]),
+                            ]),
             tdTestSessionEx([ tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy!
                               tdStepSessionSetEnv(u'ß$%ß&', ''),
                               tdStepSessionCheckEnv([ u'ß$%ß&=',]),
-                              ]),
+                            ]),
             # Misc stuff.
             tdTestSessionEx([ tdStepSessionSetEnv('FOO', ''),
                               tdStepSessionCheckEnv(['FOO=',]),
-                              ]),
+                            ]),
             tdTestSessionEx([ tdStepSessionSetEnv('FOO', 'BAR'),
                               tdStepSessionCheckEnv(['FOO=BAR',])
-                              ],),
+                            ],),
             tdTestSessionEx([ tdStepSessionSetEnv('FOO', 'BAR'),
                               tdStepSessionSetEnv('BAR', 'BAZ'),
                               tdStepSessionCheckEnv([ 'FOO=BAR', 'BAR=BAZ',]),
-                              ]),
+                            ]),
         ];
         return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'SessionEnv');
 
@@ -2521,20 +2522,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Long (+ random) stuff.
                 [ tdTestDirCreate(sUser = sUser, sPassword = sPassword,
                                   sDirectory = os.path.join(sScratch,
-                                  "".join(random.choice(string.ascii_lowercase) for i in range(32))) ),
+                                                            "".join(random.choice(string.ascii_lowercase) for i in range(32))) ),
                   tdTestResult(fRc = True) ],
                 [ tdTestDirCreate(sUser = sUser, sPassword = sPassword,
                                   sDirectory = os.path.join(sScratch,
-                                  "".join(random.choice(string.ascii_lowercase) for i in range(128))) ),
+                                                            "".join(random.choice(string.ascii_lowercase) for i in range(128))) ),
                   tdTestResult(fRc = True) ],
                 # Following two should fail on Windows (paths too long). Both should timeout.
                 [ tdTestDirCreate(sUser = sUser, sPassword = sPassword,
                                   sDirectory = os.path.join(sScratch,
-                                  "".join(random.choice(string.ascii_lowercase) for i in range(255))) ),
+                                                            "".join(random.choice(string.ascii_lowercase) for i in range(255))) ),
                   tdTestResult(fRc = False) ],
                 [ tdTestDirCreate(sUser = sUser, sPassword = sPassword,
                                   sDirectory = os.path.join(sScratch,
-                                  "".join(random.choice(string.ascii_lowercase) for i in range(1024))) ),
+                                                            "".join(random.choice(string.ascii_lowercase) for i in range(1024)))
+                                 ),
                   tdTestResult(fRc = False) ]
             ]);
         else:
@@ -2812,37 +2814,41 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows():
             aaTests.extend([
                 # Invalid stuff.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = ''),               tdTestResult(fRc = False) ],
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows'),    tdTestResult(fRc = False) ],
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows'),    tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = ''),
+                  tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows'),
+                  tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows'),
+                  tdTestResult(fRc = False) ],
                 # More unusual stuff.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'z:\\'),           tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'z:\\'),
+                  tdTestResult(fRc = False) ],
                 [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = '\\\\uncrulez\\foo'),
-                                                                                                   tdTestResult(fRc = False) ],
+                  tdTestResult(fRc = False) ],
                 # Non-existing stuff.
                 [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Apps\\nonexisting'),
-                                                                                                   tdTestResult(fRc = False) ],
+                  tdTestResult(fRc = False) ],
                 [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Apps\\testFileRemove'),
-                                                                                                   tdTestResult(fRc = False) ],
+                  tdTestResult(fRc = False) ],
                 # Try to delete system files.
                 [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\pagefile.sys'),
-                                                                                                   tdTestResult(fRc = False) ],
+                  tdTestResult(fRc = False) ],
                 [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\kernel32.sys'),
-                                                                                                   tdTestResult(fRc = False) ]
+                  tdTestResult(fRc = False) ]
             ]);
 
             if oTestVm.sVmName == 'tst-xppro':
                 aaTests.extend([
                     # Try delete some unimportant media stuff.
                     [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\Media\\chimes.wav'),
-                                                                                                   tdTestResult(fRc = True) ],
+                      tdTestResult(fRc = True) ],
                     # Second attempt should fail.
                     [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\Media\\chimes.wav'),
-                                                                                                   tdTestResult(fRc = False) ],
+                      tdTestResult(fRc = False) ],
                     [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\Media\\chord.wav'),
-                                                                                                   tdTestResult(fRc = True) ],
+                      tdTestResult(fRc = True) ],
                     [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\Media\\chord.wav'),
-                                                                                                   tdTestResult(fRc = False) ]
+                      tdTestResult(fRc = False) ]
                 ]);
         else:
             reporter.log('No OS-specific tests for non-Windows yet!');
@@ -2881,7 +2887,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aoTests = [
             tdTestSessionEx([ tdStepStatDir('.'),
                               tdStepStatDir('..'),
-                              ]),
+                            ]),
         ];
         if oTestVm.isWindows():
             aoTests += [ tdTestSessionEx([ tdStepStatDir('C:\\Windows'),
@@ -2904,7 +2910,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                            tdStepStatDir('C:/Windows/System32//..//'),
                                            tdStepStatFile('C:\\Windows\\System32\\kernel32.dll'),
                                            tdStepStatFile('C:/Windows/System32/kernel32.dll')
-                                           ]) ];
+                                         ]) ];
         elif oTestVm.isOS2():
             aoTests += [ tdTestSessionEx([ tdStepStatDir('C:\\OS2'),
                                            tdStepStatDir('C:\\OS2\\DLL'),
@@ -2914,7 +2920,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                            tdStepStatDir('c:/OS2/DLL/'),
                                            tdStepStatFile('C:\\CONFIG.SYS'),
                                            tdStepStatFile('C:\\OS2\\DLL\\DOSCALL1.DLL'),
-                                           ]) ];
+                                         ]) ];
         else: # generic unix.
             aoTests += [ tdTestSessionEx([ tdStepStatDir('/'),
                                            tdStepStatDir('///'),
@@ -2925,7 +2931,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                            tdStepStatFile('/bin/ls'),
                                            tdStepStatFile('/bin/cp'),
                                            tdStepStatFile('/bin/date'),
-                                           ]) ];
+                                         ]) ];
         # None existing stuff.
         if oTestVm.isWindows() or oTestVm.isOS2():
             aoTests += [ tdTestSessionEx([ tdStepStatFileNotFound('C:\\NoSuchFileOrDirectory', ),
@@ -2938,13 +2944,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                            tdStepStatPathNotFound('C:/NoSuchDirectory/NoSuchFileOrDirectory/'),
                                            tdStepStatPathNotFound('N:\\'), # ASSUMES nothing mounted on N:!
                                            tdStepStatPathNotFound('\\\\NoSuchUncServerName\\NoSuchShare'),
-                                           ]) ];
+                                         ]) ];
         else: # generic unix.
             aoTests += [ tdTestSessionEx([ tdStepStatFileNotFound('/NoSuchFileOrDirectory', ),
                                            tdStepStatFileNotFound('/bin/NoSuchFileOrDirectory'),
                                            tdStepStatPathNotFound('/NoSuchDirectory/'),
                                            tdStepStatPathNotFound('/NoSuchDirectory/.'),
-                                           ]) ];
+                                         ]) ];
         # Invalid parameter check.
         aoTests += [ tdTestSessionEx([ tdStepStat('', vbox.ComError.E_INVALIDARG), ]), ];
 
@@ -3292,33 +3298,46 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows():
             aaTests.extend([
                 # Destination missing.
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = ''),                   tdTestResult(fRc = False) ],
+                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = ''),
+                  tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows',
-                               aFlags = [ 1234 ] ),                                                tdTestResult(fRc = False) ],
+                               aFlags = [ 1234 ] ),
+                  tdTestResult(fRc = False) ],
                 # Source missing.
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = ''),                   tdTestResult(fRc = False) ],
+                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = ''),
+                  tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = 'C:\\Windows',
-                               aFlags = [ 1234 ] ),                                                tdTestResult(fRc = False) ],
+                               aFlags = [ 1234 ] ),
+                  tdTestResult(fRc = False) ],
                 # Nothing to copy (source and/or destination is empty).
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'z:\\'),               tdTestResult(fRc = False) ],
+                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'z:\\'),
+                  tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = '\\\\uncrulez\\foo'),
-                                                                                                   tdTestResult(fRc = False) ],
+
+                  tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'non-exist',
-                               sDst = os.path.join(sScratch, 'non-exist.dll')),                    tdTestResult(fRc = False) ],
+                               sDst = os.path.join(sScratch, 'non-exist.dll')),
+                  tdTestResult(fRc = False) ],
                 # Copying single files.
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = 'C:\\non-exist\\'),                                          tdTestResult(fRc = False) ],
+                               sDst = 'C:\\non-exist\\'),
+                  tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = 'C:\\non\\exist\\'),                                         tdTestResult(fRc = False) ],
+                               sDst = 'C:\\non\\exist\\'),
+                  tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = 'C:\\non\\exist\\renamedfile.dll'),                          tdTestResult(fRc = False) ],
+                               sDst = 'C:\\non\\exist\\renamedfile.dll'),
+                  tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),           tdTestResult(fRc = True) ],
+                               sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
+                  tdTestResult(fRc = True) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),           tdTestResult(fRc = True) ],
+                               sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
+                  tdTestResult(fRc = True) ],
                 # Destination is a directory, should fail.
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = sScratch),                                                   tdTestResult(fRc = False) ]
+                               sDst = sScratch),
+                  tdTestResult(fRc = False) ]
                 ## @todo Add testing the CopyTo flags here!
             ]);
 
@@ -3327,10 +3346,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 aaTests.extend([
                     # Copying directories with contain files we don't have read access to.
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\security',
-                                   sDst = sScratch),                                               tdTestResult(fRc = False) ],
+                                   sDst = sScratch),
+                      tdTestResult(fRc = False) ],
                     # Copying directories with regular files.
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Help',
-                                   sDst = sScratch),                                               tdTestResult(fRc = True) ]
+                                   sDst = sScratch),
+                      tdTestResult(fRc = True) ]
                 ]);
         else:
             reporter.log('No OS-specific tests for non-Windows yet!');
@@ -3391,7 +3412,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sDst = ''),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sDst = 'C:\\Windows',
-                               aFlags = [ 1234 ] ),
+                                 aFlags = [ 1234 ] ),
                   tdTestResult(fRc = False) ],
                 # Nothing to copy (sDst is empty / unreachable).
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'z:\\'),
@@ -3400,7 +3421,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'non-exist',
-                               sDst = os.path.join(sScratch, 'non-exist.dll')),
+                                 sDst = os.path.join(sScratch, 'non-exist.dll')),
                   tdTestResult(fRc = False) ]
                 ## @todo Add testing the CopyFrom aFlags here!
             ]);
@@ -3421,10 +3442,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     #                sDst = os.path.join(sScratch, 'renamedfile.dll')), tdTestResult(fRc = True) ],
                     # Destination is a directory, should fail.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                   sDst = sScratch),                                                 tdTestResult(fRc = False) ],
+                                     sDst = sScratch),
+                      tdTestResult(fRc = False) ],
                     # Copying directories.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
-                                   sDst = sScratch),                                                 tdTestResult(fRc = True) ]
+                                     sDst = sScratch),
+                      tdTestResult(fRc = True) ]
                     ## @todo Add testing the CopyFrom aFlags here!
                 ]);
         else:
