@@ -408,8 +408,10 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                                                              pwszFile, cch + 1 /* Include terminator */);
                                     AssertMsg(cchFile == cch, ("cchCopied (%RU16) does not match cchFile (%RU16)\n",
                                                                cchFile, cch));
-                                    int rc2 = RTUtf16ToUtf8(pwszFile, &pszFile);
-                                    AssertRC(rc2);
+                                    rc = RTUtf16ToUtf8(pwszFile, &pszFile);
+                                    AssertRC(rc);
+
+                                    RTMemFree(pwszFile);
                                 }
                                 else
                                     rc = VERR_NO_MEMORY;
@@ -441,7 +443,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
                             }
 
                             if (pszFile)
-                                RTMemFree(pszFile);
+                                RTStrFree(pszFile);
 
                             if (RT_FAILURE(rc))
                                 break;
