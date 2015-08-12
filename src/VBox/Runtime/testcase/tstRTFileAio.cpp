@@ -190,9 +190,10 @@ int main()
         if (   RT_SUCCESS(rc)
             && enmType == RTFSTYPE_TMPFS)
             fAsyncMayFail = true;
-        RTTESTI_CHECK_RC(rc = RTFileOpen(&hFile, "tstFileAio#1.tst",
-                                         RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_ASYNC_IO),
-                         VINF_SUCCESS);
+        RTTESTI_CHECK((rc = RTFileOpen(&hFile, "tstFileAio#1.tst",
+                                       RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_ASYNC_IO)
+                       ) == (   VINF_SUCCESS
+                             || (rc == VERR_INVALID_PARAMETER && fAsyncMayFail)));
         if (RT_SUCCESS(rc))
         {
             uint8_t *pbTestBuf = (uint8_t *)RTTestGuardedAllocTail(g_hTest, TSTFILEAIO_BUFFER_SIZE);
