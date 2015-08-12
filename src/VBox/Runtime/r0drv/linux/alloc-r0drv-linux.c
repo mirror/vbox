@@ -451,7 +451,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
         pvRet = NULL;
 
     IPRT_LINUX_RESTORE_EFL_AC();
-    return NULL;
+    return pvRet;
 }
 RT_EXPORT_SYMBOL(RTMemContAlloc);
 
