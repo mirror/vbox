@@ -370,18 +370,22 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                                 /* Note: paParms[2] was set by the guest as blocking flag. */
                             }
                         }
-                        else
-                            rc = VERR_NOT_FOUND;
+                        else /* No host callback in place, so drag and drop is not supported by the host. */
+                            rc = VERR_NOT_SUPPORTED;
 
                         if (RT_FAILURE(rc))
                             rc = m_pManager->nextMessage(u32Function, cParms, paParms);
 
-                        /* Some error occurred? */
-                        if (   RT_FAILURE(rc)
-                            && paParms[2].u.uint32) /* Blocking flag set? */
+                        /* Some error occurred or no (new) messages available? */
+                        if (RT_FAILURE(rc))
                         {
-                            /* Defer client returning. */
-                            rc = VINF_HGCM_ASYNC_EXECUTE;
+                            if (paParms[2].u.uint32) /* Blocking flag set? */
+                            {
+                                /* Defer client returning. */
+                                rc = VINF_HGCM_ASYNC_EXECUTE;
+                            }
+
+                            LogFlowFunc(("Message queue is empty, returning %Rrc to guest\n", rc));
                         }
                     }
                 }
@@ -665,6 +669,8 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             paParms = data.paParms;
                         }
                     }
+                    else /* No host callback in place, so drag and drop is not supported by the host. */
+                        rc = VERR_NOT_SUPPORTED;
                 }
                 break;
             }
@@ -678,15 +684,25 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
      */
     if (rc == VINF_HGCM_ASYNC_EXECUTE)
     {
-        m_clientQueue.append(new HGCM::Client(u32ClientID, callHandle,
-                                              u32Function, cParms, paParms));
+        try
+        {
+            LogFlowFunc(("Deferring guest call completion of client ID=%RU32\n", u32ClientID));
+            m_clientQueue.append(new HGCM::Client(u32ClientID, callHandle,
+                                                  u32Function, cParms, paParms));
+        }
+        catch (std::bad_alloc)
+        {
+            rc = VERR_NO_MEMORY;
+            /* Don't report to guest. */
+        }
     }
-
-    if (   rc != VINF_HGCM_ASYNC_EXECUTE
-        && m_pHelpers)
+    else if (m_pHelpers)
     {
+        /* Complete call on guest side. */
         m_pHelpers->pfnCallComplete(callHandle, rc);
     }
+    else
+        rc = VERR_NOT_IMPLEMENTED;
 
     LogFlowFunc(("Returning rc=%Rrc\n", rc));
 }
