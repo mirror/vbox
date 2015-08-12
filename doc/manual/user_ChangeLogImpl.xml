@@ -41,17 +41,45 @@
       </listitem>
 
       <listitem>
-        <para>GUI: fixed behavior when checking for the correct disk encryption
-          password</para>
+        <para>GUI: fixed rare hang and crash on VM shutdown/poweroff</para>
       </listitem>
 
       <listitem>
-        <para>GUI: don't switch the highlight bar in the VM selector to the newly
-          created VM if the VM was created by another client (e.g. VBoxManage)</para>
+        <para>GUI: X11: fixed few crashes caused by the Qt 'alien widgets' feature</para>
       </listitem>
 
       <listitem>
-        <para>GUI: improve the quality in scaling mode under some circumstances
+        <para>GUI: X11: fixed various mini-toolbar geometry quirks like positioning, z-order,
+          transiency issues on certain window managers (bug #14257)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: X11: fixed mini-toolbar minimize button issue under certain window managers
+          (bug #14284)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: VM menu actions availability should now be properly updated on
+          full-screen/seamless/scaled mode switches</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: disk encryption password validation should be performed
+          when user confirm password, not after each entered symbol</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: do not change the VM/group selection in the VM Manager to the newly
+          created VM if it was created by another client (e.g. VBoxManage)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Mac OS X: Do not treat 'almost maximized' VM windows as 'maximized',
+          watch for strict window geometry instead</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: improve the quality in scaled mode under some circumstances
           (5.0 regression; bug #14303)</para>
       </listitem>
 
