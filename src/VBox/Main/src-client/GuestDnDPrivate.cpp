@@ -457,7 +457,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             rc = it->second.pfnCallback(u32Function, pvParms, cbParms, it->second.pvUser);
         }
         else
-            rc = VERR_NO_DATA; /* Tell the guest. */
+            rc = VERR_NOT_SUPPORTED; /* Tell the guest. */
     }
 
     LogFlowFunc(("Returning rc=%Rrc\n", rc));
