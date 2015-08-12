@@ -86,6 +86,7 @@ typedef struct RTSEMMUTEXINTERNAL
 
 RTDECL(int) RTSemMutexCreate(PRTSEMMUTEX phMtx)
 {
+    int rc = VINF_SUCCESS;
     IPRT_LINUX_SAVE_EFL_AC();
 
     /*
@@ -93,21 +94,25 @@ RTDECL(int) RTSemMutexCreate(PRTSEMMUTEX phMtx)
      */
     PRTSEMMUTEXINTERNAL pThis;
     pThis = (PRTSEMMUTEXINTERNAL)RTMemAlloc(sizeof(*pThis));
-    if (!pThis)
-        return VERR_NO_MEMORY;
+    if (pThis)
+    {
+        /*
+         * Initialize.
+         */
+        pThis->u32Magic     = RTSEMMUTEX_MAGIC;
+        pThis->cRecursions  = 0;
+        pThis->pOwnerTask   = NULL;
+        pThis->cRefs        = 1;
+        RTListInit(&pThis->WaiterList);
+        spin_lock_init(&pThis->Spinlock);
 
-    /*
-     * Initialize.
-     */
-    pThis->u32Magic     = RTSEMMUTEX_MAGIC;
-    pThis->cRecursions  = 0;
-    pThis->pOwnerTask   = NULL;
-    pThis->cRefs        = 1;
-    RTListInit(&pThis->WaiterList);
-    spin_lock_init(&pThis->Spinlock);
+        *phMtx = pThis;
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
-    *phMtx = pThis;
-    return VINF_SUCCESS;
+    IPRT_LINUX_RESTORE_EFL_AC();
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTSemMutexCreate);
 
@@ -117,7 +122,6 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
     PRTSEMMUTEXINTERNAL     pThis = hMtx;
     PRTSEMMUTEXLNXWAITER    pCur;
     unsigned long           fSavedIrq;
-    IPRT_LINUX_SAVE_EFL_AC();
 
     /*
      * Validate.
@@ -131,6 +135,8 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
      * Kill it, kick waiters and release it.
      */
     AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, RTSEMMUTEX_MAGIC_DEAD, RTSEMMUTEX_MAGIC), VERR_INVALID_HANDLE);
+
+    IPRT_LINUX_SAVE_EFL_AC();
 
     spin_lock_irqsave(&pThis->Spinlock, fSavedIrq);
     RTListForEach(&pThis->WaiterList, pCur, RTSEMMUTEXLNXWAITER, ListEntry)
@@ -146,6 +152,8 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
         spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
         RTMemFree(pThis);
     }
+
+    IPRT_LINUX_RESTORE_EFL_AC();
 
     return VINF_SUCCESS;
 }
