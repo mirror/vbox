@@ -286,7 +286,7 @@ class TestBoxScript(object):
             if sType == 'cifs':
                 utils.sudoProcessOutputChecked(['/bin/mount', '-t', 'cifs',
                                                 '-o',
-                                                  'user=' + sUser
+                                                'user=' + sUser
                                                 + ',password=' + sPassword
                                                 + ',sec=ntlmv2'
                                                 + ',uid=' + str(os.getuid()) # pylint: disable=E1101
@@ -313,7 +313,7 @@ class TestBoxScript(object):
                 oPasswdFile.flush();
                 utils.sudoProcessOutputChecked(['/sbin/mount', '-F', 'smbfs',
                                                 '-o',
-                                                  'user=' + sUser
+                                                'user=' + sUser
                                                 + ',uid=' + str(os.getuid()) # pylint: disable=E1101
                                                 + ',gid=' + str(os.getgid()) # pylint: disable=E1101
                                                 + ',fileperms=0555,dirperms=0555,noxattr,ro',
