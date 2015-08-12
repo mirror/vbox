@@ -144,22 +144,71 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 
 void UIMachineViewFullscreen::adjustGuestScreenSize()
 {
-    /* Acquire working-area size: */
-    const QSize workingAreaSize = workingArea().size();
-    /* Acquire frame-buffer size: */
-    QSize frameBufferSize(frameBuffer()->width(), frameBuffer()->height());
-    /* Take the scale-factor(s) into account: */
-    frameBufferSize = scaledForward(frameBufferSize);
-    /* Check if we should adjust guest-screen to new size: */
-    if (frameBuffer()->isAutoEnabled() ||
-        frameBufferSize != workingAreaSize)
-        if (m_bIsGuestAutoresizeEnabled &&
-            uisession()->isGuestSupportsGraphics() &&
-            uisession()->isScreenVisible(screenId()))
+    /* Should we adjust guest-screen size? Logging paranoia is required here to reveal the truth. */
+    LogRel(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Adjust guest-screen size if necessary.\n"));
+    bool fAdjust = false;
+
+    /* Step 1: Was the guest-screen enabled automatically? */
+    if (!fAdjust)
+    {
+        if (frameBuffer()->isAutoEnabled())
         {
-            frameBuffer()->setAutoEnabled(false);
-            sltPerformGuestResize(workingArea().size());
+            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen was enabled automatically, adjustment is required.\n"));
+            fAdjust = true;
         }
+    }
+    /* Step 2: Is the guest-screen of another size than necessary? */
+    if (!fAdjust)
+    {
+        /* Acquire frame-buffer size: */
+        QSize frameBufferSize(frameBuffer()->width(), frameBuffer()->height());
+        /* Take the scale-factor(s) into account: */
+        frameBufferSize = scaledForward(frameBufferSize);
+
+        /* Acquire working-area size: */
+        const QSize workingAreaSize = workingArea().size();
+
+        if (frameBufferSize != workingAreaSize)
+        {
+            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen is of another size than necessary, adjustment is required.\n"));
+            fAdjust = true;
+        }
+    }
+
+    /* Step 3: Is guest-additions supports graphics? */
+    if (fAdjust)
+    {
+        if (!uisession()->isGuestSupportsGraphics())
+        {
+            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-additions are not supporting graphics, adjustment is omitted.\n"));
+            fAdjust = false;
+        }
+    }
+    /* Step 4: Is guest-screen visible? */
+    if (fAdjust)
+    {
+        if (!uisession()->isScreenVisible(screenId()))
+        {
+            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen is not visible, adjustment is omitted.\n"));
+            fAdjust = false;
+        }
+    }
+    /* Step 5: Is guest-screen auto-resize enabled? */
+    if (fAdjust)
+    {
+        if (!m_bIsGuestAutoresizeEnabled)
+        {
+            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen auto-resize is disabled, adjustment is omitted.\n"));
+            fAdjust = false;
+        }
+    }
+
+    /* Final step: Adjust if requested/allowed. */
+    if (fAdjust)
+    {
+        frameBuffer()->setAutoEnabled(false);
+        sltPerformGuestResize(workingArea().size());
+    }
 }
 
 QRect UIMachineViewFullscreen::workingArea() const

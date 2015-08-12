@@ -889,11 +889,13 @@ void UISession::sltAdditionsChange()
         m_fIsGuestSupportsGraphics = fIsGuestSupportsGraphics;
         m_fIsGuestSupportsSeamless = fIsGuestSupportsSeamless;
 
-        /* Notify listeners about guest additions state really changed: */
+        /* Notify listeners about GA state really changed: */
+        LogRel(("GUI: UISession::sltAdditionsChange: GA state really changed, notifying listeners.\n"));
         emit sigAdditionsStateActualChange();
     }
 
-    /* Notify listeners about guest additions state event came: */
+    /* Notify listeners about GA state change event came: */
+    LogRel(("GUI: UISession::sltAdditionsChange: GA state change event came, notifying listeners.\n"));
     emit sigAdditionsStateChange();
 }
 
