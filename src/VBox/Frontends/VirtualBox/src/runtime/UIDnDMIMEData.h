@@ -69,13 +69,12 @@ signals:
      * in the specified MIME type.
      *
      * @returns IPRT status code.
-     * @param strMIMEType               MIME type to retrieve data for.
+     * @param dropAction            Drop action to perform.
+     * @param strMimeType           MIME data type.
+     * @param vaType                Qt's variant type of the MIME data.
+     * @param vaData                Reference to QVariant where to store the retrieved data.
      */
-    int getData(const QString &strMIMEType) const;
-
-#ifdef RT_OS_DARWIN
-    void notifyDropped(void) const;
-#endif
+    int sigGetData(Qt::DropAction dropAction, const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData) const;
 
 public slots:
 

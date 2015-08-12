@@ -382,6 +382,10 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     connect(pDrag, SIGNAL(actionChanged(Qt::DropAction)),
             m_pMIMEData, SLOT(sltDropActionChanged(Qt::DropAction)));
 
+    /* Invoke this handler as data needs to be retrieved by our derived QMimeData class. */
+    connect(m_pMIMEData, SIGNAL(sigGetData(Qt::DropAction, const QString&, QVariant::Type, QVariant&)),
+            this, SLOT(sltGetData(Qt::DropAction, const QString&, QVariant::Type, QVariant&)));
+
     /*
      * Set MIME data object and start the (modal) drag'n drop operation on the host.
      * This does not block Qt's event loop, however (on Windows it would).
@@ -650,6 +654,11 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction    dropAction,
 
     int rc = VINF_SUCCESS;
 
+    /* Send a mouse event with released mouse buttons into the guest that triggers
+     * the "drop" event in our proxy window on the guest. */
+    AssertPtr(m_pSession);
+    m_pSession->mouse().PutMouseEvent(0, 0, 0, 0, 0);
+
     /* Start getting the data from the source. Request and transfer data
      * from the source and display a modal progress dialog while doing this. */
     Assert(!m_dndSource.isNull());
@@ -702,6 +711,16 @@ void UIDnDHandler::setMode(DNDMODE enmMode)
     QMutexLocker AutoWriteLock(&m_WriteLock);
     m_enmMode = enmMode;
     LogFlowFunc(("Mode is now: %RU32\n", m_enmMode));
+}
+
+int UIDnDHandler::sltGetData(      Qt::DropAction  dropAction,
+                             const QString        &strMIMEType,
+                                   QVariant::Type  vaType,
+                                   QVariant       &vaData)
+{
+    int rc = retrieveData(dropAction, strMIMEType, vaType, vaData);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /*

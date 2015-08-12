@@ -99,6 +99,21 @@ public:
     static Qt::DropAction      toQtDnDAction(KDnDAction action);
     static Qt::DropActions     toQtDnDActions(const QVector<KDnDAction> &vecActions);
 
+public slots:
+
+    /**
+     * Called by UIDnDMIMEData (Linux, OS X, Solaris) to start retrieving the actual data
+     * from the guest. This function will block and show a modal progress dialog until
+     * the data transfer is complete.
+     *
+     * @return IPRT status code.
+     * @param dropAction            Drop action to perform.
+     * @param strMIMEType           MIME data type.
+     * @param vaType                Qt's variant type of the MIME data.
+     * @param vaData                Reference to QVariant where to store the retrieved data.
+     */
+    int                        sltGetData(Qt::DropAction dropAction, const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData);
+
 protected:
 
 #ifdef DEBUG
