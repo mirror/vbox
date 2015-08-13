@@ -3,7 +3,7 @@
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
-    <title>Version 5.0.2 (2015-xx-xx)</title>
+    <title>Version 5.0.2 (2015-08-xx)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
       added:</para>
@@ -74,7 +74,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: Mac OS X: Do not treat 'almost maximized' VM windows as 'maximized',
+        <para>GUI: Mac OS X: do not treat 'almost maximized' VM windows as 'maximized',
           watch for strict window geometry instead</para>
       </listitem>
 
@@ -84,7 +84,7 @@
       </listitem>
 
       <listitem>
-        <para>VBoxManage: don't deny changing the network adapter type at
+        <para>VBoxManage: do not deny changing the network adapter type at
           VM runtime (5.0 regression; bug #14308)</para>
       </listitem>
 
