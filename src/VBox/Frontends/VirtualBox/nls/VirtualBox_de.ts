@@ -8093,7 +8093,7 @@
     </message>
     <message>
         <source>(Optical Drive)</source>
-        <translation>(opt. Laufwerk)</translation>
+        <translation>(DVD)</translation>
     </message>
     <message>
         <source>Encrypted</source>
