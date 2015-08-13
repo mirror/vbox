@@ -131,6 +131,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
     RT_ASSERT_PREEMPT_CPUID_VAR();
     AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
               ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
+    IPRT_LINUX_SAVE_EFL_AC();
 
 #ifdef CONFIG_PROVE_LOCKING
     lockdep_off();
@@ -142,15 +143,12 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
         pThis->fIntSaved = fIntSaved;
     }
     else
-    {
-        IPRT_LINUX_SAVE_EFL_AC();
         spin_lock(&pThis->Spinlock);
-        IPRT_LINUX_RESTORE_EFL_ONLY_AC();
-    }
 #ifdef CONFIG_PROVE_LOCKING
     lockdep_on();
 #endif
 
+    IPRT_LINUX_RESTORE_EFL_ONLY_AC();
     RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
 }
 RT_EXPORT_SYMBOL(RTSpinlockAcquire);
@@ -163,6 +161,7 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
     AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
               ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
     RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
+    IPRT_LINUX_SAVE_EFL_AC();           /* spin_unlock* may preempt and trash eflags.ac. */
 
 #ifdef CONFIG_PROVE_LOCKING
     lockdep_off();
@@ -174,15 +173,12 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
         spin_unlock_irqrestore(&pThis->Spinlock, fIntSaved);
     }
     else
-    {
-        IPRT_LINUX_SAVE_EFL_AC();
         spin_unlock(&pThis->Spinlock);
-        IPRT_LINUX_RESTORE_EFL_ONLY_AC();
-    }
 #ifdef CONFIG_PROVE_LOCKING
     lockdep_on();
 #endif
 
+    IPRT_LINUX_RESTORE_EFL_ONLY_AC();
     RT_ASSERT_PREEMPT_CPUID();
 }
 RT_EXPORT_SYMBOL(RTSpinlockRelease);
