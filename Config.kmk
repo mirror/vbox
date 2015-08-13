@@ -1739,8 +1739,8 @@ ifndef VBOX_BLD_PYTHON
   VBOX_BLD_PYTHON := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS)/win.x86/python/v*/python$(HOSTSUFF_EXE))) \
   				   python-not-found.exe)
  else
-  VBOX_BLD_PYTHON := $(firstword $(which python$(HOSTSUFF_EXE)) $(which python2.7$(HOSTSUFF_EXE)) \
-                                 $(which python2.6$(HOSTSUFF_EXE)) python$(HOSTSUFF_EXE))
+  VBOX_BLD_PYTHON := $(firstword $(which python2.7$(HOSTSUFF_EXE)) $(which python2.6$(HOSTSUFF_EXE)) \
+                                 $(which python$(HOSTSUFF_EXE)) python$(HOSTSUFF_EXE))
  endif
 endif
 
