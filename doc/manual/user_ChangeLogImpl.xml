@@ -188,6 +188,11 @@
         <para>Solaris Additions: added support for X.Org Server 1.17</para>
       </listitem>
 
+      <listitem>
+        <para>X11 Additions: various seamless mode fixes, including
+           invisible windows under LXDE.</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
