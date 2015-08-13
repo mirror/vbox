@@ -45,7 +45,8 @@
       </listitem>
 
       <listitem>
-        <para>GUI: X11: fixed few crashes caused by the Qt 'alien widgets' feature</para>
+        <para>GUI: X11: fixed few crashes caused by the Qt <emphasis>alien
+            widgets</emphasis> feature</para>
       </listitem>
 
       <listitem>
@@ -65,7 +66,7 @@
 
       <listitem>
         <para>GUI: disk encryption password validation should be performed
-          when user confirm password, not after each entered symbol</para>
+          when user confirmed the password, not after each entered symbol</para>
       </listitem>
 
       <listitem>
@@ -75,7 +76,7 @@
 
       <listitem>
         <para>GUI: Mac OS X: do not treat 'almost maximized' VM windows as 'maximized',
-          watch for strict window geometry instead</para>
+          watch for the strict window geometry instead</para>
       </listitem>
 
       <listitem>
@@ -147,6 +148,10 @@
       <listitem>
         <para>Windows hosts: fixed host-only adapter creation issues on
           Windows 10 (bug #14040)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed audio on Windows 10 (bug #14432)</para>
       </listitem>
 
       <listitem>
