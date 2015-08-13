@@ -128,10 +128,10 @@ RT_EXPORT_SYMBOL(RTSpinlockDestroy);
 RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
 {
     PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    IPRT_LINUX_SAVE_EFL_AC();
     RT_ASSERT_PREEMPT_CPUID_VAR();
     AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
               ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
-    IPRT_LINUX_SAVE_EFL_AC();
 
 #ifdef CONFIG_PROVE_LOCKING
     lockdep_off();
@@ -157,11 +157,11 @@ RT_EXPORT_SYMBOL(RTSpinlockAcquire);
 RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
 {
     PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    IPRT_LINUX_SAVE_EFL_AC();           /* spin_unlock* may preempt and trash eflags.ac. */
     RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS();
     AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
               ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
     RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
-    IPRT_LINUX_SAVE_EFL_AC();           /* spin_unlock* may preempt and trash eflags.ac. */
 
 #ifdef CONFIG_PROVE_LOCKING
     lockdep_off();
