@@ -709,7 +709,7 @@ static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned 
                     != ((fSavedEfl    & (X86_EFL_AC | X86_EFL_IF | X86_EFL_DF | X86_EFL_IOPL)) | X86_EFL_AC) ))
     {
         char szTmp[48];
-        RTStrPrintf(szTmp, sizeof(szTmp), "uCmd=%#x: %#x->%#x!", uCmd, (uint32_t)fSavedEfl, (uint32_t)ASMGetFlags());
+        RTStrPrintf(szTmp, sizeof(szTmp), "uCmd=%#x: %#x->%#x!", _IOC_NR(uCmd), (uint32_t)fSavedEfl, (uint32_t)ASMGetFlags());
         supdrvBadContext(&g_DevExt, "SUPDrv-linux.c",  __LINE__, szTmp);
     }
     ASMSetFlags(fSavedEfl);
@@ -740,7 +740,7 @@ static int VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned
     /*
      * Read the header.
      */
-    if (RT_UNLIKELY(copy_from_user(&Hdr, (void *)ulArg, sizeof(Hdr))))
+    if (RT_FAILURE(RTR0MemUserCopyFrom(&Hdr, ulArg, sizeof(Hdr))))
     {
         Log(("VBoxDrvLinuxIOCtl: copy_from_user(,%#lx,) failed; uCmd=%#x\n", ulArg, uCmd));
         return -EFAULT;
@@ -771,7 +771,7 @@ static int VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned
         OSDBGPRINT(("VBoxDrvLinuxIOCtl: failed to allocate buffer of %d bytes for uCmd=%#x\n", cbBuf, uCmd));
         return -ENOMEM;
     }
-    if (RT_UNLIKELY(copy_from_user(pHdr, (void *)ulArg, Hdr.cbIn)))
+    if (RT_FAILURE(RTR0MemUserCopyFrom(pHdr, ulArg, Hdr.cbIn)))
     {
         Log(("VBoxDrvLinuxIOCtl: copy_from_user(,%#lx, %#x) failed; uCmd=%#x\n", ulArg, Hdr.cbIn, uCmd));
         RTMemFree(pHdr);
@@ -796,7 +796,7 @@ static int VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned
             OSDBGPRINT(("VBoxDrvLinuxIOCtl: too much output! %#x > %#x; uCmd=%#x!\n", cbOut, cbBuf, uCmd));
             cbOut = cbBuf;
         }
-        if (RT_UNLIKELY(copy_to_user((void *)ulArg, pHdr, cbOut)))
+        if (RT_FAILURE(RTR0MemUserCopyTo(ulArg, pHdr, cbOut)))
         {
             /* this is really bad! */
             OSDBGPRINT(("VBoxDrvLinuxIOCtl: copy_to_user(%#lx,,%#x); uCmd=%#x!\n", ulArg, cbOut, uCmd));

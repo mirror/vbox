@@ -580,7 +580,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
   VBoxDrv_ASDEFS         += VBOX_WITH_HARDENING
  endif
  if ($(VBOX_VERSION_BUILD) % 2) == 1
-  VBoxDrv_DEFS           += VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV
+  VBoxDrv_DEFS           += VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV IPRT_WITH_EFLAGS_AC_PRESERVING
  endif
 
  VBoxDrv_INCS             = . $(VBoxDrv_0_OUTDIR)
@@ -706,7 +706,8 @@ if1of ($(KBUILD_TARGET), linux freebsd)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "" \
 		$(if-expr !defined(VBOX_WITH_HARDENING)   ,-e "s;-DVBOX_WITH_HARDENING;;g",) \
-		$(if-expr ($(VBOX_VERSION_BUILD) % 2) == 0 || 1,-e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g",) \
+		$(if-expr ($(VBOX_VERSION_BUILD) % 2) == 0 || 1 \
+		 , -e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" -e "s;-DIPRT_WITH_EFLAGS_AC_PRESERVING;;g",) \
 		--output $@ $<
 	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/vboxdrv-mod-1.dep' \
 		'Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
