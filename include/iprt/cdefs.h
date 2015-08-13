@@ -949,13 +949,16 @@
 
 /** @def RTCALL
  * The standard calling convention for the Runtime interfaces.
+ *
+ * @remarks The regparm(0) in the X86/GNUC variant deals with -mregparm=x use in
+ *          the linux kernel and potentially elsewhere (3rd party).
  */
 #ifdef _MSC_VER
-# define RTCALL     __cdecl
+# define RTCALL                 __cdecl
 #elif defined(RT_OS_OS2)
-# define RTCALL     __cdecl
-#elif defined(__GNUC__) && defined(IN_RING0) && defined(RT_ARCH_X86) /** @todo consider dropping IN_RING0 here. */
-# define RTCALL     __attribute__((cdecl,regparm(0))) /* regparm(0) deals with -mregparm=x use in the linux kernel. */
+# define RTCALL                 __cdecl
+#elif defined(__GNUC__) && defined(RT_ARCH_X86)
+# define RTCALL                 __attribute__((cdecl,regparm(0)))
 #else
 # define RTCALL
 #endif
@@ -1023,32 +1026,16 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef __cplusplus
-# if defined(_MSC_VER) || defined(RT_OS_OS2)
-#  define DECLASM(type)          extern "C" type __cdecl
-# elif defined(__GNUC__) && defined(RT_ARCH_X86)
-#  define DECLASM(type)          extern "C" type __attribute__((cdecl,regparm(0)))
-# else
-#  define DECLASM(type)          extern "C" type
-# endif
+# define DECLASM(type)           extern "C" type RTCALL
 #else
-# if defined(_MSC_VER) || defined(RT_OS_OS2)
-#  define DECLASM(type)          type __cdecl
-# elif defined(__GNUC__) && defined(RT_ARCH_X86)
-#  define DECLASM(type)          type __attribute__((cdecl,regparm(0)))
-# else
-#  define DECLASM(type)          type
-# endif
+# define DECLASM(type)           type RTCALL
 #endif
 
 /** @def DECLASMTYPE
  * How to declare an internal assembly function type.
  * @param   type    The return type of the function.
  */
-# if defined(_MSC_VER) || defined(RT_OS_OS2)
-# define DECLASMTYPE(type)      type __cdecl
-#else
-# define DECLASMTYPE(type)      type
-#endif
+#define DECLASMTYPE(type)       type RTCALL
 
 /** @def DECLNORETURN
  * How to declare a function which does not return.
