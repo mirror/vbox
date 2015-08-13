@@ -145,6 +145,11 @@
       </listitem>
 
       <listitem>
+        <para>Windows hosts: fixed host-only adapter creation issues on
+          Windows 10 (bug #14040)</para>
+      </listitem>
+
+      <listitem>
         <para>Linux hosts: check then name space before attaching to a host
           network interface (bug #13795)</para>
       </listitem>
