@@ -193,7 +193,7 @@ int main()
         rc = RTFileOpen(&hFile, "tstFileAio#1.tst",
                                 RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_ASYNC_IO);
         RTTESTI_CHECK(   rc == VINF_SUCCESS
-                      || (rc == VERR_INVALID_PARAMETER && fAsyncMayFail));
+                      || (rc == VERR_ACCESS_DENIED && fAsyncMayFail));
         if (RT_SUCCESS(rc))
         {
             uint8_t *pbTestBuf = (uint8_t *)RTTestGuardedAllocTail(g_hTest, TSTFILEAIO_BUFFER_SIZE);
