@@ -92,9 +92,14 @@ for f in $FILES_VBOXDRV_BIN; do
     install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxdrv/`echo $f|cut -d'>' -f2`"
 done
 if [ -n "$VBOX_WITH_HARDENING" ]; then
-    cat                                   $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
+    sed -e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" \
+        -e "s;-DIPRT_WITH_EFLAGS_AC_PRESERVING;;g" \
+        < $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
 else
-    sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
+    sed -e "s;-DVBOX_WITH_HARDENING;;g" \
+        -e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" \
+        -e "s;-DIPRT_WITH_EFLAGS_AC_PRESERVING;;g" \
+        < $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
 fi
 
 # vboxnetflt (VirtualBox netfilter kernel module)
