@@ -8156,7 +8156,7 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
                    )
                )
                 return setError(VBOX_E_INVALID_VM_STATE,
-                                tr("The machine is not mutable (state is %s)"),
+                                tr("The machine is not mutable or saved (state is %s)"),
                                 Global::stringifyMachineState(mData->mMachineState));
             break;
         }
@@ -8172,7 +8172,7 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
                    )
                )
                 return setError(VBOX_E_INVALID_VM_STATE,
-                                tr("The machine is not mutable (state is %s)"),
+                                tr("The machine is not mutable or running (state is %s)"),
                                 Global::stringifyMachineState(mData->mMachineState));
             break;
         }
@@ -8189,7 +8189,7 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
                    )
                )
                 return setError(VBOX_E_INVALID_VM_STATE,
-                                tr("The machine is not mutable (state is %s)"),
+                                tr("The machine is not mutable, saved or running (state is %s)"),
                                 Global::stringifyMachineState(mData->mMachineState));
             break;
         }
