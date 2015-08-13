@@ -1163,7 +1163,7 @@ HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer, AutoWrite
         if (mType != SessionType_WriteLock && (rc == E_UNEXPECTED || rc == E_ACCESSDENIED))
             rc = S_OK;
 
-#ifndef DEBUG_bird /* I don't want clients crashing on me just because VBoxSVC went belly up. */
+#if !defined(DEBUG_bird) && !defined(DEBUG_andy) /* I don't want clients crashing on me just because VBoxSVC went belly up. */
         AssertComRC(rc);
 #endif
     }
