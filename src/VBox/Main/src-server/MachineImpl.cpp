@@ -13387,23 +13387,10 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
 
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        switch (mData->mMachineState)
+        if (!Global::IsOnline(mData->mMachineState))
         {
-            case MachineState_Paused:
-            case MachineState_Running:
-            case MachineState_Teleporting:
-            case MachineState_TeleportingPausedVM:
-            case MachineState_OnlineSnapshotting:
-            case MachineState_LiveSnapshotting:
-            case MachineState_DeletingSnapshotOnline:
-            case MachineState_DeletingSnapshotPaused:
-            case MachineState_Saving:
-            case MachineState_Stopping:
-                break;
-
-            default:
-                AssertMsgFailedReturn(("%s\n", Global::stringifyMachineState(mData->mMachineState)),
-                                      VBOX_E_INVALID_VM_STATE);
+            AssertMsgFailedReturn(("%s\n", Global::stringifyMachineState(mData->mMachineState)),
+                                  VBOX_E_INVALID_VM_STATE);
         }
 
         i_setModified(IsModified_MachineData);
