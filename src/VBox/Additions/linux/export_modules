@@ -56,6 +56,7 @@ echo "#define VBOX_VERSION_BUILD $VBOX_VERSION_BUILD" >> $PATH_TMP/version-gener
 echo "#define VBOX_VERSION_STRING_RAW \"$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD\"" >> $PATH_TMP/version-generated.h
 echo "#define VBOX_VERSION_STRING \"$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD\"" >> $PATH_TMP/version-generated.h
 echo "#define VBOX_API_VERSION_STRING \"${VBOX_VERSION_MAJOR}_${VBOX_VERSION_MINOR}\"" >> $PATH_TMP/version-generated.h
+echo "#define VBOX_PRIVATE_BUILD_DESC \"Private build with export_modules\"" >> $PATH_TMP/version-generated.h
 echo "" >> $PATH_TMP/version-generated.h
 echo "#endif" >> $PATH_TMP/version-generated.h
 
