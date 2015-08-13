@@ -98,6 +98,12 @@
       </listitem>
 
       <listitem>
+        <para>Storage: improved raw disk access on OS X by unmounting
+          any accessed volume before first use and prevent any mount attempt
+          by the host (bug #14219)</para>
+      </listitem>
+
+      <listitem>
         <para>3D: basic support for saving/restoring display lists</para>
       </listitem>
 
@@ -115,6 +121,11 @@
       </listitem>
 
       <listitem>
+        <para>Shared Folders: improved path conversion between hosts and
+          guests with different path separators (bug #14153)</para>
+      </listitem>
+
+      <listitem>
         <para>API: fixed method for setting medium IDs which used zero (invalid)
           UUIDs instead random (valid) UUIDs if no UUIDs were passed (bug #14350)</para>
       </listitem>
@@ -125,7 +136,7 @@
       </listitem>
 
       <listitem>
-        <para>Mac OS X hosts: El Capitan fixes (USB)</para>
+        <para>Mac OS X hosts: El Capitan USB fixes</para>
       </listitem>
 
       <listitem>
@@ -155,12 +166,6 @@
 
       <listitem>
         <para>Solaris Additions: added support for X.Org Server 1.17</para>
-      </listitem>
-
-      <listitem>
-        <para>Storage: improved raw disk access on OS X by unmounting
-          any accessed volume before first use and prevent any mount attempt
-          by the host (bug #14219)</para>
       </listitem>
 
     </itemizedlist>
