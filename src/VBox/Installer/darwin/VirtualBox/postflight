@@ -81,19 +81,19 @@ if [ -d "${INSTALLER_TEMP}/ExtensionPacks" ]; then
 fi
 
 #
-# Workaround for 10.11 beta 6 in which the set-uid bit isn't set by the installer.
+# Correct the ownership of the directories in case there
+# was an existing installation.
+#
+chown -R root:admin /Applications/VirtualBox.app
+
+#
+# Workaround for 10.11 beta 6 in which the above chown strips the set-uid-to-root bit.
 #
 SET_UID_BINARIES="VBoxNetAdpCtl"
 SET_UID_BINARIES="${SET_UID_BINARIES} VBoxHeadless VirtualBox VirtualBoxVM VBoxNetDHCP VBoxNetNAT" # WITH_HARDENING
 for bin in ${SET_UID_BINARIES}; do
     chmod u+s "/Applications/VirtualBox.app/Contents/MacOS/${bin}"
 done
-
-#
-# Correct the ownership of the directories in case there
-# was an existing installation.
-#
-chown -R root:admin /Applications/VirtualBox.app
 
 exit 0;
 
