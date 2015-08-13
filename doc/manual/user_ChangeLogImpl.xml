@@ -3,7 +3,7 @@
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
-    <title>Version 5.0.2 (2015-08-xx)</title>
+    <title>Version 5.0.2 (2015-08-13)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
       added:</para>
@@ -38,6 +38,12 @@
       <listitem>
         <para>VMM: fixed a crash while creating a guest core dumps via the VM
           debug facility (5.0 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: This release has AVX2 passthrough disabled on every host and
+          AVX passthrough disabled for 64-bit VMs on 32-bit hosts. This will be
+          properly fixed in a future 5.0.x maintenance release (see e.g. bug #14262).</para>
       </listitem>
 
       <listitem>
@@ -162,6 +168,11 @@
 
       <listitem>
         <para>Windows hosts: fixed audio on Windows 10 (bug #14432)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: more fixes for activated SMAP on Linux 3.19
+          and newer (Broadwell and later; bug #13961)</para>
       </listitem>
 
       <listitem>
