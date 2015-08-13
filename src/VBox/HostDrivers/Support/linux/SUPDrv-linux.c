@@ -981,12 +981,14 @@ int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *pu
     uint32_t u32Low, u32High;
     int rc;
 
+    IPRT_LINUX_SAVE_EFL_AC();
     if (idCpu == NIL_RTCPUID)
         rc = rdmsr_safe(uMsr, &u32Low, &u32High);
     else if (RTMpIsCpuOnline(idCpu))
         rc = rdmsr_safe_on_cpu(idCpu, uMsr, &u32Low, &u32High);
     else
         return VERR_CPU_OFFLINE;
+    IPRT_LINUX_RESTORE_EFL_AC();
     if (rc == 0)
     {
         *puValue = RT_MAKE_U64(u32Low, u32High);
@@ -1004,12 +1006,15 @@ int VBOXCALL    supdrvOSMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uV
 # ifdef SUPDRV_LINUX_HAS_SAFE_MSR_API
     int rc;
 
+    IPRT_LINUX_SAVE_EFL_AC();
     if (idCpu == NIL_RTCPUID)
         rc = wrmsr_safe(uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue));
     else if (RTMpIsCpuOnline(idCpu))
         rc = wrmsr_safe_on_cpu(idCpu, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue));
     else
         return VERR_CPU_OFFLINE;
+    IPRT_LINUX_RESTORE_EFL_AC();
+
     if (rc == 0)
         return VINF_SUCCESS;
     return VERR_ACCESS_DENIED;
@@ -1131,6 +1136,7 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
     va_list va;
     char    szMsg[512];
+    IPRT_LINUX_SAVE_EFL_AC();
 
     va_start(va, pszFormat);
     RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
@@ -1138,6 +1144,8 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     szMsg[sizeof(szMsg) - 1] = '\0';
 
     printk("%s", szMsg);
+
+    IPRT_LINUX_RESTORE_EFL_AC();
     return 0;
 }
 
@@ -1148,7 +1156,9 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 #ifdef CONFIG_PAX_KERNEXEC
     fFlags |= SUPKERNELFEATURES_GDT_READ_ONLY;
 #endif
-#ifdef CONFIG_X86_SMAP
+#if defined(VBOX_STRICT) || defined(VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV)
+    fFlags |= SUPKERNELFEATURES_SMAP;
+#elif defined(CONFIG_X86_SMAP)
     if (ASMGetCR4() & X86_CR4_SMAP)
         fFlags |= SUPKERNELFEATURES_SMAP;
 #endif
