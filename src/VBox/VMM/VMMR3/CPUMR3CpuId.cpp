@@ -133,6 +133,26 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /* [77(0x4d)] = */ kCpumMicroarch_Intel_Atom_Silvermont,
     /* [78(0x4e)] = */ kCpumMicroarch_Intel_Unknown,
     /* [79(0x4f)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [80(0x50)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [81(0x51)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [82(0x52)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [83(0x53)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [84(0x54)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [85(0x55)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [86(0x56)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [87(0x57)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [88(0x58)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [89(0x59)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [90(0x5a)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [91(0x5b)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [92(0x5c)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [93(0x5d)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [94(0x5e)] = */ kCpumMicroarch_Intel_Core7_Skylake, /* 6700K */
+    /* [95(0x5f)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [96(0x60)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [97(0x61)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [98(0x62)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [99(0x63)] = */ kCpumMicroarch_Intel_Unknown,
 };
 
 
