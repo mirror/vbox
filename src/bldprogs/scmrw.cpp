@@ -621,6 +621,10 @@ bool rewrite_FixFlowerBoxMarkers(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
                 cBlankLines = 0;
                 continue;
             }
+
+            int rc = ScmStreamSeekAbsolute(pIn, offSaved);
+            if (RT_FAILURE(rc))
+                return false;
         }
 
         int rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
