@@ -133,8 +133,8 @@ VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMM_INT_DECL(bool) gimKvmAreHypercallsEnabled(PVMCPU pVCpu)
 {
-    /* KVM paravirt interface doesn't have hypercall control bits like Hyper-V does
-       that guests can control. It's always enabled. */
+    /* KVM paravirt interface doesn't have hypercall control bits (like Hyper-V does)
+       that guests can control, i.e. hypercalls are always enabled. */
     return true;
 }
 
