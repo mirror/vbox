@@ -302,7 +302,7 @@ BOOL vbvaFindChangedRect(SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, POI
 static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)
 {
     NOREF(pvEnv);
-    return EngAllocMem(0, cb, 0);
+    return EngAllocMem(0, cb, MEM_ALLOC_TAG);
 }
 
 static DECLCALLBACK(void) hgsmiEnvFree(void *pvEnv, void *pv)
