@@ -114,7 +114,7 @@ static int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
 
     XGetErrorText(pDisplay, pError->error_code, errorText, sizeof(errorText));
     LogRelFlow(("VBoxClient: an X Window protocol error occurred: %s (error code %d).  Request code: %d, minor code: %d, serial number: %d\n", errorText, pError->error_code, pError->request_code, pError->minor_code, pError->serial));
-    return 0;  /* We should never reach this. */
+    return 0;
 }
 
 /**
@@ -149,91 +149,6 @@ static void vboxClientSetSignalHandlers(void)
     sigaction(SIGUSR1, &sigAction, NULL);
     sigaction(SIGUSR2, &sigAction, NULL);
     LogRelFlowFunc(("returning\n"));
-}
-
-/** Check whether X.Org has acquired or lost the current virtual terminal and
- * call the service @a pause() or @a resume() call-back if appropriate.
- * The functionality is provided by the vboxvideo driver for pre-1.16 X servers
- * and by 1.16 and later series servers.
- * This can either be called directly from a service's event loop or the service
- * can call VBClStartVTMonitor() to start an event loop in a separate thread.
- * Property notification for the root window should be selected first.  Services
- * are not required to check VT changes if they do not need the information.
- * @param  pEvent an event received on a display connection which will be
- *                checked to see if it is change to the XFree86_has_VT property
- */
-void VBClCheckXOrgVT(union _XEvent *pEvent)
-{
-    Atom actualType;
-    int actualFormat;
-    unsigned long cItems, cbLeft;
-    bool fHasVT = false;
-    unsigned long *pValue;
-    int rc;
-    Display *pDisplay = pEvent->xany.display;
-    Atom hasVT = XInternAtom(pDisplay, "XFree86_has_VT", False);
-
-    if (   pEvent->type != PropertyNotify
-        || pEvent->xproperty.window != DefaultRootWindow(pDisplay)
-        || pEvent->xproperty.atom != hasVT)
-        return;
-    XGetWindowProperty(pDisplay, DefaultRootWindow(pDisplay), hasVT, 0, 1,
-                       False, XA_INTEGER, &actualType, &actualFormat, &cItems,
-                       &cbLeft, (unsigned char **)&pValue);
-    if (cItems && actualFormat == 32)
-    {
-        fHasVT = *pValue != 0;
-        XFree(pValue);
-    }
-    else
-        return;
-    if (fHasVT)
-    {
-        rc = (*g_pService)->resume(g_pService);
-        if (RT_FAILURE(rc))
-            VBClFatalError(("Error resuming the service: %Rrc\n", rc));
-    }
-    if (!fHasVT)
-    {
-        rc = (*g_pService)->pause(g_pService);
-        if (RT_FAILURE(rc))
-            VBClFatalError(("Error pausing the service: %Rrc\n", rc));
-    }
-}
-
-/**
- * Thread which notifies the service when we switch to a different VT or back
- * and cleans up when the X server exits.
- * @note runs until programme exit.
- */
-static int pfnMonitorThread(RTTHREAD self, void *pvUser)
-{
-    Display *pDisplay;
-    bool fHasVT = true;
-
-    pDisplay = XOpenDisplay(NULL);
-    if (!pDisplay)
-        VBClFatalError(("Failed to open the X11 display\n"));
-    XSelectInput(pDisplay, DefaultRootWindow(pDisplay), PropertyChangeMask);
-    while (true)
-    {
-        XEvent event;
-
-        XNextEvent(pDisplay, &event);
-        VBClCheckXOrgVT(&event);
-    }
-    return VINF_SUCCESS;  /* Should never be reached. */
-}
-
-/**
- * Start a thread which notifies the service when we switch to a different
- * VT or back, and terminates us when the X server exits.  This should be called
- * by most services which do not regularly run an X11 event loop.
- */
-int VBClStartVTMonitor()
-{
-    return RTThreadCreate(NULL, pfnMonitorThread, NULL, 0,
-                          RTTHREADTYPE_INFREQUENT_POLLER, 0, "MONITOR");
 }
 
 /**

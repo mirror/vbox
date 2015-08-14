@@ -387,8 +387,6 @@ struct VBCLSERVICE vbclDisplayInterface =
     getPidFilePath,
     init,
     run,
-    VBClServiceDefaultHandler, /* pause */
-    VBClServiceDefaultHandler, /* resume */
     cleanup
 };
 

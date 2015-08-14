@@ -207,8 +207,6 @@ struct VBCLSERVICE vbclHostVersionInterface =
     getPidFilePath,
     VBClServiceDefaultHandler, /* init */
     run,
-    VBClServiceDefaultHandler, /* pause */
-    VBClServiceDefaultHandler, /* resume */
     VBClServiceDefaultCleanup
 };
 

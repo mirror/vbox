@@ -354,8 +354,6 @@ struct VBCLSERVICE vbclSeamlessInterface =
     getPidFilePath,
     init,
     run,
-    VBClServiceDefaultHandler, /* pause */
-    VBClServiceDefaultHandler, /* resume */
     cleanup
 };
 

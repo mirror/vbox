@@ -50,12 +50,6 @@ struct VBCLSERVICE
     int (*init)(struct VBCLSERVICE **ppInterface);
     /** Run the service main loop */
     int (*run)(struct VBCLSERVICE **ppInterface, bool fDaemonised);
-    /** Pause the service loop.  This is used to allow the service to disable
-     * itself when the X server is switched out.  It must be safe to call on a
-     * different thread if the VT monitoring thread is used. */
-    int (*pause)(struct VBCLSERVICE **ppInterface);
-    /** Resume after pausing.  The same applies here as for @a pause. */
-    int (*resume)(struct VBCLSERVICE **ppInterface);
     /** Clean up any global resources before we shut down hard.  The last calls
      * to @a pause and @a resume are guaranteed to finish before this is called.
      */
@@ -75,10 +69,6 @@ static void VBClServiceDefaultCleanup(struct VBCLSERVICE **ppInterface)
 {
     NOREF(ppInterface);
 }
-
-union _XEvent;  /* We do not want to pull in the X11 header files here. */
-extern void VBClCheckXOrgVT(union _XEvent *pEvent);
-extern int VBClStartVTMonitor();
 
 extern struct VBCLSERVICE **VBClGetClipboardService();
 extern struct VBCLSERVICE **VBClGetSeamlessService();
