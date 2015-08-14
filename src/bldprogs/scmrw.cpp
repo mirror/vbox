@@ -479,7 +479,7 @@ static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t
     size_t offLine = 1;
     while (offLine < cchLine && pchLine[offLine] == '*')
         offLine++;
-    if (offLine < 20)
+    if (offLine < 20)                   /* (Code below depend on a reasonable minimum here.) */
         return false;
     while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
         offLine++;
@@ -497,16 +497,17 @@ static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t
         return false;
 
     offLine = 0;
-    while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
-        offLine++;
-    if (offLine + 5 > cchLine)
-        return false;
+    if (RT_C_IS_BLANK(pchLine[0]))
+        offLine = RT_C_IS_BLANK(pchLine[1]) ? 2 : 1;
+
     if (pchLine[offLine] != '*')
         return false;
     offLine++;
+
     if (!RT_C_IS_BLANK(pchLine[offLine + 1]))
         return false;
     offLine++;
+
     while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
         offLine++;
     if (offLine >= cchLine)
@@ -540,6 +541,8 @@ static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t
         return false;
 
     offLine = 0;
+    if (RT_C_IS_BLANK(pchLine[0]))
+        offLine = RT_C_IS_BLANK(pchLine[1]) ? 2 : 1;
     while (offLine < cchLine && pchLine[offLine] == '*')
         offLine++;
     if (offLine < cchBox - 4)
