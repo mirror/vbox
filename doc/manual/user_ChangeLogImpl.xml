@@ -15,6 +15,10 @@
       </listitem>
 
       <listitem>
+        <para>GUI: added another pre-defined guest screen resolution (bug #14384)</para>
+      </listitem>
+
+      <listitem>
         <para>Additions/Windows: fixed the call to the memory allocation function
           (bug #14415)</para>
       </listitem>
