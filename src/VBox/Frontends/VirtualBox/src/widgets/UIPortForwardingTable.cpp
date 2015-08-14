@@ -218,7 +218,15 @@ public:
         setFrame(false);
         setAlignment(Qt::AlignCenter);
         setValidator(new IPv4Validator(this));
-        setInputMask("000.000.000.000");
+        connect(this, SIGNAL(textEdited(const QString&)), this, SLOT(sltTextEdited(const QString&)));
+    }
+
+private slots:
+
+    /** Drops the changed data to listener. */
+    void sltTextEdited(const QString&)
+    {
+        emit sigCommitData(this);
     }
 
 private:
@@ -255,7 +263,15 @@ public:
         setFrame(false);
         setAlignment(Qt::AlignCenter);
         setValidator(new IPv6Validator(this));
-        // setInputMask("000.000.000.000"); // No mask for now...
+        connect(this, SIGNAL(textEdited(const QString&)), this, SLOT(sltTextEdited(const QString&)));
+    }
+
+private slots:
+
+    /** Drops the changed data to listener. */
+    void sltTextEdited(const QString&)
+    {
+        emit sigCommitData(this);
     }
 
 private:
