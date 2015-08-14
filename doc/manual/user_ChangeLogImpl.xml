@@ -3,7 +3,7 @@
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
-    <title>Version 5.04 (2015-xx-xx)</title>
+    <title>Version 5.0.4 (2015-xx-xx)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
       added:</para>
@@ -78,7 +78,7 @@
 
       <listitem>
         <para>GUI: X11: fixed various mini-toolbar geometry quirks like positioning, z-order,
-          transiency issues on certain window managers (bug #14257)</para>
+          transparency issues on certain window managers (bug #14257)</para>
       </listitem>
 
       <listitem>
