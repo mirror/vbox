@@ -522,7 +522,7 @@ ifdef VBOX_WITH_MAIN_USB_ID_DATABASE  # Generate a database of USB vendor IDs an
  USBIdDatabaseGenerator_TEMPLATE = VBoxAdvBldProg
  USBIdDatabaseGenerator_SOURCES  = src-server/USBIdDatabaseGenerator.cpp
 else
- VBoxSVC_SOURCES += src-server/USBIdDatabaseStub.cpp	
+ VBoxSVC_SOURCES += src-server/USBIdDatabaseStub.cpp
 endif
 
 src-server/win/VBoxSVC.rc_INCS  = $(VBoxSVC_0_OUTDIR)

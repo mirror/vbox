@@ -24,7 +24,7 @@
 #define VBSF_F_PATH_HAS_WILDCARD_IN_PREFIX UINT32_C(0x00000001) /* A component before the last one contains a wildcard. */
 #define VBSF_F_PATH_HAS_WILDCARD_IN_LAST   UINT32_C(0x00000002) /* The last component contains a wildcard. */
 
-/** 
+/**
  *
  * @param pClient                Shared folder client.
  * @param hRoot                  Root handle.

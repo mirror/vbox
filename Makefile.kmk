@@ -1709,4 +1709,3 @@ sdk:
 sdk-fetch:
 	+ $(KMK) VBOX_ONLY_SDK=1 -C tools
 
-

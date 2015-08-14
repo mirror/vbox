@@ -15,9 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_ADP_DRV
 #include "../../../Runtime/r0drv/darwin/the-darwin-kernel.h"
 
@@ -56,9 +57,10 @@ extern "C" {
 #define VBOXNETADP_OS_SPECFIC 1
 #include "../VBoxNetAdpInternal.h"
 
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** The maximum number of SG segments.
  * Used to prevent stack overflow and similar bad stuff. */
 #define VBOXNETADP_DARWIN_MAX_SEGS       32
@@ -69,9 +71,10 @@ extern "C" {
 
 #define VBOXNETADP_FROM_IFACE(iface) ((PVBOXNETADP) ifnet_softc(iface))
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
 static kern_return_t    VBoxNetAdpDarwinStart(struct kmod_info *pKModInfo, void *pvData);
 static kern_return_t    VBoxNetAdpDarwinStop(struct kmod_info *pKModInfo, void *pvData);
@@ -81,9 +84,10 @@ static int VBoxNetAdpDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc
 static int VBoxNetAdpDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
 static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess);
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /**
  * Declare the module stuff.
  */

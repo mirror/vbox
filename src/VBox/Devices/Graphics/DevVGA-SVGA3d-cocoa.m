@@ -17,9 +17,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
 #include "DevVGA-SVGA3d-cocoa.h"
 #import <Cocoa/Cocoa.h>
@@ -33,9 +34,9 @@
 #include <VBox/vmm/dbgf.h>
 
 
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** @def USE_NSOPENGLVIEW
  * Define this to experiment with using NSOpenGLView instead
  * of NSView.  There are transparency issues with the former,
@@ -54,9 +55,9 @@
 
 
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * Argument package for doing this on the main thread.
  */
@@ -89,13 +90,13 @@
 {
 @private
     /** This points to the parent view, if there is one.  If there isn't a parent
-     * the view will be hidden and never used for displaying stuff.  We only have 
-     * one visible context per guest screen that is visible to the user and 
-     * subject to buffer swapping. */ 
+     * the view will be hidden and never used for displaying stuff.  We only have
+     * one visible context per guest screen that is visible to the user and
+     * subject to buffer swapping. */
     NSView         *m_pParentView;
     /** Indicates that buffers (back+front) needs clearing before use because
-     * the view changed size.  There are two buffers, so this is set to two 
-     * each time when the view area increases. */ 
+     * the view changed size.  There are two buffers, so this is set to two
+     * each time when the view area increases. */
     uint32_t        m_cClears;
     /** Set if the OpenGL context needs updating after a resize. */
     bool            m_fUpdateCtx;
@@ -145,7 +146,6 @@
 
 
 /********************************************************************************
-*
 * VMSVGA3DOverlayView class implementation
 *
 ********************************************************************************/
@@ -255,8 +255,8 @@
                  */
                 if (pParams->pParentView)
                 {
-                    [[NSNotificationCenter defaultCenter] addObserver:self 
-                                                             selector:@selector(vboxFrameDidChange) 
+                    [[NSNotificationCenter defaultCenter] addObserver:self
+                                                             selector:@selector(vboxFrameDidChange)
                                                                  name:NSViewFrameDidChangeNotification
                                                                object:self];
                 }
@@ -406,20 +406,20 @@
     if (   m_Pos.x != CurFrameRect.origin.x
         || m_Pos.y != CurFrameRect.origin.y)
     {
-        LogFlow(("OvlView(%p) vboxReshapePerform: moving (%d,%d) -> (%d,%d)\n", 
+        LogFlow(("OvlView(%p) vboxReshapePerform: moving (%d,%d) -> (%d,%d)\n",
                  (void *)self,  CurFrameRect.origin.x, CurFrameRect.origin.y, m_Pos.x, m_Pos.y));
         [self setFrameOrigin:m_Pos];
     }
 
     if (   CurFrameRect.size.width != m_Size.width
         || CurFrameRect.size.height != m_Size.height)
-    {                    
-        LogFlow(("OvlView(%p) vboxReshapePerform: resizing (%d,%d) -> (%d,%d)\n", 
+    {
+        LogFlow(("OvlView(%p) vboxReshapePerform: resizing (%d,%d) -> (%d,%d)\n",
                  (void *)self,  CurFrameRect.size.width, CurFrameRect.size.height, m_Size.width, m_Size.height));
         [self setFrameSize:m_Size];
 
-        /* 
-         * Schedule two clears and a context update for now. 
+        /*
+         * Schedule two clears and a context update for now.
          * Really though, we should just clear any new surface area.
          */
         m_cClears = 2;
@@ -466,9 +466,9 @@
 #endif
 
 /**
- * Removes the view from the parent, if it has one, and makes sure it's hidden. 
- *  
- * This is callbed before destroying it. 
+ * Removes the view from the parent, if it has one, and makes sure it's hidden.
+ *
+ * This is callbed before destroying it.
  */
 - (void)vboxRemoveFromSuperviewAndHide
 {
@@ -476,7 +476,7 @@
     if (m_pParentView)
     {
         /*
-         * The removeFromSuperview has been frequently seen to deadlock thing like this: 
+         * The removeFromSuperview has been frequently seen to deadlock thing like this:
          *   #0  0x00007fff8db440fa in __psynch_cvwait ()
          *   #1  0x00007fff8d0acfb9 in _pthread_cond_wait ()
          *   #2  0x00007fff8a1bc8f0 in -[NSViewHierarchyLock _lockForWriting:handler:] ()
@@ -577,8 +577,8 @@
     if (m_pCtx && [m_pCtx view] != self)
     {
         m_cSetViewAttempts++;
-        if (   m_pParentView 
-            || m_cSetViewAttempts < 64 
+        if (   m_pParentView
+            || m_cSetViewAttempts < 64
             || (m_cSetViewAttempts & (m_cSetViewAttempts < _64K ? 0xfff : 0x7fff)) == 0 )
             [m_pCtx setView:self];
     }
@@ -649,8 +649,8 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaServiceRunLoop(void)
 
 /**
  * Document me later.
- * 
- * @param   pParentView     The parent view if this is a context we'll be 
+ *
+ * @param   pParentView     The parent view if this is a context we'll be
  *                          presenting to.
  */
 VMSVGA3DCOCOA_DECL(bool) vmsvga3dCocoaCreateViewAndContext(NativeNSViewRef *ppView, NativeNSOpenGLContextRef *ppCtx,
@@ -717,27 +717,27 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewInfo(PCDBGFINFOHLP pHlp, NativeNSViewR
     if (pView != nil)
     {
         VMSVGA3DOverlayView *pOvlView = (VMSVGA3DOverlayView *)pView;
-                                                                                                 
+
         NSRect FrameRect = [pOvlView frame];
-        pHlp->pfnPrintf(pHlp, "     Frame rect:            x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
+        pHlp->pfnPrintf(pHlp, "     Frame rect:            x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n",
                         FLOAT_FMT_ARGS(FrameRect.origin.x), FLOAT_FMT_ARGS(FrameRect.origin.y),
                         FLOAT_FMT_ARGS(FrameRect.size.width), FLOAT_FMT_ARGS(FrameRect.size.height));
         NSRect BoundsRect = [pOvlView bounds];
-        pHlp->pfnPrintf(pHlp, "     Bounds rect:           x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
-                        FLOAT_FMT_ARGS(BoundsRect.origin.x), FLOAT_FMT_ARGS(BoundsRect.origin.y), 
+        pHlp->pfnPrintf(pHlp, "     Bounds rect:           x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n",
+                        FLOAT_FMT_ARGS(BoundsRect.origin.x), FLOAT_FMT_ARGS(BoundsRect.origin.y),
                         FLOAT_FMT_ARGS(BoundsRect.size.width), FLOAT_FMT_ARGS(BoundsRect.size.height));
         NSRect VisibleRect = [pOvlView visibleRect];
-        pHlp->pfnPrintf(pHlp, "     Visible rect:          x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
-                        FLOAT_FMT_ARGS(VisibleRect.origin.x), FLOAT_FMT_ARGS(VisibleRect.origin.y), 
+        pHlp->pfnPrintf(pHlp, "     Visible rect:          x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n",
+                        FLOAT_FMT_ARGS(VisibleRect.origin.x), FLOAT_FMT_ARGS(VisibleRect.origin.y),
                         FLOAT_FMT_ARGS(VisibleRect.size.width), FLOAT_FMT_ARGS(VisibleRect.size.height));
         pHlp->pfnPrintf(pHlp, "     isHidden:              %RTbool\n", [pOvlView isHidden] != NO);
         pHlp->pfnPrintf(pHlp, "     canDraw:               %RTbool\n", [pOvlView canDraw] != NO);
         pHlp->pfnPrintf(pHlp, "     wantsDefaultClipping:  %RTbool\n", [pOvlView wantsDefaultClipping] != NO);
-        pHlp->pfnPrintf(pHlp, "     wantsLayer:            %RTbool\n", [pOvlView wantsLayer] != NO); 
+        pHlp->pfnPrintf(pHlp, "     wantsLayer:            %RTbool\n", [pOvlView wantsLayer] != NO);
         if ([pOvlView layer] != nil)
             pHlp->pfnPrintf(pHlp, "     Layer:                 %p\n", [pOvlView layer] != nil);
         pHlp->pfnPrintf(pHlp, "     isOpaque:              %RTbool\n", [pOvlView isOpaque] != NO);
-        pHlp->pfnPrintf(pHlp, "     autoresizingMask:      %#x\n", [pOvlView autoresizingMask]); 
+        pHlp->pfnPrintf(pHlp, "     autoresizingMask:      %#x\n", [pOvlView autoresizingMask]);
         pHlp->pfnPrintf(pHlp, "     isRotatedOrScaledFromBase: %RTbool\n", [pOvlView isRotatedOrScaledFromBase] != NO);
 
         NSView *pEnclosingScrollView = [pOvlView enclosingScrollView];
@@ -748,14 +748,14 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewInfo(PCDBGFINFOHLP pHlp, NativeNSViewR
             NSView *pNextView = [pCurView superview];
             pHlp->pfnPrintf(pHlp, "     Superview#%u:           %p, super=%p\n", iLevel, pCurView, pNextView);
             FrameRect = [pCurView frame];
-            pHlp->pfnPrintf(pHlp, "     Superview#%u frame:     x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
+            pHlp->pfnPrintf(pHlp, "     Superview#%u frame:     x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n",
                             iLevel,
-                            FLOAT_FMT_ARGS(FrameRect.origin.x), FLOAT_FMT_ARGS(FrameRect.origin.y), 
+                            FLOAT_FMT_ARGS(FrameRect.origin.x), FLOAT_FMT_ARGS(FrameRect.origin.y),
                             FLOAT_FMT_ARGS(FrameRect.size.width), FLOAT_FMT_ARGS(FrameRect.size.height));
             BoundsRect = [pCurView bounds];
-            pHlp->pfnPrintf(pHlp, "     Superview#%u bounds:    x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
+            pHlp->pfnPrintf(pHlp, "     Superview#%u bounds:    x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n",
                             iLevel,
-                            FLOAT_FMT_ARGS(BoundsRect.origin.x), FLOAT_FMT_ARGS(BoundsRect.origin.y), 
+                            FLOAT_FMT_ARGS(BoundsRect.origin.x), FLOAT_FMT_ARGS(BoundsRect.origin.y),
                             FLOAT_FMT_ARGS(BoundsRect.size.width), FLOAT_FMT_ARGS(BoundsRect.size.height));
             if (pEnclosingScrollView == pCurView)
                 pHlp->pfnPrintf(pHlp, "     Superview#%u is enclosing scroll view\n", iLevel);
@@ -771,8 +771,8 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewInfo(PCDBGFINFOHLP pHlp, NativeNSViewR
         {
             pHlp->pfnPrintf(pHlp, "     Window:                %p\n", pWindow);
             FrameRect = [pWindow frame];
-            pHlp->pfnPrintf(pHlp, "     Window frame:          x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n", 
-                            FLOAT_FMT_ARGS(FrameRect.origin.x), FLOAT_FMT_ARGS(FrameRect.origin.y), 
+            pHlp->pfnPrintf(pHlp, "     Window frame:          x=" FLOAT_FMT_STR ", y=" FLOAT_FMT_STR " cx=" FLOAT_FMT_STR ", cy=" FLOAT_FMT_STR "\n",
+                            FLOAT_FMT_ARGS(FrameRect.origin.x), FLOAT_FMT_ARGS(FrameRect.origin.y),
                             FLOAT_FMT_ARGS(FrameRect.size.width), FLOAT_FMT_ARGS(FrameRect.size.height));
             CGFloat rFactor = [pWindow backingScaleFactor];
             pHlp->pfnPrintf(pHlp, "     W.backingScaleFactor:  " FLOAT_FMT_STR "\n", FLOAT_FMT_ARGS(rFactor));

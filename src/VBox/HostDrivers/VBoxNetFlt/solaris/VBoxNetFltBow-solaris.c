@@ -24,9 +24,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -66,9 +67,10 @@
 #define VBOXNETFLT_OS_SPECFIC 1
 #include "../VBoxNetFltInternal.h"
 
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** The module name. */
 #define DEVICE_NAME                     "vboxbow"
 /** The module descriptions as seen in 'modinfo'. */
@@ -113,17 +115,17 @@ extern void     mac_client_get_resources(mac_client_handle_t hClient, mac_resour
 extern int      mac_client_set_resources(mac_client_handle_t hClient, mac_resource_props_t *pResources);
 
 
-/*******************************************************************************
-*   Kernel Entry Hooks                                                         *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Kernel Entry Hooks                                                                                                           *
+*********************************************************************************************************************************/
 LOCAL int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 LOCAL int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
 LOCAL int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
 
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * cb_ops: for drivers that support char/block entry points
  */
@@ -235,9 +237,9 @@ typedef struct VBOXNETFLTVNIC
 typedef struct VBOXNETFLTVNIC *PVBOXNETFLTVNIC;
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /** Global Device handle we only support one instance. */
 static dev_info_t *g_pVBoxNetFltSolarisDip = NULL;
 /** The (common) global data. */
@@ -246,9 +248,9 @@ static VBOXNETFLTGLOBALS g_VBoxNetFltSolarisGlobals;
 static volatile uint64_t g_VBoxNetFltSolarisVNICId;
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 LOCAL mblk_t *vboxNetFltSolarisMBlkFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst);
 LOCAL unsigned vboxNetFltSolarisMBlkCalcSGSegs(PVBOXNETFLTINS pThis, mblk_t *pMsg);
 LOCAL int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNETSG pSG, unsigned cSegs, uint32_t fSrc);

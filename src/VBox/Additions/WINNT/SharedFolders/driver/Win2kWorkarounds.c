@@ -16,9 +16,9 @@
  */
 
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define FsRtlTeardownPerStreamContexts  FsRtlTeardownPerStreamContexts_AvoidIt
 #define RtlGetVersion                   RtlGetVersion_AvoidIt
 #define PsGetProcessImageFileName       PsGetProcessImageFileName_AvoidIt

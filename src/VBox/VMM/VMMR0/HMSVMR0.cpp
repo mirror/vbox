@@ -15,9 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_HM
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/thread.h>
@@ -41,9 +42,9 @@
 #endif
 
 
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #ifdef VBOX_WITH_STATISTICS
 # define HMSVM_EXITCODE_STAM_COUNTER_INC(u64ExitCode) do { \
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll); \
@@ -260,9 +261,10 @@ typedef enum SVMMSREXITWRITE
  */
 typedef int FNSVMEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite);
 static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu);
 static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
@@ -304,9 +306,10 @@ static FNSVMEXITHANDLER hmR0SvmExitXcptDB;
 
 DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient);
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /** Ring-0 memory object for the IO bitmap. */
 RTR0MEMOBJ                  g_hMemObjIOBitmap = NIL_RTR0MEMOBJ;
 /** Physical address of the IO bitmap. */

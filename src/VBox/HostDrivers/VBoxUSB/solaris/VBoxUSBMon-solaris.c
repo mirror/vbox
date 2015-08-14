@@ -24,9 +24,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP  LOG_GROUP_USB_DRV
 #include "VBoxUSBFilterMgr.h"
 #include <VBox/usblib-solaris.h>
@@ -57,17 +58,18 @@
 #include <sys/cmn_err.h>
 
 
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** The module name. */
 #define DEVICE_NAME              "vboxusbmon"
 /** The module description as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV          "VirtualBox USBMon"
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 static int VBoxUSBMonSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred);
 static int VBoxUSBMonSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred);
 static int VBoxUSBMonSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred);
@@ -77,9 +79,10 @@ static int VBoxUSBMonSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, voi
 static int VBoxUSBMonSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxUSBMonSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * cb_ops: for drivers that support char/block entry points
  */
@@ -161,9 +164,9 @@ typedef struct
 } vboxusbmon_state_t;
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /** Global Device handle we only support one instance. */
 static dev_info_t *g_pDip = NULL;
 /** Global Mutex. */
@@ -175,16 +178,17 @@ vboxusbmon_client_t *g_pVBoxUSBMonSolarisClients = NULL;
 /** Opaque pointer to list of soft states. */
 static void *g_pVBoxUSBMonSolarisState;
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 static int vboxUSBMonSolarisProcessIOCtl(int iFunction, void *pvState, void *pvData, size_t cbData, size_t *pcbReturnedData);
 static int vboxUSBMonSolarisResetDevice(char *pszDevicePath, bool fReattach);
 
 
-/*******************************************************************************
-*   Monitor Global Hooks                                                       *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Monitor Global Hooks                                                                                                         *
+*********************************************************************************************************************************/
 static int vboxUSBMonSolarisClientInfo(vboxusbmon_state_t *pState, PVBOXUSB_CLIENT_INFO pClientInfo);
 int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO pClientInfo);
 int VBoxUSBMonSolarisUnregisterClient(dev_info_t *pClientDip);

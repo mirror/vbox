@@ -19,7 +19,7 @@
 */
 Product AliasDictionary::productArray[] = {0};
 
-const size_t AliasDictionary::products_size = sizeof(AliasDictionary::productArray) / sizeof(Product); 
+const size_t AliasDictionary::products_size = sizeof(AliasDictionary::productArray) / sizeof(Product);
 
 Vendor AliasDictionary::vendorArray[] = {0};
 

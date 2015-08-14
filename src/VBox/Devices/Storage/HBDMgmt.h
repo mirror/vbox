@@ -52,8 +52,8 @@ DECLHIDDEN(void) HBDMgrDestroy(HBDMGR hHbdMgr);
  * be managed by this API.
  *
  * @returns true if the given filename point to a block device manageable
- * 			by the given manager
- * 	        false otherwise.
+ *                      by the given manager
+ *              false otherwise.
  * @param   pszFilename The block device to check.
  */
 DECLHIDDEN(bool) HBDMgrIsBlockDevice(const char *pszFilename);

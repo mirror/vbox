@@ -16,9 +16,9 @@
  */
 
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #if defined(_WIN32_WINNT) && _WIN32_WINNT < 0x0502
 # undef  _WIN32_WINNT
 # define _WIN32_WINNT 0x0502 /* CachedRemoteInteractive in recent SDKs. */
@@ -49,9 +49,10 @@ static uint32_t s_uDebugIter = 0;
  *  See notes in this section why we might want to skip this. */
 static bool s_fSkipRDPDetection = false;
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /** Structure for storing the looked up user information. */
 typedef struct VBOXSERVICEVMINFOUSER
 {
@@ -89,7 +90,6 @@ typedef struct VBOXSERVICEVMINFOPROC
 
 
 /*******************************************************************************
-*   Prototypes
 *******************************************************************************/
 uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs);
 bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);

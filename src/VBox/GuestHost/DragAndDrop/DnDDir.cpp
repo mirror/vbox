@@ -128,7 +128,7 @@ int DnDDirDroppedFilesClose(PDNDDIRDROPPEDFILES pDir, bool fRemove)
     int rc = VINF_SUCCESS;
     if (pDir->fOpen)
     {
-        rc = RTDirClose(pDir->hDir); 
+        rc = RTDirClose(pDir->hDir);
         if (RT_SUCCESS(rc))
             pDir->fOpen = false;
     }

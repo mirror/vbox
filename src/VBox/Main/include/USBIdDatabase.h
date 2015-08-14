@@ -22,7 +22,7 @@
 */
 #define USBKEY(vendorId, productId) (((uint32_t)(vendorId) << 16) | (productId))
 
-/** 
+/**
 * Elements of Aliases table
 */
 class Product
@@ -63,7 +63,7 @@ public:
 };
 
 
-/** 
+/**
 * Wrapper for static array of Aliases.
 */
 class AliasDictionary
