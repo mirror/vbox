@@ -1152,7 +1152,7 @@ bool UIMessageCenter::warnAboutIncorrectAddress(QWidget *pParent /* = 0 */) cons
 {
     alert(pParent, MessageType_Error,
           tr("The current port forwarding rules are not valid. "
-             "All of the host or guest address values should correct if not empty."));
+             "All of the host or guest address values should be correct or empty."));
     return false;
 }
 
