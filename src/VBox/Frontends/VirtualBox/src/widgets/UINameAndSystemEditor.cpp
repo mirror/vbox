@@ -204,9 +204,9 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
         QString strDefaultID = "Windows7";
         if (ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode)
             strDefaultID += "_64";
-        int iIndexWinXP = m_pTypeCombo->findData(strDefaultID, TypeID);
-        if (iIndexWinXP != -1)
-            m_pTypeCombo->setCurrentIndex(iIndexWinXP);
+        int iIndexWin7 = m_pTypeCombo->findData(strDefaultID, TypeID);
+        if (iIndexWin7 != -1)
+            m_pTypeCombo->setCurrentIndex(iIndexWin7);
     }
     /* Or select Ubuntu item for Linux family as default: */
     else if (strFamilyId == "Linux")
@@ -225,7 +225,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     sltTypeChanged(m_pTypeCombo->currentIndex());
 
     /* Unlock the signals of m_pTypeCombo: */
-    m_pTypeCombo->blockSignals (false);
+    m_pTypeCombo->blockSignals(false);
 }
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)

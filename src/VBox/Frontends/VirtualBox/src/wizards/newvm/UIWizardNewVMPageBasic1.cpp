@@ -57,8 +57,9 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp(  "Wi.*95",                         Qt::CaseInsensitive), "Windows95" },
     { QRegExp(  "Wi.*Me",                         Qt::CaseInsensitive), "WindowsMe" },
     { QRegExp( "(Wi.*NT)|(NT4)",                  Qt::CaseInsensitive), "WindowsNT4" },
-    { QRegExp("((Wi.*XP)|(\\bXP\\b)).*64",        Qt::CaseInsensitive), "WindowsXP_64" },
-    { QRegExp("((Wi.*XP)|(\\bXP\\b)).*32",        Qt::CaseInsensitive), "WindowsXP" },
+    /* Note: Do not automatically set WindowsXP_64 on 64-bit hosts, as Windows XP 64-bit
+     *       is extremely rare -- most users never heard of it even. So always default to 32-bit. */
+    { QRegExp("((Wi.*XP)|(XP)).*",                Qt::CaseInsensitive), "WindowsXP" },
     { QRegExp("((Wi.*2003)|(W2K3)|(Win2K3)).*64", Qt::CaseInsensitive), "Windows2003_64" },
     { QRegExp("((Wi.*2003)|(W2K3)|(Win2K3)).*32", Qt::CaseInsensitive), "Windows2003" },
     { QRegExp("((Wi.*Vis)|(Vista)).*64",          Qt::CaseInsensitive), "WindowsVista_64" },
@@ -76,8 +77,9 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp( "(Wi.*10.*64)|(W10.*64)",          Qt::CaseInsensitive), "Windows10_64" },
     { QRegExp( "(Wi.*10.*32)|(W10.*32)",          Qt::CaseInsensitive), "Windows10" },
     { QRegExp(  "Wi.*3.*1",                       Qt::CaseInsensitive), "Windows31" },
-    { QRegExp(  "Wi.*64",                         Qt::CaseInsensitive), "WindowsXP_64" },
-    { QRegExp(  "Wi.*32",                         Qt::CaseInsensitive), "WindowsXP" },
+    /* Set Windows 7 as default for "Windows". */
+    { QRegExp(  "Wi.*64",                         Qt::CaseInsensitive), "Windows7_64" },
+    { QRegExp(  "Wi.*32",                         Qt::CaseInsensitive), "Windows7" },
 
     /* Solaris: */
     { QRegExp("So.*11",                                                 Qt::CaseInsensitive), "Solaris11_64" },
