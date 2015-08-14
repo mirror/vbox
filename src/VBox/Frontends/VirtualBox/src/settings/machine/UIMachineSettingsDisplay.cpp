@@ -850,6 +850,7 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     m_pComboVideoCaptureSize->addItem("720 x 480 (3:2)",     QSize(720, 480));
     m_pComboVideoCaptureSize->addItem("800 x 600 (4:3)",     QSize(800, 600));
     m_pComboVideoCaptureSize->addItem("1024 x 768 (4:3)",    QSize(1024, 768));
+    m_pComboVideoCaptureSize->addItem("1152 x 864 (4:3)",    QSize(1152, 864));
     m_pComboVideoCaptureSize->addItem("1280 x 720 (16:9)",   QSize(1280, 720));
     m_pComboVideoCaptureSize->addItem("1280 x 800 (16:10)",  QSize(1280, 800));
     m_pComboVideoCaptureSize->addItem("1280 x 960 (4:3)",    QSize(1280, 960));
