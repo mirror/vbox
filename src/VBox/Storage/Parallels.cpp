@@ -110,6 +110,7 @@ static const VDFILEEXTENSION s_aParallelsFileExtensions[] =
 };
 
 /***************************************************
+ * Internal functions                              *
  **************************************************/
 
 /**

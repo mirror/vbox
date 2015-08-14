@@ -669,6 +669,7 @@ static int drvvdCfgQueryBytes(void *pvUser, const char *pszName, void *ppvData, 
 
 
 /*******************************************************************************
+*   VD Crypto interface implementation for the encryption support       *
 *******************************************************************************/
 
 static DECLCALLBACK(int) drvvdCryptoKeyRetain(void *pvUser, const char *pszId, const uint8_t **ppbKey, size_t *pcbKey)

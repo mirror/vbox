@@ -32,6 +32,7 @@
 #include "VDBackends.h"
 
 /*******************************************************************************
+* On disk data structures                                                      *
 *******************************************************************************/
 
 /** @note All structures which are written to the disk are written in camel case

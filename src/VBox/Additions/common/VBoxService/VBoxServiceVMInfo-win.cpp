@@ -90,6 +90,7 @@ typedef struct VBOXSERVICEVMINFOPROC
 
 
 /*******************************************************************************
+*   Prototypes
 *******************************************************************************/
 uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs);
 bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);

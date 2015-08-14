@@ -68,6 +68,7 @@ typedef RTMANIFESTCALLBACKDATA* PRTMANIFESTCALLBACKDATA;
 
 
 /*******************************************************************************
+*   Private functions
 *******************************************************************************/
 
 DECLINLINE(char *) rtManifestPosOfCharInBuf(char const *pv, size_t cb, char c)
@@ -98,6 +99,7 @@ int rtSHAProgressCallback(unsigned uPercent, void *pvUser)
 
 
 /*******************************************************************************
+*   Public functions
 *******************************************************************************/
 
 RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed)

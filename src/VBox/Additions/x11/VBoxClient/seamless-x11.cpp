@@ -39,6 +39,8 @@
 #endif
 
 /*****************************************************************************
+* Static functions                                                           *
+*****************************************************************************/
 
 static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
                                     const char *aPropName, unsigned long *nItems)
