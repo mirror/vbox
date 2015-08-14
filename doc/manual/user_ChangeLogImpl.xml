@@ -14,6 +14,11 @@
         <para>GUI: changed default OS type for Windows from Windows XP to Windows 7</para>
       </listitem>
 
+      <listitem>
+        <para>Additions/Windows: fixed the call to the memory allocation function
+          (bug #14415)</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
