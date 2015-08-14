@@ -82,6 +82,7 @@ DeclareExtensionSecurity
 defaultColorVisualClass
 defaultDPMSEnabled
 DeleteCallback
+DeleteProperty
 DeliverEvents
 deltaSaveUndersViewable
 DestroyFontRec

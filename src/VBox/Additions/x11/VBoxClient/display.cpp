@@ -25,6 +25,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
@@ -53,7 +54,7 @@ struct screenInformation
     unsigned y;
     bool fEnabled;
     bool fUpdateSize;
-    bool fUpdatePosition;
+    volatile bool fUpdatePosition;
 };
 
 /** Display magic number, start of a UUID. */
@@ -83,37 +84,46 @@ struct DISPLAYSTATE
     struct screenInformation *paScreenInformation;
 };
 
-/** Tell the VBoxGuest driver we no longer want any events and tell the host
- * we no longer support any capabilities. */
-static int disableEventsAndCaps(bool fDisableEvents)
+/** Thread to monitor and react to X server VT switches and exits. */
+static int pfnMonitorThread(RTTHREAD self, void *pvUser)
 {
-    int rc = VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to unset graphics capability, rc=%Rrc.\n", rc));
-    rc = VbglR3SetMouseStatus(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to unset mouse status, rc=%Rrc.\n", rc));
-    if (fDisableEvents)
-        rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to unset filter mask, rc=%Rrc.\n", rc));
-    return VINF_SUCCESS;
+    struct DISPLAYSTATE *pState = (struct DISPLAYSTATE *)pvUser;
+    Display *pDisplay;
+    bool fHasVT = true;
+
+    pDisplay = XOpenDisplay(NULL);
+    if (!pDisplay)
+        VBClFatalError(("Failed to open the X11 display\n"));
+    XSelectInput(pDisplay, DefaultRootWindow(pDisplay), PropertyChangeMask);
+    while (true)
+    {
+        XEvent event;
+
+        XNextEvent(pDisplay, &event);
+        /* This property is deleted when the server regains the virtual
+         * terminal.  Force the main thread to call xrandr again, as old X
+         * servers could not handle it while switched out. */
+        if (pState->fHaveRandR12)
+            continue;
+        if (   event.type != PropertyNotify
+            || event.xproperty.state != PropertyDelete
+            || event.xproperty.window != DefaultRootWindow(pDisplay)
+            || event.xproperty.atom != XInternAtom(pDisplay, "VBOXVIDEO_NO_VT", False))
+            continue;
+        LogRel(("VBoxClient/Display: entered virtual terminal.\n"));
+        ASMAtomicWriteBool(&pState->paScreenInformation[0].fUpdateSize, true);
+        VbglR3InterruptEventWaits();
+    }
+    return VINF_SUCCESS;  /* Should never be reached. */
 }
 
-/** Tell the VBoxGuest driver which events we want and tell the host which
- * capabilities we support. */
-static int enableEventsAndCaps()
+static int startMonitorThread(struct DISPLAYSTATE *pState)
 {
-    int rc = VbglR3CtlFilterMask(  VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED
-                                 | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to set filter mask, rc=%Rrc.\n", rc));
-    rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to set graphics capability, rc=%Rrc.\n", rc));
-    rc = VbglR3SetMouseStatus(0);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to set mouse status, rc=%Rrc.\n", rc));
+    int rc;
+
+    rc = RTThreadCreate(NULL, pfnMonitorThread, (void *)pState, 0, RTTHREADTYPE_INFREQUENT_POLLER, 0, "VT_MONITOR");
+    if (rc != VINF_SUCCESS)
+        VBClFatalError(("Failed to start the VT monitor thread, rc=%Rrc\n", rc));
     return VINF_SUCCESS;
 }
 
@@ -208,9 +218,12 @@ static void notifyXServerRandR11(struct DISPLAYSTATE *pState)
     if (   pState->paScreenInformation[0].fUpdateSize
         && pState->paScreenInformation[0].cx > 0 && pState->paScreenInformation[0].cy > 0)
     {
+        int ret;
+
         RTStrPrintf(szCommand, sizeof(szCommand), "%s -s %ux%u",
                     pState->pcszXrandr, pState->paScreenInformation[0].cx, pState->paScreenInformation[0].cy);
-        system(szCommand);
+        ret = system(szCommand);
+        LogRel(("VBoxClient/Display: executed \"%s\", returned %d.\n", szCommand, ret));
         pState->paScreenInformation[0].fUpdateSize = false;
     }
 }
@@ -237,6 +250,7 @@ static void runDisplay(struct DISPLAYSTATE *pState)
 {
     int rc;
     unsigned i, cScreensTracked;
+    uint32_t fModeSet = false;
 
     LogRelFlowFunc(("\n"));
     rc = VbglR3VideoModeGetHighestSavedScreen(&cScreensTracked);
@@ -261,6 +275,13 @@ static void runDisplay(struct DISPLAYSTATE *pState)
                 updateScreenInformation(pState, cx, cy, cBPP, i, x, y, fEnabled, true);
         }
     }
+    /* Semantics: when VBOX_HAS_GRAPHICS is set, the X server driver assumes
+     * that a client capable of forwarding mode hints will be present for the
+     * rest of the X session.  If we crash things will not work as they should.
+     * I thought that preferable to implementing complex crash-handling logic.
+     */
+    XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay), XInternAtom(pState->pDisplay, "VBOX_HAS_GRAPHICS", 0),
+                    XA_INTEGER, 32, PropModeReplace, (unsigned char *)&fModeSet, 1);
     while (true)
     {
         uint32_t fEvents;
@@ -332,7 +353,9 @@ static int init(struct VBCLSERVICE **ppInterface)
     rc = initDisplay(pSelf);
     if (RT_FAILURE(rc))
         return rc;
-    rc = enableEventsAndCaps();
+    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Failed to set filter mask, rc=%Rrc.\n", rc));
     if (RT_SUCCESS(rc))
         pSelf->mfInit = true;
     return rc;
@@ -345,40 +368,17 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
     if (!pSelf->mfInit)
         return VERR_WRONG_ORDER;
-    rc = VBClStartVTMonitor();
+    rc = startMonitorThread(pSelf);
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to start the VT monitor thread: %Rrc\n", rc));
     runDisplay(pSelf);
     return VERR_INTERNAL_ERROR;  /* "Should never reach here." */
 }
 
-static int pause(struct VBCLSERVICE **ppInterface)
-{
-    struct DISPLAYSTATE *pSelf = getStateFromInterface(ppInterface);
-
-    if (!pSelf->mfInit)
-        return VERR_WRONG_ORDER;
-    return disableEventsAndCaps(false);
-}
-
-static int resume(struct VBCLSERVICE **ppInterface)
-{
-    struct DISPLAYSTATE *pSelf = getStateFromInterface(ppInterface);
-    int rc;
-
-    if (!pSelf->mfInit)
-        return VERR_WRONG_ORDER;
-    rc = enableEventsAndCaps();
-    /* RandR 1.1-based drivers only let us change mode when we are not switched
-     * out, so interrupt the wait when we switch in and re-set it. */
-    VbglR3InterruptEventWaits();
-    return rc;
-}
-
 static void cleanup(struct VBCLSERVICE **ppInterface)
 {
     NOREF(ppInterface);
-    disableEventsAndCaps(true);
+    VbglR3CtlFilterMask(0, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
     VbglR3Term();
 }
 
@@ -387,8 +387,8 @@ struct VBCLSERVICE vbclDisplayInterface =
     getPidFilePath,
     init,
     run,
-    pause,
-    resume,
+    VBClServiceDefaultHandler, /* pause */
+    VBClServiceDefaultHandler, /* resume */
     cleanup
 };
 
