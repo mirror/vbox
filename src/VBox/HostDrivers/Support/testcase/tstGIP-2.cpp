@@ -313,7 +313,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
     return !!rc;
 }
 
-#ifndef VBOX_WITH_HARDENING
+#if !defined(VBOX_WITH_HARDENING) || !defined(RT_OS_WINDOWS)
 /**
  * Main entry point.
  */
@@ -321,6 +321,5 @@ int main(int argc, char **argv)
 {
     return TrustedMain(argc, argv);
 }
-#endif /* !VBOX_WITH_HARDENING */
-
+#endif
 
