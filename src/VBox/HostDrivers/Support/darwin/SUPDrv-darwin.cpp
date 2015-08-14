@@ -716,17 +716,20 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
         /*
          * Get the header and figure out how much we're gonna have to read.
          */
+        IPRT_DARWIN_SAVE_EFL_AC();
         SUPREQHDR Hdr;
         pUser = (user_addr_t)*(void **)pData;
         int rc = copyin(pUser, &Hdr, sizeof(Hdr));
         if (RT_UNLIKELY(rc))
         {
             OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: copyin(%llx,Hdr,) -> %#x; iCmd=%#lx\n", (unsigned long long)pUser, rc, iCmd));
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return rc;
         }
         if (RT_UNLIKELY((Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC))
         {
             OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: bad magic fFlags=%#x; iCmd=%#lx\n", Hdr.fFlags, iCmd));
+            IPRT_DARWIN_SAVE_EFL_AC();
             return EINVAL;
         }
         cbReq = RT_MAX(Hdr.cbIn, Hdr.cbOut);
@@ -735,6 +738,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
                         ||  cbReq > _1M*16))
         {
             OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: max(%#x,%#x); iCmd=%#lx\n", Hdr.cbIn, Hdr.cbOut, iCmd));
+            IPRT_DARWIN_SAVE_EFL_AC();
             return EINVAL;
         }
 
@@ -747,6 +751,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
         if (RT_UNLIKELY(!pHdr))
         {
             OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: failed to allocate buffer of %d bytes; iCmd=%#lx\n", cbReq, iCmd));
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return ENOMEM;
         }
         rc = copyin(pUser, pHdr, Hdr.cbIn);
@@ -758,10 +763,12 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
                 IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cbReq, PAGE_SIZE));
             else
                 RTMemTmpFree(pHdr);
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return rc;
         }
         if (Hdr.cbIn < cbReq)
             RT_BZERO((uint8_t *)pHdr + Hdr.cbIn, cbReq - Hdr.cbIn);
+        IPRT_DARWIN_RESTORE_EFL_AC();
     }
     else
     {
@@ -780,6 +787,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
          */
         if (pUser)
         {
+            IPRT_DARWIN_SAVE_EFL_AC();
             uint32_t cbOut = pHdr->cbOut;
             if (cbOut > cbReq)
             {
@@ -796,6 +804,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
                 IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cbReq, PAGE_SIZE));
             else
                 RTMemTmpFree(pHdr);
+            IPRT_DARWIN_RESTORE_EFL_AC();
         }
     }
     else
@@ -806,7 +815,11 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
         if (pUser)
         {
             if (pvPageBuf)
+            {
+                IPRT_DARWIN_SAVE_EFL_AC();
                 IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cbReq, PAGE_SIZE));
+                IPRT_DARWIN_RESTORE_EFL_AC();
+            }
             else
                 RTMemTmpFree(pHdr);
         }
