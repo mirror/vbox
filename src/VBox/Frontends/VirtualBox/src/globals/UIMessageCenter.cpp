@@ -1156,6 +1156,14 @@ bool UIMessageCenter::warnAboutIncorrectAddress(QWidget *pParent /* = 0 */) cons
     return false;
 }
 
+bool UIMessageCenter::warnAboutEmptyGuestAddress(QWidget *pParent /* = 0 */) const
+{
+    alert(pParent, MessageType_Error,
+          tr("The current port forwarding rules are not valid. "
+             "None of the guest address values may be empty."));
+    return false;
+}
+
 bool UIMessageCenter::warnAboutNameShouldBeUnique(QWidget *pParent /* = 0 */) const
 {
     alert(pParent, MessageType_Error,

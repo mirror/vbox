@@ -50,8 +50,8 @@ UIGlobalSettingsPortForwardingDlg::UIGlobalSettingsPortForwardingDlg(QWidget *pP
         m_pTabWidget = new QTabWidget;
         {
             /* Create table tabs: */
-            m_pIPv4Table = new UIPortForwardingTable(ipv4rules, false);
-            m_pIPv6Table = new UIPortForwardingTable(ipv6rules, true);
+            m_pIPv4Table = new UIPortForwardingTable(ipv4rules, false, false);
+            m_pIPv6Table = new UIPortForwardingTable(ipv6rules, true, false);
             /* Add widgets into tab-widget: */
             m_pTabWidget->addTab(m_pIPv4Table, QString());
             m_pTabWidget->addTab(m_pIPv6Table, QString());

@@ -566,8 +566,9 @@ bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &va
 }
 
 
-UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6)
-    : m_fIsTableDataChanged(false)
+UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6, bool fAllowEmptyGuestIPs)
+    : m_fAllowEmptyGuestIPs(fAllowEmptyGuestIPs)
+    , m_fIsTableDataChanged(false)
     , m_pTableView(0)
     , m_pToolBar(0)
     , m_pModel(0)
@@ -729,6 +730,11 @@ bool UIPortForwardingTable::validate() const
         if (   (!hostIp.isEmpty() && QHostAddress(hostIp).isNull())
             || (!guestIp.isEmpty() && QHostAddress(guestIp).isNull()))
             return msgCenter().warnAboutIncorrectAddress(window());
+
+        /* If empty guest address is not allowed: */
+        if (   !m_fAllowEmptyGuestIPs
+            && guestIp.isEmpty())
+            return msgCenter().warnAboutEmptyGuestAddress(window());
 
         /* Make sure non of the names were previosly used: */
         if (!names.contains(name))

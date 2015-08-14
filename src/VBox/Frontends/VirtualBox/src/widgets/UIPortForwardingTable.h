@@ -129,7 +129,7 @@ class UIPortForwardingTable : public QIWithRetranslateUI<QWidget>
 public:
 
     /* Constructor: */
-    UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6);
+    UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6, bool fAllowEmptyGuestIPs);
 
     /* API: Rules stuff: */
     const UIPortForwardingDataList& rules() const;
@@ -158,6 +158,7 @@ private:
     bool eventFilter(QObject *pObject, QEvent *pEvent);
 
     /* Flags: */
+    bool m_fAllowEmptyGuestIPs;
     bool m_fIsTableDataChanged;
 
     /* Widgets: */

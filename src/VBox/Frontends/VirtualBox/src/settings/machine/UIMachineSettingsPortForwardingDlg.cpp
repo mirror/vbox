@@ -44,7 +44,7 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         /* Create table: */
-        m_pTable = new UIPortForwardingTable(rules, false);
+        m_pTable = new UIPortForwardingTable(rules, false, true);
         /* Create button-box: */
         m_pButtonBox = new QIDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal);
         {
