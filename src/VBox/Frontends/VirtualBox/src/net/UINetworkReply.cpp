@@ -388,7 +388,7 @@ int UINetworkReplyPrivateThread::downloadCertificates(RTHTTP pHttp, const QStrin
 
     /* Receive certificate package: */
     QByteArray package;
-    const QNetworkRequest address(QUrl("http://www.verisign.com/support/roots.zip"));
+    const QNetworkRequest address(QUrl("http://www.symantec.com/content/en/us/enterprise/verisign/roots/roots.zip"));
     int rc = performGetRequestForBinary(pHttp, address, package);
     /* UnZIP PCA-3G5 certificate: */
     if (RT_SUCCESS(rc))
