@@ -165,8 +165,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-strip-trailing-blanks",         SCMOPT_NO_STRIP_TRAILING_BLANKS,        RTGETOPT_REQ_NOTHING },
     { "--strip-trailing-lines",             SCMOPT_STRIP_TRAILING_LINES,            RTGETOPT_REQ_NOTHING },
     { "--strip-no-trailing-lines",          SCMOPT_NO_STRIP_TRAILING_LINES,         RTGETOPT_REQ_NOTHING },
-    { "--fix-flower-box-markers",           SCMOPT_FIX_FLOWER_BOX_MARKERS,          RTGETOPT_REQ_NOTHING },
     { "--min-blank-lines-before-flower-box-makers", SCMOPT_FIX_FLOWER_BOX_MARKERS,  RTGETOPT_REQ_UINT8 },
+    { "--fix-flower-box-markers",           SCMOPT_FIX_FLOWER_BOX_MARKERS,          RTGETOPT_REQ_NOTHING },
     { "--no-fix-flower-box-markers",        SCMOPT_NO_FIX_FLOWER_BOX_MARKERS,       RTGETOPT_REQ_NOTHING },
     { "--only-svn-dirs",                    SCMOPT_ONLY_SVN_DIRS,                   RTGETOPT_REQ_NOTHING },
     { "--not-only-svn-dirs",                SCMOPT_NOT_ONLY_SVN_DIRS,               RTGETOPT_REQ_NOTHING },
@@ -1484,6 +1484,73 @@ static int scmProcessSomething(const char *pszSomething, PSCMSETTINGS pSettingsS
     return rc;
 }
 
+static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
+{
+    RTPrintf("VirtualBox Source Code Massager\n"
+             "\n"
+             "Usage: %s [options] <files & dirs>\n"
+             "\n"
+             "Options:\n", g_szProgName);
+    for (size_t i = 0; i < cOpts; i++)
+    {
+        bool fAdvanceTwo = false;
+        if ((paOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_NOTHING)
+        {
+            fAdvanceTwo = i + 1 < cOpts
+                       && (   strstr(paOpts[i+1].pszLong, "-no-") != NULL
+                           || strstr(paOpts[i+1].pszLong, "-not-") != NULL
+                           || strstr(paOpts[i+1].pszLong, "-dont-") != NULL
+                           || (paOpts[i].iShort == 'q' && paOpts[i+1].iShort == 'v')
+                           || (paOpts[i].iShort == 'd' && paOpts[i+1].iShort == 'D')
+                          );
+            if (fAdvanceTwo)
+                RTPrintf("  %s, %s\n", paOpts[i].pszLong, paOpts[i + 1].pszLong);
+            else
+                RTPrintf("  %s\n", paOpts[i].pszLong);
+        }
+        else if ((paOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_STRING)
+            RTPrintf("  %s string\n", paOpts[i].pszLong);
+        else
+            RTPrintf("  %s value\n", paOpts[i].pszLong);
+        switch (paOpts[i].iShort)
+        {
+            case 'd':
+            case 'D':                           RTPrintf("      Default: --dry-run\n"); break;
+            case 'f':                           RTPrintf("      Default: none\n"); break;
+            case 'q':
+            case 'v':                           RTPrintf("      Default: -vv\n"); break;
+
+            case SCMOPT_DIFF_IGNORE_EOL:        RTPrintf("      Default: false\n"); break;
+            case SCMOPT_DIFF_IGNORE_SPACE:      RTPrintf("      Default: false\n"); break;
+            case SCMOPT_DIFF_IGNORE_LEADING_SPACE:  RTPrintf("      Default: false\n"); break;
+            case SCMOPT_DIFF_IGNORE_TRAILING_SPACE: RTPrintf("      Default: false\n"); break;
+            case SCMOPT_DIFF_SPECIAL_CHARS:     RTPrintf("      Default: true\n"); break;
+
+            case SCMOPT_CONVERT_EOL:            RTPrintf("      Default: %RTbool\n", g_Defaults.fConvertEol); break;
+            case SCMOPT_CONVERT_TABS:           RTPrintf("      Default: %RTbool\n", g_Defaults.fConvertTabs); break;
+            case SCMOPT_FORCE_FINAL_EOL:        RTPrintf("      Default: %RTbool\n", g_Defaults.fForceFinalEol); break;
+            case SCMOPT_FORCE_TRAILING_LINE:    RTPrintf("      Default: %RTbool\n", g_Defaults.fForceTrailingLine); break;
+            case SCMOPT_STRIP_TRAILING_BLANKS:  RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingBlanks); break;
+            case SCMOPT_STRIP_TRAILING_LINES:   RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingLines); break;
+            case SCMOPT_FIX_FLOWER_BOX_MARKERS: RTPrintf("      Default: %RTbool\n", g_Defaults.fFixFlowerBoxMarkers); break;
+            case SCMOPT_MIN_BLANK_LINES_BEFORE_FLOWER_BOX_MARKERS: RTPrintf("      Default: %u\n", g_Defaults.cMinBlankLinesBeforeFlowerBoxMakers); break;
+            case SCMOPT_ONLY_SVN_DIRS:          RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnDirs); break;
+            case SCMOPT_ONLY_SVN_FILES:         RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnFiles); break;
+            case SCMOPT_SET_SVN_EOL:            RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnEol); break;
+            case SCMOPT_SET_SVN_EXECUTABLE:     RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnExecutable); break;
+            case SCMOPT_SET_SVN_KEYWORDS:       RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnKeywords); break;
+            case SCMOPT_TAB_SIZE:               RTPrintf("      Default: %u\n", g_Defaults.cchTab); break;
+            case SCMOPT_WIDTH:                  RTPrintf("      Default: %u\n", g_Defaults.cchWidth); break;
+            case SCMOPT_FILTER_OUT_DIRS:        RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutDirs); break;
+            case SCMOPT_FILTER_FILES:           RTPrintf("      Default: %s\n", g_Defaults.pszFilterFiles); break;
+            case SCMOPT_FILTER_OUT_FILES:       RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutFiles); break;
+            default: AssertMsgFailed(("i=%d %d %s\n", i, paOpts[i].iShort, paOpts[i].pszLong));
+        }
+        i += fAdvanceTwo;
+    }
+
+}
+
 int main(int argc, char **argv)
 {
     int rc = RTR3InitExe(argc, &argv, 0);
@@ -1547,54 +1614,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("VirtualBox Source Code Massager\n"
-                         "\n"
-                         "Usage: %s [options] <files & dirs>\n"
-                         "\n"
-                         "Options:\n", g_szProgName);
-                for (size_t i = 0; i < RT_ELEMENTS(s_aOpts); i++)
-                {
-                    bool fAdvanceTwo = false;
-                    if ((s_aOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_NOTHING)
-                    {
-                        fAdvanceTwo = i + 1 < RT_ELEMENTS(s_aOpts)
-                                   && (   strstr(s_aOpts[i+1].pszLong, "-no-") != NULL
-                                       || strstr(s_aOpts[i+1].pszLong, "-not-") != NULL
-                                       || strstr(s_aOpts[i+1].pszLong, "-dont-") != NULL
-                                      );
-                        if (fAdvanceTwo)
-                            RTPrintf("  %s, %s\n", s_aOpts[i].pszLong, s_aOpts[i + 1].pszLong);
-                        else
-                            RTPrintf("  %s\n", s_aOpts[i].pszLong);
-                    }
-                    else if ((s_aOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_STRING)
-                        RTPrintf("  %s string\n", s_aOpts[i].pszLong);
-                    else
-                        RTPrintf("  %s value\n", s_aOpts[i].pszLong);
-                    switch (s_aOpts[i].iShort)
-                    {
-                        case SCMOPT_CONVERT_EOL:            RTPrintf("      Default: %RTbool\n", g_Defaults.fConvertEol); break;
-                        case SCMOPT_CONVERT_TABS:           RTPrintf("      Default: %RTbool\n", g_Defaults.fConvertTabs); break;
-                        case SCMOPT_FORCE_FINAL_EOL:        RTPrintf("      Default: %RTbool\n", g_Defaults.fForceFinalEol); break;
-                        case SCMOPT_FORCE_TRAILING_LINE:    RTPrintf("      Default: %RTbool\n", g_Defaults.fForceTrailingLine); break;
-                        case SCMOPT_STRIP_TRAILING_BLANKS:  RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingBlanks); break;
-                        case SCMOPT_STRIP_TRAILING_LINES:   RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingLines); break;
-                        case SCMOPT_FIX_FLOWER_BOX_MARKERS: RTPrintf("      Default: %RTbool\n", g_Defaults.fFixFlowerBoxMarkers); break;
-                        case SCMOPT_MIN_BLANK_LINES_BEFORE_FLOWER_BOX_MARKERS: RTPrintf("      Default: %u\n", g_Defaults.cMinBlankLinesBeforeFlowerBoxMakers); break;
-                        case SCMOPT_ONLY_SVN_DIRS:          RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnDirs); break;
-                        case SCMOPT_ONLY_SVN_FILES:         RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnFiles); break;
-                        case SCMOPT_SET_SVN_EOL:            RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnEol); break;
-                        case SCMOPT_SET_SVN_EXECUTABLE:     RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnExecutable); break;
-                        case SCMOPT_SET_SVN_KEYWORDS:       RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnKeywords); break;
-                        case SCMOPT_TAB_SIZE:               RTPrintf("      Default: %u\n", g_Defaults.cchTab); break;
-                        case SCMOPT_WIDTH:                  RTPrintf("      Default: %u\n", g_Defaults.cchWidth); break;
-                        case SCMOPT_FILTER_OUT_DIRS:        RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutDirs); break;
-                        case SCMOPT_FILTER_FILES:           RTPrintf("      Default: %s\n", g_Defaults.pszFilterFiles); break;
-                        case SCMOPT_FILTER_OUT_FILES:       RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutFiles); break;
-                        default: AssertFailed();
-                    }
-                    i += fAdvanceTwo;
-                }
+                usage(s_aOpts, RT_ELEMENTS(s_aOpts));
                 return 1;
 
             case 'q':
