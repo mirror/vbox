@@ -122,6 +122,7 @@ SCMEOL      ScmStreamGetEolByLine(PSCMSTREAM pStream, size_t iLine);
 int         ScmStreamPutLine(PSCMSTREAM pStream, const char *pchLine, size_t cchLine, SCMEOL enmEol);
 int         ScmStreamWrite(PSCMSTREAM pStream, const char *pchBuf, size_t cchBuf);
 int         ScmStreamPutCh(PSCMSTREAM pStream, char ch);
+int         ScmStreamPutEol(PSCMSTREAM pStream, SCMEOL enmEol);
 ssize_t     ScmStreamPrintf(PSCMSTREAM pStream, const char *pszFormat, ...);
 ssize_t     ScmStreamPrintfV(PSCMSTREAM pStream, const char *pszFormat, va_list va);
 int         ScmStreamCopyLines(PSCMSTREAM pDst, PSCMSTREAM pSrc, size_t cLines);

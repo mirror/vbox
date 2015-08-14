@@ -15,9 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
@@ -36,6 +37,48 @@
 
 #include "scm.h"
 
+
+/**
+ * Worker for isBlankLine.
+ *
+ * @returns true if blank, false if not.
+ * @param   pchLine     Pointer to the start of the line.
+ * @param   cchLine     The (encoded) length of the line, excluding EOL char.
+ */
+static bool isBlankLineSlow(const char *pchLine, size_t cchLine)
+{
+    /*
+     * From the end, more likely to hit a non-blank char there.
+     */
+    while (cchLine-- > 0)
+        if (!RT_C_IS_BLANK(pchLine[cchLine]))
+            return false;
+    return true;
+}
+
+/**
+ * Helper for checking whether a line is blank.
+ *
+ * @returns true if blank, false if not.
+ * @param   pchLine     Pointer to the start of the line.
+ * @param   cchLine     The (encoded) length of the line, excluding EOL char.
+ */
+DECLINLINE(bool) isBlankLine(const char *pchLine, size_t cchLine)
+{
+    if (cchLine == 0)
+        return true;
+    /*
+     * We're more likely to fine a non-space char at the end of the line than
+     * at the start, due to source code indentation.
+     */
+    if (pchLine[cchLine - 1])
+        return false;
+
+    /*
+     * Don't bother inlining loop code.
+     */
+    return isBlankLineSlow(pchLine, cchLine);
+}
 
 
 /**
@@ -419,6 +462,181 @@ bool rewrite_Makefile_kup(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, P
 bool rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
     return false;
+}
+
+
+static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t cchLine,
+                                     const char **ppchText, size_t *pcchText)
+{
+    *ppchText = NULL;
+    *pcchText = 0;
+
+    /*
+     * The first line.
+     */
+    if (pchLine[0] != '/')
+        return false;
+    size_t offLine = 1;
+    while (offLine < cchLine && pchLine[offLine] == '*')
+        offLine++;
+    if (offLine < 20)
+        return false;
+    while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
+        offLine++;
+    if (offLine != cchLine)
+        return false;
+
+    size_t const cchBox = cchLine;
+
+    /*
+     * The next line, extracting the text.
+     */
+    SCMEOL enmEol;
+    pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+    if (cchLine < cchBox - 3)
+        return false;
+
+    offLine = 0;
+    while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
+        offLine++;
+    if (offLine + 5 > cchLine)
+        return false;
+    if (pchLine[offLine] != '*')
+        return false;
+    offLine++;
+    if (!RT_C_IS_BLANK(pchLine[offLine + 1]))
+        return false;
+    offLine++;
+    while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
+        offLine++;
+    if (offLine >= cchLine)
+        return false;
+    if (!RT_C_IS_UPPER(pchLine[offLine]))
+        return false;
+
+    *ppchText = &pchLine[offLine];
+    size_t const offText = offLine;
+
+    /* From the end now. */
+    offLine = cchLine - 1;
+    while (RT_C_IS_BLANK(pchLine[offLine]))
+        offLine--;
+
+    if (pchLine[offLine] != '*')
+        return false;
+    offLine--;
+    if (!RT_C_IS_BLANK(pchLine[offLine]))
+        return false;
+    offLine--;
+    while (RT_C_IS_BLANK(pchLine[offLine]))
+        offLine--;
+    *pcchText = offLine - offText + 1;
+
+    /*
+     * Third line closes the box.
+     */
+    pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+    if (cchLine < cchBox - 3)
+        return false;
+
+    offLine = 0;
+    while (offLine < cchLine && pchLine[offLine] == '*')
+        offLine++;
+    if (offLine < cchBox - 4)
+        return false;
+
+    if (pchLine[offLine] != '/')
+        return false;
+    offLine++;
+
+    while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
+        offLine++;
+    if (offLine != cchLine)
+        return false;
+
+    return true;
+}
+
+
+/**
+ * Flower box marker comments in C and C++ code.
+ *
+ * @returns true if modifications were made, false if not.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_FixFlowerBoxMarkers(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    if (!pSettings->fFixFlowerBoxMarkers)
+        return false;
+
+    /*
+     * Work thru the file line by line looking for flower box markers.
+     */
+    bool        fModified = false;
+    size_t      cBlankLines = 0;
+    SCMEOL      enmEol;
+    size_t      cchLine;
+    const char *pchLine;
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        /*
+         * Get a likely match for a first line.
+         */
+        if (   pchLine[0] == '/'
+            && cchLine > 20
+            && pchLine[1] == '*'
+            && pchLine[2] == '*'
+            && pchLine[3] == '*')
+        {
+            size_t const offSaved = ScmStreamTell(pIn);
+            char const  *pchText;
+            size_t       cchText;
+            if (isFlowerBoxSectionMarker(pIn, pchLine, cchLine, &pchText, &cchText))
+            {
+                while (cBlankLines < pSettings->cMinBlankLinesBeforeFlowerBoxMakers)
+                {
+                    ScmStreamPutEol(pOut, enmEol);
+                    cBlankLines++;
+                }
+
+                ScmStreamPutCh(pOut, '/');
+                ScmStreamWrite(pOut, g_szAsterisks, pSettings->cchWidth - 1);
+                ScmStreamPutEol(pOut, enmEol);
+
+                static const char s_szLead[] = "*   ";
+                ScmStreamWrite(pOut, s_szLead, sizeof(s_szLead) - 1);
+                ScmStreamWrite(pOut, pchText, cchText);
+                size_t offCurPlus1 = sizeof(s_szLead) - 1 + cchText + 1;
+                ScmStreamWrite(pOut, g_szSpaces, offCurPlus1 < pSettings->cchWidth ? pSettings->cchWidth - offCurPlus1 : 1);
+                ScmStreamPutCh(pOut, '*');
+                ScmStreamPutEol(pOut, enmEol);
+
+                ScmStreamWrite(pOut, g_szAsterisks, pSettings->cchWidth - 1);
+                ScmStreamPutCh(pOut, '/');
+                ScmStreamPutEol(pOut, enmEol);
+
+                fModified = true;
+                cBlankLines = 0;
+                continue;
+            }
+        }
+
+        int rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
+        if (RT_FAILURE(rc))
+            return false;
+
+        /* Do blank line accounting so we can ensure at least two blank lines
+           before each section marker. */
+        if (!isBlankLine(pchLine, cchLine))
+            cBlankLines = 0;
+        else
+            cBlankLines++;
+    }
+    if (fModified)
+        ScmVerbose(pState, 2, " * Converted EOL markers\n");
+    return fModified;
 }
 
 /**

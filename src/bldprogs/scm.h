@@ -105,6 +105,7 @@ FNSCMREWRITER rewrite_SvnNoExecutable;
 FNSCMREWRITER rewrite_SvnKeywords;
 FNSCMREWRITER rewrite_Makefile_kup;
 FNSCMREWRITER rewrite_Makefile_kmk;
+FNSCMREWRITER rewrite_FixFlowerBoxMarkers;
 FNSCMREWRITER rewrite_C_and_CPP;
 
 /** @}  */
@@ -140,6 +141,12 @@ typedef struct SCMSETTINGSBASE
     bool            fForceTrailingLine;
     bool            fStripTrailingBlanks;
     bool            fStripTrailingLines;
+
+    /** Whether to fix C/C++ flower box section markers. */
+    bool            fFixFlowerBoxMarkers;
+    /** The minimum number of blank lines we want before flowerbox markers. */
+    uint8_t         cMinBlankLinesBeforeFlowerBoxMakers;
+
     /** Only process files that are part of a SVN working copy. */
     bool            fOnlySvnFiles;
     /** Only recurse into directories containing an .svn dir.  */
@@ -150,8 +157,10 @@ typedef struct SCMSETTINGSBASE
     bool            fSetSvnExecutable;
     /** Set svn:keyword if completely or partially missing. */
     bool            fSetSvnKeywords;
-    /**  */
-    unsigned        cchTab;
+    /** Tab size. */
+    uint8_t         cchTab;
+    /** Optimal source code width. */
+    uint8_t         cchWidth;
     /** Only consider files matching these patterns.  This is only applied to the
      *  base names. */
     char           *pszFilterFiles;
@@ -219,6 +228,8 @@ typedef SCMSETTINGS const *PCSCMSETTINGS;
 void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...);
 
 extern const char g_szTabSpaces[16+1];
+extern const char g_szAsterisks[255+1];
+extern const char g_szSpaces[255+1];
 
 RT_C_DECLS_END
 
