@@ -45,6 +45,12 @@ int XFree(void *data)
 #define TEST_DISPLAY ((Display *)0xffff)
 #define TEST_ROOT ((Window)1)
 
+extern void vbclFatalError(char *psz)
+{
+    RTPrintf("Fatal error: %s\n", psz);
+    exit(1);
+}
+
 extern "C" Display *XOpenDisplay(const char *display_name);
 Display *XOpenDisplay(const char *display_name)
 {

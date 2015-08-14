@@ -58,12 +58,6 @@ private:
      */
     int nextStateChangeEvent(void);
 
-    /**
-     * Interrupt an event wait and cause the current or next
-     * @a nextStateChangeEvent call to return immediately.
-     */
-    int cancelEvent(void);
-
     /** Thread function to monitor X11 window configuration changes. */
     static DECLCALLBACK(int) x11MonitorThread(RTTHREAD self, void *pvUser);
 
