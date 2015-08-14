@@ -710,35 +710,38 @@ const UIPortForwardingDataList& UIPortForwardingTable::rules() const
 bool UIPortForwardingTable::validate() const
 {
     /* Validate table: */
-    QSet<QString> usedNames;
-    QMap<int, QString> rules;
+    QList<NameData> names;
+    QList<UIPortForwardingDataUnique> rules;
     for (int i = 0; i < m_pModel->rowCount(); ++i)
     {
+        /* Some of variables: */
+        const NameData name = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_Name), Qt::EditRole).value<NameData>();
+        const KNATProtocol protocol = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_Protocol), Qt::EditRole).value<KNATProtocol>();
+        const PortData hostPort = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostPort), Qt::EditRole).value<PortData>().value();
+        const PortData guestPort = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_GuestPort), Qt::EditRole).value<PortData>().value();
+        const IpData hostIp = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostIp), Qt::EditRole).value<IpData>();
+        const IpData guestIp = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_GuestIp), Qt::EditRole).value<IpData>();
+
         /* If at aleast one port is 'zero': */
-        if (m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostPort), Qt::EditRole).value<PortData>().value() == 0 ||
-            m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_GuestPort), Qt::EditRole).value<PortData>().value() == 0)
+        if (hostPort.value() == 0 || guestPort.value() == 0)
+            return msgCenter().warnAboutIncorrectPort(window());
+        /* If at aleast one address is incorrect: */
+        if (   (!hostIp.isEmpty() && QHostAddress(hostIp).isNull())
+            || (!guestIp.isEmpty() && QHostAddress(guestIp).isNull()))
             return msgCenter().warnAboutIncorrectPort(window());
 
         /* Make sure non of the names were previosly used: */
-        const QString strName = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_Name), Qt::EditRole).value<NameData>();
-        if (!usedNames.contains(strName))
-            usedNames << strName;
+        if (!names.contains(name))
+            names << name;
         else
             return msgCenter().warnAboutNameShouldBeUnique(window());
 
-        /* Make sure rules are not in conflict: */
-        const ushort iHostPort = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostPort), Qt::EditRole).value<PortData>().value();
-        const QString strHostAddressNew = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostIp), Qt::EditRole).value<IpData>();
-        if (rules.contains(iHostPort))
-        {
-            const QString strHostAddressOld = rules.value(iHostPort);
-            if (   strHostAddressNew == strHostAddressOld
-                || strHostAddressNew.isEmpty() || QHostAddress(strHostAddressNew).isNull()
-                || strHostAddressOld.isEmpty() || QHostAddress(strHostAddressOld).isNull())
-                return msgCenter().warnAboutRulesConflict(window());
-        }
+        /* Make sure non of the rules were previosly used: */
+        UIPortForwardingDataUnique rule(protocol, hostPort, hostIp);
+        if (!rules.contains(rule))
+            rules << rule;
         else
-            rules[iHostPort] = strHostAddressNew;
+            return msgCenter().warnAboutRulesConflict(window());
     }
     /* True by default: */
     return true;

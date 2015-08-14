@@ -96,6 +96,28 @@ struct UIPortForwardingData
     PortData guestPort;
 };
 
+/* Port forwarding data, unique part: */
+struct UIPortForwardingDataUnique
+{
+    UIPortForwardingDataUnique(KNATProtocol enmProtocol,
+                               PortData uHostPort,
+                               const IpData &strHostIp)
+        : protocol(enmProtocol)
+        , hostPort(uHostPort)
+        , hostIp(strHostIp) {}
+    bool operator==(const UIPortForwardingDataUnique &other)
+    {
+        return    protocol == other.protocol
+               && hostPort == other.hostPort
+               && (   hostIp.isEmpty()    || other.hostIp.isEmpty()
+                   || hostIp == "0.0.0.0" || other.hostIp == "0.0.0.0"
+                   || hostIp              == other.hostIp);
+    }
+    KNATProtocol protocol;
+    PortData hostPort;
+    IpData hostIp;
+};
+
 /* Port forwarding data list: */
 typedef QList<UIPortForwardingData> UIPortForwardingDataList;
 
