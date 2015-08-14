@@ -18,42 +18,43 @@
 #include <string>
 
 #include <iprt/string.h>
+#include <iprt/stream.h>
 
 using namespace std;
 
 const char* header = "/*\n\
-* Copyright(C) 2005 - 2015 Oracle Corporation\n\
-*\n\
-* This file is part of VirtualBox Open Source Edition(OSE), as\n\
-* available from http ://www.virtualbox.org. This file is free software;\n\
-* you can redistribute it and / or modify it under the terms of the GNU\n\
-* General Public License(GPL) as published by the Free Software\n\
-* Foundation, in version 2 as it comes in the \"COPYING\" file of the\n\
-* VirtualBox OSE distribution.VirtualBox OSE is distributed in the\n\
-* hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.\n\
-*\n\
-*/\
-\n\
-\n\
-#include \"USBIdDatabase.h\"\n\
-\n\
-/** USB devices aliases array.\n\
-*   Format: VendorId, ProductId, Vendor Name, Product Name\n\
-*   The source of the list is http://www.linux-usb.org/usb.ids\n\
-*/\n\
-Product AliasDictionary::productArray[] = { \n";
+ * Copyright(C) 2005 - 2015 Oracle Corporation\n\
+ *\n\
+ * This file is part of VirtualBox Open Source Edition(OSE), as\n\
+ * available from http ://www.virtualbox.org. This file is free software;\n\
+ * you can redistribute it and / or modify it under the terms of the GNU\n\
+ * General Public License(GPL) as published by the Free Software\n\
+ * Foundation, in version 2 as it comes in the \"COPYING\" file of the\n\
+ * VirtualBox OSE distribution.VirtualBox OSE is distributed in the\n\
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.\n\
+ *\n\
+ */\
+ \n\
+ \n\
+ #include \"USBIdDatabase.h\"\n\
+ \n\
+ /** USB devices aliases array.\n\
+ *   Format: VendorId, ProductId, Vendor Name, Product Name\n\
+ *   The source of the list is http://www.linux-usb.org/usb.ids\n\
+ */\n\
+ Product AliasDictionary::productArray[] = { \n";
 
 const char* footer = "};\n\
-\n\
-const size_t AliasDictionary::products_size = sizeof(AliasDictionary::productArray) / sizeof(Product); \n";
+ \n\
+ const size_t AliasDictionary::products_size = sizeof(AliasDictionary::productArray) / sizeof(Product); \n";
 
 const char* vendor_header = "\nVendor AliasDictionary::vendorArray[] = { \n";
 const char* vendor_footer = "};\n\
 \n\
 const size_t AliasDictionary::vendors_size = sizeof(AliasDictionary::vendorArray) / sizeof(Vendor);";
 
-const wchar_t* start_block = L"#		interface  interface_name		<-- two tabs";
-const wchar_t* end_block = L"# List of known device classes, subclasses and protocols";
+const char* start_block = "#		interface  interface_name		<-- two tabs";
+const char* end_block = "# List of known device classes, subclasses and protocols";
 
 #define USBKEY(vendorId, productId) (((vendorId) << 16) | (productId))
 
@@ -67,7 +68,7 @@ const wchar_t* end_block = L"# List of known device classes, subclasses and prot
 struct VendorRecord
 {
     size_t vendorID;
-    wstring vendor;
+    string vendor;
 };
 
 struct ProductRecord
@@ -75,7 +76,7 @@ struct ProductRecord
     size_t key;
     size_t vendorID;
     size_t productID;
-    wstring product;
+    string product;
 };
 
 bool operator < (const ProductRecord& lh, const ProductRecord& rh)
@@ -98,21 +99,16 @@ bool operator == (const VendorRecord& lh, const VendorRecord& rh)
     return lh.vendorID == rh.vendorID;
 }
 
-string conv(const wstring& src)
+string conv(const string& src)
 {
-    string res;
-    char* buf = NULL;
-    
-    if (RTUtf16ToLatin1((PRTUTF16)src.c_str(), &buf) == VINF_SUCCESS)
+    string res = src;
+    for (size_t i = 0; i < res.length(); i++)
     {
-        size_t len = strlen(buf);
-        for (size_t i = 0; i < len; i++)
+        switch (res[i])
         {
-            if (buf[i] == '"')
-                buf[i] = '\'';
+        case '"':
+        case '\\': res.insert(i++, "\\");
         }
-        res = buf;
-        RTStrFree(buf);
     }
     return res;
 }
@@ -125,25 +121,10 @@ ostream& operator <<(ostream& stream, const ProductRecord product)
     return stream;
 }
 
-wostream& operator <<(wostream& stream, const ProductRecord product)
-{
-    stream << L"{USBKEY(0x" << hex << product.vendorID
-        << L", 0x" << product.productID << L"), "
-        << L"\"" << product.product.c_str() << L"\" }," << endl;
-    return stream;
-}
-
 ostream& operator <<(ostream& stream, const VendorRecord vendor)
 {
     stream << "{0x" << hex << vendor.vendorID
         << ", \"" << conv(vendor.vendor).c_str() << "\" }," << endl;
-    return stream;
-}
-
-wostream& operator <<(wostream& stream, const VendorRecord vendor)
-{
-    stream << L"{0x" << hex << vendor.vendorID
-        << L", \"" << vendor.vendor.c_str() << L"\" }," << endl;
     return stream;
 }
 
@@ -164,17 +145,17 @@ ProductsSet g_products;
 VendorsSet g_vendors;
 
 
-int ParseAlias(const wstring& src, size_t& id, wstring& desc)
+int ParseAlias(const string& src, size_t& id, string& desc)
 {
-    int i = 0;
+    unsigned int i = 0;
     int idx = 0;
-    wstring sin;
+    string sin;
 
-    if (swscanf(src.c_str(), L"%x", &i) != 1)
+    if (sscanf(src.c_str(), "%x", &i) != 1)
         return ERROR_IN_PARSE_LINE;
 
-    size_t index = src.find_first_of(L" \t", 1);
-    index = src.find_first_not_of(L" \t", index);
+    size_t index = src.find_first_of(" \t", 1);
+    index = src.find_first_not_of(" \t", index);
 
     if (index == string::npos)
         return ERROR_IN_PARSE_LINE;
@@ -186,18 +167,36 @@ int ParseAlias(const wstring& src, size_t& id, wstring& desc)
     return 0;
 }
 
-bool IsCommentOrEmptyLine(const wstring& str)
+bool IsCommentOrEmptyLine(const string& str)
 {
-    size_t index = str.find_first_not_of(L" \t");// skip left spaces
-    return index == string::npos || str[index] == L'#';
+    size_t index = str.find_first_not_of(" \t");// skip left spaces
+    return index == string::npos || str[index] == '#';
 }
 
-int ParseUsbIds(wifstream& instream)
+bool getline(PRTSTREAM instream, string& resString)
+{
+    const size_t szBuf = 4096;
+    char buf[szBuf] = { 0 };
+
+    int rc = RTStrmGetLine(instream, buf, szBuf);
+    if (RT_SUCCESS(rc))
+    {
+        resString = buf;
+        return true;
+    }
+    else if (rc != VERR_EOF)
+    {
+        cerr << "Warning: Invalid line in file. Error: " << hex << rc << endl;
+    }
+    return false;
+}
+
+int ParseUsbIds(PRTSTREAM instream)
 {
     State::Value state = State::lookForStartBlock;
-    wstring line;
+    string line;
     int res = 0;
-    VendorRecord vendor = { 0, L"" };
+    VendorRecord vendor = { 0, "" };
 
     while (state != State::finished && getline(instream, line))
     {
@@ -227,7 +226,7 @@ int ParseUsbIds(wifstream& instream)
                                 << line.c_str() << "'" << endl;
                             return ERROR_WRONG_FILE_FORMAT;
                         }
-                        ProductRecord product = { 0, vendor.vendorID, 0, L"" };
+                        ProductRecord product = { 0, vendor.vendorID, 0, "" };
                         if (ParseAlias(line.substr(1), product.productID, product.product) != 0)
                         {
                             cerr << "Error in parsing product line: '"
@@ -273,11 +272,12 @@ int main(int argc, char* argv[])
         return ERROR_INVALID_ARGUMENTS;
     }
     ofstream fout;
-    wifstream fin;
+    PRTSTREAM fin;
     g_products.reserve(20000);
     g_vendors.reserve(3500);
 
     char* outName = NULL;
+    int rc = 0;
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-o") == 0)
@@ -286,12 +286,11 @@ int main(int argc, char* argv[])
             continue;
         }
 
-        fin.open(argv[i]);
-        if (!fin.is_open())
+        if (RT_FAILURE(rc = RTStrmOpen(argv[i], "r", &fin)))
         {
             cerr << "Format: " << argv[0] <<
                 " [linux.org usb list file] [custom usb list file] [-o output file]" << endl;
-            cerr << "Error: Can not open file '" << argv[i] << "'." << endl;
+            cerr << "Error: Can not open file '" << argv[i] << "'. Error: " << hex << rc << endl;
             return ERROR_OPEN_FILE;
         }
 
@@ -300,21 +299,21 @@ int main(int argc, char* argv[])
         {
             cerr << "Error in parsing USB devices file '" <<
                 argv[i] << "'" << endl;
-            fin.close();
+            RTStrmClose(fin);
             return res;
         }
-        fin.close();
+        RTStrmClose(fin);
     }
 
     sort(g_products.begin(), g_products.end());
     sort(g_vendors.begin(), g_vendors.end());
 
     // validate that all records are unique
-    ProductsSet::iterator it = adjacent_find(g_products.begin(), g_products.end());
-    if (it != g_products.end())
+    ProductsSet::iterator ita = adjacent_find(g_products.begin(), g_products.end());
+    if (ita != g_products.end())
     {
-        cerr << "Error: Duplicate alias detected. " << *it << endl;
-        return ERROR_DUPLICATE_ENTRY;
+        cerr << "Warning: Duplicate alias detected. " << *ita << endl;
+        return 0;
     }
 
     if (!outName)
@@ -335,16 +334,16 @@ int main(int argc, char* argv[])
     }
 
     fout << header;
-    for (ProductsSet::iterator it = g_products.begin(); it != g_products.end(); ++it)
+    for (ProductsSet::iterator itp = g_products.begin(); itp != g_products.end(); ++itp)
     {
-        fout << *it;
+        fout << *itp;
     }
     fout << footer;
 
     fout << vendor_header;
-    for (VendorsSet::iterator it = g_vendors.begin(); it != g_vendors.end(); ++it)
+    for (VendorsSet::iterator itv = g_vendors.begin(); itv != g_vendors.end(); ++itv)
     {
-        fout << *it;
+        fout << *itv;
     }
     fout << vendor_footer;
 
