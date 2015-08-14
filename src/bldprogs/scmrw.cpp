@@ -574,7 +574,7 @@ bool rewrite_FixFlowerBoxMarkers(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
     /*
      * Work thru the file line by line looking for flower box markers.
      */
-    bool        fModified = false;
+    size_t      cChanges = 0;
     size_t      cBlankLines = 0;
     SCMEOL      enmEol;
     size_t      cchLine;
@@ -617,7 +617,7 @@ bool rewrite_FixFlowerBoxMarkers(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
                 ScmStreamPutCh(pOut, '/');
                 ScmStreamPutEol(pOut, enmEol);
 
-                fModified = true;
+                cChanges++;
                 cBlankLines = 0;
                 continue;
             }
@@ -634,9 +634,9 @@ bool rewrite_FixFlowerBoxMarkers(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
         else
             cBlankLines++;
     }
-    if (fModified)
-        ScmVerbose(pState, 2, " * Converted EOL markers\n");
-    return fModified;
+    if (cChanges > 0)
+        ScmVerbose(pState, 2, " * Converted %zu flower boxer markers\n", cChanges);
+    return cChanges != 0;
 }
 
 /**
