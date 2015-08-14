@@ -959,6 +959,7 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
 # endif
        )
     {
+        IPRT_DARWIN_SAVE_EFL_AC();
         if (fEnable)
         {
             /*
@@ -983,7 +984,10 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
                             rc = VERR_VMX_NO_VMX;
                     }
                     if (RT_FAILURE(rc))
+                    {
+                        IPRT_DARWIN_RESTORE_EFL_AC();
                         return rc;
+                    }
                 }
                 g_fDoneCleanup = true;
             }
@@ -1019,6 +1023,7 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
             rc = VINF_SUCCESS;
             LogRel(("VBoxDrv: host_vmxoff -> vmx_use_count=%d\n", *g_pVmxUseCount));
         }
+        IPRT_DARWIN_RESTORE_EFL_AC();
     }
     else
     {
@@ -1049,7 +1054,9 @@ bool VBOXCALL supdrvOSSuspendVTxOnCpu(void)
     if (   g_pVmxUseCount
         && *g_pVmxUseCount > 0)
     {
+        IPRT_DARWIN_SAVE_EFL_AC();
         g_pfnVmxSuspend();
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return true;
     }
     return false;
@@ -1072,7 +1079,11 @@ void VBOXCALL   supdrvOSResumeVTxOnCpu(bool fSuspended)
      */
     if (   fSuspended
         && g_pfnVmxResume)
+    {
+        IPRT_DARWIN_SAVE_EFL_AC();
         g_pfnVmxResume();
+        IPRT_DARWIN_RESTORE_EFL_AC();
+    }
     else
         Assert(!fSuspended);
 #else
@@ -1194,7 +1205,11 @@ int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *pu
     Args.rc       = -1;
 
     if (idCpu == NIL_RTCPUID)
+    {
+        IPRT_DARWIN_SAVE_EFL_AC();
         supdrvDarwinMsrProberReadOnCpu(idCpu, &Args, NULL);
+        IPRT_DARWIN_RESTORE_EFL_AC();
+    }
     else
     {
         int rc = RTMpOnSpecific(idCpu, supdrvDarwinMsrProberReadOnCpu, &Args, NULL);
@@ -1238,7 +1253,11 @@ int VBOXCALL    supdrvOSMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uV
     Args.rc       = -1;
 
     if (idCpu == NIL_RTCPUID)
+    {
+        IPRT_DARWIN_SAVE_EFL_AC();
         supdrvDarwinMsrProberWriteOnCpu(idCpu, &Args, NULL);
+        IPRT_DARWIN_RESTORE_EFL_AC();
+    }
     else
     {
         int rc = RTMpOnSpecific(idCpu, supdrvDarwinMsrProberWriteOnCpu, &Args, NULL);
@@ -1321,7 +1340,9 @@ int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
         return VERR_NOT_SUPPORTED;
     if (idCpu == NIL_RTCPUID)
     {
+        IPRT_DARWIN_SAVE_EFL_AC();
         supdrvDarwinMsrProberModifyOnCpu(idCpu, pReq, NULL);
+        IPRT_DARWIN_RESTORE_EFL_AC();
         return VINF_SUCCESS;
     }
     return RTMpOnSpecific(idCpu, supdrvDarwinMsrProberModifyOnCpu, pReq, NULL);
