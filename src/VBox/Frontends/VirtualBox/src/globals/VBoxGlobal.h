@@ -119,6 +119,11 @@ public:
     static MacOSXRelease osRelease();
 #endif /* Q_WS_MAC */
 
+    /** Try to acquire COM cleanup protection token for reading. */
+    bool comTokenTryLockForRead() { return m_comCleanupProtectionToken.tryLockForRead(); }
+    /** Unlock previously acquired COM cleanup protection token. */
+    void comTokenUnlock() { return m_comCleanupProtectionToken.unlock(); }
+
     /** Returns the copy of VirtualBox client wrapper. */
     CVirtualBoxClient virtualBoxClient() const { return m_client; }
     /** Returns the copy of VirtualBox object wrapper. */
@@ -480,6 +485,9 @@ private:
 #endif
 
     bool mValid;
+
+    /** COM cleanup protection token. */
+    QReadWriteLock m_comCleanupProtectionToken;
 
     /** Holds the instance of VirtualBox client wrapper. */
     CVirtualBoxClient m_client;
