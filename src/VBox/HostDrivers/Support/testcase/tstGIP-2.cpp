@@ -59,17 +59,13 @@ int main(int argc, char **argv)
                                                               * implies updating GIP CpuHz even when invariant) */
     };
 
-    uint32_t cIterations = 40;
-    bool fHex = true;
-    bool fSpin = false;
-    bool fCompat = true;
-    bool fTestMode = true;
-    int ch;
-    uint64_t uCpuHzRef = UINT64_MAX;
-    uint64_t uCpuHzOverallDeviation = 0;
-    uint32_t cCpuHzNotCompat = 0;
-    int64_t  iCpuHzMaxDeviation = 0;
-    int32_t  cCpuHzOverallDevCnt = 0;
+    bool          fHex = true;
+    bool          fSpin = false;
+    bool          fCompat = true;
+    bool          fTestMode = true;
+    int           ch;
+    uint32_t      cIterations = 40;
+    uint64_t      uCpuHzRef = UINT64_MAX;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -115,6 +111,12 @@ int main(int argc, char **argv)
     {
         if (g_pSUPGlobalInfoPage)
         {
+            uint64_t uCpuHzOverallDeviation = 0;
+            uint32_t cCpuHzNotCompat = 0;
+            int64_t  iCpuHzMaxDeviation = 0;
+            int32_t  cCpuHzOverallDevCnt = 0;
+            uint32_t cCpuHzChecked = 0;
+
             /* Pick current CpuHz as the reference if none was specified. */
             if (uCpuHzRef == UINT64_MAX)
                 uCpuHzRef = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
@@ -123,7 +125,7 @@ int main(int argc, char **argv)
                 && g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_INVARIANT_TSC)
                 SUPR3GipSetFlags(SUPGIP_FLAGS_TESTING_ENABLE, UINT32_MAX);
 
-            RTPrintf("tstGIP-2: cCpus=%d  u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u64CpuHz=%RU64  uCpuHzRef=%RU64  u32Mode=%d (%s) u32Version=%#x\n",
+            RTPrintf("tstGIP-2: cCpus=%d  u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u64CpuHz=%RU64  uCpuHzRef=%RU64  u32Mode=%d (%s)  fTestMode=%RTbool  u32Version=%#x\n",
                      g_pSUPGlobalInfoPage->cCpus,
                      g_pSUPGlobalInfoPage->u32UpdateHz,
                      g_pSUPGlobalInfoPage->u32UpdateIntervalNS,
@@ -131,6 +133,7 @@ int main(int argc, char **argv)
                      g_pSUPGlobalInfoPage->u64CpuHz,
                      uCpuHzRef,
                      g_pSUPGlobalInfoPage->u32Mode,
+                     fTestMode,
                      SUPGetGIPModeName(g_pSUPGlobalInfoPage),
                      g_pSUPGlobalInfoPage->u32Version);
             RTPrintf(fHex
@@ -140,10 +143,10 @@ int main(int argc, char **argv)
             static SUPGIPCPU s_aaCPUs[2][256];
             for (uint32_t i = 0; i < cIterations; i++)
             {
-                /* copy the data */
+                /* Copy the data. */
                 memcpy(&s_aaCPUs[i & 1][0], &g_pSUPGlobalInfoPage->aCPUs[0], g_pSUPGlobalInfoPage->cCpus * sizeof(g_pSUPGlobalInfoPage->aCPUs[0]));
 
-                /* display it & find something to spin on. */
+                /* Display it & find something to spin on. */
                 uint32_t u32TransactionId = 0;
                 uint32_t volatile *pu32TransactionId = NULL;
                 for (unsigned iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
@@ -154,29 +157,42 @@ int main(int argc, char **argv)
                         PSUPGIPCPU pCpu = &s_aaCPUs[i & 1][iCpu];
                         if (uCpuHzRef)
                         {
-                            int64_t iCpuHzDeviation = pCpu->u64CpuHz - uCpuHzRef;
-                            uint64_t uCpuHzDeviation = RT_ABS(iCpuHzDeviation);
-                            if (uCpuHzDeviation > 999999999)
-                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%17s  ", "?");
-                            else
+                            /* Only CPU 0 is updated for invariant & sync modes, see supdrvGipUpdate(). */
+                            if (   iCpu == 0
+                                || g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_ASYNC_TSC)
                             {
                                 /* Wait until the history validation code takes effect. */
-                                bool fCurHzCompat = true;
                                 if (pCpu->u32TransactionId > 23 + (8 * 2) + 1)
                                 {
-                                    if (RT_ABS(iCpuHzDeviation) > RT_ABS(iCpuHzMaxDeviation))
-                                        iCpuHzMaxDeviation = iCpuHzDeviation;
-                                    uCpuHzOverallDeviation += uCpuHzDeviation;
-                                    cCpuHzOverallDevCnt++;
-                                    fCurHzCompat = SUPIsTscFreqCompatibleEx(uCpuHzRef, pCpu->u64CpuHz, false /* fRelax */);
+                                    int64_t  iCpuHzDeviation = pCpu->u64CpuHz - uCpuHzRef;
+                                    uint64_t uCpuHzDeviation = RT_ABS(iCpuHzDeviation);
+                                    bool     fCurHzCompat = SUPIsTscFreqCompatibleEx(uCpuHzRef, pCpu->u64CpuHz, false /*fRelax*/);
+                                    if (uCpuHzDeviation <= 999999999)
+                                    {
+                                        if (RT_ABS(iCpuHzDeviation) > RT_ABS(iCpuHzMaxDeviation))
+                                            iCpuHzMaxDeviation = iCpuHzDeviation;
+                                        uCpuHzOverallDeviation += uCpuHzDeviation;
+                                        cCpuHzOverallDevCnt++;
+                                        uint32_t uPct = (uint32_t)(uCpuHzDeviation * 100000 / uCpuHzRef + 5);
+                                        RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64%3d.%02d%%  %RTbool   ",
+                                                    iCpuHzDeviation, uPct / 1000, (uPct % 1000) / 10, fCurHzCompat);
+                                    }
+                                    else
+                                    {
+                                        RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%17s  %RTbool   ", "?",
+                                                    fCurHzCompat);
+                                    }
+
+                                    if (!fCurHzCompat)
+                                        ++cCpuHzNotCompat;
+                                    fCompat &= fCurHzCompat;
+                                    ++cCpuHzChecked;
                                 }
-                                uint32_t uPct = (uint32_t)(uCpuHzDeviation * 100000 / uCpuHzRef + 5);
-                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64%3d.%02d%%  %RTbool   ",
-                                            iCpuHzDeviation, uPct / 1000, (uPct % 1000) / 10, fCurHzCompat);
-                                if (!fCurHzCompat)
-                                    ++cCpuHzNotCompat;
-                                fCompat &= fCurHzCompat;
+                                else
+                                    RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%25s  ", "priming");
                             }
+                            else
+                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%25s  ", "");
                         }
                         else
                             szCpuHzDeviation[0] = '\0';
@@ -208,7 +224,7 @@ int main(int argc, char **argv)
                         }
                     }
 
-                /* wait a bit / spin */
+                /* Wait a bit / spin. */
                 if (!fSpin)
                     RTThreadSleep(9);
                 else
@@ -250,20 +266,26 @@ int main(int argc, char **argv)
 
             RTPrintf("tstGIP-2: enmUseTscDelta=%d  fGetGipCpu=%#x\n",
                      g_pSUPGlobalInfoPage->enmUseTscDelta, g_pSUPGlobalInfoPage->fGetGipCpu);
-            if (   uCpuHzRef
-                && cCpuHzOverallDevCnt)
+            if (uCpuHzRef)
             {
-                uint32_t uPct    = (uint32_t)(uCpuHzOverallDeviation * 100000 / cCpuHzOverallDevCnt / uCpuHzRef + 5);
-                RTPrintf("tstGIP-2: Average CpuHz deviation: %d.%02d%%\n",
-                         uPct / 1000, (uPct % 1000) / 10);
+                if (cCpuHzOverallDevCnt)
+                {
+                    uint32_t uPct    = (uint32_t)(uCpuHzOverallDeviation * 100000 / cCpuHzOverallDevCnt / uCpuHzRef + 5);
+                    RTPrintf("tstGIP-2: Average CpuHz deviation: %d.%02d%%\n",
+                             uPct / 1000, (uPct % 1000) / 10);
 
-                uint32_t uMaxPct = (uint32_t)(RT_ABS(iCpuHzMaxDeviation) * 100000 / uCpuHzRef + 5);
-                RTPrintf("tstGIP-2: Maximum CpuHz deviation: %d.%02d%% (%RI64 ticks)\n",
-                         uMaxPct / 1000, (uMaxPct % 1000) / 10, iCpuHzMaxDeviation);
+                    uint32_t uMaxPct = (uint32_t)(RT_ABS(iCpuHzMaxDeviation) * 100000 / uCpuHzRef + 5);
+                    RTPrintf("tstGIP-2: Maximum CpuHz deviation: %d.%02d%% (%RI64 ticks)\n",
+                             uMaxPct / 1000, (uMaxPct % 1000) / 10, iCpuHzMaxDeviation);
+                }
+                else
+                {
+                    RTPrintf("tstGIP-2: Average CpuHz deviation: ??.??\n");
+                    RTPrintf("tstGIP-2: Average CpuHz deviation: ??.??\n");
+                }
 
-                RTPrintf("tstGIP-2: CpuHz compatibility: %RTbool (incompatible %u of %u times w/ %RU64 Hz %s GIP)\n", fCompat,
-                         cCpuHzNotCompat, cIterations * g_pSUPGlobalInfoPage->cCpus, uCpuHzRef,
-                         SUPGetGIPModeName(g_pSUPGlobalInfoPage));
+                RTPrintf("tstGIP-2: CpuHz compatibility: %RTbool (incompatible %u of %u times w/ %RU64 Hz - %s GIP)\n", fCompat,
+                         cCpuHzNotCompat, cCpuHzChecked, uCpuHzRef, SUPGetGIPModeName(g_pSUPGlobalInfoPage));
 
                 if (   !fCompat
                     && g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_INVARIANT_TSC)
