@@ -40,7 +40,11 @@
 #include <iprt/getopt.h>
 #include <iprt/x86.h>
 
-int main(int argc, char **argv)
+
+/**
+ *  Entry point.
+ */
+extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
 {
     RTR3InitExe(argc, &argv, 0);
 
@@ -308,4 +312,15 @@ int main(int argc, char **argv)
         RTPrintf("tstGIP-2: SUPR3Init failed: %Rrc\n", rc);
     return !!rc;
 }
+
+#ifndef VBOX_WITH_HARDENING
+/**
+ * Main entry point.
+ */
+int main(int argc, char **argv)
+{
+    return TrustedMain(argc, argv);
+}
+#endif /* !VBOX_WITH_HARDENING */
+
 

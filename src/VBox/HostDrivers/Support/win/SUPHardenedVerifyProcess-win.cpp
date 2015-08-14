@@ -205,7 +205,8 @@ static const char *g_apszSupNtVpAllowedDlls[] =
 
 /**
  * VBox executables allowed to start VMs.
- * @remarks Remember to keep in sync with SUPR3HardenedVerify.cpp.
+ * @remarks Remember to keep in sync with g_aSupInstallFiles in
+ *          SUPR3HardenedVerify.cpp.
  */
 static const char *g_apszSupNtVpAllowedVmExes[] =
 {
@@ -221,6 +222,7 @@ static const char *g_apszSupNtVpAllowedVmExes[] =
     "tstVMM.exe",
     "tstVMREQ.exe",
     "tstCFGM.exe",
+    "tstGIP-2.exe",
     "tstIntNet-1.exe",
     "tstMMHyperHeap.exe",
     "tstRTR0ThreadPreemptionDriver.exe",

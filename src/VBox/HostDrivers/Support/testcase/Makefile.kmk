@@ -40,7 +40,6 @@ PROGRAMS += \
 	tstInt \
 	tstLow \
 	tstPin \
-	tstGIP-2 \
 	tstGetPagingMode \
 	tstSupLoadModule \
 	tstSupSem \
@@ -86,8 +85,29 @@ tstPin_SOURCES        = tstPin.cpp
 tstPage_TEMPLATE      = VBOXR3TSTEXE
 tstPage_SOURCES       = tstPage.cpp
 
-tstGIP-2_TEMPLATE     = VBOXR3TSTEXE
-tstGIP-2_SOURCES      = tstGIP-2.cpp
+#
+# tstGIP-2
+#
+ifdef VBOX_WITH_TESTCASES
+ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
+  PROGRAMS += tstGIP-2Hardened
+  DLLS += tstGIP-2
+ else
+  PROGRAMS += tstGIP-2
+ endif
+endif
+
+tstGIP-2Hardened_TEMPLATE = VBoxR3HardenedTstExe
+tstGIP-2Hardened_DEFS = PROGRAM_NAME_STR=\"tstGIP-2\"
+tstGIP-2Hardened_SOURCES = ../SUPR3HardenedMainTemplateTestcase.cpp
+tstGIP-2Hardened_NAME = tstGIP-2
+
+if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
+  tstGIP-2_TEMPLATE := VBoxR3HardenedTstDll
+else
+  tstGIP-2_TEMPLATE := VBOXR3TSTEXE
+endif
+tstGIP-2_SOURCES = tstGIP-2.cpp
 
 tstGetPagingMode_TEMPLATE = VBOXR3TSTEXE
 tstGetPagingMode_SOURCES = tstGetPagingMode.cpp
