@@ -2689,6 +2689,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
     BOOL destroyList = FALSE;
     WCHAR pWCfgGuidString [50];
     WCHAR DevName[256];
+    HKEY hkey = (HKEY)INVALID_HANDLE_VALUE;
 
     do
     {
@@ -2703,7 +2704,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
          * of the VBoxNetAdp driver. */
         DWORD detailBuf [2048];
 
-        HKEY hkey = NULL;
         DWORD cbSize;
         DWORD dwValueType;
 
@@ -2989,6 +2989,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
                 break;
         }
 
+        if (ret != ERROR_SUCCESS)
+            SetErrBreak(("Querying NetCfgInstanceId failed (0x%08X)", GetLastError()));
+
         /*
          * We need to query the device name after we have succeeded in querying its
          * instance ID to avoid similar waiting-and-retrying loop (see @bugref{7973}).
@@ -3020,16 +3023,15 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
                                               err));
             }
         }
-        RegCloseKey (hkey);
-
-        if (ret != ERROR_SUCCESS)
-            SetErrBreak(("Querying NetCfgInstanceId failed (0x%08X)", GetLastError()));
     }
     while (0);
 
     /*
      * cleanup
      */
+    if (hkey != INVALID_HANDLE_VALUE)
+        RegCloseKey (hkey);
+
     if (pQueueCallbackContext)
         SetupTermDefaultQueueCallback(pQueueCallbackContext);
 
