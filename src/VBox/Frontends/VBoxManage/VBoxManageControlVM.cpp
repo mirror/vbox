@@ -715,7 +715,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 {
                     if (!strcmp(a->argv[2], "null"))
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
                         CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Null), RTEXITCODE_FAILURE);
                     }
                     else if (!strcmp(a->argv[2], "nat"))
