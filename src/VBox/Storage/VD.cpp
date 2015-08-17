@@ -11059,7 +11059,7 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
 
 /**
  * generic plugin functions
- *.
+ */
 
 /** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
 DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
