@@ -2344,7 +2344,7 @@ PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int 
 /**
  * @callback_method_impl{FNPCIBRIDGECONFIGWRITE}
  */
-static void pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, uint32_t u32Value, unsigned cb)
+static DECLCALLBACK(void) pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, uint32_t u32Value, unsigned cb)
 {
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
 
@@ -2376,7 +2376,7 @@ static void pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t i
 /**
  * @callback_method_impl{FNPCIBRIDGECONFIGREAD}
  */
-static uint32_t pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, unsigned cb)
+static DECLCALLBACK(uint32_t) pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, unsigned cb)
 {
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
     uint32_t u32Value = 0xffffffff; /* Return value in case there is no device. */

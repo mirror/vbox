@@ -858,8 +858,8 @@ static int drvAudioAllocHstIn(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTR
  * @param   cbBuf
  * @param   pcbWritten
  */
-int drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut,
-                  const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+static DECLCALLBACK(int) drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut,
+                                       const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);

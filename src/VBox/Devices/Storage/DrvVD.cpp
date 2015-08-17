@@ -298,7 +298,7 @@ static int drvvdSetWritable(PVBOXDISK pThis)
 *   Error reporting callback                                                                                                     *
 *********************************************************************************************************************************/
 
-static void drvvdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL,
+static DECLCALLBACK(void) drvvdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL,
                                const char *pszFormat, va_list va)
 {
     PPDMDRVINS pDrvIns = (PPDMDRVINS)pvUser;
@@ -647,22 +647,22 @@ static DECLCALLBACK(int) drvvdThreadFinishWrite(void *pvUser)
 *   VD Configuration interface implementation                                                                                    *
 *********************************************************************************************************************************/
 
-static bool drvvdCfgAreKeysValid(void *pvUser, const char *pszzValid)
+static DECLCALLBACK(bool) drvvdCfgAreKeysValid(void *pvUser, const char *pszzValid)
 {
     return CFGMR3AreValuesValid((PCFGMNODE)pvUser, pszzValid);
 }
 
-static int drvvdCfgQuerySize(void *pvUser, const char *pszName, size_t *pcb)
+static DECLCALLBACK(int) drvvdCfgQuerySize(void *pvUser, const char *pszName, size_t *pcb)
 {
     return CFGMR3QuerySize((PCFGMNODE)pvUser, pszName, pcb);
 }
 
-static int drvvdCfgQuery(void *pvUser, const char *pszName, char *pszString, size_t cchString)
+static DECLCALLBACK(int) drvvdCfgQuery(void *pvUser, const char *pszName, char *pszString, size_t cchString)
 {
     return CFGMR3QueryString((PCFGMNODE)pvUser, pszName, pszString, cchString);
 }
 
-static int drvvdCfgQueryBytes(void *pvUser, const char *pszName, void *ppvData, size_t cbData)
+static DECLCALLBACK(int) drvvdCfgQueryBytes(void *pvUser, const char *pszName, void *ppvData, size_t cbData)
 {
     return CFGMR3QueryBytes((PCFGMNODE)pvUser, pszName, ppvData, cbData);
 }
@@ -1373,8 +1373,8 @@ static DECLCALLBACK(int) drvvdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
     return RTTcpGetPeerAddress(pSockInt->hSocket, pAddr);
 }
 
-static int drvvdTcpSelectOneExPoll(VDSOCKET Sock, uint32_t fEvents,
-                                   uint32_t *pfEvents, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) drvvdTcpSelectOneExPoll(VDSOCKET Sock, uint32_t fEvents,
+                                                 uint32_t *pfEvents, RTMSINTERVAL cMillies)
 {
     int rc = VINF_SUCCESS;
     uint32_t id = 0;
@@ -2173,7 +2173,7 @@ static DECLCALLBACK(int) drvvdStartDiscard(PPDMIMEDIAASYNC pInterface, PCRTRANGE
 }
 
 /** @copydoc FNPDMBLKCACHEXFERCOMPLETEDRV */
-static void drvvdBlkCacheXferComplete(PPDMDRVINS pDrvIns, void *pvUser, int rcReq)
+static DECLCALLBACK(void) drvvdBlkCacheXferComplete(PPDMDRVINS pDrvIns, void *pvUser, int rcReq)
 {
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
 
@@ -2183,10 +2183,10 @@ static void drvvdBlkCacheXferComplete(PPDMDRVINS pDrvIns, void *pvUser, int rcRe
 }
 
 /** @copydoc FNPDMBLKCACHEXFERENQUEUEDRV */
-static int drvvdBlkCacheXferEnqueue(PPDMDRVINS pDrvIns,
-                                    PDMBLKCACHEXFERDIR enmXferDir,
-                                    uint64_t off, size_t cbXfer,
-                                    PCRTSGBUF pcSgBuf, PPDMBLKCACHEIOXFER hIoXfer)
+static DECLCALLBACK(int) drvvdBlkCacheXferEnqueue(PPDMDRVINS pDrvIns,
+                                                  PDMBLKCACHEXFERDIR enmXferDir,
+                                                  uint64_t off, size_t cbXfer,
+                                                  PCRTSGBUF pcSgBuf, PPDMBLKCACHEIOXFER hIoXfer)
 {
     int rc = VINF_SUCCESS;
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
@@ -2220,8 +2220,8 @@ static int drvvdBlkCacheXferEnqueue(PPDMDRVINS pDrvIns,
 }
 
 /** @copydoc FNPDMBLKCACHEXFERENQUEUEDISCARDDRV */
-static int drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCRTRANGE paRanges,
-                                           unsigned cRanges, PPDMBLKCACHEIOXFER hIoXfer)
+static DECLCALLBACK(int) drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCRTRANGE paRanges,
+                                                         unsigned cRanges, PPDMBLKCACHEIOXFER hIoXfer)
 {
     int rc = VINF_SUCCESS;
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);

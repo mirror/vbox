@@ -340,7 +340,7 @@ static int drvscsihostAsyncIOLoopWakeupFunc(void)
  * @param   pDrvIns    Pointer to the device instance data.
  * @param   pThread    Pointer to the thread instance data.
  */
-static int drvscsihostAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvscsihostAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     int rc = VINF_SUCCESS;
     PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
@@ -359,7 +359,7 @@ static int drvscsihostAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     return VINF_SUCCESS;
 }
 
-static int drvscsihostAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvscsihostAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     int rc;
     PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);

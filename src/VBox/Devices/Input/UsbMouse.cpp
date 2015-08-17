@@ -2287,7 +2287,7 @@ static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 /**
  * @copydoc PDMUSBREG::pfnDestruct
  */
-static void usbHidDestruct(PPDMUSBINS pUsbIns)
+static DECLCALLBACK(void) usbHidDestruct(PPDMUSBINS pUsbIns)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogRelFlow(("usbHidDestruct/#%u:\n", pUsbIns->iInstance));

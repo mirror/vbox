@@ -3276,8 +3276,8 @@ static int vboxCmdVBVACmdCalloutProcess(struct VBOXVDMAHOST *pVdma, struct VBOXC
     return rc;
 }
 
-int vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface,
-                                                               struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
+DECLCALLBACK(int) vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                            struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
 {
     PVGASTATE pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
     struct VBOXVDMAHOST *pVdma = pVGAState->pVdma;

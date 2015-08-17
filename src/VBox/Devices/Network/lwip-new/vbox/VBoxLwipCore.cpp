@@ -65,7 +65,7 @@ static LWIPCORE g_LwipCore;
 /**
  * @note: this function executes on TCPIP thread.
  */
-static DECLCALLBACK(void) lwipCoreUserCallback(void *pvArg)
+static void lwipCoreUserCallback(void *pvArg)
 {
     LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
 
@@ -82,7 +82,7 @@ static DECLCALLBACK(void) lwipCoreUserCallback(void *pvArg)
 /**
  * @note: this function executes on TCPIP thread.
  */
-static DECLCALLBACK(void) lwipCoreInitDone(void *pvArg)
+static void lwipCoreInitDone(void *pvArg)
 {
     LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
 
@@ -96,7 +96,7 @@ static DECLCALLBACK(void) lwipCoreInitDone(void *pvArg)
 /**
  * @note: this function executes on TCPIP thread.
  */
-static DECLCALLBACK(void) lwipCoreFiniDone(void *pvArg)
+static void lwipCoreFiniDone(void *pvArg)
 {
     LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
 

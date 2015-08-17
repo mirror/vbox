@@ -1349,7 +1349,7 @@ int vboxVBVASaveStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return vbvaVHWAEnable(PDMINS_2_DATA(pDevIns, PVGASTATE), true);
 }
 
-int vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd)
+DECLCALLBACK(int) vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd)
 {
     int rc;
     Log(("VGA Command <<< Async rc %d %#p, %d\n", pCmd->rc, pCmd, pCmd->enmCmd));

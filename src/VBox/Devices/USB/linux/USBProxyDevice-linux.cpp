@@ -1146,7 +1146,7 @@ static DECLCALLBACK(int) usbProxyLinuxClaimInterface(PUSBPROXYDEV pProxyDev, int
  * Releases an interface.
  * @returns success indicator.
  */
-static int usbProxyLinuxReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
+static DECLCALLBACK(int) usbProxyLinuxReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
     LogFlow(("usbProxyLinuxReleaseInterface: pProxyDev=%s ifnum=%#x\n", usbProxyGetName(pProxyDev), iIf));
 
@@ -1164,7 +1164,7 @@ static int usbProxyLinuxReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
  *
  * @returns success indicator.
  */
-static int usbProxyLinuxSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
+static DECLCALLBACK(int) usbProxyLinuxSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
 {
     struct usbdevfs_setinterface SetIf;
     LogFlow(("usbProxyLinuxSetInterface: pProxyDev=%p iIf=%#x iAlt=%#x\n", pProxyDev, iIf, iAlt));
@@ -1183,7 +1183,7 @@ static int usbProxyLinuxSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
 /**
  * Clears the halted endpoint 'EndPt'.
  */
-static int usbProxyLinuxClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
+static DECLCALLBACK(int) usbProxyLinuxClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
 {
     LogFlow(("usbProxyLinuxClearHaltedEp: pProxyDev=%s EndPt=%u\n", usbProxyGetName(pProxyDev), EndPt));
 

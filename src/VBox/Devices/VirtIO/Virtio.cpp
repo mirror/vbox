@@ -809,10 +809,10 @@ static const char *vpciCounter(const char *pszDevFmt,
 }
 
 // TODO: header
-DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
-                                int iInstance, const char *pcszNameFmt,
-                                uint16_t uSubsystemId, uint16_t uClass,
-                                uint32_t nQueues)
+int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
+                  int iInstance, const char *pcszNameFmt,
+                  uint16_t uSubsystemId, uint16_t uClass,
+                  uint32_t nQueues)
 {
     /* Init handles and log related stuff. */
     RTStrPrintf(pState->szInstance, sizeof(pState->szInstance),

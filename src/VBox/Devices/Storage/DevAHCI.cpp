@@ -4362,7 +4362,7 @@ static int atapiDoTransfer(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbMax,
     return rcSourceSink;
 }
 
-static int atapiReadSectors2352PostProcess(PAHCIREQ pAhciReq, void **ppvProc, size_t *pcbProc)
+static DECLCALLBACK(int) atapiReadSectors2352PostProcess(PAHCIREQ pAhciReq, void **ppvProc, size_t *pcbProc)
 {
     uint8_t *pbBuf = NULL;
     uint32_t cSectors  = pAhciReq->cbTransfer / 2048;

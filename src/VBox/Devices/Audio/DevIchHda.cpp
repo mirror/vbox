@@ -2498,8 +2498,8 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
 
-static DECLCALLBACK(int) hdaTransfer(PHDASTATE pThis,
-                                     ENMSOUNDSOURCE enmSrc, uint32_t cbAvail)
+static int hdaTransfer(PHDASTATE pThis,
+                       ENMSOUNDSOURCE enmSrc, uint32_t cbAvail)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 

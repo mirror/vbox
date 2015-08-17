@@ -300,7 +300,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
  * @param   pThis   The instance data.
  * @param   pcb     Where to store the size.
  */
-static int drvHostDvdGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
+static DECLCALLBACK(int) drvHostDvdGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
 {
     /*
      * Query the media size.
@@ -414,9 +414,9 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
 
 
 /** @copydoc PDMIBLOCK::pfnSendCmd */
-static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
-                             PDMBLOCKTXDIR enmTxDir, void *pvBuf, uint32_t *pcbBuf,
-                             uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies)
+static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
+                                           PDMBLOCKTXDIR enmTxDir, void *pvBuf, uint32_t *pcbBuf,
+                                           uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies)
 {
     PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
     int rc;

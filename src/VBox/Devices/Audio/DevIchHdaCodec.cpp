@@ -866,7 +866,7 @@ static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, 
 }
 
 
-static int stac9220ResetNode(PHDACODEC pThis, uint8_t nodenum, PCODECNODE pNode)
+static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t nodenum, PCODECNODE pNode)
 {
     pNode->node.id = nodenum;
     pNode->node.au32F00_param[0xF] = 0; /* Power statest Supported: are the same as AFG reports */
@@ -2560,7 +2560,7 @@ static DECLCALLBACK(void) codecDbgSelector(PHDACODEC pThis, PCDBGFINFOHLP pHlp, 
 }
 #endif
 
-static int codecLookup(PHDACODEC pThis, uint32_t cmd, PPFNHDACODECVERBPROCESSOR pfn)
+static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, uint32_t cmd, PPFNHDACODECVERBPROCESSOR pfn)
 {
     Assert(CODEC_CAD(cmd) == pThis->id);
     if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))

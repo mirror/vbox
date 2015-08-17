@@ -680,7 +680,7 @@ int VBVAGetInfoViewAndScreen(PVGASTATE pVGAState, uint32_t u32ViewIndex, VBVAINF
 uint32_t HGSMIReset (PHGSMIINSTANCE pIns);
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
-int vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd);
+DECLCALLBACK(int) vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd);
 int vbvaVHWAConstruct (PVGASTATE pVGAState);
 int vbvaVHWAReset (PVGASTATE pVGAState);
 
@@ -695,14 +695,16 @@ int vboxVBVASaveStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 #endif
 
 # ifdef VBOX_WITH_CRHGSMI
-int vboxVDMACrHgsmiCommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc);
-int vboxVDMACrHgsmiControlCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCmd, int rc);
-int vboxCmdVBVACmdHostCtl(PPDMIDISPLAYVBVACALLBACKS pInterface,
-                                                               struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
-                                                               PFNCRCTLCOMPLETION pfnCompletion,
-                                                               void *pvCompletion);
-int vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface,
-                                                               struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
+DECLCALLBACK(int) vboxVDMACrHgsmiCommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                                      PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc);
+DECLCALLBACK(int) vboxVDMACrHgsmiControlCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                                      PVBOXVDMACMD_CHROMIUM_CTL pCmd, int rc);
+DECLCALLBACK(int) vboxCmdVBVACmdHostCtl(PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                        struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
+                                        PFNCRCTLCOMPLETION pfnCompletion,
+                                        void *pvCompletion);
+DECLCALLBACK(int) vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                            struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
 # endif
 
 int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);

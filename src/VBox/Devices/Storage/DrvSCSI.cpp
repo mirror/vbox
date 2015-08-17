@@ -268,7 +268,7 @@ static DECLCALLBACK(int) drvscsiSetLock(VSCSILUN hVScsiLun, void *pvScsiLunUser,
     return VINF_SUCCESS;
 }
 
-static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rc)
+static DECLCALLBACK(int) drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rc)
 {
     PDRVSCSI pThis = PDMIBLOCKASYNCPORT_2_DRVSCSI(pInterface);
     VSCSIIOREQ hVScsiIoReq = (VSCSIIOREQ)pvUser;
@@ -477,9 +477,9 @@ static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun,
     return VINF_SUCCESS;
 }
 
-static void drvscsiVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
-                                     void *pVScsiReqUser, int rcScsiCode, bool fRedoPossible,
-                                     int rcReq)
+static DECLCALLBACK(void) drvscsiVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
+                                                   void *pVScsiReqUser, int rcScsiCode, bool fRedoPossible,
+                                                   int rcReq)
 {
     PDRVSCSI pThis = (PDRVSCSI)pVScsiDeviceUser;
 
@@ -526,7 +526,7 @@ static int drvscsiAsyncIOLoopWakeupFunc(PDRVSCSI pThis)
  * @param   pDrvIns    Pointer to the driver instance data.
  * @param   pThread    Pointer to the thread instance data.
  */
-static int drvscsiAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvscsiAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     int rc = VINF_SUCCESS;
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
@@ -565,7 +565,7 @@ static bool drvscsiAsyncIOLoopNoPendingDummy(PDRVSCSI pThis, uint32_t cMillies)
     return true;
 }
 
-static int drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
     PRTREQ pReq;
