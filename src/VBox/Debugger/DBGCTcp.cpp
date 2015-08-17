@@ -56,7 +56,7 @@ typedef DBGCTCP *PDBGCTCP;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int  dbgcTcpConnection(RTSOCKET Sock, void *pvUser);
+static DECLCALLBACK(int)  dbgcTcpConnection(RTSOCKET Sock, void *pvUser);
 
 
 

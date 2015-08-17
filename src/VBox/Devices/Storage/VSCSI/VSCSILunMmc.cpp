@@ -155,7 +155,7 @@ static int mmcReadTOCMulti(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint1
     return vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
 }
 
-static int vscsiLunMmcInit(PVSCSILUNINT pVScsiLun)
+static DECLCALLBACK(int) vscsiLunMmcInit(PVSCSILUNINT pVScsiLun)
 {
     PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
     uint64_t        cbDisk = 0;
@@ -169,14 +169,14 @@ static int vscsiLunMmcInit(PVSCSILUNINT pVScsiLun)
     return rc;
 }
 
-static int vscsiLunMmcDestroy(PVSCSILUNINT pVScsiLun)
+static DECLCALLBACK(int) vscsiLunMmcDestroy(PVSCSILUNINT pVScsiLun)
 {
     PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
 
     return VINF_SUCCESS;
 }
 
-static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
+static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
 {
     PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
     VSCSIIOREQTXDIR enmTxDir = VSCSIIOREQTXDIR_INVALID;
