@@ -60,7 +60,7 @@ int vbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRequestType en
 }
 
 
-VBGLR3DECL(int) vbglR3GRPerform(VMMDevRequestHeader *pReq)
+int vbglR3GRPerform(VMMDevRequestHeader *pReq)
 {
     return vbglR3DoIOCtl(VBOXGUEST_IOCTL_VMMREQUEST(pReq->size), pReq, pReq->size);
 }
