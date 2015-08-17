@@ -716,8 +716,8 @@ static void dsoundCaptureClose(PDSOUNDSTREAMIN pDSoundStrmIn)
 
 static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pDSoundStrmIn, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDSoundStrmIn, VERR_INVALID_POINTER);
 
     LogFlowFunc(("pDSoundStrmIn=%p, cbBufferIn=%ld, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
                  pDSoundStrmIn,
@@ -858,8 +858,8 @@ static void dsoundCaptureStop(PDSOUNDSTREAMIN pDSoundStrmIn)
 
 static int dsoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pDSoundStrmIn, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDSoundStrmIn, VERR_INVALID_POINTER);
 
     HRESULT hr;
 
@@ -1083,7 +1083,7 @@ static DECLCALLBACK(int) drvHostDSoundControlOut(PPDMIHOSTAUDIO pInterface,
 
         default:
         {
-            AssertMsgFailed(("Invalid command %ld\n", enmStreamCmd));
+            AssertMsgFailed(("Invalid command: %ld\n", enmStreamCmd));
             rc = VERR_INVALID_PARAMETER;
             break;
         }
