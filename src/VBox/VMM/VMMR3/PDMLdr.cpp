@@ -721,8 +721,8 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName,
     LogRel(("PDMLdr: pdmR3LoadR0U: pszName=\"%s\" rc=%Rrc szErr=\"%s\"\n", pszName, rc, ErrInfo.Core.pszMsg));
 
     /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
-    if (RT_FAILURE(rc) && pUVM->pVM) /** @todo VMR3SetErrorU. */
-        rc = VMSetError(pUVM->pVM, rc, RT_SRC_POS, N_("Cannot load R0 module %s: %s"), pszFilename, ErrInfo.Core.pszMsg);
+    if (RT_FAILURE(rc))
+        rc = VMR3SetError(pUVM, rc, RT_SRC_POS, N_("Failed to load R0 module %s: %s"), pszFilename, ErrInfo.Core.pszMsg);
 
     RTMemTmpFree(pszFile); /* might be reference thru pszFilename in the above VMSetError call. */
     return rc;
