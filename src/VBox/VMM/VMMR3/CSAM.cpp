@@ -1035,8 +1035,8 @@ DECLINLINE(int) csamR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCP
  * @param   pUserData   User pointer (callback specific)
  *
  */
-static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC,
-                                 PCSAMP2GLOOKUPREC pCacheRec, void *pUserData)
+static DECLCALLBACK(int) CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC,
+                                               PCSAMP2GLOOKUPREC pCacheRec, void *pUserData)
 {
     PCSAMPAGE pPage = (PCSAMPAGE)pUserData;
     int rc;

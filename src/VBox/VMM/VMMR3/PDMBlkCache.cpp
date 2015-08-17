@@ -1374,7 +1374,7 @@ VMMR3DECL(int) PDMR3BlkCacheRetainInt(PVM pVM, void *pvUser, PPPDMBLKCACHE ppBlk
  * @param    pNode     The node to destroy.
  * @param    pvUser    Opaque user data.
  */
-static int pdmBlkCacheEntryDestroy(PAVLRU64NODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) pdmBlkCacheEntryDestroy(PAVLRU64NODECORE pNode, void *pvUser)
 {
     PPDMBLKCACHEENTRY  pEntry = (PPDMBLKCACHEENTRY)pNode;
     PPDMBLKCACHEGLOBAL pCache = (PPDMBLKCACHEGLOBAL)pvUser;
@@ -2694,7 +2694,7 @@ VMMR3DECL(void) PDMR3BlkCacheIoXferComplete(PPDMBLKCACHE pBlkCache, PPDMBLKCACHE
  * @param    pNode     The node to destroy.
  * @param    pvUser    Opaque user data.
  */
-static int pdmBlkCacheEntryQuiesce(PAVLRU64NODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) pdmBlkCacheEntryQuiesce(PAVLRU64NODECORE pNode, void *pvUser)
 {
     PPDMBLKCACHEENTRY   pEntry    = (PPDMBLKCACHEENTRY)pNode;
     PPDMBLKCACHE        pBlkCache = pEntry->pBlkCache;
