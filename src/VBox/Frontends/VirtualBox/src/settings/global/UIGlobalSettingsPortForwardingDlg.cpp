@@ -27,6 +27,7 @@
 /* GUI includes: */
 # include "UIGlobalSettingsPortForwardingDlg.h"
 # include "UIIconPool.h"
+# include "UIMessageCenter.h"
 # include "QIDialogButtonBox.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -94,9 +95,9 @@ void UIGlobalSettingsPortForwardingDlg::accept()
 
 void UIGlobalSettingsPortForwardingDlg::reject()
 {
-    /* Discard table: */
-    bool fPassed = m_pIPv4Table->discard() && m_pIPv6Table->discard();
-    if (!fPassed)
+    /* Ask user to discard table changes if necessary: */
+    if (   (m_pIPv4Table->isChanged() || m_pIPv6Table->isChanged())
+        && !msgCenter().confirmCancelingPortForwardingDialog(window()))
         return;
     /* Call to base-class: */
     QIWithRetranslateUI<QIDialog>::reject();

@@ -134,7 +134,9 @@ public:
     /* API: Rules stuff: */
     const UIPortForwardingDataList& rules() const;
     bool validate() const;
-    bool discard() const;
+
+    /** Returns whether the table data was changed. */
+    bool isChanged() const { return m_fIsTableDataChanged; }
 
 private slots:
 
@@ -143,8 +145,10 @@ private slots:
     void sltCopyRule();
     void sltDelRule();
 
+    /** Marks table data as changed. */
+    void sltTableDataChanged() { m_fIsTableDataChanged = true; }
+
     /* Handlers: Table stuff: */
-    void sltTableDataChanged();
     void sltCurrentChanged();
     void sltShowTableContexMenu(const QPoint &position);
     void sltAdjustTable();
@@ -159,6 +163,8 @@ private:
 
     /* Flags: */
     bool m_fAllowEmptyGuestIPs;
+
+    /** Holds whether the table data was changed. */
     bool m_fIsTableDataChanged;
 
     /* Widgets: */
