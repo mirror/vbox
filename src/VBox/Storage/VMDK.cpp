@@ -3249,7 +3249,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             {
                 case VMDKETYPE_HOSTED_SPARSE:
                     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      VDOpenFlagsToFileOpenFlags(uOpenFlags | (pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0,
+                                      VDOpenFlagsToFileOpenFlags(uOpenFlags | ((pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0),
                                                                  false /* fCreate */));
                     if (RT_FAILURE(rc))
                     {
@@ -3276,7 +3276,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
                 case VMDKETYPE_VMFS:
                 case VMDKETYPE_FLAT:
                     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      VDOpenFlagsToFileOpenFlags(uOpenFlags | (pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0,
+                                      VDOpenFlagsToFileOpenFlags(uOpenFlags | ((pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0),
                                                                  false /* fCreate */));
                     if (RT_FAILURE(rc))
                     {
@@ -3402,7 +3402,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
         /* Open flat image, the raw disk. */
         rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                          VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags | (pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0,
+                          VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags | ((pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0),
                                                      false /* fCreate */));
         if (RT_FAILURE(rc))
             return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not open raw disk file '%s'"), pExtent->pszFullname);
@@ -3510,7 +3510,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
                 /* Create partition table flat image. */
                 rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                  VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags | (pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0,
+                                  VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags | ((pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0),
                                                              true /* fCreate */));
                 if (RT_FAILURE(rc))
                     return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not create new partition data file '%s'"), pExtent->pszFullname);
@@ -3545,7 +3545,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
                     /* Open flat image, the raw partition. */
                     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags | (pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0,
+                                      VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags | ((pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0),
                                                                  false /* fCreate */));
                     if (RT_FAILURE(rc))
                         return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not open raw partition file '%s'"), pExtent->pszFullname);
