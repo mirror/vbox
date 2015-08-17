@@ -42,7 +42,7 @@
 #  define PDMBOTHCBDECL(type)   DECLEXPORT(type)
 # endif
 #else
-# define PDMBOTHCBDECL(type)    static type
+# define PDMBOTHCBDECL(type)    static DECLCALLBACK(type)
 #endif
 
 /** @def PDMINS_2_DATA

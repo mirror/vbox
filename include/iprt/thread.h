@@ -843,7 +843,7 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
  *
  * @param   pvValue     The current value.
  */
-typedef DECLCALLBACK(void) FNRTTLSDTOR(void *pvValue);
+typedef void FNRTTLSDTOR(void *pvValue);
 /** Pointer to a FNRTTLSDTOR. */
 typedef FNRTTLSDTOR *PFNRTTLSDTOR;
 
