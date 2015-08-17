@@ -592,16 +592,8 @@ typedef VBOXHDDBACKEND *PVBOXHDDBACKEND;
 typedef const VBOXHDDBACKEND *PCVBOXHDDBACKEND;
 
 /** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
-DECLINLINE(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
-{
-    *pszLocation = NULL;
-    return VINF_SUCCESS;
-}
+DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation);
 /** @copydoc VBOXHDDBACKEND::pfnComposeName */
-DECLINLINE(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName)
-{
-    *pszName = NULL;
-    return VINF_SUCCESS;
-}
+DECLCALLBACK(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName);
 
 #endif

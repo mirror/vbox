@@ -661,11 +661,11 @@ static PCVDFILTERBACKEND *g_apFilterBackends = NULL;
 static RTLDRMOD *g_ahFilterBackendPlugins = NULL;
 
 /** Forward declaration of the async discard helper. */
-static int vdDiscardHelperAsync(PVDIOCTX pIoCtx);
-static int vdWriteHelperAsync(PVDIOCTX pIoCtx);
+static DECLCALLBACK(int) vdDiscardHelperAsync(PVDIOCTX pIoCtx);
+static DECLCALLBACK(int) vdWriteHelperAsync(PVDIOCTX pIoCtx);
 static void vdDiskProcessBlockedIoCtx(PVBOXHDD pDisk);
 static int vdDiskUnlock(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc);
-static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq);
+static void vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq);
 
 /**
  * internal: add several backends.
@@ -2011,7 +2011,7 @@ static int vdDiskReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImagePare
  * internal: read the specified amount of data in whatever blocks the backend
  * will give us - async version.
  */
-static int vdReadHelperAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdReadHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc;
     PVBOXHDD pDisk                = pIoCtx->pDisk;
@@ -2165,8 +2165,8 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
 /**
  * internal: parent image read wrapper for compacting.
  */
-static int vdParentRead(void *pvUser, uint64_t uOffset, void *pvBuf,
-                        size_t cbRead)
+static DECLCALLBACK(int) vdParentRead(void *pvUser, uint64_t uOffset, void *pvBuf,
+                                      size_t cbRead)
 {
     PVDPARENTSTATEDESC pParentState = (PVDPARENTSTATEDESC)pvUser;
 
@@ -2522,7 +2522,7 @@ static int vdCopyHelper(PVBOXHDD pDiskFrom, PVDIMAGE pImageFrom, PVBOXHDD pDiskT
 /**
  * Flush helper async version.
  */
-static int vdSetModifiedHelperAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdSetModifiedHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = pIoCtx->pDisk;
@@ -2587,7 +2587,7 @@ static int vdSetModifiedFlagAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
     return rc;
 }
 
-static int vdWriteHelperCommitAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdWriteHelperCommitAsync(PVDIOCTX pIoCtx)
 {
     int rc             = VINF_SUCCESS;
     PVDIMAGE pImage    = pIoCtx->Req.Io.pImageStart;
@@ -2615,7 +2615,7 @@ static int vdWriteHelperCommitAsync(PVDIOCTX pIoCtx)
     return rc;
 }
 
-static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage       = pIoCtx->Req.Io.pImageCur;
@@ -2693,7 +2693,7 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
     return rc;
 }
 
-static int vdWriteHelperOptimizedPreReadAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdWriteHelperOptimizedPreReadAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
 
@@ -2722,7 +2722,7 @@ static int vdWriteHelperOptimizedPreReadAsync(PVDIOCTX pIoCtx)
  * that do not change the data relative to the state as of the parent images.
  * All backends which support differential/growing images support this - async version.
  */
-static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
 {
     PVBOXHDD pDisk = pIoCtx->pDisk;
     uint64_t uOffset   = pIoCtx->Type.Child.uOffsetSaved;
@@ -2772,7 +2772,7 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
     return VINF_SUCCESS;
 }
 
-static int vdWriteHelperStandardReadImageAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdWriteHelperStandardReadImageAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
 
@@ -2807,7 +2807,7 @@ static int vdWriteHelperStandardReadImageAsync(PVDIOCTX pIoCtx)
     return rc;
 }
 
-static int vdWriteHelperStandardAssemble(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdWriteHelperStandardAssemble(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
     size_t cbPostRead  = pIoCtx->Type.Child.cbPostRead;
@@ -2870,7 +2870,7 @@ static int vdWriteHelperStandardAssemble(PVDIOCTX pIoCtx)
     return rc;
 }
 
-static int vdWriteHelperStandardPreReadAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdWriteHelperStandardPreReadAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
 
@@ -2892,7 +2892,7 @@ static int vdWriteHelperStandardPreReadAsync(PVDIOCTX pIoCtx)
     return rc;
 }
 
-static int vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
 {
     PVBOXHDD pDisk = pIoCtx->pDisk;
     uint64_t uOffset   = pIoCtx->Type.Child.uOffsetSaved;
@@ -2953,7 +2953,7 @@ static int vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
  * internal: write buffer to the image, taking care of block boundaries and
  * write optimizations - async version.
  */
-static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdWriteHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc;
     size_t cbWrite   = pIoCtx->Req.Io.cbTransfer;
@@ -3133,7 +3133,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
 /**
  * Flush helper async version.
  */
-static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdFlushHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = pIoCtx->pDisk;
@@ -3177,7 +3177,7 @@ static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
  * @returns VBox status code.
  * @param   pIoCtx    The I/O context to operate on.
  */
-static int vdDiscardWholeBlockAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdDiscardWholeBlockAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = pIoCtx->pDisk;
@@ -3315,7 +3315,7 @@ static int vdDiscardRemoveBlocksAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx, size_t cb
  * @returns VBox status code.
  * @param   pIoCtx    The I/O context to operate on.
  */
-static int vdDiscardCurrentRangeAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdDiscardCurrentRangeAsync(PVDIOCTX pIoCtx)
 {
     PVBOXHDD        pDisk         = pIoCtx->pDisk;
     PVDDISCARDSTATE pDiscard      = pDisk->pDiscard;
@@ -3388,7 +3388,7 @@ static int vdDiscardCurrentRangeAsync(PVDIOCTX pIoCtx)
  * @returns VBox status code.
  * @param   pIoCtx    The I/O context to operate on.
  */
-static int vdDiscardHelperAsync(PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) vdDiscardHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc             = VINF_SUCCESS;
     PVBOXHDD  pDisk    = pIoCtx->pDisk;
@@ -3922,9 +3922,9 @@ out:
 /**
  * VD async I/O interface open callback.
  */
-static int vdIOOpenFallback(void *pvUser, const char *pszLocation,
-                            uint32_t fOpen, PFNVDCOMPLETED pfnCompleted,
-                            void **ppStorage)
+static DECLCALLBACK(int) vdIOOpenFallback(void *pvUser, const char *pszLocation,
+                                          uint32_t fOpen, PFNVDCOMPLETED pfnCompleted,
+                                          void **ppStorage)
 {
     PVDIIOFALLBACKSTORAGE pStorage = (PVDIIOFALLBACKSTORAGE)RTMemAllocZ(sizeof(VDIIOFALLBACKSTORAGE));
 
@@ -3948,7 +3948,7 @@ static int vdIOOpenFallback(void *pvUser, const char *pszLocation,
 /**
  * VD async I/O interface close callback.
  */
-static int vdIOCloseFallback(void *pvUser, void *pvStorage)
+static DECLCALLBACK(int) vdIOCloseFallback(void *pvUser, void *pvStorage)
 {
     PVDIIOFALLBACKSTORAGE pStorage = (PVDIIOFALLBACKSTORAGE)pvStorage;
 
@@ -3957,22 +3957,22 @@ static int vdIOCloseFallback(void *pvUser, void *pvStorage)
     return VINF_SUCCESS;
 }
 
-static int vdIODeleteFallback(void *pvUser, const char *pcszFilename)
+static DECLCALLBACK(int) vdIODeleteFallback(void *pvUser, const char *pcszFilename)
 {
     return RTFileDelete(pcszFilename);
 }
 
-static int vdIOMoveFallback(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
+static DECLCALLBACK(int) vdIOMoveFallback(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
 {
     return RTFileMove(pcszSrc, pcszDst, fMove);
 }
 
-static int vdIOGetFreeSpaceFallback(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
+static DECLCALLBACK(int) vdIOGetFreeSpaceFallback(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
 {
     return RTFsQuerySizes(pcszFilename, NULL, pcbFreeSpace, NULL, NULL);
 }
 
-static int vdIOGetModificationTimeFallback(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
+static DECLCALLBACK(int) vdIOGetModificationTimeFallback(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
 {
     RTFSOBJINFO info;
     int rc = RTPathQueryInfo(pcszFilename, &info, RTFSOBJATTRADD_NOTHING);
@@ -3984,7 +3984,7 @@ static int vdIOGetModificationTimeFallback(void *pvUser, const char *pcszFilenam
 /**
  * VD async I/O interface callback for retrieving the file size.
  */
-static int vdIOGetSizeFallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
+static DECLCALLBACK(int) vdIOGetSizeFallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
 {
     PVDIIOFALLBACKSTORAGE pStorage = (PVDIIOFALLBACKSTORAGE)pvStorage;
 
@@ -3994,7 +3994,7 @@ static int vdIOGetSizeFallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
 /**
  * VD async I/O interface callback for setting the file size.
  */
-static int vdIOSetSizeFallback(void *pvUser, void *pvStorage, uint64_t cbSize)
+static DECLCALLBACK(int) vdIOSetSizeFallback(void *pvUser, void *pvStorage, uint64_t cbSize)
 {
     PVDIIOFALLBACKSTORAGE pStorage = (PVDIIOFALLBACKSTORAGE)pvStorage;
 
@@ -4004,7 +4004,7 @@ static int vdIOSetSizeFallback(void *pvUser, void *pvStorage, uint64_t cbSize)
 /**
  * VD async I/O interface callback for a synchronous write to the file.
  */
-static int vdIOWriteSyncFallback(void *pvUser, void *pvStorage, uint64_t uOffset,
+static DECLCALLBACK(int) vdIOWriteSyncFallback(void *pvUser, void *pvStorage, uint64_t uOffset,
                               const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
 {
     PVDIIOFALLBACKSTORAGE pStorage = (PVDIIOFALLBACKSTORAGE)pvStorage;
@@ -4015,7 +4015,7 @@ static int vdIOWriteSyncFallback(void *pvUser, void *pvStorage, uint64_t uOffset
 /**
  * VD async I/O interface callback for a synchronous read from the file.
  */
-static int vdIOReadSyncFallback(void *pvUser, void *pvStorage, uint64_t uOffset,
+static DECLCALLBACK(int) vdIOReadSyncFallback(void *pvUser, void *pvStorage, uint64_t uOffset,
                              void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
     PVDIIOFALLBACKSTORAGE pStorage = (PVDIIOFALLBACKSTORAGE)pvStorage;
@@ -4026,7 +4026,7 @@ static int vdIOReadSyncFallback(void *pvUser, void *pvStorage, uint64_t uOffset,
 /**
  * VD async I/O interface callback for a synchronous flush of the file data.
  */
-static int vdIOFlushSyncFallback(void *pvUser, void *pvStorage)
+static DECLCALLBACK(int) vdIOFlushSyncFallback(void *pvUser, void *pvStorage)
 {
     PVDIIOFALLBACKSTORAGE pStorage = (PVDIIOFALLBACKSTORAGE)pvStorage;
 
@@ -4036,10 +4036,10 @@ static int vdIOFlushSyncFallback(void *pvUser, void *pvStorage)
 /**
  * VD async I/O interface callback for a asynchronous read from the file.
  */
-static int vdIOReadAsyncFallback(void *pvUser, void *pStorage, uint64_t uOffset,
-                                 PCRTSGSEG paSegments, size_t cSegments,
-                                 size_t cbRead, void *pvCompletion,
-                                 void **ppTask)
+static DECLCALLBACK(int) vdIOReadAsyncFallback(void *pvUser, void *pStorage, uint64_t uOffset,
+                                               PCRTSGSEG paSegments, size_t cSegments,
+                                               size_t cbRead, void *pvCompletion,
+                                               void **ppTask)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -4047,10 +4047,10 @@ static int vdIOReadAsyncFallback(void *pvUser, void *pStorage, uint64_t uOffset,
 /**
  * VD async I/O interface callback for a asynchronous write to the file.
  */
-static int vdIOWriteAsyncFallback(void *pvUser, void *pStorage, uint64_t uOffset,
-                                  PCRTSGSEG paSegments, size_t cSegments,
-                                  size_t cbWrite, void *pvCompletion,
-                                  void **ppTask)
+static DECLCALLBACK(int) vdIOWriteAsyncFallback(void *pvUser, void *pStorage, uint64_t uOffset,
+                                                PCRTSGSEG paSegments, size_t cSegments,
+                                                size_t cbWrite, void *pvCompletion,
+                                                void **ppTask)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -4058,8 +4058,8 @@ static int vdIOWriteAsyncFallback(void *pvUser, void *pStorage, uint64_t uOffset
 /**
  * VD async I/O interface callback for a asynchronous flush of the file data.
  */
-static int vdIOFlushAsyncFallback(void *pvUser, void *pStorage,
-                                  void *pvCompletion, void **ppTask)
+static DECLCALLBACK(int) vdIOFlushAsyncFallback(void *pvUser, void *pStorage,
+                                                void *pvCompletion, void **ppTask)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -4507,7 +4507,7 @@ static void vdXferTryLockDiskDeferIoTask(PVDIOTASK pIoTask)
     }
 }
 
-static int vdIOIntReqCompleted(void *pvUser, int rcReq)
+static DECLCALLBACK(int) vdIOIntReqCompleted(void *pvUser, int rcReq)
 {
     PVDIOTASK pIoTask = (PVDIOTASK)pvUser;
 
@@ -4521,8 +4521,8 @@ static int vdIOIntReqCompleted(void *pvUser, int rcReq)
 /**
  * VD I/O interface callback for opening a file.
  */
-static int vdIOIntOpen(void *pvUser, const char *pszLocation,
-                       unsigned uOpenFlags, PPVDIOSTORAGE ppIoStorage)
+static DECLCALLBACK(int) vdIOIntOpen(void *pvUser, const char *pszLocation,
+                                     unsigned uOpenFlags, PPVDIOSTORAGE ppIoStorage)
 {
     int rc = VINF_SUCCESS;
     PVDIO pVDIo             = (PVDIO)pvUser;
@@ -4555,13 +4555,13 @@ static int vdIOIntOpen(void *pvUser, const char *pszLocation,
     return rc;
 }
 
-static int vdIOIntTreeMetaXferDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) vdIOIntTreeMetaXferDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
 {
     AssertMsgFailed(("Tree should be empty at this point!\n"));
     return VINF_SUCCESS;
 }
 
-static int vdIOIntClose(void *pvUser, PVDIOSTORAGE pIoStorage)
+static DECLCALLBACK(int) vdIOIntClose(void *pvUser, PVDIOSTORAGE pIoStorage)
 {
     int rc = VINF_SUCCESS;
     PVDIO pVDIo = (PVDIO)pvUser;
@@ -4574,55 +4574,55 @@ static int vdIOIntClose(void *pvUser, PVDIOSTORAGE pIoStorage)
     return rc;
 }
 
-static int vdIOIntDelete(void *pvUser, const char *pcszFilename)
+static DECLCALLBACK(int) vdIOIntDelete(void *pvUser, const char *pcszFilename)
 {
     PVDIO pVDIo = (PVDIO)pvUser;
     return pVDIo->pInterfaceIo->pfnDelete(pVDIo->pInterfaceIo->Core.pvUser,
                                           pcszFilename);
 }
 
-static int vdIOIntMove(void *pvUser, const char *pcszSrc, const char *pcszDst,
-                       unsigned fMove)
+static DECLCALLBACK(int) vdIOIntMove(void *pvUser, const char *pcszSrc, const char *pcszDst,
+                                     unsigned fMove)
 {
     PVDIO pVDIo = (PVDIO)pvUser;
     return pVDIo->pInterfaceIo->pfnMove(pVDIo->pInterfaceIo->Core.pvUser,
                                         pcszSrc, pcszDst, fMove);
 }
 
-static int vdIOIntGetFreeSpace(void *pvUser, const char *pcszFilename,
-                               int64_t *pcbFreeSpace)
+static DECLCALLBACK(int) vdIOIntGetFreeSpace(void *pvUser, const char *pcszFilename,
+                                             int64_t *pcbFreeSpace)
 {
     PVDIO pVDIo = (PVDIO)pvUser;
     return pVDIo->pInterfaceIo->pfnGetFreeSpace(pVDIo->pInterfaceIo->Core.pvUser,
                                                 pcszFilename, pcbFreeSpace);
 }
 
-static int vdIOIntGetModificationTime(void *pvUser, const char *pcszFilename,
-                                      PRTTIMESPEC pModificationTime)
+static DECLCALLBACK(int) vdIOIntGetModificationTime(void *pvUser, const char *pcszFilename,
+                                                    PRTTIMESPEC pModificationTime)
 {
     PVDIO pVDIo = (PVDIO)pvUser;
     return pVDIo->pInterfaceIo->pfnGetModificationTime(pVDIo->pInterfaceIo->Core.pvUser,
                                                        pcszFilename, pModificationTime);
 }
 
-static int vdIOIntGetSize(void *pvUser, PVDIOSTORAGE pIoStorage,
-                          uint64_t *pcbSize)
+static DECLCALLBACK(int) vdIOIntGetSize(void *pvUser, PVDIOSTORAGE pIoStorage,
+                                        uint64_t *pcbSize)
 {
     PVDIO pVDIo = (PVDIO)pvUser;
     return pVDIo->pInterfaceIo->pfnGetSize(pVDIo->pInterfaceIo->Core.pvUser,
                                            pIoStorage->pStorage, pcbSize);
 }
 
-static int vdIOIntSetSize(void *pvUser, PVDIOSTORAGE pIoStorage,
-                          uint64_t cbSize)
+static DECLCALLBACK(int) vdIOIntSetSize(void *pvUser, PVDIOSTORAGE pIoStorage,
+                                        uint64_t cbSize)
 {
     PVDIO pVDIo = (PVDIO)pvUser;
     return pVDIo->pInterfaceIo->pfnSetSize(pVDIo->pInterfaceIo->Core.pvUser,
                                            pIoStorage->pStorage, cbSize);
 }
 
-static int vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
-                           PVDIOCTX pIoCtx, size_t cbRead)
+static DECLCALLBACK(int) vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                                         PVDIOCTX pIoCtx, size_t cbRead)
 {
     int rc = VINF_SUCCESS;
     PVDIO    pVDIo = (PVDIO)pvUser;
@@ -4718,9 +4718,9 @@ static int vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffs
     return rc;
 }
 
-static int vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
-                            PVDIOCTX pIoCtx, size_t cbWrite, PFNVDXFERCOMPLETED pfnComplete,
-                            void *pvCompleteUser)
+static DECLCALLBACK(int) vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                                          PVDIOCTX pIoCtx, size_t cbWrite, PFNVDXFERCOMPLETED pfnComplete,
+                                          void *pvCompleteUser)
 {
     int rc = VINF_SUCCESS;
     PVDIO    pVDIo = (PVDIO)pvUser;
@@ -4818,10 +4818,10 @@ static int vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOff
     return rc;
 }
 
-static int vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
-                           void *pvBuf, size_t cbRead, PVDIOCTX pIoCtx,
-                           PPVDMETAXFER ppMetaXfer, PFNVDXFERCOMPLETED pfnComplete,
-                           void *pvCompleteUser)
+static DECLCALLBACK(int) vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                                         void *pvBuf, size_t cbRead, PVDIOCTX pIoCtx,
+                                         PPVDMETAXFER ppMetaXfer, PFNVDXFERCOMPLETED pfnComplete,
+                                         void *pvCompleteUser)
 {
     PVDIO pVDIo     = (PVDIO)pvUser;
     PVBOXHDD pDisk  = pVDIo->pDisk;
@@ -4940,9 +4940,9 @@ static int vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffs
     return rc;
 }
 
-static int vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
-                            const void *pvBuf, size_t cbWrite, PVDIOCTX pIoCtx,
-                            PFNVDXFERCOMPLETED pfnComplete, void *pvCompleteUser)
+static DECLCALLBACK(int) vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                                          const void *pvBuf, size_t cbWrite, PVDIOCTX pIoCtx,
+                                          PFNVDXFERCOMPLETED pfnComplete, void *pvCompleteUser)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -5098,7 +5098,7 @@ static int vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOff
     return rc;
 }
 
-static void vdIOIntMetaXferRelease(void *pvUser, PVDMETAXFER pMetaXfer)
+static DECLCALLBACK(void) vdIOIntMetaXferRelease(void *pvUser, PVDMETAXFER pMetaXfer)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -5133,8 +5133,8 @@ static void vdIOIntMetaXferRelease(void *pvUser, PVDMETAXFER pMetaXfer)
     }
 }
 
-static int vdIOIntFlush(void *pvUser, PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
-                        PFNVDXFERCOMPLETED pfnComplete, void *pvCompleteUser)
+static DECLCALLBACK(int) vdIOIntFlush(void *pvUser, PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
+                                      PFNVDXFERCOMPLETED pfnComplete, void *pvCompleteUser)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -5210,8 +5210,8 @@ static int vdIOIntFlush(void *pvUser, PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
     return rc;
 }
 
-static size_t vdIOIntIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
-                                 const void *pvBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vdIOIntIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
+                                               const void *pvBuf, size_t cbBuf)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -5230,8 +5230,8 @@ static size_t vdIOIntIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
     return cbCopied;
 }
 
-static size_t vdIOIntIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
-                                   void *pvBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vdIOIntIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
+                                                 void *pvBuf, size_t cbBuf)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -5250,7 +5250,7 @@ static size_t vdIOIntIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
     return cbCopied;
 }
 
-static size_t vdIOIntIoCtxSet(void *pvUser, PVDIOCTX pIoCtx, int ch, size_t cb)
+static DECLCALLBACK(size_t) vdIOIntIoCtxSet(void *pvUser, PVDIOCTX pIoCtx, int ch, size_t cb)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -5269,9 +5269,9 @@ static size_t vdIOIntIoCtxSet(void *pvUser, PVDIOCTX pIoCtx, int ch, size_t cb)
     return cbSet;
 }
 
-static size_t vdIOIntIoCtxSegArrayCreate(void *pvUser, PVDIOCTX pIoCtx,
-                                         PRTSGSEG paSeg, unsigned *pcSeg,
-                                         size_t cbData)
+static DECLCALLBACK(size_t) vdIOIntIoCtxSegArrayCreate(void *pvUser, PVDIOCTX pIoCtx,
+                                                       PRTSGSEG paSeg, unsigned *pcSeg,
+                                                       size_t cbData)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -5291,8 +5291,8 @@ static size_t vdIOIntIoCtxSegArrayCreate(void *pvUser, PVDIOCTX pIoCtx,
     return cbCreated;
 }
 
-static void vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
-                                  size_t cbCompleted)
+static DECLCALLBACK(void) vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
+                                                size_t cbCompleted)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -5360,8 +5360,8 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxGetDataUnitSize(void *pvUser, PVDIOCTX p
 /**
  * VD I/O interface callback for opening a file (limited version for VDGetFormat).
  */
-static int vdIOIntOpenLimited(void *pvUser, const char *pszLocation,
-                              uint32_t fOpen, PPVDIOSTORAGE ppIoStorage)
+static DECLCALLBACK(int) vdIOIntOpenLimited(void *pvUser, const char *pszLocation,
+                                            uint32_t fOpen, PPVDIOSTORAGE ppIoStorage)
 {
     int rc = VINF_SUCCESS;
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
@@ -5379,7 +5379,7 @@ static int vdIOIntOpenLimited(void *pvUser, const char *pszLocation,
     return rc;
 }
 
-static int vdIOIntCloseLimited(void *pvUser, PVDIOSTORAGE pIoStorage)
+static DECLCALLBACK(int) vdIOIntCloseLimited(void *pvUser, PVDIOSTORAGE pIoStorage)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
     int rc = pInterfaceIo->pfnClose(NULL, pIoStorage->pStorage);
@@ -5388,53 +5388,53 @@ static int vdIOIntCloseLimited(void *pvUser, PVDIOSTORAGE pIoStorage)
     return rc;
 }
 
-static int vdIOIntDeleteLimited(void *pvUser, const char *pcszFilename)
+static DECLCALLBACK(int) vdIOIntDeleteLimited(void *pvUser, const char *pcszFilename)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
     return pInterfaceIo->pfnDelete(NULL, pcszFilename);
 }
 
-static int vdIOIntMoveLimited(void *pvUser, const char *pcszSrc,
-                              const char *pcszDst, unsigned fMove)
+static DECLCALLBACK(int) vdIOIntMoveLimited(void *pvUser, const char *pcszSrc,
+                                            const char *pcszDst, unsigned fMove)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
     return pInterfaceIo->pfnMove(NULL, pcszSrc, pcszDst, fMove);
 }
 
-static int vdIOIntGetFreeSpaceLimited(void *pvUser, const char *pcszFilename,
-                                      int64_t *pcbFreeSpace)
+static DECLCALLBACK(int) vdIOIntGetFreeSpaceLimited(void *pvUser, const char *pcszFilename,
+                                                    int64_t *pcbFreeSpace)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
     return pInterfaceIo->pfnGetFreeSpace(NULL, pcszFilename, pcbFreeSpace);
 }
 
-static int vdIOIntGetModificationTimeLimited(void *pvUser,
-                                             const char *pcszFilename,
-                                             PRTTIMESPEC pModificationTime)
+static DECLCALLBACK(int) vdIOIntGetModificationTimeLimited(void *pvUser,
+                                                           const char *pcszFilename,
+                                                           PRTTIMESPEC pModificationTime)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
     return pInterfaceIo->pfnGetModificationTime(NULL, pcszFilename, pModificationTime);
 }
 
-static int vdIOIntGetSizeLimited(void *pvUser, PVDIOSTORAGE pIoStorage,
-                                 uint64_t *pcbSize)
+static DECLCALLBACK(int) vdIOIntGetSizeLimited(void *pvUser, PVDIOSTORAGE pIoStorage,
+                                               uint64_t *pcbSize)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
     return pInterfaceIo->pfnGetSize(NULL, pIoStorage->pStorage, pcbSize);
 }
 
-static int vdIOIntSetSizeLimited(void *pvUser, PVDIOSTORAGE pIoStorage,
-                                 uint64_t cbSize)
+static DECLCALLBACK(int) vdIOIntSetSizeLimited(void *pvUser, PVDIOSTORAGE pIoStorage,
+                                               uint64_t cbSize)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
     return pInterfaceIo->pfnSetSize(NULL, pIoStorage->pStorage, cbSize);
 }
 
-static int vdIOIntWriteUserLimited(void *pvUser, PVDIOSTORAGE pStorage,
-                                   uint64_t uOffset, PVDIOCTX pIoCtx,
-                                   size_t cbWrite,
-                                   PFNVDXFERCOMPLETED pfnComplete,
-                                   void *pvCompleteUser)
+static DECLCALLBACK(int) vdIOIntWriteUserLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                                                 uint64_t uOffset, PVDIOCTX pIoCtx,
+                                                 size_t cbWrite,
+                                                 PFNVDXFERCOMPLETED pfnComplete,
+                                                 void *pvCompleteUser)
 {
     NOREF(pvUser);
     NOREF(pStorage);
@@ -5446,9 +5446,9 @@ static int vdIOIntWriteUserLimited(void *pvUser, PVDIOSTORAGE pStorage,
     AssertMsgFailedReturn(("This needs to be implemented when called\n"), VERR_NOT_IMPLEMENTED);
 }
 
-static int vdIOIntReadUserLimited(void *pvUser, PVDIOSTORAGE pStorage,
-                                  uint64_t uOffset, PVDIOCTX pIoCtx,
-                                  size_t cbRead)
+static DECLCALLBACK(int) vdIOIntReadUserLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                                                uint64_t uOffset, PVDIOCTX pIoCtx,
+                                                size_t cbRead)
 {
     NOREF(pvUser);
     NOREF(pStorage);
@@ -5458,11 +5458,11 @@ static int vdIOIntReadUserLimited(void *pvUser, PVDIOSTORAGE pStorage,
     AssertMsgFailedReturn(("This needs to be implemented when called\n"), VERR_NOT_IMPLEMENTED);
 }
 
-static int vdIOIntWriteMetaLimited(void *pvUser, PVDIOSTORAGE pStorage,
-                                   uint64_t uOffset, const void *pvBuffer,
-                                   size_t cbBuffer, PVDIOCTX pIoCtx,
-                                   PFNVDXFERCOMPLETED pfnComplete,
-                                   void *pvCompleteUser)
+static DECLCALLBACK(int) vdIOIntWriteMetaLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                                                 uint64_t uOffset, const void *pvBuffer,
+                                                 size_t cbBuffer, PVDIOCTX pIoCtx,
+                                                 PFNVDXFERCOMPLETED pfnComplete,
+                                                 void *pvCompleteUser)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
 
@@ -5473,12 +5473,12 @@ static int vdIOIntWriteMetaLimited(void *pvUser, PVDIOSTORAGE pStorage,
     return pInterfaceIo->pfnWriteSync(NULL, pStorage->pStorage, uOffset, pvBuffer, cbBuffer, NULL);
 }
 
-static int vdIOIntReadMetaLimited(void *pvUser, PVDIOSTORAGE pStorage,
-                                  uint64_t uOffset, void *pvBuffer,
-                                  size_t cbBuffer, PVDIOCTX pIoCtx,
-                                  PPVDMETAXFER ppMetaXfer,
-                                  PFNVDXFERCOMPLETED pfnComplete,
-                                  void *pvCompleteUser)
+static DECLCALLBACK(int) vdIOIntReadMetaLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                                                uint64_t uOffset, void *pvBuffer,
+                                                size_t cbBuffer, PVDIOCTX pIoCtx,
+                                                PPVDMETAXFER ppMetaXfer,
+                                                PFNVDXFERCOMPLETED pfnComplete,
+                                                void *pvCompleteUser)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
 
@@ -5497,10 +5497,10 @@ static int vdIOIntMetaXferReleaseLimited(void *pvUser, PVDMETAXFER pMetaXfer)
     return VINF_SUCCESS;
 }
 
-static int vdIOIntFlushLimited(void *pvUser, PVDIOSTORAGE pStorage,
-                               PVDIOCTX pIoCtx,
-                               PFNVDXFERCOMPLETED pfnComplete,
-                               void *pvCompleteUser)
+static DECLCALLBACK(int) vdIOIntFlushLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                                             PVDIOCTX pIoCtx,
+                                             PFNVDXFERCOMPLETED pfnComplete,
+                                             void *pvCompleteUser)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
 
@@ -5514,7 +5514,7 @@ static int vdIOIntFlushLimited(void *pvUser, PVDIOSTORAGE pStorage,
 /**
  * internal: send output to the log (unconditionally).
  */
-int vdLogMessage(void *pvUser, const char *pszFormat, va_list args)
+static DECLCALLBACK(int) vdLogMessage(void *pvUser, const char *pszFormat, va_list args)
 {
     NOREF(pvUser);
     RTLogPrintfV(pszFormat, args);
@@ -5646,7 +5646,7 @@ static void vdIfIoIntCallbacksSetup(PVDINTERFACEIOINT pIfIoInt)
 /**
  * Internally used completion handler for synchronous I/O contexts.
  */
-static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq)
+static void vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
     PVBOXHDD pDisk = (PVBOXHDD)pvUser1;
     RTSEMEVENT hEvent = (RTSEMEVENT)pvUser2;
@@ -11057,3 +11057,19 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
     return rc;
 }
 
+/**
+ * generic plugin functions
+ *.
+
+/** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
+DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
+{
+    *pszLocation = NULL;
+    return VINF_SUCCESS;
+}
+/** @copydoc VBOXHDDBACKEND::pfnComposeName */
+DECLCALLBACK(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName)
+{
+    *pszName = NULL;
+    return VINF_SUCCESS;
+}

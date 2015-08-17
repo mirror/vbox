@@ -1533,8 +1533,8 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
-static int qedCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                           PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+static DECLCALLBACK(int) qedCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                         PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
     PVDIOSTORAGE pStorage = NULL;
@@ -1589,9 +1589,9 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
-static int qedOpen(const char *pszFilename, unsigned uOpenFlags,
-                   PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                   VDTYPE enmType, void **ppBackendData)
+static DECLCALLBACK(int) qedOpen(const char *pszFilename, unsigned uOpenFlags,
+                                 PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                 VDTYPE enmType, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p enmType=%u ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, enmType, ppBackendData));
     int rc;
@@ -1638,14 +1638,14 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCreate */
-static int qedCreate(const char *pszFilename, uint64_t cbSize,
-                     unsigned uImageFlags, const char *pszComment,
-                     PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
-                     PCRTUUID pUuid, unsigned uOpenFlags,
-                     unsigned uPercentStart, unsigned uPercentSpan,
-                     PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                     PVDINTERFACE pVDIfsOperation, VDTYPE enmType,
-                     void **ppBackendData)
+static DECLCALLBACK(int) qedCreate(const char *pszFilename, uint64_t cbSize,
+                                   unsigned uImageFlags, const char *pszComment,
+                                   PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
+                                   PCRTUUID pUuid, unsigned uOpenFlags,
+                                   unsigned uPercentStart, unsigned uPercentSpan,
+                                   PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                   PVDINTERFACE pVDIfsOperation, VDTYPE enmType,
+                                   void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p enmType=%d ppBackendData=%#p",
                  pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, enmType, ppBackendData));
@@ -1724,7 +1724,7 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnRename */
-static int qedRename(void *pBackendData, const char *pszFilename)
+static DECLCALLBACK(int) qedRename(void *pBackendData, const char *pszFilename)
 {
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
     int rc = VINF_SUCCESS;
@@ -1770,7 +1770,7 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnClose */
-static int qedClose(void *pBackendData, bool fDelete)
+static DECLCALLBACK(int) qedClose(void *pBackendData, bool fDelete)
 {
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -1783,8 +1783,8 @@ static int qedClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
-static int qedRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
-                   PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
+static DECLCALLBACK(int) qedRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
+                                 PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
                  pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
@@ -1834,9 +1834,9 @@ out:
     return rc;
 }
 
-static int qedWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
-                    PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
-                    size_t *pcbPostRead, unsigned fWrite)
+static DECLCALLBACK(int) qedWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
+                                  PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
+                                  size_t *pcbPostRead, unsigned fWrite)
 {
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
                  pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
@@ -2017,7 +2017,7 @@ out:
     return rc;
 }
 
-static int qedFlush(void *pBackendData, PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) qedFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2035,7 +2035,7 @@ static int qedFlush(void *pBackendData, PVDIOCTX pIoCtx)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetVersion */
-static unsigned qedGetVersion(void *pBackendData)
+static DECLCALLBACK(unsigned) qedGetVersion(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2049,7 +2049,7 @@ static unsigned qedGetVersion(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
-static uint32_t qedGetSectorSize(void *pBackendData)
+static DECLCALLBACK(uint32_t) qedGetSectorSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2065,7 +2065,7 @@ static uint32_t qedGetSectorSize(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
-static uint64_t qedGetSize(void *pBackendData)
+static DECLCALLBACK(uint64_t) qedGetSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2081,7 +2081,7 @@ static uint64_t qedGetSize(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetFileSize */
-static uint64_t qedGetFileSize(void *pBackendData)
+static DECLCALLBACK(uint64_t) qedGetFileSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2105,8 +2105,8 @@ static uint64_t qedGetFileSize(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetPCHSGeometry */
-static int qedGetPCHSGeometry(void *pBackendData,
-                              PVDGEOMETRY pPCHSGeometry)
+static DECLCALLBACK(int) qedGetPCHSGeometry(void *pBackendData,
+                                            PVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2132,8 +2132,8 @@ static int qedGetPCHSGeometry(void *pBackendData,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetPCHSGeometry */
-static int qedSetPCHSGeometry(void *pBackendData,
-                              PCVDGEOMETRY pPCHSGeometry)
+static DECLCALLBACK(int) qedSetPCHSGeometry(void *pBackendData,
+                                            PCVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2161,8 +2161,8 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetLCHSGeometry */
-static int qedGetLCHSGeometry(void *pBackendData,
-                              PVDGEOMETRY pLCHSGeometry)
+static DECLCALLBACK(int) qedGetLCHSGeometry(void *pBackendData,
+                                            PVDGEOMETRY pLCHSGeometry)
 {
      LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2188,8 +2188,8 @@ static int qedGetLCHSGeometry(void *pBackendData,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetLCHSGeometry */
-static int qedSetLCHSGeometry(void *pBackendData,
-                               PCVDGEOMETRY pLCHSGeometry)
+static DECLCALLBACK(int) qedSetLCHSGeometry(void *pBackendData,
+                                            PCVDGEOMETRY pLCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pBackendData, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2217,7 +2217,7 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetImageFlags */
-static unsigned qedGetImageFlags(void *pBackendData)
+static DECLCALLBACK(unsigned) qedGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2235,7 +2235,7 @@ static unsigned qedGetImageFlags(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetOpenFlags */
-static unsigned qedGetOpenFlags(void *pBackendData)
+static DECLCALLBACK(unsigned) qedGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2253,7 +2253,7 @@ static unsigned qedGetOpenFlags(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetOpenFlags */
-static int qedSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
+static DECLCALLBACK(int) qedSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
     LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2279,8 +2279,8 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetComment */
-static int qedGetComment(void *pBackendData, char *pszComment,
-                          size_t cbComment)
+static DECLCALLBACK(int) qedGetComment(void *pBackendData, char *pszComment,
+                                       size_t cbComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2298,7 +2298,7 @@ static int qedGetComment(void *pBackendData, char *pszComment,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetComment */
-static int qedSetComment(void *pBackendData, const char *pszComment)
+static DECLCALLBACK(int) qedSetComment(void *pBackendData, const char *pszComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2321,7 +2321,7 @@ static int qedSetComment(void *pBackendData, const char *pszComment)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetUuid */
-static int qedGetUuid(void *pBackendData, PRTUUID pUuid)
+static DECLCALLBACK(int) qedGetUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2339,7 +2339,7 @@ static int qedGetUuid(void *pBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetUuid */
-static int qedSetUuid(void *pBackendData, PCRTUUID pUuid)
+static DECLCALLBACK(int) qedSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2363,7 +2363,7 @@ static int qedSetUuid(void *pBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetModificationUuid */
-static int qedGetModificationUuid(void *pBackendData, PRTUUID pUuid)
+static DECLCALLBACK(int) qedGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2381,7 +2381,7 @@ static int qedGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
-static int qedSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
+static DECLCALLBACK(int) qedSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2404,7 +2404,7 @@ static int qedSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetParentUuid */
-static int qedGetParentUuid(void *pBackendData, PRTUUID pUuid)
+static DECLCALLBACK(int) qedGetParentUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2422,7 +2422,7 @@ static int qedGetParentUuid(void *pBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
-static int qedSetParentUuid(void *pBackendData, PCRTUUID pUuid)
+static DECLCALLBACK(int) qedSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2445,7 +2445,7 @@ static int qedSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetParentModificationUuid */
-static int qedGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
+static DECLCALLBACK(int) qedGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2463,7 +2463,7 @@ static int qedGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentModificationUuid */
-static int qedSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
+static DECLCALLBACK(int) qedSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2486,7 +2486,7 @@ static int qedSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnDump */
-static void qedDump(void *pBackendData)
+static DECLCALLBACK(void) qedDump(void *pBackendData)
 {
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
 
@@ -2501,7 +2501,7 @@ static void qedDump(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetParentFilename */
-static int qedGetParentFilename(void *pBackendData, char **ppszParentFilename)
+static DECLCALLBACK(int) qedGetParentFilename(void *pBackendData, char **ppszParentFilename)
 {
     int rc = VINF_SUCCESS;
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2520,7 +2520,7 @@ static int qedGetParentFilename(void *pBackendData, char **ppszParentFilename)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentFilename */
-static int qedSetParentFilename(void *pBackendData, const char *pszParentFilename)
+static DECLCALLBACK(int) qedSetParentFilename(void *pBackendData, const char *pszParentFilename)
 {
     int rc = VINF_SUCCESS;
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
@@ -2570,11 +2570,11 @@ static int qedSetParentFilename(void *pBackendData, const char *pszParentFilenam
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnResize */
-static int qedResize(void *pBackendData, uint64_t cbSize,
-                     PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
-                     unsigned uPercentStart, unsigned uPercentSpan,
-                     PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                     PVDINTERFACE pVDIfsOperation)
+static DECLCALLBACK(int) qedResize(void *pBackendData, uint64_t cbSize,
+                                   PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
+                                   unsigned uPercentStart, unsigned uPercentSpan,
+                                   PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                   PVDINTERFACE pVDIfsOperation)
 {
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;

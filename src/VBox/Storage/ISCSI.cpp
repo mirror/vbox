@@ -1207,7 +1207,7 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
  * @returns VBox status.
  * @param   pImage      The iSCSI connection state to be used.
  */
-static int iscsiAttach(void *pvUser)
+static DECLCALLBACK(int) iscsiAttach(void *pvUser)
 {
     int rc;
     uint32_t itt;
@@ -1722,7 +1722,7 @@ out:
  * @returns VBox status.
  * @param   pImage      The iSCSI connection state to be used.
  */
-static int iscsiDetach(void *pvUser)
+static DECLCALLBACK(int) iscsiDetach(void *pvUser)
 {
     int rc;
     uint32_t itt;
@@ -3543,7 +3543,7 @@ static int iscsiCommandAsync(PISCSIIMAGE pImage, PSCSIREQ pScsiReq,
     return rc;
 }
 
-static void iscsiCommandCompleteSync(PISCSIIMAGE pImage, int rcReq, void *pvUser)
+static DECLCALLBACK(void) iscsiCommandCompleteSync(PISCSIIMAGE pImage, int rcReq, void *pvUser)
 {
     PISCSICMDSYNC pIScsiCmdSync = (PISCSICMDSYNC)pvUser;
 
@@ -3681,7 +3681,7 @@ static int iscsiExecSync(PISCSIIMAGE pImage, PFNISCSIEXEC pfnExec, void *pvUser)
 }
 
 
-static void iscsiCommandAsyncComplete(PISCSIIMAGE pImage, int rcReq, void *pvUser)
+static DECLCALLBACK(void) iscsiCommandAsyncComplete(PISCSIIMAGE pImage, int rcReq, void *pvUser)
 {
     bool fComplete = true;
     size_t cbTransfered = 0;
@@ -4550,7 +4550,7 @@ out:
 
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
-static int iscsiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+static DECLCALLBACK(int) iscsiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                              PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
@@ -4564,9 +4564,9 @@ static int iscsiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
-static int iscsiOpen(const char *pszFilename, unsigned uOpenFlags,
-                     PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                     VDTYPE enmType, void **ppBackendData)
+static DECLCALLBACK(int) iscsiOpen(const char *pszFilename, unsigned uOpenFlags,
+                                   PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                   VDTYPE enmType, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p enmType=%u ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, enmType, ppBackendData));
     int rc;
@@ -4628,14 +4628,14 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCreate */
-static int iscsiCreate(const char *pszFilename, uint64_t cbSize,
-                       unsigned uImageFlags, const char *pszComment,
-                       PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
-                       PCRTUUID pUuid, unsigned uOpenFlags,
-                       unsigned uPercentStart, unsigned uPercentSpan,
-                       PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                       PVDINTERFACE pVDIfsOperation, VDTYPE enmType,
-                       void **ppBackendData)
+static DECLCALLBACK(int) iscsiCreate(const char *pszFilename, uint64_t cbSize,
+                                     unsigned uImageFlags, const char *pszComment,
+                                     PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
+                                     PCRTUUID pUuid, unsigned uOpenFlags,
+                                     unsigned uPercentStart, unsigned uPercentSpan,
+                                     PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                     PVDINTERFACE pVDIfsOperation, VDTYPE enmType,
+                                     void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p enmType=%u ppBackendData=%#p",
                  pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, enmType, ppBackendData));
@@ -4646,7 +4646,7 @@ static int iscsiCreate(const char *pszFilename, uint64_t cbSize,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnClose */
-static int iscsiClose(void *pBackendData, bool fDelete)
+static DECLCALLBACK(int) iscsiClose(void *pBackendData, bool fDelete)
 {
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -4662,8 +4662,8 @@ static int iscsiClose(void *pBackendData, bool fDelete)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnRead */
-static int iscsiRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
-                     PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
+static DECLCALLBACK(int) iscsiRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
+                                   PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
@@ -4785,9 +4785,9 @@ static int iscsiRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnWrite */
-static int iscsiWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
-                      PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
-                      size_t *pcbPostRead, unsigned fWrite)
+static DECLCALLBACK(int) iscsiWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
+                                    PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
+                                    size_t *pcbPostRead, unsigned fWrite)
 {
     LogFlowFunc(("pBackendData=%p uOffset=%llu pIoCtx=%#p cbToWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
                  pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite));
@@ -4911,7 +4911,7 @@ static int iscsiWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnFlush */
-static int iscsiFlush(void *pBackendData, PVDIOCTX pIoCtx)
+static DECLCALLBACK(int) iscsiFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     LogFlowFunc(("pBackendData=%p pIoCtx=%#p\n", pBackendData, pIoCtx));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -4971,7 +4971,7 @@ static int iscsiFlush(void *pBackendData, PVDIOCTX pIoCtx)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetVersion */
-static unsigned iscsiGetVersion(void *pBackendData)
+static DECLCALLBACK(unsigned) iscsiGetVersion(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -4983,7 +4983,7 @@ static unsigned iscsiGetVersion(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
-static uint32_t iscsiGetSectorSize(void *pBackendData)
+static DECLCALLBACK(uint32_t) iscsiGetSectorSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -4997,7 +4997,7 @@ static uint32_t iscsiGetSectorSize(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
-static uint64_t iscsiGetSize(void *pBackendData)
+static DECLCALLBACK(uint64_t) iscsiGetSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5011,7 +5011,7 @@ static uint64_t iscsiGetSize(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetFileSize */
-static uint64_t iscsiGetFileSize(void *pBackendData)
+static DECLCALLBACK(uint64_t) iscsiGetFileSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5026,7 +5026,7 @@ static uint64_t iscsiGetFileSize(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetPCHSGeometry */
-static int iscsiGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCHSGeometry)
+static DECLCALLBACK(int) iscsiGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5044,7 +5044,7 @@ static int iscsiGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCHSGeometry)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetPCHSGeometry */
-static int iscsiSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pPCHSGeometry)
+static DECLCALLBACK(int) iscsiSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5070,7 +5070,7 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetLCHSGeometry */
-static int iscsiGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
+static DECLCALLBACK(int) iscsiGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5088,7 +5088,7 @@ static int iscsiGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetLCHSGeometry */
-static int iscsiSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLCHSGeometry)
+static DECLCALLBACK(int) iscsiSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pBackendData, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5114,7 +5114,7 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetImageFlags */
-static unsigned iscsiGetImageFlags(void *pBackendData)
+static DECLCALLBACK(unsigned) iscsiGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5130,7 +5130,7 @@ static unsigned iscsiGetImageFlags(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetOpenFlags */
-static unsigned iscsiGetOpenFlags(void *pBackendData)
+static DECLCALLBACK(unsigned) iscsiGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5148,7 +5148,7 @@ static unsigned iscsiGetOpenFlags(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetOpenFlags */
-static int iscsiSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
+static DECLCALLBACK(int) iscsiSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
     LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5185,8 +5185,8 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetComment */
-static int iscsiGetComment(void *pBackendData, char *pszComment,
-                          size_t cbComment)
+static DECLCALLBACK(int) iscsiGetComment(void *pBackendData, char *pszComment,
+                                         size_t cbComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5204,7 +5204,7 @@ static int iscsiGetComment(void *pBackendData, char *pszComment,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetComment */
-static int iscsiSetComment(void *pBackendData, const char *pszComment)
+static DECLCALLBACK(int) iscsiSetComment(void *pBackendData, const char *pszComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5227,7 +5227,7 @@ static int iscsiSetComment(void *pBackendData, const char *pszComment)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetUuid */
-static int iscsiGetUuid(void *pBackendData, PRTUUID pUuid)
+static DECLCALLBACK(int) iscsiGetUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5245,7 +5245,7 @@ static int iscsiGetUuid(void *pBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetUuid */
-static int iscsiSetUuid(void *pBackendData, PCRTUUID pUuid)
+static DECLCALLBACK(int) iscsiSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5269,7 +5269,7 @@ static int iscsiSetUuid(void *pBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetModificationUuid */
-static int iscsiGetModificationUuid(void *pBackendData, PRTUUID pUuid)
+static DECLCALLBACK(int) iscsiGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5287,7 +5287,7 @@ static int iscsiGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
-static int iscsiSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
+static DECLCALLBACK(int) iscsiSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5311,7 +5311,7 @@ static int iscsiSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetParentUuid */
-static int iscsiGetParentUuid(void *pBackendData, PRTUUID pUuid)
+static DECLCALLBACK(int) iscsiGetParentUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5329,7 +5329,7 @@ static int iscsiGetParentUuid(void *pBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
-static int iscsiSetParentUuid(void *pBackendData, PCRTUUID pUuid)
+static DECLCALLBACK(int) iscsiSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5353,7 +5353,7 @@ static int iscsiSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetParentModificationUuid */
-static int iscsiGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
+static DECLCALLBACK(int) iscsiGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5371,7 +5371,7 @@ static int iscsiGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentModificationUuid */
-static int iscsiSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
+static DECLCALLBACK(int) iscsiSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -5395,7 +5395,7 @@ static int iscsiSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnDump */
-static void iscsiDump(void *pBackendData)
+static DECLCALLBACK(void) iscsiDump(void *pBackendData)
 {
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
 
@@ -5408,7 +5408,7 @@ static void iscsiDump(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
-static int iscsiComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
+static DECLCALLBACK(int) iscsiComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
 {
     char *pszTarget  = NULL;
     char *pszLUN     = NULL;
@@ -5435,7 +5435,7 @@ static int iscsiComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnComposeName */
-static int iscsiComposeName(PVDINTERFACE pConfig, char **pszName)
+static DECLCALLBACK(int) iscsiComposeName(PVDINTERFACE pConfig, char **pszName)
 {
     char *pszTarget  = NULL;
     char *pszLUN     = NULL;
