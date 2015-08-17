@@ -905,29 +905,6 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
 
 
 /**
- * Unused ring-0 entry point that used to be called from the interrupt gate.
- *
- * Will be removed one of the next times we do a major SUPDrv version bump.
- *
- * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
- * @param   enmOperation    Which operation to execute.
- * @param   pvArg           Argument to the operation.
- * @remarks Assume called with interrupts disabled.
- */
-VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
-{
-    /*
-     * We're returning VERR_NOT_SUPPORT here so we've got something else
-     * than -1 which the interrupt gate glue code might return.
-     */
-    Log(("operation %#x is not supported\n", enmOperation));
-    NOREF(enmOperation); NOREF(pvArg); NOREF(pVM);
-    return VERR_NOT_SUPPORTED;
-}
-
-
-/**
  * The Ring 0 entry point, called by the fast-ioctl path.
  *
  * @param   pVM             Pointer to the VM.

@@ -1842,15 +1842,16 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
 
 
 /**
- * memcmp + log.
+ * memcmp + errormsg + log.
  *
  * @returns Same as memcmp.
  * @param   pImage          The image.
  * @param   pbImageBits     The image bits ring-3 uploads.
  * @param   uRva            The RVA to start comparing at.
  * @param   cb              The number of bytes to compare.
+ * @param   pReq            The load request.
  */
-static int supdrvNtCompare(PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, uint32_t uRva, uint32_t cb)
+static int supdrvNtCompare(PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, uint32_t uRva, uint32_t cb, PSUPLDRLOAD pReq)
 {
     int iDiff = memcmp((uint8_t const *)pImage->pvImage + uRva, pbImageBits + uRva, cb);
     if (iDiff)
@@ -1860,20 +1861,28 @@ static int supdrvNtCompare(PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, u
         for (size_t off = uRva; cbLeft > 0; off++, cbLeft--)
             if (pbNativeBits[off] != pbImageBits[off])
             {
-                char szBytes[128];
-                RTStrPrintf(szBytes, sizeof(szBytes), "native: %.*Rhxs  our: %.*Rhxs",
-                            RT_MIN(12, cbLeft), &pbNativeBits[off],
-                            RT_MIN(12, cbLeft), &pbImageBits[off]);
-                SUPR0Printf("VBoxDrv: Mismatch at %#x of %s: %s\n", off, pImage->szName, szBytes);
+                /* Note! We need to copy image bits into a temporary stack buffer here as we'd
+                         otherwise risk overwriting them while formatting the error message. */
+                uint8_t abBytes[64];
+                memcpy(abBytes, &pbImageBits[off], RT_MIN(64, cbLeft));
+                supdrvLdrLoadError(VERR_LDR_MISMATCH_NATIVE, pReq,
+                                   "Mismatch at %#x of %s:\n"
+                                   "ntld: %.*Rhxs\n"
+                                   "iprt: %.*Rhxs",
+                                   off, pImage->szName,
+                                   RT_MIN(64, cbLeft), &pbNativeBits[off],
+                                   RT_MIN(64, cbLeft), &abBytes[0]);
+                SUPR0Printf("VBoxDrv: %s", pReq->u.Out.szError);
                 break;
             }
     }
     return iDiff;
 }
 
+
 int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, PSUPLDRLOAD pReq)
 {
-    NOREF(pDevExt); NOREF(pReq);
+    NOREF(pDevExt);
     if (pImage->pvNtSectionObj)
     {
         /*
@@ -1954,19 +1963,19 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
             for (unsigned i = 0; !iDiff && i < cExcludeRgns; i++)
             {
                 if (uRvaNext < aExcludeRgns[i].uRva)
-                    iDiff = supdrvNtCompare(pImage, pbImageBits, uRvaNext, aExcludeRgns[i].uRva - uRvaNext);
+                    iDiff = supdrvNtCompare(pImage, pbImageBits, uRvaNext, aExcludeRgns[i].uRva - uRvaNext, pReq);
                 uRvaNext = aExcludeRgns[i].uRva + aExcludeRgns[i].cb;
             }
             if (!iDiff && uRvaNext < pImage->cbImageBits)
-                iDiff = supdrvNtCompare(pImage, pbImageBits, uRvaNext, pImage->cbImageBits - uRvaNext);
+                iDiff = supdrvNtCompare(pImage, pbImageBits, uRvaNext, pImage->cbImageBits - uRvaNext, pReq);
             if (!iDiff)
                 return VINF_SUCCESS;
         }
         else
-            supdrvNtCompare(pImage, pbImageBits, 0, pImage->cbImageBits);
+            supdrvNtCompare(pImage, pbImageBits, 0, pImage->cbImageBits, pReq);
         return VERR_LDR_MISMATCH_NATIVE;
     }
-    return VERR_INTERNAL_ERROR_4;
+    return supdrvLdrLoadError(VERR_INTERNAL_ERROR_4, pReq, "No NT section object! Impossible!");
 }
 
 

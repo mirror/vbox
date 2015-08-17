@@ -111,7 +111,7 @@ SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, v
     if (RT_SUCCESS(rc))
     {
         rc = supLoadModule(pszFilename, pszModule, NULL, pErrInfo, ppvImageBase);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(rc) && !RTErrInfoIsSet(pErrInfo))
             RTErrInfoSetF(pErrInfo, rc, "SUPR3LoadModule: supLoadModule returned %Rrc", rc);
     }
     return rc;
@@ -444,29 +444,32 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                     /*
                      * Get the entry points.
                      */
-                    RTUINTPTR VMMR0EntryInt = 0;
                     RTUINTPTR VMMR0EntryFast = 0;
                     RTUINTPTR VMMR0EntryEx = 0;
                     RTUINTPTR SrvReqHandler = 0;
                     RTUINTPTR ModuleInit = 0;
                     RTUINTPTR ModuleTerm = 0;
+                    const char *pszEp = NULL;
                     if (fIsVMMR0)
                     {
-                        rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, UINT32_MAX, "VMMR0EntryInt", &VMMR0EntryInt);
+                        rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase,
+                                              UINT32_MAX, pszEp = "VMMR0EntryFast", &VMMR0EntryFast);
                         if (RT_SUCCESS(rc))
-                            rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, UINT32_MAX, "VMMR0EntryFast", &VMMR0EntryFast);
-                        if (RT_SUCCESS(rc))
-                            rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, UINT32_MAX, "VMMR0EntryEx", &VMMR0EntryEx);
+                            rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase,
+                                                  UINT32_MAX, pszEp = "VMMR0EntryEx", &VMMR0EntryEx);
                     }
                     else if (pszSrvReqHandler)
-                        rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, UINT32_MAX, pszSrvReqHandler, &SrvReqHandler);
+                        rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase,
+                                              UINT32_MAX, pszEp = pszSrvReqHandler, &SrvReqHandler);
                     if (RT_SUCCESS(rc))
                     {
-                        int rc2 = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, UINT32_MAX, "ModuleInit", &ModuleInit);
+                        int rc2 = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase,
+                                                   UINT32_MAX, pszEp = "ModuleInit", &ModuleInit);
                         if (RT_FAILURE(rc2))
                             ModuleInit = 0;
 
-                        rc2 = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, UINT32_MAX, "ModuleTerm", &ModuleTerm);
+                        rc2 = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.abImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase,
+                                               UINT32_MAX, pszEp = "ModuleTerm", &ModuleTerm);
                         if (RT_FAILURE(rc2))
                             ModuleTerm = 0;
                     }
@@ -502,7 +505,6 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                             {
                                 pLoadReq->u.In.eEPType                = SUPLDRLOADEP_VMMR0;
                                 pLoadReq->u.In.EP.VMMR0.pvVMMR0       = OpenReq.u.Out.pvImageBase;
-                                pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryInt = (RTR0PTR)VMMR0EntryInt;
                                 pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryFast= (RTR0PTR)VMMR0EntryFast;
                                 pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryEx  = (RTR0PTR)VMMR0EntryEx;
                             }
@@ -544,8 +546,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                                 if (fIsVMMR0)
                                 {
                                     g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
-                                    LogRel(("SUP: VMMR0EntryEx located at %RTptr, VMMR0EntryFast at %RTptr and VMMR0EntryInt at %RTptr\n",
-                                            VMMR0EntryEx, VMMR0EntryFast, VMMR0EntryInt));
+                                    LogRel(("SUP: VMMR0EntryEx located at %RTptr and VMMR0EntryFast at %RTptr\n", VMMR0EntryEx, VMMR0EntryFast));
                                 }
 #ifdef RT_OS_WINDOWS
                                 LogRel(("SUP: windbg> .reload /f %s=%#p\n", pszFilename, OpenReq.u.Out.pvImageBase));
@@ -555,25 +556,50 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                                 RTLdrClose(hLdrMod);
                                 return VINF_SUCCESS;
                             }
+
+                            /*
+                             * Failed, bail out.
+                             */
+                            LogRel(("SUP: Loading failed for %s (%s) rc=%Rrc\n", pszModule, pszFilename, rc));
+                            if (   pLoadReq->u.Out.uErrorMagic == SUPLDRLOAD_ERROR_MAGIC
+                                && pLoadReq->u.Out.szError[0] != '\0')
+                            {
+                                LogRel(("SUP: %s\n", pLoadReq->u.Out.szError));
+                                RTErrInfoSet(pErrInfo, rc, pLoadReq->u.Out.szError);
+                            }
                             else
-                                LogRel(("SUP: Loading failed for %s (%s) rc=%Rrc\n", pszModule, pszFilename, rc));
+                                RTErrInfoSet(pErrInfo, rc, "SUP_IOCTL_LDR_LOAD failed");
                         }
                         else
+                        {
                             LogRel(("SUP: RTLdrEnumSymbols failed for %s (%s) rc=%Rrc\n", pszModule, pszFilename, rc));
+                            RTErrInfoSetF(pErrInfo, rc, "RTLdrEnumSymbols #2 failed");
+                        }
                     }
                     else
-                        LogRel(("SUP: Failed to get entry points for %s (%s) rc=%Rrc\n", pszModule, pszFilename, rc));
+                    {
+                        LogRel(("SUP: Failed to get entry point '%s' for %s (%s) rc=%Rrc\n", pszEp, pszModule, pszFilename, rc));
+                        RTErrInfoSetF(pErrInfo, rc, "Failed to resolve entry point '%s'", pszEp);
+                    }
                 }
                 else
+                {
                     LogRel(("SUP: RTLdrGetBits failed for %s (%s). rc=%Rrc\n", pszModule, pszFilename, rc));
+                    if (!RTErrInfoIsSet(pErrInfo))
+                        RTErrInfoSetF(pErrInfo, rc, "RTLdrGetBits failed");
+                }
                 RTMemTmpFree(pLoadReq);
             }
             else
             {
                 AssertMsgFailed(("failed to allocated %u bytes for SUPLDRLOAD_IN structure!\n", SUP_IOCTL_LDR_LOAD_SIZE(cbImageWithTabs)));
                 rc = VERR_NO_TMP_MEMORY;
+                RTErrInfoSetF(pErrInfo, rc, "Failed to allocate %u bytes for the load request", SUP_IOCTL_LDR_LOAD_SIZE(cbImageWithTabs));
             }
         }
+        /*
+         * Already loaded?
+         */
         else if (RT_SUCCESS(rc))
         {
             if (fIsVMMR0)
@@ -584,7 +610,14 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
             LogRel(("SUP: windbg> .reload /f %s=%#p\n", pszFilename, OpenReq.u.Out.pvImageBase));
 #endif
         }
+        /*
+         * No, failed.
+         */
+        else
+            RTErrInfoSet(pErrInfo, rc, "SUP_IOCTL_LDR_OPEN failed");
     }
+    else
+        RTErrInfoSetF(pErrInfo, rc, "RTLdrEnumSymbols #1 failed");
     RTLdrClose(hLdrMod);
     return rc;
 }

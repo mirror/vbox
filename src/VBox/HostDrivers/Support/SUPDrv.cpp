@@ -140,7 +140,7 @@ static int                  supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSE
 static int                  supdrvIOCtl_LdrLockDown(PSUPDRVDEVEXT pDevExt);
 static int                  supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
 static int                  supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
-static int                  supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt,void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
+static int                  supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
 static void                 supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt);
 static int                  supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void                 supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
@@ -4692,6 +4692,27 @@ static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImag
 
 
 /**
+ * Formats a load error message.
+ *
+ * @returns @a rc
+ * @param   rc                  Return code.
+ * @param   pReq                The request.
+ * @param   pszFormat           The error message format string.
+ * @param   ...                 Argument to the format string.
+ */
+int VBOXCALL supdrvLdrLoadError(int rc, PSUPLDRLOAD pReq, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    pReq->u.Out.uErrorMagic = SUPLDRLOAD_ERROR_MAGIC;
+    RTStrPrintfV(pReq->u.Out.szError, sizeof(pReq->u.Out.szError), pszFormat, va);
+    va_end(va);
+    Log(("SUP_IOCTL_LDR_LOAD: %s [rc=%Rrc]\n", pReq->u.Out.szError, rc));
+    return rc;
+}
+
+
+/**
  * Loads the image bits.
  *
  * This is the 2nd step of the loading.
@@ -4722,8 +4743,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     if (!pUsage)
     {
         supdrvLdrUnlock(pDevExt);
-        Log(("SUP_IOCTL_LDR_LOAD: couldn't find image!\n"));
-        return VERR_INVALID_HANDLE;
+        return supdrvLdrLoadError(VERR_INVALID_HANDLE, pReq, "Image not found");
     }
     pImage = pUsage->pImage;
 
@@ -4734,9 +4754,8 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         || pImage->cbImageBits     != pReq->u.In.cbImageBits)
     {
         supdrvLdrUnlock(pDevExt);
-        Log(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load) or %d != %d\n",
-             pImage->cbImageWithTabs, pReq->u.In.cbImageWithTabs, pImage->cbImageBits, pReq->u.In.cbImageBits));
-        return VERR_INVALID_HANDLE;
+        return supdrvLdrLoadError(VERR_INVALID_HANDLE, pReq, "Image size mismatch found: %d(prep) != %d(load) or %d != %d",
+                                  pImage->cbImageWithTabs, pReq->u.In.cbImageWithTabs, pImage->cbImageBits, pReq->u.In.cbImageBits);
     }
 
     if (pImage->uState != SUP_IOCTL_LDR_OPEN)
@@ -4745,6 +4764,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         supdrvLdrUnlock(pDevExt);
         if (uState != SUP_IOCTL_LDR_LOAD)
             AssertMsgFailed(("SUP_IOCTL_LDR_LOAD: invalid image state %d (%#x)!\n", uState, uState));
+        pReq->u.Out.uErrorMagic = 0;
         return VERR_ALREADY_LOADED;
     }
 
@@ -4752,8 +4772,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     if (pDevExt->fLdrLockedDown)
     {
         supdrvLdrUnlock(pDevExt);
-        Log(("SUP_IOCTL_LDR_LOAD: Not loading '%s' image bits, loader interface is locked down!\n", pImage->szName));
-        return VERR_PERMISSION_DENIED;
+        return supdrvLdrLoadError(VERR_PERMISSION_DENIED, pReq, "Loader is locked down");
     }
 
     switch (pReq->u.In.eEPType)
@@ -4764,45 +4783,42 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         case SUPLDRLOADEP_VMMR0:
             rc = supdrvLdrValidatePointer(    pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0,          false, pReq->u.In.abImage, "pvVMMR0");
             if (RT_SUCCESS(rc))
-                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,  false, pReq->u.In.abImage, "pvVMMR0EntryInt");
-            if (RT_SUCCESS(rc))
                 rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, false, pReq->u.In.abImage, "pvVMMR0EntryFast");
             if (RT_SUCCESS(rc))
                 rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx,   false, pReq->u.In.abImage, "pvVMMR0EntryEx");
             if (RT_FAILURE(rc))
-                return rc;
+                return supdrvLdrLoadError(rc, pReq, "Invalid VMMR0 pointer");
             break;
 
         case SUPLDRLOADEP_SERVICE:
             rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.Service.pfnServiceReq, false, pReq->u.In.abImage, "pfnServiceReq");
             if (RT_FAILURE(rc))
-                return rc;
+                return supdrvLdrLoadError(rc, pReq, "Invalid pfnServiceReq pointer: %p", pReq->u.In.EP.Service.pfnServiceReq);
             if (    pReq->u.In.EP.Service.apvReserved[0] != NIL_RTR0PTR
                 ||  pReq->u.In.EP.Service.apvReserved[1] != NIL_RTR0PTR
                 ||  pReq->u.In.EP.Service.apvReserved[2] != NIL_RTR0PTR)
             {
                 supdrvLdrUnlock(pDevExt);
-                Log(("Out of range (%p LB %#x): apvReserved={%p,%p,%p} MBZ!\n",
-                     pImage->pvImage, pReq->u.In.cbImageWithTabs,
-                     pReq->u.In.EP.Service.apvReserved[0],
-                     pReq->u.In.EP.Service.apvReserved[1],
-                     pReq->u.In.EP.Service.apvReserved[2]));
-                return VERR_INVALID_PARAMETER;
+                return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq,
+                                          "Out of range (%p LB %#x): apvReserved={%p,%p,%p} MBZ!",
+                                          pImage->pvImage, pReq->u.In.cbImageWithTabs,
+                                          pReq->u.In.EP.Service.apvReserved[0],
+                                          pReq->u.In.EP.Service.apvReserved[1],
+                                          pReq->u.In.EP.Service.apvReserved[2]);
             }
             break;
 
         default:
             supdrvLdrUnlock(pDevExt);
-            Log(("Invalid eEPType=%d\n", pReq->u.In.eEPType));
-            return VERR_INVALID_PARAMETER;
+            return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq, "Invalid eEPType=%d", pReq->u.In.eEPType);
     }
 
     rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleInit, true, pReq->u.In.abImage, "pfnModuleInit");
     if (RT_FAILURE(rc))
-        return rc;
+        return supdrvLdrLoadError(rc, pReq, "Invalid pfnModuleInit pointer: %p", pReq->u.In.pfnModuleInit);
     rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleTerm, true, pReq->u.In.abImage, "pfnModuleTerm");
     if (RT_FAILURE(rc))
-        return rc;
+        return supdrvLdrLoadError(rc, pReq, "Invalid pfnModuleTerm pointer: %p", pReq->u.In.pfnModuleTerm);
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
 
     /*
@@ -4816,7 +4832,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (pImage->pachStrTab)
             memcpy(pImage->pachStrTab, &pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
         else
-            rc = /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_3;
+            rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for string table: %#x", pImage->cbStrTab);
         SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     }
 
@@ -4828,7 +4844,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (pImage->paSymbols)
             memcpy(pImage->paSymbols, &pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
         else
-            rc = /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_4;
+            rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for symbol table: %#x", cbSymbols);
         SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     }
 
@@ -4863,7 +4879,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                 rc = VINF_SUCCESS;
                 break;
             case SUPLDRLOADEP_VMMR0:
-                rc = supdrvLdrSetVMMR0EPs(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
+                rc = supdrvLdrSetVMMR0EPs(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0,
                                           pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
                 break;
             case SUPLDRLOADEP_SERVICE:
@@ -4887,8 +4903,12 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
         pDevExt->pLdrInitImage  = NULL;
         pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
-        if (RT_FAILURE(rc) && pDevExt->pvVMMR0 == pImage->pvImage)
-            supdrvLdrUnsetVMMR0EPs(pDevExt);
+        if (RT_FAILURE(rc))
+        {
+            if (pDevExt->pvVMMR0 == pImage->pvImage)
+                supdrvLdrUnsetVMMR0EPs(pDevExt);
+            supdrvLdrLoadError(rc, pReq, "ModuleInit failed: %Rrc", rc);
+        }
     }
     SUPR0Printf("vboxdrv: %p %s\n", pImage->pvImage, pImage->szName);
 
@@ -5209,15 +5229,14 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
  * @param   pDevExt             Device globals.
  * @param   pSession            Session data.
  * @param   pVMMR0              VMMR0 image handle.
- * @param   pvVMMR0EntryInt     VMMR0EntryInt address.
  * @param   pvVMMR0EntryFast    VMMR0EntryFast address.
  * @param   pvVMMR0EntryEx      VMMR0EntryEx address.
  * @remark  Caller must own the loader mutex.
  */
-static int supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx)
+static int supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx)
 {
     int rc = VINF_SUCCESS;
-    LogFlow(("supdrvLdrSetR0EP pvVMMR0=%p pvVMMR0EntryInt=%p\n", pvVMMR0, pvVMMR0EntryInt));
+    LogFlow(("supdrvLdrSetR0EP pvVMMR0=%p pvVMMR0EntryFast=%p\n", pvVMMR0, pvVMMR0EntryFast));
 
 
     /*
@@ -5226,7 +5245,6 @@ static int supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVM
     if (!pDevExt->pvVMMR0)
     {
         pDevExt->pvVMMR0 = pvVMMR0;
-        *(void **)&pDevExt->pfnVMMR0EntryInt  = pvVMMR0EntryInt;
         *(void **)&pDevExt->pfnVMMR0EntryFast = pvVMMR0EntryFast;
         *(void **)&pDevExt->pfnVMMR0EntryEx   = pvVMMR0EntryEx;
         ASMCompilerBarrier(); /* the above isn't nice, so be careful... */
@@ -5237,7 +5255,6 @@ static int supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVM
          * Return failure or success depending on whether the values match or not.
          */
         if (    pDevExt->pvVMMR0 != pvVMMR0
-            ||  (void *)pDevExt->pfnVMMR0EntryInt   != pvVMMR0EntryInt
             ||  (void *)pDevExt->pfnVMMR0EntryFast  != pvVMMR0EntryFast
             ||  (void *)pDevExt->pfnVMMR0EntryEx    != pvVMMR0EntryEx)
         {
@@ -5257,7 +5274,6 @@ static int supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVM
 static void supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt)
 {
     pDevExt->pvVMMR0            = NULL;
-    pDevExt->pfnVMMR0EntryInt   = NULL;
     pDevExt->pfnVMMR0EntryFast  = NULL;
     pDevExt->pfnVMMR0EntryEx    = NULL;
 }
