@@ -3942,7 +3942,10 @@ VMMR3DECL(int) VMR3SetErrorV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *psz
     /* Take shortcut when called on EMT, skipping VM handle requirement + validation. */
     if (VMR3GetVMCPUThread(pUVM) != NIL_RTTHREAD)
     {
-        vmR3SetErrorUV(pUVM, rc, RT_SRC_POS_ARGS, pszFormat, &va);
+        va_list vaCopy;
+        va_copy(&vaCopy, va);
+        vmR3SetErrorUV(pUVM, rc, RT_SRC_POS_ARGS, pszFormat, &vaCopy);
+        va_end(vaCopy);
         return rc;
     }
 
