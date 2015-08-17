@@ -1866,10 +1866,10 @@ static int supdrvNtCompare(PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, u
                 uint8_t abBytes[64];
                 memcpy(abBytes, &pbImageBits[off], RT_MIN(64, cbLeft));
                 supdrvLdrLoadError(VERR_LDR_MISMATCH_NATIVE, pReq,
-                                   "Mismatch at %#x of %s:\n"
+                                   "Mismatch at %#x (%p) of %s loaded at %p:\n"
                                    "ntld: %.*Rhxs\n"
                                    "iprt: %.*Rhxs",
-                                   off, pImage->szName,
+                                   off, &pbNativeBits[off], pImage->szName, pImage->pvImage,
                                    RT_MIN(64, cbLeft), &pbNativeBits[off],
                                    RT_MIN(64, cbLeft), &abBytes[0]);
                 SUPR0Printf("VBoxDrv: %s", pReq->u.Out.szError);
