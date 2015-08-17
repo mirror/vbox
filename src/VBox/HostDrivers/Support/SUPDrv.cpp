@@ -4910,9 +4910,13 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             supdrvLdrLoadError(rc, pReq, "ModuleInit failed: %Rrc", rc);
         }
     }
-    SUPR0Printf("vboxdrv: %p %s\n", pImage->pvImage, pImage->szName);
-
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        SUPR0Printf("vboxdrv: %p %s\n", pImage->pvImage, pImage->szName);
+        pReq->u.Out.uErrorMagic = 0;
+        pReq->u.Out.szError[0]  = '\0';
+    }
+    else
     {
         /* Inform the tracing component in case ModuleInit registered TPs. */
         supdrvTracerModuleUnloading(pDevExt, pImage);
