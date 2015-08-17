@@ -409,7 +409,7 @@ VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszBwGroup, uint64_
  * @param   pVM         Pointer to the VM.
  * @param   pThread     The PDM thread data.
  */
-static int pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
+static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
 {
     PPDMNETSHAPER pShaper = (PPDMNETSHAPER)pThread->pvUser;
     LogFlow(("pdmR3NsTxThread: pShaper=%p\n", pShaper));
@@ -434,7 +434,7 @@ static int pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
 /**
  * @copydoc FNPDMTHREADWAKEUPINT
  */
-static int pdmR3NsTxWakeUp(PVM pVM, PPDMTHREAD pThread)
+static DECLCALLBACK(int) pdmR3NsTxWakeUp(PVM pVM, PPDMTHREAD pThread)
 {
     PPDMNETSHAPER pShaper = (PPDMNETSHAPER)pThread->pvUser;
     LogFlow(("pdmR3NsTxWakeUp: pShaper=%p\n", pShaper));
