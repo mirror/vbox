@@ -20,11 +20,12 @@
 
 /*
  * DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
- * to a file on the host. Be sure to adjust the dumping path
+ * to a file on the host. Be sure to adjust DEBUG_DUMP_PCM_DATA_PATH
  * to your needs before using this!
  */
 #ifdef DEBUG
 //# define DEBUG_DUMP_PCM_DATA
+# define DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
 #endif
 
 #include <iprt/asm-math.h>
@@ -212,6 +213,20 @@ int AudioMixBufAcquire(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
     *pcSamplesRead = cSamplesRead;
 
     return rc;
+}
+
+/**
+ * Clears the entire sample buffer.
+ *
+ * @param   pMixBuf                 Mixing buffer to clear.
+ *
+ */
+void AudioMixBufClear(PPDMAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturnVoid(pMixBuf);
+
+    if (pMixBuf->cSamples)
+        RT_BZERO(pMixBuf->pSamples, pMixBuf->cSamples * sizeof(PDMAUDIOSAMPLE));
 }
 
 /**
@@ -1329,7 +1344,7 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     {
 #ifdef DEBUG_DUMP_PCM_DATA
         RTFILE fh;
-        rc = RTFileOpen(&fh, "c:\\temp\\mixbuf_readcirc.pcm",
+        rc = RTFileOpen(&fh, DEBUG_DUMP_PCM_DATA_PATH "mixbuf_readcirc.pcm",
                         RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {
@@ -1369,8 +1384,7 @@ void AudioMixBufReset(PPDMAUDIOMIXBUF pMixBuf)
     pMixBuf->cMixed       = 0;
     pMixBuf->cProcessed   = 0;
 
-    if (pMixBuf->cSamples)
-        RT_BZERO(pMixBuf->pSamples, pMixBuf->cSamples * sizeof(PDMAUDIOSAMPLE));
+    AudioMixBufClear(pMixBuf);
 }
 
 /**
@@ -1532,7 +1546,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 
 #ifdef DEBUG_DUMP_PCM_DATA
     RTFILE fh;
-    rc = RTFileOpen(&fh, "c:\\temp\\mixbuf_writeat.pcm",
+    rc = RTFileOpen(&fh, DEBUG_DUMP_PCM_DATA_PATH "mixbuf_writeat.pcm",
                     RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
@@ -1685,7 +1699,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 
 #ifdef DEBUG_DUMP_PCM_DATA
         RTFILE fh;
-        RTFileOpen(&fh, "c:\\temp\\mixbuf_writeex.pcm",
+        RTFileOpen(&fh, DEBUG_DUMP_PCM_DATA_PATH "mixbuf_writeex.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         RTFileWrite(fh, pSamplesDst1, AUDIOMIXBUF_S2B(pMixBuf, cLenDst1), NULL);
         RTFileClose(fh);
