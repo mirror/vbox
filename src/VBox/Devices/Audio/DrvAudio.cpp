@@ -317,6 +317,9 @@ void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf)
     if (!cbBuf)
         return;
 
+    Log2Func(("pPCMInfo=%p, pvBuf=%p, cbBuf=%zu, fSigned=%RTbool, cBits=%RU8, cShift=%RU8\n",
+              pPCMInfo, pvBuf, cbBuf, pPCMInfo->fSigned, pPCMInfo->cBits, pPCMInfo->cShift));
+
     if (pPCMInfo->fSigned)
     {
         memset(pvBuf, 0, cbBuf << pPCMInfo->cShift);
@@ -367,6 +370,118 @@ void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf)
             break;
         }
     }
+}
+
+static int drvAudioControlHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN pHstStrmIn, PDMAUDIOSTREAMCMD enmStreamCmd,
+                                uint32_t uFlags)
+{
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);
+
+    int rc;
+
+    switch (enmStreamCmd)
+    {
+        case PDMAUDIOSTREAMCMD_ENABLE:
+        {
+            if (!pHstStrmIn->fEnabled)
+            {
+                rc = pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn, PDMAUDIOSTREAMCMD_ENABLE);
+                if (RT_SUCCESS(rc))
+                {
+                    pHstStrmIn->fEnabled = true;
+                }
+                else
+                    LogFlowFunc(("Backend reported an error when opening input stream, rc=%Rrc\n", rc));
+            }
+            else
+                rc = VINF_SUCCESS;
+
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_DISABLE:
+        {
+            if (pHstStrmIn->fEnabled)
+            {
+                rc = pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn, PDMAUDIOSTREAMCMD_DISABLE);
+                if (RT_SUCCESS(rc))
+                {
+                    pHstStrmIn->fEnabled = false;
+                    AudioMixBufClear(&pHstStrmIn->MixBuf);
+                }
+                else
+                    LogFlowFunc(("Backend vetoed closing output stream, rc=%Rrc\n", rc));
+            }
+            else
+                rc = VINF_SUCCESS;
+
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("Command %ld not implemented\n", enmStreamCmd));
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    return rc;
+}
+
+static int drvAudioControlHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOut, PDMAUDIOSTREAMCMD enmStreamCmd,
+                                 uint32_t uFlags)
+{
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHstStrmOut, VERR_INVALID_POINTER);
+
+    int rc;
+
+    switch (enmStreamCmd)
+    {
+        case PDMAUDIOSTREAMCMD_ENABLE:
+        {
+            if (!pHstStrmOut->fEnabled)
+            {
+                rc = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_ENABLE);
+                if (RT_SUCCESS(rc))
+                {
+                    pHstStrmOut->fEnabled = true;
+                }
+                else
+                    LogFlowFunc(("Backend reported an error when opening output stream, rc=%Rrc\n", rc));
+            }
+            else
+                rc = VINF_SUCCESS;
+
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_DISABLE:
+        {
+            if (pHstStrmOut->fEnabled)
+            {
+                rc = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
+                if (RT_SUCCESS(rc))
+                {
+                    pHstStrmOut->fEnabled = false;
+                    AudioMixBufClear(&pHstStrmOut->MixBuf);
+                }
+                else
+                    LogFlowFunc(("Backend vetoed closing output stream, rc=%Rrc\n", rc));
+            }
+            else
+                rc = VINF_SUCCESS;
+
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("Command %ld not implemented\n", enmStreamCmd));
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    return rc;
 }
 
 int drvAudioDestroyHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOut)
@@ -1044,11 +1159,9 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
             && !cStreamsLive)
         {
             /* Stop playing the current (pending) stream. */
-            int rc2 = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut,
-                                                          PDMAUDIOSTREAMCMD_DISABLE);
+            int rc2 = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE, 0 /* Flags */);
             if (RT_SUCCESS(rc2))
             {
-                pHstStrmOut->fEnabled        = false;
                 pHstStrmOut->fPendingDisable = false;
 
                 LogFunc(("[%s] Disabling stream\n", pHstStrmOut->MixBuf.pszName));
@@ -1293,11 +1406,11 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
 
     PPDMAUDIOHSTSTRMOUT pHstStrmOut = NULL;
     while ((pHstStrmOut = drvAudioHstFindAnyEnabledOut(pThis, pHstStrmOut)))
-        pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, enmCmd);
+        drvAudioControlHstOut(pThis, pHstStrmOut, enmCmd, 0 /* Flags */);
 
     PPDMAUDIOHSTSTRMIN pHstStrmIn = NULL;
     while ((pHstStrmIn = drvAudioFindNextEnabledHstIn(pThis, pHstStrmIn)))
-        pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn, enmCmd);
+        drvAudioControlHstIn(pThis, pHstStrmIn, enmCmd, 0 /* Flags */);
 }
 
 static struct audio_option audio_options[] =
@@ -1450,12 +1563,12 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
+    int rc = VINF_SUCCESS;
+
     if (pGstStrmOut)
     {
         PPDMAUDIOHSTSTRMOUT pHstStrmOut = pGstStrmOut->pHstStrmOut;
         AssertPtr(pHstStrmOut);
-
-        LogFlowFunc(("%s: fEnable=%RTbool\n", pGstStrmOut->MixBuf.pszName, fEnable));
 
         if (pGstStrmOut->State.fActive != fEnable)
         {
@@ -1463,12 +1576,7 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
             {
                 pHstStrmOut->fPendingDisable = false;
                 if (!pHstStrmOut->fEnabled)
-                {
-                    pHstStrmOut->fEnabled = true;
-                    pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut,
-                                                        PDMAUDIOSTREAMCMD_ENABLE);
-                    /** @todo Check rc. */
-                }
+                    rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_ENABLE, 0 /* Flags */);
             }
             else
             {
@@ -1487,11 +1595,14 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
                 }
             }
 
-            pGstStrmOut->State.fActive = fEnable;
+            if (RT_SUCCESS(rc))
+                pGstStrmOut->State.fActive = fEnable;
+
+            LogFlowFunc(("%s: fEnable=%RTbool, rc=%Rrc\n", pGstStrmOut->MixBuf.pszName, fEnable, rc));
         }
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static DECLCALLBACK(int) drvAudioEnableIn(PPDMIAUDIOCONNECTOR pInterface,
@@ -1502,6 +1613,8 @@ static DECLCALLBACK(int) drvAudioEnableIn(PPDMIAUDIOCONNECTOR pInterface,
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
+    int rc = VINF_SUCCESS;
+
     if (pGstStrmIn)
     {
         PPDMAUDIOHSTSTRMIN pHstStrmIn = pGstStrmIn->pHstStrmIn;
@@ -1511,36 +1624,16 @@ static DECLCALLBACK(int) drvAudioEnableIn(PPDMIAUDIOCONNECTOR pInterface,
 
         if (pGstStrmIn->State.fActive != fEnable)
         {
-            if (fEnable)
-            {
-                if (!pHstStrmIn->fEnabled)
-                {
-                    int rc2 = pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn,
-                                                                 PDMAUDIOSTREAMCMD_ENABLE);
-                    if (RT_LIKELY(RT_SUCCESS(rc2)))
-                        pHstStrmIn->fEnabled = true;
-                    else
-                        LogFlowFunc(("Error opening host input stream in backend, rc=%Rrc\n", rc2));
-                }
-            }
-            else
-            {
-                if (pHstStrmIn->fEnabled)
-                {
-                    int rc2 = pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn,
-                                                                 PDMAUDIOSTREAMCMD_DISABLE);
-                    if (RT_LIKELY(RT_SUCCESS(rc2))) /* Did the backend veto? */
-                        pHstStrmIn->fEnabled = false;
-                    else
-                        LogFlowFunc(("Backend vetoed closing input stream, rc=%Rrc\n", rc2));
-                }
-            }
+            rc = drvAudioControlHstIn(pThis, pHstStrmIn,
+                                      fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE, 0 /* Flags */);
+            if (RT_SUCCESS(rc))
+                pGstStrmIn->State.fActive = fEnable;
 
-            pGstStrmIn->State.fActive = fEnable;
+            LogFlowFunc(("%s: fEnable=%RTbool, rc=%Rrc\n", pGstStrmIn->MixBuf.pszName, fEnable, rc));
         }
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static DECLCALLBACK(bool) drvAudioIsInputOK(PPDMIAUDIOCONNECTOR pInterface,
@@ -1777,7 +1870,7 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
     PPDMAUDIOHSTSTRMOUT pHstStrmOut = NULL;
     while ((pHstStrmOut = drvAudioFindAnyHstOut(pThis, pHstStrmOut)))
     {
-        pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
+        drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE, 0 /* Flags */);
         pThis->pHostDrvAudio->pfnFiniOut(pThis->pHostDrvAudio, pHstStrmOut);
     }
 
@@ -1785,7 +1878,7 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
     PPDMAUDIOHSTSTRMIN pHstStrmIn = NULL;
     while ((pHstStrmIn = drvAudioFindNextHstIn(pThis, pHstStrmIn)))
     {
-        pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn, PDMAUDIOSTREAMCMD_DISABLE);
+        drvAudioControlHstIn(pThis, pHstStrmIn, PDMAUDIOSTREAMCMD_DISABLE, 0 /* Flags */);
         pThis->pHostDrvAudio->pfnFiniIn(pThis->pHostDrvAudio, pHstStrmIn);
     }
 

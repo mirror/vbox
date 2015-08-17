@@ -548,14 +548,17 @@ static void dsoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut
 
     if (pDSoundStrmOut->pDSB != NULL)
     {
-        DWORD dwStatus;
         /* This performs some restore, so call it anyway and ignore result. */
-        dsoundPlayGetStatus(pDSoundStrmOut->pDSB, &dwStatus);
+        dsoundPlayGetStatus(pDSoundStrmOut->pDSB, NULL /* Status */);
 
         LogFlowFunc(("Playback stopped\n"));
 
         HRESULT hr = IDirectSoundBuffer8_Stop(pDSoundStrmOut->pDSB);
-        if (FAILED(hr))
+        if (SUCCEEDED(hr))
+        {
+            dsoundPlayClearSamples(pDSoundStrmOut);
+        }
+        else
             LogRelMax(s_cMaxRelLogEntries, ("DSound: Errpor stopping playback buffer: %Rhrc\n", hr));
     }
 }
