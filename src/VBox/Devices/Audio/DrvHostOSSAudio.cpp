@@ -352,8 +352,8 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
-            audio_pcm_info_clear_buf(&pHstStrmOut->Props,
-                                     pThisStrmOut->pvPCMBuf, AudioMixBufSize(&pHstStrmOut->MixBuf));
+            drvAudioClearBuf(&pHstStrmOut->Props,
+                             pThisStrmOut->pvPCMBuf, AudioMixBufSize(&pHstStrmOut->MixBuf));
 
             mask = PCM_ENABLE_OUTPUT;
             if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)

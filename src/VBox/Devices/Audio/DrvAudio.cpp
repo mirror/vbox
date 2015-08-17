@@ -309,14 +309,17 @@ static bool drvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
     return fValid;
 }
 
-void audio_pcm_info_clear_buf(PPDMPCMPROPS pPCMInfo, void *pvBuf, int len)
+void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf)
 {
-    if (!len)
+    AssertPtrReturnVoid(pPCMInfo);
+    AssertPtrReturnVoid(pvBuf);
+
+    if (!cbBuf)
         return;
 
     if (pPCMInfo->fSigned)
     {
-        memset (pvBuf, 0, len << pPCMInfo->cShift);
+        memset(pvBuf, 0, cbBuf << pPCMInfo->cShift);
     }
     else
     {
@@ -324,41 +327,43 @@ void audio_pcm_info_clear_buf(PPDMPCMPROPS pPCMInfo, void *pvBuf, int len)
         {
 
         case 8:
-            memset (pvBuf, 0x80, len << pPCMInfo->cShift);
+            memset(pvBuf, 0x80, cbBuf << pPCMInfo->cShift);
             break;
 
         case 16:
-            {
-                int i;
-                uint16_t *p = (uint16_t *)pvBuf;
-                int shift = pPCMInfo->cChannels - 1;
-                short s = INT16_MAX;
+        {
+            int i;
+            uint16_t *p = (uint16_t *)pvBuf;
+            int shift = pPCMInfo->cChannels - 1;
+            short s = INT16_MAX;
 
-                if (pPCMInfo->fSwapEndian)
-                    s = RT_BSWAP_U16(s);
+            if (pPCMInfo->fSwapEndian)
+                s = RT_BSWAP_U16(s);
 
-                for (i = 0; i < len << shift; i++)
-                    p[i] = s;
-            }
+            for (i = 0; i < cbBuf << shift; i++)
+                p[i] = s;
+
             break;
+        }
 
         case 32:
-            {
-                int i;
-                uint32_t *p = (uint32_t *)pvBuf;
-                int shift = pPCMInfo->cChannels - 1;
-                int32_t s = INT32_MAX;
+        {
+            int i;
+            uint32_t *p = (uint32_t *)pvBuf;
+            int shift = pPCMInfo->cChannels - 1;
+            int32_t s = INT32_MAX;
 
-                if (pPCMInfo->fSwapEndian)
-                    s = RT_BSWAP_U32(s);
+            if (pPCMInfo->fSwapEndian)
+                s = RT_BSWAP_U32(s);
 
-                for (i = 0; i < len << shift; i++)
-                    p[i] = s;
-            }
+            for (i = 0; i < cbBuf << shift; i++)
+                p[i] = s;
+
             break;
+        }
 
         default:
-            LogFlowFunc(("audio_pcm_info_clear_buf: invalid bits %d\n", pPCMInfo->cBits));
+            AssertMsgFailed(("Invalid bits: %RU8\n", pPCMInfo->cBits));
             break;
         }
     }
@@ -1478,7 +1483,7 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
                             cGstStrmsActive++;
                     }
 
-                    pHstStrmOut->fPendingDisable = cGstStrmsActive == 1;
+                    pHstStrmOut->fPendingDisable = cGstStrmsActive >= 1;
                 }
             }
 

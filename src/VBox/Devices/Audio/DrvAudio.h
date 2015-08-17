@@ -144,10 +144,10 @@ int drvAudioHlpPcmCreateVoicePairOut(PDRVAUDIO pDrvAudio, const char *pszName, P
 
 /* Common functions between DrvAudio and backends (host audio drivers). */
 int  drvAudioAttachCapture(PDRVAUDIO pDrvAudio, PPDMAUDIOHSTSTRMOUT pHstStrmOut);
+void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf);
 void drvAudioDetachCapture(PPDMAUDIOHSTSTRMOUT pHstStrmOut);
 uint32_t drvAudioHstOutSamplesLive(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t *pcStreamsLive);
 
-void audio_pcm_info_clear_buf(PPDMPCMPROPS pPCMInfo, void *pvBuf, int len);
 
 typedef struct fixed_settings
 {

@@ -497,10 +497,10 @@ static void dsoundPlayClearSamples(PDSOUNDSTREAMOUT pDSoundStrmOut)
         int len2 = cb2 >> pDSoundStrmOut->strmOut.Props.cShift;
 
         if (pv1 && len1)
-            audio_pcm_info_clear_buf(&pDSoundStrmOut->strmOut.Props, pv1, len1);
+            drvAudioClearBuf(&pDSoundStrmOut->strmOut.Props, pv1, len1);
 
         if (pv2 && len2)
-            audio_pcm_info_clear_buf(&pDSoundStrmOut->strmOut.Props, pv2, len2);
+            drvAudioClearBuf(&pDSoundStrmOut->strmOut.Props, pv2, len2);
 
         dsoundUnlockOutput(pDSoundStrmOut->pDSB, pv1, pv2, cb1, cb2);
     }
