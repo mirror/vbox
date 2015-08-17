@@ -3831,7 +3831,7 @@ VMMR3_INT_DECL(uint32_t) VMR3GetErrorCount(PUVM pUVM)
  * @param   ...             The arguments.
  * @thread  Any thread.
  */
-static int vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+static int vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -3938,6 +3938,14 @@ VMMR3DECL(int) VMR3SetError(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszF
 VMMR3DECL(int) VMR3SetErrorV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+
+    /* Take shortcut when called on EMT, skipping VM handle requirement + validation. */
+    if (VMR3GetVMCPUThread(pUVM) != NIL_RTTHREAD)
+    {
+        vmR3SetErrorUV(pUVM, rc, RT_SRC_POS_ARGS, pszFormat, &va);
+        return rc;
+    }
+
     VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
     return VMSetErrorV(pUVM->pVM, rc, pszFile, iLine, pszFunction, pszFormat, va);
 }
