@@ -2440,7 +2440,7 @@ static DECLCALLBACK(int) vhdCompact(void *pBackendData, unsigned uPercentStart,
     void *pvBuf = NULL, *pvReplace = NULL;
     uint32_t *paBlocks = NULL;
 
-    DECLCALLBACK(int) (*pfnParentRead)(void *, uint64_t, void *, size_t) = NULL;
+    DECLCALLBACKMEMBER(int, pfnParentRead)(void *, uint64_t, void *, size_t) = NULL;
     void *pvParent = NULL;
     PVDINTERFACEPARENTSTATE pIfParentState = VDIfParentStateGet(pVDIfsOperation);
     if (pIfParentState)
