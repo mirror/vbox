@@ -642,21 +642,16 @@ public:
     {
         switch (m_error)
         {
-            case QNetworkReply::NoError:
-                break;
-            case QNetworkReply::HostNotFoundError:
-                return tr("Host not found");
-            case QNetworkReply::ContentAccessDenied:
-                return tr("Content access denied");
-            case QNetworkReply::ProtocolFailure:
-                return tr("Protocol failure");
-            case QNetworkReply::AuthenticationRequiredError:
-                return tr("Wrong SSL certificate format");
-            case QNetworkReply::SslHandshakeFailedError:
-                return tr("SSL authentication failed");
-            default:
-                return tr("Unknown reason");
-                break;
+            case QNetworkReply::NoError:                     break;
+            case QNetworkReply::RemoteHostClosedError:       return tr("Unable to initialize HTTP library");
+            case QNetworkReply::HostNotFoundError:           return tr("Host not found");
+            case QNetworkReply::ContentAccessDenied:         return tr("Content access denied");
+            case QNetworkReply::ProtocolFailure:             return tr("Protocol failure");
+            case QNetworkReply::ConnectionRefusedError:      return tr("Connection refused");
+            case QNetworkReply::SslHandshakeFailedError:     return tr("SSL authentication failed");
+            case QNetworkReply::AuthenticationRequiredError: return tr("Wrong SSL certificate format");
+            case QNetworkReply::ContentReSendError:          return tr("Content moved");
+            default:                                         return tr("Unknown reason");
         }
         return QString();
     }
@@ -671,30 +666,18 @@ private slots:
     {
         switch (m_pThread->error())
         {
-            case VINF_SUCCESS:
-                m_error = QNetworkReply::NoError;
-                break;
-            case VERR_HTTP_ABORTED:
-                m_error = QNetworkReply::OperationCanceledError;
-                break;
-            case VERR_HTTP_NOT_FOUND:
-                m_error = QNetworkReply::HostNotFoundError;
-                break;
-            case VERR_HTTP_ACCESS_DENIED:
-                m_error = QNetworkReply::ContentAccessDenied;
-                break;
-            case VERR_HTTP_BAD_REQUEST:
-                m_error = QNetworkReply::ProtocolFailure;
-                break;
-            case VERR_HTTP_CACERT_WRONG_FORMAT:
-                m_error = QNetworkReply::AuthenticationRequiredError;
-                break;
-            case VERR_HTTP_CACERT_CANNOT_AUTHENTICATE:
-                m_error = QNetworkReply::SslHandshakeFailedError;
-                break;
-            default:
-                m_error = QNetworkReply::UnknownNetworkError;
-                break;
+            case VINF_SUCCESS:                         m_error = QNetworkReply::NoError; break;
+            case VERR_HTTP_INIT_FAILED:                m_error = QNetworkReply::RemoteHostClosedError; break;
+            case VERR_HTTP_NOT_FOUND:                  m_error = QNetworkReply::HostNotFoundError; break;
+            case VERR_HTTP_ACCESS_DENIED:              m_error = QNetworkReply::ContentAccessDenied; break;
+            case VERR_HTTP_BAD_REQUEST:                m_error = QNetworkReply::ProtocolFailure; break;
+            case VERR_HTTP_COULDNT_CONNECT:            m_error = QNetworkReply::ConnectionRefusedError; break;
+            case VERR_HTTP_SSL_CONNECT_ERROR:          m_error = QNetworkReply::SslHandshakeFailedError; break;
+            case VERR_HTTP_CACERT_WRONG_FORMAT:        m_error = QNetworkReply::AuthenticationRequiredError; break;
+            case VERR_HTTP_CACERT_CANNOT_AUTHENTICATE: m_error = QNetworkReply::AuthenticationRequiredError; break;
+            case VERR_HTTP_ABORTED:                    m_error = QNetworkReply::OperationCanceledError; break;
+            case VERR_HTTP_REDIRECTED:                 m_error = QNetworkReply::ContentReSendError; break;
+            default:                                   m_error = QNetworkReply::UnknownNetworkError; break;
         }
         emit finished();
     }
