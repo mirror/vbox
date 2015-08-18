@@ -28,6 +28,11 @@
           be always opened readonly (5.0.2 regression)</para>
       </listitem>
 
+      <listitem>
+        <para>Appliance: fixed duplicate USB controller entries in exported OVA/OVF
+          (bug #14462)</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>

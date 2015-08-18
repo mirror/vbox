@@ -10220,6 +10220,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         if (FAILED(rc)) throw rc;
 
         /* USB Controller (required) */
+        data.usbSettings.llUSBControllers.clear();
         for (USBControllerList::const_iterator it = mUSBControllers->begin(); it != mUSBControllers->end(); ++it)
         {
             ComObjPtr<USBController> ctrl = *it;
