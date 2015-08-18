@@ -1429,7 +1429,7 @@ static void crVBoxHGSMIHandleNewMessage( CRConnection *conn, CRMessage *msg, uns
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
-DECLCALLBACK(HVBOXCRHGSMI_CLIENT) _crVBoxHGSMIClientCreate(PVBOXUHGSMI pHgsmi)
+static DECLCALLBACK(HVBOXCRHGSMI_CLIENT) _crVBoxHGSMIClientCreate(PVBOXUHGSMI pHgsmi)
 {
     PCRVBOXHGSMI_CLIENT pClient = crAlloc(sizeof (CRVBOXHGSMI_CLIENT));
 
@@ -1461,7 +1461,7 @@ DECLCALLBACK(HVBOXCRHGSMI_CLIENT) _crVBoxHGSMIClientCreate(PVBOXUHGSMI pHgsmi)
     return NULL;
 }
 
-DECLCALLBACK(void) _crVBoxHGSMIClientDestroy(HVBOXCRHGSMI_CLIENT hClient)
+static DECLCALLBACK(void) _crVBoxHGSMIClientDestroy(HVBOXCRHGSMI_CLIENT hClient)
 {
     Assert(0);
 
