@@ -959,7 +959,7 @@ static void doQueuesLoop()
  * the loop that takes SOAP calls from HTTP and serves them by handing sockets to the
  * SOAP queue worker threads.
  */
-static int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
 {
     // store a log prefix for this thread
     util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
