@@ -896,7 +896,7 @@
 #  define RT_NO_THROW_PROTO     throw()
 # endif
 #else
-# define RT_NO_THROW_PROO
+# define RT_NO_THROW_PROTO
 #endif
 
 /** @def RT_NO_THROW_DEF
