@@ -248,7 +248,7 @@ public:
     HRESULT rc() const { return mRC; }
     bool isOk() const { return SUCCEEDED(rc()); }
 
-    static int fntMediumTask(RTTHREAD aThread, void *pvUser);
+    static DECLCALLBACK(int) fntMediumTask(RTTHREAD aThread, void *pvUser);
 
     bool isAsync() { return mThread != NIL_RTTHREAD; }
 

@@ -73,6 +73,12 @@
         RTPrintf("%70s -- %u calls per second\n", #fn, nCalls); \
   } while (0)
 
+void shutdownProcessList(std::vector<RTPROCESS> const &rProcesses)
+{
+    for (size_t i = 0; i < rProcesses.size(); i++)
+        RTProcTerminate(rProcesses[i]);
+}
+
 void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cVMs)
 {
 
@@ -90,7 +96,8 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
         if (RT_FAILURE(rc))
         {
             hints.getProcesses(processes);
-            std::for_each(processes.begin(), processes.end(), std::ptr_fun(RTProcTerminate));
+            shutdownProcessList(processes);
+
             RTPrintf("tstCollector: RTProcCreate() -> %Rrc\n", rc);
             return;
         }
@@ -140,7 +147,7 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
     printf("\n%u VMs -- %.2f%% of CPU time\n", cVMs, (RTTimeNanoTS() - start) / 10000000. / times);
 
     /* Shut down fake VMs */
-    std::for_each(processes.begin(), processes.end(), std::ptr_fun(RTProcTerminate));
+    shutdownProcessList(processes);
 }
 
 #ifdef RT_OS_SOLARIS

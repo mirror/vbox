@@ -620,7 +620,7 @@ void clipPeekEventAndDoXFixesHandling(CLIPBACKEND *pCtx)
  * The main loop of our clipboard reader.
  * @note  X11 backend code.
  */
-static int clipEventThread(RTTHREAD self, void *pvUser)
+static DECLCALLBACK(int) clipEventThread(RTTHREAD self, void *pvUser)
 {
     LogRel(("Shared clipboard: Starting shared clipboard thread\n"));
 
