@@ -943,7 +943,7 @@ static DECLCALLBACK(int) drvHostALSAAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
         }
 
         size_t cbToRead = RT_MIN(AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf,
-                                                 cAvail),
+                                                 (uint32_t)cAvail), /* cAvail is always >= 0 */
                                  AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf,
                                                  drvAudioHstOutSamplesLive(pHstStrmOut, NULL /* pcStreamsLive */)));
         LogFlowFunc(("cbToRead=%zu, cbAvail=%zu\n",
