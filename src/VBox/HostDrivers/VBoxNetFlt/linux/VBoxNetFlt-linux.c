@@ -2291,8 +2291,8 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
 {
     int err;
-    NOREF(pvContext);
     IPRT_LINUX_SAVE_EFL_AC();
+    NOREF(pvContext);
 
     pThis->u.s.Notifier.notifier_call = vboxNetFltLinuxNotifierCallback;
     err = register_netdevice_notifier(&pThis->u.s.Notifier);
