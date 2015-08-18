@@ -2187,7 +2187,7 @@ static int hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pvUser          The user argument (pointer to the possibly
  *                          out-of-date guest-CPU context).
  */
-DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
+static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
 {
     if (enmOperation == VMMCALLRING3_VM_R0_ASSERTION)
     {
