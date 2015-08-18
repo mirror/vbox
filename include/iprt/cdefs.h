@@ -881,9 +881,17 @@
  * and the compiler can thus save itself the bother of trying
  * to catch any of them. Put this between the closing parenthesis
  * and the semicolon in function prototypes (and implementation if C++).
+ *
+ * @remarks The use of the nothrow attribute with GCC is because old compilers
+ *          (4.1.1, 32-bit) leaking the nothrow into global space or something
+ *          when used with RTDECL or similar.
  */
 #ifdef RT_EXCEPTIONS_ENABLED
-# define RT_NO_THROW            throw()
+# ifdef __GNUC__
+#  define RT_NO_THROW           __attribute__((nothrow))
+# else
+#  define RT_NO_THROW           throw()
+# endif
 #else
 # define RT_NO_THROW
 #endif
