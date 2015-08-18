@@ -111,14 +111,22 @@ typedef struct PDMAUDIOSTREAMCFG
 # error "Port me!"
 #endif
 
+/**
+ * Audio direction.
+ */
 typedef enum PDMAUDIODIR
 {
-    PDMAUDIODIR_UNKNOWN = 0,
-    PDMAUDIODIR_IN      = 1,
-    PDMAUDIODIR_OUT     = 2,
-    PDMAUDIODIR_BOTH    = 3
+    PDMAUDIODIR_UNKNOWN    = 0,
+    PDMAUDIODIR_IN         = 1,
+    PDMAUDIODIR_OUT        = 2,
+    PDMAUDIODIR_DUPLEX     = 3,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIODIR_32BIT_HACK = 0x7fffffff
 } PDMAUDIODIR;
 
+/**
+ * Audio mixer controls.
+ */
 typedef enum PDMAUDIOMIXERCTL
 {
     PDMAUDIOMIXERCTL_UNKNOWN = 0,
@@ -130,6 +138,9 @@ typedef enum PDMAUDIOMIXERCTL
     PDMAUDIOMIXERCTL_32BIT_HACK = 0x7fffffff
 } PDMAUDIOMIXERCTL;
 
+/**
+ * Audio recording sources.
+ */
 typedef enum PDMAUDIORECSOURCE
 {
     PDMAUDIORECSOURCE_UNKNOWN = 0,
@@ -501,6 +512,13 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnOpenOut, (PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
                                            PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMOUT *ppGstStrmOut));
 
+    /**
+     * Plays (transfers) all available samples via the connected host backend.
+     *
+     * @returns VBox status code.
+     * @param   pInterface           Pointer to the interface structure containing the called function pointer.
+     * @param   pcSamplesPlayed      Number of samples played. Optional.
+     */
     DECLR3CALLBACKMEMBER(int, pfnPlayOut, (PPDMIAUDIOCONNECTOR pInterface, uint32_t *pcSamplesPlayed));
 
     /**
@@ -625,6 +643,12 @@ typedef struct PDMIHOSTAUDIO
      */
     DECLR3CALLBACKMEMBER(int, pfnFiniOut, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut));
 
+    /**
+     * Returns whether the specified audio direction in the backend is enabled or not.
+     *
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   enmDir              Audio direction to check status for.
+     */
     DECLR3CALLBACKMEMBER(bool, pfnIsEnabled, (PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir));
 
     /**
