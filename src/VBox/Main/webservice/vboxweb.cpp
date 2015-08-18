@@ -99,7 +99,7 @@ typedef WebsessionsMap::iterator                WebsessionsMapIterator;
 
 typedef std::map<RTTHREAD, com::Utf8Str> ThreadsMap;
 
-static int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser);
+static DECLCALLBACK(int) fntWatchdog(RTTHREAD ThreadSelf, void *pvUser);
 
 /****************************************************************************
  *
@@ -402,7 +402,7 @@ public:
      * @param pvThread
      * @return
      */
-    static int fntWrapper(RTTHREAD pThread, void *pvThread)
+    static DECLCALLBACK(int) fntWrapper(RTTHREAD pThread, void *pvThread)
     {
         SoapThread *pst = (SoapThread*)pvThread;
         pst->process();
@@ -1419,8 +1419,7 @@ int main(int argc, char *argv[])
  * for whether they have been no requests in a configurable timeout period. In
  * that case, the websession is automatically logged off.
  */
-/* static */
-int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
 {
     // store a log prefix for this thread
     util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);

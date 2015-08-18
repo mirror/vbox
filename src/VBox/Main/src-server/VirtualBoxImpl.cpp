@@ -1410,7 +1410,7 @@ void sanitiseMachineFilename(Utf8Str &strName)
 
 #ifdef DEBUG
 /** Simple unit test/operation examples for sanitiseMachineFilename(). */
-static unsigned testSanitiseMachineFilename(void (*pfnPrintf)(const char *, ...))
+static unsigned testSanitiseMachineFilename(DECLCALLBACKMEMBER(void, pfnPrintf)(const char *, ...))
 {
     unsigned cErrors = 0;
 
