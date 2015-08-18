@@ -34,7 +34,7 @@
 *********************************************************************************************************************************/
 #include <iprt/string.h>
 #ifndef VBOX_VBGLR3_XSERVER
-# include <iprt/cpp/mem.h>
+# include <iprt/mem.h>
 #endif
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
@@ -60,7 +60,7 @@ extern "C" void* xf86memset(const void*,int,xf86size_t);
 
 #ifdef VBOX_VBGLR3_XSERVER
 
-# undef RTSTrEnd
+# undef RTStrEnd
 # define RTStrEnd xf86RTStrEnd
 
 DECLINLINE(char const *) RTStrEnd(char const *pszString, size_t cchMax)
@@ -579,6 +579,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
 
 /**
  * Start enumerating guest properties which match a given pattern.
+ *
  * This function creates a handle which can be used to continue enumerating.
  *
  * @returns VBox status code.
@@ -599,18 +600,18 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
  * @param   ppHandle        where the handle for continued enumeration is stored
  *                          on success.  This must be freed with
  *                          VbglR3GuestPropEnumFree when it is no longer needed.
- * @param  ppszName      Where to store the next property name.  This will be
- *                       set to NULL if there are no more properties to
- *                       enumerate.  This pointer should not be freed. Optional.
- * @param  ppszValue     Where to store the next property value.  This will be
- *                       set to NULL if there are no more properties to
- *                       enumerate.  This pointer should not be freed. Optional.
- * @param  pu64Timestamp Where to store the next property timestamp.  This
- *                       will be set to zero if there are no more properties
- *                       to enumerate. Optional.
- * @param  ppszFlags     Where to store the next property flags.  This will be
- *                       set to NULL if there are no more properties to
- *                       enumerate.  This pointer should not be freed. Optional.
+ * @param   ppszName        Where to store the next property name.  This will be
+ *                          set to NULL if there are no more properties to
+ *                          enumerate.  This pointer should not be freed. Optional.
+ * @param   ppszValue       Where to store the next property value.  This will be
+ *                          set to NULL if there are no more properties to
+ *                          enumerate.  This pointer should not be freed. Optional.
+ * @param   pu64Timestamp   Where to store the next property timestamp.  This
+ *                          will be set to zero if there are no more properties
+ *                          to enumerate. Optional.
+ * @param   ppszFlags       Where to store the next property flags.  This will be
+ *                          set to NULL if there are no more properties to
+ *                          enumerate.  This pointer should not be freed. Optional.
  *
  * @remarks While all output parameters are optional, you need at least one to
  *          figure out when to stop.
@@ -625,68 +626,72 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
                                     char const **ppszFlags)
 {
     /* Create the handle. */
-    RTCMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> Handle;
-    Handle = (PVBGLR3GUESTPROPENUM)RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM));
-    if (!Handle)
+    PVBGLR3GUESTPROPENUM pHandle = (PVBGLR3GUESTPROPENUM)RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM));
+    if (RT_LIKELY(pHandle))
+    {/* likely */}
+    else
         return VERR_NO_MEMORY;
 
     /* Get the length of the pattern string, including the final terminator. */
-    size_t cchPatterns = 1;
+    size_t cbPatterns = 1;
     for (uint32_t i = 0; i < cPatterns; ++i)
-        cchPatterns += strlen(papszPatterns[i]) + 1;
+        cbPatterns += strlen(papszPatterns[i]) + 1;
 
-    /* Pack the pattern array */
-    RTCMemAutoPtr<char> Patterns;
-    Patterns = (char *)RTMemAlloc(cchPatterns);
+    /* Pack the pattern array. */
+    char *pszzPatterns = (char *)RTMemAlloc(cbPatterns);
     size_t off = 0;
     for (uint32_t i = 0; i < cPatterns; ++i)
     {
         size_t cb = strlen(papszPatterns[i]) + 1;
-        memcpy(&Patterns[off], papszPatterns[i], cb);
+        memcpy(&pszzPatterns[off], papszPatterns[i], cb);
         off += cb;
     }
-    Patterns[off] = '\0';
-
-    /* Randomly chosen initial size for the buffer to hold the enumeration
-     * information. */
-    uint32_t cchBuf = 4096;
-    RTCMemAutoPtr<char> Buf;
+    pszzPatterns[off] = '\0';
 
     /* In reading the guest property data we are racing against the host
      * adding more of it, so loop a few times and retry on overflow. */
-    int rc = VINF_SUCCESS;
+    uint32_t cbBuf  = 4096; /* picked out of thin air */
+    char    *pchBuf = NULL;
+    int      rc     = VINF_SUCCESS;
     for (int i = 0; i < 10; ++i)
     {
-        if (!Buf.realloc(cchBuf))
+        void *pvNew = RTMemRealloc(pchBuf, cbBuf);
+        if (pvNew)
+            pchBuf = (char *)pvNew;
+        else
         {
             rc = VERR_NO_MEMORY;
             break;
         }
-        rc = VbglR3GuestPropEnumRaw(u32ClientId, Patterns.get(),
-                                    Buf.get(), cchBuf, &cchBuf);
+        rc = VbglR3GuestPropEnumRaw(u32ClientId, pszzPatterns, pchBuf, cbBuf, &cbBuf);
         if (rc != VERR_BUFFER_OVERFLOW)
             break;
-        cchBuf += 4096;  /* Just to increase our chances */
+        cbBuf += 4096;  /* Just to increase our chances */
     }
+    RTMemFree(pszzPatterns);
     if (RT_SUCCESS(rc))
     {
         /*
-         * Transfer ownership of the buffer to the handle structure and
-         * call VbglR3GuestPropEnumNext to retrieve the first entry.
+         * Complete the handle and call VbglR3GuestPropEnumNext to retrieve the first entry.
          */
-        Handle->pchNext = Handle->pchBuf = Buf.release();
-        Handle->pchBufEnd = Handle->pchBuf + cchBuf;
+        pHandle->pchNext   = pchBuf;
+        pHandle->pchBuf    = pchBuf;
+        pHandle->pchBufEnd = pchBuf + cbBuf;
 
         const char *pszNameTmp;
         if (!ppszName)
             ppszName = &pszNameTmp;
-        rc = VbglR3GuestPropEnumNext(Handle.get(), ppszName, ppszValue,
-                                     pu64Timestamp, ppszFlags);
+        rc = VbglR3GuestPropEnumNext(pHandle, ppszName, ppszValue, pu64Timestamp, ppszFlags);
         if (RT_SUCCESS(rc))
-            *ppHandle = Handle.release();
+        {
+            *ppHandle = pHandle;
+            return rc;
+        }
     }
     else if (rc == VERR_BUFFER_OVERFLOW)
         rc = VERR_TOO_MUCH_DATA;
+    RTMemFree(pchBuf);
+    RTMemFree(pHandle);
     return rc;
 }
 
