@@ -45,8 +45,7 @@
 unsigned g_cErrors = 0;
 
 
-static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
-                       const char *pszFormat, va_list va)
+static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     g_cErrors++;
     RTPrintf("tstVD: Error %Rrc at %s:%u (%s): ", rc, RT_SRC_POS_ARGS);
@@ -54,7 +53,7 @@ static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
     RTPrintf("\n");
 }
 
-static int tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
+static DECLCALLBACK(int) tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
     RTPrintf("tstVD: ");
     RTPrintfV(pszFormat, va);

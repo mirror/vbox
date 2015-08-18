@@ -83,18 +83,17 @@ unsigned g_cErrors = 0;
 /** Global RNG state. */
 RTRAND   g_hRand;
 
-static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
-                       const char *pszFormat, va_list va)
+static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     g_cErrors++;
-    RTPrintf("tstVD: Error %Rrc at %s:%u (%s): ", rc, RT_SRC_POS_ARGS);
+    RTPrintf("tstVDSnap: Error %Rrc at %s:%u (%s): ", rc, RT_SRC_POS_ARGS);
     RTPrintfV(pszFormat, va);
     RTPrintf("\n");
 }
 
-static int tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
+static DECLCALLBACK(int) tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
-    RTPrintf("tstVD: ");
+    RTPrintf("tstVDSnap: ");
     RTPrintfV(pszFormat, va);
     return VINF_SUCCESS;
 }

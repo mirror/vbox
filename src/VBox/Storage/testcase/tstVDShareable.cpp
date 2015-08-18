@@ -45,18 +45,17 @@
 unsigned g_cErrors = 0;
 
 
-static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
-                       const char *pszFormat, va_list va)
+static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     g_cErrors++;
-    RTPrintf("tstVD: Error %Rrc at %s:%u (%s): ", rc, RT_SRC_POS_ARGS);
+    RTPrintf("tstVDShareable: Error %Rrc at %s:%u (%s): ", rc, RT_SRC_POS_ARGS);
     RTPrintfV(pszFormat, va);
     RTPrintf("\n");
 }
 
-static int tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
+static DECLCALLBACK(int) tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
-    RTPrintf("tstVD: ");
+    RTPrintf("tstVDShareable: ");
     RTPrintfV(pszFormat, va);
     return VINF_SUCCESS;
 }
@@ -123,7 +122,7 @@ int main(int argc, char *argv[])
     RTR3InitExe(argc, &argv, 0);
     int rc;
 
-    RTPrintf("tstVD: TESTING...\n");
+    RTPrintf("tstVDShareable: TESTING...\n");
 
     /*
      * Clean up potential leftovers from previous unsuccessful runs.
@@ -135,7 +134,7 @@ int main(int argc, char *argv[])
         rc = RTDirCreate("tmp", RTFS_UNIX_IRWXU, 0);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("tstVD: Failed to create 'tmp' directory! rc=%Rrc\n", rc);
+            RTPrintf("tstVDShareable: Failed to create 'tmp' directory! rc=%Rrc\n", rc);
             g_cErrors++;
         }
     }
@@ -145,7 +144,7 @@ int main(int argc, char *argv[])
                                 VD_IMAGE_FLAGS_FIXED);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstVD: VDI shareable test failed! rc=%Rrc\n", rc);
+        RTPrintf("tstVDShareable: VDI shareable test failed! rc=%Rrc\n", rc);
         g_cErrors++;
     }
 #endif /* VDI_TEST */
@@ -158,16 +157,16 @@ int main(int argc, char *argv[])
     rc = VDShutdown();
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstVD: unloading backends failed! rc=%Rrc\n", rc);
+        RTPrintf("tstVDShareable: unloading backends failed! rc=%Rrc\n", rc);
         g_cErrors++;
     }
      /*
       * Summary
       */
     if (!g_cErrors)
-        RTPrintf("tstVD: SUCCESS\n");
+        RTPrintf("tstVDShareable: SUCCESS\n");
     else
-        RTPrintf("tstVD: FAILURE - %d errors\n", g_cErrors);
+        RTPrintf("tstVDShareable: FAILURE - %d errors\n", g_cErrors);
 
     return !!g_cErrors;
 }

@@ -43,7 +43,7 @@ static struct KeyValuePair {
     { NULL, NULL }
 };
 
-static bool tstAreKeysValid(void *pvUser, const char *pszzValid)
+static DECLCALLBACK(bool) tstAreKeysValid(void *pvUser, const char *pszzValid)
 {
     return true;
 }
@@ -56,7 +56,7 @@ static const char *tstGetValueByKey(const char *pszKey)
     return NULL;
 }
 
-static int tstQuerySize(void *pvUser, const char *pszName, size_t *pcbValue)
+static DECLCALLBACK(int) tstQuerySize(void *pvUser, const char *pszName, size_t *pcbValue)
 {
     const char *pszValue = tstGetValueByKey(pszName);
     if (!pszValue)
@@ -65,7 +65,7 @@ static int tstQuerySize(void *pvUser, const char *pszName, size_t *pcbValue)
     return VINF_SUCCESS;
 }
 
-static int tstQuery(void *pvUser, const char *pszName, char *pszValue, size_t cchValue)
+static DECLCALLBACK(int) tstQuery(void *pvUser, const char *pszName, char *pszValue, size_t cchValue)
 {
     const char *pszTmp = tstGetValueByKey(pszName);
     if (!pszValue)

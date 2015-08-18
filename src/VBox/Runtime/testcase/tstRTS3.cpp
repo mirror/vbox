@@ -55,7 +55,7 @@
 # define TSTS3_PUTGETKEY_GETFILE "tstS3_fetched"
 #endif /* TSTS3_PUTGETKEY */
 
-static int progress(unsigned uPercent, void *pvUser)
+static DECLCALLBACK(int) progress(unsigned uPercent, void *pvUser)
 {
 #ifdef TSTS3_SHOWPROGRESS
     RTTestIPrintf(RTTESTLVL_ALWAYS, " Progress for %s - %d%% done.\n", (char*)pvUser, (int)uPercent);

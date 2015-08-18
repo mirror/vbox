@@ -63,7 +63,7 @@ int PrintError(const char *pszFormat, ...)
 }
 
 
-int ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
 {
     uint64_t *pu64 = (uint64_t *)pvUser;
     for (;;)

@@ -74,7 +74,7 @@ typedef struct VDIOBACKENDMEM
     volatile uint32_t cReqsWaiting;
 } VDIOBACKENDMEM;
 
-static int vdIoBackendMemThread(RTTHREAD hThread, void *pvUser);
+static DECLCALLBACK(int) vdIoBackendMemThread(RTTHREAD hThread, void *pvUser);
 
 /**
  * Pokes the I/O thread that something interesting happened.
@@ -196,7 +196,7 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
  * @param hThread    The thread handle.
  * @param pvUser     Opaque user data.
  */
-static int vdIoBackendMemThread(RTTHREAD hThread, void *pvUser)
+static DECLCALLBACK(int) vdIoBackendMemThread(RTTHREAD hThread, void *pvUser)
 {
     PVDIOBACKENDMEM pIoBackend = (PVDIOBACKENDMEM)pvUser;
 

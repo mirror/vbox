@@ -76,7 +76,7 @@ int VDMemDiskCreate(PPVDMEMDISK ppMemDisk, uint64_t cbSize)
     return rc;
 }
 
-static int vdMemDiskDestroy(PAVLRU64NODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) vdMemDiskDestroy(PAVLRU64NODECORE pNode, void *pvUser)
 {
     PVDMEMDISKSEG pSeg = (PVDMEMDISKSEG)pNode;
     RTMemFree(pSeg->pvSeg);
@@ -307,7 +307,7 @@ int VDMemDiskGetSize(PVDMEMDISK pMemDisk, uint64_t *pcbSize)
  * @param pvParam  Opaque user data containing the pointer to
  *                 the file handle.
  */
-static int vdMemDiskSegmentWriteToFile(PAVLRU64NODECORE pNode, void *pvParam)
+static DECLCALLBACK(int) vdMemDiskSegmentWriteToFile(PAVLRU64NODECORE pNode, void *pvParam)
 {
     PVDMEMDISKSEG pSeg = (PVDMEMDISKSEG)pNode;
     RTFILE hFile = *(PRTFILE)pvParam;
