@@ -401,7 +401,7 @@ typedef struct VGAState {
     PPDMDEVINSRC                pDevInsRC;
     /** Pointer to the GC vram mapping. */
     RCPTRTYPE(uint8_t *)        vram_ptrRC;
-    uint32_t                    PaddingMinus1;
+    uint32_t                    Padding1;
 
     /** Pointer to the device instance - R3 Ptr. */
     PPDMDEVINSR3                pDevInsR3;
@@ -442,12 +442,13 @@ typedef struct VGAState {
     /** The R0 vram pointer... */
     R0PTRTYPE(uint8_t *)        vram_ptrR0;
 
-#ifdef VBOX_WITH_VMSVGA
 # if HC_ARCH_BITS == 32
     uint32_t                    Padding3;
 # endif
+
+# ifdef VBOX_WITH_VMSVGA
     VMSVGAState                 svga;
-#endif
+# endif
 
     /** The number of monitors. */
     uint32_t                    cMonitors;
@@ -468,13 +469,13 @@ typedef struct VGAState {
     bool                        fRemappedVGA;
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     bool                        fRenderVRAM;
-#ifdef VBOX_WITH_VMSVGA
+# ifdef VBOX_WITH_VMSVGA
     /* Whether the SVGA emulation is enabled or not. */
     bool                        fVMSVGAEnabled;
-    bool                        Padding1[1+4];
-#else
-    bool                        Padding1[2+4];
-#endif
+    bool                        Padding4[1+4];
+# else
+    bool                        Padding4[2+4];
+# endif
 
     /** Physical access type for the linear frame buffer dirty page tracking. */
     PGMPHYSHANDLERTYPE          hLfbAccessHandlerType;
