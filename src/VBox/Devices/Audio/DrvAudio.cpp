@@ -335,7 +335,6 @@ void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf)
 
         case 16:
         {
-            int i;
             uint16_t *p = (uint16_t *)pvBuf;
             int shift = pPCMInfo->cChannels - 1;
             short s = INT16_MAX;
@@ -343,7 +342,7 @@ void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf)
             if (pPCMInfo->fSwapEndian)
                 s = RT_BSWAP_U16(s);
 
-            for (i = 0; i < cbBuf << shift; i++)
+            for (unsigned i = 0; i < cbBuf << shift; i++)
                 p[i] = s;
 
             break;
@@ -351,7 +350,6 @@ void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf)
 
         case 32:
         {
-            int i;
             uint32_t *p = (uint32_t *)pvBuf;
             int shift = pPCMInfo->cChannels - 1;
             int32_t s = INT32_MAX;
@@ -359,7 +357,7 @@ void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf)
             if (pPCMInfo->fSwapEndian)
                 s = RT_BSWAP_U32(s);
 
-            for (i = 0; i < cbBuf << shift; i++)
+            for (unsigned i = 0; i < cbBuf << shift; i++)
                 p[i] = s;
 
             break;
