@@ -41,7 +41,7 @@ typedef struct {
 
 
 extern DECLEXPORT(void) crInitTSD(CRtsd *tsd);
-extern DECLEXPORT(void) crInitTSDF(CRtsd *tsd, DECLCALLBACKMEMBER(void, destructor)(void *));
+extern DECLEXPORT(void) crInitTSDF(CRtsd *tsd, void (*destructor)(void *));
 extern DECLEXPORT(void) crFreeTSD(CRtsd *tsd);
 extern DECLEXPORT(void) crSetTSD(CRtsd *tsd, void *ptr);
 extern DECLEXPORT(void *) crGetTSD(CRtsd *tsd);
