@@ -138,8 +138,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
                      g_pSUPGlobalInfoPage->u64CpuHz,
                      uCpuHzRef,
                      g_pSUPGlobalInfoPage->u32Mode,
-                     fTestMode,
                      SUPGetGIPModeName(g_pSUPGlobalInfoPage),
+                     fTestMode,
                      g_pSUPGlobalInfoPage->u32Version);
             RTPrintf(fHex
                      ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId      CpuHz      %sTSC Interval History...\n"
