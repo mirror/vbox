@@ -67,14 +67,10 @@
  * executed from one), while in ring-0 there are none at all.  Neither context
  * manages the page tables for intermediate switcher context, that's all done in
  * ring-3.
- *
- * On 32-bit darwin (hybrid kernel) we do 64-bit guest support differently, so
- * there we can safely work without mappings if we don't compile in raw-mode.
  */
 #if defined(IN_RING0) \
   || (   !defined(VBOX_WITH_RAW_MODE) \
       && (   HC_ARCH_BITS != 32 \
-          || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) \
           || !defined(VBOX_WITH_64_BITS_GUESTS) \
          ) \
      )

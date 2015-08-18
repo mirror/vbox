@@ -2,6 +2,7 @@
 ;; @file
 ; HM - Internal header file.
 ;
+
 ;
 ; Copyright (C) 2006-2015 Oracle Corporation
 ;
@@ -15,9 +16,7 @@
 ;
 
 %if HC_ARCH_BITS == 32
- %ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
-  %define VMX_USE_CACHED_VMCS_ACCESSES
- %endif
+ %define VMX_USE_CACHED_VMCS_ACCESSES
 %endif
 
 ;Maximum number of cached entries.

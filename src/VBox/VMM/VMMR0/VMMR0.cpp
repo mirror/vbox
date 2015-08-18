@@ -61,6 +61,11 @@
 #  pragma intrinsic(_AddressOfReturnAddress)
 #endif
 
+#if defined(RT_OS_DARWIN) && ARCH_BITS == 32
+# error "32-bit darwin is no longer supported. Go back to 4.3 or earlier!"
+#endif
+
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *

@@ -255,11 +255,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
             if (fExtFeaturesEDX & X86_CPUID_EXT_FEATURE_EDX_SYSCALL)
             {
 #ifdef RT_ARCH_X86
-# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-                if (fExtFeaturesEDX & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
-# else
                 if (!ASMIsIntelCpu())
-# endif
 #endif
                 {
                     uint64_t fEfer = ASMRdMsr(MSR_K6_EFER);
@@ -399,7 +395,7 @@ VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
         Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
@@ -463,7 +459,7 @@ VMMR0_INT_DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     AssertReturn((pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU), VINF_SUCCESS);
     NOREF(pVM); NOREF(pCtx);
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE))
@@ -530,15 +526,10 @@ static int cpumR0SaveHostDebugState(PVMCPU pVCpu)
     /*
      * Save the host state.
      */
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    AssertCompile((uintptr_t)&pVCpu->cpum.s.Host.dr3 - (uintptr_t)&pVCpu->cpum.s.Host.dr0 == sizeof(uint64_t) * 3);
-    cpumR0SaveDRx(&pVCpu->cpum.s.Host.dr0);
-#else
     pVCpu->cpum.s.Host.dr0 = ASMGetDR0();
     pVCpu->cpum.s.Host.dr1 = ASMGetDR1();
     pVCpu->cpum.s.Host.dr2 = ASMGetDR2();
     pVCpu->cpum.s.Host.dr3 = ASMGetDR3();
-#endif
     pVCpu->cpum.s.Host.dr6 = ASMGetDR6();
     /** @todo dr7 might already have been changed to 0x400; don't care right now as it's harmless. */
     pVCpu->cpum.s.Host.dr7 = ASMGetDR7();
@@ -582,7 +573,7 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, 
      */
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_GUEST)
     {
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
         if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
         {
             uint64_t uDr6 = pVCpu->cpum.s.Guest.dr[6];
@@ -593,14 +584,10 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, 
         else
 #endif
         {
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-            cpumR0SaveDRx(&pVCpu->cpum.s.Guest.dr[0]);
-#else
             pVCpu->cpum.s.Guest.dr[0] = ASMGetDR0();
             pVCpu->cpum.s.Guest.dr[1] = ASMGetDR1();
             pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
             pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
-#endif
             if (fDr6)
                 pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
         }
@@ -618,15 +605,10 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, 
         if (uCurDR7 != X86_DR7_INIT_VAL)
             ASMSetDR7(X86_DR7_INIT_VAL);
 
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-        AssertCompile((uintptr_t)&pVCpu->cpum.s.Host.dr3 - (uintptr_t)&pVCpu->cpum.s.Host.dr0 == sizeof(uint64_t) * 3);
-        cpumR0LoadDRx(&pVCpu->cpum.s.Host.dr0);
-#else
         ASMSetDR0(pVCpu->cpum.s.Host.dr0);
         ASMSetDR1(pVCpu->cpum.s.Host.dr1);
         ASMSetDR2(pVCpu->cpum.s.Host.dr2);
         ASMSetDR3(pVCpu->cpum.s.Host.dr3);
-#endif
         /** @todo consider only updating if they differ, esp. DR6. Need to figure how
          *        expensive DRx reads are over DRx writes.  */
         ASMSetDR6(pVCpu->cpum.s.Host.dr6);
@@ -659,7 +641,7 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6)
      */
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_GUEST)
     {
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
         if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
         {
             uint64_t uDr6 = pVCpu->cpum.s.Guest.dr[6];
@@ -670,14 +652,10 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6)
         else
 #endif
         {
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-            cpumR0SaveDRx(&pVCpu->cpum.s.Guest.dr[0]);
-#else
             pVCpu->cpum.s.Guest.dr[0] = ASMGetDR0();
             pVCpu->cpum.s.Guest.dr[1] = ASMGetDR1();
             pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
             pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
-#endif
             if (fDr6)
                 pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
         }
@@ -706,20 +684,16 @@ VMMR0_INT_DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDr6)
      * Activate the guest state DR0-3.
      * DR7 and DR6 (if fDr6 is true) are left to the caller.
      */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
         ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_SYNC_DEBUG_REGS_GUEST); /* Postpone it to the world switch. */
     else
 #endif
     {
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-        cpumR0LoadDRx(&pVCpu->cpum.s.Guest.dr[0]);
-#else
         ASMSetDR0(pVCpu->cpum.s.Guest.dr[0]);
         ASMSetDR1(pVCpu->cpum.s.Guest.dr[1]);
         ASMSetDR2(pVCpu->cpum.s.Guest.dr[2]);
         ASMSetDR3(pVCpu->cpum.s.Guest.dr[3]);
-#endif
         if (fDr6)
             ASMSetDR6(pVCpu->cpum.s.Guest.dr[6]);
 
@@ -753,20 +727,16 @@ VMMR0_INT_DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDr6)
      * Activate the guest state DR0-3.
      * DR7 and DR6 (if fDr6 is true) are left to the caller.
      */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
         ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_SYNC_DEBUG_REGS_HYPER); /* Postpone it. */
     else
 #endif
     {
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-        cpumR0LoadDRx(&pVCpu->cpum.s.Hyper.dr[0]);
-#else
         ASMSetDR0(pVCpu->cpum.s.Hyper.dr[0]);
         ASMSetDR1(pVCpu->cpum.s.Hyper.dr[1]);
         ASMSetDR2(pVCpu->cpum.s.Hyper.dr[2]);
         ASMSetDR3(pVCpu->cpum.s.Hyper.dr[3]);
-#endif
         if (fDr6)
             ASMSetDR6(X86_DR6_INIT_VAL);
 

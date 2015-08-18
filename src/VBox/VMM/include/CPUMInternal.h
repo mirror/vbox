@@ -111,13 +111,6 @@ typedef uint64_t STAMCOUNTER;
 #define CPUM_USE_SUPPORTS_LONGMODE      RT_BIT(20)
 /** @} */
 
-/* Sanity check. */
-#ifndef VBOX_FOR_DTRACE_LIB
-#if defined(VBOX_WITH_HYBRID_32BIT_KERNEL) && (HC_ARCH_BITS != 32 || R0_ARCH_BITS != 32)
-# error "VBOX_WITH_HYBRID_32BIT_KERNEL is only for 32 bit builds."
-#endif
-#endif
-
 
 /** @name CPUM Saved State Version.
  * @{ */
@@ -201,15 +194,12 @@ typedef CPUMINFO const *CPCPUMINFO;
 
 /**
  * The saved host CPU state.
- *
- * @remark  The special VBOX_WITH_HYBRID_32BIT_KERNEL checks here are for the 10.4.x series
- *          of Mac OS X where the OS is essentially 32-bit but the cpu mode can be 64-bit.
  */
 typedef struct CPUMHOSTCTX
 {
     /** General purpose register, selectors, flags and more
      * @{ */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64
     /** General purpose register ++
      * { */
     /*uint64_t        rax; - scratch*/
@@ -263,7 +253,7 @@ typedef struct CPUMHOSTCTX
     RTSEL           csPadding;
     /** @} */
 
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32
     /** Control registers.
      * @{ */
     uint32_t        cr0;
@@ -308,7 +298,7 @@ typedef struct CPUMHOSTCTX
     /* padding to get 64byte aligned size */
     uint8_t         auPadding[20];
 
-#elif HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#elif HC_ARCH_BITS == 64
 
     /** Control registers.
      * @{ */
@@ -351,14 +341,10 @@ typedef struct CPUMHOSTCTX
     /** @} */
 
     /* padding to get 32byte aligned size */
-# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    uint8_t         auPadding[52];
-# else
     uint8_t         auPadding[4];
-# endif
 
 #else
-# error HC_ARCH_BITS not defined
+# error HC_ARCH_BITS not defined or unsupported
 #endif
 
     /** Pointer to the FPU/SSE/AVX/XXXX state raw-mode mapping. */
@@ -557,8 +543,6 @@ DECLASM(void)       cpumR0SetFCW(uint16_t u16FCW);
 DECLASM(uint16_t)   cpumR0GetFCW(void);
 DECLASM(void)       cpumR0SetMXCSR(uint32_t u32MXCSR);
 DECLASM(uint32_t)   cpumR0GetMXCSR(void);
-DECLASM(void)       cpumR0LoadDRx(uint64_t const *pa4Regs);
-DECLASM(void)       cpumR0SaveDRx(uint64_t *pa4Regs);
 #endif
 
 RT_C_DECLS_END

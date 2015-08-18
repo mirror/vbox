@@ -324,23 +324,15 @@ VMMDECL(void) CPUMSetHyperLDTR(PVMCPU pVCpu, RTSEL SelLDTR)
  */
 #ifdef IN_RING0
 # if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-#  ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
-#   define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
+#  define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
     do { \
         if (!CPUMIsGuestInLongModeEx(&(a_pVCpu)->cpum.s.Guest)) \
             a_fnLoad(a_uValue); \
         else \
             (a_pVCpu)->cpum.s.fUseFlags |= CPUM_SYNC_DEBUG_REGS_HYPER; \
     } while (0)
-#  else
-#   define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
-    do { \
-        /** @todo we're not loading the correct guest value here! */ \
-        a_fnLoad(a_uValue); \
-    } while (0)
-#  endif
 # else
-# define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
+#  define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
     do { \
         a_fnLoad(a_uValue); \
     } while (0)

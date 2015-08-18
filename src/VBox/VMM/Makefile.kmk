@@ -25,6 +25,16 @@ endif
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 
+# Fail on unsupported hosts.
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+ ifeq ($(KBUILD_TARGET),darwin)
+  $(error 32-bit darwin is no longer a supported VirtualBox host. Go back to 4.3 or older for 32-bit support.)
+ else ifeq ($(KBUILD_TARGET),solaris)
+  $(error 32-bit solaris is no longer a supported VirtualBox host. Go back to x.y or older for 32-bit support.)
+ endif
+endif
+
+
 #
 # Globals
 #
@@ -119,9 +129,6 @@ if "$(KBUILD_TYPE)" == "debug" && "$(USERNAME)" == "bird"
  VBoxVMM_DEFS   += RTMEM_WRAP_TO_EF_APIS
 endif
 VBoxVMM_DEFS.darwin = VMM_R0_SWITCH_STACK
-VBoxVMM_DEFS.darwin.x86 = \
-	VBOX_WITH_2X_4GB_ADDR_SPACE   VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3 \
-	VBOX_WITH_HYBRID_32BIT_KERNEL VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R3
 
 VBoxVMM_INCS     = \
 	include \
@@ -276,8 +283,6 @@ ifdef VBOX_WITH_RAW_MODE
  VBoxVMM_SOURCES.amd64 = \
  	VMMSwitcher/AMD64To32Bit.asm \
  	VMMSwitcher/AMD64ToPAE.asm
- VBoxVMM_SOURCES.darwin.x86 += \
- 	VMMSwitcher/AMD64ToPAE.asm
 endif
 VBoxVMM_SOURCES.x86 += \
  	VMMSwitcher/32BitToAMD64.asm \
@@ -423,12 +428,6 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  ifdef VBOX_WITH_VMM_R0_SWITCH_STACK
   VMMRC_DEFS    += VMM_R0_SWITCH_STACK
  endif
- ifeq ($(KBUILD_TARGET_ARCH),x86)
-  VMMRC_DEFS.darwin = VMM_R0_SWITCH_STACK
-  VMMRC_DEFS.darwin = \
-  	VBOX_WITH_2X_4GB_ADDR_SPACE   VBOX_WITH_2X_4GB_ADDR_SPACE_IN_RC \
-  	VBOX_WITH_HYBRID_32BIT_KERNEL VBOX_WITH_HYBRID_32BIT_KERNEL_IN_RC
- endif
 
  VMMRC_INCS     := \
  	include \
@@ -550,9 +549,6 @@ ifndef VBOX_ONLY_EXTPACKS
   VMMR0_DEFS    += VMM_R0_SWITCH_STACK
  endif
  VMMR0_DEFS.darwin = VMM_R0_SWITCH_STACK
- VMMR0_DEFS.darwin.x86 = \
- 	VBOX_WITH_2X_4GB_ADDR_SPACE   VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 \
- 	VBOX_WITH_HYBRID_32BIT_KERNEL VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
  VMMR0_DEFS.win.amd64  = VBOX_WITH_KERNEL_USING_XMM
 
  VMMR0_INCS      = \
@@ -636,8 +632,6 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMR0/VMMR0JmpA-amd64.asm
  VMMR0_SOURCES.x86 = \
  	VMMR0/VMMR0JmpA-x86.asm
- VMMR0_SOURCES.darwin.x86 = \
- 	VMMRZ/PGMRZDynMap.cpp
 
  VMMR0_LIBS = \
  	$(PATH_STAGE_LIB)/ServicesR0$(VBOX_SUFF_LIB) \

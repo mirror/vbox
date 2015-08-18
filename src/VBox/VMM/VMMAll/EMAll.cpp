@@ -2382,7 +2382,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCP
     DISQPVPARAMVAL param1, param2;
     NOREF(pvFault);
 
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0)
+#if HC_ARCH_BITS == 32
     Assert(pDis->Param1.cb <= 4);
 #endif
 
@@ -3014,7 +3014,7 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
     DISQPVPARAMVAL param1, param2;
     NOREF(pvFault);
 
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0)
+#if HC_ARCH_BITS == 32
     Assert(pDis->Param1.cb <= 4);
 #endif
 
@@ -3728,16 +3728,6 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
             &&  uOpCode != OP_BTS
             &&  uOpCode != OP_BTR
             &&  uOpCode != OP_BTC
-# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-            &&  uOpCode != OP_CMPXCHG /* solaris */
-            &&  uOpCode != OP_AND     /* windows */
-            &&  uOpCode != OP_OR      /* windows */
-            &&  uOpCode != OP_XOR     /* because we can */
-            &&  uOpCode != OP_ADD     /* windows (dripple) */
-            &&  uOpCode != OP_ADC     /* because we can */
-            &&  uOpCode != OP_SUB     /* because we can */
-            /** @todo OP_BTS or is that a different kind of failure? */
-# endif
             )
         {
 # ifdef VBOX_WITH_STATISTICS

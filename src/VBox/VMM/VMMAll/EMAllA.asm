@@ -43,19 +43,6 @@
 %ifdef RT_ARCH_AMD64
  %define CAN_DO_8_BYTE_OP  1
 %endif
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
- %define CAN_DO_8_BYTE_OP  1
- %define MY_PTR_REG64   rcx
-%endif
-
-
-;*******************************************************************************
-;*  External Symbols                                                           *
-;*******************************************************************************
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-extern NAME(SUPR0Abs64bitKernelCS)
-extern NAME(SUPR0AbsKernelCS)
-%endif
 
 
 BEGINCODE
@@ -187,22 +174,6 @@ BEGINPROC   EMEmulateAnd
     pushf
     pop     MY_RET_REG
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
-    and     [MY_PTR_REG64], rdx         ; do 8 bytes AND
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateAnd
 
 
@@ -276,22 +247,6 @@ BEGINPROC   EMEmulateLockAnd
 %endif
     mov     eax, VINF_SUCCESS
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
-    lock and [MY_PTR_REG64], rdx         ; do 8 bytes OR
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateLockAnd
 
 ;;
@@ -356,22 +311,6 @@ BEGINPROC   EMEmulateOr
     pushf
     pop     MY_RET_REG
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
-    or      [MY_PTR_REG64], rdx         ; do 8 bytes OR
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateOr
 
 
@@ -445,22 +384,6 @@ BEGINPROC   EMEmulateLockOr
 %endif
     mov     eax, VINF_SUCCESS
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
-    lock or [MY_PTR_REG64], rdx         ; do 8 bytes OR
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateLockOr
 
 
@@ -526,22 +449,6 @@ BEGINPROC   EMEmulateXor
     pushf
     pop     MY_RET_REG
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
-    xor     [MY_PTR_REG64], rdx         ; do 8 bytes XOR
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateXor
 
 ;;
@@ -614,22 +521,6 @@ BEGINPROC   EMEmulateLockXor
 %endif
     mov     eax, VINF_SUCCESS
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
-    lock xor [MY_PTR_REG64], rdx         ; do 8 bytes OR
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateLockXor
 
 ;;
@@ -820,22 +711,6 @@ BEGINPROC   EMEmulateAdd
     pushf
     pop     MY_RET_REG
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
-    add     [MY_PTR_REG64], rdx         ; do 8 bytes ADD
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateAdd
 
 
@@ -905,23 +780,6 @@ BEGINPROC   EMEmulateAdcWithCarrySet
     pushf
     pop     MY_RET_REG
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
-    stc     ; set carry flag
-    adc     [MY_PTR_REG64], rdx         ; do 8 bytes ADC
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateAdcWithCarrySet
 
 
@@ -987,22 +845,6 @@ BEGINPROC   EMEmulateSub
     pushf
     pop     MY_RET_REG
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
-    sub     [MY_PTR_REG64], rdx         ; do 8 bytes SUB
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateSub
 
 
@@ -1219,26 +1061,6 @@ BEGINPROC   EMEmulateLockCmpXchg
 
     pop     xBX
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     ebx, 0ffffffffh
-    and     esp, 0ffffffffh
-    and     ecx, 0ffffffffh
-    mov     rax, qword [rbx]            ; load 2nd parameter's value
-    mov     rdx, qword [rsp + 0ch + 4]  ; rdx = third parameter
-
-    lock cmpxchg qword [rcx], rdx       ; do 8 byte CMPXCHG
-    mov     qword [rbx], rax
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateLockCmpXchg
 
 
@@ -1327,26 +1149,6 @@ BEGINPROC   EMEmulateCmpXchg
 
     pop     xBX
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     ebx, 0ffffffffh
-    and     esp, 0ffffffffh
-    and     ecx, 0ffffffffh
-    mov     rax, qword [rbx]            ; load 2nd parameter's value
-    mov     rdx, qword [rsp + 0ch + 4]  ; rdx = third parameter
-
-    cmpxchg qword [rcx], rdx            ; do 8 byte CMPXCHG
-    mov     qword [rbx], rax
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateCmpXchg
 
 
@@ -1564,23 +1366,6 @@ BEGINPROC   EMEmulateLockXAdd
     pop     MY_RET_REG
 
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     edx, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rax, qword [rdx]            ; load 2nd parameter's value
-    and     [MY_PTR_REG64], rax         ; do 8 bytes XADD
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateLockXAdd
 
 
@@ -1653,22 +1438,5 @@ BEGINPROC   EMEmulateXAdd
     pop     MY_RET_REG
 
     retn
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-.do_qword:
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    and     edx, 0ffffffffh
-    and     MY_PTR_REG, 0ffffffffh
-    mov     rax, qword [rdx]            ; load 2nd parameter's value
-    and     [MY_PTR_REG64], rax         ; do 8 bytes XADD
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .done.
-    dd      .done, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateXAdd
 

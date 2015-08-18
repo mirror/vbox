@@ -737,7 +737,7 @@ VMMR3DECL(int)      PGMR3MappingsSize(PVM pVM, uint32_t *pcb);
 VMMR3DECL(int)      PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 VMMR3DECL(int)      PGMR3MappingsUnfix(PVM pVM);
 VMMR3DECL(bool)     PGMR3MappingsNeedReFixing(PVM pVM);
-#if defined(VBOX_WITH_RAW_MODE) || (HC_ARCH_BITS != 64 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL))
+#if defined(VBOX_WITH_RAW_MODE) || HC_ARCH_BITS == 32 /* (latter for 64-bit guests on 32-bit hosts) */
 VMMR3DECL(int)      PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages);
 #endif
 VMMR3DECL(int)      PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);

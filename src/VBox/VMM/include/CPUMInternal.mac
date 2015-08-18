@@ -63,14 +63,6 @@ endstruc
 %define CPUM_HANDLER_CTXCORE_IN_EBP     RT_BIT(31)
 
 
-;; if anyone figures how to do %if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) in
-; nasm please tell / fix this hack.
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
- %define fVBOX_WITH_HYBRID_32BIT_KERNEL 1
-%else
- %define fVBOX_WITH_HYBRID_32BIT_KERNEL 0
-%endif
-
 struc CPUM
     ;...
     .offCPUMCPU0                resd    1
@@ -248,7 +240,7 @@ struc CPUMCPU
     ;
     alignb 64
     .Host                resb    0
-%if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBRID_32BIT_KERNEL
+%if HC_ARCH_BITS == 64
     ;.Host.rax            resq    1 - scratch
     .Host.rbx            resq    1
     ;.Host.rcx            resq    1 - scratch
@@ -294,7 +286,7 @@ struc CPUMCPU
     .Host.cs             resw    1
     .Host.csPadding      resw    1
 
-%if HC_ARCH_BITS == 32 && fVBOX_WITH_HYBRID_32BIT_KERNEL == 0
+%if HC_ARCH_BITS == 32
     .Host.cr0            resd    1
     ;.Host.cr2            resd    1 - scratch
     .Host.cr3            resd    1
@@ -353,11 +345,7 @@ struc CPUMCPU
     .Host.FSbase         resq    1
     .Host.GSbase         resq    1
     .Host.efer           resq    1
- %if fVBOX_WITH_HYBRID_32BIT_KERNEL
-    .Host.auPadding      resb    54
- %else
     .Host.auPadding      resb    4
- %endif
 %endif ; 64-bit
     .Host.pXStateRC RTRCPTR_RES  1
     alignb RTR0PTR_CB
