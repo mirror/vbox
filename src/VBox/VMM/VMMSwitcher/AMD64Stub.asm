@@ -31,11 +31,8 @@
 BEGINCODE
 GLOBALNAME Start
 
-%ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
-BITS 64
-%else
 BITS 32
-%endif
+
 BEGINPROC vmmR0ToRawMode
     mov     eax, VERR_VMM_SWITCHER_STUB
     ret

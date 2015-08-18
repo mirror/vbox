@@ -1852,7 +1852,7 @@ DECLASM(int) VMXDispatchHostNmi(void);
  * @returns VBox status code.
  * @param   HCPhysVmxOn      Physical address of VMXON structure.
  */
-#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXEnable(RTHCPHYS HCPhysVmxOn);
 #else
 DECLINLINE(int) VMXEnable(RTHCPHYS HCPhysVmxOn)
@@ -1915,7 +1915,7 @@ the_end:
 /**
  * Executes VMXOFF.
  */
-#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(void) VMXDisable(void);
 #else
 DECLINLINE(void) VMXDisable(void)
@@ -1946,7 +1946,7 @@ DECLINLINE(void) VMXDisable(void)
  * @returns VBox status code.
  * @param   HCPhysVmcs       Physical address of VM control structure.
  */
-#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs);
 #else
 DECLINLINE(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs)
@@ -2003,7 +2003,7 @@ success:
  * @returns VBox status code.
  * @param   HCPhysVmcs       Physical address of VMCS structure.
  */
-#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs);
 #else
 DECLINLINE(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs)
@@ -2075,7 +2075,7 @@ DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pHCPhysVmcs);
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
-#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val);
 #else
 DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
@@ -2143,7 +2143,7 @@ the_end:
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
-#if !defined(RT_ARCH_X86) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if !defined(RT_ARCH_X86)
 # if !VMX_USE_MSC_INTRINSICS || ARCH_BITS != 64
 DECLASM(int) VMXWriteVmcs64(uint32_t idxField, uint64_t u64Val);
 # else  /* VMX_USE_MSC_INTRINSICS */
@@ -2160,14 +2160,7 @@ DECLINLINE(int) VMXWriteVmcs64(uint32_t idxField, uint64_t u64Val)
 VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
 #endif
 
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-# define VMXWriteVmcsHstN(idxField, uVal)       HMVMX_IS_64BIT_HOST_MODE() ?                     \
-                                                   VMXWriteVmcs64(idxField, uVal)                \
-                                                 : VMXWriteVmcs32(idxField, uVal)
-# define VMXWriteVmcsGstN(idxField, u64Val)     (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests) ? \
-                                                   VMXWriteVmcs64(idxField, u64Val)              \
-                                                 : VMXWriteVmcs32(idxField, u64Val)
-#elif ARCH_BITS == 32
+#if ARCH_BITS == 32
 # define VMXWriteVmcsHstN                       VMXWriteVmcs32
 # define VMXWriteVmcsGstN(idxField, u64Val)     VMXWriteVmcs64Ex(pVCpu, idxField, u64Val)
 #else  /* ARCH_BITS == 64 */
@@ -2208,7 +2201,7 @@ DECLASM(int) VMXR0InvVPID(VMXFLUSHVPID enmFlush, uint64_t *pDescriptor);
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
-#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData);
 #else
 DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
@@ -2286,7 +2279,7 @@ the_end:
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
-#if (!defined(RT_ARCH_X86) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if (!defined(RT_ARCH_X86) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData);
 #else
 DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)

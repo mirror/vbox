@@ -1492,7 +1492,7 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     return rc;
 }
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
 
 /**
  * Save guest FPU/XMM state (64 bits guest mode & 32 bits host only)
@@ -1551,7 +1551,7 @@ VMMR0_INT_DECL(int)   HMR0TestSwitcher3264(PVM pVM)
     return rc;
 }
 
-#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL) */
+#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
 
 /**
  * Returns suspend status of the host.

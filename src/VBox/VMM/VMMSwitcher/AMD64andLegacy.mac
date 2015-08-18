@@ -46,7 +46,6 @@ GLOBALNAME Fixups
 BEGINCODE
 GLOBALNAME Start
 
-%ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
 BITS 64
 
 ;;
@@ -203,79 +202,6 @@ gth64_apic_done:
 
     ret
 ENDPROC vmmR0ToRawMode
-
-
-%else ; VBOX_WITH_HYBRID_32BIT_KERNEL
-
-
-BITS 32
-
-;;
-; The C interface.
-;
-BEGINPROC vmmR0ToRawMode
- %ifdef DEBUG_STUFF
-    COM32_S_NEWLINE
-    COM32_S_CHAR '^'
- %endif
-
- %ifdef VBOX_WITH_STATISTICS
-    ;
-    ; Switcher stats.
-    ;
-    FIXUP FIX_HC_VM_OFF, 1, VM.StatSwitcherToGC
-    mov     edx, 0ffffffffh
-    STAM_PROFILE_ADV_START edx
- %endif
-
-    ; Thunk to/from 64 bit when invoking the worker routine.
-    ;
-    FIXUP FIX_HC_VM_OFF, 1, VM.cpum
-    mov     edx, 0ffffffffh
-
-    push    0
-    push    cs
-    push    0
-    FIXUP FIX_HC_32BIT, 1, .vmmR0ToRawModeReturn - NAME(Start)
-    push    0ffffffffh
-
-    FIXUP FIX_HC_64BIT_CS, 1
-    push    0ffffh
-    FIXUP FIX_HC_32BIT, 1, NAME(vmmR0ToRawModeAsm) - NAME(Start)
-    push    0ffffffffh
-    retf
-.vmmR0ToRawModeReturn:
-
-    ;
-    ; This selector reloading is probably not necessary, but we do it anyway to be quite sure
-    ; the CPU has the right idea about the selectors.
-    ;
-    mov     edx, ds
-    mov     ds, edx
-    mov     ecx, es
-    mov     es, ecx
-    mov     edx, ss
-    mov     ss, edx
-
- %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
- Missing implementation!
- %endif
-
-
- %ifdef VBOX_WITH_STATISTICS
-    ;
-    ; Switcher stats.
-    ;
-    FIXUP FIX_HC_VM_OFF, 1, VM.StatSwitcherToHC
-    mov     edx, 0ffffffffh
-    STAM_PROFILE_ADV_STOP edx
- %endif
-
-    ret
-ENDPROC vmmR0ToRawMode
-
-BITS 64
-%endif ;!VBOX_WITH_HYBRID_32BIT_KERNEL
 
 
 

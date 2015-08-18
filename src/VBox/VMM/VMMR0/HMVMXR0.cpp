@@ -55,18 +55,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#if defined(RT_ARCH_AMD64)
-# define HMVMX_IS_64BIT_HOST_MODE()   (true)
-typedef RTHCUINTREG                   HMVMXHCUINTREG;
-#elif defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-extern "C" uint32_t g_fVMXIs64bitHost;
-# define HMVMX_IS_64BIT_HOST_MODE()   (g_fVMXIs64bitHost != 0)
-typedef uint64_t                      HMVMXHCUINTREG;
-#else
-# define HMVMX_IS_64BIT_HOST_MODE()   (false)
-typedef RTHCUINTREG                   HMVMXHCUINTREG;
-#endif
-
 /** Use the function table. */
 #define HMVMX_USE_FUNCTION_TABLE
 
@@ -351,7 +339,7 @@ static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMXFLUSHVPID e
 static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
                                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress,
                                                  bool fStepping, uint32_t *puIntState);
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32
 static int                hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu);
 #endif
 #ifndef HMVMX_USE_FUNCTION_TABLE
@@ -2744,19 +2732,6 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         return VERR_INTERNAL_ERROR;
     }
 
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    /*
-     * This is for the darwin 32-bit/PAE kernels trying to execute 64-bit guests. We don't bother with
-     * the 32<->64 switcher in this case. This is a rare, legacy use-case with barely any test coverage.
-     */
-    if (   pVM->hm.s.fAllow64BitGuests
-        && !HMVMX_IS_64BIT_HOST_MODE())
-    {
-        LogRel(("VMXR0SetupVM: Unsupported guest and host paging mode combination.\n"));
-        return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
-    }
-#endif
-
     /* Initialize these always, see hmR3InitFinalizeR0().*/
     pVM->hm.s.vmx.enmFlushEpt  = VMXFLUSHEPT_NONE;
     pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_NONE;
@@ -2771,9 +2746,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
     /* Check if we can use the VMCS controls for swapping the EFER MSR. */
     Assert(!pVM->hm.s.vmx.fSupportsVmcsEfer);
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (   HMVMX_IS_64BIT_HOST_MODE()
-        && (pVM->hm.s.vmx.Msrs.VmxEntry.n.allowed1 & VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR)
+#if HC_ARCH_BITS == 64
+    if (   (pVM->hm.s.vmx.Msrs.VmxEntry.n.allowed1 & VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR)
         && (pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1  & VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR)
         && (pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1  & VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR))
     {
@@ -2827,7 +2801,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: hmR0VmxInitUpdatedGuestStateMask failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
 
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32
         rc = hmR0VmxInitVmcsReadCache(pVM, pVCpu);
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: hmR0VmxInitVmcsReadCache failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
@@ -2863,19 +2837,8 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
     int rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_CR0, uReg);
     AssertRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    /* For the darwin 32-bit hybrid kernel, we need the 64-bit CR3 as it uses 64-bit paging. */
-    if (HMVMX_IS_64BIT_HOST_MODE())
-    {
-        uint64_t uRegCR3 = HMR0Get64bitCR3();
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_CR3, uRegCR3);
-    }
-    else
-#endif
-    {
-        uReg = ASMGetCR3();
-        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_CR3, uReg);
-    }
+    uReg = ASMGetCR3();
+    rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_CR3, uReg);
     AssertRCReturn(rc, rc);
 
     uReg = ASMGetCR4();
@@ -2951,24 +2914,8 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     /*
      * Host CS and SS segment registers.
      */
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    RTSEL uSelCS;
-    RTSEL uSelSS;
-    if (HMVMX_IS_64BIT_HOST_MODE())
-    {
-        uSelCS = (RTSEL)(uintptr_t)&SUPR0Abs64bitKernelCS;
-        uSelSS = (RTSEL)(uintptr_t)&SUPR0Abs64bitKernelSS;
-    }
-    else
-    {
-        /* Seems darwin uses the LDT (TI flag is set) in the CS & SS selectors which VT-x doesn't like. */
-        uSelCS = (RTSEL)(uintptr_t)&SUPR0AbsKernelCS;
-        uSelSS = (RTSEL)(uintptr_t)&SUPR0AbsKernelSS;
-    }
-#else
     RTSEL uSelCS = ASMGetCS();
     RTSEL uSelSS = ASMGetSS();
-#endif
 
     /*
      * Host TR segment register.
@@ -3019,60 +2966,45 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
      * Host GDTR and IDTR.
      */
     RTGDTR Gdtr;
+    RTIDTR Idtr;
     RT_ZERO(Gdtr);
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    if (HMVMX_IS_64BIT_HOST_MODE())
-    {
-        X86XDTR64 Gdtr64;
-        X86XDTR64 Idtr64;
-        HMR0Get64bitGdtrAndIdtr(&Gdtr64, &Idtr64);
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_GDTR_BASE, Gdtr64.uAddr);     AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_IDTR_BASE, Idtr64.uAddr);     AssertRCReturn(rc, rc);
-
-        Gdtr.cbGdt = Gdtr64.cb;
-        Gdtr.pGdt  = (uintptr_t)Gdtr64.uAddr;
-    }
-    else
-#endif
-    {
-        RTIDTR Idtr;
-        ASMGetGDTR(&Gdtr);
-        ASMGetIDTR(&Idtr);
-        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_GDTR_BASE, Gdtr.pGdt);      AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_IDTR_BASE, Idtr.pIdt);      AssertRCReturn(rc, rc);
+    RT_ZERO(Idtr);
+    ASMGetGDTR(&Gdtr);
+    ASMGetIDTR(&Idtr);
+    rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_GDTR_BASE, Gdtr.pGdt);      AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_IDTR_BASE, Idtr.pIdt);      AssertRCReturn(rc, rc);
 
 #if HC_ARCH_BITS == 64
-        /*
-         * Determine if we need to manually need to restore the GDTR and IDTR limits as VT-x zaps them to the
-         * maximum limit (0xffff) on every VM-exit.
-         */
-        if (Gdtr.cbGdt != 0xffff)
-        {
-            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDTR;
-            AssertCompile(sizeof(Gdtr) == sizeof(X86XDTR64));
-            memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
-        }
-
-        /*
-         * IDT limit is effectively capped at 0xfff. (See Intel spec. 6.14.1 "64-Bit Mode IDT"
-         * and Intel spec. 6.2 "Exception and Interrupt Vectors".)  Therefore if the host has the limit as 0xfff, VT-x
-         * bloating the limit to 0xffff shouldn't cause any different CPU behavior.  However, several hosts either insists
-         * on 0xfff being the limit (Windows Patch Guard) or uses the limit for other purposes (darwin puts the CPU ID in there
-         * but botches sidt alignment in at least one consumer).  So, we're only allowing IDTR.LIMIT to be left at 0xffff on
-         * hosts where we are pretty sure it won't cause trouble.
-         */
-# if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-        if (Idtr.cbIdt <  0x0fff)
-# else
-        if (Idtr.cbIdt != 0xffff)
-# endif
-        {
-            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_IDTR;
-            AssertCompile(sizeof(Idtr) == sizeof(X86XDTR64));
-            memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostIdtr, &Idtr, sizeof(X86XDTR64));
-        }
-#endif
+    /*
+     * Determine if we need to manually need to restore the GDTR and IDTR limits as VT-x zaps them to the
+     * maximum limit (0xffff) on every VM-exit.
+     */
+    if (Gdtr.cbGdt != 0xffff)
+    {
+        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDTR;
+        AssertCompile(sizeof(Gdtr) == sizeof(X86XDTR64));
+        memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
     }
+
+    /*
+     * IDT limit is effectively capped at 0xfff. (See Intel spec. 6.14.1 "64-Bit Mode IDT"
+     * and Intel spec. 6.2 "Exception and Interrupt Vectors".)  Therefore if the host has the limit as 0xfff, VT-x
+     * bloating the limit to 0xffff shouldn't cause any different CPU behavior.  However, several hosts either insists
+     * on 0xfff being the limit (Windows Patch Guard) or uses the limit for other purposes (darwin puts the CPU ID in there
+     * but botches sidt alignment in at least one consumer).  So, we're only allowing IDTR.LIMIT to be left at 0xffff on
+     * hosts where we are pretty sure it won't cause trouble.
+     */
+# if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+    if (Idtr.cbIdt <  0x0fff)
+# else
+    if (Idtr.cbIdt != 0xffff)
+# endif
+    {
+        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_IDTR;
+        AssertCompile(sizeof(Idtr) == sizeof(X86XDTR64));
+        memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostIdtr, &Idtr, sizeof(X86XDTR64));
+    }
+#endif
 
     /*
      * Host TR base. Verify that TR selector doesn't point past the GDT. Masking off the TI and RPL bits
@@ -3083,68 +3015,51 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
                     VERR_VMX_INVALID_HOST_STATE);
 
     PCX86DESCHC pDesc = (PCX86DESCHC)(Gdtr.pGdt + (uSelTR & X86_SEL_MASK));
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    if (HMVMX_IS_64BIT_HOST_MODE())
-    {
-        /* We need the 64-bit TR base for hybrid darwin. */
-        uint64_t u64TRBase = X86DESC64_BASE((PX86DESC64)pDesc);
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_TR_BASE, u64TRBase);
-    }
-    else
-#endif
-    {
-        uintptr_t uTRBase;
 #if HC_ARCH_BITS == 64
-        uTRBase = X86DESC64_BASE(pDesc);
+    uintptr_t uTRBase = X86DESC64_BASE(pDesc);
 
-        /*
-         * VT-x unconditionally restores the TR limit to 0x67 and type to 11 (32-bit busy TSS) on all VM-exits.
-         * The type is the same for 64-bit busy TSS[1]. The limit needs manual restoration if the host has something else.
-         * Task switching is not supported in 64-bit mode[2], but the limit still matters as IOPM is supported in 64-bit mode.
-         * Restoring the limit lazily while returning to ring-3 is safe because IOPM is not applicable in ring-0.
-         *
-         * [1] See Intel spec. 3.5 "System Descriptor Types".
-         * [2] See Intel spec. 7.2.3 "TSS Descriptor in 64-bit mode".
-         */
-        Assert(pDesc->System.u4Type == 11);
-        if (   pDesc->System.u16LimitLow != 0x67
-            || pDesc->System.u4LimitHigh)
-        {
-            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_TR;
-            /* If the host has made GDT read-only, we would need to temporarily toggle CR0.WP before writing the GDT. */
-            if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_READ_ONLY)
-                pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_READ_ONLY;
-            pVCpu->hm.s.vmx.RestoreHost.uHostSelTR = uSelTR;
+    /*
+     * VT-x unconditionally restores the TR limit to 0x67 and type to 11 (32-bit busy TSS) on all VM-exits.
+     * The type is the same for 64-bit busy TSS[1]. The limit needs manual restoration if the host has something else.
+     * Task switching is not supported in 64-bit mode[2], but the limit still matters as IOPM is supported in 64-bit mode.
+     * Restoring the limit lazily while returning to ring-3 is safe because IOPM is not applicable in ring-0.
+     *
+     * [1] See Intel spec. 3.5 "System Descriptor Types".
+     * [2] See Intel spec. 7.2.3 "TSS Descriptor in 64-bit mode".
+     */
+    Assert(pDesc->System.u4Type == 11);
+    if (   pDesc->System.u16LimitLow != 0x67
+        || pDesc->System.u4LimitHigh)
+    {
+        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_TR;
+        /* If the host has made GDT read-only, we would need to temporarily toggle CR0.WP before writing the GDT. */
+        if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_READ_ONLY)
+            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_READ_ONLY;
+        pVCpu->hm.s.vmx.RestoreHost.uHostSelTR = uSelTR;
 
-            /* Store the GDTR here as we need it while restoring TR. */
-            memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
-        }
-#else
-        uTRBase = X86DESC_BASE(pDesc);
-#endif
-        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_TR_BASE, uTRBase);
+        /* Store the GDTR here as we need it while restoring TR. */
+        memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
     }
+#else
+    uintptr_t uTRBase = X86DESC_BASE(pDesc);
+#endif
+    rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_TR_BASE, uTRBase);
     AssertRCReturn(rc, rc);
 
     /*
      * Host FS base and GS base.
      */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (HMVMX_IS_64BIT_HOST_MODE())
-    {
-        uint64_t u64FSBase = ASMRdMsr(MSR_K8_FS_BASE);
-        uint64_t u64GSBase = ASMRdMsr(MSR_K8_GS_BASE);
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_FS_BASE, u64FSBase);          AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_GS_BASE, u64GSBase);          AssertRCReturn(rc, rc);
+#if HC_ARCH_BITS == 64
+    uint64_t u64FSBase = ASMRdMsr(MSR_K8_FS_BASE);
+    uint64_t u64GSBase = ASMRdMsr(MSR_K8_GS_BASE);
+    rc = VMXWriteVmcs64(VMX_VMCS_HOST_FS_BASE, u64FSBase);          AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs64(VMX_VMCS_HOST_GS_BASE, u64GSBase);          AssertRCReturn(rc, rc);
 
-# if HC_ARCH_BITS == 64
-        /* Store the base if we have to restore FS or GS manually as we need to restore the base as well. */
-        if (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_SEL_FS)
-            pVCpu->hm.s.vmx.RestoreHost.uHostFSBase = u64FSBase;
-        if (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_SEL_GS)
-            pVCpu->hm.s.vmx.RestoreHost.uHostGSBase = u64GSBase;
-# endif
-    }
+    /* Store the base if we have to restore FS or GS manually as we need to restore the base as well. */
+    if (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_SEL_FS)
+        pVCpu->hm.s.vmx.RestoreHost.uHostFSBase = u64FSBase;
+    if (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_SEL_GS)
+        pVCpu->hm.s.vmx.RestoreHost.uHostGSBase = u64GSBase;
 #endif
     return rc;
 }
@@ -3179,20 +3094,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
      */
     rc = VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,        ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
     AssertRCReturn(rc, rc);
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    if (HMVMX_IS_64BIT_HOST_MODE())
-    {
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_ESP,     ASMRdMsr(MSR_IA32_SYSENTER_ESP));
-        AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_EIP,     ASMRdMsr(MSR_IA32_SYSENTER_EIP));
-    }
-    else
-    {
-        rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,     ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
-        AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,     ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
-    }
-#elif HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
     AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
@@ -3245,7 +3147,7 @@ static bool hmR0VmxShouldSwapEferMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     return true;
 #endif
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
     /* For 32-bit hosts running 64-bit guests, we always swap EFER in the world-switcher. Nothing to do here. */
     if (CPUMIsGuestInLongMode(pVCpu))
         return false;
@@ -3385,14 +3287,9 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
          * Set the host long mode active (EFER.LMA) bit (which Intel calls "Host address-space size") if necessary.
          * On VM-exit, VT-x sets both the host EFER.LMA and EFER.LME bit to this value. See assertion in hmR0VmxSaveHostMsrs().
          */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (HMVMX_IS_64BIT_HOST_MODE())
-        {
-            val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
-            Log4(("Load[%RU32]: VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE\n", pVCpu->idCpu));
-        }
-        else
-            Assert(!(val & VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE));
+#if HC_ARCH_BITS == 64
+        val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
+        Log4(("Load[%RU32]: VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE\n", pVCpu->idCpu));
 #else
         if (CPUMIsGuestInLongModeEx(pMixedCtx))
         {
@@ -3402,7 +3299,7 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         }
         else
             Assert(!(val & VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE));
-#endif  /* HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) */
+#endif
 
         /* If the newer VMCS fields for managing EFER exists, use it. */
         if (   pVM->hm.s.vmx.fSupportsVmcsEfer
@@ -4194,7 +4091,7 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
          *
          * Note! DBGF expects a clean DR6 state before executing guest code.
          */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
         if (   CPUMIsGuestInLongModeEx(pMixedCtx)
             && !CPUMIsHyperDebugStateActivePending(pVCpu))
         {
@@ -4227,7 +4124,7 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
          */
         if (pMixedCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD)) /** @todo Why GD? */
         {
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
             if (   CPUMIsGuestInLongModeEx(pMixedCtx)
                 && !CPUMIsGuestDebugStateActivePending(pVCpu))
             {
@@ -4252,7 +4149,7 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
          * If no debugging enabled, we'll lazy load DR0-3.  Unlike on AMD-V, we
          * must intercept #DB in order to maintain a correct DR6 guest value.
          */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
         else if (   !CPUMIsGuestDebugStateActivePending(pVCpu)
                  && !CPUMIsGuestDebugStateActive(pVCpu))
 #else
@@ -4412,14 +4309,11 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                    || (pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
         /* 64-bit capable CPUs. */
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (HMVMX_IS_64BIT_HOST_MODE())
-        {
-            Assert(!(pCtx->cs.u64Base >> 32));
-            Assert(!pCtx->ss.Attr.u || !(pCtx->ss.u64Base >> 32));
-            Assert(!pCtx->ds.Attr.u || !(pCtx->ds.u64Base >> 32));
-            Assert(!pCtx->es.Attr.u || !(pCtx->es.u64Base >> 32));
-        }
+# if HC_ARCH_BITS == 64
+        Assert(!(pCtx->cs.u64Base >> 32));
+        Assert(!pCtx->ss.Attr.u || !(pCtx->ss.u64Base >> 32));
+        Assert(!pCtx->ds.Attr.u || !(pCtx->ds.u64Base >> 32));
+        Assert(!pCtx->es.Attr.u || !(pCtx->es.u64Base >> 32));
 # endif
     }
     else if (   CPUMIsGuestInV86ModeEx(pCtx)
@@ -4464,14 +4358,11 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(pCtx->gs.u32Limit == 0xffff);
         Assert(u32GSAttr == 0xf3);
         /* 64-bit capable CPUs. */
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (HMVMX_IS_64BIT_HOST_MODE())
-        {
-            Assert(!(pCtx->cs.u64Base >> 32));
-            Assert(!u32SSAttr || !(pCtx->ss.u64Base >> 32));
-            Assert(!u32DSAttr || !(pCtx->ds.u64Base >> 32));
-            Assert(!u32ESAttr || !(pCtx->es.u64Base >> 32));
-        }
+# if HC_ARCH_BITS == 64
+        Assert(!(pCtx->cs.u64Base >> 32));
+        Assert(!u32SSAttr || !(pCtx->ss.u64Base >> 32));
+        Assert(!u32DSAttr || !(pCtx->ds.u64Base >> 32));
+        Assert(!u32ESAttr || !(pCtx->es.u64Base >> 32));
 # endif
     }
 }
@@ -4778,7 +4669,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS))
     {
         /* For 64-bit hosts, we load/restore them lazily, see hmR0VmxLazyLoadGuestMsrs(). */
-#if HC_ARCH_BITS == 32 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32
         if (pVM->hm.s.fAllow64BitGuests)
         {
             int rc = VINF_SUCCESS;
@@ -4905,7 +4796,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #endif
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32
         /* 32-bit host. We need to switch to 64-bit before running the 64-bit guest. */
         if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0SwitcherStartVM64)
         {
@@ -4919,28 +4810,24 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
         }
 #else
-        /* 64-bit host or hybrid host. */
+        /* 64-bit host. */
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM64;
 #endif
     }
     else
     {
         /* Guest is not in long mode, use the 32-bit handler. */
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0StartVM32)
+#if HC_ARCH_BITS == 32
+        if (   pVCpu->hm.s.vmx.pfnStartVM != VMXR0StartVM32
+            && pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
         {
-            if (pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
-            {
-                /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
-                AssertMsg(HMCPU_CF_IS_SET(pVCpu,   HM_CHANGED_VMX_EXIT_CTLS
-                                                 | HM_CHANGED_VMX_ENTRY_CTLS
-                                                 | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
-            }
-            pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
+            /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
+            AssertMsg(HMCPU_CF_IS_SET(pVCpu,   HM_CHANGED_VMX_EXIT_CTLS
+                                             | HM_CHANGED_VMX_ENTRY_CTLS
+                                             | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
         }
-#else
-        pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
 #endif
+        pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
     }
     Assert(pVCpu->hm.s.vmx.pfnStartVM);
     return VINF_SUCCESS;
@@ -5025,7 +4912,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 /* VMX control bits. */
                 uint32_t        u32Val;
                 uint64_t        u64Val;
-                HMVMXHCUINTREG  uHCReg;
+                RTHCUINTREG     uHCReg;
                 rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PIN_EXEC, &u32Val);                  AssertRC(rc);
                 Log4(("VMX_VMCS32_CTRL_PIN_EXEC                %#RX32\n", u32Val));
                 rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);                 AssertRC(rc);
@@ -5162,16 +5049,13 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 Log4(("Host RSP %#RHv\n", uHCReg));
                 rc = VMXReadVmcsHstN(VMX_VMCS_HOST_RIP, &uHCReg);           AssertRC(rc);
                 Log4(("Host RIP %#RHv\n", uHCReg));
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-                if (HMVMX_IS_64BIT_HOST_MODE())
-                {
-                    Log4(("MSR_K6_EFER            = %#RX64\n", ASMRdMsr(MSR_K6_EFER)));
-                    Log4(("MSR_K8_CSTAR           = %#RX64\n", ASMRdMsr(MSR_K8_CSTAR)));
-                    Log4(("MSR_K8_LSTAR           = %#RX64\n", ASMRdMsr(MSR_K8_LSTAR)));
-                    Log4(("MSR_K6_STAR            = %#RX64\n", ASMRdMsr(MSR_K6_STAR)));
-                    Log4(("MSR_K8_SF_MASK         = %#RX64\n", ASMRdMsr(MSR_K8_SF_MASK)));
-                    Log4(("MSR_K8_KERNEL_GS_BASE  = %#RX64\n", ASMRdMsr(MSR_K8_KERNEL_GS_BASE)));
-                }
+# if HC_ARCH_BITS == 64
+                Log4(("MSR_K6_EFER            = %#RX64\n", ASMRdMsr(MSR_K6_EFER)));
+                Log4(("MSR_K8_CSTAR           = %#RX64\n", ASMRdMsr(MSR_K8_CSTAR)));
+                Log4(("MSR_K8_LSTAR           = %#RX64\n", ASMRdMsr(MSR_K8_LSTAR)));
+                Log4(("MSR_K6_STAR            = %#RX64\n", ASMRdMsr(MSR_K6_STAR)));
+                Log4(("MSR_K8_SF_MASK         = %#RX64\n", ASMRdMsr(MSR_K8_SF_MASK)));
+                Log4(("MSR_K8_KERNEL_GS_BASE  = %#RX64\n", ASMRdMsr(MSR_K8_KERNEL_GS_BASE)));
 # endif
 #endif /* VBOX_STRICT */
             break;
@@ -5186,7 +5070,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 }
 
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
 #ifndef VMX_USE_CACHED_VMCS_ACCESSES
 # error "VMX_USE_CACHED_VMCS_ACCESSES not defined when it should be!"
 #endif
@@ -5617,48 +5501,7 @@ VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
     pCache->Write.cValidEntries++;
     return VINF_SUCCESS;
 }
-
-/* Enable later when the assembly code uses these as callbacks. */
-#if 0
-/*
- * Loads the VMCS write-cache into the CPU (by executing VMWRITEs).
- *
- * @param   pVCpu           Pointer to the VMCPU.
- * @param   pCache          Pointer to the VMCS cache.
- *
- * @remarks No-long-jump zone!!!
- */
-VMMR0DECL(void) VMXWriteCachedVmcsLoad(PVMCPU pVCpu, PVMCSCACHE pCache)
-{
-    AssertPtr(pCache);
-    for (uint32_t i = 0; i < pCache->Write.cValidEntries; i++)
-    {
-        int rc = VMXWriteVmcs64(pCache->Write.aField[i], pCache->Write.aFieldVal[i]);
-        AssertRC(rc);
-    }
-    pCache->Write.cValidEntries = 0;
-}
-
-
-/**
- * Stores the VMCS read-cache from the CPU (by executing VMREADs).
- *
- * @param   pVCpu           Pointer to the VMCPU.
- * @param   pCache          Pointer to the VMCS cache.
- *
- * @remarks No-long-jump zone!!!
- */
-VMMR0DECL(void) VMXReadCachedVmcsStore(PVMCPU pVCpu, PVMCSCACHE pCache)
-{
-    AssertPtr(pCache);
-    for (uint32_t i = 0; i < pCache->Read.cValidEntries; i++)
-    {
-        int rc = VMXReadVmcs64(pCache->Read.aField[i], &pCache->Read.aFieldVal[i]);
-        AssertRC(rc);
-    }
-}
-#endif
-#endif /* HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL) */
+#endif /* HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) */
 
 
 /**
@@ -8752,7 +8595,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     AssertMsg(!HMCPU_CF_VALUE(pVCpu), ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
     /* Store status of the shared guest-host state at the time of VM-entry. */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(pMixedCtx))
     {
         pVmxTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActivePending(pVCpu);
@@ -9512,38 +9355,33 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * RIP and RFLAGS.
          */
         uint32_t u32Eflags;
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (HMVMX_IS_64BIT_HOST_MODE())
+#if HC_ARCH_BITS == 64
+        rc = VMXReadVmcs64(VMX_VMCS_GUEST_RIP, &u64Val);
+        AssertRCBreak(rc);
+        /* pCtx->rip can be different than the one in the VMCS (e.g. run guest code and VM-exits that don't update it). */
+        if (   !fLongModeGuest
+            || !pCtx->cs.Attr.n.u1Long)
         {
-            rc = VMXReadVmcs64(VMX_VMCS_GUEST_RIP, &u64Val);
-            AssertRCBreak(rc);
-            /* pCtx->rip can be different than the one in the VMCS (e.g. run guest code and VM-exits that don't update it). */
-            if (   !fLongModeGuest
-                || !pCtx->cs.Attr.n.u1Long)
-            {
-                HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffff00000000)), VMX_IGS_LONGMODE_RIP_INVALID);
-            }
-            /** @todo If the processor supports N < 64 linear-address bits, bits 63:N
-             *        must be identical if the "IA-32e mode guest" VM-entry
-             *        control is 1 and CS.L is 1. No check applies if the
-             *        CPU supports 64 linear-address bits. */
+            HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffff00000000)), VMX_IGS_LONGMODE_RIP_INVALID);
+        }
+        /** @todo If the processor supports N < 64 linear-address bits, bits 63:N
+         *        must be identical if the "IA-32e mode guest" VM-entry
+         *        control is 1 and CS.L is 1. No check applies if the
+         *        CPU supports 64 linear-address bits. */
 
-            /* Flags in pCtx can be different (real-on-v86 for instance). We are only concerned about the VMCS contents here. */
-            rc = VMXReadVmcs64(VMX_VMCS_GUEST_RFLAGS, &u64Val);
-            AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffffffc08028)),                     /* Bit 63:22, Bit 15, 5, 3 MBZ. */
-                              VMX_IGS_RFLAGS_RESERVED);
-            HMVMX_CHECK_BREAK((u64Val & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);       /* Bit 1 MB1. */
-            u32Eflags = u64Val;
-        }
-        else
+        /* Flags in pCtx can be different (real-on-v86 for instance). We are only concerned about the VMCS contents here. */
+        rc = VMXReadVmcs64(VMX_VMCS_GUEST_RFLAGS, &u64Val);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffffffc08028)),                     /* Bit 63:22, Bit 15, 5, 3 MBZ. */
+                          VMX_IGS_RFLAGS_RESERVED);
+        HMVMX_CHECK_BREAK((u64Val & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);       /* Bit 1 MB1. */
+        u32Eflags = u64Val;
+#else
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Eflags);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK(!(u32Eflags & 0xffc08028), VMX_IGS_RFLAGS_RESERVED);          /* Bit 31:22, Bit 15, 5, 3 MBZ. */
+        HMVMX_CHECK_BREAK((u32Eflags & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);    /* Bit 1 MB1. */
 #endif
-        {
-            rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Eflags);
-            AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(!(u32Eflags & 0xffc08028), VMX_IGS_RFLAGS_RESERVED);          /* Bit 31:22, Bit 15, 5, 3 MBZ. */
-            HMVMX_CHECK_BREAK((u32Eflags & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);    /* Bit 1 MB1. */
-        }
 
         if (   fLongModeGuest
             || (   fUnrestrictedGuest
@@ -9564,38 +9402,35 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * 64-bit checks.
          */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (HMVMX_IS_64BIT_HOST_MODE())
+#if HC_ARCH_BITS == 64
+        if (fLongModeGuest)
         {
-            if (fLongModeGuest)
-            {
-                HMVMX_CHECK_BREAK(u32GuestCR0 & X86_CR0_PG, VMX_IGS_CR0_PG_LONGMODE);
-                HMVMX_CHECK_BREAK(u32GuestCR4 & X86_CR4_PAE, VMX_IGS_CR4_PAE_LONGMODE);
-            }
-
-            if (   !fLongModeGuest
-                && (u32GuestCR4 & X86_CR4_PCIDE))
-            {
-                HMVMX_ERROR_BREAK(VMX_IGS_CR4_PCIDE);
-            }
-
-            /** @todo CR3 field must be such that bits 63:52 and bits in the range
-             *        51:32 beyond the processor's physical-address width are 0. */
-
-            if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG)
-                && (pCtx->dr[7] & X86_DR7_MBZ_MASK))
-            {
-                HMVMX_ERROR_BREAK(VMX_IGS_DR7_RESERVED);
-            }
-
-            rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_ESP, &u64Val);
-            AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_ESP_NOT_CANONICAL);
-
-            rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_EIP, &u64Val);
-            AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_EIP_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(u32GuestCR0 & X86_CR0_PG, VMX_IGS_CR0_PG_LONGMODE);
+            HMVMX_CHECK_BREAK(u32GuestCR4 & X86_CR4_PAE, VMX_IGS_CR4_PAE_LONGMODE);
         }
+
+        if (   !fLongModeGuest
+            && (u32GuestCR4 & X86_CR4_PCIDE))
+        {
+            HMVMX_ERROR_BREAK(VMX_IGS_CR4_PCIDE);
+        }
+
+        /** @todo CR3 field must be such that bits 63:52 and bits in the range
+         *        51:32 beyond the processor's physical-address width are 0. */
+
+        if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG)
+            && (pCtx->dr[7] & X86_DR7_MBZ_MASK))
+        {
+            HMVMX_ERROR_BREAK(VMX_IGS_DR7_RESERVED);
+        }
+
+        rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_ESP, &u64Val);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_ESP_NOT_CANONICAL);
+
+        rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_EIP, &u64Val);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_EIP_NOT_CANONICAL);
 #endif
 
         /*
@@ -9765,21 +9600,18 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                                   || (pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_READ), VMX_IGS_GS_ATTR_TYPE_INVALID);
             }
             /* 64-bit capable CPUs. */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-            if (HMVMX_IS_64BIT_HOST_MODE())
-            {
-                HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->fs.u64Base), VMX_IGS_FS_BASE_NOT_CANONICAL);
-                HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->gs.u64Base), VMX_IGS_GS_BASE_NOT_CANONICAL);
-                HMVMX_CHECK_BREAK(   (pCtx->ldtr.Attr.u & X86DESCATTR_UNUSABLE)
-                                  || X86_IS_CANONICAL(pCtx->ldtr.u64Base), VMX_IGS_LDTR_BASE_NOT_CANONICAL);
-                HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32),
-                                  VMX_IGS_LONGMODE_SS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32),
-                                  VMX_IGS_LONGMODE_DS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32),
-                                  VMX_IGS_LONGMODE_ES_BASE_INVALID);
-            }
+#if HC_ARCH_BITS == 64
+            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->fs.u64Base), VMX_IGS_FS_BASE_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->gs.u64Base), VMX_IGS_GS_BASE_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(   (pCtx->ldtr.Attr.u & X86DESCATTR_UNUSABLE)
+                              || X86_IS_CANONICAL(pCtx->ldtr.u64Base), VMX_IGS_LDTR_BASE_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
+            HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32),
+                              VMX_IGS_LONGMODE_SS_BASE_INVALID);
+            HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32),
+                              VMX_IGS_LONGMODE_DS_BASE_INVALID);
+            HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32),
+                              VMX_IGS_LONGMODE_ES_BASE_INVALID);
 #endif
         }
         else
@@ -9824,21 +9656,18 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             HMVMX_CHECK_BREAK(pCtx->gs.u32Limit == 0xffff, VMX_IGS_V86_GS_LIMIT_INVALID);
             HMVMX_CHECK_BREAK(u32GSAttr == 0xf3, VMX_IGS_V86_GS_ATTR_INVALID);
             /* 64-bit capable CPUs. */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-            if (HMVMX_IS_64BIT_HOST_MODE())
-            {
-                HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->fs.u64Base), VMX_IGS_FS_BASE_NOT_CANONICAL);
-                HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->gs.u64Base), VMX_IGS_GS_BASE_NOT_CANONICAL);
-                HMVMX_CHECK_BREAK(   (pCtx->ldtr.Attr.u & X86DESCATTR_UNUSABLE)
-                                  || X86_IS_CANONICAL(pCtx->ldtr.u64Base), VMX_IGS_LDTR_BASE_NOT_CANONICAL);
-                HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32),
-                                  VMX_IGS_LONGMODE_SS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32),
-                                  VMX_IGS_LONGMODE_DS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32),
-                                  VMX_IGS_LONGMODE_ES_BASE_INVALID);
-            }
+#if HC_ARCH_BITS == 64
+            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->fs.u64Base), VMX_IGS_FS_BASE_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->gs.u64Base), VMX_IGS_GS_BASE_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(   (pCtx->ldtr.Attr.u & X86DESCATTR_UNUSABLE)
+                              || X86_IS_CANONICAL(pCtx->ldtr.u64Base), VMX_IGS_LDTR_BASE_NOT_CANONICAL);
+            HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
+            HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32),
+                              VMX_IGS_LONGMODE_SS_BASE_INVALID);
+            HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32),
+                              VMX_IGS_LONGMODE_DS_BASE_INVALID);
+            HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32),
+                              VMX_IGS_LONGMODE_ES_BASE_INVALID);
 #endif
         }
 
@@ -9847,11 +9676,8 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          */
         HMVMX_CHECK_BREAK(!(pCtx->tr.Sel & X86_SEL_LDT), VMX_IGS_TR_TI_INVALID);
         /* 64-bit capable CPUs. */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (HMVMX_IS_64BIT_HOST_MODE())
-        {
-            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->tr.u64Base), VMX_IGS_TR_BASE_NOT_CANONICAL);
-        }
+#if HC_ARCH_BITS == 64
+        HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->tr.u64Base), VMX_IGS_TR_BASE_NOT_CANONICAL);
 #endif
         if (fLongModeGuest)
         {
@@ -9876,17 +9702,14 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * GDTR and IDTR.
          */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (HMVMX_IS_64BIT_HOST_MODE())
-        {
-            rc = VMXReadVmcs64(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);
-            AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_GDTR_BASE_NOT_CANONICAL);
+#if HC_ARCH_BITS == 64
+        rc = VMXReadVmcs64(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_GDTR_BASE_NOT_CANONICAL);
 
-            rc = VMXReadVmcs64(VMX_VMCS_GUEST_IDTR_BASE, &u64Val);
-            AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_IDTR_BASE_NOT_CANONICAL);
-        }
+        rc = VMXReadVmcs64(VMX_VMCS_GUEST_IDTR_BASE, &u64Val);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_IDTR_BASE_NOT_CANONICAL);
 #endif
 
         rc = VMXReadVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val);
@@ -9965,21 +9788,18 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
 
         /* Pending debug exceptions. */
-        if (HMVMX_IS_64BIT_HOST_MODE())
-        {
-            rc = VMXReadVmcs64(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, &u64Val);
-            AssertRCBreak(rc);
-            /* Bits 63:15, Bit 13, Bits 11:4 MBZ. */
-            HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffffffffaff0)), VMX_IGS_LONGMODE_PENDING_DEBUG_RESERVED);
-            u32Val = u64Val;    /* For pending debug exceptions checks below. */
-        }
-        else
-        {
-            rc = VMXReadVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, &u32Val);
-            AssertRCBreak(rc);
-            /* Bits 31:15, Bit 13, Bits 11:4 MBZ. */
-            HMVMX_CHECK_BREAK(!(u64Val & 0xffffaff0), VMX_IGS_PENDING_DEBUG_RESERVED);
-        }
+#if HC_ARCH_BITS == 64
+        rc = VMXReadVmcs64(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, &u64Val);
+        AssertRCBreak(rc);
+        /* Bits 63:15, Bit 13, Bits 11:4 MBZ. */
+        HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffffffffaff0)), VMX_IGS_LONGMODE_PENDING_DEBUG_RESERVED);
+        u32Val = u64Val;    /* For pending debug exceptions checks below. */
+#else
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, &u32Val);
+        AssertRCBreak(rc);
+        /* Bits 31:15, Bit 13, Bits 11:4 MBZ. */
+        HMVMX_CHECK_BREAK(!(u32Val & 0xffffaff0), VMX_IGS_PENDING_DEBUG_RESERVED);
+#endif
 
         if (   (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI)
             || (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS)
@@ -10708,7 +10528,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
 
 #ifdef VBOX_STRICT
     uint32_t       uIntrState;
-    HMVMXHCUINTREG uHCReg;
+    RTHCUINTREG    uHCReg;
     uint64_t       u64Val;
     uint32_t       u32Val;
 

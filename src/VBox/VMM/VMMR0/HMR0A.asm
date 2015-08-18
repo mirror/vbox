@@ -45,19 +45,12 @@
 ;*******************************************************************************
 ;*  Defined Constants And Macros                                               *
 ;*******************************************************************************
-%ifdef RT_ARCH_AMD64
- %define MAYBE_64_BIT
-%endif
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
- %define MAYBE_64_BIT
-%else
- %ifdef RT_OS_DARWIN
-  %ifdef RT_ARCH_AMD64
-   ;;
-   ; Load the NULL selector into DS, ES, FS and GS on 64-bit darwin so we don't
-   ; risk loading a stale LDT value or something invalid.
-   %define HM_64_BIT_USE_NULL_SEL
-  %endif
+%ifdef RT_OS_DARWIN
+ %ifdef RT_ARCH_AMD64
+  ;;
+  ; Load the NULL selector into DS, ES, FS and GS on 64-bit darwin so we don't
+  ; risk loading a stale LDT value or something invalid.
+  %define HM_64_BIT_USE_NULL_SEL
  %endif
 %endif
 
@@ -219,29 +212,8 @@
 ;*******************************************************************************
 ;* External Symbols                                                            *
 ;*******************************************************************************
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-extern NAME(SUPR0AbsIs64bit)
-extern NAME(SUPR0Abs64bitKernelCS)
-extern NAME(SUPR0Abs64bitKernelSS)
-extern NAME(SUPR0Abs64bitKernelDS)
-extern NAME(SUPR0AbsKernelCS)
-%endif
 %ifdef VBOX_WITH_KERNEL_USING_XMM
 extern NAME(CPUMIsGuestFPUStateActive)
-%endif
-
-
-;*******************************************************************************
-;*  Global Variables                                                           *
-;*******************************************************************************
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-BEGINDATA
-;;
-; Store the SUPR0AbsIs64bit absolute value here so we can cmp/test without
-; needing to clobber a register. (This trick doesn't quite work for PE btw.
-; but that's not relevant atm.)
-GLOBALNAME g_fVMXIs64bitHost
-    dd  NAME(SUPR0AbsIs64bit)
 %endif
 
 
@@ -394,13 +366,6 @@ BEGINPROC VMXWriteVmcs64
 %else  ; RT_ARCH_X86
     mov         ecx, [esp + 4]          ; idxField
     lea         edx, [esp + 8]          ; &u64Data
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp         byte [NAME(g_fVMXIs64bitHost)], 0
-    jz          .legacy_mode
-    db          0xea                    ; jmp far .sixtyfourbit_mode
-    dd          .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     vmwrite     ecx, [edx]              ; low dword
     jz          .done
     jc          .done
@@ -417,24 +382,6 @@ BEGINPROC VMXWriteVmcs64
     mov         eax, VERR_VMX_INVALID_VMCS_FIELD
 .the_end:
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    and     edx, 0ffffffffh
-    and     ecx, 0ffffffffh
-    xor     eax, eax
-    vmwrite rcx, [rdx]
-    mov     r8d, VERR_VMX_INVALID_VMCS_FIELD
-    cmovz   eax, r8d
-    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
-    cmovc   eax, r9d
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXWriteVmcs64
 
 
@@ -461,13 +408,6 @@ BEGINPROC VMXReadVmcs64
 %else  ; RT_ARCH_X86
     mov         ecx, [esp + 4]          ; idxField
     mov         edx, [esp + 8]          ; pData
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp         byte [NAME(g_fVMXIs64bitHost)], 0
-    jz          .legacy_mode
-    db          0xea                    ; jmp far .sixtyfourbit_mode
-    dd          .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     vmread      [edx], ecx              ; low dword
     jz          .done
     jc          .done
@@ -484,24 +424,6 @@ BEGINPROC VMXReadVmcs64
     mov         eax, VERR_VMX_INVALID_VMCS_FIELD
 .the_end:
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    and     edx, 0ffffffffh
-    and     ecx, 0ffffffffh
-    xor     eax, eax
-    vmread  [rdx], rcx
-    mov     r8d, VERR_VMX_INVALID_VMCS_FIELD
-    cmovz   eax, r8d
-    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
-    cmovc   eax, r9d
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXReadVmcs64
 
 
@@ -530,13 +452,6 @@ BEGINPROC VMXReadVmcs32
 %else  ; RT_ARCH_X86
     mov     ecx, [esp + 4]              ; idxField
     mov     edx, [esp + 8]              ; pu32Data
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jz      .legacy_mode
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmread  [edx], ecx
 %endif ; RT_ARCH_X86
@@ -548,25 +463,6 @@ BEGINPROC VMXReadVmcs32
     mov     eax, VERR_VMX_INVALID_VMCS_FIELD
 .the_end:
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    and     edx, 0ffffffffh
-    and     ecx, 0ffffffffh
-    xor     eax, eax
-    vmread  r10, rcx
-    mov     [rdx], r10d
-    mov     r8d, VERR_VMX_INVALID_VMCS_FIELD
-    cmovz   eax, r8d
-    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
-    cmovc   eax, r9d
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXReadVmcs32
 
 
@@ -595,13 +491,6 @@ BEGINPROC VMXWriteVmcs32
 %else  ; RT_ARCH_X86
     mov     ecx, [esp + 4]              ; idxField
     mov     edx, [esp + 8]              ; u32Data
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jz      .legacy_mode
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmwrite ecx, edx
 %endif ; RT_ARCH_X86
@@ -613,24 +502,6 @@ BEGINPROC VMXWriteVmcs32
     mov     eax, VERR_VMX_INVALID_VMCS_FIELD
 .the_end:
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    and     edx, 0ffffffffh
-    and     ecx, 0ffffffffh
-    xor     eax, eax
-    vmwrite rcx, rdx
-    mov     r8d, VERR_VMX_INVALID_VMCS_FIELD
-    cmovz   eax, r8d
-    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
-    cmovc   eax, r9d
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXWriteVmcs32
 
 
@@ -651,13 +522,6 @@ BEGINPROC VMXEnable
  %endif
     vmxon   [rsp]
 %else  ; RT_ARCH_X86
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jz      .legacy_mode
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmxon   [esp + 4]
 %endif ; RT_ARCH_X86
@@ -674,24 +538,6 @@ BEGINPROC VMXEnable
     add     rsp, 8
 %endif
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    lea     rdx, [rsp + 4]              ; &HCPhysVMXOn.
-    and     edx, 0ffffffffh
-    xor     eax, eax
-    vmxon   [rdx]
-    mov     r8d, VERR_VMX_VMXON_FAILED
-    cmovz   eax, r8d
-    mov     r9d, VERR_VMX_INVALID_VMXON_PTR
-    cmovc   eax, r9d
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXEnable
 
 
@@ -700,27 +546,9 @@ ENDPROC VMXEnable
 ; */
 ;DECLASM(void) VMXDisable(void);
 BEGINPROC VMXDisable
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jz      .legacy_mode
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     vmxoff
 .the_end:
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    vmxoff
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXDisable
 
 
@@ -742,13 +570,6 @@ BEGINPROC VMXClearVmcs
  %endif
     vmclear [rsp]
 %else  ; RT_ARCH_X86
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jz      .legacy_mode
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmclear [esp + 4]
 %endif ; RT_ARCH_X86
@@ -759,22 +580,6 @@ BEGINPROC VMXClearVmcs
     add     rsp, 8
 %endif
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    lea     rdx, [rsp + 4]              ; &HCPhysVmcs
-    and     edx, 0ffffffffh
-    xor     eax, eax
-    vmclear [rdx]
-    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
-    cmovc   eax, r9d
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif
 ENDPROC VMXClearVmcs
 
 
@@ -796,13 +601,6 @@ BEGINPROC VMXActivateVmcs
  %endif
     vmptrld [rsp]
 %else
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jz      .legacy_mode
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmptrld [esp + 4]
 %endif
@@ -813,22 +611,6 @@ BEGINPROC VMXActivateVmcs
     add     rsp, 8
 %endif
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    lea     rdx, [rsp + 4]              ; &HCPhysVmcs
-    and     edx, 0ffffffffh
-    xor     eax, eax
-    vmptrld [rdx]
-    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
-    cmovc   eax, r9d
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXActivateVmcs
 
 
@@ -851,32 +633,11 @@ BEGINPROC VMXGetActivatedVmcs
     vmptrst qword [rcx]
   %endif
  %else
-  %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jz      .legacy_mode
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
-  %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     vmptrst qword [esp+04h]
  %endif
     xor     eax, eax
 .the_end:
     ret
-
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    lea     rdx, [rsp + 4]              ; &HCPhysVmcs
-    and     edx, 0ffffffffh
-    vmptrst qword [rdx]
-    xor     eax, eax
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 %endif
 ENDPROC VMXGetActivatedVmcs
 
@@ -900,13 +661,6 @@ BEGINPROC VMXR0InvEPT
     DB          0x66, 0x0F, 0x38, 0x80, 0xA
  %endif
 %else
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp         byte [NAME(g_fVMXIs64bitHost)], 0
-    jz          .legacy_mode
-    db          0xea                        ; jmp far .sixtyfourbit_mode
-    dd          .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     mov         ecx, [esp + 4]
     mov         edx, [esp + 8]
     xor         eax, eax
@@ -921,26 +675,6 @@ BEGINPROC VMXR0InvEPT
     mov         eax, VERR_INVALID_PARAMETER
 .the_end:
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    mov     ecx, [rsp + 4]              ; enmFlush
-    mov     edx, [rsp + 8]              ; pDescriptor
-    xor     eax, eax
-;    invept  rcx, qword [rdx]
-    DB      0x66, 0x0F, 0x38, 0x80, 0xA
-    mov     r8d, VERR_INVALID_PARAMETER
-    cmovz   eax, r8d
-    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
-    cmovc   eax, r9d
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXR0InvEPT
 
 
@@ -964,13 +698,6 @@ BEGINPROC VMXR0InvVPID
     DB          0x66, 0x0F, 0x38, 0x81, 0xA
  %endif
 %else
- %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jz      .legacy_mode
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.legacy_mode:
- %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     mov         ecx, [esp + 4]
     mov         edx, [esp + 8]
     xor         eax, eax
@@ -985,26 +712,6 @@ BEGINPROC VMXR0InvVPID
     mov         eax, VERR_INVALID_PARAMETER
 .the_end:
     ret
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    mov     ecx, [rsp + 4]              ; enmFlush
-    mov     edx, [rsp + 8]              ; pDescriptor
-    xor     eax, eax
-;    invvpid rcx, qword [rdx]
-    DB      0x66, 0x0F, 0x38, 0x81, 0xA
-    mov     r8d, VERR_INVALID_PARAMETER
-    cmovz   eax, r8d
-    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
-    cmovc   eax, r9d
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXR0InvVPID
 
 
@@ -1064,61 +771,6 @@ ENDPROC SVMR0InvlpgA
 
 %endif ; GC_ARCH_BITS != 64
 
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-
-;/**
-; * Gets 64-bit GDTR and IDTR on darwin.
-; * @param  pGdtr        Where to store the 64-bit GDTR.
-; * @param  pIdtr        Where to store the 64-bit IDTR.
-; */
-;DECLASM(void) HMR0Get64bitGdtrAndIdtr(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
-ALIGNCODE(16)
-BEGINPROC HMR0Get64bitGdtrAndIdtr
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.the_end:
-    ret
-
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    and     esp, 0ffffffffh
-    mov     ecx, [rsp + 4]              ; pGdtr
-    mov     edx, [rsp + 8]              ; pIdtr
-    sgdt    [rcx]
-    sidt    [rdx]
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-ENDPROC   HMR0Get64bitGdtrAndIdtr
-
-
-;/**
-; * Gets 64-bit CR3 on darwin.
-; * @returns CR3
-; */
-;DECLASM(uint64_t) HMR0Get64bitCR3(void);
-ALIGNCODE(16)
-BEGINPROC HMR0Get64bitCR3
-    db      0xea                        ; jmp far .sixtyfourbit_mode
-    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
-.the_end:
-    ret
-
-ALIGNCODE(16)
-BITS 64
-.sixtyfourbit_mode:
-    mov     rax, cr3
-    mov     rdx, rax
-    shr     rdx, 32
-    jmp far [.fpret wrt rip]
-.fpret:                                 ; 16:32 Pointer to .the_end.
-    dd      .the_end, NAME(SUPR0AbsKernelCS)
-BITS 32
-ENDPROC   HMR0Get64bitCR3
-
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
 %ifdef VBOX_WITH_KERNEL_USING_XMM
 
@@ -1463,11 +1115,7 @@ ENDPROC   HMR0SVMRunWrapXMM
 ;
 ; The default setup of the StartVM routines.
 ;
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
- %define MY_NAME(name)   name %+ _32
-%else
- %define MY_NAME(name)   name
-%endif
+%define MY_NAME(name)   name
 %ifdef RT_ARCH_AMD64
  %define MYPUSHAD       MYPUSHAD64
  %define MYPOPAD        MYPOPAD64
@@ -1481,216 +1129,4 @@ ENDPROC   HMR0SVMRunWrapXMM
 %endif
 
 %include "HMR0Mixed.mac"
-
-
-%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
- ;
- ; Write the wrapper procedures.
- ;
- ; These routines are probably being too paranoid about selector
- ; restoring, but better safe than sorry...
- ;
-
-; DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
-ALIGNCODE(16)
-BEGINPROC VMXR0StartVM32
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    je near NAME(VMXR0StartVM32_32)
-
-    ; stack frame
-    push    esi
-    push    edi
-    push    fs
-    push    gs
-
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
-
-ALIGNCODE(16)
-BITS 64
-.thunk64:
-    sub     esp, 20h
-    mov     edi, [rsp + 20h + 14h]      ; fResume
-    mov     esi, [rsp + 20h + 18h]      ; pCtx
-    mov     edx, [rsp + 20h + 1Ch]      ; pCache
-    mov     ecx, [rsp + 20h + 20h]      ; pVM
-    mov     r8,  [rsp + 20h + 24h]      ; pVCpu
-    call    NAME(VMXR0StartVM32_64)
-    add     esp, 20h
-    jmp far [.fpthunk32 wrt rip]
-.fpthunk32:                             ; 16:32 Pointer to .thunk32.
-    dd      .thunk32, NAME(SUPR0AbsKernelCS)
-
-BITS 32
-ALIGNCODE(16)
-.thunk32:
-    pop     gs
-    pop     fs
-    pop     edi
-    pop     esi
-    ret
-ENDPROC   VMXR0StartVM32
-
-
-; DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
-ALIGNCODE(16)
-BEGINPROC VMXR0StartVM64
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    je      .not_in_long_mode
-
-    ; stack frame
-    push    esi
-    push    edi
-    push    fs
-    push    gs
-
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
-
-ALIGNCODE(16)
-BITS 64
-.thunk64:
-    sub     esp, 20h
-    mov     edi, [rsp + 20h + 14h]      ; fResume
-    mov     esi, [rsp + 20h + 18h]      ; pCtx
-    mov     edx, [rsp + 20h + 1Ch]      ; pCache
-    mov     ecx, [rsp + 20h + 20h]      ; pVM
-    mov     r8,  [rsp + 20h + 24h]      ; pVCpu
-    call    NAME(VMXR0StartVM64_64)
-    add     esp, 20h
-    jmp far [.fpthunk32 wrt rip]
-.fpthunk32:                             ; 16:32 Pointer to .thunk32.
-    dd      .thunk32, NAME(SUPR0AbsKernelCS)
-
-BITS 32
-ALIGNCODE(16)
-.thunk32:
-    pop     gs
-    pop     fs
-    pop     edi
-    pop     esi
-    ret
-
-.not_in_long_mode:
-    mov     eax, VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE
-    ret
-ENDPROC   VMXR0StartVM64
-
-;DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
-ALIGNCODE(16)
-BEGINPROC SVMR0VMRun
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    je near NAME(SVMR0VMRun_32)
-
-    ; stack frame
-    push    esi
-    push    edi
-    push    fs
-    push    gs
-
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
-
-ALIGNCODE(16)
-BITS 64
-.thunk64:
-    sub     esp, 20h
-    mov     rdi, [rsp + 20h + 14h]      ; pVMCBHostPhys
-    mov     rsi, [rsp + 20h + 1Ch]      ; pVMCBPhys
-    mov     edx, [rsp + 20h + 24h]      ; pCtx
-    mov     ecx, [rsp + 20h + 28h]      ; pVM
-    mov     r8d, [rsp + 20h + 2Ch]      ; pVCpu
-    call    NAME(SVMR0VMRun_64)
-    add     esp, 20h
-    jmp far [.fpthunk32 wrt rip]
-.fpthunk32:                             ; 16:32 Pointer to .thunk32.
-    dd      .thunk32, NAME(SUPR0AbsKernelCS)
-
-BITS 32
-ALIGNCODE(16)
-.thunk32:
-    pop     gs
-    pop     fs
-    pop     edi
-    pop     esi
-    ret
-ENDPROC   SVMR0VMRun
-
-
-; DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
-ALIGNCODE(16)
-BEGINPROC SVMR0VMRun64
-    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    je      .not_in_long_mode
-
-    ; stack frame
-    push    esi
-    push    edi
-    push    fs
-    push    gs
-
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
-
-ALIGNCODE(16)
-BITS 64
-.thunk64:
-    sub     esp, 20h
-    mov     rdi, [rsp + 20h + 14h]      ; pVMCBHostPhys
-    mov     rsi, [rsp + 20h + 1Ch]      ; pVMCBPhys
-    mov     edx, [rsp + 20h + 24h]      ; pCtx
-    mov     ecx, [rsp + 20h + 28h]      ; pVM
-    mov     r8d, [rsp + 20h + 2Ch]      ; pVCpu
-    call    NAME(SVMR0VMRun64_64)
-    add     esp, 20h
-    jmp far [.fpthunk32 wrt rip]
-.fpthunk32:                             ; 16:32 Pointer to .thunk32.
-    dd      .thunk32, NAME(SUPR0AbsKernelCS)
-
-BITS 32
-ALIGNCODE(16)
-.thunk32:
-    pop     gs
-    pop     fs
-    pop     edi
-    pop     esi
-    ret
-
-.not_in_long_mode:
-    mov     eax, VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE
-    ret
-ENDPROC   SVMR0VMRun64
-
- ;
- ; Do it a second time pretending we're a 64-bit host.
- ;
- ; This *HAS* to be done at the very end of the file to avoid restoring
- ; macros. So, add new code *BEFORE* this mess.
- ;
- BITS 64
- %undef  RT_ARCH_X86
- %define RT_ARCH_AMD64
- %undef  ASM_CALL64_MSC
- %define ASM_CALL64_GCC
- %define xCB             8
- %define xSP            rsp
- %define xBP            rbp
- %define xAX            rax
- %define xBX            rbx
- %define xCX            rcx
- %define xDX            rdx
- %define xDI            rdi
- %define xSI            rsi
- %define MY_NAME(name)   name %+ _64
- %define MYPUSHAD       MYPUSHAD64
- %define MYPOPAD        MYPOPAD64
- %define MYPUSHSEGS     MYPUSHSEGS64
- %define MYPOPSEGS      MYPOPSEGS64
-
- %include "HMR0Mixed.mac"
-%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 

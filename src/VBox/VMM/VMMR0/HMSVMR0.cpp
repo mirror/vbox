@@ -1018,7 +1018,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
  * bits for the 32->64 switcher.
  *
  * @{ */
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
 /**
  * Prepares for and executes VMRUN (64-bit guests on a 32-bit host).
  *
@@ -1467,7 +1467,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
          *
          * Note! DBGF expects a clean DR6 state before executing guest code.
          */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
         if (   CPUMIsGuestInLongModeEx(pCtx)
             && !CPUMIsHyperDebugStateActivePending(pVCpu))
         {
@@ -1520,7 +1520,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
          */
         if (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD)) /** @todo Why GD? */
         {
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
             if (   CPUMIsGuestInLongModeEx(pCtx)
                 && !CPUMIsGuestDebugStateActivePending(pVCpu))
             {
@@ -1544,7 +1544,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
          * If no debugging enabled, we'll lazy load DR0-3. We don't need to
          * intercept #DB as DR6 is updated in the VMCB.
          */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
         else if (   !CPUMIsGuestDebugStateActivePending(pVCpu)
                  && !CPUMIsGuestDebugStateActive(pVCpu))
 #else
@@ -1688,7 +1688,7 @@ static int hmR0SvmSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pCtx)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #endif
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32
         /* 32-bit host. We need to switch to 64-bit before running the 64-bit guest. */
         pVCpu->hm.s.svm.pfnVMRun = SVMR0VMSwitcherRun64;
 #else
@@ -3134,7 +3134,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
         pVmcb->ctrl.u64VmcbCleanBits = 0;
 
     /* Store status of the shared guest-host state at the time of VMRUN. */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
         pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActivePending(pVCpu);
