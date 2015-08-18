@@ -76,12 +76,6 @@ RTDECL(int)   RTThreadSleep(RTMSINTERVAL cMillies)
 }
 
 
-RTDECL(int)   RTThreadSleepCommon(RTMSINTERVAL cMillies)
-{
-    return rtR0ThreadNtSleepCommon(cMillies);
-}
-
-
 RTDECL(bool) RTThreadYield(void)
 {
     return ZwYieldExecution() != STATUS_NO_YIELD_PERFORMED;
