@@ -57,7 +57,11 @@ RTR3DECL(RTTLS) RTTlsAlloc(void)
 RTR3DECL(int) RTTlsAllocEx(PRTTLS piTls, PFNRTTLSDTOR pfnDestructor)
 {
     pthread_key_t iTls = (pthread_key_t)NIL_RTTLS;
+#if defined(__GNUC__) && defined(RT_ARCH_X86)
+    int rc = pthread_key_create(&iTls, (void (*)(void*))pfnDestructor);
+#else
     int rc = pthread_key_create(&iTls, pfnDestructor);
+#endif
     if (!rc)
     {
         *piTls = iTls;
