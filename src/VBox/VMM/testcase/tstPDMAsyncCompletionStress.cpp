@@ -156,7 +156,7 @@ size_t   g_cbTestPattern;
 /** Array holding test files. */
 PDMACTESTFILE g_aTestFiles[NR_OPEN_ENDPOINTS];
 
-static void tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvUser2, int rcReq);
+static DECLCALLBACK(void) tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvUser2, int rcReq);
 
 static void tstPDMACStressTestFileVerify(PPDMACTESTFILE pTestFile, PPDMACTESTFILETASK pTestTask)
 {
@@ -327,7 +327,7 @@ static bool tstPDMACTestIsTrue(int iPercentage)
     return (uRnd <= iPercentage); /* This should be enough for our purpose */
 }
 
-static int tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
+static DECLCALLBACK(int) tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
 {
     PPDMACTESTFILE pTestFile = (PPDMACTESTFILE)pThread->pvUser;
     int iWriteChance = 100; /* Chance to get a write task in percent. */
@@ -388,7 +388,7 @@ static int tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
     return rc;
 }
 
-static void tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvUser2, int rcReq)
+static DECLCALLBACK(void) tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvUser2, int rcReq)
 {
     PPDMACTESTFILE pTestFile = (PPDMACTESTFILE)pvUser2;
     PPDMACTESTFILETASK pTestTask = (PPDMACTESTFILETASK)pvUser;
@@ -458,7 +458,8 @@ static int tstPDMACStressTestFileOpen(PVM pVM, PPDMACTESTFILE pTestFile, unsigne
             char szDesc[256];
 
             RTStrPrintf(szDesc, sizeof(szDesc), "Template-%d", iTestId);
-            rc = PDMR3AsyncCompletionTemplateCreateInternal(pVM, &pTestFile->pTemplate, tstPDMACStressTestFileTaskCompleted, pTestFile, szDesc);
+            rc = PDMR3AsyncCompletionTemplateCreateInternal(pVM, &pTestFile->pTemplate, tstPDMACStressTestFileTaskCompleted,
+                                                            pTestFile, szDesc);
             if (RT_SUCCESS(rc))
             {
                 /* Open the endpoint now. Because async completion endpoints cannot create files we have to do it before. */

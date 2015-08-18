@@ -676,7 +676,7 @@ DECLINLINE(RTRCPTR) PATMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
 }
 
 #ifdef LOG_ENABLED
-int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PPATMP2GLOOKUPREC pCacheRec);
+DECLCALLBACK(int) patmR3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PPATMP2GLOOKUPREC pCacheRec);
 int patmr3DisasmCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PFN_PATMR3ANALYSE pfnPATMR3Analyse, PPATMP2GLOOKUPREC pCacheRec);
 #endif
 

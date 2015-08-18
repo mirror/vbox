@@ -2185,7 +2185,8 @@ static bool patmIsKnownDisasmJump(PPATCHINFO pPatch, RTRCPTR pInstrGC)
  * @param   pCacheRec   Cache record ptr
  *
  */
-int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PPATMP2GLOOKUPREC pCacheRec)
+DECLCALLBACK(int) patmR3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC,
+                                       RCPTRTYPE(uint8_t *) pCurInstrGC, PPATMP2GLOOKUPREC pCacheRec)
 {
     PPATCHINFO pPatch = (PPATCHINFO)pCacheRec->pPatch;
     NOREF(pInstrGC);
@@ -2939,7 +2940,7 @@ static int patmR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pIns
 
 #ifdef LOG_ENABLED
     Log(("Patch code ----------------------------------------------------------\n"));
-    patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmr3DisasmCallback, &cacheRec);
+    patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmR3DisasmCallback, &cacheRec);
     /* Free leftover lock if any. */
     if (cacheRec.Lock.pvMap)
     {
@@ -3123,7 +3124,7 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, uint32_t uOpSize, PPATMPATC
 
 #ifdef LOG_ENABLED
             Log(("Patch code ----------------------------------------------------------\n"));
-            patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmr3DisasmCallback, pCacheRec);
+            patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmR3DisasmCallback, pCacheRec);
             Log(("Patch code ends -----------------------------------------------------\n"));
 #endif
             Log(("Successfully installed IDT handler patch at %RRv\n", pInstrGC));
@@ -3197,7 +3198,7 @@ static int patmInstallTrapTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pP
 
 #ifdef LOG_ENABLED
     Log(("Patch code ----------------------------------------------------------\n"));
-    patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmr3DisasmCallback, pCacheRec);
+    patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmR3DisasmCallback, pCacheRec);
     Log(("Patch code ends -----------------------------------------------------\n"));
 #endif
     PATM_LOG_ORG_PATCH_INSTR(pVM, pPatch, "TRAP handler");
@@ -3344,7 +3345,7 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
 
 #ifdef LOG_ENABLED
     Log(("Patch code ----------------------------------------------------------\n"));
-    patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmr3DisasmCallback, pCacheRec);
+    patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmR3DisasmCallback, pCacheRec);
     Log(("Patch code ends -----------------------------------------------------\n"));
 #endif
 

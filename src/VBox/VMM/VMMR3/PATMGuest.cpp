@@ -155,7 +155,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
     RT_ZERO(cacheRec);
     cacheRec.pPatch = pPatch;
 
-    patmr3DisasmCodeStream(pVM, pInstrGC, pInstrGC, patmr3DisasmCallback, &cacheRec);
+    patmr3DisasmCodeStream(pVM, pInstrGC, pInstrGC, patmR3DisasmCallback, &cacheRec);
     /* Free leftover lock if any. */
     if (cacheRec.Lock.pvMap)
         PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
