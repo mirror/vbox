@@ -500,10 +500,10 @@ static DECLCALLBACK(uint64_t) rtDvmFmtGptVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
     return 0;
 }
 
-DECLCALLBACK(bool) rtDvmFmtGptVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hVolFmt,
-                                                        uint64_t offStart, size_t cbRange,
-                                                        uint64_t *poffVol,
-                                                        uint64_t *pcbIntersect)
+static DECLCALLBACK(bool) rtDvmFmtGptVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hVolFmt,
+                                                               uint64_t offStart, size_t cbRange,
+                                                               uint64_t *poffVol,
+                                                               uint64_t *pcbIntersect)
 {
     bool fIntersect = false;
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;

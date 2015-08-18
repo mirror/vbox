@@ -274,7 +274,7 @@ static bool rtDvmFmtBsdLblDiskLabelDecode(PBsdLabel pBsdLabel)
     return true;
 }
 
-DECLCALLBACK(int) rtDvmFmtBsdLblProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
+static DECLCALLBACK(int) rtDvmFmtBsdLblProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
 {
     BsdLabel DiskLabel;
     int rc = VINF_SUCCESS;
@@ -292,7 +292,7 @@ DECLCALLBACK(int) rtDvmFmtBsdLblProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
     return rc;
 }
 
-DECLCALLBACK(int) rtDvmFmtBsdLblOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
+static DECLCALLBACK(int) rtDvmFmtBsdLblOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
 {
     int rc = VINF_SUCCESS;
     PRTDVMFMTINTERNAL pThis = NULL;
@@ -327,13 +327,13 @@ DECLCALLBACK(int) rtDvmFmtBsdLblOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
     return rc;
 }
 
-DECLCALLBACK(int) rtDvmFmtBsdLblInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
+static DECLCALLBACK(int) rtDvmFmtBsdLblInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
 {
     NOREF(pDisk); NOREF(phVolMgrFmt);
     return VERR_NOT_IMPLEMENTED;
 }
 
-DECLCALLBACK(void) rtDvmFmtBsdLblClose(RTDVMFMT hVolMgrFmt)
+static DECLCALLBACK(void) rtDvmFmtBsdLblClose(RTDVMFMT hVolMgrFmt)
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
@@ -359,13 +359,13 @@ static DECLCALLBACK(int) rtDvmFmtBsdLblQueryRangeUse(RTDVMFMT hVolMgrFmt,
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(uint32_t) rtDvmFmtBsdLblGetValidVolumes(RTDVMFMT hVolMgrFmt)
+static DECLCALLBACK(uint32_t) rtDvmFmtBsdLblGetValidVolumes(RTDVMFMT hVolMgrFmt)
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
     return pThis->cPartitions;
 }
 
-DECLCALLBACK(uint32_t) rtDvmFmtBsdLblGetMaxVolumes(RTDVMFMT hVolMgrFmt)
+static DECLCALLBACK(uint32_t) rtDvmFmtBsdLblGetMaxVolumes(RTDVMFMT hVolMgrFmt)
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
     return pThis->DiskLabel.cPartitions;
@@ -402,7 +402,7 @@ static int rtDvmFmtBsdLblVolumeCreate(PRTDVMFMTINTERNAL pThis, PBsdLabelPartitio
     return rc;
 }
 
-DECLCALLBACK(int) rtDvmFmtBsdLblQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT phVolFmt)
+static DECLCALLBACK(int) rtDvmFmtBsdLblQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT phVolFmt)
 {
     int rc = VINF_SUCCESS;
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
@@ -426,7 +426,7 @@ DECLCALLBACK(int) rtDvmFmtBsdLblQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLU
     return rc;
 }
 
-DECLCALLBACK(int) rtDvmFmtBsdLblQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT hVolFmt, PRTDVMVOLUMEFMT phVolFmtNext)
+static DECLCALLBACK(int) rtDvmFmtBsdLblQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT hVolFmt, PRTDVMVOLUMEFMT phVolFmtNext)
 {
     int rc = VERR_DVM_MAP_NO_VOLUME;
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
@@ -446,7 +446,7 @@ DECLCALLBACK(int) rtDvmFmtBsdLblQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUME
     return rc;
 }
 
-DECLCALLBACK(void) rtDvmFmtBsdLblVolumeClose(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(void) rtDvmFmtBsdLblVolumeClose(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
 
@@ -458,35 +458,35 @@ DECLCALLBACK(void) rtDvmFmtBsdLblVolumeClose(RTDVMVOLUMEFMT hVolFmt)
     RTMemFree(pVol);
 }
 
-DECLCALLBACK(uint64_t) rtDvmFmtBsdLblVolumeGetSize(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(uint64_t) rtDvmFmtBsdLblVolumeGetSize(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
 
     return pVol->cbVolume;
 }
 
-DECLCALLBACK(int) rtDvmFmtBsdLblVolumeQueryName(RTDVMVOLUMEFMT hVolFmt, char **ppszVolName)
+static DECLCALLBACK(int) rtDvmFmtBsdLblVolumeQueryName(RTDVMVOLUMEFMT hVolFmt, char **ppszVolName)
 {
     NOREF(hVolFmt); NOREF(ppszVolName);
     return VERR_NOT_SUPPORTED;
 }
 
-DECLCALLBACK(RTDVMVOLTYPE) rtDvmFmtBsdLblVolumeGetType(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(RTDVMVOLTYPE) rtDvmFmtBsdLblVolumeGetType(RTDVMVOLUMEFMT hVolFmt)
 {
     NOREF(hVolFmt);
     return RTDVMVOLTYPE_UNKNOWN;
 }
 
-DECLCALLBACK(uint64_t) rtDvmFmtBsdLblVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(uint64_t) rtDvmFmtBsdLblVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
 {
     NOREF(hVolFmt);
     return 0;
 }
 
-DECLCALLBACK(bool) rtDvmFmtBsdLblVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hVolFmt,
-                                                           uint64_t offStart, size_t cbRange,
-                                                           uint64_t *poffVol,
-                                                           uint64_t *pcbIntersect)
+static DECLCALLBACK(bool) rtDvmFmtBsdLblVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hVolFmt,
+                                                                  uint64_t offStart, size_t cbRange,
+                                                                  uint64_t *poffVol,
+                                                                  uint64_t *pcbIntersect)
 {
     bool fIntersect = false;
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -501,7 +501,7 @@ DECLCALLBACK(bool) rtDvmFmtBsdLblVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hVolFm
     return fIntersect;
 }
 
-DECLCALLBACK(int) rtDvmFmtBsdLblVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
+static DECLCALLBACK(int) rtDvmFmtBsdLblVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
     AssertReturn(off + cbRead <= pVol->cbVolume, VERR_INVALID_PARAMETER);
@@ -509,7 +509,7 @@ DECLCALLBACK(int) rtDvmFmtBsdLblVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off,
     return rtDvmDiskRead(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbRead);
 }
 
-DECLCALLBACK(int) rtDvmFmtBsdLblVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t off, const void *pvBuf, size_t cbWrite)
+static DECLCALLBACK(int) rtDvmFmtBsdLblVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
     AssertReturn(off + cbWrite <= pVol->cbVolume, VERR_INVALID_PARAMETER);
