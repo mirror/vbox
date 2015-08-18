@@ -217,8 +217,12 @@ void VBoxGlobal::destroy()
         return;
     }
 
-    /* Cleanup instance: */
-    /* Automatically on QApplication::aboutToQuit() signal: */
+    /* Cleanup instance:
+     * 1. By default, automatically on QApplication::aboutToQuit() signal.
+     * 2. But if QApplication was not started at all and we perform
+     *    early shutdown, we should do cleanup ourselves. */
+    if (m_spInstance->isValid())
+        m_spInstance->cleanup();
     /* Destroy instance: */
     delete m_spInstance;
 }
