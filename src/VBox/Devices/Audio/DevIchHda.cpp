@@ -2268,7 +2268,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc, ui
 /**
  * @interface_method_impl{HDACODEC,pfnReset}
  */
-DECLCALLBACK(int) hdaCodecReset(PHDACODEC pCodec)
+static DECLCALLBACK(int) hdaCodecReset(PHDACODEC pCodec)
 {
     PHDASTATE pThis = pCodec->pHDAState;
     NOREF(pThis);

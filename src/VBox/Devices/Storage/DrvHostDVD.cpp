@@ -317,7 +317,7 @@ static DECLCALLBACK(int) drvHostDvdGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pc
 /**
  * Do media change polling.
  */
-DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
+static DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
 {
     /*
      * Poll for media change.
@@ -725,7 +725,7 @@ static int solarisExitRootMode(uid_t *pEffUserID)
 
 
 /** @copydoc FNPDMDRVDESTRUCT */
-DECLCALLBACK(void) drvHostDvdDestruct(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvHostDvdDestruct(PPDMDRVINS pDrvIns)
 {
 #ifdef RT_OS_LINUX
     PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
