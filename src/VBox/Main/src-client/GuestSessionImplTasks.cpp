@@ -209,7 +209,7 @@ int SessionTaskOpen::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProg
 }
 
 /* static */
-int SessionTaskOpen::taskThread(RTTHREAD Thread, void *pvUser)
+DECLCALLBACK(int) SessionTaskOpen::taskThread(RTTHREAD Thread, void *pvUser)
 {
     std::auto_ptr<SessionTaskOpen> task(static_cast<SessionTaskOpen*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
@@ -569,7 +569,7 @@ int SessionTaskCopyTo::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pPr
 }
 
 /* static */
-int SessionTaskCopyTo::taskThread(RTTHREAD Thread, void *pvUser)
+DECLCALLBACK(int) SessionTaskCopyTo::taskThread(RTTHREAD Thread, void *pvUser)
 {
     std::auto_ptr<SessionTaskCopyTo> task(static_cast<SessionTaskCopyTo*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
@@ -841,7 +841,7 @@ int SessionTaskCopyFrom::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &p
 }
 
 /* static */
-int SessionTaskCopyFrom::taskThread(RTTHREAD Thread, void *pvUser)
+DECLCALLBACK(int) SessionTaskCopyFrom::taskThread(RTTHREAD Thread, void *pvUser)
 {
     std::auto_ptr<SessionTaskCopyFrom> task(static_cast<SessionTaskCopyFrom*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
@@ -1537,7 +1537,7 @@ int SessionTaskUpdateAdditions::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progr
 }
 
 /* static */
-int SessionTaskUpdateAdditions::taskThread(RTTHREAD Thread, void *pvUser)
+DECLCALLBACK(int) SessionTaskUpdateAdditions::taskThread(RTTHREAD Thread, void *pvUser)
 {
     std::auto_ptr<SessionTaskUpdateAdditions> task(static_cast<SessionTaskUpdateAdditions*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);

@@ -193,8 +193,8 @@ static DECLCALLBACK(int) notImpl_FlushSync(void *pvUser, void *pvStorage)
  *   Internal: RTFile interface
  ******************************************************************************/
 
-static int fileOpenCallback(void * /* pvUser */, const char *pszLocation, uint32_t fOpen,
-                              PFNVDCOMPLETED pfnCompleted, void **ppInt)
+static DECLCALLBACK(int) fileOpenCallback(void * /* pvUser */, const char *pszLocation, uint32_t fOpen,
+                                          PFNVDCOMPLETED pfnCompleted, void **ppInt)
 {
     /* Validate input. */
     AssertPtrReturn(ppInt, VERR_INVALID_POINTER);
@@ -218,7 +218,7 @@ static int fileOpenCallback(void * /* pvUser */, const char *pszLocation, uint32
     return rc;
 }
 
-static int fileCloseCallback(void * /* pvUser */, void *pvStorage)
+static DECLCALLBACK(int) fileCloseCallback(void * /* pvUser */, void *pvStorage)
 {
     /* Validate input. */
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
@@ -235,21 +235,21 @@ static int fileCloseCallback(void * /* pvUser */, void *pvStorage)
     return rc;
 }
 
-static int fileDeleteCallback(void * /* pvUser */, const char *pcszFilename)
+static DECLCALLBACK(int) fileDeleteCallback(void * /* pvUser */, const char *pcszFilename)
 {
     DEBUG_PRINT_FLOW();
 
     return RTFileDelete(pcszFilename);
 }
 
-static int fileMoveCallback(void * /* pvUser */, const char *pcszSrc, const char *pcszDst, unsigned fMove)
+static DECLCALLBACK(int) fileMoveCallback(void * /* pvUser */, const char *pcszSrc, const char *pcszDst, unsigned fMove)
 {
     DEBUG_PRINT_FLOW();
 
     return RTFileMove(pcszSrc, pcszDst, fMove);
 }
 
-static int fileGetFreeSpaceCallback(void * /* pvUser */, const char *pcszFilename, int64_t *pcbFreeSpace)
+static DECLCALLBACK(int) fileGetFreeSpaceCallback(void * /* pvUser */, const char *pcszFilename, int64_t *pcbFreeSpace)
 {
     /* Validate input. */
     AssertPtrReturn(pcszFilename, VERR_INVALID_POINTER);
@@ -260,7 +260,8 @@ static int fileGetFreeSpaceCallback(void * /* pvUser */, const char *pcszFilenam
     return VERR_NOT_IMPLEMENTED;
 }
 
-static int fileGetModificationTimeCallback(void * /* pvUser */, const char *pcszFilename, PRTTIMESPEC pModificationTime)
+static DECLCALLBACK(int) fileGetModificationTimeCallback(void * /* pvUser */, const char *pcszFilename,
+                                                         PRTTIMESPEC pModificationTime)
 {
     /* Validate input. */
     AssertPtrReturn(pcszFilename, VERR_INVALID_POINTER);
@@ -271,7 +272,7 @@ static int fileGetModificationTimeCallback(void * /* pvUser */, const char *pcsz
     return VERR_NOT_IMPLEMENTED;
 }
 
-static int fileGetSizeCallback(void * /* pvUser */, void *pvStorage, uint64_t *pcbSize)
+static DECLCALLBACK(int) fileGetSizeCallback(void * /* pvUser */, void *pvStorage, uint64_t *pcbSize)
 {
     /* Validate input. */
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
@@ -283,7 +284,7 @@ static int fileGetSizeCallback(void * /* pvUser */, void *pvStorage, uint64_t *p
     return RTFileGetSize(pInt->file, pcbSize);
 }
 
-static int fileSetSizeCallback(void * /* pvUser */, void *pvStorage, uint64_t cbSize)
+static DECLCALLBACK(int) fileSetSizeCallback(void * /* pvUser */, void *pvStorage, uint64_t cbSize)
 {
     /* Validate input. */
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
@@ -295,8 +296,8 @@ static int fileSetSizeCallback(void * /* pvUser */, void *pvStorage, uint64_t cb
     return RTFileSetSize(pInt->file, cbSize);
 }
 
-static int fileWriteSyncCallback(void * /* pvUser */, void *pvStorage, uint64_t uOffset,
-                                   const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
+static DECLCALLBACK(int) fileWriteSyncCallback(void * /* pvUser */, void *pvStorage, uint64_t uOffset,
+                                               const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
 {
     /* Validate input. */
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
@@ -306,8 +307,8 @@ static int fileWriteSyncCallback(void * /* pvUser */, void *pvStorage, uint64_t 
     return RTFileWriteAt(pInt->file, uOffset, pvBuf, cbWrite, pcbWritten);
 }
 
-static int fileReadSyncCallback(void * /* pvUser */, void *pvStorage, uint64_t uOffset,
-                                  void *pvBuf, size_t cbRead, size_t *pcbRead)
+static DECLCALLBACK(int) fileReadSyncCallback(void * /* pvUser */, void *pvStorage, uint64_t uOffset,
+                                              void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
     /* Validate input. */
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
@@ -319,7 +320,7 @@ static int fileReadSyncCallback(void * /* pvUser */, void *pvStorage, uint64_t u
     return RTFileReadAt(pInt->file, uOffset, pvBuf, cbRead, pcbRead);
 }
 
-static int fileFlushSyncCallback(void * /* pvUser */, void *pvStorage)
+static DECLCALLBACK(int) fileFlushSyncCallback(void * /* pvUser */, void *pvStorage)
 {
     /* Validate input. */
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
@@ -585,7 +586,7 @@ static DECLCALLBACK(int) fssRdOnly_Open(void *pvUser, const char *pszLocation, u
 }
 
 /** @interface_method_impl{VDINTERFACEIO,pfnClose}  */
-static int fssRdOnly_Close(void *pvUser, void *pvStorage)
+static DECLCALLBACK(int) fssRdOnly_Close(void *pvUser, void *pvStorage)
 {
     PIOSRDONLYINTERNAL      pFile = (PIOSRDONLYINTERNAL)pvStorage;
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1026,8 +1027,8 @@ DECLINLINE(int) shaFlushCurBuf(PSHASTORAGEINTERNAL pInt)
     return rc;
 }
 
-static int shaOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen,
-                              PFNVDCOMPLETED pfnCompleted, void **ppInt)
+static DECLCALLBACK(int) shaOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen,
+                                         PFNVDCOMPLETED pfnCompleted, void **ppInt)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_PARAMETER);
@@ -1136,7 +1137,7 @@ static int shaOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen
     return rc;
 }
 
-static int shaCloseCallback(void *pvUser, void *pvStorage)
+static DECLCALLBACK(int) shaCloseCallback(void *pvUser, void *pvStorage)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1212,7 +1213,7 @@ static int shaCloseCallback(void *pvUser, void *pvStorage)
     return rc;
 }
 
-static int shaDeleteCallback(void *pvUser, const char *pcszFilename)
+static DECLCALLBACK(int) shaDeleteCallback(void *pvUser, const char *pcszFilename)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1226,7 +1227,7 @@ static int shaDeleteCallback(void *pvUser, const char *pcszFilename)
     return vdIfIoFileDelete(pIfIo, pcszFilename);
 }
 
-static int shaMoveCallback(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
+static DECLCALLBACK(int) shaMoveCallback(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1241,7 +1242,7 @@ static int shaMoveCallback(void *pvUser, const char *pcszSrc, const char *pcszDs
     return vdIfIoFileMove(pIfIo, pcszSrc, pcszDst, fMove);
 }
 
-static int shaGetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
+static DECLCALLBACK(int) shaGetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1255,7 +1256,7 @@ static int shaGetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int64
     return vdIfIoFileGetFreeSpace(pIfIo, pcszFilename, pcbFreeSpace);
 }
 
-static int shaGetModificationTimeCallback(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
+static DECLCALLBACK(int) shaGetModificationTimeCallback(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1270,7 +1271,7 @@ static int shaGetModificationTimeCallback(void *pvUser, const char *pcszFilename
 }
 
 
-static int shaGetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
+static DECLCALLBACK(int) shaGetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1294,7 +1295,7 @@ static int shaGetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
     return VINF_SUCCESS;
 }
 
-static int shaSetSizeCallback(void *pvUser, void *pvStorage, uint64_t cbSize)
+static DECLCALLBACK(int) shaSetSizeCallback(void *pvUser, void *pvStorage, uint64_t cbSize)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1311,8 +1312,8 @@ static int shaSetSizeCallback(void *pvUser, void *pvStorage, uint64_t cbSize)
     return vdIfIoFileSetSize(pIfIo, pInt->pvStorage, cbSize);
 }
 
-static int shaWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
-                                 const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
+static DECLCALLBACK(int) shaWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
+                                              const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1407,8 +1408,8 @@ static int shaWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
     return rc;
 }
 
-static int shaReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
-                               void *pvBuf, size_t cbRead, size_t *pcbRead)
+static DECLCALLBACK(int) shaReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
+                                             void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
@@ -1505,7 +1506,7 @@ static int shaReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
     return rc;
 }
 
-static int shaFlushSyncCallback(void *pvUser, void *pvStorage)
+static DECLCALLBACK(int) shaFlushSyncCallback(void *pvUser, void *pvStorage)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);

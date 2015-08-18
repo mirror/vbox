@@ -5858,7 +5858,7 @@ HRESULT Console::i_enumerateGuestProperties(const Utf8Str &aPatterns,
 /*
  * Internal: helper function for connecting progress reporting
  */
-static int onlineMergeMediumProgress(void *pvUser, unsigned uPercentage)
+static DECLCALLBACK(int) onlineMergeMediumProgress(void *pvUser, unsigned uPercentage)
 {
     HRESULT rc = S_OK;
     IProgress *pProgress = static_cast<IProgress *>(pvUser);

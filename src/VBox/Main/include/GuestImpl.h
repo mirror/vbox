@@ -168,8 +168,9 @@ private:
     /** @name Private internal methods.
      * @{ */
     void i_updateStats(uint64_t iTick);
-    static int i_staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                                         STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser);
+    static DECLCALLBACK(int) i_staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *pvSample,
+                                                       STAMUNIT enmUnit, STAMVISIBILITY enmVisiblity,
+                                                       const char *pszDesc, void *pvUser);
 
     /** @}  */
 

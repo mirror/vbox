@@ -76,7 +76,7 @@ class HostDnsMonitor
   private:
     HostDnsMonitor(const HostDnsMonitor &);
     HostDnsMonitor& operator= (const HostDnsMonitor &);
-    static int threadMonitoringRoutine(RTTHREAD, void *);
+    static DECLCALLBACK(int) threadMonitoringRoutine(RTTHREAD, void *);
     void pollGlobalExtraData();
 
   protected:

@@ -307,7 +307,7 @@ void HostDnsMonitor::monitorThreadInitializationDone()
 }
 
 
-int HostDnsMonitor::threadMonitoringRoutine(RTTHREAD, void *pvUser)
+DECLCALLBACK(int) HostDnsMonitor::threadMonitoringRoutine(RTTHREAD, void *pvUser)
 {
     HostDnsMonitor *pThis = static_cast<HostDnsMonitor *>(pvUser);
     return pThis->monitorWorker();

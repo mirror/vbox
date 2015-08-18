@@ -205,8 +205,9 @@ DECLCALLBACK(void) Guest::i_staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, 
 }
 
 /* static */
-int Guest::i_staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                                     STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser)
+DECLCALLBACK(int)  Guest::i_staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *pvSample,
+                                                    STAMUNIT enmUnit, STAMVISIBILITY enmVisiblity,
+                                                    const char *pszDesc, void *pvUser)
 {
     AssertLogRelMsgReturn(enmType == STAMTYPE_COUNTER, ("Unexpected sample type %d ('%s')\n", enmType, pszName), VINF_SUCCESS);
     AssertLogRelMsgReturn(enmUnit == STAMUNIT_BYTES, ("Unexpected sample unit %d ('%s')\n", enmUnit, pszName), VINF_SUCCESS);
