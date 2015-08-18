@@ -122,7 +122,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_TM
 #include <VBox/vmm/tm.h>
-#include <iprt/asm-amd64-x86.h> /* for SUPGetCpuHzFromGIP from sup.h  */
+#include <iprt/asm-amd64-x86.h> /* for SUPGetCpuHzFromGip from sup.h  */
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/hm.h>
