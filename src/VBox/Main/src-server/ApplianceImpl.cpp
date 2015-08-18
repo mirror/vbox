@@ -1276,7 +1276,7 @@ DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, 
 }
 
 /* static */
-int Appliance::TaskOVF::updateProgress(unsigned uPercent, void *pvUser)
+DECLCALLBACK(int) Appliance::TaskOVF::updateProgress(unsigned uPercent, void *pvUser)
 {
     Appliance::TaskOVF* pTask = *(Appliance::TaskOVF**)pvUser;
 

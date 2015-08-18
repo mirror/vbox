@@ -142,7 +142,7 @@ struct Appliance::TaskOVF
         rc(S_OK)
     {}
 
-    static int updateProgress(unsigned uPercent, void *pvUser);
+    static DECLCALLBACK(int) updateProgress(unsigned uPercent, void *pvUser);
 
     HRESULT startThread();
 
