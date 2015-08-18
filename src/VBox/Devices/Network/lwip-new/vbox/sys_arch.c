@@ -493,7 +493,7 @@ struct sys_timeouts *sys_arch_timeouts(void)
  * Internal: thread main function adapter, dropping the first parameter. Needed
  * to make lwip thread main function compatible with IPRT thread main function.
  */
-static int sys_thread_adapter(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) sys_thread_adapter(RTTHREAD ThreadSelf, void *pvUser)
 {
     THREADLOCALSTORAGE *tls = (THREADLOCALSTORAGE *)pvUser;
     tls->thread(tls->arg);

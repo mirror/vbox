@@ -129,8 +129,7 @@ void vbvxSetUpHGSMIHeapInGuest(VBOXPtr pVBox, uint32_t cbVRAM)
 }
 
 /** Callback to fill in the view structures */
-static int
-vboxFillViewInfo(void *pvVBox, struct VBVAINFOVIEW *pViews, uint32_t cViews)
+static DECLCALLBACK(int) vboxFillViewInfo(void *pvVBox, struct VBVAINFOVIEW *pViews, uint32_t cViews)
 {
     VBOXPtr pVBox = (VBOXPtr)pvVBox;
     unsigned i;

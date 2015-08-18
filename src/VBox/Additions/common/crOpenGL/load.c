@@ -499,7 +499,7 @@ static void stubSignalHandler(int signo)
 
 #ifndef RT_OS_WINDOWS
 # ifdef CHROMIUM_THREADSAFE
-static DECLCALLBACK(void) stubThreadTlsDtor(void *pvValue)
+static void stubThreadTlsDtor(void *pvValue)
 {
     ContextInfo *pCtx = (ContextInfo*)pvValue;
     VBoxTlsRefRelease(pCtx);
