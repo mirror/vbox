@@ -463,7 +463,7 @@ crStateFreeContext(CRContext *ctx)
 
 #ifdef CHROMIUM_THREADSAFE
 # ifndef RT_OS_WINDOWS
-static DECLCALLBACK(void) crStateThreadTlsDtor(void *pvValue)
+static void crStateThreadTlsDtor(void *pvValue)
 {
     CRContext *pCtx = (CRContext*)pvValue;
     VBoxTlsRefRelease(pCtx);
