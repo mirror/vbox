@@ -123,7 +123,7 @@ struct VBoxNetBaseService::Data
     RTTHREAD m_hThrRecv;
 
     bool fShutdown;
-    static int recvLoop(RTTHREAD, void *);
+    static DECLCALLBACK(int) recvLoop(RTTHREAD, void *);
 };
 
 
@@ -145,7 +145,7 @@ static RTGETOPTDEF g_aGetOptDef[] =
 };
 
 
-int VBoxNetBaseService::Data::recvLoop(RTTHREAD, void *pvUser)
+DECLCALLBACK(int) VBoxNetBaseService::Data::recvLoop(RTTHREAD, void *pvUser)
 {
     VBoxNetBaseService *pThis = static_cast<VBoxNetBaseService *>(pvUser);
 
