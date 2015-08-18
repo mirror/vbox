@@ -179,7 +179,7 @@ DECLCALLBACK(void) VBoxServiceDefaultTerm(void)
  * @param   enmPhase
  * @param   pfnLog
  */
-static void VBoxServiceLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
+static DECLCALLBACK(void) VBoxServiceLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
 {
     /* Some introductory information. */
     static RTTIMESPEC s_TimeSpec;

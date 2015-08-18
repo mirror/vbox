@@ -319,7 +319,7 @@ static void Usage(PRTSTREAM pStrm)
  * @param   pvUser              Pointer to the stop variable.
  * @param   iTick               The tick, ignored.
  */
-static void netperfStopTimerCallback(RTTIMERLR hTimer, void *pvUser, uint64_t iTick)
+static DECLCALLBACK(void) netperfStopTimerCallback(RTTIMERLR hTimer, void *pvUser, uint64_t iTick)
 {
     bool volatile *pfStop = (bool volatile *)pvUser;
 /*    RTPrintf("Time's Up!\n");*/

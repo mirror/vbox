@@ -118,7 +118,7 @@
  * @param   fInvalid        When set, get the next invalid operands that will
  *                          cause exceptions/faults.
  */
-typedef int FNCIDETSETUPINOUT(struct CIDETCORE *pThis, bool fInvalid);
+typedef DECLCALLBACK(int) FNCIDETSETUPINOUT(struct CIDETCORE *pThis, bool fInvalid);
 /** Pointer to a FNCIDETSETUPINOUT function. */
 typedef FNCIDETSETUPINOUT *PFNCIDETSETUPINOUT;
 

@@ -85,7 +85,7 @@ struct DISPLAYSTATE
 };
 
 /** Thread to monitor and react to X server VT switches and exits. */
-static int pfnMonitorThread(RTTHREAD self, void *pvUser)
+static DECLCALLBACK(int) vboxClientMonitorThread(RTTHREAD self, void *pvUser)
 {
     struct DISPLAYSTATE *pState = (struct DISPLAYSTATE *)pvUser;
     Display *pDisplay;
@@ -121,7 +121,7 @@ static int startMonitorThread(struct DISPLAYSTATE *pState)
 {
     int rc;
 
-    rc = RTThreadCreate(NULL, pfnMonitorThread, (void *)pState, 0, RTTHREADTYPE_INFREQUENT_POLLER, 0, "VT_MONITOR");
+    rc = RTThreadCreate(NULL, vboxClientMonitorThread, (void *)pState, 0, RTTHREADTYPE_INFREQUENT_POLLER, 0, "VT_MONITOR");
     if (rc != VINF_SUCCESS)
         VBClFatalError(("Failed to start the VT monitor thread, rc=%Rrc\n", rc));
     return VINF_SUCCESS;

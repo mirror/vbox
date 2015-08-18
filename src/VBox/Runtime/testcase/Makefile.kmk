@@ -84,7 +84,6 @@ PROGRAMS += \
 	tstRTList \
 	tstRTLockValidator \
 	tstLog \
-	tstMemAutoPtr \
 	tstRTMemEf \
 	tstRTMemCache \
 	tstRTMemPool \
@@ -443,9 +442,6 @@ tstRTLockValidator_SOURCES = tstRTLockValidator.cpp
 
 tstLog_TEMPLATE = VBOXR3TSTEXE
 tstLog_SOURCES = tstLog.cpp
-
-tstMemAutoPtr_TEMPLATE = VBOXR3TSTEXE
-tstMemAutoPtr_SOURCES = tstMemAutoPtr.cpp
 
 tstRTMemEf_TEMPLATE = VBOXR3TSTEXE
 tstRTMemEf_SOURCES = tstRTMemEf.cpp

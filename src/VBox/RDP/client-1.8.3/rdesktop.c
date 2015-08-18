@@ -556,7 +556,7 @@ parse_server_and_port(char *server)
 
 #ifdef VBOX
 /* This disables iprt logging */
-DECLEXPORT(PRTLOGGER) RTLogDefaultInit(void)
+DECLEXPORT(PRTLOGGER) RTCALL RTLogDefaultInit(void)
 {
     return NULL;
 }

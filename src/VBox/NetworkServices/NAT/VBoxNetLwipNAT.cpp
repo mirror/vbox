@@ -18,8 +18,6 @@
 /* Must be included before winutils.h (lwip/def.h), otherwise Windows build breaks. */
 #define LOG_GROUP LOG_GROUP_NAT_SERVICE
 
-#include <iprt/cpp/mem.h>
-
 #include "winutils.h"
 
 #include <VBox/com/assert.h>
@@ -182,11 +180,11 @@ class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
      * on startup, and then on sync them on events.
      */
     bool fDontLoadRulesOnStartup;
-    static void onLwipTcpIpInit(void *arg);
-    static void onLwipTcpIpFini(void *arg);
+    static DECLCALLBACK(void) onLwipTcpIpInit(void *arg);
+    static DECLCALLBACK(void) onLwipTcpIpFini(void *arg);
     static err_t netifInit(netif *pNetif);
     static err_t netifLinkoutput(netif *pNetif, pbuf *pBuf);
-    static int intNetThreadRecv(RTTHREAD, void *);
+    /* static int intNetThreadRecv(RTTHREAD, void *); - unused */
 
     VECNATSERVICEPF m_vecPortForwardRule4;
     VECNATSERVICEPF m_vecPortForwardRule6;
@@ -293,8 +291,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
                     break;
 
                 default:
-                    LogRel(("Event: %s %s port-forwarding rule \"%s\":"
-                            " invalid protocol %d\n",
+                    LogRel(("Event: %s %s port-forwarding rule \"%s\": invalid protocol %d\n",
                             fCreateFW ? "Add" : "Remove",
                             fIPv6FW ? "IPv6" : "IPv4",
                             com::Utf8Str(name).c_str(),
@@ -302,8 +299,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
                     goto port_forward_done;
             }
 
-            LogRel(("Event: %s %s port-forwarding rule \"%s\":"
-                    " %s %s%s%s:%d -> %s%s%s:%d\n",
+            LogRel(("Event: %s %s port-forwarding rule \"%s\": %s %s%s%s:%d -> %s%s%s:%d\n",
                     fCreateFW ? "Add" : "Remove",
                     fIPv6FW ? "IPv6" : "IPv4",
                     com::Utf8Str(name).c_str(),
@@ -352,25 +348,22 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
                 for (it = rules.begin(); it != rules.end(); ++it)
                 {
                     /* compare */
-                    NATSEVICEPORTFORWARDRULE& natFw = *it;
+                    NATSEVICEPORTFORWARDRULE &natFw = *it;
                     if (   natFw.Pfr.iPfrProto == r.Pfr.iPfrProto
                         && natFw.Pfr.u16PfrHostPort == r.Pfr.u16PfrHostPort
-                        && (strncmp(natFw.Pfr.szPfrHostAddr, r.Pfr.szPfrHostAddr, INET6_ADDRSTRLEN) == 0)
+                        && strncmp(natFw.Pfr.szPfrHostAddr, r.Pfr.szPfrHostAddr, INET6_ADDRSTRLEN) == 0
                         && natFw.Pfr.u16PfrGuestPort == r.Pfr.u16PfrGuestPort
-                        && (strncmp(natFw.Pfr.szPfrGuestAddr, r.Pfr.szPfrGuestAddr, INET6_ADDRSTRLEN) == 0))
+                        && strncmp(natFw.Pfr.szPfrGuestAddr, r.Pfr.szPfrGuestAddr, INET6_ADDRSTRLEN) == 0)
                     {
-                        RTCMemAutoPtr<fwspec> pFwCopy;
-                        if (RT_UNLIKELY(!pFwCopy.alloc()))
-                            break;
-
-                        memcpy(pFwCopy.get(), &natFw.FWSpec, sizeof(natFw.FWSpec));
-
-                        int status = portfwd_rule_del(pFwCopy.get());
-                        if (status != 0)
-                            break;
-
-                        pFwCopy.release(); /* owned by lwip thread now */
-                        rules.erase(it);
+                        fwspec *pFwCopy = (fwspec *)RTMemDup(&natFw.FWSpec, sizeof(natFw.FWSpec));
+                        if (pFwCopy)
+                        {
+                            int status = portfwd_rule_del(pFwCopy);
+                            if (status == 0)
+                                rules.erase(it);   /* (pFwCopy is owned by lwip thread now.) */
+                            else
+                                RTMemFree(pFwCopy);
+                        }
                         break;
                     }
                 } /* loop over vector elements */
@@ -426,7 +419,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 }
 
 
-void VBoxNetLwipNAT::onLwipTcpIpInit(void* arg)
+/*static*/ DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpInit(void *arg)
 {
     AssertPtrReturnVoid(arg);
     VBoxNetLwipNAT *pNat = static_cast<VBoxNetLwipNAT *>(arg);
@@ -519,7 +512,7 @@ void VBoxNetLwipNAT::onLwipTcpIpInit(void* arg)
 }
 
 
-void VBoxNetLwipNAT::onLwipTcpIpFini(void* arg)
+/*static*/ DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpFini(void* arg)
 {
     AssertPtrReturnVoid(arg);
     VBoxNetLwipNAT *pThis = (VBoxNetLwipNAT *)arg;
@@ -534,7 +527,7 @@ void VBoxNetLwipNAT::onLwipTcpIpFini(void* arg)
 /*
  * Callback for netif_add() to initialize the interface.
  */
-err_t VBoxNetLwipNAT::netifInit(netif *pNetif)
+/*static*/ err_t VBoxNetLwipNAT::netifInit(netif *pNetif)
 {
     err_t rcLwip = ERR_OK;
 
@@ -596,7 +589,7 @@ err_t VBoxNetLwipNAT::netifInit(netif *pNetif)
 }
 
 
-err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
+/*static*/ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
 {
     AssertPtrReturn(pNetif, ERR_ARG);
     AssertPtrReturn(pPBuf, ERR_ARG);
@@ -701,7 +694,7 @@ VBoxNetLwipNAT::~VBoxNetLwipNAT()
 }
 
 
-int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
+/*static*/ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
 {
     int lrc;
 
@@ -738,27 +731,23 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
     if (lrc != 0)
         return VERR_IGNORED;
 
-    RTCMemAutoPtr<fwspec> pFwCopy;
-    if (RT_UNLIKELY(!pFwCopy.alloc()))
+    fwspec *pFwCopy = (fwspec *)RTMemDup(&natPf.FWSpec, sizeof(natPf.FWSpec));
+    if (pFwCopy)
     {
+        lrc = portfwd_rule_add(pFwCopy);
+        if (lrc == 0)
+            return VINF_SUCCESS; /* (pFwCopy is owned by lwip thread now.) */
+        RTMemFree(pFwCopy);
+    }
+    else
         LogRel(("Unable to allocate memory for %s rule \"%s\"\n",
                 natPf.Pfr.fPfrIPv6 ? "IPv6" : "IPv4",
                 natPf.Pfr.szPfrName));
-        return VERR_IGNORED;
-    }
-
-    memcpy(pFwCopy.get(), &natPf.FWSpec, sizeof(natPf.FWSpec));
-
-    lrc = portfwd_rule_add(pFwCopy.get());
-    if (lrc != 0)
-        return VERR_IGNORED;
-
-    pFwCopy.release();          /* owned by lwip thread now */
-    return VINF_SUCCESS;
+    return VERR_IGNORED;
 }
 
 
-int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules)
+/*static*/ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules)
 {
     ITERATORNATSERVICEPF it;
     for (it = vecRules.begin(); it != vecRules.end(); ++it)

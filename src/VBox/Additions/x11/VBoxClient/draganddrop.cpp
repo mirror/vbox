@@ -598,8 +598,8 @@ public:
 private:
 
     int dragAndDropInit(void);
-    static int hgcmEventThread(RTTHREAD hThread, void *pvUser);
-    static int x11EventThread(RTTHREAD hThread, void *pvUser);
+    static DECLCALLBACK(int) hgcmEventThread(RTTHREAD hThread, void *pvUser);
+    static DECLCALLBACK(int) x11EventThread(RTTHREAD hThread, void *pvUser);
 
     /* Private member vars */
     Display             *m_pDisplay;
@@ -3169,7 +3169,7 @@ int DragAndDropService::dragAndDropInit(void)
  * @param   pvUser                  Pointer to DragAndDropService instance to use.
  */
 /* static */
-int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
+DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
 {
     AssertPtrReturn(pvUser, VERR_INVALID_PARAMETER);
     DragAndDropService *pThis = static_cast<DragAndDropService*>(pvUser);
@@ -3239,7 +3239,7 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
  * @param   pvUser                  Pointer to DragAndDropService instance to use.
  */
 /* static */
-int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
+DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
 {
     AssertPtrReturn(pvUser, VERR_INVALID_PARAMETER);
     DragAndDropService *pThis = static_cast<DragAndDropService*>(pvUser);
