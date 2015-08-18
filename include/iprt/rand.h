@@ -42,7 +42,7 @@ RT_C_DECLS_BEGIN
  * @param   pv  Where to store the random bytes.
  * @param   cb  Number of bytes to generate.
  */
-RTDECL(void) RTRandBytes(void *pv, size_t cb) RT_NO_THROW;
+RTDECL(void) RTRandBytes(void *pv, size_t cb) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 32-bit signed random number in the set [i32First..i32Last].
@@ -51,14 +51,14 @@ RTDECL(void) RTRandBytes(void *pv, size_t cb) RT_NO_THROW;
  * @param   i32First    First number in the set.
  * @param   i32Last     Last number in the set.
  */
-RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last) RT_NO_THROW;
+RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 32-bit signed random number.
  *
  * @returns The random number.
  */
-RTDECL(int32_t) RTRandS32(void) RT_NO_THROW;
+RTDECL(int32_t) RTRandS32(void) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 32-bit unsigned random number in the set [u32First..u32Last].
@@ -67,14 +67,14 @@ RTDECL(int32_t) RTRandS32(void) RT_NO_THROW;
  * @param   u32First    First number in the set.
  * @param   u32Last     Last number in the set.
  */
-RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last) RT_NO_THROW;
+RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 32-bit unsigned random number.
  *
  * @returns The random number.
  */
-RTDECL(uint32_t) RTRandU32(void) RT_NO_THROW;
+RTDECL(uint32_t) RTRandU32(void) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 64-bit signed random number in the set [i64First..i64Last].
@@ -83,14 +83,14 @@ RTDECL(uint32_t) RTRandU32(void) RT_NO_THROW;
  * @param   i64First    First number in the set.
  * @param   i64Last     Last number in the set.
  */
-RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last) RT_NO_THROW;
+RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 64-bit signed random number.
  *
  * @returns The random number.
  */
-RTDECL(int64_t) RTRandS64(void) RT_NO_THROW;
+RTDECL(int64_t) RTRandS64(void) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 64-bit unsigned random number in the set [u64First..u64Last].
@@ -99,14 +99,14 @@ RTDECL(int64_t) RTRandS64(void) RT_NO_THROW;
  * @param   u64First    First number in the set.
  * @param   u64Last     Last number in the set.
  */
-RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last) RT_NO_THROW;
+RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 64-bit unsigned random number.
  *
  * @returns The random number.
  */
-RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW;
+RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW_PROTO;
 
 
 /**
@@ -116,7 +116,7 @@ RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW;
  * @param   phRand      Where to return the handle to the new random number
  *                      generator.
  */
-RTDECL(int) RTRandAdvCreate(PRTRAND phRand) RT_NO_THROW;
+RTDECL(int) RTRandAdvCreate(PRTRAND phRand) RT_NO_THROW_PROTO;
 
 /**
  * Create an instance of the default pseudo random number generator.
@@ -124,7 +124,7 @@ RTDECL(int) RTRandAdvCreate(PRTRAND phRand) RT_NO_THROW;
  * @returns IPRT status code.
  * @param   phRand      Where to store the handle to the generator.
  */
-RTDECL(int) RTRandAdvCreatePseudo(PRTRAND phRand) RT_NO_THROW;
+RTDECL(int) RTRandAdvCreatePseudo(PRTRAND phRand) RT_NO_THROW_PROTO;
 
 /**
  * Create an instance of the Park-Miller pseudo random number generator.
@@ -132,7 +132,7 @@ RTDECL(int) RTRandAdvCreatePseudo(PRTRAND phRand) RT_NO_THROW;
  * @returns IPRT status code.
  * @param   phRand      Where to store the handle to the generator.
  */
-RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW;
+RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW_PROTO;
 
 /**
  * Create an instance of the faster random number generator for the OS.
@@ -147,7 +147,7 @@ RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW;
  *
  * @remarks Think /dev/urandom.
  */
-RTDECL(int) RTRandAdvCreateSystemFaster(PRTRAND phRand) RT_NO_THROW;
+RTDECL(int) RTRandAdvCreateSystemFaster(PRTRAND phRand) RT_NO_THROW_PROTO;
 
 /**
  * Create an instance of the truer random number generator for the OS.
@@ -166,7 +166,7 @@ RTDECL(int) RTRandAdvCreateSystemFaster(PRTRAND phRand) RT_NO_THROW;
  *
  * @remarks Think /dev/random.
  */
-RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand) RT_NO_THROW;
+RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand) RT_NO_THROW_PROTO;
 
 /**
  * Destroys a random number generator.
@@ -174,7 +174,7 @@ RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand) RT_NO_THROW;
  * @returns IPRT status code.
  * @param   hRand       Handle to the random number generator.
  */
-RTDECL(int) RTRandAdvDestroy(RTRAND hRand) RT_NO_THROW;
+RTDECL(int) RTRandAdvDestroy(RTRAND hRand) RT_NO_THROW_PROTO;
 
 /**
  * Generic method for seeding of a random number generator.
@@ -189,7 +189,7 @@ RTDECL(int) RTRandAdvDestroy(RTRAND hRand) RT_NO_THROW;
  * @param   hRand       Handle to the random number generator.
  * @param   u64Seed     Seed.
  */
-RTDECL(int) RTRandAdvSeed(RTRAND hRand, uint64_t u64Seed) RT_NO_THROW;
+RTDECL(int) RTRandAdvSeed(RTRAND hRand, uint64_t u64Seed) RT_NO_THROW_PROTO;
 
 /**
  * Save the current state of a pseudo generator.
@@ -211,7 +211,7 @@ RTDECL(int) RTRandAdvSeed(RTRAND hRand, uint64_t u64Seed) RT_NO_THROW;
  *                      size required / used on return (including the
  *                      terminator, thus the 'cb' instead of 'cch').
  */
-RTDECL(int) RTRandAdvSaveState(RTRAND hRand, char *pszState, size_t *pcbState) RT_NO_THROW;
+RTDECL(int) RTRandAdvSaveState(RTRAND hRand, char *pszState, size_t *pcbState) RT_NO_THROW_PROTO;
 
 /**
  * Restores the state of a pseudo generator.
@@ -225,7 +225,7 @@ RTDECL(int) RTRandAdvSaveState(RTRAND hRand, char *pszState, size_t *pcbState) R
  * @param   hRand       Handle to the random number generator.
  * @param   pszState    The state to load.
  */
-RTDECL(int) RTRandAdvRestoreState(RTRAND hRand, char const *pszState) RT_NO_THROW;
+RTDECL(int) RTRandAdvRestoreState(RTRAND hRand, char const *pszState) RT_NO_THROW_PROTO;
 
 /**
  * Fills a buffer with random bytes.
@@ -234,7 +234,7 @@ RTDECL(int) RTRandAdvRestoreState(RTRAND hRand, char const *pszState) RT_NO_THRO
  * @param   pv  Where to store the random bytes.
  * @param   cb  Number of bytes to generate.
  */
-RTDECL(void) RTRandAdvBytes(RTRAND hRand, void *pv, size_t cb) RT_NO_THROW;
+RTDECL(void) RTRandAdvBytes(RTRAND hRand, void *pv, size_t cb) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 32-bit signed random number in the set [i32First..i32Last].
@@ -244,7 +244,7 @@ RTDECL(void) RTRandAdvBytes(RTRAND hRand, void *pv, size_t cb) RT_NO_THROW;
  * @param   i32First    First number in the set.
  * @param   i32Last     Last number in the set.
  */
-RTDECL(int32_t) RTRandAdvS32Ex(RTRAND hRand, int32_t i32First, int32_t i32Last) RT_NO_THROW;
+RTDECL(int32_t) RTRandAdvS32Ex(RTRAND hRand, int32_t i32First, int32_t i32Last) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 32-bit signed random number.
@@ -252,7 +252,7 @@ RTDECL(int32_t) RTRandAdvS32Ex(RTRAND hRand, int32_t i32First, int32_t i32Last) 
  * @returns The random number.
  * @param   hRand       Handle to the random number generator.
  */
-RTDECL(int32_t) RTRandAdvS32(RTRAND hRand) RT_NO_THROW;
+RTDECL(int32_t) RTRandAdvS32(RTRAND hRand) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 32-bit unsigned random number in the set [u32First..u32Last].
@@ -262,7 +262,7 @@ RTDECL(int32_t) RTRandAdvS32(RTRAND hRand) RT_NO_THROW;
  * @param   u32First    First number in the set.
  * @param   u32Last     Last number in the set.
  */
-RTDECL(uint32_t) RTRandAdvU32Ex(RTRAND hRand, uint32_t u32First, uint32_t u32Last) RT_NO_THROW;
+RTDECL(uint32_t) RTRandAdvU32Ex(RTRAND hRand, uint32_t u32First, uint32_t u32Last) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 32-bit unsigned random number.
@@ -270,7 +270,7 @@ RTDECL(uint32_t) RTRandAdvU32Ex(RTRAND hRand, uint32_t u32First, uint32_t u32Las
  * @returns The random number.
  * @param   hRand       Handle to the random number generator.
  */
-RTDECL(uint32_t) RTRandAdvU32(RTRAND hRand) RT_NO_THROW;
+RTDECL(uint32_t) RTRandAdvU32(RTRAND hRand) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 64-bit signed random number in the set [i64First..i64Last].
@@ -280,14 +280,14 @@ RTDECL(uint32_t) RTRandAdvU32(RTRAND hRand) RT_NO_THROW;
  * @param   i64First    First number in the set.
  * @param   i64Last     Last number in the set.
  */
-RTDECL(int64_t) RTRandAdvS64Ex(RTRAND hRand, int64_t i64First, int64_t i64Last) RT_NO_THROW;
+RTDECL(int64_t) RTRandAdvS64Ex(RTRAND hRand, int64_t i64First, int64_t i64Last) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 64-bit signed random number.
  *
  * @returns The random number.
  */
-RTDECL(int64_t) RTRandAdvS64(RTRAND hRand) RT_NO_THROW;
+RTDECL(int64_t) RTRandAdvS64(RTRAND hRand) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 64-bit unsigned random number in the set [u64First..u64Last].
@@ -297,7 +297,7 @@ RTDECL(int64_t) RTRandAdvS64(RTRAND hRand) RT_NO_THROW;
  * @param   u64First    First number in the set.
  * @param   u64Last     Last number in the set.
  */
-RTDECL(uint64_t) RTRandAdvU64Ex(RTRAND hRand, uint64_t u64First, uint64_t u64Last) RT_NO_THROW;
+RTDECL(uint64_t) RTRandAdvU64Ex(RTRAND hRand, uint64_t u64First, uint64_t u64Last) RT_NO_THROW_PROTO;
 
 /**
  * Generate a 64-bit unsigned random number.
@@ -305,7 +305,7 @@ RTDECL(uint64_t) RTRandAdvU64Ex(RTRAND hRand, uint64_t u64First, uint64_t u64Las
  * @returns The random number.
  * @param   hRand       Handle to the random number generator.
  */
-RTDECL(uint64_t) RTRandAdvU64(RTRAND hRand) RT_NO_THROW;
+RTDECL(uint64_t) RTRandAdvU64(RTRAND hRand) RT_NO_THROW_PROTO;
 
 
 /** @} */

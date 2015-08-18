@@ -187,7 +187,7 @@ static DECLCALLBACK(int) rtRandParkMillerRestoreState(PRTRANDINT pThis, char con
 }
 
 
-RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW
+RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW_DEF
 {
     PRTRANDINT pThis = (PRTRANDINT)RTMemAlloc(sizeof(*pThis));
     if (!pThis)

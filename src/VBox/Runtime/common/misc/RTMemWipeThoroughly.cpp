@@ -36,7 +36,7 @@
 #include <iprt/string.h>
 
 
-RTDECL(void) RTMemWipeThoroughly(void *pv, size_t cb, size_t cMinPasses) RT_NO_THROW
+RTDECL(void) RTMemWipeThoroughly(void *pv, size_t cb, size_t cMinPasses) RT_NO_THROW_DEF
 {
     size_t cPasses = RT_MIN(cMinPasses, 6);
 

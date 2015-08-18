@@ -61,7 +61,7 @@ RTDECL(int) RTMemPoolDestroy(RTMEMPOOL hMemPool);
  * @param   hMemPool        Handle to the pool to allocate the memory from.
  * @param   cb              Size in bytes of the memory block to allocated.
  */
-RTDECL(void *) RTMemPoolAlloc(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW;
+RTDECL(void *) RTMemPoolAlloc(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW_PROTO;
 
 /**
  * Allocates zero'd memory.
@@ -76,7 +76,7 @@ RTDECL(void *) RTMemPoolAlloc(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW;
  * @param   hMemPool        Handle to the pool to allocate the memory from.
  * @param   cb              Size in bytes of the memory block to allocated.
  */
-RTDECL(void *) RTMemPoolAllocZ(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW;
+RTDECL(void *) RTMemPoolAllocZ(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW_PROTO;
 
 /**
  * Duplicates a chunk of memory into a new heap block.
@@ -88,7 +88,7 @@ RTDECL(void *) RTMemPoolAllocZ(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW;
  * @param   pvSrc           The memory to duplicate.
  * @param   cb              The amount of memory to duplicate.
  */
-RTDECL(void *) RTMemPoolDup(RTMEMPOOL hMemPool, const void *pvSrc, size_t cb) RT_NO_THROW;
+RTDECL(void *) RTMemPoolDup(RTMEMPOOL hMemPool, const void *pvSrc, size_t cb) RT_NO_THROW_PROTO;
 
 /**
  * Duplicates a chunk of memory into a new heap block with some
@@ -102,7 +102,7 @@ RTDECL(void *) RTMemPoolDup(RTMEMPOOL hMemPool, const void *pvSrc, size_t cb) RT
  * @param   cbSrc           The amount of memory to duplicate.
  * @param   cbExtra         The amount of extra memory to allocate and zero.
  */
-RTDECL(void *) RTMemPoolDupEx(RTMEMPOOL hMemPool, const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW;
+RTDECL(void *) RTMemPoolDupEx(RTMEMPOOL hMemPool, const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW_PROTO;
 
 /**
  * Reallocates memory.
@@ -114,7 +114,7 @@ RTDECL(void *) RTMemPoolDupEx(RTMEMPOOL hMemPool, const void *pvSrc, size_t cbSr
  * @param   pvOld           The memory block to reallocate.
  * @param   cbNew           The new block size (in bytes).
  */
-RTDECL(void *) RTMemPoolRealloc(RTMEMPOOL hMemPool, void *pvOld, size_t cbNew) RT_NO_THROW;
+RTDECL(void *) RTMemPoolRealloc(RTMEMPOOL hMemPool, void *pvOld, size_t cbNew) RT_NO_THROW_PROTO;
 
 /**
  * Frees memory allocated from a pool.
@@ -127,7 +127,7 @@ RTDECL(void *) RTMemPoolRealloc(RTMEMPOOL hMemPool, void *pvOld, size_t cbNew) R
  * @remarks This is the same a RTMemPoolRelease but included here as a separate
  *          function to simplify code migration.
  */
-RTDECL(void) RTMemPoolFree(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW;
+RTDECL(void) RTMemPoolFree(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW_PROTO;
 
 /**
  * Retains a reference to a memory block in a pool.
@@ -136,7 +136,7 @@ RTDECL(void) RTMemPoolFree(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW;
  *
  * @param   pv              Pointer to memory block.
  */
-RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW;
+RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW_PROTO;
 
 /**
  * Releases a reference to a memory block in a pool.
@@ -148,7 +148,7 @@ RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW;
  *                          performance cost.
  * @param   pv              Pointer to memory block.
  */
-RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW;
+RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW_PROTO;
 
 /**
  * Get the current reference count.
@@ -156,7 +156,7 @@ RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW;
  * @returns The reference count, UINT32_MAX on error (asserted).
  * @param   pv              Pointer to memory block.
  */
-RTDECL(uint32_t) RTMemPoolRefCount(void *pv) RT_NO_THROW;
+RTDECL(uint32_t) RTMemPoolRefCount(void *pv) RT_NO_THROW_PROTO;
 
 
 RT_C_DECLS_END

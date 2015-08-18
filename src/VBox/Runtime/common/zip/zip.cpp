@@ -1717,7 +1717,7 @@ RT_EXPORT_SYMBOL(RTZipDecompDestroy);
 
 RTDECL(int) RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t fFlags,
                                void const *pvSrc, size_t cbSrc,
-                               void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW
+                               void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW_DEF
 {
     /* input validation - the crash and burn approach as speed is essential here. */
     Assert(enmLevel <= RTZIPLEVEL_MAX && enmLevel >= RTZIPLEVEL_STORE);
@@ -1833,7 +1833,7 @@ RT_EXPORT_SYMBOL(RTZipBlockCompress);
 
 RTDECL(int) RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
                                  void const *pvSrc, size_t cbSrc, size_t *pcbSrcActual,
-                                 void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW
+                                 void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW_DEF
 {
     /* input validation - the crash and burn approach as speed is essential here. */
     Assert(!fFlags);

@@ -78,20 +78,20 @@ void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb) RT_EF_THROWS_BAD_ALLOC
 }
 
 
-void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb, const std::nothrow_t &) RT_NO_THROW
+void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb, const std::nothrow_t &) RT_NO_THROW_DEF
 {
     void *pv = rtR3MemAlloc("new nothrow", RTMEMTYPE_NEW, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     return pv;
 }
 
 
-void RT_EF_CDECL operator delete(void *pv) RT_NO_THROW
+void RT_EF_CDECL operator delete(void *pv) RT_NO_THROW_DEF
 {
     rtR3MemFree("delete", RTMEMTYPE_DELETE, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
-void RT_EF_CDECL operator delete(void * pv, const std::nothrow_t &) RT_NO_THROW
+void RT_EF_CDECL operator delete(void * pv, const std::nothrow_t &) RT_NO_THROW_DEF
 {
     rtR3MemFree("delete nothrow", RTMEMTYPE_DELETE, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
@@ -114,20 +114,20 @@ void *RT_EF_CDECL operator new[](RT_EF_SIZE_T cb) RT_EF_THROWS_BAD_ALLOC
 }
 
 
-void * RT_EF_CDECL operator new[](RT_EF_SIZE_T cb, const std::nothrow_t &) RT_NO_THROW
+void * RT_EF_CDECL operator new[](RT_EF_SIZE_T cb, const std::nothrow_t &) RT_NO_THROW_DEF
 {
     void *pv = rtR3MemAlloc("new[] nothrow", RTMEMTYPE_NEW_ARRAY, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     return pv;
 }
 
 
-void RT_EF_CDECL operator delete[](void * pv) RT_NO_THROW
+void RT_EF_CDECL operator delete[](void * pv) RT_NO_THROW_DEF
 {
     rtR3MemFree("delete[]", RTMEMTYPE_DELETE_ARRAY, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
-void RT_EF_CDECL operator delete[](void *pv, const std::nothrow_t &) RT_NO_THROW
+void RT_EF_CDECL operator delete[](void *pv, const std::nothrow_t &) RT_NO_THROW_DEF
 {
     rtR3MemFree("delete[] nothrow", RTMEMTYPE_DELETE_ARRAY, pv, ASMReturnAddress(), NULL, 0, NULL);
 }

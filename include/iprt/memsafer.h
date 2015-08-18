@@ -107,7 +107,7 @@ RTDECL(int) RTMemSaferUnscramble(void *pv, size_t cb);
  *                      RTMEMSAFER_F_XXX.
  * @param   pszTag      Allocation tag used for statistics and such.
  */
-RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW;
+RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW_PROTO;
 
 /**
  * Allocates memory for sensitive data.
@@ -133,7 +133,7 @@ RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, con
  * @param   cb          Number of bytes to allocate.
  * @param   pszTag      Allocation tag used for statistics and such.
  */
-RTDECL(void *) RTMemSaferAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW;
+RTDECL(void *) RTMemSaferAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_PROTO;
 
 /**
  * Allocates memory for sensitive data.
@@ -167,7 +167,7 @@ RTDECL(void *) RTMemSaferAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW;
  *                      requirments after the initial allocation.
  * @param   pszTag      Allocation tag used for statistics and such.
  */
-RTDECL(int) RTMemSaferReallocZExTag(size_t cbOld, void *pvOld, size_t cbNew, void **ppvNew, uint32_t fFlags, const char *pszTag) RT_NO_THROW;
+RTDECL(int) RTMemSaferReallocZExTag(size_t cbOld, void *pvOld, size_t cbNew, void **ppvNew, uint32_t fFlags, const char *pszTag) RT_NO_THROW_PROTO;
 
 /**
  * Reallocates memory allocated by RTMemSaferAllocZEx, RTMemSaferAllocZ,
@@ -206,7 +206,7 @@ RTDECL(int) RTMemSaferReallocZExTag(size_t cbOld, void *pvOld, size_t cbNew, voi
  * @param   cbNew       The size of the new allocation.
  * @param   pszTag      Allocation tag used for statistics and such.
  */
-RTDECL(void *) RTMemSaferReallocZTag(size_t cbOld, void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW;
+RTDECL(void *) RTMemSaferReallocZTag(size_t cbOld, void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW_PROTO;
 
 /**
  * Reallocates memory allocated by RTMemSaferAllocZ or RTMemSaferAllocZTag.
@@ -235,7 +235,7 @@ RTDECL(void *) RTMemSaferReallocZTag(size_t cbOld, void *pvOld, size_t cbNew, co
  * @param   pv          The allocation.
  * @param   cb          The allocation size.
  */
-RTDECL(void) RTMemSaferFree(void *pv, size_t cb) RT_NO_THROW;
+RTDECL(void) RTMemSaferFree(void *pv, size_t cb) RT_NO_THROW_PROTO;
 
 /** @}  */
 RT_C_DECLS_END

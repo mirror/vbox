@@ -85,25 +85,25 @@
 #undef RTALLOC_USE_EFENCE
 
 
-RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
+RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     return RTMemAllocTag(cb, pszTag);
 }
 
 
-RTDECL(void *)  RTMemTmpAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
+RTDECL(void *)  RTMemTmpAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     return RTMemAllocZTag(cb, pszTag);
 }
 
 
-RTDECL(void) RTMemTmpFree(void *pv) RT_NO_THROW
+RTDECL(void) RTMemTmpFree(void *pv) RT_NO_THROW_DEF
 {
     RTMemFree(pv);
 }
 
 
-RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
 #ifdef RTALLOC_USE_EFENCE
     void *pv = rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, cb, pszTag, ASMReturnAddress(), NULL, 0, NULL);
@@ -126,7 +126,7 @@ RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 }
 
 
-RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
 #ifdef RTALLOC_USE_EFENCE
     void *pv = rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, pszTag, ASMReturnAddress(), NULL, 0, NULL);
@@ -150,7 +150,7 @@ RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 }
 
 
-RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW_DEF
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
@@ -166,7 +166,7 @@ RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_TH
 }
 
 
-RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW_DEF
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
@@ -182,7 +182,7 @@ RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_T
 }
 
 
-RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW
+RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW_DEF
 {
 #ifdef RTALLOC_USE_EFENCE
     void *pv = rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, pszTag, ASMReturnAddress(), NULL, 0, NULL);
@@ -207,7 +207,7 @@ RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) R
 }
 
 
-RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
+RTDECL(void) RTMemFree(void *pv) RT_NO_THROW_DEF
 {
     if (pv)
 #ifdef RTALLOC_USE_EFENCE

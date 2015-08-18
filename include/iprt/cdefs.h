@@ -876,24 +876,37 @@
 # define RT_EXCEPTIONS_ENABLED
 #endif
 
-/** @def RT_NO_THROW
+/** @def RT_NO_THROW_PROTO
  * How to express that a function doesn't throw C++ exceptions
  * and the compiler can thus save itself the bother of trying
  * to catch any of them. Put this between the closing parenthesis
  * and the semicolon in function prototypes (and implementation if C++).
  *
+ * @remarks May not work on C++ methods, mainly intented for C-style APIs.
+ *
  * @remarks The use of the nothrow attribute with GCC is because old compilers
  *          (4.1.1, 32-bit) leaking the nothrow into global space or something
- *          when used with RTDECL or similar.
+ *          when used with RTDECL or similar.  Using this forces use to have two
+ *          macros, as the nothrow attribute is not for the function definition.
  */
 #ifdef RT_EXCEPTIONS_ENABLED
 # ifdef __GNUC__
-#  define RT_NO_THROW           __attribute__((nothrow))
+#  define RT_NO_THROW_PROTO     __attribute__((__nothrow__))
 # else
-#  define RT_NO_THROW           throw()
+#  define RT_NO_THROW_PROTO     throw()
 # endif
 #else
-# define RT_NO_THROW
+# define RT_NO_THROW_PROO
+#endif
+
+/** @def RT_NO_THROW_DEF
+ * The counter part to RT_NO_THROW_PROTO that is added to the function
+ * definition.
+ */
+#if defined(RT_EXCEPTIONS_ENABLED) && !defined(__GNUC__)
+# define RT_NO_THROW_DEF        RT_NO_THROW_PROTO
+#else
+# define RT_NO_THROW_DEF
 #endif
 
 /** @def RT_THROW

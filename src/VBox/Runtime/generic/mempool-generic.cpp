@@ -243,7 +243,7 @@ DECLINLINE(void) rtMemPoolUnlink(PRTMEMPOOLENTRY pEntry)
 }
 
 
-RTDECL(void *) RTMemPoolAlloc(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemPoolAlloc(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW_DEF
 {
     PRTMEMPOOLINT pMemPool = hMemPool;
     RTMEMPOOL_VALID_RETURN_RC(pMemPool, NULL);
@@ -258,7 +258,7 @@ RTDECL(void *) RTMemPoolAlloc(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemPoolAlloc);
 
 
-RTDECL(void *) RTMemPoolAllocZ(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemPoolAllocZ(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW_DEF
 {
     PRTMEMPOOLINT pMemPool = hMemPool;
     RTMEMPOOL_VALID_RETURN_RC(pMemPool, NULL);
@@ -273,7 +273,7 @@ RTDECL(void *) RTMemPoolAllocZ(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemPoolAllocZ);
 
 
-RTDECL(void *) RTMemPoolDup(RTMEMPOOL hMemPool, const void *pvSrc, size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemPoolDup(RTMEMPOOL hMemPool, const void *pvSrc, size_t cb) RT_NO_THROW_DEF
 {
     PRTMEMPOOLINT pMemPool = hMemPool;
     RTMEMPOOL_VALID_RETURN_RC(pMemPool, NULL);
@@ -289,7 +289,7 @@ RTDECL(void *) RTMemPoolDup(RTMEMPOOL hMemPool, const void *pvSrc, size_t cb) RT
 RT_EXPORT_SYMBOL(RTMemPoolDup);
 
 
-RTDECL(void *) RTMemPoolDupEx(RTMEMPOOL hMemPool, const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW
+RTDECL(void *) RTMemPoolDupEx(RTMEMPOOL hMemPool, const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW_DEF
 {
     PRTMEMPOOLINT pMemPool = hMemPool;
     RTMEMPOOL_VALID_RETURN_RC(pMemPool, NULL);
@@ -307,7 +307,7 @@ RT_EXPORT_SYMBOL(RTMemPoolDupEx);
 
 
 
-RTDECL(void *) RTMemPoolRealloc(RTMEMPOOL hMemPool, void *pvOld, size_t cbNew) RT_NO_THROW
+RTDECL(void *) RTMemPoolRealloc(RTMEMPOOL hMemPool, void *pvOld, size_t cbNew) RT_NO_THROW_DEF
 {
     /*
      * Fend off the odd cases.
@@ -350,14 +350,14 @@ RTDECL(void *) RTMemPoolRealloc(RTMEMPOOL hMemPool, void *pvOld, size_t cbNew) R
 RT_EXPORT_SYMBOL(RTMemPoolRealloc);
 
 
-RTDECL(void) RTMemPoolFree(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW
+RTDECL(void) RTMemPoolFree(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW_DEF
 {
     RTMemPoolRelease(hMemPool, pv);
 }
 RT_EXPORT_SYMBOL(RTMemPoolFree);
 
 
-RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW
+RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW_DEF
 {
     PRTMEMPOOLENTRY pEntry = (PRTMEMPOOLENTRY)pv - 1;
     RTMEMPOOL_VALID_ENTRY_RETURN_RC(pEntry, UINT32_MAX);
@@ -370,7 +370,7 @@ RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemPoolRetain);
 
 
-RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW
+RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW_DEF
 {
     if (!pv)
         return 0;
@@ -396,7 +396,7 @@ RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemPoolRelease);
 
 
-RTDECL(uint32_t) RTMemPoolRefCount(void *pv) RT_NO_THROW
+RTDECL(uint32_t) RTMemPoolRefCount(void *pv) RT_NO_THROW_DEF
 {
     PRTMEMPOOLENTRY pEntry = (PRTMEMPOOLENTRY)pv - 1;
     RTMEMPOOL_VALID_ENTRY_RETURN_RC(pEntry, UINT32_MAX);

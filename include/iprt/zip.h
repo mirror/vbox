@@ -195,7 +195,7 @@ RTDECL(int)     RTZipDecompDestroy(PRTZIPDECOMP pZip);
  */
 RTDECL(int)     RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t fFlags,
                                    void const *pvSrc, size_t cbSrc,
-                                   void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW;
+                                   void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW_PROTO;
 
 
 /**
@@ -214,7 +214,7 @@ RTDECL(int)     RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint3
  */
 RTDECL(int)     RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
                                      void const *pvSrc, size_t cbSrc, size_t *pcbSrcActual,
-                                     void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW;
+                                     void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW_PROTO;
 
 
 /**

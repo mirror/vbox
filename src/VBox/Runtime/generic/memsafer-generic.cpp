@@ -102,7 +102,7 @@ RTDECL(int) RTMemSaferUnscramble(void *pv, size_t cb)
 RT_EXPORT_SYMBOL(RTMemSaferUnscramble);
 
 
-RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW
+RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW_DEF
 {
     AssertPtrReturn(ppvNew, VERR_INVALID_PARAMETER);
     *ppvNew = NULL;
@@ -143,7 +143,7 @@ RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, con
 RT_EXPORT_SYMBOL(RTMemSaferAllocZExTag);
 
 
-RTDECL(void) RTMemSaferFree(void *pv, size_t cb) RT_NO_THROW
+RTDECL(void) RTMemSaferFree(void *pv, size_t cb) RT_NO_THROW_DEF
 {
     if (pv)
     {
@@ -159,7 +159,7 @@ RTDECL(void) RTMemSaferFree(void *pv, size_t cb) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemSaferFree);
 
 
-RTDECL(int) RTMemSaferReallocZExTag(size_t cbOld, void *pvOld, size_t cbNew, void **ppvNew, uint32_t fFlags, const char *pszTag) RT_NO_THROW
+RTDECL(int) RTMemSaferReallocZExTag(size_t cbOld, void *pvOld, size_t cbNew, void **ppvNew, uint32_t fFlags, const char *pszTag) RT_NO_THROW_DEF
 {
     /*
      * We cannot let the heap move us around because we will be failing in our
@@ -203,7 +203,7 @@ RTDECL(int) RTMemSaferReallocZExTag(size_t cbOld, void *pvOld, size_t cbNew, voi
 RT_EXPORT_SYMBOL(RTMemSaferReallocZExTag);
 
 
-RTDECL(void *) RTMemSaferAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemSaferAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     void *pvNew = NULL;
     int rc = RTMemSaferAllocZExTag(&pvNew, cb, 0 /*fFlags*/, pszTag);
@@ -214,7 +214,7 @@ RTDECL(void *) RTMemSaferAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemSaferAllocZTag);
 
 
-RTDECL(void *) RTMemSaferReallocZTag(size_t cbOld, void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemSaferReallocZTag(size_t cbOld, void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW_DEF
 {
     void *pvNew = NULL;
     int rc = RTMemSaferReallocZExTag(cbOld, pvOld, cbNew, &pvNew, 0 /*fFlags*/, pszTag);

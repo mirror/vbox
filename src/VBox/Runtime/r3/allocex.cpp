@@ -38,7 +38,7 @@
 #include "allocex.h"
 
 
-RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, const char *pszTag, void **ppv) RT_NO_THROW
+RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, const char *pszTag, void **ppv) RT_NO_THROW_DEF
 {
     /*
      * Validate and adjust input.
@@ -104,7 +104,7 @@ RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, cons
 RT_EXPORT_SYMBOL(RTMemAllocExTag);
 
 
-RTDECL(void) RTMemFreeEx(void *pv, size_t cb) RT_NO_THROW
+RTDECL(void) RTMemFreeEx(void *pv, size_t cb) RT_NO_THROW_DEF
 {
     if (!pv)
         return;
