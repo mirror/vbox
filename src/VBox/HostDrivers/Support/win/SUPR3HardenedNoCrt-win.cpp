@@ -246,25 +246,25 @@ DECLHIDDEN(void) supR3HardenedWinCompactHeaps(void)
 
 
 
-RTDECL(void *) RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     return RTMemAllocTag(cb, pszTag);
 }
 
 
-RTDECL(void *) RTMemTmpAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemTmpAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     return RTMemAllocZTag(cb, pszTag);
 }
 
 
-RTDECL(void) RTMemTmpFree(void *pv) RT_NO_THROW
+RTDECL(void) RTMemTmpFree(void *pv) RT_NO_THROW_DEF
 {
     RTMemFree(pv);
 }
 
 
-RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     HANDLE hHeap = g_hSupR3HardenedHeap;
     if (!hHeap)
@@ -282,7 +282,7 @@ RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 }
 
 
-RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     HANDLE hHeap = g_hSupR3HardenedHeap;
     if (!hHeap)
@@ -300,7 +300,7 @@ RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 }
 
 
-RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW_DEF
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
@@ -311,7 +311,7 @@ RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_TH
 }
 
 
-RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW_DEF
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
@@ -322,7 +322,7 @@ RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_T
 }
 
 
-RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW
+RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW_DEF
 {
     if (!pvOld)
         return RTMemAllocZTag(cbNew, pszTag);
@@ -383,7 +383,7 @@ RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT
 }
 
 
-RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
+RTDECL(void) RTMemFree(void *pv) RT_NO_THROW_DEF
 {
     if (pv)
     {
@@ -418,7 +418,7 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
  * random number code.
  */
 
-RTDECL(void) RTMemWipeThoroughly(void *pv, size_t cb, size_t cMinPasses) RT_NO_THROW
+RTDECL(void) RTMemWipeThoroughly(void *pv, size_t cb, size_t cMinPasses) RT_NO_THROW_DEF
 {
     size_t cPasses = RT_MIN(cMinPasses, 6);
     static const uint32_t s_aPatterns[] = { 0x00, 0xaa, 0x55, 0xff, 0xf0, 0x0f, 0xcc, 0x3c, 0xc3 };
