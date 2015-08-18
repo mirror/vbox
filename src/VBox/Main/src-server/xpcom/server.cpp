@@ -325,7 +325,7 @@ public:
         }
     };
 
-    static void ShutdownTimer(RTTIMERLR hTimerLR, void *pvUser, uint64_t /*iTick*/)
+    static DECLCALLBACK(void) ShutdownTimer(RTTIMERLR hTimerLR, void *pvUser, uint64_t /*iTick*/)
     {
         NOREF(hTimerLR);
         NOREF(pvUser);

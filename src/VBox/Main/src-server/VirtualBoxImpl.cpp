@@ -3883,7 +3883,7 @@ struct SaveMediaRegistriesDesc
     ComObjPtr<VirtualBox> pVirtualBox;
 };
 
-static int fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser)
 {
     NOREF(ThreadSelf);
     SaveMediaRegistriesDesc *pDesc = (SaveMediaRegistriesDesc *)pvUser;

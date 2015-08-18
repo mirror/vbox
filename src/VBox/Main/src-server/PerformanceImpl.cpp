@@ -634,8 +634,8 @@ void PerformanceCollector::resumeSampling()
 ///////////////////////////////////////////////////////////////////////////////
 
 /* static */
-void PerformanceCollector::staticSamplerCallback(RTTIMERLR hTimerLR, void *pvUser,
-                                                 uint64_t iTick)
+DECLCALLBACK(void) PerformanceCollector::staticSamplerCallback(RTTIMERLR hTimerLR, void *pvUser,
+                                                               uint64_t iTick)
 {
     AssertReturnVoid(pvUser != NULL);
     PerformanceCollector *collector = static_cast <PerformanceCollector *> (pvUser);

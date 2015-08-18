@@ -162,7 +162,7 @@ private:
     HRESULT toIPerformanceMetric(pm::Metric *src, ComPtr<IPerformanceMetric> &dst);
     HRESULT toIPerformanceMetric(pm::BaseMetric *src, ComPtr<IPerformanceMetric> &dst);
 
-    static void staticSamplerCallback(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
+    static DECLCALLBACK(void) staticSamplerCallback(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
     void samplerCallback(uint64_t iTick);
 
     const Utf8Str& getFailedGuestName();

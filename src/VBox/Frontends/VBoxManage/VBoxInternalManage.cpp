@@ -603,7 +603,7 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
     RTMsgError("Error code %Rrc at %s(%u) in function %s", rc, RT_SRC_POS_ARGS);
 }
 
-static int handleVDMessage(void *pvUser, const char *pszFormat, va_list va)
+static DECLCALLBACK(int) handleVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
     NOREF(pvUser);
     return RTPrintfV(pszFormat, va);
