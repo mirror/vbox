@@ -1617,11 +1617,11 @@ Virtual system 0:
     <computeroutput>--legacy09</computeroutput> option.</para>
 
     <para>To specify options controlling the exact content of the appliance
-    file, you can use <computeroutput>--option</computeroutput> to request the
+    file, you can use <computeroutput>--options</computeroutput> to request the
     creation of a manifest file (encouraged, allows detection of corrupted
     appliances on import), the additional export of DVD images, and the
     exclusion of MAC addresses. You can specify a list of options, e.g.
-    <computeroutput>--option manifest,nomacs</computeroutput>. For details,
+    <computeroutput>--options manifest,nomacs</computeroutput>. For details,
     check the help output of <computeroutput>VBoxManage export</computeroutput>.</para>
   </sect1>
 
