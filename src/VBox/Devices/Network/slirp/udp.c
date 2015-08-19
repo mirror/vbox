@@ -650,6 +650,10 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
 /*  setsockopt(so->s, SOL_SOCKET, SO_OOBINLINE,(char *)&opt, sizeof(int)); */
 
     getsockname(so->s,(struct sockaddr *)&addr,&addrlen);
+    so->so_hladdr = addr.sin_addr;
+    so->so_hlport = addr.sin_port;
+
+    /* XXX: wtf are we setting so_faddr/so_fport here? */
     so->so_fport = addr.sin_port;
     /* The original check was completely broken, as the commented out
      * if statement was always true (INADDR_ANY=0). */
