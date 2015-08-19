@@ -443,10 +443,13 @@ static int drvAudioControlHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOu
                 rc = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_ENABLE);
                 if (RT_SUCCESS(rc))
                 {
+                    Assert(!pHstStrmOut->fPendingDisable);
                     pHstStrmOut->fEnabled = true;
+                    LogFunc(("[%s] Enabled stream\n", pHstStrmOut->MixBuf.pszName));
                 }
                 else
-                    LogFlowFunc(("Backend reported an error when opening output stream, rc=%Rrc\n", rc));
+                    LogFlowFunc(("[%s] Backend reported an error when opening output stream, rc=%Rrc\n",
+                                 pHstStrmOut->MixBuf.pszName, rc));
             }
             else
                 rc = VINF_SUCCESS;
@@ -461,11 +464,14 @@ static int drvAudioControlHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOu
                 rc = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
                 if (RT_SUCCESS(rc))
                 {
-                    pHstStrmOut->fEnabled = false;
+                    pHstStrmOut->fEnabled        = false;
+                    pHstStrmOut->fPendingDisable = false;
                     AudioMixBufClear(&pHstStrmOut->MixBuf);
+
+                    LogFunc(("[%s] Disabled stream\n", pHstStrmOut->MixBuf.pszName));
                 }
                 else
-                    LogFlowFunc(("Backend vetoed closing output stream, rc=%Rrc\n", rc));
+                    LogFlowFunc(("[%s] Backend vetoed closing output stream, rc=%Rrc\n", pHstStrmOut->MixBuf.pszName, rc));
             }
             else
                 rc = VINF_SUCCESS;
@@ -1014,14 +1020,16 @@ static DECLCALLBACK(int) drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIO
 
     if (RT_SUCCESS(rc))
     {
-        /* Return the number of samples which actually have been mixed
+        /*
+         * Return the number of samples which actually have been mixed
          * down to the parent, regardless how much samples were written
-         * into the children buffer. */
+         * into the children buffer.
+         */
         if (pcbWritten)
             *pcbWritten = AUDIOMIXBUF_S2B(&pGstStrmOut->MixBuf, cMixed);
     }
 
-    LogFlowFunc(("%s -> %s: Written pvBuf=%p, cbBuf=%zu, cWritten=%RU32 (%RU32 bytes), cMixed=%RU32, rc=%Rrc\n",
+    LogFlowFunc(("%s -> %s: Written pvBuf=%p, cbBuf=%RU32, cWritten=%RU32 (%RU32 bytes), cMixed=%RU32, rc=%Rrc\n",
                  pGstStrmOut->MixBuf.pszName, pHstStrmOut->MixBuf.pszName, pvBuf, cbBuf, cWritten,
                  AUDIOMIXBUF_S2B(&pGstStrmOut->MixBuf, cWritten), cMixed, rc));
     return rc;
@@ -1146,15 +1154,12 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
     PPDMAUDIOHSTSTRMOUT pHstStrmOut = NULL;
     while ((pHstStrmOut = drvAudioHstFindAnyEnabledOut(pThis, pHstStrmOut)))
     {
-        uint32_t cStreamsLive;
-        cSamplesLive = drvAudioHstOutSamplesLive(pHstStrmOut, &cStreamsLive);
-        if (!cStreamsLive)
-            cSamplesLive = 0;
+        cSamplesLive = drvAudioHstOutSamplesLive(pHstStrmOut);
 
         /* Has this stream marked as disabled but there still were guest streams relying
          * on it? Check if this stream now can be closed and do so, if possible. */
         if (   pHstStrmOut->fPendingDisable
-            && !cStreamsLive)
+            && !cSamplesLive)
         {
             /* Stop playing the current (pending) stream. */
             int rc2 = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE, 0 /* Flags */);
@@ -1190,7 +1195,7 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
                 cbFree2 = RT_MIN(cbFree2, AUDIOMIXBUF_S2B_RATIO(&pGstStrmOut->MixBuf,
                                                                 AudioMixBufFree(&pGstStrmOut->MixBuf)));
 
-                LogFlowFunc(("\t[%s] cbFree=%RU32\n", pGstStrmOut->MixBuf.pszName, cbFree2));
+                //LogFlowFunc(("\t[%s] cbFree=%RU32\n", pGstStrmOut->MixBuf.pszName, cbFree2));
             }
         }
 
@@ -1293,7 +1298,8 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface, uint32_
         if (RT_SUCCESS(rc2))
             cSamplesPlayedMax = RT_MAX(cSamplesPlayed, cSamplesPlayedMax);
 
-        LogFlowFunc(("\t[%s] cSamplesPlayed=%RU32, rc=%Rrc\n", pHstStrmOut->MixBuf.pszName, cSamplesPlayed, rc2));
+        LogFlowFunc(("\t[%s] cSamplesPlayed=%RU32, cSamplesPlayedMax=%RU32, rc=%Rrc\n",
+                     pHstStrmOut->MixBuf.pszName, cSamplesPlayed, cSamplesPlayedMax, rc2));
 
         bool fNeedsCleanup = false;
 
@@ -1568,7 +1574,7 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
         PPDMAUDIOHSTSTRMOUT pHstStrmOut = pGstStrmOut->pHstStrmOut;
         AssertPtr(pHstStrmOut);
 
-        if (pGstStrmOut->State.fActive != fEnable)
+        if (pGstStrmOut->State.fActive != fEnable) /* Only process real state changes. */
         {
             if (fEnable)
             {
@@ -1576,27 +1582,43 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
                 if (!pHstStrmOut->fEnabled)
                     rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_ENABLE, 0 /* Flags */);
             }
-            else
+            else /* Disable */
             {
                 if (pHstStrmOut->fEnabled)
                 {
                     uint32_t cGstStrmsActive = 0;
 
+                    /*
+                     * Check if there are any active guest streams assigned
+                     * to this host stream which still are being marked as active.
+                     *
+                     * In that case we have to defer closing the host stream and
+                     * wait until all guest streams have been finished.
+                     */
                     PPDMAUDIOGSTSTRMOUT pIter;
                     RTListForEach(&pHstStrmOut->lstGstStrmOut, pIter, PDMAUDIOGSTSTRMOUT, Node)
                     {
                         if (pIter->State.fActive)
+                        {
                             cGstStrmsActive++;
+                            break; /* At least one assigned & active guest stream is enough. */
+                        }
                     }
 
+                    /* Do we need to defer closing the host stream? */
                     pHstStrmOut->fPendingDisable = cGstStrmsActive >= 1;
+
+                    /* Can we close the host stream now instead of deferring it? */
+                    if (!pHstStrmOut->fPendingDisable)
+                        rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE, 0 /* Flags */);
                 }
             }
 
             if (RT_SUCCESS(rc))
                 pGstStrmOut->State.fActive = fEnable;
 
-            LogFlowFunc(("%s: fEnable=%RTbool, rc=%Rrc\n", pGstStrmOut->MixBuf.pszName, fEnable, rc));
+            LogFlowFunc(("%s: fEnable=%RTbool, fPendingDisable=%RTbool, rc=%Rrc\n",
+                         pGstStrmOut->MixBuf.pszName, fEnable, pHstStrmOut->fPendingDisable, rc));
         }
     }
 
@@ -1620,7 +1642,7 @@ static DECLCALLBACK(int) drvAudioEnableIn(PPDMIAUDIOCONNECTOR pInterface,
 
         LogFlowFunc(("%s: fEnable=%RTbool\n", pGstStrmIn->MixBuf.pszName, fEnable));
 
-        if (pGstStrmIn->State.fActive != fEnable)
+        if (pGstStrmIn->State.fActive != fEnable) /* Only process real state changes. */
         {
             rc = drvAudioControlHstIn(pThis, pHstStrmIn,
                                       fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE, 0 /* Flags */);

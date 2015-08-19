@@ -408,74 +408,19 @@ void drvAudioStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg)
 }
 
 /**
- * Returns the minimum number of live samples already written to all associated
- * guest output streams of a specific host output stream.
- *
- * @return  uint32_t                Minimum number of total live samples already written to all
- *                                  associated guest output streams, UINT32_MAX if none found.
- * @param   pHstStrmOut             Host output stream to search in.
- * @param   pcStreamsLive           Returns the number of live guest streams associated to
- *                                  this host output stream. Optional.
- */
-static uint32_t drvAudioHstOutMinSamplesMixed(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t *pcStreamsLive)
-{
-    AssertPtrReturn(pHstStrmOut, 0);
-    /* pcStreamsLive is optional. */
-
-    uint32_t cStreamsLive = 0;
-    uint32_t cMinSamplesMixed = UINT32_MAX;
-    uint32_t cSamples;
-
-    PPDMAUDIOGSTSTRMOUT pGstStrmOut;
-    RTListForEach(&pHstStrmOut->lstGstStrmOut, pGstStrmOut, PDMAUDIOGSTSTRMOUT, Node)
-    {
-        if (    pGstStrmOut->State.fActive
-            || !pGstStrmOut->State.fEmpty)
-        {
-            cSamples = AudioMixBufMixed(&pGstStrmOut->MixBuf);
-            cMinSamplesMixed = RT_MIN(cMinSamplesMixed, cSamples);
-
-            cStreamsLive++;
-        }
-    }
-
-    if (pcStreamsLive)
-        *pcStreamsLive = cStreamsLive;
-
-    return cMinSamplesMixed;
-}
-
-/**
- * Finds the number of live (guest) samples of a specific host output stream.
+ * Finds the number of live samples for a specific output stream.
  *
  * @return  uint32_t                Minimum number of live host output samples processed
  *                                  by all connected guest output streams.
  * @param   pHstStrmOut             Host output stream to search in.
- * @param   pcStreamsLive           Number of associated guest live streams. Optional.
  */
-uint32_t drvAudioHstOutSamplesLive(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t *pcStreamsLive)
+uint32_t drvAudioHstOutSamplesLive(PPDMAUDIOHSTSTRMOUT pHstStrmOut)
 {
     AssertPtrReturn(pHstStrmOut, 0);
-    /* pcStreamsLive is optional. */
 
-    uint32_t cStreamsLive;
-    uint32_t cSamplesMin = drvAudioHstOutMinSamplesMixed(pHstStrmOut, &cStreamsLive);
+    uint32_t cSamplesLive = AudioMixBufAvail(&pHstStrmOut->MixBuf);
 
-    if (pcStreamsLive)
-        *pcStreamsLive = cStreamsLive;
-
-    if (cStreamsLive) /* Any live streams at all? */
-    {
-        if (   cSamplesMin == UINT32_MAX
-            || cSamplesMin > AudioMixBufSize(&pHstStrmOut->MixBuf))
-        {
-            LogFlowFunc(("Error: cSamplesMin=%RU32\n", cSamplesMin));
-            return 0;
-        }
-
-        return cSamplesMin;
-    }
-
-    return 0;
+    LogFlowFunc(("%s: cStreamsLive=%RU32, cSamplesLive=%RU32\n", pHstStrmOut->MixBuf.pszName, cSamplesLive));
+    return cSamplesLive;
 }
 

@@ -146,7 +146,7 @@ int drvAudioHlpPcmCreateVoicePairOut(PDRVAUDIO pDrvAudio, const char *pszName, P
 int  drvAudioAttachCapture(PDRVAUDIO pDrvAudio, PPDMAUDIOHSTSTRMOUT pHstStrmOut);
 void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf);
 void drvAudioDetachCapture(PPDMAUDIOHSTSTRMOUT pHstStrmOut);
-uint32_t drvAudioHstOutSamplesLive(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t *pcStreamsLive);
+uint32_t drvAudioHstOutSamplesLive(PPDMAUDIOHSTSTRMOUT pHstStrmOut);
 
 
 typedef struct fixed_settings

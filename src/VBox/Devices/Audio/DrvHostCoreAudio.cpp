@@ -1493,7 +1493,7 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
 
     /* Not much else to do here. */
 
-    uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut, NULL /* pcStreamsLive */);
+    uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut);
     if (!cLive) /* Not samples to play? Bail out. */
     {
         if (pcSamplesPlayed)

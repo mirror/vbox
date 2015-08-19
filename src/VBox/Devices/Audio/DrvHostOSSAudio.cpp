@@ -775,8 +775,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
     {
         size_t cbBuf = AudioMixBufSizeBytes(&pHstStrmOut->MixBuf);
 
-        uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut,
-                                                   NULL /* pcStreamsLive */);
+        uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut);
         uint32_t cToRead;
 
 #ifndef RT_OS_L4

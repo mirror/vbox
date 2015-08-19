@@ -832,7 +832,7 @@ static DECLCALLBACK(int) drvHostPulseAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPD
     int rc = VINF_SUCCESS;
     uint32_t cbReadTotal = 0;
 
-    uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut, NULL /* pcStreamsLive */);
+    uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut);
     if (!cLive)
     {
         LogFlowFunc(("%p: No live samples, skipping\n", pHstStrmOut));

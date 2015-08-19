@@ -152,7 +152,7 @@ static DECLCALLBACK(int) drvHostNullAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
     NULLAUDIOSTREAMOUT *pNullStrmOut = (NULLAUDIOSTREAMOUT *)pHstStrmOut;
 
     /* Consume as many samples as would be played at the current frequency since last call. */
-    uint32_t csLive = drvAudioHstOutSamplesLive(pHstStrmOut, NULL /* pcStreamsLive */);
+    uint32_t csLive = drvAudioHstOutSamplesLive(pHstStrmOut);
     uint64_t u64TicksNow = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
     uint64_t u64TicksElapsed = u64TicksNow  - pNullStrmOut->u64TicksLast;
     uint64_t u64TicksFreq = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
