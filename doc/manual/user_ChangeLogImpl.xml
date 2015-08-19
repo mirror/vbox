@@ -48,6 +48,11 @@
       </listitem>
 
       <listitem>
+        <para>Mac OS X hosts: fixed broken 3D support (5.0.2 regression;
+          bug #14476)</para>
+      </listitem>
+
+      <listitem>
         <para>Additions/Windows: fixed the call to the memory allocation function
           (bug #14415)</para>
       </listitem>
