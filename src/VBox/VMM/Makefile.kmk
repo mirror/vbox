@@ -30,7 +30,7 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
  ifeq ($(KBUILD_TARGET),darwin)
   $(error 32-bit darwin is no longer a supported VirtualBox host. Go back to 4.3 or older for 32-bit support.)
  else ifeq ($(KBUILD_TARGET),solaris)
-  $(error 32-bit solaris is no longer a supported VirtualBox host. Go back to x.y or older for 32-bit support.)
+  $(error 32-bit solaris is no longer a supported VirtualBox host. Go back to 4.2 or older for 32-bit support.)
  endif
 endif
 
