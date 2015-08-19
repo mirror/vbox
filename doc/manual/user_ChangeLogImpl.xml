@@ -43,6 +43,10 @@
       </listitem>
 
       <listitem>
+        <para>Shared Folders: fixed a path separator issue (bug #14434)</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: another attempt to not deny changing the network adapter
           type at VM runtime (5.0 regression; bug #14308)</para>
       </listitem>
@@ -55,6 +59,11 @@
       <listitem>
         <para>Mac OS X hosts: fixed broken 3D support (5.0.2 regression;
           bug #14476)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed the <emphasis>VERR_LDR_MISMATCH_NATIVE</emphasis>
+          error message (bug #14420)</para>
       </listitem>
 
       <listitem>
