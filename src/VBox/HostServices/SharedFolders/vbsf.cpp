@@ -1295,6 +1295,17 @@ int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint
     if (RT_SUCCESS(rc))
     {
         rc = RTSymlinkRead(pszFullPath, (char *) pBuffer, cbBuffer, 0);
+        if (RT_SUCCESS(rc))
+        {
+            /* Convert the slashes in the link target to the guest path separator characters. */
+            char *psz = (char *)pBuffer;
+            while (*psz != '\0')
+            {
+                if (*psz == RTPATH_DELIMITER)
+                    *psz = pClient->PathDelimiter;
+                psz++;
+            }
+        }
 
         /* free the path string */
         vbsfFreeFullPath(pszFullPath);
@@ -1845,6 +1856,7 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
     int rc = VINF_SUCCESS;
 
     char *pszFullNewPath = NULL;
+    char *pszFullOldPath = NULL;
     const char *pszOldPath = (const char *)pOldPath->String.utf8;
 
     /* XXX: no support for UCS2 at the moment. */
@@ -1860,6 +1872,14 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
     rc = vbsfBuildFullPath(pClient, root, pNewPath, pNewPath->u16Size + SHFLSTRING_HEADER_SIZE, &pszFullNewPath, NULL);
     AssertRCReturn(rc, rc);
 
+    /* Verify that the link target can be a valid host path, i.e. does not contain invalid characters. */
+    rc = vbsfBuildFullPath(pClient, root, pOldPath, pOldPath->u16Size + SHFLSTRING_HEADER_SIZE, &pszFullOldPath, NULL);
+    if (RT_FAILURE(rc))
+    {
+        vbsfFreeFullPath(pszFullNewPath);
+        return rc;
+    }
+
     rc = RTSymlinkCreate(pszFullNewPath, (const char *)pOldPath->String.utf8,
                          RTSYMLINKTYPE_UNKNOWN, 0);
     if (RT_SUCCESS(rc))
@@ -1870,6 +1890,7 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
             vbfsCopyFsObjInfoFromIprt(pInfo, &info);
     }
 
+    vbsfFreeFullPath(pszFullOldPath);
     vbsfFreeFullPath(pszFullNewPath);
 
     return rc;
