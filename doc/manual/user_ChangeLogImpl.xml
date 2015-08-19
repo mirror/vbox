@@ -29,17 +29,22 @@
 
       <listitem>
         <para>Audio: fixed playing audio after suspending the host (5.0 regression;
-          Linux hosts with ALSA</para>
+          Linux hosts using the ALSA backend)</para>
       </listitem>
 
       <listitem>
         <para>Storage: fixed raw disk access and flat VMDK image access which would
-          be always opened readonly (5.0.2 regression)</para>
+          be always opened readonly (5.0.2 regression, bugs #14425, #14461)</para>
       </listitem>
 
       <listitem>
         <para>OVF: fixed duplicate USB controller entries in exported OVA/OVF
           (bug #14462)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: another attempt to not deny changing the network adapter
+          type at VM runtime (5.0 regression; bug #14308)</para>
       </listitem>
 
       <listitem>
