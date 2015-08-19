@@ -1892,25 +1892,44 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
             return VINF_SUCCESS;
 
         /*
-         * However, on Windows Server 2003 (sp2 x86) both import thunk tables
-         * are fixed up and we typically get a mismatch in the INIT section.
+         * On Windows 10 the ImageBase member of the optional header is sometimes
+         * updated with the actual load address and sometimes not.  Try compare
+         *
+         */
+        uint32_t const  offNtHdrs = *(uint16_t *)pbImageBits == IMAGE_DOS_SIGNATURE
+                                  ? ((IMAGE_DOS_HEADER const *)pbImageBits)->e_lfanew
+                                  : 0;
+        AssertLogRelReturn(offNtHdrs + sizeof(IMAGE_NT_HEADERS) < pImage->cbImageBits, VERR_INTERNAL_ERROR_5);
+        IMAGE_NT_HEADERS const *pNtHdrsIprt = (IMAGE_NT_HEADERS const *)(pbImageBits + offNtHdrs);
+        IMAGE_NT_HEADERS const *pNtHdrsNtLd = (IMAGE_NT_HEADERS const *)((uintptr_t)pImage->pvImage + offNtHdrs);
+
+        uint32_t const  offImageBase = offNtHdrs + RT_OFFSETOF(IMAGE_NT_HEADERS, OptionalHeader.ImageBase);
+        uint32_t const  cbImageBase  = RT_SIZEOFMEMB(IMAGE_NT_HEADERS, OptionalHeader.ImageBase);
+        if (   pNtHdrsNtLd->OptionalHeader.ImageBase != pNtHdrsIprt->OptionalHeader.ImageBase
+            && (   pNtHdrsNtLd->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage
+                || pNtHdrsIprt->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage)
+            && pNtHdrsIprt->Signature == IMAGE_NT_SIGNATURE
+            && pNtHdrsIprt->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR_MAGIC
+            && !memcmp(pImage->pvImage, pbImageBits, offImageBase)
+            && !memcmp((uint8_t const *)pImage->pvImage + offImageBase + cbImageBase,
+                       pbImageBits                      + offImageBase + cbImageBase,
+                       pImage->cbImageBits              - offImageBase - cbImageBase))
+            return VINF_SUCCESS;
+
+        /*
+         * On Windows Server 2003 (sp2 x86) both import thunk tables are fixed
+         * up and we typically get a mismatch in the INIT section.
          *
          * So, lets see if everything matches when excluding the
-         * OriginalFirstThunk tables.  To make life simpler, set the max number
-         * of imports to 16 and just record and sort the locations that needs
-         * to be excluded from the comparison.
+         * OriginalFirstThunk tables and (maybe) the ImageBase member.
+         * For simplicity the max number of exclusion regions is set to 16.
          */
-        IMAGE_NT_HEADERS const *pNtHdrs;
-        pNtHdrs = (IMAGE_NT_HEADERS const *)(pbImageBits
-                                             + (  *(uint16_t *)pbImageBits == IMAGE_DOS_SIGNATURE
-                                                ? ((IMAGE_DOS_HEADER const *)pbImageBits)->e_lfanew
-                                                : 0));
-        if (    pNtHdrs->Signature == IMAGE_NT_SIGNATURE
-            &&  pNtHdrs->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR_MAGIC
-            &&  pNtHdrs->OptionalHeader.NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_IMPORT
-            &&  pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size >= sizeof(IMAGE_IMPORT_DESCRIPTOR)
-            &&  pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress > sizeof(IMAGE_NT_HEADERS)
-            &&  pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress < pImage->cbImageBits
+        if (    pNtHdrsIprt->Signature == IMAGE_NT_SIGNATURE
+            &&  pNtHdrsIprt->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR_MAGIC
+            &&  pNtHdrsIprt->OptionalHeader.NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_IMPORT
+            &&  pNtHdrsIprt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size >= sizeof(IMAGE_IMPORT_DESCRIPTOR)
+            &&  pNtHdrsIprt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress > sizeof(IMAGE_NT_HEADERS)
+            &&  pNtHdrsIprt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress < pImage->cbImageBits
             )
         {
             struct MyRegion
@@ -1919,11 +1938,23 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                 uint32_t cb;
             }           aExcludeRgns[16];
             unsigned    cExcludeRgns = 0;
-            uint32_t    cImpsLeft    = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
+
+            /* ImageBase: */
+            if (   pNtHdrsNtLd->OptionalHeader.ImageBase != pNtHdrsIprt->OptionalHeader.ImageBase
+                && (   pNtHdrsNtLd->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage
+                    || pNtHdrsIprt->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage) )
+            {
+                aExcludeRgns[cExcludeRgns].uRva = offImageBase;
+                aExcludeRgns[cExcludeRgns].cb   = cbImageBase;
+                cExcludeRgns++;
+            }
+
+            /* Imports: */
+            uint32_t    cImpsLeft    = pNtHdrsIprt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
                                      / sizeof(IMAGE_IMPORT_DESCRIPTOR);
-            IMAGE_IMPORT_DESCRIPTOR const *pImp;
-            pImp = (IMAGE_IMPORT_DESCRIPTOR const *)(pbImageBits
-                                                     + pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+            uint32_t    offImps      = pNtHdrsIprt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+            AssertLogRelReturn(offImps + cImpsLeft * sizeof(IMAGE_IMPORT_DESCRIPTOR) <= pImage->cbImageBits, VERR_INTERNAL_ERROR_3);
+            IMAGE_IMPORT_DESCRIPTOR const *pImp = (IMAGE_IMPORT_DESCRIPTOR const *)(pbImageBits + offImps);
             while (   cImpsLeft-- > 0
                    && cExcludeRgns < RT_ELEMENTS(aExcludeRgns))
             {
