@@ -960,27 +960,33 @@ static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * 
             rc = collectNetIfInfo(name, Guid(IfGuid), &Info, iDefaultInterface);
             if (RT_FAILURE(rc))
             {
-                Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Rrc\n", rc));
+                LogRel(("vboxNetWinAddComponent: collectNetIfInfo() -> %Rrc\n", rc));
             }
+            LogRel(("vboxNetWinAddComponent: adding %ls\n", lpszName));
             /* create a new object and add it to the list */
             ComObjPtr<HostNetworkInterface> iface;
             iface.createObject();
             /* remove the curly bracket at the end */
-            if (SUCCEEDED(iface->init(name, enmType, &Info)))
+            rc = iface->init(name, enmType, &Info);
+            if (SUCCEEDED(rc))
             {
                 if (Info.bIsDefault)
                     pPist->push_front(iface);
                 else
                     pPist->push_back(iface);
-                rc = VINF_SUCCESS;
             }
             else
             {
+                LogRel(("vboxNetWinAddComponent: HostNetworkInterface::init() -> %Rrc\n", rc));
                 Assert(0);
             }
         }
+        else
+            LogRel(("vboxNetWinAddComponent: failed to get device instance GUID (0x%x)\n", hr));
         CoTaskMemFree(lpszName);
     }
+    else
+        LogRel(("vboxNetWinAddComponent: failed to get device display name (0x%x)\n", hr));
 
     return rc;
 }
@@ -1013,7 +1019,13 @@ static int netIfListHostAdapters(std::list<ComObjPtr<HostNetworkInterface> > &li
         {
             while ((hr = pEnumComponent->Next(1, &pMpNcc, NULL)) == S_OK)
             {
+                LPWSTR pwszName;
                 ULONG uComponentStatus;
+                hr = pMpNcc->GetDisplayName(&pwszName);
+                if (hr == S_OK)
+                    LogRel(("netIfListHostAdapters: %ls\n", pwszName));
+                else
+                    LogRel(("netIfListHostAdapters: failed to get device display name (0x%x)\n", hr));
                 hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
                 if (hr == S_OK)
                 {
@@ -1024,14 +1036,19 @@ static int netIfListHostAdapters(std::list<ComObjPtr<HostNetworkInterface> > &li
                         Assert(hr == S_OK);
                         if (hr == S_OK)
                         {
+                            LogRel(("netIfListHostAdapters: id = %ls\n", pId));
                             if (!_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
                             {
                                 vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly, -1);
                             }
                             CoTaskMemFree(pId);
                         }
+                        else
+                            LogRel(("netIfListHostAdapters: failed to get device id (0x%x)\n", hr));
                     }
                 }
+                else
+                    LogRel(("netIfListHostAdapters: failed to get device status (0x%x)\n", hr));
                 pMpNcc->Release();
             }
             Assert(hr == S_OK || hr == S_FALSE);
@@ -1040,14 +1057,19 @@ static int netIfListHostAdapters(std::list<ComObjPtr<HostNetworkInterface> > &li
         }
         else
         {
-            LogRel((__FUNCTION__": EnumComponents error (0x%x)", hr));
+            LogRel(("netIfListHostAdapters: EnumComponents error (0x%x)\n", hr));
         }
 
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
     }
-    else if (lpszApp)
+    else
     {
-        CoTaskMemFree(lpszApp);
+        LogRel(("netIfListHostAdapters: failed to acquire INetCfg interface (0x%x)\n", hr));
+
+        if (lpszApp)
+        {
+            CoTaskMemFree(lpszApp);
+        }
     }
 #endif /* #  if defined VBOX_WITH_NETFLT */
     return VINF_SUCCESS;
@@ -1468,6 +1490,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
     INetCfgBindingInterface *pBi;
     int                  iDefault = getDefaultInterfaceIndex();
 
+    LogRel(("NetIfList: building the list of interfaces\n"));
     /* we are using the INetCfg API for getting the list of miniports */
     hr = VBoxNetCfgWinQueryINetCfg(&pNc, FALSE,
                        VBOX_APP_NAME,
@@ -1484,6 +1507,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
         hr = pNc->FindComponent(L"oracle_VBoxNetLwf", &pTcpIpNcc);
         if (hr != S_OK)
         {
+            LogRel(("NetIfList: could not find VBoxNetLwf component (error 0x%x), trying VBoxNetFlt instead\n", hr));
             /* fall back to NDIS5 miniport lookup (sun_VBoxNetFlt) */
             hr = pNc->FindComponent(L"sun_VBoxNetFlt", &pTcpIpNcc);
         }
@@ -1513,6 +1537,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                     {
                         while ((hr = pEnumBp->Next(1, &pBp, NULL)) == S_OK)
                         {
+                            LogRel(("NetIfList: fetched INetCfgBindingPath interface\n"));
                             /* S_OK == enabled, S_FALSE == disabled */
                             if (pBp->IsEnabled() == S_OK)
                             {
@@ -1526,11 +1551,18 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                                     {
                                         while ((hr = pEnumBi->Next(1, &pBi, NULL)) == S_OK)
                                         {
+                                            LogRel(("NetIfList: fetched INetCfgBindingInterface interface\n"));
                                             hr = pBi->GetLowerComponent(&pMpNcc);
                                             Assert(hr == S_OK);
                                             if (hr == S_OK)
                                             {
+                                                LPWSTR pwszName;
                                                 ULONG uComponentStatus;
+                                                hr = pMpNcc->GetDisplayName(&pwszName);
+                                                if (hr == S_OK)
+                                                    LogRel(("NetIfList: got %ls\n", pwszName));
+                                                else
+                                                    LogRel(("NetIfList: failed to get device display name (0x%x)\n", hr));
                                                 hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
                                                 if (hr == S_OK)
                                                 {
@@ -1541,6 +1573,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                                                         Assert(hr == S_OK);
                                                         if (hr == S_OK)
                                                         {
+                                                            LogRel(("NetIfList: fetched network adapter id: %.80ls\n", pId));
                                                             /*
                                                              * Host-only interfaces are ignored here and included into the list
                                                              * later in netIfListHostAdapters()
@@ -1552,25 +1585,45 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                                                             }
                                                             CoTaskMemFree(pId);
                                                         }
+                                                        else
+                                                            LogRel(("NetIfList: failed to get device id (0x%x)\n", hr));
                                                     }
+                                                    else
+                                                        LogRel(("NetIfList: wrong device status (0x%x)\n", uComponentStatus));
                                                 }
+                                                else
+                                                    LogRel(("NetIfList: failed to get device status (0x%x)\n", hr));
                                                 pMpNcc->Release();
                                             }
+                                            else
+                                                LogRel(("NetIfList: failed to get lower component (0x%x)\n", hr));
                                             pBi->Release();
                                         }
                                         Assert(hr == S_OK || hr == S_FALSE);
                                     }
+                                    else
+                                        LogRel(("NetIfList: IEnumNetCfgBindingInterface::Reset failed (0x%x)\n", hr));
                                     pEnumBi->Release();
                                 }
+                                else
+                                    LogRel(("NetIfList: failed to enumerate binding interfaces (0x%x)\n", hr));
                             }
+                            else
+                                LogRel(("NetIfList: INetCfgBindingPath is disabled\n"));
                             pBp->Release();
                         }
                         Assert(hr == S_OK || hr == S_FALSE);
                     }
+                    else
+                        LogRel(("NetIfList: IEnumNetCfgBindingPath::Reset failed (0x%x)\n", hr));
                     pEnumBp->Release();
                 }
+                else
+                    LogRel(("NetIfList: EnumBindingPaths failed (0x%x)\n", hr));
                 pBindings->Release();
             }
+            else
+                LogRel(("NetIfList: failed to acquire INetCfgComponentBindings interface\n"));
             pTcpIpNcc->Release();
         }
         else
@@ -1580,6 +1633,8 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
 
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
     }
+    else
+        LogRel(("NetIfList: failed to acquire INetCfg interface (0x%x)\n", hr));
 
     /* Add host-only adapters to the list */
     netIfListHostAdapters(list);
