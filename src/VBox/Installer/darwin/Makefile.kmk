@@ -372,6 +372,11 @@ ifdef VBOX_WITH_CROGL
  	MacOS/VBoxOGLhosterrorspu.dylib \
  	MacOS/VBoxOGLrenderspu.dylib \
  	MacOS/VBoxSharedCrOpenGL.dylib
+
+ ifdef VBOX_WITH_CR_DISPLAY_LISTS
+  VBOX_DI_VBAPP_DYLIBS += \
+ 	MacOS/VBoxOGLexpandospu.dylib
+ endif
 endif
 ifdef VBOX_WITH_DEBUGGER_GUI
  VBOX_DI_VBAPP_DYLIBS += \

@@ -29,10 +29,6 @@ BLDDIRS   += \
 	$(VBOX_PATH_CROGL_GENFILES)/
 endif
 
-ifeq ($(KBUILD_TARGET),darwin)
- VBOX_WITH_CR_DISPLAY_LISTS=1
-endif
-
 ifdef VBOX_WITH_CR_DISPLAY_LISTS
  LIBRARIES += VBoxOGLcrdlm
  DLLS      += VBoxOGLexpandospu

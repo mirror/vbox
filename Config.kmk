@@ -2237,6 +2237,11 @@ ifdef VBOX_WITH_CROGL
  ifdef VBOX_WITH_WDDM
   VBOX_WITH_CRHGSMI = 1
  endif
+
+ if1of ($(KBUILD_TARGET),darwin)
+  VBOX_WITH_CR_DISPLAY_LISTS = 1
+ endif
+
  VBOX_PATH_CROGL_GLAPI       = $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/glapi_parser
  VBOX_PATH_CROGL_GENFILES    = $(PATH_OBJ)/VBoxOGLgen
  VBOX_PATH_CROGL_INCLUDE     = $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/include
