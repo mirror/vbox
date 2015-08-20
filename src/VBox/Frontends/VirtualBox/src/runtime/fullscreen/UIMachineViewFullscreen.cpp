@@ -216,7 +216,7 @@ QRect UIMachineViewFullscreen::workingArea() const
     /* Get corresponding screen: */
     int iScreen = static_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(screenId());
     /* Return available geometry for that screen: */
-    return QApplication::desktop()->screenGeometry(iScreen);
+    return vboxGlobal().screenGeometry(iScreen);
 }
 
 QSize UIMachineViewFullscreen::calculateMaxGuestSize() const

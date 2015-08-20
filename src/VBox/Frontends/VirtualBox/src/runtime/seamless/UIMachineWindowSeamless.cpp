@@ -173,7 +173,7 @@ void UIMachineWindowSeamless::placeOnScreen()
     /* Get corresponding host-screen: */
     const int iHostScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
     /* And corresponding working area: */
-    const QRect workingArea = QApplication::desktop()->availableGeometry(iHostScreen);
+    const QRect workingArea = vboxGlobal().availableGeometry(iHostScreen);
 
     /* Set appropriate geometry for window: */
     move(workingArea.topLeft());

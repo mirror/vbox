@@ -312,7 +312,7 @@ void UIMachineWindowFullscreen::placeOnScreen()
     /* Get corresponding host-screen: */
     const int iHostScreen = qobject_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
     /* And corresponding working area: */
-    const QRect workingArea = QApplication::desktop()->screenGeometry(iHostScreen);
+    const QRect workingArea = vboxGlobal().screenGeometry(iHostScreen);
 
 #if   defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* Set appropriate geometry for window: */
