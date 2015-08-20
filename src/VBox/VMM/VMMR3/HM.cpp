@@ -1744,7 +1744,7 @@ VMMR3_INT_DECL(void) HMR3Reset(PVM pVM)
  * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  Unused.
  */
-DECLCALLBACK(VBOXSTRICTRC) hmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(VBOXSTRICTRC) hmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     VMCPUID idCpu = (VMCPUID)(uintptr_t)pvUser;
 
@@ -1883,7 +1883,7 @@ VMMR3_INT_DECL(int)  HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cb
  * @param   pvUser  User specified CPU context.
  *
  */
-DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     /*
      * Only execute the handler on the VCPU the original patch request was
@@ -2057,7 +2057,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUs
  * @param   pvUser  User specified CPU context.
  *
  */
-DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     /*
      * Only execute the handler on the VCPU the original patch request was

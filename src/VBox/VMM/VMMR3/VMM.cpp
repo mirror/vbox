@@ -1390,7 +1390,7 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
  * @param   idCpu       Virtual CPU to perform SIPI on
  * @param   uVector     SIPI vector
  */
-DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
+static DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 {
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     VMCPU_ASSERT_EMT(pVCpu);
@@ -1421,7 +1421,7 @@ DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 # endif
 }
 
-DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
+static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 {
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     VMCPU_ASSERT_EMT(pVCpu);
