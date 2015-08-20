@@ -38,7 +38,7 @@ DECLINLINE(void) vboxSHGSMICommandRelease (PVBOXSHGSMI pHeap, PVBOXSHGSMIHEADER 
         vboxSHGSMICommandFree (pHeap, pCmd);
 }
 
-DECLCALLBACK(void) vboxSHGSMICompletionSetEvent(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext)
+static DECLCALLBACK(void) vboxSHGSMICompletionSetEvent(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext)
 {
     RTSemEventSignal((RTSEMEVENT)pvContext);
 }

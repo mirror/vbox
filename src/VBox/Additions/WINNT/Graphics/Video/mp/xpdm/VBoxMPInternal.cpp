@@ -80,7 +80,7 @@ static void VBoxComputeFrameBufferSizes(PVBOXMP_DEVEXT pPrimaryExt)
     }
 }
 
-DECLCALLBACK(int) VBoxVbvaInitInfoDisplayCB(void *pvData, struct VBVAINFOVIEW *p, uint32_t cViews)
+static DECLCALLBACK(int) VBoxVbvaInitInfoDisplayCB(void *pvData, struct VBVAINFOVIEW *p, uint32_t cViews)
 {
     PVBOXMP_DEVEXT pExt, pPrimaryExt = (PVBOXMP_DEVEXT) pvData;
     unsigned i;
@@ -361,8 +361,8 @@ DECLCALLBACK(void) VBoxMPHGSMIHostCmdCompleteCB(HVBOXVIDEOHGSMI hHGSMI, struct V
     VBoxHGSMIHostCmdComplete(pCtx, pCmd);
 }
 
-DECLCALLBACK(int)
-VBoxMPHGSMIHostCmdRequestCB(HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, uint32_t iDisplay, struct VBVAHOSTCMD **ppCmd)
+DECLCALLBACK(int) VBoxMPHGSMIHostCmdRequestCB(HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel,
+                                              uint32_t iDisplay, struct VBVAHOSTCMD **ppCmd)
 {
     LOGF_ENTER();
 
