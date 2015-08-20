@@ -121,7 +121,6 @@
 #include <iprt/x86.h>
 
 
-
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -734,7 +733,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 /**
  * Terminate the VMM bits.
  *
- * @returns VINF_SUCCESS.
+ * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
 VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
@@ -1133,7 +1132,7 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
  *
  * @returns VBox status
  * @param   pVM             Pointer to the VM.
- * @param   pszSymbol       Symbol to resolv
+ * @param   pszSymbol       Symbol to resolve.
  * @param   pRCPtrValue     Where to store the symbol value.
  *
  * @remark  This has to work before VMMR3Relocate() is called.
@@ -1383,12 +1382,13 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
     }
 }
 
+
 /**
  * VCPU worker for VMMSendSipi.
  *
  * @param   pVM         Pointer to the VM.
- * @param   idCpu       Virtual CPU to perform SIPI on
- * @param   uVector     SIPI vector
+ * @param   idCpu       Virtual CPU to perform SIPI on.
+ * @param   uVector     SIPI vector.
  */
 static DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 {
@@ -1421,6 +1421,7 @@ static DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 # endif
 }
 
+
 static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 {
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
@@ -1439,13 +1440,14 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     return VINF_EM_WAIT_SIPI;
 }
 
+
 /**
  * Sends SIPI to the virtual CPU by setting CS:EIP into vector-dependent state
- * and unhalting processor
+ * and unhalting processor.
  *
  * @param   pVM         Pointer to the VM.
- * @param   idCpu       Virtual CPU to perform SIPI on
- * @param   uVector     SIPI vector
+ * @param   idCpu       Virtual CPU to perform SIPI on.
+ * @param   uVector     SIPI vector.
  */
 VMMR3_INT_DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
 {
@@ -1455,11 +1457,12 @@ VMMR3_INT_DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
     AssertRC(rc);
 }
 
+
 /**
  * Sends init IPI to the virtual CPU.
  *
  * @param   pVM         Pointer to the VM.
- * @param   idCpu       Virtual CPU to perform int IPI on
+ * @param   idCpu       Virtual CPU to perform int IPI on.
  */
 VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 {
@@ -1469,13 +1472,14 @@ VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     AssertRC(rc);
 }
 
+
 /**
- * Registers the guest memory range that can be used for patching
+ * Registers the guest memory range that can be used for patching.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pPatchMem   Patch memory range
- * @param   cbPatchMem  Size of the memory range
+ * @param   pPatchMem   Patch memory range.
+ * @param   cbPatchMem  Size of the memory range.
  */
 VMMR3DECL(int) VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
@@ -1486,13 +1490,14 @@ VMMR3DECL(int) VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
     return VERR_NOT_SUPPORTED;
 }
 
+
 /**
- * Deregisters the guest memory range that can be used for patching
+ * Deregisters the guest memory range that can be used for patching.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pPatchMem   Patch memory range
- * @param   cbPatchMem  Size of the memory range
+ * @param   pPatchMem   Patch memory range.
+ * @param   cbPatchMem  Size of the memory range.
  */
 VMMR3DECL(int) VMMR3DeregisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
@@ -2137,7 +2142,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
  * @param   pVCpu   Pointer to the VMCPU.
- * @remark  Careful with critsects.
+ * @remarks Careful with critsects.
  */
 static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
 {

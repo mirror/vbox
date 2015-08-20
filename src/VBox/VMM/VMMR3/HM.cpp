@@ -310,11 +310,11 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
 *********************************************************************************************************************************/
 static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-static int hmR3InitCPU(PVM pVM);
-static int hmR3InitFinalizeR0(PVM pVM);
-static int hmR3InitFinalizeR0Intel(PVM pVM);
-static int hmR3InitFinalizeR0Amd(PVM pVM);
-static int hmR3TermCPU(PVM pVM);
+static int               hmR3InitCPU(PVM pVM);
+static int               hmR3InitFinalizeR0(PVM pVM);
+static int               hmR3InitFinalizeR0Intel(PVM pVM);
+static int               hmR3InitFinalizeR0Amd(PVM pVM);
+static int               hmR3TermCPU(PVM pVM);
 
 
 
@@ -452,7 +452,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /** @cfgm{/HM/VmxPleWindow, uint32_t, 0}
      * The pause-filter exiting window in TSC ticks. When the number of ticks
      * between the current PAUSE instruction and first PAUSE of a loop exceeds
-     * VmxPleWindow, a VM-exit is trigerred.
+     * VmxPleWindow, a VM-exit is triggered.
      *
      * Setting VmxPleGap and VmxPleGap to 0 disables pause-filter exiting.
      */
@@ -1063,7 +1063,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
     }
 
     /*
-     * Do the vendor specific initalization                                                                                                               .
+     * Do the vendor specific initialization                                                                                                               .
      *                                                                                                                                                    .
      * Note! We disable release log buffering here since we're doing relatively                                                                           .
      *       lot of logging and doesn't want to hit the disk with each LogRel                                                                             .
@@ -1647,17 +1647,6 @@ VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmSha
         Log(("HMR3PagingModeChanged indicates real mode execution\n"));
         pVCpu->hm.s.vmx.fWasInRealMode = true;
     }
-
-    /** @todo r=ramshankar: Disabling for now. If nothing breaks remove it
-     *        eventually. (Test platforms that use the cache ofc). */
-#if 0
-#ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    /* Reset the contents of the read cache. */
-    PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
-    for (unsigned j = 0; j < pCache->Read.cValidEntries; j++)
-        pCache->Read.aFieldVal[j] = 0;
-#endif
-#endif
 }
 
 
@@ -2465,7 +2454,7 @@ static bool hmR3IsStackSelectorOkForVmx(PCPUMSELREG pSel)
      * but as an alternative we for old saved states and AMD<->VT-x migration
      * we also treat segments with all the attributes cleared as unusable.
      */
-    /** @todo r=bird: actually all zeros isn't gonna cut it... SS.DPL == CPL. */
+    /** @todo r=bird: actually all zeroes isn't gonna cut it... SS.DPL == CPL. */
     if (pSel->Attr.n.u1Unusable || !pSel->Attr.u)
         return true;
 
@@ -2932,8 +2921,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PC
             uint32_t uAndVal = pVCpu->hm.s.PendingIO.s.Port.uAndVal;
             uint32_t u32Val  = 0;
 
-            rcStrict = IOMIOPortRead(pVM, pVCpu, pVCpu->hm.s.PendingIO.s.Port.uPort,
-                                     &u32Val,
+            rcStrict = IOMIOPortRead(pVM, pVCpu, pVCpu->hm.s.PendingIO.s.Port.uPort, &u32Val,
                                      pVCpu->hm.s.PendingIO.s.Port.cbSize);
             if (IOM_SUCCESS(rcStrict))
             {

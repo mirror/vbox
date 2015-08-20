@@ -58,7 +58,7 @@ VMMDECL(bool) HMIsEnabledNotMacro(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   GCVirt      Page to invalidate
+ * @param   GCVirt      Page to invalidate.
  */
 static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
@@ -75,7 +75,7 @@ static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   GCVirt      Page to invalidate
+ * @param   GCVirt      Page to invalidate.
  */
 VMM_INT_DECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
@@ -121,6 +121,7 @@ static DECLCALLBACK(void) hmFlushHandler(RTCPUID idCpu, void *pvUser1, void *pvU
     NOREF(idCpu); NOREF(pvUser1); NOREF(pvUser2);
     return;
 }
+
 
 /**
  * Wrapper for RTMpPokeCpu to deal with VERR_NOT_SUPPORTED.
@@ -356,14 +357,16 @@ VMM_INT_DECL(PGMMODE) HMGetShwPagingMode(PVM pVM)
     return PGMMODE_EPT;
 }
 
+
 /**
- * Invalidates a guest page by physical address
- *
- * NOTE: Assumes the current instruction references this physical page though a virtual address!!
+ * Invalidates a guest page by physical address.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   GCPhys      Page to invalidate
+ * @param   GCPhys      Page to invalidate.
+ *
+ * @remarks Assumes the current instruction references this physical page
+ *          though a virtual address!
  */
 VMM_INT_DECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 {
