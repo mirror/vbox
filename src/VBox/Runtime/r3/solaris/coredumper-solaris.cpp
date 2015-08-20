@@ -1490,7 +1490,7 @@ static int ElfWriteNoteSection(PRTSOLCORE pSolCore, RTSOLCORETYPE enmType)
         {
             ELFWRITENOTE aElfNotes[] =
             {
-                { "NT_PRPSINFO", NT_PRPSINFO, &pSolProc->ProcInfoOld,  sizeof(prpsinfo_t) },
+                { "NT_PRPSINFO", NT_PRPSINFO, &pSolProc->ProcInfoOld,   sizeof(prpsinfo_t) },
                 { "NT_AUXV",     NT_AUXV,      pSolProc->pAuxVecs,      pSolProc->cAuxVecs * sizeof(auxv_t) },
                 { "NT_PLATFORM", NT_PLATFORM,  pSolProc->szPlatform,    strlen(pSolProc->szPlatform) + 1 }
             };
