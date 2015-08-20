@@ -883,7 +883,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
     /* Set TLB flush state as checked until we return from the world switch. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);
 
-    /* Check for explicit TLB shootdowns. */
+    /* Check for explicit TLB flushes. */
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
         pVCpu->hm.s.fForceTLBFlush = true;
@@ -958,25 +958,6 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
 
         pVCpu->hm.s.fForceTLBFlush = false;
     }
-    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
-     *        not be executed. See hmQueueInvlPage() where it is commented
-     *        out. Support individual entry flushing someday. */
-#if 0
-    else
-    {
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
-        {
-            /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
-            for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
-                SVMR0InvlpgA(pVCpu->hm.s.TlbShootdown.aPages[i], pVmcb->ctrl.TLBCtrl.n.u32ASID);
-
-            pVCpu->hm.s.TlbShootdown.cPages = 0;
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
-        }
-    }
-#endif
-
 
     /* Update VMCB with the ASID. */
     if (pVmcb->ctrl.TLBCtrl.n.u32ASID != pVCpu->hm.s.uCurrentAsid)
@@ -3149,7 +3130,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     pSvmTransient->fWasGuestFPUStateActive = CPUMIsGuestFPUStateActive(pVCpu);
 
     /* Flush the appropriate tagged-TLB entries. */
-    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
     hmR0SvmFlushTaggedTlb(pVCpu);
     Assert(HMR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
 
@@ -3232,8 +3213,8 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB-shootdowns. */
-    ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for TLB-shootdowns. */
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
+    ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for EMT poking. */
 
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     pVmcb->ctrl.u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;        /* Mark the VMCB-state cache as unmodified by VMM. */

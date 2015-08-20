@@ -1873,12 +1873,6 @@ static void hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
 
-    /** @todo TLB shootdown is currently not used. See hmQueueInvlPage(). */
-#if 0
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
-    pVCpu->hm.s.TlbShootdown.cPages = 0;
-#endif
-
     Assert(pCpu->idCpu != NIL_RTCPUID);
     pVCpu->hm.s.idLastCpu           = pCpu->idCpu;
     pVCpu->hm.s.cTlbFlushes         = pCpu->cTlbFlushes;
@@ -1952,7 +1946,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);  /* Already flushed-by-EPT, skip doing it again below. */
     }
 
-    /* Check for explicit TLB shootdowns. */
+    /* Check for explicit TLB flushes. */
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
         /*
@@ -1967,34 +1961,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
         HMVMX_SET_TAGGED_TLB_FLUSHED();
     }
 
-    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere. See hmQueueInvlPage()
-     *        where it is commented out. Support individual entry flushing
-     *        someday. */
-#if 0
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
-    {
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
-
-        /*
-         * Flush individual guest entries using VPID from the TLB or as little as possible with EPT
-         * as supported by the CPU.
-         */
-        if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
-        {
-            for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
-                hmR0VmxFlushVpid(pVM, pVCpu, VMXFLUSHVPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
-        }
-        else
-            hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
-
-        HMVMX_SET_TAGGED_TLB_FLUSHED();
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
-        pVCpu->hm.s.TlbShootdown.cPages = 0;
-    }
-#endif
-
     pVCpu->hm.s.fForceTLBFlush = false;
-
     HMVMX_UPDATE_FLUSH_SKIPPED_STAT();
 
     Assert(pVCpu->hm.s.idLastCpu == pCpu->idCpu);
@@ -2045,7 +2012,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCp
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
     }
 
-    /* Check for explicit TLB shootdown flushes. */
+    /* Check for explicit TLB flushes. */
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
         pVCpu->hm.s.fForceTLBFlush = true;
@@ -2060,25 +2027,6 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCp
         hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         pVCpu->hm.s.fForceTLBFlush = false;
     }
-    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere. See hmQueueInvlPage()
-     *        where it is commented out. Support individual entry flushing
-     *        someday. */
-#if 0
-    else
-    {
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
-        {
-            /* We cannot flush individual entries without VPID support. Flush using EPT. */
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
-            hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
-        }
-        else
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
-
-        pVCpu->hm.s.TlbShootdown.cPages = 0;
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
-    }
-#endif
 }
 
 
@@ -2113,7 +2061,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
     }
 
-    /* Check for explicit TLB shootdown flushes. */
+    /* Check for explicit TLB flushes. */
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
         /*
@@ -2155,35 +2103,6 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
             }
         }
     }
-    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere. See hmQueueInvlPage()
-     *        where it is commented out. Support individual entry flushing
-     *        someday. */
-#if 0
-    else
-    {
-        AssertMsg(pVCpu->hm.s.uCurrentAsid && pCpu->uCurrentAsid,
-                  ("hm->uCurrentAsid=%lu hm->cTlbFlushes=%lu cpu->uCurrentAsid=%lu cpu->cTlbFlushes=%lu\n",
-                   pVCpu->hm.s.uCurrentAsid, pVCpu->hm.s.cTlbFlushes,
-                   pCpu->uCurrentAsid, pCpu->cTlbFlushes));
-
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
-        {
-            /* Flush individual guest entries using VPID or as little as possible with EPT as supported by the CPU. */
-            if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
-            {
-                for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
-                    hmR0VmxFlushVpid(pVM, pVCpu, VMXFLUSHVPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
-            }
-            else
-                hmR0VmxFlushVpid(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
-
-            pVCpu->hm.s.TlbShootdown.cPages = 0;
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
-        }
-        else
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
-    }
-#endif
 
     AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %d (%u vs %u)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
@@ -2220,9 +2139,6 @@ DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
             AssertMsgFailed(("Invalid flush-tag function identifier\n"));
             break;
     }
-
-    /* VMCPU_FF_TLB_SHOOTDOWN is unused. */
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN));
 
     /* Don't assert that VMCPU_FF_TLB_FLUSH should no longer be pending. It can be set by other EMTs. */
 }
@@ -8624,7 +8540,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
         pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = false;
     }
 
-    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
     hmR0VmxFlushTaggedTlb(pVCpu, pCpu);                         /* Invalidate the appropriate guest entries from the TLB. */
     Assert(idCurrentCpu == pVCpu->hm.s.idLastCpu);
     pVCpu->hm.s.vmx.LastError.idCurrentCpu = idCurrentCpu;      /* Update the error reporting info. with the current host CPU. */
@@ -8697,8 +8613,8 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
 
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB-shootdowns. */
-    ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for TLB-shootdowns. */
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
+    ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for EMT poking. */
     HMVMXCPU_GST_RESET_TO(pVCpu, 0);                            /* Exits/longjmps to ring-3 requires saving the guest state. */
     pVmxTransient->fVmcsFieldsRead     = 0;                     /* Transient fields need to be read from the VMCS. */
     pVmxTransient->fVectoringPF        = false;                 /* Vectoring page-fault needs to be determined later. */

@@ -391,10 +391,6 @@ typedef struct VMCPU
 /** Same as VM_FF_PGM_SYNC_CR3 except that global pages can be skipped.
  * (NON-GLOBAL FLUSH) */
 #define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL    RT_BIT_32(17)
-/** Check for pending TLB shootdown actions.
- * Consumer: HM
- * @todo rename to VMCPU_FF_HM_TLB_SHOOTDOWN  */
-#define VMCPU_FF_TLB_SHOOTDOWN              RT_BIT_32(18)
 /** Check for pending TLB flush action.
  * Consumer: HM
  * @todo rename to VMCPU_FF_HM_TLB_FLUSH  */
@@ -507,8 +503,7 @@ typedef struct VMCPU
 /** All the forced VMCPU flags except those related to raw-mode and hardware
  * assisted execution. */
 #define VMCPU_FF_ALL_REM_MASK                   (~(  VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_PDM_CRITSECT \
-                                                   | VMCPU_FF_TLB_FLUSH | VMCPU_FF_TLB_SHOOTDOWN \
-                                                   | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) ))
+                                                   | VMCPU_FF_TLB_FLUSH | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) ))
 /** @} */
 
 /** @def VM_FF_SET

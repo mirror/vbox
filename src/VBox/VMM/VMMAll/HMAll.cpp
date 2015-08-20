@@ -65,16 +65,8 @@ static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
     /* Nothing to do if a TLB flush is already pending */
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH))
         return;
-#if 1
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     NOREF(GCVirt);
-#else
-    /* Be very careful when activating this code! */
-    if (iPage == RT_ELEMENTS(pVCpu->hm.s.TlbShootdown.aPages))
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-    else
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
-#endif
 }
 
 
