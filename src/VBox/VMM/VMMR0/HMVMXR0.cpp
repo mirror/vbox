@@ -11404,10 +11404,10 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
         || rc == VERR_PAGE_NOT_PRESENT)
     {
         /* Successfully handled MMIO operation. */
-        HMCPU_CF_SET(pVCpu,  HM_CHANGED_GUEST_RIP
-                             | HM_CHANGED_GUEST_RSP
-                             | HM_CHANGED_GUEST_RFLAGS
-                             | HM_CHANGED_VMX_GUEST_APIC_STATE);
+        HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
+                            | HM_CHANGED_GUEST_RSP
+                            | HM_CHANGED_GUEST_RFLAGS
+                            | HM_CHANGED_VMX_GUEST_APIC_STATE);
         rc = VINF_SUCCESS;
     }
     return rc;
