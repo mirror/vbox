@@ -3,72 +3,15 @@
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
-    <title>Version 5.0.4 (2015-xx-xx)</title>
+    <title>Version x.x.x (2015-xx-xx)</title>
 
-    <para>This is a maintenance release. The following items were fixed and/or
-      added:</para>
+    <para>This is a major update. The following major new features
+      were added:</para>
 
     <itemizedlist>
 
       <listitem>
-        <para>GUI: changed default OS type for Windows from Windows XP to Windows 7</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: added another pre-defined guest screen resolution (bug #14384)</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: fixed update check which was broken due to changing the
-          location of the root certificates (bug #13096)</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio: fixed playing leftover/deprecated audio samples</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio: fixed playing audio after suspending the host (5.0 regression;
-          Linux hosts using the ALSA backend)</para>
-      </listitem>
-
-      <listitem>
-        <para>Storage: fixed raw disk access and flat VMDK image access which would
-          be always opened readonly (5.0.2 regression, bugs #14425, #14461)</para>
-      </listitem>
-
-      <listitem>
-        <para>OVF: fixed duplicate USB controller entries in exported OVA/OVF
-          (bug #14462)</para>
-      </listitem>
-
-      <listitem>
-        <para>Shared Folders: fixed a path separator issue (bug #14434)</para>
-      </listitem>
-
-      <listitem>
-        <para>VBoxManage: another attempt to not deny changing the network adapter
-          type at VM runtime (5.0 regression; bug #14308)</para>
-      </listitem>
-
-      <listitem>
-        <para>Mac OS X hosts: fixed remaining problems with activated SMAP (Broadwell
-          and later; bug #14412)</para>
-      </listitem>
-
-      <listitem>
-        <para>Mac OS X hosts: fixed broken 3D support (5.0.2 regression;
-          bug #14476)</para>
-      </listitem>
-
-      <listitem>
-        <para>Windows hosts: fixed the <emphasis>VERR_LDR_MISMATCH_NATIVE</emphasis>
-          error message (bug #14420)</para>
-      </listitem>
-
-      <listitem>
-        <para>Additions/Windows: fixed the call to the memory allocation function
-          (bug #14415)</para>
+        <para>dummy</para>
       </listitem>
 
     </itemizedlist>
