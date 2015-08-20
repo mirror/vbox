@@ -93,13 +93,12 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
             if (pObjDir)
             {
                 m_lstTree.append(pObjDir);
+
+                /** @todo Add DNDURILIST_FLAGS_KEEP_OPEN handling? */
+                m_cTotal++;
             }
             else
                 rc = VERR_NO_MEMORY;
-
-            /** @todo Add DNDURILIST_FLAGS_KEEP_OPEN handling. */
-
-            m_cTotal++;
         }
         /* Note: Symlinks already should have been resolved at this point. */
         else
