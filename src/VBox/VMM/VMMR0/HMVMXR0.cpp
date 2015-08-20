@@ -1617,7 +1617,8 @@ static int hmR0VmxCheckVmcsCtls(PVMCPU pVCpu)
     {
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, &u32Val);
         AssertRCReturn(rc, rc);
-        AssertMsgReturn(pVCpu->hm.s.vmx.u32ProcCtls2 == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32ProcCtls2, u32Val),
+        AssertMsgReturn(pVCpu->hm.s.vmx.u32ProcCtls2 == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32ProcCtls2, u32Val),
                         VERR_VMX_PROC_EXEC2_CTLS_CACHE_INVALID);
     }
 
@@ -4140,7 +4141,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(   !(pCtx->cs.u32Limit & 0xfff00000)
                || (pCtx->cs.Attr.n.u1Granularity));
         /* CS cannot be loaded with NULL in protected mode. */
-        Assert(pCtx->cs.Attr.u && !(pCtx->cs.Attr.u & X86DESCATTR_UNUSABLE)); /** @todo is this really true even for 64-bit CS?!? */
+        Assert(pCtx->cs.Attr.u && !(pCtx->cs.Attr.u & X86DESCATTR_UNUSABLE)); /** @todo is this really true even for 64-bit CS? */
         if (pCtx->cs.Attr.n.u4Type == 9 || pCtx->cs.Attr.n.u4Type == 11)
             Assert(pCtx->cs.Attr.n.u2Dpl == pCtx->ss.Attr.n.u2Dpl);
         else if (pCtx->cs.Attr.n.u4Type == 13 || pCtx->cs.Attr.n.u4Type == 15)
@@ -9394,7 +9395,8 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             AssertRCBreak(rc);
             HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xfffffffffffff2fe)),
                               VMX_IGS_EFER_MSR_RESERVED);               /* Bits 63:12, bit 9, bits 7:1 MBZ. */
-            HMVMX_CHECK_BREAK(RT_BOOL(u64Val & MSR_K6_EFER_LMA) == RT_BOOL(pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST),
+            HMVMX_CHECK_BREAK(RT_BOOL(u64Val & MSR_K6_EFER_LMA) == RT_BOOL(  pVCpu->hm.s.vmx.u32EntryCtls
+                                                                           & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST),
                               VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH);
             HMVMX_CHECK_BREAK(   fUnrestrictedGuest
                               || !(u32GuestCR0 & X86_CR0_PG)
@@ -10576,7 +10578,8 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         if (   hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx)
             && pMixedCtx->ecx != MSR_K6_EFER)
         {
-            AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
+            AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
+                             pMixedCtx->ecx));
             HMVMX_RETURN_UNEXPECTED_EXIT();
         }
 # if HC_ARCH_BITS == 64
@@ -10867,7 +10870,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             AssertRCReturn(rc, rc);
             rcStrict = IEMExecDecodedLmsw(pVCpu, pVmxTransient->cbInstr,
                                           VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(uExitQualification));
-            AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT || rcStrict == VINF_PGM_CHANGE_MODE, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT || rcStrict == VINF_PGM_CHANGE_MODE,
+                      ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
             Log4(("CRX LMSW rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
             break;
@@ -10922,14 +10926,16 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     PVM pVM                 = pVCpu->CTX_SUFF(pVM);
     if (fIOString)
     {
-#ifdef VBOX_WITH_2ND_IEM_STEP /* This used to gurus with debian 32-bit guest without NP (on ATA reads). See @bugref{5752#c158}. Should work now. */
+#ifdef VBOX_WITH_2ND_IEM_STEP /* This used to gurus with debian 32-bit guest without NP (on ATA reads).
+                                 See @bugref{5752#c158}. Should work now. */
         /*
          * INS/OUTS - I/O String instruction.
          *
          * Use instruction-information if available, otherwise fall back on
          * interpreting the instruction.
          */
-        Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c str\n", pMixedCtx->cs.Sel, pMixedCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
+        Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c str\n", pMixedCtx->cs.Sel, pMixedCtx->rip, uIOPort, cbValue,
+              fIOWrite ? 'w' : 'r'));
         AssertReturn(pMixedCtx->dx == uIOPort, VERR_VMX_IPE_2);
         if (MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo))
         {
@@ -10987,7 +10993,8 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         }
         else
         {
-            AssertMsg(rcStrict == VERR_EM_INTERPRETER, ("rcStrict=%Rrc RIP %#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->rip));
+            AssertMsg(rcStrict == VERR_EM_INTERPRETER, ("rcStrict=%Rrc RIP=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict),
+                                                        pMixedCtx->rip));
             rcStrict = VINF_EM_RAW_EMULATE_INSTR;
         }
 #endif
