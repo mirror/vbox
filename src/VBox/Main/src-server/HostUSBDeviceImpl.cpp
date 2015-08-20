@@ -348,8 +348,7 @@ com::Utf8Str HostUSBDevice::i_getName()
         else
         {
             name = "<unknown>";
-            LogRel(("USB: Unknown USB device detected ( idVendor: 0x%04x, idProduct: 0x%04x ). \
-                Please, report the idVendor and idProduct to vbox.org.\n", vendorName, productName));
+            LogRel(("USB: Unknown USB device detected (idVendor: 0x%04x, idProduct: 0x%04x). Please, report the idVendor and idProduct to virtualbox.org.\n", vendorName, productName));
         }
     }
 
