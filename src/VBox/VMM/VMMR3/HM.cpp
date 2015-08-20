@@ -358,14 +358,36 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /*
      * Read configuration.
      */
-    PCFGMNODE pCfgHM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "HM/");
+    PCFGMNODE pCfgHm = CFGMR3GetChild(CFGMR3GetRoot(pVM), "HM/");
+
+    /*
+     * Validate the HM settings.
+     */
+    rc = CFGMR3ValidateConfig(pCfgHm, "/HM/",
+                              "HMForced"
+                              "|EnableNestedPaging"
+                              "|EnableUX"
+                              "|EnableLargePages"
+                              "|EnableVPID"
+                              "|TPRPatchingEnabled"
+                              "|64bitEnabled"
+                              "|VmxPleGap"
+                              "|VmxPleWindow"
+                              "|SvmPauseFilter"
+                              "|SvmPauseFilterThreshold"
+                              "|Exclusive"
+                              "|MaxResumeLoops"
+                              "|UseVmxPreemptTimer",
+                              "" /* pszValidNodes */, "HM" /* pszWho */, 0 /* uInstance */);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /** @cfgm{/HM/HMForced, bool, false}
      * Forces hardware virtualization, no falling back on raw-mode. HM must be
      * enabled, i.e. /HMEnabled must be true. */
     bool fHMForced;
 #ifdef VBOX_WITH_RAW_MODE
-    rc = CFGMR3QueryBoolDef(pCfgHM, "HMForced", &fHMForced, false);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "HMForced", &fHMForced, false);
     AssertRCReturn(rc, rc);
     AssertLogRelMsgReturn(!fHMForced || pVM->fHMEnabled, ("Configuration error: HM forced but not enabled!\n"),
                           VERR_INVALID_PARAMETER);
@@ -384,28 +406,28 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 
     /** @cfgm{/HM/EnableNestedPaging, bool, false}
      * Enables nested paging (aka extended page tables). */
-    rc = CFGMR3QueryBoolDef(pCfgHM, "EnableNestedPaging", &pVM->hm.s.fAllowNestedPaging, false);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "EnableNestedPaging", &pVM->hm.s.fAllowNestedPaging, false);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/EnableUX, bool, true}
      * Enables the VT-x unrestricted execution feature. */
-    rc = CFGMR3QueryBoolDef(pCfgHM, "EnableUX", &pVM->hm.s.vmx.fAllowUnrestricted, true);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "EnableUX", &pVM->hm.s.vmx.fAllowUnrestricted, true);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/EnableLargePages, bool, false}
      * Enables using large pages (2 MB) for guest memory, thus saving on (nested)
      * page table walking and maybe better TLB hit rate in some cases. */
-    rc = CFGMR3QueryBoolDef(pCfgHM, "EnableLargePages", &pVM->hm.s.fLargePages, false);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "EnableLargePages", &pVM->hm.s.fLargePages, false);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/EnableVPID, bool, false}
      * Enables the VT-x VPID feature. */
-    rc = CFGMR3QueryBoolDef(pCfgHM, "EnableVPID", &pVM->hm.s.vmx.fAllowVpid, false);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "EnableVPID", &pVM->hm.s.vmx.fAllowVpid, false);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/TPRPatchingEnabled, bool, false}
      * Enables TPR patching for 32-bit windows guests with IO-APIC. */
-    rc = CFGMR3QueryBoolDef(pCfgHM, "TPRPatchingEnabled", &pVM->hm.s.fTprPatchingAllowed, false);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "TPRPatchingEnabled", &pVM->hm.s.fTprPatchingAllowed, false);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/64bitEnabled, bool, 32-bit:false, 64-bit:true}
@@ -413,7 +435,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * On 32-bit hosts this isn't default and require host CPU support. 64-bit hosts
      * already have the support. */
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
-    rc = CFGMR3QueryBoolDef(pCfgHM, "64bitEnabled", &pVM->hm.s.fAllow64BitGuests, HC_ARCH_BITS == 64);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "64bitEnabled", &pVM->hm.s.fAllow64BitGuests, HC_ARCH_BITS == 64);
     AssertLogRelRCReturn(rc, rc);
 #else
     pVM->hm.s.fAllow64BitGuests = false;
@@ -424,7 +446,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * two successive PAUSE instructions exceeds VmxPleGap, the CPU considers the
      * latest PAUSE instruction to be start of a new PAUSE loop.
      */
-    rc = CFGMR3QueryU32Def(pCfgHM, "VmxPleGap", &pVM->hm.s.vmx.cPleGapTicks, 0);
+    rc = CFGMR3QueryU32Def(pCfgHm, "VmxPleGap", &pVM->hm.s.vmx.cPleGapTicks, 0);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/VmxPleWindow, uint32_t, 0}
@@ -434,14 +456,14 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      *
      * Setting VmxPleGap and VmxPleGap to 0 disables pause-filter exiting.
      */
-    rc = CFGMR3QueryU32Def(pCfgHM, "VmxPleWindow", &pVM->hm.s.vmx.cPleWindowTicks, 0);
+    rc = CFGMR3QueryU32Def(pCfgHm, "VmxPleWindow", &pVM->hm.s.vmx.cPleWindowTicks, 0);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/SvmPauseFilterCount, uint16_t, 0}
      * A counter that is decrement each time a PAUSE instruction is executed by the
      * guest. When the counter is 0, a #VMEXIT is triggered.
      */
-    rc = CFGMR3QueryU16Def(pCfgHM, "SvmPauseFilterCount", &pVM->hm.s.svm.cPauseFilter, 0);
+    rc = CFGMR3QueryU16Def(pCfgHm, "SvmPauseFilter", &pVM->hm.s.svm.cPauseFilter, 0);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/SvmPauseFilterThreshold, uint16_t, 0}
@@ -453,7 +475,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Setting both SvmPauseFilterCount and SvmPauseFilterCount to 0 disables
      * pause-filter exiting.
      */
-    rc = CFGMR3QueryU16Def(pCfgHM, "SvmPauseFilterTreshold", &pVM->hm.s.svm.cPauseFilterThresholdTicks, 0);
+    rc = CFGMR3QueryU16Def(pCfgHm, "SvmPauseFilterThreshold", &pVM->hm.s.svm.cPauseFilterThresholdTicks, 0);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/Exclusive, bool}
@@ -470,7 +492,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 #if defined(RT_OS_DARWIN)
     pVM->hm.s.fGlobalInit = true;
 #else
-    rc = CFGMR3QueryBoolDef(pCfgHM, "Exclusive", &pVM->hm.s.fGlobalInit,
+    rc = CFGMR3QueryBoolDef(pCfgHm, "Exclusive", &pVM->hm.s.fGlobalInit,
 # if defined(RT_OS_WINDOWS)
                             false
 # else
@@ -484,13 +506,13 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * The number of times to resume guest execution before we forcibly return to
      * ring-3.  The return value of RTThreadPreemptIsPendingTrusty in ring-0
      * determines the default value. */
-    rc = CFGMR3QueryU32Def(pCfgHM, "MaxResumeLoops", &pVM->hm.s.cMaxResumeLoops, 0 /* set by R0 later */);
+    rc = CFGMR3QueryU32Def(pCfgHm, "MaxResumeLoops", &pVM->hm.s.cMaxResumeLoops, 0 /* set by R0 later */);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/HM/UseVmxPreemptTimer, bool}
      * Whether to make use of the VMX-preemption timer feature of the CPU if it's
      * available. */
-    rc = CFGMR3QueryBoolDef(pCfgHM, "UseVmxPreemptTimer", &pVM->hm.s.vmx.fUsePreemptTimer, true);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "UseVmxPreemptTimer", &pVM->hm.s.vmx.fUsePreemptTimer, true);
     AssertLogRelRCReturn(rc, rc);
 
     /*
