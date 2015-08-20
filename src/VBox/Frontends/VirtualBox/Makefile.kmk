@@ -300,6 +300,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extradata/UIExtraDataManager.h \
 	src/globals/UIActionPool.h \
 	src/globals/UIAnimationFramework.h \
+	src/globals/UIDesktopWidgetWatchdog.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
@@ -500,6 +501,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/extensions/QIAdvancedToolBar.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIDesktopWidgetWatchdog.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
@@ -579,6 +581,7 @@ VirtualBox_SOURCES = \
 	src/globals/COMDefs.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIAnimationFramework.cpp \
+	src/globals/UIDesktopWidgetWatchdog.cpp \
 	src/globals/UIIconPool.cpp \
 	src/globals/UIImageTools.cpp \
 	src/globals/UIMainEventListener.cpp \

@@ -76,8 +76,9 @@
 
 # ifdef Q_WS_X11
 #  include "UIHostComboEditor.h"
+#  include "UIDesktopWidgetWatchdog.h"
 #  ifndef VBOX_OSE
-#  include "VBoxLicenseViewer.h"
+#   include "VBoxLicenseViewer.h"
 #  endif /* VBOX_OSE */
 # endif /* Q_WS_X11 */
 
@@ -235,6 +236,7 @@ VBoxGlobal::VBoxGlobal()
     , m_pMediumEnumerator(0)
 #ifdef Q_WS_X11
     , m_enmWindowManagerType(X11WMType_Unknown)
+    , m_pDesktopWidgetWatchdog(0)
 #endif /* Q_WS_X11 */
 #if defined(DEBUG_bird)
     , mAgressiveCaching(false)
@@ -336,6 +338,32 @@ MacOSXRelease VBoxGlobal::osRelease()
     return MacOSXRelease_Unknown;
 }
 #endif /* Q_WS_MAC */
+
+const QRect	VBoxGlobal::screenGeometry(int iHostScreenIndex /* = -1 */) const
+{
+#ifdef Q_WS_X11
+    /* Make sure desktop-widget watchdog already created: */
+    AssertPtrReturn(m_pDesktopWidgetWatchdog, QApplication::desktop()->screenGeometry(iHostScreenIndex));
+    /* Redirect call to UIDesktopWidgetWatchdog: */
+    return m_pDesktopWidgetWatchdog->screenGeometry(iHostScreenIndex);
+#endif /* Q_WS_X11 */
+
+    /* Redirect call to QDesktopWidget: */
+    return QApplication::desktop()->screenGeometry(iHostScreenIndex);
+}
+
+const QRect	VBoxGlobal::availableGeometry(int iHostScreenIndex /* = -1 */) const
+{
+#ifdef Q_WS_X11
+    /* Make sure desktop-widget watchdog already created: */
+    AssertPtrReturn(m_pDesktopWidgetWatchdog, QApplication::desktop()->availableGeometry(iHostScreenIndex));
+    /* Redirect call to UIDesktopWidgetWatchdog: */
+    return m_pDesktopWidgetWatchdog->availableGeometry(iHostScreenIndex);
+#endif /* Q_WS_X11 */
+
+    /* Redirect call to QDesktopWidget: */
+    return QApplication::desktop()->availableGeometry(iHostScreenIndex);
+}
 
 /**
  *  Sets the new global settings and saves them to the VirtualBox server.
@@ -4043,6 +4071,9 @@ void VBoxGlobal::prepare()
 #ifdef Q_WS_X11
     /* Acquire current Window Manager type: */
     m_enmWindowManagerType = X11WindowManagerType();
+
+    /* Create desktop-widget watchdog instance: */
+    m_pDesktopWidgetWatchdog = new UIDesktopWidgetWatchdog(this);
 #endif /* Q_WS_X11 */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

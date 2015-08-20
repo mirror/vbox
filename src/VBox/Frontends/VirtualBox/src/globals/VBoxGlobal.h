@@ -64,6 +64,9 @@ class QSpinBox;
 class UIMediumEnumerator;
 class UIMedium;
 class UIIconPoolGeneral;
+#ifdef Q_WS_X11
+class UIDesktopWidgetWatchdog;
+#endif /* Q_WS_X11 */
 
 // VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////
@@ -135,6 +138,13 @@ public:
 
     /** Returns the VBoxSVC availability value. */
     bool isVBoxSVCAvailable() const { return m_fVBoxSVCAvailable; }
+
+    /** Returns the geometry of the host-screen with @a iHostScreenIndex.
+      * @note The default screen is used if @a iHostScreenIndex is -1. */
+    const QRect	screenGeometry(int iHostScreenIndex = -1) const;
+    /** Returns the available-geometry of the host-screen with @a iHostScreenIndex.
+      * @note The default screen is used if @a iHostScreenIndex is -1. */
+    const QRect	availableGeometry(int iHostScreenIndex = -1) const;
 
     VBoxGlobalSettings &settings() { return gset; }
     bool setSettings (VBoxGlobalSettings &gs);
@@ -521,6 +531,9 @@ private:
 #ifdef Q_WS_X11
     /** X11: Holds the type of the Window Manager we are running under. */
     X11WMType m_enmWindowManagerType;
+
+    /** X11: Holds the desktop-widget watchdog instance aware of host-screen geometry changes. */
+    UIDesktopWidgetWatchdog *m_pDesktopWidgetWatchdog;
 #endif /* Q_WS_X11 */
 
     /** The --aggressive-caching / --no-aggressive-caching option. */
