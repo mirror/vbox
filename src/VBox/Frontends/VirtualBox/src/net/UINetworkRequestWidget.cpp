@@ -179,6 +179,10 @@ void UINetworkRequestWidget::sltSetProgressToFailed(const QString &strError)
         for (int i = 0; i < links.size(); ++i)
             strErrorText = strErrorText.arg(QString("<b>%1</b>").arg(links[i]));
 
+    // @todo: NLS: Embed <br> directly into error header text.
+    /* Prepend the error-message with <br> symbol: */
+    strErrorText.prepend("<br>");
+
     /* Show error label: */
     m_pErrorPane->setHidden(false);
     m_pErrorPane->setText(UINetworkManagerDialog::tr("The network operation failed with the following error: %1.").arg(strErrorText));

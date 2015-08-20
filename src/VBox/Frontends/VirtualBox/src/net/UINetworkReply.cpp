@@ -51,6 +51,9 @@ public:
     /* Constructor: */
     UINetworkReplyPrivateThread(const QNetworkRequest &request);
 
+    /** Returns short descriptive context of thread's current operation. */
+    const QString context() const { return m_strContext; }
+
     /* API: Read stuff: */
     const QByteArray& readAll() const { return m_reply; }
 
@@ -92,6 +95,9 @@ private:
     static int saveCertificates(const QString &strFullCertificateFileName, const QByteArray &certificatePca3G5, const QByteArray &certificatePca3);
     static int saveCertificate(QFile &file, const QByteArray &certificate);
 
+    /** Holds short descriptive context of thread's current operation. */
+    QString m_strContext;
+
     /* Variables: */
     QNetworkRequest m_request;
     int m_iError;
@@ -118,6 +124,9 @@ void UINetworkReplyPrivateThread::abort()
 
 int UINetworkReplyPrivateThread::applyProxyRules()
 {
+    /* Set thread context: */
+    m_strContext = tr("During proxy configuration");
+
     /* Make sure proxy is enabled in Proxy Manager: */
     UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
     if (!proxyManager.proxyEnabled())
@@ -131,6 +140,9 @@ int UINetworkReplyPrivateThread::applyProxyRules()
 
 int UINetworkReplyPrivateThread::applyHttpsCertificates()
 {
+    /* Set thread context: */
+    m_strContext = tr("During certificate downloading");
+
     /* Prepare variables: */
     const QString strFullCertificateFileName(fullCertificateFileName());
     int rc = VINF_SUCCESS;
@@ -155,6 +167,9 @@ int UINetworkReplyPrivateThread::applyHttpsCertificates()
 
 int UINetworkReplyPrivateThread::applyRawHeaders()
 {
+    /* Set thread context: */
+    m_strContext = tr("During network request");
+
     /* Make sure we have a raw headers at all: */
     QList<QByteArray> headers = m_request.rawHeaderList();
     if (headers.isEmpty())
@@ -166,6 +181,9 @@ int UINetworkReplyPrivateThread::applyRawHeaders()
 
 int UINetworkReplyPrivateThread::performMainRequest()
 {
+    /* Set thread context: */
+    m_strContext = tr("During network request");
+
     /* Perform GET request: */
     return performGetRequestForText(m_pHttp, m_request, m_reply);
 }
@@ -612,6 +630,8 @@ public:
         : m_error(QNetworkReply::NoError)
         , m_pThread(0)
     {
+        /* Prepare full error template: */
+        m_strErrorTemplate = tr("%1: %2", "Context description: Error description");
         /* Create and run network-reply thread: */
         m_pThread = new UINetworkReplyPrivateThread(request);
         connect(m_pThread, SIGNAL(finished()), this, SLOT(sltFinished()));
@@ -643,15 +663,15 @@ public:
         switch (m_error)
         {
             case QNetworkReply::NoError:                     break;
-            case QNetworkReply::RemoteHostClosedError:       return tr("Unable to initialize HTTP library");
-            case QNetworkReply::HostNotFoundError:           return tr("Host not found");
-            case QNetworkReply::ContentAccessDenied:         return tr("Content access denied");
-            case QNetworkReply::ProtocolFailure:             return tr("Protocol failure");
-            case QNetworkReply::ConnectionRefusedError:      return tr("Connection refused");
-            case QNetworkReply::SslHandshakeFailedError:     return tr("SSL authentication failed");
-            case QNetworkReply::AuthenticationRequiredError: return tr("Wrong SSL certificate format");
-            case QNetworkReply::ContentReSendError:          return tr("Content moved");
-            default:                                         return tr("Unknown reason");
+            case QNetworkReply::RemoteHostClosedError:       return m_strErrorTemplate.arg(m_pThread->context(), tr("Unable to initialize HTTP library"));
+            case QNetworkReply::HostNotFoundError:           return m_strErrorTemplate.arg(m_pThread->context(), tr("Host not found"));
+            case QNetworkReply::ContentAccessDenied:         return m_strErrorTemplate.arg(m_pThread->context(), tr("Content access denied"));
+            case QNetworkReply::ProtocolFailure:             return m_strErrorTemplate.arg(m_pThread->context(), tr("Protocol failure"));
+            case QNetworkReply::ConnectionRefusedError:      return m_strErrorTemplate.arg(m_pThread->context(), tr("Connection refused"));
+            case QNetworkReply::SslHandshakeFailedError:     return m_strErrorTemplate.arg(m_pThread->context(), tr("SSL authentication failed"));
+            case QNetworkReply::AuthenticationRequiredError: return m_strErrorTemplate.arg(m_pThread->context(), tr("Wrong SSL certificate format"));
+            case QNetworkReply::ContentReSendError:          return m_strErrorTemplate.arg(m_pThread->context(), tr("Content moved"));
+            default:                                         return m_strErrorTemplate.arg(m_pThread->context(), tr("Unknown reason"));
         }
         return QString();
     }
@@ -683,6 +703,9 @@ private slots:
     }
 
 private:
+
+    /** Holds full error template in "Context description: Error description" form. */
+    QString m_strErrorTemplate;
 
     /* Variables: */
     QNetworkReply::NetworkError m_error;
