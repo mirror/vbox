@@ -478,6 +478,10 @@ void UIVMLogViewer::refresh()
                 /* Create a log viewer page and append the read text to it: */
                 QTextEdit *pLogViewer = createLogPage(QFileInfo(strFileName).fileName());
                 pLogViewer->setPlainText(strText);
+                /* Move the cursor position to end: */
+                QTextCursor cursor = pLogViewer->textCursor();
+                cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
+                pLogViewer->setTextCursor(cursor);
                 /* Add the actual file name and the QTextEdit containing the content to a list: */
                 m_book << qMakePair(strFileName, pLogViewer);
                 isAnyLogPresent = true;
