@@ -59,9 +59,10 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
     {
         if (RTFS_IS_FILE(objInfo.Attr.fMode))
         {
-            LogFlowFunc(("File '%s' -> '%s' (%RU64)\n", pcszSource, pcszTarget, (uint64_t)objInfo.cbObject));
+            LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
+                         pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
 
-            DnDURIObject *pObjFile= new DnDURIObject(DnDURIObject::File, pcszSource, pcszTarget);
+            DnDURIObject *pObjFile = new DnDURIObject(DnDURIObject::File, pcszSource, pcszTarget);
             if (pObjFile)
             {
                 if (fFlags & DNDURILIST_FLAGS_KEEP_OPEN) /* Shall we keep the file open while being added to this list? */
@@ -77,16 +78,18 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
                     m_cTotal++;
                     m_cbTotal += pObjFile->GetSize();
                 }
+                else
+                    delete pObjFile;
             }
             else
                 rc = VERR_NO_MEMORY;
         }
         else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
         {
-            LogFlowFunc(("Directory '%s' -> '%s' \n", pcszSource, pcszTarget));
+            LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
 
-            DnDURIObject *pObjDir= new DnDURIObject(DnDURIObject::Directory, pcszSource, pcszTarget,
-                                                    objInfo.Attr.fMode, 0 /* Size */);
+            DnDURIObject *pObjDir = new DnDURIObject(DnDURIObject::Directory, pcszSource, pcszTarget,
+                                                     objInfo.Attr.fMode, 0 /* Size */);
             if (pObjDir)
             {
                 m_lstTree.append(pObjDir);
