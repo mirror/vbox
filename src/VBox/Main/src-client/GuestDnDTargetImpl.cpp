@@ -911,21 +911,21 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
 
     uint32_t cbRead = 0;
 
-    int rc = pObject->Read(pCtx->mURI.pvScratchBuf, pCtx->mURI.cbScratchBuf, &cbRead);
+    int rc = pObject->Read(pCtx->mURI.GetBufferMutable(), pCtx->mURI.GetBufferSize(), &cbRead);
     if (RT_SUCCESS(rc))
     {
         pCtx->mData.cbProcessed += cbRead;
 
         if (mDataBase.mProtocolVersion <= 1)
         {
-            pMsg->setNextPointer(pCtx->mURI.pvScratchBuf, cbRead);  /* pvData */
-            pMsg->setNextUInt32(cbRead);                            /* cbData */
-            pMsg->setNextUInt32(pObject->GetMode());                   /* fMode */
+            pMsg->setNextPointer(pCtx->mURI.GetBufferMutable(), cbRead); /* pvData */
+            pMsg->setNextUInt32(cbRead);                                 /* cbData */
+            pMsg->setNextUInt32(pObject->GetMode());                     /* fMode */
         }
         else
         {
-            pMsg->setNextPointer(pCtx->mURI.pvScratchBuf, cbRead); /* pvData */
-            pMsg->setNextUInt32(cbRead);                           /* cbData */
+            pMsg->setNextPointer(pCtx->mURI.GetBufferMutable(), cbRead); /* pvData */
+            pMsg->setNextUInt32(cbRead);                                 /* cbData */
         }
 
         if (pObject->IsComplete()) /* Done reading? */
@@ -1116,12 +1116,6 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
         break; \
     }
 
-    void *pvBuf = RTMemAlloc(mData.mcbBlockSize);
-    if (!pvBuf)
-        return VERR_NO_MEMORY;
-
-    int rc;
-
 #define REGISTER_CALLBACK(x)                                        \
     rc = pCtx->mpResp->setCallback(x, i_sendURIDataCallback, pCtx); \
     if (RT_FAILURE(rc))                                             \
@@ -1132,6 +1126,10 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
         int rc2 = pCtx->mpResp->setCallback(x, NULL); \
         AssertRC(rc2);                                \
     }
+
+    int rc = pCtx->mURI.Init(mData.mcbBlockSize);
+    if (RT_FAILURE(rc))
+        return rc;
 
     rc = pCtx->mCallback.Reset();
     if (RT_FAILURE(rc))
@@ -1152,12 +1150,6 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     do
     {
         /*
-         * Set our scratch buffer.
-         */
-        pCtx->mURI.pvScratchBuf = pvBuf;
-        pCtx->mURI.cbScratchBuf = mData.mcbBlockSize;
-
-        /*
          * Extract URI list from byte data.
          */
         DnDURIList &lstURI = pCtx->mURI.lstURI; /* Use the URI list from the context. */
@@ -1171,7 +1163,9 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
         RTCList<RTCString> lstURIOrg = RTCString(pszList, cbList).split("\r\n");
         URI_DATA_IS_VALID_BREAK(!lstURIOrg.isEmpty());
 
-        rc = lstURI.AppendURIPathsFromList(lstURIOrg, 0 /* fFlags */);
+        uint32_t fFlags = DNDURILIST_FLAGS_KEEP_OPEN;
+
+        rc = lstURI.AppendURIPathsFromList(lstURIOrg, fFlags);
         if (RT_SUCCESS(rc))
             LogFlowFunc(("URI root objects: %zu, total bytes (raw data to transfer): %zu\n",
                          lstURI.RootCount(), lstURI.TotalBytes()));
@@ -1243,10 +1237,6 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
         AssertRC(rc2);
     }
 
-    /* Destroy temporary scratch buffer. */
-    if (pvBuf)
-        RTMemFree(pvBuf);
-
 #undef URI_DATA_IS_VALID_BREAK
 
     LogFlowFuncLeaveRC(rc);
@@ -1258,8 +1248,6 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     DnDURIList &lstURI = pCtx->mURI.lstURI;
-
-    int rc;
 
     uint64_t cbTotal = pCtx->mData.cbToProcess;
     uint8_t uPercent = pCtx->mData.cbProcessed * 100 / (cbTotal ? cbTotal : 1);
@@ -1291,7 +1279,7 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
                  pCurObj->GetSourcePath().c_str(), pCurObj->GetDestPath().c_str(),
                  fMode, pCurObj->GetSize(),
                  RTFS_IS_DIRECTORY(fMode), RTFS_IS_FILE(fMode)));
-
+    int rc;
     if (RTFS_IS_DIRECTORY(fMode))
     {
         rc = i_sendDirectory(pCtx, pMsg, pCurObj);

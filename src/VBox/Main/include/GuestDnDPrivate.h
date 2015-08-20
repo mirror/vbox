@@ -106,6 +106,22 @@ typedef struct GuestDnDURIData
         Reset();
     }
 
+    int Init(size_t cbBuf = _64K)
+    {
+        Reset();
+
+        pvScratchBuf = RTMemAlloc(cbBuf);
+        if (!pvScratchBuf)
+            return VERR_NO_MEMORY;
+
+        cbScratchBuf = cbBuf;
+        return VINF_SUCCESS;
+    }
+
+    void *const GetBufferMutable(void) { return pvScratchBuf; }
+
+    size_t GetBufferSize(void) { return cbScratchBuf; }
+
     void Reset(void)
     {
         lstURI.Clear();
@@ -128,6 +144,9 @@ typedef struct GuestDnDURIData
     DnDURIList                      lstURI;
     /** Current object to receive. */
     DnDURIObject                    objURI;
+
+protected:
+
     /** Pointer to an optional scratch buffer to use for
      *  doing the actual chunk transfers. */
     void                           *pvScratchBuf;
