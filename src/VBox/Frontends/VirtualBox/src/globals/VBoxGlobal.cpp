@@ -339,7 +339,7 @@ MacOSXRelease VBoxGlobal::osRelease()
 }
 #endif /* Q_WS_MAC */
 
-const QRect	VBoxGlobal::screenGeometry(int iHostScreenIndex /* = -1 */) const
+const QRect VBoxGlobal::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
 #ifdef Q_WS_X11
     /* Make sure desktop-widget watchdog already created: */
@@ -352,7 +352,7 @@ const QRect	VBoxGlobal::screenGeometry(int iHostScreenIndex /* = -1 */) const
     return QApplication::desktop()->screenGeometry(iHostScreenIndex);
 }
 
-const QRect	VBoxGlobal::availableGeometry(int iHostScreenIndex /* = -1 */) const
+const QRect VBoxGlobal::availableGeometry(int iHostScreenIndex /* = -1 */) const
 {
 #ifdef Q_WS_X11
     /* Make sure desktop-widget watchdog already created: */
