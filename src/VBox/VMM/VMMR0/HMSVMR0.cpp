@@ -296,6 +296,7 @@ static FNSVMEXITHANDLER hmR0SvmExitNestedPF;
 static FNSVMEXITHANDLER hmR0SvmExitVIntr;
 static FNSVMEXITHANDLER hmR0SvmExitTaskSwitch;
 static FNSVMEXITHANDLER hmR0SvmExitVmmCall;
+static FNSVMEXITHANDLER hmR0SvmExitPause;
 static FNSVMEXITHANDLER hmR0SvmExitIret;
 static FNSVMEXITHANDLER hmR0SvmExitXcptPF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptNM;
@@ -674,6 +675,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     Assert(pVM->hm.s.svm.fSupported);
 
+    bool const fPauseFilter          = RT_BOOL(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER);
+    bool const fPauseFilterThreshold = RT_BOOL(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD);
+    bool const fUsePauseFilter       = fPauseFilter && pVM->hm.s.svm.cPauseFilter && pVM->hm.s.svm.cPauseFilterThresholdTicks;
+
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
@@ -793,6 +798,14 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         /* Apply the exceptions intercepts needed by the GIM provider. */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
             pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_UD);
+
+        /* Setup Pause Filter for guest pause-loop (spinlock) exiting. */
+        if (fUsePauseFilter)
+        {
+            pVmcb->ctrl.u16PauseFilterCount = pVM->hm.s.svm.cPauseFilter;
+            if (fPauseFilterThreshold)
+                pVmcb->ctrl.u16PauseFilterThreshold = pVM->hm.s.svm.cPauseFilterThresholdTicks;
+        }
 
         /*
          * The following MSRs are saved/restored automatically during the world-switch.
@@ -3545,6 +3558,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         case SVM_EXIT_WRITE_CR8:
             return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
 
+        case SVM_EXIT_PAUSE:
+            return hmR0SvmExitPause(pVCpu, pCtx, pSvmTransient);
+
         case SVM_EXIT_VMMCALL:
             return hmR0SvmExitVmmCall(pVCpu, pCtx, pSvmTransient);
 
@@ -5148,6 +5164,17 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
     hmR0SvmSetPendingXcptUD(pVCpu);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * #VMEXIT handler for VMMCALL (SVM_EXIT_VMMCALL). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitPause(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPause);
+    return VINF_EM_RAW_INTERRUPT;
 }
 
 

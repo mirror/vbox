@@ -419,6 +419,43 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     pVM->hm.s.fAllow64BitGuests = false;
 #endif
 
+    /** @cfgm{/HM/VmxPleGap, uint32_t, 0}
+     * The pause-filter exiting gap in TSC ticks. When the number of ticks between
+     * two successive PAUSE instructions exceeds VmxPleGap, the CPU considers the
+     * latest PAUSE instruction to be start of a new PAUSE loop.
+     */
+    rc = CFGMR3QueryU32Def(pCfgHM, "VmxPleGap", &pVM->hm.s.vmx.cPleGapTicks, 0);
+    AssertRCReturn(rc, rc);
+
+    /** @cfgm{/HM/VmxPleWindow, uint32_t, 0}
+     * The pause-filter exiting window in TSC ticks. When the number of ticks
+     * between the current PAUSE instruction and first PAUSE of a loop exceeds
+     * VmxPleWindow, a VM-exit is trigerred.
+     *
+     * Setting VmxPleGap and VmxPleGap to 0 disables pause-filter exiting.
+     */
+    rc = CFGMR3QueryU32Def(pCfgHM, "VmxPleWindow", &pVM->hm.s.vmx.cPleWindowTicks, 0);
+    AssertRCReturn(rc, rc);
+
+    /** @cfgm{/HM/SvmPauseFilterCount, int16_t, 0}
+     * A counter that is decrement each time a PAUSE instruction is executed by the
+     * guest. When the counter is 0, a #VMEXIT is triggered.
+     */
+    rc = CFGMR3QueryU16Def(pCfgHM, "SvmPauseFilterCount", &pVM->hm.s.svm.cPauseFilter, 0);
+    AssertRCReturn(rc, rc);
+
+    /** @cfgm{/HM/SvmPauseFilterThreshold, uint16_t, 0}
+     * The pause filter threshold in ticks. When the elapsed time between two
+     * successive PAUSE instructions exceeds SvmPauseFilterThreshold, the PauseFilter
+     * count is reset to its initial value. However, if PAUSE is executed PauseFilter
+     * times within PauseFilterThreshold ticks, a VM-exit will be triggered.
+     *
+     * Setting both SvmPauseFilterCount and SvmPauseFilterCount to 0 disables
+     * pause-filter exiting.
+     */
+    rc = CFGMR3QueryU16Def(pCfgHM, "SvmPauseFilterTreshold", &pVM->hm.s.svm.cPauseFilterThresholdTicks, 0);
+    AssertRCReturn(rc, rc);
+
     /** @cfgm{/HM/Exclusive, bool}
      * Determines the init method for AMD-V and VT-x. If set to true, HM will do a
      * global init for each host CPU.  If false, we do local init each time we wish
@@ -1140,23 +1177,13 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         val = pVM->hm.s.vmx.Msrs.u64EptVpidCaps;
         LogRel(("HM: MSR_IA32_VMX_EPT_VPID_CAP       = %#RX64\n", val));
         HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_RWX_W_ONLY);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_RWX_WX_ONLY);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_21_BITS);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_30_BITS);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_39_BITS);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_48_BITS);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_57_BITS);
+        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4);
         HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_WC);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_WT);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_WP);
         HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_SP_21_BITS);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_SP_30_BITS);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_SP_39_BITS);
-        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_SP_48_BITS);
+        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_PDE_2M);
+        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_PDPTE_1G);
         HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVEPT);
+        HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY);
         HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT);
         HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS);
         HMVMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVVPID);

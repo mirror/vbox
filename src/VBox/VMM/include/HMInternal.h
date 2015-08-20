@@ -431,7 +431,13 @@ typedef struct HM
 
         /** Internal Id of which flush-handler to use for tagged-TLB entries. */
         uint32_t                    uFlushTaggedTlb;
+
+        /** Pause-loop exiting (PLE) gap in ticks. */
+        uint32_t                    cPleGapTicks;
+        /** Pause-loop exiting (PLE) window in ticks. */
+        uint32_t                    cPleWindowTicks;
         uint32_t                    u32Alignment0;
+
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    u64HostCr4;
 
@@ -441,7 +447,7 @@ typedef struct HM
         bool                        fSupportsVmcsEfer;
         uint8_t                     u8Alignment2[7];
 
-        /** VMX MSR values */
+        /** VMX MSR values. */
         VMXMSRS                     Msrs;
 
         /** Flush types for invept & invvpid; they depend on capabilities. */
@@ -479,6 +485,12 @@ typedef struct HM
         uint32_t                    u32Rev;
         /** SVM feature bits from cpuid 0x8000000a */
         uint32_t                    u32Features;
+
+        /** Pause filter counter. */
+        uint16_t                    cPauseFilter;
+        /** Pause filter treshold in ticks. */
+        uint16_t                    cPauseFilterThresholdTicks;
+        uint32_t                    u32Alignment0;
     } svm;
 
     /**
