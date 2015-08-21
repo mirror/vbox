@@ -286,6 +286,9 @@ namespace UIExtraDataDefs
         extern const char* GUI_ExtraDataManager_SplitterHints;
     /** @} */
 #endif /* DEBUG */
+
+        /** Holds log-window geometry. */
+        extern const char* GUI_LogWindowGeometry;
 }
 
 /** Extra-data meta definitions. */

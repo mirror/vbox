@@ -28,6 +28,7 @@
 # include <QLabel>
 # include <QScrollBar>
 # include <QTextEdit>
+# include <QDesktopWidget>
 
 /* GUI includes: */
 # include "UIVMLogViewer.h"
@@ -37,6 +38,7 @@
 # include "VBoxGlobal.h"
 # include "UIMessageCenter.h"
 # include "VBoxUtils.h"
+# include "UIExtraDataManager.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -411,12 +413,18 @@ UIVMLogViewer::UIVMLogViewer(QWidget *pParent, Qt::WindowFlags flags, const CMac
     /* Reading log files: */
     refresh();
 
+    /* Load settings: */
+    loadSettings();
+
     /* Loading language constants */
     retranslateUi();
 }
 
 UIVMLogViewer::~UIVMLogViewer()
 {
+    /* Save settings: */
+    saveSettings();
+
     if (!m_machine.isNull())
         m_viewers.remove(m_machine.GetName());
 }
@@ -563,28 +571,12 @@ void UIVMLogViewer::showEvent(QShowEvent *pEvent)
     if (m_fIsPolished)
         return;
 
-    m_fIsPolished = true;
-
-    /* Resize the whole log-viewer to fit 80 symbols in
-     * text-browser for the first time started: */
-    QTextEdit *pFirstPage = currentLogPage();
-    if (pFirstPage)
-    {
-        int fullWidth = pFirstPage->fontMetrics().width(QChar('x')) * 80 +
-                        pFirstPage->verticalScrollBar()->width() +
-                        pFirstPage->frameWidth() * 2 +
-                        /* m_pViewerContainer margin */ 10 * 2 +
-                        /* CentralWidget margin */ 10 * 2;
-        resize(fullWidth, height());
-    }
+    m_fIsPolished = true;   
 
     /* Make sure the log view widget has the focus */
     QWidget *pCurrentLogPage = currentLogPage();
     if (pCurrentLogPage)
-        pCurrentLogPage->setFocus();
-
-    /* Explicit widget centering relatively to it's parent: */
-    VBoxGlobal::centerWidget(this, parentWidget(), false);
+        pCurrentLogPage->setFocus(); 
 }
 
 void UIVMLogViewer::keyPressEvent(QKeyEvent *pEvent)
@@ -641,6 +633,61 @@ QTextEdit* UIVMLogViewer::createLogPage(const QString &strName)
 
     m_pViewerContainer->addTab(pPageContainer, strName);
     return pLogViewer;
+}
+
+void UIVMLogViewer::loadSettings()
+{
+    /* Restore window geometry: */
+    {
+        /* Getting available geometry to calculate default geometry: */
+        const QRect desktopRect = QApplication::desktop()->availableGeometry(this);
+        int iDefaultWidth = desktopRect.width() * 0.5;
+        int iDefaultHeight = desktopRect.height() * 0.75;
+
+        /* Calculate default width to fit 132 characters: */
+        QTextEdit *pCurrentLogPage = currentLogPage();
+        if (pCurrentLogPage)
+        {
+            iDefaultWidth = pCurrentLogPage->fontMetrics().width(QChar('x')) * 132 +
+                pCurrentLogPage->verticalScrollBar()->width() +
+                pCurrentLogPage->frameWidth() * 2 +
+                /* m_pViewerContainer margin */ 10 * 2 +
+                /* CentralWidget margin */ 10 * 2;
+        }
+        QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
+        defaultGeometry.moveCenter(parentWidget()->geometry().center());
+
+        /* Load geometry: */
+        m_geometry = gEDataManager->logWindowGeometry(this, defaultGeometry);
+#ifdef Q_WS_MAC
+        move(m_geometry.topLeft());
+        resize(m_geometry.size());
+#else /* Q_WS_MAC */
+        setGeometry(m_geometry);
+#endif /* !Q_WS_MAC */
+        LogRel(("GUI: UIVMLogViewer: Geometry loaded to: %dx%d @ %dx%d\n",
+                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+
+        /* Maximize (if necessary): */
+        if (gEDataManager->logWindowShouldBeMaximized())
+            showMaximized();
+    }
+}
+
+void UIVMLogViewer::saveSettings()
+{
+    /* Save window geometry: */
+    {
+        /* Save geometry: */
+        const QRect save_geometry = geometry();
+#ifdef Q_WS_MAC
+        gEDataManager->setLogWindowGeometry(save_geometry, ::darwinIsWindowMaximized(this));
+#else /* Q_WS_MAC */
+        gEDataManager->setLogWindowGeometry(save_geometry, isMaximized());
+#endif /* !Q_WS_MAC */
+        LogRel(("GUI: UIVMLogViewer: Geometry saved as: %dx%d @ %dx%d\n",
+                save_geometry.x(), save_geometry.y(), save_geometry.width(), save_geometry.height()));
+    }
 }
 
 #include "UIVMLogViewer.moc"
