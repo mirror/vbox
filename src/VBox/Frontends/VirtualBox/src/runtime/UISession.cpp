@@ -1242,6 +1242,10 @@ void UISession::prepareScreens()
     m_monitorVisibilityVector.fill(false);
     m_monitorVisibilityVector[0] = true;
 
+    /* Prepare empty last full-screen size vector: */
+    m_monitorLastFullScreenSizeVector.resize(machine().GetMonitorCount());
+    m_monitorLastFullScreenSizeVector.fill(QSize(-1, -1));
+
     /* If machine is in 'saved' state: */
     if (isSaved())
     {
@@ -1922,6 +1926,24 @@ void UISession::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
     m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
     /* Remember 'desired' visibility status: */
     gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, vboxGlobal().managedVMUuid());
+}
+
+QSize UISession::lastFullScreenSize(ulong uScreenId) const
+{
+    /* Make sure index fits the bounds: */
+    AssertReturn(uScreenId < (ulong)m_monitorLastFullScreenSizeVector.size(), QSize(-1, -1));
+
+    /* Return last full-screen size: */
+    return m_monitorLastFullScreenSizeVector.value((int)uScreenId);
+}
+
+void UISession::setLastFullScreenSize(ulong uScreenId, QSize size)
+{
+    /* Make sure index fits the bounds: */
+    AssertReturnVoid(uScreenId < (ulong)m_monitorLastFullScreenSizeVector.size());
+
+    /* Remember last full-screen size: */
+    m_monitorLastFullScreenSizeVector[(int)uScreenId] = size;
 }
 
 int UISession::countOfVisibleWindows()

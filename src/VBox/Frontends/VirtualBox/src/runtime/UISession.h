@@ -226,6 +226,10 @@ public:
     bool isScreenVisible(ulong uScreenId) const;
     void setScreenVisible(ulong uScreenId, bool fIsMonitorVisible);
 
+    /* Last screen full-screen size: */
+    QSize lastFullScreenSize(ulong uScreenId) const;
+    void setLastFullScreenSize(ulong uScreenId, QSize size);
+
     /* Returns existing framebuffer for the given screen-number;
      * Returns 0 (asserts) if screen-number attribute is out of bounds: */
     UIFrameBuffer* frameBuffer(ulong uScreenId) const;
@@ -405,6 +409,9 @@ private:
 
     /* Screen visibility vector: */
     QVector<bool> m_monitorVisibilityVector;
+
+    /* Screen last full-screen size vector: */
+    QVector<QSize> m_monitorLastFullScreenSizeVector;
 
     /* Frame-buffers vector: */
     QVector<UIFrameBuffer*> m_frameBufferVector;
