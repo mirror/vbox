@@ -21,7 +21,7 @@ for i in $HOME/.vboxclient-*.pid; do
     test -w $i || rm -f $i
 done
 
-if test -f /proc/modules && ! grep -q vboxguest /proc/modules 2>/dev/null; then
+if ! test -c /dev/vboxguest 2>/dev/null; then
    # Do not start if the kernel module is not present.
    notify-send "VBoxClient: the VirtualBox kernel service is not running.  Exiting."
 elif test -z "${SSH_CONNECTION}"; then
