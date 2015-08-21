@@ -30,6 +30,167 @@
 *********************************************************************************************************************************/
 #define MY_ISDIGIT(c) ((c) >= '0' && (c) <= '9')
 
+/** @name RTSTR_Z_XXX - Size modifiers
+ * @{ */
+#define RTSTR_Z_DEFAULT         UINT16_C(0x0001)
+#define RTSTR_Z_LONG            UINT16_C(0x0002) /**< l */
+#define RTSTR_Z_LONGLONG        UINT16_C(0x0004) /**< ll, L, q. */
+#define RTSTR_Z_HALF            UINT16_C(0x0008) /**< h */
+#define RTSTR_Z_HALFHALF        UINT16_C(0x0010) /**< hh (internally H) */
+#define RTSTR_Z_SIZE            UINT16_C(0x0020) /**< z */
+#define RTSTR_Z_PTRDIFF         UINT16_C(0x0040) /**< t */
+#define RTSTR_Z_INTMAX          UINT16_C(0x0080) /**< j */
+#define RTSTR_Z_MS_I32          UINT16_C(0x1000) /**< I32 */
+#define RTSTR_Z_MS_I64          UINT16_C(0x2000) /**< I64 */
+#define RTSTR_Z_ALL_INT         UINT16_C(0x30fe) /**< short hand for integers. */
+/** @} */
+
+
+/** @name VFMTCHKTYPE_F_XXX - Type flags.
+ * @{ */
+/** Pointers type. */
+#define VFMTCHKTYPE_F_PTR       UINT8_C(0x01)
+/** Both const and non-const pointer types. */
+#define VFMTCHKTYPE_F_CPTR      (UINT8_C(0x02) | VFMTCHKTYPE_F_PTR)
+/** @} */
+
+/** @name VFMTCHKTYPE_Z_XXX - Special type sizes
+ * @{ */
+#define VFMTCHKTYPE_Z_CHAR       UINT8_C(0xe0)
+#define VFMTCHKTYPE_Z_SHORT      UINT8_C(0xe1)
+#define VFMTCHKTYPE_Z_INT        UINT8_C(0xe2)
+#define VFMTCHKTYPE_Z_LONG       UINT8_C(0xe3)
+#define VFMTCHKTYPE_Z_LONGLONG   UINT8_C(0xe4)
+#define VFMTCHKTYPE_Z_PTR        UINT8_C(0xe5) /**< ASSUMED to be the same for 'void *', 'size_t' and 'ptrdiff_t'. */
+/** @} */
+
+/** @name VFMTCHKTYPE_NM_XXX - Standard C type names.
+ * @{ */
+#define VFMTCHKTYPE_NM_INT          "int"
+#define VFMTCHKTYPE_NM_UINT         "unsigned int"
+#define VFMTCHKTYPE_NM_LONG         "long"
+#define VFMTCHKTYPE_NM_ULONG        "unsigned long"
+#define VFMTCHKTYPE_NM_LONGLONG     "long long"
+#define VFMTCHKTYPE_NM_ULONGLONG    "unsigned long long"
+#define VFMTCHKTYPE_NM_SHORT        "short"
+#define VFMTCHKTYPE_NM_USHORT       "unsigned short"
+#define VFMTCHKTYPE_NM_CHAR         "char"
+#define VFMTCHKTYPE_NM_SCHAR        "signed char"
+#define VFMTCHKTYPE_NM_UCHAR        "unsigned char"
+/** @} */
+
+
+/** @name VFMTCHKDESC_F_XXX - Format descriptor flags.
+ * @{ */
+#define VFMTCHKDESC_F_NONE          UINT32_C(0)
+#define VFMTCHKDESC_F_SIGNED        RT_BIT_32(0)
+#define VFMTCHKDESC_F_UNSIGNED      RT_BIT_32(1)
+/** @} */
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
+ * Format check type entry.
+ */
+typedef struct VFMTCHKTYPE
+{
+    /** The format size flag(s). */
+    uint16_t        fSize;
+    /** The argument size. */
+    uint8_t         cbArg;
+    /** Argument flags (VFMTCHKTYPE_F_XXX). */
+    uint8_t         fFlags;
+    /** List of strings with acceptable types, if NULL only check the sizes. */
+    const char      *pszzTypeNames;
+} VFMTCHKTYPE;
+/** Pointer to a read only format check type entry. */
+typedef VFMTCHKTYPE const *PCVFMTCHKTYPE;
+
+/** For use as an initializer in VFMTCHKDESK where it indicates that
+ * everything is covered by VFMTCHKDESC::paMoreTypes.   Useful for repeating
+ * stuff. */
+#define VFMTCHKTYPE_USE_MORE_TYPES  { 0, 0, 0, NULL }
+
+/**
+ * Format type descriptor.
+ */
+typedef struct VFMTCHKDESC
+{
+    /** The format type. */
+    const char     *pszType;
+    /** Recognized format flags (RTSTR_F_XXX).  */
+    uint16_t        fFmtFlags;
+    /** Recognized format sizes (RTSTR_Z_XXX). */
+    uint16_t        fFmtSize;
+    /** Flags (VFMTCHKDESC_F_XXX).  */
+    uint32_t        fFlags;
+    /** Primary type. */
+    VFMTCHKTYPE     Type;
+    /** More recognized types (optional).   */
+    PCVFMTCHKTYPE   paMoreTypes;
+} VFMTCHKDESC;
+typedef VFMTCHKDESC const *PCVFMTCHKDESC;
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Integer type specs for 'x', 'd', 'u', 'i', ++
+ *
+ * @todo RTUINT32U and friends...  The whole type matching thing.
+ */
+static VFMTCHKTYPE const g_aIntTypes[] =
+{
+    {   RTSTR_Z_DEFAULT,        VFMTCHKTYPE_Z_INT,      0, VFMTCHKTYPE_NM_INT "\0"      VFMTCHKTYPE_NM_UINT "\0" },
+    {   RTSTR_Z_LONG,           VFMTCHKTYPE_Z_LONG,     0, VFMTCHKTYPE_NM_LONG "\0"     VFMTCHKTYPE_NM_ULONG "\0" },
+    {   RTSTR_Z_LONGLONG,       VFMTCHKTYPE_Z_LONGLONG, 0, VFMTCHKTYPE_NM_LONGLONG "\0" VFMTCHKTYPE_NM_ULONGLONG "\0" },
+    {   RTSTR_Z_HALF,           VFMTCHKTYPE_Z_SHORT,    0, VFMTCHKTYPE_NM_SHORT "\0"    VFMTCHKTYPE_NM_USHORT "\0" },
+    {   RTSTR_Z_HALFHALF,       VFMTCHKTYPE_Z_CHAR,     0, VFMTCHKTYPE_NM_SCHAR "\0"    VFMTCHKTYPE_NM_UCHAR "\0" VFMTCHKTYPE_NM_CHAR "\0" },
+    {   RTSTR_Z_SIZE,           VFMTCHKTYPE_Z_PTR,      0, "size_t\0"    "RTUINTPTR\0"  "RTINTPTR\0" },
+    {   RTSTR_Z_PTRDIFF,        VFMTCHKTYPE_Z_PTR,      0, "ptrdiff_t\0" "RTUINTPTR\0"  "RTINTPTR\0" },
+    {   RTSTR_Z_INTMAX,         VFMTCHKTYPE_Z_PTR,      0, "uint64_t\0" "int64_t\0" "RTUINT64U\0" VFMTCHKTYPE_NM_LONGLONG "\0" VFMTCHKTYPE_NM_ULONGLONG "\0" },
+    {   RTSTR_Z_MS_I32,         sizeof(uint32_t),       0, "uint32_t\0" "int32_t\0" "RTUINT32U\0" },
+    {   RTSTR_Z_MS_I64,         sizeof(uint64_t),       0, "uint64_t\0" "int64_t\0" "RTUINT64U\0" },
+};
+
+/** String type specs for 's', 'ls' and 'Ls'.
+ */
+static VFMTCHKTYPE const g_aStringTypes[] =
+{
+    {   RTSTR_Z_DEFAULT,        VFMTCHKTYPE_Z_PTR,      VFMTCHKTYPE_F_CPTR, VFMTCHKTYPE_NM_CHAR "\0" },
+    {   RTSTR_Z_LONG,           VFMTCHKTYPE_Z_PTR,      VFMTCHKTYPE_F_CPTR, "RTUTF16\0" },
+    {   RTSTR_Z_LONGLONG,       VFMTCHKTYPE_Z_PTR,      VFMTCHKTYPE_F_CPTR, "RTUNICP\0" },
+};
+
+static VFMTCHKDESC const g_aFmtDescs[] =
+{
+    {   "s",
+        RTSTR_F_LEFT | RTSTR_F_WIDTH | RTSTR_F_PRECISION,
+        RTSTR_Z_DEFAULT | RTSTR_Z_LONG | RTSTR_Z_LONGLONG,
+        VFMTCHKDESC_F_UNSIGNED,
+        VFMTCHKTYPE_USE_MORE_TYPES,
+        g_aStringTypes
+    },
+    {   "x",
+        RTSTR_F_LEFT | RTSTR_F_ZEROPAD | RTSTR_F_SPECIAL | RTSTR_F_WIDTH | RTSTR_F_PRECISION,
+        RTSTR_Z_ALL_INT,
+        VFMTCHKDESC_F_UNSIGNED,
+        VFMTCHKTYPE_USE_MORE_TYPES,
+        g_aIntTypes
+    },
+    {   "RX32",
+        RTSTR_F_LEFT | RTSTR_F_ZEROPAD | RTSTR_F_SPECIAL | RTSTR_F_WIDTH | RTSTR_F_PRECISION,
+        RTSTR_Z_ALL_INT,
+        VFMTCHKDESC_F_UNSIGNED,
+        { RTSTR_Z_DEFAULT,      sizeof(uint32_t),       0, "uint32_t\0" "int32_t\0" },
+        NULL
+    },
+
+
+
+};
 
 
 /**
@@ -74,7 +235,7 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
         /*
          * Flags
          */
-        uint32_t fFlags = 0;
+        uint32_t fFmtFlags = 0;
         for (;;)
         {
             uint32_t fFlag;
@@ -90,9 +251,9 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
             }
             if (!fFlag)
                 break;
-            if (fFlags & fFlag)
+            if (fFmtFlags & fFlag)
                 VFmtChkWarnFmt(pState, pszPct, "duplicate flag '%c'", ch);
-            fFlags |= fFlag;
+            fFmtFlags |= fFlag;
             ch = *pszFmt++;
         }
 
@@ -109,14 +270,14 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
                 cchWidth *= 10;
                 cchWidth += ch - '0';
             }
-            fFlags |= RTSTR_F_WIDTH;
+            fFmtFlags |= RTSTR_F_WIDTH;
         }
         else if (ch == '*')
         {
             VFmtChkRequireIntArg(pState, pszPct, iArg, "width should be an 'int' sized argument");
             iArg++;
             cchWidth = 0;
-            fFlags |= RTSTR_F_WIDTH;
+            fFmtFlags |= RTSTR_F_WIDTH;
             ch = *pszFmt++;
         }
 
@@ -151,40 +312,53 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
                 VFmtChkErrFmt(pState, pszPct, "Negative precision value: %d", cchPrecision);
                 cchPrecision = 0;
             }
-            fFlags |= RTSTR_F_PRECISION;
+            fFmtFlags |= RTSTR_F_PRECISION;
         }
 
         /*
          * Argument size.
          */
-        char chSize = ch;
+        uint16_t fFmtSize = RTSTR_Z_DEFAULT;
         switch (ch)
         {
             default:
-                chSize = '\0';
+                fFmtSize = RTSTR_Z_DEFAULT;
                 break;
 
             case 'z':
-            case 'L':
+                fFmtSize = RTSTR_Z_SIZE;
+                ch = *pszFmt++;
+                break;
             case 'j':
+                fFmtSize = RTSTR_Z_INTMAX;
+                ch = *pszFmt++;
             case 't':
+                fFmtSize = RTSTR_Z_PTRDIFF;
                 ch = *pszFmt++;
                 break;
 
             case 'l':
+                fFmtSize = RTSTR_Z_LONG;
                 ch = *pszFmt++;
                 if (ch == 'l')
                 {
-                    chSize = 'L';
+                    fFmtSize = RTSTR_Z_LONGLONG;
                     ch = *pszFmt++;
                 }
                 break;
 
+            case 'q': /* Used on BSD platforms. */
+            case 'L':
+                fFmtSize = RTSTR_Z_LONGLONG;
+                ch = *pszFmt++;
+                break;
+
             case 'h':
+                fFmtSize = RTSTR_Z_HALF;
                 ch = *pszFmt++;
                 if (ch == 'h')
                 {
-                    chSize = 'H';
+                    fFmtSize = RTSTR_Z_HALFHALF;
                     ch = *pszFmt++;
                 }
                 break;
@@ -194,21 +368,19 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
                     && pszFmt[1] == '4')
                 {
                     pszFmt += 2;
-                    chSize = 'L';
+                    fFmtSize = RTSTR_Z_MS_I64;
                 }
                 else if (   pszFmt[0] == '3'
                          && pszFmt[1] == '2')
                 {
                     pszFmt += 2;
-                    chSize = 0;
+                    fFmtSize = RTSTR_Z_MS_I32;
                 }
                 else
-                    chSize = 'j';
-                ch = *pszFmt++;
-                break;
-
-            case 'q': /* Used on BSD platforms. */
-                chSize = 'L';
+                {
+                    VFmtChkErrFmt(pState, pszFmt, "Unknow format type/size/flag 'I%c'", pszFmt[0]);
+                    fFmtSize = RTSTR_Z_INTMAX;
+                }
                 ch = *pszFmt++;
                 break;
         }
@@ -225,10 +397,10 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
             {
                 if (*pszFmt)
                     VFmtChkErrFmt(pState, pszFmt, "Characters following '%%M' will be ignored");
-                if (chSize != '\0')
-                    VFmtChkWarnFmt(pState, pszFmt, "'%%M' does not support any size flags (%c)", chSize);
-                if (fFlags != 0)
-                    VFmtChkWarnFmt(pState, pszFmt, "'%%M' does not support any format flags (%#x)", fFlags);
+                if (fFmtSize != RTSTR_Z_DEFAULT)
+                    VFmtChkWarnFmt(pState, pszFmt, "'%%M' does not support any size flags (%#x)", fFmtSize);
+                if (fFmtFlags != 0)
+                    VFmtChkWarnFmt(pState, pszFmt, "'%%M' does not support any format flags (%#x)", fFmtFlags);
                 if (VFmtChkRequireStringArg(pState, pszPct, iArg, "'%M' expects a format string"))
                     VFmtChkHandleReplacementFormatString(pState, pszPct, iArg);
                 return;
@@ -236,10 +408,10 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
 
             case 'N': /* real nesting. */
             {
-                if (chSize != '\0')
-                    VFmtChkWarnFmt(pState, pszFmt, "'%%N' does not support any size flags (%c)", chSize);
-                if (fFlags != 0)
-                    VFmtChkWarnFmt(pState, pszFmt, "'%%N' does not support any format flags (%#x)", fFlags);
+                if (fFmtSize != RTSTR_Z_DEFAULT)
+                    VFmtChkWarnFmt(pState, pszFmt, "'%%N' does not support any size flags (%#x)", fFmtSize);
+                if (fFmtFlags != 0)
+                    VFmtChkWarnFmt(pState, pszFmt, "'%%N' does not support any format flags (%#x)", fFmtFlags);
                 VFmtChkRequireStringArg(pState, pszPct, iArg,        "'%N' expects a string followed by a va_list pointer");
                 VFmtChkRequireVaListPtrArg(pState, pszPct, iArg + 1, "'%N' expects a string followed by a va_list pointer");
                 iArg += 2;
