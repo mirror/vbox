@@ -679,14 +679,14 @@ void UIVMLogViewer::saveSettings()
     /* Save window geometry: */
     {
         /* Save geometry: */
-        const QRect save_geometry = geometry();
+        const QRect saveGeometry = geometry();
 #ifdef Q_WS_MAC
-        gEDataManager->setLogWindowGeometry(save_geometry, ::darwinIsWindowMaximized(this));
+        gEDataManager->setLogWindowGeometry(saveGeometry, ::darwinIsWindowMaximized(this));
 #else /* Q_WS_MAC */
-        gEDataManager->setLogWindowGeometry(save_geometry, isMaximized());
+        gEDataManager->setLogWindowGeometry(saveGeometry, isMaximized());
 #endif /* !Q_WS_MAC */
         LogRel(("GUI: UIVMLogViewer: Geometry saved as: %dx%d @ %dx%d\n",
-                save_geometry.x(), save_geometry.y(), save_geometry.width(), save_geometry.height()));
+                saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
     }
 }
 
