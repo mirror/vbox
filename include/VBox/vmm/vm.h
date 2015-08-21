@@ -391,6 +391,10 @@ typedef struct VMCPU
 /** Same as VM_FF_PGM_SYNC_CR3 except that global pages can be skipped.
  * (NON-GLOBAL FLUSH) */
 #define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL    RT_BIT_32(17)
+/** Check for pending TLB shootdown actions (deprecated)
+ * Reserved for furture HM re-use if necessary / safe.
+ * Consumer: HM */
+#define VMCPU_FF_TLB_SHOOTDOWN_UNUSED       RT_BIT_32(18)
 /** Check for pending TLB flush action.
  * Consumer: HM
  * @todo rename to VMCPU_FF_HM_TLB_FLUSH  */
