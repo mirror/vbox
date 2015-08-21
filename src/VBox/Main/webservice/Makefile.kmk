@@ -375,7 +375,7 @@ VBoxJWs-inst-jar_GENERATEDSOURCES = $(addprefix $(VBoxJWs-inst-jar_BLDDIRS)/,$(V
 VBoxJWSGlue_KMK = $(PATH_OUT)/vboxjwsglue.kmk
 include $(VBoxJWSGlue_KMK)
 
-$(VBoxJWSGlue_KMK).ts +| $(VBoxJWSGlue_KMK): $(VBOXWEB_IDL_SRC_ORIG) $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl
+$(VBoxJWSGlue_KMK).ts +| $(VBoxJWSGlue_KMK): $(VBOXWEB_IDL_SRC_ORIG) $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $(VBOX_VERSION_STAMP)
 	$(call MSG_GENERATE,,$(VBoxJWSGlue_KMK))
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
@@ -391,7 +391,8 @@ $(VBOX_JWS_GEN_RAWSRC) \
 +| $(VBoxJWs-inst-jar_GENERATEDSOURCES): \
 		$(VBOXWEB_IDL_SRC_ORIG) \
 		$(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
-		$(VBOX_FILESPLIT)
+		$(VBOX_FILESPLIT) \
+		$(VBOX_VERSION_STAMP)
 	$(call MSG_L1,Generating JAX-WS Java glue files from XIDL)
 	$(QUIET)$(RM) -f $(filter-out $(VBoxJWs-inst-jar_GENERATEDSOURCES),$(wildcard $(VBOX_JWS_GEN)/java/*/*/*.java))
 	$(QUIET)$(MKDIR) -p $(@D)
