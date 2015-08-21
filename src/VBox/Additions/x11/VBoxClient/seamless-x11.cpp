@@ -312,6 +312,8 @@ void SeamlessX11::nextConfigurationEvent(void)
         mHostCallback(mpRects, mcRects);
     }
     mChanged = false;
+    /* We execute this even when seamless is disabled, as it also waits for
+     * enable and disable notification. */
     XNextEvent(mDisplay, &event);
     if (!mEnabled)
         return;
