@@ -541,7 +541,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		\
 		$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_QT4_SUN),$(VBOX_PATH_QT4)/bin/qtconfig,) \
 		$(if-expr defined(VBOX_WITH_ADDITIONS_PACKING),$(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.iso,) \
-		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL),$(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
+		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL),$(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
 		\
 		$(foreach var, $(SOLARIS_FILE_LIST_VARS),$(foreach file, $($(var)), $($(var).SRC)/$(file))) \
 		\
@@ -613,7 +613,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	,$(NLTAB)$(LN_SYMLINK) ../VBoxGuestAdditions.iso $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/,)
 
 	$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL) \
-	,$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2 \
+	,$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2 \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/libSDL-1.2.so.0,)
 
 	$(if-expr defined(VBOX_WITH_EFIFW_PACKING) \
