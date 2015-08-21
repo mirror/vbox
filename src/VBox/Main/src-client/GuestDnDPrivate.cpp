@@ -420,7 +420,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_ACK_PENDING == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             if (   pCBData->cbFormat == 0
-                || pCBData->cbFormat >  _64K)
+                || pCBData->cbFormat > _64K) /** @todo Make the maximum size configurable? */
             {
                 rc = VERR_INVALID_PARAMETER;
             }

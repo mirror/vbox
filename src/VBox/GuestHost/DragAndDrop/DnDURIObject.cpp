@@ -363,12 +363,12 @@ void DnDURIObject::Reset(void)
 {
     Close();
 
-    m_Type          = Unknown;
-    m_strSrcPath    = "";
-    m_strTgtPath    = "";
-    m_fMode = 0;
-    m_cbSize        = 0;
-    m_cbProcessed   = 0;
+    m_Type        = Unknown;
+    m_strSrcPath  = "";
+    m_strTgtPath  = "";
+    m_fMode       = 0;
+    m_cbSize      = 0;
+    m_cbProcessed = 0;
 }
 
 int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)

@@ -84,9 +84,9 @@ protected:
 
     int i_cancelOperation(void);
     int i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout);
-    int i_sendDirectory(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject *pObject);
-    int i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject *pObject);
-    int i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject *pObject);
+    int i_sendDirectory(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg);
+    int i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg);
+    int i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg);
     int i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout);
     int i_sendRawData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout);
     int i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg);

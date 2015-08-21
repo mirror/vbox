@@ -72,6 +72,8 @@ bool DnDMIMENeedsDropDir(const char *pcszFormat, size_t cchFormatMax);
 int DnDPathSanitizeFilename(char *pszPath, size_t cbPath);
 int DnDPathSanitize(char *pszPath, size_t cbPath);
 
+/** No flags specified. */
+#define DNDURILIST_FLAGS_NONE                   0
 /** Keep the original paths, don't convert paths to relative ones. */
 #define DNDURILIST_FLAGS_ABSOLUTE_PATHS         RT_BIT(0)
 /** Resolve all symlinks. */

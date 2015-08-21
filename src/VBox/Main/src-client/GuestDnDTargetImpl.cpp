@@ -770,18 +770,20 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 
     ASMAtomicWriteBool(&pCtx->mIsActive, false);
 
-#undef DATA_IS_VALID_BREAK
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject *pObject)
+int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg)
 {
-    AssertPtrReturn(pObject, VERR_INVALID_POINTER);
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pMsg,    VERR_INVALID_POINTER);
 
-    RTCString strPath = pObject->GetDestPath();
+    DnDURIObject *pObj = pObjCtx->pObjURI;
+    AssertPtr(pObj);
+
+    RTCString strPath = pObj->GetDestPath();
     if (strPath.isEmpty())
         return VERR_INVALID_PARAMETER;
     if (strPath.length() >= RTPATH_MAX) /* Note: Maximum is RTPATH_MAX on guest side. */
@@ -792,41 +794,45 @@ int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURI
     pMsg->setType(DragAndDropSvc::HOST_DND_HG_SND_DIR);
     pMsg->setNextString(strPath.c_str());                  /* path */
     pMsg->setNextUInt32((uint32_t)(strPath.length() + 1)); /* path length - note: Maximum is RTPATH_MAX on guest side. */
-    pMsg->setNextUInt32(pObject->GetMode());             /* mode */
+    pMsg->setNextUInt32(pObj->GetMode());                  /* mode */
 
     return VINF_SUCCESS;
 }
 
-int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject *pObject)
+int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg)
 {
-    AssertPtrReturn(pObject, VERR_INVALID_POINTER);
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pMsg,    VERR_INVALID_POINTER);
 
-    RTCString strPathSrc = pObject->GetSourcePath();
+    DnDURIObject *pObj = pObjCtx->pObjURI;
+    AssertPtr(pObj);
+
+    RTCString strPathSrc = pObj->GetSourcePath();
     if (strPathSrc.isEmpty())
         return VERR_INVALID_PARAMETER;
 
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("Sending \"%s\" (%RU32 bytes buffer) using protocol v%RU32 ...\n",
-                 strPathSrc.c_str(), mData.mcbBlockSize, mDataBase.mProtocolVersion));
+    LogFlowFunc(("Sending file with %RU32 bytes buffer, using protocol v%RU32 ...\n",
+                  mData.mcbBlockSize, mDataBase.mProtocolVersion));
+    LogFlowFunc(("strPathSrc=%s, fIsOpen=%RTbool, cbSize=%RU64\n", strPathSrc.c_str(), pObj->IsOpen(), pObj->GetSize()));
 
-    bool fOpen = pObject->IsOpen();
-    if (!fOpen)
+    if (!pObj->IsOpen())
     {
-        LogFlowFunc(("Opening \"%s\" ...\n", strPathSrc.c_str()));
-        rc = pObject->OpenEx(strPathSrc, DnDURIObject::File, DnDURIObject::Source,
+        LogRel2(("DnD: Opening host file for transferring to guest: %s\n", strPathSrc.c_str()));
+        rc = pObj->OpenEx(strPathSrc, DnDURIObject::File, DnDURIObject::Source,
                           RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
         if (RT_FAILURE(rc))
-            LogRel(("DnD: Error opening host file \"%s\", rc=%Rrc\n", strPathSrc.c_str(), rc));
+            LogRel(("DnD: Error opening host file '%s', rc=%Rrc\n", strPathSrc.c_str(), rc));
     }
 
-    bool fSendFileData = false;
+    bool fSendData = false;
     if (RT_SUCCESS(rc))
     {
         if (mDataBase.mProtocolVersion >= 2)
         {
-            if (!fOpen)
+            if (!pObjCtx->fHeaderSent)
             {
                 /*
                  * Since protocol v2 the file header and the actual file contents are
@@ -834,60 +840,58 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
                  * The just registered callback will be called by the guest afterwards.
                  */
                 pMsg->setType(DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR);
-                pMsg->setNextUInt32(0);                                            /* context ID */
-                rc = pMsg->setNextString(pObject->GetDestPath().c_str());             /* pvName */
+                pMsg->setNextUInt32(0);                                            /* uContextID */
+                rc = pMsg->setNextString(pObj->GetDestPath().c_str());             /* pvName */
                 AssertRC(rc);
-                pMsg->setNextUInt32((uint32_t)(pObject->GetDestPath().length() + 1)); /* cbName */
+                pMsg->setNextUInt32((uint32_t)(pObj->GetDestPath().length() + 1)); /* cbName */
                 pMsg->setNextUInt32(0);                                            /* uFlags */
-                pMsg->setNextUInt32(pObject->GetMode());                              /* fMode */
-                pMsg->setNextUInt64(pObject->GetSize());                              /* uSize */
+                pMsg->setNextUInt32(pObj->GetMode());                              /* fMode */
+                pMsg->setNextUInt64(pObj->GetSize());                              /* uSize */
 
                 LogFlowFunc(("Sending file header ...\n"));
                 LogRel2(("DnD: Transferring host file to guest: %s (%RU64 bytes, mode 0x%x)\n",
-                         strPathSrc.c_str(), pObject->GetSize(), pObject->GetMode()));
+                         strPathSrc.c_str(), pObj->GetSize(), pObj->GetMode()));
 
                 /** @todo Set progress object title to current file being transferred? */
+
+                pObjCtx->fHeaderSent = true;
             }
             else
             {
                 /* File header was sent, so only send the actual file data. */
-                fSendFileData = true;
+                fSendData = true;
             }
         }
         else /* Protocol v1. */
         {
             /* Always send the file data, every time. */
-            fSendFileData = true;
+            fSendData = true;
         }
     }
 
     if (   RT_SUCCESS(rc)
-        && fSendFileData)
+        && fSendData)
     {
-        rc = i_sendFileData(pCtx, pMsg, pObject);
+        rc = i_sendFileData(pCtx, pObjCtx, pMsg);
     }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject *pObject)
+int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg)
 {
-    AssertPtrReturn(pObject, VERR_INVALID_POINTER);
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pMsg,    VERR_INVALID_POINTER);
+
+    DnDURIObject *pObj = pObjCtx->pObjURI;
+    AssertPtr(pObj);
 
     GuestDnDResponse *pResp = pCtx->mpResp;
     AssertPtr(pResp);
 
     /** @todo Don't allow concurrent reads per context! */
-
-    /* Something to transfer? */
-    if (   pCtx->mURI.lstURI.IsEmpty()
-        || !pCtx->mIsActive)
-    {
-        return VERR_WRONG_ORDER;
-    }
 
     /*
      * Start sending stuff.
@@ -900,39 +904,44 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
      * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
     if (mDataBase.mProtocolVersion <= 1)
     {
-        pMsg->setNextString(pObject->GetDestPath().c_str());                  /* pvName */
-        pMsg->setNextUInt32((uint32_t)(pObject->GetDestPath().length() + 1)); /* cbName */
+        pMsg->setNextString(pObj->GetDestPath().c_str());                  /* pvName */
+        pMsg->setNextUInt32((uint32_t)(pObj->GetDestPath().length() + 1)); /* cbName */
     }
     else
     {
         /* Protocol version 2 also sends the context ID. Currently unused. */
-        pMsg->setNextUInt32(0);                                              /* context ID */
+        pMsg->setNextUInt32(0);                                            /* context ID */
     }
 
     uint32_t cbRead = 0;
 
-    int rc = pObject->Read(pCtx->mURI.GetBufferMutable(), pCtx->mURI.GetBufferSize(), &cbRead);
+    int rc = pObj->Read(pCtx->mURI.GetBufferMutable(), pCtx->mURI.GetBufferSize(), &cbRead);
     if (RT_SUCCESS(rc))
     {
         pCtx->mData.cbProcessed += cbRead;
+        LogFlowFunc(("cbBufSize=%zu, cbRead=%RU32, cbProcessed=%RU64, rc=%Rrc\n",
+                     pCtx->mURI.GetBufferSize(), cbRead, pCtx->mData.cbProcessed, rc));
 
         if (mDataBase.mProtocolVersion <= 1)
         {
-            pMsg->setNextPointer(pCtx->mURI.GetBufferMutable(), cbRead); /* pvData */
-            pMsg->setNextUInt32(cbRead);                                 /* cbData */
-            pMsg->setNextUInt32(pObject->GetMode());                     /* fMode */
+            pMsg->setNextPointer(pCtx->mURI.GetBufferMutable(), cbRead);   /* pvData */
+            pMsg->setNextUInt32(cbRead);                                   /* cbData */
+            pMsg->setNextUInt32(pObj->GetMode());                          /* fMode */
         }
         else
         {
-            pMsg->setNextPointer(pCtx->mURI.GetBufferMutable(), cbRead); /* pvData */
-            pMsg->setNextUInt32(cbRead);                                 /* cbData */
+            pMsg->setNextPointer(pCtx->mURI.GetBufferMutable(), cbRead);   /* pvData */
+            pMsg->setNextUInt32(cbRead);                                   /* cbData */
         }
 
-        if (pObject->IsComplete()) /* Done reading? */
+        if (pObj->IsComplete()) /* Done reading? */
         {
-            LogRel2(("DnD: File transfer to guest complete: %s\n", pObject->GetSourcePath().c_str()));
-            LogFlowFunc(("File \"%s\" complete\n", pObject->GetSourcePath().c_str()));
-            rc = VINF_EOF;
+            LogRel2(("DnD: File transfer to guest complete: %s\n", pObj->GetSourcePath().c_str()));
+            LogFlowFunc(("File '%s' complete\n", pObj->GetSourcePath().c_str()));
+
+            /* DnDURIObject::Read() returns VINF_EOF when finished reading the entire fire,
+             * but we don't want this here -- so just override this with VINF_SUCCESS. */
+            rc = VINF_SUCCESS;
         }
     }
 
@@ -951,9 +960,8 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
 
     LogFlowFunc(("pThis=%p, uMsg=%RU32\n", pThis, uMsg));
 
-    int rc = VINF_SUCCESS; /* Will be reported back to guest. */
-
-    int rcCallback = VINF_SUCCESS; /* rc for the callback. */
+    int rc      = VINF_SUCCESS; /* Will be reported back to guest. */
+    int rcGuest;                /* Contains error code from guest in case of VERR_GSTDND_GUEST_ERROR. */
     bool fNotify = false;
 
     switch (uMsg)
@@ -970,7 +978,11 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
                 GuestDnDMsg *pMsg = new GuestDnDMsg();
 
                 rc = pThis->i_sendURIDataLoop(pCtx, pMsg);
-                if (RT_SUCCESS(rc))
+                if (rc == VINF_EOF) /* Transfer complete? */
+                {
+                    LogFlowFunc(("Last URI item processed, bailing out\n"));
+                }
+                else if (RT_SUCCESS(rc))
                 {
                     rc = pThis->msgQueueAdd(pMsg);
                     if (RT_SUCCESS(rc)) /* Return message type & required parameter count to the guest. */
@@ -981,8 +993,12 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
                     }
                 }
 
-                if (RT_FAILURE(rc))
+                if (   RT_FAILURE(rc)
+                    || rc == VINF_EOF) /* Transfer complete? */
+                {
                     delete pMsg;
+                    pMsg = NULL;
+                }
             }
             catch(std::bad_alloc & /*e*/)
             {
@@ -1000,12 +1016,18 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             pCtx->mpResp->reset();
 
             if (RT_SUCCESS(pCBData->rc))
+            {
+                AssertMsgFailed(("Guest has sent an error event but did not specify an actual error code\n"));
                 pCBData->rc = VERR_GENERAL_FAILURE; /* Make sure some error is set. */
+            }
 
             rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc,
                                            GuestDnDTarget::i_guestErrorToString(pCBData->rc));
             if (RT_SUCCESS(rc))
-                rcCallback = VERR_GSTDND_GUEST_ERROR;
+            {
+                rc      = VERR_GSTDND_GUEST_ERROR;
+                rcGuest = pCBData->rc;
+            }
             break;
         }
         case DragAndDropSvc::HOST_DND_HG_SND_DIR:
@@ -1060,47 +1082,70 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             break;
     }
 
-    if (   RT_FAILURE(rc)
-        || RT_FAILURE(rcCallback))
+    int rcToGuest = VINF_SUCCESS; /* Status which will be sent back to the guest. */
+
+    /*
+     * Resolve errors.
+     */
+    switch (rc)
     {
-        fNotify = true;
-        if (RT_SUCCESS(rcCallback))
-            rcCallback = rc;
+        case VINF_SUCCESS:
+            break;
+
+        case VINF_EOF:
+        {
+            LogRel2(("DnD: Transfer to guest complete\n"));
+
+            /* Complete operation on host side. */
+            fNotify = true;
+
+            /* The guest expects VERR_NO_DATA if the transfer is complete. */
+            rcToGuest = VERR_NO_DATA;
+            break;
+        }
+
+        case VERR_GSTDND_GUEST_ERROR:
+        {
+            LogRel(("DnD: Guest reported error %Rrc, aborting transfer to guest\n", rcGuest));
+            break;
+        }
+
+        case VERR_CANCELLED:
+        {
+            LogRel2(("DnD: Transfer to guest canceled\n"));
+            rcToGuest = VERR_CANCELLED; /* Also cancel on guest side. */
+            break;
+        }
+
+        default:
+        {
+            LogRel(("DnD: Host error %Rrc occurred, aborting transfer to guest\n", rc));
+            rcToGuest = VERR_CANCELLED; /* Also cancel on guest side. */
+            break;
+        }
     }
 
     if (RT_FAILURE(rc))
     {
-        switch (rc)
-        {
-            case VERR_NO_DATA:
-                LogRel2(("DnD: Transfer to guest complete\n"));
-                break;
-
-            case VERR_CANCELLED:
-                LogRel2(("DnD: Transfer to guest canceled\n"));
-                break;
-
-            default:
-                LogRel(("DnD: Error %Rrc occurred, aborting transfer to guest\n", rc));
-                break;
-        }
-
         /* Unregister this callback. */
         AssertPtr(pCtx->mpResp);
         int rc2 = pCtx->mpResp->setCallback(uMsg, NULL /* PFNGUESTDNDCALLBACK */);
         AssertRC(rc2);
+
+        /* Let the waiter(s) know. */
+        fNotify = true;
     }
 
-    LogFlowFunc(("fNotify=%RTbool, rcCallback=%Rrc, rc=%Rrc\n", fNotify, rcCallback, rc));
+    LogFlowFunc(("fNotify=%RTbool, rc=%Rrc, rcToGuest=%Rrc\n", fNotify, rc, rcToGuest));
 
     if (fNotify)
     {
-        int rc2 = pCtx->mCallback.Notify(rcCallback);
+        int rc2 = pCtx->mCallback.Notify(rc); /** @todo Also pass guest error back? */
         AssertRC(rc2);
     }
 
     LogFlowFuncLeaveRC(rc);
-    return rc; /* Tell the guest. */
+    return rcToGuest; /* Tell the guest. */
 }
 
 int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
@@ -1163,9 +1208,9 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
         RTCList<RTCString> lstURIOrg = RTCString(pszList, cbList).split("\r\n");
         URI_DATA_IS_VALID_BREAK(!lstURIOrg.isEmpty());
 
-        uint32_t fFlags = DNDURILIST_FLAGS_KEEP_OPEN;
-
-        rc = lstURI.AppendURIPathsFromList(lstURIOrg, fFlags);
+        /* Note: All files to be transferred will be kept open during the entire DnD
+         *       operation, also to keep the accounting right. */
+        rc = lstURI.AppendURIPathsFromList(lstURIOrg, DNDURILIST_FLAGS_KEEP_OPEN);
         if (RT_SUCCESS(rc))
             LogFlowFunc(("URI root objects: %zu, total bytes (raw data to transfer): %zu\n",
                          lstURI.RootCount(), lstURI.TotalBytes()));
@@ -1266,13 +1311,17 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     }
 
     if (fComplete)
-    {
-        LogFlowFunc(("Last URI item processed, bailing out\n"));
-        return VERR_NO_DATA;
-    }
+        return VINF_EOF;
 
     Assert(!lstURI.IsEmpty());
     DnDURIObject *pCurObj = lstURI.First();
+
+    /* As we transfer all objects one after another at a time at the moment,
+     * we only need one object context at the moment. */
+    GuestDnDURIObjCtx *pObjCtx = &pCtx->mURI.objCtx;
+
+    /* Assign the pointer of the current object to our context. */
+    pObjCtx->pObjURI = pCurObj;
 
     uint32_t fMode = pCurObj->GetMode();
     LogFlowFunc(("Processing srcPath=%s, dstPath=%s, fMode=0x%x, cbSize=%RU32, fIsDir=%RTbool, fIsFile=%RTbool\n",
@@ -1282,11 +1331,11 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     int rc;
     if (RTFS_IS_DIRECTORY(fMode))
     {
-        rc = i_sendDirectory(pCtx, pMsg, pCurObj);
+        rc = i_sendDirectory(pCtx, pObjCtx, pMsg);
     }
     else if (RTFS_IS_FILE(fMode))
     {
-        rc = i_sendFile(pCtx, pMsg, pCurObj);
+        rc = i_sendFile(pCtx, pObjCtx, pMsg);
     }
     else
     {

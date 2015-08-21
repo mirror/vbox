@@ -438,7 +438,7 @@ typedef struct VBOXDNDNEXTMSGMSG
  * Used by:
  * GUEST_DND_CONNECT
  */
-typedef struct VBOXDNDCONNECTPMSG
+typedef struct VBOXDNDCONNECTMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
@@ -447,7 +447,7 @@ typedef struct VBOXDNDCONNECTPMSG
     /** Connection flags. Optional. */
     HGCMFunctionParameter uFlags;        /* OUT uint32_t */
 
-} VBOXDNDCONNECTPMSG;
+} VBOXDNDCONNECTMSG;
 
 /**
  * HG Acknowledge Operation event.

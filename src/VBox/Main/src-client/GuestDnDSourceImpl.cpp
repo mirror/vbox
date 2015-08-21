@@ -619,10 +619,11 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
     return rc;
 }
 
-int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath,
+int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, const char *pszPath, uint32_t cbPath,
                                        uint64_t cbSize, uint32_t fMode, uint32_t fFlags)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cbPath,     VERR_INVALID_PARAMETER);
     AssertReturn(fMode,      VERR_INVALID_PARAMETER);
@@ -634,17 +635,21 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
 
     do
     {
-        if (    pCtx->mURI.objURI.IsOpen()
-            && !pCtx->mURI.objURI.IsComplete())
+        DnDURIObject *pObj = pObjCtx->pObjURI;
+
+        if (    pObj
+            &&  pObj->IsOpen()
+            && !pObj->IsComplete())
         {
-            AssertMsgFailed(("Object '%s' not complete yet\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            AssertMsgFailed(("Object '%s' not complete yet\n", pObj->GetDestPath().c_str()));
             rc = VERR_WRONG_ORDER;
             break;
         }
 
-        if (pCtx->mURI.objURI.IsOpen()) /* File already opened? */
+        if (   pObj
+            && pObj->IsOpen()) /* File already opened? */
         {
-            AssertMsgFailed(("Current opened object is '%s', close this first\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            AssertMsgFailed(("Current opened object is '%s', close this first\n", pObj->GetDestPath().c_str()));
             rc = VERR_WRONG_ORDER;
             break;
         }
@@ -673,29 +678,53 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
 
         LogFunc(("Rebased to: %s\n", pszPathAbs));
 
-        /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
-        rc = pCtx->mURI.objURI.OpenEx(pszPathAbs, DnDURIObject::File, DnDURIObject::Target,
-                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
-                                      (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
+        if (   pObj
+            && pObjCtx->fAllocated)
+        {
+            delete pObj;
+            pObj = NULL;
+        }
+
+        try
+        {
+            pObj = new DnDURIObject();
+
+            pObjCtx->pObjURI    = pObj;
+            pObjCtx->fAllocated = true;
+        }
+        catch (std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
+            rc = pObj->OpenEx(pszPathAbs, DnDURIObject::File, DnDURIObject::Target,
+                              RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
+                              (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
+        }
+
         if (RT_SUCCESS(rc))
         {
             /* Note: Protocol v1 does not send any file sizes, so always 0. */
             if (mDataBase.mProtocolVersion >= 2)
-                rc = pCtx->mURI.objURI.SetSize(cbSize);
+                rc = pObj->SetSize(cbSize);
 
             /** @todo Unescpae path before printing. */
             LogRel2(("DnD: Transferring guest file to host: %s (%RU64 bytes, mode 0x%x)\n",
-                     pCtx->mURI.objURI.GetDestPath().c_str(), pCtx->mURI.objURI.GetSize(), pCtx->mURI.objURI.GetMode()));
+                     pObj->GetDestPath().c_str(), pObj->GetSize(), pObj->GetMode()));
 
             /** @todo Set progress object title to current file being transferred? */
 
             if (!cbSize) /* 0-byte file? Close again. */
-                pCtx->mURI.objURI.Close();
+                pObj->Close();
         }
-        else
+
+        if (RT_FAILURE(rc))
         {
             LogRel2(("DnD: Error opening/creating guest file '%s' on host, rc=%Rrc\n",
-                     pCtx->mURI.objURI.GetDestPath().c_str(), rc));
+                     pObj->GetDestPath().c_str(), rc));
             break;
         }
 
@@ -705,9 +734,10 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
     return rc;
 }
 
-int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, uint32_t cbData)
+int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, const void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
@@ -715,22 +745,29 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
 
     do
     {
-        if (pCtx->mURI.objURI.IsComplete())
+        DnDURIObject *pObj = pObjCtx->pObjURI;
+        if (!pObj)
         {
-            LogFlowFunc(("Warning: Object '%s' already completed\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            rc = VERR_INVALID_PARAMETER;
+            break;
+        }
+
+        if (pObj->IsComplete())
+        {
+            LogFlowFunc(("Warning: Object '%s' already completed\n", pObj->GetDestPath().c_str()));
             rc = VERR_WRONG_ORDER;
             break;
         }
 
-        if (!pCtx->mURI.objURI.IsOpen()) /* File opened on host? */
+        if (!pObj->IsOpen()) /* File opened on host? */
         {
-            LogFlowFunc(("Warning: Object '%s' not opened\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            LogFlowFunc(("Warning: Object '%s' not opened\n", pObj->GetDestPath().c_str()));
             rc = VERR_WRONG_ORDER;
             break;
         }
 
         uint32_t cbWritten;
-        rc = pCtx->mURI.objURI.Write(pvData, cbData, &cbWritten);
+        rc = pObj->Write(pvData, cbData, &cbWritten);
         if (RT_SUCCESS(rc))
         {
             Assert(cbWritten <= cbData);
@@ -746,20 +783,26 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
 
         if (RT_SUCCESS(rc))
         {
-            if (pCtx->mURI.objURI.IsComplete())
+            if (pObj->IsComplete())
             {
                 /** @todo Sanitize path. */
-                LogRel2(("DnD: File transfer to host complete: %s\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+                LogRel2(("DnD: File transfer to host complete: %s\n", pObj->GetDestPath().c_str()));
                 rc = VINF_EOF;
 
-                /* Prepare URI object for next use. */
-                pCtx->mURI.objURI.Reset();
+                /* Deletion needed? */
+                if (pObjCtx->fAllocated)
+                {
+                    delete pObj;
+                    pObj = NULL;
+
+                    pObjCtx->fAllocated = false;
+                }
             }
         }
         else
         {
             /** @todo What to do when the host's disk is full? */
-            LogRel(("DnD: Error writing guest file to host to '%s': %Rrc\n", pCtx->mURI.objURI.GetDestPath().c_str(), rc));
+            LogRel(("DnD: Error writing guest file to host to '%s': %Rrc\n", pObj->GetDestPath().c_str(), rc));
         }
 
     } while (0);
@@ -1179,7 +1222,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBSNDFILEHDRDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_SND_FILE_HDR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
-            rc = pThis->i_onReceiveFileHdr(pCtx, pCBData->pszFilePath, pCBData->cbFilePath,
+            rc = pThis->i_onReceiveFileHdr(pCtx, &pCtx->mURI.objCtx, pCBData->pszFilePath, pCBData->cbFilePath,
                                            pCBData->cbSize, pCBData->fMode, pCBData->fFlags);
             break;
         }
@@ -1199,14 +1242,14 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
                  * - There was no information whatsoever about the total file size; the old code only
                  *   appended data to the desired file. So just pass 0 as cbSize.
                  */
-                rc = pThis->i_onReceiveFileHdr(pCtx,
+                rc = pThis->i_onReceiveFileHdr(pCtx, &pCtx->mURI.objCtx,
                                                pCBData->u.v1.pszFilePath, pCBData->u.v1.cbFilePath,
                                                0 /* cbSize */, pCBData->u.v1.fMode, 0 /* fFlags */);
                 if (RT_SUCCESS(rc))
-                    rc = pThis->i_onReceiveFileData(pCtx, pCBData->pvData, pCBData->cbData);
+                    rc = pThis->i_onReceiveFileData(pCtx, &pCtx->mURI.objCtx, pCBData->pvData, pCBData->cbData);
             }
             else /* Protocol v2 and up. */
-                rc = pThis->i_onReceiveFileData(pCtx, pCBData->pvData, pCBData->cbData);
+                rc = pThis->i_onReceiveFileData(pCtx, &pCtx->mURI.objCtx, pCBData->pvData, pCBData->cbData);
             break;
         }
         case DragAndDropSvc::GUEST_DND_GH_EVT_ERROR:
