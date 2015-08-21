@@ -176,16 +176,16 @@ void UIMachineWindowSeamless::placeOnScreen()
     const QRect workingArea = vboxGlobal().availableGeometry(iHostScreen);
 
     /* Set appropriate geometry for window: */
-    move(workingArea.topLeft());
     resize(workingArea.size());
+    move(workingArea.topLeft());
 
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /* If there is a mini-toolbar: */
     if (m_pMiniToolBar)
     {
         /* Set appropriate geometry for mini-toolbar: */
-        m_pMiniToolBar->move(workingArea.topLeft());
         m_pMiniToolBar->resize(workingArea.size());
+        m_pMiniToolBar->move(workingArea.topLeft());
     }
 #endif /* Q_WS_WIN || Q_WS_X11 */
 }
