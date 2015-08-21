@@ -994,83 +994,59 @@ static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * 
 #endif /* VBOX_WITH_NETFLT */
 
 
-static int netIfListHostAdapters(std::list<ComObjPtr<HostNetworkInterface> > &list)
+static int netIfListHostAdapters(INetCfg *pNc, std::list<ComObjPtr<HostNetworkInterface> > &list)
 {
 #ifndef VBOX_WITH_NETFLT
     /* VBoxNetAdp is available only when VBOX_WITH_NETFLT is enabled */
     return VERR_NOT_IMPLEMENTED;
 #else /* #  if defined VBOX_WITH_NETFLT */
-    INetCfg              *pNc;
     INetCfgComponent     *pMpNcc;
-    LPWSTR               lpszApp = NULL;
     HRESULT              hr;
     IEnumNetCfgComponent  *pEnumComponent;
 
-    /* we are using the INetCfg API for getting the list of miniports */
-    hr = VBoxNetCfgWinQueryINetCfg(&pNc, FALSE,
-                       VBOX_APP_NAME,
-                       10000,
-                       &lpszApp);
-    Assert(hr == S_OK);
+    hr = pNc->EnumComponents(&GUID_DEVCLASS_NET, &pEnumComponent);
     if (hr == S_OK)
     {
-        hr = pNc->EnumComponents(&GUID_DEVCLASS_NET, &pEnumComponent);
-        if (hr == S_OK)
+        while ((hr = pEnumComponent->Next(1, &pMpNcc, NULL)) == S_OK)
         {
-            while ((hr = pEnumComponent->Next(1, &pMpNcc, NULL)) == S_OK)
+            LPWSTR pwszName;
+            ULONG uComponentStatus;
+            hr = pMpNcc->GetDisplayName(&pwszName);
+            if (hr == S_OK)
+                LogRel(("netIfListHostAdapters: %ls\n", pwszName));
+            else
+                LogRel(("netIfListHostAdapters: failed to get device display name (0x%x)\n", hr));
+            hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
+            if (hr == S_OK)
             {
-                LPWSTR pwszName;
-                ULONG uComponentStatus;
-                hr = pMpNcc->GetDisplayName(&pwszName);
-                if (hr == S_OK)
-                    LogRel(("netIfListHostAdapters: %ls\n", pwszName));
-                else
-                    LogRel(("netIfListHostAdapters: failed to get device display name (0x%x)\n", hr));
-                hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
-                if (hr == S_OK)
+                if (uComponentStatus == 0)
                 {
-                    if (uComponentStatus == 0)
+                    LPWSTR pId;
+                    hr = pMpNcc->GetId(&pId);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
                     {
-                        LPWSTR pId;
-                        hr = pMpNcc->GetId(&pId);
-                        Assert(hr == S_OK);
-                        if (hr == S_OK)
+                        LogRel(("netIfListHostAdapters: id = %ls\n", pId));
+                        if (!_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
                         {
-                            LogRel(("netIfListHostAdapters: id = %ls\n", pId));
-                            if (!_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
-                            {
-                                vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly, -1);
-                            }
-                            CoTaskMemFree(pId);
+                            vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly, -1);
                         }
-                        else
-                            LogRel(("netIfListHostAdapters: failed to get device id (0x%x)\n", hr));
+                        CoTaskMemFree(pId);
                     }
+                    else
+                        LogRel(("netIfListHostAdapters: failed to get device id (0x%x)\n", hr));
                 }
-                else
-                    LogRel(("netIfListHostAdapters: failed to get device status (0x%x)\n", hr));
-                pMpNcc->Release();
             }
-            Assert(hr == S_OK || hr == S_FALSE);
-
-            pEnumComponent->Release();
+            else
+                LogRel(("netIfListHostAdapters: failed to get device status (0x%x)\n", hr));
+            pMpNcc->Release();
         }
-        else
-        {
-            LogRel(("netIfListHostAdapters: EnumComponents error (0x%x)\n", hr));
-        }
+        Assert(hr == S_OK || hr == S_FALSE);
 
-        VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
+        pEnumComponent->Release();
     }
     else
-    {
-        LogRel(("netIfListHostAdapters: failed to acquire INetCfg interface (0x%x)\n", hr));
-
-        if (lpszApp)
-        {
-            CoTaskMemFree(lpszApp);
-        }
-    }
+        LogRel(("netIfListHostAdapters: EnumComponents error (0x%x)\n", hr));
 #endif /* #  if defined VBOX_WITH_NETFLT */
     return VINF_SUCCESS;
 }
@@ -1479,7 +1455,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
 #ifndef VBOX_WITH_NETFLT
     return VERR_NOT_IMPLEMENTED;
 #else /* #  if defined VBOX_WITH_NETFLT */
-    INetCfg              *pNc;
+    INetCfg              *pNc = NULL;
     INetCfgComponent     *pMpNcc;
     INetCfgComponent     *pTcpIpNcc;
     LPWSTR               lpszApp;
@@ -1631,13 +1607,22 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
             LogRel(("failed to get the oracle_VBoxNetLwf(sun_VBoxNetFlt) component, error (0x%x)\n", hr));
         }
 
+        /* Add host-only adapters to the list */
+        netIfListHostAdapters(pNc, list);
+
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
     }
     else
-        LogRel(("NetIfList: failed to acquire INetCfg interface (0x%x)\n", hr));
-
-    /* Add host-only adapters to the list */
-    netIfListHostAdapters(list);
+    {
+        if (pNc)
+            pNc->Release();
+        pNc = NULL;
+        LogRel(("NetIfList: failed to acquire INetCfg interface (0x%x), trying CoCreateInstance...\n", hr));
+        hr = CoCreateInstance(CLSID_CNetCfg, NULL, CLSCTX_INPROC_SERVER, IID_INetCfg, (PVOID*)&pNc);
+        LogRel(("NetIfList: CoCreateInstance failed with 0x%x\n", hr));
+        if (pNc)
+            pNc->Release();
+    }
 
     return VINF_SUCCESS;
 #endif /* #  if defined VBOX_WITH_NETFLT */
