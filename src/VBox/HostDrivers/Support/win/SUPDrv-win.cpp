@@ -156,7 +156,7 @@ typedef struct SUPDRVNTERRORINFO
     /** Number of bytes of valid info. */
     uint32_t        cchErrorInfo;
     /** The error info. */
-    char            szErrorInfo[2048];
+    char            szErrorInfo[16384 - sizeof(RTLISTNODE) - sizeof(HANDLE)*2 - sizeof(uint64_t) - sizeof(uint32_t) - 0x20];
 } SUPDRVNTERRORINFO;
 /** Pointer to error info. */
 typedef SUPDRVNTERRORINFO *PSUPDRVNTERRORINFO;
