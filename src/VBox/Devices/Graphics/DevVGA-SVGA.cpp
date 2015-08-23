@@ -543,11 +543,26 @@ DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t u
 
     Log(("vmsvgaPortSetViewPort: screen %d (%d,%d)(%d,%d)\n", uScreenId, x, y, cx, cy));
 
-    pThis->svga.viewport.x  = x;
-    pThis->svga.viewport.y  = y;
-    pThis->svga.viewport.cx = RT_MIN(cx, (uint32_t)pThis->svga.uWidth);
-    pThis->svga.viewport.cy = RT_MIN(cy, (uint32_t)pThis->svga.uHeight);
-    return;
+    if (x < pThis->svga.uWidth)
+    {
+        pThis->svga.viewport.x  = x;
+        pThis->svga.viewport.cx = RT_MIN(cx, pThis->svga.uWidth - x);
+    }
+    else
+    {
+        pThis->svga.viewport.x  = pThis->svga.uWidth;
+        pThis->svga.viewport.cx = 0;
+    }
+    if (y < pThis->svga.uHeight)
+    {
+        pThis->svga.viewport.y  = y;
+        pThis->svga.viewport.cy = RT_MIN(cy, pThis->svga.uHeight - y);
+    }
+    else
+    {
+        pThis->svga.viewport.y  = pThis->svga.uHeight;
+        pThis->svga.viewport.cy = 0;
+    }
 }
 
 /**

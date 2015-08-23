@@ -308,7 +308,9 @@ typedef struct VMSVGAState
     uint32_t                    u32MaxWidth;
     /** Maximum height supported. */
     uint32_t                    u32MaxHeight;
-    /** Viewport rectangle */
+    /** Viewport rectangle, i.e. what's currently visible of the target host
+     *  window.  This is usually (0,0)(uWidth,uHeight), but if the window is
+     *  shrunk and scrolling applied, both the origin and size may differ.  */
     struct
     {
         uint32_t                x;
