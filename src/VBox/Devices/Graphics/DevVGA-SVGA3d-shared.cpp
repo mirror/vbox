@@ -167,7 +167,6 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD ThreadSelf, void *pvUser)
                 RTSemEventSignal(WndRequestSem);
                 continue;
             }
-            else
             if (msg.message == WM_VMSVGA3D_DESTROYWINDOW)
             {
                 BOOL ret = DestroyWindow((HWND)msg.wParam);
@@ -176,7 +175,6 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD ThreadSelf, void *pvUser)
                 RTSemEventSignal(WndRequestSem);
                 continue;
             }
-            else
             if (msg.message == WM_VMSVGA3D_RESIZEWINDOW)
             {
                 HWND hwnd = (HWND)msg.wParam;

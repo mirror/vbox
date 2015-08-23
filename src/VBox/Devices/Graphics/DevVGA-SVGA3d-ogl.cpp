@@ -2639,7 +2639,6 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
 
     pSurface = pState->papSurfaces[sid];
 
-    /** @todo stricter checks for associated context */
     Log(("vmsvga3dCommandPresent: sid=%x cRects=%d\n", sid, cRects));
     for (uint32_t i=0; i < cRects; i++)
         Log(("vmsvga3dCommandPresent: rectangle %d src=(%d,%d) (%d,%d)(%d,%d)\n", i, pRect[i].srcx, pRect[i].srcy, pRect[i].x, pRect[i].y, pRect[i].x + pRect[i].w, pRect[i].y + pRect[i].h));
@@ -2649,6 +2648,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     cid = pContext->id;
     VMSVGA3D_CLEAR_GL_ERRORS();
 
+#if 0 /* Can't make sense of this. SVGA3dCopyRect doesn't allow scaling.  non-blit-cube path change to not use it. */
     /*
      * Source surface different size?
      */
@@ -2659,8 +2659,10 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
         float xMultiplier = (float)pSurface->pMipmapLevels[0].size.width  / (float)pThis->svga.uWidth;
         float yMultiplier = (float)pSurface->pMipmapLevels[0].size.height / (float)pThis->svga.uHeight;
 
-        LogFlow(("size (%d vs %d) (%d vs %d) multiplier (%d,%d)/100\n", pSurface->pMipmapLevels[0].size.width, pThis->svga.uWidth,
-                 pSurface->pMipmapLevels[0].size.height, pThis->svga.uHeight, (int)(xMultiplier * 100.0), (int)(yMultiplier * 100.0)));
+        LogFlow(("size (%d vs %d, %d vs %d) multiplier (" FLOAT_FMT_STR ", " FLOAT_FMT_STR ")\n",
+                 pSurface->pMipmapLevels[0].size.width, pThis->svga.uWidth,
+                 pSurface->pMipmapLevels[0].size.height, pThis->svga.uHeight,
+                 FLOAT_FMT_ARGS(xMultiplier), FLOAT_FMT_ARGS(yMultiplier) ));
 
         srcViewPort.x  = (uint32_t)((float)pThis->svga.viewport.x  * xMultiplier);
         srcViewPort.y  = (uint32_t)((float)pThis->svga.viewport.y  * yMultiplier);
@@ -2679,9 +2681,10 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     SrcViewPortRect.xRight  = srcViewPort.x + srcViewPort.cx;
     SrcViewPortRect.yBottom = srcViewPort.y;
     SrcViewPortRect.yTop    = srcViewPort.y + srcViewPort.cy;
+#endif
 
 
-#ifndef RT_OS_DARWIN /* blit-cube fails in this path... */
+#if 0//ndef RT_OS_DARWIN /* blit-cube fails in this path... */
     /*
      * Note! this path is slightly faster than the glBlitFrameBuffer path below.
      */
@@ -2837,112 +2840,167 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     pState->ext.glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pSurface->oglId.texture, 0 /* level 0 */);
     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
-    /* Blit the surface rectangle(s) to the back buffer. */
-    if (cRects == 0)
 
-    {
-        Log(("view port (%d,%d)(%d,%d)\n", srcViewPort.x, srcViewPort.y, srcViewPort.cx, srcViewPort.cy));
-        pState->ext.glBlitFramebuffer(srcViewPort.x,
-                                      srcViewPort.y,
-                                      srcViewPort.x + srcViewPort.cx,   /* exclusive. */
-                                      srcViewPort.y + srcViewPort.cy,   /* exclusive. (reverse to flip the image) */
-                                      0,
-                                      pThis->svga.viewport.cy, /* exclusive. */
-                                      pThis->svga.viewport.cx, /* exclusive. */
-                                      0,
-                                      GL_COLOR_BUFFER_BIT,
-                                      GL_LINEAR);
-        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-    }
+    /* If there are no recangles specified, just grab a viewport worth bits. */
+# if 1
+    VMSVGAVIEWPORT const DstViewport = pThis->svga.viewport;
+# else
+    VMSVGAVIEWPORT const DstViewport = { 0, 0, pThis->svga.uWidth, pThis->svga.uHeight, pThis->svga.uWidth, pThis->svga.uHeight };
+# endif
+    SVGA3dCopyRect       DummyRect;
+    if (cRects != 0)
+    { /* likely */ }
     else
     {
-        for (uint32_t i = 0; i < cRects; i++)
-        {
-# ifdef RT_OS_DARWIN
-            /* This works better... */
-            RTRECT SrcRect;
-            SrcRect.xLeft   = pRect[i].srcx;
-            SrcRect.xRight  = pRect[i].srcx + pRect[i].w;
-            SrcRect.yBottom = pRect[i].srcy;
-            SrcRect.yTop    = pRect[i].srcy + pRect[i].h;
-            RTRECT DstRect; /* y flipped wrt source */
-            DstRect.xLeft   = pRect[i].x;
-            DstRect.xRight  = pRect[i].x + pRect[i].w;
-            DstRect.yBottom = pRect[i].y + pRect[i].h;
-            DstRect.yTop    = pRect[i].y;
-
-            if (SrcRect.xLeft < SrcViewPortRect.xLeft)
-            {
-                DstRect.xLeft += SrcViewPortRect.xLeft - SrcRect.xLeft;
-                SrcRect.xLeft  = SrcViewPortRect.xLeft;
-            }
-            else if (SrcRect.xLeft >= SrcViewPortRect.xRight)
-                continue;
-
-            if (SrcRect.xRight > SrcViewPortRect.xRight)
-            {
-                DstRect.xRight -= SrcViewPortRect.xRight - SrcRect.xRight;
-                SrcRect.xRight  = SrcViewPortRect.xRight;
-            }
-            else if (SrcRect.xRight <= SrcViewPortRect.xLeft)
-                continue;
-
-            if (SrcRect.xRight <= SrcRect.xLeft)
-                continue;
-
-            if (SrcRect.yBottom < SrcViewPortRect.yBottom)
-            {
-                DstRect.yTop    += SrcViewPortRect.yBottom - SrcRect.yBottom;
-                SrcRect.yBottom  = SrcViewPortRect.yBottom;
-            }
-            else if (SrcRect.yBottom >= SrcViewPortRect.yTop)
-                continue;
-
-            if (SrcRect.yTop > SrcViewPortRect.yTop)
-            {
-                DstRect.yBottom -= SrcViewPortRect.yTop - SrcRect.yTop;
-                SrcRect.yTop     = SrcViewPortRect.yTop;
-            }
-            else if (SrcRect.yTop <= SrcViewPortRect.yBottom)
-                continue;
-
-            if (SrcRect.yTop <= SrcRect.yBottom)
-                continue;
-
-            Log(("SrcRect: (%d,%d)(%d,%d) DstRect: (%d,%d)(%d,%d)\n",
-                 SrcRect.xLeft, SrcRect.yBottom, SrcRect.xRight, SrcRect.yTop,
-                 DstRect.xLeft, DstRect.yBottom, DstRect.xRight, DstRect.yTop));
-            pState->ext.glBlitFramebuffer(SrcRect.xLeft, SrcRect.yBottom, SrcRect.xRight, SrcRect.yTop,
-                                          DstRect.xLeft, DstRect.yBottom, DstRect.xRight, DstRect.yTop,
-                                          GL_COLOR_BUFFER_BIT, GL_LINEAR);
-
-# else
-            if (    pRect[i].x + pRect[i].w <= pThis->svga.viewport.x
-                ||  pThis->svga.viewport.x + pThis->svga.viewport.cx <= pRect[i].x
-                ||  pRect[i].y + pRect[i].h <= pThis->svga.viewport.y
-                ||  pThis->svga.viewport.y + pThis->svga.viewport.cy <= pRect[i].y)
-            {
-                /* Intersection is empty; skip */
-                continue;
-            }
-            pState->ext.glBlitFramebuffer(RT_MAX(pRect[i].srcx, srcViewPort.x),
-                                          pSurface->pMipmapLevels[0].size.width - RT_MAX(pRect[i].srcy, srcViewPort.y),   /* exclusive. (reverse to flip the image) */
-                                          RT_MIN(pRect[i].srcx + pRect[i].w, srcViewPort.x + srcViewPort.cx),  /* exclusive. */
-                                          pSurface->pMipmapLevels[0].size.width - RT_MIN(pRect[i].srcy + pRect[i].h, srcViewPort.y + srcViewPort.cy),
-                                          RT_MAX(pRect[i].x, pThis->svga.viewport.x) - pThis->svga.viewport.x,
-                                          pThis->svga.uHeight - (RT_MIN(pRect[i].y + pRect[i].h, pThis->svga.viewport.y + pThis->svga.viewport.cy) - pThis->svga.viewport.y),  /* exclusive. */
-                                          RT_MIN(pRect[i].x + pRect[i].w, pThis->svga.viewport.x + pThis->svga.viewport.cx) - pThis->svga.viewport.x,  /* exclusive. */
-                                          pThis->svga.uHeight - (RT_MAX(pRect[i].y, pThis->svga.viewport.y) - pThis->svga.viewport.y),
-                                          GL_COLOR_BUFFER_BIT,
-                                          GL_LINEAR);
+        /** @todo Find the usecase for this or check what the original device does.
+         *        The original code was doing some scaling based on the surface
+         *        size... */
+# ifdef DEBUG_bird
+        AssertMsgFailed(("No rects to present. Who is doing that and what do they actually expect?\n"));
 # endif
-        }
+        cRects = 1;
+        pRect  = &DummyRect;
+        DummyRect.x = DummyRect.srcx = DstViewport.x;
+        DummyRect.y = DummyRect.srcy = DstViewport.y;
+        DummyRect.w = DstViewport.cx;
+        DummyRect.h = DstViewport.cy;
     }
 
-#endif
-#ifndef RT_OS_DARWIN /* darwin: postponed till after buffer swap. */
-    /* Reset the frame buffer association - see below.  */
-    VMSVGA3D_ASSERT_GL_CALL(pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, pContext->idFramebuffer), pState, pContext);
+    /* Blit the surface rectangle(s) to the back buffer. */
+    uint32_t const cxSurface = pSurface->pMipmapLevels[0].size.width;
+    uint32_t const cySurface = pSurface->pMipmapLevels[0].size.height;
+    for (uint32_t i = 0; i < cRects; i++)
+    {
+        SVGA3dCopyRect ClippedRect = pRect[i];
+
+        /* Do some sanity checking and limit width and height, all so we
+           don't need to think about wrap-arounds below. */
+        if (RT_LIKELY(   ClippedRect.w
+                      && ClippedRect.x    < VMSVGA_MAX_X
+                      && ClippedRect.srcx < VMSVGA_MAX_X
+                      && ClippedRect.h
+                      && ClippedRect.y    < VMSVGA_MAX_Y
+                      && ClippedRect.srcy < VMSVGA_MAX_Y
+                         ))
+        { /* likely */ }
+        else
+            continue;
+
+        if (RT_LIKELY(ClippedRect.w < VMSVGA_MAX_Y))
+        { /* likely */ }
+        else
+            ClippedRect.w = VMSVGA_MAX_Y;
+        if (RT_LIKELY(ClippedRect.w < VMSVGA_MAX_Y))
+        { /* likely */ }
+        else
+            ClippedRect.w = VMSVGA_MAX_Y;
+
+
+        /* Source surface clipping (paranoia). */
+        if (RT_LIKELY(ClippedRect.srcx < cxSurface))
+        { /* likely */ }
+        else
+            continue;
+        if (RT_LIKELY(ClippedRect.srcx + ClippedRect.w <= cxSurface))
+        { /* likely */ }
+        else
+        {
+            AssertFailed(); /* remove if annoying. */
+            ClippedRect.w = cxSurface - ClippedRect.srcx;
+        }
+
+        if (RT_LIKELY(ClippedRect.srcy < cySurface))
+        { /* likely */ }
+        else
+            continue;
+        if (RT_LIKELY(ClippedRect.srcy + ClippedRect.h <= cySurface))
+        { /* likely */ }
+        else
+        {
+            AssertFailed(); /* remove if annoying. */
+            ClippedRect.h = cySurface - ClippedRect.srcy;
+        }
+
+
+        /* Destination viewport clipping. */
+        if (ClippedRect.x >= DstViewport.x)
+        {
+            if (ClippedRect.x + ClippedRect.w <= DstViewport.xRight)
+            { /* typical */ }
+            else if (ClippedRect.x < DstViewport.xRight)
+                ClippedRect.w = DstViewport.xRight - ClippedRect.x;
+            else
+                continue;
+        }
+        else
+        {
+            uint32_t cxAdjust = DstViewport.x - ClippedRect.x;
+            if (cxAdjust < ClippedRect.w)
+            {
+                ClippedRect.w    -= cxAdjust;
+                ClippedRect.x    += cxAdjust;
+                ClippedRect.srcx += cxAdjust;
+            }
+            else
+                continue;
+
+            if (ClippedRect.x + ClippedRect.w <= DstViewport.xRight)
+            { /* typical */ }
+            else
+                ClippedRect.w = DstViewport.xRight - ClippedRect.x;
+        }
+
+        if (ClippedRect.y >= DstViewport.y)
+        {
+            if (ClippedRect.y + ClippedRect.h <= DstViewport.yBottom)
+            { /* typical */ }
+            else if (ClippedRect.y < DstViewport.yBottom)
+                ClippedRect.h = DstViewport.yBottom - ClippedRect.y;
+            else
+                continue;
+        }
+        else
+        {
+            uint32_t cyAdjust = DstViewport.y - ClippedRect.y;
+            if (cyAdjust < ClippedRect.h)
+            {
+                ClippedRect.h    -= cyAdjust;
+                ClippedRect.y    += cyAdjust;
+                ClippedRect.srcy += cyAdjust;
+            }
+            else
+                continue;
+
+            if (ClippedRect.y + ClippedRect.h <= DstViewport.yBottom)
+            { /* typical */ }
+            else
+                ClippedRect.h = DstViewport.yBottom - ClippedRect.y;
+        }
+
+
+        /* Do the blitting. */
+        RTRECT SrcRect;
+        SrcRect.xLeft   = ClippedRect.srcx;
+        SrcRect.xRight  = ClippedRect.srcx + ClippedRect.w;
+        SrcRect.yBottom = ClippedRect.srcy;
+        SrcRect.yTop    = ClippedRect.srcy + ClippedRect.h;
+        RTRECT DstRect; /* y flipped wrt source */
+        DstRect.xLeft   = ClippedRect.x;
+        DstRect.xRight  = ClippedRect.x + ClippedRect.w;
+        DstRect.yBottom = ClippedRect.y + ClippedRect.h;
+        DstRect.yTop    = ClippedRect.y;
+
+        Log(("SrcRect: (%d,%d)(%d,%d) DstRect: (%d,%d)(%d,%d)\n",
+             SrcRect.xLeft, SrcRect.yBottom, SrcRect.xRight, SrcRect.yTop,
+             DstRect.xLeft, DstRect.yBottom, DstRect.xRight, DstRect.yTop));
+        pState->ext.glBlitFramebuffer(SrcRect.xLeft, SrcRect.yBottom, SrcRect.xRight, SrcRect.yTop,
+                                      DstRect.xLeft   - DstViewport.x,
+                                      DstRect.yBottom - DstViewport.y,
+                                      DstRect.xRight  - DstViewport.x,
+                                      DstRect.yTop    - DstViewport.y,
+                                      GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    }
+
 #endif
 
     /*
@@ -2964,13 +3022,11 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     glXSwapBuffers(pState->display, pContext->window);
 #endif
 
-#if defined(RT_OS_DARWIN)
     /*
      * Now we can reset the frame buffer association.  Doing it earlier means no
      * output on darwin.
      */
     VMSVGA3D_ASSERT_GL_CALL(pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, pContext->idFramebuffer), pState, pContext);
-#endif
     return VINF_SUCCESS;
 }
 

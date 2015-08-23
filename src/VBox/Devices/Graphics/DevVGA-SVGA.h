@@ -29,6 +29,13 @@
 
 #define VMSVGA_VAL_UNINITIALIZED        (unsigned)-1
 
+/** For validating X and width values.
+ * The code assumes it's at least an order of magnitude less than UINT32_MAX. */
+#define VMSVGA_MAX_X                    _1M
+/** For validating Y and height values.
+ * The code assumes it's at least an order of magnitude less than UINT32_MAX. */
+#define VMSVGA_MAX_Y                    _1M
+
 /* u32ActionFlags */
 #define VMSVGA_ACTION_CHANGEMODE_BIT    0
 #define VMSVGA_ACTION_CHANGEMODE        RT_BIT(VMSVGA_ACTION_CHANGEMODE_BIT)
