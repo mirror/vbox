@@ -2185,70 +2185,180 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     else
         pSurfaceD3D = pSurface->u.pSurface;
 
-    /* Source surface different size? */
-    if (pSurface->pMipmapLevels[0].size.width  != pThis->svga.uWidth ||
-        pSurface->pMipmapLevels[0].size.height != pThis->svga.uHeight)
-    {
-        float xMultiplier = (float)pSurface->pMipmapLevels[0].size.width / (float)pThis->svga.uWidth;
-        float yMultiplier = (float)pSurface->pMipmapLevels[0].size.height / (float)pThis->svga.uHeight;
+    /* Read the destination viewport specs in one go to try avoid some unnecessary update races. */
+    VMSVGAVIEWPORT const DstViewport = pThis->svga.viewport;
+    ASMCompilerBarrier(); /* paranoia */
+    Assert(DstViewport.yHighWC >= DstViewport.yLowWC);
 
-        srcViewPort.x  = (uint32_t)((float)pThis->svga.viewport.x  * xMultiplier);
-        srcViewPort.y  = (uint32_t)((float)pThis->svga.viewport.y  * yMultiplier);
-        srcViewPort.cx = (uint32_t)((float)pThis->svga.viewport.cx * xMultiplier);
-        srcViewPort.cy = (uint32_t)((float)pThis->svga.viewport.cy * yMultiplier);
-    }
+    /* If there are no recangles specified, just grab a screenful. */
+    SVGA3dCopyRect DummyRect;
+    if (cRects != 0)
+    { /* likely */ }
     else
     {
-        srcViewPort.x  = pThis->svga.viewport.x;
-        srcViewPort.y  = pThis->svga.viewport.y;
-        srcViewPort.cx = pThis->svga.viewport.cx;
-        srcViewPort.cy = pThis->svga.viewport.cy;
+        /** @todo Find the usecase for this or check what the original device does.
+         *        The original code was doing some scaling based on the surface
+         *        size... */
+# ifdef DEBUG_bird
+        AssertMsgFailed(("No rects to present. Who is doing that and what do they actually expect?\n"));
+# endif
+        DummyRect.x = DummyRect.srcx = 0;
+        DummyRect.y = DummyRect.srcy = 0;
+        DummyRect.w = pThis->svga.uWidth;
+        DummyRect.h = pThis->svga.uHeight;
+        cRects = 1;
+        pRect  = &DummyRect;
     }
 
-    /* @note the viewport doesn't affect blitting. */
-    if (cRects == 0)
+    /*
+     * Blit the surface rectangle(s) to the back buffer.
+     */
+    uint32_t const cxSurface = pSurface->pMipmapLevels[0].size.width;
+    uint32_t const cySurface = pSurface->pMipmapLevels[0].size.height;
+    for (uint32_t i = 0; i < cRects; i++)
     {
-        RECT rectDest, rectSrc;
+        SVGA3dCopyRect ClippedRect = pRect[i];
 
-        rectSrc.left    = srcViewPort.x;
-        rectSrc.top     = srcViewPort.y;
-        rectSrc.right   = rectSrc.left + srcViewPort.cx;
-        rectSrc.bottom  = rectSrc.top  + srcViewPort.cy;
-        rectDest.left   = 0;
-        rectDest.top    = 0;
-        rectDest.right  = pThis->svga.viewport.cx;
-        rectDest.bottom = pThis->svga.viewport.cy;
-        hr = pContext->pDevice->StretchRect(pSurfaceD3D, &rectSrc, pBackBuffer, &rectDest, D3DTEXF_NONE);
-    }
-    else
-    {
-        for (uint32_t i = 0; i < cRects; i++)
+        /*
+         * Do some sanity checking and limit width and height, all so we
+         * don't need to think about wrap-arounds below.
+         */
+        if (RT_LIKELY(   ClippedRect.w
+                      && ClippedRect.x    < VMSVGA_MAX_X
+                      && ClippedRect.srcx < VMSVGA_MAX_X
+                      && ClippedRect.h
+                      && ClippedRect.y    < VMSVGA_MAX_Y
+                      && ClippedRect.srcy < VMSVGA_MAX_Y
+                         ))
+        { /* likely */ }
+        else
+            continue;
+
+        if (RT_LIKELY(ClippedRect.w < VMSVGA_MAX_Y))
+        { /* likely */ }
+        else
+            ClippedRect.w = VMSVGA_MAX_Y;
+        if (RT_LIKELY(ClippedRect.w < VMSVGA_MAX_Y))
+        { /* likely */ }
+        else
+            ClippedRect.w = VMSVGA_MAX_Y;
+
+        /*
+         * Source surface clipping (paranoia). Straight forward.
+         */
+        if (RT_LIKELY(ClippedRect.srcx < cxSurface))
+        { /* likely */ }
+        else
+            continue;
+        if (RT_LIKELY(ClippedRect.srcx + ClippedRect.w <= cxSurface))
+        { /* likely */ }
+        else
         {
-            RECT rectSrc;
-            RECT rectDest;
-
-            if (    pRect[i].x + pRect[i].w <= pThis->svga.viewport.x
-                ||  pThis->svga.viewport.x + pThis->svga.viewport.cx <= pRect[i].x
-                ||  pRect[i].y + pRect[i].h <= pThis->svga.viewport.y
-                ||  pThis->svga.viewport.y + pThis->svga.viewport.cy <= pRect[i].y)
-            {
-                /* Intersection is empty; skip */
-                continue;
-            }
-
-            rectSrc.left    = RT_MAX(pRect[i].srcx, srcViewPort.x);
-            rectSrc.top     = RT_MAX(pRect[i].srcy, srcViewPort.y);
-            rectSrc.right   = RT_MIN(pRect[i].srcx + pRect[i].w, srcViewPort.x + srcViewPort.cx);
-            rectSrc.bottom  = RT_MIN(pRect[i].srcy + pRect[i].h, srcViewPort.y + srcViewPort.cy);
-            rectDest.left   = RT_MAX(pRect[i].x, pThis->svga.viewport.x) - pThis->svga.viewport.x;
-            rectDest.top    = RT_MAX(pRect[i].y, pThis->svga.viewport.y) - pThis->svga.viewport.y;
-            rectDest.right  = RT_MIN(pRect[i].x + pRect[i].w, pThis->svga.viewport.x + pThis->svga.viewport.cx) - pThis->svga.viewport.x;
-            rectDest.bottom = RT_MIN(pRect[i].y + pRect[i].h, pThis->svga.viewport.y + pThis->svga.viewport.cy) - pThis->svga.viewport.y;
-
-            hr = pContext->pDevice->StretchRect(pSurfaceD3D, &rectSrc, pBackBuffer, &rectDest, D3DTEXF_NONE);
-            AssertBreak(hr == D3D_OK);
+            AssertFailed(); /* remove if annoying. */
+            ClippedRect.w = cxSurface - ClippedRect.srcx;
         }
+
+        if (RT_LIKELY(ClippedRect.srcy < cySurface))
+        { /* likely */ }
+        else
+            continue;
+        if (RT_LIKELY(ClippedRect.srcy + ClippedRect.h <= cySurface))
+        { /* likely */ }
+        else
+        {
+            AssertFailed(); /* remove if annoying. */
+            ClippedRect.h = cySurface - ClippedRect.srcy;
+        }
+
+        /*
+         * Destination viewport clipping.
+         *
+         * This is very straight forward compared to OpenGL.  There is no Y
+         * inversion anywhere and all the coordinate systems are the same.
+         */
+        /* X */
+        if (ClippedRect.x >= DstViewport.x)
+        {
+            if (ClippedRect.x + ClippedRect.w <= DstViewport.xRight)
+            { /* typical */ }
+            else if (ClippedRect.x < DstViewport.xRight)
+                ClippedRect.w = DstViewport.xRight - ClippedRect.x;
+            else
+                continue;
+        }
+        else
+        {
+            uint32_t cxAdjust = DstViewport.x - ClippedRect.x;
+            if (cxAdjust < ClippedRect.w)
+            {
+                ClippedRect.w    -= cxAdjust;
+                ClippedRect.x    += cxAdjust;
+                ClippedRect.srcx += cxAdjust;
+            }
+            else
+                continue;
+
+            if (ClippedRect.x + ClippedRect.w <= DstViewport.xRight)
+            { /* typical */ }
+            else
+                ClippedRect.w = DstViewport.xRight - ClippedRect.x;
+        }
+
+        /* Y */
+        if (ClippedRect.y >= DstViewport.y)
+        {
+            if (ClippedRect.y + ClippedRect.h <= DstViewport.y + DstViewport.cy)
+            { /* typical */ }
+            else if (ClippedRect.x < DstViewport.y + DstViewport.cy)
+                ClippedRect.h = DstViewport.y + DstViewport.cy - ClippedRect.y;
+            else
+                continue;
+        }
+        else
+        {
+            uint32_t cyAdjust = DstViewport.y - ClippedRect.y;
+            if (cyAdjust < ClippedRect.h)
+            {
+                ClippedRect.h    -= cyAdjust;
+                ClippedRect.y    += cyAdjust;
+                ClippedRect.srcy += cyAdjust;
+            }
+            else
+                continue;
+
+            if (ClippedRect.y + ClippedRect.h <= DstViewport.y + DstViewport.cy)
+            { /* typical */ }
+            else
+                ClippedRect.h = DstViewport.y + DstViewport.cy - ClippedRect.y;
+        }
+
+        /* Calc source rectangle. */
+        RECT SrcRect;
+        SrcRect.left   = ClippedRect.srcx;
+        SrcRect.right  = ClippedRect.srcx + ClippedRect.w;
+        SrcRect.top    = ClippedRect.srcy;
+        SrcRect.bottom = ClippedRect.srcy + ClippedRect.h;
+
+        /* Calc destination rectangle. */
+        RECT DstRect;
+        DstRect.left   = ClippedRect.x;
+        DstRect.right  = ClippedRect.x + ClippedRect.w;
+        DstRect.top    = ClippedRect.y;
+        DstRect.bottom = ClippedRect.y + ClippedRect.h;
+
+        /* Adjust for viewport. */
+        DstRect.left   -= DstViewport.x;
+        DstRect.right  -= DstViewport.x;
+        DstRect.bottom -= DstViewport.y;
+        DstRect.top    -= DstViewport.y;
+
+        Log(("SrcRect: (%d,%d)(%d,%d) DstRect: (%d,%d)(%d,%d)\n",
+             SrcRect.left, SrcRect.bottom, SrcRect.right, SrcRect.top,
+             DstRect.left, DstRect.bottom, DstRect.right, DstRect.top));
+        hr = pContext->pDevice->StretchRect(pSurfaceD3D, &SrcRect, pBackBuffer, &DstRect, D3DTEXF_NONE);
+        AssertBreak(hr == D3D_OK);
     }
+#endif
 
     if (pSurface->flags & SVGA3D_SURFACE_HINT_TEXTURE)
         pSurfaceD3D->Release();

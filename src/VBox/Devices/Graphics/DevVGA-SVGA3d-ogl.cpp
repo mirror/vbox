@@ -2841,11 +2841,12 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
 
-    /* If there are no recangles specified, just grab a viewport worth bits. */
+    /* Read the destination viewport specs in one go to try avoid some unnecessary update races. */
     VMSVGAVIEWPORT const DstViewport   = pThis->svga.viewport;
     ASMCompilerBarrier(); /* paranoia */
     Assert(DstViewport.yHighWC >= DstViewport.yLowWC);
 
+    /* If there are no recangles specified, just grab a screenful. */
     SVGA3dCopyRect DummyRect;
     if (cRects != 0)
     { /* likely */ }
@@ -2865,7 +2866,9 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
         pRect  = &DummyRect;
     }
 
-    /* Blit the surface rectangle(s) to the back buffer. */
+    /*
+     * Blit the surface rectangle(s) to the back buffer.
+     */
     uint32_t const cxSurface = pSurface->pMipmapLevels[0].size.width;
     uint32_t const cySurface = pSurface->pMipmapLevels[0].size.height;
     for (uint32_t i = 0; i < cRects; i++)
