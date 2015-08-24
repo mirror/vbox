@@ -37,6 +37,8 @@ public:
 
     /** Constructs watchdog for the @a pParent being passed into the base-class. */
     UIDesktopWidgetWatchdog(QObject *pParent);
+    /** Destructs watchdog. */
+    ~UIDesktopWidgetWatchdog();
 
     /** Returns the geometry of the host-screen with @a iHostScreenIndex.
       * @note The default screen is used if @a iHostScreenIndex is -1. */
@@ -61,6 +63,8 @@ private:
 
     /** Prepare routine. */
     void prepare();
+    /** Cleanup routine. */
+    void cleanup();
 
     /** Holds the desktop-widget reference pointer. */
     QDesktopWidget *m_pDesktopWidget;
@@ -69,6 +73,8 @@ private:
     int m_cHostScreenCount;
     /** Holds current host-screen available-geometries. */
     QVector<QRect> m_availableGeometryData;
+    /** Holds current workers determining host-screen available-geometries. */
+    QVector<QWidget*> m_availableGeometryWorkers;
 };
 
 #endif /* !___UIDesktopWidgetWatchdog_h___ */
