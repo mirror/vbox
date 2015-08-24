@@ -622,8 +622,8 @@
           Hyper-V hypervisor interface which is recognized by Windows 7 and newer
           operating systems. VirtualBox's implementation currently supports
           paravirtualized clocks, APIC frequency reporting, guest crash reporting
-          and relaxed timer checks. This provider is recommended for Windows and
-          FreeBSD guests.
+          and relaxed timer checks. This provider is recommended for Windows
+          guests.
           </para>
         </listitem>
      </itemizedlist>
