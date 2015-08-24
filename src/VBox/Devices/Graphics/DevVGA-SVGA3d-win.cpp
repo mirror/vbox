@@ -2358,7 +2358,6 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
         hr = pContext->pDevice->StretchRect(pSurfaceD3D, &SrcRect, pBackBuffer, &DstRect, D3DTEXF_NONE);
         AssertBreak(hr == D3D_OK);
     }
-#endif
 
     if (pSurface->flags & SVGA3D_SURFACE_HINT_TEXTURE)
         pSurfaceD3D->Release();
