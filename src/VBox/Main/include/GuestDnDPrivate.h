@@ -160,7 +160,7 @@ typedef struct GuestDnDURIData
         return VINF_SUCCESS;
     }
 
-    void *const GetBufferMutable(void) { return pvScratchBuf; }
+    void * GetBufferMutable(void) { return pvScratchBuf; }
 
     size_t GetBufferSize(void) { return cbScratchBuf; }
 
