@@ -172,6 +172,14 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_UFC_CTRL_PROC_EXEC2                                 8
 /** Invalid unrestricted-guest execution controls combo. */
 #define VMX_UFC_INVALID_UX_COMBO                                9
+/** EPT flush type not supported. */
+#define VMX_UFC_EPT_FLUSH_TYPE_UNSUPPORTED                      10
+/** EPT paging structure memory type is not write-back. */
+#define VMX_UFC_EPT_MEM_TYPE_NOT_WB                             11
+/** EPT requires INVEPT instr. support but it's not available. */
+#define VMX_UFC_EPT_INVEPT_UNAVAILABLE                          12
+/** EPT requires page-walk length of 4. */
+#define VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED                13
 /** @} */
 
 /** @name VMX HM-error codes for VERR_VMX_INVALID_GUEST_STATE.

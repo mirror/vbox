@@ -2171,14 +2171,23 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
             {
                 /* Shouldn't happen. EPT is supported but no suitable flush-types supported. */
                 pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
+                pVM->aCpus[0].hm.s.u32HMError = VMX_UFC_EPT_FLUSH_TYPE_UNSUPPORTED;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
 
             /* Make sure the write-back cacheable memory type for EPT is supported. */
-            if (!(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB))
+            if (RT_UNLIKELY(!(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB)))
             {
-                LogRel(("hmR0VmxSetupTaggedTlb: Unsupported EPTP memory type %#x.\n", pVM->hm.s.vmx.Msrs.u64EptVpidCaps));
                 pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
+                pVM->aCpus[0].hm.s.u32HMError = VMX_UFC_EPT_MEM_TYPE_NOT_WB;
+                return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
+            }
+
+            /* EPT requires a page-walk length of 4. */
+            if (RT_UNLIKELY(!(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4)))
+            {
+                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
+                pVM->aCpus[0].hm.s.u32HMError = VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
         }
@@ -2186,6 +2195,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
         {
             /* Shouldn't happen. EPT is supported but INVEPT instruction is not supported. */
             pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
+            pVM->aCpus[0].hm.s.u32HMError = VMX_UFC_EPT_INVEPT_UNAVAILABLE;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
     }
@@ -3795,8 +3805,11 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
             /* Validate. See Intel spec. 26.2.1 "Checks on VMX Controls" */
             AssertMsg(   ((pVCpu->hm.s.vmx.HCPhysEPTP >> 3) & 0x07) == 3      /* Bits 3:5 (EPT page walk length - 1) must be 3. */
-                      && ((pVCpu->hm.s.vmx.HCPhysEPTP >> 6) & 0x3f) == 0,     /* Bits 6:11 MBZ. */
+                      && ((pVCpu->hm.s.vmx.HCPhysEPTP >> 7) & 0x1f) == 0,     /* Bits 7:11 MBZ. */
                          ("EPTP %#RX64\n", pVCpu->hm.s.vmx.HCPhysEPTP));
+            AssertMsg(  !((pVCpu->hm.s.vmx.HCPhysEPTP >> 6) & 0x01)           /* Bit 6 (EPT accessed & dirty bit). */
+                      || (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY),
+                         ("EPTP accessed/dirty bit not supported by CPU but set %#RX64\n", pVCpu->hm.s.vmx.HCPhysEPTP));
 
             rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, pVCpu->hm.s.vmx.HCPhysEPTP);
             AssertRCReturn(rc, rc);
