@@ -1691,6 +1691,8 @@ RT_C_DECLS_END
 #define VERR_HTTP_ABORTED                       (-893)
 /** Request was redirected. */
 #define VERR_HTTP_REDIRECTED                    (-894)
+/** Proxy couldn't be resolved. */
+#define VERR_HTTP_PROXY_NOT_FOUND               (-895)
 /** @} */
 
 /** @name RTManifest status codes

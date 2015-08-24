@@ -437,6 +437,9 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pHttpInt, int rcCurl)
                 /* forcefully aborted */
                 rc = VERR_HTTP_ABORTED;
                 break;
+            case CURLE_COULDNT_RESOLVE_PROXY:
+                rc = VERR_HTTP_PROXY_NOT_FOUND;
+                break;
             default:
                 break;
         }
