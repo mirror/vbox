@@ -287,8 +287,11 @@ namespace UIExtraDataDefs
     /** @} */
 #endif /* DEBUG */
 
+    /** @name Virtual Machine: Log dialog
+      * @{ */
         /** Holds log-window geometry. */
         extern const char* GUI_LogWindowGeometry;
+    /** @} */
 }
 
 /** Extra-data meta definitions. */
@@ -652,3 +655,4 @@ enum MiniToolbarAlignment
 #endif /* !Q_WS_MAC */
 
 #endif /* !___UIExtraDataDefs_h___ */
+

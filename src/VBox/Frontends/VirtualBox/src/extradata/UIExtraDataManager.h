@@ -533,7 +533,7 @@ public:
     /** @} */
 #endif /* DEBUG */
 
-    /** @name Virtual Machine: Logwindow dialog
+    /** @name Virtual Machine: Log dialog
       * @{ */
         /** Returns log-window geometry using @a pWidget and @a defaultGeometry as hints. */
         QRect logWindowGeometry(QWidget *pWidget, const QRect &defaultGeometry);
@@ -616,3 +616,4 @@ private:
 #define gEDataManager UIExtraDataManager::instance()
 
 #endif /* !___UIExtraDataManager_h___ */
+
