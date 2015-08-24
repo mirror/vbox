@@ -2842,12 +2842,11 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
 
 
     /* If there are no recangles specified, just grab a viewport worth bits. */
-# if 1
-    VMSVGAVIEWPORT const DstViewport = pThis->svga.viewport;
-# else
-    VMSVGAVIEWPORT const DstViewport = { 0, 0, pThis->svga.uWidth, pThis->svga.uHeight, pThis->svga.uWidth, pThis->svga.uHeight };
-# endif
-    SVGA3dCopyRect       DummyRect;
+    VMSVGAVIEWPORT const DstViewport   = pThis->svga.viewport;
+    ASMCompilerBarrier(); /* paranoia */
+    Assert(DstViewport.yHighWC >= DstViewport.yLowWC);
+
+    SVGA3dCopyRect DummyRect;
     if (cRects != 0)
     { /* likely */ }
     else
@@ -2858,12 +2857,12 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
 # ifdef DEBUG_bird
         AssertMsgFailed(("No rects to present. Who is doing that and what do they actually expect?\n"));
 # endif
+        DummyRect.x = DummyRect.srcx = 0;
+        DummyRect.y = DummyRect.srcy = 0;
+        DummyRect.w = pThis->svga.uWidth;
+        DummyRect.h = pThis->svga.uHeight;
         cRects = 1;
         pRect  = &DummyRect;
-        DummyRect.x = DummyRect.srcx = DstViewport.x;
-        DummyRect.y = DummyRect.srcy = DstViewport.y;
-        DummyRect.w = DstViewport.cx;
-        DummyRect.h = DstViewport.cy;
     }
 
     /* Blit the surface rectangle(s) to the back buffer. */
@@ -2873,8 +2872,10 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     {
         SVGA3dCopyRect ClippedRect = pRect[i];
 
-        /* Do some sanity checking and limit width and height, all so we
-           don't need to think about wrap-arounds below. */
+        /*
+         * Do some sanity checking and limit width and height, all so we
+         * don't need to think about wrap-arounds below.
+         */
         if (RT_LIKELY(   ClippedRect.w
                       && ClippedRect.x    < VMSVGA_MAX_X
                       && ClippedRect.srcx < VMSVGA_MAX_X
@@ -2896,7 +2897,9 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
             ClippedRect.w = VMSVGA_MAX_Y;
 
 
-        /* Source surface clipping (paranoia). */
+        /*
+         * Source surface clipping (paranoia). Straight forward.
+         */
         if (RT_LIKELY(ClippedRect.srcx < cxSurface))
         { /* likely */ }
         else
@@ -2921,8 +2924,75 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
             ClippedRect.h = cySurface - ClippedRect.srcy;
         }
 
-
-        /* Destination viewport clipping. */
+        /*
+         * Destination viewport clipping - real PITA.
+         *
+         * We have to take the following into account here:
+         *  - The source image is Y inverted.
+         *  - The destination framebuffer is in world and not window coordinates,
+         *    just like the source surface.  This means working in the first quadrant.
+         *  - The viewport is in window coordinate, that is fourth quadrant and
+         *    negated Y values.
+         *  - The destination framebuffer is not scrolled, so we have to blit
+         *    what's visible into the top of the framebuffer.
+         *
+         *
+         *  To illustrate:
+         *
+         *        source              destination        0123456789
+         *     8 ^----------       8 ^----------       0 ----------->
+         *     7 |         |       7 |         |       1 |         |
+         *     6 |         |       6 | ******* |       2 | ******* |
+         *     5 |   ***   |       5 |    *    |       3 |    *    |
+         *     4 |    *    |  =>   4 |    *    |  =>   4 |    *    |
+         *     3 |    *    |       3 |   ***   |       5 |   ***   |
+         *     2 | ******* |       2 |         |       6 |         |
+         *     1 |         |       1 |         |       7 |         |
+         *     0 ----------->      0 ----------->      8 v----------
+         *       0123456789          0123456789          Destination window
+         *
+         * From the above, it follows that a destination viewport given in
+         * window coordinates matches the source exactly when srcy = srcx = 0.
+         *
+         * Example (Y only):
+         *  ySrc        =  0
+         *  yDst         =  0
+         *  cyCopy      =  9
+         *  cyScreen    =  cyCopy
+         *  cySurface  >=  cyCopy
+         *  yViewport   = 5
+         *  cyViewport  = 2  (i.e. '|   ***   |'
+         *                         '|         |' )
+         *  yWCViewportHi  = cxScreen - yViewport              = 9 - 5 = 4
+         *  yWCViewportLow = cxScreen - yViewport - cyViewport = 4 - 2 = 2
+         *
+         * We can see from the illustration that the final result should be:
+         *  SrcRect = (0,7) (11, 5)  (cy=2 from y=5)
+         *  DstRect = (0,2) (11, 4)
+         *
+         * Let's postpone the switching of SrcRect.yBottom/yTop to make it
+         * easier to follow:
+         *  SrcRect = (0,5) (11, 7)
+         *
+         * From the top, Y values only:
+         *  0. Copy = { .yDst = 0, .ySrc = 0, .cy = 9 }
+         *
+         *  1. CopyRect.yDst (=0) is lower than yWCViewportLow:
+         *      cyAdjust = yWCViewportLow - CopyRect.yDst = 2;
+         *      Copy.yDst += cyAdjust = 2;
+         *      Copy.ySrc  = unchanged;
+         *      Copy.cx   -= cyAdjust = 7;
+         *   => Copy = { .yDst = 2, .ySrc = 0, .cy = 7 }
+         *
+         *  2. CopyRect.yDst + CopyRect.cx (=9) is higher than yWCViewportHi:
+         *      cyAdjust = CopyRect.yDst + CopyRect.cx - yWCViewportHi = 9 - 4 = 5
+         *      Copy.yDst  = unchanged;
+         *      Copy.ySrc += cyAdjust = 5;
+         *      Copy.cx   -= cyAdjust = 2;
+         *   => Copy = { .yDst = 2, .ySrc = 5, .cy = 2 }
+         *
+         */
+        /* X - no inversion, so kind of simple. */
         if (ClippedRect.x >= DstViewport.x)
         {
             if (ClippedRect.x + ClippedRect.w <= DstViewport.xRight)
@@ -2950,54 +3020,69 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
                 ClippedRect.w = DstViewport.xRight - ClippedRect.x;
         }
 
-        if (ClippedRect.y >= DstViewport.y)
+        /* Y - complicated, see above. */
+        if (ClippedRect.y >= DstViewport.yLowWC)
         {
-            if (ClippedRect.y + ClippedRect.h <= DstViewport.yBottom)
+            if (ClippedRect.y + ClippedRect.h <= DstViewport.yHighWC)
             { /* typical */ }
-            else if (ClippedRect.y < DstViewport.yBottom)
-                ClippedRect.h = DstViewport.yBottom - ClippedRect.y;
+            else if (ClippedRect.y < DstViewport.yHighWC)
+            {
+                /* adjustment #2 */
+                uint32_t cyAdjust = ClippedRect.y + ClippedRect.h - DstViewport.yHighWC;
+                ClippedRect.srcy += cyAdjust;
+                ClippedRect.h    -= cyAdjust;
+            }
             else
                 continue;
         }
         else
         {
-            uint32_t cyAdjust = DstViewport.y - ClippedRect.y;
+            /* adjustment #1 */
+            uint32_t cyAdjust = DstViewport.yLowWC - ClippedRect.y;
             if (cyAdjust < ClippedRect.h)
             {
-                ClippedRect.h    -= cyAdjust;
                 ClippedRect.y    += cyAdjust;
-                ClippedRect.srcy += cyAdjust;
+                ClippedRect.h    -= cyAdjust;
             }
             else
                 continue;
 
-            if (ClippedRect.y + ClippedRect.h <= DstViewport.yBottom)
+            if (ClippedRect.y + ClippedRect.h <= DstViewport.yHighWC)
             { /* typical */ }
             else
-                ClippedRect.h = DstViewport.yBottom - ClippedRect.y;
+            {
+                /* adjustment #2 */
+                uint32_t cyAdjust = ClippedRect.y + ClippedRect.h - DstViewport.yHighWC;
+                ClippedRect.srcy += cyAdjust;
+                ClippedRect.h    -= cyAdjust;
+            }
         }
 
-
-        /* Do the blitting. */
+        /* Calc source rectangle with y flipping wrt destination. */
         RTRECT SrcRect;
         SrcRect.xLeft   = ClippedRect.srcx;
         SrcRect.xRight  = ClippedRect.srcx + ClippedRect.w;
-        SrcRect.yBottom = ClippedRect.srcy;
-        SrcRect.yTop    = ClippedRect.srcy + ClippedRect.h;
-        RTRECT DstRect; /* y flipped wrt source */
+        SrcRect.yBottom = ClippedRect.srcy + ClippedRect.h;
+        SrcRect.yTop    = ClippedRect.srcy;
+
+        /* Calc destination rectangle. */
+        RTRECT DstRect;
         DstRect.xLeft   = ClippedRect.x;
         DstRect.xRight  = ClippedRect.x + ClippedRect.w;
-        DstRect.yBottom = ClippedRect.y + ClippedRect.h;
-        DstRect.yTop    = ClippedRect.y;
+        DstRect.yBottom = ClippedRect.y;
+        DstRect.yTop    = ClippedRect.y + ClippedRect.h;
+
+        /* Adjust for viewport. */
+        DstRect.xLeft   -= DstViewport.x;
+        DstRect.xRight  -= DstViewport.x;
+        DstRect.yBottom += DstViewport.y;
+        DstRect.yTop    += DstViewport.y;
 
         Log(("SrcRect: (%d,%d)(%d,%d) DstRect: (%d,%d)(%d,%d)\n",
              SrcRect.xLeft, SrcRect.yBottom, SrcRect.xRight, SrcRect.yTop,
              DstRect.xLeft, DstRect.yBottom, DstRect.xRight, DstRect.yTop));
         pState->ext.glBlitFramebuffer(SrcRect.xLeft, SrcRect.yBottom, SrcRect.xRight, SrcRect.yTop,
-                                      DstRect.xLeft   - DstViewport.x,
-                                      DstRect.yBottom - DstViewport.y,
-                                      DstRect.xRight  - DstViewport.x,
-                                      DstRect.yTop    - DstViewport.y,
+                                      DstRect.xLeft, DstRect.yBottom, DstRect.xRight, DstRect.yTop,
                                       GL_COLOR_BUFFER_BIT, GL_LINEAR);
     }
 

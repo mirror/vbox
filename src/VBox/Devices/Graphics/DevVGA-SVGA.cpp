@@ -559,13 +559,15 @@ DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t u
     {
         pThis->svga.viewport.y       = y;
         pThis->svga.viewport.cy      = RT_MIN(cy, pThis->svga.uHeight - y);
-        pThis->svga.viewport.yBottom = y + pThis->svga.viewport.cy;
+        pThis->svga.viewport.yLowWC  = pThis->svga.uHeight - y - pThis->svga.viewport.cy;
+        pThis->svga.viewport.yHighWC = pThis->svga.uHeight - y;
     }
     else
     {
         pThis->svga.viewport.y       = pThis->svga.uHeight;
         pThis->svga.viewport.cy      = 0;
-        pThis->svga.viewport.yBottom = y + pThis->svga.uHeight;
+        pThis->svga.viewport.yLowWC  = 0;
+        pThis->svga.viewport.yHighWC = 0;
     }
 }
 
@@ -1046,8 +1048,11 @@ int vmsvgaChangeMode(PVGASTATE pThis)
     if (    pThis->svga.viewport.cx == 0
         &&  pThis->svga.viewport.cy == 0)
     {
-        pThis->svga.viewport.cx = pThis->svga.viewport.xRight  = pThis->svga.uWidth;
-        pThis->svga.viewport.cy = pThis->svga.viewport.yBottom = pThis->svga.uHeight;
+        pThis->svga.viewport.cx      = pThis->svga.uWidth;
+        pThis->svga.viewport.xRight  = pThis->svga.uWidth;
+        pThis->svga.viewport.cy      = pThis->svga.uHeight;
+        pThis->svga.viewport.yHighWC = pThis->svga.uHeight;
+        pThis->svga.viewport.yLowWC  = 0;
     }
     return VINF_SUCCESS;
 }

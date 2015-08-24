@@ -219,13 +219,52 @@ static LONG WINAPI vmsvga3dWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
     switch (uMsg)
     {
         case WM_CLOSE:
+            Log7(("vmsvga3dWndProc(%p): WM_CLOSE\n", hwnd));
             break;
 
         case WM_DESTROY:
+            Log7(("vmsvga3dWndProc(%p): WM_DESTROY\n", hwnd));
             break;
 
         case WM_NCHITTEST:
+            Log7(("vmsvga3dWndProc(%p): WM_NCHITTEST\n", hwnd));
             return HTNOWHERE;
+
+# if 0 /* flicker experiment, no help here. */
+        case WM_PAINT:
+            Log7(("vmsvga3dWndProc(%p): WM_PAINT %p %p\n", hwnd, wParam, lParam));
+            ValidateRect(hwnd, NULL);
+            return 0;
+        case WM_ERASEBKGND:
+            Log7(("vmsvga3dWndProc(%p): WM_ERASEBKGND %p %p\n", hwnd, wParam, lParam));
+            return TRUE;
+        case WM_NCPAINT:
+            Log7(("vmsvga3dWndProc(%p): WM_NCPAINT %p %p\n", hwnd, wParam, lParam));
+            break;
+        case WM_WINDOWPOSCHANGING:
+        {
+            PWINDOWPOS pPos = (PWINDOWPOS)lParam;
+            Log7(("vmsvga3dWndProc(%p): WM_WINDOWPOSCHANGING %p %p pos=(%d,%d) size=(%d,%d) flags=%#x\n",
+                  hwnd, wParam, lParam, pPos->x, pPos->y, pPos->cx, pPos->cy, pPos->flags));
+            break;
+        }
+        case WM_WINDOWPOSCHANGED:
+        {
+            PWINDOWPOS pPos = (PWINDOWPOS)lParam;
+            Log7(("vmsvga3dWndProc(%p): WM_WINDOWPOSCHANGED %p %p pos=(%d,%d) size=(%d,%d) flags=%#x\n",
+                  hwnd, wParam, lParam, pPos->x, pPos->y, pPos->cx, pPos->cy, pPos->flags));
+            break;
+        }
+        case WM_MOVE:
+            Log7(("vmsvga3dWndProc(%p): WM_MOVE %p %p\n", hwnd, wParam, lParam));
+            break;
+        case WM_SIZE:
+            Log7(("vmsvga3dWndProc(%p): WM_SIZE %p %p\n", hwnd, wParam, lParam));
+            break;
+
+        default:
+            Log7(("vmsvga3dWndProc(%p): %#x %p %p\n", hwnd, uMsg, wParam, lParam));
+# endif
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }

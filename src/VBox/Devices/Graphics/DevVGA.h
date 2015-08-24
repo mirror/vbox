@@ -238,8 +238,15 @@ typedef struct VMSVGAVIEWPORT
     uint32_t        y;                  /**< y coordinate (top). */
     uint32_t        cx;                 /**< width. */
     uint32_t        cy;                 /**< height. */
-    uint32_t        xRight;             /**< x + cx. */
-    uint32_t        yBottom;            /**< y + cy. */
+    /** Right side coordinate (exclusive). Same as x + cx. */
+    uint32_t        xRight;
+    /** First quadrant low y coordinate.
+     * Same as y + cy - 1 in window coordinates. */
+    uint32_t        yLowWC;
+    /** First quadrant high y coordinate (exclusive) - yLowWC + cy.
+     * Same as y - 1 in window coordinates. */
+    uint32_t        yHighWC;
+
 } VMSVGAVIEWPORT;
 
 /** Pointer to the private VMSVGA ring-3 state structure.
