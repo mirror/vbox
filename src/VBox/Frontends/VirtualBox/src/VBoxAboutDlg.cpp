@@ -23,6 +23,7 @@
 # include <QDir>
 # include <QEvent>
 # include <QPainter>
+# include <QLabel>
 # include <iprt/path.h>
 # include <VBox/version.h> /* VBOX_VENDOR */
 
@@ -37,7 +38,7 @@
 
 
 VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
-    : QIWithRetranslateUI2<QIDialog>(pParent, Qt::CustomizeWindowHint | Qt::WindowTitleHint)
+    : QIWithRetranslateUI2<QIDialog>(pParent)
     , m_strVersion(strVersion)
 {
     /* Delete dialog on close: */
@@ -62,6 +63,27 @@ VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
     m_size = icon.availableSizes().first();
     m_pixmap = icon.pixmap(m_size);
 
+    /* Create main layout: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+
+    /* Create label for version text: */
+    m_pLabel = new QLabel();
+    pMainLayout->addWidget(m_pLabel);
+
+    QPalette palette;
+    /* Branding: Set a different text color (because splash also could be white),
+     * otherwise use white as default color: */
+    QString strColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
+    if (!strColor.isEmpty())
+        palette.setColor(QPalette::WindowText, QColor(strColor).name());
+    else
+        palette.setColor(QPalette::WindowText, Qt::black);
+    m_pLabel->setPalette(palette);
+    m_pLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    m_pLabel->setFont(font());
+
+    pMainLayout->setAlignment(m_pLabel, Qt::AlignRight | Qt::AlignBottom);
+
     /* Translate: */
     retranslateUi();
 }
@@ -70,8 +92,6 @@ bool VBoxAboutDlg::event(QEvent *pEvent)
 {
     if (pEvent->type() == QEvent::Polish)
         setFixedSize(m_size);
-    if (pEvent->type() == QEvent::WindowDeactivate)
-        close();
     return QIDialog::event(pEvent);
 }
 
@@ -79,36 +99,12 @@ void VBoxAboutDlg::paintEvent(QPaintEvent* /* pEvent */)
 {
     QPainter painter(this);
     painter.drawPixmap(0, 0, m_pixmap);
-    painter.setFont(font());
-
-    /* Branding: Set a different text color (because splash also could be white),
-                 otherwise use white as default color: */
-    QString strColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
-    if (!strColor.isEmpty())
-        painter.setPen(QColor(strColor).name());
-    else
-        painter.setPen(Qt::black);
-#if VBOX_OSE
-    painter.drawText(QRect(0, 400, 600, 32),
-                     Qt::AlignCenter | Qt::AlignVCenter | Qt::TextWordWrap,
-                     m_strAboutText);
-#else /* VBOX_OSE */
-    painter.drawText(QRect(271, 370, 360, 72),
-                     Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
-                     m_strAboutText);
-#endif /* VBOX_OSE */
-}
-
-void VBoxAboutDlg::mouseReleaseEvent(QMouseEvent* /* pEvent */)
-{
-    /* Close the dialog on mouse button release: */
-    close();
 }
 
 void VBoxAboutDlg::retranslateUi()
 {
     setWindowTitle(tr("VirtualBox - About"));
-    QString strAboutText =  tr("VirtualBox Graphical User Interface");
+    QString strAboutText = tr("VirtualBox Graphical User Interface");
 #ifdef VBOX_BLEEDING_EDGE
     QString strVersionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);
 #else
@@ -120,5 +116,7 @@ void VBoxAboutDlg::retranslateUi()
 #else /* VBOX_OSE */
     m_strAboutText = strAboutText + "\n" + strVersionText.arg(m_strVersion);
 #endif /* VBOX_OSE */
+    m_strAboutText = m_strAboutText + "\n" + QString("Copyright %1 2015 Oracle and/or its affiliates. All rights reserved.").arg(QChar(0xa9));
+    m_pLabel->setText(m_strAboutText);
 }
 
