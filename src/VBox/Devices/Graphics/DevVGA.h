@@ -246,7 +246,8 @@ typedef struct VMSVGAVIEWPORT
     /** First quadrant high y coordinate (exclusive) - yLowWC + cy.
      * Same as y - 1 in window coordinates. */
     uint32_t        yHighWC;
-
+    /** Alignment padding. */
+    uint32_t        uAlignment;
 } VMSVGAVIEWPORT;
 
 /** Pointer to the private VMSVGA ring-3 state structure.
