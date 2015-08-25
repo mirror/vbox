@@ -478,6 +478,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/DevLsiLogicSCSI.cpp
  endif
 
+  if defined(VBOX_WITH_NVME_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+   VBoxDD_DEFS          += VBOX_WITH_NVME_IMPL
+   VBoxDD_SOURCES       += \
+ 	Storage/DevNVMe.cpp
+  endif
+
  ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
   VBoxDD_DEFS           += VBOX_WITH_PDM_ASYNC_COMPLETION
  endif
@@ -967,6 +973,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Storage/DevLsiLogicSCSI.cpp
   endif
 
+  if defined(VBOX_WITH_NVME_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+   VBoxDDGC_DEFS       += VBOX_WITH_NVME_IMPL
+   VBoxDDGC_SOURCES    += \
+  	Storage/DevNVMe.cpp
+  endif
+
   ifdef VBOX_WITH_NEW_PS2M
   VBoxDDRC_DEFS         += VBOX_WITH_NEW_PS2M
   endif
@@ -1137,6 +1149,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDR0_DEFS          += VBOX_WITH_LSILOGIC
  VBoxDDR0_SOURCES       += \
  	Storage/DevLsiLogicSCSI.cpp
+ endif
+
+ if defined(VBOX_WITH_NVME_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  VBoxDDR0_DEFS       += VBOX_WITH_NVME_IMPL
+  VBoxDDR0_SOURCES    += \
+ 	Storage/DevNVMe.cpp
  endif
 
  ifdef VBOX_WITH_NEW_PS2M
@@ -1334,6 +1352,38 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
   $(call VBOX_SET_VER_INFO_R0,VBoxPciRawR0,PUEL Extension Pack - PCI Passthrough Driver$(COMMA) ring-0)
 
   Bus/DevPciRaw.cpp_INCS    = Bus
+ endif
+
+ #
+ # The NVMe Extension Pack Modules.
+ #
+ if defined(VBOX_WITH_NVME_IMPL)
+  DLLS += VBoxNvmeR3
+  VBoxNvmeR3_TEMPLATE = VBoxR3ExtPackPuel
+  VBoxNvmeR3_SOURCES  = \
+ 	Storage/DevNVMe.cpp
+  VBoxNvmeR3_SOURCES.win = \
+ 	build/VBoxNvmeR3.rc
+
+  SYSMODS += VBoxNvmeR0
+  VBoxNvmeR0_TEMPLATE = VBoxR0ExtPackPuel
+  VBoxNvmeR0_SOURCES  = \
+ 	Storage/DevNVMe.cpp
+
+  ifdef VBOX_WITH_RAW_MODE
+   SYSMODS += VBoxNvmeRC
+   VBoxNvmeRC_TEMPLATE = VBoxRcExtPackPuel
+   VBoxNvmeRC_SOURCES  = \
+ 	Storage/DevNVMe.cpp
+  endif
+
+  # Hacky but MSI support *must* be enabled
+  ifdef VBOX_WITH_MSI_DEVICES
+   VBoxNvmeR3_DEFS += VBOX_WITH_MSI_DEVICES
+   VBoxNvmeR0_DEFS += VBOX_WITH_MSI_DEVICES
+   VBoxNvmeRC_DEFS += VBOX_WITH_MSI_DEVICES
+  endif
+
  endif
 
 

@@ -75,6 +75,9 @@ extern const PDMDEVREG g_DevicePciIch9Bridge;
 extern const PDMDEVREG g_DeviceLsiLogicSCSI;
 extern const PDMDEVREG g_DeviceLsiLogicSAS;
 #endif
+#ifdef VBOX_WITH_NVME_IMPL
+extern const PDMDEVREG g_DeviceNVMe;
+#endif
 #ifdef VBOX_WITH_EFI
 extern const PDMDEVREG g_DeviceEFI;
 #endif
