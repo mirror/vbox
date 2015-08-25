@@ -140,6 +140,9 @@ EXPORTS
     FTMR3CancelStandby
     FTMR3PowerOn
 
+    MMHyperR3ToR0
+    MMHyperR3ToRC
+
     HMR3IsEnabled
     HMR3IsNestedPagingActive
     HMR3IsUXActive
@@ -147,6 +150,8 @@ EXPORTS
 
     MMR3HeapFree
     MMR3HeapRealloc
+
+    MMR3HyperAllocOnceNoRel
 
     PATMR3AllowPatching
     PATMR3IsEnabled
