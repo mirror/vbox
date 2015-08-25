@@ -139,12 +139,22 @@ public:
     /** Returns the VBoxSVC availability value. */
     bool isVBoxSVCAvailable() const { return m_fVBoxSVCAvailable; }
 
-    /** Returns the geometry of the host-screen with @a iHostScreenIndex.
-      * @note The default screen is used if @a iHostScreenIndex is -1. */
-    const QRect	screenGeometry(int iHostScreenIndex = -1) const;
-    /** Returns the available-geometry of the host-screen with @a iHostScreenIndex.
-      * @note The default screen is used if @a iHostScreenIndex is -1. */
-    const QRect	availableGeometry(int iHostScreenIndex = -1) const;
+    /** @name Host-screen geometry stuff
+      * @{ */
+        /** Returns the geometry of the host-screen with @a iHostScreenIndex.
+          * @note The default screen is used if @a iHostScreenIndex is -1. */
+        const QRect	screenGeometry(int iHostScreenIndex = -1) const;
+        /** Returns the available-geometry of the host-screen with @a iHostScreenIndex.
+          * @note The default screen is used if @a iHostScreenIndex is -1. */
+        const QRect	availableGeometry(int iHostScreenIndex = -1) const;
+
+        /** Returns the geometry of the host-screen which contains @a pWidget.
+          * @note The default screen is used if @a pWidget is 0. */
+        const QRect	screenGeometry(QWidget *pWidget = 0) const;
+        /** Returns the available-geometry of the host-screen which contains @a pWidget.
+          * @note The default screen is used if @a pWidget is 0. */
+        const QRect	availableGeometry(QWidget *pWidget = 0) const;
+    /** @} */
 
     VBoxGlobalSettings &settings() { return gset; }
     bool setSettings (VBoxGlobalSettings &gs);
@@ -532,35 +542,40 @@ private:
     /** X11: Holds the type of the Window Manager we are running under. */
     X11WMType m_enmWindowManagerType;
 
-    /** X11: Holds the desktop-widget watchdog instance aware of host-screen geometry changes. */
-    UIDesktopWidgetWatchdog *m_pDesktopWidgetWatchdog;
+    /** @name Host-screen geometry stuff
+      * @{ */
+        /** X11: Holds the desktop-widget watchdog instance aware of host-screen geometry changes. */
+        UIDesktopWidgetWatchdog *m_pDesktopWidgetWatchdog;
+    /** @} */
 #endif /* Q_WS_X11 */
 
     /** The --aggressive-caching / --no-aggressive-caching option. */
     bool mAgressiveCaching;
     /** The --restore-current option. */
     bool mRestoreCurrentSnapshot;
+
     /** @name Ad-hoc VM reconfiguration.
      * @{ */
-    /** Floppy image. */
-    QString m_strFloppyImage;
-    /** DVD image. */
-    QString m_strDvdImage;
+        /** Floppy image. */
+        QString m_strFloppyImage;
+        /** DVD image. */
+        QString m_strDvdImage;
     /** @} */
+
     /** @name VMM options
      * @{ */
-    /** The --disable-patm option. */
-    bool mDisablePatm;
-    /** The --disable-csam option. */
-    bool mDisableCsam;
-    /** The --recompile-supervisor option. */
-    bool mRecompileSupervisor;
-    /** The --recompile-user option. */
-    bool mRecompileUser;
-    /** The --execute-all-in-iem option. */
-    bool mExecuteAllInIem;
-    /** The --warp-factor option value. */
-    uint32_t mWarpPct;
+        /** The --disable-patm option. */
+        bool mDisablePatm;
+        /** The --disable-csam option. */
+        bool mDisableCsam;
+        /** The --recompile-supervisor option. */
+        bool mRecompileSupervisor;
+        /** The --recompile-user option. */
+        bool mRecompileUser;
+        /** The --execute-all-in-iem option. */
+        bool mExecuteAllInIem;
+        /** The --warp-factor option value. */
+        uint32_t mWarpPct;
     /** @} */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

@@ -365,6 +365,18 @@ const QRect VBoxGlobal::availableGeometry(int iHostScreenIndex /* = -1 */) const
     return QApplication::desktop()->availableGeometry(iHostScreenIndex);
 }
 
+const QRect	VBoxGlobal::screenGeometry(QWidget *pWidget /* = 0 */) const
+{
+    /* Redirect to existing wrapper: */
+    return screenGeometry(QApplication::desktop()->screenNumber(pWidget));
+}
+
+const QRect	VBoxGlobal::availableGeometry(QWidget *pWidget /* = 0 */) const
+{
+    /* Redirect to existing wrapper: */
+    return availableGeometry(QApplication::desktop()->screenNumber(pWidget));
+}
+
 /**
  *  Sets the new global settings and saves them to the VirtualBox server.
  */
