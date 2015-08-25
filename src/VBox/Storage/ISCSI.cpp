@@ -1220,10 +1220,10 @@ static DECLCALLBACK(int) iscsiAttach(void *pvUser)
     size_t cbChallenge = 0;     /* shut up gcc */
     uint8_t bChapIdx;
     uint8_t aResponse[RTMD5HASHSIZE];
-    uint32_t cnISCSIReq;
+    uint32_t cnISCSIReq = 0;
     ISCSIREQ aISCSIReq[4];
     uint32_t aReqBHS[12];
-    uint32_t cnISCSIRes;
+    uint32_t cnISCSIRes = 0;
     ISCSIRES aISCSIRes[2];
     uint32_t aResBHS[12];
     unsigned cRetries = 5;
