@@ -99,6 +99,10 @@
 # undef LOG_GROUP
 # include "../Storage/DevLsiLogicSCSI.cpp"
 #endif
+#ifdef VBOX_WITH_NVME_IMPL
+# undef LOG_GROUP
+# include "../Storage/DevNVMe.cpp"
+#endif
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
 # undef LOG_GROUP

@@ -109,6 +109,10 @@
 #include "../Audio/DevIchAc97.cpp"
 #undef LOG_GROUP
 #include "../Audio/DevIchHda.cpp"
+#ifdef VBOX_WITH_NVME_IMPL
+# undef LOG_GROUP
+# include "../Storage/DevNVMe.cpp"
+#endif
 
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
@@ -1891,6 +1895,63 @@ int main()
     GEN_CHECK_OFF(HDASTATE, pSinkMicIn);
     GEN_CHECK_OFF(HDASTATE, u64BaseTS);
     GEN_CHECK_OFF(HDASTATE, u8Counter);
+
+#ifdef VBOX_WITH_NVME_IMPL
+    GEN_CHECK_SIZE(NVME);
+    GEN_CHECK_OFF(NVME, PciDev);
+    GEN_CHECK_OFF(NVME, pDevInsR3);
+    GEN_CHECK_OFF(NVME, pDevInsR0);
+    GEN_CHECK_OFF(NVME, pDevInsRC);
+    GEN_CHECK_OFF(NVME, IBase);
+    GEN_CHECK_OFF(NVME, ILeds);
+    GEN_CHECK_OFF(NVME, pLedsConnector);
+    GEN_CHECK_OFF(NVME, pSupDrvSession);
+    GEN_CHECK_OFF(NVME, GCPhysMMIO);
+    GEN_CHECK_OFF(NVME, IOPortBase);
+    GEN_CHECK_OFF(NVME, cQueuesSubmMax);
+    GEN_CHECK_OFF(NVME, cQueuesCompMax);
+    GEN_CHECK_OFF(NVME, cQueueEntriesMax);
+    GEN_CHECK_OFF(NVME, cTimeoutMax);
+    GEN_CHECK_OFF(NVME, cWrkThrdsMax);
+    GEN_CHECK_OFF(NVME, cNamespaces);
+    GEN_CHECK_OFF(NVME, aszSerialNumber);
+    GEN_CHECK_OFF(NVME, aszModelNumber);
+    GEN_CHECK_OFF(NVME, aszFirmwareRevision);
+    GEN_CHECK_OFF(NVME, fRCEnabled);
+    GEN_CHECK_OFF(NVME, fR0Enabled);
+    GEN_CHECK_OFF(NVME, enmState);
+    GEN_CHECK_OFF(NVME, u32IntrMask);
+    GEN_CHECK_OFF(NVME, u32IntrSts);
+    GEN_CHECK_OFF(NVME, aIntrVecs);
+    GEN_CHECK_OFF(NVME, u32IoCompletionQueueEntrySize);
+    GEN_CHECK_OFF(NVME, u32IoSubmissionQueueEntrySize);
+    GEN_CHECK_OFF(NVME, uShutdwnNotifierLast);
+    GEN_CHECK_OFF(NVME, uAmsSet);
+    GEN_CHECK_OFF(NVME, uMpsSet);
+    GEN_CHECK_OFF(NVME, uCssSet);
+    GEN_CHECK_OFF(NVME, u32RegIdx);
+    GEN_CHECK_OFF(NVME, cbPage);
+    GEN_CHECK_OFF(NVME, paQueuesSubmR3);
+    GEN_CHECK_OFF(NVME, paQueuesCompR3);
+    GEN_CHECK_OFF(NVME, paQueuesSubmR0);
+    GEN_CHECK_OFF(NVME, paQueuesCompR0);
+    GEN_CHECK_OFF(NVME, paQueuesSubmRC);
+    GEN_CHECK_OFF(NVME, paQueuesCompRC);
+    GEN_CHECK_OFF(NVME, cAsyncEvtReqsMax);
+    GEN_CHECK_OFF(NVME, CritSectAsyncEvtReqs);
+    GEN_CHECK_OFF(NVME, paAsyncEvtReqCids);
+    GEN_CHECK_OFF(NVME, paNamespaces);
+    GEN_CHECK_OFF(NVME, cWrkThrdsCur);
+    GEN_CHECK_OFF(NVME, cWrkThrdsActive);
+    GEN_CHECK_OFF(NVME, pListWrkThrds);
+    GEN_CHECK_OFF(NVME, CritSectWrkThrds);
+    GEN_CHECK_OFF(NVME, pListReqsFree);
+    GEN_CHECK_OFF(NVME, CritSectReqsFree);
+    GEN_CHECK_OFF(NVME, fRedo);
+    GEN_CHECK_OFF(NVME, fSignalIdle);
+    GEN_CHECK_OFF(NVME, pListReqsRedo);
+    GEN_CHECK_OFF(NVME, CritSectReqsRedo);
+#endif
 
     return (0);
 }
