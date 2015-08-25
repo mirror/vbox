@@ -32,10 +32,6 @@ ifdef VBOX_WITH_TESTCASES
  tstVD-2_SOURCES  = tstVD-2.cpp
  tstVD-2_LIBS = $(LIB_DDU)
 
- tstVDCopy_TEMPLATE = VBOXR3TSTEXE
- tstVDCopy_SOURCES  = tstVDCopy.cpp
- tstVDCopy_LIBS = $(LIB_DDU)
-
  PROGRAMS += tstVDIo
 
  #
