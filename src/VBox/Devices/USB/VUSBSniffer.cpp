@@ -550,6 +550,8 @@ DECLHIDDEN(int) VUSBSnifferCreate(PVUSBSNIFFER phSniffer, uint32_t fFlags,
             RTSemFastMutexDestroy(pThis->hMtx);
             pThis->hMtx = NIL_RTSEMFASTMUTEX;
         }
+        if (pThis->pbBlockData)
+            RTMemFree(pThis->pbBlockData);
         RTMemFree(pThis);
     }
     else
