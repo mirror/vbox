@@ -22,7 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Basic testcases for the VD code.
 #
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable
+ PROGRAMS += tstVD tstVD-2 tstVDSnap
 
  tstVD_TEMPLATE = VBOXR3TSTEXE
  tstVD_SOURCES = tstVD.cpp
@@ -103,13 +103,6 @@ ifdef VBOX_WITH_TESTCASES
   tstVDIo_LIBS += \
   	$(PATH_STAGE_LIB)/StorageDbgLib$(VBOX_SUFF_LIB)
  endif
-
- tstVDSetUuid_TEMPLATE = VBOXR3TSTEXE
- tstVDSetUuid_LIBS = $(LIB_DDU)
-
- tstVDShareable_TEMPLATE = VBOXR3TSTEXE
- tstVDShareable_LIBS = $(LIB_DDU)
- tstVDShareable_SOURCES = tstVDShareable.cpp
 
  tstVDSnap_TEMPLATE = VBOXR3TSTEXE
  tstVDSnap_LIBS = $(LIB_DDU)
