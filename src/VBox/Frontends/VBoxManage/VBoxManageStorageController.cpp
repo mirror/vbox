@@ -1085,6 +1085,12 @@ RTEXITCODE handleStorageController(HandlerArg *a)
                                                           StorageBus_USB,
                                                           ctl.asOutParam()));
             }
+            else if (!RTStrICmp(pszBusType, "pcie"))
+            {
+                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl).raw(),
+                                                          StorageBus_PCIe,
+                                                          ctl.asOutParam()));
+            }
             else
             {
                 errorArgument("Invalid --add argument '%s'", pszBusType);
@@ -1137,6 +1143,10 @@ RTEXITCODE handleStorageController(HandlerArg *a)
                 else if (!RTStrICmp(pszCtlType, "usb"))
                 {
                     CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_USB));
+                }
+                else if (!RTStrICmp(pszCtlType, "nvme"))
+                {
+                    CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_NVMe));
                 }
                 else
                 {
