@@ -671,6 +671,7 @@ public:
             case QNetworkReply::SslHandshakeFailedError:     return m_strErrorTemplate.arg(m_pThread->context(), tr("SSL authentication failed"));
             case QNetworkReply::AuthenticationRequiredError: return m_strErrorTemplate.arg(m_pThread->context(), tr("Wrong SSL certificate format"));
             case QNetworkReply::ContentReSendError:          return m_strErrorTemplate.arg(m_pThread->context(), tr("Content moved"));
+            case QNetworkReply::ProxyNotFoundError:          return m_strErrorTemplate.arg(m_pThread->context(), tr("Proxy not found"));
             default:                                         return m_strErrorTemplate.arg(m_pThread->context(), tr("Unknown reason"));
         }
         return QString();
@@ -697,6 +698,7 @@ private slots:
             case VERR_HTTP_CACERT_CANNOT_AUTHENTICATE: m_error = QNetworkReply::AuthenticationRequiredError; break;
             case VERR_HTTP_ABORTED:                    m_error = QNetworkReply::OperationCanceledError; break;
             case VERR_HTTP_REDIRECTED:                 m_error = QNetworkReply::ContentReSendError; break;
+            case VERR_HTTP_PROXY_NOT_FOUND:            m_error = QNetworkReply::ProxyNotFoundError; break;
             default:                                   m_error = QNetworkReply::UnknownNetworkError; break;
         }
         emit finished();
