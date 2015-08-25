@@ -2178,12 +2178,14 @@ static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
     {
         AssertPtr(pIt);
         PVDSTORAGE pStorage = (PVDSTORAGE)RTMemAllocZ(sizeof(VDSTORAGE));
-        if (!pStorage)
+        if (pStorage)
+        {
+            pStorage->pFile = pIt;
+            pStorage->pfnComplete = pfnCompleted;
+            *ppStorage = pStorage;
+        }
+        else
             rc = VERR_NO_MEMORY;
-
-        pStorage->pFile = pIt;
-        pStorage->pfnComplete = pfnCompleted;
-        *ppStorage = pStorage;
     }
 
     return rc;
