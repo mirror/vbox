@@ -1498,7 +1498,7 @@ static DECLCALLBACK(int) drvHostDSoundGetConf(PPDMIHOSTAUDIO pInterface, PPDMAUD
 
     hr = DirectSoundCaptureEnumerateW(&dsoundCaptureEnumCallback, &ctx);
     if (FAILED(hr))
-        LogRel(("DSound: Error nnumerating host capturing devices: %Rhrc\n", hr));
+        LogRel(("DSound: Error enumerating host capturing devices: %Rhrc\n", hr));
 
     LogRel(("DSound: Found %RU32 host capturing devices\n", pCfg->cMaxHstStrmsIn));
     if (pCfg->cMaxHstStrmsIn < 2)
