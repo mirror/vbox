@@ -67,6 +67,7 @@ static const DeviceAssignmentRule aGenericRules[] =
     {"lsilogic",      0, 20, 0,  1},
     {"buslogic",      0, 21, 0,  1},
     {"lsilogicsas",   0, 22, 0,  1},
+    {"nvme",          0, 14, 0,  1},
 
     /* USB controllers */
     {"usb-ohci",      0,  6,  0, 0},
@@ -168,6 +169,13 @@ static const DeviceAssignmentRule aIch9Rules[] =
     {"lsilogicsas",   1, 29, 0,   0},
     {"lsilogicsas",   1, 30, 0,   0},
     {"lsilogicsas",   1, 31, 0,   0},
+    {"nvme",          1, 32, 0,   0},
+    {"nvme",          1, 33, 0,   0},
+    {"nvme",          1, 34, 0,   0},
+    {"nvme",          1, 35, 0,   0},
+    {"nvme",          1, 36, 0,   0},
+    {"nvme",          1, 37, 0,   0},
+    {"nvme",          1, 38, 0,   0},
 
     /* NICs */
     {"nic",           2,  0, 0,   0},
@@ -211,7 +219,8 @@ static const DeviceAliasRule aDeviceAliases[] =
     {"ahci",        "storage"},
     {"lsilogic",    "storage"},
     {"buslogic",    "storage"},
-    {"lsilogicsas", "storage"}
+    {"lsilogicsas", "storage"},
+    {"nvme",        "storage"}
 };
 
 struct BusAssignmentManager::State

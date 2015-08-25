@@ -446,7 +446,7 @@
 
   <enum
     name="SettingsVersion"
-    uuid="d5b15ca7-3de7-46b2-a63a-ddcce42bfa3f"
+    uuid="b4cc23c2-96f2-419d-830b-bd13c1135dfb"
     >
     <desc>
       Settings version of VirtualBox settings files. This is written to
@@ -564,6 +564,12 @@
       <desc>Settings version "1.15", written by VirtualBox 5.0.x.</desc>
       <!--
           Machine changes: hot-plug flag for storage devices.
+      -->
+    </const>
+    <const name="v1_16" value="18">
+      <desc>Settings version "1.16", written by VirtualBox 5.1.x.</desc>
+      <!--
+          Machine changes: NVMe storage controller.
       -->
     </const>
 
@@ -19585,7 +19591,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="StorageBus"
-    uuid="2dab9df1-9683-48fd-8c11-caada236fcb0"
+    uuid="21371490-8542-4b5a-a74d-ee9ac2d45a90"
     >
     <desc>
       The bus type of the storage controller (IDE, SATA, SCSI, SAS or Floppy);
@@ -19600,11 +19606,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Floppy"    value="4"/>
     <const name="SAS"       value="5"/>
     <const name="USB"       value="6"/>
+    <const name="PCIe"      value="7"/>
   </enum>
 
   <enum
     name="StorageControllerType"
-    uuid="02e190af-b546-4109-b036-6deaa4ef6e69"
+    uuid="9427f309-82e7-468f-9964-abfefc4d3058"
     >
     <desc>
       The exact variant of storage controller hardware presented
@@ -19638,7 +19645,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="LsiLogicSas"   value="8">
       <desc>A variant of the LsiLogic controller using SAS.</desc>
     </const>
-    <const name="USB"           value="9">
+    <const name="NVMe"          value="9">
+      <desc>An NVMe storage controller.</desc>
+    </const>
+    <const name="USB"           value="10">
       <desc>Special USB based storage controller.</desc>
     </const>
   </enum>

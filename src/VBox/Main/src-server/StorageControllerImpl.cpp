@@ -123,7 +123,7 @@ HRESULT StorageController::init(Machine *aParent,
 
     ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
     if (   (aStorageBus <= StorageBus_Null)
-        || (aStorageBus >  StorageBus_USB))
+        || (aStorageBus >  StorageBus_PCIe))
         return setError(E_INVALIDARG,
                         tr("Invalid storage connection type"));
 
@@ -184,6 +184,10 @@ HRESULT StorageController::init(Machine *aParent,
         case StorageBus_USB:
             m->bd->mPortCount = 8;
             m->bd->mStorageControllerType = StorageControllerType_USB;
+            break;
+        case StorageBus_PCIe:
+            m->bd->mPortCount = 1;
+            m->bd->mStorageControllerType = StorageControllerType_NVMe;
             break;
     }
 
@@ -424,6 +428,12 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
                 rc = E_INVALIDARG;
             break;
         }
+        case StorageBus_PCIe:
+        {
+            if (aControllerType != StorageControllerType_NVMe)
+                rc = E_INVALIDARG;
+            break;
+        }
         default:
             AssertMsgFailed(("Invalid controller type %d\n", m->bd->mStorageBus));
             rc = E_INVALIDARG;
@@ -557,6 +567,18 @@ HRESULT StorageController::setPortCount(ULONG aPortCount)
                 return setError(E_INVALIDARG,
                                 tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
                                 aPortCount, 8, 8);
+            break;
+        }
+        case StorageBus_PCIe:
+        {
+            /*
+             * PCIe (NVMe in particular) supports theoretically 2^32 - 1
+             * different namespaces, limit the amount artifically here.
+             */
+            if (aPortCount < 1 || aPortCount > 255)
+                return setError(E_INVALIDARG,
+                                tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                                aPortCount, 1, 255);
             break;
         }
         default:

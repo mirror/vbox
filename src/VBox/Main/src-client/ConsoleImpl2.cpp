@@ -2063,7 +2063,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * Storage controllers.
          */
         com::SafeIfaceArray<IStorageController> ctrls;
-        PCFGMNODE aCtrlNodes[StorageControllerType_LsiLogicSas + 1] = {};
+        PCFGMNODE aCtrlNodes[StorageControllerType_NVMe + 1] = {};
         hrc = pMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));       H();
 
         bool fFdcEnabled = false;
@@ -2279,6 +2279,22 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                    "is at least one USB storage device configured for this VM.\n"
                                    "To fix this problem either enable the USB controller or remove\n"
                                    "the storage device from the VM"));
+                    break;
+                }
+
+                case StorageControllerType_NVMe:
+                {
+                    hrc = pBusMgr->assignPCIDevice("nvme", pCtlInst);                       H();
+
+                    ULONG cPorts = 0;
+                    hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
+                    InsertConfigInteger(pCfg, "NamespacesMax", cPorts);
+
+                    /* Attach the status driver */
+                    AssertRelease(cPorts <= cLedSata);
+                    i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedNvme], 0, cPorts - 1,
+                                       &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    paLedDevType = &maStorageDevType[iLedNvme];
                     break;
                 }
 

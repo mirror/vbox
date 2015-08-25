@@ -3588,6 +3588,11 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             sctl.storageBus = StorageBus_USB;
             sctl.controllerType = StorageControllerType_USB;
         }
+        else if (strType == "NVMe")
+        {
+            sctl.storageBus = StorageBus_PCIe;
+            sctl.controllerType = StorageControllerType_NVMe;
+        }
         else
             throw ConfigFileError(this, pelmController, N_("Invalid value '%s' for StorageController/@type attribute"), strType.c_str());
 
@@ -5096,6 +5101,7 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
             case StorageControllerType_I82078: pcszType = "I82078"; break;
             case StorageControllerType_LsiLogicSas: pcszType = "LsiLogicSas"; break;
             case StorageControllerType_USB: pcszType = "USB"; break;
+            case StorageControllerType_NVMe: pcszType = "NVMe"; break;
             default: /*case StorageControllerType_PIIX3:*/ pcszType = "PIIX3"; break;
         }
         pelmController->setAttribute("type", pcszType);
@@ -5579,6 +5585,23 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_16)
+    {
+        // VirtualBox 5.1 adds a NVMe storage controller.
+        for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
+             it != storageMachine.llStorageControllers.end();
+             ++it)
+        {
+            const StorageController &sctl = *it;
+
+            if (sctl.controllerType == StorageControllerType_NVMe)
+            {
+                m->sv = SettingsVersion_v1_16;
+                return;
+            }
+        }
+    }
+
     if (m->sv < SettingsVersion_v1_15)
     {
         // VirtualBox 5.0 adds paravirt providers, explicit AHCI port hotplug
