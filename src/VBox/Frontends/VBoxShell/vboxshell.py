@@ -2526,7 +2526,7 @@ def detachCtrCmd(ctx, args):
 
 def usbctr(ctx, mach, console, args):
     if (args[0]):
-        console.attachUSBDevice(args[1])
+        console.attachUSBDevice(args[1], "")
     else:
         console.detachUSBDevice(args[1])
 
