@@ -121,6 +121,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_LSILOGICSCSI,
     /** NE2000 Device group. */
     LOG_GROUP_DEV_NE2000,
+    /** NVMe Device group. */
+    LOG_GROUP_DEV_NVME,
     /** USB OHCI Device group. */
     LOG_GROUP_DEV_OHCI,
     /** Parallel Device group */
@@ -829,6 +831,7 @@ typedef enum LOGGROUP
     "DEV_LPC",      \
     "DEV_LSILOGICSCSI", \
     "DEV_NE2000",   \
+    "DEV_NVME",     \
     "DEV_OHCI",     \
     "DEV_PARALLEL", \
     "DEV_PC",       \
