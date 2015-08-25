@@ -81,6 +81,8 @@
 #define USBIP_STATUS_SUCCESS                 INT32_C(0)
 /** Pipe stalled. */
 #define USBIP_STATUS_PIPE_STALLED            INT32_C(-32)
+/** Short read. */
+#define USBIP_STATUS_SHORT_READ              INT32_C(-121)
 /** @} */
 
 /**
@@ -559,7 +561,8 @@ DECLINLINE(void) usbProxyUsbIpExportedDeviceN2H(PUsbIpExportedDevice pDevice)
  */
 DECLINLINE(int) usbProxyUsbIpStatusConvertFromStatus(int32_t i32Status)
 {
-    if (RT_LIKELY(i32Status == USBIP_STATUS_SUCCESS))
+    if (RT_LIKELY(   i32Status == USBIP_STATUS_SUCCESS
+                  || i32Status == USBIP_STATUS_SHORT_READ))
         return VINF_SUCCESS;
 
     switch (i32Status)
@@ -581,7 +584,8 @@ DECLINLINE(int) usbProxyUsbIpStatusConvertFromStatus(int32_t i32Status)
  */
 DECLINLINE(VUSBSTATUS) usbProxyUsbIpVUsbStatusConvertFromStatus(int32_t i32Status)
 {
-    if (RT_LIKELY(i32Status == USBIP_STATUS_SUCCESS))
+    if (RT_LIKELY(   i32Status == USBIP_STATUS_SUCCESS
+                  || i32Status == USBIP_STATUS_SHORT_READ))
         return VUSBSTATUS_OK;
 
     switch (i32Status)
@@ -1092,6 +1096,8 @@ static int usbProxyUsbIpUrbQueueWorker(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPRO
     pUrbUsbIp->u32SeqNumUrb = usbProxyUsbIpSeqNumGet(pProxyDevUsbIp);
 
     UsbIpReqSubmit ReqSubmit;
+
+    RT_ZERO(ReqSubmit);
     ReqSubmit.Hdr.u32ReqRet           = USBIP_CMD_SUBMIT;
     ReqSubmit.Hdr.u32SeqNum           = pUrbUsbIp->u32SeqNumUrb;
     ReqSubmit.Hdr.u32DevId            = pProxyDevUsbIp->u32DevId;
@@ -1119,7 +1125,6 @@ static int usbProxyUsbIpUrbQueueWorker(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPRO
             memcpy(&ReqSubmit.Setup, &pUrb->abData, sizeof(ReqSubmit.Setup));
             if (pUrb->enmDir == VUSBDIRECTION_OUT)
             {
-                ReqSubmit.u32TransferBufferLength -= sizeof(VUSBSETUP);
                 aSegReq[cSegsUsed].cbSeg = pUrb->cbData - sizeof(VUSBSETUP);
                 aSegReq[cSegsUsed].pvSeg = pUrb->abData + sizeof(VUSBSETUP);
                 cSegsUsed++;
@@ -1274,9 +1279,6 @@ static DECLCALLBACK(int) usbProxyUsbIpOpen(PUSBPROXYDEV pProxyDev, const char *p
     pDevUsbIp->pszHost       = NULL;
     pDevUsbIp->pszBusId      = NULL;
     usbProxyUsbIpResetRecvState(pDevUsbIp);
-
-    pProxyDev->iActiveCfg = 1; /** @todo that may not be always true. */
-    pProxyDev->cIgnoreSetConfigs = 1;
 
     rc = RTSemFastMutexCreate(&pDevUsbIp->hMtxLists);
     if (RT_SUCCESS(rc))

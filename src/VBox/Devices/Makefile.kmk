@@ -319,7 +319,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_USB
   VBoxDD_DEFS           += VBOX_WITH_USB
   VBoxDD_SOURCES        += \
-  	USB/vrdp/USBProxyDevice-vrdp.cpp
+  	USB/vrdp/USBProxyDevice-vrdp.cpp \
+  	USB/usbip/USBProxyDevice-usbip.cpp
 
   VBoxDD_DEFS.darwin    += VUSB_HAVE_USBPROXY_DEVICE
   ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
