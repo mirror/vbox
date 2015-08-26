@@ -11,6 +11,7 @@
 #include <memory.h>
 
 #include <iprt/types.h>
+#include <iprt/mem.h>
 
 #if DEBUG_MEM
 #include <stdio.h>
@@ -43,7 +44,11 @@ static void *_crAlloc( unsigned int nbytes )
 DECLEXPORT(void) *crAlloc( unsigned int nbytes )
 #endif
 {
+#ifdef VBOX
+	void *ret = RTMemAlloc( nbytes );
+#else
 	void *ret = malloc( nbytes );
+#endif
 	if (!ret) {
 		crError( "Out of memory trying to allocate %d bytes!", nbytes );
 		abort();
@@ -68,7 +73,11 @@ static void *_crCalloc( unsigned int nbytes )
 DECLEXPORT(void) *crCalloc( unsigned int nbytes )
 #endif
 {
+#ifdef VBOX
+	void *ret = RTMemAlloc( nbytes );
+#else
 	void *ret = malloc( nbytes );
+#endif
 	if (!ret) {
 		crError( "Out of memory trying to (c)allocate %d bytes!", nbytes );
 		abort();
@@ -108,8 +117,13 @@ DECLEXPORT(void) crRealloc( void **ptr, unsigned int nbytes )
 
 DECLEXPORT(void) crFree( void *ptr )
 {
+#ifdef VBOX
+	if (ptr)
+		RTMemFree(ptr);
+#else
 	if (ptr)
 		free(ptr);
+#endif
 }
 
 DECLEXPORT(void) crMemcpy( void *dst, const void *src, unsigned int bytes )
