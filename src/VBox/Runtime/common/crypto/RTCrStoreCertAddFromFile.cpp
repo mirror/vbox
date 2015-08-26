@@ -39,9 +39,37 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static RTCRPEMMARKERWORD const g_aWords_Certificate[]  = { { RT_STR_TUPLE("CERTIFICATE") } };
-/** X509 Certificate markers. */
-static RTCRPEMMARKER     const g_aCertificateMarkers[] = { { g_aWords_Certificate, RT_ELEMENTS(g_aWords_Certificate) } };
+/** BEGIN CERTIFICATE / END CERTIFICATE. */
+static RTCRPEMMARKERWORD const g_aWords_Certificate[] =
+{
+    { RT_STR_TUPLE("CERTIFICATE") }
+};
+
+/** BEGIN TRUSTED CERTIFICATE / END TRUSTED CERTIFICATE. */
+static RTCRPEMMARKERWORD const g_aWords_TrustedCertificate[] =
+{
+    { RT_STR_TUPLE("TRUSTED") },
+    { RT_STR_TUPLE("CERTIFICATE") }
+};
+
+/** BEGIN X509 CERTIFICATE / END X509 CERTIFICATE. (old) */
+static RTCRPEMMARKERWORD const g_aWords_X509Certificate[] =
+{
+    { RT_STR_TUPLE("X509") },
+    { RT_STR_TUPLE("CERTIFICATE") }
+};
+
+/**
+ * X509 Certificate markers.
+ *
+ * @remark See crypto/pem/pem.h in OpenSSL for a matching list.
+ */
+static RTCRPEMMARKER     const g_aCertificateMarkers[] =
+{
+    { g_aWords_Certificate,         RT_ELEMENTS(g_aWords_Certificate) },
+    { g_aWords_TrustedCertificate,  RT_ELEMENTS(g_aWords_TrustedCertificate) },
+    { g_aWords_X509Certificate,     RT_ELEMENTS(g_aWords_X509Certificate) }
+};
 
 
 #if 0
