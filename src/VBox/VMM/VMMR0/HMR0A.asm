@@ -1390,28 +1390,26 @@ ALIGN(16)
 
     ; Resume or start VM?
     cmp     xDI, 0                  ; fResume
-    je      .vmlaunch_launch
 
     ; Load guest edi & esi.
     mov     edi, [xSI + CPUMCTX.edi]
     mov     esi, [xSI + CPUMCTX.esi]
 
+    je      .vmlaunch_launch
+
     vmresume
+    jc      near .vmxstart_invalid_vmcs_ptr
+    jz      near .vmxstart_start_failed
     jmp     .vmlaunch_done;      ; Here if vmresume detected a failure.
 
 .vmlaunch_launch:
-    ; Save guest edi & esi.
-    mov     edi, [xSI + CPUMCTX.edi]
-    mov     esi, [xSI + CPUMCTX.esi]
-
     vmlaunch
+    jc      near .vmxstart_invalid_vmcs_ptr
+    jz      near .vmxstart_start_failed
     jmp     .vmlaunch_done;      ; Here if vmlaunch detected a failure.
 
 ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte off.
 .vmlaunch_done:
-    jc      near .vmxstart_invalid_vmcs_ptr
-    jz      near .vmxstart_start_failed
-
     RESTORE_STATE_VM32
     mov     eax, VINF_SUCCESS
 
@@ -1689,28 +1687,26 @@ ALIGN(16)
 
     ; Resume or start VM?
     cmp     xDI, 0                  ; fResume
-    je      .vmlaunch64_launch
 
     ; Load guest rdi & rsi.
     mov     rdi, qword [xSI + CPUMCTX.edi]
     mov     rsi, qword [xSI + CPUMCTX.esi]
 
+    je      .vmlaunch64_launch
+
     vmresume
+    jc      near .vmxstart64_invalid_vmcs_ptr
+    jz      near .vmxstart64_start_failed
     jmp     .vmlaunch64_done;      ; Here if vmresume detected a failure.
 
 .vmlaunch64_launch:
-    ; Save guest rdi & rsi.
-    mov     rdi, qword [xSI + CPUMCTX.edi]
-    mov     rsi, qword [xSI + CPUMCTX.esi]
-
     vmlaunch
+    jc      near .vmxstart64_invalid_vmcs_ptr
+    jz      near .vmxstart64_start_failed
     jmp     .vmlaunch64_done;      ; Here if vmlaunch detected a failure.
 
 ALIGNCODE(16)
 .vmlaunch64_done:
-    jc      near .vmxstart64_invalid_vmcs_ptr
-    jz      near .vmxstart64_start_failed
-
     RESTORE_STATE_VM64
     mov     eax, VINF_SUCCESS
 
