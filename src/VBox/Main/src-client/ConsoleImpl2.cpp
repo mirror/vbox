@@ -2988,7 +2988,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 }
                 else
                 {
-                    LogRel(("Shared crOpenGL service loaded\n"));
+                    LogRel(("Shared OpenGL service loaded -- 3D enabled\n"));
 
                     /* Setup the service. */
                     VBOXHGCMSVCPARM parm;
