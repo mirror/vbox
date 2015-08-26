@@ -109,7 +109,11 @@ DECLEXPORT(void) crRealloc( void **ptr, unsigned int nbytes )
 	}
 	else
 	{
+#ifdef VBOX
+		*ptr = RTMemRealloc( *ptr, nbytes );
+#else
 		*ptr = realloc( *ptr, nbytes );
+#endif
 		if (*ptr == NULL)
 			crError( "Couldn't realloc %d bytes!", nbytes );
 	}
