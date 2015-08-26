@@ -302,9 +302,17 @@ private:
 
         int iResult = -1;
         if (fForward && (fStartCurrent || iPos < strText.size() - 1))
+        {
             iResult = strText.indexOf(m_pSearchEditor->text(), iAnc + iDiff,
                                       m_pCaseSensitiveCheckBox->isChecked() ?
                                       Qt::CaseSensitive : Qt::CaseInsensitive);
+
+            /* When searchstring is changed, search from beginning of log again: */
+            if (iResult == -1 && fStartCurrent)
+                iResult = strText.indexOf(m_pSearchEditor->text(), 0,
+                                          m_pCaseSensitiveCheckBox->isChecked() ?
+                                          Qt::CaseSensitive : Qt::CaseInsensitive);
+        }
         else if (!fForward && iAnc > 0)
             iResult = strText.lastIndexOf(m_pSearchEditor->text(), iAnc - 1,
                                           m_pCaseSensitiveCheckBox->isChecked() ?
