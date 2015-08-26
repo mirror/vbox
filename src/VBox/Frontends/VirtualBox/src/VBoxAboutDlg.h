@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,48 +15,66 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxAboutDlg_h__
-#define __VBoxAboutDlg_h__
+#ifndef ___VBoxAboutDlg_h___
+#define ___VBoxAboutDlg_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QPixmap>
 
-/* Local includes */
-#include "QIWithRetranslateUI.h"
+/* GUI includes: */
 #include "QIDialog.h"
+#include "QIWithRetranslateUI.h"
 
-/* Forward declarations */
+/* Forward declarations: */
 class QEvent;
 class QLabel;
 
-/* VBox about dialog */
-class VBoxAboutDlg: public QIWithRetranslateUI2<QIDialog>
+/** QIDialog extension
+  * used to show the About-VirtualBox dialog. */
+class VBoxAboutDlg : public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructor: */
+    /** Constructs dialog passing @a pParent to the QWidget base-class constructor.
+      * @param strVersion is used to specify the version number of VirtualBox. */
     VBoxAboutDlg(QWidget* pParent, const QString &strVersion);
 
 protected:
 
-    /* Event handlers: */
+    /** Handles Qt polish event. */
     bool event(QEvent *pEvent);
+
+    /** Handles Qt paint-event to draw About-VirtualBox image. */
     void paintEvent(QPaintEvent *pEvent);
 
-    /* Language stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
 private:
 
-    /* Variables: */
+    /** Prepare About-VirtualBox dialog. */
+    void prepare();
+
+    /** Prepare main-layout routine. */
+    void prepareMainLayout();
+
+    /** Holds the About-VirtualBox text. */
     QString m_strAboutText;
+
+    /** Holds the VirtualBox version number. */
     QString m_strVersion;
+
+    /** Holds the About-VirtualBox image. */
     QPixmap m_pixmap;
+
+    /** Holds the About-VirtualBox dialog size. */
     QSize   m_size;
+
+    /** Holds the instance of label we create for About-VirtualBox text. */
     QLabel *m_pLabel;
 };
 
-#endif /* __VBoxAboutDlg_h__ */
+#endif /* !___VBoxAboutDlg_h___ */
 
