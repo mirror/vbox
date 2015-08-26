@@ -339,6 +339,12 @@ MacOSXRelease VBoxGlobal::osRelease()
 }
 #endif /* Q_WS_MAC */
 
+int VBoxGlobal::screenCount() const
+{
+    /* Redirect call to QDesktopWidget: */
+    return QApplication::desktop()->screenCount();
+}
+
 const QRect VBoxGlobal::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
 #ifdef Q_WS_X11
@@ -365,15 +371,15 @@ const QRect VBoxGlobal::availableGeometry(int iHostScreenIndex /* = -1 */) const
     return QApplication::desktop()->availableGeometry(iHostScreenIndex);
 }
 
-const QRect	VBoxGlobal::screenGeometry(QWidget *pWidget /* = 0 */) const
+const QRect VBoxGlobal::screenGeometry(QWidget *pWidget /* = 0 */) const
 {
-    /* Redirect to existing wrapper: */
+    /* Redirect call to existing wrapper: */
     return screenGeometry(QApplication::desktop()->screenNumber(pWidget));
 }
 
-const QRect	VBoxGlobal::availableGeometry(QWidget *pWidget /* = 0 */) const
+const QRect VBoxGlobal::availableGeometry(QWidget *pWidget /* = 0 */) const
 {
-    /* Redirect to existing wrapper: */
+    /* Redirect call to existing wrapper: */
     return availableGeometry(QApplication::desktop()->screenNumber(pWidget));
 }
 
