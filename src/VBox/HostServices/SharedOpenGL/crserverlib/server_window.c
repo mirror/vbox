@@ -100,7 +100,7 @@ GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint p
     CRMuralInfo *mural;
     GLint windowID = -1;
 
-    dpyName = "";
+    NOREF(dpyName);
 
     if (cr_server.sharedWindows) {
         int pos, j;
