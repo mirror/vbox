@@ -2900,6 +2900,11 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_ES, uSelES);      AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_FS, uSelFS);      AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_GS, uSelGS);      AssertRCReturn(rc, rc);
+#else
+    NOREF(uSelDS);
+    NOREF(uSelES);
+    NOREF(uSelFS);
+    NOREF(uSelGS);
 #endif
     rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_TR, uSelTR);      AssertRCReturn(rc, rc);
 
@@ -10891,6 +10896,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
     HMCPU_CF_SET(pVCpu, rcStrict != VINF_IEM_RAISED_XCPT ? HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS : HM_CHANGED_ALL_GUEST);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
+    NOREF(pVM);
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 

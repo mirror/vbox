@@ -1293,7 +1293,7 @@ VMM_INT_DECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     g_fIgnoreRaxRdx = true;
 #endif
     /* Low dword of the TSC_AUX msr only. */
-    VBOXSTRICTRC rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pCtx->rcx); Assert(rc2 == VINF_SUCCESS);
+    VBOXSTRICTRC rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pCtx->rcx); Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
     pCtx->rcx &= UINT32_C(0xffffffff);
 
     return VINF_SUCCESS;
