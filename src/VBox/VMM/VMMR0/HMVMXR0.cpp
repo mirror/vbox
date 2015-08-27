@@ -7929,7 +7929,6 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
  */
 static void hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu)
 {
-    int rc;
     Log4Func(("vcpu[%d]\n", pVCpu->idCpu));
 
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
