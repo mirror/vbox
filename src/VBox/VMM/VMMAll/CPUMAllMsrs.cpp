@@ -204,10 +204,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PlatformId(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ApicBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
 #if 0 /** @todo Sort this one out properly.  Evidence from ticks 12240 and 12875 suggest the apic base is still readable even
        * after the apic has been diabled.  That makes common sense too.  What we need to do here, though, is check whether
        * there is an APIC device associated with the VM, and GP if there isn't.  But that's for later. */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (   !pVM->cpum.s.GuestFeatures.fApic
         && !pVM->cpum.s.GuestFeatures.fX2Apic)
     {

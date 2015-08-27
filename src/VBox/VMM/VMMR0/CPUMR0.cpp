@@ -146,7 +146,6 @@ VMMR0_INT_DECL(int) CPUMR0ModuleTerm(void)
 static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     PVM     pVM   = (PVM)pvUser1;
-    PCPUM   pCPUM = &pVM->cpum.s;
 
     NOREF(idCpu); NOREF(pvUser2);
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aCpuidUnifyBits); i++)
