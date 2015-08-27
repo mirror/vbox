@@ -551,6 +551,10 @@ ifndef VBOX_ONLY_EXTPACKS
  VMMR0_DEFS.darwin = VMM_R0_SWITCH_STACK
  VMMR0_DEFS.win.amd64  = VBOX_WITH_KERNEL_USING_XMM
 
+ ifeq ($(VBOX_LDR_FMT),elf)
+  VMMR0_CXXFLAGS += -Wunused-variable
+ endif
+
  VMMR0_INCS      = \
  	include \
  	$(if-expr defined(VBOX_WITH_RAW_MODE),PATM,)
