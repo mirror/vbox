@@ -4483,7 +4483,7 @@ static void gmmR0ShModDeletePerVM(PGMM pGMM, PGVM pGVM, PGMMSHAREDMODULEPERVM pR
     if (fRemove)
     {
         void *pvTest = RTAvlGCPtrRemove(&pGVM->gmm.s.pSharedModuleTree, pRecVM->Core.Key);
-        Assert(pvTest == &pRecVM->Core);
+        Assert(pvTest == &pRecVM->Core); NOREF(pvTest);
     }
 
     RTMemFree(pRecVM);
