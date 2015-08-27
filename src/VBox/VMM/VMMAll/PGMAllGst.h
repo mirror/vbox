@@ -468,7 +468,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
     PPGMVIRTHANDLER         pCur     = (PPGMVIRTHANDLER)pNode;
     PPGMVIRTHANDLERTYPEINT  pCurType = PGMVIRTANDLER_GET_TYPE(pVM, pCur);
 
-    Assert(pCurType->enmKind != PGMVIRTHANDLERKIND_HYPERVISOR);
+    Assert(pCurType->enmKind != PGMVIRTHANDLERKIND_HYPERVISOR); NOREF(pCurType);
 
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
     PX86PD          pPDSrc = pgmGstGet32bitPDPtr(pVCpu);
