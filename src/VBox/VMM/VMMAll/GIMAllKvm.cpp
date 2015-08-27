@@ -223,8 +223,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
 {
     NOREF(pRange);
-    PVM     pVM  = pVCpu->CTX_SUFF(pVM);
-    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
+    PVM        pVM  = pVCpu->CTX_SUFF(pVM);
     PGIMKVMCPU pKvmCpu = &pVCpu->gim.s.u.KvmCpu;
 
     switch (idMsr)
@@ -234,6 +233,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
         {
             bool fEnable = RT_BOOL(uRawValue & MSR_GIM_KVM_SYSTEM_TIME_ENABLE_BIT);
 #ifdef IN_RING0
+            NOREF(fEnable); NOREF(pKvmCpu);
             gimR0KvmUpdateSystemTime(pVM, pVCpu);
             return VINF_CPUM_R3_MSR_WRITE;
 #elif defined(IN_RC)
@@ -293,6 +293,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
                 int rc = gimR3KvmEnableWallClock(pVM, GCPhysWallClock);
                 if (RT_SUCCESS(rc))
                 {
+                    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
                     pKvm->u64WallClockMsr = uRawValue;
                     return VINF_SUCCESS;
                 }
