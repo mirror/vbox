@@ -1672,7 +1672,8 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
         for (pAdapter = pAddresses; pAdapter; pAdapter = pAdapter->Next)
         {
             LogRel(("Enumerating %s\n", pAdapter->AdapterName));
-            if (pAdapter->IfType != IF_TYPE_ETHERNET_CSMACD)
+            /* Vista+ systems introduced separate type for wireless adapters */
+            if (pAdapter->IfType != IF_TYPE_ETHERNET_CSMACD && pAdapter->IfType != IF_TYPE_IEEE80211)
             {
                 LogRel(("Skipped non-Ethernet '%ls'\n", pAdapter->FriendlyName));
                 continue;
