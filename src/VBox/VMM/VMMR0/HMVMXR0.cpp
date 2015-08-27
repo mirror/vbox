@@ -336,6 +336,7 @@ typedef FNVMXEXITHANDLER *PFNVMXEXITHANDLER;
 *********************************************************************************************************************************/
 static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush);
 static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMXFLUSHVPID enmFlush, RTGCPTR GCPtr);
+static void               hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu);
 static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
                                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress,
                                                  bool fStepping, uint32_t *puIntState);
@@ -6809,8 +6810,7 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
 
 
 /**
- * Converts any pending HM event into a TRPM trap. Typically used when leaving
- * VT-x to execute any instruction.
+ * Converts the pending HM event into a TRPM trap.
  *
  * @param   pvCpu           Pointer to the VMCPU.
  */
@@ -6872,6 +6872,18 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
                   ("Invalid vector: uVector=%#x uVectorType=%#x\n", uVector, uVectorType));
         TRPMSetInstrLength(pVCpu, pVCpu->hm.s.Event.cbInstr);
     }
+
+    /* Clear the pending event from the VMCS. */
+#ifdef VBOX_STRICT
+    uint32_t u32EntryInfo;
+    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
+    AssertRC(rc);
+    Assert(VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(u32EntryInfo));
+#endif
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);        AssertRC(rc);
+    rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);        AssertRC(rc);
+
+    /* We're now done converting the pending event. */
     pVCpu->hm.s.Event.fPending = false;
 }
 
@@ -7107,6 +7119,9 @@ static int hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcE
         Assert(!pVCpu->hm.s.Event.fPending);
     }
 
+    /* Clear interrupt-window and NMI-window controls as we re-evaluate it when we return from ring-3. */
+    hmR0VmxClearIntNmiWindowsVmcs(pVCpu);
+
     /* If we're emulating an instruction, we shouldn't have any TRPM traps pending
        and if we're injecting an event we should have a TRPM trap pending. */
     AssertMsg(rcExit != VINF_EM_RAW_INJECT_TRPM_EVENT || TRPMHasTrap(pVCpu), ("%Rrc\n", rcExit));
@@ -7310,8 +7325,6 @@ DECLINLINE(void) hmR0VmxClearNmiWindowExitVmcs(PVMCPU pVCpu)
  */
 static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    Assert(!pVCpu->hm.s.Event.fPending);
-
     /* Get the current interruptibility-state of the guest and then figure out what can be injected. */
     uint32_t const uIntrState = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
     bool const fBlockMovSS    = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
@@ -7331,7 +7344,8 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))    /* NMI. NMIs take priority over regular interrupts. */
     {
         /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
-        if (   !fBlockNmi
+        if (   !pVCpu->hm.s.Event.fPending
+            && !fBlockNmi
             && !fBlockSti
             && !fBlockMovSS)
         {
@@ -7355,7 +7369,8 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         int rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
         AssertRC(rc);
         bool const fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
-        if (   !fBlockInt
+        if (   !pVCpu->hm.s.Event.fPending
+            && !fBlockInt
             && !fBlockSti
             && !fBlockMovSS)
         {
@@ -7434,18 +7449,13 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSte
     if (pVCpu->hm.s.Event.fPending)
     {
         /*
-         * Clear any interrupt-window exiting control if we're going to inject an interrupt. Saves one extra
-         * VM-exit in situations where we previously setup interrupt-window exiting but got other VM-exits and
-         * ended up enabling interrupts outside VT-x.
+         * Do -not- clear any interrupt-window exiting control here. We might have an interrupt
+         * pending even while injecting an event and in this case, we want a VM-exit as soon as
+         * the guest is ready for the next interrupt, see @bugref{6208#c45}.
+         *
+         * See Intel spec. 26.6.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
          */
-        uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
-        if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
-            && uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
-        {
-            Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT);
-            hmR0VmxClearIntWindowExitVmcs(pVCpu);
-        }
-
+        uint32_t const uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
 #ifdef VBOX_STRICT
         if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
@@ -7473,12 +7483,10 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSte
         fBlockMovSS = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
         fBlockSti   = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
 
-#ifdef VBOX_WITH_STATISTICS
         if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
         else
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
-#endif
     }
 
     /* Deliver pending debug exception if the guest is single-stepping. Evaluate and set the BS bit. */
@@ -7919,7 +7927,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
  *          delivered to the guest but are injected in the VMCS!
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
+static void hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu)
 {
     int rc;
     Log4Func(("vcpu[%d]\n", pVCpu->idCpu));
@@ -7929,25 +7937,6 @@ static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
 
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT)
         hmR0VmxClearNmiWindowExitVmcs(pVCpu);
-
-    if (!pVCpu->hm.s.Event.fPending)
-        return;
-
-#ifdef VBOX_STRICT
-    uint32_t u32EntryInfo;
-    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
-    AssertRC(rc);
-    Assert(VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(u32EntryInfo));
-#endif
-
-    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
-    AssertRC(rc);
-
-    rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);
-    AssertRC(rc);
-
-    /* We deliberately don't clear "hm.s.Event.fPending" here, it's taken
-       care of in hmR0VmxExitToRing3() converting the pending event to TRPM. */
 }
 
 
@@ -8399,8 +8388,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
 
     if (TRPMHasTrap(pVCpu))
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);
-    else if (!pVCpu->hm.s.Event.fPending)
-        hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
+    hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
 
     /*
      * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus needs to be done with
@@ -8445,7 +8433,6 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         && (   !fStepping /* Optimized for the non-stepping case, of course. */
             || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK & ~(VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT))) )
     {
-        hmR0VmxClearEventVmcs(pVCpu);
         ASMSetFlags(pVmxTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
@@ -8454,7 +8441,6 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
 
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
-        hmR0VmxClearEventVmcs(pVCpu);
         ASMSetFlags(pVmxTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
