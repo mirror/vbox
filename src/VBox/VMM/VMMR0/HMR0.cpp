@@ -1846,7 +1846,8 @@ VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *psz
     /*
      * Limit and Base and format the output.
      */
-    uint32_t    u32Limit = X86DESC_LIMIT_G(pDesc);
+#ifdef LOG_ENABLED
+    uint32_t u32Limit = X86DESC_LIMIT_G(pDesc);
 
 # if HC_ARCH_BITS == 64
     uint64_t    u32Base  = X86DESC64_BASE(pDesc);
@@ -1857,6 +1858,7 @@ VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *psz
     Log(("%s %04x - %08x %08x - base=%08x limit=%08x dpl=%d %s\n", pszMsg,
          Sel, pDesc->au32[0], pDesc->au32[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 # endif
+#endif
 }
 
 
