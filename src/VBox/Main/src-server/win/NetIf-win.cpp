@@ -22,6 +22,8 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_MAIN
 
+#define NETIF_WITHOUT_NETCFG
+
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <list>
@@ -1450,6 +1452,7 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
 #endif
 }
 
+#ifndef NETIF_WITHOUT_NETCFG
 int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
 {
 #ifndef VBOX_WITH_NETFLT
@@ -1638,3 +1641,169 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
     return VINF_SUCCESS;
 #endif /* #  if defined VBOX_WITH_NETFLT */
 }
+
+#else /* !NETIF_WITHOUT_NETCFG */
+int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
+{
+    DWORD dwRc;
+    int rc = VINF_SUCCESS;
+    int iDefault = getDefaultInterfaceIndex();
+    /*
+     * Most of the hosts probably have less than 10 adapters,
+     * so we'll mostly succeed from the first attempt.
+     */
+    ULONG uBufLen = sizeof(IP_ADAPTER_ADDRESSES) * 10;
+    PIP_ADAPTER_ADDRESSES pAddresses = (PIP_ADAPTER_ADDRESSES)RTMemAlloc(uBufLen);
+    if (!pAddresses)
+        return VERR_NO_MEMORY;
+    dwRc = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, NULL, pAddresses, &uBufLen);
+    if (dwRc == ERROR_BUFFER_OVERFLOW)
+    {
+        /* Impressive! More than 10 adapters! Get more memory and try again. */
+        RTMemFree(pAddresses);
+        pAddresses = (PIP_ADAPTER_ADDRESSES)RTMemAlloc(uBufLen);
+        if (!pAddresses)
+            return VERR_NO_MEMORY;
+        dwRc = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, NULL, pAddresses, &uBufLen);
+    }
+    if (dwRc == NO_ERROR)
+    {
+        PIP_ADAPTER_ADDRESSES pAdapter;
+        for (pAdapter = pAddresses; pAdapter; pAdapter = pAdapter->Next)
+        {
+            LogRel(("Enumerating %s\n", pAdapter->AdapterName));
+            if (pAdapter->IfType != IF_TYPE_ETHERNET_CSMACD)
+            {
+                LogRel(("Skipped non-Ethernet '%ls'\n", pAdapter->FriendlyName));
+                continue;
+            }
+
+            NETIFINFO Info;
+            RT_ZERO(Info);
+
+            if (pAdapter->AdapterName[0] == '{')
+            {
+                char *pszUuid = pAdapter->AdapterName + 1;
+                size_t len = strlen(pszUuid) - 1;
+                if (pszUuid[len] != '}')
+                {
+                    LogRel(("%s is not a valid UUID!\n", pAdapter->AdapterName));
+                    continue;
+                }
+                pszUuid[len] = 0;
+                rc = RTUuidFromStr(&Info.Uuid, pszUuid);
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("NetIfList: Failed to convert %s to UUID (%Rrc)\n", pszUuid, rc));
+                    continue;
+                }
+                bool fIPv4Found, fIPv6Found;
+                PIP_ADAPTER_UNICAST_ADDRESS pAddr;
+                fIPv4Found = fIPv6Found = false;
+                for (pAddr = pAdapter->FirstUnicastAddress;
+                     pAddr && !(fIPv4Found && fIPv6Found);
+                     pAddr = pAddr->Next)
+                {
+                    switch (pAddr->Address.lpSockaddr->sa_family)
+                    {
+                        case AF_INET:
+                            if (!fIPv4Found)
+                            {
+                                fIPv4Found = true;
+                                memcpy(&Info.IPAddress,
+                                       &((struct sockaddr_in *)pAddr->Address.lpSockaddr)->sin_addr.s_addr,
+                                       sizeof(Info.IPAddress));
+                            }
+                            break;
+                        case AF_INET6:
+                            if (!fIPv6Found)
+                            {
+                                fIPv6Found = true;
+                                memcpy(&Info.IPv6Address,
+                                       ((struct sockaddr_in6 *)pAddr->Address.lpSockaddr)->sin6_addr.s6_addr,
+                                       sizeof(Info.IPv6Address));
+                            }
+                            break;
+                    }
+                }
+                PIP_ADAPTER_PREFIX pPrefix;
+                fIPv4Found = fIPv6Found = false;
+                for (pPrefix = pAdapter->FirstPrefix;
+                     pPrefix && !(fIPv4Found && fIPv6Found);
+                     pPrefix = pPrefix->Next)
+                {
+                    switch (pPrefix->Address.lpSockaddr->sa_family)
+                    {
+                        case AF_INET:
+                            if (!fIPv4Found)
+                            {
+                                if (pPrefix->PrefixLength <= sizeof(Info.IPNetMask) * 8)
+                                {
+                                    fIPv4Found = true;
+                                    ASMBitSetRange(&Info.IPNetMask, 0, pPrefix->PrefixLength);
+                                }
+                                else
+                                    LogRel(("NetIfList: Unexpected IPv4 prefix length of %d\n",
+                                            pPrefix->PrefixLength));
+                            }
+                            break;
+                        case AF_INET6:
+                            if (!fIPv6Found)
+                            {
+                                if (pPrefix->PrefixLength <= sizeof(Info.IPv6NetMask) * 8)
+                                {
+                                    fIPv6Found = true;
+                                    ASMBitSetRange(&Info.IPv6NetMask, 0, pPrefix->PrefixLength);
+                                }
+                                else
+                                    LogRel(("NetIfList: Unexpected IPv6 prefix length of %d\n",
+                                            pPrefix->PrefixLength));
+                            }
+                            break;
+                    }
+                }
+                if (sizeof(Info.MACAddress) != pAdapter->PhysicalAddressLength)
+                    LogRel(("NetIfList: Unexpected physical address length: %u\n",
+                            pAdapter->PhysicalAddressLength));
+                else
+                    memcpy(Info.MACAddress.au8, pAdapter->PhysicalAddress, sizeof(Info.MACAddress));
+                Info.enmMediumType = NETIF_T_ETHERNET;
+                Info.enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
+                Info.bDhcpEnabled = !!(pAdapter->Flags & IP_ADAPTER_DHCP_ENABLED);
+                Info.bIsDefault = (pAdapter->IfIndex == iDefault);
+                HostNetworkInterfaceType enmType;
+                /*
+                 * For some reason, I would not even want to speculate what it is, the users see
+                 * adapter's description as its name in its property dialog box.
+                 */
+                enmType = wcsncmp(pAdapter->Description, L"VirtualBox", 10) == 0
+                    ? HostNetworkInterfaceType_HostOnly
+                    : HostNetworkInterfaceType_Bridged;
+                LogRel(("Adding %ls as %s\n", pAdapter->Description,
+                        enmType == HostNetworkInterfaceType_Bridged ? "bridged" : "host-only"));
+                /* create a new object and add it to the list */
+                ComObjPtr<HostNetworkInterface> iface;
+                iface.createObject();
+                /* remove the curly bracket at the end */
+                rc = iface->init(pAdapter->Description, enmType, &Info);
+                if (SUCCEEDED(rc))
+                {
+                    if (Info.bIsDefault)
+                        list.push_front(iface);
+                    else
+                        list.push_back(iface);
+                }
+                else
+                {
+                    LogRel(("vboxNetWinAddComponent: HostNetworkInterface::init() -> %Rrc\n", rc));
+                    Assert(0);
+                }
+            }
+        }
+    }
+
+    RTMemFree(pAddresses);
+
+    return VINF_SUCCESS;
+}
+#endif /* !NETIF_WITHOUT_NETCFG */
