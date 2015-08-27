@@ -679,7 +679,8 @@ typedef const STAMPROFILE *PCSTAMPROFILE;
 #ifndef VBOX_WITHOUT_RELEASE_STATISTICS
 # define STAM_REL_PROFILE_START(pProfile, Prefix) \
     uint64_t Prefix##_tsStart; \
-    STAM_GET_TS(Prefix##_tsStart)
+    STAM_GET_TS(Prefix##_tsStart); \
+    NOREF(Prefix##_tsStart)
 #else
 # define STAM_REL_PROFILE_START(pProfile, Prefix) do { } while (0)
 #endif
