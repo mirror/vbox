@@ -170,7 +170,7 @@ private:
             "http://www.symantec.com/content/en/us/enterprise/verisign/roots/Class-3-Public-Primary-Certification-Authority.pem",
             "http://www.verisign.com/repository/roots/root-certificates/PCA-3.pem", /* dead */
             NULL,
-            "http://updates.virtualbox.org/cacerts-symantec-PCA-3-pem-has-gone-missing-again" /* attention getter */
+            "http://update.virtualbox.org/cacerts-symantec-PCA-3-pem-has-gone-missing-again" /* attention getter */
         },
     },
     /*[1] =*/   /* The original version with the MD2 signature. */
@@ -228,7 +228,7 @@ private:
             "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem",
             "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class-3-Public-Primary-Certification-Authority-G5.pem", /* (in case they correct above typo) */
             "http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem", /* dead */
-            "http://updates.virtualbox.org/cacerts-symantec-PCA-3G5-pem-has-gone-missing-again" /* attention getter */
+            "http://update.virtualbox.org/cacerts-symantec-PCA-3G5-pem-has-gone-missing-again" /* attention getter */
         },
     },
 };
@@ -610,7 +610,7 @@ UINetworkReplyPrivateThread::downloadCertificates(RTHTTP hHttp, const char *pszC
     static const char * const a_apszRootsZipUrls[] =
     {
         "http://www.symantec.com/content/en/us/enterprise/verisign/roots/roots.zip",
-        "http://updates.virtualbox.org/cacerts-symantec-roots-zip-has-gone-missing-again" /* Just to try grab our attention. */
+        "http://update.virtualbox.org/cacerts-symantec-roots-zip-has-gone-missing-again" /* Just to try grab our attention. */
     };
     for (uint32_t iUrl = 0; iUrl < RT_ELEMENTS(a_apszRootsZipUrls); iUrl++)
     {
