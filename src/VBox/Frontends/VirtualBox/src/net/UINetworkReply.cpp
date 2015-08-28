@@ -36,10 +36,12 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <iprt/http.h>
+#include <iprt/crypto/store.h>
 #include <iprt/err.h>
+#include <iprt/http.h>
+#include <iprt/path.h>
+#include <iprt/sha.h>
 #include <iprt/zip.h>
-
 
 /* Our network-reply thread: */
 class UINetworkReplyPrivateThread : public QThread
@@ -54,46 +56,70 @@ public:
     /** Returns short descriptive context of thread's current operation. */
     const QString context() const { return m_strContext; }
 
-    /* API: Read stuff: */
+    /** @name APIs
+     * @{ */
+    /** Read everything. */
     const QByteArray& readAll() const { return m_reply; }
-
-    /* API: Error stuff: */
+    /** IRPT error status. */
     int error() const { return m_iError; }
-
-    /* API: HTTP stuff: */
+    /** Abort HTTP request. */
     void abort();
+    /** @} */
 
 private:
+    /** Info about wanted certificate. */
+    typedef struct CERTINFO
+    {
+        /** The certificate subject name. */
+        const char *pszSubject;
+        /** @todo add zip path and direct URLs. */
+        /** The size of the DER (ASN.1) encoded certificate. */
+        uint16_t    cbEncoded;
+        /** Gives the s_aCerts index this certificate is an alternative edition of,
+         * UINT16_MAX if no alternative.  This is a complication caused by VeriSign
+         * reissuing certificates signed with md2WithRSAEncryption using
+         * sha1WithRSAEncryption, since MD2 is comprimised.  (Public key unmodified.)
+         * It has no practical meaning for the trusted root anchor use we put it to.  */
+        uint16_t    iAlternativeTo;
+        /** The SHA-1 fingerprint (of the encoded data).   */
+        uint8_t     abSha1[RTSHA1_HASH_SIZE];
+        /** The SHA-512 fingerprint (of the encoded data).   */
+        uint8_t     abSha512[RTSHA512_HASH_SIZE];
+    } CERTINFO;
 
-    /* Helpers: HTTP stuff: */
+
+    /** @name Helpers - HTTP stuff
+     * @{ */
     int applyProxyRules();
     int applyHttpsCertificates();
     int applyRawHeaders();
     int performMainRequest();
+    /** @} */
 
     /* Helper: Main thread runner: */
     void run();
 
-    /* Static helper: File stuff: */
+    /** @name Static helpers for HTTP and Certificates handling.
+     * @{ */
     static QString fullCertificateFileName();
-
-    /* Static helpers: HTTP stuff: */
     static int abort(RTHTTP pHttp);
     static int applyProxyRules(RTHTTP pHttp, const QString &strHostName, int iPort);
-    static int applyCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
     static int applyRawHeaders(RTHTTP pHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
     static int performGetRequestForText(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
     static int performGetRequestForBinary(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
-    static int checkCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
+    static bool checkCertificatesInFile(const char *pszCaCertFile);
+    static bool checkCertificatesInStore(RTCRSTORE hStore, unsigned *pcCertificates = NULL);
     static int decompressCertificate(const QByteArray &package, QByteArray &certificate, const QString &strName);
     static int downloadCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
     static int downloadCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate);
     static int downloadCertificatePca3(RTHTTP pHttp, QByteArray &certificate);
-    static int verifyCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate);
-    static int verifyCertificatePca3(RTHTTP pHttp, QByteArray &certificate);
-    static int verifyCertificate(RTHTTP pHttp, QByteArray &certificate, const QByteArray &sha1, const QByteArray &sha512);
-    static int saveCertificates(const QString &strFullCertificateFileName, const QByteArray &certificatePca3G5, const QByteArray &certificatePca3);
+    static int retrieveCertificatesFromSystem(const char *pszCaCertFile);
+    static int verifyCertificatePca3G5(RTHTTP pHttp, QByteArray const &certificate);
+    static int verifyCertificatePca3(RTHTTP pHttp, QByteArray const &certificate);
+    static int verifyCertificate(RTHTTP pHttp, QByteArray const &certificate, CERTINFO const *pCertInfo);
+    static int saveDownloadedCertificates(const QString &strFullCertificateFileName, const QByteArray &certificatePca3G5, const QByteArray &certificatePca3);
     static int saveCertificate(QFile &file, const QByteArray &certificate);
+    /** @} */
 
     /** Holds short descriptive context of thread's current operation. */
     QString m_strContext;
@@ -103,11 +129,93 @@ private:
     int m_iError;
     RTHTTP m_pHttp;
     QByteArray m_reply;
-    static const QString m_strCertificateFileName;
+
+    static const QString s_strCertificateFileName;
+    static const CERTINFO s_aCerts[3];
 };
 
-/* static */
-const QString UINetworkReplyPrivateThread::m_strCertificateFileName = QString("vbox-ssl-cacertificate.crt");
+
+/**
+ * Details on the certificates we are after.
+ */
+/* static */ const UINetworkReplyPrivateThread::CERTINFO UINetworkReplyPrivateThread::s_aCerts[3] =
+{
+    /*[0] =*/   /* The reissued version with the SHA-1 signature. */
+    {
+        /*.pszSubject =*/
+        "C=US, O=VeriSign, Inc., OU=Class 3 Public Primary Certification Authority",
+        /*.cbEncoded      =*/   0x240,
+        /*.iAlternativeTo =*/   1,
+        /*.abSha1         =*/
+        {
+            0xa1, 0xdb, 0x63, 0x93, 0x91, 0x6f, 0x17, 0xe4, 0x18, 0x55,
+            0x09, 0x40, 0x04, 0x15, 0xc7, 0x02, 0x40, 0xb0, 0xae, 0x6b
+        },
+        /*.abSha512       =*/
+        {
+            0xbb, 0xf7, 0x8a, 0x19, 0x9f, 0x37, 0xee, 0xa2,
+            0xce, 0xc8, 0xaf, 0xe3, 0xd6, 0x22, 0x54, 0x20,
+            0x74, 0x67, 0x6e, 0xa5, 0x19, 0xb7, 0x62, 0x1e,
+            0xc1, 0x2f, 0xd5, 0x08, 0xf4, 0x64, 0xc4, 0xc6,
+            0xbb, 0xc2, 0xf2, 0x35, 0xe7, 0xbe, 0x32, 0x0b,
+            0xde, 0xb2, 0xfc, 0x44, 0x92, 0x5b, 0x8b, 0x9b,
+            0x77, 0xa5, 0x40, 0x22, 0x18, 0x12, 0xcb, 0x3d,
+            0x0a, 0x67, 0x83, 0x87, 0xc5, 0x45, 0xc4, 0x99
+        }
+    },
+    /*[1] =*/   /* The original version with the MD2 signature. */
+    {
+        /*.pszSubject     =*/
+        "C=US, O=VeriSign, Inc., OU=Class 3 Public Primary Certification Authority",
+        /*.cbEncoded      =*/   0x240,
+        /*.iAlternativeTo =*/   0,
+        /*.abSha1         =*/
+        {
+            0x74, 0x2c, 0x31, 0x92, 0xe6, 0x07, 0xe4, 0x24, 0xeb, 0x45,
+            0x49, 0x54, 0x2b, 0xe1, 0xbb, 0xc5, 0x3e, 0x61, 0x74, 0xe2
+        },
+        /*.abSha512       =*/
+        {
+            0x7c, 0x2f, 0x94, 0x22, 0x5f, 0x67, 0x98, 0x89,
+            0xb9, 0xde, 0xd7, 0x41, 0xa0, 0x0d, 0xb1, 0x5c,
+            0xc6, 0xca, 0x28, 0x12, 0xbf, 0xbc, 0xa8, 0x2b,
+            0x22, 0x53, 0x7a, 0xf8, 0x32, 0x41, 0x2a, 0xbb,
+            0xc1, 0x05, 0xe0, 0x0c, 0xd0, 0xa3, 0x97, 0x9d,
+            0x5f, 0xcd, 0xe9, 0x9b, 0x68, 0x06, 0xe8, 0xe6,
+            0xce, 0xef, 0xb2, 0x71, 0x8e, 0x91, 0x60, 0xa2,
+            0xc8, 0x0c, 0x5a, 0xe7, 0x8b, 0x33, 0xf2, 0xaa
+        }
+    },
+    /*[2] =*/
+    {
+        /*.pszSubject =*/
+        "C=US, O=VeriSign, Inc., OU=VeriSign Trust Network, OU=(c) 2006 VeriSign, Inc. - For authorized use only, "
+        "CN=VeriSign Class 3 Public Primary Certification Authority - G5",
+        /*.cbEncoded      =*/   0x4d7,
+        /*.iAlternativeTo =*/   UINT16_MAX,
+        /*.abSha1         =*/
+        {
+            0x4e, 0xb6, 0xd5, 0x78, 0x49, 0x9b, 0x1c, 0xcf, 0x5f, 0x58,
+            0x1e, 0xad, 0x56, 0xbe, 0x3d, 0x9b, 0x67, 0x44, 0xa5, 0xe5
+        },
+        /*.abSha512   =*/
+        {
+            0xd4, 0xf8, 0x10, 0x54, 0x72, 0x77, 0x0a, 0x2d,
+            0xe3, 0x17, 0xb3, 0xcf, 0xed, 0x61, 0xae, 0x5c,
+            0x5d, 0x3e, 0xde, 0xa1, 0x41, 0x35, 0xb2, 0xdf,
+            0x60, 0xe2, 0x61, 0xfe, 0x3a, 0xc1, 0x66, 0xa3,
+            0x3c, 0x88, 0x54, 0x04, 0x4f, 0x1d, 0x13, 0x46,
+            0xe3, 0x8c, 0x06, 0x92, 0x9d, 0x70, 0x54, 0xc3,
+            0x44, 0xeb, 0x2c, 0x74, 0x25, 0x9e, 0x5d, 0xfb,
+            0xd2, 0x6b, 0xa8, 0x9a, 0xf0, 0xb3, 0x6a, 0x01
+        }
+    },
+};
+
+
+/** The certificate file name (no path). */
+/* static */ const QString UINetworkReplyPrivateThread::s_strCertificateFileName = QString("vbox-ssl-cacertificate.crt");
+
 
 UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(const QNetworkRequest &request)
     : m_request(request)
@@ -143,25 +251,34 @@ int UINetworkReplyPrivateThread::applyHttpsCertificates()
     /* Set thread context: */
     m_strContext = tr("During certificate downloading");
 
-    /* Prepare variables: */
+    /*
+     * Calc the filename of the CA certificate file.
+     */
     const QString strFullCertificateFileName(fullCertificateFileName());
-    int rc = VINF_SUCCESS;
+    QByteArray utf8FullCertificateFileName = strFullCertificateFileName.toUtf8();
+    const char *pszCaCertFile = utf8FullCertificateFileName.constData();
 
-    /* Check certificates if present: */
-    if (QFile::exists(strFullCertificateFileName))
-        rc = checkCertificates(m_pHttp, strFullCertificateFileName);
+    /*
+     * Check that the certificate file is recent and contains the necessary certificates.
+     */
+    int rc;
+    if (checkCertificatesInFile(pszCaCertFile))
+        rc = RTHttpSetCAFile(m_pHttp, pszCaCertFile);
     else
-        rc = VERR_FILE_NOT_FOUND;
+    {
+        /*
+         * Need to create/update the CA certificate file.  Try see if the necessary
+         * certificates are to be found somewhere on the local system, then fall back
+         * to downloading them.
+         */
+        rc = retrieveCertificatesFromSystem(pszCaCertFile);
+        if (RT_FAILURE(rc))
+            rc = downloadCertificates(m_pHttp, strFullCertificateFileName);
 
-    /* Download certificates if necessary: */
-    if (!RT_SUCCESS(rc))
-        rc = downloadCertificates(m_pHttp, strFullCertificateFileName);
+        if (RT_SUCCESS(rc))
+            rc = RTHttpSetCAFile(m_pHttp, pszCaCertFile);
+    }
 
-    /* Apply certificates: */
-    if (RT_SUCCESS(rc))
-        rc = applyCertificates(m_pHttp, strFullCertificateFileName);
-
-    /* Return result-code: */
     return rc;
 }
 
@@ -225,7 +342,7 @@ void UINetworkReplyPrivateThread::run()
 QString UINetworkReplyPrivateThread::fullCertificateFileName()
 {
     const QDir homeDir(QDir::toNativeSeparators(vboxGlobal().homeFolder()));
-    return QDir::toNativeSeparators(homeDir.absoluteFilePath(m_strCertificateFileName));
+    return QDir::toNativeSeparators(homeDir.absoluteFilePath(s_strCertificateFileName));
 }
 
 /* static */
@@ -251,17 +368,6 @@ int UINetworkReplyPrivateThread::applyProxyRules(RTHTTP pHttp, const QString &st
                           strHostName.toAscii().constData(),
                           iPort,
                           0 /* login */, 0 /* password */);
-}
-
-/* static */
-int UINetworkReplyPrivateThread::applyCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName)
-{
-    /* Make sure HTTP is created: */
-    if (!pHttp)
-        return VERR_INVALID_POINTER;
-
-    /* Apply HTTPs certificates: */
-    return RTHttpSetCAFile(pHttp, strFullCertificateFileName.toUtf8().constData());
 }
 
 /* static */
@@ -322,61 +428,148 @@ int UINetworkReplyPrivateThread::performGetRequestForBinary(RTHTTP pHttp, const 
     return rc;
 }
 
-/* static */
-int UINetworkReplyPrivateThread::checkCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName)
+/**
+ * Checks if the certificates we desire are all present in the given file, and
+ * that the file is recent enough (not for downloaded certs).
+ *
+ * @returns true if fine, false if not.
+ * @param   pszCaCertFile   The path to the certificate file.
+ */
+/* static */ bool
+UINetworkReplyPrivateThread::checkCertificatesInFile(const char *pszCaCertFile)
 {
-    /* Open certificates file: */
-    QFile file(strFullCertificateFileName);
-    bool fFileOpened = file.open(QIODevice::ReadOnly);
-    int rc = fFileOpened ? VINF_SUCCESS : VERR_OPEN_FAILED;
+    bool fFoundCerts = false;
 
-    /* Read certificates file: */
-    if (RT_SUCCESS(rc))
+    /*
+     * Check whether the file exists.
+     */
+    RTFSOBJINFO Info;
+    int rc = RTPathQueryInfoEx(pszCaCertFile, &Info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+    if (   RT_SUCCESS(rc)
+        && RTFS_IS_FILE(Info.Attr.fMode))
     {
-        /* Parse the file content: */
-        QString strData(file.readAll());
-#define CERT   "-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\r{0,1}\\n]+-{5}END CERTIFICATE-{5}"
-#define REOLD  "(" CERT ")\\r{0,1}\\n(" CERT ")\\r{0,1}\\n(" CERT ")"
-#define RENEW  "(" CERT ")\\r{0,1}\\n(" CERT ")"
-        /* First check if we have the old format with three certificates: */
-        QRegExp regExp(REOLD);
-        regExp.setMinimal(true);
-
-        /* If so, fake an error to force re-downloading */
-        if (regExp.indexIn(strData) != -1)
-            rc = VERR_HTTP_CACERT_WRONG_FORMAT;
-
-        /* Otherwise, check for two certificates: */
+        /*
+         * Load the CA certificate file into a store and use
+         * checkCertificatesInStore to do the real work.
+         */
+        RTCRSTORE hStore;
+        int rc = RTCrStoreCreateInMem(&hStore, 256);
         if (RT_SUCCESS(rc))
         {
-            regExp.setPattern(RENEW);
-            regExp.setMinimal(true);
-            if (regExp.indexIn(strData) == -1)
-                rc = VERR_FILE_IO_ERROR;
-        }
+            RTERRINFOSTATIC StaticErrInfo;
+            rc = RTCrStoreCertAddFromFile(hStore, RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR, pszCaCertFile,
+                                          RTErrInfoInitStatic(&StaticErrInfo));
+            if (RTErrInfoIsSet(&StaticErrInfo.Core))
+                LogRel(("checkCertificates: %s\n", StaticErrInfo.Core.pszMsg));
+            else
+                AssertRC(rc);
 
-        /* Verify certificates: */
-        if (RT_SUCCESS(rc))
-        {
-            QByteArray certificate = regExp.cap(1).toAscii();
-            rc = verifyCertificatePca3G5(pHttp, certificate);
+            unsigned cCertificates = 0;
+            fFoundCerts = checkCertificatesInStore(hStore, &cCertificates);
+
+            RTCrStoreRelease(hStore);
+
+            /*
+             * If there are more than two certificates in the database, we're looking
+             * at a mirror of the system CA stores.  Refresh our snapshot once every 28 days.
+             */
+            RTTIMESPEC MaxAge;
+            if (   fFoundCerts
+                && cCertificates > 2
+                && RTTimeSpecCompare(&Info.ModificationTime, RTTimeSpecSubSeconds(RTTimeNow(&MaxAge), 28 *24*3600)) < 0)
+                fFoundCerts = false;
         }
-        if (RT_SUCCESS(rc))
-        {
-            QByteArray certificate = regExp.cap(2).toAscii();
-            rc = verifyCertificatePca3(pHttp, certificate);
-        }
-#undef CERT
-#undef REOLD
-#undef RENEW
     }
 
-    /* Close certificates file: */
-    if (fFileOpened)
-        file.close();
+    return fFoundCerts;
+}
 
-    /* Return result-code: */
-    return rc;
+/**
+ * Checks if the certificates we desire are all present in the given store.
+ *
+ * @returns true if present, false if not.
+ * @param   hStore              The store to examine.
+ * @param   pcCertificates      Where to return the number of certificates in
+ *                              the store. Optional.
+ */
+/* static */ bool
+UINetworkReplyPrivateThread::checkCertificatesInStore(RTCRSTORE hStore, unsigned *pcCertificates /* = NULL*/)
+{
+    if (pcCertificates)
+        *pcCertificates = 0;
+
+    /*
+     * Enumerate the store, checking for the certificates we need.
+     */
+    RTCRSTORECERTSEARCH Search;
+    int rc = RTCrStoreCertFindAll(hStore, &Search);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t      fFoundCerts   = 0;
+        unsigned      cCertificates = 0;
+        PCRTCRCERTCTX pCertCtx;
+        while ((pCertCtx = RTCrStoreCertSearchNext(hStore, &Search)) != NULL)
+        {
+            if (   (pCertCtx->fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_X509_DER
+                && pCertCtx->cbEncoded > 0
+                && pCertCtx->pCert)
+            {
+                cCertificates++;
+
+                /*
+                 * It is a X.509 certificate.  Check if it matches any of those we're looking for.
+                 */
+                for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
+                    if (   pCertCtx->cbEncoded == s_aCerts[i].cbEncoded
+                        && RTCrX509Name_MatchWithString(&pCertCtx->pCert->TbsCertificate.Subject, s_aCerts[i].pszSubject))
+                    {
+                        if (RTSha1Check(pCertCtx->pabEncoded, pCertCtx->cbEncoded, s_aCerts[i].abSha1))
+                        {
+                            if (RTSha512Check(pCertCtx->pabEncoded, pCertCtx->cbEncoded, s_aCerts[i].abSha512))
+                            {
+                                fFoundCerts |= RT_BIT_64(i);
+
+                                /*
+                                 * Tedium: Also mark certificates that this is an alternative to, we only need
+                                 *         the public key once.
+                                 */
+                                uint16_t iAlt = s_aCerts[i].iAlternativeTo;
+                                if (iAlt != UINT16_MAX)
+                                {
+                                    unsigned cMax = 10;
+                                    do
+                                    {
+                                        Assert(iAlt < RT_ELEMENTS(s_aCerts));
+                                        Assert(cMax > 1);
+                                        Assert(strcmp(s_aCerts[iAlt].pszSubject, s_aCerts[i].pszSubject) == 0);
+                                        fFoundCerts |= RT_BIT_64(iAlt);
+                                        iAlt = s_aCerts[iAlt].iAlternativeTo;
+                                    } while (iAlt != i && cMax-- > 0);
+                                }
+                                break;
+                            }
+                        }
+                    }
+            }
+            RTCrCertCtxRelease(pCertCtx);
+        }
+        int rc2 = RTCrStoreCertSearchDestroy(hStore, &Search); AssertRC(rc2);
+
+        /*
+         * Set the certificate count.
+         */
+        if (pcCertificates)
+            *pcCertificates = cCertificates;
+
+        /*
+         * Did we locate all of them?
+         */
+        AssertCompile(RT_ELEMENTS(s_aCerts) < 64);
+        if (fFoundCerts == RT_BIT_64(RT_ELEMENTS(s_aCerts)) - UINT64_C(1))
+            return true;
+    }
+    AssertRC(rc);
+    return false;
 }
 
 /* static */
@@ -428,7 +621,7 @@ int UINetworkReplyPrivateThread::downloadCertificates(RTHTTP pHttp, const QStrin
     }
 
     /* Fallback.. download certificates separately: */
-    if (!RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
     {
         /* Reset result: */
         rc = VINF_SUCCESS;
@@ -442,7 +635,7 @@ int UINetworkReplyPrivateThread::downloadCertificates(RTHTTP pHttp, const QStrin
 
     /* Save certificates: */
     if (RT_SUCCESS(rc))
-        saveCertificates(strFullCertificateFileName, certificatePca3G5, certificatePca3);
+        rc = saveDownloadedCertificates(strFullCertificateFileName, certificatePca3G5, certificatePca3);
 
     /* Return result-code: */
     return rc;
@@ -478,99 +671,114 @@ int UINetworkReplyPrivateThread::downloadCertificatePca3(RTHTTP pHttp, QByteArra
     return rc;
 }
 
-/* static */
-int UINetworkReplyPrivateThread::verifyCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate)
+/**
+ * Tries to retrieve an up to date list of certificates from the system that
+ * includes the necessary certs.
+ *
+ * @returns IPRT status code, success indicating that we've found what we need.
+ * @param   pszCaCertFile           Where to store the certificates.
+ */
+int UINetworkReplyPrivateThread::retrieveCertificatesFromSystem(const char *pszCaCertFile)
 {
-    /* PCA 3G5 secure hash algorithm 1: */
-    const unsigned char baSha1PCA3G5[] =
-    {
-        0x4e, 0xb6, 0xd5, 0x78, 0x49, 0x9b, 0x1c, 0xcf, 0x5f, 0x58,
-        0x1e, 0xad, 0x56, 0xbe, 0x3d, 0x9b, 0x67, 0x44, 0xa5, 0xe5
-    };
-    /* PCA 3G5 secure hash algorithm 512: */
-    const unsigned char baSha512PCA3G5[] =
-    {
-        0xd4, 0xf8, 0x10, 0x54, 0x72, 0x77, 0x0a, 0x2d,
-        0xe3, 0x17, 0xb3, 0xcf, 0xed, 0x61, 0xae, 0x5c,
-        0x5d, 0x3e, 0xde, 0xa1, 0x41, 0x35, 0xb2, 0xdf,
-        0x60, 0xe2, 0x61, 0xfe, 0x3a, 0xc1, 0x66, 0xa3,
-        0x3c, 0x88, 0x54, 0x04, 0x4f, 0x1d, 0x13, 0x46,
-        0xe3, 0x8c, 0x06, 0x92, 0x9d, 0x70, 0x54, 0xc3,
-        0x44, 0xeb, 0x2c, 0x74, 0x25, 0x9e, 0x5d, 0xfb,
-        0xd2, 0x6b, 0xa8, 0x9a, 0xf0, 0xb3, 0x6a, 0x01
-    };
-    QByteArray pca3G5sha1 = QByteArray::fromRawData((const char *)baSha1PCA3G5, sizeof(baSha1PCA3G5));
-    QByteArray pca3G5sha512 = QByteArray::fromRawData((const char *)baSha512PCA3G5, sizeof(baSha512PCA3G5));
+    /*
+     * Duplicate the user and system stores.
+     */
+    RTERRINFOSTATIC StaticErrInfo;
+    RTCRSTORE hUserStore;
+    int rc = RTCrStoreCreateSnapshotById(&hUserStore, RTCRSTOREID_USER_TRUSTED_CAS_AND_CERTIFICATES,
+                                         RTErrInfoInitStatic(&StaticErrInfo));
+    if (RT_FAILURE(rc))
+        hUserStore = NIL_RTCRSTORE;
+    if (RTErrInfoIsSet(&StaticErrInfo.Core))
+        LogRel(("retrieveCertificatesFromSystem/#1: %s\n", StaticErrInfo.Core.pszMsg));
 
-    /* Verify certificate: */
-    return verifyCertificate(pHttp, certificate, pca3G5sha1, pca3G5sha512);
+    RTCRSTORE hSystemStore;
+    rc = RTCrStoreCreateSnapshotById(&hSystemStore, RTCRSTOREID_SYSTEM_TRUSTED_CAS_AND_CERTIFICATES,
+                                     RTErrInfoInitStatic(&StaticErrInfo));
+    if (RT_FAILURE(rc))
+        hUserStore = NIL_RTCRSTORE;
+    if (RTErrInfoIsSet(&StaticErrInfo.Core))
+        LogRel(("retrieveCertificatesFromSystem/#2: %s\n", StaticErrInfo.Core.pszMsg));
+
+    /*
+     * Merge the two.
+     */
+    int rc2 = RTCrStoreCertAddFromStore(hUserStore, RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
+                                        hSystemStore);
+    AssertRC(rc2);
+    RTCrStoreRelease(hSystemStore);
+    hSystemStore = NIL_RTCRSTORE;
+
+    /*
+     * See if we've got the certificates we want.
+     */
+    if (checkCertificatesInStore(hUserStore))
+        rc = RTCrStoreCertExportAsPem(hUserStore, 0 /*fFlags*/, pszCaCertFile);
+    else
+        rc = VERR_NOT_FOUND;
+    RTCrStoreRelease(hUserStore);
+    return rc;
+}
+
+
+/* static */
+int UINetworkReplyPrivateThread::verifyCertificatePca3G5(RTHTTP pHttp, QByteArray const &certificate)
+{
+    const CERTINFO *pCertInfo = &s_aCerts[2];
+    Assert(pCertInfo->cbEncoded == 0x4d7);
+    return verifyCertificate(pHttp, certificate, pCertInfo);
 }
 
 /* static */
-int UINetworkReplyPrivateThread::verifyCertificatePca3(RTHTTP pHttp, QByteArray &certificate)
+int UINetworkReplyPrivateThread::verifyCertificatePca3(RTHTTP pHttp, QByteArray const &certificate)
 {
-    /* PCA 3 secure hash algorithm 1: */
-    const unsigned char baSha1PCA3[] =
-    {
-        0xa1, 0xdb, 0x63, 0x93, 0x91, 0x6f, 0x17, 0xe4, 0x18, 0x55,
-        0x09, 0x40, 0x04, 0x15, 0xc7, 0x02, 0x40, 0xb0, 0xae, 0x6b
-    };
-    /* PCA 3 secure hash algorithm 512: */
-    const unsigned char baSha512PCA3[] =
-    {
-        0xbb, 0xf7, 0x8a, 0x19, 0x9f, 0x37, 0xee, 0xa2,
-        0xce, 0xc8, 0xaf, 0xe3, 0xd6, 0x22, 0x54, 0x20,
-        0x74, 0x67, 0x6e, 0xa5, 0x19, 0xb7, 0x62, 0x1e,
-        0xc1, 0x2f, 0xd5, 0x08, 0xf4, 0x64, 0xc4, 0xc6,
-        0xbb, 0xc2, 0xf2, 0x35, 0xe7, 0xbe, 0x32, 0x0b,
-        0xde, 0xb2, 0xfc, 0x44, 0x92, 0x5b, 0x8b, 0x9b,
-        0x77, 0xa5, 0x40, 0x22, 0x18, 0x12, 0xcb, 0x3d,
-        0x0a, 0x67, 0x83, 0x87, 0xc5, 0x45, 0xc4, 0x99
-    };
-    QByteArray pca3sha1 = QByteArray::fromRawData((const char *)baSha1PCA3, sizeof(baSha1PCA3));
-    QByteArray pca3sha512 = QByteArray::fromRawData((const char *)baSha512PCA3, sizeof(baSha512PCA3));
-
-    /* Verify certificate: */
-    return verifyCertificate(pHttp, certificate, pca3sha1, pca3sha512);
+    const CERTINFO *pCertInfo = &s_aCerts[0];
+    Assert(pCertInfo->cbEncoded == 0x240);
+    Assert(pCertInfo->abSha1[0] == 0xa1);
+    return verifyCertificate(pHttp, certificate, pCertInfo);
 }
 
 /* static */
-int UINetworkReplyPrivateThread::verifyCertificate(RTHTTP pHttp, QByteArray &certificate, const QByteArray &sha1, const QByteArray &sha512)
+int UINetworkReplyPrivateThread::verifyCertificate(RTHTTP pHttp, QByteArray const &certificate, CERTINFO const *pCertInfo)
 {
     /* Make sure HTTP is created: */
     if (!pHttp)
         return VERR_INVALID_POINTER;
 
-    /* Create digest: */
-    uint8_t *abSha1;
-    size_t  cbSha1;
-    uint8_t *abSha512;
-    size_t  cbSha512;
-    int rc = RTHttpCertDigest(pHttp, certificate.data(), certificate.size(),
-                              &abSha1, &cbSha1, &abSha512, &cbSha512);
+    /*
+     * Convert the PEM formatted certificate into bytes and create
+     * SHA-1 and SHA-512 digest for them.
+     */
+    uint8_t *pabSha1;
+    size_t   cbSha1;
+    uint8_t *pabSha512;
+    size_t   cbSha512;
+    int rc = RTHttpCertDigest(pHttp, (char *)certificate.constData(), certificate.size(),
+                              &pabSha1, &cbSha1, &pabSha512, &cbSha512); /* Insane interface! (cbSha1, cbSha512, non-const data) Will be replaced eventually... */
+    if (RT_SUCCESS(rc))
+    {
+        Assert(cbSha1   == RTSHA1_DIGEST_LEN);
+        Assert(cbSha512 == RTSHA512_DIGEST_LEN);
 
-    /* Verify digest: */
-    if (cbSha1 != (size_t)sha1.size())
-        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
-    else if (memcmp(sha1.constData(), abSha1, cbSha1))
-        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
-    if (cbSha512 != (size_t)sha512.size())
-        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
-    else if (memcmp(sha512.constData(), abSha512, cbSha512))
-        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
+        /* Verify digest: */
+        if (memcmp(pCertInfo->abSha1, pabSha1, RTSHA1_DIGEST_LEN))
+            rc = VERR_HTTP_CACERT_WRONG_FORMAT;
+        if (memcmp(pCertInfo->abSha512, pabSha512, RTSHA512_DIGEST_LEN))
+            rc = VERR_HTTP_CACERT_WRONG_FORMAT;
 
-    /* Cleanup digest: */
-    RTMemFree(abSha1);
-    RTMemFree(abSha512);
+        /* Cleanup digest: */
+        RTMemFree(pabSha1);
+        RTMemFree(pabSha512);
+    }
 
     /* Return result-code: */
     return rc;
 }
 
-/* static */
-int UINetworkReplyPrivateThread::saveCertificates(const QString &strFullCertificateFileName,
-                                                  const QByteArray &certificatePca3G5,
-                                                  const QByteArray &certificatePca3)
+/* static */ int
+UINetworkReplyPrivateThread::saveDownloadedCertificates(const QString &strFullCertificateFileName,
+                                                        const QByteArray &certificatePca3G5,
+                                                        const QByteArray &certificatePca3)
 {
     /* Open certificates file: */
     QFile file(strFullCertificateFileName);
