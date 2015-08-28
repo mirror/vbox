@@ -358,6 +358,21 @@ RTDECL(void) RTPathStripSuffix(char *pszPath);
 RTDECL(size_t) RTPathStripTrailingSlash(char *pszPath);
 
 /**
+ * Ensures that the path has a trailing path separator such that file names can
+ * be appended without further work.
+ *
+ * This can be helpful when preparing for efficiently combining a directory path
+ * with the filenames returned by RTDirRead.  The return value gives you the
+ * position at which you copy the RTDIRENTRY::szName to construct a valid path
+ * to it.
+ *
+ * @returns The length of the path, 0 on buffer overflow.
+ * @param   pszPath     The path.
+ * @param   cbPath      The length of the path buffer @a pszPath points to.
+ */
+RTDECL(size_t) RTPathEnsureTrailingSeparator(char *pszPath, size_t cbPath);
+
+/**
  * Changes all the slashes in the specified path to DOS style.
  *
  * Unless @a fForce is set, nothing will be done when on a UNIX flavored system

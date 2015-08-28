@@ -441,7 +441,7 @@ RTDECL(void) RTSha1Update(PRTSHA1CONTEXT pCtx, const void *pvBuf, size_t cbBuf)
 RT_EXPORT_SYMBOL(RTSha1Update);
 
 
-RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabDigest[RTSHA1_HASH_SIZE])
+static void rtSha1FinalInternal(PRTSHA1CONTEXT pCtx)
 {
     Assert(pCtx->AltPrivate.cbMessage < UINT64_MAX / 2);
 
@@ -480,11 +480,21 @@ RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabDigest[RTSHA1_HASH_SIZE
     pCtx->AltPrivate.auH[2] = RT_H2BE_U32(pCtx->AltPrivate.auH[2]);
     pCtx->AltPrivate.auH[3] = RT_H2BE_U32(pCtx->AltPrivate.auH[3]);
     pCtx->AltPrivate.auH[4] = RT_H2BE_U32(pCtx->AltPrivate.auH[4]);
+}
 
-    memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA1_HASH_SIZE);
 
+DECLINLINE(void) rtSha1WipeCtx(PRTSHA1CONTEXT pCtx)
+{
     RT_ZERO(pCtx->AltPrivate);
     pCtx->AltPrivate.cbMessage = UINT64_MAX;
+}
+
+
+RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabDigest[RTSHA1_HASH_SIZE])
+{
+    rtSha1FinalInternal(pCtx);
+    memcpy(pabDigest, &pCtx->AltPrivate.auH[0], RTSHA1_HASH_SIZE);
+    rtSha1WipeCtx(pCtx);
 }
 RT_EXPORT_SYMBOL(RTSha1Final);
 
@@ -497,4 +507,19 @@ RTDECL(void) RTSha1(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA1_HA
     RTSha1Final(&Ctx, pabDigest);
 }
 RT_EXPORT_SYMBOL(RTSha1);
+
+
+RTDECL(bool) RTSha1Check(const void *pvBuf, size_t cbBuf, uint8_t const pabHash[RTSHA1_HASH_SIZE])
+{
+    RTSHA1CONTEXT Ctx;
+    RTSha1Init(&Ctx);
+    RTSha1Update(&Ctx, pvBuf, cbBuf);
+    rtSha1FinalInternal(&Ctx);
+
+    bool fRet = memcmp(pabHash, &Ctx.AltPrivate.auH[0], RTSHA1_HASH_SIZE) == 0;
+
+    rtSha1WipeCtx(&Ctx);
+    return fRet;
+}
+RT_EXPORT_SYMBOL(RTSha1Check);
 

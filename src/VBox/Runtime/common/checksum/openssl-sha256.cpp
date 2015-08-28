@@ -36,6 +36,8 @@
 #include <iprt/sha.h>
 
 #include <iprt/assert.h>
+#include <iprt/string.h>
+
 
 AssertCompile(RT_SIZEOFMEMB(RTSHA256CONTEXT, abPadding) >= RT_SIZEOFMEMB(RTSHA256CONTEXT, Private));
 
@@ -48,6 +50,20 @@ RTDECL(void) RTSha256(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA25
     RTSha256Final(&Ctx, pabDigest);
 }
 RT_EXPORT_SYMBOL(RTSha256);
+
+
+RTDECL(bool) RTSha256Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA256_HASH_SIZE])
+{
+    RTSHA256CONTEXT Ctx;
+    RTSha256Init(&Ctx);
+    RTSha256Update(&Ctx, pvBuf, cbBuf);
+    uint8_t abActualDigest[RTSHA256_HASH_SIZE];
+    RTSha256Final(&Ctx, abActualDigest);
+    bool fRet = memcmp(pabDigest, abActualDigest, RTSHA256_HASH_SIZE) == 0;
+    RT_ZERO(abActualDigest);
+    return fRet;
+}
+RT_EXPORT_SYMBOL(RTSha256Check);
 
 
 RTDECL(void) RTSha256Init(PRTSHA256CONTEXT pCtx)
@@ -84,6 +100,20 @@ RTDECL(void) RTSha224(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA22
     RTSha224Final(&Ctx, pabDigest);
 }
 RT_EXPORT_SYMBOL(RTSha224);
+
+
+RTDECL(bool) RTSha224Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA224_HASH_SIZE])
+{
+    RTSHA224CONTEXT Ctx;
+    RTSha224Init(&Ctx);
+    RTSha224Update(&Ctx, pvBuf, cbBuf);
+    uint8_t abActualDigest[RTSHA224_HASH_SIZE];
+    RTSha224Final(&Ctx, abActualDigest);
+    bool fRet = memcmp(pabDigest, abActualDigest, RTSHA224_HASH_SIZE) == 0;
+    RT_ZERO(abActualDigest);
+    return fRet;
+}
+RT_EXPORT_SYMBOL(RTSha224Check);
 
 
 RTDECL(void) RTSha224Init(PRTSHA224CONTEXT pCtx)

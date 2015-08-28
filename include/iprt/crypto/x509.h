@@ -164,7 +164,7 @@ RTDECL(bool) RTCrX509Name_ConstraintMatch(PCRTCRX509NAME pConstraint, PCRTCRX509
 RTDECL(int) RTCrX509Name_RecodeAsUtf8(PRTCRX509NAME pThis, PCRTASN1ALLOCATORVTABLE pAllocator);
 
 /**
- * Matches the directory name against a comma separated list of the comonent
+ * Matches the directory name against a comma separated list of the component
  * strings (case sensitive).
  *
  * @returns true if match, false if mismatch.

@@ -495,11 +495,14 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
         switch (ch)
         {
             case 'r': case 'a':
-                rc = RTCrStoreCertAddFromFile(ch == 'r' ? State.hRootStore : State.hAdditionalStore,  0, ValueUnion.psz,
-                                              RTErrInfoInitStatic(&StaticErrInfo));
+                rc = RTCrStoreCertAddFromFile(ch == 'r' ? State.hRootStore : State.hAdditionalStore,
+                                              RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
+                                              ValueUnion.psz, RTErrInfoInitStatic(&StaticErrInfo));
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error loading certificate '%s': %Rrc - %s",
                                           ValueUnion.psz, rc, StaticErrInfo.szMsg);
+                if (RTErrInfoIsSet(&StaticErrInfo.Core))
+                    RTMsgWarning("Warnings loading certificate '%s': %s", ValueUnion.psz, StaticErrInfo.szMsg);
                 break;
 
             case 't':

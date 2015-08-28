@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - SHA-1 hash functions.
+ * IPRT - RTPathEnsureTrailingSeparator
  */
 
 /*
- * Copyright (C) 2009-2015 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,60 +29,31 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
-
-#include <openssl/sha.h>
-
-#define RT_SHA1_PRIVATE_CONTEXT
-#include <iprt/sha.h>
-
-#include <iprt/assert.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/ctype.h>
 
 
-AssertCompile(RT_SIZEOFMEMB(RTSHA1CONTEXT, abPadding) >= RT_SIZEOFMEMB(RTSHA1CONTEXT, Private));
 
-
-RTDECL(void) RTSha1(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA1_HASH_SIZE])
+RTDECL(size_t) RTPathEnsureTrailingSeparator(char *pszPath, size_t cbPath)
 {
-    RTSHA1CONTEXT Ctx;
-    RTSha1Init(&Ctx);
-    RTSha1Update(&Ctx, pvBuf, cbBuf);
-    RTSha1Final(&Ctx, pabDigest);
+    size_t off = strlen(pszPath);
+    if (off > 0)
+    {
+        char ch = pszPath[off - 1];
+        if (RTPATH_IS_SLASH(ch) || RTPATH_IS_VOLSEP(ch))
+            return off;
+    }
+
+    if (off + 2 < cbPath)
+    {
+        pszPath[off++] = '.';
+        pszPath[off++] = RTPATH_SLASH;
+        pszPath[off]   = '\0';
+        return off;
+    }
+
+    return 0;
 }
-RT_EXPORT_SYMBOL(RTSha1);
-
-
-RTDECL(bool) RTSha1Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA1_HASH_SIZE])
-{
-    RTSHA1CONTEXT Ctx;
-    RTSha1Init(&Ctx);
-    RTSha1Update(&Ctx, pvBuf, cbBuf);
-    uint8_t abActualDigest[RTSHA1_HASH_SIZE];
-    RTSha1Final(&Ctx, abActualDigest);
-    bool fRet = memcmp(pabDigest, abActualDigest, RTSHA1_HASH_SIZE) == 0;
-    RT_ZERO(abActualDigest);
-    return fRet;
-}
-RT_EXPORT_SYMBOL(RTSha1Check);
-
-
-RTDECL(void) RTSha1Init(PRTSHA1CONTEXT pCtx)
-{
-    SHA1_Init(&pCtx->Private);
-}
-RT_EXPORT_SYMBOL(RTSha1Init);
-
-
-RTDECL(void) RTSha1Update(PRTSHA1CONTEXT pCtx, const void *pvBuf, size_t cbBuf)
-{
-    SHA1_Update(&pCtx->Private, pvBuf, cbBuf);
-}
-RT_EXPORT_SYMBOL(RTSha1Update);
-
-
-RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabDigest[RTSHA1_HASH_SIZE])
-{
-    SHA1_Final((unsigned char *)&pabDigest[0], &pCtx->Private);
-}
-RT_EXPORT_SYMBOL(RTSha1Final);
+RT_EXPORT_SYMBOL(RTPathEnsureTrailingSeparator);
 

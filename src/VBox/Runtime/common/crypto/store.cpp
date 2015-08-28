@@ -173,8 +173,9 @@ RTDECL(int) RTCrStoreCertAddEncoded(RTCRSTORE hStore, uint32_t fFlags, void cons
     AssertReturn(pThis->u32Magic == RTCRSTOREINT_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(pvSrc, VERR_INVALID_POINTER);
     AssertReturn(cbSrc > 16 && cbSrc < _1M, VERR_OUT_OF_RANGE);
-    AssertMsgReturn(   fFlags == RTCRCERTCTX_F_ENC_X509_DER
-                    || fFlags == RTCRCERTCTX_F_ENC_TAF_DER
+    AssertReturn(!(fFlags & ~(RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ENC_MASK)), VERR_INVALID_FLAGS);
+    AssertMsgReturn(   (fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_X509_DER
+                    || (fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_TAF_DER
                     , ("Only X.509 and TAF DER supported: %#x\n", fFlags), VERR_INVALID_FLAGS);
 
     int rc;

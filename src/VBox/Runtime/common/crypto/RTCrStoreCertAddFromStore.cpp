@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - SHA-1 hash functions.
+ * IPRT - Cryptographic (Certificate) Store, RTCrStoreCertAddFromStore.
  */
 
 /*
- * Copyright (C) 2009-2015 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,60 +29,44 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
-
-#include <openssl/sha.h>
-
-#define RT_SHA1_PRIVATE_CONTEXT
-#include <iprt/sha.h>
+#include <iprt/crypto/store.h>
 
 #include <iprt/assert.h>
-#include <iprt/string.h>
+#include <iprt/err.h>
 
 
-AssertCompile(RT_SIZEOFMEMB(RTSHA1CONTEXT, abPadding) >= RT_SIZEOFMEMB(RTSHA1CONTEXT, Private));
 
-
-RTDECL(void) RTSha1(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA1_HASH_SIZE])
+RTDECL(int) RTCrStoreCertAddFromStore(RTCRSTORE hStore, uint32_t fFlags, RTCRSTORE hStoreSrc)
 {
-    RTSHA1CONTEXT Ctx;
-    RTSha1Init(&Ctx);
-    RTSha1Update(&Ctx, pvBuf, cbBuf);
-    RTSha1Final(&Ctx, pabDigest);
+    /*
+     * Validate input.
+     */
+    AssertReturn(!(fFlags & ~(RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR)), VERR_INVALID_FLAGS);
+
+    /*
+     * Enumerate all the certificates in the source store, adding them to the destination.
+     */
+    RTCRSTORECERTSEARCH Search;
+    int rc = RTCrStoreCertFindAll(hStoreSrc, &Search);
+    if (RT_SUCCESS(rc))
+    {
+        PCRTCRCERTCTX pCertCtx;
+        while ((pCertCtx = RTCrStoreCertSearchNext(hStoreSrc, &Search)) != NULL)
+        {
+            int rc2 = RTCrStoreCertAddEncoded(hStore, pCertCtx->fFlags | (fFlags & RTCRCERTCTX_F_ADD_IF_NOT_FOUND),
+                                              pCertCtx->pabEncoded, pCertCtx->cbEncoded, NULL);
+            if (RT_FAILURE(rc2))
+            {
+                rc = rc2;
+                if (!(fFlags & RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR))
+                    break;
+            }
+            RTCrCertCtxRelease(pCertCtx);
+        }
+
+        int rc2 = RTCrStoreCertSearchDestroy(hStoreSrc, &Search); AssertRC(rc2);
+    }
+    return rc;
 }
-RT_EXPORT_SYMBOL(RTSha1);
-
-
-RTDECL(bool) RTSha1Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA1_HASH_SIZE])
-{
-    RTSHA1CONTEXT Ctx;
-    RTSha1Init(&Ctx);
-    RTSha1Update(&Ctx, pvBuf, cbBuf);
-    uint8_t abActualDigest[RTSHA1_HASH_SIZE];
-    RTSha1Final(&Ctx, abActualDigest);
-    bool fRet = memcmp(pabDigest, abActualDigest, RTSHA1_HASH_SIZE) == 0;
-    RT_ZERO(abActualDigest);
-    return fRet;
-}
-RT_EXPORT_SYMBOL(RTSha1Check);
-
-
-RTDECL(void) RTSha1Init(PRTSHA1CONTEXT pCtx)
-{
-    SHA1_Init(&pCtx->Private);
-}
-RT_EXPORT_SYMBOL(RTSha1Init);
-
-
-RTDECL(void) RTSha1Update(PRTSHA1CONTEXT pCtx, const void *pvBuf, size_t cbBuf)
-{
-    SHA1_Update(&pCtx->Private, pvBuf, cbBuf);
-}
-RT_EXPORT_SYMBOL(RTSha1Update);
-
-
-RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabDigest[RTSHA1_HASH_SIZE])
-{
-    SHA1_Final((unsigned char *)&pabDigest[0], &pCtx->Private);
-}
-RT_EXPORT_SYMBOL(RTSha1Final);
+RT_EXPORT_SYMBOL(RTCrStoreCertAddFromStore);
 

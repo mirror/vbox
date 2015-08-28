@@ -99,44 +99,30 @@ RTDECL(int) RTCrX509Certificates_ReadFromFile(const char *pszFilename, uint32_t 
 
 RTDECL(int) RTCrStoreCertAddFromFile(RTCRSTORE hStore, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo)
 {
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
-#if 0
-    RTCRX509CERTIFICATES Certs;
-    int rc = RTCrX509Certificates_ReadFromFile(pszFilename, 0, &Certs, pErrInfo);
-    if (RT_SUCCESS(rc))
-    {
-        for (uint32_t i = 0; i < Certs.cCerts; i++)
-        {
-            int rc2 = RTCrStoreCertAddEncoded(hStore, RTCRCERTCTX_F_ENC_X509_DER,
-                                              RTASN1CORE_GET_RAW_ASN1_PTR(&Certs.paCerts[i].SeqCore.Asn1Core),
-                                              RTASN1CORE_GET_RAW_ASN1_SIZE(&Certs.paCerts[i].SeqCore.Asn1Core),
-                                              RT_SUCCESS(rc) ? pErrInfo : NULL);
-            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-                rc = rc2;
-        }
-
-        RTAsn1Destroy(&Certs.SetCore.Asn1Core);
-    }
-    return rc;
-#else
+    AssertReturn(!(fFlags & ~(RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR)), VERR_INVALID_FLAGS);
 
     PCRTCRPEMSECTION pSectionHead;
-    int rc = RTCrPemReadFile(pszFilename, 0, g_aCertificateMarkers, RT_ELEMENTS(g_aCertificateMarkers), &pSectionHead, pErrInfo);
+    int rc = RTCrPemReadFile(pszFilename,
+                             fFlags & RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR ? RTCRPEMREADFILE_F_CONTINUE_ON_ENCODING_ERROR : 0,
+                             g_aCertificateMarkers, RT_ELEMENTS(g_aCertificateMarkers), &pSectionHead, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         PCRTCRPEMSECTION pCurSec = pSectionHead;
         while (pCurSec)
         {
-            int rc2 = RTCrStoreCertAddEncoded(hStore, RTCRCERTCTX_F_ENC_X509_DER, pCurSec->pbData, pCurSec->cbData,
-                                              RT_SUCCESS(rc) ? pErrInfo : NULL);
+            int rc2 = RTCrStoreCertAddEncoded(hStore, RTCRCERTCTX_F_ENC_X509_DER | (fFlags & ~RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR),
+                                              pCurSec->pbData, pCurSec->cbData, !RTErrInfoIsSet(pErrInfo) ? pErrInfo : NULL);
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+            {
                 rc = rc2;
+                if (!(fFlags & RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR))
+                    break;
+            }
             pCurSec = pCurSec->pNext;
         }
 
         RTCrPemFreeSections(pSectionHead);
     }
     return rc;
-#endif
 }
 

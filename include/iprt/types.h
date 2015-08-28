@@ -2175,6 +2175,21 @@ typedef const RTUTF16  *PCRTUTF16;
 
 
 /**
+ * String tuple to go with the RT_STR_TUPLE macro.
+ */
+typedef struct RTSTRTUPLE
+{
+    /** The string. */
+    const char *psz;
+    /** The string length. */
+    size_t      cch;
+} RTSTRTUPLE;
+/** Pointer to a string tuple. */
+typedef RTSTRTUPLE *PRTSTRTUPLE;
+/** Pointer to a const string tuple. */
+typedef RTSTRTUPLE const *PCRTSTRTUPLE;
+
+/**
  * Wait for ever if we have to.
  */
 #define RT_INDEFINITE_WAIT      (~0U)

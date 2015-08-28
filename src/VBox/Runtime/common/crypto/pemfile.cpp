@@ -124,8 +124,7 @@ static bool rtCrPemFindMarker(uint8_t const *pbContent, size_t cbContent, size_t
                  */
                 uint8_t const  *pbSavedContent = pbContent;
                 size_t  const   cbSavedContent = cbContent;
-                uint32_t        iMarker = 0;
-                while (iMarker < cMarkers)
+                for (uint32_t iMarker = 0; iMarker < cMarkers; iMarker++)
                 {
                     pbContent = pbSavedContent;
                     cbContent = cbSavedContent;
@@ -142,13 +141,16 @@ static bool rtCrPemFindMarker(uint8_t const *pbContent, size_t cbContent, size_t
                         pbContent += cchWord;
                         cbContent -= cchWord;
 
-                        if (!cbContent || !RT_C_IS_BLANK(*pbContent))
+                        if (!cbContent)
                             break;
-                        do
-                        {
-                            pbContent++;
-                            cbContent--;
-                        } while (cbContent > 0 && RT_C_IS_BLANK(*pbContent));
+                        if (RT_C_IS_BLANK(*pbContent))
+                            do
+                            {
+                                pbContent++;
+                                cbContent--;
+                            } while (cbContent > 0 && RT_C_IS_BLANK(*pbContent));
+                        else if (cWords > 1 || pbContent[0] != '-')
+                            break;
 
                         cWords--;
                         if (cWords == 0)
@@ -174,7 +176,7 @@ static bool rtCrPemFindMarker(uint8_t const *pbContent, size_t cbContent, size_t
                                     pbContent++, cbContent--;
                                 if (poffEnd)
                                     *poffEnd = pbContent - pbStart;
-                                if (*ppMatch)
+                                if (ppMatch)
                                     *ppMatch = &paMarkers[iMarker];
                                 return true;
                             }
@@ -264,28 +266,35 @@ static int rtCrPemDecodeBase64(uint8_t const *pbContent, size_t cbContent, void 
 static bool rtCrPemIsBinaryFile(uint8_t *pbFile, size_t cbFile)
 {
     /*
-     * Assume a well formed PEM file contains only 7-bit ASCII and restricts
-     * itself to the following control characters:
+     * Well formed PEM files should probably only contain 7-bit ASCII and
+     * restrict thenselfs to the following control characters:
      *      tab, newline, return, form feed
+     *
+     * However, if we wan't to read PEM files which contains human readable
+     * certificate details before or after each base-64 section, we can't stick
+     * to 7-bit ASCII.  We could say it must be UTF-8, but that's probably to
+     * limited too.  So, we'll settle for detecting binary files by control
+     * characters alone (safe enough for DER encoded stuff, I think).
      */
     while (cbFile-- > 0)
     {
         uint8_t const b = *pbFile++;
-        if (   b >= 0x7f
-            || (b < 32 && b != '\t' && b != '\n' && b != '\r' && b != '\f') )
+        if (b < 32 && b != '\t' && b != '\n' && b != '\r' && b != '\f')
         {
             /* Ignore EOT (4), SUB (26) and NUL (0) at the end of the file. */
             if (   (b == 4 || b == 26)
                 && (   cbFile == 0
                     || (   cbFile == 1
                         && *pbFile == '\0')))
-                return true;
+                return false;
+
             if (b == 0 && cbFile == 0)
-                return true;
-            return false;
+                return false;
+
+            return true;
         }
     }
-    return true;
+    return false;
 }
 
 
@@ -327,7 +336,7 @@ RTDECL(int) RTCrPemFreeSections(PCRTCRPEMSECTION pSectionHead)
 RTDECL(int) RTCrPemReadFile(const char *pszFilename, uint32_t fFlags, PCRTCRPEMMARKER paMarkers, size_t cMarkers,
                             PCRTCRPEMSECTION *ppSectionHead, PRTERRINFO pErrInfo)
 {
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTCRPEMREADFILE_F_CONTINUE_ON_ENCODING_ERROR), VERR_INVALID_FLAGS);
 
     size_t      cbContent;
     uint8_t    *pbContent;
@@ -361,13 +370,20 @@ RTDECL(int) RTCrPemReadFile(const char *pszFilename, uint32_t fFlags, PCRTCRPEMM
 
                     /* Decode the section. */
                     /** @todo copy the preamble as well. */
-                    rc = rtCrPemDecodeBase64(pbContent + offBegin, offEnd - offBegin,
-                                             (void **)&pSection->pbData, &pSection->cbData);
-                    if (RT_FAILURE(rc))
+                    int rc2 = rtCrPemDecodeBase64(pbContent + offBegin, offEnd - offBegin,
+                                                  (void **)&pSection->pbData, &pSection->cbData);
+                    if (RT_FAILURE(rc2))
                     {
                         pSection->pbData = NULL;
                         pSection->cbData = 0;
-                        break;
+                        if (   rc2 == VERR_INVALID_BASE64_ENCODING
+                            && (fFlags & RTCRPEMREADFILE_F_CONTINUE_ON_ENCODING_ERROR))
+                            rc = -rc2;
+                        else
+                        {
+                            rc = rc2;
+                            break;
+                        }
                     }
 
                     /* More sections? */

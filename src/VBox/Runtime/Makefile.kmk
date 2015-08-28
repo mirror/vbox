@@ -368,6 +368,9 @@ RuntimeR3_SOURCES       = \
 	common/crypto/store.cpp \
 	common/crypto/store-inmem.cpp \
 	common/crypto/RTCrStoreCertAddFromFile.cpp \
+	common/crypto/RTCrStoreCertAddFromDir.cpp \
+	common/crypto/RTCrStoreCertAddFromStore.cpp \
+	common/crypto/RTCrStoreCertExportAsPem.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
 	common/dbg/dbgcfg.cpp \
@@ -457,6 +460,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathChangeToUnixSlashes.cpp \
 	common/path/RTPathCopyComponents.cpp \
 	common/path/RTPathCountComponents.cpp \
+	common/path/RTPathEnsureTrailingSeparator.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
 	common/path/RTPathHasExt.cpp \
@@ -734,6 +738,7 @@ RuntimeR3_SOURCES.win = \
  	r3/nt/pathint-nt.cpp \
  	r3/nt/RTProcQueryParent-r3-nt.cpp \
 	r3/win/env-win.cpp \
+	r3/win/RTCrStoreCreateSnapshotById-win.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
 	r3/win/RTSystemShutdown-win.cpp \
@@ -778,6 +783,7 @@ RuntimeR3_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES)
 
 RuntimeR3_SOURCES.linux = \
 	generic/cdrom-generic.cpp \
+	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -864,6 +870,7 @@ endif
 
 RuntimeR3_SOURCES.os2   = \
 	generic/cdrom-generic.cpp \
+	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -938,6 +945,7 @@ RuntimeR3_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/cdrom-generic.cpp \
+	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -1007,6 +1015,7 @@ RuntimeR3_SOURCES.darwin = \
 ## @todo Make BSD sched, implement RTMP*.
 RuntimeR3_SOURCES.freebsd = \
 	generic/cdrom-generic.cpp \
+	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -1078,6 +1087,7 @@ RuntimeR3_SOURCES.freebsd = \
 
 RuntimeR3_SOURCES.solaris = \
 	generic/cdrom-generic.cpp \
+	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -1152,6 +1162,7 @@ RuntimeR3_SOURCES.solaris.sparc64 = \
 	generic/RTSystemQueryDmiString-generic.cpp
 
 RuntimeR3_SOURCES.haiku = \
+	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \

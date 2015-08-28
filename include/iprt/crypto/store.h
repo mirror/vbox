@@ -57,13 +57,148 @@ typedef struct RTCRSTORECERTSEARCH
 typedef RTCRSTORECERTSEARCH *PRTCRSTORECERTSEARCH;
 
 
+/**
+ * Standard store identifiers.
+ *
+ * This is a least common denominator approach to system specific certificate
+ * stores, could be extended to include things other than certificates later if
+ * we need it.
+ *
+ * Windows has lots of different stores, they'll be combined by the
+ * implementation, possibly leading to duplicates.  The user stores on Windows
+ * seems to be unioned with the system (machine) stores.
+ *
+ * Linux may have different stores depending on the distro/version/installation,
+ * in which case we'll combine them, which will most likely lead to
+ * duplicates just like on windows.  Haven't found any easily accessible
+ * per-user certificate stores on linux yet, so they'll all be empty.
+ *
+ * Mac OS X seems a lot simpler, at least from the GUI point of view.  Each
+ * keychains as a "Certificates" folder (the "My Certificates" folder seems to
+ * only be a matching of "Keys" and "Certificates"). However, there are two
+ * system keychains that we need to combine, "System" and "System Roots".  As
+ * with Windows and Linux, there is a possibility for duplicates here.
+ *
+ * On solaris we have currently no idea where to look for a certificate store,
+ * so that doesn't yet work.
+ *
+ * Because of the OS X setup, we do not provide any purpose specific
+ */
+typedef enum RTCRSTOREID
+{
+    /** Mandatory invalid zero value. */
+    RTCRSTOREID_INVALID = 0,
+    /** Open the certificate store of the current user containing trusted
+     * CAs and certificates.
+     * @remarks This may or may not include all the certificates in the system
+     *          store, that's host dependent.  So, you better look in both. */
+    RTCRSTOREID_USER_TRUSTED_CAS_AND_CERTIFICATES,
+    /** Open the certificate store of the system containg trusted CAs
+     * and certificates. */
+    RTCRSTOREID_SYSTEM_TRUSTED_CAS_AND_CERTIFICATES,
+    /** End of valid values. */
+    RTCRSTOREID_END,
+    /** Traditional enum type compression prevention hack. */
+    RTCRSTOREID_32BIT_HACK = 0x7fffffff
+} RTCRSTOREID;
+
+/**
+ * Creates a snapshot of a standard store.
+ *
+ * This will return an in-memory store containing all data from the given store.
+ * There will be no duplicates in this one.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_ALREADY_EXISTS if the certificate is already present and
+ *          RTCRCERTCTX_F_ADD_IF_NOT_FOUND was specified.
+ * @param   phStore             Where to return the store handle. Use
+ *                              RTCrStoreRelease to release it.
+ * @param   enmStoreId          The store to snapshot.
+ * @param   pErrInfo            Where to return additional error/warning info.
+ *                              Optional.
+ */
+RTDECL(int) RTCrStoreCreateSnapshotById(PRTCRSTORE phStore, RTCRSTOREID enmStoreId, PRTERRINFO pErrInfo);
+
 RTDECL(int) RTCrStoreCreateInMem(PRTCRSTORE phStore, uint32_t cSizeHint);
 
 RTDECL(uint32_t) RTCrStoreRetain(RTCRSTORE hStore);
 RTDECL(uint32_t) RTCrStoreRelease(RTCRSTORE hStore);
 RTDECL(PCRTCRCERTCTX) RTCrStoreCertByIssuerAndSerialNo(RTCRSTORE hStore, PCRTCRX509NAME pIssuer, PCRTASN1INTEGER pSerialNo);
+
+/**
+ * Add a certificate to the store.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_ALREADY_EXISTS if the certificate is already present and
+ *          RTCRCERTCTX_F_ADD_IF_NOT_FOUND was specified.
+ * @retval  VERR_WRITE_PROTECT if the store doesn't support adding.
+ * @param   hStore              The store to add the certificate to.
+ * @param   fFlags              RTCRCERTCTX_F_XXX. Encoding must be specified.
+ *                              RTCRCERTCTX_F_ADD_IF_NOT_FOUND is supported.
+ * @param   pvSrc               The encoded certificate bytes.
+ * @param   cbSrc               The size of the encoded certificate.
+ * @param   pErrInfo            Where to return additional error/warning info.
+ *                              Optional.
+ */
 RTDECL(int) RTCrStoreCertAddEncoded(RTCRSTORE hStore, uint32_t fFlags, void const *pvSrc, size_t cbSrc, PRTERRINFO pErrInfo);
+
+/**
+ * Adds certificates from the specified file.
+ *
+ * @returns IPRT status code.  Even when RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR is
+ *          used, an error is returned as an error (and not a warning).
+ *
+ * @param   hStore              The store to add the certificate(s) to.
+ * @param   fFlags              RTCRCERTCTX_F_ADD_IF_NOT_FOUND and/or
+ *                              RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR.
+ * @param   pszFilename         The filename.
+ * @param   pErrInfo            Where to return additional error/warning info.
+ *                              Optional.
+ */
 RTDECL(int) RTCrStoreCertAddFromFile(RTCRSTORE hStore, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo);
+
+/**
+ * Adds certificates from files in the specified directory.
+ *
+ * @returns IPRT status code.  Even when RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR is
+ *          used, an error is returned as an error (and not a warning).
+ *
+ * @param   hStore              The store to add the certificate(s) to.
+ * @param   fFlags              RTCRCERTCTX_F_ADD_IF_NOT_FOUND and/or
+ *                              RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR.
+ * @param   pszDir              The path to the directory.
+ * @param   paSuffixes          List of suffixes of files to process.
+ * @param   cSuffixes           Number of suffixes.  If this is 0, all files are
+ *                              processed.
+ * @param   pErrInfo            Where to return additional error/warning info.
+ *                              Optional.
+ */
+RTDECL(int) RTCrStoreCertAddFromDir(RTCRSTORE hStore, uint32_t fFlags, const char *pszDir,
+                                    PCRTSTRTUPLE paSuffixes, size_t cSuffixes, PRTERRINFO pErrInfo);
+
+/**
+ * Adds all certificates from @a hStoreSrc into @a hStore.
+ *
+ * @returns IPRT status code.  Even when RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR is
+ *          used, an error is returned as an error (and not a warning).
+ *
+ * @param   hStore              The destination store.
+ * @param   fFlags              RTCRCERTCTX_F_ADD_IF_NOT_FOUND and/or
+ *                              RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR.
+ * @param   hStoreSrc           The source store.
+ */
+RTDECL(int) RTCrStoreCertAddFromStore(RTCRSTORE hStore, uint32_t fFlags, RTCRSTORE hStoreSrc);
+
+/**
+ * Exports the certificates in the store to a PEM file
+ *
+ * @returns IPRT status code.
+ * @param   hStore              The store which certificates should be exported.
+ * @param   fFlags              Reserved for the future, MBZ.
+ * @param   pszFilename         The name of the destination PEM file.  This will
+ *                              be truncated.
+ */
+RTDECL(int) RTCrStoreCertExportAsPem(RTCRSTORE hStore, uint32_t fFlags, const char *pszFilename);
 
 RTDECL(int) RTCrStoreCertFindAll(RTCRSTORE hStore, PRTCRSTORECERTSEARCH pSearch);
 RTDECL(int) RTCrStoreCertFindBySubjectOrAltSubjectByRfc5280(RTCRSTORE hStore, PCRTCRX509NAME pSubject,
@@ -118,6 +253,13 @@ typedef struct RTCRCERTCTX
 /** Extended certificate, DER encoded. */
 #define RTCRCERTCTX_F_ENC_PKCS6_DER    UINT32_C(0x00000002)
 #endif
+/** Mask containing the flags that ends up in the certificate context. */
+#define RTCRCERTCTX_F_MASK             UINT32_C(0x000000ff)
+
+/** Add APIs: Add the certificate if not found. */
+#define RTCRCERTCTX_F_ADD_IF_NOT_FOUND          UINT32_C(0x00010000)
+/** Add APIs: Continue on error when possible. */
+#define RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR     UINT32_C(0x00020000)
 /** @} */
 
 

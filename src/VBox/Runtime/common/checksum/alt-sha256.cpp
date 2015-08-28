@@ -606,6 +606,21 @@ RTDECL(void) RTSha256(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA25
 RT_EXPORT_SYMBOL(RTSha256);
 
 
+RTDECL(bool) RTSha256Check(const void *pvBuf, size_t cbBuf, uint8_t const pabHash[RTSHA256_HASH_SIZE])
+{
+    RTSHA256CONTEXT Ctx;
+    RTSha256Init(&Ctx);
+    RTSha256Update(&Ctx, pvBuf, cbBuf);
+    rtSha256FinalInternal(&Ctx);
+
+    bool fRet = memcmp(pabHash, &Ctx.AltPrivate.auH[0], RTSHA256_HASH_SIZE) == 0;
+
+    RT_ZERO(Ctx.AltPrivate.auH);
+    return fRet;
+}
+RT_EXPORT_SYMBOL(RTSha256Check);
+
+
 
 /*
  * SHA-224 is just SHA-256 with different initial values an a truncated result.
@@ -650,4 +665,19 @@ RTDECL(void) RTSha224(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA22
     RTSha224Final(&Ctx, pabDigest);
 }
 RT_EXPORT_SYMBOL(RTSha224);
+
+
+RTDECL(bool) RTSha224Check(const void *pvBuf, size_t cbBuf, uint8_t const pabHash[RTSHA224_HASH_SIZE])
+{
+    RTSHA224CONTEXT Ctx;
+    RTSha224Init(&Ctx);
+    RTSha224Update(&Ctx, pvBuf, cbBuf);
+    rtSha256FinalInternal(&Ctx);
+
+    bool fRet = memcmp(pabHash, &Ctx.AltPrivate.auH[0], RTSHA224_HASH_SIZE) == 0;
+
+    RT_ZERO(Ctx.AltPrivate.auH);
+    return fRet;
+}
+RT_EXPORT_SYMBOL(RTSha224Check);
 

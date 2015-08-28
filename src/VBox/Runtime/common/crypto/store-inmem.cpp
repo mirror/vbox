@@ -281,18 +281,40 @@ static DECLCALLBACK(int) rtCrStoreInMem_CertAddEncoded(void *pvProvider, uint32_
     PRTCRSTOREINMEM pThis = (PRTCRSTOREINMEM)pvProvider;
     int rc;
 
-    AssertMsgReturn(   fFlags == RTCRCERTCTX_F_ENC_X509_DER
-                    || fFlags == RTCRCERTCTX_F_ENC_TAF_DER
+    AssertMsgReturn(   (fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_X509_DER
+                    || (fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_TAF_DER
                     , ("Only X.509 and TAF DER are supported: %#x\n", fFlags), VERR_INVALID_FLAGS);
 
-    if (pThis->cCerts + 1 > pThis->cCertsAlloc)
+    /*
+     * Check for duplicates if specified.
+     */
+    if (fFlags & RTCRCERTCTX_F_ADD_IF_NOT_FOUND)
+    {
+        uint32_t iCert = pThis->cCerts;
+        while (iCert-- > 0)
+        {
+            PRTCRSTOREINMEMCERT pCert = pThis->papCerts[iCert];
+            if (   pCert->Core.Public.cbEncoded == cbEncoded
+                && pCert->Core.Public.fFlags == (fFlags & RTCRCERTCTX_F_ENC_MASK)
+                && memcmp(pCert->Core.Public.pabEncoded, pbEncoded, cbEncoded) == 0)
+                return VWRN_ALREADY_EXISTS;
+        }
+    }
+
+    /*
+     * Add it.
+     */
+    if (pThis->cCerts + 1 <= pThis->cCertsAlloc)
+    { /* likely */ }
+    else
     {
         rc = rtCrStoreInMemGrow(pThis, pThis->cCerts + 1);
         if (RT_FAILURE(rc))
             return rc;
     }
 
-    rc = rtCrStoreInMemCreateCertEntry(pThis, fFlags, pbEncoded, cbEncoded, pErrInfo, &pThis->papCerts[pThis->cCerts]);
+    rc = rtCrStoreInMemCreateCertEntry(pThis, fFlags & RTCRCERTCTX_F_ENC_MASK, pbEncoded, cbEncoded,
+                                       pErrInfo, &pThis->papCerts[pThis->cCerts]);
     if (RT_SUCCESS(rc))
     {
         pThis->cCerts++;
@@ -359,4 +381,5 @@ RTDECL(int) RTCrStoreCreateInMem(PRTCRSTORE phStore, uint32_t cSizeHint)
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTCrStoreCreateInMem);
 

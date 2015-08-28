@@ -68,6 +68,17 @@ typedef RTSHA1CONTEXT *PRTSHA1CONTEXT;
 RTDECL(void) RTSha1(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA1_HASH_SIZE]);
 
 /**
+ * Computes the SHA-1 hash for the given data comparing it with the one given.
+ *
+ * @returns true on match, false on mismatch.
+ * @param   pvBuf       Pointer to the data.
+ * @param   cbBuf       The amount of data (in bytes).
+ * @param   pabHash     The hash to verify. (What is passed is a pointer to the
+ *                      caller's buffer.)
+ */
+RTDECL(bool) RTSha1Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA1_HASH_SIZE]);
+
+/**
  * Initializes the SHA-1 context.
  *
  * @param   pCtx        Pointer to the SHA-1 context.
@@ -176,6 +187,17 @@ typedef RTSHA256CONTEXT *PRTSHA256CONTEXT;
 RTDECL(void) RTSha256(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA256_HASH_SIZE]);
 
 /**
+ * Computes the SHA-256 hash for the given data comparing it with the one given.
+ *
+ * @returns true on match, false on mismatch.
+ * @param   pvBuf       Pointer to the data.
+ * @param   cbBuf       The amount of data (in bytes).
+ * @param   pabHash     The hash to verify. (What is passed is a pointer to the
+ *                      caller's buffer.)
+ */
+RTDECL(bool) RTSha256Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA256_HASH_SIZE]);
+
+/**
  * Initializes the SHA-256 context.
  *
  * @param   pCtx        Pointer to the SHA-256 context.
@@ -272,6 +294,17 @@ typedef RTSHA256CONTEXT *PRTSHA224CONTEXT;
  *                      the caller's buffer.)
  */
 RTDECL(void) RTSha224(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA224_HASH_SIZE]);
+
+/**
+ * Computes the SHA-224 hash for the given data comparing it with the one given.
+ *
+ * @returns true on match, false on mismatch.
+ * @param   pvBuf       Pointer to the data.
+ * @param   cbBuf       The amount of data (in bytes).
+ * @param   pabHash     The hash to verify. (What is passed is a pointer to the
+ *                      caller's buffer.)
+ */
+RTDECL(bool) RTSha224Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA224_HASH_SIZE]);
 
 /**
  * Initializes the SHA-224 context.
@@ -382,6 +415,17 @@ typedef RTSHA512CONTEXT *PRTSHA512CONTEXT;
 RTDECL(void) RTSha512(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA512_HASH_SIZE]);
 
 /**
+ * Computes the SHA-512 hash for the given data comparing it with the one given.
+ *
+ * @returns true on match, false on mismatch.
+ * @param   pvBuf       Pointer to the data.
+ * @param   cbBuf       The amount of data (in bytes).
+ * @param   pabHash     The hash to verify. (What is passed is a pointer to the
+ *                      caller's buffer.)
+ */
+RTDECL(bool) RTSha512Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA512_HASH_SIZE]);
+
+/**
  * Initializes the SHA-512 context.
  *
  * @param   pCtx        Pointer to the SHA-512 context.
@@ -437,6 +481,7 @@ RTDECL(int) RTSha512FromString(char const *pszDigest, uint8_t pabDigest[RTSHA512
     typedef RTSHA512CONTEXT RT_CONCAT3(RTSHA,a_UName,CONTEXT); \
     typedef RTSHA512CONTEXT *RT_CONCAT3(PRTSHA,a_UName,CONTEXT); \
     RTDECL(void) RT_CONCAT(RTSha,a_Name)(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)]); \
+    RTDECL(bool) RT_CONCAT3(RTSha,a_Name,Check)(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)]); \
     RTDECL(void) RT_CONCAT3(RTSha,a_Name,Init)(RT_CONCAT3(PRTSHA,a_UName,CONTEXT) pCtx); \
     RTDECL(void) RT_CONCAT3(RTSha,a_Name,Update)(RT_CONCAT3(PRTSHA,a_UName,CONTEXT) pCtx, const void *pvBuf, size_t cbBuf); \
     RTDECL(void) RT_CONCAT3(RTSha,a_Name,Final)(RT_CONCAT3(PRTSHA,a_UName,CONTEXT) pCtx, uint8_t pabDigest[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)]); \

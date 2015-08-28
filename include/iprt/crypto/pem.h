@@ -116,7 +116,7 @@ RTDECL(int) RTCrPemFreeSections(PCRTCRPEMSECTION pSectionHead);
  *
  * @returns IPRT status code.
  * @param   pszFilename     The path to the file to read.
- * @param   fFlags          Flags reserved for future hacks.
+ * @param   fFlags          RTCRPEMREADFILE_F_XXX.
  * @param   paMarkers       Array of one or more section markers to look for.
  * @param   cMarkers        Number of markers in the array.
  * @param   ppSectionHead   Where to return the head of the section list.
@@ -124,6 +124,11 @@ RTDECL(int) RTCrPemFreeSections(PCRTCRPEMSECTION pSectionHead);
  */
 RTDECL(int) RTCrPemReadFile(const char *pszFilename, uint32_t fFlags, PCRTCRPEMMARKER paMarkers, size_t cMarkers,
                             PCRTCRPEMSECTION *ppSectionHead, PRTERRINFO pErrInfo);
+/** @name RTCRPEMREADFILE_F_XXX - Flags for RTCrPemReadFile
+ * @{ */
+/** Continue on encoding error. */
+#define RTCRPEMREADFILE_F_CONTINUE_ON_ENCODING_ERROR    RT_BIT(0)
+/** @} */
 
 /** @} */
 
