@@ -101,11 +101,32 @@ typedef RTCRPEMSECTION const *PCRTCRPEMSECTION;
 
 
 /**
- * Frees sections returned by RTCrPemReadFile.
+ * Frees sections returned by RTCrPemReadFile and RTCrPemParseContent.
  * @returns IPRT status code.
  * @param   pSectionHead        The first section.
  */
 RTDECL(int) RTCrPemFreeSections(PCRTCRPEMSECTION pSectionHead);
+
+/**
+ * Parses the given data and returns a list of binary sections.
+ *
+ * If the file isn't an ASCII file or if no markers were found, the entire file
+ * content is returned as one single section (with pMarker = NULL).
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_EOF if the file is empty. The ppSectionHead value will be NULL.
+ *
+ * @param   pvContent       The content bytes to parse.
+ * @param   cbContent       The number of content bytes.
+ * @param   fFlags          RTCRPEMREADFILE_F_XXX.
+ * @param   paMarkers       Array of one or more section markers to look for.
+ * @param   cMarkers        Number of markers in the array.
+ * @param   ppSectionHead   Where to return the head of the section list.  Call
+ *                          RTCrPemFreeSections to free.
+ * @param   pErrInfo        Where to return extend error info. Optional.
+ */
+RTDECL(int) RTCrPemParseContent(void const *pvContent, size_t cbContent, uint32_t fFlags,
+                                PCRTCRPEMMARKER paMarkers, size_t cMarkers, PCRTCRPEMSECTION *ppSectionHead, PRTERRINFO pErrInfo);
 
 /**
  * Reads the content of the given file and returns a list of binary sections
@@ -115,16 +136,20 @@ RTDECL(int) RTCrPemFreeSections(PCRTCRPEMSECTION pSectionHead);
  * content is returned as one single section (with pMarker = NULL).
  *
  * @returns IPRT status code.
+ * @retval  VINF_EOF if the file is empty. The ppSectionHead value will be NULL.
+ *
  * @param   pszFilename     The path to the file to read.
  * @param   fFlags          RTCRPEMREADFILE_F_XXX.
  * @param   paMarkers       Array of one or more section markers to look for.
  * @param   cMarkers        Number of markers in the array.
- * @param   ppSectionHead   Where to return the head of the section list.
+ * @param   ppSectionHead   Where to return the head of the section list. Call
+ *                          RTCrPemFreeSections to free.
  * @param   pErrInfo        Where to return extend error info. Optional.
  */
 RTDECL(int) RTCrPemReadFile(const char *pszFilename, uint32_t fFlags, PCRTCRPEMMARKER paMarkers, size_t cMarkers,
                             PCRTCRPEMSECTION *ppSectionHead, PRTERRINFO pErrInfo);
-/** @name RTCRPEMREADFILE_F_XXX - Flags for RTCrPemReadFile
+/** @name RTCRPEMREADFILE_F_XXX - Flags for RTCrPemReadFile and
+ *        RTCrPemParseContent.
  * @{ */
 /** Continue on encoding error. */
 #define RTCRPEMREADFILE_F_CONTINUE_ON_ENCODING_ERROR    RT_BIT(0)

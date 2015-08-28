@@ -40,7 +40,6 @@
 #include <iprt/stream.h>
 
 #include <curl/curl.h>
-#include <openssl/ssl.h>
 #include "internal/magics.h"
 
 
@@ -68,8 +67,8 @@ typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
 
 typedef struct RTHTTPMEMCHUNK
 {
-    uint8_t *pu8Mem;
-    size_t cb;
+    uint8_t    *pu8Mem;
+    size_t      cb;
 } RTHTTPMEMCHUNK;
 typedef RTHTTPMEMCHUNK *PRTHTTPMEMCHUNK;
 
@@ -121,6 +120,7 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
     return VINF_SUCCESS;
 }
 
+
 RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
 {
     if (!hHttp)
@@ -147,6 +147,7 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
     curl_global_cleanup();
 }
 
+
 static DECLCALLBACK(size_t) rtHttpWriteData(void *pvBuf, size_t cb, size_t n, void *pvUser)
 {
     PRTHTTPMEMCHUNK pMem = (PRTHTTPMEMCHUNK)pvUser;
@@ -162,14 +163,15 @@ static DECLCALLBACK(size_t) rtHttpWriteData(void *pvBuf, size_t cb, size_t n, vo
     return cbAll;
 }
 
-static DECLCALLBACK(int) rtHttpProgress(void *pData, double DlTotal, double DlNow,
-                                        double UlTotal, double UlNow)
+
+static DECLCALLBACK(int) rtHttpProgress(void *pData, double DlTotal, double DlNow, double UlTotal, double UlNow)
 {
     PRTHTTPINTERNAL pHttpInt = (PRTHTTPINTERNAL)pData;
     AssertReturn(pHttpInt->u32Magic == RTHTTP_MAGIC, 1);
 
     return pHttpInt->fAbort ? 1 : 0;
 }
+
 
 RTR3DECL(int) RTHttpAbort(RTHTTP hHttp)
 {
@@ -180,6 +182,7 @@ RTR3DECL(int) RTHttpAbort(RTHTTP hHttp)
 
     return VINF_SUCCESS;
 }
+
 
 RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation)
 {
@@ -192,6 +195,7 @@ RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation)
     *ppszRedirLocation = RTStrDup(pHttpInt->pszRedirLocation);
     return VINF_SUCCESS;
 }
+
 
 RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp)
 {
@@ -228,6 +232,7 @@ RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp)
     return rc;
 }
 
+
 RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort,
                              const char *pcszProxyUser, const char *pcszProxyPwd)
 {
@@ -260,6 +265,7 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort
     return VINF_SUCCESS;
 }
 
+
 RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const *papszHeaders)
 {
     PRTHTTPINTERNAL pHttpInt = hHttp;
@@ -285,64 +291,6 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const
     return VINF_SUCCESS;
 }
 
-RTR3DECL(int) RTHttpCertDigest(RTHTTP hHttp, char *pcszCert, size_t cbCert,
-                               uint8_t **pabSha1,   size_t *pcbSha1,
-                               uint8_t **pabSha512, size_t *pcbSha512)
-{
-    int rc = VINF_SUCCESS;
-
-    BIO *cert = BIO_new_mem_buf(pcszCert, (int)cbCert);
-    if (cert)
-    {
-        X509 *crt = NULL;
-        if (PEM_read_bio_X509(cert, &crt, NULL, NULL))
-        {
-            unsigned cb;
-            unsigned char md[EVP_MAX_MD_SIZE];
-
-            int rc1 = X509_digest(crt, EVP_sha1(), md, &cb);
-            if (rc1 > 0)
-            {
-                *pabSha1 = (uint8_t*)RTMemAlloc(cb);
-                if (*pabSha1)
-                {
-                    memcpy(*pabSha1, md, cb);
-                    *pcbSha1 = cb;
-
-                    rc1 = X509_digest(crt, EVP_sha512(), md, &cb);
-                    if (rc1 > 0)
-                    {
-                        *pabSha512 = (uint8_t*)RTMemAlloc(cb);
-                        if (*pabSha512)
-                        {
-                            memcpy(*pabSha512, md, cb);
-                            *pcbSha512 = cb;
-                        }
-                        else
-                            rc = VERR_NO_MEMORY;
-                    }
-                    else
-                        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
-
-                    if (RT_FAILURE(rc))
-                        RTMemFree(*pabSha1);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-            else
-                rc = VERR_HTTP_CACERT_WRONG_FORMAT;
-            X509_free(crt);
-        }
-        else
-            rc = VERR_HTTP_CACERT_WRONG_FORMAT;
-        BIO_free(cert);
-    }
-    else
-        rc = VERR_INTERNAL_ERROR;
-
-    return rc;
-}
 
 RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile)
 {
@@ -448,6 +396,19 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pHttpInt, int rcCurl)
     return rc;
 }
 
+
+/**
+ * Internal worker that performs a HTTP GET.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp               The HTTP instance.
+ * @param   pcszUrl             The URL.
+ * @param   ppvResponse         Where to return the pointer to the allocated
+ *                              response data (RTMemFree).  There will always be
+ *                              an zero terminator char after the response, that
+ *                              is not part of the size returned via @a pcb.
+ * @param   pcb                 The size of the response data.
+ */
 RTR3DECL(int) rtHttpGet(RTHTTP hHttp, const char *pcszUrl, uint8_t **ppvResponse, size_t *pcb)
 {
     PRTHTTPINTERNAL pHttpInt = hHttp;
@@ -475,17 +436,17 @@ RTR3DECL(int) rtHttpGet(RTHTTP hHttp, const char *pcszUrl, uint8_t **ppvResponse
             return VERR_INTERNAL_ERROR;
     }
 
-    RTHTTPMEMCHUNK chunk = { NULL, 0 };
+    RTHTTPMEMCHUNK Chunk = { NULL, 0 };
     rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEFUNCTION, &rtHttpWriteData);
     if (CURL_FAILED(rcCurl))
         return VERR_INTERNAL_ERROR;
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEDATA, (void*)&chunk);
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEDATA, (void *)&Chunk);
     if (CURL_FAILED(rcCurl))
         return VERR_INTERNAL_ERROR;
     rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSFUNCTION, &rtHttpProgress);
     if (CURL_FAILED(rcCurl))
         return VERR_INTERNAL_ERROR;
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSDATA, (void*)pHttpInt);
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSDATA, (void *)pHttpInt);
     if (CURL_FAILED(rcCurl))
         return VERR_INTERNAL_ERROR;
     rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_NOPROGRESS, (long)0);
@@ -496,27 +457,58 @@ RTR3DECL(int) rtHttpGet(RTHTTP hHttp, const char *pcszUrl, uint8_t **ppvResponse
         return VERR_INVALID_PARAMETER;
 
     rcCurl = curl_easy_perform(pHttpInt->pCurl);
+
     int rc = rtHttpGetCalcStatus(pHttpInt, rcCurl);
-    *ppvResponse = chunk.pu8Mem;
-    *pcb = chunk.cb;
+    if (RT_SUCCESS(rc))
+    {
+        *ppvResponse = Chunk.pu8Mem;
+        *pcb         = Chunk.cb;
+    }
+    else
+    {
+        if (Chunk.pu8Mem)
+            RTMemFree(Chunk.pu8Mem);
+        *ppvResponse = NULL;
+        *pcb         = 0;
+    }
 
     return rc;
 }
 
 
-RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
+RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pcszUrl, char **ppszNotUtf8)
 {
     uint8_t *pv;
-    size_t cb;
+    size_t   cb;
     int rc = rtHttpGet(hHttp, pcszUrl, &pv, &cb);
-    *ppszResponse = (char*)pv;
+    if (RT_SUCCESS(rc))
+    {
+        if (pv) /* paranoia */
+            *ppszNotUtf8 = (char *)pv;
+        else
+            *ppszNotUtf8 = (char *)RTMemDup("", 1);
+    }
+    else
+        *ppszNotUtf8 = NULL;
     return rc;
+}
+
+
+RTR3DECL(void) RTHttpFreeResponseText(char *pszNotUtf8)
+{
+    RTMemFree(pszNotUtf8);
 }
 
 
 RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pcszUrl, void **ppvResponse, size_t *pcb)
 {
-    return rtHttpGet(hHttp, pcszUrl, (uint8_t**)ppvResponse, pcb);
+    return rtHttpGet(hHttp, pcszUrl, (uint8_t **)ppvResponse, pcb);
+}
+
+
+RTR3DECL(void) RTHttpFreeResponse(void *pvResponse)
+{
+    RTMemFree(pvResponse);
 }
 
 
@@ -569,7 +561,7 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
     rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSFUNCTION, &rtHttpProgress);
     if (CURL_FAILED(rcCurl))
         return VERR_INTERNAL_ERROR;
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSDATA, (void*)pHttpInt);
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSDATA, (void *)pHttpInt);
     if (CURL_FAILED(rcCurl))
         return VERR_INTERNAL_ERROR;
     rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_NOPROGRESS, (long)0);

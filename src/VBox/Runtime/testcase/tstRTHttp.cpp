@@ -28,18 +28,21 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/err.h>
 #include <iprt/http.h>
-#include <iprt/mem.h>
+
+#include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
+#include <iprt/message.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/initterm.h>
 #include <iprt/vfslowlevel.h>
 #include <iprt/zip.h>
 
 #define CAFILE_NAME "tstHttp-tempcafile.crt"
 
+#if 0
 static int extractPCA3G5(RTHTTP hHttp, PRTSTREAM CAFile, uint8_t *pu8Buf, size_t cbBuf)
 {
     uint8_t *abSha1;
@@ -187,6 +190,7 @@ static void checkError(RTHTTP hHttp, int rc, const char *pszFile)
     else
         RTPrintf("Error %Rrc trying to fetch '%s'\n", rc, pszFile);
 }
+#endif
 
 int main(int argc, char **argv)
 {
@@ -199,6 +203,8 @@ int main(int argc, char **argv)
         RTPrintf("usage: %s default\n", argv[0]);
         return 1;
     }
+
+#if 0 /* rewrite to modified API and use test.h! */
 
     for (int i = 1; i < argc; i++)
     {
@@ -342,4 +348,9 @@ int main(int argc, char **argv)
 //    RTFileDelete(CAFILE_NAME);
 
     return !!cErrors;
+#else
+    RTMsgError("Needs rewriting. You're better off debugging the actual code in the GUI!\n");
+    return RTEXITCODE_SKIPPED;
+#endif
 }
+

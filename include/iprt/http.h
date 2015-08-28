@@ -65,8 +65,8 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp);
 /**
  * Retrieve the redir location for 301 responses.
  *
- * @param   hHttp       Handle to the HTTP interface.
- * @para    ppszRedirLocation   Where to store the string. To be freed with
+ * @param   hHttp               Handle to the HTTP interface.
+ * @param   ppszRedirLocation   Where to store the string.  To be freed with
  *                              RTStrFree().
  */
 RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation);
@@ -74,26 +74,58 @@ RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation);
 /**
  * Perform a simple blocking HTTP request.
  *
+ * This is a just a convenient wrapper around RTHttpGetBinary that returns a
+ * different type and sheds a parameter.
+ *
  * @returns iprt status code.
  *
- * @param    hHttp         HTTP interface handle.
- * @param    pcszUrl       URL.
- * @param    ppszResponse  HTTP response. It is guaranteed that this string is
- *                         '\0'-terminated.
+ * @param   hHttp           HTTP interface handle.
+ * @param   pcszUrl         URL.
+ * @param   ppszNotUtf8     Where to return the poitner to the HTTP response.
+ *                          The string is of course zero terminated.  Use
+ *                          RTHttpFreeReponseText to free.
+ *
+ * @remarks BIG FAT WARNING!
+ *
+ *          This function does not guarantee the that returned string is valid UTF-8 or
+ *          any other kind of text encoding!
+ *
+ *          The caller must determine and validate the string encoding _before_
+ *          passing it along to functions that expect UTF-8!
+ *
+ *          Also, this function does not guarantee that the returned string
+ *          doesn't have embedded zeros and provides the caller no way of
+ *          finding out!  If you are worried about the response from the HTTPD
+ *          containing embedded zero's, use RTHttpGetBinary instead.
  */
-RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse);
+RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pcszUrl, char **ppszNotUtf8);
+
+/**
+ * Frees memory returned by RTHttpGetText.
+ *
+ * @param   pszNotUtf8      What RTHttpGetText returned.
+ */
+RTR3DECL(void) RTHttpFreeResponseText(char *pszNotUtf8);
 
 /**
  * Perform a simple blocking HTTP request.
  *
  * @returns iprt status code.
  *
- * @param    hHttp         HTTP interface handle.
- * @param    pcszUrl       URL.
- * @param    ppvResponse   HTTP response.
- * @param    pcb           Size of the returned buffer.
+ * @param   hHttp           HTTP interface handle.
+ * @param   pcszUrl         The URL.
+ * @param   ppvResponse     Where to store the HTTP response data.  Use
+ *                          RTHttpFreeResponse to free.
+ * @param   pcb             Size of the returned buffer.
  */
 RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pcszUrl, void **ppvResponse, size_t *pcb);
+
+/**
+ * Frees memory returned by RTHttpGetBinary.
+ *
+ * @param   pvResponse      What RTHttpGetBinary returned.
+ */
+RTR3DECL(void) RTHttpFreeResponse(void *pvResponse);
 
 /**
  * Perform a simple blocking HTTP request, writing the output to a file.
@@ -101,7 +133,7 @@ RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pcszUrl, void **ppvRespo
  * @returns iprt status code.
  *
  * @param   hHttp           HTTP interface handle.
- * @param   pszUrl          URL.
+ * @param   pszUrl          The URL.
  * @param   pszDstFile      The destination file name.
  */
 RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDstFile);
@@ -113,7 +145,7 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
  *
  * @returns iprt status code.
  *
- * @param    hHttp         HTTP interface handle.
+ * @param   hHttp           HTTP interface handle.
  */
 RTR3DECL(int) RTHttpAbort(RTHTTP hHttp);
 
@@ -130,11 +162,11 @@ RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp);
  *
  * @returns iprt status code.
  *
- * @param    hHttp         HTTP interface handle.
- * @param    pcszProxy     URL of the proxy
- * @param    uPort         port number of the proxy, use 0 for not specifying a port.
- * @param    pcszUser      username, pass NULL for no authentication
- * @param    pcszPwd       password, pass NULL for no authentication
+ * @param   hHttp           HTTP interface handle.
+ * @param   pcszProxy       URL of the proxy.
+ * @param   uPort           port number of the proxy, use 0 for not specifying a port.
+ * @param   pcszUser        Username, pass NULL for no authentication.
+ * @param   pcszPwd         Password, pass NULL for no authentication.
  */
 RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxyUrl, uint32_t uPort,
                              const char *pcszProxyUser, const char *pcszProxyPwd);
@@ -144,9 +176,9 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxyUrl, uint32_t uP
  *
  * @returns iprt status code.
  *
- * @param    hHttp         HTTP interface handle.
- * @param    cHeaders      number of custom headers.
- * @param    pcszHeaders   array of headers in form "foo: bar".
+ * @param   hHttp           HTTP interface handle.
+ * @param   cHeaders        Number of custom headers.
+ * @param   pcszHeaders     Array of headers in form "foo: bar".
  */
 RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const *papszHeaders);
 
@@ -155,32 +187,10 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const
  *
  * @returns iprt status code.
  *
- * @param    hHttp         HTTP interface handle.
- * @param    pcszCAFile    File name containing root certificates.
+ * @param   hHttp           HTTP interface handle.
+ * @param   pcszCAFile      File name containing root certificates.
  */
 RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile);
-
-
-/**
- * Determine the digest (fingerprint) of a certificate. Allocate memory for
- * storing the SHA1 fingerprint as well as the SHA512 fingerprint. This
- * memory has to be freed by RTMemFree().
- *
- * @todo Move this function to somewhere else.
- *
- * @returns iprt status code.
- *
- * @param    hHttp         HTTP interface handle (ignored).
- * @param    pcszCert      The certificate in PEM format.
- * @param    cbCert        Size of the certificate.
- * @param    pabSha1       Where to store the pointer to the SHA1 fingerprint.
- * @param    pcbSha1       Where to store the size of the SHA1 fingerprint.
- * @param    pabSha512     Where to store the pointer to the SHA512 fingerprint.
- * @param    pcbSha512     Where to store the size of the SHA512 fingerprint.
- */
-RTR3DECL(int) RTHttpCertDigest(RTHTTP hHttp, char *pcszCert, size_t cbCert,
-                               uint8_t **pabSha1, size_t *pcbSha1,
-                               uint8_t **pabSha512, size_t *pcbSha512);
 
 
 /** @} */

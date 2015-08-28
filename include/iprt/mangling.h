@@ -2432,6 +2432,7 @@
 # define RTCrRsaPrivateKey_CheckSanity                  RT_MANGLER(RTCrRsaPrivateKey_CheckSanity)
 # define RTCrRsaPublicKey_CheckSanity                   RT_MANGLER(RTCrRsaPublicKey_CheckSanity)
 # define RTCrPemFreeSections                            RT_MANGLER(RTCrPemFreeSections)
+# define RTCrPemParseContent                            RT_MANGLER(RTCrPemParseContent)
 # define RTCrPemReadFile                                RT_MANGLER(RTCrPemReadFile)
 # define RTCrPkcs7Attribute_DecodeAsn1                  RT_MANGLER(RTCrPkcs7Attribute_DecodeAsn1)
 # define RTCrPkcs7Attributes_DecodeAsn1                 RT_MANGLER(RTCrPkcs7Attributes_DecodeAsn1)
