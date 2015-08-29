@@ -637,7 +637,7 @@ static bool vboxDrvCfgInfEnumerationCallback(LPCWSTR lpszFileName, PVOID pCtxt)
     PINFENUM_CONTEXT pContext = (PINFENUM_CONTEXT)pCtxt;
     DWORD dwErr;
     NonStandardLogRelCrap((__FUNCTION__": lpszFileName (%S)\n", lpszFileName));
-    NonStandardLogRelCrap((__FUNCTION__ ": pContext->InfInfo.lpszClassName = (%S)", pContext->InfInfo.lpszClassName));
+    NonStandardLogRelCrap((__FUNCTION__ ": pContext->InfInfo.lpszClassName = (%S)\n", pContext->InfInfo.lpszClassName));
     HINF hInf = SetupOpenInfFileW(lpszFileName, pContext->InfInfo.lpszClassName, INF_STYLE_WIN4, NULL /*__in PUINT ErrorLine */);
     if (hInf == INVALID_HANDLE_VALUE)
     {
@@ -649,15 +649,15 @@ static bool vboxDrvCfgInfEnumerationCallback(LPCWSTR lpszFileName, PVOID pCtxt)
         }
         else
         {
-            NonStandardLogCrap((__FUNCTION__ ": dwErr == ERROR_CLASS_MISMATCH"));
+            NonStandardLogCrap((__FUNCTION__ ": dwErr == ERROR_CLASS_MISMATCH\n"));
         }
         return true;
     }
 
     LPWSTR lpszPnPId;
     HRESULT hr = vboxDrvCfgInfQueryFirstPnPId(hInf, &lpszPnPId);
-    NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgInfQueryFirstPnPId returned lpszPnPId = (%S)", lpszPnPId));
-    NonStandardLogRelCrap((__FUNCTION__ ": pContext->InfInfo.lpszPnPId = (%S)", pContext->InfInfo.lpszPnPId));
+    NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgInfQueryFirstPnPId returned lpszPnPId = (%S)\n", lpszPnPId));
+    NonStandardLogRelCrap((__FUNCTION__ ": pContext->InfInfo.lpszPnPId = (%S)\n", pContext->InfInfo.lpszPnPId));
     if (hr == S_OK)
     {
         if (!wcsicmp(pContext->InfInfo.lpszPnPId, lpszPnPId))
