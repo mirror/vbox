@@ -79,11 +79,13 @@ private:
         /** The size of the DER (ASN.1) encoded certificate. */
         uint16_t    cbEncoded;
         /** Gives the s_aCerts index this certificate is an alternative edition of,
-         * UINT16_MAX if no alternative.  This is a complication caused by VeriSign
+         * UINT8_MAX if no alternative.  This is a complication caused by VeriSign
          * reissuing certificates signed with md2WithRSAEncryption using
          * sha1WithRSAEncryption, since MD2 is comprimised.  (Public key unmodified.)
          * It has no practical meaning for the trusted root anchor use we put it to.  */
-        uint16_t    iAlternativeTo;
+        uint8_t     iAlternativeTo;
+        /** Set if mandatory. */
+        bool        fMandatory;
         /** The SHA-1 fingerprint (of the encoded data).   */
         uint8_t     abSha1[RTSHA1_HASH_SIZE];
         /** The SHA-512 fingerprint (of the encoded data).   */
@@ -111,7 +113,7 @@ private:
     static QString fullCertificateFileName();
     static int applyProxyRules(RTHTTP hHttp, const QString &strHostName, int iPort);
     static int applyRawHeaders(RTHTTP hHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
-    static uint64_t certAllFoundMask(void);
+    static bool allCertsFound(uint64_t fFoundCerts, bool fOnlyMandatory);
     static uint64_t certEntryFoundMask(uint32_t iCert);
     static bool checkCertificatesInFile(const char *pszCaCertFile);
     static bool checkCertificatesInStore(RTCRSTORE hStore, unsigned *pcCertificates = NULL);
@@ -142,11 +144,13 @@ private:
 /* static */ const UINetworkReplyPrivateThread::CERTINFO UINetworkReplyPrivateThread::s_aCerts[3] =
 {
     /*[0] =*/   /* The reissued version with the SHA-1 signature. */
+/** @todo r=bird: Why do we need this certificate? Neither update.virtualbox.org nor www.virtualbox.org uses it...  ElCapitan doesn't ship this. */
     {
         /*.pszSubject =*/
         "C=US, O=VeriSign, Inc., OU=Class 3 Public Primary Certification Authority",
         /*.cbEncoded      =*/   0x240,
         /*.iAlternativeTo =*/   1,
+        /*.fMandatory     =*/   false,
         /*.abSha1         =*/
         {
             0xa1, 0xdb, 0x63, 0x93, 0x91, 0x6f, 0x17, 0xe4, 0x18, 0x55,
@@ -179,6 +183,7 @@ private:
         "C=US, O=VeriSign, Inc., OU=Class 3 Public Primary Certification Authority",
         /*.cbEncoded      =*/   0x240,
         /*.iAlternativeTo =*/   0,
+        /*.fMandatory     =*/   false,
         /*.abSha1         =*/
         {
             0x74, 0x2c, 0x31, 0x92, 0xe6, 0x07, 0xe4, 0x24, 0xeb, 0x45,
@@ -204,7 +209,8 @@ private:
         "C=US, O=VeriSign, Inc., OU=VeriSign Trust Network, OU=(c) 2006 VeriSign, Inc. - For authorized use only, "
         "CN=VeriSign Class 3 Public Primary Certification Authority - G5",
         /*.cbEncoded      =*/   0x4d7,
-        /*.iAlternativeTo =*/   UINT16_MAX,
+        /*.iAlternativeTo =*/   UINT8_MAX,
+        /*.fMandatory     =*/   true,
         /*.abSha1         =*/
         {
             0x4e, 0xb6, 0xd5, 0x78, 0x49, 0x9b, 0x1c, 0xcf, 0x5f, 0x58,
@@ -475,15 +481,28 @@ UINetworkReplyPrivateThread::checkCertificatesInFile(const char *pszCaCertFile)
 }
 
 /**
- * Calculates the 64-bit all-certs found mask.
+ * Checks if we've found all the necessary certificates or not.
  *
- * @returns 64-bit mask.
+ * @returns true if we have, false if we haven't.
+ * @param   fFoundCerts         The mask of found certificates (see
+ *                              certEntryFoundMask).
+ * @param   fOnlyMandatory      Only require mandatory certificates to be
+ *                              present.  If false, all certificates must be
+ *                              found before we return true.
  */
-/*static*/ uint64_t
-UINetworkReplyPrivateThread::certAllFoundMask()
+/*static*/ bool
+UINetworkReplyPrivateThread::allCertsFound(uint64_t fFoundCerts, bool fOnlyMandatory)
 {
     AssertCompile(RT_ELEMENTS(s_aCerts) < 64);
-    return RT_BIT_64(RT_ELEMENTS(s_aCerts)) - UINT64_C(1);
+
+    /* Add non-mandatory flags before comparing. */
+    if (   fOnlyMandatory
+        && fFoundCerts != RT_BIT_64(RT_ELEMENTS(s_aCerts)) - UINT64_C(1))
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
+            if (!s_aCerts[i].fMandatory)
+                fFoundCerts |= RT_BIT_64(i);
+
+    return fFoundCerts == RT_BIT_64(RT_ELEMENTS(s_aCerts)) - UINT64_C(1);
 }
 
 /**
@@ -502,8 +521,8 @@ UINetworkReplyPrivateThread::certEntryFoundMask(uint32_t iCert)
      * Tedium: Also mark certificates that this is an alternative to, we only need
      *         the public key once.
      */
-    uint16_t iAlt = s_aCerts[iCert].iAlternativeTo;
-    if (iAlt != UINT16_MAX)
+    uint8_t iAlt = s_aCerts[iCert].iAlternativeTo;
+    if (iAlt != UINT8_MAX)
     {
         unsigned cMax = 10;
         do
@@ -581,7 +600,7 @@ UINetworkReplyPrivateThread::checkCertificatesInStore(RTCRSTORE hStore, unsigned
         /*
          * Did we locate all of them?
          */
-        if (fFoundCerts == certAllFoundMask())
+        if (allCertsFound(fFoundCerts, true /* fOnlyMandatory */)) /** @todo combine the two certificate retrieval approaches */
             return true;
     }
     AssertRC(rc);
@@ -634,7 +653,7 @@ UINetworkReplyPrivateThread::downloadCertificates(RTHTTP hHttp, const char *pszC
                     }
                 }
             RTHttpFreeResponse(pvRootsZip);
-            if (fFoundCerts == certAllFoundMask())
+            if (allCertsFound(fFoundCerts, false /* fOnlyMandatory */))
                 break;
         }
     }
@@ -642,7 +661,7 @@ UINetworkReplyPrivateThread::downloadCertificates(RTHTTP hHttp, const char *pszC
     /*
      * Fallback: Try download certificates separately.
      */
-    if (fFoundCerts != certAllFoundMask())
+    if (allCertsFound(fFoundCerts, false /* fOnlyMandatory */))
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
             if (!(fFoundCerts & RT_BIT_64(i)))
                 for (uint32_t iUrl = 0; iUrl < RT_ELEMENTS(s_aCerts[i].apszUrls); i++)
@@ -666,7 +685,7 @@ UINetworkReplyPrivateThread::downloadCertificates(RTHTTP hHttp, const char *pszC
     /*
      * See if we've got the certificates we want, save it we do.
      */
-    if (fFoundCerts == certAllFoundMask())
+    if (allCertsFound(fFoundCerts, true /*fOnlyMandatory*/))
         rc = RTCrStoreCertExportAsPem(hStore, 0 /*fFlags*/, pszCaCertFile);
     else if (RT_SUCCESS(rc))
         rc = VERR_NOT_FOUND;
