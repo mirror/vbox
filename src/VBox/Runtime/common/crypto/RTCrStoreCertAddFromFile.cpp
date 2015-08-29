@@ -33,6 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/crypto/pem.h>
 
 
@@ -101,28 +102,51 @@ RTDECL(int) RTCrStoreCertAddFromFile(RTCRSTORE hStore, uint32_t fFlags, const ch
 {
     AssertReturn(!(fFlags & ~(RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR)), VERR_INVALID_FLAGS);
 
-    PCRTCRPEMSECTION pSectionHead;
-    int rc = RTCrPemReadFile(pszFilename,
-                             fFlags & RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR ? RTCRPEMREADFILE_F_CONTINUE_ON_ENCODING_ERROR : 0,
-                             g_aCertificateMarkers, RT_ELEMENTS(g_aCertificateMarkers), &pSectionHead, pErrInfo);
+    size_t      cbContent;
+    void        *pvContent;
+    int rc = RTFileReadAllEx(pszFilename, 0, 64U*_1M, RTFILE_RDALL_O_DENY_WRITE, &pvContent, &cbContent);
     if (RT_SUCCESS(rc))
     {
-        PCRTCRPEMSECTION pCurSec = pSectionHead;
-        while (pCurSec)
+        /*
+         * Is it a java key store file?
+         */
+        if (   cbContent > 32
+            && ((uint32_t const *)pvContent)[0] == RT_H2BE_U32_C(UINT32_C(0xfeedfeed)) /* magic */
+            && ((uint32_t const *)pvContent)[1] == RT_H2BE_U32_C(UINT32_C(0x00000002)) /* version */ )
+            rc = RTCrStoreCertAddFromJavaKeyStoreInMem(hStore, fFlags, pvContent, cbContent, pszFilename, pErrInfo);
+        /*
+         * No assume PEM or DER encoded binary certificate.
+         */
+        else
         {
-            int rc2 = RTCrStoreCertAddEncoded(hStore, RTCRCERTCTX_F_ENC_X509_DER | (fFlags & ~RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR),
-                                              pCurSec->pbData, pCurSec->cbData, !RTErrInfoIsSet(pErrInfo) ? pErrInfo : NULL);
-            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+            PCRTCRPEMSECTION pSectionHead;
+            rc = RTCrPemParseContent(pvContent, cbContent, fFlags, g_aCertificateMarkers, RT_ELEMENTS(g_aCertificateMarkers),
+                                     &pSectionHead, pErrInfo);
+            if (RT_SUCCESS(rc))
             {
-                rc = rc2;
-                if (!(fFlags & RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR))
-                    break;
-            }
-            pCurSec = pCurSec->pNext;
-        }
+                PCRTCRPEMSECTION pCurSec = pSectionHead;
+                while (pCurSec)
+                {
+                    int rc2 = RTCrStoreCertAddEncoded(hStore,
+                                                      RTCRCERTCTX_F_ENC_X509_DER | (fFlags & RTCRCERTCTX_F_ADD_IF_NOT_FOUND),
+                                                      pCurSec->pbData, pCurSec->cbData,
+                                                      !RTErrInfoIsSet(pErrInfo) ? pErrInfo : NULL);
+                    if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                    {
+                        rc = rc2;
+                        if (!(fFlags & RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR))
+                            break;
+                    }
+                    pCurSec = pCurSec->pNext;
+                }
 
-        RTCrPemFreeSections(pSectionHead);
+                RTCrPemFreeSections(pSectionHead);
+            }
+        }
+        RTFileReadAllFree(pvContent, cbContent);
     }
+    else
+        rc = RTErrInfoSetF(pErrInfo, rc, "RTFileReadAllEx failed with %Rrc on '%s'", rc, pszFilename);
     return rc;
 }
 

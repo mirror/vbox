@@ -143,21 +143,6 @@ RTDECL(PCRTCRCERTCTX) RTCrStoreCertByIssuerAndSerialNo(RTCRSTORE hStore, PCRTCRX
 RTDECL(int) RTCrStoreCertAddEncoded(RTCRSTORE hStore, uint32_t fFlags, void const *pvSrc, size_t cbSrc, PRTERRINFO pErrInfo);
 
 /**
- * Adds certificates from the specified file.
- *
- * @returns IPRT status code.  Even when RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR is
- *          used, an error is returned as an error (and not a warning).
- *
- * @param   hStore              The store to add the certificate(s) to.
- * @param   fFlags              RTCRCERTCTX_F_ADD_IF_NOT_FOUND and/or
- *                              RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR.
- * @param   pszFilename         The filename.
- * @param   pErrInfo            Where to return additional error/warning info.
- *                              Optional.
- */
-RTDECL(int) RTCrStoreCertAddFromFile(RTCRSTORE hStore, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo);
-
-/**
  * Adds certificates from files in the specified directory.
  *
  * @returns IPRT status code.  Even when RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR is
@@ -175,6 +160,61 @@ RTDECL(int) RTCrStoreCertAddFromFile(RTCRSTORE hStore, uint32_t fFlags, const ch
  */
 RTDECL(int) RTCrStoreCertAddFromDir(RTCRSTORE hStore, uint32_t fFlags, const char *pszDir,
                                     PCRTSTRTUPLE paSuffixes, size_t cSuffixes, PRTERRINFO pErrInfo);
+
+/**
+ * Adds certificates from the specified file.
+ *
+ * The supported file formats are:
+ *      - PEM (base 64 blobs wrapped in -----BEGIN / END----).  Support multiple
+ *        certificates in one file.
+ *      - Binary DER ASN.1 certificate. Only one per file.
+ *      - Java key store version 2.
+ *
+ * @returns IPRT status code.  Even when RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR is
+ *          used, an error is returned as an error (and not a warning).
+ *
+ * @param   hStore              The store to add the certificate(s) to.
+ * @param   fFlags              RTCRCERTCTX_F_ADD_IF_NOT_FOUND and/or
+ *                              RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR.
+ * @param   pszFilename         The filename.
+ * @param   pErrInfo            Where to return additional error/warning info.
+ *                              Optional.
+ */
+RTDECL(int) RTCrStoreCertAddFromFile(RTCRSTORE hStore, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo);
+
+/**
+ * Adds certificates from the specified java key store file.
+ *
+ * @returns IPRT status code.  Even when RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR is
+ *          used, an error is returned as an error (and not a warning).
+ *
+ * @param   hStore              The store to add the certificate(s) to.
+ * @param   fFlags              RTCRCERTCTX_F_ADD_IF_NOT_FOUND and/or
+ *                              RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR.
+ * @param   pszFilename         The path to the JKS file.
+ * @param   pErrInfo            Where to return additional error/warning info.
+ *                              Optional.
+ */
+RTDECL(int) RTCrStoreCertAddFromJavaKeyStore(RTCRSTORE hStore, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo);
+
+/**
+ * Adds certificates from an in-memory java key store.
+ *
+ * @returns IPRT status code.  Even when RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR is
+ *          used, an error is returned as an error (and not a warning).
+ *
+ * @param   hStore              The store to add the certificate(s) to.
+ * @param   fFlags              RTCRCERTCTX_F_ADD_IF_NOT_FOUND and/or
+ *                              RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR.
+ * @param   pvContent           Pointer to the key store bytes.
+ * @param   cbContent           The size of the key store.
+ * @param   pszErrorName        The file name or whatever helpful indicator the
+ *                              caller want in the error messages.
+ * @param   pErrInfo            Where to return additional error/warning info.
+ *                              Optional.
+ */
+RTDECL(int) RTCrStoreCertAddFromJavaKeyStoreInMem(RTCRSTORE hStore, uint32_t fFlags, void const *pvContent, size_t cbContent,
+                                                  const char *pszErrorName, PRTERRINFO pErrInfo);
 
 /**
  * Adds all certificates from @a hStoreSrc into @a hStore.
