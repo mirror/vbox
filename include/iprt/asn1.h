@@ -604,6 +604,7 @@ RTDECL(int) RTAsn1Dummy_InitEx(PRTASN1DUMMY pThis);
  */
 DECLINLINE(int) RTAsn1Dummy_Init(PRTASN1DUMMY pThis, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
+    NOREF(pAllocator);
     return RTAsn1Dummy_InitEx(pThis);
 }
 
@@ -1213,7 +1214,10 @@ RTDECL(int) RTAsn1ContextTagN_Clone(PRTASN1CONTEXTTAG pThis, PCRTASN1CONTEXTTAG 
     typedef RT_CONCAT(RTASN1CONTEXTTAG,a_uTag) *RT_CONCAT(PRTASN1CONTEXTTAG,a_uTag); \
     DECLINLINE(int) RT_CONCAT3(RTAsn1ContextTag,a_uTag,_Init)(RT_CONCAT(PRTASN1CONTEXTTAG,a_uTag) pThis, \
                                                               PCRTASN1ALLOCATORVTABLE pAllocator) \
-    {   return RTAsn1ContextTagN_Init((PRTASN1CONTEXTTAG)pThis, a_uTag); } \
+    { \
+        NOREF(pAllocator); \
+        return RTAsn1ContextTagN_Init((PRTASN1CONTEXTTAG)pThis, a_uTag); \
+    } \
     DECLINLINE(int) RT_CONCAT3(RTAsn1ContextTag,a_uTag,_Clone)(RT_CONCAT(PRTASN1CONTEXTTAG,a_uTag) pThis, \
                                                                RT_CONCAT(RTASN1CONTEXTTAG,a_uTag) const *pSrc) \
     {   return RTAsn1ContextTagN_Clone((PRTASN1CONTEXTTAG)pThis, (PCRTASN1CONTEXTTAG)pSrc, a_uTag); } \
