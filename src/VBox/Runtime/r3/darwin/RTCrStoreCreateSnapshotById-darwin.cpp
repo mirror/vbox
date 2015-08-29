@@ -35,6 +35,11 @@
 #include <iprt/err.h>
 #include <iprt/file.h>
 
+/* HACK ALERT! Shut up those deprecated messages on SecKeychainSearchCreateFromAttributes and SecKeychainSearchCopyNext. */
+#include <CoreFoundation/CoreFoundation.h>
+#undef  DEPRECATED_IN_MAC_OS_X_VERSION_10_7_AND_LATER
+#define DEPRECATED_IN_MAC_OS_X_VERSION_10_7_AND_LATER
+
 #include <Security/Security.h>
 
 
