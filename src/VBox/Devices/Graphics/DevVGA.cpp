@@ -2428,12 +2428,13 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
     {
         /* Do not update the destination buffer if it is not big enough.
          * Can happen if the resize request was ignored by the driver.
+         * Compare with 'disp_width', because it is what the framebuffer has been resized to.
          */
-        if (   pDrv->cx != (uint32_t)width
+        if (   pDrv->cx != (uint32_t)disp_width
             || pDrv->cy != (uint32_t)height)
         {
             LogRel(("Framebuffer mismatch: vga %dx%d, drv %dx%d!!!\n",
-                    width, height,
+                    disp_width, height,
                     pDrv->cx, pDrv->cy));
             return VINF_SUCCESS;
         }
