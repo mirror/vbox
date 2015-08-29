@@ -370,6 +370,7 @@ RuntimeR3_SOURCES       = \
 	common/crypto/RTCrStoreCertAddFromFile.cpp \
 	common/crypto/RTCrStoreCertAddFromDir.cpp \
 	common/crypto/RTCrStoreCertAddFromStore.cpp \
+	common/crypto/RTCrStoreCertAddFromJavaKeyStore.cpp \
 	common/crypto/RTCrStoreCertExportAsPem.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
