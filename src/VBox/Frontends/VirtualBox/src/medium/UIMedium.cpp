@@ -530,9 +530,9 @@ QString UIMedium::nullID()
 /* static */
 QString UIMedium::normalizedID(const QString &strID)
 {
-    AssertMsgReturn(QUuid(strID).toString().remove('{').remove('}') == strID,
-                    ("CMedium UUID is not valid: '%s'\n", strID.toAscii().constData()),
-                    nullID());
+    /* Handle wrong UUID (null/empty or invalid format): */
+    if (QUuid(strID).toString().remove('{').remove('}') != strID)
+        return nullID();
     return strID;
 }
 
