@@ -3725,7 +3725,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx, int argc, char 
         }
     }
 
-    if (fSeenListArg)
+    if (!fSeenListArg)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_LIST, "Missing list name");
     Assert(fListAll || fListSessions);
 
