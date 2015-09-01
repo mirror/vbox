@@ -20,7 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QDesktopWidget>
 # include <QMenuBar>
 # include <QTimer>
 # include <QContextMenuEvent>
@@ -358,8 +357,8 @@ void UIMachineWindowNormal::loadSettings()
         else
         {
             /* Get available geometry, for screen with (x,y) coords if possible: */
-            QRect availableGeo = !geo.isNull() ? QApplication::desktop()->availableGeometry(QPoint(geo.x(), geo.y())) :
-                                                 QApplication::desktop()->availableGeometry(this);
+            QRect availableGeo = !geo.isNull() ? vboxGlobal().availableGeometry(QPoint(geo.x(), geo.y())) :
+                                                 vboxGlobal().availableGeometry(this);
 
             /* Normalize to the optimal size: */
             normalizeGeometry(true /* adjust position */);
@@ -499,11 +498,7 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
 
     /* Adjust position if necessary: */
     if (fAdjustPosition)
-    {
-        const QDesktopWidget *pDesktopWidget = QApplication::desktop();
-        const QRegion availableGeo = pDesktopWidget->availableGeometry(pos());
-        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo);
-    }
+        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, vboxGlobal().availableGeometry(pos()));
 
     /* Finally, set the frame geometry: */
     setGeometry(frameGeo.left() + dl, frameGeo.top() + dt,

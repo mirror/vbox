@@ -21,7 +21,6 @@
 
 /* Qt includes: */
 # include <QDir>
-# include <QDesktopWidget>
 # include <QFileInfo>
 # include <QLocale>
 # include <QThread>

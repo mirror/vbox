@@ -20,7 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QDesktopWidget>
 # ifndef Q_WS_MAC
 #  include <QTimer>
 # endif /* !Q_WS_MAC */

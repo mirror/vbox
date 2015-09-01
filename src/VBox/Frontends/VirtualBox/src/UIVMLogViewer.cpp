@@ -28,7 +28,6 @@
 # include <QLabel>
 # include <QScrollBar>
 # include <QTextEdit>
-# include <QDesktopWidget>
 
 /* GUI includes: */
 # include "UIVMLogViewer.h"
@@ -648,7 +647,7 @@ void UIVMLogViewer::loadSettings()
     /* Restore window geometry: */
     {
         /* Getting available geometry to calculate default geometry: */
-        const QRect desktopRect = QApplication::desktop()->availableGeometry(this);
+        const QRect desktopRect = vboxGlobal().availableGeometry(this);
         int iDefaultWidth = desktopRect.width() * 0.5;
         int iDefaultHeight = desktopRect.height() * 0.75;
 

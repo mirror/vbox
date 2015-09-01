@@ -21,7 +21,6 @@
 
 /* Qt includes: */
 # include <QApplication>
-# include <QDesktopWidget>
 # include <QMainWindow>
 # include <QMenuBar>
 # include <QScrollBar>
@@ -219,7 +218,7 @@ void UIMachineViewNormal::adjustGuestScreenSize()
 
 QRect UIMachineViewNormal::workingArea() const
 {
-    return QApplication::desktop()->availableGeometry(this);
+    return vboxGlobal().availableGeometry(this);
 }
 
 QSize UIMachineViewNormal::calculateMaxGuestSize() const

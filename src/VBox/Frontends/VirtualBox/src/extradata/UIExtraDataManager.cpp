@@ -22,7 +22,6 @@
 /* Qt includes: */
 # include <QMutex>
 # include <QMetaEnum>
-# include <QDesktopWidget>
 # ifdef DEBUG
 #  include <QMainWindow>
 #  include <QMenuBar>
@@ -2231,15 +2230,15 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
     /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect screenGeometry = fOk ? QApplication::desktop()->availableGeometry(QPoint(iX, iY)) :
-                                       QApplication::desktop()->availableGeometry();
+    const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
+                                          vboxGlobal().availableGeometry();
 
     /* Make sure resulting geometry is within current bounds: */
-    geometry = geometry.intersected(screenGeometry);
+    geometry = geometry.intersected(availableGeometry);
 
     /* Move default-geometry to screen-geometry' center: */
     if (!fOk)
-        geometry.moveCenter(screenGeometry.center());
+        geometry.moveCenter(availableGeometry.center());
 
     /* Return result: */
     return geometry;
@@ -3427,11 +3426,11 @@ QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *p
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
     /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect screenGeometry = fOk ? QApplication::desktop()->availableGeometry(QPoint(iX, iY)) :
-                                       QApplication::desktop()->availableGeometry();
+    const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
+                                          vboxGlobal().availableGeometry();
 
     /* Make sure resulting geometry is within current bounds: */
-    geometry = geometry.intersected(screenGeometry);
+    geometry = geometry.intersected(availableGeometry);
 
     /* Move default-geometry to pParentWidget' geometry center: */
     if (!fOk && pParentWidget)
@@ -3537,15 +3536,15 @@ QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget)
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
     /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect screenGeometry = fOk ? QApplication::desktop()->availableGeometry(QPoint(iX, iY)) :
-                                       QApplication::desktop()->availableGeometry();
+    const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
+                                          vboxGlobal().availableGeometry();
 
     /* Make sure resulting geometry is within current bounds: */
-    geometry = geometry.intersected(screenGeometry);
+    geometry = geometry.intersected(availableGeometry);
 
     /* Move default-geometry to current screen center: */
     if (!fOk)
-        geometry.moveCenter(screenGeometry.center());
+        geometry.moveCenter(availableGeometry.center());
 
     /* Return result: */
     return geometry;
@@ -3652,10 +3651,10 @@ QRect UIExtraDataManager::logWindowGeometry(QWidget *pWidget, const QRect &defau
     /* In Windows Qt fails to reposition out of screen window properly, so moving to centre: */
 #ifdef Q_WS_WIN
     /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect screenGeometry = QApplication::desktop()->availableGeometry(QPoint(iX, iY));
+    const QRect availableGeometry = vboxGlobal().availableGeometry(QPoint(iX, iY));
 
     /* Make sure resulting geometry is within current bounds: */
-    if (!screenGeometry.contains(geometry, true))
+    if (!availableGeometry.contains(geometry, true))
         geometry.moveCenter(defaultGeometry.center());
 #endif /* Q_WS_WIN */
 

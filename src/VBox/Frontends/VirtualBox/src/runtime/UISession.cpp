@@ -798,11 +798,8 @@ void UISession::sltCheckIfHostDisplayChanged()
 {
     LogRelFlow(("GUI: UISession::sltCheckIfHostDisplayChanged()\n"));
 
-    /* Acquire desktop wrapper: */
-    QDesktopWidget *pDesktop = QApplication::desktop();
-
     /* Check if display count changed: */
-    if (pDesktop->screenCount() != m_hostScreens.size())
+    if (vboxGlobal().screenCount() != m_hostScreens.size())
     {
         /* Reset watchdog: */
         m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
@@ -812,9 +809,9 @@ void UISession::sltCheckIfHostDisplayChanged()
     else
     {
         /* Check if at least one display geometry changed: */
-        for (int iScreenIndex = 0; iScreenIndex < pDesktop->screenCount(); ++iScreenIndex)
+        for (int iScreenIndex = 0; iScreenIndex < vboxGlobal().screenCount(); ++iScreenIndex)
         {
-            if (pDesktop->screenGeometry(iScreenIndex) != m_hostScreens.at(iScreenIndex))
+            if (vboxGlobal().screenGeometry(iScreenIndex) != m_hostScreens.at(iScreenIndex))
             {
                 /* Reset watchdog: */
                 m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
@@ -1971,9 +1968,8 @@ void UISession::setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer)
 void UISession::updateHostScreenData()
 {
     m_hostScreens.clear();
-    QDesktopWidget *pDesktop = QApplication::desktop();
-    for (int iScreenIndex = 0; iScreenIndex < pDesktop->screenCount(); ++iScreenIndex)
-        m_hostScreens << pDesktop->screenGeometry(iScreenIndex);
+    for (int iScreenIndex = 0; iScreenIndex < vboxGlobal().screenCount(); ++iScreenIndex)
+        m_hostScreens << vboxGlobal().screenGeometry(iScreenIndex);
 }
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
