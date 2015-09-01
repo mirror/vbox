@@ -144,6 +144,11 @@ public:
         /** Returns the number of host-screens currently available on the system. */
         int screenCount() const;
 
+        /** Returns the index of the screen which contains contains @a pWidget. */
+        int screenNumber(const QWidget *pWidget) const;
+        /** Returns the index of the screen which contains contains @a point. */
+        int screenNumber(const QPoint &point) const;
+
         /** Returns the geometry of the host-screen with @a iHostScreenIndex.
           * @note The default screen is used if @a iHostScreenIndex is -1. */
         const QRect screenGeometry(int iHostScreenIndex = -1) const;
@@ -151,12 +156,15 @@ public:
           * @note The default screen is used if @a iHostScreenIndex is -1. */
         const QRect availableGeometry(int iHostScreenIndex = -1) const;
 
-        /** Returns the geometry of the host-screen which contains @a pWidget.
-          * @note The default screen is used if @a pWidget is 0. */
-        const QRect screenGeometry(QWidget *pWidget = 0) const;
-        /** Returns the available-geometry of the host-screen which contains @a pWidget.
-          * @note The default screen is used if @a pWidget is 0. */
-        const QRect availableGeometry(QWidget *pWidget = 0) const;
+        /** Returns the geometry of the host-screen which contains @a pWidget. */
+        const QRect screenGeometry(const QWidget *pWidget) const;
+        /** Returns the available-geometry of the host-screen which contains @a pWidget. */
+        const QRect availableGeometry(const QWidget *pWidget) const;
+
+        /** Returns the geometry of the host-screen which contains @a point. */
+        const QRect screenGeometry(const QPoint &point) const;
+        /** Returns the available-geometry of the host-screen which contains @a point. */
+        const QRect availableGeometry(const QPoint &point) const;
     /** @} */
 
     VBoxGlobalSettings &settings() { return gset; }
