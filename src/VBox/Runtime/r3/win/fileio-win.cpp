@@ -823,14 +823,47 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
     /*
      * Query file info.
      */
+    HANDLE hHandle = (HANDLE)RTFileToNative(hFile);
+
     BY_HANDLE_FILE_INFORMATION Data;
-    if (!GetFileInformationByHandle((HANDLE)RTFileToNative(hFile), &Data))
+    if (!GetFileInformationByHandle(hHandle, &Data))
     {
         DWORD dwErr = GetLastError();
         /* Only return if we *really* don't have a valid handle value,
          * everything else is fine here ... */
         if (dwErr == ERROR_INVALID_HANDLE)
-            return RTErrConvertFromWin32(dwErr);
+        {
+            /*
+             * On Windows 7 or earlier certain standard handles such as
+             * stin, stdout and stderr were ring-3 pseudo handles which the
+             * kernel didn't know about.
+             *
+             * So simply ignore the ERROR_INVALID_HANDLE in that case to not
+             * break other parts which rely on this function.
+             */
+            OSVERSIONINFOEX OSInfoEx = { 0 };
+            OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+
+            bool fIgnoreError = false;
+
+            /* Windows 7 or  earlier? */
+            if (   GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
+                && (OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT)
+                && (OSInfoEx.dwMajorVersion <= 6)
+                && (OSInfoEx.dwMajorVersion <= 1))
+            {
+                /* Do we want to query file information for one of the pseudo handles? Then skip. */
+                if (   hHandle == GetStdHandle(STD_INPUT_HANDLE)
+                    || hHandle == GetStdHandle(STD_OUTPUT_HANDLE)
+                    || hHandle == GetStdHandle(STD_ERROR_HANDLE))
+                {
+                    fIgnoreError = true;
+                }
+            }
+
+            if (!fIgnoreError)
+                return RTErrConvertFromWin32(dwErr);
+        }
         RT_ZERO(Data);
         Data.dwFileAttributes = RTFS_DOS_NT_DEVICE;
     }
