@@ -835,7 +835,7 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
         {
             /*
              * On Windows 7 or earlier certain standard handles such as
-             * stin, stdout and stderr were ring-3 pseudo handles which the
+             * stdin, stdout and stderr were ring-3 pseudo handles which the
              * kernel didn't know about.
              *
              * So simply ignore the ERROR_INVALID_HANDLE in that case to not
