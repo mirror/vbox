@@ -547,9 +547,10 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT enmFormat)
         case D3DDDIFMT_A2R10G10B10:
             return 32;
         case D3DDDIFMT_A16B16G16R16:
-// Floating-point formats are not implemented in Chromium.
-//        case D3DDDIFMT_A16B16G16R16F:
+        case D3DDDIFMT_A16B16G16R16F:
             return 64;
+        case D3DDDIFMT_A32B32G32R32F:
+            return 128;
         case D3DDDIFMT_A8P8:
             return 16;
         case D3DDDIFMT_P8:

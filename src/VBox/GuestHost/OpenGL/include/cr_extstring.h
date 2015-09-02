@@ -240,6 +240,9 @@ static const char *crExtensions =
 #ifdef CR_GREMEDY_string_marker
     "GL_GREMEDY_string_marker "
 #endif
+#ifdef CR_ARB_texture_float
+    "GL_ARB_texture_float "
+#endif
 
 	"";
 

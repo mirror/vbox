@@ -178,4 +178,6 @@
 
 #define CR_GREMEDY_string_marker 1
 
+#define CR_ARB_texture_float 1
+
 #endif /* CR_VERSION_H */
