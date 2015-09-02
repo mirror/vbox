@@ -3226,6 +3226,8 @@ const char *Console::i_convertControllerTypeToDev(StorageControllerType_T enmCtr
             return "i82078";
         case StorageControllerType_USB:
             return "Msd";
+        case StorageControllerType_NVMe:
+            return "nvme";
         default:
             return NULL;
     }
@@ -3246,6 +3248,7 @@ HRESULT Console::i_convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LON
         case StorageBus_SATA:
         case StorageBus_SCSI:
         case StorageBus_SAS:
+        case StorageBus_PCIe:
         {
             uLun = port;
             return S_OK;

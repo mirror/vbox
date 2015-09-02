@@ -944,6 +944,10 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.15";
             break;
 
+        case SettingsVersion_v1_16:
+            pcszVersion = "1.16";
+            break;
+
         default:
             // catch human error: the assertion below will trigger in debug
             // or dbgopt builds, so hopefully this will get noticed sooner in
