@@ -39,14 +39,14 @@ public:
 
     /** Constructs dialog passing @a pParent to the QWidget base-class constructor.
       * @param strVersion is used to specify the version number of VirtualBox. */
-    VBoxAboutDlg(QWidget* pParent, const QString &strVersion);
+    VBoxAboutDlg(QWidget *pParent, const QString &strVersion);
 
 protected:
 
-    /** Handles Qt polish event. */
+    /** Handles any Qt @a pEvent. */
     bool event(QEvent *pEvent);
 
-    /** Handles Qt paint-event to draw About-VirtualBox image. */
+    /** Handles Qt paint @a pEvent. */
     void paintEvent(QPaintEvent *pEvent);
 
     /** Handles translation event. */
@@ -54,10 +54,10 @@ protected:
 
 private:
 
-    /** Prepare About-VirtualBox dialog. */
+    /** Prepares About-VirtualBox dialog. */
     void prepare();
 
-    /** Prepare main-layout routine. */
+    /** Prepares main-layout. */
     void prepareMainLayout();
 
     /** Holds the About-VirtualBox text. */

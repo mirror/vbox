@@ -41,6 +41,7 @@
 VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
     : QIWithRetranslateUI2<QIDialog>(pParent)
     , m_strVersion(strVersion)
+    , m_pLabel(0)
 {
     /* Prepare: */
     prepare();
@@ -48,33 +49,37 @@ VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
 
 bool VBoxAboutDlg::event(QEvent *pEvent)
 {
+    /* Set fixed-size for dialog: */
     if (pEvent->type() == QEvent::Polish)
         setFixedSize(m_size);
+    /* Call to base-class: */
     return QIDialog::event(pEvent);
 }
 
 void VBoxAboutDlg::paintEvent(QPaintEvent* /* pEvent */)
 {
     QPainter painter(this);
+    /* Draw About-VirtualBox background image: */
     painter.drawPixmap(0, 0, m_pixmap);
 }
 
 void VBoxAboutDlg::retranslateUi()
 {
     setWindowTitle(tr("VirtualBox - About"));
-    QString strAboutText = tr("VirtualBox Graphical User Interface");
+    const QString strAboutText = tr("VirtualBox Graphical User Interface");
 #ifdef VBOX_BLEEDING_EDGE
-    QString strVersionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);
-#else
-    QString strVersionText = tr("Version %1");
-#endif
+    const QString strVersionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);
+#else /* !VBOX_BLEEDING_EDGE */
+    const QString strVersionText = tr("Version %1");
+#endif /* !VBOX_BLEEDING_EDGE */
 #if VBOX_OSE
     m_strAboutText = strAboutText + " " + strVersionText.arg(m_strVersion) + "\n" +
                      QString("%1 2004-" VBOX_C_YEAR " " VBOX_VENDOR).arg(QChar(0xa9));
-#else /* VBOX_OSE */
+#else /* !VBOX_OSE */
     m_strAboutText = strAboutText + "\n" + strVersionText.arg(m_strVersion);
-#endif /* VBOX_OSE */
+#endif /* !VBOX_OSE */
     m_strAboutText = m_strAboutText + "\n" + QString("Copyright %1 2015 Oracle and/or its affiliates. All rights reserved.").arg(QChar(0xa9));
+    AssertPtrReturnVoid(m_pLabel);
     m_pLabel->setText(m_strAboutText);
 }
 
@@ -87,7 +92,7 @@ void VBoxAboutDlg::prepare()
     QString strPath(":/about.png");
 
     /* Branding: Use a custom about splash picture if set: */
-    QString strSplash = vboxGlobal().brandingGetKey("UI/AboutSplash");
+    const QString strSplash = vboxGlobal().brandingGetKey("UI/AboutSplash");
     if (vboxGlobal().brandingIsActive() && !strSplash.isEmpty())
     {
         char szExecPath[1024];
@@ -98,11 +103,11 @@ void VBoxAboutDlg::prepare()
     }
 
     /* Load image: */
-    QIcon icon = UIIconPool::iconSet(strPath);
+    const QIcon icon = UIIconPool::iconSet(strPath);
     m_size = icon.availableSizes().first();
     m_pixmap = icon.pixmap(m_size);
 
-    /* Prepare main-layout: */
+    /* Prepares main-layout: */
     prepareMainLayout();
 
     /* Translate: */
@@ -120,11 +125,10 @@ void VBoxAboutDlg::prepareMainLayout()
         AssertPtrReturnVoid(m_pLabel);
         {
             /* Prepare label for version text: */
-
             QPalette palette;
             /* Branding: Set a different text color (because splash also could be white),
              * otherwise use white as default color: */
-            QString strColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
+            const QString strColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
             if (!strColor.isEmpty())
                 palette.setColor(QPalette::WindowText, QColor(strColor).name());
             else
