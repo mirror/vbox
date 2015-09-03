@@ -305,7 +305,7 @@
     </sect2>
     -->
 
-    <sect2>
+    <sect2 id="pot-insecure">
     <title>Potentially insecure operations</title>
 
       <para>The following features of VirtualBox can present security
@@ -325,6 +325,16 @@
           the two hosts. But when considering teleporting a VM over an untrusted
           network the first question to answer is how both VMs can securely
           access the same virtual disk image(s) with a reasonable performance. </para>
+        </listitem>
+
+        <listitem>
+          <para>When Page Fusion (see <xref linkend="guestadd-pagefusion"/>)
+          is enabled, a malicious guest doing a side-channel attack could be
+          able to determine the address space layout of another guest running
+          on the same host. This would improve the chances of the malicious guest
+          to take advantage of other attack vectors he might have against the
+          target VM. To prevent potential malcious guest process from doing
+          such side-channel attacks, Page Fusion should be disabled.</para>
         </listitem>
 
         <listitem>
