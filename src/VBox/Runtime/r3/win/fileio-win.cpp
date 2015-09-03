@@ -39,6 +39,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
+#include <iprt/ldr.h>
 #include <iprt/log.h>
 #include "internal/file.h"
 #include "internal/fs.h"
@@ -48,7 +49,8 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-
+typedef BOOL WINAPI FNVERIFYCONSOLEIOHANDLE(HANDLE);
+typedef FNVERIFYCONSOLEIOHANDLE *PFNVERIFYCONSOLEIOHANDLE; /* No, nobody fell on the keyboard, really! */
 
 /**
  * This is wrapper around the ugly SetFilePointer api.
@@ -850,15 +852,35 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
             if (   GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
                 && (OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT)
                 && (OSInfoEx.dwMajorVersion <= 6)
-                && (OSInfoEx.dwMajorVersion <= 1))
+                && (OSInfoEx.dwMinorVersion <= 1))
             {
-                /* Do we want to query file information for one of the pseudo handles? Then skip. */
-                if (   hHandle == GetStdHandle(STD_INPUT_HANDLE)
-                    || hHandle == GetStdHandle(STD_OUTPUT_HANDLE)
-                    || hHandle == GetStdHandle(STD_ERROR_HANDLE))
+                PFNVERIFYCONSOLEIOHANDLE pfnVerifyConsoleIoHandle = NULL;
+
+                /*
+                 * As the standard I/O handles could have been overwritten by SetStdHandle() we cannot assume
+                 * that GetStdHandle will actually return real console I/O handles.
+                 *
+                 * So try to dynamically load the undocumented VerifyConsoleIoHandle from kernel32.dll.
+                 * This function will check if the given handle actually is a console I/O handle, and if so,
+                 * we know that we have to ignore the ERROR_INVALID_HANDLE on Windows 7 or earlier.
+                 *
+                 */
+                RTLDRMOD hKernel32 = NIL_RTLDRMOD;
+                int rc2 = RTLdrLoadSystem("kernel32.dll", true /*fNoUnload*/, &hKernel32);
+                if (RT_SUCCESS(rc2))
+                    rc2 = RTLdrGetSymbol(hKernel32, "VerifyConsoleIoHandle", (void**)&pfnVerifyConsoleIoHandle);
+
+                if (RT_SUCCESS(rc2))
                 {
-                    fIgnoreError = true;
+                    AssertPtr(pfnVerifyConsoleIoHandle);
+
+                    /* Is the handle a console handle? Then ignore ERROR_INVALID_HANDLE. */
+                    if (pfnVerifyConsoleIoHandle(hHandle))
+                        fIgnoreError = true;
                 }
+
+                if (hKernel32 != NIL_RTLDRMOD)
+                    RTLdrClose(hKernel32);
             }
 
             if (!fIgnoreError)
