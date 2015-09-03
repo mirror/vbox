@@ -329,12 +329,13 @@
 
         <listitem>
           <para>When Page Fusion (see <xref linkend="guestadd-pagefusion"/>)
-          is enabled, a malicious guest doing a side-channel attack could be
-          able to determine the address space layout of another guest running
-          on the same host. This would improve the chances of the malicious guest
-          to take advantage of other attack vectors he might have against the
-          target VM. To prevent potential malcious guest process from doing
-          such side-channel attacks, Page Fusion should be disabled.</para>
+          is enabled, it is possible that a side-channel opens up that allows
+          a malicious guest to determin the address space layout (i.e. where
+          DLLs are typically loaded) of one other VM running on the same host.
+          This information leak in it self is harmless, however the malicious
+          guest may use it to optimize attack against that VM via unrelated
+          attack vectors.  It is recommended to only enable Page Fusion if you
+          do not think this is a concern in your setup.</para>
         </listitem>
 
         <listitem>

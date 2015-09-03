@@ -1856,9 +1856,9 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       amount of fused memory for a given VM. Please refer to <xref
         linkend="metrics" /> for information on how to query metrics.</para>
 
-      <note><para>Enabling Page Fusion might improve the chances for malicious
-       guests to successfully attack other VMs running on the same host using
-       side-channel attacks, see <xref linkend="pot-insecure"/>.</para></note>
+      <note><para>Enabling Page Fusion might indirectly increase the chances
+      for malicious guests to successfully attack other VMs running on the
+      same host, see <xref linkend="pot-insecure"/>.</para></note>
     </sect2>
   </sect1>
 </chapter>
