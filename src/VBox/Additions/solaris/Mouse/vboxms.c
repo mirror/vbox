@@ -291,7 +291,8 @@ int _fini(void)
 
     LogRelFlow((DEVICE_NAME ":_fini\n"));
     rc = mod_remove(&g_vbmsSolModLinkage);
-    mutex_destroy(&g_OpenNodeState.InitMtx);
+    if (!rc)
+        mutex_destroy(&g_OpenNodeState.InitMtx);
 
     return rc;
 }

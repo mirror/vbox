@@ -155,7 +155,8 @@ int _fini(void)
     LogFlow((DEVICE_NAME ":_fini flow\n"));
     cmn_err(CE_NOTE, DEVICE_NAME ":_fini\n");
     int rc = mod_remove(&g_VBoxVideoSolarisModLinkage);
-    ddi_soft_state_fini(&g_pVBoxVideoSolarisState);
+    if (!rc)
+        ddi_soft_state_fini(&g_pVBoxVideoSolarisState);
     return rc;
 }
 
