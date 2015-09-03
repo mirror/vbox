@@ -64,6 +64,7 @@ class QSpinBox;
 class UIMediumEnumerator;
 class UIMedium;
 class UIIconPoolGeneral;
+class UIThreadPool;
 #ifdef Q_WS_X11
 class UIDesktopWidgetWatchdog;
 #endif /* Q_WS_X11 */
@@ -138,6 +139,9 @@ public:
 
     /** Returns the VBoxSVC availability value. */
     bool isVBoxSVCAvailable() const { return m_fVBoxSVCAvailable; }
+
+    /** Returns the thread-pool instance. */
+    UIThreadPool* threadPool() const { return m_pThreadPool; }
 
     /** @name Host-screen geometry stuff
       * @{ */
@@ -637,6 +641,8 @@ private:
 
     /** General icon-pool. */
     UIIconPoolGeneral *m_pIconPool;
+    /** Holds the thread-pool instance. */
+    UIThreadPool *m_pThreadPool;
 
     /* API: Instance stuff: */
     static bool m_sfCleanupInProgress;

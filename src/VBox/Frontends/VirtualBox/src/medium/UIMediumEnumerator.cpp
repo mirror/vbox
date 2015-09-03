@@ -68,9 +68,8 @@ void UITaskMediumEnumeration::run()
 }
 
 
-UIMediumEnumerator::UIMediumEnumerator(ulong uWorkerCount /* = 3*/, ulong uWorkerTimeout /* = 5000*/)
-    : m_pThreadPool(0)
-    , m_fMediumEnumerationInProgress(false)
+UIMediumEnumerator::UIMediumEnumerator()
+    : m_fMediumEnumerationInProgress(false)
 {
     /* Allow UIMedium to be used in inter-thread signals: */
     qRegisterMetaType<UIMedium>();
@@ -83,17 +82,12 @@ UIMediumEnumerator::UIMediumEnumerator(ulong uWorkerCount /* = 3*/, ulong uWorke
     connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QString, QString)), this, SLOT(sltHandleSnapshotDeleted(QString, QString)));
     connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)), this, SLOT(sltHandleMachineRegistration(QString, bool)));
 
-    /* Prepare thread-pool: */
-    m_pThreadPool = new UIThreadPool(uWorkerCount, uWorkerTimeout);
-    connect(m_pThreadPool, SIGNAL(sigTaskComplete(UITask*)), this, SLOT(sltHandleMediumEnumerationTaskComplete(UITask*)));
+    /* Listen for global thread-pool: */
+    connect(vboxGlobal().threadPool(), SIGNAL(sigTaskComplete(UITask*)), this, SLOT(sltHandleMediumEnumerationTaskComplete(UITask*)));
 }
 
 UIMediumEnumerator::~UIMediumEnumerator()
 {
-    /* Delete thread-pool: */
-    delete m_pThreadPool;
-    m_pThreadPool = 0;
-
     /* Delete all the tasks: */
     while (!m_tasks.isEmpty())
         delete m_tasks.takeFirst();
@@ -347,8 +341,8 @@ void UIMediumEnumerator::createMediumEnumerationTask(const UIMedium &medium)
     UITask *pTask = new UITaskMediumEnumeration(medium);
     /* Append to internal list: */
     m_tasks.append(pTask);
-    /* Post into thread-pool: */
-    m_pThreadPool->enqueueTask(pTask);
+    /* Post into global thread-pool: */
+    vboxGlobal().threadPool()->enqueueTask(pTask);
 }
 
 void UIMediumEnumerator::addNullMediumToMap(UIMediumMap &mediums)

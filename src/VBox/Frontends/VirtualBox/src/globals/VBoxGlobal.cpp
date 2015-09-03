@@ -58,6 +58,7 @@
 # include "QIMessageBox.h"
 # include "QIDialogButtonBox.h"
 # include "UIIconPool.h"
+# include "UIThreadPool.h"
 # include "UIShortcutPool.h"
 # include "UIExtraDataManager.h"
 # include "QIFileDialog.h"
@@ -254,6 +255,7 @@ VBoxGlobal::VBoxGlobal()
     , m3DAvailable(-1)
     , mSettingsPwSet(false)
     , m_pIconPool(0)
+    , m_pThreadPool(0)
 {
     /* Assign instance: */
     m_spInstance = this;
@@ -4057,6 +4059,9 @@ void VBoxGlobal::prepare()
     connect(gVBoxEvents, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             this, SLOT(sltHandleVBoxSVCAvailabilityChange(bool)));
 
+    /* Prepare thread-pool instance: */
+    m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
+
     /* create default non-null global settings */
     gset = VBoxGlobalSettings (false);
 
@@ -4451,6 +4456,9 @@ void VBoxGlobal::cleanup()
     /* Destroy whatever this converter stuff is: */
     UIConverter::cleanup();
 
+    /* Cleanup thread-pool: */
+    delete m_pThreadPool;
+    m_pThreadPool = 0;
     /* Cleanup general icon-pool: */
     delete m_pIconPool;
     m_pIconPool = 0;

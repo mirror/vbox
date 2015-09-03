@@ -50,8 +50,9 @@ signals:
 
 public:
 
-    /* Constructor/destructor: */
-    UIMediumEnumerator(ulong uWorkerCount = 3, ulong uWorkerTimeout = 5000);
+    /** Constructs medium-enumerator object. */
+    UIMediumEnumerator();
+    /** Destructs medium-enumerator object. */
     ~UIMediumEnumerator();
 
     /* API: Medium-access stuff: */
@@ -93,7 +94,6 @@ private:
     void recacheFromActualUsage(const CMediumMap &currentCMediums, const QStringList &currentCMediumIDs);
 
     /* Variables: */
-    UIThreadPool *m_pThreadPool;
     bool m_fMediumEnumerationInProgress;
     QList<UITask*> m_tasks;
     UIMediumMap m_mediums;
