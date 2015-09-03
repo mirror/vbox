@@ -90,6 +90,10 @@ static int tstVfsIoFromStandardHandle(RTTEST hTest, RTHANDLESTD enmHandle)
         RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Error creating VFS I/O stream for %s: %Rrc\n",
                      standardHandleToString(enmHandle), rc);
 
+
+    if (RT_FAILURE(rc))
+        RTTestFailed(hTest, "Testing %s failed: %Rrc\n", standardHandleToString(enmHandle), rc);
+
     return rc;
 }
 
