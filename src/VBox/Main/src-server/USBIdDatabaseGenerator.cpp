@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -22,39 +23,45 @@
 
 using namespace std;
 
-const char* header = "/*\n\
- * Copyright(C) 2005 - 2015 Oracle Corporation\n\
- *\n\
- * This file is part of VirtualBox Open Source Edition(OSE), as\n\
- * available from http ://www.virtualbox.org. This file is free software;\n\
- * you can redistribute it and / or modify it under the terms of the GNU\n\
- * General Public License(GPL) as published by the Free Software\n\
- * Foundation, in version 2 as it comes in the \"COPYING\" file of the\n\
- * VirtualBox OSE distribution.VirtualBox OSE is distributed in the\n\
- * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.\n\
- *\n\
- */\
- \n\
- \n\
- #include \"USBIdDatabase.h\"\n\
- \n\
- /** USB devices aliases array.\n\
- *   Format: VendorId, ProductId, Vendor Name, Product Name\n\
- *   The source of the list is http://www.linux-usb.org/usb.ids\n\
- */\n\
- Product AliasDictionary::productArray[] = { \n";
+const char *header =
+    "/*\n"
+    " * Copyright(C) 2015 Oracle Corporation\n"
+    " *\n"
+    " * This file is part of VirtualBox Open Source Edition(OSE), as\n"
+    " * available from http ://www.virtualbox.org. This file is free software;\n"
+    " * you can redistribute it and / or modify it under the terms of the GNU\n"
+    " * General Public License(GPL) as published by the Free Software\n"
+    " * Foundation, in version 2 as it comes in the \"COPYING\" file of the\n"
+    " * VirtualBox OSE distribution.VirtualBox OSE is distributed in the\n"
+    " * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.\n"
+    " */"
+    "\n"
+    "\n"
+    "#include \"USBIdDatabase.h\"\n"
+    "\n"
+    "/**\n"
+    " * USB devices aliases array.\n"
+    " * Format: VendorId, ProductId, Vendor Name, Product Name\n"
+    " * The source of the list is http://www.linux-usb.org/usb.ids\n"
+    " */\n"
+    "Product AliasDictionary::productArray[] =\n"
+    "{\n";
 
-const char* footer = "};\n\
- \n\
- const size_t AliasDictionary::products_size = sizeof(AliasDictionary::productArray) / sizeof(Product); \n";
+const char *footer =
+    "};\n"
+    "\n"
+    "const size_t AliasDictionary::products_size = sizeof(AliasDictionary::productArray) / sizeof(Product);\n";
 
-const char* vendor_header = "\nVendor AliasDictionary::vendorArray[] = { \n";
-const char* vendor_footer = "};\n\
-\n\
-const size_t AliasDictionary::vendors_size = sizeof(AliasDictionary::vendorArray) / sizeof(Vendor);";
+const char *vendor_header =
+    "\nVendor AliasDictionary::vendorArray[] =\n"
+    "{\n";
+const char *vendor_footer =
+    "};\n"
+    "\n"
+    "const size_t AliasDictionary::vendors_size = sizeof(AliasDictionary::vendorArray) / sizeof(Vendor);\n";
 
-const char* start_block = "# Vendors, devices and interfaces. Please keep sorted.";
-const char* end_block = "# List of known device classes, subclasses and protocols";
+const char *start_block = "# Vendors, devices and interfaces. Please keep sorted.";
+const char *end_block = "# List of known device classes, subclasses and protocols";
 
 #define USBKEY(vendorId, productId) (((vendorId) << 16) | (productId))
 
@@ -115,16 +122,16 @@ string conv(const string& src)
 
 ostream& operator <<(ostream& stream, const ProductRecord product)
 {
-    stream << "{USBKEY(0x" << hex << product.vendorID
-        << ", 0x" << product.productID << "), "
-        << "\"" << conv(product.product).c_str() << "\" }," << endl;
+    stream << "    { USBKEY(0x" << setfill('0') << setw(4) << hex << product.vendorID
+           <<            ", 0x" << setfill('0') << setw(4) << product.productID << "), "
+           << "\"" << conv(product.product).c_str() << "\" }," << endl;
     return stream;
 }
 
 ostream& operator <<(ostream& stream, const VendorRecord vendor)
 {
-    stream << "{0x" << hex << vendor.vendorID
-        << ", \"" << conv(vendor.vendor).c_str() << "\" }," << endl;
+    stream << "    { 0x" << setfill('0') << setw(4) << hex << vendor.vendorID
+           << ", \"" << conv(vendor.vendor).c_str() << "\" }," << endl;
     return stream;
 }
 
