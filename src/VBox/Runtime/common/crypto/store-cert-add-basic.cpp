@@ -280,7 +280,7 @@ RTDECL(int) RTCrStoreCertAddWantedFromStore(RTCRSTORE hStore, uint32_t fFlags, R
                 uint8_t abSha1[RTSHA1_HASH_SIZE];
                 RTSha1(pCertCtx->pabEncoded, pCertCtx->cbEncoded, abSha1);
                 uint8_t abSha512[RTSHA512_HASH_SIZE];
-                RTSha1(pCertCtx->pabEncoded, pCertCtx->cbEncoded, abSha512);
+                RTSha512(pCertCtx->pabEncoded, pCertCtx->cbEncoded, abSha512);
                 if (rtCrStoreIsCertWanted(paWanted, cWanted, pafFound, pCertCtx->cbEncoded, abSha1, abSha512, pCertCtx->pCert))
                 {
                     int rc2 = RTCrStoreCertAddEncoded(hStore,
@@ -372,7 +372,7 @@ RTDECL(int) RTCrStoreCertCheckWanted(RTCRSTORE hStore, PCRTCRCERTWANTED paWanted
                 uint8_t abSha1[RTSHA1_HASH_SIZE];
                 RTSha1(pCertCtx->pabEncoded, pCertCtx->cbEncoded, abSha1);
                 uint8_t abSha512[RTSHA512_HASH_SIZE];
-                RTSha1(pCertCtx->pabEncoded, pCertCtx->cbEncoded, abSha512);
+                RTSha512(pCertCtx->pabEncoded, pCertCtx->cbEncoded, abSha512);
                 if (rtCrStoreMarkCertFound(pafFound, paWanted, cWanted, pCertCtx->cbEncoded, abSha1, abSha512, pCertCtx->pCert))
                 {
                     rc = VINF_SUCCESS;
@@ -527,7 +527,7 @@ RTDECL(int) RTCrStoreCertAddWantedFromFile(RTCRSTORE hStore, uint32_t fFlags, co
                     uint8_t abSha1[RTSHA1_HASH_SIZE];
                     RTSha1(pCurSec->pbData, pCurSec->cbData, abSha1);
                     uint8_t abSha512[RTSHA512_HASH_SIZE];
-                    RTSha1(pCurSec->pbData, pCurSec->cbData, abSha512);
+                    RTSha512(pCurSec->pbData, pCurSec->cbData, abSha512);
                     if (!rtCrStoreIsCertWanted(paWanted, cWanted, pafFound, pCurSec->cbData, abSha1, abSha512, NULL))
                         continue;
 

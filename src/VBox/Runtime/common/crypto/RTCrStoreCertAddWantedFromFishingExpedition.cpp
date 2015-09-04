@@ -145,11 +145,11 @@ RTDECL(int) RTCrStoreCertAddWantedFromFishingExpedition(RTCRSTORE hStore, uint32
             PREFIX_UNIXROOT "/opt/*/jre/lib/security/cacerts",
 #endif
 #ifdef RT_OS_WINDOWS
-            "${BothProgramFiles}/Git/bin/curl-ca-bundle.crt",
-            "${BothProgramFiles}/Mercurial/hgrc.d/cacert.pem",
-            "${BothProgramFiles}/Java/jre*/lib/security/cacerts",
-            "${BothProgramFiles}/Java/jdk*/jre/lib/security/cacerts",
-            "${BothProgramFiles}/HexChat/cert.pem",
+            "${AllProgramFiles}/Git/bin/curl-ca-bundle.crt",
+            "${AllProgramFiles}/Mercurial/hgrc.d/cacert.pem",
+            "${AllProgramFiles}/Java/jre*/lib/security/cacerts",
+            "${AllProgramFiles}/Java/jdk*/jre/lib/security/cacerts",
+            "${AllProgramFiles}/HexChat/cert.pem",
             "${SystemDrive}/BitNami/*/git/bin/curl-ca-bundle.crt",
             "${SystemDrive}/BitNami/*/heroku/data/cacert.pem",
             "${SystemDrive}/BitNami/*/heroku/vendor/gems/excon*/data/cacert.pem",
@@ -186,10 +186,10 @@ RTDECL(int) RTCrStoreCertAddWantedFromFishingExpedition(RTCRSTORE hStore, uint32
             "/System/Library/Frameworks/Ruby.framework/Versions/2.0/usr/lib/ruby/2.0.0/rubygems/ssl_certs/"
 #endif
 #ifdef RT_OS_WINDOWS
-            "${BothProgramFiles}/Git/ssl/certs/",
-            "${BothProgramFiles}/Git/ssl/certs/expired/",
-            "${BothProgramFiles}/Common Files/Apple/Internet Services/security.resources/roots/",
-            "${BothProgramFiles}/Raptr/ca-certs/",
+            "${AllProgramFiles}/Git/ssl/certs/",
+            "${AllProgramFiles}/Git/ssl/certs/expired/",
+            "${AllProgramFiles}/Common Files/Apple/Internet Services/security.resources/roots/",
+            "${AllProgramFiles}/Raptr/ca-certs/",
             "${SystemDrive}/Bitname/*/git/ssl/certs/",
             "${SystemDrive}/Bitnami/*/git/ssl/certs/expired/",
 #endif
@@ -219,7 +219,7 @@ RTDECL(int) RTCrStoreCertAddWantedFromFishingExpedition(RTCRSTORE hStore, uint32
     if (RT_SUCCESS(rc))
     {
         size_t cFound = rtCrStoreCountFound(pafFound, cWanted);
-        Assert(cFound == cWanted || fAllFound);
+        Assert(cFound == cWanted || !fAllFound);
         if (cFound == cWanted)
             rc = VINF_SUCCESS;
         else if (cFound > 0)

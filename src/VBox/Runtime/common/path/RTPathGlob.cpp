@@ -48,6 +48,7 @@
 #elif defined(RT_OS_OS2)
 # define INCL_BASE
 # include <os2.h>
+# undef RT_MAX /* collision */
 
 #endif
 
@@ -509,6 +510,7 @@ static DECLCALLBACK(int) rtPathVarQuery_DosSystemDrive(uint32_t iItem, char *psz
                 pszBuf[0] = wcDrive;
                 pszBuf[1] = ':';
                 pszBuf[2] = '\0';
+                *pcchValue = 2;
                 return VINF_EOF;
             }
         }
@@ -522,6 +524,7 @@ static DECLCALLBACK(int) rtPathVarQuery_DosSystemDrive(uint32_t iItem, char *psz
             pszBuf[0] = (char)ulDrive + 'A';
             pszBuf[1] = ':';
             pszBuf[2] = '\0';
+            *pcchValue = 2;
             return VINF_EOF;
         }
 # endif
@@ -546,7 +549,7 @@ static DECLCALLBACK(int) rtPathVarQuery_WinSystemRoot(uint32_t iItem, char *pszB
         RTUTF16 wszSystemRoot[MAX_PATH];
         UINT cchSystemRoot = GetSystemWindowsDirectoryW(wszSystemRoot, MAX_PATH);
         if (cchSystemRoot > 0)
-            return RTUtf16ToUtf8Ex(wszSystemRoot, cchSystemRoot, &pszBuf, cbBuf, NULL);
+            return RTUtf16ToUtf8Ex(wszSystemRoot, cchSystemRoot, &pszBuf, cbBuf, pcchValue);
         return RTErrConvertFromWin32(GetLastError());
     }
     return VERR_EOF;
@@ -1028,7 +1031,7 @@ static int rtPathMatchCompile(const char *pchPattern, size_t cchPattern, bool fI
          */
         if (pAllocator->iNext >= pAllocator->cAllocated)
         {
-            uint32_t cNew = RT_MAX(pAllocator->cAllocated, 1) * 2;
+            uint32_t cNew = pAllocator->cAllocated ? pAllocator->cAllocated * 2 : 2;
             void *pvNew = RTMemRealloc(pAllocator->paInstructions, cNew * sizeof(pAllocator->paInstructions[0]));
             AssertReturn(pvNew, VERR_NO_MEMORY);
             pAllocator->paInstructions = (PRTPATHMATCHCORE)pvNew;
@@ -1057,7 +1060,6 @@ static int rtPathMatchCompile(const char *pchPattern, size_t cchPattern, bool fI
             /*
              * Zero or more characters wildcard.
              */
-            /** @todo bitmap optimziation (index = ch).   */
             if (ch == '*')
             {
                 /* Skip extra asterisks. */

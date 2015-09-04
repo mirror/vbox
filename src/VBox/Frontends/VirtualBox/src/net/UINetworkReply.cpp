@@ -106,6 +106,7 @@ private:
     static int applyRawHeaders(RTHTTP hHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
     static unsigned countCertsFound(bool const *pafFoundCerts);
     static bool areAllCertsFound(bool const *pafFoundCerts, bool fOnlyMandatory);
+    static int  adjustCertsFound(int rc, bool *pafFoundCerts);
     static void refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldStore, bool *pafFoundCerts, const char *pszCaCertFile);
     static void downloadMissingCertificates(RTCRSTORE hNewStore, bool *pafNewFoundCerts, RTHTTP hHttp,
                                             PRTERRINFOSTATIC pStaticErrInfo);
@@ -341,6 +342,7 @@ int UINetworkReplyPrivateThread::applyHttpsCertificates()
              * need to do wrt file age.
              */
             rc = RTCrStoreCertCheckWanted(hCurStore, s_aCerts, RT_ELEMENTS(s_aCerts), afCertsFound);
+            rc = adjustCertsFound(rc, afCertsFound);
             AssertRC(rc);
             RTTIMESPEC RefreshAge;
             uint32_t   cSecRefresh = rc == VINF_SUCCESS  ? 28 * RT_SEC_1DAY /* all found */ : 60 /* stuff missing */;
@@ -487,6 +489,41 @@ int UINetworkReplyPrivateThread::applyRawHeaders(RTHTTP hHttp, const QList<QByte
 }
 
 /**
+ * Adjusts the set of found certificates by marking all alternatives found if
+ * one is.
+ *
+ * @returns Adjusted rc (VINF_SUCCESS instead of VWRN_NOT_FOUND if all found).
+ * @param   rc                  The status code.
+ * @param   pafFoundCerts       Array parallel to s_aCerts with the status of
+ *                              each wanted certificate.
+ */
+/*static*/ int
+UINetworkReplyPrivateThread::adjustCertsFound(int rc, bool *pafFoundCerts)
+{
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
+        if (pafFoundCerts[i])
+        {
+            uint8_t iAlt = i;
+            for (;;)
+            {
+                const CERTINFO *pCertInfo = (const CERTINFO *)s_aCerts[iAlt].pvUser;
+                iAlt = pCertInfo->iAlternativeTo;
+                if (iAlt >= RT_ELEMENTS(s_aCerts) || iAlt == i)
+                {
+                    Assert(iAlt == UINT8_MAX || iAlt < RT_ELEMENTS(s_aCerts));
+                    break;
+                }
+                if (!pafFoundCerts[iAlt])
+                    pafFoundCerts[iAlt] = true;
+            }
+        }
+
+    if (rc == VINF_SUCCESS || rc == VWRN_NOT_FOUND)
+        rc = countCertsFound(pafFoundCerts) == RT_ELEMENTS(s_aCerts) ? VINF_SUCCESS : VWRN_NOT_FOUND;
+    return rc;
+}
+
+/**
  * Counts the number of certificates found in a search result array.
  *
  * @returns Number of wanted certifcates we've found.
@@ -558,6 +595,7 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
             RT_ZERO(afNewFoundCerts); /* paranoia */
 
             rc = RTCrStoreCertCheckWanted(hNewStore, s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts);
+            rc = adjustCertsFound(rc, afNewFoundCerts);
             AssertLogRelRC(rc);
             Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/));
             if (rc != VINF_SUCCESS)
@@ -565,6 +603,7 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
                 rc = RTCrStoreCertAddWantedFromStore(hNewStore,
                                                      RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
                                                      hOldStore, s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts);
+                rc = adjustCertsFound(rc, afNewFoundCerts);
                 AssertLogRelRC(rc);
                 Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/));
             }
@@ -580,6 +619,7 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
                                                                  | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
                                                                  s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts,
                                                                  RTErrInfoInitStatic(&StaticErrInfo));
+                rc = adjustCertsFound(rc, afNewFoundCerts);
                 if (RTErrInfoIsSet(&StaticErrInfo.Core))
                     LogRel(("refreshCertificates/#2: %s\n", StaticErrInfo.Core.pszMsg));
                 Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/));
@@ -651,7 +691,7 @@ UINetworkReplyPrivateThread::downloadMissingCertificates(RTCRSTORE hNewStore, bo
                                  * Successfully added. Mark it as found and return if we've got them all.
                                  */
                                 pafNewFoundCerts[i] = true;
-                                if (areAllCertsFound(pafNewFoundCerts, false /* fOnlyMandatory */))
+                                if (adjustCertsFound(VWRN_NOT_FOUND, pafNewFoundCerts) == VINF_SUCCESS)
                                 {
                                     RTHttpFreeResponse(pvRootsZip);
                                     return;
@@ -684,6 +724,7 @@ UINetworkReplyPrivateThread::downloadMissingCertificates(RTCRSTORE hNewStore, bo
                         if (RT_SUCCESS(rc))
                         {
                             pafNewFoundCerts[i] = true;
+                            adjustCertsFound(VWRN_NOT_FOUND, pafNewFoundCerts);
                             break;
                         }
                     }

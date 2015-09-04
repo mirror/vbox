@@ -558,6 +558,11 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl)
             case CURLE_COULDNT_RESOLVE_PROXY:
                 rc = VERR_HTTP_PROXY_NOT_FOUND;
                 break;
+            case CURLE_WRITE_ERROR:
+                rc = RT_FAILURE_NP(pThis->rcOutput) ? pThis->rcOutput : VERR_WRITE_ERROR;
+                break;
+            //case CURLE_READ_ERROR
+
             default:
                 break;
         }
@@ -671,7 +676,7 @@ static size_t rtHttpWriteData(void *pvBuf, size_t cbUnit, size_t cUnits, void *p
             memcpy(&pThis->Output.Mem.pb[cbCurSize], pvBuf, cbToAppend);
             pThis->Output.Mem.cb = cbNewSize;
             pThis->Output.Mem.pb[cbNewSize] = '\0';
-            return VINF_SUCCESS;
+            return cbToAppend;
         }
 
         /*
@@ -692,13 +697,13 @@ static size_t rtHttpWriteData(void *pvBuf, size_t cbUnit, size_t cUnits, void *p
             pThis->Output.Mem.cbAllocated = cbAlloc;
             pThis->Output.Mem.pb = pbNew;
             pThis->Output.Mem.cb = cbNewSize;
-            return VINF_SUCCESS;
+            return cbToAppend;
         }
 
         pThis->rcOutput = VERR_NO_MEMORY;
     }
     else
-        pThis->rcOutput      = VERR_TOO_MUCH_DATA;
+        pThis->rcOutput = VERR_TOO_MUCH_DATA;
 
     /*
      * Failure - abort.
@@ -742,7 +747,7 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, uint8_t **ppvRespons
      * Set the busy flag (paranoia).
      */
     bool fBusy = ASMAtomicXchgBool(&pThis->fBusy, true);
-    AssertReturn(fBusy, VERR_WRONG_ORDER);
+    AssertReturn(!fBusy, VERR_WRONG_ORDER);
 
     /*
      * Reset the state and apply settings.
@@ -845,7 +850,7 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
      * Set the busy flag (paranoia).
      */
     bool fBusy = ASMAtomicXchgBool(&pThis->fBusy, true);
-    AssertReturn(fBusy, VERR_WRONG_ORDER);
+    AssertReturn(!fBusy, VERR_WRONG_ORDER);
 
     /*
      * Reset the state and apply settings.
