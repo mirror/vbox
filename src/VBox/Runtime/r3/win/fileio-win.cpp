@@ -35,8 +35,10 @@
 #include <Windows.h>
 
 #include <iprt/file.h>
-#include <iprt/path.h>
+
+#include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
 #include <iprt/ldr.h>
@@ -830,62 +832,40 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
     BY_HANDLE_FILE_INFORMATION Data;
     if (!GetFileInformationByHandle(hHandle, &Data))
     {
+        /*
+         * Console I/O handles make trouble here.  On older windows versions they
+         * end up with ERROR_INVALID_HANDLE when handed to the above API, while on
+         * more recent ones they cause different errors to appear.
+         *
+         * Thus, we must ignore the latter and doubly verify invalid handle claims.
+         * We use the undocumented VerifyConsoleIoHandle to do this, falling back on
+         * GetFileType should it not be there.
+         */
         DWORD dwErr = GetLastError();
-        /* Only return if we *really* don't have a valid handle value,
-         * everything else is fine here ... */
         if (dwErr == ERROR_INVALID_HANDLE)
         {
-            /*
-             * On Windows 7 or earlier certain standard handles such as
-             * stdin, stdout and stderr were ring-3 pseudo handles which the
-             * kernel didn't know about.
-             *
-             * So simply ignore the ERROR_INVALID_HANDLE in that case to not
-             * break other parts which rely on this function.
-             */
-            OSVERSIONINFOEX OSInfoEx = { 0 };
-            OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-
-            bool fIgnoreError = false;
-
-            /* Windows 7 or  earlier? */
-            if (   GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
-                && (OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT)
-                && (OSInfoEx.dwMajorVersion <= 6)
-                && (OSInfoEx.dwMinorVersion <= 1))
+            static PFNVERIFYCONSOLEIOHANDLE s_pfnVerifyConsoleIoHandle = NULL;
+            static bool volatile            s_fInitialized = false;
+            PFNVERIFYCONSOLEIOHANDLE        pfnVerifyConsoleIoHandle;
+            if (fInitialized)
+                pfnVerifyConsoleIoHandle = s_pfnVerifyConsoleIoHandle;
+            else
             {
-                PFNVERIFYCONSOLEIOHANDLE pfnVerifyConsoleIoHandle = NULL;
-
-                /*
-                 * As the standard I/O handles could have been overwritten by SetStdHandle() we cannot assume
-                 * that GetStdHandle will actually return real console I/O handles.
-                 *
-                 * So try to dynamically load the undocumented VerifyConsoleIoHandle from kernel32.dll.
-                 * This function will check if the given handle actually is a console I/O handle, and if so,
-                 * we know that we have to ignore the ERROR_INVALID_HANDLE on Windows 7 or earlier.
-                 *
-                 */
-                RTLDRMOD hKernel32 = NIL_RTLDRMOD;
-                int rc2 = RTLdrLoadSystem("kernel32.dll", true /*fNoUnload*/, &hKernel32);
-                if (RT_SUCCESS(rc2))
-                    rc2 = RTLdrGetSymbol(hKernel32, "VerifyConsoleIoHandle", (void**)&pfnVerifyConsoleIoHandle);
-
-                if (RT_SUCCESS(rc2))
-                {
-                    AssertPtr(pfnVerifyConsoleIoHandle);
-
-                    /* Is the handle a console handle? Then ignore ERROR_INVALID_HANDLE. */
-                    if (pfnVerifyConsoleIoHandle(hHandle))
-                        fIgnoreError = true;
-                }
-
-                if (hKernel32 != NIL_RTLDRMOD)
-                    RTLdrClose(hKernel32);
+                int rc = RTLdrGetSystemSymbol(hKernel32, "VerifyConsoleIoHandle", (void **)&pfnVerifyConsoleIoHandle);
+                if (RT_SUCCESS(rc))
+                    s_pfnVerifyConsoleIoHandle = pfnVerifyConsoleIoHandle;
+                else
+                    pfnVerifyConsoleIoHandle = NULL;
+                ASMAtomicWriteBool(&s_fInitialized, true);
             }
-
-            if (!fIgnoreError)
-                return RTErrConvertFromWin32(dwErr);
+            if (   pfnVerifyConsoleIoHandle
+                ? !pfnVerifyConsoleIoHandle(hHandle)
+                : GetFileType(hHandle) == FILE_TYPE_UNKNOWN && GetLastError() != NO_ERROR)
+                return VERR_INVALID_HANDLE;
         }
+        else
+            return RTErrConvertFromWin32(dwErr);
+
         RT_ZERO(Data);
         Data.dwFileAttributes = RTFS_DOS_NT_DEVICE;
     }
