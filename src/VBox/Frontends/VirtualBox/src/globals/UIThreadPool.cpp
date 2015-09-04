@@ -33,26 +33,27 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/**
- * COM capable worker thread for the UIThreadPool.
- */
+/** QThread extension used as worker-thread.
+  * Capable of executing COM-related tasks. */
 class UIThreadWorker : public QThread
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifier: Worker stuff: */
+    /** Notifies listeners about @a pWorker finished. */
     void sigFinished(UIThreadWorker *pWorker);
 
 public:
 
-    /* Constructor: */
+    /** Constructs worker-thread for parent worker-thread @a pPool.
+      * @param iIndex defines worker-thread index within the worker-thread pool registry. */
     UIThreadWorker(UIThreadPool *pPool, int iIndex);
 
+    /** Returns worker-thread index within the worker-thread pool registry. */
     int getIndex() const { return m_iIndex; }
 
-    /** Disables sigFinished. For optimizing pool termination. */
+    /** Disables sigFinished signal, for optimizing worker-thread pool termination. */
     void setNoFinishedSignal()
     {
         m_fNoFinishedSignal = true;
@@ -60,15 +61,16 @@ public:
 
 private:
 
-    /* Helper: Worker stuff: */
+    /** Contains the worker-thread body. */
     void run();
 
-    /* Variables: General stuff: */
+    /** Holds the worker-thread pool reference. */
     UIThreadPool *m_pPool;
 
-    /** The index into UIThreadPool::m_workers. */
+    /** Holds the worker-thread index within the worker-thread pool registry. */
     int m_iIndex;
-    /** Indicates whether sigFinished should be emitted or not. */
+
+    /** Holds whether sigFinished signal should be emitted or not. */
     bool m_fNoFinishedSignal;
 };
 

@@ -51,7 +51,7 @@ public:
     /** Destructs worker-thread pool. */
     ~UIThreadPool();
 
-    /** Enqueues @a pTask into task-queue. */
+    /** Enqueues @a pTask into the task-queue. */
     void enqueueTask(UITask *pTask);
 
     /** Returns whether the 'termination sequence' is started. */
@@ -61,8 +61,8 @@ public:
 
 protected:
 
-    /** Returns dequeued top-most task from the task-queue using @a pWorker as a hint.
-      * @remarks Called by the worker-thread. */
+    /** Returns dequeued top-most task from the task-queue.
+      * @remarks Called by the @a pWorker passed as a hint. */
     UITask* dequeueTask(UIThreadWorker *pWorker);
 
 private slots:
@@ -83,7 +83,7 @@ private:
         /** Holds the vector of worker-threads. */
         QVector<UIThreadWorker*> m_workers;
         /** Holds the number of worker-threads.
-          * @remarks We cannot use the vector size since it may contain NULL pointers. */
+          * @remarks We cannot use the vector size since it may contain 0 pointers. */
         int m_cWorkers;
         /** Holds the number of idle worker-threads. */
         int m_cIdleWorkers;
@@ -113,8 +113,8 @@ private:
     friend class UIThreadWorker;
 };
 
-/** QObject extension used as worker-thread task.
-  * Describes task to be executed by the UIThreadPool object. */
+/** QObject extension used as worker-thread task interface.
+  * Describes task to be executed by the UIThreadWorker object. */
 class UITask : public QObject
 {
     Q_OBJECT;
@@ -127,7 +127,8 @@ signals:
 public:
 
     /** Constructs worker-thread task.
-      * @param data defines inter-thread task data to be processed by worker-thread. */
+      * @param data defines inter-thread task data to be processed
+      *             by worker-thread and returned back if necessary. */
     UITask(const QVariant &data);
 
     /** Returns the inter-thread task data. */
@@ -139,12 +140,13 @@ protected:
       * @remarks Called by the worker-thread. */
     void start();
 
-    /** Contains the abstract task body, to be reimplemented in sub-class. */
+    /** Contains the abstract task body.
+      * @remarks To be reimplemented in sub-class. */
     virtual void run() = 0;
 
 //private:
 
-    /** Holds the inter-thread task data to be processed by worker-thread. */
+    /** Holds the inter-thread task data. */
     QVariant m_data;
 
     /** Allows UIThreadWorker to start task. */
