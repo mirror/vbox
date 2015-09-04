@@ -140,7 +140,6 @@ PROGRAMS += \
 	tstRTCircBuf \
 	tstRTManifest \
 	tstRTUri \
-	tstRTVfs \
 	tstVector \
 	tstRTZip
 
@@ -149,6 +148,7 @@ PROGRAMS.win += \
 	tstRTLocalIpc \
 	tstRTProcWait \
 	tstFileAppendWin-1 \
+	tstRTVfs \
 	ntGetTimerResolution
 PROGRAMS.linux += \
 	tstRTProcWait \
