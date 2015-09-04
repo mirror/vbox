@@ -53,7 +53,7 @@ const char* vendor_footer = "};\n\
 \n\
 const size_t AliasDictionary::vendors_size = sizeof(AliasDictionary::vendorArray) / sizeof(Vendor);";
 
-const char* start_block = "#            interface  interface_name               <-- two tabs";
+const char* start_block = "# Vendors, devices and interfaces. Please keep sorted.";
 const char* end_block = "# List of known device classes, subclasses and protocols";
 
 #define USBKEY(vendorId, productId) (((vendorId) << 16) | (productId))
@@ -110,7 +110,7 @@ string conv(const string& src)
         case '\\': res.insert(i++, "\\");
         }
     }
-    return res;
+  return res;
 }
 
 ostream& operator <<(ostream& stream, const ProductRecord product)
