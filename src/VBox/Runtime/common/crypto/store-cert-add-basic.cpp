@@ -666,7 +666,7 @@ RTDECL(int) RTCrStoreCertAddFromDir(RTCRSTORE hStore, uint32_t fFlags, const cha
                     union
                     {
                         RTDIRENTRY  DirEntry;
-                        uint8_t     ab[RTPATH_MAX];
+                        uint8_t     abPadding[RTPATH_MAX + sizeof(RTDIRENTRY)];
                     } u;
                     size_t cbBuf = sizeof(u);
                     int rc2 = RTDirRead(hDir, &u.DirEntry, &cbBuf);
@@ -775,7 +775,7 @@ RTDECL(int) RTCrStoreCertAddWantedFromDir(RTCRSTORE hStore, uint32_t fFlags,
                     union
                     {
                         RTDIRENTRY  DirEntry;
-                        uint8_t     abPadding[RT_OFFSETOF(RTDIRENTRY, szName) + RTPATH_MAX];
+                        uint8_t     abPadding[RTPATH_MAX + sizeof(RTDIRENTRY)];
                     } u;
                     size_t cbEntry = sizeof(u);
                     int rc2 = RTDirRead(hDir, &u.DirEntry, &cbEntry);
