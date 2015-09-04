@@ -182,8 +182,8 @@ bool UIMessageCenter::errorWithQuestion(QWidget *pParent, MessageType type,
                                         const QString &strCancelButtonText /* = QString()*/) const
 {
     return (message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
-                    AlertButton_Ok | AlertButtonOption_Default,
-                    AlertButton_Cancel | AlertButtonOption_Escape,
+                    AlertButton_Ok,
+                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                     0 /* third button */,
                     strOkButtonText,
                     strCancelButtonText,
@@ -219,8 +219,8 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType type,
                                      const QString &strCancelButtonText /* = QString()*/) const
 {
     return (question(pParent, type, strMessage, pcszAutoConfirmId,
-                     AlertButton_Ok | AlertButtonOption_Default,
-                     AlertButton_Cancel | AlertButtonOption_Escape,
+                     AlertButton_Ok,
+                     AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                      0 /* third button */,
                      strOkButtonText,
                      strCancelButtonText,
@@ -669,16 +669,16 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
            message(0, MessageType_Question,
                    strText, QString(),
                    0 /* auto-confirm id */,
-                   AlertButton_Ok | AlertButtonOption_Default,
-                   AlertButton_Cancel | AlertButtonOption_Escape,
+                   AlertButton_Ok,
+                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                    0,
                    tr("Remove")) :
            message(0, MessageType_Question,
                    strText, QString(),
                    0 /* auto-confirm id */,
                    AlertButton_Choice1,
-                   AlertButton_Choice2 | AlertButtonOption_Default,
-                   AlertButton_Cancel | AlertButtonOption_Escape,
+                   AlertButton_Choice2,
+                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                    tr("Delete all files"),
                    tr("Remove only"));
 }
@@ -830,8 +830,8 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                                 .arg(strSnapshotName),
                              tr("Create a snapshot of the current machine state"),
                              !gEDataManager->messagesWithInvertedOption().contains("confirmSnapshotRestoring"),
-                             AlertButton_Ok | AlertButtonOption_Default,
-                             AlertButton_Cancel | AlertButtonOption_Escape,
+                             AlertButton_Ok,
+                             AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                              0 /* 3rd button */,
                              tr("Restore"), tr("Cancel"), QString() /* 3rd button text */) :
            message(0, MessageType_Question,
@@ -839,8 +839,8 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                       .arg(strSnapshotName),
                    QString() /* details */,
                    0 /* auto-confirm id */,
-                   AlertButton_Ok | AlertButtonOption_Default,
-                   AlertButton_Cancel | AlertButtonOption_Escape,
+                   AlertButton_Ok,
+                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                    0 /* 3rd button */,
                    tr("Restore"), tr("Cancel"), QString() /* 3rd button text */);
 }
