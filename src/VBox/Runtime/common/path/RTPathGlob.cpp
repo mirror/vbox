@@ -202,7 +202,7 @@ typedef struct RTPATHGLOB
         /** Directory entry buffer. */
         RTDIRENTRY      DirEntry;
         /** Padding the buffer to an unreasonably large size. */
-        uint8_t         abPadding[RTPATH_MAX + RT_OFFSETOF(RTDIRENTRY, szName)];
+        uint8_t         abPadding[RTPATH_MAX + sizeof(RTDIRENTRY)];
     } u;
 
 
@@ -442,28 +442,27 @@ static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_
     while (*pszPath != '\0')
     {
         char *pchSep = strchr(pszPath, chSep);
-        if (iItem > 0)
+
+        /* We ignore empty strings, which is probably not entirely correct,
+           but works better on DOS based system with many entries added
+           without checking whether there is a trailing separator or not.
+           Thus, the current directory is only searched if a '.' is present
+           in the PATH. */
+        if (pchSep == pszPath)
+            pszPath++;
+        else if (iItem > 0)
         {
             /* If we didn't find a separator, the item doesn't exists. Quit. */
             if (!pchSep)
                 break;
 
-            /* We ignore empty strings, which is probably not entirely correct,
-               but works better on DOS based system with many entries added
-               without checking whether there is a trailing separator or not.
-               Thus, the current directory is only searched if a '.' is present
-               in the PATH. */
-            if (pchSep != pszPath)
-            {
-                pszPath = pchSep;
-                iItem--;
-            }
-            pszPath++;
+            pszPath = pchSep + 1;
+            iItem--;
         }
         else
         {
             /* We've reached the item we wanted. */
-            size_t cchComp = pchSep ? pszPath - pchSep : strlen(pszPath);
+            size_t cchComp = pchSep ? pchSep - pszPath : strlen(pszPath);
             if (cchComp < cbBuf)
             {
                 if (pszBuf != pszPath)
@@ -473,6 +472,7 @@ static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_
             }
             else
                 rc = VERR_BUFFER_OVERFLOW;
+            *pcchValue = cchComp;
             break;
         }
     }
@@ -1071,12 +1071,12 @@ static int rtPathMatchCompile(const char *pchPattern, size_t cchPattern, bool fI
                 pInstr->cch = 1;
                 if (cchPattern == 0)
                 {
-                    pInstr->enmOpCode = iFirst + 1 == pAllocator->iNext
+                    pInstr->enmOpCode = iFirst + 1U == pAllocator->iNext
                                       ? RTPATHMATCHOP_RETURN_MATCH_EXCEPT_DOT_AND_DOTDOT : RTPATHMATCHOP_RETURN_MATCH;
                     break;
                 }
 
-                pInstr->enmOpCode = iFirst + 1 == pAllocator->iNext
+                pInstr->enmOpCode = iFirst + 1U == pAllocator->iNext
                                   ? RTPATHMATCHOP_ZERO_OR_MORE_EXCEPT_DOT_AND_DOTDOT : RTPATHMATCHOP_ZERO_OR_MORE;
                 pInstr->uOp2      = (uint16_t)offInput;
                 AssertReturn(cZeroOrMore < RT_ELEMENTS(aiZeroOrMore), VERR_OUT_OF_RANGE);
@@ -1224,7 +1224,7 @@ static int rtPathMatchCompile(const char *pchPattern, size_t cchPattern, bool fI
                         pInstr->cch       = (uint16_t)cchPattern;   /* ditto */
                         pchPattern += cchVarNm + 1;
                         cchPattern -= cchVarNm + 1;
-                        AssertMsgReturn(!g_aVariables[iVar].fFirstOnly || iFirst + 1 == pAllocator->iNext,
+                        AssertMsgReturn(!g_aVariables[iVar].fFirstOnly || iFirst + 1U == pAllocator->iNext,
                                         ("Glob variable '%s' should be first\n", g_aVariables[iVar].pszName),
                                         VERR_PATH_MATCH_VARIABLE_MUST_BE_FIRST);
                         /* cchInput unchanged, value can be empty. */
@@ -1244,7 +1244,7 @@ static int rtPathMatchCompile(const char *pchPattern, size_t cchPattern, bool fI
         uint32_t cchPlain = 1;
         while (cchPlain < cchPattern)
         {
-            char const ch = pchPattern[cchPlain];
+            ch = pchPattern[cchPlain];
             if (!ASMBitTest(s_bmMetaChars, (uint8_t)ch))
             { /* probable */ }
             else if (   ch == '?'
