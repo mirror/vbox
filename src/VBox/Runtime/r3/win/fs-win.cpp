@@ -337,6 +337,12 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
 }
 
 
+RTR3DECL(bool) RTFsIsCaseSensitive(const char *pszFsPath)
+{
+    return false;
+}
+
+
 /**
  * Internal helper for comparing a WCHAR string with a char string.
  *

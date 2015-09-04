@@ -600,7 +600,7 @@ RTDECL(int) RTPathCopyComponents(char *pszDst, size_t cbDst, const char *pszSrc,
  *
  * The first component is the root, volume or UNC specifier, if present.  Use
  * RTPATH_PROP_HAS_ROOT_SPEC() on RTPATHPARSED::fProps to determine its
- * precense.
+ * presence.
  *
  * Other than the root component, no component will include directory separators
  * (slashes).
@@ -1170,6 +1170,72 @@ RTDECL(int) RTPathAppDocs(char *pszPath, size_t cchPath);
  * @param   cchPath     Buffer size in bytes.
  */
 RTDECL(int) RTPathTemp(char *pszPath, size_t cchPath);
+
+
+/**
+ * RTPathGlobl result entry.
+ */
+typedef struct RTPATHGLOBENTRY
+{
+    /** List entry. */
+    struct RTPATHGLOBENTRY *pNext;
+    /** RTDIRENTRYTYPE value. */
+    uint8_t                 uType;
+    /** Unused explicit padding. */
+    uint8_t                 bUnused;
+    /** The length of the path. */
+    uint16_t                cchPath;
+    /** The path to the file (variable length). */
+    char                    szPath[1];
+} RTPATHGLOBENTRY;
+/** Pointer to a GLOB result entry. */
+typedef RTPATHGLOBENTRY *PRTPATHGLOBENTRY;
+/** Pointer to a const GLOB result entry. */
+typedef RTPATHGLOBENTRY const *PCRTPATHGLOBENTRY;
+/** Pointer to a GLOB result entry pointer. */
+typedef PCRTPATHGLOBENTRY *PPCRTPATHGLOBENTRY;
+
+/**
+ * Performs wildcard expansion on a path pattern.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pszPattern      The pattern to expand.
+ * @param   fFlags          RTPATHGLOB_F_XXX.
+ * @param   ppHead          Where to return the head of the result list.  This
+ *                          is always set to NULL on failure.
+ * @param   pcResults       Where to return the number of the result. Optional.
+ */
+RTDECL(int) RTPathGlob(const char *pszPattern, uint32_t fFlags, PPCRTPATHGLOBENTRY ppHead, uint32_t *pcResults);
+
+/** @name RTPATHGLOB_F_XXX - RTPathGlob flags
+ *  @{ */
+/** Case insensitive. */
+#define RTPATHGLOB_F_IGNORE_CASE        RT_BIT_32(0)
+/** Do not expand \${EnvOrSpecialVariable} in the pattern. */
+#define RTPATHGLOB_F_NO_VARIABLES       RT_BIT_32(1)
+/** Do not interpret a leading tilde as a home directory reference. */
+#define RTPATHGLOB_F_NO_TILDE           RT_BIT_32(2)
+/** Only return the first match. */
+#define RTPATHGLOB_F_FIRST_ONLY         RT_BIT_32(3)
+/** Only match directories (implied if pattern ends with slash). */
+#define RTPATHGLOB_F_ONLY_DIRS          RT_BIT_32(4)
+/** Do not match directories.  (Can't be used with RTPATHGLOB_F_ONLY_DIRS or
+ * patterns containing a trailing slash.) */
+#define RTPATHGLOB_F_NO_DIRS            RT_BIT_32(5)
+/** Disables the '**' wildcard pattern for matching zero or more subdirs. */
+#define RTPATHGLOB_F_NO_STARSTAR        RT_BIT_32(6)
+/** Mask of valid flags. */
+#define RTPATHGLOB_F_MASK               UINT32_C(0x0000007f)
+/** @} */
+
+/**
+ * Frees the results produced by RTPathGlob.
+ *
+ * @param   pHead           What RTPathGlob returned.  NULL ignored.
+ */
+RTDECL(void) RTPathGlobFree(PCRTPATHGLOBENTRY pHead);
+
 
 /**
  * Query information about a file system object.

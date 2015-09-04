@@ -145,7 +145,7 @@ RTDECL(int) RTCrStoreCreateSnapshotById(PRTCRSTORE phStore, RTCRSTOREID enmStore
         }
     }
     else
-        RTErrInfoSet(pErrInfo, rc, "RTCrStoreCreateInMem failed");
+        RTErrInfoAdd(pErrInfo, rc, "  RTCrStoreCreateInMem failed");
     return rc;
 }
 RT_EXPORT_SYMBOL(RTCrStoreCreateSnapshotById);

@@ -71,32 +71,6 @@ public:
     /** @} */
 
 private:
-    /** Info about wanted certificate. */
-    typedef struct CERTINFO
-    {
-        /** The certificate subject name. */
-        const char *pszSubject;
-        /** The size of the DER (ASN.1) encoded certificate. */
-        uint16_t    cbEncoded;
-        /** Gives the s_aCerts index this certificate is an alternative edition of,
-         * UINT8_MAX if no alternative.  This is a complication caused by VeriSign
-         * reissuing certificates signed with md2WithRSAEncryption using
-         * sha1WithRSAEncryption, since MD2 is comprimised.  (Public key unmodified.)
-         * It has no practical meaning for the trusted root anchor use we put it to.  */
-        uint8_t     iAlternativeTo;
-        /** Set if mandatory. */
-        bool        fMandatory;
-        /** The SHA-1 fingerprint (of the encoded data).   */
-        uint8_t     abSha1[RTSHA1_HASH_SIZE];
-        /** The SHA-512 fingerprint (of the encoded data).   */
-        uint8_t     abSha512[RTSHA512_HASH_SIZE];
-        /** Filename in the zip file we download (PEM). */
-        const char *pszZipFile;
-        /** List of direct URLs to PEM formatted files.. */
-        const char *apszUrls[4];
-    } CERTINFO;
-
-
     /** @name Helpers - HTTP stuff
      * @{ */
     int applyProxyRules();
@@ -108,19 +82,35 @@ private:
     /* Helper: Main thread runner: */
     void run();
 
+    /** Info about wanted certificate. */
+    typedef struct CERTINFO
+    {
+        /** Gives the s_aCerts index this certificate is an alternative edition of,
+         * UINT8_MAX if no alternative.  This is a complication caused by VeriSign
+         * reissuing certificates signed with md2WithRSAEncryption using
+         * sha1WithRSAEncryption, since MD2 is comprimised.  (Public key unmodified.)
+         * It has no practical meaning for the trusted root anchor use we put it to.  */
+        uint8_t     iAlternativeTo;
+        /** Set if mandatory. */
+        bool        fMandatory;
+        /** Filename in the zip file we download (PEM). */
+        const char *pszZipFile;
+        /** List of direct URLs to PEM formatted files.. */
+        const char *apszUrls[4];
+    } CERTINFO;
+
     /** @name Static helpers for HTTP and Certificates handling.
      * @{ */
     static QString fullCertificateFileName();
     static int applyProxyRules(RTHTTP hHttp, const QString &strHostName, int iPort);
     static int applyRawHeaders(RTHTTP hHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
-    static bool allCertsFound(uint64_t fFoundCerts, bool fOnlyMandatory);
-    static uint64_t certEntryFoundMask(uint32_t iCert);
-    static bool checkCertificatesInFile(const char *pszCaCertFile);
-    static bool checkCertificatesInStore(RTCRSTORE hStore, unsigned *pcCertificates = NULL);
-    static int downloadCertificates(RTHTTP hHttp, const char *pszCaCertFile);
+    static unsigned countCertsFound(bool const *pafFoundCerts);
+    static bool areAllCertsFound(bool const *pafFoundCerts, bool fOnlyMandatory);
+    static void refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldStore, bool *pafFoundCerts, const char *pszCaCertFile);
+    static void downloadMissingCertificates(RTCRSTORE hNewStore, bool *pafNewFoundCerts, RTHTTP hHttp,
+                                            PRTERRINFOSTATIC pStaticErrInfo);
     static int convertVerifyAndAddPemCertificateToStore(RTCRSTORE hStore, void const *pvResponse,
-                                                        size_t cbResponse, const CERTINFO *pCertInfo);
-    static int retrieveCertificatesFromSystem(const char *pszCaCertFile);
+                                                        size_t cbResponse, PCRTCRCERTWANTED pWantedCert);
     /** @} */
 
     /** Holds short descriptive context of thread's current operation. */
@@ -134,29 +124,70 @@ private:
     QByteArray m_reply;
 
     static const QString s_strCertificateFileName;
-    static const CERTINFO s_aCerts[3];
+    static const RTCRCERTWANTED s_aCerts[3];
+    static const CERTINFO s_CertInfoPcaCls3Gen1Md2;
+    static const CERTINFO s_CertInfoPcaCls3Gen1Sha1;
+    static const CERTINFO s_CertInfoPcaCls3Gen5;
+};
+
+/*static*/ const UINetworkReplyPrivateThread::CERTINFO UINetworkReplyPrivateThread::s_CertInfoPcaCls3Gen1Sha1 =
+{
+    /*.iAlternativeTo =*/   1,
+    /*.fMandatory     =*/   false,
+    /*.pszZipFile     =*/
+    "VeriSign Root Certificates/Generation 1 (G1) PCAs/Class 3 Public Primary Certification Authority.pem",
+    /*.apszUrls[3]    =*/
+    {
+        "http://www.symantec.com/content/en/us/enterprise/verisign/roots/Class-3-Public-Primary-Certification-Authority.pem",
+        "http://www.verisign.com/repository/roots/root-certificates/PCA-3.pem", /* dead */
+        NULL,
+        "http://update.virtualbox.org/cacerts-symantec-PCA-3-pem-has-gone-missing-again" /* attention getter */
+    }
+};
+
+/*static*/ const UINetworkReplyPrivateThread::CERTINFO UINetworkReplyPrivateThread::s_CertInfoPcaCls3Gen1Md2 =
+{
+    /*.iAlternativeTo =*/   0,
+    /*.fMandatory     =*/   false,
+    /*.pszZipFile     =*/   NULL,
+    /*.apszUrls[3]    =*/   { NULL, NULL, NULL },
+};
+
+/*static*/ const UINetworkReplyPrivateThread::CERTINFO UINetworkReplyPrivateThread::s_CertInfoPcaCls3Gen5 =
+{
+    /*.iAlternativeTo =*/   UINT8_MAX,
+    /*.fMandatory     =*/   true,
+    /*.pszZipFile     =*/
+    "VeriSign Root Certificates/Generation 5 (G5) PCA/VeriSign Class 3 Public Primary Certification Authority - G5.pem",
+    /*.apszUrls[3]    =*/
+    {
+        "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem",
+        "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class-3-Public-Primary-Certification-Authority-G5.pem", /* (in case they correct above typo) */
+        "http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem", /* dead */
+        "http://update.virtualbox.org/cacerts-symantec-PCA-3G5-pem-has-gone-missing-again" /* attention getter */
+    }
 };
 
 
 /**
  * Details on the certificates we are after.
+ * The pvUser member points to a UINetworkReplyPrivateThread::CERTINFO.
  */
-/* static */ const UINetworkReplyPrivateThread::CERTINFO UINetworkReplyPrivateThread::s_aCerts[3] =
+/* static */ const RTCRCERTWANTED UINetworkReplyPrivateThread::s_aCerts[3] =
 {
     /*[0] =*/   /* The reissued version with the SHA-1 signature. */
 /** @todo r=bird: Why do we need this certificate? Neither update.virtualbox.org nor www.virtualbox.org uses it...  ElCapitan doesn't ship this. */
     {
-        /*.pszSubject =*/
-        "C=US, O=VeriSign, Inc., OU=Class 3 Public Primary Certification Authority",
-        /*.cbEncoded      =*/   0x240,
-        /*.iAlternativeTo =*/   1,
-        /*.fMandatory     =*/   false,
-        /*.abSha1         =*/
+        /*.pszSubject        =*/    "C=US, O=VeriSign, Inc., OU=Class 3 Public Primary Certification Authority",
+        /*.cbEncoded         =*/    0x240,
+        /*.Sha1Fingerprint   =*/    true,
+        /*.Sha512Fingerprint =*/    true,
+        /*.abSha1            =*/
         {
             0xa1, 0xdb, 0x63, 0x93, 0x91, 0x6f, 0x17, 0xe4, 0x18, 0x55,
             0x09, 0x40, 0x04, 0x15, 0xc7, 0x02, 0x40, 0xb0, 0xae, 0x6b
         },
-        /*.abSha512       =*/
+        /*.abSha512          =*/
         {
             0xbb, 0xf7, 0x8a, 0x19, 0x9f, 0x37, 0xee, 0xa2,
             0xce, 0xc8, 0xaf, 0xe3, 0xd6, 0x22, 0x54, 0x20,
@@ -167,29 +198,20 @@ private:
             0x77, 0xa5, 0x40, 0x22, 0x18, 0x12, 0xcb, 0x3d,
             0x0a, 0x67, 0x83, 0x87, 0xc5, 0x45, 0xc4, 0x99
         },
-        /*.pszZipFile     =*/
-        "VeriSign Root Certificates/Generation 1 (G1) PCAs/Class 3 Public Primary Certification Authority.pem",
-        /*.apszUrls[3]    =*/
-        {
-            "http://www.symantec.com/content/en/us/enterprise/verisign/roots/Class-3-Public-Primary-Certification-Authority.pem",
-            "http://www.verisign.com/repository/roots/root-certificates/PCA-3.pem", /* dead */
-            NULL,
-            "http://update.virtualbox.org/cacerts-symantec-PCA-3-pem-has-gone-missing-again" /* attention getter */
-        },
+        /*.pvUser */ &UINetworkReplyPrivateThread::s_CertInfoPcaCls3Gen1Sha1
     },
     /*[1] =*/   /* The original version with the MD2 signature. */
     {
-        /*.pszSubject     =*/
-        "C=US, O=VeriSign, Inc., OU=Class 3 Public Primary Certification Authority",
-        /*.cbEncoded      =*/   0x240,
-        /*.iAlternativeTo =*/   0,
-        /*.fMandatory     =*/   false,
-        /*.abSha1         =*/
+        /*.pszSubject        =*/    "C=US, O=VeriSign, Inc., OU=Class 3 Public Primary Certification Authority",
+        /*.cbEncoded         =*/    0x240,
+        /*.Sha1Fingerprint   =*/    true,
+        /*.Sha512Fingerprint =*/    true,
+        /*.abSha1            =*/
         {
             0x74, 0x2c, 0x31, 0x92, 0xe6, 0x07, 0xe4, 0x24, 0xeb, 0x45,
             0x49, 0x54, 0x2b, 0xe1, 0xbb, 0xc5, 0x3e, 0x61, 0x74, 0xe2
         },
-        /*.abSha512       =*/
+        /*.abSha512          =*/
         {
             0x7c, 0x2f, 0x94, 0x22, 0x5f, 0x67, 0x98, 0x89,
             0xb9, 0xde, 0xd7, 0x41, 0xa0, 0x0d, 0xb1, 0x5c,
@@ -200,23 +222,22 @@ private:
             0xce, 0xef, 0xb2, 0x71, 0x8e, 0x91, 0x60, 0xa2,
             0xc8, 0x0c, 0x5a, 0xe7, 0x8b, 0x33, 0xf2, 0xaa
         },
-        /*.pszZipFile     =*/ NULL,
-        /*.apszUrls[3]    =*/ { NULL, NULL, NULL },
+        /*.pvUser */ &UINetworkReplyPrivateThread::s_CertInfoPcaCls3Gen1Md2
     },
     /*[2] =*/
     {
-        /*.pszSubject =*/
+        /*.pszSubject        =*/
         "C=US, O=VeriSign, Inc., OU=VeriSign Trust Network, OU=(c) 2006 VeriSign, Inc. - For authorized use only, "
         "CN=VeriSign Class 3 Public Primary Certification Authority - G5",
-        /*.cbEncoded      =*/   0x4d7,
-        /*.iAlternativeTo =*/   UINT8_MAX,
-        /*.fMandatory     =*/   true,
-        /*.abSha1         =*/
+        /*.cbEncoded         =*/    0x4d7,
+        /*.Sha1Fingerprint   =*/    true,
+        /*.Sha512Fingerprint =*/    true,
+        /*.abSha1            =*/
         {
             0x4e, 0xb6, 0xd5, 0x78, 0x49, 0x9b, 0x1c, 0xcf, 0x5f, 0x58,
             0x1e, 0xad, 0x56, 0xbe, 0x3d, 0x9b, 0x67, 0x44, 0xa5, 0xe5
         },
-        /*.abSha512   =*/
+        /*.abSha512          =*/
         {
             0xd4, 0xf8, 0x10, 0x54, 0x72, 0x77, 0x0a, 0x2d,
             0xe3, 0x17, 0xb3, 0xcf, 0xed, 0x61, 0xae, 0x5c,
@@ -227,15 +248,7 @@ private:
             0x44, 0xeb, 0x2c, 0x74, 0x25, 0x9e, 0x5d, 0xfb,
             0xd2, 0x6b, 0xa8, 0x9a, 0xf0, 0xb3, 0x6a, 0x01
         },
-        /*.pszZipFile     =*/
-        "VeriSign Root Certificates/Generation 5 (G5) PCA/VeriSign Class 3 Public Primary Certification Authority - G5.pem",
-        /*.apszUrls[3]    =*/
-        {
-            "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem",
-            "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class-3-Public-Primary-Certification-Authority-G5.pem", /* (in case they correct above typo) */
-            "http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem", /* dead */
-            "http://update.virtualbox.org/cacerts-symantec-PCA-3G5-pem-has-gone-missing-again" /* attention getter */
-        },
+        /*.pvUser */ &UINetworkReplyPrivateThread::s_CertInfoPcaCls3Gen5
     },
 };
 
@@ -287,26 +300,75 @@ int UINetworkReplyPrivateThread::applyHttpsCertificates()
     const char *pszCaCertFile = utf8FullCertificateFileName.constData();
 
     /*
-     * Check that the certificate file is recent and contains the necessary certificates.
+     * Check the state of our CA certificate file, it's one of the following:
+     *      - Missing, recreate from scratch (= refresh).
+     *      - Everything is there and it is less than 28 days old, do nothing.
+     *      - Everything is there but it's older than 28 days, refresh.
+     *      - Missing certificates and is older than 1 min, refresh.
+     *
+     * Start by creating a store for loading the current state into, as we'll
+     * be need that for the refresh.
      */
-    int rc;
-    if (checkCertificatesInFile(pszCaCertFile))
-        rc = RTHttpSetCAFile(m_hHttp, pszCaCertFile);
-    else
+    RTCRSTORE hCurStore = NIL_RTCRSTORE;
+    int rc = RTCrStoreCreateInMem(&hCurStore, 256);
+    if (RT_SUCCESS(rc))
     {
-        /*
-         * Need to create/update the CA certificate file.  Try see if the necessary
-         * certificates are to be found somewhere on the local system, then fall back
-         * to downloading them.
-         */
-        rc = retrieveCertificatesFromSystem(pszCaCertFile);
-        if (RT_FAILURE(rc))
-            rc = downloadCertificates(m_hHttp, pszCaCertFile);
+        bool fRefresh    = true;
+        bool afCertsFound[RT_ELEMENTS(s_aCerts)];
+        RT_ZERO(afCertsFound);
 
+        /*
+         * Load the file if it exists.
+         *
+         * To effect regular updates, we need the modification date of the file,
+         * so we use RTPathQueryInfoEx here and not RTFileExists.
+         */
+        RTFSOBJINFO Info;
+        int rc = RTPathQueryInfoEx(pszCaCertFile, &Info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+        if (   RT_SUCCESS(rc)
+            && RTFS_IS_FILE(Info.Attr.fMode))
+        {
+            RTERRINFOSTATIC StaticErrInfo;
+            rc = RTCrStoreCertAddFromFile(hCurStore, RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR, pszCaCertFile,
+                                          RTErrInfoInitStatic(&StaticErrInfo));
+            if (RTErrInfoIsSet(&StaticErrInfo.Core))
+                LogRel(("checkCertificates: %s\n", StaticErrInfo.Core.pszMsg));
+            else
+                AssertRC(rc);
+
+            /*
+             * Scan the store the for certificates we need, then see what we
+             * need to do wrt file age.
+             */
+            rc = RTCrStoreCertCheckWanted(hCurStore, s_aCerts, RT_ELEMENTS(s_aCerts), afCertsFound);
+            AssertRC(rc);
+            RTTIMESPEC RefreshAge;
+            uint32_t   cSecRefresh = rc == VINF_SUCCESS  ? 28 * RT_SEC_1DAY /* all found */ : 60 /* stuff missing */;
+            fRefresh = RTTimeSpecCompare(&Info.ModificationTime, RTTimeSpecSubSeconds(RTTimeNow(&RefreshAge), cSecRefresh)) <= 0;
+        }
+
+        /*
+         * Refresh the file if necessary.
+         */
+        if (fRefresh)
+            refreshCertificates(m_hHttp, hCurStore, afCertsFound, pszCaCertFile);
+
+        RTCrStoreRelease(hCurStore);
+
+        /*
+         * Final verdict.
+         */
+        if (areAllCertsFound(afCertsFound, true /*fOnlyMandatory*/))
+            rc = VINF_SUCCESS;
+        else
+            rc = VERR_NOT_FOUND; /** @todo r=bird: Why not try and let RTHttpGet* bitch if the necessary certs are missing? */
+
+        /*
+         * Set our custom CA file.
+         */
         if (RT_SUCCESS(rc))
             rc = RTHttpSetCAFile(m_hHttp, pszCaCertFile);
     }
-
     return rc;
 }
 
@@ -425,203 +487,135 @@ int UINetworkReplyPrivateThread::applyRawHeaders(RTHTTP hHttp, const QList<QByte
 }
 
 /**
- * Checks if the certificates we desire are all present in the given file, and
- * that the file is recent enough (not for downloaded certs).
+ * Counts the number of certificates found in a search result array.
  *
- * @returns true if fine, false if not.
- * @param   pszCaCertFile   The path to the certificate file.
+ * @returns Number of wanted certifcates we've found.
+ * @param   pafFoundCerts       Array parallel to s_aCerts with the status of
+ *                              each wanted certificate.
  */
-/*static*/ bool
-UINetworkReplyPrivateThread::checkCertificatesInFile(const char *pszCaCertFile)
+/*static*/ unsigned
+UINetworkReplyPrivateThread::countCertsFound(bool const *pafFoundCerts)
 {
-    bool fFoundCerts = false;
-
-    /*
-     * Check whether the file exists.
-     */
-    RTFSOBJINFO Info;
-    int rc = RTPathQueryInfoEx(pszCaCertFile, &Info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
-    if (   RT_SUCCESS(rc)
-        && RTFS_IS_FILE(Info.Attr.fMode))
-    {
-        /*
-         * Load the CA certificate file into a store and use
-         * checkCertificatesInStore to do the real work.
-         */
-        RTCRSTORE hStore;
-        int rc = RTCrStoreCreateInMem(&hStore, 256);
-        if (RT_SUCCESS(rc))
-        {
-            RTERRINFOSTATIC StaticErrInfo;
-            rc = RTCrStoreCertAddFromFile(hStore, RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR, pszCaCertFile,
-                                          RTErrInfoInitStatic(&StaticErrInfo));
-            if (RTErrInfoIsSet(&StaticErrInfo.Core))
-                LogRel(("checkCertificates: %s\n", StaticErrInfo.Core.pszMsg));
-            else
-                AssertRC(rc);
-
-            unsigned cCertificates = 0;
-            fFoundCerts = checkCertificatesInStore(hStore, &cCertificates);
-
-            RTCrStoreRelease(hStore);
-
-            /*
-             * If there are more than two certificates in the database, we're looking
-             * at a mirror of the system CA stores.  Refresh our snapshot once every 28 days.
-             */
-            RTTIMESPEC MaxAge;
-            if (   fFoundCerts
-                && cCertificates > 2
-                && RTTimeSpecCompare(&Info.ModificationTime, RTTimeSpecSubSeconds(RTTimeNow(&MaxAge), 28 *24*3600)) < 0)
-                fFoundCerts = false;
-        }
-    }
-
-    return fFoundCerts;
+    unsigned cFound = 0;
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
+        cFound += pafFoundCerts[i];
+    return cFound;
 }
 
 /**
  * Checks if we've found all the necessary certificates or not.
  *
  * @returns true if we have, false if we haven't.
- * @param   fFoundCerts         The mask of found certificates (see
- *                              certEntryFoundMask).
+ * @param   pafFoundCerts       Array parallel to s_aCerts with the status of
+ *                              each wanted certificate.
  * @param   fOnlyMandatory      Only require mandatory certificates to be
  *                              present.  If false, all certificates must be
  *                              found before we return true.
  */
 /*static*/ bool
-UINetworkReplyPrivateThread::allCertsFound(uint64_t fFoundCerts, bool fOnlyMandatory)
+UINetworkReplyPrivateThread::areAllCertsFound(bool const *pafFoundCerts, bool fOnlyMandatory)
 {
-    AssertCompile(RT_ELEMENTS(s_aCerts) < 64);
-
-    /* Add non-mandatory flags before comparing. */
-    if (   fOnlyMandatory
-        && fFoundCerts != RT_BIT_64(RT_ELEMENTS(s_aCerts)) - UINT64_C(1))
-        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
-            if (!s_aCerts[i].fMandatory)
-                fFoundCerts |= RT_BIT_64(i);
-
-    return fFoundCerts == RT_BIT_64(RT_ELEMENTS(s_aCerts)) - UINT64_C(1);
-}
-
-/**
- * Calculates the 64-bit 'found' mask for a certificate entry.
- *
- * @returns 64-bit mask.
- * @param   iCert               The certificate entry.
- */
-/*static*/ uint64_t
-UINetworkReplyPrivateThread::certEntryFoundMask(uint32_t iCert)
-{
-    Assert(iCert < RT_ELEMENTS(s_aCerts));
-    uint64_t fMask = RT_BIT_64(iCert);
-
-    /*
-     * Tedium: Also mark certificates that this is an alternative to, we only need
-     *         the public key once.
-     */
-    uint8_t iAlt = s_aCerts[iCert].iAlternativeTo;
-    if (iAlt != UINT8_MAX)
+    if (fOnlyMandatory)
     {
-        unsigned cMax = 10;
-        do
-        {
-            Assert(iAlt < RT_ELEMENTS(s_aCerts));
-            Assert(cMax > 1);
-            Assert(strcmp(s_aCerts[iAlt].pszSubject, s_aCerts[iCert].pszSubject) == 0);
-            fMask |= RT_BIT_64(iAlt);
-            iAlt = s_aCerts[iAlt].iAlternativeTo;
-        } while (iAlt != iCert && cMax-- > 0);
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
+            if (   !pafFoundCerts[i]
+                && ((const CERTINFO *)s_aCerts[i].pvUser)->fMandatory)
+                return false;
     }
-
-    return fMask;
+    else
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
+            if (!pafFoundCerts[i])
+                return false;
+    return true;
 }
 
-/**
- * Checks if the certificates we desire are all present in the given store.
- *
- * @returns true if present, false if not.
- * @param   hStore              The store to examine.
- * @param   pcCertificates      Where to return the number of certificates in
- *                              the store. Optional.
- */
-/* static */ bool
-UINetworkReplyPrivateThread::checkCertificatesInStore(RTCRSTORE hStore, unsigned *pcCertificates /* = NULL*/)
+/*static*/ void
+UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldStore, bool *pafOldFoundCerts,
+                                                 const char *pszCaCertFile)
 {
-    if (pcCertificates)
-        *pcCertificates = 0;
-
     /*
-     * Enumerate the store, checking for the certificates we need.
+     * Collect the standard assortment of SSL certificates.
      */
-    RTCRSTORECERTSEARCH Search;
-    int rc = RTCrStoreCertFindAll(hStore, &Search);
+    uint32_t  cHint = RTCrStoreCertCount(hOldStore);
+    RTCRSTORE hNewStore;
+    int rc = RTCrStoreCreateInMem(&hNewStore, cHint > 32 && cHint < _32K ? cHint + 16 : 256);
     if (RT_SUCCESS(rc))
     {
-        uint64_t      fFoundCerts   = 0;
-        unsigned      cCertificates = 0;
-        PCRTCRCERTCTX pCertCtx;
-        while ((pCertCtx = RTCrStoreCertSearchNext(hStore, &Search)) != NULL)
+        RTERRINFOSTATIC StaticErrInfo;
+        rc = RTHttpGatherCaCertsInStore(hNewStore, 0 /*fFlags*/, RTErrInfoInitStatic(&StaticErrInfo));
+        if (RTErrInfoIsSet(&StaticErrInfo.Core))
+            LogRel(("refreshCertificates/#1: %s\n", StaticErrInfo.Core.pszMsg));
+        else
+            AssertLogRelRC(rc);
+
+        if (RT_SUCCESS(rc))
         {
-            if (   (pCertCtx->fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_X509_DER
-                && pCertCtx->cbEncoded > 0
-                && pCertCtx->pCert)
+            /*
+             * Check and see what we've got.  If we haven't got all we desire,
+             * try add it from the previous store.
+             */
+            bool afNewFoundCerts[RT_ELEMENTS(s_aCerts)];
+            RT_ZERO(afNewFoundCerts); /* paranoia */
+
+            rc = RTCrStoreCertCheckWanted(hNewStore, s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts);
+            AssertLogRelRC(rc);
+            Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/));
+            if (rc != VINF_SUCCESS)
             {
-                cCertificates++;
-
-                /*
-                 * It is a X.509 certificate.  Check if it matches any of those we're looking for.
-                 */
-                for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
-                    if (   pCertCtx->cbEncoded == s_aCerts[i].cbEncoded
-                        && RTCrX509Name_MatchWithString(&pCertCtx->pCert->TbsCertificate.Subject, s_aCerts[i].pszSubject))
-                    {
-                        if (RTSha1Check(pCertCtx->pabEncoded, pCertCtx->cbEncoded, s_aCerts[i].abSha1))
-                        {
-                            if (RTSha512Check(pCertCtx->pabEncoded, pCertCtx->cbEncoded, s_aCerts[i].abSha512))
-                            {
-                                fFoundCerts |= certEntryFoundMask(i);
-                                break;
-                            }
-                        }
-                    }
+                rc = RTCrStoreCertAddWantedFromStore(hNewStore,
+                                                     RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
+                                                     hOldStore, s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts);
+                AssertLogRelRC(rc);
+                Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/));
             }
-            RTCrCertCtxRelease(pCertCtx);
+
+            /*
+             * If that didn't help, seek out certificates in more obscure places,
+             * like java, mozilla and mutt.
+             */
+            if (rc != VINF_SUCCESS)
+            {
+                rc = RTCrStoreCertAddWantedFromFishingExpedition(hNewStore,
+                                                                 RTCRCERTCTX_F_ADD_IF_NOT_FOUND
+                                                                 | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
+                                                                 s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts,
+                                                                 RTErrInfoInitStatic(&StaticErrInfo));
+                if (RTErrInfoIsSet(&StaticErrInfo.Core))
+                    LogRel(("refreshCertificates/#2: %s\n", StaticErrInfo.Core.pszMsg));
+                Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/));
+            }
+
+            /*
+             * If that didn't help, try download the certificates.
+             */
+            if (rc != VINF_SUCCESS)
+                downloadMissingCertificates(hNewStore, afNewFoundCerts, hHttp, &StaticErrInfo);
+
+            /*
+             * If we've got the same or better hit rate than the old store,
+             * replace the CA certs file.
+             */
+            if (   areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/)
+                || (   countCertsFound(afNewFoundCerts) >= countCertsFound(pafOldFoundCerts)
+                    &&    areAllCertsFound(afNewFoundCerts, true /*fOnlyMandatory*/)
+                       >= areAllCertsFound(pafOldFoundCerts, true /*fOnlyMandatory*/) ) )
+            {
+                rc = RTCrStoreCertExportAsPem(hNewStore, 0 /*fFlags*/, pszCaCertFile);
+                if (RT_SUCCESS(rc))
+                    memcpy(pafOldFoundCerts, afNewFoundCerts, sizeof(afNewFoundCerts));
+                else
+                    RT_ZERO(pafOldFoundCerts);
+            }
         }
-        int rc2 = RTCrStoreCertSearchDestroy(hStore, &Search); AssertRC(rc2);
-
-        /*
-         * Set the certificate count.
-         */
-        if (pcCertificates)
-            *pcCertificates = cCertificates;
-
-        /*
-         * Did we locate all of them?
-         */
-        if (allCertsFound(fFoundCerts, true /* fOnlyMandatory */)) /** @todo combine the two certificate retrieval approaches */
-            return true;
+        RTCrStoreRelease(hNewStore);
     }
-    AssertRC(rc);
-    return false;
 }
 
-/*static*/ int
-UINetworkReplyPrivateThread::downloadCertificates(RTHTTP hHttp, const char *pszCaCertFile)
+/*static*/ void
+UINetworkReplyPrivateThread::downloadMissingCertificates(RTCRSTORE hNewStore, bool *pafNewFoundCerts, RTHTTP hHttp,
+                                                         PRTERRINFOSTATIC pStaticErrInfo)
 {
-    /*
-     * Prepare temporary certificate store.
-     */
-    RTCRSTORE hStore;
-    int rc = RTCrStoreCreateInMem(&hStore, RT_ELEMENTS(s_aCerts));
-    AssertRCReturn(rc, rc);
-
-    /*
-     * Accounts for certificates we've downloaded, verified and added to the store.
-     */
-    uint64_t fFoundCerts = 0;
-    AssertCompile(RT_ELEMENTS(s_aCerts) < 64);
+    int rc;
 
     /*
      * Try get the roots.zip from symantec (or virtualbox.org) first.
@@ -639,59 +633,62 @@ UINetworkReplyPrivateThread::downloadCertificates(RTHTTP hHttp, const char *pszC
         if (RT_SUCCESS(rc))
         {
             for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
-                if (s_aCerts[i].pszZipFile)
+                if (!pafNewFoundCerts[i])
                 {
-                    void  *pvFile;
-                    size_t cbFile;
-                    rc = RTZipPkzipMemDecompress(&pvFile, &cbFile, pvRootsZip, cbRootsZip, s_aCerts[i].pszZipFile);
-                    if (RT_SUCCESS(rc))
+                    CERTINFO const *pInfo = (CERTINFO const *)s_aCerts[i].pvUser;
+                    if (pInfo->pszZipFile)
                     {
-                        rc = convertVerifyAndAddPemCertificateToStore(hStore, pvFile, cbFile, &s_aCerts[i]);
-                        RTMemFree(pvFile);
+                        void  *pvFile;
+                        size_t cbFile;
+                        rc = RTZipPkzipMemDecompress(&pvFile, &cbFile, pvRootsZip, cbRootsZip, pInfo->pszZipFile);
                         if (RT_SUCCESS(rc))
-                            fFoundCerts |= certEntryFoundMask(i);
+                        {
+                            rc = convertVerifyAndAddPemCertificateToStore(hNewStore, pvFile, cbFile, &s_aCerts[i]);
+                            RTMemFree(pvFile);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Successfully added. Mark it as found and return if we've got them all.
+                                 */
+                                pafNewFoundCerts[i] = true;
+                                if (areAllCertsFound(pafNewFoundCerts, false /* fOnlyMandatory */))
+                                {
+                                    RTHttpFreeResponse(pvRootsZip);
+                                    return;
+                                }
+                            }
+                        }
                     }
                 }
             RTHttpFreeResponse(pvRootsZip);
-            if (allCertsFound(fFoundCerts, false /* fOnlyMandatory */))
-                break;
         }
     }
 
     /*
-     * Fallback: Try download certificates separately.
+     * Try download certificates separately.
      */
-    if (allCertsFound(fFoundCerts, false /* fOnlyMandatory */))
-        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
-            if (!(fFoundCerts & RT_BIT_64(i)))
-                for (uint32_t iUrl = 0; iUrl < RT_ELEMENTS(s_aCerts[i].apszUrls); i++)
-                    if (s_aCerts[i].apszUrls[iUrl])
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
+        if (!pafNewFoundCerts[i])
+        {
+            CERTINFO const *pInfo = (CERTINFO const *)s_aCerts[i].pvUser;
+            for (uint32_t iUrl = 0; iUrl < RT_ELEMENTS(pInfo->apszUrls); i++)
+                if (pInfo->apszUrls[iUrl])
+                {
+                    void  *pvResponse;
+                    size_t cbResponse;
+                    rc = RTHttpGetBinary(hHttp, pInfo->apszUrls[iUrl], &pvResponse, &cbResponse);
+                    if (RT_SUCCESS(rc))
                     {
-                        void  *pvResponse;
-                        size_t cbResponse;
-                        rc = RTHttpGetBinary(hHttp, s_aCerts[i].apszUrls[iUrl], &pvResponse, &cbResponse);
+                        rc = convertVerifyAndAddPemCertificateToStore(hNewStore, pvResponse, cbResponse, &s_aCerts[i]);
+                        RTHttpFreeResponse(pvResponse);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = convertVerifyAndAddPemCertificateToStore(hStore, pvResponse, cbResponse, &s_aCerts[i]);
-                            RTHttpFreeResponse(pvResponse);
-                            if (RT_SUCCESS(rc))
-                            {
-                                fFoundCerts |= certEntryFoundMask(i);
-                                break;
-                            }
+                            pafNewFoundCerts[i] = true;
+                            break;
                         }
                     }
-
-    /*
-     * See if we've got the certificates we want, save it we do.
-     */
-    if (allCertsFound(fFoundCerts, true /*fOnlyMandatory*/))
-        rc = RTCrStoreCertExportAsPem(hStore, 0 /*fFlags*/, pszCaCertFile);
-    else if (RT_SUCCESS(rc))
-        rc = VERR_NOT_FOUND;
-
-    RTCrStoreRelease(hStore);
-    return rc;
+                }
+        }
 }
 
 /**
@@ -702,13 +699,13 @@ UINetworkReplyPrivateThread::downloadCertificates(RTHTTP hHttp, const char *pszC
  * @param   hStore              The store to add it to.
  * @param   pvResponse          The raw PEM certificate file bytes.
  * @param   cbResponse          The number of bytes.
- * @param   pCertInfo           The certificate info (we use hashes and encoded
+ * @param   pWantedCert         The certificate info (we use hashes and encoded
  *                              size).
  */
 /*static*/ int
 UINetworkReplyPrivateThread::convertVerifyAndAddPemCertificateToStore(RTCRSTORE hStore,
                                                                       void const *pvResponse, size_t cbResponse,
-                                                                      const CERTINFO *pCertInfo)
+                                                                      PCRTCRCERTWANTED pWantedCert)
 {
     /*
      * Convert the PEM certificate to its binary form so we can hash it.
@@ -729,10 +726,10 @@ UINetworkReplyPrivateThread::convertVerifyAndAddPemCertificateToStore(RTCRSTORE 
          */
         rc = VERR_NOT_FOUND;
         for (PCRTCRPEMSECTION pCur = pSectionHead; pCur; pCur = pCur->pNext)
-            if (pCur->cbData == pCertInfo->cbEncoded)
+            if (pCur->cbData == pWantedCert->cbEncoded)
             {
-                if (   RTSha1Check(pCur->pbData, pCur->cbData, pCertInfo->abSha1)
-                    && RTSha512Check(pCur->pbData, pCur->cbData, pCertInfo->abSha512))
+                if (   RTSha1Check(pCur->pbData, pCur->cbData, pWantedCert->abSha1)
+                    && RTSha512Check(pCur->pbData, pCur->cbData, pWantedCert->abSha512))
                 {
                     /*
                      * Matching, add it to the store.
@@ -753,63 +750,12 @@ UINetworkReplyPrivateThread::convertVerifyAndAddPemCertificateToStore(RTCRSTORE 
             }
             else
                 LogRel(("convertVerifyAndAddPemCertificateToStore: cbData=%#zx expected %#zx\n",
-                        pCur->cbData, pCertInfo->cbEncoded));
+                        pCur->cbData, pWantedCert->cbEncoded));
 
         RTCrPemFreeSections(pSectionHead);
     }
     return rc;
 }
-
-/**
- * Tries to retrieve an up to date list of certificates from the system that
- * includes the necessary certs.
- *
- * @returns IPRT status code, success indicating that we've found what we need.
- * @param   pszCaCertFile           Where to store the certificates.
- */
-/*static*/ int
-UINetworkReplyPrivateThread::retrieveCertificatesFromSystem(const char *pszCaCertFile)
-{
-    /*
-     * Duplicate the user and system stores.
-     */
-    RTERRINFOSTATIC StaticErrInfo;
-    RTCRSTORE hUserStore;
-    int rc = RTCrStoreCreateSnapshotById(&hUserStore, RTCRSTOREID_USER_TRUSTED_CAS_AND_CERTIFICATES,
-                                         RTErrInfoInitStatic(&StaticErrInfo));
-    if (RT_FAILURE(rc))
-        hUserStore = NIL_RTCRSTORE;
-    if (RTErrInfoIsSet(&StaticErrInfo.Core))
-        LogRel(("retrieveCertificatesFromSystem/#1: %s\n", StaticErrInfo.Core.pszMsg));
-
-    RTCRSTORE hSystemStore;
-    rc = RTCrStoreCreateSnapshotById(&hSystemStore, RTCRSTOREID_SYSTEM_TRUSTED_CAS_AND_CERTIFICATES,
-                                     RTErrInfoInitStatic(&StaticErrInfo));
-    if (RT_FAILURE(rc))
-        hUserStore = NIL_RTCRSTORE;
-    if (RTErrInfoIsSet(&StaticErrInfo.Core))
-        LogRel(("retrieveCertificatesFromSystem/#2: %s\n", StaticErrInfo.Core.pszMsg));
-
-    /*
-     * Merge the two.
-     */
-    int rc2 = RTCrStoreCertAddFromStore(hUserStore, RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
-                                        hSystemStore);
-    AssertRC(rc2);
-    RTCrStoreRelease(hSystemStore);
-    hSystemStore = NIL_RTCRSTORE;
-
-    /*
-     * See if we've got the certificates we want, save it we do.
-     */
-    if (checkCertificatesInStore(hUserStore))
-        rc = RTCrStoreCertExportAsPem(hUserStore, 0 /*fFlags*/, pszCaCertFile);
-    else
-        rc = VERR_NOT_FOUND;
-    RTCrStoreRelease(hUserStore);
-    return rc;
-}
-
 
 
 /**

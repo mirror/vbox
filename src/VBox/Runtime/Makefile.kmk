@@ -367,10 +367,9 @@ RuntimeR3_SOURCES       = \
 	common/crypto/tsp-sanity.cpp \
 	common/crypto/store.cpp \
 	common/crypto/store-inmem.cpp \
-	common/crypto/RTCrStoreCertAddFromFile.cpp \
-	common/crypto/RTCrStoreCertAddFromDir.cpp \
-	common/crypto/RTCrStoreCertAddFromStore.cpp \
+	common/crypto/store-cert-add-basic.cpp \
 	common/crypto/RTCrStoreCertAddFromJavaKeyStore.cpp \
+	common/crypto/RTCrStoreCertAddWantedFromFishingExpedition.cpp \
 	common/crypto/RTCrStoreCertExportAsPem.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
@@ -464,6 +463,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathEnsureTrailingSeparator.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
+	common/path/RTPathGlob.cpp \
 	common/path/RTPathHasExt.cpp \
 	common/path/RTPathHasPath.cpp \
 	common/path/RTPathJoin.cpp \

@@ -95,6 +95,7 @@ PROGRAMS += \
 	tstRTNetIPv6 \
 	tstOnce \
 	tstRTPath \
+	tstRTPathGlob \
 	tstRTPipe \
 	tstRTPoll \
 	tstRTPrfIO \
@@ -491,6 +492,9 @@ tstOnce_SOURCES = tstOnce.cpp
 
 tstRTPath_TEMPLATE = VBOXR3TSTEXE
 tstRTPath_SOURCES = tstRTPath.cpp
+
+tstRTPathGlob_TEMPLATE = VBOXR3TSTEXE
+tstRTPathGlob_SOURCES = tstRTPathGlob.cpp
 
 tstRTPipe_TEMPLATE = VBOXR3TSTEXE
 tstRTPipe_SOURCES = tstRTPipe.cpp

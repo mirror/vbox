@@ -28,6 +28,7 @@
 
 #include <iprt/crypto/x509.h>
 #include <iprt/crypto/taf.h>
+#include <iprt/sha.h>
 
 
 RT_C_DECLS_BEGIN
@@ -55,6 +56,38 @@ typedef struct RTCRSTORECERTSEARCH
 } RTCRSTORECERTSEARCH;
 /** Pointer to a certificate store search. */
 typedef RTCRSTORECERTSEARCH *PRTCRSTORECERTSEARCH;
+
+
+/**
+ * Info about a wanted certificate.
+ *
+ * All the search criteria are optional, but for a safe and efficient search
+ * it's recommended to specify all possible ones.  If none are given, the search
+ * function will fail.
+ *
+ * For use with RTCrStoreCertAddFromFishingExpedition and others.
+ */
+typedef struct RTCRCERTWANTED
+{
+    /** The certificate subject name, optional.
+     * The format is: "C=US, ST=California, L=Redwood Shores, O=Oracle Corporation" */
+    const char *pszSubject;
+    /** The size of the DER (ASN.1) encoded certificate, optional (0). */
+    uint16_t    cbEncoded;
+    /** Set if abSha1 contains a valid SHA-1 fingerprint. */
+    bool        fSha1Fingerprint;
+    /** Set if abSha512 contains a valid SHA-512 fingerprint. */
+    bool        fSha512Fingerprint;
+    /** The SHA-1 fingerprint (of the encoded data).   */
+    uint8_t     abSha1[RTSHA1_HASH_SIZE];
+    /** The SHA-512 fingerprint (of the encoded data).   */
+    uint8_t     abSha512[RTSHA512_HASH_SIZE];
+    /** User pointer for directly associating other data with the entry.
+     * Subclassing the structure isn't possible because it's passed as an array. */
+    void const *pvUser;
+} RTCRCERTWANTED;
+/** Pointer to a const certificat wanted structure. */
+typedef RTCRCERTWANTED const *PCRTCRCERTWANTED;
 
 
 /**
@@ -161,6 +194,10 @@ RTDECL(int) RTCrStoreCertAddEncoded(RTCRSTORE hStore, uint32_t fFlags, void cons
 RTDECL(int) RTCrStoreCertAddFromDir(RTCRSTORE hStore, uint32_t fFlags, const char *pszDir,
                                     PCRTSTRTUPLE paSuffixes, size_t cSuffixes, PRTERRINFO pErrInfo);
 
+RTDECL(int) RTCrStoreCertAddWantedFromDir(RTCRSTORE hStore, uint32_t fFlags,
+                                          const char *pszDir, PCRTSTRTUPLE paSuffixes, size_t cSuffixes,
+                                          PCRTCRCERTWANTED paWanted, size_t cWanted, bool *pafFound, PRTERRINFO pErrInfo);
+
 /**
  * Adds certificates from the specified file.
  *
@@ -181,6 +218,9 @@ RTDECL(int) RTCrStoreCertAddFromDir(RTCRSTORE hStore, uint32_t fFlags, const cha
  *                              Optional.
  */
 RTDECL(int) RTCrStoreCertAddFromFile(RTCRSTORE hStore, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo);
+
+RTDECL(int) RTCrStoreCertAddWantedFromFile(RTCRSTORE hStore, uint32_t fFlags, const char *pszFilename,
+                                           PCRTCRCERTWANTED paWanted, size_t cWanted, bool *pafFound, PRTERRINFO pErrInfo);
 
 /**
  * Adds certificates from the specified java key store file.
@@ -229,6 +269,16 @@ RTDECL(int) RTCrStoreCertAddFromJavaKeyStoreInMem(RTCRSTORE hStore, uint32_t fFl
  */
 RTDECL(int) RTCrStoreCertAddFromStore(RTCRSTORE hStore, uint32_t fFlags, RTCRSTORE hStoreSrc);
 
+RTDECL(int) RTCrStoreCertAddWantedFromStore(RTCRSTORE hStore, uint32_t fFlags, RTCRSTORE hSrcStore,
+                                            PCRTCRCERTWANTED paWanted, size_t cWanted, bool *pafFound);
+
+RTDECL(int) RTCrStoreCertCheckWanted(RTCRSTORE hStore, PCRTCRCERTWANTED paWanted, size_t cWanted, bool *pafFound);
+
+
+RTDECL(int) RTCrStoreCertAddWantedFromFishingExpedition(RTCRSTORE hStore, uint32_t fFlags,
+                                                        PCRTCRCERTWANTED paWanted, size_t cWanted,
+                                                        bool *pafFound, PRTERRINFO pErrInfo);
+
 /**
  * Exports the certificates in the store to a PEM file
  *
@@ -239,6 +289,14 @@ RTDECL(int) RTCrStoreCertAddFromStore(RTCRSTORE hStore, uint32_t fFlags, RTCRSTO
  *                              be truncated.
  */
 RTDECL(int) RTCrStoreCertExportAsPem(RTCRSTORE hStore, uint32_t fFlags, const char *pszFilename);
+
+/**
+ * Counts the number of certificates in the store.
+ *
+ * @returns Certificate count on success, UINT32_MAX on failure.
+ * @param   hStore              The store which certificates should be counted.
+ */
+RTDECL(uint32_t) RTCrStoreCertCount(RTCRSTORE hStore);
 
 RTDECL(int) RTCrStoreCertFindAll(RTCRSTORE hStore, PRTCRSTORECERTSEARCH pSearch);
 RTDECL(int) RTCrStoreCertFindBySubjectOrAltSubjectByRfc5280(RTCRSTORE hStore, PCRTCRX509NAME pSubject,

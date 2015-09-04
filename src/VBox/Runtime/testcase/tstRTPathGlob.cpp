@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Cryptographic (Certificate) Store, RTCrStoreCertAddFromStore.
+ * IPRT Testcase - Manual RTPathGlob test.
  */
 
 /*
@@ -28,45 +28,55 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "internal/iprt.h"
-#include <iprt/crypto/store.h>
+#include <iprt/path.h>
 
-#include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/string.h>
+#include <iprt/test.h>
 
 
-
-RTDECL(int) RTCrStoreCertAddFromStore(RTCRSTORE hStore, uint32_t fFlags, RTCRSTORE hStoreSrc)
+int main(int argc, char **argv)
 {
     /*
-     * Validate input.
+     * Init RT+Test.
      */
-    AssertReturn(!(fFlags & ~(RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR)), VERR_INVALID_FLAGS);
+    RTTEST hTest;
+    int rc = RTTestInitExAndCreate(argc, &argv, 0, "tstRTPathGlob", &hTest);
+    if (rc)
+        return rc;
+    RTTestBanner(hTest);
+
+    if (argc <= 1)
+        return RTTestSkipAndDestroy(hTest, "Requires arguments");
+
 
     /*
-     * Enumerate all the certificates in the source store, adding them to the destination.
+     * Manual glob testing.
      */
-    RTCRSTORECERTSEARCH Search;
-    int rc = RTCrStoreCertFindAll(hStoreSrc, &Search);
-    if (RT_SUCCESS(rc))
+    for (int i = 1; i < argc; i++)
     {
-        PCRTCRCERTCTX pCertCtx;
-        while ((pCertCtx = RTCrStoreCertSearchNext(hStoreSrc, &Search)) != NULL)
+        uint32_t            cResults = UINT32_MAX;
+        PCRTPATHGLOBENTRY   pHead = (PCRTPATHGLOBENTRY)&cResults;
+        rc = RTPathGlob(argv[i], 0, &pHead, &cResults);
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "#%u '%s' -> %Rrc cResult=%u\n", i, argv[i], rc, cResults);
+        if (RT_SUCCESS(rc))
         {
-            int rc2 = RTCrStoreCertAddEncoded(hStore, pCertCtx->fFlags | (fFlags & RTCRCERTCTX_F_ADD_IF_NOT_FOUND),
-                                              pCertCtx->pabEncoded, pCertCtx->cbEncoded, NULL);
-            if (RT_FAILURE(rc2))
+            uint32_t iEntry = 0;
+            for (PCRTPATHGLOBENTRY pCur = pHead; pCur; pCur = pCur->pNext, iEntry++)
             {
-                rc = rc2;
-                if (!(fFlags & RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR))
-                    break;
+                RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "  #%3u: '%s'\n", iEntry, pCur->szPath);
+                RTTEST_CHECK(hTest, strlen(pCur->szPath) == pCur->cchPath);
             }
-            RTCrCertCtxRelease(pCertCtx);
-        }
 
-        int rc2 = RTCrStoreCertSearchDestroy(hStoreSrc, &Search); AssertRC(rc2);
+            RTPathGlobFree(pHead);
+        }
     }
-    return rc;
+
+
+    /*
+     * Summary.
+     */
+    return RTTestSummaryAndDestroy(hTest);
 }
-RT_EXPORT_SYMBOL(RTCrStoreCertAddFromStore);
+
 

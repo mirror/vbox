@@ -67,7 +67,11 @@ RTR3DECL(int) RTFsQuerySerial(const char *pszFsPath, uint32_t *pu32Serial)
 RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProperties)
 {
     pProperties->cbMaxComponent = 255;
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+    pProperties->fCaseSensitive = false;
+#else
     pProperties->fCaseSensitive = true;
+#endif
     pProperties->fCompressed = false;
     pProperties->fFileCompression = false;
     pProperties->fReadOnly = false;
@@ -75,5 +79,15 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
     pProperties->fSupportsUnicode = true;
     LogFlow(("RTFsQueryProperties: success stub!\n"));
     return VINF_SUCCESS;
+}
+
+
+RTR3DECL(bool) RTFsIsCaseSensitive(const char *pszFsPath)
+{
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+    return false;
+#else
+    return true;
+#endif
 }
 

@@ -777,6 +777,20 @@ RTDECL(int) RTFileCreateTemp(char *pszTemplate, RTFMODE fMode);
  */
 RTDECL(int) RTFileCreateTempSecure(char *pszTemplate);
 
+/**
+ * Opens a new file with a unique name in the temp directory.
+ *
+ * @returns iprt status code.
+ * @param   pszTemplate     The file name template on input. The actual file
+ *                          name on success. Empty string on failure.
+ * @param   fMode           The mode to create the file with.  Use 0600 unless
+ *                          you have reason not to.
+ *
+ * @remarks If actual control over the filename or location is required, we'll
+ *          create an extended edition of this API.
+ */
+RTDECL(int) RTFileOpenTemp(PRTFILE pFile, char *pszFilename, size_t cbFilename, uint64_t fOpen);
+
 
 /** @page   pg_rt_filelock      RT File locking API description
  *

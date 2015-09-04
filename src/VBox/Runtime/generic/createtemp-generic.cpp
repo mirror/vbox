@@ -234,3 +234,49 @@ RTDECL(int) RTFileCreateTempSecure(char *pszTemplate)
     }
 }
 RT_EXPORT_SYMBOL(RTFileCreateTempSecure);
+
+
+RTDECL(int) RTFileOpenTemp(PRTFILE phFile, char *pszFilename, size_t cbFilename, uint64_t fOpen)
+{
+    AssertReturn((fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE, VERR_INVALID_FLAGS);
+    AssertReturn(fOpen & RTFILE_O_WRITE, VERR_INVALID_FLAGS);
+
+    /*
+     * Start by obtaining the path to the temporary directory.
+     */
+    int rc = RTPathTemp(pszFilename, cbFilename);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Add a filename pattern.
+         */
+        static char const s_szTemplate[] = "IPRT-XXXXXXXXXXXX.tmp";
+        rc = RTPathAppend(pszFilename, cbFilename, s_szTemplate);
+        if (RT_SUCCESS(rc))
+        {
+            char * const pszX = RTStrEnd(pszFilename, cbFilename) - (sizeof(s_szTemplate) - 1) + 5;
+            unsigned     cXes = sizeof(s_szTemplate) - 1 - 4 - 5;
+            Assert(pszX[0] == 'X'); Assert(pszX[-1] == '-'); Assert(pszX[cXes] == '.');
+
+            /*
+             * Try 10000 times with random names.
+             */
+            unsigned cTriesLeft = 10000;
+            while (cTriesLeft-- > 0)
+            {
+                rtCreateTempFillTemplate(pszX, cXes);
+                rc = RTFileOpen(phFile, pszFilename, fOpen);
+                if (RT_SUCCESS(rc))
+                    return rc;
+            }
+        }
+    }
+
+    if (cbFilename)
+        *pszFilename = '\0';
+    *phFile = NIL_RTFILE;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTFileOpenTemp);
+
+

@@ -287,6 +287,29 @@ RTDECL(int) RTCrStoreCertSearchDestroy(RTCRSTORE hStore, PRTCRSTORECERTSEARCH pS
 
 
 
+RTDECL(uint32_t) RTCrStoreCertCount(RTCRSTORE hStore)
+{
+    PRTCRSTOREINT pThis = (PRTCRSTOREINT)hStore;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->u32Magic == RTCRSTOREINT_MAGIC, UINT32_MAX);
+
+    RTCRSTORECERTSEARCH Search;
+    int rc = pThis->pProvider->pfnCertFindAll(pThis->pvProvider, &Search);
+    AssertRCReturn(rc, UINT32_MAX);
+
+
+    uint32_t cCerts = 0;
+    PCRTCRCERTCTX pCur;
+    while ((pCur = pThis->pProvider->pfnCertSearchNext(pThis->pvProvider, &Search)) != NULL)
+    {
+        RTCrCertCtxRelease(pCur);
+        cCerts++;
+    }
+
+    return cCerts;
+}
+
+
 #ifdef IPRT_WITH_OPENSSL
 /*
  * OpenSSL helper.

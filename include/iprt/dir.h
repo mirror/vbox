@@ -235,7 +235,7 @@ typedef enum RTDIRFILTER
  * Directory entry type.
  *
  * This is the RTFS_TYPE_MASK stuff shifted down 12 bits and
- * identical to the BSD/LINUX ABI.
+ * identical to the BSD/LINUX ABI.  See RTFS_TYPE_DIRENTRYTYPE_SHIFT.
  */
 typedef enum RTDIRENTRYTYPE
 {

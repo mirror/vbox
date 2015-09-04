@@ -225,6 +225,11 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
 }
 
 
+RTR3DECL(bool) RTFsIsCaseSensitive(const char *pszFsPath)
+{
+    return false;
+}
+
 
 RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
 {

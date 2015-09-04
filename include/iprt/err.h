@@ -2477,10 +2477,22 @@ RT_C_DECLS_END
 
 /** @name RTCrDigest status codes.
  * @{ */
-/** OpenSSL failed to initialize the digest algorithm contextn. */
+/** OpenSSL failed to initialize the digest algorithm context. */
 #define VERR_CR_DIGEST_OSSL_DIGEST_INIT_ERROR       (-24200)
 /** OpenSSL failed to clone the digest algorithm context. */
 #define VERR_CR_DIGEST_OSSL_DIGEST_CTX_COPY_ERROR   (-24201)
+/** @} */
+
+/** @name RTPath  status codes.
+ * @{ */
+/** Unknown glob variable.  */
+#define VERR_PATH_MATCH_UNKNOWN_VARIABLE            (-24400)
+/** The specified glob variable must be first in the pattern. */
+#define VERR_PATH_MATCH_VARIABLE_MUST_BE_FIRST      (-24401)
+/** Hit unimplemented glob pattern matching feature.  */
+#define VERR_PATH_MATCH_FEATURE_NOT_IMPLEMENTED     (-24402)
+/** Unknown character class in glob pattern.   */
+#define VERR_PATH_GLOB_UNKNOWN_CHAR_CLASS           (-24403)
 /** @} */
 
 /* SED-END */
