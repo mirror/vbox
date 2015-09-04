@@ -390,6 +390,7 @@ VOID vboxVDbgDoDumpRt(const char * pPrefix, PVBOXWDDMDISP_DEVICE pDevice, const 
     {
         IDirect3DSurface9 *pRt;
         PVBOXWDDMDISP_ALLOCATION pAlloc = pDevice->apRTs[i];
+        if (!pAlloc) continue;
         IDirect3DDevice9 *pDeviceIf = pDevice->pDevice9If;
         HRESULT hr = pDeviceIf->GetRenderTarget(i, &pRt);
         Assert(hr == S_OK);

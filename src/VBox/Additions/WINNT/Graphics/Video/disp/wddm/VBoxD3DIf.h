@@ -79,10 +79,9 @@ DECLINLINE(HRESULT) VBoxD3DIfSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, ID
         }
         case VBOXDISP_D3DIFTYPE_TEXTURE:
         {
-            Assert(pRc->cAllocations == 1); /* <- VBoxD3DIfSurfGet is typically used in Blt & ColorFill functions
-                                             * in this case, if texture is used as a destination,
-                                             * we should update sub-layers as well which is not done currently
-                                             * so for now check VBoxD3DIfSurfGet is used for one-level textures */
+            /* @todo VBoxD3DIfSurfGet is typically used in Blt & ColorFill functions
+             * in this case, if texture is used as a destination,
+             * we should update sub-layers as well which is not done currently. */
             IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pD3DIf;
             IDirect3DSurface9 *pSurfaceLevel;
             Assert(pD3DIfTex);

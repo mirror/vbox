@@ -685,6 +685,11 @@ static void vboxWddmDbgSynchMemCheck(PVBOXWDDMDISP_ALLOCATION pAlloc, D3DLOCKED_
 
 static VOID vboxWddmDbgRcSynchMemCheck(PVBOXWDDMDISP_RESOURCE pRc)
 {
+    if (!pRc)
+    {
+        return;
+    }
+
     if (pRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM)
     {
         return;
@@ -1377,6 +1382,7 @@ static HRESULT vboxWddmSwapchainSwtichRtPresent(PVBOXWDDMDISP_DEVICE pDevice, PV
     for (UINT i = 0; i < pDevice->cRTs; ++i)
     {
         PVBOXWDDMDISP_ALLOCATION pRtAlloc = pDevice->apRTs[i];
+        if (!pRtAlloc) continue;
         for (UINT j = 0; j < pSwapchain->cRTs; ++j)
         {
             PVBOXWDDMDISP_ALLOCATION pAlloc = pSwapchain->aRTs[j].pAlloc;
@@ -1893,38 +1899,57 @@ static void vboxWddmDbgRenderTargetCheck(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDM
 static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, PVBOXWDDMDISP_ALLOCATION pAlloc, BOOL bOnSwapchainSynch)
 {
     IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
-    PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainForAlloc(pAlloc);
     HRESULT hr = S_OK;
-    IDirect3DSurface9 *pD3D9Surf;
-    if (pSwapchain)
+    IDirect3DSurface9 *pD3D9Surf = NULL;
+    if (pAlloc)
     {
-        hr = vboxWddmSwapchainRtSurfGet(pDevice, pSwapchain, iRt, pAlloc, bOnSwapchainSynch, &pD3D9Surf);
-        if (FAILED(hr))
+        PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainForAlloc(pAlloc);
+        if (pSwapchain)
         {
-            WARN(("vboxWddmSwapchainRtSurfGet failed, hr(0x%x)",hr));
-            return hr;
+            hr = vboxWddmSwapchainRtSurfGet(pDevice, pSwapchain, iRt, pAlloc, bOnSwapchainSynch, &pD3D9Surf);
+            if (FAILED(hr))
+            {
+                WARN(("vboxWddmSwapchainRtSurfGet failed, hr(0x%x)",hr));
+                return hr;
+            }
         }
-    }
-    else
-    {
-        hr = VBoxD3DIfSurfGet(pAlloc->pRc, pAlloc->iAlloc, &pD3D9Surf);
-        if (FAILED(hr))
+        else
         {
-            WARN(("VBoxD3DIfSurfGet failed, hr(0x%x)",hr));
-            return hr;
+            hr = VBoxD3DIfSurfGet(pAlloc->pRc, pAlloc->iAlloc, &pD3D9Surf);
+            if (FAILED(hr))
+            {
+                WARN(("VBoxD3DIfSurfGet failed, hr(0x%x)",hr));
+                return hr;
+            }
         }
-    }
 
-    Assert(pD3D9Surf);
+        Assert(pD3D9Surf);
+    }
 
     hr = pDevice9If->SetRenderTarget(iRt, pD3D9Surf);
-    Assert(hr == S_OK);
     if (hr == S_OK)
     {
         Assert(iRt < pDevice->cRTs);
         pDevice->apRTs[iRt] = pAlloc;
     }
-    pD3D9Surf->Release();
+    else
+    {
+        /* @todo This is workaround for wine 1 render target. */
+        if (!pAlloc)
+        {
+            pDevice->apRTs[iRt] = NULL;
+            hr = S_OK;
+        }
+        else
+        {
+            AssertFailed();
+        }
+    }
+
+    if (pD3D9Surf)
+    {
+        pD3D9Surf->Release();
+    }
 
     return hr;
 }
@@ -5286,10 +5311,14 @@ static HRESULT APIENTRY vboxWddmDDevSetRenderTarget(HANDLE hDevice, CONST D3DDDI
 
     IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
     PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hRenderTarget;
-    VBOXVDBG_CHECK_SMSYNC(pRc);
-    Assert(pRc);
-    Assert(pData->SubResourceIndex < pRc->cAllocations);
-    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+    PVBOXWDDMDISP_ALLOCATION pAlloc = NULL;
+    if (pRc)
+    {
+        VBOXVDBG_CHECK_SMSYNC(pRc);
+        Assert(pRc);
+        Assert(pData->SubResourceIndex < pRc->cAllocations);
+        pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+    }
     HRESULT hr = vboxWddmRenderTargetSet(pDevice, pData->RenderTargetIndex, pAlloc, FALSE);
     Assert(hr == S_OK);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
