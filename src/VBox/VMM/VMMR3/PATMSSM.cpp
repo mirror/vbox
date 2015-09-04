@@ -822,6 +822,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
     int  rc;
 
     if (    uVersion != PATM_SAVED_STATE_VERSION
+        &&  uVersion != PATM_SAVED_STATE_VERSION_NO_RAW_MEM
         &&  uVersion != PATM_SAVED_STATE_VERSION_MEM
         &&  uVersion != PATM_SAVED_STATE_VERSION_FIXUP_HACK
         &&  uVersion != PATM_SAVED_STATE_VERSION_VER16
