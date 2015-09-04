@@ -60,11 +60,11 @@ private:
 void UITaskMediumEnumeration::run()
 {
     /* Get medium: */
-    UIMedium medium = m_data.value<UIMedium>();
+    UIMedium medium = data().value<UIMedium>();
     /* Enumerate it: */
     medium.blockAndQueryState();
     /* Put medium back: */
-    m_data = QVariant::fromValue(medium);
+    setData(QVariant::fromValue(medium));
 }
 
 

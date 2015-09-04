@@ -51,16 +51,13 @@ public:
     /** Destructs worker-thread pool. */
     ~UIThreadPool();
 
-    /** Enqueues @a pTask into the task-queue. */
-    void enqueueTask(UITask *pTask);
-
     /** Returns whether the 'termination sequence' is started. */
     bool isTerminating() const;
     /** Defines that the 'termination sequence' is started. */
     void setTerminating();
 
-protected:
-
+    /** Enqueues @a pTask into the task-queue. */
+    void enqueueTask(UITask *pTask);
     /** Returns dequeued top-most task from the task-queue.
       * @remarks Called by the @a pWorker passed as a hint. */
     UITask* dequeueTask(UIThreadWorker *pWorker);
@@ -108,9 +105,6 @@ private:
     /** Holds the guard mutex object protecting
       * all the inter-thread variables. */
     mutable QMutex m_everythingLocker;
-
-    /** Allows UIThreadWorker to dequeue tasks. */
-    friend class UIThreadWorker;
 };
 
 /** QObject extension used as worker-thread task interface.
@@ -132,25 +126,23 @@ public:
     UITask(const QVariant &data);
 
     /** Returns the inter-thread task data. */
-    const QVariant& data() const;
+    const QVariant& data() const { return m_data; }
+    /** Defines the inter-thread task @a data. */
+    void setData(const QVariant &data) { m_data = data; }
+
+    /** Starts the task. */
+    void start();
 
 protected:
-
-    /** Starts the task.
-      * @remarks Called by the worker-thread. */
-    void start();
 
     /** Contains the abstract task body.
       * @remarks To be reimplemented in sub-class. */
     virtual void run() = 0;
 
-//private:
+private:
 
     /** Holds the inter-thread task data. */
     QVariant m_data;
-
-    /** Allows UIThreadWorker to start task. */
-    friend class UIThreadWorker;
 };
 
 #endif /* !___UIThreadPool_h___ */

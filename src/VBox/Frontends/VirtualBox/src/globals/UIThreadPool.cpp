@@ -113,6 +113,37 @@ UIThreadPool::~UIThreadPool()
     m_everythingLocker.unlock();
 }
 
+bool UIThreadPool::isTerminating() const
+{
+    /* Acquire termination-flag: */
+    m_everythingLocker.lock();
+    bool fTerminating = m_fTerminating;
+    m_everythingLocker.unlock();
+
+    return fTerminating;
+}
+
+void UIThreadPool::setTerminating()
+{
+    m_everythingLocker.lock();
+
+    /* Indicate that we're terminating: */
+    m_fTerminating = true;
+
+    /* Tell all threads to NOT queue any termination signals: */
+    for (int idxWorker = 0; idxWorker < m_workers.size(); ++idxWorker)
+    {
+        UIThreadWorker *pWorker = m_workers[idxWorker];
+        if (pWorker)
+            pWorker->setNoFinishedSignal();
+    }
+
+    /* Wake up all idle worker threads: */
+    m_taskCondition.wakeAll();
+
+    m_everythingLocker.unlock();
+}
+
 void UIThreadPool::enqueueTask(UITask *pTask)
 {
     Assert(!isTerminating());
@@ -151,43 +182,6 @@ void UIThreadPool::enqueueTask(UITask *pTask)
             }
     }
     /* else: wait for some worker to complete whatever it's busy with and jump to it. */
-
-    m_everythingLocker.unlock();
-}
-
-/**
- * Checks if the thread pool is terminating.
- *
- * @returns @c true if terminating, @c false if not.
- * @note    Do NOT call this while owning the thread pool mutex!
- */
-bool UIThreadPool::isTerminating() const
-{
-    /* Acquire termination-flag: */
-    m_everythingLocker.lock();
-    bool fTerminating = m_fTerminating;
-    m_everythingLocker.unlock();
-
-    return fTerminating;
-}
-
-void UIThreadPool::setTerminating()
-{
-    m_everythingLocker.lock();
-
-    /* Indicate that we're terminating: */
-    m_fTerminating = true;
-
-    /* Tell all threads to NOT queue any termination signals: */
-    for (int idxWorker = 0; idxWorker < m_workers.size(); ++idxWorker)
-    {
-        UIThreadWorker *pWorker = m_workers[idxWorker];
-        if (pWorker)
-            pWorker->setNoFinishedSignal();
-    }
-
-    /* Wake up all idle worker threads: */
-    m_taskCondition.wakeAll();
 
     m_everythingLocker.unlock();
 }
@@ -260,11 +254,6 @@ void UIThreadPool::sltHandleWorkerFinished(UIThreadWorker *pWorker)
 UITask::UITask(const QVariant &data)
     : m_data(data)
 {
-}
-
-const QVariant& UITask::data() const
-{
-    return m_data;
 }
 
 void UITask::start()
