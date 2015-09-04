@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -256,7 +256,31 @@ void QIMessageBox::prepare()
             }
             /* Add button-box into main-layout: */
             pMainLayout->addWidget(m_pButtonBox);
+
+            /* Prepares focus. It is important to prepare focus after adding buttonbox to the layout as,
+             * parenting the buttonbox to the QDialog changes default button focus by Qt: */
+            prepareFocus();
         }
+    }
+}
+
+void QIMessageBox::prepareFocus()
+{
+    /* Configure default button and focus: */
+    if (m_pButton1 && (m_iButton1 & AlertButtonOption_Default))
+    {
+        m_pButton1->setDefault(true);
+        m_pButton1->setFocus();
+    }
+    if (m_pButton2 && (m_iButton2 & AlertButtonOption_Default))
+    {
+        m_pButton2->setDefault(true);
+        m_pButton2->setFocus();
+    }
+    if (m_pButton3 && (m_iButton3 & AlertButtonOption_Default))
+    {
+        m_pButton3->setDefault(true);
+        m_pButton3->setFocus();
     }
 }
 
@@ -284,12 +308,6 @@ QPushButton* QIMessageBox::createButton(int iButton)
     /* Create push-button: */
     QPushButton *pButton = m_pButtonBox->addButton(strText, role);
 
-    /* Configure <default> button: */
-    if (iButton & AlertButtonOption_Default)
-    {
-        pButton->setDefault(true);
-        pButton->setFocus();
-    }
     /* Configure <escape> button: */
     if (iButton & AlertButtonOption_Escape)
         m_iButtonEsc = iButton & AlertButtonMask;
