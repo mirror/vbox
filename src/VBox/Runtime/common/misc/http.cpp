@@ -433,7 +433,7 @@ RTR3DECL(int) RTHttpGatherCaCertsInStore(RTCRSTORE hStore, uint32_t fFlags, PRTE
     /*
      * Ditto for the system store.
      */
-    int rcSystem = RTCrStoreCreateSnapshotById(&hSrcStore, RTCRSTOREID_USER_TRUSTED_CAS_AND_CERTIFICATES, pErrInfo);
+    int rcSystem = RTCrStoreCreateSnapshotById(&hSrcStore, RTCRSTOREID_SYSTEM_TRUSTED_CAS_AND_CERTIFICATES, pErrInfo);
     if (RT_SUCCESS(rcSystem))
     {
         rcSystem = RTCrStoreCertAddFromStore(hStore, RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
@@ -456,7 +456,7 @@ RTR3DECL(int) RTHttpGatherCaCertsInStore(RTCRSTORE hStore, uint32_t fFlags, PRTE
     if (RT_FAILURE(rcSystem))
         return rcSystem;
     if (RT_FAILURE(rcUser))
-        return rcSystem;
+        return rcUser;
     return VERR_NOT_FOUND;
 }
 

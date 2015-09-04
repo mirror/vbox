@@ -582,10 +582,11 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
         rc = RTHttpGatherCaCertsInStore(hNewStore, 0 /*fFlags*/, RTErrInfoInitStatic(&StaticErrInfo));
         if (RTErrInfoIsSet(&StaticErrInfo.Core))
             LogRel(("refreshCertificates/#1: %s\n", StaticErrInfo.Core.pszMsg));
+        else if (rc == VERR_NOT_FOUND)
+            LogRel(("refreshCertificates/#1: No trusted SSL certs found on the system, will try download...\n"));
         else
             AssertLogRelRC(rc);
-
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(rc) || rc == VERR_NOT_FOUND)
         {
             /*
              * Check and see what we've got.  If we haven't got all we desire,
@@ -642,10 +643,20 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
             {
                 rc = RTCrStoreCertExportAsPem(hNewStore, 0 /*fFlags*/, pszCaCertFile);
                 if (RT_SUCCESS(rc))
+                {
                     memcpy(pafOldFoundCerts, afNewFoundCerts, sizeof(afNewFoundCerts));
+                    LogRel(("refreshCertificates/#3: Found %u/%u SSL certs we/you trust (previously %u/%u).\n",
+                            countCertsFound(afNewFoundCerts), RTCrStoreCertCount(hNewStore),
+                            countCertsFound(pafOldFoundCerts), RTCrStoreCertCount(hOldStore) ));
+                }
                 else
+                {
                     RT_ZERO(pafOldFoundCerts);
+                    LogRel(("refreshCertificates/#3: RTCrStoreCertExportAsPem unexpectedly failed with %Rrc\n", rc));
+                }
             }
+            else
+                LogRel(("refreshCertificates/#3: Sticking with the old file, missing essential certs.\n"));
         }
         RTCrStoreRelease(hNewStore);
     }
