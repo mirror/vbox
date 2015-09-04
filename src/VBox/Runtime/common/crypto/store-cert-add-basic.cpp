@@ -72,7 +72,7 @@ static RTCRPEMMARKERWORD const g_aWords_X509Certificate[] =
  *
  * @remark See crypto/pem/pem.h in OpenSSL for a matching list.
  */
-RTCRPEMMARKER const g_aX509CertificateMarkers[3] =
+static RTCRPEMMARKER const g_aX509CertificateMarkers[3] =
 {
     { g_aWords_Certificate,         RT_ELEMENTS(g_aWords_Certificate) },
     { g_aWords_TrustedCertificate,  RT_ELEMENTS(g_aWords_TrustedCertificate) },
