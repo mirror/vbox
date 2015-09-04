@@ -851,11 +851,7 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
                 pfnVerifyConsoleIoHandle = s_pfnVerifyConsoleIoHandle;
             else
             {
-                int rc = RTLdrGetSystemSymbol("kernel32.dll", "VerifyConsoleIoHandle", (void **)&pfnVerifyConsoleIoHandle);
-                if (RT_SUCCESS(rc))
-                    s_pfnVerifyConsoleIoHandle = pfnVerifyConsoleIoHandle;
-                else
-                    pfnVerifyConsoleIoHandle = NULL;
+                pfnVerifyConsoleIoHandle = (PFNVERIFYCONSOLEIOHANDLE)RTLdrGetSystemSymbol("kernel32.dll", "VerifyConsoleIoHandle");
                 ASMAtomicWriteBool(&s_fInitialized, true);
             }
             if (   pfnVerifyConsoleIoHandle
