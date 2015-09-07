@@ -60,9 +60,8 @@ static void tstVfsIoFromStandardHandle(RTTEST hTest, RTHANDLESTD enmHandle)
     int rc = RTVfsIoStrmFromStdHandle(enmHandle, 0, true /*fLeaveOpen*/, &hVfsIos);
     if (RT_SUCCESS(rc))
     {
-        bool fOutput = enmHandle == RTHANDLESTD_OUTPUT
-                    || enmHandle == RTHANDLESTD_ERROR;
-        if (fOutput)
+        if (   enmHandle == RTHANDLESTD_OUTPUT
+            || enmHandle == RTHANDLESTD_ERROR)
         {
             char szTmp[80];
             size_t cchTmp = RTStrPrintf(szTmp, sizeof(szTmp), "Test output to %s\n", StandardHandleToString(enmHandle));
@@ -71,10 +70,6 @@ static void tstVfsIoFromStandardHandle(RTTEST hTest, RTHANDLESTD enmHandle)
             RTTESTI_CHECK_RC(rc = RTVfsIoStrmWrite(hVfsIos, szTmp, cchTmp, true /*fBlocking*/, &cbWritten), VINF_SUCCESS);
             if (RT_SUCCESS(rc))
                 RTTESTI_CHECK(cbWritten == cchTmp);
-        }
-        else
-        {
-
         }
 
         uint32_t cRefs = RTVfsIoStrmRelease(hVfsIos);
@@ -97,7 +92,7 @@ int main(int argc, char **argv)
         return rc;
     RTTestBanner(hTest);
 
-    //tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_INPUT);
+    tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_INPUT);
     tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_OUTPUT);
     tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_ERROR);
 
