@@ -209,14 +209,26 @@ int main()
     CHECK(!ASMAtomicBitTestAndClear(&p->au32[0], 16)  && p->au32[0] == ~0x40010001U);
     CHECK(ASMAtomicBitTestAndClear(&p->au32[0], 80)   && p->au32[2] == ~0x00010001U);
 
-    /* range set */
+    /* set range */
     MAP_CLEAR(p);
     ASMBitSetRange(&p->au32[0], 0, 5);
     ASMBitSetRange(&p->au32[0], 6, 44);
     ASMBitSetRange(&p->au32[0], 64, 65);
-    CHECK(p->au32[0] == 0xFFFFFFDFU);
-    CHECK(p->au32[1] == 0x00000FFFU);
-    CHECK(p->au32[2] == 0x00000001U);
+    CHECK(p->au32[0] == UINT32_C(0xFFFFFFDF));
+    CHECK(p->au32[1] == UINT32_C(0x00000FFF));
+    CHECK(p->au32[2] == UINT32_C(0x00000001));
+
+    MAP_CLEAR(p);
+    volatile int iLow = 0;
+    volatile int iHigh = 5;
+    ASMBitSetRange(&p->au32[0], iLow, iHigh);
+    iLow = 6; iHigh = 44;
+    ASMBitSetRange(&p->au32[0], iLow, iHigh);
+    iLow = 64; iHigh = 65;
+    ASMBitSetRange(&p->au32[0], iLow, iHigh);
+    CHECK(p->au32[0] == UINT32_C(0xFFFFFFDF));
+    CHECK(p->au32[1] == UINT32_C(0x00000FFF));
+    CHECK(p->au32[2] == UINT32_C(0x00000001));
 
     /* toggle */
     MAP_SET(p);
