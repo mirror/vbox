@@ -859,7 +859,11 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
                 : GetFileType(hHandle) == FILE_TYPE_UNKNOWN && GetLastError() != NO_ERROR)
                 return VERR_INVALID_HANDLE;
         }
-        else
+        /*
+         * On Windows 10 and (hopefully) 8.1 we get ERROR_INVALID_FUNCTION with console I/O
+         * handles.  We must ignore these just like the above invalid handle error.
+         */
+        else if (dwErr != ERROR_INVALID_FUNCTION)
             return RTErrConvertFromWin32(dwErr);
 
         RT_ZERO(Data);
