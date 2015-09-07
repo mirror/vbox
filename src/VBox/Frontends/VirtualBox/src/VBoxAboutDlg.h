@@ -28,6 +28,7 @@
 /* Forward declarations: */
 class QEvent;
 class QLabel;
+class QVBoxLayout;
 
 /** QIDialog extension
   * used to show the About-VirtualBox dialog. */
@@ -60,6 +61,12 @@ private:
     /** Prepares main-layout. */
     void prepareMainLayout();
 
+    /** Prepares label. */
+    void prepareLabel();
+
+    /** Prepares close-button. */
+    void prepareCloseButton();
+
     /** Holds the About-VirtualBox text. */
     QString m_strAboutText;
 
@@ -74,6 +81,9 @@ private:
 
     /** Holds the instance of label we create for About-VirtualBox text. */
     QLabel *m_pLabel;
+
+    /** Holds the instance of main-layout we create. */
+    QVBoxLayout *m_pMainLayout;
 };
 
 #endif /* !___VBoxAboutDlg_h___ */

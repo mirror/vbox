@@ -21,9 +21,11 @@
 
 /* Qt includes: */
 # include <QDir>
+# include <QDialogButtonBox>
 # include <QEvent>
 # include <QLabel>
 # include <QPainter>
+# include <QPushButton>
 
 /* GUI includes: */
 # include "UIConverter.h"
@@ -117,29 +119,55 @@ void VBoxAboutDlg::prepare()
 void VBoxAboutDlg::prepareMainLayout()
 {
     /* Create main-layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    AssertPtrReturnVoid(pMainLayout);
+    m_pMainLayout = new QVBoxLayout(this);
+    AssertPtrReturnVoid(m_pMainLayout);
     {
-        /* Create label for version text: */
-        m_pLabel = new QLabel;
-        AssertPtrReturnVoid(m_pLabel);
-        {
-            /* Prepare label for version text: */
-            QPalette palette;
-            /* Branding: Set a different text color (because splash also could be white),
-             * otherwise use white as default color: */
-            const QString strColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
-            if (!strColor.isEmpty())
-                palette.setColor(QPalette::WindowText, QColor(strColor).name());
-            else
-                palette.setColor(QPalette::WindowText, Qt::black);
-            m_pLabel->setPalette(palette);
-            m_pLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-            m_pLabel->setFont(font());
+        /* Prepares label: */
+        prepareLabel();
 
-            /* Add label to the main-layout: */
-            pMainLayout->addWidget(m_pLabel);
-            pMainLayout->setAlignment(m_pLabel, Qt::AlignRight | Qt::AlignBottom);
+        /* Prepares close-button: */
+        prepareCloseButton();
+    }
+}
+
+void VBoxAboutDlg::prepareLabel()
+{
+    /* Create label for version text: */
+    m_pLabel = new QLabel;
+    AssertPtrReturnVoid(m_pLabel);
+    {
+        /* Prepare label for version text: */
+        QPalette palette;
+        /* Branding: Set a different text color (because splash also could be white),
+         * otherwise use white as default color: */
+        const QString strColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
+        if (!strColor.isEmpty())
+            palette.setColor(QPalette::WindowText, QColor(strColor).name());
+        else
+            palette.setColor(QPalette::WindowText, Qt::black);
+        m_pLabel->setPalette(palette);
+        m_pLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        m_pLabel->setFont(font());
+
+        /* Add label to the main-layout: */
+        m_pMainLayout->addWidget(m_pLabel);
+        m_pMainLayout->setAlignment(m_pLabel, Qt::AlignRight | Qt::AlignBottom);
+    }
+}
+
+void VBoxAboutDlg::prepareCloseButton()
+{
+    /* Create button-box: */
+    QDialogButtonBox *pButtonBox = new QDialogButtonBox;
+    AssertPtrReturnVoid(pButtonBox);
+    {
+        /* Prepare button-box with close-button: */
+        QPushButton *pCloseButton = pButtonBox->addButton(QDialogButtonBox::Close);
+        AssertPtrReturnVoid(pCloseButton);
+        {
+            connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
+            /* Add button-box to the main-layout: */
+            m_pMainLayout->addWidget(pButtonBox);
         }
     }
 }
