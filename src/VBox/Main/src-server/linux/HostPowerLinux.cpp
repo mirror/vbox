@@ -22,16 +22,20 @@
 #include <iprt/power.h>
 #include <iprt/time.h>
 
-static bool checkDBusError(DBusError *pError, DBusConnection *pConnection)
+static bool checkDBusError(DBusError *pError, DBusConnection **pConnection)
 {
     if (dbus_error_is_set(pError))
     {
         LogRel(("HostPowerServiceLinux: DBus connection Error (%s)\n", pError->message));
         dbus_error_free(pError);
-        /* Close the socket or whatever underlying the connection. */
-        dbus_connection_close(pConnection);
-        /* Free in-process resources used for the now-closed connection. */
-        dbus_connection_unref(pConnection);
+        if (*pConnection)
+        {
+            /* Close the socket or whatever underlying the connection. */
+            dbus_connection_close(*pConnection);
+            /* Free in-process resources used for the now-closed connection. */
+            dbus_connection_unref(*pConnection);
+            *pConnection = NULL;
+        }
         return true;
     }
     return false;
@@ -58,7 +62,7 @@ HostPowerServiceLinux::HostPowerServiceLinux(VirtualBox *aVirtualBox)
      * The session bus allows up to 100000 connections per user as it "is just
      * running as the user anyway" (see session.conf.in in the DBus sources). */
     mpConnection = dbus_bus_get_private(DBUS_BUS_SYSTEM, &error);
-    if (checkDBusError(&error, mpConnection))
+    if (checkDBusError(&error, &mpConnection))
         return;
     /* We do not want to exit(1) if the connection is broken. */
     dbus_connection_set_exit_on_disconnect(mpConnection, FALSE);
@@ -68,7 +72,7 @@ HostPowerServiceLinux::HostPowerServiceLinux(VirtualBox *aVirtualBox)
     /* The previous UPower interfaces (2010 - ca 2013). */
     dbus_bus_add_match(mpConnection, "type='signal',interface='org.freedesktop.UPower'", &error);
     dbus_connection_flush(mpConnection);
-    if (checkDBusError(&error, mpConnection))
+    if (checkDBusError(&error, &mpConnection))
         return;
     /* Create the new worker thread. */
     rc = RTThreadCreate(&mThread, HostPowerServiceLinux::powerChangeNotificationThread, this, 0 /* cbStack */,
