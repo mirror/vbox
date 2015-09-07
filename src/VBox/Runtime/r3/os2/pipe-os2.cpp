@@ -899,7 +899,7 @@ RTDECL(int) RTPipeQueryInfo(RTPIPE hPipe, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD 
             pObjInfo->cbObject = Avail.cbpipe;
     }
     else
-        pObjInfo->cbObject = rtPipeOs2GetSpace(pThis)
+        pObjInfo->cbObject = rtPipeOs2GetSpace(pThis);
     pObjInfo->cbAllocated = RTPIPE_OS2_SIZE; /** @todo this isn't necessarily true if we didn't create it... but, whatever */
 
     RTCritSectLeave(&pThis->CritSect);
