@@ -81,6 +81,43 @@ uint32_t    rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, 
  */
 uint32_t    rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents);
 
+
+/**
+ * Fakes basic query info data for RTPipeQueryInfo.
+ *
+ * @param   pObjInfo            The output structure.
+ * @param   enmAddAttr          The extra attribute.
+ * @param   fReadPipe           Set if read pipe, clear if write pipe.
+ */
+DECLINLINE(void) rtPipeFakeQueryInfo(PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr, bool fReadPipe)
+{
+    RT_ZERO(*pObjInfo);
+    if (fReadPipe)
+        pObjInfo->Attr.fMode     = RTFS_TYPE_FIFO | RTFS_UNIX_IRUSR | RTFS_DOS_READONLY;
+    else
+        pObjInfo->Attr.fMode     = RTFS_TYPE_FIFO | RTFS_UNIX_IWUSR;
+    pObjInfo->Attr.enmAdditional = enmAddAttr;
+    switch (enmAddAttr)
+    {
+        case RTFSOBJATTRADD_UNIX:
+            pObjInfo->Attr.u.Unix.cHardlinks = 1;
+            break;
+        case RTFSOBJATTRADD_UNIX_OWNER:
+            pObjInfo->Attr.u.UnixOwner.uid = NIL_RTUID;
+            break;
+        case RTFSOBJATTRADD_UNIX_GROUP:
+            pObjInfo->Attr.u.UnixGroup.gid = NIL_RTGID;
+            break;
+        case RTFSOBJATTRADD_EASIZE:
+            break;
+        case RTFSOBJATTRADD_32BIT_SIZE_HACK:
+            /* shut up gcc. */
+            break;
+        /* no default, want warnings. */
+    }
+}
+
+
 RT_C_DECLS_END
 
 #endif

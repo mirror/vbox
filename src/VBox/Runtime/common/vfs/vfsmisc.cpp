@@ -70,8 +70,7 @@ RTDECL(int)         RTVfsIoStrmFromStdHandle(RTHANDLESTD enmStdHandle, uint64_t 
                 break;
 
             case RTHANDLETYPE_PIPE:
-                /** @todo  */
-                rc = VERR_NOT_IMPLEMENTED;
+                rc = RTVfsIoStrmFromRTPipe(h.u.hPipe, fLeaveOpen, phVfsIos);
                 break;
 
             case RTHANDLETYPE_SOCKET:

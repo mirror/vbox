@@ -878,6 +878,35 @@ RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
 }
 
 
+RTDECL(int) RTPipeQueryInfo(RTPIPE hPipe, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, 0);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, 0);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, 0);
+
+    rtPipeFakeQueryInfo(pObjInfo, enmAddAttr, pThis->fRead);
+
+    if (pThis->fRead)
+    {
+        ULONG       cbActual = 0;
+        ULONG       ulState  = 0;
+        AVAILDATA   Avail    = { 0, 0 };
+        APIRET orc = DosPeekNPipe(pThis->hPipe, NULL, 0, &cbActual, &Avail, &ulState);
+        if (orc == NO_ERROR && (Avail.cbpipe > 0 || ulState == NP_STATE_CONNECTED))
+            pObjInfo->cbObject = Avail.cbpipe;
+    }
+    else
+        pObjInfo->cbObject = rtPipeOs2GetSpace(pThis)
+    pObjInfo->cbAllocated = RTPIPE_OS2_SIZE; /** @todo this isn't necessarily true if we didn't create it... but, whatever */
+
+    RTCritSectLeave(&pThis->CritSect);
+    return VINF_SUCCESS;
+}
+
+
 int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PRTHCINTPTR phNative)
 {
     RTPIPEINTERNAL *pThis = hPipe;

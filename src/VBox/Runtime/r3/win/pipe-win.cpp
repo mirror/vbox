@@ -148,7 +148,7 @@ extern "C" NTSYSAPI NTSTATUS WINAPI NtQueryInformationFile(HANDLE, PIO_STATUS_BL
  * @param   pThis               The pipe.
  * @param   pInfo               The info structure.
  */
-static bool rtPipeQueryInfo(RTPIPEINTERNAL *pThis, FILE_PIPE_LOCAL_INFORMATION *pInfo)
+static bool rtPipeQueryNtInfo(RTPIPEINTERNAL *pThis, FILE_PIPE_LOCAL_INFORMATION *pInfo)
 {
     IO_STATUS_BLOCK Ios;
     RT_ZERO(Ios);
@@ -458,7 +458,7 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
     AssertReturn(cInstances <= 1, VERR_INVALID_HANDLE);
 
     /*
-     * Looks kind of OK, create a handle so we can try rtPipeQueryInfo on it
+     * Looks kind of OK, create a handle so we can try rtPipeQueryNtInfo on it
      * and see if we need to duplicate it to make that call work.
      */
     RTPIPEINTERNAL *pThis = (RTPIPEINTERNAL *)RTMemAllocZ(sizeof(RTPIPEINTERNAL));
@@ -486,7 +486,7 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
 
             HANDLE  hNative2 = INVALID_HANDLE_VALUE;
             FILE_PIPE_LOCAL_INFORMATION Info;
-            if (rtPipeQueryInfo(pThis, &Info))
+            if (rtPipeQueryNtInfo(pThis, &Info))
                 rc = VINF_SUCCESS;
             else
             {
@@ -497,7 +497,7 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
                                     0 /*dwOptions*/))
                 {
                     pThis->hPipe = hNative2;
-                    if (rtPipeQueryInfo(pThis, &Info))
+                    if (rtPipeQueryNtInfo(pThis, &Info))
                         rc = VINF_SUCCESS;
                     else
                     {
@@ -537,6 +537,7 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
                     /*
                      * Ok, we're good!
                      */
+/** @todo This is bogus for standard handles! */
                     if (hNative2 != INVALID_HANDLE_VALUE)
                         CloseHandle(hNative);
                     *phPipe = pThis;
@@ -745,7 +746,7 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
                 FILE_PIPE_LOCAL_INFORMATION Info;
                 if (   !pThis->fPromisedWritable
                     && cbToWrite > 0
-                    && rtPipeQueryInfo(pThis, &Info))
+                    && rtPipeQueryNtInfo(pThis, &Info))
                 {
                     if (Info.NamedPipeState == FILE_PIPE_CLOSING_STATE)
                         rc = VERR_BROKEN_PIPE;
@@ -1050,7 +1051,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
             else
             {
                 FILE_PIPE_LOCAL_INFORMATION Info;
-                if (rtPipeQueryInfo(pThis, &Info))
+                if (rtPipeQueryNtInfo(pThis, &Info))
                 {
                     /* Check for broken pipe. */
                     if (Info.NamedPipeState == FILE_PIPE_CLOSING_STATE)
@@ -1171,6 +1172,29 @@ RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
 }
 
 
+RTDECL(int) RTPipeQueryInfo(RTPIPE hPipe, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, 0);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, 0);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, 0);
+
+    rtPipeFakeQueryInfo(pObjInfo, enmAddAttr, pThis->fRead);
+
+    FILE_PIPE_LOCAL_INFORMATION Info;
+    if (rtPipeQueryNtInfo(pThis, &Info))
+    {
+        pObjInfo->cbAllocated = pThis->fRead ? Info.InboundQuota : Info.OutboundQuota;
+        pObjInfo->cbObject    = pThis->fRead ? Info.ReadDataAvailable : Info.WriteQuotaAvailable;
+    }
+
+    RTCritSectLeave(&pThis->CritSect);
+    return VINF_SUCCESS;
+}
+
+
 int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PRTHCINTPTR phNative)
 {
     RTPIPEINTERNAL *pThis = hPipe;
@@ -1231,7 +1255,7 @@ static uint32_t rtPipePollCheck(RTPIPEINTERNAL *pThis, uint32_t fEvents)
             && !fRetEvents)
         {
             FILE_PIPE_LOCAL_INFORMATION Info;
-            if (rtPipeQueryInfo(pThis, &Info))
+            if (rtPipeQueryNtInfo(pThis, &Info))
             {
                 /* Check for broken pipe. */
                 if (Info.NamedPipeState == FILE_PIPE_CLOSING_STATE)

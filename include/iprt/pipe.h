@@ -28,6 +28,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/fs.h>
 
 RT_C_DECLS_BEGIN
 
@@ -217,6 +218,31 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies);
  *                          to be read.
  */
 RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable);
+
+/**
+ * Query information about a pipe (mainly a VFS I/O stream formality).
+ *
+ * The only thing we guarentee to be returned is RTFSOBJINFO::Attr.fMode being
+ * set to FIFO and will reflect the read/write end in the RTFS_DOS_READONLY,
+ * RTFS_UNIX_IRUSR and RTFS_UNIX_IWUSR bits.
+ *
+ * Some implementations sometimes provide the pipe buffer size via
+ * RTFSOBJINFO::cbAllocated.
+ *
+ * Some implementations sometimes provide the available read data or available
+ * write space via RTFSOBJINFO::cbObject.
+ *
+ * Some implementations sometimes provide valid device and/or inode numbers.
+ *
+ * @returns iprt status code.
+ *
+ * @param   hPipe       The IPRT read pipe handle.
+ * @param   pObjInfo    Object information structure to be filled on successful
+ *                      return.
+ * @param   enmAddAttr  Which set of additional attributes to request.  Use
+ *                      RTFSOBJATTRADD_NOTHING if this doesn't matter.
+ */
+RTDECL(int) RTPipeQueryInfo(RTPIPE hPipe, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
 
 /** @} */
 

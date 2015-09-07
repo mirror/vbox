@@ -439,7 +439,7 @@ RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size
  */
 
 /**
- * Create a VFS I/O stream handle from a standard IPRT file handle (RTFILE).
+ * Creates a VFS I/O stream handle from a standard IPRT file handle (RTFILE).
  *
  * @returns IPRT status code.
  * @param   hFile           The standard IPRT file handle.
@@ -450,6 +450,17 @@ RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size
  * @param   phVfsIos        Where to return the VFS I/O stream handle.
  */
 RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, PRTVFSIOSTREAM phVfsIos);
+
+/**
+ * Creates a VFS I/O stream handle from a standard IPRT pipe handle (RTPIPE).
+ *
+ * @returns IPRT status code.
+ * @param   hPipe           The standard IPRT pipe handle.
+ * @param   fLeaveOpen      Whether to leave the handle open when the VFS file
+ *                          is released, or to close it (@c false).
+ * @param   phVfsIos        Where to return the VFS I/O stream handle.
+ */
+RTDECL(int)         RTVfsIoStrmFromRTPipe(RTPIPE hPipe, bool fLeaveOpen, PRTVFSIOSTREAM phVfsIos);
 
 /**
  * Convenience function combining RTFileOpen with RTVfsIoStrmFromRTFile.
