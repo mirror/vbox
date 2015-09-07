@@ -111,6 +111,7 @@ DECLINLINE(void) rtPipeFakeQueryInfo(PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAd
         case RTFSOBJATTRADD_EASIZE:
             break;
         case RTFSOBJATTRADD_32BIT_SIZE_HACK:
+        case RTFSOBJATTRADD_NOTHING:
             /* shut up gcc. */
             break;
         /* no default, want warnings. */
