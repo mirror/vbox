@@ -4362,7 +4362,7 @@ DECLINLINE(void) ASMBitSetRange(volatile void *pvBitmap, int32_t iBitStart, int3
         int iStart = iBitStart & ~31;
         int iEnd   = iBitEnd & ~31;
         if (iStart == iEnd)
-            *pu32 |= ((1 << (iBitEnd - iBitStart)) - 1) << iBitStart;
+            *pu32 |= ((1 << (iBitEnd - iBitStart)) - 1) << (iBitStart & 31);
         else
         {
             /* bits in first dword. */
