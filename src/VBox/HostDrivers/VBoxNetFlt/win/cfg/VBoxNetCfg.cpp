@@ -56,6 +56,21 @@ static VOID DoLogging(LPCSTR szString, ...);
 #define VBOX_NETCFG_LOCK_TIME_OUT     5000  /** @todo r=bird: What does this do? */
 
 
+/*
+ * For some weird reason we do not want to use IPRT here, hence the following
+ * function provides a replacement for BstrFmt.
+ */
+static bstr_t bstr_printf(const char *cszFmt, ...)
+{
+    char szBuffer[4096];
+    szBuffer[sizeof(szBuffer) - 1] = 0; /* Make sure the string will be null-terminated */
+    va_list va;
+    va_start(va, cszFmt);
+    _vsnprintf(szBuffer, sizeof(szBuffer) - 1, cszFmt, va);
+    va_end(va);
+    return bstr_t(szBuffer);
+}
+
 static HRESULT vboxNetCfgWinINetCfgLock(IN INetCfg *pNetCfg,
                                         IN LPCWSTR pszwClientDescription,
                                         IN DWORD cmsTimeout,
@@ -2462,12 +2477,14 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameConnection (LPWSTR pGuid, PCWSTR 
     if (1) { \
         hrc = E_FAIL; \
         NonStandardLog strAndArgs; \
+        bstrError = bstr_printf strAndArgs; \
         break; \
     } else do {} while (0)
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const GUID *pGUID, OUT BSTR *pErrMsg)
 {
     HRESULT hrc = S_OK;
+    bstr_t bstrError;
 
     do
     {
@@ -2667,6 +2684,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
     }
     while (0);
 
+    if (pErrMsg && bstrError.length())
+        *pErrMsg = bstrError.Detach();
+
     return hrc;
 }
 
@@ -2690,6 +2710,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
     WCHAR pWCfgGuidString [50];
     WCHAR DevName[256];
     HKEY hkey = (HKEY)INVALID_HANDLE_VALUE;
+    bstr_t bstrError;
 
     do
     {
@@ -3119,6 +3140,10 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
         else
             NonStandardLogFlow(("VBoxNetCfgWinQueryINetCfg failed, hr 0x%x\n", hr));
     }
+
+    if (pErrMsg && bstrError.length())
+        *pErrMsg = bstrError.Detach();
+
     return hrc;
 }
 
