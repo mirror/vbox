@@ -39,7 +39,7 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 
-static const char *standardHandleToString(RTHANDLESTD enmHandle)
+static const char *StandardHandleToString(RTHANDLESTD enmHandle)
 {
     switch (enmHandle)
     {
@@ -52,50 +52,39 @@ static const char *standardHandleToString(RTHANDLESTD enmHandle)
     return "unknown";
 }
 
-static int tstVfsIoFromStandardHandle(RTTEST hTest, RTHANDLESTD enmHandle)
+static void tstVfsIoFromStandardHandle(RTTEST hTest, RTHANDLESTD enmHandle)
 {
-    RTTestPrintf(hTest, RTTESTLVL_SUB_TEST, "Testing: %s\n", standardHandleToString(enmHandle));
+    RTTestSubF(hTest, "RTVfsIoStrmFromStdHandle(%s)", StandardHandleToString(enmHandle));
 
-    RTVFSIOSTREAM hVfs = NIL_RTVFSIOSTREAM;
-    int rc = RTVfsIoStrmFromStdHandle(enmHandle, 0, true /*fLeaveOpen*/, &hVfs);
+    RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
+    int rc = RTVfsIoStrmFromStdHandle(enmHandle, 0, true /*fLeaveOpen*/, &hVfsIos);
     if (RT_SUCCESS(rc))
     {
-        bool fOutput =    enmHandle == RTHANDLESTD_OUTPUT
-                       || enmHandle == RTHANDLESTD_ERROR;
+        bool fOutput = enmHandle == RTHANDLESTD_OUTPUT
+                    || enmHandle == RTHANDLESTD_ERROR;
         if (fOutput)
         {
-            RTTestPrintf(hTest, RTTESTLVL_SUB_TEST, "Output for %s:\n", standardHandleToString(enmHandle));
-
-            char *pszBufWritten;
-            int cchBuf = RTStrAPrintf(&pszBufWritten, "Testing %s\n", standardHandleToString(enmHandle));
-            Assert(cchBuf);
-            AssertPtr(pszBufWritten);
+            char szTmp[80];
+            size_t cchTmp = RTStrPrintf(szTmp, sizeof(szTmp), "Test output to %s\n", StandardHandleToString(enmHandle));
 
             size_t cbWritten;
-            rc = RTVfsIoStrmWrite(hVfs, pszBufWritten, strlen(pszBufWritten), true /*fBlocking*/, &cbWritten);
+            RTTESTI_CHECK_RC(rc = RTVfsIoStrmWrite(hVfsIos, szTmp, cchTmp, true /*fBlocking*/, &cbWritten), VINF_SUCCESS);
             if (RT_SUCCESS(rc))
-            {
-                rc = cbWritten == strlen(pszBufWritten) ? VINF_SUCCESS : VERR_NOT_EQUAL;
-                /** @todo Compare written + read output. */
-            }
-
-            RTStrFree(pszBufWritten);
+                RTTESTI_CHECK(cbWritten == cchTmp);
         }
         else
         {
 
         }
+
+        uint32_t cRefs = RTVfsIoStrmRelease(hVfsIos);
+        RTTESTI_CHECK_MSG(cRefs == 0, ("cRefs=%#x\n", cRefs));
     }
     else
-        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Error creating VFS I/O stream for %s: %Rrc\n",
-                     standardHandleToString(enmHandle), rc);
-
-
-    if (RT_FAILURE(rc))
-        RTTestFailed(hTest, "Testing %s failed: %Rrc\n", standardHandleToString(enmHandle), rc);
-
-    return rc;
+        RTTestFailed(hTest, "Error creating VFS I/O stream for %s: %Rrc\n", StandardHandleToString(enmHandle), rc);
 }
+
+
 
 int main(int argc, char **argv)
 {
@@ -108,18 +97,9 @@ int main(int argc, char **argv)
         return rc;
     RTTestBanner(hTest);
 
-    do
-    {
-        rc = tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_INPUT);
-        RTTESTI_CHECK_BREAK(rc == VINF_SUCCESS);
-
-        rc = tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_OUTPUT);
-        RTTESTI_CHECK_BREAK(rc == VINF_SUCCESS);
-
-        rc = tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_ERROR);
-        RTTESTI_CHECK_BREAK(rc == VINF_SUCCESS);
-
-    } while (0);
+    //tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_INPUT);
+    tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_OUTPUT);
+    tstVfsIoFromStandardHandle(hTest, RTHANDLESTD_ERROR);
 
     /*
      * Summary
