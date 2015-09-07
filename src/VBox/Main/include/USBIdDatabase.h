@@ -70,22 +70,22 @@ class AliasDictionary
 {
 protected:
     static Product productArray[];
-    static const size_t products_size;
+    static const size_t cProducts;
     static Vendor vendorArray[];
-    static const size_t vendors_size;
+    static const size_t cVendors;
 
 public:
     static const char* findProduct(unsigned short vendorId, unsigned short productId)
     {
         Product lookFor = { USBKEY(vendorId, productId) };
-        Product* it = std::lower_bound(productArray, productArray + products_size, lookFor, ProductLess());
+        Product* it = std::lower_bound(productArray, productArray + cProducts, lookFor, ProductLess());
         return lookFor.key == it->key ? it->product : NULL;
     }
 
     static const char* findVendor(unsigned short vendorID)
     {
         Vendor lookFor = { vendorID };
-        Vendor* it = std::lower_bound(vendorArray, vendorArray + vendors_size, lookFor, VendorLess());
+        Vendor* it = std::lower_bound(vendorArray, vendorArray + cVendors, lookFor, VendorLess());
         return lookFor.vendorID == it->vendorID ? it->vendor : NULL;
     }
 };

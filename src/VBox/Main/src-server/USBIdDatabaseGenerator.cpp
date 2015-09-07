@@ -18,6 +18,8 @@
 #include <vector>
 #include <string>
 
+#include <iprt/initterm.h>
+#include <iprt/message.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 
@@ -50,7 +52,7 @@ const char *header =
 const char *footer =
     "};\n"
     "\n"
-    "const size_t AliasDictionary::products_size = sizeof(AliasDictionary::productArray) / sizeof(Product);\n";
+    "const size_t AliasDictionary::cProducts = sizeof(AliasDictionary::productArray) / sizeof(Product);\n";
 
 const char *vendor_header =
     "\nVendor AliasDictionary::vendorArray[] =\n"
@@ -58,7 +60,7 @@ const char *vendor_header =
 const char *vendor_footer =
     "};\n"
     "\n"
-    "const size_t AliasDictionary::vendors_size = sizeof(AliasDictionary::vendorArray) / sizeof(Vendor);\n";
+    "const size_t AliasDictionary::cVendors = sizeof(AliasDictionary::vendorArray) / sizeof(Vendor);\n";
 
 const char *start_block = "# Vendors, devices and interfaces. Please keep sorted.";
 const char *end_block = "# List of known device classes, subclasses and protocols";
@@ -109,12 +111,29 @@ bool operator == (const VendorRecord& lh, const VendorRecord& rh)
 string conv(const string& src)
 {
     string res = src;
-    for (size_t i = 0; i < res.length(); i++)
+    for (size_t i = 0; i < res.length(); ++i)
     {
         switch (res[i])
         {
         case '"':
-        case '\\': res.insert(i++, "\\");
+        case '\\': res.insert(i++, "\\"); break;
+        default:
+        {
+            if ((unsigned char)res[i] >= 127)
+            {
+                size_t start = i;
+                string temp = "\" \"";
+                char buffer[8] = { 0 };
+                do
+                {
+                    RTStrPrintf(buffer, sizeof(buffer), "\\x%x", (unsigned char)res[i]);
+                    temp.append(buffer);
+                } while ((unsigned char)res[++i] & 0x80);
+                temp.append("\" \"");
+                res.replace(start, i - start, temp);
+                i += temp.length();
+            }
+        }
         }
     }
   return res;
@@ -271,6 +290,10 @@ int ParseUsbIds(PRTSTREAM instream)
 
 int main(int argc, char* argv[])
 {
+    int rc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+
     if (argc < 4)
     {
         cerr << "Format: " << argv[0] <<
@@ -284,7 +307,7 @@ int main(int argc, char* argv[])
     g_vendors.reserve(3500);
 
     char* outName = NULL;
-    int rc = 0;
+    rc = 0;
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-o") == 0)
