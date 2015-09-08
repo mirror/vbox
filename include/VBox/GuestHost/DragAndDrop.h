@@ -60,9 +60,10 @@ typedef struct DNDDIRDROPPEDFILES
 
 int DnDDirDroppedAddFile(PDNDDIRDROPPEDFILES pDir, const char *pszFile);
 int DnDDirDroppedAddDir(PDNDDIRDROPPEDFILES pDir, const char *pszDir);
-int DnDDirDroppedFilesCreateAndOpenEx(const char *pszPath, PDNDDIRDROPPEDFILES pDir);
-int DnDDirDroppedFilesCreateAndOpenTemp(PDNDDIRDROPPEDFILES pDir);
+int DnDDirDroppedFilesCreateAndOpenEx(const char *pszPath, uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir);
+int DnDDirDroppedFilesCreateAndOpenTemp(uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir);
 int DnDDirDroppedFilesClose(PDNDDIRDROPPEDFILES pDir, bool fRemove);
+void DnDDirDroppedFilesDestroy(PDNDDIRDROPPEDFILES pDir);
 const char *DnDDirDroppedFilesGetDirAbs(PDNDDIRDROPPEDFILES pDir);
 int DnDDirDroppedFilesRollback(PDNDDIRDROPPEDFILES pDir);
 

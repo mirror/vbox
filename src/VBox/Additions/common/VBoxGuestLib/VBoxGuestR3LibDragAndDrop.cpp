@@ -372,11 +372,11 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX   pCtx,
     /*
      * Create and query the (unique) drop target directory in the user's temporary directory.
      */
-    DNDDIRDROPPEDFILES dirDroppedFiles;
+    PDNDDIRDROPPEDFILES pDroppedFiles;
     const char *pszDropDir = NULL;
-    int rc = DnDDirDroppedFilesCreateAndOpenTemp(&dirDroppedFiles);
+    int rc = DnDDirDroppedFilesCreateAndOpenTemp(0 /* fFlags */, &pDroppedFiles);
     if (RT_SUCCESS(rc))
-        pszDropDir = DnDDirDroppedFilesGetDirAbs(&dirDroppedFiles);
+        pszDropDir = DnDDirDroppedFilesGetDirAbs(pDroppedFiles);
 
     /*
      * Enter the main loop of retieving files + directories.
@@ -420,7 +420,7 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX   pCtx,
 #endif
                         rc = RTDirCreate(pszPathAbs, fCreationMode, 0);
                         if (RT_SUCCESS(rc))
-                            rc = DnDDirDroppedAddDir(&dirDroppedFiles, pszPathAbs);
+                            rc = DnDDirDroppedAddDir(pDroppedFiles, pszPathAbs);
 
                         RTStrFree(pszPathAbs);
                     }
@@ -487,7 +487,7 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX   pCtx,
                                 rc = objFile.OpenEx(strPathAbs, DnDURIObject::File, DnDURIObject::Target, fOpen, fCreationMode);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = DnDDirDroppedAddFile(&dirDroppedFiles, strPathAbs.c_str());
+                                    rc = DnDDirDroppedAddFile(pDroppedFiles, strPathAbs.c_str());
                                     if (RT_SUCCESS(rc))
                                     {
                                         cbFileWritten = 0;
@@ -570,7 +570,7 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX   pCtx,
      * something else went wrong. */
     if (RT_FAILURE(rc))
     {
-        int rc2 = DnDDirDroppedFilesRollback(&dirDroppedFiles);
+        int rc2 = DnDDirDroppedFilesRollback(pDroppedFiles);
         AssertRC(rc2); /* Not fatal, don't report back to host. */
     }
     else
@@ -619,9 +619,11 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX   pCtx,
      * Don't try to remove it here, however, as the files are being needed
      * by the client's drag'n drop operation lateron.
      */
-    int rc2 = DnDDirDroppedFilesClose(&dirDroppedFiles, false);
+    int rc2 = DnDDirDroppedFilesClose(pDroppedFiles, false);
     if (RT_FAILURE(rc2)) /* Not fatal, don't report back to host. */
         LogFlowFunc(("Closing dropped files directory failed with %Rrc\n", rc2));
+
+    DnDDirDroppedFilesDestroy(pDroppedFiles);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

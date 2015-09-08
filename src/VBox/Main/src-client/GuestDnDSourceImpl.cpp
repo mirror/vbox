@@ -418,7 +418,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
         bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFmtRecv.c_str(), pCtx->mFmtRecv.length());
         if (fHasURIList)
         {
-            Utf8Str strURIs = pCtx->mURI.lstURI.RootToString(RTCString(DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir)));
+            Utf8Str strURIs = pCtx->mURI.lstURI.RootToString(RTCString(DnDDirDroppedFilesGetDirAbs(pCtx->mURI.pDropDir)));
             cbData = strURIs.length();
 
             LogFlowFunc(("Found %zu root URIs (%zu bytes)\n", pCtx->mURI.lstURI.RootCount(), cbData));
@@ -603,7 +603,7 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
     LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x\n", pszPath, cbPath, fMode));
 
     int rc;
-    char *pszDir = RTPathJoinA(DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir), pszPath);
+    char *pszDir = RTPathJoinA(DnDDirDroppedFilesGetDirAbs(pCtx->mURI.pDropDir), pszPath);
     if (pszDir)
     {
         rc = RTDirCreateFullPath(pszDir, fMode);
@@ -662,7 +662,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, GuestDnDURIObjCtx *pOb
         }
 
         char pszPathAbs[RTPATH_MAX];
-        rc = RTPathJoin(pszPathAbs, sizeof(pszPathAbs), DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir), pszPath);
+        rc = RTPathJoin(pszPathAbs, sizeof(pszPathAbs), DnDDirDroppedFilesGetDirAbs(pCtx->mURI.pDropDir), pszPath);
         if (RT_FAILURE(rc))
         {
             LogFlowFunc(("Warning: Rebasing current file failed with rc=%Rrc\n", rc));
@@ -1035,10 +1035,10 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 
     do
     {
-        rc = DnDDirDroppedFilesCreateAndOpenTemp(&pCtx->mURI.mDropDir);
+        rc = DnDDirDroppedFilesCreateAndOpenTemp(0 /* fFlags */, &pCtx->mURI.pDropDir);
         if (RT_FAILURE(rc))
             break;
-        LogFlowFunc(("rc=%Rrc, strDropDir=%s\n", rc, DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir)));
+        LogFlowFunc(("rc=%Rrc, strDropDir=%s\n", rc, DnDDirDroppedFilesGetDirAbs(pCtx->mURI.pDropDir)));
         if (RT_FAILURE(rc))
             break;
 
@@ -1099,15 +1099,21 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         }
     }
 
-    if (RT_FAILURE(rc))
+    if (pCtx->mURI.pDropDir)
     {
-        rc2 = DnDDirDroppedFilesRollback(&pCtx->mURI.mDropDir); /** @todo Inform user on rollback failure? */
-        LogFlowFunc(("Rolling back ended with rc=%Rrc\n", rc2));
-    }
+        if (RT_FAILURE(rc))
+        {
+            rc2 = DnDDirDroppedFilesRollback(pCtx->mURI.pDropDir); /** @todo Inform user on rollback failure? */
+            LogFlowFunc(("Rolling back ended with rc=%Rrc\n", rc2));
+        }
 
-    rc2 = DnDDirDroppedFilesClose(&pCtx->mURI.mDropDir, RT_FAILURE(rc) ? true : false /* fRemove */);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+        rc2 = DnDDirDroppedFilesClose(pCtx->mURI.pDropDir, RT_FAILURE(rc) ? true : false /* fRemove */);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+
+        DnDDirDroppedFilesDestroy(pCtx->mURI.pDropDir);
+        pCtx->mURI.pDropDir = NULL;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

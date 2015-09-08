@@ -47,79 +47,136 @@ int DnDDirDroppedAddDir(PDNDDIRDROPPEDFILES pDir, const char *pszDir)
     return VINF_SUCCESS;
 }
 
-int DnDDirDroppedFilesCreateAndOpenEx(const char *pszPath, PDNDDIRDROPPEDFILES pDir)
+static int dndDirDroppedFilesCreate(uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir)
+{
+    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
+    AssertPtrReturn(ppDir, VERR_INVALID_POINTER);
+
+    PDNDDIRDROPPEDFILES pDir = (PDNDDIRDROPPEDFILES)RTMemAlloc(sizeof(DNDDIRDROPPEDFILES));
+    if (pDir)
+    {
+        pDir->hDir  = NULL;
+        pDir->fOpen = false;
+
+        *ppDir = pDir;
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NO_MEMORY;
+}
+
+int DnDDirDroppedFilesCreateAndOpenEx(const char *pszPath, uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(pDir, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppDir, VERR_INVALID_POINTER);
 
-    char pszDropDir[RTPATH_MAX];
-    if (RTStrPrintf(pszDropDir, sizeof(pszDropDir), "%s", pszPath) <= 0)
-        return VERR_NO_MEMORY;
-
-    /** @todo On Windows we also could use the registry to override
-     *        this path, on Posix a dotfile and/or a guest property
-     *        can be used. */
-
-    /* Append our base drop directory. */
-    int rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), "VirtualBox Dropped Files"); /** @todo Make this tag configurable? */
+    PDNDDIRDROPPEDFILES pDir;
+    int rc = dndDirDroppedFilesCreate(fFlags, &pDir);
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Create it when necessary. */
-    if (!RTDirExists(pszDropDir))
+    do
     {
-        rc = RTDirCreateFullPath(pszDropDir, RTFS_UNIX_IRWXU);
+        char pszDropDir[RTPATH_MAX];
+        if (RTStrPrintf(pszDropDir, sizeof(pszDropDir), "%s", pszPath) <= 0)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        /** @todo On Windows we also could use the registry to override
+         *        this path, on Posix a dotfile and/or a guest property
+         *        can be used. */
+
+        /* Append our base drop directory. */
+        int rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), "VirtualBox Dropped Files"); /** @todo Make this tag configurable? */
         if (RT_FAILURE(rc))
-            return rc;
-    }
+            break;
 
-    /* The actually drop directory consist of the current time stamp and a
-     * unique number when necessary. */
-    char pszTime[64];
-    RTTIMESPEC time;
-    if (!RTTimeSpecToString(RTTimeNow(&time), pszTime, sizeof(pszTime)))
-        return VERR_BUFFER_OVERFLOW;
-    rc = DnDPathSanitizeFilename(pszTime, sizeof(pszTime));
-    if (RT_FAILURE(rc))
-        return rc;
+        /* Create it when necessary. */
+        if (!RTDirExists(pszDropDir))
+        {
+            rc = RTDirCreateFullPath(pszDropDir, RTFS_UNIX_IRWXU);
+            if (RT_FAILURE(rc))
+                break;
+        }
 
-    rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), pszTime);
-    if (RT_FAILURE(rc))
-        return rc;
+        /* The actually drop directory consist of the current time stamp and a
+         * unique number when necessary. */
+        char pszTime[64];
+        RTTIMESPEC time;
+        if (!RTTimeSpecToString(RTTimeNow(&time), pszTime, sizeof(pszTime)))
+        {
+            rc = VERR_BUFFER_OVERFLOW;
+            break;
+        }
 
-    /* Create it (only accessible by the current user) */
-    rc = RTDirCreateUniqueNumbered(pszDropDir, sizeof(pszDropDir), RTFS_UNIX_IRWXU, 3, '-');
-    if (RT_SUCCESS(rc))
-    {
-        PRTDIR phDir;
-        rc = RTDirOpen(&phDir, pszDropDir);
+        rc = DnDPathSanitizeFilename(pszTime, sizeof(pszTime));
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), pszTime);
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Create it (only accessible by the current user) */
+        rc = RTDirCreateUniqueNumbered(pszDropDir, sizeof(pszDropDir), RTFS_UNIX_IRWXU, 3, '-');
         if (RT_SUCCESS(rc))
         {
-            pDir->hDir       = phDir;
-            pDir->strPathAbs = pszDropDir;
-            pDir->fOpen      = true;
+            PRTDIR phDir;
+            rc = RTDirOpen(&phDir, pszDropDir);
+            if (RT_SUCCESS(rc))
+            {
+                pDir->hDir       = phDir;
+                pDir->strPathAbs = pszDropDir;
+                pDir->fOpen      = true;
+            }
         }
+
+    } while (0);
+
+    if (RT_SUCCESS(rc))
+    {
+        *ppDir = pDir;
     }
+    else
+        DnDDirDroppedFilesDestroy(pDir);
 
     return rc;
 }
 
-int DnDDirDroppedFilesCreateAndOpenTemp(PDNDDIRDROPPEDFILES pDir)
+int DnDDirDroppedFilesCreateAndOpenTemp(uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir)
 {
-    AssertPtrReturn(pDir, VERR_INVALID_POINTER);
+    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
+    AssertPtrReturn(ppDir, VERR_INVALID_POINTER);
 
-    char szTemp[RTPATH_MAX];
+    PDNDDIRDROPPEDFILES pDir;
 
     /*
      * Get the user's temp directory. Don't use the user's root directory (or
      * something inside it) because we don't know for how long/if the data will
      * be kept after the guest OS used it.
      */
+    char szTemp[RTPATH_MAX];
     int rc = RTPathTemp(szTemp, sizeof(szTemp));
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_SUCCESS(rc))
+        rc = DnDDirDroppedFilesCreateAndOpenEx(szTemp, fFlags, &pDir);
 
-    return DnDDirDroppedFilesCreateAndOpenEx(szTemp, pDir);
+    if (RT_SUCCESS(rc))
+    {
+        *ppDir = pDir;
+    }
+    else
+        DnDDirDroppedFilesDestroy(pDir);
+
+    return rc;
+}
+
+void DnDDirDroppedFilesDestroy(PDNDDIRDROPPEDFILES pDir)
+{
+    AssertPtrReturnVoid(pDir);
+
+    RTMemFree(pDir);
 }
 
 int DnDDirDroppedFilesClose(PDNDDIRDROPPEDFILES pDir, bool fRemove)
@@ -131,7 +188,10 @@ int DnDDirDroppedFilesClose(PDNDDIRDROPPEDFILES pDir, bool fRemove)
     {
         rc = RTDirClose(pDir->hDir);
         if (RT_SUCCESS(rc))
+        {
             pDir->fOpen = false;
+            pDir->hDir  = NULL;
+        }
     }
     if (RT_SUCCESS(rc))
     {
