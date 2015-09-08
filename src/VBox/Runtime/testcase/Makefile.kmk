@@ -141,6 +141,7 @@ PROGRAMS += \
 	tstRTManifest \
 	tstRTUri \
 	tstVector \
+	tstRTVfs \
 	tstRTZip
 
 PROGRAMS.win += \
@@ -148,7 +149,6 @@ PROGRAMS.win += \
 	tstRTLocalIpc \
 	tstRTProcWait \
 	tstFileAppendWin-1 \
-	tstRTVfs \
 	ntGetTimerResolution
 PROGRAMS.linux += \
 	tstRTProcWait \
