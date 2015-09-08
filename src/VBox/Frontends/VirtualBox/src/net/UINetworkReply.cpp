@@ -277,15 +277,30 @@ int UINetworkReplyPrivateThread::applyProxyRules()
     /* Set thread context: */
     m_strContext = tr("During proxy configuration");
 
-    /* Make sure proxy is enabled in Proxy Manager: */
+    /* Get the proxymanager: */
     UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
-    if (!proxyManager.proxyEnabled())
-        return VINF_SUCCESS;
 
-    /* Apply proxy rules: */
-    return applyProxyRules(m_hHttp,
-                           proxyManager.proxyHost(),
-                           proxyManager.proxyPort().toUInt());
+    /* If the specific proxy settings aren't enabled, we'll use the
+       system default proxy.  Otherwise assume it's configured. */
+    int rc;
+    if (!proxyManager.proxyEnabled())
+        rc = RTHttpUseSystemProxySettings(m_hHttp);
+    else
+        rc = RTHttpSetProxy(m_hHttp,
+                            proxyManager.proxyHost().toUtf8().constData(),
+                            proxyManager.proxyPort().toUInt(),
+                            NULL /* pszProxyUser */, NULL /* pszProxyPwd */);
+
+    /** @todo This should be some kind of tristate:
+     *      - system configured proxy ("proxyDisabled" as well as default "")
+     *      - user configured proxy ("proxyEnabled").
+     *      - user configured "no proxy" (currently missing).
+     * In the two last cases, call RTHttpSetProxy.
+     *
+     * Alternatively, we could opt not to give the user a way of doing "no proxy",
+     * that would require no real changes to the visible GUI... Just a thought.
+     */
+    return rc;
 }
 
 int UINetworkReplyPrivateThread::applyHttpsCertificates()
@@ -449,20 +464,6 @@ QString UINetworkReplyPrivateThread::fullCertificateFileName()
 {
     const QDir homeDir(QDir::toNativeSeparators(vboxGlobal().homeFolder()));
     return QDir::toNativeSeparators(homeDir.absoluteFilePath(s_strCertificateFileName));
-}
-
-/* static */
-int UINetworkReplyPrivateThread::applyProxyRules(RTHTTP hHttp, const QString &strHostName, int iPort)
-{
-    /* Make sure HTTP is created: */
-    if (hHttp == NIL_RTHTTP)
-        return VERR_INVALID_HANDLE;
-
-    /* Apply HTTP proxy: */
-    return RTHttpSetProxy(hHttp,
-                          strHostName.toAscii().constData(),
-                          iPort,
-                          0 /* login */, 0 /* password */);
 }
 
 /* static */
