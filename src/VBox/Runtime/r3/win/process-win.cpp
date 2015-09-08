@@ -647,7 +647,7 @@ static int rtProcWinEnvironmentCreateInternal(VOID *pvEnvBlock, RTENV hEnv,
                     if (   !pszEq
                         && fOverwriteExisting)
                     {
-                        rc = RTEnvUnset(pszEntry);
+                        rc = RTEnvUnsetEx(hEnvTemp, pszEntry);
                     }
                     else if (pszEq)
                     {
@@ -692,7 +692,7 @@ static int rtProcWinEnvironmentCreateInternal(VOID *pvEnvBlock, RTENV hEnv,
  * Builds up the environment block for a specified user (identified by a token),
  * whereas hEnv is an additional set of environment variables which overwrite existing
  * values of the user profile.  ppwszBlock needs to be destroyed after usage
- * calling rtProcWinDestoryEnv().
+ * calling rtProcWinDestroyEnv().
  *
  * @return  IPRT status code.
  *
@@ -745,7 +745,7 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppws
  * Builds up the environment block for a specified user (identified by user name, password
  * and domain), whereas hEnv is an additional set of environment variables which overwrite
  * existing values of the user profile.  ppwszBlock needs to be destroyed after usage
- * calling rtProcWinDestoryEnv().
+ * calling rtProcWinDestroyEnv().
  *
  * @return  IPRT status code.
  *
