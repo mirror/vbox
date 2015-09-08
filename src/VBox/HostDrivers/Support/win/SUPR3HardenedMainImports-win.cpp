@@ -92,9 +92,9 @@ typedef struct SUPHNTIMPSYSCALL
     uint32_t               *puApiNo;
     /** Assembly system call routine, type 1.  */
     PFNRT                   pfnType1;
-#ifdef RT_ARCH_X86
     /** Assembly system call routine, type 2.  */
     PFNRT                   pfnType2;
+#ifdef RT_ARCH_X86
     /** The parameter size in bytes for a standard call. */
     uint32_t                cbParams;
 #endif
@@ -220,7 +220,7 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
 # define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
     { NULL, NULL },
 # define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
-    { &RT_CONCAT(g_uApiNo, a_Name), &RT_CONCAT(a_Name, _SyscallType1) },
+    { &RT_CONCAT(g_uApiNo, a_Name), &RT_CONCAT(a_Name, _SyscallType1), &RT_CONCAT(a_Name, _SyscallType2) },
 #elif defined(RT_ARCH_X86)
 # define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
     { NULL, NULL, NULL, 0 },
@@ -456,14 +456,27 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
      * Parse the code and extract the API call number.
      */
 #ifdef RT_ARCH_AMD64
-    /* Pattern #1: XP64/W2K3-64 thru Windows 8.1
-       0:000> u ntdll!NtCreateSection
-       ntdll!NtCreateSection:
-       00000000`779f1750 4c8bd1          mov     r10,rcx
-       00000000`779f1753 b847000000      mov     eax,47h
-       00000000`779f1758 0f05            syscall
-       00000000`779f175a c3              ret
-       00000000`779f175b 0f1f440000      nop     dword ptr [rax+rax] */
+    /* Pattern #1: XP64/W2K3-64 thru Windows 10 build 10240.
+            0:000> u ntdll!NtCreateSection
+            ntdll!NtCreateSection:
+            00000000`779f1750 4c8bd1          mov     r10,rcx
+            00000000`779f1753 b847000000      mov     eax,47h
+            00000000`779f1758 0f05            syscall
+            00000000`779f175a c3              ret
+            00000000`779f175b 0f1f440000      nop     dword ptr [rax+rax]
+
+       Pattern #2: Windows 10 build 10525+.
+            0:000> u ntdll_7ffc26300000!NtCreateSection
+            ntdll_7ffc26300000!ZwCreateSection:
+            00007ffc`263943e0 4c8bd1          mov     r10,rcx
+            00007ffc`263943e3 b84a000000      mov     eax,4Ah
+            00007ffc`263943e8 f604250803fe7f01 test    byte ptr [SharedUserData+0x308 (00000000`7ffe0308)],1
+            00007ffc`263943f0 7503            jne     ntdll_7ffc26300000!ZwCreateSection+0x15 (00007ffc`263943f5)
+            00007ffc`263943f2 0f05            syscall
+            00007ffc`263943f4 c3              ret
+            00007ffc`263943f5 cd2e            int     2Eh
+            00007ffc`263943f7 c3              ret
+       */
     if (   pbFunction[ 0] == 0x4c /* mov r10, rcx */
         && pbFunction[ 1] == 0x8b
         && pbFunction[ 2] == 0xd1
@@ -471,14 +484,37 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
         //&& pbFunction[ 4] == 0xZZ
         //&& pbFunction[ 5] == 0xYY
         && pbFunction[ 6] == 0x00
-        && pbFunction[ 7] == 0x00
-        && pbFunction[ 8] == 0x0f /* syscall */
-        && pbFunction[ 9] == 0x05
-        && pbFunction[10] == 0xc3 /* ret */ )
+        && pbFunction[ 7] == 0x00)
     {
-        *pSyscall->puApiNo = RT_MAKE_U16(pbFunction[4], pbFunction[5]);
-        *pImport->ppfnImport = pSyscall->pfnType1;
-        return;
+        if (   pbFunction[ 8] == 0x0f /* syscall */
+            && pbFunction[ 9] == 0x05
+            && pbFunction[10] == 0xc3 /* ret */ )
+        {
+            *pSyscall->puApiNo = RT_MAKE_U16(pbFunction[4], pbFunction[5]);
+            *pImport->ppfnImport = pSyscall->pfnType1;
+            return;
+        }
+        if (   pbFunction[ 8] == 0xf6 /* test   byte ptr [SharedUserData+0x308 (00000000`7ffe0308)],1 */
+            && pbFunction[ 9] == 0x04
+            && pbFunction[10] == 0x25
+            && pbFunction[11] == 0x08
+            && pbFunction[12] == 0x03
+            && pbFunction[13] == 0xfe
+            && pbFunction[14] == 0x7f
+            && pbFunction[15] == 0x01
+            && pbFunction[16] == 0x75 /* jnz +3 */
+            && pbFunction[17] == 0x03
+            && pbFunction[18] == 0x0f /* syscall*/
+            && pbFunction[19] == 0x05
+            && pbFunction[20] == 0xc3 /* ret */
+            && pbFunction[21] == 0xcd /* int 2eh */
+            && pbFunction[22] == 0x2e
+            && pbFunction[23] == 0xc3 /* ret */ )
+        {
+            *pSyscall->puApiNo = RT_MAKE_U16(pbFunction[4], pbFunction[5]);
+            *pImport->ppfnImport = pSyscall->pfnType2;
+            return;
+        }
     }
 #else
     /* Pattern #1: XP thru Windows 7

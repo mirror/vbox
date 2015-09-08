@@ -163,6 +163,18 @@ BEGINPROC %1 %+ _SyscallType1
         syscall
         ret
 ENDPROC %1 %+ _SyscallType1
+BEGINPROC %1 %+ _SyscallType2 ; Introduced with build 10525
+        SEH64_END_PROLOGUE
+        mov     eax, [NAME(g_uApiNo %+ %1) xWrtRIP]
+        test    byte [07ffe0308h], 1    ; SharedUserData!Something
+        mov     r10, rcx
+        jnz     .int_alternative
+        syscall
+        ret
+.int_alternative:
+        int     2eh
+        ret
+ENDPROC %1 %+ _SyscallType2
  %else
 BEGINPROC %1 %+ _SyscallType1
         mov     edx, 07ffe0300h         ; SharedUserData!SystemCallStub
