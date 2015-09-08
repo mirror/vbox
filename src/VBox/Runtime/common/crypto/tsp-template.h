@@ -59,7 +59,7 @@ RTASN1TMPL_END_SEQCORE();
 #define RTASN1TMPL_EXT_NAME     RTCrTspAccuracy
 #define RTASN1TMPL_INT_NAME     rtCrTspAccuracy
 RTASN1TMPL_BEGIN_SEQCORE();
-RTASN1TMPL_MEMBER_EX(           Seconds,    RTASN1INTEGER,  RTAsn1Integer,
+RTASN1TMPL_MEMBER_OPT_ITAG_EX(  Seconds, RTASN1INTEGER, RTAsn1Integer, ASN1_TAG_INTEGER, RTASN1TMPL_ITAG_F_UP,
                                 RTASN1TMPL_MEMBER_CONSTR_U64_MIN_MAX(Millis, 1, UINT64_MAX, RT_NOTHING));
 /** @todo The Millis and Micros fields makes no sense if Seconds > 1, while the
  *        Micros field makes no sense with Millis > 1.  Add constraints
