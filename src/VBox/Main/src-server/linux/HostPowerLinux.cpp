@@ -84,12 +84,17 @@ HostPowerServiceLinux::HostPowerServiceLinux(VirtualBox *aVirtualBox)
 
 HostPowerServiceLinux::~HostPowerServiceLinux()
 {
+    int rc;
+    RTMSINTERVAL cMillies = 5000;
+
     /* Closing the connection should cause the event loop to exit. */
     LogFunc((": Stopping thread\n"));
     if (mpConnection)
         dbus_connection_close(mpConnection);
 
-    RTThreadWait(mThread, 5000, NULL);
+    rc = RTThreadWait(mThread, cMillies, NULL);
+    if (rc != VINF_SUCCESS)
+        LogRelThisFunc(("RTThreadWait() for %u ms failed with %Rrc\n", cMillies, rc));
     mThread = NIL_RTTHREAD;
 }
 
@@ -98,9 +103,10 @@ DECLCALLBACK(int) HostPowerServiceLinux::powerChangeNotificationThread(RTTHREAD 
 {
     NOREF(hThreadSelf);
     HostPowerServiceLinux *pPowerObj = static_cast<HostPowerServiceLinux *>(pInstance);
+    DBusConnection *pConnection = pPowerObj->mpConnection;
 
     Log(("HostPowerServiceLinux: Thread started\n"));
-    while (dbus_connection_read_write(pPowerObj->mpConnection, -1))
+    while (dbus_connection_read_write(pConnection, -1))
     {
         DBusMessage *pMessage = NULL;
 
@@ -109,7 +115,7 @@ DECLCALLBACK(int) HostPowerServiceLinux::powerChangeNotificationThread(RTTHREAD 
             DBusMessageIter args;
             dbus_bool_t fSuspend;
 
-            pMessage = dbus_connection_pop_message(pPowerObj->mpConnection);
+            pMessage = dbus_connection_pop_message(pConnection);
             if (pMessage == NULL)
                 break;
             /* The systemd-logind interface notification. */
@@ -139,10 +145,9 @@ DECLCALLBACK(int) HostPowerServiceLinux::powerChangeNotificationThread(RTTHREAD 
         }
     }
     /* Close the socket or whatever underlying the connection. */
-    dbus_connection_close(pPowerObj->mpConnection);
+    dbus_connection_close(pConnection);
     /* Free in-process resources used for the now-closed connection. */
-    dbus_connection_unref(pPowerObj->mpConnection);
-    pPowerObj->mpConnection = NULL;
+    dbus_connection_unref(pConnection);
     Log(("HostPowerServiceLinux: Exiting thread\n"));
     return VINF_SUCCESS;
 }
