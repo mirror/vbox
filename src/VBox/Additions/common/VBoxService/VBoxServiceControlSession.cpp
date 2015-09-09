@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxServiceControlSession - Guest session handling. Also handles
- *                             the forked session processes.
+ * VBoxServiceControlSession - Guest session handling. Also handles the spawned session processes.
  */
 
 /*
@@ -74,7 +73,7 @@ static int                  gstcntlSessionHandleProcTerminate(const PVBOXSERVICE
 static int                  gstcntlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
 
 
-/** Generic option indices for session fork arguments. */
+/** Generic option indices for session spawn arguments. */
 enum
 {
     VBOXSERVICESESSIONOPT_FIRST = 1000, /* For initialization. */
@@ -132,76 +131,44 @@ static int gstcntlSessionHandleDirRemove(PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
     char szDir[RTPATH_MAX];
-    uint32_t uFlags = 0;
+    uint32_t fFlags = 0;
 
     int rc = VbglR3GuestCtrlDirGetRemove(pHostCtx,
                                          /* Directory to remove. */
                                          szDir, sizeof(szDir),
                                          /* Flags of type DIRREMOVE_FLAG_. */
-                                         &uFlags);
+                                         &fFlags);
     if (RT_SUCCESS(rc))
     {
-        uint32_t uFlagsRemRec = 0;
-        bool fRecursive = false;
-/** @todo r=bird: Unnecessary variable fRecursive.  You can check for
- * DIRREMOVE_FLAG_RECURSIVE directly in the flags when deciding which API to
- * call. */
-
-        if (!(uFlags & ~DIRREMOVE_FLAG_VALID_MASK))
+        AssertReturn(!(fFlags & ~DIRREMOVE_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
+        if (!(fFlags & ~DIRREMOVE_FLAG_VALID_MASK))
         {
-            if (uFlags & DIRREMOVE_FLAG_RECURSIVE)
+            if (fFlags & DIRREMOVE_FLAG_RECURSIVE)
             {
-                /* Note: DIRREMOVE_FLAG_RECURSIVE must be set explicitly.
-                 *       Play safe here. */
-                fRecursive = true;
-            }
-/** @todo r=bird: Understand how APIs you use work (read docs, check constant,
- * check code). If you check the actual values of RTDIRRMREC_F_CONTENT_AND_DIR
- * and RTDIRRMREC_F_CONTENT_ONLY, you'd notice that the first one is 0 and the
- * second is 1.  This code is a little confused about how it all works, though
- * it ends up doing the right thing as if by accident almost. */
-            if (uFlags & DIRREMOVE_FLAG_CONTENT_AND_DIR)
-            {
-                /* Setting direct value is intentional. */
-                uFlagsRemRec = RTDIRRMREC_F_CONTENT_AND_DIR;
-            }
+                uint32_t fFlagsRemRec = RTDIRRMREC_F_CONTENT_AND_DIR; /* Set default. */
+                if (fFlags & DIRREMOVE_FLAG_CONTENT_ONLY)
+                    fFlagsRemRec |= RTDIRRMREC_F_CONTENT_ONLY;
 
-            if (uFlags & DIRREMOVE_FLAG_CONTENT_ONLY)
-            {
-                /* Setting direct value is intentional. */
-                uFlagsRemRec |= RTDIRRMREC_F_CONTENT_ONLY;
+                rc = RTDirRemoveRecursive(szDir, fFlagsRemRec);
             }
+            else /* Only delete directory if not empty. */
+                rc = RTDirRemove(szDir);
         }
         else
             rc = VERR_NOT_SUPPORTED;
 
-        VBoxServiceVerbose(4, "[Dir %s]: Removing with uFlags=0x%x, fRecursive=%RTbool\n",
-                           szDir, uFlags, fRecursive);
-
-/** @todo r=bird: Convoluted code flow. It would be shorter and easier to
- * read if you moved this code up and into the flags-are-valid if body. */
-        if (RT_SUCCESS(rc))
-        {
-            /** @todo Add own recursive function (or a new IPRT function w/ callback?) to
-             *        provide guest-to-host progress reporting. */
-            if (fRecursive)
-                rc = RTDirRemoveRecursive(szDir, uFlagsRemRec);
-            else
-                rc = RTDirRemove(szDir);
-        }
+        VBoxServiceVerbose(4, "[Dir %s]: Removing with fFlags=0x%x, rc=%Rrc\n", szDir, fFlags, rc);
 
         /* Report back in any case. */
         int rc2 = VbglR3GuestCtrlMsgReply(pHostCtx, rc);
         if (RT_FAILURE(rc2))
-            VBoxServiceError("[Dir %s]: Failed to report removing status, rc=%Rrc\n",
-                             szDir, rc2);
+            VBoxServiceError("[Dir %s]: Failed to report removing status, rc=%Rrc\n", szDir, rc2);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
 
 #ifdef DEBUG
-    VBoxServiceVerbose(4, "Removing directory \"%s\" returned rc=%Rrc\n",
-                       szDir, rc);
+    VBoxServiceVerbose(4, "Removing directory \"%s\" returned rc=%Rrc\n", szDir, rc);
 #endif
     return rc;
 }
@@ -245,17 +212,15 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
             if (!strlen(szFile))
                 rc = VERR_INVALID_PARAMETER;
 
-            if (   RT_SUCCESS(rc)
-                && !RTStrPrintf(pFile->szName, sizeof(pFile->szName), "%s", szFile))
-                rc = VERR_NO_MEMORY;
-
             if (RT_SUCCESS(rc))
             {
+                RTStrPrintf(pFile->szName, sizeof(pFile->szName), "%s", szFile);
+
                 uint64_t fFlags;
                 rc = RTFileModeToFlagsEx(szAccess, szDisposition,
                                          NULL /* pszSharing, not used yet */, &fFlags);
-                VBoxServiceVerbose(4, "[File %s]: Opening flags=0x%x, rc=%Rrc\n",
-                                   pFile->szName, fFlags, rc);
+                VBoxServiceVerbose(4, "[File %s]: Opening with fFlags=0x%x, rc=%Rrc\n", pFile->szName, fFlags, rc);
+
                 if (RT_SUCCESS(rc))
                     rc = RTFileOpen(&pFile->hFile, pFile->szName, fFlags);
                 if (   RT_SUCCESS(rc)
@@ -269,8 +234,7 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
                                          pFile->szName, uOffset, rc);
                 }
                 else if (RT_FAILURE(rc))
-                    VBoxServiceError("[File %s]: Opening failed; rc=%Rrc\n",
-                                     pFile->szName, rc);
+                    VBoxServiceError("[File %s]: Opening failed with rc=%Rrc\n", pFile->szName, rc);
             }
 
             if (RT_SUCCESS(rc))
@@ -480,8 +444,7 @@ static int gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession,
     uint32_t cbToWrite;
 
     int rc = VbglR3GuestCtrlFileGetWrite(pHostCtx, &uHandle,
-                                         pvScratchBuf, cbScratchBuf,
-                                         &cbToWrite);
+                                         pvScratchBuf, (uint32_t)cbScratchBuf, &cbToWrite);
     if (RT_SUCCESS(rc))
     {
         size_t cbWritten = 0;
@@ -528,7 +491,7 @@ static int gstcntlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pSessio
     uint32_t cbToWrite; int64_t iOffset;
 
     int rc = VbglR3GuestCtrlFileGetWriteAt(pHostCtx, &uHandle,
-                                           pvScratchBuf, cbScratchBuf,
+                                           pvScratchBuf, (uint32_t)cbScratchBuf,
                                            &cbToWrite, (uint64_t *)&iOffset);
     if (RT_SUCCESS(rc))
     {
@@ -866,7 +829,7 @@ int gstcntlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession,
      * Ask the host for the input data.
      */
     int rc = VbglR3GuestCtrlProcGetInput(pHostCtx, &uPID, &uFlags,
-                                         pvScratchBuf, cbScratchBuf, &cbSize);
+                                         pvScratchBuf, (uint32_t)cbScratchBuf, &cbSize);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("Failed to retrieve process input command for PID=%RU32, rc=%Rrc\n",
@@ -1036,16 +999,16 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
     int rc = VINF_SUCCESS;
     /**
      * Only anonymous sessions (that is, sessions which run with local
-     * service privileges) or forked session processes can do certain
+     * service privileges) or spawned session processes can do certain
      * operations.
      */
-    bool fImpersonated = (   pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_FORK
-                          || pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_ANONYMOUS);
+    bool fImpersonated = (   pSession->fFlags & VBOXSERVICECTRLSESSION_FLAG_SPAWN
+                          || pSession->fFlags & VBOXSERVICECTRLSESSION_FLAG_ANONYMOUS);
 
     switch (uMsg)
     {
         case HOST_SESSION_CLOSE:
-            /* Shutdown (this fork). */
+            /* Shutdown (this spawn). */
             rc = GstCntlSessionClose(pSession);
             *pfShutdown = true; /* Shutdown in any case. */
             break;
@@ -1151,9 +1114,8 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
 
 
 /**
- * Thread main routine for a forked guest session process.
- * This thread runs in the main executable to control the forked
- * session process.
+ * Thread main routine for a spawned guest session process.
+ * This thread runs in the main executable to control the spawned session process.
  *
  * @return IPRT status code.
  * @param  RTTHREAD             Pointer to the thread's data.
@@ -1357,7 +1319,7 @@ static DECLCALLBACK(int) gstcntlSessionThread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-RTEXITCODE gstcntlSessionForkWorker(PVBOXSERVICECTRLSESSION pSession)
+RTEXITCODE gstcntlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSession)
 {
     AssertPtrReturn(pSession, RTEXITCODE_FAILURE);
 
@@ -1649,14 +1611,14 @@ int GstCntlSessionDestroy(PVBOXSERVICECTRLSESSION pSession)
 }
 
 
-int GstCntlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t uFlags)
+int GstCntlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t fFlags)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
     RTListInit(&pSession->lstProcesses);
     RTListInit(&pSession->lstFiles);
 
-    pSession->uFlags = uFlags;
+    pSession->fFlags = fFlags;
 
     /* Init critical section for protecting the thread lists. */
     int rc = RTCritSectInit(&pSession->CritSect);
@@ -1844,12 +1806,12 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
 
             VBoxServiceVerbose(3, "New anonymous guest session ID=%RU32 created, uFlags=%x, using protocol %RU32\n",
                                pSessionStartupInfo->uSessionID,
-                               pSessionStartupInfo->uFlags,
+                               pSessionStartupInfo->fFlags,
                                pSessionStartupInfo->uProtocol);
         }
         else
         {
-            VBoxServiceVerbose(3, "Forking new guest session ID=%RU32, szUser=%s, szPassword=%s, szDomain=%s, uFlags=%x, using protocol %RU32\n",
+            VBoxServiceVerbose(3, "Spawning new guest session ID=%RU32, szUser=%s, szPassword=%s, szDomain=%s, uFlags=%x, using protocol %RU32\n",
                                pSessionStartupInfo->uSessionID,
                                pSessionStartupInfo->szUser,
 #ifdef DEBUG
@@ -1858,7 +1820,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                                "XXX", /* Never show passwords in release mode. */
 #endif
                                pSessionStartupInfo->szDomain,
-                               pSessionStartupInfo->uFlags,
+                               pSessionStartupInfo->fFlags,
                                pSessionStartupInfo->uProtocol);
         }
 
@@ -1872,282 +1834,215 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
         char *pszExeName = RTProcGetExecutablePath(szExeName, sizeof(szExeName));
         if (pszExeName)
         {
-/** @todo r=bird: A while back we had this variant in the guest props code:
- *  @code
- *      int rc = RTStrPrintf(....);
- *      if (RT_SUCCESS(rc))
- *  @endcode
- *
- *  Here we've got a new variant:
- *  @code
- *      if (!RTStrPrintf(szBuf, sizeof(szBuf),...))
- *         return VERR_BUFFER_OVERFLOW;
- *  @endcode
- *  ... which is just as pointless.
- *
- *  According to the doxygen docs in iprt/string.h, RTStrPrintf returns "The
- *  length of the returned string (in pszBuffer) excluding the terminator".
- *
- *  Which admittedly makes it a real bitch to check for buffer overflows, but is
- *  a great help preventing memory corruption by careless use of the returned
- *  value if it was outside the buffer range (negative error codes or required
- *  buffer size).  We should probably add a new string formatter which API which
- *  returns VERR_BUFFER_OVERFLOW on overflow and optionally a required buffer
- *  size that you can use here...
- *
- *  However in most cases you don't need to because you make things way to
- *  complicated (see the log file name mangling for instance).
- *
- *  Here, you just need to format two or three (#ifdef DEBUG) 32-bit numbers
- *  which are no brainers, while the szUser can be used as is.  The trick is to
- *  pass the and option and the option value separately.
- */
-            char szParmUserName[GUESTPROCESS_MAX_USER_LEN + 32];
-            if (!fAnonymous)
-            {
-                if (!RTStrPrintf(szParmUserName, sizeof(szParmUserName), "--user=%s", pSessionThread->StartupInfo.szUser))
-                    rc = VERR_BUFFER_OVERFLOW;
-            }
             char szParmSessionID[32];
-            if (RT_SUCCESS(rc) && !RTStrPrintf(szParmSessionID, sizeof(szParmSessionID), "--session-id=%RU32",
-                                               pSessionThread->StartupInfo.uSessionID))
-            {
-                rc = VERR_BUFFER_OVERFLOW;
-            }
+            RTStrPrintf(szParmSessionID, sizeof(szParmSessionID), "--session-id=%RU32", pSessionThread->StartupInfo.uSessionID);
+
             char szParmSessionProto[32];
-            if (RT_SUCCESS(rc) && !RTStrPrintf(szParmSessionProto, sizeof(szParmSessionProto), "--session-proto=%RU32",
-                                               pSessionThread->StartupInfo.uProtocol))
-            {
-                rc = VERR_BUFFER_OVERFLOW;
-            }
+            RTStrPrintf(szParmSessionProto, sizeof(szParmSessionProto), "--session-proto=%RU32",
+                        pSessionThread->StartupInfo.uProtocol);
 #ifdef DEBUG
             char szParmThreadId[32];
-            if (RT_SUCCESS(rc) && !RTStrPrintf(szParmThreadId, sizeof(szParmThreadId), "--thread-id=%RU32",
-                                               s_uCtrlSessionThread))
-            {
-                rc = VERR_BUFFER_OVERFLOW;
-            }
+            RTStrPrintf(szParmThreadId, sizeof(szParmThreadId), "--thread-id=%RU32", s_uCtrlSessionThread);
 #endif
-            if (RT_SUCCESS(rc))
-            {
-                int iOptIdx = 0; /* Current index in argument vector. */
+            char szParmUserName[GUESTPROCESS_MAX_USER_LEN + 32];
 
-                char const *papszArgs[16];
-                papszArgs[iOptIdx++] = pszExeName;
-                papszArgs[iOptIdx++] = "guestsession";
-                papszArgs[iOptIdx++] = szParmSessionID;
-                papszArgs[iOptIdx++] = szParmSessionProto;
+            int iArgIdx = 0; /* Current index in argument vector. */
+            char const *papszArgs[16];
+
+            papszArgs[iArgIdx++] = pszExeName;
+            papszArgs[iArgIdx++] = "guestsession";
+            papszArgs[iArgIdx++] = szParmSessionID;
+            papszArgs[iArgIdx++] = szParmSessionProto;
 #ifdef DEBUG
-                papszArgs[iOptIdx++] = szParmThreadId;
+            papszArgs[iArgIdx++] = szParmThreadId;
 #endif
-                if (!fAnonymous)
-                    papszArgs[iOptIdx++] = szParmUserName;
+            if (!fAnonymous) /* Do we need to pass a user name? */
+            {
+                RTStrPrintf(szParmUserName, sizeof(szParmUserName), "--user=%s", pSessionThread->StartupInfo.szUser);
+                papszArgs[iArgIdx++] = szParmUserName;
+            }
 
-                /* Add same verbose flags as parent process. */
-                int rc2 = VINF_SUCCESS;
-                char szParmVerbose[32] = { 0 };
-                for (int i = 0; i < g_cVerbosity && RT_SUCCESS(rc2); i++)
+            /* Add same verbose flags as parent process. */
+            int rc2 = VINF_SUCCESS;
+            char szParmVerbose[32] = { 0 };
+            for (int i = 0; i < g_cVerbosity && RT_SUCCESS(rc2); i++)
+            {
+                if (i == 0)
+                    rc2 = RTStrCat(szParmVerbose, sizeof(szParmVerbose), "-");
+                if (RT_FAILURE(rc2))
+                    break;
+                rc2 = RTStrCat(szParmVerbose, sizeof(szParmVerbose), "v");
+            }
+            if (RT_SUCCESS(rc2))
+                papszArgs[iArgIdx++] = szParmVerbose;
+
+            /* Add log file handling. Each session will have an own
+             * log file, naming based on the parent log file. */
+            char szParmLogFile[RTPATH_MAX];
+            if (   RT_SUCCESS(rc2)
+                && strlen(g_szLogFile))
+            {
+                char *pszLogFile = RTStrDup(g_szLogFile);
+                if (pszLogFile)
                 {
-                    if (i == 0)
-                        rc2 = RTStrCat(szParmVerbose, sizeof(szParmVerbose), "-");
+                    char *pszLogSuff = NULL;
+                    if (RTPathHasSuffix(pszLogFile))
+                        pszLogSuff = RTStrDup(RTPathSuffix(pszLogFile));
+                    RTPathStripSuffix(pszLogFile);
+                    char *pszLogNewSuffix;
+#ifndef DEBUG
+                    if (RTStrAPrintf(&pszLogNewSuffix, "-%RU32-%s",
+                                     pSessionStartupInfo->uSessionID,
+                                     pSessionStartupInfo->szUser) < 0)
+                    {
+                        rc2 = VERR_NO_MEMORY;
+                    }
+#else /* DEBUG */
+                    /* Include the session thread ID in the log file name. */
+                    if (RTStrAPrintf(&pszLogNewSuffix, "-%RU32-%RU32-%s",
+                                     pSessionStartupInfo->uSessionID,
+                                     s_uCtrlSessionThread,
+                                     pSessionStartupInfo->szUser) < 0)
+                    {
+                        rc2 = VERR_NO_MEMORY;
+                    }
+#endif /* DEBUG */
+                    else
+                    {
+                        rc2 = RTStrAAppend(&pszLogFile, pszLogNewSuffix);
+                        if (RT_SUCCESS(rc2) && pszLogSuff)
+                            rc2 = RTStrAAppend(&pszLogFile, pszLogSuff);
+                        if (RT_SUCCESS(rc2))
+                            RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "--logfile=%s", pszLogFile);
+
+                        RTStrFree(pszLogNewSuffix);
+                    }
                     if (RT_FAILURE(rc2))
-                        break;
-                    rc2 = RTStrCat(szParmVerbose, sizeof(szParmVerbose), "v");
+                        VBoxServiceError("Error building session logfile string for session %RU32 (user %s), rc=%Rrc\n",
+                                         pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, rc2);
+                    if (pszLogSuff)
+                        RTStrFree(pszLogSuff);
+                    RTStrFree(pszLogFile);
                 }
                 if (RT_SUCCESS(rc2))
-                    papszArgs[iOptIdx++] = szParmVerbose;
+                    papszArgs[iArgIdx++] = szParmLogFile;
 
-                /* Add log file handling. Each session will have an own
-                 * log file, naming based on the parent log file. */
-                char szParmLogFile[RTPATH_MAX];
-                if (   RT_SUCCESS(rc2)
-                    && strlen(g_szLogFile))
-                {
-                    char *pszLogFile = RTStrDup(g_szLogFile);
-                    if (pszLogFile)
-                    {
-                        char *pszLogSuff = NULL;
-                        if (RTPathHasSuffix(pszLogFile))
-                            pszLogSuff = RTStrDup(RTPathSuffix(pszLogFile));
-                        RTPathStripSuffix(pszLogFile);
-                        char *pszLogNewSuffix;
-#ifndef DEBUG
-                        if (RTStrAPrintf(&pszLogNewSuffix, "-%RU32-%s",
-                                         pSessionStartupInfo->uSessionID,
-                                         pSessionStartupInfo->szUser) < 0)
-                        {
-                            rc2 = VERR_NO_MEMORY;
-                        }
-#else /* DEBUG */
-                        /* Include the session thread ID in the log file name. */
-                        if (RTStrAPrintf(&pszLogNewSuffix, "-%RU32-%RU32-%s",
-                                         pSessionStartupInfo->uSessionID,
-                                         s_uCtrlSessionThread,
-                                         pSessionStartupInfo->szUser) < 0)
-                        {
-                            rc2 = VERR_NO_MEMORY;
-                        }
-#endif /* DEBUG */
-                        else
-                        {
-                            rc2 = RTStrAAppend(&pszLogFile, pszLogNewSuffix);
-                            if (RT_SUCCESS(rc2) && pszLogSuff)
-                                rc2 = RTStrAAppend(&pszLogFile, pszLogSuff);
-                            if (RT_SUCCESS(rc2))
-                            {
-                                if (!RTStrPrintf(szParmLogFile, sizeof(szParmLogFile),
-                                                 "--logfile=%s", pszLogFile))
-                                {
-                                    rc2 = VERR_BUFFER_OVERFLOW;
-                                }
-                            }
-                            RTStrFree(pszLogNewSuffix);
-                        }
-                        if (RT_FAILURE(rc2))
-                            VBoxServiceError("Error building session logfile string for session %RU32 (user %s), rc=%Rrc\n",
-                                             pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, rc2);
-                        if (pszLogSuff)
-                            RTStrFree(pszLogSuff);
-                        RTStrFree(pszLogFile);
-                    }
-                    if (RT_SUCCESS(rc2))
-                        papszArgs[iOptIdx++] = szParmLogFile;
-
-                    rc = rc2;
-                }
-                else if (RT_FAILURE(rc2))
-                    rc = rc2;
+                rc = rc2;
+            }
+            else if (RT_FAILURE(rc2))
+                rc = rc2;
 #ifdef DEBUG
-                VBoxServiceVerbose(4, "Argv building rc=%Rrc, session flags=%x\n",
-                                   rc, g_Session.uFlags);
-                char szParmDumpStdOut[32];
-                if (   RT_SUCCESS(rc)
-                    && g_Session.uFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT)
-                {
-/** @todo r=bird: This amazing code can be replaced by
- *  @code
- *    papszArgs[iOptIdx++] = "--dump-stdout";
- *  @endcode
- *  which doesn't even need braces.
- */
-                    if (!RTStrPrintf(szParmDumpStdOut, sizeof(szParmDumpStdOut), "--dump-stdout"))
-                        rc = VERR_BUFFER_OVERFLOW;
-                    if (RT_SUCCESS(rc))
-                        papszArgs[iOptIdx++] = szParmDumpStdOut;
-                }
-                char szParmDumpStdErr[32];
-                if (   RT_SUCCESS(rc)
-                    && g_Session.uFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR)
-                {
-                    if (!RTStrPrintf(szParmDumpStdErr, sizeof(szParmDumpStdErr), "--dump-stderr"))
-                        rc = VERR_BUFFER_OVERFLOW;
-                    if (RT_SUCCESS(rc))
-                        papszArgs[iOptIdx++] = szParmDumpStdErr;
-                }
+            VBoxServiceVerbose(4, "Argv building rc=%Rrc, session flags=%x\n", rc, g_Session.fFlags);
+            if (RT_SUCCESS(rc))
+            {
+                if (g_Session.fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT)
+                    papszArgs[iArgIdx++] = "--dump-stdout";
+                if (g_Session.fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR)
+                    papszArgs[iArgIdx++] = "--dump-stderr";
+            }
 #endif
-                papszArgs[iOptIdx++] = NULL;
+            papszArgs[iArgIdx++] = NULL;
 
-                if (g_cVerbosity > 3)
-                {
-                    VBoxServiceVerbose(4, "Forking parameters:\n");
+            if (g_cVerbosity > 3)
+            {
+                VBoxServiceVerbose(4, "Spawning parameters:\n");
 
-                    iOptIdx = 0;
-                    while (papszArgs[iOptIdx])
-                        VBoxServiceVerbose(4, "\t%s\n", papszArgs[iOptIdx++]);
-                }
+                iArgIdx = 0;
+                while (papszArgs[iArgIdx])
+                    VBoxServiceVerbose(4, "\t%s\n", papszArgs[iArgIdx++]);
+            }
 
-                uint32_t uProcFlags = RTPROC_FLAGS_SERVICE
-                                    | RTPROC_FLAGS_HIDDEN; /** @todo More flags from startup info? */
+            uint32_t uProcFlags = RTPROC_FLAGS_SERVICE
+                                | RTPROC_FLAGS_HIDDEN; /** @todo More flags from startup info? */
 
-                /*
-                 * Create the session process' environment block.
-                 */
-                RTENV hEnv = NIL_RTENV;
-                if (RT_SUCCESS(rc))
-                {
-                    /** @todo At the moment a session process does not have the ability to use the
-                     *        per-session environment variables itself, only the session's guest
-                     *        processes do so. Implement that later, also needs tweaking of
-                     *        VbglR3GuestCtrlSessionGetOpen(). */
-                    rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
-                }
+            /*
+             * Create the session process' environment block.
+             */
+            RTENV hEnv = NIL_RTENV;
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo At the moment a session process does not have the ability to use the
+                 *        per-session environment variables itself, only the session's guest
+                 *        processes do so. Implement that later, also needs tweaking of
+                 *        VbglR3GuestCtrlSessionGetOpen(). */
+                rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
+            }
 
 #if 0 /* Pipe handling not needed (yet). */
-                /* Setup pipes. */
-                rc = GstcntlProcessSetupPipe("|", 0 /*STDIN_FILENO*/,
-                                             &pSession->StdIn.hChild, &pSession->StdIn.phChild, &pSession->hStdInW);
+            /* Setup pipes. */
+            rc = GstcntlProcessSetupPipe("|", 0 /*STDIN_FILENO*/,
+                                         &pSession->StdIn.hChild, &pSession->StdIn.phChild, &pSession->hStdInW);
+            if (RT_SUCCESS(rc))
+            {
+                rc = GstcntlProcessSetupPipe("|", 1 /*STDOUT_FILENO*/,
+                                             &pSession->StdOut.hChild, &pSession->StdOut.phChild, &pSession->hStdOutR);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = GstcntlProcessSetupPipe("|", 1 /*STDOUT_FILENO*/,
-                                                 &pSession->StdOut.hChild, &pSession->StdOut.phChild, &pSession->hStdOutR);
+                    rc = GstcntlProcessSetupPipe("|", 2 /*STDERR_FILENO*/,
+                                                 &pSession->StdErr.hChild, &pSession->StdErr.phChild, &pSession->hStdErrR);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = GstcntlProcessSetupPipe("|", 2 /*STDERR_FILENO*/,
-                                                     &pSession->StdErr.hChild, &pSession->StdErr.phChild, &pSession->hStdErrR);
+                        rc = RTPollSetCreate(&pSession->hPollSet);
                         if (RT_SUCCESS(rc))
-                        {
-                            rc = RTPollSetCreate(&pSession->hPollSet);
-                            if (RT_SUCCESS(rc))
-                                rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdInW, RTPOLL_EVT_ERROR,
-                                                      VBOXSERVICECTRLPIPEID_STDIN);
-                            if (RT_SUCCESS(rc))
-                                rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdOutR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
-                                                      VBOXSERVICECTRLPIPEID_STDOUT);
-                            if (RT_SUCCESS(rc))
-                                rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdErrR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
-                                                      VBOXSERVICECTRLPIPEID_STDERR);
-                        }
+                            rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdInW, RTPOLL_EVT_ERROR,
+                                                  VBOXSERVICECTRLPIPEID_STDIN);
+                        if (RT_SUCCESS(rc))
+                            rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdOutR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
+                                                  VBOXSERVICECTRLPIPEID_STDOUT);
+                        if (RT_SUCCESS(rc))
+                            rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdErrR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
+                                                  VBOXSERVICECTRLPIPEID_STDERR);
+                    }
 
-                        if (RT_SUCCESS(rc))
-                            rc = RTProcCreateEx(pszExeName, papszArgs, hEnv, uProcFlags,
-                                                pSession->StdIn.phChild, pSession->StdOut.phChild, pSession->StdErr.phChild,
-                                                !fAnonymous ? pSession->StartupInfo.szUser : NULL,
-                                                !fAnonymous ? pSession->StartupInfo.szPassword : NULL,
-                                                &pSession->hProcess);
+                    if (RT_SUCCESS(rc))
+                        rc = RTProcCreateEx(pszExeName, papszArgs, hEnv, uProcFlags,
+                                            pSession->StdIn.phChild, pSession->StdOut.phChild, pSession->StdErr.phChild,
+                                            !fAnonymous ? pSession->StartupInfo.szUser : NULL,
+                                            !fAnonymous ? pSession->StartupInfo.szPassword : NULL,
+                                            &pSession->hProcess);
 
-                        if (RT_SUCCESS(rc))
-                        {
-                            /*
-                             * Close the child ends of any pipes and redirected files.
-                             */
-                            int rc2 = RTHandleClose(pSession->StdIn.phChild); AssertRC(rc2);
-                            pSession->StdIn.phChild     = NULL;
-                            rc2 = RTHandleClose(pSession->StdOut.phChild);    AssertRC(rc2);
-                            pSession->StdOut.phChild    = NULL;
-                            rc2 = RTHandleClose(pSession->StdErr.phChild);    AssertRC(rc2);
-                            pSession->StdErr.phChild    = NULL;
-                        }
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Close the child ends of any pipes and redirected files.
+                         */
+                        int rc2 = RTHandleClose(pSession->StdIn.phChild); AssertRC(rc2);
+                        pSession->StdIn.phChild     = NULL;
+                        rc2 = RTHandleClose(pSession->StdOut.phChild);    AssertRC(rc2);
+                        pSession->StdOut.phChild    = NULL;
+                        rc2 = RTHandleClose(pSession->StdErr.phChild);    AssertRC(rc2);
+                        pSession->StdErr.phChild    = NULL;
                     }
                 }
+            }
 #else
-                RTHANDLE hStdIn;
-                if (RT_SUCCESS(rc))
-                    rc = RTFileOpenBitBucket(&hStdIn.u.hFile, RTFILE_O_READ);
+            RTHANDLE hStdIn;
+            if (RT_SUCCESS(rc))
+                rc = RTFileOpenBitBucket(&hStdIn.u.hFile, RTFILE_O_READ);
+            if (RT_SUCCESS(rc))
+            {
+                hStdIn.enmType = RTHANDLETYPE_FILE;
+
+                RTHANDLE hStdOutAndErr;
+                rc = RTFileOpenBitBucket(&hStdOutAndErr.u.hFile, RTFILE_O_WRITE);
                 if (RT_SUCCESS(rc))
                 {
-                    hStdIn.enmType = RTHANDLETYPE_FILE;
-
-                    RTHANDLE hStdOutAndErr;
-                    rc = RTFileOpenBitBucket(&hStdOutAndErr.u.hFile, RTFILE_O_WRITE);
-                    if (RT_SUCCESS(rc))
-                    {
-                        hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
+                    hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
 
                         rc = RTProcCreateEx(pszExeName, papszArgs, hEnv, uProcFlags,
-                                            &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
-                                            !fAnonymous ? pSessionThread->StartupInfo.szUser : NULL,
-                                            !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
-                                            &pSessionThread->hProcess);
+                                        &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
+                                        !fAnonymous ? pSessionThread->StartupInfo.szUser : NULL,
+                                        !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
+                                        &pSessionThread->hProcess);
 
-                        RTFileClose(hStdOutAndErr.u.hFile);
-                    }
-
-                    RTFileClose(hStdIn.u.hFile);
+                    RTFileClose(hStdOutAndErr.u.hFile);
                 }
-#endif
-                if (hEnv != NIL_RTENV)
-                    RTEnvDestroy(hEnv);
+
+                RTFileClose(hStdIn.u.hFile);
             }
+#endif
+            if (hEnv != NIL_RTENV)
+                RTEnvDestroy(hEnv);
         }
         else
             rc = VERR_FILE_NOT_FOUND;
@@ -2197,7 +2092,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
     else
         rc = VERR_NO_MEMORY;
 
-    VBoxServiceVerbose(3, "Forking session thread returned returned rc=%Rrc\n", rc);
+    VBoxServiceVerbose(3, "Spawning session thread returned returned rc=%Rrc\n", rc);
     return rc;
 }
 
@@ -2226,7 +2121,7 @@ int GstCntlSessionThreadWait(PVBOXSERVICECTRLSESSIONTHREAD pThread,
     int rc = VINF_SUCCESS;
 
     /*
-     * The fork should have received the same closing request,
+     * The spawned session process should have received the same closing request,
      * so just wait for the process to close.
      */
     if (ASMAtomicReadBool(&pThread->fStarted))
@@ -2295,36 +2190,25 @@ int GstCntlSessionThreadDestroyAll(PRTLISTANCHOR pList, uint32_t uFlags)
         if (RT_FAILURE(rc))
             VBoxServiceError("Cancelling pending waits failed; rc=%Rrc\n", rc);*/
 
-/** @todo r=bird: Why don't you use RTListForEachSafe here?? */
-    PVBOXSERVICECTRLSESSIONTHREAD pSessionThread = RTListGetFirst(pList, VBOXSERVICECTRLSESSIONTHREAD, Node);
-    while (pSessionThread)
+    PVBOXSERVICECTRLSESSIONTHREAD pSessIt;
+    PVBOXSERVICECTRLSESSIONTHREAD pSessItNext;
+    RTListForEachSafe(pList, pSessIt, pSessItNext, VBOXSERVICECTRLSESSIONTHREAD, Node)
     {
-        PVBOXSERVICECTRLSESSIONTHREAD pSessionThreadNext =
-            RTListGetNext(pList, pSessionThread, VBOXSERVICECTRLSESSIONTHREAD, Node);
-        bool fLast = RTListNodeIsLast(pList, &pSessionThread->Node); /** @todo r=bird: This isn't necessary, pSessionThreadNext will be NULL! */
-
-        int rc2 = GstCntlSessionThreadDestroy(pSessionThread, uFlags);
+        int rc2 = GstCntlSessionThreadDestroy(pSessIt, uFlags);
         if (RT_FAILURE(rc2))
         {
-            VBoxServiceError("Closing session thread failed with rc=%Rrc\n", rc2);
+            VBoxServiceError("Closing session thread '%s' failed with rc=%Rrc\n", RTThreadGetName(pSessIt->Thread), rc2);
             if (RT_SUCCESS(rc))
                 rc = rc2;
             /* Keep going. */
         }
-
-        if (fLast)
-            break;
-
-        pSessionThread = pSessionThreadNext;
     }
 
+    VBoxServiceVerbose(4, "Destroying guest session threads ended with %Rrc\n", rc);
     return rc;
 }
 
-/** @todo r=bird: This isn't a fork in the tranditional unix sense, so please
- * don't confuse any unix guys by using the term.
- * GstCntlSessionChildMain would be a good name.  */
-RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
+RTEXITCODE VBoxServiceControlSessionSpawnInit(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -2349,7 +2233,7 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
                  s_aOptions, RT_ELEMENTS(s_aOptions),
                  1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
-    uint32_t uSessionFlags = VBOXSERVICECTRLSESSION_FLAG_FORK;
+    uint32_t uSessionFlags = VBOXSERVICECTRLSESSION_FLAG_SPAWN;
 
     /* Protocol and session ID must be specified explicitly. */
     g_Session.StartupInfo.uProtocol  = UINT32_MAX;
@@ -2426,7 +2310,7 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
         return RTMsgErrorExit(RTEXITCODE_INIT, "Failed to create log file \"%s\", rc=%Rrc\n",
                               g_szLogFile[0] ? g_szLogFile : "<None>", rc);
 
-    RTEXITCODE rcExit = gstcntlSessionForkWorker(&g_Session);
+    RTEXITCODE rcExit = gstcntlSessionSpawnWorker(&g_Session);
 
     VBoxServiceLogDestroy();
     return rcExit;

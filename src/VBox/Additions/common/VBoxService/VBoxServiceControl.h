@@ -81,7 +81,7 @@ typedef struct VBOXSERVICECTRLSESSIONSTARTUPINFO
     char                            szDomain[GUESTPROCESS_MAX_DOMAIN_LEN];
     /** Session creation flags.
      *  @sa VBOXSERVICECTRLSESSIONSTARTUPFLAG_* flags. */
-    uint32_t                        uFlags;
+    uint32_t                        fFlags;
 } VBOXSERVICECTRLSESSIONSTARTUPINFO;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLSESSIONSTARTUPINFO *PVBOXSERVICECTRLSESSIONSTARTUPINFO;
@@ -135,9 +135,9 @@ typedef struct VBOXSERVICECTRLSESSIONTHREAD
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLSESSIONTHREAD *PVBOXSERVICECTRLSESSIONTHREAD;
 
-/** Flag indicating that this session has been forked from
+/** Flag indicating that this session has been spawned from
  *  the main executable. */
-#define VBOXSERVICECTRLSESSION_FLAG_FORK                 RT_BIT(0)
+#define VBOXSERVICECTRLSESSION_FLAG_SPAWN                RT_BIT(0)
 /** Flag indicating that this session is anonymous, that is,
  *  it will run start guest processes with the same credentials
  *  as the main executable. */
@@ -176,7 +176,7 @@ typedef struct VBOXSERVICECTRLSESSION
     /** Internal session flags, not related
      *  to StartupInfo stuff.
      *  @sa VBOXSERVICECTRLSESSION_FLAG_* flags. */
-    uint32_t                        uFlags;
+    uint32_t                        fFlags;
     /** How many processes do we allow keeping around at a time? */
     uint32_t                        uProcsMaxKept;
 } VBOXSERVICECTRLSESSION;
@@ -298,7 +298,7 @@ extern int                      GstCntlSessionThreadCreate(PRTLISTANCHOR pList, 
 extern int                      GstCntlSessionThreadDestroy(PVBOXSERVICECTRLSESSIONTHREAD pSession, uint32_t uFlags);
 extern int                      GstCntlSessionThreadDestroyAll(PRTLISTANCHOR pList, uint32_t uFlags);
 extern int                      GstCntlSessionThreadTerminate(PVBOXSERVICECTRLSESSIONTHREAD pSession);
-extern RTEXITCODE               VBoxServiceControlSessionForkInit(int argc, char **argv);
+extern RTEXITCODE               VBoxServiceControlSessionSpawnInit(int argc, char **argv);
 /* Per-session functions. */
 extern PVBOXSERVICECTRLPROCESS  GstCntlSessionRetainProcess(PVBOXSERVICECTRLSESSION pSession, uint32_t uPID);
 extern int                      GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession);

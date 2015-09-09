@@ -865,7 +865,7 @@ int main(int argc, char **argv)
      * handles a guest control session.
      */
     if (fUserSession)
-        return VBoxServiceControlSessionForkInit(argc, argv);
+        return VBoxServiceControlSessionSpawnInit(argc, argv);
 #endif
 
     /*
