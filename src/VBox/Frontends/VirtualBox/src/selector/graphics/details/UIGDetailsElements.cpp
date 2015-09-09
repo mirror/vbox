@@ -54,7 +54,6 @@
 #include <QGraphicsLinearLayout>
 
 
-/* Constructor: */
 UIGDetailsUpdateThread::UIGDetailsUpdateThread(const CMachine &machine)
     : m_machine(machine)
 {
@@ -114,55 +113,6 @@ void UIGDetailsElementInterface::cleanupThread()
         delete m_pThread;
         m_pThread = 0;
     }
-}
-
-
-void UIGDetailsUpdateThreadGeneral::run()
-{
-    COMBase::InitializeCOM(false);
-
-    if (!machine().isNull())
-    {
-        /* Prepare table: */
-        UITextTable m_text;
-
-        /* Gather information: */
-        if (machine().GetAccessible())
-        {
-            /* Machine name: */
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Name", "details (general)"), machine().GetName());
-
-            /* Operating system type: */
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Operating System", "details (general)"),
-                                       vboxGlobal().vmGuestOSTypeDescription(machine().GetOSTypeId()));
-
-            /* Get groups: */
-            QStringList groups = machine().GetGroups().toList();
-            /* Do not show groups for machine which is in root group only: */
-            if (groups.size() == 1)
-                groups.removeAll("/");
-            /* If group list still not empty: */
-            if (!groups.isEmpty())
-            {
-                /* For every group: */
-                for (int i = 0; i < groups.size(); ++i)
-                {
-                    /* Trim first '/' symbol: */
-                    QString &strGroup = groups[i];
-                    if (strGroup.startsWith("/") && strGroup != "/")
-                        strGroup.remove(0, 1);
-                }
-                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Groups", "details (general)"), groups.join(", "));
-            }
-        }
-        else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
-
-        /* Send information into GUI thread: */
-        emit sigComplete(m_text);
-    }
-
-    COMBase::CleanupCOM();
 }
 
 
@@ -273,6 +223,55 @@ void UIGDetailsElementPreview::updateAppearance()
     /* Set new machine attribute: */
     m_pPreview->setMachine(machine());
     emit sigBuildDone();
+}
+
+
+void UIGDetailsUpdateThreadGeneral::run()
+{
+    COMBase::InitializeCOM(false);
+
+    if (!machine().isNull())
+    {
+        /* Prepare table: */
+        UITextTable m_text;
+
+        /* Gather information: */
+        if (machine().GetAccessible())
+        {
+            /* Machine name: */
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Name", "details (general)"), machine().GetName());
+
+            /* Operating system type: */
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Operating System", "details (general)"),
+                                       vboxGlobal().vmGuestOSTypeDescription(machine().GetOSTypeId()));
+
+            /* Get groups: */
+            QStringList groups = machine().GetGroups().toList();
+            /* Do not show groups for machine which is in root group only: */
+            if (groups.size() == 1)
+                groups.removeAll("/");
+            /* If group list still not empty: */
+            if (!groups.isEmpty())
+            {
+                /* For every group: */
+                for (int i = 0; i < groups.size(); ++i)
+                {
+                    /* Trim first '/' symbol: */
+                    QString &strGroup = groups[i];
+                    if (strGroup.startsWith("/") && strGroup != "/")
+                        strGroup.remove(0, 1);
+                }
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Groups", "details (general)"), groups.join(", "));
+            }
+        }
+        else
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
+
+        /* Send information into GUI thread: */
+        emit sigComplete(m_text);
+    }
+
+    COMBase::CleanupCOM();
 }
 
 

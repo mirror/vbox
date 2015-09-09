@@ -31,6 +31,7 @@
 /* Forward declarations: */
 class UIGMachinePreview;
 
+
 /* Element update thread: */
 class UIGDetailsUpdateThread : public QThread
 {
@@ -92,6 +93,39 @@ private:
 };
 
 
+/* Element 'Preview': */
+class UIGDetailsElementPreview : public UIGDetailsElement
+{
+    Q_OBJECT;
+
+public:
+
+    /* Constructor: */
+    UIGDetailsElementPreview(UIGDetailsSet *pParent, bool fOpened);
+
+private slots:
+
+    /** Handles preview size-hint changes. */
+    void sltPreviewSizeHintChanged();
+
+private:
+
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helpers: Layout stuff: */
+    int minimumWidthHint() const;
+    int minimumHeightHint(bool fClosed) const;
+    void updateLayout();
+
+    /* Helper: Update stuff: */
+    void updateAppearance();
+
+    /* Variables: */
+    UIGMachinePreview *m_pPreview;
+};
+
+
 /* Thread 'General': */
 class UIGDetailsUpdateThreadGeneral : public UIGDetailsUpdateThread
 {
@@ -124,39 +158,6 @@ private:
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadGeneral(machine()); }
-};
-
-
-/* Element 'Preview': */
-class UIGDetailsElementPreview : public UIGDetailsElement
-{
-    Q_OBJECT;
-
-public:
-
-    /* Constructor: */
-    UIGDetailsElementPreview(UIGDetailsSet *pParent, bool fOpened);
-
-private slots:
-
-    /** Handles preview size-hint changes. */
-    void sltPreviewSizeHintChanged();
-
-private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
-
-    /* Helpers: Layout stuff: */
-    int minimumWidthHint() const;
-    int minimumHeightHint(bool fClosed) const;
-    void updateLayout();
-
-    /* Helper: Update stuff: */
-    void updateAppearance();
-
-    /* Variables: */
-    UIGMachinePreview *m_pPreview;
 };
 
 
