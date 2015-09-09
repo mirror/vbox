@@ -1477,8 +1477,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                     return 'Element %s has an invalid %s attribute value: %s.' % (sName, sAttr, dAttribs[sAttr],);
 
         # Validate string attributes.
-        for sAttr in [ 'name', 'unit', 'text' ]:
-            if sAttr in dAttribs and (len(dAttribs[sAttr]) == 0 or sAttr == 'unit'):
+        for sAttr in [ 'name', 'text' ]: # 'unit' can be zero length.
+            if sAttr in dAttribs and len(dAttribs[sAttr]) == 0:
                 return 'Element %s has an empty %s attribute value.' % (sName, sAttr,);
 
         # Validate the timestamp attribute.
