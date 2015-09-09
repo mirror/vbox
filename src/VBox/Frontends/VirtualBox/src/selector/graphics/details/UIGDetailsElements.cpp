@@ -117,11 +117,6 @@ void UIGDetailsElementInterface::cleanupThread()
 }
 
 
-UIGDetailsUpdateThreadGeneral::UIGDetailsUpdateThreadGeneral(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
-
 void UIGDetailsUpdateThreadGeneral::run()
 {
     COMBase::InitializeCOM(false);
@@ -168,11 +163,6 @@ void UIGDetailsUpdateThreadGeneral::run()
     }
 
     COMBase::CleanupCOM();
-}
-
-UIGDetailsUpdateThread* UIGDetailsElementGeneral::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadGeneral(machine());
 }
 
 
@@ -286,11 +276,6 @@ void UIGDetailsElementPreview::updateAppearance()
 }
 
 
-UIGDetailsUpdateThreadSystem::UIGDetailsUpdateThreadSystem(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
-
 void UIGDetailsUpdateThreadSystem::run()
 {
     COMBase::InitializeCOM(false);
@@ -369,16 +354,6 @@ void UIGDetailsUpdateThreadSystem::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsUpdateThread* UIGDetailsElementSystem::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadSystem(machine());
-}
-
-
-UIGDetailsUpdateThreadDisplay::UIGDetailsUpdateThreadDisplay(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
 
 void UIGDetailsUpdateThreadDisplay::run()
 {
@@ -487,16 +462,6 @@ void UIGDetailsUpdateThreadDisplay::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsUpdateThread* UIGDetailsElementDisplay::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadDisplay(machine());
-}
-
-
-UIGDetailsUpdateThreadStorage::UIGDetailsUpdateThreadStorage(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
 
 void UIGDetailsUpdateThreadStorage::run()
 {
@@ -579,16 +544,6 @@ void UIGDetailsUpdateThreadStorage::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsUpdateThread* UIGDetailsElementStorage::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadStorage(machine());
-}
-
-
-UIGDetailsUpdateThreadAudio::UIGDetailsUpdateThreadAudio(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
 
 void UIGDetailsUpdateThreadAudio::run()
 {
@@ -628,16 +583,6 @@ void UIGDetailsUpdateThreadAudio::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsUpdateThread* UIGDetailsElementAudio::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadAudio(machine());
-}
-
-
-UIGDetailsUpdateThreadNetwork::UIGDetailsUpdateThreadNetwork(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
 
 void UIGDetailsUpdateThreadNetwork::run()
 {
@@ -736,16 +681,6 @@ QString UIGDetailsUpdateThreadNetwork::summarizeGenericProperties(const CNetwork
     return strResult;
 }
 
-UIGDetailsUpdateThread* UIGDetailsElementNetwork::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadNetwork(machine());
-}
-
-
-UIGDetailsUpdateThreadSerial::UIGDetailsUpdateThreadSerial(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
 
 void UIGDetailsUpdateThreadSerial::run()
 {
@@ -791,18 +726,8 @@ void UIGDetailsUpdateThreadSerial::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsUpdateThread* UIGDetailsElementSerial::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadSerial(machine());
-}
-
 
 #ifdef VBOX_WITH_PARALLEL_PORTS
-UIGDetailsUpdateThreadParallel::UIGDetailsUpdateThreadParallel(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
-
 void UIGDetailsUpdateThreadParallel::run()
 {
     COMBase::InitializeCOM(false);
@@ -840,18 +765,8 @@ void UIGDetailsUpdateThreadParallel::run()
 
     COMBase::CleanupCOM();
 }
-
-UIGDetailsUpdateThread* UIGDetailsElementParallel::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadParallel(machine());
-}
 #endif /* VBOX_WITH_PARALLEL_PORTS */
 
-
-UIGDetailsUpdateThreadUSB::UIGDetailsUpdateThreadUSB(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
 
 void UIGDetailsUpdateThreadUSB::run()
 {
@@ -904,16 +819,6 @@ void UIGDetailsUpdateThreadUSB::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsUpdateThread* UIGDetailsElementUSB::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadUSB(machine());
-}
-
-
-UIGDetailsUpdateThreadSF::UIGDetailsUpdateThreadSF(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
 
 void UIGDetailsUpdateThreadSF::run()
 {
@@ -944,16 +849,6 @@ void UIGDetailsUpdateThreadSF::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsUpdateThread* UIGDetailsElementSF::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadSF(machine());
-}
-
-
-UIGDetailsUpdateThreadUI::UIGDetailsUpdateThreadUI(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
 
 void UIGDetailsUpdateThreadUI::run()
 {
@@ -1048,16 +943,6 @@ void UIGDetailsUpdateThreadUI::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsUpdateThread* UIGDetailsElementUI::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadUI(machine());
-}
-
-
-UIGDetailsUpdateThreadDescription::UIGDetailsUpdateThreadDescription(const CMachine &machine)
-    : UIGDetailsUpdateThread(machine)
-{
-}
 
 void UIGDetailsUpdateThreadDescription::run()
 {
@@ -1086,10 +971,5 @@ void UIGDetailsUpdateThreadDescription::run()
     }
 
     COMBase::CleanupCOM();
-}
-
-UIGDetailsUpdateThread* UIGDetailsElementDescription::createUpdateThread()
-{
-    return new UIGDetailsUpdateThreadDescription(machine());
 }
 

@@ -100,7 +100,8 @@ class UIGDetailsUpdateThreadGeneral : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadGeneral(const CMachine &machine);
+    UIGDetailsUpdateThreadGeneral(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -122,7 +123,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadGeneral(machine()); }
 };
 
 
@@ -167,7 +168,8 @@ class UIGDetailsUpdateThreadSystem : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadSystem(const CMachine &machine);
+    UIGDetailsUpdateThreadSystem(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -189,7 +191,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadSystem(machine()); }
 };
 
 
@@ -201,7 +203,8 @@ class UIGDetailsUpdateThreadDisplay : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadDisplay(const CMachine &machine);
+    UIGDetailsUpdateThreadDisplay(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -223,7 +226,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadDisplay(machine()); }
 };
 
 
@@ -235,7 +238,8 @@ class UIGDetailsUpdateThreadStorage : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadStorage(const CMachine &machine);
+    UIGDetailsUpdateThreadStorage(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -257,7 +261,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadStorage(machine()); }
 };
 
 
@@ -269,7 +273,8 @@ class UIGDetailsUpdateThreadAudio : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadAudio(const CMachine &machine);
+    UIGDetailsUpdateThreadAudio(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -291,7 +296,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadAudio(machine()); }
 };
 
 
@@ -303,7 +308,8 @@ class UIGDetailsUpdateThreadNetwork : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadNetwork(const CMachine &machine);
+    UIGDetailsUpdateThreadNetwork(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -326,7 +332,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadNetwork(machine()); }
 };
 
 
@@ -338,7 +344,8 @@ class UIGDetailsUpdateThreadSerial : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadSerial(const CMachine &machine);
+    UIGDetailsUpdateThreadSerial(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -360,7 +367,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadSerial(machine()); }
 };
 
 
@@ -373,7 +380,8 @@ class UIGDetailsUpdateThreadParallel : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadParallel(const CMachine &machine);
+    UIGDetailsUpdateThreadParallel(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -395,7 +403,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadParallel(machine()); }
 };
 #endif /* VBOX_WITH_PARALLEL_PORTS */
 
@@ -408,7 +416,8 @@ class UIGDetailsUpdateThreadUSB : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadUSB(const CMachine &machine);
+    UIGDetailsUpdateThreadUSB(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -430,7 +439,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadUSB(machine()); }
 };
 
 
@@ -442,7 +451,8 @@ class UIGDetailsUpdateThreadSF : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadSF(const CMachine &machine);
+    UIGDetailsUpdateThreadSF(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -464,7 +474,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadSF(machine()); }
 };
 
 
@@ -476,7 +486,8 @@ class UIGDetailsUpdateThreadUI : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadUI(const CMachine &machine);
+    UIGDetailsUpdateThreadUI(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -498,7 +509,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadUI(machine()); }
 };
 
 
@@ -510,7 +521,8 @@ class UIGDetailsUpdateThreadDescription : public UIGDetailsUpdateThread
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadDescription(const CMachine &machine);
+    UIGDetailsUpdateThreadDescription(const CMachine &machine)
+        : UIGDetailsUpdateThread(machine) {}
 
 private:
 
@@ -532,7 +544,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread();
+    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadDescription(machine()); }
 };
 
 #endif /* __UIGDetailsElements_h__ */
