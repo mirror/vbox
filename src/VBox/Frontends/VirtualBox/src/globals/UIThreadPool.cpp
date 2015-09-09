@@ -271,11 +271,6 @@ void UIThreadPool::sltHandleWorkerFinished(UIThreadWorker *pWorker)
     delete pWorker;
 }
 
-UITask::UITask(const QVariant &data)
-    : m_data(data)
-{
-}
-
 void UITask::start()
 {
     /* Run task: */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,35 +37,33 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-
-/* GUI task prototype: Medium enumeration.
- * Extends UITask interface to be executed by the UIThreadWorker. */
+/** UITask extension used for medium enumeration purposes. */
 class UITaskMediumEnumeration : public UITask
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructor: */
+    /** Constructs @a medium enumeration task. */
     UITaskMediumEnumeration(const UIMedium &medium)
-        : UITask(QVariant::fromValue(medium))
-    {}
+    {
+        /* Store medium as property: */
+        setProperty("medium", QVariant::fromValue(medium));
+    }
 
 private:
 
-    /* Helper: Run stuff: */
-    void run();
+    /** Contains medium enumeration task body. */
+    void run()
+    {
+        /* Get medium: */
+        UIMedium medium = property("medium").value<UIMedium>();
+        /* Enumerate it: */
+        medium.blockAndQueryState();
+        /* Put it back: */
+        setProperty("medium", QVariant::fromValue(medium));
+    }
 };
-
-void UITaskMediumEnumeration::run()
-{
-    /* Get medium: */
-    UIMedium medium = data().value<UIMedium>();
-    /* Enumerate it: */
-    medium.blockAndQueryState();
-    /* Put medium back: */
-    setData(QVariant::fromValue(medium));
-}
 
 
 UIMediumEnumerator::UIMediumEnumerator()
@@ -278,7 +276,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     AssertReturnVoid(iIndexOfTask != -1);
 
     /* Get enumerated UIMedium: */
-    const UIMedium uimedium = pTask->data().value<UIMedium>();
+    const UIMedium uimedium = pTask->property("medium").value<UIMedium>();
     const QString strUIMediumKey = uimedium.key();
     LogRel2(("GUI: UIMediumEnumerator: Medium with key={%s} enumerated\n", strUIMediumKey.toAscii().constData()));
 

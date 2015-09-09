@@ -120,15 +120,8 @@ signals:
 
 public:
 
-    /** Constructs worker-thread task.
-      * @param data defines inter-thread task data to be processed
-      *             by worker-thread and returned back if necessary. */
-    UITask(const QVariant &data);
-
-    /** Returns the inter-thread task data. */
-    const QVariant& data() const { return m_data; }
-    /** Defines the inter-thread task @a data. */
-    void setData(const QVariant &data) { m_data = data; }
+    /** Constructs worker-thread task. */
+    UITask() {}
 
     /** Starts the task. */
     void start();
@@ -138,11 +131,6 @@ protected:
     /** Contains the abstract task body.
       * @remarks To be reimplemented in sub-class. */
     virtual void run() = 0;
-
-private:
-
-    /** Holds the inter-thread task data. */
-    QVariant m_data;
 };
 
 #endif /* !___UIThreadPool_h___ */
