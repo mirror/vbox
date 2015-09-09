@@ -774,7 +774,7 @@ class TestBoxController(object): # pylint: disable=R0903
         (sError, fUnforgivable) = TestResultLogic(oDb).processXmlStream(sXml, self._idTestSet);
         if sError is not None:
             oTestSet = TestSetData().initFromDbWithId(oDb, oStatusData.idTestSet);
-            self.writeToMainLog(oTestSet, '\n!!XML error: %s\n\n' % (sXml,));
+            self.writeToMainLog(oTestSet, '\n!!XML error: %s\n%s\n\n' % (sError, sXml,));
             if fUnforgivable:
                 return self._resultResponse(constants.tbresp.STATUS_NACK);
         return self._resultResponse(constants.tbresp.STATUS_ACK);
