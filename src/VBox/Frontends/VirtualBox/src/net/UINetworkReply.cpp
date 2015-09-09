@@ -106,7 +106,7 @@ private:
     static int applyRawHeaders(RTHTTP hHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
     static unsigned countCertsFound(bool const *pafFoundCerts);
     static bool areAllCertsFound(bool const *pafFoundCerts);
-    static void refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldStore, bool *pafFoundCerts, const char *pszCaCertFile);
+    static int refreshCertificates(RTHTTP hHttp, PRTCRSTORE phStore, bool *pafFoundCerts, const char *pszCaCertFile);
     static void downloadMissingCertificates(RTCRSTORE hNewStore, bool *pafNewFoundCerts, RTHTTP hHttp,
                                             PRTERRINFOSTATIC pStaticErrInfo);
     static int convertVerifyAndAddPemCertificateToStore(RTCRSTORE hStore, void const *pvResponse,
@@ -129,7 +129,8 @@ private:
     static const QString s_strCertificateFileName;
 
 #ifdef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
-    friend UINetworkReplyPrivateThreadTestcase;
+public:
+    static void testIt(RTTEST hTest);
 #endif
 };
 
@@ -307,7 +308,7 @@ int UINetworkReplyPrivateThread::applyHttpsCertificates()
          * Refresh the file if necessary.
          */
         if (fRefresh)
-            refreshCertificates(m_hHttp, hCurStore, afCertsFound, pszCaCertFile);
+            refreshCertificates(m_hHttp, &hCurStore, afCertsFound, pszCaCertFile);
 
         RTCrStoreRelease(hCurStore);
 
@@ -464,14 +465,33 @@ UINetworkReplyPrivateThread::areAllCertsFound(bool const *pafFoundCerts)
     return true;
 }
 
-/*static*/ void
-UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldStore, bool *pafOldFoundCerts,
+/**
+ * Refresh the certificates.
+ *
+ * @return  IPRT status code for the testcase.
+ * @param   hHttp               The HTTP client instance.  (Can be NIL when
+ *                              running the testcase.)
+ * @param   phStore             On input, this holds the current store, so that
+ *                              we can fish out wanted certificates from it.
+ *                              On successful return, this is replaced with a
+ *                              new store reflecting the refrehsed content of
+ *                              @a pszCaCertFile.
+ * @param   pafFoundCerts       On input, this holds the certificates found in
+ *                              the current store.  On return, this reflects
+ *                              what is current in the @a pszCaCertFile.  The
+ *                              array runs parallel to s_aCerts.
+ * @param   pszCaCertFile       Where to write the refreshed certificates if
+ *                              we've managed to gather a collection that is at
+ *                              least as good as the old one.
+ */
+/*static*/ int
+UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, PRTCRSTORE phStore, bool *pafFoundCerts,
                                                  const char *pszCaCertFile)
 {
     /*
      * Collect the standard assortment of SSL certificates.
      */
-    uint32_t  cHint = RTCrStoreCertCount(hOldStore);
+    uint32_t  cHint = RTCrStoreCertCount(*phStore);
     RTCRSTORE hNewStore;
     int rc = RTCrStoreCreateInMem(&hNewStore, cHint > 32 && cHint < _32K ? cHint + 16 : 256);
     if (RT_SUCCESS(rc))
@@ -500,7 +520,7 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
             {
                 rc = RTCrStoreCertAddWantedFromStore(hNewStore,
                                                      RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
-                                                     hOldStore, s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts);
+                                                     *phStore, s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts);
                 AssertLogRelRC(rc);
                 Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts));
             }
@@ -524,7 +544,7 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
             /*
              * If that didn't help, try download the certificates.
              */
-            if (rc != VINF_SUCCESS)
+            if (rc != VINF_SUCCESS && hHttp != NIL_RTHTTP)
                 downloadMissingCertificates(hNewStore, afNewFoundCerts, hHttp, &StaticErrInfo);
 
             /*
@@ -532,19 +552,23 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
              * replace the CA certs file.
              */
             if (   areAllCertsFound(afNewFoundCerts)
-                || countCertsFound(afNewFoundCerts) >= countCertsFound(pafOldFoundCerts) )
+                || countCertsFound(afNewFoundCerts) >= countCertsFound(pafFoundCerts) )
             {
                 rc = RTCrStoreCertExportAsPem(hNewStore, 0 /*fFlags*/, pszCaCertFile);
                 if (RT_SUCCESS(rc))
                 {
-                    memcpy(pafOldFoundCerts, afNewFoundCerts, sizeof(afNewFoundCerts));
                     LogRel(("refreshCertificates/#3: Found %u/%u SSL certs we/you trust (previously %u/%u).\n",
                             countCertsFound(afNewFoundCerts), RTCrStoreCertCount(hNewStore),
-                            countCertsFound(pafOldFoundCerts), RTCrStoreCertCount(hOldStore) ));
+                            countCertsFound(pafFoundCerts), RTCrStoreCertCount(*phStore) ));
+
+                    memcpy(pafFoundCerts, afNewFoundCerts, sizeof(afNewFoundCerts));
+                    RTCrStoreRelease(*phStore);
+                    *phStore  = hNewStore;
+                    hNewStore = NIL_RTCRSTORE;
                 }
                 else
                 {
-                    RT_ZERO(pafOldFoundCerts);
+                    RT_ZERO(pafFoundCerts);
                     LogRel(("refreshCertificates/#3: RTCrStoreCertExportAsPem unexpectedly failed with %Rrc\n", rc));
                 }
             }
@@ -553,6 +577,7 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
         }
         RTCrStoreRelease(hNewStore);
     }
+    return rc;
 }
 
 /*static*/ void
@@ -696,6 +721,7 @@ UINetworkReplyPrivateThread::convertVerifyAndAddPemCertificateToStore(RTCRSTORE 
     return rc;
 }
 
+#ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
 
 /**
  * Our network-reply (HTTP) object.
@@ -802,16 +828,9 @@ private:
 };
 
 
-
-/*
- *
- * Class UINetworkReply implementation.
- * Class UINetworkReply implementation.
- * Class UINetworkReply implementation.
- *
- */
-
-#ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
+/*********************************************************************************************************************************
+*   Class UINetworkReply implementation.                                                                                         *
+*********************************************************************************************************************************/
 
 UINetworkReply::UINetworkReply(const QNetworkRequest &request, UINetworkRequestType requestType)
     : m_replyType(UINetworkReplyType_Qt)
