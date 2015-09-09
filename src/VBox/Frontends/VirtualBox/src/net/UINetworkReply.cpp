@@ -82,11 +82,9 @@ private:
     /* Helper: Main thread runner: */
     void run();
 
-    /** Info about wanted certificate. */
+    /** Additinoal download nfo about wanted certificate. */
     typedef struct CERTINFO
     {
-        /** Set if mandatory. */
-        bool        fMandatory;
         /** Filename in the zip file we download (PEM). */
         const char *pszZipFile;
         /** List of direct URLs to PEM formatted files.. */
@@ -99,7 +97,7 @@ private:
     static int applyProxyRules(RTHTTP hHttp, const QString &strHostName, int iPort);
     static int applyRawHeaders(RTHTTP hHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
     static unsigned countCertsFound(bool const *pafFoundCerts);
-    static bool areAllCertsFound(bool const *pafFoundCerts, bool fOnlyMandatory);
+    static bool areAllCertsFound(bool const *pafFoundCerts);
     static void refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldStore, bool *pafFoundCerts, const char *pszCaCertFile);
     static void downloadMissingCertificates(RTCRSTORE hNewStore, bool *pafNewFoundCerts, RTHTTP hHttp,
                                             PRTERRINFOSTATIC pStaticErrInfo);
@@ -124,7 +122,6 @@ private:
 
 /*static*/ const UINetworkReplyPrivateThread::CERTINFO UINetworkReplyPrivateThread::s_CertInfoPcaCls3Gen5 =
 {
-    /*.fMandatory     =*/   true,
     /*.pszZipFile     =*/
     "VeriSign Root Certificates/Generation 5 (G5) PCA/VeriSign Class 3 Public Primary Certification Authority - G5.pem",
     /*.apszUrls[3]    =*/
@@ -292,7 +289,7 @@ int UINetworkReplyPrivateThread::applyHttpsCertificates()
         /*
          * Final verdict.
          */
-        if (areAllCertsFound(afCertsFound, true /*fOnlyMandatory*/))
+        if (areAllCertsFound(afCertsFound))
             rc = VINF_SUCCESS;
         else
             rc = VERR_NOT_FOUND; /** @todo r=bird: Why not try and let RTHttpGet* bitch if the necessary certs are missing? */
@@ -428,24 +425,13 @@ UINetworkReplyPrivateThread::countCertsFound(bool const *pafFoundCerts)
  * @returns true if we have, false if we haven't.
  * @param   pafFoundCerts       Array parallel to s_aCerts with the status of
  *                              each wanted certificate.
- * @param   fOnlyMandatory      Only require mandatory certificates to be
- *                              present.  If false, all certificates must be
- *                              found before we return true.
  */
 /*static*/ bool
-UINetworkReplyPrivateThread::areAllCertsFound(bool const *pafFoundCerts, bool fOnlyMandatory)
+UINetworkReplyPrivateThread::areAllCertsFound(bool const *pafFoundCerts)
 {
-    if (fOnlyMandatory)
-    {
-        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
-            if (   !pafFoundCerts[i]
-                && ((const CERTINFO *)s_aCerts[i].pvUser)->fMandatory)
-                return false;
-    }
-    else
-        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
-            if (!pafFoundCerts[i])
-                return false;
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
+        if (!pafFoundCerts[i])
+            return false;
     return true;
 }
 
@@ -480,14 +466,14 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
 
             rc = RTCrStoreCertCheckWanted(hNewStore, s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts);
             AssertLogRelRC(rc);
-            Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/));
+            Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts));
             if (rc != VINF_SUCCESS)
             {
                 rc = RTCrStoreCertAddWantedFromStore(hNewStore,
                                                      RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
                                                      hOldStore, s_aCerts, RT_ELEMENTS(s_aCerts), afNewFoundCerts);
                 AssertLogRelRC(rc);
-                Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/));
+                Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts));
             }
 
             /*
@@ -503,7 +489,7 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
                                                                  RTErrInfoInitStatic(&StaticErrInfo));
                 if (RTErrInfoIsSet(&StaticErrInfo.Core))
                     LogRel(("refreshCertificates/#2: %s\n", StaticErrInfo.Core.pszMsg));
-                Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/));
+                Assert(rc != VINF_SUCCESS || areAllCertsFound(afNewFoundCerts));
             }
 
             /*
@@ -516,10 +502,8 @@ UINetworkReplyPrivateThread::refreshCertificates(RTHTTP hHttp, RTCRSTORE hOldSto
              * If we've got the same or better hit rate than the old store,
              * replace the CA certs file.
              */
-            if (   areAllCertsFound(afNewFoundCerts, false /*fOnlyMandatory*/)
-                || (   countCertsFound(afNewFoundCerts) >= countCertsFound(pafOldFoundCerts)
-                    &&    areAllCertsFound(afNewFoundCerts, true /*fOnlyMandatory*/)
-                       >= areAllCertsFound(pafOldFoundCerts, true /*fOnlyMandatory*/) ) )
+            if (   areAllCertsFound(afNewFoundCerts)
+                || countCertsFound(afNewFoundCerts) >= countCertsFound(pafOldFoundCerts) )
             {
                 rc = RTCrStoreCertExportAsPem(hNewStore, 0 /*fFlags*/, pszCaCertFile);
                 if (RT_SUCCESS(rc))
@@ -582,7 +566,7 @@ UINetworkReplyPrivateThread::downloadMissingCertificates(RTCRSTORE hNewStore, bo
                                  * Successfully added. Mark it as found and return if we've got them all.
                                  */
                                 pafNewFoundCerts[i] = true;
-                                if (areAllCertsFound(pafNewFoundCerts, false /*fOnlyMandator*/) == VINF_SUCCESS)
+                                if (areAllCertsFound(pafNewFoundCerts))
                                 {
                                     RTHttpFreeResponse(pvRootsZip);
                                     return;
