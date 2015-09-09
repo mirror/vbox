@@ -119,6 +119,8 @@ string conv(const string& src)
         case '\\': res.insert(i++, "\\"); break;
         default:
         {
+            // encode multibyte UTF-8 symbols to be sure that they 
+            // will be safely read by compiler
             if ((unsigned char)res[i] >= 127)
             {
                 size_t start = i;
@@ -129,6 +131,9 @@ string conv(const string& src)
                     RTStrPrintf(buffer, sizeof(buffer), "\\x%x", (unsigned char)res[i]);
                     temp.append(buffer);
                 } while ((unsigned char)res[++i] & 0x80);
+                // splitting string after escape sequence to finish number sequence 
+                // otherwise it could lead to situation when "\x88a" will threathened as 
+                // multibyte symbol '\x88a' instead of two symbols '\x88' and 'a'
                 temp.append("\" \"");
                 res.replace(start, i - start, temp);
                 i += temp.length();
@@ -136,7 +141,7 @@ string conv(const string& src)
         }
         }
     }
-  return res;
+    return res;
 }
 
 ostream& operator <<(ostream& stream, const ProductRecord product)
