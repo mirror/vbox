@@ -1988,6 +1988,23 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                         }
                     }
                 }
+
+#ifdef RT_OS_WINDOWS
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * On Windows, when VBoxService was started as local service via SCM, the environment variable
+                     * USERPROFILE was set to point to LocalService's user directory.
+                     *
+                     * As we want to make sure that USERPROFILE actually points to the directory of the user we want
+                     * to spawn the guest process for, unset the variable here before handing the environment block over
+                     * to RTProcCreateEx().
+                     *
+                     * Note: RTProcCreateEx() in turn will *not* overwrite _any_ of already set
+                     *       environment variables by default! */
+                    RTEnvUnsetEx(hEnv, "USERPROFILE");
+                }
+#endif
             }
 
 #if 0 /* Pipe handling not needed (yet). */
