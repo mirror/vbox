@@ -61,15 +61,26 @@ UIGDetailsUpdateThread::UIGDetailsUpdateThread(const CMachine &machine)
     qRegisterMetaType<UITextTable>();
 }
 
-UIGDetailsElementInterface::UIGDetailsElementInterface(UIGDetailsSet *pParent, DetailsElementType elementType, bool fOpened)
-    : UIGDetailsElement(pParent, elementType, fOpened)
+UIGDetailsElementInterface::UIGDetailsElementInterface(UIGDetailsSet *pParent, DetailsElementType type, bool fOpened)
+    : UIGDetailsElement(pParent, type, fOpened)
     , m_pThread(0)
 {
+    /* Assign corresponding icon: */
+    setIcon(gpConverter->toIcon(elementType()));
+
+    /* Translate finally: */
+    retranslateUi();
 }
 
 UIGDetailsElementInterface::~UIGDetailsElementInterface()
 {
     cleanupThread();
+}
+
+void UIGDetailsElementInterface::retranslateUi()
+{
+    /* Assign corresponding name: */
+    setName(gpConverter->toString(elementType()));
 }
 
 void UIGDetailsElementInterface::updateAppearance()
@@ -159,21 +170,6 @@ void UIGDetailsUpdateThreadGeneral::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsElementGeneral::UIGDetailsElementGeneral(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_General, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/machine_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementGeneral::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_General));
-}
-
 UIGDetailsUpdateThread* UIGDetailsElementGeneral::createUpdateThread()
 {
     return new UIGDetailsUpdateThreadGeneral(machine());
@@ -200,7 +196,7 @@ UIGDetailsElementPreview::UIGDetailsElementPreview(UIGDetailsSet *pParent, bool 
     pLayout->addItem(m_pPreview);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    /* Translate: */
+    /* Translate finally: */
     retranslateUi();
 }
 
@@ -214,7 +210,8 @@ void UIGDetailsElementPreview::sltPreviewSizeHintChanged()
 
 void UIGDetailsElementPreview::retranslateUi()
 {
-    setName(gpConverter->toString(DetailsElementType_Preview));
+    /* Assign corresponding name: */
+    setName(gpConverter->toString(elementType()));
 }
 
 int UIGDetailsElementPreview::minimumWidthHint() const
@@ -372,21 +369,6 @@ void UIGDetailsUpdateThreadSystem::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsElementSystem::UIGDetailsElementSystem(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_System, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/chipset_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementSystem::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_System));
-}
-
 UIGDetailsUpdateThread* UIGDetailsElementSystem::createUpdateThread()
 {
     return new UIGDetailsUpdateThreadSystem(machine());
@@ -505,21 +487,6 @@ void UIGDetailsUpdateThreadDisplay::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsElementDisplay::UIGDetailsElementDisplay(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_Display, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/vrdp_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementDisplay::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_Display));
-}
-
 UIGDetailsUpdateThread* UIGDetailsElementDisplay::createUpdateThread()
 {
     return new UIGDetailsUpdateThreadDisplay(machine());
@@ -612,21 +579,6 @@ void UIGDetailsUpdateThreadStorage::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsElementStorage::UIGDetailsElementStorage(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_Storage, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/hd_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementStorage::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_Storage));
-}
-
 UIGDetailsUpdateThread* UIGDetailsElementStorage::createUpdateThread()
 {
     return new UIGDetailsUpdateThreadStorage(machine());
@@ -674,21 +626,6 @@ void UIGDetailsUpdateThreadAudio::run()
     }
 
     COMBase::CleanupCOM();
-}
-
-UIGDetailsElementAudio::UIGDetailsElementAudio(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_Audio, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/sound_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementAudio::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_Audio));
 }
 
 UIGDetailsUpdateThread* UIGDetailsElementAudio::createUpdateThread()
@@ -799,21 +736,6 @@ QString UIGDetailsUpdateThreadNetwork::summarizeGenericProperties(const CNetwork
     return strResult;
 }
 
-UIGDetailsElementNetwork::UIGDetailsElementNetwork(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_Network, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/nw_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementNetwork::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_Network));
-}
-
 UIGDetailsUpdateThread* UIGDetailsElementNetwork::createUpdateThread()
 {
     return new UIGDetailsUpdateThreadNetwork(machine());
@@ -869,21 +791,6 @@ void UIGDetailsUpdateThreadSerial::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsElementSerial::UIGDetailsElementSerial(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_Serial, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/serial_port_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementSerial::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_Serial));
-}
-
 UIGDetailsUpdateThread* UIGDetailsElementSerial::createUpdateThread()
 {
     return new UIGDetailsUpdateThreadSerial(machine());
@@ -932,21 +839,6 @@ void UIGDetailsUpdateThreadParallel::run()
     }
 
     COMBase::CleanupCOM();
-}
-
-UIGDetailsElementParallel::UIGDetailsElementParallel(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_Parallel, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/parallel_port_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementParallel::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_Parallel));
 }
 
 UIGDetailsUpdateThread* UIGDetailsElementParallel::createUpdateThread()
@@ -1012,21 +904,6 @@ void UIGDetailsUpdateThreadUSB::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsElementUSB::UIGDetailsElementUSB(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_USB, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/usb_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementUSB::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_USB));
-}
-
 UIGDetailsUpdateThread* UIGDetailsElementUSB::createUpdateThread()
 {
     return new UIGDetailsUpdateThreadUSB(machine());
@@ -1065,21 +942,6 @@ void UIGDetailsUpdateThreadSF::run()
     }
 
     COMBase::CleanupCOM();
-}
-
-UIGDetailsElementSF::UIGDetailsElementSF(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_SF, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/sf_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementSF::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_SF));
 }
 
 UIGDetailsUpdateThread* UIGDetailsElementSF::createUpdateThread()
@@ -1186,21 +1048,6 @@ void UIGDetailsUpdateThreadUI::run()
     COMBase::CleanupCOM();
 }
 
-UIGDetailsElementUI::UIGDetailsElementUI(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_UI, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/interface_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementUI::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_UI));
-}
-
 UIGDetailsUpdateThread* UIGDetailsElementUI::createUpdateThread()
 {
     return new UIGDetailsUpdateThreadUI(machine());
@@ -1239,21 +1086,6 @@ void UIGDetailsUpdateThreadDescription::run()
     }
 
     COMBase::CleanupCOM();
-}
-
-UIGDetailsElementDescription::UIGDetailsElementDescription(UIGDetailsSet *pParent, bool fOpened)
-    : UIGDetailsElementInterface(pParent, DetailsElementType_Description, fOpened)
-{
-    /* Icon: */
-    setIcon(UIIconPool::iconSet(":/description_16px.png"));
-
-    /* Translate: */
-    retranslateUi();
-}
-
-void UIGDetailsElementDescription::retranslateUi()
-{
-    setName(gpConverter->toString(DetailsElementType_Description));
 }
 
 UIGDetailsUpdateThread* UIGDetailsElementDescription::createUpdateThread()

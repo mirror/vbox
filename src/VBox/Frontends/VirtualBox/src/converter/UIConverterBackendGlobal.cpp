@@ -976,6 +976,35 @@ template<> DetailsElementType fromInternalString<DetailsElementType>(const QStri
     return values.at(keys.indexOf(QRegExp(strDetailsElementType, Qt::CaseInsensitive)));
 }
 
+/* QIcon <= DetailsElementType: */
+template<> QIcon toIcon(const DetailsElementType &detailsElementType)
+{
+    switch (detailsElementType)
+    {
+        case DetailsElementType_General:     return UIIconPool::iconSet(":/machine_16px.png");
+        case DetailsElementType_Preview:     return UIIconPool::iconSet(":/machine_16px.png");
+        case DetailsElementType_System:      return UIIconPool::iconSet(":/chipset_16px.png");
+        case DetailsElementType_Display:     return UIIconPool::iconSet(":/vrdp_16px.png");
+        case DetailsElementType_Storage:     return UIIconPool::iconSet(":/hd_16px.png");
+        case DetailsElementType_Audio:       return UIIconPool::iconSet(":/sound_16px.png");
+        case DetailsElementType_Network:     return UIIconPool::iconSet(":/nw_16px.png");
+        case DetailsElementType_Serial:      return UIIconPool::iconSet(":/serial_port_16px.png");
+#ifdef VBOX_WITH_PARALLEL_PORTS
+        case DetailsElementType_Parallel:    return UIIconPool::iconSet(":/parallel_port_16px.png");
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+        case DetailsElementType_USB:         return UIIconPool::iconSet(":/usb_16px.png");
+        case DetailsElementType_SF:          return UIIconPool::iconSet(":/sf_16px.png");
+        case DetailsElementType_UI:          return UIIconPool::iconSet(":/interface_16px.png");
+        case DetailsElementType_Description: return UIIconPool::iconSet(":/description_16px.png");
+        default:
+        {
+            AssertMsgFailed(("No icon for details element type=%d", detailsElementType));
+            break;
+        }
+    }
+    return QIcon();
+}
+
 /* QString <= PreviewUpdateIntervalType: */
 template<> QString toInternalString(const PreviewUpdateIntervalType &previewUpdateIntervalType)
 {

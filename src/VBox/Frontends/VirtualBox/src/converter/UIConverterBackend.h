@@ -158,6 +158,7 @@ template<> QString toString(const DetailsElementType &detailsElementType);
 template<> DetailsElementType fromString<DetailsElementType>(const QString &strDetailsElementType);
 template<> QString toInternalString(const DetailsElementType &detailsElementType);
 template<> DetailsElementType fromInternalString<DetailsElementType>(const QString &strDetailsElementType);
+template<> QIcon toIcon(const DetailsElementType &detailsElementType);
 template<> QString toInternalString(const PreviewUpdateIntervalType &previewUpdateIntervalType);
 template<> PreviewUpdateIntervalType fromInternalString<PreviewUpdateIntervalType>(const QString &strPreviewUpdateIntervalType);
 template<> int toInternalInteger(const PreviewUpdateIntervalType &previewUpdateIntervalType);

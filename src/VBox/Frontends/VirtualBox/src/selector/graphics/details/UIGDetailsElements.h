@@ -65,10 +65,13 @@ class UIGDetailsElementInterface : public UIGDetailsElement
 public:
 
     /* Constructor/destructor: */
-    UIGDetailsElementInterface(UIGDetailsSet *pParent, DetailsElementType elementType, bool fOpened);
+    UIGDetailsElementInterface(UIGDetailsSet *pParent, DetailsElementType type, bool fOpened);
     ~UIGDetailsElementInterface();
 
 protected:
+
+    /* Helper: Translate stuff: */
+    void retranslateUi();
 
     /* Helpers: Update stuff: */
     void updateAppearance();
@@ -113,12 +116,10 @@ class UIGDetailsElementGeneral : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementGeneral(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementGeneral(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_General, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -182,12 +183,10 @@ class UIGDetailsElementSystem : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementSystem(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementSystem(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_System, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -218,12 +217,10 @@ class UIGDetailsElementDisplay : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementDisplay(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementDisplay(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_Display, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -254,12 +251,10 @@ class UIGDetailsElementStorage : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementStorage(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementStorage(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_Storage, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -290,12 +285,10 @@ class UIGDetailsElementAudio : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementAudio(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementAudio(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_Audio, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -327,12 +320,10 @@ class UIGDetailsElementNetwork : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementNetwork(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementNetwork(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_Network, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -363,12 +354,10 @@ class UIGDetailsElementSerial : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementSerial(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementSerial(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_Serial, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -400,12 +389,10 @@ class UIGDetailsElementParallel : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementParallel(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementParallel(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_Parallel, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -437,12 +424,10 @@ class UIGDetailsElementUSB : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementUSB(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementUSB(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_USB, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -473,12 +458,10 @@ class UIGDetailsElementSF : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementSF(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementSF(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_SF, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -509,12 +492,10 @@ class UIGDetailsElementUI : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementUI(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementUI(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_UI, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
@@ -545,12 +526,10 @@ class UIGDetailsElementDescription : public UIGDetailsElementInterface
 public:
 
     /* Constructor: */
-    UIGDetailsElementDescription(UIGDetailsSet *pParent, bool fOpened);
+    UIGDetailsElementDescription(UIGDetailsSet *pParent, bool fOpened)
+        : UIGDetailsElementInterface(pParent, DetailsElementType_Description, fOpened) {}
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
