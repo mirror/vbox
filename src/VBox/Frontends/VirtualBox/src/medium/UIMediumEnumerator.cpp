@@ -46,6 +46,7 @@ public:
 
     /** Constructs @a medium enumeration task. */
     UITaskMediumEnumeration(const UIMedium &medium)
+        : UITask(UITask::Type_MediumEnumeration)
     {
         /* Store medium as property: */
         setProperty("medium", QVariant::fromValue(medium));
@@ -272,6 +273,8 @@ void UIMediumEnumerator::sltHandleSnapshotDeleted(QString strMachineID, QString 
 void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
 {
     /* Make sure that is one of our tasks: */
+    if (pTask->type() != UITask::Type_MediumEnumeration)
+        return;
     int iIndexOfTask = m_tasks.indexOf(pTask);
     AssertReturnVoid(iIndexOfTask != -1);
 
