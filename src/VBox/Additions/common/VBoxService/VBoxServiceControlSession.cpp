@@ -1966,6 +1966,28 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                  *        processes do so. Implement that later, also needs tweaking of
                  *        VbglR3GuestCtrlSessionGetOpen(). */
                 rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
+
+                if (g_cVerbosity > 3)
+                {
+                    VBoxServiceVerbose(4, "Environment variables:\n");
+
+                    uint32_t cVars = RTEnvCountEx(hEnv);
+                    for (uint32_t iVar = 0; iVar < cVars; iVar++)
+                    {
+                        char szVar[_1K];
+                        char szValue[_16K];
+                        int rc2 = RTEnvGetByIndexEx(hEnv, iVar, szVar, sizeof(szVar), szValue, sizeof(szValue));
+                        if (RT_SUCCESS(rc2))
+                            VBoxServiceVerbose(4, "\t%s=%s\n", szVar, szValue);
+                        else if (rc2 == VERR_BUFFER_OVERFLOW)
+                            VBoxServiceVerbose(4, "\t%s=%s [VERR_BUFFER_OVERFLOW]\n", szVar, szValue);
+                        else
+                        {
+                            VBoxServiceVerbose(4, "\tUnable to enumerate environment variable #%RU32: %Rrc\n", iVar, rc2);
+                            /* Keep going. */
+                        }
+                    }
+                }
             }
 
 #if 0 /* Pipe handling not needed (yet). */
