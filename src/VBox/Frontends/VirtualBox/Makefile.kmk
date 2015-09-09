@@ -1152,7 +1152,7 @@ endif
 # Testcase for SSL certificate downloading.
 #
 if defined(VBOX_WITH_TESTCASES) && defined(VBOX_GUI_WITH_NETWORK_MANAGER)
- PROGRAMS += tstSSLCertDownloads
+# PROGRAMS += tstSSLCertDownloads - debug later.
  tstSSLCertDownloads_TEMPLATE   = VBOXQT4GUIEXE
  tstSSLCertDownloads_USES       = qt4
  tstSSLCertDownloads_QTTOOL     = QT4
