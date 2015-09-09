@@ -20,6 +20,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QSet>
 
 /* GUI includes: */
 #include "UIMedium.h"
@@ -52,8 +53,6 @@ public:
 
     /** Constructs medium-enumerator object. */
     UIMediumEnumerator();
-    /** Destructs medium-enumerator object. */
-    ~UIMediumEnumerator();
 
     /* API: Medium-access stuff: */
     QList<QString> mediumIDs() const;
@@ -95,7 +94,7 @@ private:
 
     /* Variables: */
     bool m_fMediumEnumerationInProgress;
-    QList<UITask*> m_tasks;
+    QSet<UITask*> m_tasks;
     UIMediumMap m_mediums;
 };
 

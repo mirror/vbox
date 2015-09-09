@@ -111,6 +111,12 @@ UIThreadPool::~UIThreadPool()
         }
     }
 
+    /* Cleanup all the tasks: */
+    qDeleteAll(m_pendingTasks);
+    qDeleteAll(m_executingTasks);
+    m_pendingTasks.clear();
+    m_executingTasks.clear();
+
     /* Unlock finally: */
     m_everythingLocker.unlock();
 }
@@ -166,7 +172,7 @@ void UIThreadPool::enqueueTask(UITask *pTask)
     m_everythingLocker.lock();
 
     /* Put the task into the queue: */
-    m_tasks.enqueue(pTask);
+    m_pendingTasks.enqueue(pTask);
 
     /* Wake up an idle worker if we got one: */
     if (m_cIdleWorkers > 0)
@@ -215,11 +221,14 @@ UITask* UIThreadPool::dequeueTask(UIThreadWorker *pWorker)
         Assert(m_workers.at(pWorker->index()) == pWorker);
 
         /* Dequeue task if there is one: */
-        if (!m_tasks.isEmpty())
+        if (!m_pendingTasks.isEmpty())
         {
-            UITask *pTask = m_tasks.dequeue();
+            UITask *pTask = m_pendingTasks.dequeue();
             if (pTask)
             {
+                /* Put into the set of executing tasks: */
+                m_executingTasks << pTask;
+
                 /* Unlock finally: */
                 m_everythingLocker.unlock();
 
@@ -258,8 +267,19 @@ void UIThreadPool::sltHandleTaskComplete(UITask *pTask)
     if (isTerminating())
         return;
 
-    /* Notify listener: */
+    /* Notify listeners: */
     emit sigTaskComplete(pTask);
+
+    /* Lock initially: */
+    m_everythingLocker.lock();
+
+    /* Delete task finally: */
+    Assert(m_executingTasks.contains(pTask) &&
+           m_executingTasks.remove(pTask));
+    delete pTask;
+
+    /* Unlock finally: */
+    m_everythingLocker.unlock();
 }
 
 void UIThreadPool::sltHandleWorkerFinished(UIThreadWorker *pWorker)
@@ -295,7 +315,8 @@ void UIThreadWorker::run()
     while (UITask *pTask = m_pPool->dequeueTask(this))
     {
         /* Process the task if we are not terminating.
-         * Please take into account tasks are cleared by their creator. */
+         * Please take into account tasks are cleared by the UIThreadPool
+         * after all listeners notified about task is complete and handled it. */
         if (!m_pPool->isTerminating())
             pTask->start();
     }

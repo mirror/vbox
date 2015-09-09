@@ -22,6 +22,7 @@
 #include <QObject>
 #include <QMutex>
 #include <QQueue>
+#include <QSet>
 #include <QVariant>
 #include <QVector>
 #include <QWaitCondition>
@@ -91,9 +92,11 @@ private:
 
     /** @name Task stuff
      * @{ */
-        /** Holds the queue (FIFO) of pending tasks. */
-        QQueue<UITask*> m_tasks;
-       /** Holds the condition variable that gets signalled when
+        /** Holds the queue of pending tasks. */
+        QQueue<UITask*> m_pendingTasks;
+        /** Holds the set of executing tasks. */
+        QSet<UITask*> m_executingTasks;
+        /** Holds the condition variable that gets signalled when
           * queuing a new task and there are idle worker threads around.
           * @remarks Idle threads sits in dequeueTask waiting for this.
           *          Thus on thermination, setTerminating() will send a
