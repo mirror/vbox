@@ -76,8 +76,16 @@ endif
 # Include Qt project file, we'll use FORMS and TRANSLATIONS in
 # the VirtualBox setup below.
 #
+# This is a bit messy.  We boldly ASSUME that LANGUAGE, IMAGES, FORMS
+# and TRANSLATIONS are all unused by kBuild and the host toolchain.
+#
 SAVED_TEMPLATE := $(TEMPLATE)
 include $(PATH_SUB_CURRENT)/VBoxUI.pro
+TEMPLATE       := $(SAVED_TEMPLATE)
+SAVED_TEMPLATE :=
+LANGUAGE       :=
+IMAGES         :=
+# FORMS and TRANSLATIONS are reset further down.
 
 
 #
@@ -1001,6 +1009,13 @@ $$(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_I
 endif # win
 
 
+#
+# Unset everything that was loaded from VBoxUI.pro.
+#
+FORMS :=
+TRANSLATIONS :=
+
+
 ifeq ($(KBUILD_TARGET),darwin)
 #
 # Create directories for each approved language or the application
@@ -1113,33 +1128,42 @@ if defined(VBOX_WITH_VIDEOHWACCEL)
  endif
 endif
 
+
 #
 # Testcase for the darwin keyboard routines.
 #
 ifdef VBOX_WITH_TESTCASES
-PROGRAMS.darwin += tstDarwinKeyboard
-tstDarwinKeyboard_NAME = tstDarwinKeyboard
-tstDarwinKeyboard_TEMPLATE = VBOXR3TSTEXE
-tstDarwinKeyboard_DEFS.x86 = USE_HID_FOR_MODIFIERS
-tstDarwinKeyboard_INCS = include
-tstDarwinKeyboard_SOURCES = \
-	src/platform/darwin/tstDarwinKeyboard.cpp \
-	src/platform/darwin/DarwinKeyboard.cpp
-tstDarwinKeyboard_SOURCES.amd64 = \
-	src/platform/darwin/CocoaEventHelper.mm
-tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
-tstDarwinKeyboard_LIBS = \
-	$(LIB_RUNTIME)
+ PROGRAMS.darwin += tstDarwinKeyboard
+ tstDarwinKeyboard_TEMPLATE = VBOXR3TSTEXE
+ tstDarwinKeyboard_DEFS.x86 = USE_HID_FOR_MODIFIERS
+ tstDarwinKeyboard_INCS = include
+ tstDarwinKeyboard_SOURCES = \
+ 	src/platform/darwin/tstDarwinKeyboard.cpp \
+ 	src/platform/darwin/DarwinKeyboard.cpp
+ tstDarwinKeyboard_SOURCES.amd64 = \
+ 	src/platform/darwin/CocoaEventHelper.mm
+ tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
+ tstDarwinKeyboard_LIBS = \
+ 	$(LIB_RUNTIME)
 endif
 
 
-# Unset everything that was loaded from VBoxUI.pro.
-TEMPLATE := $(SAVED_TEMPLATE)
-SAVED_TEMPLATE :=
-LANGUAGE :=
-FORMS :=
-TRANSLATIONS :=
-IMAGES :=
+#
+# Testcase for SSL certificate downloading.
+#
+if defined(VBOX_WITH_TESTCASES) && defined(VBOX_GUI_WITH_NETWORK_MANAGER)
+ PROGRAMS += tstSSLCertDownloads
+ tstSSLCertDownloads_TEMPLATE = VBOXQT4GUIEXE
+ tstSSLCertDownloads_DEFS = VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
+ tstSSLCertDownloads_INCS = \
+ 	$(VBOX_GUI_INC_DIRS) \
+ 	$(VirtualBox_0_OUTDIR)/include
+ tstSSLCertDownloads_SOURCES = \
+ 	src/net/tstSSLCertDownloads.cpp
+ tstSSLCertDownloads_QT_MOCSRCS += \
+	src/net/UINetworkReply.cpp
+ tstSSLCertDownloads_QT_MODULES = Core GUI Network
+endif
 
 
 #

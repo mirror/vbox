@@ -24,12 +24,17 @@
 # include <QFile>
 # include <QThread>
 # include <QRegExp>
+# include <QVector>
 
 /* GUI includes: */
 # include "UINetworkReply.h"
 # include "UINetworkManager.h"
-# include "VBoxGlobal.h"
-# include "VBoxUtils.h"
+# ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
+#  include "VBoxGlobal.h"
+#  include "VBoxUtils.h"
+# else
+#  include <VBox/log.h>
+# endif
 
 /* Other VBox includes; */
 # include <iprt/initterm.h>
@@ -115,21 +120,39 @@ private:
     RTHTTP m_hHttp;
     QByteArray m_reply;
 
-    static const QString s_strCertificateFileName;
-    static const RTCRCERTWANTED s_aCerts[3];
+    static const char * const s_apszRootsZipUrls[];
     static const CERTINFO s_CertInfoPcaCls3Gen5;
+    static const RTCRCERTWANTED s_aCerts[];
+    static const QString s_strCertificateFileName;
+
+#ifdef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
+    friend UINetworkReplyPrivateThreadTestcase;
+#endif
 };
 
+
+/**
+ * URLs to root zip files containing certificates we want.
+ */
+/*static*/ const char * const UINetworkReplyPrivateThread::s_apszRootsZipUrls[] =
+{
+    "http://www.symantec.com/content/en/us/enterprise/verisign/roots/roots.zip"
+};
+
+
+/**
+ * Download details for
+ */
 /*static*/ const UINetworkReplyPrivateThread::CERTINFO UINetworkReplyPrivateThread::s_CertInfoPcaCls3Gen5 =
 {
     /*.pszZipFile     =*/
     "VeriSign Root Certificates/Generation 5 (G5) PCA/VeriSign Class 3 Public Primary Certification Authority - G5.pem",
-    /*.apszUrls[3]    =*/
+    /*.apszUrls[]     =*/
     {
         "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem",
         "http://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class-3-Public-Primary-Certification-Authority-G5.pem", /* (in case they correct above typo) */
         "http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem", /* dead */
-        "http://update.virtualbox.org/cacerts-symantec-PCA-3G5-pem-has-gone-missing-again" /* attention getter */
+        NULL,
     }
 };
 
@@ -138,7 +161,7 @@ private:
  * Details on the certificates we are after.
  * The pvUser member points to a UINetworkReplyPrivateThread::CERTINFO.
  */
-/* static */ const RTCRCERTWANTED UINetworkReplyPrivateThread::s_aCerts[3] =
+/* static */ const RTCRCERTWANTED UINetworkReplyPrivateThread::s_aCerts[] =
 {
     /*[0] =*/
     {
@@ -192,19 +215,17 @@ int UINetworkReplyPrivateThread::applyProxyRules()
     /* Set thread context: */
     m_strContext = tr("During proxy configuration");
 
+#ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
     /* Get the proxymanager: */
     UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
 
     /* If the specific proxy settings aren't enabled, we'll use the
        system default proxy.  Otherwise assume it's configured. */
-    int rc;
-    if (!proxyManager.proxyEnabled())
-        rc = RTHttpUseSystemProxySettings(m_hHttp);
-    else
-        rc = RTHttpSetProxy(m_hHttp,
-                            proxyManager.proxyHost().toUtf8().constData(),
-                            proxyManager.proxyPort().toUInt(),
-                            NULL /* pszProxyUser */, NULL /* pszProxyPwd */);
+    if (proxyManager.proxyEnabled())
+        return RTHttpSetProxy(m_hHttp,
+                              proxyManager.proxyHost().toUtf8().constData(),
+                              proxyManager.proxyPort().toUInt(),
+                              NULL /* pszProxyUser */, NULL /* pszProxyPwd */);
 
     /** @todo This should be some kind of tristate:
      *      - system configured proxy ("proxyDisabled" as well as default "")
@@ -215,7 +236,8 @@ int UINetworkReplyPrivateThread::applyProxyRules()
      * Alternatively, we could opt not to give the user a way of doing "no proxy",
      * that would require no real changes to the visible GUI... Just a thought.
      */
-    return rc;
+#endif
+    return RTHttpUseSystemProxySettings(m_hHttp);
 }
 
 int UINetworkReplyPrivateThread::applyHttpsCertificates()
@@ -376,8 +398,12 @@ void UINetworkReplyPrivateThread::run()
 /* static */
 QString UINetworkReplyPrivateThread::fullCertificateFileName()
 {
+#ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
     const QDir homeDir(QDir::toNativeSeparators(vboxGlobal().homeFolder()));
     return QDir::toNativeSeparators(homeDir.absoluteFilePath(s_strCertificateFileName));
+#else
+    return QString("/not/such/agency/non-existing-file.cer");
+#endif
 }
 
 /* static */
@@ -535,16 +561,11 @@ UINetworkReplyPrivateThread::downloadMissingCertificates(RTCRSTORE hNewStore, bo
     /*
      * Try get the roots.zip from symantec (or virtualbox.org) first.
      */
-    static const char * const a_apszRootsZipUrls[] =
-    {
-        "http://www.symantec.com/content/en/us/enterprise/verisign/roots/roots.zip",
-        "http://update.virtualbox.org/cacerts-symantec-roots-zip-has-gone-missing-again" /* Just to try grab our attention. */
-    };
-    for (uint32_t iUrl = 0; iUrl < RT_ELEMENTS(a_apszRootsZipUrls); iUrl++)
+    for (uint32_t iUrl = 0; iUrl < RT_ELEMENTS(s_apszRootsZipUrls); iUrl++)
     {
         void   *pvRootsZip;
         size_t  cbRootsZip;
-        rc = RTHttpGetBinary(hHttp, a_apszRootsZipUrls[iUrl], &pvRootsZip, &cbRootsZip);
+        rc = RTHttpGetBinary(hHttp, s_apszRootsZipUrls[iUrl], &pvRootsZip, &cbRootsZip);
         if (RT_SUCCESS(rc))
         {
             for (uint32_t i = 0; i < RT_ELEMENTS(s_aCerts); i++)
@@ -777,6 +798,18 @@ private:
     UINetworkReplyPrivateThread *m_pThread;
 };
 
+
+
+/*
+ *
+ * Class UINetworkReply implementation.
+ * Class UINetworkReply implementation.
+ * Class UINetworkReply implementation.
+ *
+ */
+
+#ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
+
 UINetworkReply::UINetworkReply(const QNetworkRequest &request, UINetworkRequestType requestType)
     : m_replyType(UINetworkReplyType_Qt)
     , m_pReply(0)
@@ -890,6 +923,8 @@ QUrl UINetworkReply::url() const
     }
     return result;
 }
+
+#endif /* !VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS */
 
 #include "UINetworkReply.moc"
 
