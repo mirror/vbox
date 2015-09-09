@@ -1153,16 +1153,16 @@ endif
 #
 if defined(VBOX_WITH_TESTCASES) && defined(VBOX_GUI_WITH_NETWORK_MANAGER)
  PROGRAMS += tstSSLCertDownloads
- tstSSLCertDownloads_TEMPLATE = VBOXQT4GUIEXE
+ tstSSLCertDownloads_TEMPLATE   = VBOXQT4GUIEXE
+ tstSSLCertDownloads_USES       = qt4
+ tstSSLCertDownloads_QTTOOL     = QT4
+ tstSSLCertDownloads_QT_MODULES = Core GUI Network
  tstSSLCertDownloads_DEFS = VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
  tstSSLCertDownloads_INCS = \
  	$(VBOX_GUI_INC_DIRS) \
- 	$(VirtualBox_0_OUTDIR)/include
+ 	$(tstSSLCertDownloads_0_OUTDIR)/include
  tstSSLCertDownloads_SOURCES = \
  	src/net/tstSSLCertDownloads.cpp
- tstSSLCertDownloads_QT_MOCSRCS += \
-	src/net/UINetworkReply.cpp
- tstSSLCertDownloads_QT_MODULES = Core GUI Network
 endif
 
 
