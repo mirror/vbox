@@ -18,44 +18,24 @@
 #ifndef __UIGDetailsElements_h__
 #define __UIGDetailsElements_h__
 
-/* Qt includes: */
-#include <QThread>
-
 /* GUI includes: */
+#include "UIThreadPool.h"
 #include "UIGDetailsElement.h"
-
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
 
 /* Forward declarations: */
 class UIGMachinePreview;
+class CNetworkAdapter;
 
 
-/* Element update thread: */
-class UIGDetailsUpdateThread : public QThread
+/* Element update task: */
+class UIGDetailsUpdateTask : public UITask
 {
     Q_OBJECT;
-
-signals:
-
-    /* Notifier: Prepare stuff: */
-    void sigComplete(const UITextTable &text);
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThread(const CMachine &machine);
-
-protected:
-
-    /* Internal API: Machine stuff: */
-    const CMachine& machine() const { return m_machine; }
-
-private:
-
-    /* Variables: */
-    const CMachine &m_machine;
+    UIGDetailsUpdateTask(const CMachine &machine);
 };
 
 /* Details element interface: */
@@ -67,29 +47,25 @@ public:
 
     /* Constructor/destructor: */
     UIGDetailsElementInterface(UIGDetailsSet *pParent, DetailsElementType type, bool fOpened);
-    ~UIGDetailsElementInterface();
 
 protected:
 
     /* Helper: Translate stuff: */
-    void retranslateUi();
+    virtual void retranslateUi();
 
     /* Helpers: Update stuff: */
-    void updateAppearance();
-    virtual UIGDetailsUpdateThread* createUpdateThread() = 0;
+    virtual void updateAppearance();
+    virtual UITask* createUpdateTask() = 0;
 
 private slots:
 
     /* Handler: Update stuff: */
-    virtual void sltUpdateAppearanceFinished(const UITextTable &newText);
+    virtual void sltUpdateAppearanceFinished(UITask *pTask);
 
 private:
 
-    /* Helpers: Cleanup stuff: */
-    void cleanupThread();
-
     /* Variables: */
-    UIGDetailsUpdateThread *m_pThread;
+    UITask *m_pTask;
 };
 
 
@@ -111,7 +87,7 @@ private slots:
 private:
 
     /* Helper: Translate stuff: */
-    void retranslateUi();
+    virtual void retranslateUi();
 
     /* Helpers: Layout stuff: */
     int minimumWidthHint() const;
@@ -126,16 +102,16 @@ private:
 };
 
 
-/* Thread 'General': */
-class UIGDetailsUpdateThreadGeneral : public UIGDetailsUpdateThread
+/* Task 'General': */
+class UIGDetailsUpdateTaskGeneral : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadGeneral(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskGeneral(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -157,20 +133,20 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadGeneral(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskGeneral(machine()); }
 };
 
 
-/* Thread 'System': */
-class UIGDetailsUpdateThreadSystem : public UIGDetailsUpdateThread
+/* Task 'System': */
+class UIGDetailsUpdateTaskSystem : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadSystem(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskSystem(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -192,20 +168,20 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadSystem(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskSystem(machine()); }
 };
 
 
-/* Thread 'Display': */
-class UIGDetailsUpdateThreadDisplay : public UIGDetailsUpdateThread
+/* Task 'Display': */
+class UIGDetailsUpdateTaskDisplay : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadDisplay(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskDisplay(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -227,20 +203,20 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadDisplay(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskDisplay(machine()); }
 };
 
 
-/* Thread 'Storage': */
-class UIGDetailsUpdateThreadStorage : public UIGDetailsUpdateThread
+/* Task 'Storage': */
+class UIGDetailsUpdateTaskStorage : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadStorage(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskStorage(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -262,20 +238,20 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadStorage(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskStorage(machine()); }
 };
 
 
-/* Thread 'Audio': */
-class UIGDetailsUpdateThreadAudio : public UIGDetailsUpdateThread
+/* Task 'Audio': */
+class UIGDetailsUpdateTaskAudio : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadAudio(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskAudio(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -297,20 +273,20 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadAudio(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskAudio(machine()); }
 };
 
 
-/* Thread 'Network': */
-class UIGDetailsUpdateThreadNetwork : public UIGDetailsUpdateThread
+/* Task 'Network': */
+class UIGDetailsUpdateTaskNetwork : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadNetwork(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskNetwork(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -333,20 +309,20 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadNetwork(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskNetwork(machine()); }
 };
 
 
-/* Thread 'Serial': */
-class UIGDetailsUpdateThreadSerial : public UIGDetailsUpdateThread
+/* Task 'Serial': */
+class UIGDetailsUpdateTaskSerial : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadSerial(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskSerial(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -368,21 +344,21 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadSerial(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskSerial(machine()); }
 };
 
 
 #ifdef VBOX_WITH_PARALLEL_PORTS
-/* Thread 'Parallel': */
-class UIGDetailsUpdateThreadParallel : public UIGDetailsUpdateThread
+/* Task 'Parallel': */
+class UIGDetailsUpdateTaskParallel : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadParallel(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskParallel(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -404,21 +380,21 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadParallel(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskParallel(machine()); }
 };
 #endif /* VBOX_WITH_PARALLEL_PORTS */
 
 
-/* Thread 'USB': */
-class UIGDetailsUpdateThreadUSB : public UIGDetailsUpdateThread
+/* Task 'USB': */
+class UIGDetailsUpdateTaskUSB : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadUSB(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskUSB(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -440,20 +416,20 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadUSB(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskUSB(machine()); }
 };
 
 
-/* Thread 'SF': */
-class UIGDetailsUpdateThreadSF : public UIGDetailsUpdateThread
+/* Task 'SF': */
+class UIGDetailsUpdateTaskSF : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadSF(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskSF(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -475,20 +451,20 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadSF(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskSF(machine()); }
 };
 
 
-/* Thread 'UI': */
-class UIGDetailsUpdateThreadUI : public UIGDetailsUpdateThread
+/* Task 'UI': */
+class UIGDetailsUpdateTaskUI : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadUI(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskUI(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -510,20 +486,20 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadUI(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskUI(machine()); }
 };
 
 
-/* Thread 'Description': */
-class UIGDetailsUpdateThreadDescription : public UIGDetailsUpdateThread
+/* Task 'Description': */
+class UIGDetailsUpdateTaskDescription : public UIGDetailsUpdateTask
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIGDetailsUpdateThreadDescription(const CMachine &machine)
-        : UIGDetailsUpdateThread(machine) {}
+    UIGDetailsUpdateTaskDescription(const CMachine &machine)
+        : UIGDetailsUpdateTask(machine) {}
 
 private:
 
@@ -545,7 +521,7 @@ public:
 private:
 
     /* Helper: Update stuff: */
-    UIGDetailsUpdateThread* createUpdateThread() { return new UIGDetailsUpdateThreadDescription(machine()); }
+    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskDescription(machine()); }
 };
 
 #endif /* __UIGDetailsElements_h__ */

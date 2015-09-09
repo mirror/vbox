@@ -127,6 +127,7 @@ public:
     enum Type
     {
         Type_MediumEnumeration = 1,
+        Type_DetailsPopulation = 2,
     };
 
     /** Constructs the task of passed @a type. */
