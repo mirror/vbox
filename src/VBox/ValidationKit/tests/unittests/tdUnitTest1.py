@@ -61,6 +61,9 @@ class tdUnitTest1(vbox.TestDriver):
         'darwin': {
             'testcase/tstX86-1': '',                    # 'FSTP M32R, ST0' fails; no idea why.
         },
+        'linux': {
+            'testcase/tstRTFileAio':, ''                # See xTracker #8035.
+        },
         'solaris': {
             'testcase/tstIntNet-1': '',                 # Fails opening rge0, probably a generic issue figuring which nic to use.
             'testcase/tstIprtList': '',                 # Crashes in the multithreaded test, I think.
