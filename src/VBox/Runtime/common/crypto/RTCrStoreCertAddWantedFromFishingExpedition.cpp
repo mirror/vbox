@@ -148,6 +148,7 @@ RTDECL(int) RTCrStoreCertAddWantedFromFishingExpedition(RTCRSTORE hStore, uint32
 #endif
 #ifdef RT_OS_SOLARIS
             PREFIX_UNIXROOT "/usr/java/jre/lib/security/cacerts",
+            PREFIX_UNIXROOT "/usr/jdk/instances/*/jre/lib/security/cacerts",
 #endif
 #ifdef RT_OS_WINDOWS
             "${AllProgramFiles}/Git/bin/curl-ca-bundle.crt",
