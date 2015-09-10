@@ -1645,10 +1645,21 @@ void UIMachineLogic::sltTakeScreenshot()
     if (!isMachineWindowsCreated())
         return;
 
+    /* Formatting default and temporary filenames for screenshot accroding to current time: */
+    const QFileInfo fi(machine().GetSettingsFilePath());
+    const QString strCurrentTime = QDateTime::currentDateTime().toString("dd_MM_yyyy_hh_mm_ss");
+    const QString strFormatDefaultFileName = QString("VirtualBox").append("_").append(machine().GetName()).append("_").
+            append(strCurrentTime);
+    const QString strDefaultFileName = QDir(fi.absolutePath()).absoluteFilePath(strFormatDefaultFileName);
+    const QString strTempFile = QDir(fi.absolutePath()).absoluteFilePath("temp").append(strCurrentTime).append(".png");
+
+    /* Do the screenshot: */
+    takeScreenshot(strTempFile, "png");
+
     /* Which image formats for writing does this Qt version know of? */
     QList<QByteArray> formats = QImageWriter::supportedImageFormats();
     QStringList filters;
-    /* Build a filters list out of it. */
+    /* Build a filters list out of it: */
     for (int i = 0; i < formats.size(); ++i)
     {
         const QString &s = formats.at(i) + " (*." + formats.at(i).toLower() + ")";
@@ -1656,7 +1667,7 @@ void UIMachineLogic::sltTakeScreenshot()
         if (filters.indexOf(QRegExp(QRegExp::escape(s), Qt::CaseInsensitive)) == -1)
             filters << s;
     }
-    /* Try to select some common defaults. */
+    /* Try to select some common defaults: */
     QString strFilter;
     int i = filters.indexOf(QRegExp(".*png.*", Qt::CaseInsensitive));
     if (i == -1)
@@ -1680,12 +1691,8 @@ void UIMachineLogic::sltTakeScreenshot()
         activeMachineWindow()->machineView()->clearFocus();
 #endif /* Q_WS_WIN */
 
-    /* Request the filename from the user. */
-    QFileInfo fi(machine().GetSettingsFilePath());
-    QString strAbsolutePath(fi.absolutePath());
-    QString strCompleteBaseName(fi.completeBaseName());
-    QString strStart = QDir(strAbsolutePath).absoluteFilePath(strCompleteBaseName);
-    QString strFilename = QIFileDialog::getSaveFileName(strStart,
+    /* Request the filename from the user: */
+    const QString strFilename = QIFileDialog::getSaveFileName(strDefaultFileName,
                                                         filters.join(";;"),
                                                         activeMachineWindow(),
                                                         tr("Select a filename for the screenshot ..."),
@@ -1703,9 +1710,22 @@ void UIMachineLogic::sltTakeScreenshot()
         activeMachineWindow()->machineView()->setFocus();
 #endif /* Q_WS_WIN */
 
-    /* Do the screenshot. */
     if (!strFilename.isEmpty())
-        takeScreenshot(strFilename, strFilter.split(" ").value(0, "png"));
+    {
+        const QString strFormat = strFilter.split(" ").value(0, "png");
+        const QImage tmpImage(strTempFile);
+
+    /* On X11 Qt Filedialog returns the filepath without the filetype suffix,
+     * so adding it ourselves: */
+    #ifdef Q_WS_X11
+        tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(QString("%1.%2").arg(strFilename, strFormat))),
+                    strFormat.toAscii().constData());
+    #else /* !Q_WS_X11 */
+        tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(strFilename)),
+                    strFormat.toAscii().constData());
+    #endif /* !Q_WS_X11 */
+    }
+    QFile::remove(strTempFile);
 }
 
 void UIMachineLogic::sltOpenVideoCaptureOptions()
