@@ -1698,7 +1698,7 @@ DECL_NO_INLINE(static, int) rtPathGlobExecRecursiveVarExp(PRTPATHGLOB pGlob, siz
         {
             Assert(pGlob->szPath[offPath + cch] == '\0');
 
-            int rc = RTPathQueryInfoEx(pGlob->szPath, &pGlob->u.ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+            int rc = RTPathQueryInfoEx(pGlob->szPath, &pGlob->u.ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
             if (RT_SUCCESS(rc))
             {
                 if (pGlob->aComps[iComp].fFinal)
@@ -1793,7 +1793,7 @@ DECL_NO_INLINE(static, int) rtPathGlobExecRecursivePlainText(PRTPATHGLOB pGlob, 
             /*
              * Check if it exists.
              */
-            int rc = RTPathQueryInfoEx(pGlob->szPath, &pGlob->u.ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+            int rc = RTPathQueryInfoEx(pGlob->szPath, &pGlob->u.ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
             if (RT_SUCCESS(rc))
             {
                 if (pGlob->aComps[iComp].fFinal)
@@ -2006,7 +2006,7 @@ static int rtPathGlobExec(PRTPATHGLOB pGlob)
          * Special case where we only have a root component or tilde expansion.
          */
         Assert(pGlob->offFirstPath > 0);
-        rc = RTPathQueryInfoEx(pGlob->szPath, &pGlob->u.ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+        rc = RTPathQueryInfoEx(pGlob->szPath, &pGlob->u.ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
         if (   RT_SUCCESS(rc)
             && rtPathGlobExecIsMatchFinalWithFileMode(pGlob, pGlob->u.ObjInfo.Attr.fMode))
             rc = rtPathGlobAddResult(pGlob, pGlob->offFirstPath,
