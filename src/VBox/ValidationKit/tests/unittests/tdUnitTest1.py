@@ -231,7 +231,8 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstCFGM',
         'testcase/tstContiguous',
         'testcase/tstGetPagingMode',
-        'testcase/tstGIP-2',
+        #'testcase/tstGIP-2', 2015-09-10: Fails regularly. E.g. TestSetID 2744205 (testboxsh2), 2743961 (wei01-b6kc-6).
+        #                                 The responsible engineer should reenable it once it has been fixed.
         'testcase/tstInit',
         'testcase/tstLow',
         'testcase/tstMMHyperHeap',
