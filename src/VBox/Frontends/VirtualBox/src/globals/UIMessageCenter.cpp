@@ -182,8 +182,8 @@ bool UIMessageCenter::errorWithQuestion(QWidget *pParent, MessageType type,
                                         const QString &strCancelButtonText /* = QString()*/) const
 {
     return (message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
-                    AlertButton_Ok,
-                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                    AlertButton_Ok | AlertButtonOption_Default,
+                    AlertButton_Cancel | AlertButtonOption_Escape,
                     0 /* third button */,
                     strOkButtonText,
                     strCancelButtonText,
@@ -219,8 +219,8 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType type,
                                      const QString &strCancelButtonText /* = QString()*/) const
 {
     return (question(pParent, type, strMessage, pcszAutoConfirmId,
-                     AlertButton_Ok,
-                     AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                     AlertButton_Ok | AlertButtonOption_Default,
+                     AlertButton_Cancel | AlertButtonOption_Escape,
                      0 /* third button */,
                      strOkButtonText,
                      strCancelButtonText,
