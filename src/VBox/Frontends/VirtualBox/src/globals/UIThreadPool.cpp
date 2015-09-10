@@ -274,8 +274,9 @@ void UIThreadPool::sltHandleTaskComplete(UITask *pTask)
     m_everythingLocker.lock();
 
     /* Delete task finally: */
-    Assert(m_executingTasks.contains(pTask) &&
-           m_executingTasks.remove(pTask));
+    if (   !m_executingTasks.contains(pTask)
+        || !m_executingTasks.remove(pTask))
+        AssertMsgFailed(("Unable to find or remove complete task!"));
     delete pTask;
 
     /* Unlock finally: */
