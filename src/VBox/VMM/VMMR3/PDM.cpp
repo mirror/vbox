@@ -610,10 +610,21 @@ static void pdmR3TermLuns(PVM pVM, PPDMLUN pLun, const char *pszDevice, unsigned
             }
             pDrvIns->Internal.s.pDrv->cInstances--;
 
-            TMR3TimerDestroyDriver(pVM, pDrvIns);
+            /* Order of resource freeing like in pdmR3DrvDestroyChain, but
+             * not all need to be done as they are done globally later. */
             //PDMR3QueueDestroyDriver(pVM, pDrvIns);
-            //pdmR3ThreadDestroyDriver(pVM, pDrvIns);
+            TMR3TimerDestroyDriver(pVM, pDrvIns);
             SSMR3DeregisterDriver(pVM, pDrvIns, NULL, 0);
+            //pdmR3ThreadDestroyDriver(pVM, pDrvIns);
+            //DBGFR3InfoDeregisterDriver(pVM, pDrvIns, NULL);
+            //pdmR3CritSectBothDeleteDriver(pVM, pDrvIns);
+            //PDMR3BlkCacheReleaseDriver(pVM, pDrvIns);
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+            //pdmR3AsyncCompletionTemplateDestroyDriver(pVM, pDrvIns);
+#endif
+
+            /* Clear the driver struture to catch sloppy code. */
+            ASMMemFill32(pDrvIns, RT_OFFSETOF(PDMDRVINS, achInstanceData[pDrvIns->pReg->cbInstance]), 0xdeadd0d0);
 
             pDrvIns = pDrvNext;
         }
