@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,8 +33,7 @@ namespace settings
 class ATL_NO_VTABLE NATEngine :
     public NATEngineWrap
 {
-    public:
-    typedef std::map<Utf8Str, settings::NATRule> NATRuleMap;
+public:
 
     DECLARE_EMPTY_CTOR_DTOR(NATEngine)
 
@@ -47,8 +46,9 @@ class ATL_NO_VTABLE NATEngine :
     void uninit();
 
     bool i_isModified();
-    bool i_rollback();
+    void i_rollback();
     void i_commit();
+    void i_copyFrom(NATEngine *aThat);
     HRESULT i_loadSettings(const settings::NAT &data);
     HRESULT i_saveSettings(settings::NAT &data);
 
@@ -102,10 +102,8 @@ private:
 
     struct Data;
     Data *mData;
-    bool m_fModified;
     const ComObjPtr<NATEngine> mPeer;
     Machine * const mParent;
-    NATRuleMap mNATRules;
     INetworkAdapter * const mAdapter;
 };
 #endif
