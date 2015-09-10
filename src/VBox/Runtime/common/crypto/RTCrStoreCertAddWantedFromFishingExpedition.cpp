@@ -189,11 +189,12 @@ RTDECL(int) RTCrStoreCertAddWantedFromFishingExpedition(RTCRSTORE hStore, uint32
         {
             PREFIX_UNIXROOT "/usr/share/ca-certificates/mozilla/",
 #ifdef RT_OS_DARWIN
-            "/System/Library/Frameworks/Ruby.framework/Versions/2.0/usr/lib/ruby/2.0.0/rubygems/ssl_certs/"
+            "/System/Library/Frameworks/Ruby.framework/Versions/2.0/usr/lib/ruby/2.0.0/rubygems/ssl_certs/",
 #endif
 #ifdef RT_OS_SOLARIS
             "/etc/certs/",
             "/etc/crypto/certs/",
+#endif
 #ifdef RT_OS_WINDOWS
             "${AllProgramFiles}/Git/ssl/certs/",
             "${AllProgramFiles}/Git/ssl/certs/expired/",
