@@ -683,7 +683,7 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                     rc = MMHyperAlloc(pVM, cb, 64, MM_TAG_PDM_DRIVER, (void **)&pNew);
                 else
                     rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DRIVER, cb, (void **)&pNew);
-                if (pNew)
+                if (RT_SUCCESS(rc))
                 {
                     /*
                      * Initialize the instance structure (declaration order).
@@ -774,10 +774,7 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                     }
                 }
                 else
-                {
-                    AssertMsgFailed(("Failed to allocate %d bytes for instantiating driver '%s'\n", cb, pszName));
-                    rc = VERR_NO_MEMORY;
-                }
+                    AssertMsgFailed(("Failed to allocate %d bytes for instantiating driver '%s'! rc=%Rrc\n", cb, pszName, rc));
             }
             else
                 AssertMsgFailed(("Failed to create Config node! rc=%Rrc\n", rc));
