@@ -62,6 +62,11 @@ if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && !defined(VBOX_ONLY_VALIDATIONKIT)
  RTGzip_TEMPLATE = VBoxR3Tool
  RTGzip_SOURCES = RTGzip.cpp
 
+ # RTHttp - our http/https fetcher (for testing the http client API).
+ PROGRAMS += RTHttp
+ RTHttp_TEMPLATE = VBoxR3Tool
+ RTHttp_SOURCES = RTHttp.cpp
+
  # RTShutdown - similar (but not identical) to a typical unix shutdown command.
  PROGRAMS += RTShutdown
  RTShutdown_TEMPLATE = VBoxR3Tool
