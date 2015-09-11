@@ -257,8 +257,8 @@ void QIMessageBox::prepare()
             /* Add button-box into main-layout: */
             pMainLayout->addWidget(m_pButtonBox);
 
-            /* Prepares focus. It is important to prepare focus after adding buttonbox to the layout as,
-             * parenting the buttonbox to the QDialog changes default button focus by Qt: */
+            /* Prepare focus. It is important to prepare focus after adding button-box to the layout as
+             * parenting the button-box to the QDialog changes default button focus by Qt: */
             prepareFocus();
         }
     }
