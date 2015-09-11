@@ -67,6 +67,9 @@ typedef struct RTHTTPINTERNAL
     char               *pszCaFile;
     /** Whether to delete the CA on destruction. */
     bool                fDeleteCaFile;
+    /** Set if we should use the system proxy settings for a URL.
+     * This means reconfiguring cURL for each request.  */
+    bool                fUseSystemProxySettings;
     /** Abort the current HTTP request if true. */
     bool volatile       fAbort;
     /** Set if someone is preforming an HTTP operation. */
@@ -158,8 +161,9 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
             PRTHTTPINTERNAL pThis = (PRTHTTPINTERNAL)RTMemAllocZ(sizeof(RTHTTPINTERNAL));
             if (pThis)
             {
-                pThis->u32Magic = RTHTTP_MAGIC;
-                pThis->pCurl    = pCurl;
+                pThis->u32Magic                 = RTHTTP_MAGIC;
+                pThis->pCurl                    = pCurl;
+                pThis->fUseSystemProxySettings  = true;
 
                 *phHttp = (RTHTTP)pThis;
 
@@ -260,6 +264,114 @@ RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp)
     }
     else if (rc == VERR_ENV_VAR_NOT_FOUND)
         rc = VINF_SUCCESS;
+
+    return rc;
+}
+
+
+static bool rtHttpUrlInNoProxyList(const char *pszUrl,  const char *pszNoProxyList)
+{
+    /** @todo implement me. */
+    return false;
+}
+
+
+static int rtHttpConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
+{
+    const char *pszProxy    = NULL;
+    long        uPort       = 0;
+    const char *pszUser     = NULL;
+    const char *pszPassword = NULL;
+    bool        fNoProxy    = true;
+
+
+    char szTmp[_1K];
+
+    /*
+     * First we consult the "no_proxy" / "NO_PROXY" environment variable.
+     */
+    const char *pszNoProxyVar;
+    size_t cchActual;
+    char  *pszNoProxyFree = NULL;
+    char  *pszNoProxy = szTmp;
+    int rc = RTEnvGetEx(RTENV_DEFAULT, pszNoProxyVar = "no_proxy", szTmp, sizeof(szTmp), &cchActual);
+    if (rc == VERR_ENV_VAR_NOT_FOUND)
+        rc = RTEnvGetEx(RTENV_DEFAULT, pszNoProxyVar = "NO_PROXY", szTmp, sizeof(szTmp), &cchActual);
+    if (rc == VERR_BUFFER_OVERFLOW)
+    {
+        pszNoProxyFree = pszNoProxy = (char *)RTMemTmpAlloc(cchActual + _1K);
+        AssertReturn(pszNoProxy, VERR_NO_TMP_MEMORY);
+        rc = RTEnvGetEx(RTENV_DEFAULT, pszNoProxyVar, pszNoProxy, cchActual + _1K, NULL);
+    }
+    AssertMsg(rc == VINF_SUCCESS || rc == VERR_ENV_VAR_NOT_FOUND, ("rc=%Rrc\n", rc));
+    fNoProxy = rtHttpUrlInNoProxyList(pszUrl, pszNoProxy);
+    RTMemTmpFree(pszNoProxy);
+    if (!fNoProxy)
+    {
+        /*
+         * Get the schema specific specific env var, falling back on the
+         * generic all_proxy if not found.
+         */
+        const char *apszEnvVars[4];
+        unsigned    cEnvVars = 0;
+        if (!RTStrNICmp(pszUrl, RT_STR_TUPLE("http:")))
+            apszEnvVars[cEnvVars++] = "http_proxy"; /* Skip HTTP_PROXY because of cgi paranoia */
+        else if (!RTStrNICmp(pszUrl, RT_STR_TUPLE("https:")))
+        {
+            apszEnvVars[cEnvVars++] = "https_proxy";
+            apszEnvVars[cEnvVars++] = "HTTPS_PROXY";
+        }
+        else if (!RTStrNICmp(pszUrl, RT_STR_TUPLE("ftp:")))
+        {
+            apszEnvVars[cEnvVars++] = "ftp_proxy";
+            apszEnvVars[cEnvVars++] = "FTP_PROXY";
+        }
+        else
+            AssertMsgFailedReturn(("Unknown/unsupported schema in URL: '%s'\n", pszUrl), VERR_NOT_SUPPORTED);
+        apszEnvVars[cEnvVars++] = "all_proxy";
+        apszEnvVars[cEnvVars++] = "ALL_PROXY";
+
+        for (uint32_t i = 0; i < cEnvVars; i++)
+        {
+            size_t cchValue;
+            rc = RTEnvGetEx(RTENV_DEFAULT, apszEnvVars[i], szTmp, sizeof(szTmp) - sizeof("http://"), &cchValue);
+            if (RT_SUCCESS(rc))
+            {
+                if (!strstr(szTmp, "://"))
+                {
+                    memmove(&szTmp[sizeof("http://") - 1], szTmp, cchValue + 1);
+                    memcpy(szTmp, RT_STR_TUPLE("http://"));
+                }
+                /** @todo continue where using RTUriParse... */
+            }
+            else
+                AssertMsg(rc == VERR_ENV_VAR_NOT_FOUND, ("%Rrc\n"));
+        }
+
+#if 0
+        if (RT_SUCCESS(rc))
+        {
+            int rcCurl;
+            if (!strncmp(szProxy, RT_STR_TUPLE("http://")))
+            {
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, &szProxy[sizeof("http://") - 1]);
+                if (CURL_FAILURE(rcCurl))
+                    return VERR_INVALID_PARAMETER;
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPORT, 80);
+                if (CURL_FAILURE(rcCurl))
+                    return VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, &szProxy[sizeof("http://") - 1]);
+                if (CURL_FAILURE(rcCurl))
+                    return VERR_INVALID_PARAMETER;
+            }
+        }
+        else if (rc == VERR_ENV_VAR_NOT_FOUND)
+            rc = VINF_SUCCESS;
+#endif
+    }
 
     return rc;
 }

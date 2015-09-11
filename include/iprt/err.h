@@ -2495,6 +2495,18 @@ RT_C_DECLS_END
 #define VERR_PATH_GLOB_UNKNOWN_CHAR_CLASS           (-24403)
 /** @} */
 
+/** @name RTUri status codes.
+ * @{ */
+/** The URI is empty */
+#define VERR_URI_EMPTY                              (-24600)
+/** The URI is too short to be a valid URI. */
+#define VERR_URI_TOO_SHORT                          (-24601)
+/** Invalid scheme.  */
+#define VERR_URI_INVALID_SCHEME                     (-24602)
+/** Invalid port number.  */
+#define VERR_URI_INVALID_PORT_NUMBER                (-24603)
+/** @} */
+
 /* SED-END */
 
 /** @} */

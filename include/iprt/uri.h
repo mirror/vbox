@@ -79,8 +79,33 @@ RTR3DECL(char *) RTUriScheme(const char *pszUri);
  *
  * @returns the authority if the URI contains one, NULL otherwise.
  * @param   pszUri              The URI to extract from.
+ * @remarks The authority can have a zero length.
  */
 RTR3DECL(char *) RTUriAuthority(const char *pszUri);
+
+/**
+ * Extract the username out of the authority component in an URI.
+ *
+ * @returns The username if the URI contains one, otherwise NULL.
+ * @param   pszUri              The URI to extract from.
+ */
+RTR3DECL(char *) RTUriAuthorityUsername(const char *pszUri);
+
+/**
+ * Extract the password out of the authority component in an URI.
+ *
+ * @returns The password if the URI contains one, otherwise NULL.
+ * @param   pszUri              The URI to extract from.
+ */
+RTR3DECL(char *) RTUriAuthorityPassword(const char *pszUri);
+
+/**
+ * Extract the port number out of the authority component in an URI.
+ *
+ * @returns The port number if the URI contains one, otherwise UINT32_MAX.
+ * @param   pszUri              The URI to extract from.
+ */
+RTR3DECL(uint32_t) RTUriAuthorityPort(const char *pszUri);
 
 /**
  * Extract the path out of an URI.
@@ -120,12 +145,13 @@ RTR3DECL(char *) RTUriFragment(const char *pszUri);
 #define URI_FILE_FORMAT_WIN   UINT32_C(2)
 
 /**
- * Creates a file URI. The returned pointer must be freed
- * using RTStrFree().
+ * Creates a file URI.
+ *
+ * The returned pointer must be freed using RTStrFree().
  *
  * @see RTUriCreate
  *
- * @returns the new URI on success, NULL otherwise.
+ * @returns The new URI on success, NULL otherwise.  Free With RTStrFree.
  * @param   pszPath             The path of the URI.
  */
 RTR3DECL(char *) RTUriFileCreate(const char *pszPath);

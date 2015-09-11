@@ -30,10 +30,10 @@
 *********************************************************************************************************************************/
 #include <iprt/uri.h>
 
-#include <iprt/string.h>
-#include <iprt/mem.h>
+#include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/path.h>
-#include <iprt/stream.h>
+#include <iprt/string.h>
 
 /* General URI format:
 
@@ -46,23 +46,86 @@
     urn:example:animal:ferret:nose
 */
 
+/**
+ * Parsed URI.
+ */
+typedef struct RTURIPARSED
+{
+    /** RTURIPARSED_F_XXX. */
+    uint32_t    fFlags;
+
+    /** The length of the scheme. */
+    size_t      cchScheme;
+
+    /** The offset into the string of the authority. */
+    size_t      offAuthority;
+    /** The authority length.
+     * @remarks The authority component can be zero length, so to check whether
+     *          it's there or not consult RTURIPARSED_F_HAVE_AUTHORITY. */
+    size_t      cchAuthority;
+
+    /** The offset into the string of the path. */
+    size_t      offPath;
+    /** The length of the path. */
+    size_t      cchPath;
+
+    /** The offset into the string of the query. */
+    size_t      offQuery;
+    /** The length of the query. */
+    size_t      cchQuery;
+
+    /** The offset into the string of the fragment. */
+    size_t      offFragment;
+    /** The length of the fragment. */
+    size_t      cchFragment;
+
+    /** @name Authority subdivisions
+     * @{ */
+    /** If there is a userinfo part, this is the start of it. Otherwise it's the
+     * same as offAuthorityHost. */
+    size_t      offAuthorityUsername;
+    /** The length of the username (zero if not present). */
+    size_t      cchAuthorityUsername;
+    /** If there is a userinfo part containing a password, this is the start of it.
+     * Otherwise it's the same as offAuthorityHost. */
+    size_t      offAuthorityPassword;
+    /** The length of the password (zero if not present). */
+    size_t      cchAuthorityPassword;
+    /** The offset of the host part of the authority. */
+    size_t      offAuthorityHost;
+    /** The length of the host part of the authority. */
+    size_t      cchAuthorityHost;
+    /** The authority port number, UINT32_MAX if not present. */
+    uint32_t    uAuthorityPort;
+    /** @} */
+} RTURIPARSED;
+/** Pointer to a parsed URI. */
+typedef RTURIPARSED *PRTURIPARSED;
+/** Set if the URI contains escaped characters. */
+#define RTURIPARSED_F_CONTAINS_ESCAPED_CHARS        UINT32_C(0x00000001)
+/** Set if the URI have an authority component.  Necessary since the authority
+ * component can have a zero length. */
+#define RTURIPARSED_F_HAVE_AUTHORITY                UINT32_C(0x00000002)
+
+
 
 /*********************************************************************************************************************************
-*   Private RTUri helper                                                                                                         *
+*   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
-/* The following defines characters which have to be % escaped:
-   control = 00-1F
-   space   = ' '
-   delims  = '<' , '>' , '#' , '%' , '"'
-   unwise  = '{' , '}' , '|' , '\' , '^' , '[' , ']' , '`'
-*/
+/**
+ * The following defines characters which have to be % escaped:
+ *  control = 00-1F
+ *  space   = ' '
+ *  delims  = '<' , '>' , '#' , '%' , '"'
+ *  unwise  = '{' , '}' , '|' , '\' , '^' , '[' , ']' , '`'
+ */
 #define URI_EXCLUDED(a) \
-     ((a) >= 0x0  && (a) <= 0x20) \
-  || ((a) >= 0x5B && (a) <= 0x5E) \
-  || ((a) >= 0x7B && (a) <= 0x7D) \
-  || (a) == '<' || (a) == '>' || (a) == '#' \
-  || (a) == '%' || (a) == '"' || (a) == '`'
+  (   ((a) >= 0x0  && (a) <= 0x20) \
+   || ((a) >= 0x5B && (a) <= 0x5E) \
+   || ((a) >= 0x7B && (a) <= 0x7D) \
+   || (a) == '<' || (a) == '>' || (a) == '#' \
+   || (a) == '%' || (a) == '"' || (a) == '`' )
 
 static char *rtUriPercentEncodeN(const char *pszString, size_t cchMax)
 {
@@ -73,13 +136,14 @@ static char *rtUriPercentEncodeN(const char *pszString, size_t cchMax)
 
     size_t cbLen = RT_MIN(strlen(pszString), cchMax);
     /* The new string can be max 3 times in size of the original string. */
-    char *pszNew = (char*)RTMemAlloc(cbLen * 3 + 1);
+    char *pszNew = RTStrAlloc(cbLen * 3 + 1);
     if (!pszNew)
         return NULL;
+
     char *pszRes = NULL;
     size_t iIn = 0;
     size_t iOut = 0;
-    while(iIn < cbLen)
+    while (iIn < cbLen)
     {
         if (URI_EXCLUDED(pszString[iIn]))
         {
@@ -116,16 +180,18 @@ static char *rtUriPercentDecodeN(const char *pszString, size_t cchMax)
     if (!pszString)
         return NULL;
 
-    int rc = VINF_SUCCESS;
-    size_t cbLen = RT_MIN(strlen(pszString), cchMax);
     /* The new string can only get smaller. */
-    char *pszNew = (char*)RTMemAlloc(cbLen + 1);
+    size_t cchLen = strlen(pszString);
+    cchLen = RT_MIN(cchLen, cchMax);
+    char *pszNew = RTStrAlloc(cchLen + 1);
     if (!pszNew)
         return NULL;
+
+    int rc = VINF_SUCCESS;
     char *pszRes = NULL;
     size_t iIn = 0;
     size_t iOut = 0;
-    while(iIn < cbLen)
+    while (iIn < cchLen)
     {
         if (pszString[iIn] == '%')
         {
@@ -168,9 +234,9 @@ static char *rtUriPercentDecodeN(const char *pszString, size_t cchMax)
 
 static bool rtUriFindSchemeEnd(const char *pszUri, size_t iStart, size_t cbLen, size_t *piEnd)
 {
-    size_t i = iStart;
     /* The scheme has to end with ':'. */
-    while(i < iStart + cbLen)
+    size_t i = iStart;
+    while (i < iStart + cbLen)
     {
         if (pszUri[i] == ':')
         {
@@ -198,9 +264,9 @@ static bool rtUriCheckAuthorityStart(const char *pszUri, size_t iStart, size_t c
 
 static bool rtUriFindAuthorityEnd(const char *pszUri, size_t iStart, size_t cbLen, size_t *piEnd)
 {
-    size_t i = iStart;
     /* The authority can end with '/' || '?' || '#'. */
-    while(i < iStart + cbLen)
+    size_t i = iStart;
+    while (i < iStart + cbLen)
     {
         if (   pszUri[i] == '/'
             || pszUri[i] == '?'
@@ -223,11 +289,13 @@ static bool rtUriCheckPathStart(const char *pszUri, size_t iStart, size_t cbLen,
         *piStart = iStart; /* Including '/' */
         return true;
     }
+
     /* '?' || '#' means there is no path. */
     if (   cbLen >= 1
         && (   pszUri[iStart] == '?'
             || pszUri[iStart] == '#'))
         return false;
+
     /* All other values are allowed. */
     *piStart = iStart;
     return true;
@@ -235,9 +303,9 @@ static bool rtUriCheckPathStart(const char *pszUri, size_t iStart, size_t cbLen,
 
 static bool rtUriFindPathEnd(const char *pszUri, size_t iStart, size_t cbLen, size_t *piEnd)
 {
-    size_t i = iStart;
     /* The path can end with '?' || '#'. */
-    while(i < iStart + cbLen)
+    size_t i = iStart;
+    while (i < iStart + cbLen)
     {
         if (   pszUri[i] == '?'
             || pszUri[i] == '#')
@@ -250,57 +318,197 @@ static bool rtUriFindPathEnd(const char *pszUri, size_t iStart, size_t cbLen, si
     return false;
 }
 
-static bool rtUriCheckQueryStart(const char *pszUri, size_t iStart, size_t cbLen, size_t *piStart)
+static int rtUriParse(const char *pszUri, PRTURIPARSED pParsed)
 {
-    /* The query start with a '?'. */
-    if (   cbLen >= 1
-        && pszUri[iStart] == '?')
-    {
-        *piStart = iStart + 1; /* Excluding '?' */
-        return true;
-    }
-    return false;
-}
+    /*
+     * Validate the input and clear the output.
+     */
+    AssertPtrReturn(pParsed, VERR_INVALID_POINTER);
+    RT_ZERO(*pParsed);
+    pParsed->uAuthorityPort = UINT32_MAX;
 
-static bool rtUriFindQueryEnd(const char *pszUri, size_t iStart, size_t cbLen, size_t *piEnd)
-{
-    size_t i = iStart;
-    /* The query can end with '?' || '#'. */
-    while(i < iStart + cbLen)
+    AssertPtrReturn(pszUri, VERR_INVALID_POINTER);
+    size_t const cchUri = strlen(pszUri);
+    if (RT_LIKELY(cchUri >= 3)) { /* likely */ }
+    else return cchUri ? VERR_URI_TOO_SHORT : VERR_URI_EMPTY;
+
+    /*
+     * RFC-3986, section 3.1:
+     *      scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+     *
+     * The scheme ends with a ':', which we also skip here.
+     */
+    size_t off = 0;
+    char ch = pszUri[off++];
+    if (RT_LIKELY(RT_C_IS_ALPHA(ch))) { /* likely */ }
+    else return VERR_URI_INVALID_SCHEME;
+    for (;;)
     {
-        if (pszUri[i] == '#')
+        ch = pszUri[off];
+        if (ch == ':')
+            break;
+        if (RT_LIKELY(RT_C_IS_ALNUM(ch) || ch == '.' || ch == '-' || ch == '+')) { /* likely */ }
+        else return VERR_URI_INVALID_SCHEME;
+        off++;
+    }
+    pParsed->cchScheme = off;
+
+    /* Require the scheme length to be at least two chars so we won't confuse
+       it with a path starting with a DOS drive letter specification. */
+    if (RT_LIKELY(off >= 2)) { /* likely */ }
+    else return VERR_URI_INVALID_SCHEME;
+
+    off++;                              /* (skip colon) */
+
+    /*
+     * Find the end of the path, we'll need this several times.
+     * Also, while we're potentially scanning the whole thing, check for '%'.
+     */
+    size_t const offHash         = RTStrOffCharOrTerm(&pszUri[off], '#') + off;
+    size_t const offQuestionMark = RTStrOffCharOrTerm(&pszUri[off], '?') + off;
+
+    if (memchr(pszUri, '%', cchUri) != NULL)
+        pParsed->fFlags |= RTURIPARSED_F_CONTAINS_ESCAPED_CHARS;
+
+    /*
+     * RFC-3986, section 3.2:
+     *      The authority component is preceeded by a double slash ("//")...
+     */
+    if (   pszUri[off] == '/'
+        && pszUri[off + 1] == '/')
+    {
+        off += 2;
+        pParsed->offAuthority = pParsed->offAuthorityUsername = pParsed->offAuthorityPassword = pParsed->offAuthorityHost = off;
+        pParsed->fFlags |= RTURIPARSED_F_HAVE_AUTHORITY;
+
+        /*
+         * RFC-3986, section 3.2:
+         *      ...and is terminated by the next slash ("/"), question mark ("?"),
+         *       or number sign ("#") character, or by the end of the URI.
+         */
+        const char *pszAuthority = &pszUri[off];
+        size_t      cchAuthority = RTStrOffCharOrTerm(pszAuthority, '/');
+        cchAuthority = RT_MIN(cchAuthority, offHash - off);
+        cchAuthority = RT_MIN(cchAuthority, offQuestionMark - off);
+        pParsed->cchAuthority     = cchAuthority;
+
+        /* The Authority can be empty, like for: file:///usr/bin/grep  */
+        if (cchAuthority > 0)
         {
-            *piEnd = i;
-            return true;
+            pParsed->cchAuthorityHost = cchAuthority;
+
+            /*
+             * If there is a userinfo part, it is ended by a '@'.
+             */
+            const char *pszAt = (const char *)memchr(pszAuthority, '@', cchAuthority);
+            if (pszAt)
+            {
+                size_t cchTmp = pszAt - pszAuthority;
+                pParsed->offAuthorityHost += cchTmp + 1;
+                pParsed->cchAuthorityHost -= cchTmp + 1;
+
+                /* If there is a password part, it's separated from the username with a colon. */
+                const char *pszColon = (const char *)memchr(pszAuthority, ':', cchTmp);
+                if (pszColon)
+                {
+                    pParsed->cchAuthorityUsername = pszColon - pszAuthority;
+                    pParsed->offAuthorityPassword = &pszColon[1] - pszUri;
+                    pParsed->cchAuthorityPassword = pszAt - &pszColon[1];
+                }
+                else
+                {
+                    pParsed->cchAuthorityUsername = cchTmp;
+                    pParsed->offAuthorityPassword = off + cchTmp;
+                }
+            }
+
+            /*
+             * If there is a port part, its after the last colon in the host part.
+             */
+            const char *pszColon = (const char *)memrchr(&pszUri[pParsed->offAuthorityHost], ':', pParsed->cchAuthorityHost);
+            if (pszColon)
+            {
+                size_t cchTmp = &pszUri[pParsed->offAuthorityHost + pParsed->cchAuthorityHost] - &pszColon[1];
+                pParsed->cchAuthorityHost -= cchTmp + 1;
+
+                pParsed->uAuthorityPort = 0;
+                while (cchTmp-- > 0)
+                {
+                    ch = *++pszColon;
+                    if (   RT_C_IS_DIGIT(ch)
+                        && pParsed->uAuthorityPort < UINT32_MAX / UINT32_C(10))
+                    {
+                        pParsed->uAuthorityPort *= 10;
+                        pParsed->uAuthorityPort += ch - '0';
+                    }
+                    else
+                        return VERR_URI_INVALID_PORT_NUMBER;
+                }
+            }
         }
-        ++i;
-    }
-    return false;
-}
 
-static bool rtUriCheckFragmentStart(const char *pszUri, size_t iStart, size_t cbLen, size_t *piStart)
-{
-    /* The fragment start with a '#'. */
-    if (   cbLen >= 1
-        && pszUri[iStart] == '#')
+        /* Skip past the authority. */
+        off += cchAuthority;
+    }
+    else
+        pParsed->offAuthority = pParsed->offAuthorityUsername = pParsed->offAuthorityPassword = pParsed->offAuthorityHost = off;
+
+    /*
+     * RFC-3986, section 3.3: Path
+     *      The path is terminated by the first question mark ("?")
+     *      or number sign ("#") character, or by the end of the URI.
+     */
+    pParsed->offPath = off;
+    pParsed->cchPath = RT_MIN(offHash, offQuestionMark) - off;
+    off += pParsed->cchPath;
+
+    /*
+     * RFC-3986, section 3.4: Query
+     *      The query component is indicated by the first question mark ("?")
+     *      character and terminated by a number sign ("#") character or by the
+     *      end of the URI.
+     */
+    if (   off == offQuestionMark
+        && off < cchUri)
     {
-        *piStart = iStart + 1; /* Excluding '#' */
-        return true;
+        Assert(pszUri[offQuestionMark] == '?');
+        pParsed->offQuery = ++off;
+        pParsed->cchQuery = offHash - off;
+        off = offHash;
     }
-    return false;
+    else
+    {
+        Assert(!pszUri[offQuestionMark]);
+        pParsed->offQuery = off;
+    }
+
+    /*
+     * RFC-3986, section 3.5: Fragment
+     *      A fragment identifier component is indicated by the presence of a
+     *      number sign ("#") character and terminated by the end of the URI.
+     */
+    if (   off == offHash
+        && off < cchUri)
+    {
+        pParsed->offFragment = ++off;
+        pParsed->cchFragment = cchUri - off;
+    }
+    else
+    {
+        Assert(!pszUri[offHash]);
+        pParsed->offFragment = off;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
 /*********************************************************************************************************************************
-*   Public RTUri interface                                                                                                       *
+*   Generic URI APIs                                                                                                             *
 *********************************************************************************************************************************/
 
-
-/*********************************************************************************************************************************
-*   Generic Uri methods                                                                                                          *
-*********************************************************************************************************************************/
-
-RTR3DECL(char *) RTUriCreate(const char *pszScheme, const char *pszAuthority, const char *pszPath, const char *pszQuery, const char *pszFragment)
+RTR3DECL(char *) RTUriCreate(const char *pszScheme, const char *pszAuthority, const char *pszPath, const char *pszQuery,
+                             const char *pszFragment)
 {
     if (!pszScheme) /* Scheme is minimum requirement */
         return NULL;
@@ -345,9 +553,11 @@ RTR3DECL(char *) RTUriCreate(const char *pszScheme, const char *pszAuthority, co
             cbSize += strlen(pszFragment1) + 1;
         }
 
-        char *pszTmp = pszResult = (char*)RTMemAllocZ(cbSize);
+        char *pszTmp = pszResult = (char *)RTStrAlloc(cbSize);
         if (!pszResult)
             break;
+        RT_BZERO(pszTmp, cbSize);
+
         /* Compose the target uri string. */
         RTStrCatP(&pszTmp, &cbSize, pszScheme);
         RTStrCatP(&pszTmp, &cbSize, ":");
@@ -370,7 +580,7 @@ RTR3DECL(char *) RTUriCreate(const char *pszScheme, const char *pszAuthority, co
             RTStrCatP(&pszTmp, &cbSize, "#");
             RTStrCatP(&pszTmp, &cbSize, pszFragment1);
         }
-    }while (0);
+    } while (0);
 
     /* Cleanup */
     if (pszAuthority1)
@@ -410,212 +620,103 @@ RTR3DECL(char *) RTUriScheme(const char *pszUri)
 
 RTR3DECL(char *) RTUriAuthority(const char *pszUri)
 {
-    AssertPtrReturn(pszUri, NULL);
-
-    size_t iPos1;
-    size_t cbLen = strlen(pszUri);
-    /* Find the end of the scheme. */
-    if (!rtUriFindSchemeEnd(pszUri, 0, cbLen, &iPos1))
-        return NULL; /* no URI */
-    else
-        ++iPos1; /* Skip ':' */
-
-    size_t iPos2;
-    /* Find the start of the authority. */
-    if (rtUriCheckAuthorityStart(pszUri, iPos1, cbLen - iPos1, &iPos2))
-    {
-        size_t iPos3 = cbLen;
-        /* Find the end of the authority. If not found, the rest of the string
-         * is used. */
-        rtUriFindAuthorityEnd(pszUri, iPos2, cbLen - iPos2, &iPos3);
-        if (iPos3 > iPos2) /* Length check */
-            return rtUriPercentDecodeN(&pszUri[iPos2], iPos3 - iPos2);
-        else
-            return NULL;
-    }
+    RTURIPARSED Parsed;
+    int rc = rtUriParse(pszUri, &Parsed);
+    if (RT_SUCCESS(rc))
+        if (Parsed.cchAuthority || (Parsed.fFlags & RTURIPARSED_F_HAVE_AUTHORITY))
+            return rtUriPercentDecodeN(&pszUri[Parsed.offAuthority], Parsed.cchAuthority);
     return NULL;
+}
+
+RTR3DECL(char *) RTUriAuthorityUsername(const char *pszUri)
+{
+    RTURIPARSED Parsed;
+    int rc = rtUriParse(pszUri, &Parsed);
+    if (RT_SUCCESS(rc))
+        if (Parsed.cchAuthorityUsername)
+            return rtUriPercentDecodeN(&pszUri[Parsed.offAuthorityUsername], Parsed.cchAuthorityUsername);
+    return NULL;
+}
+
+RTR3DECL(char *) RTUriAuthorityPassword(const char *pszUri)
+{
+    RTURIPARSED Parsed;
+    int rc = rtUriParse(pszUri, &Parsed);
+    if (RT_SUCCESS(rc))
+        if (Parsed.cchAuthorityPassword)
+            return rtUriPercentDecodeN(&pszUri[Parsed.offAuthorityPassword], Parsed.cchAuthorityPassword);
+    return NULL;
+}
+
+RTR3DECL(uint32_t) RTUriAuthorityPort(const char *pszUri)
+{
+    RTURIPARSED Parsed;
+    int rc = rtUriParse(pszUri, &Parsed);
+    if (RT_SUCCESS(rc))
+        return Parsed.uAuthorityPort;
+    return UINT32_MAX;
 }
 
 RTR3DECL(char *) RTUriPath(const char *pszUri)
 {
-    AssertPtrReturn(pszUri, NULL);
-
-    size_t iPos1;
-    size_t cbLen = strlen(pszUri);
-    /* Find the end of the scheme. */
-    if (!rtUriFindSchemeEnd(pszUri, 0, cbLen, &iPos1))
-        return NULL; /* no URI */
-    else
-        ++iPos1; /* Skip ':' */
-
-    size_t iPos2;
-    size_t iPos3 = iPos1; /* Skip if no authority is found */
-    /* Find the start of the authority. */
-    if (rtUriCheckAuthorityStart(pszUri, iPos1, cbLen - iPos1, &iPos2))
-    {
-        /* Find the end of the authority. If not found, then there is no path
-         * component, cause the authority is the rest of the string. */
-        if (!rtUriFindAuthorityEnd(pszUri, iPos2, cbLen - iPos2, &iPos3))
-            return NULL; /* no path! */
-    }
-
-    size_t iPos4;
-    /* Find the start of the path */
-    if (rtUriCheckPathStart(pszUri, iPos3, cbLen - iPos3, &iPos4))
-    {
-        /* Search for the end of the scheme. */
-        size_t iPos5 = cbLen;
-        rtUriFindPathEnd(pszUri, iPos4, cbLen - iPos4, &iPos5);
-        if (iPos5 > iPos4) /* Length check */
-            return rtUriPercentDecodeN(&pszUri[iPos4], iPos5 - iPos4);
-    }
-
+    RTURIPARSED Parsed;
+    int rc = rtUriParse(pszUri, &Parsed);
+    if (RT_SUCCESS(rc))
+        if (Parsed.cchPath)
+            return rtUriPercentDecodeN(&pszUri[Parsed.offPath], Parsed.cchPath);
     return NULL;
 }
 
 RTR3DECL(char *) RTUriQuery(const char *pszUri)
 {
-    AssertPtrReturn(pszUri, NULL);
-
-    size_t iPos1;
-    size_t cbLen = strlen(pszUri);
-    /* Find the end of the scheme. */
-    if (!rtUriFindSchemeEnd(pszUri, 0, cbLen, &iPos1))
-        return NULL; /* no URI */
-    else
-        ++iPos1; /* Skip ':' */
-
-    size_t iPos2;
-    size_t iPos3 = iPos1; /* Skip if no authority is found */
-    /* Find the start of the authority. */
-    if (rtUriCheckAuthorityStart(pszUri, iPos1, cbLen - iPos1, &iPos2))
-    {
-        /* Find the end of the authority. If not found, then there is no path
-         * component, cause the authority is the rest of the string. */
-        if (!rtUriFindAuthorityEnd(pszUri, iPos2, cbLen - iPos2, &iPos3))
-            return NULL; /* no path! */
-    }
-
-    size_t iPos4;
-    size_t iPos5 = iPos3; /* Skip if no path is found */
-    /* Find the start of the path */
-    if (rtUriCheckPathStart(pszUri, iPos3, cbLen - iPos3, &iPos4))
-    {
-        /* Find the end of the path. If not found, then there is no query
-         * component, cause the path is the rest of the string. */
-        if (!rtUriFindPathEnd(pszUri, iPos4, cbLen - iPos4, &iPos5))
-            return NULL; /* no query! */
-    }
-
-    size_t iPos6;
-    /* Find the start of the query */
-    if (rtUriCheckQueryStart(pszUri, iPos5, cbLen - iPos5, &iPos6))
-    {
-        /* Search for the end of the query. */
-        size_t iPos7 = cbLen;
-        rtUriFindQueryEnd(pszUri, iPos6, cbLen - iPos6, &iPos7);
-        if (iPos7 > iPos6) /* Length check */
-            return rtUriPercentDecodeN(&pszUri[iPos6], iPos7 - iPos6);
-    }
-
+    RTURIPARSED Parsed;
+    int rc = rtUriParse(pszUri, &Parsed);
+    if (RT_SUCCESS(rc))
+        if (Parsed.cchQuery)
+            return rtUriPercentDecodeN(&pszUri[Parsed.offQuery], Parsed.cchQuery);
     return NULL;
 }
 
 RTR3DECL(char *) RTUriFragment(const char *pszUri)
 {
-    AssertPtrReturn(pszUri, NULL);
-
-    size_t iPos1;
-    size_t cbLen = strlen(pszUri);
-    /* Find the end of the scheme. */
-    if (!rtUriFindSchemeEnd(pszUri, 0, cbLen, &iPos1))
-        return NULL; /* no URI */
-    else
-        ++iPos1; /* Skip ':' */
-
-    size_t iPos2;
-    size_t iPos3 = iPos1; /* Skip if no authority is found */
-    /* Find the start of the authority. */
-    if (rtUriCheckAuthorityStart(pszUri, iPos1, cbLen - iPos1, &iPos2))
-    {
-        /* Find the end of the authority. If not found, then there is no path
-         * component, cause the authority is the rest of the string. */
-        if (!rtUriFindAuthorityEnd(pszUri, iPos2, cbLen - iPos2, &iPos3))
-            return NULL; /* no path! */
-    }
-
-    size_t iPos4;
-    size_t iPos5 = iPos3; /* Skip if no path is found */
-    /* Find the start of the path */
-    if (rtUriCheckPathStart(pszUri, iPos3, cbLen - iPos3, &iPos4))
-    {
-        /* Find the end of the path. If not found, then there is no query
-         * component, cause the path is the rest of the string. */
-        if (!rtUriFindPathEnd(pszUri, iPos4, cbLen - iPos4, &iPos5))
-            return NULL; /* no query! */
-    }
-
-    size_t iPos6;
-    size_t iPos7 = iPos5; /* Skip if no query is found */
-    /* Find the start of the query */
-    if (rtUriCheckQueryStart(pszUri, iPos5, cbLen - iPos5, &iPos6))
-    {
-        /* Find the end of the query If not found, then there is no fragment
-         * component, cause the query is the rest of the string. */
-        if (!rtUriFindQueryEnd(pszUri, iPos6, cbLen - iPos6, &iPos7))
-            return NULL; /* no query! */
-    }
-
-
-    size_t iPos8;
-    /* Find the start of the fragment */
-    if (rtUriCheckFragmentStart(pszUri, iPos7, cbLen - iPos7, &iPos8))
-    {
-        /* There could be nothing behind a fragment. So use the rest of the
-         * string. */
-        if (cbLen > iPos8) /* Length check */
-            return rtUriPercentDecodeN(&pszUri[iPos8], cbLen - iPos8);
-    }
+    RTURIPARSED Parsed;
+    int rc = rtUriParse(pszUri, &Parsed);
+    if (RT_SUCCESS(rc))
+        if (Parsed.cchFragment)
+            return rtUriPercentDecodeN(&pszUri[Parsed.offFragment], Parsed.cchFragment);
     return NULL;
 }
 
 
 /*********************************************************************************************************************************
-*   File Uri methods                                                                                                             *
+*   File URI APIs                                                                                                                *
 *********************************************************************************************************************************/
 
 RTR3DECL(char *) RTUriFileCreate(const char *pszPath)
 {
-    if (!pszPath)
-        return NULL;
-
-    char *pszResult = 0;
-    char *pszPath1 = 0;
-
-    do
+    char *pszResult = NULL;
+    if (pszPath)
     {
-        /* Create the percent encoded strings and calculate the necessary uri
-         * length. */
-        pszPath1 = rtUriPercentEncodeN(pszPath, RTSTR_MAX);
-        if (!pszPath1)
-            break;
-        size_t cbSize = 7 /* file:// */ + strlen(pszPath1) + 1; /* plus zero byte */
-        if (pszPath1[0] != '/')
-            ++cbSize;
-        char *pszTmp = pszResult = (char*)RTMemAllocZ(cbSize);
-        if (!pszResult)
-            break;
-        /* Compose the target uri string. */
-        RTStrCatP(&pszTmp, &cbSize, "file://");
-        if (pszPath1[0] != '/')
-            RTStrCatP(&pszTmp, &cbSize, "/");
-        RTStrCatP(&pszTmp, &cbSize, pszPath1);
-    }while (0);
-
-    /* Cleanup */
-    if (pszPath1)
-        RTStrFree(pszPath1);
-
+        /* Create the percent encoded strings and calculate the necessary uri length. */
+        char *pszPath1 = rtUriPercentEncodeN(pszPath, RTSTR_MAX);
+        if (pszPath1)
+        {
+            size_t cbSize = 7 /* file:// */ + strlen(pszPath1) + 1; /* plus zero byte */
+            if (pszPath1[0] != '/')
+                ++cbSize;
+            char *pszTmp = pszResult = RTStrAlloc(cbSize);
+            if (pszResult)
+            {
+                /* Compose the target uri string. */
+                *pszTmp = '\0';
+                RTStrCatP(&pszTmp, &cbSize, "file://");
+                if (pszPath1[0] != '/')
+                    RTStrCatP(&pszTmp, &cbSize, "/");
+                RTStrCatP(&pszTmp, &cbSize, pszPath1);
+            }
+            RTStrFree(pszPath1);
+        }
+    }
     return pszResult;
 }
 
@@ -627,65 +728,43 @@ RTR3DECL(char *) RTUriFilePath(const char *pszUri, uint32_t uFormat)
 RTR3DECL(char *) RTUriFileNPath(const char *pszUri, uint32_t uFormat, size_t cchMax)
 {
     AssertPtrReturn(pszUri, NULL);
+    AssertReturn(uFormat == URI_FILE_FORMAT_AUTO || uFormat == URI_FILE_FORMAT_UNIX || uFormat == URI_FILE_FORMAT_WIN, NULL);
 
-    size_t iPos1;
-    size_t cbLen = RT_MIN(strlen(pszUri), cchMax);
-    /* Find the end of the scheme. */
-    if (!rtUriFindSchemeEnd(pszUri, 0, cbLen, &iPos1))
-        return NULL; /* no URI */
-    else
-        ++iPos1; /* Skip ':' */
+    /* Auto is based on the current OS. */
+    if (uFormat == URI_FILE_FORMAT_AUTO)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+        uFormat = URI_FILE_FORMAT_WIN;
+#else
+        uFormat = URI_FILE_FORMAT_UNIX;
+#endif
 
     /* Check that this is a file Uri */
-    if (RTStrNICmp(pszUri, "file:", iPos1) != 0)
+    if (RTStrNICmp(pszUri, RT_STR_TUPLE("file:")) != 0)
         return NULL;
 
-    size_t iPos2;
-    size_t iPos3 = iPos1; /* Skip if no authority is found */
-    /* Find the start of the authority. */
-    if (rtUriCheckAuthorityStart(pszUri, iPos1, cbLen - iPos1, &iPos2))
+    RTURIPARSED Parsed;
+    int rc = rtUriParse(pszUri, &Parsed);
+    if (RT_SUCCESS(rc) && Parsed.cchPath)
     {
-        /* Find the end of the authority. If not found, then there is no path
-         * component, cause the authority is the rest of the string. */
-        if (!rtUriFindAuthorityEnd(pszUri, iPos2, cbLen - iPos2, &iPos3))
-            return NULL; /* no path! */
-    }
-
-    size_t iPos4;
-    /* Find the start of the path */
-    if (rtUriCheckPathStart(pszUri, iPos3, cbLen - iPos3, &iPos4))
-    {
-        uint32_t uFIntern = uFormat;
-        /* Auto is based on the current OS. */
-        if (uFormat == URI_FILE_FORMAT_AUTO)
-#ifdef RT_OS_WINDOWS
-            uFIntern = URI_FILE_FORMAT_WIN;
-#else /* RT_OS_WINDOWS */
-            uFIntern = URI_FILE_FORMAT_UNIX;
-#endif /* !RT_OS_WINDOWS */
-
-        if (   uFIntern != URI_FILE_FORMAT_UNIX
-            && pszUri[iPos4] == '/')
-            ++iPos4;
-        /* Search for the end of the scheme. */
-        size_t iPos5 = cbLen;
-        rtUriFindPathEnd(pszUri, iPos4, cbLen - iPos4, &iPos5);
-        if (iPos5 > iPos4) /* Length check */
+        /* Special hack for DOS path like file:///c:/WINDOWS/clock.avi where we
+           have to drop the leading slash that was used to separate the authority
+           from the path. */
+        if (  uFormat == URI_FILE_FORMAT_WIN
+            && Parsed.cchPath >= 3
+            && pszUri[Parsed.offPath] == '/'
+            && pszUri[Parsed.offPath + 2] == ':'
+            && RT_C_IS_ALPHA(pszUri[Parsed.offPath + 1]) )
         {
-            char *pszPath = rtUriPercentDecodeN(&pszUri[iPos4], iPos5 - iPos4);
-            if (uFIntern == URI_FILE_FORMAT_UNIX)
-                return RTPathChangeToUnixSlashes(pszPath, true);
-            else if (uFIntern == URI_FILE_FORMAT_WIN)
-                return RTPathChangeToDosSlashes(pszPath, true);
-            else
-            {
-                RTStrFree(pszPath);
-                AssertMsgFailed(("Unknown uri file format %u", uFIntern));
-                return NULL;
-            }
+            Parsed.offPath++;
+            Parsed.cchPath--;
         }
-    }
 
+        char *pszPath = rtUriPercentDecodeN(&pszUri[Parsed.offPath], Parsed.cchPath);
+        if (uFormat == URI_FILE_FORMAT_UNIX)
+            return RTPathChangeToUnixSlashes(pszPath, true);
+        Assert(uFormat == URI_FILE_FORMAT_WIN);
+        return RTPathChangeToDosSlashes(pszPath, true);
+    }
     return NULL;
 }
 
