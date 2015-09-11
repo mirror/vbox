@@ -53,6 +53,8 @@ static struct
     const char *pszPassword;
     const char *pszHost;
     uint32_t    uPort;
+
+    const char *pszCreated;
 } g_aTests[] =
 {
     {   /* #0 */
@@ -66,6 +68,7 @@ static struct
         /*.pszPassword  =*/ "yt",
         /*.pszHost      =*/ "example.com",
         /*.uPort        =*/ 8042,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #1 */
         "foo://tt:yt@example.com:8042/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there?name=%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60ferret",
@@ -78,6 +81,7 @@ static struct
         /*.pszPassword  =*/ "yt",
         /*.pszHost      =*/ "example.com",
         /*.uPort        =*/ 8042,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #2 */
         "foo://tt:yt@example.com:8042/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
@@ -90,6 +94,7 @@ static struct
         /*.pszPassword  =*/ "yt",
         /*.pszHost      =*/ "example.com",
         /*.uPort        =*/ 8042,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #3 */
         "foo:tt@example.com",
@@ -102,6 +107,7 @@ static struct
         /*.pszPassword  =*/ NULL,
         /*.pszHost      =*/ NULL,
         /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #4 */
         "foo:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there?name=%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60ferret#nose%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60",
@@ -114,6 +120,7 @@ static struct
         /*.pszPassword  =*/ NULL,
         /*.pszHost      =*/ NULL,
         /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #5 */
         "foo:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there#nose%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60",
@@ -126,6 +133,7 @@ static struct
         /*.pszPassword  =*/ NULL,
         /*.pszHost      =*/ NULL,
         /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #6 */
         "urn:example:animal:ferret:nose",
@@ -138,6 +146,7 @@ static struct
         /*.pszPassword  =*/ NULL,
         /*.pszHost      =*/ NULL,
         /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #7 */
         "foo:?name=%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60ferret#nose%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60",
@@ -150,6 +159,7 @@ static struct
         /*.pszPassword  =*/ NULL,
         /*.pszHost      =*/ NULL,
         /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #8 */
         "foo:#nose%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60",
@@ -162,6 +172,7 @@ static struct
         /*.pszPassword  =*/ NULL,
         /*.pszHost      =*/ NULL,
         /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #9 */
         "foo://tt:yt@example.com:8042/?name=%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60ferret#nose%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60",
@@ -174,6 +185,7 @@ static struct
         /*.pszPassword  =*/ "yt",
         /*.pszHost      =*/ "example.com",
         /*.uPort        =*/ 8042,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #10 */
         "foo://tt:yt@example.com:8042/",
@@ -186,6 +198,7 @@ static struct
         /*.pszPassword  =*/ "yt",
         /*.pszHost      =*/ "example.com",
         /*.uPort        =*/ 8042,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #11 */
         "foo://tt:yt@example.com:8042?name=%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60ferret#nose%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60",
@@ -198,6 +211,7 @@ static struct
         /*.pszPassword  =*/ "yt",
         /*.pszHost      =*/ "example.com",
         /*.uPort        =*/ 8042,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #12 */
         "foo://tt:yt@example.com:8042#nose%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60",
@@ -210,6 +224,7 @@ static struct
         /*.pszPassword  =*/ "yt",
         /*.pszHost      =*/ "example.com",
         /*.uPort        =*/ 8042,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #13 */
         "foo://tt:yt@example.com:8042",
@@ -222,6 +237,7 @@ static struct
         /*.pszPassword  =*/ "yt",
         /*.pszHost      =*/ "example.com",
         /*.uPort        =*/ 8042,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #14 */
         "foo:///",
@@ -234,6 +250,7 @@ static struct
         /*.pszPassword  =*/ NULL,
         /*.pszHost      =*/ NULL,
         /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #15 */
         "foo://",
@@ -246,6 +263,20 @@ static struct
         /*.pszPassword  =*/ NULL,
         /*.pszHost      =*/ NULL,
         /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
+    },
+    {   /* #16 - UTF-8 escape sequences. */
+        "http://example.com/%ce%b3%ce%bb%cf%83%ce%b1%20%e0%a4%95\xe0\xa4\x95",
+        /*.pszScheme    =*/ "http",
+        /*.pszAuthority =*/ "example.com",
+        /*.pszPath      =*/ "/\xce\xb3\xce\xbb\xcf\x83\xce\xb1 \xe0\xa4\x95\xe0\xa4\x95",
+        /*.pszQuery     =*/ NULL,
+        /*.pszFragment  =*/ NULL,
+        /*.pszUsername  =*/ NULL,
+        /*.pszPassword  =*/ NULL,
+        /*.pszHost      =*/ "example.com",
+        /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ "http://example.com/\xce\xb3\xce\xbb\xcf\x83\xce\xb1%20\xe0\xa4\x95\xe0\xa4\x95",
     },
 };
 
@@ -323,6 +354,21 @@ int main()
         return rc;
     RTTestBanner(hTest);
 
+#define CHECK_STR_API(a_Call, a_pszExpected) \
+        do { \
+            char *pszTmp = a_Call; \
+            if (a_pszExpected) \
+            { \
+                if (!pszTmp) \
+                    RTTestIFailed("#%u: %s returns NULL, expected '%s'", i, #a_Call, a_pszExpected); \
+                else if (strcmp(pszTmp, a_pszExpected)) \
+                        RTTestIFailed("#%u: %s returns '%s', expected '%s'", i, #a_Call, pszTmp, a_pszExpected); \
+            } \
+            else if (pszTmp) \
+                RTTestIFailed("#%u: %s returns '%s', expected NULL", i, #a_Call, pszTmp); \
+            RTStrFree(pszTmp); \
+        } while (0)
+
     RTTestISub("RTUriParse & RTUriParsed*");
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
     {
@@ -330,20 +376,6 @@ int main()
         RTTESTI_CHECK_RC(rc = RTUriParse(g_aTests[i].pszUri, &Parsed), VINF_SUCCESS);
         if (RT_SUCCESS(rc))
         {
-#define CHECK_STR_API(a_Call, a_pszExpected) \
-            do { \
-                char *pszTmp = a_Call; \
-                if (a_pszExpected) \
-                { \
-                    if (!pszTmp) \
-                        RTTestIFailed("#%u: %s returns NULL, expected '%s'", i, #a_Call, a_pszExpected); \
-                    else if (strcmp(pszTmp, a_pszExpected)) \
-                            RTTestIFailed("#%u: %s returns '%s', expected '%s'", i, #a_Call, pszTmp, a_pszExpected); \
-                } \
-                else if (pszTmp) \
-                    RTTestIFailed("#%u: %s returns '%s', expected NULL", i, #a_Call, pszTmp); \
-                RTStrFree(pszTmp); \
-            } while (0)
             CHECK_STR_API(RTUriParsedScheme(g_aTests[i].pszUri, &Parsed), g_aTests[i].pszScheme);
             CHECK_STR_API(RTUriParsedAuthority(g_aTests[i].pszUri, &Parsed), g_aTests[i].pszAuthority);
             CHECK_STR_API(RTUriParsedAuthorityUsername(g_aTests[i].pszUri, &Parsed), g_aTests[i].pszUsername);
@@ -361,8 +393,9 @@ int main()
     /* Creation */
     RTTestISub("RTUriCreate");
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
-        tstCreate(i, g_aTests[i].pszScheme, g_aTests[i].pszAuthority, g_aTests[i].pszPath,
-                  g_aTests[i].pszQuery, g_aTests[i].pszFragment, g_aTests[i].pszUri);
+        CHECK_STR_API(RTUriCreate(g_aTests[i].pszScheme, g_aTests[i].pszAuthority, g_aTests[i].pszPath,
+                                  g_aTests[i].pszQuery, g_aTests[i].pszFragment),
+                      g_aTests[i].pszCreated ? g_aTests[i].pszCreated : g_aTests[i].pszUri);
 
     /* File Uri path */
     RTTestISub("RTUriFilePath");
