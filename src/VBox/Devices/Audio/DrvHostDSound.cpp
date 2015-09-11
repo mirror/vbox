@@ -1546,35 +1546,13 @@ static DECLCALLBACK(void *) drvHostDSoundQueryInterface(PPDMIBASE pInterface, co
     return NULL;
 }
 
-static int dsoundConfigQueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
-{
-    /** @todo r=bird: What's wrong with CFGMR3QueryStringAlloc ??   */
-    size_t cbString;
-    int rc = CFGMR3QuerySize(pNode, pszName, &cbString);
-    if (RT_SUCCESS(rc))
-    {
-        char *pszString = RTStrAlloc(cbString);
-        if (pszString)
-        {
-            rc = CFGMR3QueryString(pNode, pszName, pszString, cbString);
-            if (RT_SUCCESS(rc))
-                *ppszString = pszString;
-            else
-                RTStrFree(pszString);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    return rc;
-}
-
 static LPCGUID dsoundConfigQueryGUID(PCFGMNODE pCfg, const char *pszName, RTUUID *pUuid)
 {
     LPCGUID pGuid = NULL;
 
     char *pszGuid = NULL;
-    dsoundConfigQueryStringAlloc(pCfg, pszName, &pszGuid);
-    if (pszGuid)
+    int rc = CFGMR3QueryStringAlloc(pCfg, pszName, &pszGuid);
+    if (RT_SUCCESS(rc))
     {
         int rc = RTUuidFromStr(pUuid, pszGuid);
         if (RT_SUCCESS(rc))
