@@ -1808,6 +1808,19 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnPowerOff}
+ */
+static DECLCALLBACK(void) efiPowerOff(PPDMDEVINS pDevIns)
+{
+    PDEVEFI  pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+
+    if (pThis->Lun0.pNvramDrv)
+        nvramStore(pThis);
+}
+
+
+
+/**
  * Destruct a device instance.
  *
  * Most VM resources are freed by the VM. This callback is provided so that any non-VM
@@ -1820,8 +1833,6 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
     PDEVEFI  pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
-    if (pThis->Lun0.pNvramDrv)
-        nvramStore(pThis);
     nvramFlushDeviceVariableList(pThis);
 
     if (pThis->pu8EfiRom)
@@ -2367,7 +2378,7 @@ const PDMDEVREG g_DeviceEFI =
     /* pfnInitComplete. */
     efiInitComplete,
     /* pfnPowerOff */
-    NULL,
+    efiPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32VersionEnd */
