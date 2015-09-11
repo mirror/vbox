@@ -2533,6 +2533,24 @@ DECLINLINE(char *) RTStrEnd(const char *pszString, size_t cchMax)
 RT_C_DECLS_BEGIN
 
 /**
+ * Finds the offset at which a simple character first occurs in a string.
+ *
+ * @returns The offset of the first occurence or the terminator offset.
+ * @param   pszHaystack The string to search.
+ * @param   chNeedle    The character to search for.
+ */
+DECLINLINE(size_t) RTStrOffCharOrTerm(const char *pszHaystack, char chNeedle)
+{
+    const char *psz = pszHaystack;
+    char ch;
+    while (   (ch = *psz) != chNeedle
+           && ch != '\0')
+        psz++;
+    return psz - pszHaystack;
+}
+
+
+/**
  * Matches a simple string pattern.
  *
  * @returns true if the string matches the pattern, otherwise false.
