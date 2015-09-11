@@ -780,8 +780,12 @@ RuntimeR3_SOURCES.win = \
 	win/RTErrConvertFromWin32.cpp \
 	common/string/mempcpy.asm
 
-RuntimeR3_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES)
-RuntimeR3_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES)
+RuntimeR3_SOURCES.win.amd64 := \
+	$(RuntimeWin64ASM_SOURCES) \
+	common/string/memrchr.asm
+RuntimeR3_SOURCES.win.x86   := \
+	$(RuntimeWin32ASM_SOURCES) \
+	common/string/memrchr.asm
 
 RuntimeR3_SOURCES.linux = \
 	generic/cdrom-generic.cpp \
@@ -871,6 +875,7 @@ else
 endif
 
 RuntimeR3_SOURCES.os2   = \
+	common/string/memrchr.asm \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
@@ -1013,6 +1018,8 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
+RuntimeR3_SOURCES.darwin.x86   += common/string/memrchr.asm
+RuntimeR3_SOURCES.darwin.amd64 += common/string/memrchr.asm
 
 ## @todo Make BSD sched, implement RTMP*.
 RuntimeR3_SOURCES.freebsd = \
@@ -1086,6 +1093,8 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/timer-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
+RuntimeR3_SOURCES.freebsd.x86   += common/string/memrchr.asm
+RuntimeR3_SOURCES.freebsd.amd64 += common/string/memrchr.asm
 
 RuntimeR3_SOURCES.solaris = \
 	generic/cdrom-generic.cpp \
@@ -1153,9 +1162,11 @@ RuntimeR3_SOURCES.solaris = \
 	r3/solaris/RTSystemShutdown-solaris.cpp \
 	r3/solaris/thread-affinity-solaris.cpp
 RuntimeR3_SOURCES.solaris.amd64 = \
+	common/string/memrchr.asm \
 	r3/solaris/coredumper-solaris.cpp \
 	r3/solaris/RTSystemQueryDmiString-solaris.cpp
 RuntimeR3_SOURCES.solaris.x86 = \
+	common/string/memrchr.asm \
 	r3/solaris/coredumper-solaris.cpp \
 	r3/solaris/RTSystemQueryDmiString-solaris.cpp
 RuntimeR3_SOURCES.solaris.sparc32 = \
@@ -1224,6 +1235,8 @@ RuntimeR3_SOURCES.haiku = \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
+RuntimeR3_SOURCES.haiku.x86   += common/string/memrchr.asm
+RuntimeR3_SOURCES.haiku.amd64 += common/string/memrchr.asm
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
