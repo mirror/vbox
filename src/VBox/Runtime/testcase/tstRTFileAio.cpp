@@ -226,6 +226,8 @@ int main()
             /* Cleanup */
             RTFileDelete("tstFileAio#1.tst");
         }
+        else
+            RTTestSkipped(g_hTest, "rc=%Rrc", rc);
     }
 
     /*
