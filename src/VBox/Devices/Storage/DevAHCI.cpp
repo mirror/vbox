@@ -6547,6 +6547,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         case ATA_SMART:
         case ATA_NV_CACHE:
         case ATA_IDLE:
+        case ATA_TRUSTED_RECEIVE_DMA: /* Windows 8+ */
             pAhciReq->uATARegError = ABRT_ERR;
             pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
             break;
