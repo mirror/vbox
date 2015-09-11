@@ -216,16 +216,26 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType type,
                                      const QString &strMessage,
                                      const char *pcszAutoConfirmId /* = 0*/,
                                      const QString &strOkButtonText /* = QString()*/,
-                                     const QString &strCancelButtonText /* = QString()*/) const
+                                     const QString &strCancelButtonText /* = QString()*/,
+                                     bool fDefaultFocusForOk /* = true*/) const
 {
-    return (question(pParent, type, strMessage, pcszAutoConfirmId,
-                     AlertButton_Ok | AlertButtonOption_Default,
-                     AlertButton_Cancel | AlertButtonOption_Escape,
-                     0 /* third button */,
-                     strOkButtonText,
-                     strCancelButtonText,
-                     QString() /* third button */) &
-            AlertButtonMask) == AlertButton_Ok;
+    return fDefaultFocusForOk ?
+           ((question(pParent, type, strMessage, pcszAutoConfirmId,
+               AlertButton_Ok | AlertButtonOption_Default,
+               AlertButton_Cancel | AlertButtonOption_Escape,
+               0 /* third button */,
+               strOkButtonText,
+               strCancelButtonText,
+               QString() /* third button */) &
+           AlertButtonMask) == AlertButton_Ok) :
+           ((question(pParent, type, strMessage, pcszAutoConfirmId,
+               AlertButton_Ok,
+               AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+               0 /* third button */,
+               strOkButtonText,
+               strCancelButtonText,
+               QString() /* third button */) &
+           AlertButtonMask) == AlertButton_Ok);
 }
 
 int UIMessageCenter::questionTrinary(QWidget *pParent, MessageType type,
@@ -599,7 +609,9 @@ bool UIMessageCenter::confirmMachineItemRemoval(const QStringList &names) const
                              "<p><b>%1</b></p><p>Do you wish to proceed?</p>")
                              .arg(names.join(", ")),
                           0 /* auto-confirm id */,
-                          tr("Remove"));
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) const
@@ -854,7 +866,9 @@ bool UIMessageCenter::confirmSnapshotRemoval(const QString &strSnapshotName) con
                              "</p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
                              .arg(strSnapshotName),
                           0 /* auto-confirm id */,
-                          tr("Delete"));
+                          tr("Delete") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName,
@@ -869,7 +883,9 @@ bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapsh
                               "the snapshot at your own risk.</p>")
                               .arg(strSnapshotName, strTargetImageName, strTargetImageMaxSize, strTargetFileSystemFree),
                           0 /* auto-confirm id */,
-                          tr("Delete"));
+                          tr("Delete") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 void UIMessageCenter::cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent /* = 0*/) const
@@ -940,7 +956,9 @@ bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *
                              "type.</p>")
                              .arg(strName),
                           0 /* auto-confirm id */,
-                          tr("Remove"));
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
@@ -956,7 +974,9 @@ bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QW
                              "name or a different adapter attachment type.</p>")
                              .arg(strName),
                           0 /* auto-confirm id */,
-                          tr("Remove"));
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 void UIMessageCenter::cannotCreateNATNetwork(const CVirtualBox &vbox, QWidget *pParent /* = 0*/)
@@ -1104,7 +1124,9 @@ int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) c
                              "<p>You will not be able to insert any optical disks or ISO images "
                              "or install the Guest Additions without it!</p>"),
                           0 /* auto-confirm id */,
-                          tr("&Remove", "medium"));
+                          tr("&Remove", "medium") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
@@ -1183,7 +1205,11 @@ bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* =
 {
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
-                             "<p>If you proceed your changes will be discarded.</p>"));
+                             "<p>If you proceed your changes will be discarded.</p>"),
+                          0 /* auto-confirm id */,
+                          QString() /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 void UIMessageCenter::cannotCreateSharedFolder(const CMachine &machine, const QString &strName, const QString &strPath, QWidget *pParent /* = 0*/)
@@ -1311,7 +1337,9 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
     return questionBinary(pParent, MessageType_Question,
                           strMessage.arg(medium.location()),
                           "confirmMediumRemoval" /* auto-confirm id */,
-                          tr("Remove", "medium"));
+                          tr("Remove", "medium") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent /* = 0*/) const
@@ -2296,7 +2324,9 @@ bool UIMessageCenter::confirmRemoveExtensionPack(const QString &strPackName, QWi
                              "<p>Are you sure you want to proceed?</p>")
                              .arg(strPackName),
                           0 /* auto-confirm id */,
-                          tr("&Remove"));
+                          tr("&Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 void UIMessageCenter::cannotOpenExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent /* = 0*/) const
@@ -2402,7 +2432,11 @@ bool UIMessageCenter::confirmOverridingFile(const QString &strPath, QWidget *pPa
                           tr("A file named <b>%1</b> already exists. "
                              "Are you sure you want to replace it?<br /><br />"
                              "Replacing it will overwrite its contents.")
-                             .arg(strPath));
+                             .arg(strPath),
+                          0 /* auto-confirm id */,
+                          QString() /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 bool UIMessageCenter::confirmOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent /* = 0*/) const
@@ -2415,7 +2449,11 @@ bool UIMessageCenter::confirmOverridingFiles(const QVector<QString> &strPaths, Q
                               tr("The following files already exist:<br /><br />%1<br /><br />"
                                  "Are you sure you want to replace them? "
                                  "Replacing them will overwrite their contents.")
-                                 .arg(QStringList(strPaths.toList()).join("<br />")));
+                                 .arg(QStringList(strPaths.toList()).join("<br />")),
+                              0 /* auto-confirm id */,
+                              QString() /* ok button text */,
+                              QString() /* cancel button text */,
+                              false /* ok button by default? */);
     else
         return true;
 }

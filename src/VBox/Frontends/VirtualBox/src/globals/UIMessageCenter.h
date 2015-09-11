@@ -120,7 +120,8 @@ public:
                         const QString &strMessage,
                         const char *pcszAutoConfirmId = 0,
                         const QString &strOkButtonText = QString(),
-                        const QString &strCancelButtonText = QString()) const;
+                        const QString &strCancelButtonText = QString(),
+                        bool fDefaultFocusForOk = true) const;
 
     /* API: Wrapper to 'question' function,
      * Question providing three buttons (Yes, No and Cancel by default): */
