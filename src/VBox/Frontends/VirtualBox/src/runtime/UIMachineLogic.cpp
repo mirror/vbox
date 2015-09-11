@@ -927,7 +927,7 @@ void UIMachineLogic::prepareSessionConnections()
             this, SLOT(sltHandleVBoxSVCAvailabilityChange()));
 
     /* We should watch for requested modes: */
-    connect(uisession(), SIGNAL(sigInitialized()), this, SLOT(sltCheckForRequestedVisualStateType()));
+    connect(uisession(), SIGNAL(sigInitialized()), this, SLOT(sltCheckForRequestedVisualStateType()), Qt::QueuedConnection);
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltCheckForRequestedVisualStateType()));
 
     /* We should watch for console events: */
