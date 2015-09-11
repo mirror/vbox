@@ -93,7 +93,7 @@ fi
 
 if [ "$system" = "debian" ]; then
     daemon() {
-        start-stop-daemon --start --exec $1 -- $2
+        start-stop-daemon --start --exec $1 -- $2 $3
     }
 
     killproc() {
@@ -120,7 +120,7 @@ if [ "$system" = "gentoo" ]; then
         . /etc/init.d/functions.sh
     fi
     daemon() {
-        start-stop-daemon --start --exec $1 -- $2
+        start-stop-daemon --start --exec $1 -- $2 $3
     }
 
     killproc() {
@@ -146,7 +146,7 @@ fi
 
 if [ "$system" = "slackware" -o "$system" = "other" ]; then
     daemon() {
-        $1 $2
+        $1 $2 $3
     }
 
     killproc() {
@@ -171,7 +171,7 @@ fi
 if [ "$system" = "lfs" ]; then
     . /etc/rc.d/init.d/functions
     daemon() {
-        loadproc $1 $2
+        loadproc $1 $2 $3
     }
 
     fail_msg() {
@@ -212,9 +212,8 @@ start() {
             exit 1
         }
         testbinary
-        daemon $binary > /dev/null
+        daemon $binary --pidfile $PIDFILE > /dev/null
         RETVAL=$?
-        test $RETVAL -eq 0 && echo `pidof VBoxService` > $PIDFILE
         succ_msg
     fi
     return $RETVAL

@@ -1976,7 +1976,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                     {
                         char szVar[_1K];
                         char szValue[_16K];
-                        int rc2 = RTEnvGetByIndexEx(hEnv, iVar, szVar, sizeof(szVar), szValue, sizeof(szValue));
+                        rc2 = RTEnvGetByIndexEx(hEnv, iVar, szVar, sizeof(szVar), szValue, sizeof(szValue));
                         if (RT_SUCCESS(rc2))
                             VBoxServiceVerbose(4, "\t%s=%s\n", szVar, szValue);
                         else if (rc2 == VERR_BUFFER_OVERFLOW)
