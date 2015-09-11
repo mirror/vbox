@@ -67,6 +67,9 @@ INSTALLS += linux-bin
 linux-bin_INST = bin/
 linux-bin_MODE = a+rx,u+w
 linux-bin_SOURCES = \
+	postinst-common.sh \
+	prerm-common.sh \
+	routines.sh \
 	scripts/install.sh=>scripts/install.sh \
 	scripts/VBoxHeadlessXOrg.sh=>scripts/VBoxHeadlessXOrg.sh \
 	VBoxSysInfo.sh \
@@ -82,6 +85,8 @@ linux-scripts_INST = $(VBOX_LNX_INST_STAGE_DIR_REL)/
 linux-scripts_MODE = a+rx,u+w
 linux-scripts_SOURCES = \
 	deffiles \
+	postinst-common.sh \
+	prerm-common.sh \
 	routines.sh \
 	uninstall.sh \
 	vboxautostart-service.sh \

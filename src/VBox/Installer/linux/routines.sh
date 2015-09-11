@@ -193,12 +193,12 @@ systemd_wrap_init_script()
     ## Name for the service.
     name="$2"
     test -x "$script" && test ! "$name" = "" || \
-        { log "$self: invalid arguments" && return 1; }
+        { echo "$self: invalid arguments" >&2 && return 1; }
     test -d /usr/lib/systemd/system && unit_path=/usr/lib/systemd/system
     test -d /lib/systemd/system && unit_path=/lib/systemd/system
     test -n "${unit_path}" || \
-        { log "$self: systemd unit path not found" && return 1; }
-    description=`sed -n 's/# *Description: *\(.*\)/\1/p' "${script}"`
+        { echo "$self: systemd unit path not found" >&2 && return 1; }
+    description=`sed -n 's/# *Short-Description: *\(.*\)/\1/p' "${script}"`
     required=`sed -n 's/# *Required-Start: *\(.*\)/\1/p' "${script}"`
     runlevels=`sed -n 's/# *Default-Start: *\(.*\)/\1/p' "${script}"`
     before=`for i in ${runlevels}; do printf "runlevel${i}.target "; done`
@@ -235,19 +235,20 @@ install_init_script()
     script="$1"
     ## Name for the service.
     name="$2"
-    test -x "$script" && test ! "$name" = "" || \
-        { log "$self: invalid arguments" && return 1; }
-    test -d /lib/systemd/system || test -d /usr/lib/systemd/system && systemd_wrap_init_script "$script" "$name"
-    if test -d /etc/rc.d/init.d
-    then
-        cp "$script" "/etc/rc.d/init.d/$name" 2> /dev/null
-        chmod 755 "/etc/rc.d/init.d/$name" 2> /dev/null
-    elif test -d /etc/init.d
-    then
-        cp "$script" "/etc/init.d/$name" 2> /dev/null
-        chmod 755 "/etc/init.d/$name" 2> /dev/null
+
+    test -x "$script" && test ! "$name" = "" ||
+        { echo "$self: invalid arguments" >&2; return 1; }
+    test -x "`which systemctl 2>/dev/null`" &&
+        { systemd_wrap_init_script "$script" "$name"; return; }
+    if test -d /etc/rc.d/init.d; then
+        cp "$script" "/etc/rc.d/init.d/$name" &&
+            chmod 755 "/etc/rc.d/init.d/$name"
+    elif test -d /etc/init.d; then
+        cp "$script" "/etc/init.d/$name" &&
+            chmod 755 "/etc/init.d/$name"
+    else
+        { echo "${self}: error: unknown init type" >&2; return 1; }
     fi
-    return 0
 }
 
 ## Remove the init script "name"
@@ -256,17 +257,12 @@ remove_init_script()
     self="remove_init_script"
     ## Name of the service to remove.
     name="$1"
-    test ! "$name" = "" || \
-        { log "$self: missing argument" && return 1; }
+
+    test -n "$name" ||
+        { echo "$self: missing argument"; return 1; }
     rm -f /lib/systemd/system/"$name".service /usr/lib/systemd/system/"$name".service
-    if test -d /etc/rc.d/init.d
-    then
-        rm -f "/etc/rc.d/init.d/$name" > /dev/null 2>&1
-    elif test -d /etc/init.d
-    then
-        rm -f "/etc/init.d/$name" > /dev/null 2>&1
-    fi
-    return 0
+    rm -f "/etc/rc.d/init.d/$name"
+    rm -f "/etc/init.d/$name"
 }
 
 ## Perform an action on a service
@@ -277,22 +273,18 @@ do_sysvinit_action()
     name="${1}"
     ## The action to perform, normally "start", "stop" or "status".
     action="${2}"
-    test ! -z "${name}" && test ! -z "${action}" || \
-        { log "${self}: missing argument" && return 1; }
-    if test -x "`which systemctl 2>/dev/null`"
-    then
-        systemctl ${action} "${name}"
-    elif test -x "`which service 2>/dev/null`"
-    then
+
+    test ! -z "${name}" && test ! -z "${action}" ||
+        { echo "${self}: missing argument" >&2; return 1; }
+    if test -x "`which systemctl 2>/dev/null`"; then
+        systemctl -q ${action} "${name}"
+    elif test -x "`which service 2>/dev/null`"; then
         service "${name}" ${action}
-    elif test -x "`which invoke-rc.d 2>/dev/null`"
-    then
+    elif test -x "`which invoke-rc.d 2>/dev/null`"; then
         invoke-rc.d "${name}" ${action}
-    elif test -x "/etc/rc.d/init.d/${name}"
-    then
+    elif test -x "/etc/rc.d/init.d/${name}"; then
         "/etc/rc.d/init.d/${name}" "${action}"
-    elif test -x "/etc/init.d/${name}"
-    then
+    elif test -x "/etc/init.d/${name}"; then
         "/etc/init.d/${name}" "${action}"
     fi
 }
@@ -314,6 +306,7 @@ get_chkconfig_info()
 {
     ## The script to extract the information from.
     script="${1}"
+
     set `sed -n 's/# *chkconfig: *\([0-9]*\) *\(.*\)/\1 \2/p' "${script}"`
     ## Which runlevels should we start in?
     runlevels="${1}"
@@ -322,16 +315,17 @@ get_chkconfig_info()
     ## How soon in the shutdown process will we stop, from 99 (first) to 00
     stop_order="${3}"
     test ! -z "${name}" || \
-        { log "${self}: missing name" && return 1; }
+        { echo "${self}: missing name" >&2; return 1; }
     expr "${start_order}" + 0 > /dev/null 2>&1 && \
         expr 0 \<= "${start_order}" > /dev/null 2>&1 && \
         test `expr length "${start_order}"` -eq 2 > /dev/null 2>&1 || \
-        { log "${self}: start sequence number must be between 00 and 99" && return 1; }
+        { echo "${self}: start sequence number must be between 00 and 99" >&2;
+            return 1; }
     expr "${stop_order}" + 0 > /dev/null 2>&1 && \
         expr 0 \<= "${stop_order}" > /dev/null 2>&1 && \
         test `expr length "${stop_order}"` -eq 2 > /dev/null 2>&1 || \
-        { log "${self}: stop sequence number must be between 00 and 99" && return 1; }
-    return 0
+        { echo "${self}: stop sequence number must be between 00 and 99" >&2;
+            return 1; }
 }
 
 ## Add a service to a runlevel
@@ -340,40 +334,32 @@ addrunlevel()
     self="addrunlevel"
     ## Service name.
     name="${1}"
+
     test -n "${name}" || \
-        { log "${self}: missing argument" && return 1; }
+        { echo "${self}: missing argument" >&2; return 1; }
     test -x "`which systemctl 2>/dev/null`" && \
-        { systemctl enable "${name}"; return; }
-    if test -x "/etc/rc.d/init.d/${name}"
-    then
+        { systemctl -q enable "${name}"; return; }
+    if test -x "/etc/rc.d/init.d/${name}"; then
         init_d_path=/etc/rc.d
-    elif test -x "/etc/init.d/${name}"
-    then
+    elif test -x "/etc/init.d/${name}"; then
         init_d_path=/etc
     else
-        log "${self}: error: unknown init type or unknown service ${name}"
-        return 1
+        { echo "${self}: error: unknown init type" >&2; return 1; }
     fi
     get_chkconfig_info "${init_d_path}/init.d/${name}" || return 1
     # Redhat based sysvinit systems
-    if test -x "`which chkconfig 2>/dev/null`"
-    then
-        chkconfig --add "${name}" || {
-            log "Failed to set up init script ${name}" && return 1
-        }
+    if test -x "`which chkconfig 2>/dev/null`"; then
+        chkconfig --add "${name}"
     # SUSE-based sysvinit systems
-    elif test -x "`which insserv 2>/dev/null`"
-    then
-        insserv "${name}" > /dev/null
+    elif test -x "`which insserv 2>/dev/null`"; then
+        insserv "${name}"
     # Debian/Ubuntu-based systems
-    elif test -x "`which update-rc.d 2>/dev/null`"
-    then
+    elif test -x "`which update-rc.d 2>/dev/null`"; then
         # Old Debians did not support dependencies
-        update-rc.d "${name}" defaults "${start_order}" "${stop_order}" \
-            > /dev/null 2>&1
+        update-rc.d "${name}" defaults "${start_order}" "${stop_order}"
     # Gentoo Linux
     elif test -x "`which rc-update 2>/dev/null`"; then
-        rc-update add "${name}" default > /dev/null 2>&1
+        rc-update add "${name}" default
     # Generic sysvinit
     elif test -n "${init_d_path}/rc0.d"
     then
@@ -383,13 +369,11 @@ addrunlevel()
             expr "${runlevels}" : ".*${locali}" >/dev/null && \
                 target="${init_d_path}/rc${locali}.d/S${start_order}${name}"
             test -e "${init_d_path}/rc${locali}.d/"[KS][0-9]*"${name}" || \
-                ln -fs "${init_d_path}/init.d/${name}" "${target}" 2> /dev/null
+                ln -fs "${init_d_path}/init.d/${name}" "${target}"
         done
     else
-        log "${self}: error: unknown init type"
-        return 1
+        { echo "${self}: error: unknown init type" >&2; return 1; }
     fi
-    return 0
 }
 
 
@@ -399,39 +383,21 @@ delrunlevel()
     self="delrunlevel"
     ## Service name.
     name="${1}"
-    test -n "${name}" || \
-        { log "${self}: missing argument" && return 1; }
-    if test -x "`which systemctl 2>/dev/null`"
-    then
-        systemctl disable "${name}"
+
+    test -n "${name}" ||
+        { echo "${self}: missing argument" >&2; return 1; }
+    systemctl -q disable "${name}" >/dev/null 2>&1
     # Redhat-based systems
-    elif test -x "/sbin/chkconfig"
-    then
-        /sbin/chkconfig --del "${name}" > /dev/null 2>&1
+    chkconfig --del "${name}" >/dev/null 2>&1
     # SUSE-based sysvinit systems
-    elif test -x /sbin/insserv
-    then
-        /sbin/insserv -r "${name}" > /dev/null 2>&1
+    insserv -r "${name}" >/dev/null 2>&1
     # Debian/Ubuntu-based systems
-    elif test -x "`which update-rc.d 2>/dev/null`"
-    then
-        update-rc.d -f "${name}" remove > /dev/null 2>&1
+    update-rc.d -f "${name}" remove >/dev/null 2>&1
     # Gentoo Linux
-    elif test -x "`which rc-update 2>/dev/null`"
-    then
-        rc-update del "${name}" > /dev/null 2>&1
+    rc-update del "${name}" >/dev/null 2>&1
     # Generic sysvinit
-    elif test -d /etc/rc.d/init.d
-    then
-        rm /etc/rc.d/rc?.d/[SK]??"${name}" > /dev/null 2>&1
-    elif test -d /etc/init.d
-    then
-        rm /etc/rc?.d/[SK]??"${name}" > /dev/null 2>&1
-    else
-        log "${self}: error: unknown init type"
-        return 1
-    fi
-    return 0
+    rm -f /etc/rc.d/rc?.d/[SK]??"${name}"
+    rm -f /etc/rc?.d/[SK]??"${name}"
 }
 
 

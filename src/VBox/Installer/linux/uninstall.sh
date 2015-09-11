@@ -47,32 +47,10 @@ if [ "$PREV_INSTALLATION" = "" ]; then
     abort "Couldn't find a VirtualBox installation to uninstall."
 fi
 
-# Stop the ballon control service
-stop_init_script vboxballoonctrl-service
-# Stop the autostart service
-stop_init_script vboxautostart-service
-# Stop the web service
-stop_init_script vboxweb-service
-# Do this check here after we terminated the web service
-check_running
-# Terminate VBoxNetDHCP if running
-terminate_proc VBoxNetDHCP
-# Terminate VBoxNetNAT if running
-terminate_proc VBoxNetNAT
-delrunlevel vboxballoonctrl-service > /dev/null 2>&1
-remove_init_script vboxballoonctrl-service
-delrunlevel vboxautostart-service > /dev/null 2>&1
-remove_init_script vboxautostart-service
-delrunlevel vboxweb-service > /dev/null 2>&1
-remove_init_script vboxweb-service
-# Stop kernel module and uninstall runlevel script
-stop_init_script vboxdrv
-delrunlevel vboxdrv > /dev/null 2>&1
-remove_init_script vboxdrv
-# Stop host networking and uninstall runlevel script (obsolete)
-stop_init_script vboxnet
-delrunlevel vboxnet > /dev/null 2>&1
-remove_init_script vboxnet
+# Do pre-removal common to all installer types, currently service script
+# clean-up.
+./prerm-common.sh
+
 # Remove kernel module installed
 if [ -n "$DKMS" ]; then
     $DKMS remove -m vboxhost -v $INSTALL_VER --all > /dev/null 2>&1

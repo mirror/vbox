@@ -375,12 +375,6 @@ if [ "$ACTION" = "install" ]; then
     test -e $INSTALLATION_DIR/VBoxNetAdpCtl && chmod 4511 $INSTALLATION_DIR/VBoxNetAdpCtl
     test -e $INSTALLATION_DIR/VBoxVolInfo && chmod 4511 $INSTALLATION_DIR/VBoxVolInfo
 
-    # Install runlevel scripts
-    install_init_script $INSTALLATION_DIR/vboxdrv.sh vboxdrv 2>> $LOG
-    install_init_script $INSTALLATION_DIR/vboxballoonctrl-service.sh vboxballoonctrl-service 2>> $LOG
-    install_init_script $INSTALLATION_DIR/vboxautostart-service.sh vboxautostart-service 2>> $LOG
-    install_init_script $INSTALLATION_DIR/vboxweb-service.sh vboxweb-service 2>> $LOG
-
     # Write the configuration. Do this before we call /etc/init.d/vboxdrv setup!
     echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
     echo "INSTALL_DIR='$INSTALLATION_DIR'" >> $CONFIG_DIR/$CONFIG
@@ -390,15 +384,6 @@ if [ "$ACTION" = "install" ]; then
     echo "# Build type and user name for logging purposes" >> $CONFIG_DIR/$CONFIG
     echo "BUILD_TYPE='$BUILD_BUILDTYPE'" >> $CONFIG_DIR/$CONFIG
     echo "USERNAME='$BUILD_USERNAME'" >> $CONFIG_DIR/$CONFIG
-
-    delrunlevel vboxdrv > /dev/null 2>&1
-    addrunlevel vboxdrv 2>> $LOG # This may produce useful output
-    delrunlevel vboxballoonctrl-service > /dev/null 2>&1
-    addrunlevel vboxballoonctrl-service 2>> $LOG # This may produce useful output
-    delrunlevel vboxautostart-service > /dev/null 2>&1
-    addrunlevel vboxautostart-service 2>> $LOG # This may produce useful output
-    delrunlevel vboxweb-service > /dev/null 2>&1
-    addrunlevel vboxweb-service 2>> $LOG # This may produce useful output
 
     # Create users group
     groupadd -r -f $GROUPNAME 2> /dev/null
@@ -479,18 +464,22 @@ if [ "$ACTION" = "install" ]; then
         log ""
         ./vboxdrv.sh setup
         # Start VirtualBox kernel module
-        if [ $RETVAL -eq 0 ] && ! start_init_script vboxdrv; then
+        if [ $RETVAL -eq 0 ] && ! ./vboxdrv.sh start; then
             info "Failed to load the kernel module."
             MODULE_FAILED="true"
             RC_SCRIPT=1
         fi
-        start_init_script vboxballoonctrl-service
-        start_init_script vboxautostart-service
-        start_init_script vboxweb-service
         log ""
         log "End of the output from the Linux kernel build system."
         cd $cur
     fi
+
+    # Do post-installation common to all installer types, currently service
+    # script set-up.
+    START_SERVICES=
+    test "${BUILD_MODULE}" = "true" && test "${MODULE_FAILED}" = "false" &&
+        START_SERVICES="--start"
+    ./postinst-common.sh "${INSTALLATION_DIR}" "${START_SERVICES}" >> "${LOG}"
 
     info ""
     if [ ! "$MODULE_FAILED" = "true" ]
