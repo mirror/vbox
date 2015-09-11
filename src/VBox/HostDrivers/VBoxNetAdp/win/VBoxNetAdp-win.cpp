@@ -325,6 +325,8 @@ DECLHIDDEN(VOID) vboxNetAdpWinHaltEx(IN NDIS_HANDLE MiniportAdapterContext,
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
     LogFlow(("==>vboxNetAdpWinHaltEx\n"));
     // TODO: Stop something?
+    if (pAdapter)
+        vboxNetAdpWinFreeAdapter(pAdapter);
     LogFlow(("<==vboxNetAdpWinHaltEx\n"));
 }
 
