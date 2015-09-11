@@ -71,11 +71,11 @@ typedef struct
     /** Called from the worker thread.
      *
      * @returns VBox status code.
-     * @retval  VINF_SUCCESS if exitting because *pfTerminate was set.
-     * @param   pfTerminate     Pointer to a per service termination flag to check
+     * @retval  VINF_SUCCESS if exitting because *pfShutdown was set.
+     * @param   pfShutdown      Pointer to a per service termination flag to check
      *                          before and after blocking.
      */
-    DECLCALLBACKMEMBER(int, pfnWorker)(bool volatile *pfTerminate);
+    DECLCALLBACKMEMBER(int, pfnWorker)(bool volatile *pfShutdown);
 
     /**
      * Stops a service.
