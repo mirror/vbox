@@ -78,7 +78,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnWorker)(bool volatile *pfTerminate);
 
     /**
-     * Stop an service.
+     * Stops a service.
      */
     DECLCALLBACKMEMBER(void, pfnStop)(void);
 
