@@ -2505,6 +2505,18 @@ RT_C_DECLS_END
 #define VERR_URI_INVALID_SCHEME                     (-24602)
 /** Invalid port number.  */
 #define VERR_URI_INVALID_PORT_NUMBER                (-24603)
+/** Invalid escape sequence.  */
+#define VERR_URI_INVALID_ESCAPE_SEQ                 (-24604)
+/** Escape URI char decodes as zero (the C string terminator). */
+#define VERR_URI_ESCAPED_ZERO                       (-24605)
+/** Escaped URI characters does not decode to valid UTF-8. */
+#define VERR_URI_ESCAPED_CHARS_NOT_VALID_UTF8       (-24606)
+/** Escaped URI character is not a valid UTF-8 lead byte. */
+#define VERR_URI_INVALID_ESCAPED_UTF8_LEAD_BYTE     (-24607)
+/** Escaped URI character sequence with invalid UTF-8 continutation byte. */
+#define VERR_URI_INVALID_ESCAPED_UTF8_CONTINUATION_BYTE (-24608)
+/** Missing UTF-8 continutation in escaped URI character sequence. */
+#define VERR_URI_MISSING_UTF8_CONTINUATION_BYTE     (-24609)
 /** @} */
 
 /* SED-END */
