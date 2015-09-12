@@ -142,7 +142,7 @@ int main(int argc, char **argv)
                     }
                 }
                 if (RT_FAILURE(rcHttp))
-                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Error %Rrc getting '%s'", rc, ValueUnion.psz);
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Error %Rrc getting '%s'", rcHttp, ValueUnion.psz);
                 break;
             }
 

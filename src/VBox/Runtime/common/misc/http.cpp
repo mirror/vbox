@@ -41,6 +41,7 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/uri.h>
 
 #include "internal/magics.h"
 
@@ -67,9 +68,30 @@ typedef struct RTHTTPINTERNAL
     char               *pszCaFile;
     /** Whether to delete the CA on destruction. */
     bool                fDeleteCaFile;
+
+    /** @name Proxy settings.
+     * When fUseSystemProxySettings is set, the other members will be updated each
+     * time we're presented with a new URL.  The members reflect the cURL
+     * configuration.
+     *
+     * @{ */
     /** Set if we should use the system proxy settings for a URL.
      * This means reconfiguring cURL for each request.  */
     bool                fUseSystemProxySettings;
+    /** Set if we've detected no proxy necessary. */
+    bool                fNoProxy;
+    /** Proxy host name (RTStrFree). */
+    char               *pszProxyHost;
+    /** Proxy port number (UINT32_MAX if not specified). */
+    uint32_t            uProxyPort;
+    /** The proxy type (CURLPROXY_HTTP, CURLPROXY_SOCKS5, ++). */
+    curl_proxytype      enmProxyType;
+    /** Proxy username (RTStrFree). */
+    char               *pszProxyUsername;
+    /** Proxy password (RTStrFree). */
+    char               *pszProxyPassword;
+    /** @} */
+
     /** Abort the current HTTP request if true. */
     bool volatile       fAbort;
     /** Set if someone is preforming an HTTP operation. */
@@ -237,35 +259,143 @@ RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp)
 {
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
+    AssertReturn(!pThis->fBusy, VERR_WRONG_ORDER);
 
     /*
-     * Very limited right now, just enought to make it work for ourselves.
+     * Change the settings.
      */
-    char szProxy[_1K];
-    int rc = RTEnvGetEx(RTENV_DEFAULT, "http_proxy", szProxy, sizeof(szProxy), NULL);
-    if (RT_SUCCESS(rc))
+    pThis->fUseSystemProxySettings = true;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * rtHttpConfigureProxyForUrl: Update cURL proxy settings as needed.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The HTTP client instance.
+ * @param   enmProxyType    The proxy type.
+ * @param   pszHost         The proxy host name.  If NULL, the proxying will be
+ *                          disabled.
+ * @param   uPort           The proxy port number.
+ * @param   pszUsername     The proxy username, or NULL if none.
+ * @param   pszPassword     The proxy password, or NULL if none.
+ */
+static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProxyType, const char *pszHost,
+                                   uint32_t uPort, const char *pszUsername, const char *pszPassword)
+{
+    int rcCurl;
+
+    if (enmProxyType != pThis->enmProxyType)
     {
-        int rcCurl;
-        if (!strncmp(szProxy, RT_STR_TUPLE("http://")))
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYTYPE, (long)enmProxyType);
+        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYTYPE=%d: %d (%#x)\n", enmProxyType, rcCurl, rcCurl),
+                        VERR_HTTP_CURL_PROXY_CONFIG);
+        pThis->enmProxyType = CURLPROXY_HTTP;
+    }
+
+    if (uPort != pThis->uProxyPort)
+    {
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPORT, (long)uPort);
+        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYPORT=%d: %d (%#x)\n", uPort, rcCurl, rcCurl),
+                        VERR_HTTP_CURL_PROXY_CONFIG);
+        pThis->uProxyPort = uPort;
+    }
+
+    if (   pszUsername != pThis->pszProxyUsername
+        || RTStrCmp(pszUsername, pThis->pszProxyUsername))
+    {
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYUSERNAME, pszUsername);
+        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYUSERNAME=%s: %d (%#x)\n", pszUsername, rcCurl, rcCurl),
+                        VERR_HTTP_CURL_PROXY_CONFIG);
+        if (pThis->pszProxyUsername)
         {
-            rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, &szProxy[sizeof("http://") - 1]);
-            if (CURL_FAILURE(rcCurl))
-                return VERR_INVALID_PARAMETER;
-            rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPORT, 80);
-            if (CURL_FAILURE(rcCurl))
-                return VERR_INVALID_PARAMETER;
+            RTStrFree(pThis->pszProxyUsername);
+            pThis->pszProxyUsername = NULL;
         }
-        else
+        if (pszUsername)
         {
-            rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, &szProxy[sizeof("http://") - 1]);
-            if (CURL_FAILURE(rcCurl))
-                return VERR_INVALID_PARAMETER;
+            pThis->pszProxyUsername = RTStrDup(pszUsername);
+            AssertReturn(pThis->pszProxyUsername, VERR_NO_STR_MEMORY);
         }
     }
-    else if (rc == VERR_ENV_VAR_NOT_FOUND)
-        rc = VINF_SUCCESS;
 
-    return rc;
+    if (   pszPassword != pThis->pszProxyPassword
+        || RTStrCmp(pszPassword, pThis->pszProxyPassword))
+    {
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPASSWORD, pszPassword);
+        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYPASSWORD=%s: %d (%#x)\n", pszPassword ? "xxx" : NULL, rcCurl, rcCurl),
+                        VERR_HTTP_CURL_PROXY_CONFIG);
+        if (pThis->pszProxyPassword)
+        {
+            RTMemWipeThoroughly(pThis->pszProxyPassword, strlen(pThis->pszProxyPassword), 2);
+            RTStrFree(pThis->pszProxyPassword);
+            pThis->pszProxyPassword = NULL;
+        }
+        if (pszPassword)
+        {
+            pThis->pszProxyPassword = RTStrDup(pszPassword);
+            AssertReturn(pThis->pszProxyPassword, VERR_NO_STR_MEMORY);
+        }
+    }
+
+    if (   pszHost != pThis->pszProxyHost
+        || RTStrCmp(pszHost, pThis->pszProxyHost))
+    {
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, pszHost);
+        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXY=%s: %d (%#x)\n", pszHost, rcCurl, rcCurl),
+                        VERR_HTTP_CURL_PROXY_CONFIG);
+        if (pThis->pszProxyHost)
+        {
+            RTStrFree(pThis->pszProxyHost);
+            pThis->pszProxyHost = NULL;
+        }
+        if (pszHost)
+        {
+            pThis->pszProxyHost = RTStrDup(pszHost);
+            AssertReturn(pThis->pszProxyHost, VERR_NO_STR_MEMORY);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * rtHttpConfigureProxyForUrl: Disables proxying.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The HTTP client instance.
+ */
+static int rtHttpUpdateAutomaticProxyDisable(PRTHTTPINTERNAL pThis)
+{
+    AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYTYPE,   (long)CURLPROXY_HTTP) == CURLE_OK, VERR_INTERNAL_ERROR_2);
+    pThis->enmProxyType = CURLPROXY_HTTP;
+
+    AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPORT,             (long)1080) == CURLE_OK, VERR_INTERNAL_ERROR_2);
+    pThis->uProxyPort = 1080;
+
+    AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYUSERNAME, (const char *)NULL) == CURLE_OK, VERR_INTERNAL_ERROR_2);
+    if (pThis->pszProxyUsername)
+    {
+        RTStrFree(pThis->pszProxyUsername);
+        pThis->pszProxyUsername = NULL;
+    }
+
+    AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPASSWORD, (const char *)NULL) == CURLE_OK, VERR_INTERNAL_ERROR_2);
+    if (pThis->pszProxyPassword)
+    {
+        RTStrFree(pThis->pszProxyPassword);
+        pThis->pszProxyPassword = NULL;
+    }
+
+    AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY,         (const char *)NULL) == CURLE_OK, VERR_INTERNAL_ERROR_2);
+    if (pThis->pszProxyHost)
+    {
+        RTStrFree(pThis->pszProxyHost);
+        pThis->pszProxyHost = NULL;
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -276,15 +406,17 @@ static bool rtHttpUrlInNoProxyList(const char *pszUrl,  const char *pszNoProxyLi
 }
 
 
-static int rtHttpConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
+
+/**
+ * Consults enviornment variables that cURL/lynx/wget/lynx uses for figuring out
+ * the proxy config.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The HTTP client instance.
+ * @param   pszUrl              The URL to configure a proxy for.
+ */
+static int rtHttpConfigureProxyForUrlFromEnv(PRTHTTPINTERNAL pThis, const char *pszUrl)
 {
-    const char *pszProxy    = NULL;
-    long        uPort       = 0;
-    const char *pszUser     = NULL;
-    const char *pszPassword = NULL;
-    bool        fNoProxy    = true;
-
-
     char szTmp[_1K];
 
     /*
@@ -304,8 +436,8 @@ static int rtHttpConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
         rc = RTEnvGetEx(RTENV_DEFAULT, pszNoProxyVar, pszNoProxy, cchActual + _1K, NULL);
     }
     AssertMsg(rc == VINF_SUCCESS || rc == VERR_ENV_VAR_NOT_FOUND, ("rc=%Rrc\n", rc));
-    fNoProxy = rtHttpUrlInNoProxyList(pszUrl, pszNoProxy);
-    RTMemTmpFree(pszNoProxy);
+    bool fNoProxy = rtHttpUrlInNoProxyList(pszUrl, pszNoProxy);
+    RTMemTmpFree(pszNoProxyFree);
     if (!fNoProxy)
     {
         /*
@@ -331,49 +463,121 @@ static int rtHttpConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
         apszEnvVars[cEnvVars++] = "all_proxy";
         apszEnvVars[cEnvVars++] = "ALL_PROXY";
 
+        /*
+         * We try the env vars out and goes with the first one we can make sense out of.
+         * If we cannot make sense of any, we return the first unexpected rc we got.
+         */
+        rc = VINF_SUCCESS;
         for (uint32_t i = 0; i < cEnvVars; i++)
         {
             size_t cchValue;
-            rc = RTEnvGetEx(RTENV_DEFAULT, apszEnvVars[i], szTmp, sizeof(szTmp) - sizeof("http://"), &cchValue);
-            if (RT_SUCCESS(rc))
+            int rc2 = RTEnvGetEx(RTENV_DEFAULT, apszEnvVars[i], szTmp, sizeof(szTmp) - sizeof("http://"), &cchValue);
+            if (RT_SUCCESS(rc2))
             {
-                if (!strstr(szTmp, "://"))
+                if (cchValue != 0)
                 {
-                    memmove(&szTmp[sizeof("http://") - 1], szTmp, cchValue + 1);
-                    memcpy(szTmp, RT_STR_TUPLE("http://"));
-                }
-                /** @todo continue where using RTUriParse... */
-            }
-            else
-                AssertMsg(rc == VERR_ENV_VAR_NOT_FOUND, ("%Rrc\n"));
-        }
+                    /* Add a http:// prefix so RTUriParse groks it. */
+                    if (!strstr(szTmp, "://"))
+                    {
+                        memmove(&szTmp[sizeof("http://") - 1], szTmp, cchValue + 1);
+                        memcpy(szTmp, RT_STR_TUPLE("http://"));
+                    }
 
-#if 0
-        if (RT_SUCCESS(rc))
-        {
-            int rcCurl;
-            if (!strncmp(szProxy, RT_STR_TUPLE("http://")))
-            {
-                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, &szProxy[sizeof("http://") - 1]);
-                if (CURL_FAILURE(rcCurl))
-                    return VERR_INVALID_PARAMETER;
-                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPORT, 80);
-                if (CURL_FAILURE(rcCurl))
-                    return VERR_INVALID_PARAMETER;
+                    RTURIPARSED Parsed;
+                    rc2 = RTUriParse(szTmp, &Parsed);
+                    if (RT_SUCCESS(rc))
+                    {
+                        bool fDone = false;
+                        char *pszHost = RTUriParsedAuthorityHost(szTmp, &Parsed);
+                        if (pszHost)
+                        {
+                            /*
+                             * We've got a host name, try get the rest.
+                             */
+                            char    *pszUsername = RTUriParsedAuthorityUsername(szTmp, &Parsed);
+                            char    *pszPassword = RTUriParsedAuthorityPassword(szTmp, &Parsed);
+                            uint32_t uProxyPort  = RTUriParsedAuthorityPort(szTmp, &Parsed);
+                            curl_proxytype enmProxyType;
+                            if (RTUriIsSchemeMatch(szTmp, "http"))
+                                enmProxyType  = CURLPROXY_HTTP;
+                            else if (   RTUriIsSchemeMatch(szTmp, "socks4")
+                                     || RTUriIsSchemeMatch(szTmp, "socks"))
+                                enmProxyType = CURLPROXY_SOCKS4;
+                            else if (RTUriIsSchemeMatch(szTmp, "socks4a"))
+                                enmProxyType = CURLPROXY_SOCKS4A;
+                            else if (RTUriIsSchemeMatch(szTmp, "socks5"))
+                                enmProxyType = CURLPROXY_SOCKS5;
+                            else if (RTUriIsSchemeMatch(szTmp, "socks5h"))
+                                enmProxyType = CURLPROXY_SOCKS5_HOSTNAME;
+                            else
+                                enmProxyType = CURLPROXY_HTTP;
+
+                            /* Guess the port from the proxy type if not given. */
+                            if (uProxyPort == UINT32_MAX)
+                                switch (enmProxyType)
+                                {
+                                    case CURLPROXY_HTTP: uProxyPort = 80; break;
+                                    default:             uProxyPort = 1080 /* CURL_DEFAULT_PROXY_PORT */; break;
+                                }
+
+                            rc2 = rtHttpUpdateProxyConfig(pThis, enmProxyType, pszHost, uProxyPort, pszUsername, pszPassword);
+
+                            RTStrFree(pszUsername);
+                            RTStrFree(pszPassword);
+                            RTStrFree(pszHost);
+
+                            /* If that succeeded we're done. */
+                            if (RT_SUCCESS(rc2))
+                            {
+                                rc = rc2;
+                                break;
+                            }
+
+                            if (RT_SUCCESS(rc))
+                                rc = rc2;
+                        }
+                        else
+                            AssertMsgFailed(("RTUriParsedAuthorityHost('%s',) -> NULL\n", szTmp));
+                    }
+                    else
+                    {
+                        AssertMsgFailed(("RTUriParse('%s',) -> %Rrc\n", szTmp, rc2));
+                        if (RT_SUCCESS(rc))
+                            rc = rc2;
+                    }
+                }
+                /*
+                 * The variable is empty.  Guess that means no proxying wanted.
+                 */
+                else
+                {
+                    rc = rtHttpUpdateAutomaticProxyDisable(pThis);
+                    break;
+                }
             }
             else
-            {
-                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, &szProxy[sizeof("http://") - 1]);
-                if (CURL_FAILURE(rcCurl))
-                    return VERR_INVALID_PARAMETER;
-            }
+                AssertMsgStmt(rc2 == VERR_ENV_VAR_NOT_FOUND, ("%Rrc\n", rc2), if (RT_SUCCESS(rc)) rc = rc2);
         }
-        else if (rc == VERR_ENV_VAR_NOT_FOUND)
-            rc = VINF_SUCCESS;
-#endif
     }
+    /*
+     * The host is the no-proxy list, it seems.
+     */
+    else
+        rc = rtHttpUpdateAutomaticProxyDisable(pThis);
 
     return rc;
+}
+
+
+static int rtHttpConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
+{
+    if (pThis->fUseSystemProxySettings)
+    {
+/** @todo system specific class here, fall back on env vars if necessary. */
+        return rtHttpConfigureProxyForUrlFromEnv(pThis, pszUrl);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -383,30 +587,16 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
     AssertPtrReturn(pcszProxy, VERR_INVALID_PARAMETER);
+    AssertReturn(!pThis->fBusy, VERR_WRONG_ORDER);
 
-    int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, pcszProxy);
-    if (CURL_FAILURE(rcCurl))
-        return VERR_INVALID_PARAMETER;
-
-    if (uPort != 0)
-    {
-        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPORT, (long)uPort);
-        if (CURL_FAILURE(rcCurl))
-            return VERR_INVALID_PARAMETER;
-    }
-
-    if (pcszProxyUser && pcszProxyPwd)
-    {
-        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYUSERNAME, pcszProxyUser);
-        if (CURL_FAILURE(rcCurl))
-            return VERR_INVALID_PARAMETER;
-
-        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPASSWORD, pcszProxyPwd);
-        if (CURL_FAILURE(rcCurl))
-            return VERR_INVALID_PARAMETER;
-    }
-
-    return VINF_SUCCESS;
+    /*
+     * Update the settings.
+     *
+     * Currently, we don't make alot of effort parsing or checking the input, we
+     * leave that to cURL.  (A bit afraid of breaking user settings.)
+     */
+    pThis->fUseSystemProxySettings = false;
+    return rtHttpUpdateProxyConfig(pThis, CURLPROXY_HTTP, pcszProxy, uPort ? uPort : 1080, pcszProxyUser, pcszProxyPwd);
 }
 
 
@@ -598,7 +788,7 @@ RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, 
  */
 static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl)
 {
-    int rc = VERR_INTERNAL_ERROR;
+    int rc = VERR_HTTP_CURL_ERROR;
 
     if (pThis->pszRedirLocation)
     {
@@ -727,6 +917,13 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
         return VERR_INVALID_PARAMETER;
 
     /*
+     * Proxy config.
+     */
+    int rc = rtHttpConfigureProxyForUrl(pThis, pszUrl);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
      * Setup SSL.  Can be a bit of work.
      */
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_SSLVERSION, (long)CURL_SSLVERSION_TLSv1);
@@ -737,7 +934,7 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
     if (   !pszCaFile
         && rtHttpNeedSsl(pszUrl))
     {
-        int rc = RTHttpUseTemporaryCaFile(pThis, NULL);
+        rc = RTHttpUseTemporaryCaFile(pThis, NULL);
         if (RT_SUCCESS(rc))
             pszCaFile = pThis->pszCaFile;
         else
@@ -747,7 +944,7 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_CAINFO, pszCaFile);
         if (CURL_FAILURE(rcCurl))
-            return VERR_INTERNAL_ERROR;
+            return VERR_HTTP_CURL_ERROR;
     }
 
     /*
@@ -755,13 +952,13 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
      */
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROGRESSFUNCTION, &rtHttpProgress);
     if (CURL_FAILURE(rcCurl))
-        return VERR_INTERNAL_ERROR;
+        return VERR_HTTP_CURL_ERROR;
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROGRESSDATA, (void *)pThis);
     if (CURL_FAILURE(rcCurl))
-        return VERR_INTERNAL_ERROR;
+        return VERR_HTTP_CURL_ERROR;
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOPROGRESS, (long)0);
     if (CURL_FAILURE(rcCurl))
-        return VERR_INTERNAL_ERROR;
+        return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
 }
@@ -894,7 +1091,7 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, uint8_t **ppvRespons
             RT_ZERO(pThis->Output.Mem);
         }
         else
-            rc = VERR_INTERNAL_ERROR_3;
+            rc = VERR_HTTP_CURL_ERROR;
     }
 
     ASMAtomicWriteBool(&pThis->fBusy, false);
@@ -1001,7 +1198,7 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
             pThis->Output.hFile = NIL_RTFILE;
         }
         else
-            rc = VERR_INTERNAL_ERROR_3;
+            rc = VERR_HTTP_CURL_ERROR;
     }
 
     ASMAtomicWriteBool(&pThis->fBusy, false);

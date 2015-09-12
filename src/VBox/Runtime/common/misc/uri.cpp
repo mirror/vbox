@@ -673,7 +673,7 @@ RTDECL(bool)   RTUriIsSchemeMatch(const char *pszUri, const char *pszScheme)
     AssertPtrReturn(pszUri, false);
     size_t const cchScheme = strlen(pszScheme);
     return RTStrNICmp(pszUri, pszScheme, cchScheme) == 0
-        && pszScheme[cchScheme] == ':';
+        && pszUri[cchScheme] == ':';
 }
 
 

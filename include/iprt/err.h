@@ -1693,6 +1693,10 @@ RT_C_DECLS_END
 #define VERR_HTTP_REDIRECTED                    (-894)
 /** Proxy couldn't be resolved. */
 #define VERR_HTTP_PROXY_NOT_FOUND               (-895)
+/** Unexpected cURL error configure the proxy. */
+#define VERR_HTTP_CURL_PROXY_CONFIG             (-897)
+/** Generic CURL error. */
+#define VERR_HTTP_CURL_ERROR                    (-899)
 /** @} */
 
 /** @name RTManifest status codes
