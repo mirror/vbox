@@ -228,8 +228,11 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
 
     RTStrFree(pThis->pszProxyHost);
     RTStrFree(pThis->pszProxyUsername);
-    RTMemWipeThoroughly(pThis->pszProxyPassword, strlen(pThis->pszProxyPassword), 2);
-    RTStrFree(pThis->pszProxyPassword);
+    if (pThis->pszProxyPassword)
+    {
+        RTMemWipeThoroughly(pThis->pszProxyPassword, strlen(pThis->pszProxyPassword), 2);
+        RTStrFree(pThis->pszProxyPassword);
+    }
 
     RTMemFree(pThis);
 
