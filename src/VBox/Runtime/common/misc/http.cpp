@@ -34,6 +34,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/crypto/store.h>
+#include <iprt/ctype.h>
 #include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
@@ -225,6 +226,11 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
     if (pThis->pszRedirLocation)
         RTStrFree(pThis->pszRedirLocation);
 
+    RTStrFree(pThis->pszProxyHost);
+    RTStrFree(pThis->pszProxyUsername);
+    RTMemWipeThoroughly(pThis->pszProxyPassword, strlen(pThis->pszProxyPassword), 2);
+    RTStrFree(pThis->pszProxyPassword);
+
     RTMemFree(pThis);
 
     curl_global_cleanup();
@@ -275,8 +281,7 @@ RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp)
  * @returns IPRT status code.
  * @param   pThis           The HTTP client instance.
  * @param   enmProxyType    The proxy type.
- * @param   pszHost         The proxy host name.  If NULL, the proxying will be
- *                          disabled.
+ * @param   pszHost         The proxy host name.
  * @param   uPort           The proxy port number.
  * @param   pszUsername     The proxy username, or NULL if none.
  * @param   pszPassword     The proxy password, or NULL if none.
@@ -285,6 +290,15 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
                                    uint32_t uPort, const char *pszUsername, const char *pszPassword)
 {
     int rcCurl;
+    AssertReturn(pszHost, VERR_INVALID_PARAMETER);
+
+    if (pThis->fNoProxy)
+    {
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOPROXY, (const char *)NULL);
+        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_NOPROXY=NULL: %d (%#x)\n", rcCurl, rcCurl),
+                        VERR_HTTP_CURL_PROXY_CONFIG);
+        pThis->fNoProxy = false;
+    }
 
     if (enmProxyType != pThis->enmProxyType)
     {
@@ -395,16 +409,100 @@ static int rtHttpUpdateAutomaticProxyDisable(PRTHTTPINTERNAL pThis)
         RTStrFree(pThis->pszProxyHost);
         pThis->pszProxyHost = NULL;
     }
+
+    /* No proxy for everything! */
+    AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_NOPROXY, "*") == CURLE_OK, CURLOPT_PROXY);
+    pThis->fNoProxy = true;
+
     return VINF_SUCCESS;
 }
 
 
-static bool rtHttpUrlInNoProxyList(const char *pszUrl,  const char *pszNoProxyList)
+/**
+ * See if the host name of the URL is included in the stripped no_proxy list.
+ *
+ * The no_proxy list is a colon or space separated list of domain names for
+ * which there should be no proxying.  Given "no_proxy=oracle.com" neither the
+ * URL "http://www.oracle.com" nor "http://oracle.com" will not be proxied, but
+ * "http://notoracle.com" will be.
+ *
+ * @returns true if the URL is in the no_proxy list, otherwise false.
+ * @param   pszUrl          The URL.
+ * @param   pszNoProxyList  The stripped no_proxy list.
+ */
+static bool rtHttpUrlInNoProxyList(const char *pszUrl, const char *pszNoProxyList)
 {
-    /** @todo implement me. */
-    return false;
-}
+    /*
+     * Check for just '*', diabling proxying for everything.
+     * (Caller stripped pszNoProxyList.)
+     */
+    if (*pszNoProxyList == '*' && pszNoProxyList[1] == '\0')
+        return true;
 
+    /*
+     * Empty list? (Caller stripped it, remember).
+     */
+    if (!*pszNoProxyList)
+        return false;
+
+    /*
+     * We now need to parse the URL and extract the host name.
+     */
+    RTURIPARSED Parsed;
+    int rc = RTUriParse(pszUrl, &Parsed);
+    AssertRCReturn(rc, false);
+    char *pszHost = RTUriParsedAuthorityHost(pszUrl, &Parsed);
+    if (!pszHost) /* Don't assert, in case of file:///xxx or similar blunder. */
+        return false;
+
+    bool fRet = false;
+    size_t const cchHost = strlen(pszHost);
+    if (cchHost)
+    {
+        /*
+         * The list is comma or space separated, walk it and match host names.
+         */
+        while (*pszNoProxyList != '\0')
+        {
+            /* Strip leading slashes, commas and dots. */
+            char ch;
+            while (   (ch = *pszNoProxyList) == ','
+                   || ch == '.'
+                   || RT_C_IS_SPACE(ch))
+                pszNoProxyList++;
+
+            /* Find the end. */
+            size_t cch     = RTStrOffCharOrTerm(pszNoProxyList, ',');
+            size_t offNext = RTStrOffCharOrTerm(pszNoProxyList, ' ');
+            cch = RT_MIN(cch, offNext);
+            offNext = cch;
+
+            /* Trip trailing spaces, well tabs and stuff. */
+            while (cch > 0 && RT_C_IS_SPACE(pszNoProxyList[cch - 1]))
+                cch--;
+
+            /* Do the matching, if we have anything to work with. */
+            if (cch > 0)
+            {
+                if (   (   cch == cchHost
+                        && RTStrNICmp(pszNoProxyList, pszHost, cch) == 0)
+                    || (   cch <  cchHost
+                        && pszHost[cchHost - cch - 1] == '.'
+                        && RTStrNICmp(pszNoProxyList, &pszHost[cchHost - cch], cch) == 0) )
+                {
+                    fRet = true;
+                    break;
+                }
+            }
+
+            /* Next. */
+            pszNoProxyList += offNext;
+        }
+    }
+
+    RTStrFree(pszHost);
+    return fRet;
+}
 
 
 /**
@@ -436,7 +534,7 @@ static int rtHttpConfigureProxyForUrlFromEnv(PRTHTTPINTERNAL pThis, const char *
         rc = RTEnvGetEx(RTENV_DEFAULT, pszNoProxyVar, pszNoProxy, cchActual + _1K, NULL);
     }
     AssertMsg(rc == VINF_SUCCESS || rc == VERR_ENV_VAR_NOT_FOUND, ("rc=%Rrc\n", rc));
-    bool fNoProxy = rtHttpUrlInNoProxyList(pszUrl, pszNoProxy);
+    bool fNoProxy = rtHttpUrlInNoProxyList(pszUrl, RTStrStrip(pszNoProxy));
     RTMemTmpFree(pszNoProxyFree);
     if (!fNoProxy)
     {
