@@ -93,6 +93,9 @@ class tdUnitTest1(vbox.TestDriver):
             'testcase/tstX86-1': '',                    # Fails on win.x86.
             'tscpasswd': '',                            # ??
             'tstVMREQ': '',                            # ?? Same as darwin.x86?
+        },
+        'win.x86': {
+            'testcase/tstRTR0TimerDriver': '',          # See xTracker #8041.
         }
     };
 
@@ -702,6 +705,7 @@ class tdUnitTest1(vbox.TestDriver):
 
         # Determin the host OS specific exclusion lists.
         dTestCasesBuggyForHostOs = self.kdTestCasesBuggyPerOs.get(utils.getHostOs(), []);
+        dTestCasesBuggyForHostOs.update(self.kdTestCasesBuggyPerOs.get(utils.getHostOsDotArch(), []);)
 
         #
         # Process the file list and run everything looking like a testcase.
