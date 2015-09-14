@@ -80,7 +80,8 @@ void VBoxAboutDlg::retranslateUi()
 #else /* !VBOX_OSE */
     m_strAboutText = strAboutText + "\n" + strVersionText.arg(m_strVersion);
 #endif /* !VBOX_OSE */
-    m_strAboutText = m_strAboutText + "\n" + QString("Copyright %1 2015 Oracle and/or its affiliates. All rights reserved.").arg(QChar(0xa9));
+    m_strAboutText = m_strAboutText + "\n" + QString("Copyright %1 %2 %3 and/or its affiliates. All rights reserved.")
+                                                     .arg(QChar(0xa9)).arg(VBOX_C_YEAR).arg(VBOX_VENDOR);
     AssertPtrReturnVoid(m_pLabel);
     m_pLabel->setText(m_strAboutText);
 }
