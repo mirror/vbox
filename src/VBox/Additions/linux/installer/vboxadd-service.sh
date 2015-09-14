@@ -36,7 +36,7 @@ elif [ -f /etc/SuSE-release ]; then
     PIDFILE="/var/run/vboxadd-service"
 elif [ -f /etc/debian_version ]; then
     system=debian
-    PIDFILE="/var/run/vboxadd-service"
+    PIDFILE="/var/run/vboxadd-service.pid"
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
     PIDFILE="/var/run/vboxadd-service"
