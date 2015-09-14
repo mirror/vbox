@@ -164,31 +164,28 @@ void bt_sighandler (int sig, siginfo_t *info, void *secret) {
 
 #endif /* DEBUG && X11 && LINUX*/
 
-#if defined(RT_OS_DARWIN)
+#ifdef Q_WS_MAC
 # include <dlfcn.h>
 # include <sys/mman.h>
 # include <iprt/asm.h>
 # include <iprt/system.h>
 
-/** Really ugly hack to shut up a silly check in AppKit. */
-static void ShutUpAppKit(void)
+/** Mac OS X: Really ugly hack to prevent silly check in AppKit. */
+static void PreventCheckInAppKit()
 {
-    /* Check for Snow Leopard or higher */
+    /* Check for Snow Leopard or higher: */
     char szInfo[64];
-    int rc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
-    if (   RT_SUCCESS (rc)
-        && szInfo[0] == '1') /* higher than 1x.x.x */
+    int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
+    if (RT_SUCCESS(rc) && szInfo[0] == '1') /* higher than 1x.x.x */
     {
-        /*
-         * Find issetguid() and make it always return 0 by modifying the code.
-         */
-        void *addr = dlsym(RTLD_DEFAULT, "issetugid");
-        int rc = mprotect((void *)((uintptr_t)addr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE|PROT_READ|PROT_EXEC);
+        /* Find issetguid() and make it always return 0 by modifying the code: */
+        void *pAddr = dlsym(RTLD_DEFAULT, "issetugid");
+        int rc = mprotect((void *)((uintptr_t)pAddr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE|PROT_READ|PROT_EXEC);
         if (!rc)
-            ASMAtomicWriteU32((volatile uint32_t *)addr, 0xccc3c031); /* xor eax, eax; ret; int3 */
+            ASMAtomicWriteU32((volatile uint32_t *)pAddr, 0xccc3c031); /* xor eax, eax; ret; int3 */
     }
 }
-#endif /* DARWIN */
+#endif /* Q_WS_MAC */
 
 static void QtMessageOutput (QtMsgType type, const char *msg)
 {
@@ -311,9 +308,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     /* Simulate try-catch block: */
     do
     {
-#ifdef RT_OS_DARWIN
-        ShutUpAppKit();
-#endif /* RT_OS_DARWIN */
+#ifdef Q_WS_MAC
+        PreventCheckInAppKit();
+#endif /* Q_WS_MAC */
 
         /* Console help preprocessing: */
         bool fHelpShown = false;
@@ -639,9 +636,10 @@ int main(int argc, char **argv, char **envp)
  */
 extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
 {
-# ifdef RT_OS_DARWIN
-    ShutUpAppKit();
-# endif /* RT_OS_DARWIN */
+# ifdef Q_WS_MAC
+    PreventCheckInAppKit();
+# endif /* Q_WS_MAC */
+
     char szMsgBuf[_16K];
 
     /*
