@@ -641,7 +641,8 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
 
     if (bind(so->s,(struct sockaddr *)&addr, addrlen) < 0)
     {
-        LogRel(("NAT: bind to %RTnaipv4 has been failed\n", addr.sin_addr));
+        LogRel(("NAT: udp bind to %RTnaipv4:%d failed, error %d\n",
+                addr.sin_addr, RT_N2H_U16(port), errno));
         udp_detach(pData, so);
         LogFlowFunc(("LEAVE: NULL\n"));
         return NULL;
