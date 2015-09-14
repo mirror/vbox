@@ -939,7 +939,7 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
 
         if (RT_SUCCESS(rc))
         {
-            /* Set the protocol version to use. */
+            /* Set the default protocol version to use. */
             pCtx->uProtocol = 2;
 
             Assert(Info.u32ClientID);
@@ -947,7 +947,30 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
         }
     }
 
+    /*
+     * Check if the host is >= VBox 5.0 which in case supports GUEST_DND_CONNECT.
+     */
+    bool fSupportsConnectReq = false;
     if (RT_SUCCESS(rc))
+    {
+        /* The guest property service might not be available. Not fatal. */
+        uint32_t uGuestPropSvcClientID;
+        int rc2 = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
+        if (RT_SUCCESS(rc2))
+        {
+            char *pszHostVersion;
+            rc2 = VbglR3GuestPropReadValueAlloc(uGuestPropSvcClientID, "/VirtualBox/HostInfo/VBoxVer", &pszHostVersion);
+            if (RT_SUCCESS(rc2))
+            {
+                fSupportsConnectReq = RTStrVersionCompare(pszHostVersion, "5.0") >= 0;
+                VbglR3GuestPropReadValueFree(pszHostVersion);
+            }
+
+            VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
+        }
+    }
+
+    if (fSupportsConnectReq)
     {
         /*
          * Try sending the connect message to tell the protocol version to use.
@@ -968,8 +991,15 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
         if (RT_SUCCESS(rc2))
             rc2 = Msg.hdr.result; /* Not fatal. */
 
+        if (RT_FAILURE(rc2))
+            fSupportsConnectReq = false;
+
         LogFlowFunc(("Connection request ended with rc=%Rrc\n", rc2));
     }
+
+    /* GUEST_DND_CONNECT not supported; play safe here and just use protocol v1. */
+    if (!fSupportsConnectReq)
+        pCtx->uProtocol = 1; /* Fall back to protocol version 1 (< VBox 5.0). */
 
     LogFlowFunc(("uClient=%RU32, uProtocol=%RU32, rc=%Rrc\n", pCtx->uClientID, pCtx->uProtocol, rc));
     return rc;
