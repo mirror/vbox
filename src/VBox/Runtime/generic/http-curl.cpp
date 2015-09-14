@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - HTTP communication API.
+ * IPRT - HTTP client API, cURL based.
  */
 
 /*
@@ -38,7 +38,11 @@
 #include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/ldr.h>
+#endif
 #include <iprt/mem.h>
+#include <iprt/once.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -47,6 +51,10 @@
 #include "internal/magics.h"
 
 #include <curl/curl.h>
+
+#ifdef RT_OS_WINDOWS
+# include <Winhttp.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -125,6 +133,18 @@ typedef struct RTHTTPINTERNAL
 typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
 
 
+#ifdef RT_OS_WINDOWS
+/** @name Windows: Types for dynamically resolved APIs
+ * @{ */
+typedef HINTERNET (WINAPI * PFNWINHTTPOPEN)(LPCWSTR, DWORD, LPCWSTR, LPCWSTR, DWORD);
+typedef BOOL      (WINAPI * PFNWINHTTPCLOSEHANDLE)(HINTERNET);
+typedef BOOL      (WINAPI * PFNWINHTTPGETPROXYFORURL)(HINTERNET, LPCWSTR, WINHTTP_AUTOPROXY_OPTIONS *, WINHTTP_PROXY_INFO *);
+typedef BOOL      (WINAPI * PFNWINHTTPGETDEFAULTPROXYCONFIGURATION)(WINHTTP_PROXY_INFO *);
+typedef BOOL      (WINAPI * PFNWINHTTPGETIEPROXYCONFIGFORCURRENTUSER)(WINHTTP_CURRENT_USER_IE_PROXY_CONFIG *);
+/** @} */
+#endif
+
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -160,6 +180,23 @@ typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
         AssertPtrReturnVoid(hHttp); \
         AssertReturnVoid((hHttp)->u32Magic == RTHTTP_MAGIC); \
     } while (0)
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+#ifdef RT_OS_WINDOWS
+/** @name Windows: Dynamically resolved APIs
+ * @{ */
+static RTONCE                                   g_WinResolveImportsOnce = RTONCE_INITIALIZER;
+static RTLDRMOD                                 g_hWinHttpMod = NIL_RTLDRMOD;
+static PFNWINHTTPOPEN                           g_pfnWinHttpOpen = NULL;
+static PFNWINHTTPCLOSEHANDLE                    g_pfnWinHttpCloseHandle = NULL;
+static PFNWINHTTPGETPROXYFORURL                 g_pfnWinHttpGetProxyForUrl = NULL;
+static PFNWINHTTPGETDEFAULTPROXYCONFIGURATION   g_pfnWinHttpGetDefaultProxyConfiguration = NULL;
+static PFNWINHTTPGETIEPROXYCONFIGFORCURRENTUSER g_pfnWinHttpGetIEProxyConfigForCurrentUser = NULL;
+/** @} */
+#endif
 
 
 /*********************************************************************************************************************************
@@ -669,11 +706,213 @@ static int rtHttpConfigureProxyForUrlFromEnv(PRTHTTPINTERNAL pThis, const char *
     return rc;
 }
 
+#ifdef RT_OS_WINDOWS
+
+/**
+ * @callback_method_impl{FNRTONCE, Loads WinHttp.dll and resolves APIs}
+ */
+static DECLCALLBACK(int) rtHttpWinResolveImports(void *pvUser)
+{
+    RTLDRMOD hMod;
+    int rc = RTLdrLoadSystem("winhttp.dll", true /*fNoUnload*/, &hMod);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hMod, "WinHttpOpen", (void **)&g_pfnWinHttpOpen);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hMod, "WinHttpCloseHandle", (void **)&g_pfnWinHttpCloseHandle);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hMod, "WinHttpGetProxyForUrl", (void **)&g_pfnWinHttpGetProxyForUrl);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hMod, "WinHttpGetDefaultProxyConfiguration", (void **)&g_pfnWinHttpGetDefaultProxyConfiguration);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hMod, "WinHttpGetIEProxyConfigForCurrentUser", (void **)&g_pfnWinHttpGetIEProxyConfigForCurrentUser);
+        RTLdrClose(hMod);
+    }
+    AssertRC(rc);
+
+    NOREF(pvUser);
+    return rc;
+}
+
+
+/**
+ * Reconfigures the cURL proxy settings for the given URL.
+ *
+ * @returns IPRT status code. VINF_NOT_SUPPORTED if we should try fallback.
+ * @param   pThis       The HTTP client instance.
+ * @param   pszUrl      The URL.
+ */
+static int rtHttpConfigureProxyForUrlWindows(PRTHTTPINTERNAL pThis, const char *pszUrl)
+{
+    int rcRet = VINF_NOT_SUPPORTED;
+
+    int rc = RTOnce(&g_WinResolveImportsOnce, rtHttpWinResolveImports, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Try get some proxy info for the URL.  We first try getting the IE
+         * config and seeing if we can use WinHttpGetIEProxyConfigForCurrentUser
+         * in some way, if we can we prepare ProxyOptions with a non-zero dwFlags.
+         */
+        WINHTTP_PROXY_INFO          ProxyInfo;
+        PRTUTF16                    pwszProxy = NULL;
+        PRTUTF16                    pwszNoProxy = NULL;
+        WINHTTP_AUTOPROXY_OPTIONS   AutoProxyOptions;
+        RT_ZERO(AutoProxyOptions);
+        RT_ZERO(ProxyInfo);
+
+        WINHTTP_CURRENT_USER_IE_PROXY_CONFIG IeProxyConfig;
+        if (g_pfnWinHttpGetIEProxyConfigForCurrentUser(&IeProxyConfig))
+        {
+            AutoProxyOptions.fAutoLogonIfChallenged = FALSE;
+            AutoProxyOptions.lpszAutoConfigUrl      = IeProxyConfig.lpszAutoConfigUrl;
+            if (IeProxyConfig.fAutoDetect)
+            {
+                AutoProxyOptions.dwFlags            = WINHTTP_AUTOPROXY_AUTO_DETECT | WINHTTP_AUTOPROXY_RUN_INPROCESS;
+                AutoProxyOptions.dwAutoDetectFlags  = WINHTTP_AUTO_DETECT_TYPE_DHCP | WINHTTP_AUTO_DETECT_TYPE_DNS_A;
+            }
+            else if (AutoProxyOptions.lpszAutoConfigUrl)
+                AutoProxyOptions.dwFlags            = WINHTTP_AUTOPROXY_CONFIG_URL;
+            else if (ProxyInfo.lpszProxy)
+                ProxyInfo.dwAccessType              = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
+            ProxyInfo.lpszProxy       = IeProxyConfig.lpszProxy;
+            ProxyInfo.lpszProxyBypass = IeProxyConfig.lpszProxyBypass;
+        }
+        else
+        {
+            AssertMsgFailed(("WinHttpGetIEProxyConfigForCurrentUser -> %u\n", GetLastError()));
+            if (!g_pfnWinHttpGetDefaultProxyConfiguration(&ProxyInfo))
+            {
+                AssertMsgFailed(("WinHttpGetDefaultProxyConfiguration -> %u\n", GetLastError()));
+                RT_ZERO(ProxyInfo);
+            }
+        }
+
+        /*
+         * Should we try WinHttGetProxyForUrl?
+         */
+        if (AutoProxyOptions.dwFlags != 0)
+        {
+            HINTERNET hSession = g_pfnWinHttpOpen(NULL /*pwszUserAgent*/, WINHTTP_ACCESS_TYPE_NO_PROXY,
+                                                  WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0 /*dwFlags*/ );
+            if (hSession != NULL)
+            {
+                PRTUTF16 pwszUrl;
+                rc = RTStrToUtf16(pszUrl, &pwszUrl);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Try autodetect first, then fall back on the config URL if there is one.
+                     *
+                     * Also, we first try without auto authentication, then with.  This will according
+                     * to http://msdn.microsoft.com/en-us/library/aa383153%28v=VS.85%29.aspx help with
+                     * caching the result when it's processed out-of-process (seems default here on W10).
+                     */
+                    WINHTTP_PROXY_INFO TmpProxyInfo;
+                    BOOL fRc = g_pfnWinHttpGetProxyForUrl(hSession, pwszUrl, &AutoProxyOptions, &TmpProxyInfo);
+                    if (   !fRc
+                        && GetLastError() == ERROR_WINHTTP_LOGIN_FAILURE)
+                    {
+                        AutoProxyOptions.fAutoLogonIfChallenged = TRUE;
+                        fRc = g_pfnWinHttpGetProxyForUrl(hSession, pwszUrl, &AutoProxyOptions, &TmpProxyInfo);
+                    }
+
+                    if (   !fRc
+                        && AutoProxyOptions.dwFlags != WINHTTP_AUTOPROXY_CONFIG_URL
+                        && AutoProxyOptions.lpszAutoConfigUrl)
+                    {
+                        AutoProxyOptions.fAutoLogonIfChallenged = FALSE;
+                        AutoProxyOptions.dwFlags = WINHTTP_AUTOPROXY_CONFIG_URL;
+                        AutoProxyOptions.dwAutoDetectFlags = 0;
+                        fRc = g_pfnWinHttpGetProxyForUrl(hSession, pwszUrl, &AutoProxyOptions, &TmpProxyInfo);
+                        if (   !fRc
+                            && GetLastError() == ERROR_WINHTTP_LOGIN_FAILURE)
+                        {
+                            AutoProxyOptions.fAutoLogonIfChallenged = TRUE;
+                            fRc = g_pfnWinHttpGetProxyForUrl(hSession, pwszUrl, &AutoProxyOptions, &TmpProxyInfo);
+                        }
+                    }
+
+                    if (fRc)
+                    {
+                        if (ProxyInfo.lpszProxy)
+                            GlobalFree(ProxyInfo.lpszProxy);
+                        if (ProxyInfo.lpszProxyBypass)
+                            GlobalFree(ProxyInfo.lpszProxyBypass);
+                        ProxyInfo = TmpProxyInfo;
+                    }
+                    /*
+                     * If the autodetection failed, assume no proxy.
+                     */
+                    else
+                    {
+                        DWORD dwErr = GetLastError();
+                        if (dwErr == ERROR_WINHTTP_AUTODETECTION_FAILED)
+                            rcRet = rtHttpUpdateAutomaticProxyDisable(pThis);
+                        else
+                            AssertMsgFailed(("g_pfnWinHttpGetProxyForUrl -> %u\n", dwErr));
+                    }
+                    RTUtf16Free(pwszUrl);
+                }
+                else
+                {
+                    AssertMsgFailed(("RTStrToUtf16(%s,) -> %Rrc\n", pszUrl, rc));
+                    rcRet = rc;
+                }
+                 g_pfnWinHttpCloseHandle(hSession);
+            }
+            else
+                AssertMsgFailed(("g_pfnWinHttpOpen -> %u\n", GetLastError()));
+        }
+
+        /*
+         * Try use the proxy info we've found.
+         */
+        switch (ProxyInfo.dwAccessType)
+        {
+            case WINHTTP_ACCESS_TYPE_NO_PROXY:
+                rcRet = rtHttpUpdateAutomaticProxyDisable(pThis);
+                break;
+
+            case WINHTTP_ACCESS_TYPE_NAMED_PROXY:
+/** @todo Continue here: parse the proxy thingy. */
+//AssertMsgFailed(("lpszProxy='%ls'\n", ProxyInfo.lpszProxy));
+                break;
+
+            case 0:
+                break;
+
+            default:
+                AssertMsgFailed(("%#x\n", ProxyInfo.dwAccessType));
+        }
+
+        /*
+         * Cleanup.
+         */
+        if (ProxyInfo.lpszProxy)
+            GlobalFree(ProxyInfo.lpszProxy);
+        if (ProxyInfo.lpszProxyBypass)
+            GlobalFree(ProxyInfo.lpszProxyBypass);
+        if (AutoProxyOptions.lpszAutoConfigUrl)
+            GlobalFree((PRTUTF16)AutoProxyOptions.lpszAutoConfigUrl);
+    }
+
+    return rcRet;
+}
+
+#endif /* RT_OS_WINDOWS */
+
 
 static int rtHttpConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
 {
     if (pThis->fUseSystemProxySettings)
     {
+#ifdef RT_OS_WINDOWS
+        int rc = rtHttpConfigureProxyForUrlWindows(pThis, pszUrl);
+        if (rc == VINF_SUCCESS || RT_FAILURE(rc))
+            return rc;
+        Assert(rc == VINF_NOT_SUPPORTED);
+#endif
 /** @todo system specific class here, fall back on env vars if necessary. */
         return rtHttpConfigureProxyForUrlFromEnv(pThis, pszUrl);
     }
