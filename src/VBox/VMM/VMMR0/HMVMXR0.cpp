@@ -6878,13 +6878,7 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
         TRPMSetInstrLength(pVCpu, pVCpu->hm.s.Event.cbInstr);
     }
 
-    /* Clear the pending event from the VMCS. */
-#ifdef VBOX_STRICT
-    uint32_t u32EntryInfo;
-    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
-    AssertRC(rc);
-    Assert(VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(u32EntryInfo));
-#endif
+    /* Clear any pending events from the VMCS. */
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);        AssertRC(rc);
     rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);        AssertRC(rc);
 
