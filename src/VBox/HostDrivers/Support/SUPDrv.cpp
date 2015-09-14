@@ -1690,7 +1690,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
         {
             /* validate */
             PSUPLDRLOAD pReq = (PSUPLDRLOAD)pReqHdr;
-            REQ_CHECK_EXPR(Name, pReq->Hdr.cbIn >= sizeof(*pReq));
+            REQ_CHECK_EXPR(Name, pReq->Hdr.cbIn >= SUP_IOCTL_LDR_LOAD_SIZE_IN(32));
             REQ_CHECK_SIZES_EX(SUP_IOCTL_LDR_LOAD, SUP_IOCTL_LDR_LOAD_SIZE_IN(pReq->u.In.cbImageWithTabs), SUP_IOCTL_LDR_LOAD_SIZE_OUT);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_LOAD, pReq->u.In.cSymbols <= 16384);
             REQ_CHECK_EXPR_FMT(     !pReq->u.In.cSymbols
