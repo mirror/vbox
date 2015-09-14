@@ -278,19 +278,29 @@ static void showHelp()
 }
 
 #ifdef Q_WS_X11
-/** This is a workaround for a bug on old libX11 versions, fixed in commit
- *      941f02ede63baa46f93ed8abccebe76fb29c0789 and released in version 1.1. */
-Status VBoxXInitThreads(void)
+/** X11: For versions of Xlib which are aware of multi-threaded environments this function
+  *      calls for XInitThreads() which initializes Xlib support for concurrent threads.
+  * @returns @c non-zero unless it is unsafe to make multi-threaded calls to Xlib.
+  * @remarks This is a workaround for a bug on old Xlib versions, fixed in commit
+  *          941f02e and released in Xlib version 1.1. We check for the symbol
+  *          "xcb_connect" which was introduced in that version. */
+static Status MakeSureMultiThreadingIsSafe()
 {
-    void *pvProcess = dlopen(NULL, RTLD_GLOBAL | RTLD_LAZY);
+    /* Success by default: */
     Status rc = 1;
+    /* Get a global handle to process symbols: */
+    void *pvProcess = dlopen(0, RTLD_GLOBAL | RTLD_LAZY);
+    /* Initialize multi-thread environment only if we can obtain
+     * an address of xcb_connect symbol in this process: */
     if (pvProcess && dlsym(pvProcess, "xcb_connect"))
         rc = XInitThreads();
+    /* Close the handle: */
     if (pvProcess)
         dlclose(pvProcess);
+    /* Return result: */
     return rc;
 }
-#endif
+#endif /* Q_WS_X11 */
 
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 {
@@ -301,7 +311,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     int iResultCode = 1;
 
 #ifdef Q_WS_X11
-    if (!VBoxXInitThreads())
+    if (!MakeSureMultiThreadingIsSafe())
         return 1;
 #endif /* Q_WS_X11 */
 
@@ -530,7 +540,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 int main(int argc, char **argv, char **envp)
 {
 #ifdef Q_WS_X11
-    if (!VBoxXInitThreads())
+    if (!MakeSureMultiThreadingIsSafe())
         return 1;
 #endif /* Q_WS_X11 */
 
