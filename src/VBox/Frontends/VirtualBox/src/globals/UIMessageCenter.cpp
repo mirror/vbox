@@ -221,21 +221,21 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType type,
 {
     return fDefaultFocusForOk ?
            ((question(pParent, type, strMessage, pcszAutoConfirmId,
-               AlertButton_Ok | AlertButtonOption_Default,
-               AlertButton_Cancel | AlertButtonOption_Escape,
-               0 /* third button */,
-               strOkButtonText,
-               strCancelButtonText,
-               QString() /* third button */) &
-           AlertButtonMask) == AlertButton_Ok) :
+                      AlertButton_Ok | AlertButtonOption_Default,
+                      AlertButton_Cancel | AlertButtonOption_Escape,
+                      0 /* third button */,
+                      strOkButtonText,
+                      strCancelButtonText,
+                      QString() /* third button */) &
+                      AlertButtonMask) == AlertButton_Ok) :
            ((question(pParent, type, strMessage, pcszAutoConfirmId,
-               AlertButton_Ok,
-               AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
-               0 /* third button */,
-               strOkButtonText,
-               strCancelButtonText,
-               QString() /* third button */) &
-           AlertButtonMask) == AlertButton_Ok);
+                      AlertButton_Ok,
+                      AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                      0 /* third button */,
+                      strOkButtonText,
+                      strCancelButtonText,
+                      QString() /* third button */) &
+                      AlertButtonMask) == AlertButton_Ok);
 }
 
 int UIMessageCenter::questionTrinary(QWidget *pParent, MessageType type,
