@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,7 +32,7 @@
 
 /** @todo Move this part in VbglR3 and just provide a callback for the platform-specific
           notification stuff, since this is very similar to the VBoxClient code. */
-int VBoxCheckHostVersion()
+int VBoxCheckHostVersion(void)
 {
     int rc;
     uint32_t uGuestPropSvcClientID;
@@ -57,7 +57,7 @@ int VBoxCheckHostVersion()
                                                 "We recommend updating to the latest version (%s) by choosing the "
                                                 "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
 
-                rc = hlpShowBalloonTip(ghInstance, ghwndToolWindow, ID_TRAYICON,
+                rc = hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
                                        szMsg, szTitle,
                                        5000 /* Time to display in msec */, NIIF_INFO);
                 if (RT_FAILURE(rc))

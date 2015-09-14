@@ -47,6 +47,9 @@
 //# define VBOX_DND_DEBUG_WND
 #endif
 
+/** The drag and drop window's window class. */
+#define VBOX_DND_WND_CLASS            "VBoxTrayDnDWnd"
+
 /** @todo Merge this with messages from VBoxTray.h. */
 #define WM_VBOXTRAY_DND_MESSAGE       WM_APP + 401
 
@@ -61,6 +64,8 @@ static PFNENUMDISPLAYMONITORS s_pfnEnumDisplayMonitors = NULL;
 
 static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+static VBOXDNDCONTEXT g_Ctx = { 0 };
 
 VBoxDnDWnd::VBoxDnDWnd(void)
     : hThread(NIL_RTTHREAD),
@@ -96,12 +101,12 @@ VBoxDnDWnd::~VBoxDnDWnd(void)
  * @return  IPRT status code.
  * @param   pContext                Pointer to context to use.
  */
-int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pContext)
+int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pCtx)
 {
-    AssertPtrReturn(pContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     /* Save the context. */
-    this->pContext = pContext;
+    this->pCtx = pCtx;
 
     int rc = RTSemEventCreate(&mEventSem);
     if (RT_SUCCESS(rc))
@@ -112,7 +117,7 @@ int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pContext)
         /* Message pump thread for our proxy window. */
         rc = RTThreadCreate(&hThread, VBoxDnDWnd::Thread, this,
                             0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
-                            "VBoxTrayDnDWnd");
+                            "dndwnd"); /** @todo Include ID if there's more than one proxy window. */
         if (RT_SUCCESS(rc))
             rc = RTThreadUserWait(hThread, 30 * 1000 /* Timeout in ms */);
     }
@@ -127,7 +132,6 @@ int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pContext)
 /**
  * Destroys the proxy window and releases all remaining
  * resources again.
- *
  */
 void VBoxDnDWnd::Destroy(void)
 {
@@ -143,7 +147,16 @@ void VBoxDnDWnd::Destroy(void)
 
     RTCritSectDelete(&mCritSect);
     if (mEventSem != NIL_RTSEMEVENT)
+    {
         RTSemEventDestroy(mEventSem);
+        mEventSem = NIL_RTSEMEVENT;
+    }
+
+    if (pCtx->wndClass != 0)
+    {
+        UnregisterClass(VBOX_DND_WND_CLASS, pCtx->pEnv->hInstance);
+        pCtx->wndClass = 0;
+    }
 
     LogFlowFuncLeave();
 }
@@ -161,40 +174,43 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
 {
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
+    LogFlowFuncEnter();
+
     VBoxDnDWnd *pThis = (VBoxDnDWnd*)pvUser;
     AssertPtr(pThis);
 
-    PVBOXDNDCONTEXT pContext = pThis->pContext;
-    AssertPtr(pContext);
-    AssertPtr(pContext->pEnv);
+    PVBOXDNDCONTEXT pCtx = pThis->pCtx;
+    AssertPtr(pCtx);
+    AssertPtr(pCtx->pEnv);
 
-    HINSTANCE hInstance = pContext->pEnv->hInstance;
+    int rc = VINF_SUCCESS;
+
+    AssertPtr(pCtx->pEnv);
+    HINSTANCE hInstance = pCtx->pEnv->hInstance;
     Assert(hInstance != 0);
 
     /* Create our proxy window. */
-    WNDCLASSEX wndClass;
-    RT_ZERO(wndClass);
+    WNDCLASSEX wc = { 0 };
+    wc.cbSize     = sizeof(WNDCLASSEX);
 
-    wndClass.cbSize        = sizeof(WNDCLASSEX);
-    wndClass.lpfnWndProc   = vboxDnDWndProc;
-    wndClass.lpszClassName = "VBoxTrayDnDWnd";
-    wndClass.hInstance     = hInstance;
-    wndClass.style         = CS_NOCLOSE;
-#ifdef VBOX_DND_DEBUG_WND
-    wndClass.style        |= CS_HREDRAW | CS_VREDRAW;
-    wndClass.hbrBackground = (HBRUSH)(CreateSolidBrush(RGB(255, 0, 0)));
-#else
-    wndClass.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
-#endif
-
-    bool fSignalled = false; /* Thread signalled? */
-
-    int rc = VINF_SUCCESS;
-    if (!RegisterClassEx(&wndClass))
+    if (!GetClassInfoEx(hInstance, VBOX_DND_WND_CLASS, &wc))
     {
-        DWORD dwErr = GetLastError();
-        LogFlowFunc(("Unable to register proxy window class, error=%ld\n", dwErr));
-        rc = RTErrConvertFromWin32(dwErr);
+        wc.lpfnWndProc   = vboxDnDWndProc;
+        wc.lpszClassName = VBOX_DND_WND_CLASS;
+        wc.hInstance     = hInstance;
+        wc.style         = CS_NOCLOSE;
+#ifdef VBOX_DND_DEBUG_WND
+        wc.style        |= CS_HREDRAW | CS_VREDRAW;
+        wc.hbrBackground = (HBRUSH)(CreateSolidBrush(RGB(255, 0, 0)));
+#else
+        wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
+#endif
+        if (!RegisterClassEx(&wc))
+        {
+            DWORD dwErr = GetLastError();
+            LogFlowFunc(("Unable to register proxy window class, error=%ld\n", dwErr));
+            rc = RTErrConvertFromWin32(dwErr);
+        }
     }
 
     if (RT_SUCCESS(rc))
@@ -207,7 +223,7 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
 #endif
         pThis->hWnd =
             CreateWindowEx(dwExStyle,
-                           "VBoxTrayDnDWnd", "VBoxTrayDnDWnd",
+                           VBOX_DND_WND_CLASS, VBOX_DND_WND_CLASS,
                            dwStyle,
 #ifdef VBOX_DND_DEBUG_WND
                            CW_USEDEFAULT, CW_USEDEFAULT, 200, 200, NULL, NULL,
@@ -250,6 +266,8 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
     {
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
         rc = pThis->RegisterAsDropTarget();
+#else
+        rc = VINF_SUCCESS;
 #endif
     }
     else
@@ -258,13 +276,15 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
         rc = VERR_COM_UNEXPECTED;
     }
 
+    bool fSignalled = false;
+
     if (RT_SUCCESS(rc))
     {
         rc = RTThreadUserSignal(hThread);
         fSignalled = RT_SUCCESS(rc);
 
         bool fShutdown = false;
-        while (RT_SUCCESS(rc))
+        for (;;)
         {
             MSG uMsg;
             while (GetMessage(&uMsg, 0, 0, 0))
@@ -273,12 +293,12 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
                 DispatchMessage(&uMsg);
             }
 
-            if (ASMAtomicReadBool(&pContext->fShutdown))
+            if (ASMAtomicReadBool(&pCtx->fShutdown))
                 fShutdown = true;
 
             if (fShutdown)
             {
-                LogFlowFunc(("Cancelling ...\n"));
+                LogFlowFunc(("Closing proxy window ...\n"));
                 break;
             }
 
@@ -355,21 +375,30 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             return TRUE;
         }
 
-        case WM_CLOSE:
+        case WM_QUIT:
         {
-            OnDestroy();
-
-            DestroyWindow(hWnd);
+            LogFlowThisFunc(("WM_QUIT\n"));
             PostQuitMessage(0);
             return 0;
         }
 
+        case WM_DESTROY:
+        {
+            LogFlowThisFunc(("WM_DESTROY\n"));
+
+            OnDestroy();
+            return 0;
+        }
+
         case WM_LBUTTONDOWN:
+        {
             LogFlowThisFunc(("WM_LBUTTONDOWN\n"));
             mfMouseButtonDown = true;
             return 0;
+        }
 
         case WM_LBUTTONUP:
+        {
             LogFlowThisFunc(("WM_LBUTTONUP\n"));
             mfMouseButtonDown = false;
 
@@ -380,10 +409,13 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
              *   enters the guest screen again after this unsuccessful operation */
             reset();
             return 0;
+        }
 
         case WM_MOUSELEAVE:
+        {
             LogFlowThisFunc(("WM_MOUSELEAVE\n"));
             return 0;
+        }
 
         /* Will only be called once; after the first mouse move, this
          * window will be hidden! */
@@ -641,7 +673,6 @@ int VBoxDnDWnd::RegisterAsDropTarget(void)
     try
     {
         pDropTarget = new VBoxDnDDropTarget(this /* pParent */);
-        AssertPtr(pDropTarget);
         HRESULT hr = CoLockObjectExternal(pDropTarget, TRUE /* fLock */,
                                           FALSE /* fLastUnlockReleases */);
         if (SUCCEEDED(hr))
@@ -705,6 +736,7 @@ int VBoxDnDWnd::UnregisterAsDropTarget(void)
  */
 int VBoxDnDWnd::OnCreate(void)
 {
+    LogFlowFuncEnter();
     int rc = VbglR3DnDConnect(&mDnDCtx);
     if (RT_FAILURE(rc))
     {
@@ -721,6 +753,8 @@ int VBoxDnDWnd::OnCreate(void)
  */
 void VBoxDnDWnd::OnDestroy(void)
 {
+    DestroyWindow(hWnd);
+
     VbglR3DnDDisconnect(&mDnDCtx);
     LogFlowThisFuncLeave();
 }
@@ -811,7 +845,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
                         cFormatsActive++;
                     }
                     else /* Should never happen. */
-                        AssertReleaseFailedBreak(("Format specification for '%s' not implemented\n", pszFormat));
+                        AssertReleaseMsgFailedBreak(("Format specification for '%s' not implemented\n", pszFormat));
                     break;
                 }
             }
@@ -939,7 +973,7 @@ int VBoxDnDWnd::OnHgLeave(void)
 
     /* Post ESC to our window to officially abort the
      * drag and drop operation. */
-    PostMessage(hWnd, WM_KEYDOWN, VK_ESCAPE, 0 /* lParam */);
+    this->PostMessage(WM_KEYDOWN, VK_ESCAPE /* wParam */, 0 /* lParam */);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1195,7 +1229,7 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
             switch (rc)
             {
                 case VERR_ACCESS_DENIED:
-                    rc = hlpShowBalloonTip(ghInstance, ghwndToolWindow, ID_TRAYICON,
+                    rc = hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
                                            szMsg, szTitle,
                                            15 * 1000 /* Time to display in msec */, NIIF_INFO);
                     AssertRC(rc);
@@ -1269,6 +1303,13 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormat,
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
+void VBoxDnDWnd::PostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    LogFlowFunc(("Posting message %u\n"));
+    BOOL fRc = ::PostMessage(hWnd, uMsg, wParam, lParam);
+    Assert(fRc);
+}
+
 /**
  * Injects a DnD event in this proxy window's Windows
  * event queue. The (allocated) event will be deleted by
@@ -1281,22 +1322,23 @@ int VBoxDnDWnd::ProcessEvent(PVBOXDNDEVENT pEvent)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    BOOL fRc = PostMessage(hWnd, WM_VBOXTRAY_DND_MESSAGE,
-                           0 /* wParm */, (LPARAM)pEvent /* lParm */);
+    BOOL fRc = ::PostMessage(hWnd, WM_VBOXTRAY_DND_MESSAGE,
+                             0 /* wParm */, (LPARAM)pEvent /* lParm */);
     if (!fRc)
     {
+        DWORD dwErr = GetLastError();
+
         static int s_iBitchedAboutFailedDnDMessages = 0;
         if (s_iBitchedAboutFailedDnDMessages++ < 32)
         {
-            DWORD dwErr = GetLastError();
-            LogRel(("DnD: Processing event %p failed with %ld (%Rrc), skpping\n",
+            LogRel(("DnD: Processing event %p failed with %ld (%Rrc), skipping\n",
                     pEvent, dwErr, RTErrConvertFromWin32(dwErr)));
         }
 
         RTMemFree(pEvent);
         pEvent = NULL;
 
-        return VERR_NO_MEMORY;
+        return RTErrConvertFromWin32(dwErr);
     }
 
     return VINF_SUCCESS;
@@ -1560,35 +1602,43 @@ static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg,
  * @param   ppInstance                  The instance pointer which refer to this object.
  * @param   pfStartThread               Pointer to flag whether the DnD service can be started or not.
  */
-int VBoxDnDInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
+DECLCALLBACK(int) VBoxDnDInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 {
     AssertPtrReturn(pEnv, VERR_INVALID_POINTER);
-    /** ppInstance not used here. */
-    AssertPtrReturn(pfStartThread, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppInstance, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
 
-    *pfStartThread = false;
-
-    PVBOXDNDCONTEXT pCtx = &gCtx;
+    PVBOXDNDCONTEXT pCtx = &g_Ctx; /* Only one instance at the moment. */
+    AssertPtr(pCtx);
 
     int rc;
     bool fSupportedOS = true;
 
-    s_pfnSendInput = (PFNSENDINPUT)
-        RTLdrGetSystemSymbol("User32.dll", "SendInput");
-    fSupportedOS = !RT_BOOL(s_pfnSendInput == NULL);
-    s_pfnEnumDisplayMonitors = (PFNENUMDISPLAYMONITORS)
-        RTLdrGetSystemSymbol("User32.dll", "EnumDisplayMonitors");
-    /* g_pfnEnumDisplayMonitors is optional. */
-
-    if (!fSupportedOS)
+    if (VbglR3AutoLogonIsRemoteSession())
     {
-        LogRel(("DnD: Not supported Windows version, disabling drag and drop support\n"));
+        /* Do not do drag and drop for remote sessions. */
+        LogRel(("DnD: Drag and drop has been disabled for a remote session\n"));
         rc = VERR_NOT_SUPPORTED;
     }
     else
         rc = VINF_SUCCESS;
+
+    if (RT_SUCCESS(rc))
+    {
+        s_pfnSendInput = (PFNSENDINPUT)
+            RTLdrGetSystemSymbol("User32.dll", "SendInput");
+        fSupportedOS = !RT_BOOL(s_pfnSendInput == NULL);
+        s_pfnEnumDisplayMonitors = (PFNENUMDISPLAYMONITORS)
+            RTLdrGetSystemSymbol("User32.dll", "EnumDisplayMonitors");
+        /* g_pfnEnumDisplayMonitors is optional. */
+
+        if (!fSupportedOS)
+        {
+            LogRel(("DnD: Not supported Windows version, disabling drag and drop support\n"));
+            rc = VERR_NOT_SUPPORTED;
+        }
+    }
 
     if (RT_SUCCESS(rc))
     {
@@ -1618,20 +1668,19 @@ int VBoxDnDInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
     if (RT_SUCCESS(rc))
     {
         *ppInstance = pCtx;
-        *pfStartThread = true;
 
         LogRel(("DnD: Drag and drop service successfully started\n"));
-        return VINF_SUCCESS;
     }
+    else
+        LogRel(("DnD: Initializing drag and drop service failed with rc=%Rrc\n", rc));
 
-    LogRel(("DnD: Initializing drag and drop service failed with rc=%Rrc\n", rc));
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-void VBoxDnDStop(const VBOXSERVICEENV *pEnv, void *pInstance)
+DECLCALLBACK(int) VBoxDnDStop(void *pInstance)
 {
-    AssertPtrReturnVoid(pEnv);
-    AssertPtrReturnVoid(pInstance);
+    AssertPtrReturn(pInstance, VERR_INVALID_POINTER);
 
     LogFunc(("Stopping pInstance=%p\n", pInstance));
 
@@ -1640,12 +1689,17 @@ void VBoxDnDStop(const VBOXSERVICEENV *pEnv, void *pInstance)
 
     /* Set shutdown indicator. */
     ASMAtomicWriteBool(&pCtx->fShutdown, true);
+
+    /* Disconnect. */
+    VbglR3DnDDisconnect(&pCtx->cmdCtx);
+
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
-void VBoxDnDDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
+DECLCALLBACK(void) VBoxDnDDestroy(void *pInstance)
 {
-    AssertPtr(pEnv);
-    AssertPtr(pInstance);
+    AssertPtrReturnVoid(pInstance);
 
     LogFunc(("Destroying pInstance=%p\n", pInstance));
 
@@ -1658,25 +1712,32 @@ void VBoxDnDDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     Assert(pCtx->lstWnd.size() == 1);
     VBoxDnDWnd *pWnd = pCtx->lstWnd.first();
     if (pWnd)
+    {
         delete pWnd;
+        pWnd = NULL;
+    }
 
     if (pCtx->hEvtQueueSem != NIL_RTSEMEVENT)
         RTSemEventDestroy(pCtx->hEvtQueueSem);
 
-    LogFunc(("Destroyed pInstance=%p, rc=%Rrc\n",
-             pInstance, rc));
+    LogFunc(("Destroyed pInstance=%p, rc=%Rrc\n", pInstance, rc));
 }
 
-unsigned __stdcall VBoxDnDThread(void *pInstance)
+DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
 {
+    AssertPtr(pInstance);
     LogFlowFunc(("pInstance=%p\n", pInstance));
+
+    /*
+     * Tell the control thread that it can continue
+     * spawning services.
+     */
+    RTThreadUserSignal(RTThreadSelf());
 
     PVBOXDNDCONTEXT pCtx = (PVBOXDNDCONTEXT)pInstance;
     AssertPtr(pCtx);
 
-    VBGLR3GUESTDNDCMDCTX ctxDnD; /* The thread's own DnD context. */
-
-    int rc = VbglR3DnDConnect(&ctxDnD);
+    int rc = VbglR3DnDConnect(&pCtx->cmdCtx);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1687,10 +1748,11 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
 
     /* Number of invalid messages skipped in a row. */
     int cMsgSkippedInvalid = 0;
+    PVBOXDNDEVENT pEvent = NULL;
 
-    do
+    for (;;)
     {
-        PVBOXDNDEVENT pEvent = (PVBOXDNDEVENT)RTMemAlloc(sizeof(VBOXDNDEVENT));
+        pEvent = (PVBOXDNDEVENT)RTMemAllocZ(sizeof(VBOXDNDEVENT));
         if (!pEvent)
         {
             rc = VERR_NO_MEMORY;
@@ -1698,23 +1760,33 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
         }
         /* Note: pEvent will be free'd by the consumer later. */
 
-        rc = VbglR3DnDProcessNextMessage(&ctxDnD, &pEvent->Event);
+        rc = VbglR3DnDProcessNextMessage(&pCtx->cmdCtx, &pEvent->Event);
         LogFlowFunc(("VbglR3DnDProcessNextMessage returned uType=%RU32, rc=%Rrc\n",
                      pEvent->Event.uType, rc));
 
-        if (ASMAtomicReadBool(&pCtx->fShutdown))
-            break;
-
         if (   RT_SUCCESS(rc)
-            || rc == VERR_CANCELLED)
+            /* Cancelled from host. */
+            || rc == VERR_CANCELLED
+            )
         {
             cMsgSkippedInvalid = 0; /* Reset skipped messages count. */
 
-            LogFlowFunc(("Received new event, type=%RU32\n", pEvent->Event.uType));
+            LogFlowFunc(("Received new event, type=%RU32, rc=%Rrc\n", pEvent->Event.uType, rc));
 
-            int rc2 = pWnd->ProcessEvent(pEvent);
-            if (RT_FAILURE(rc2))
-                LogFlowFunc(("Processing event failed with rc=%Rrc\n", rc2));
+            rc = pWnd->ProcessEvent(pEvent);
+            if (RT_SUCCESS(rc))
+            {
+                /* Event was consumed and the proxy window till take care of the memory -- NULL it. */
+                pEvent = NULL;
+            }
+            else
+                LogFlowFunc(("Processing event failed with rc=%Rrc\n", rc));
+        }
+        else if (rc == VERR_INTERRUPTED) /* Disconnected from service. */
+        {
+            LogFlowFunc(("Posting quit message ...\n"));
+            pWnd->PostMessage(WM_QUIT, 0 /* wParm */, 0 /* lParm */);
+            rc = VINF_SUCCESS;
         }
         else
         {
@@ -1731,7 +1803,7 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
                 break;
             }
 
-            int rc2 = VbglR3DnDGHSendError(&ctxDnD, rc);
+            int rc2 = VbglR3DnDGHSendError(&pCtx->cmdCtx, rc);
             AssertRC(rc2);
         }
 
@@ -1740,14 +1812,35 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
 
         if (RT_FAILURE(rc)) /* Don't hog the CPU on errors. */
             RTThreadSleep(1000 /* ms */);
+    }
 
-    } while (true);
+    if (pEvent)
+    {
+        RTMemFree(pEvent);
+        pEvent = NULL;
+    }
 
     LogFlowFunc(("Shutting down ...\n"));
 
-    VbglR3DnDDisconnect(&ctxDnD);
+    VbglR3DnDDisconnect(&pCtx->cmdCtx);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
+/**
+ * The service description.
+ */
+VBOXSERVICEDESC g_SvcDescDnD =
+{
+    /* pszName. */
+    "draganddrop",
+    /* pszDescription. */
+    "Drag and Drop",
+    /* methods */
+    VBoxDnDInit,
+    VBoxDnDWorker,
+    VBoxDnDStop,
+    VBoxDnDDestroy
+};
 

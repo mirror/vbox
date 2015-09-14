@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,6 +45,7 @@
 
 #include <iprt/initterm.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 
 #include <VBox/version.h>
 #include <VBox/VBoxGuest.h> /** @todo use the VbglR3 interface! */
@@ -62,10 +63,8 @@
  */
 #define WM_VBOXTRAY_TRAY_ICON                   WM_APP + 40
 
-
 /* The tray icon's ID. */
 #define ID_TRAYICON                             2000
-
 
 /*
  * Timer IDs.
@@ -75,30 +74,97 @@
 #define TIMERID_VBOXTRAY_DT_TIMER               1002
 #define TIMERID_VBOXTRAY_ST_DELAYED_INIT_TIMER  1003
 
-/* The environment information for services. */
+/**
+ * The environment information for services.
+ */
 typedef struct _VBOXSERVICEENV
 {
+    /** hInstance of VBoxTray. */
     HINSTANCE hInstance;
+    /** Handle of guest driver. */
     HANDLE    hDriver;
-    HANDLE    hStopEvent;
-    /* display driver interface, XPDM - WDDM abstraction see VBOXDISPIF** definitions above */
+    /* Display driver interface, XPDM - WDDM abstraction see VBOXDISPIF** definitions above */
+    /** @todo r=andy Argh. Needed by the "display" + "seamless" services (which in turn get called
+     *               by the VBoxCaps facility. See #8037. */
     VBOXDISPIF dispIf;
-} VBOXSERVICEENV;
+} VBOXSERVICEENV, *PVBOXSERVICEENV;
 
-/* The service initialization info and runtime variables. */
+/**
+ * A service descriptor.
+ */
+typedef struct _VBOXSERVICEDESC
+{
+    /** The service's name. RTTHREAD_NAME_LEN maximum characters. */
+    char           *pszName;
+    /** The service description. */
+    char           *pszDesc;
+
+    /** Callbacks. */
+
+    /**
+     * Initializes a service.
+     * @returns VBox status code.
+     * @param   pEnv
+     * @param   ppInstance      Where to return the thread-specific instance data.
+     */
+    DECLCALLBACKMEMBER(int,  pfnInit)   (const PVBOXSERVICEENV pEnv, void **ppInstance);
+
+    /** Called from the worker thread.
+     *
+     * @returns VBox status code.
+     * @retval  VINF_SUCCESS if exitting because *pfShutdown was set.
+     * @param   pInstance       Pointer to thread-specific instance data.
+     * @param   pfShutdown      Pointer to a per service termination flag to check
+     *                          before and after blocking.
+     */
+    DECLCALLBACKMEMBER(int,  pfnWorker) (void *pInstance, bool volatile *pfShutdown);
+
+    /**
+     * Stops a service.
+     */
+    DECLCALLBACKMEMBER(int,  pfnStop)   (void *pInstance);
+
+    /**
+     * Does termination cleanups.
+     *
+     * @remarks This may be called even if pfnInit hasn't been called!
+     */
+    DECLCALLBACKMEMBER(void, pfnDestroy)(void *pInstance);
+} VBOXSERVICEDESC, *PVBOXSERVICEDESC;
+
+extern VBOXSERVICEDESC g_SvcDescDisplay;
+extern VBOXSERVICEDESC g_SvcDescClipboard;
+extern VBOXSERVICEDESC g_SvcDescSeamless;
+extern VBOXSERVICEDESC g_SvcDescVRDP;
+extern VBOXSERVICEDESC g_SvcDescIPC;
+extern VBOXSERVICEDESC g_SvcDescLA;
+#ifdef VBOX_WITH_DRAG_AND_DROP
+extern VBOXSERVICEDESC g_SvcDescDnD;
+#endif
+
+/**
+ * The service initialization info and runtime variables.
+ */
 typedef struct _VBOXSERVICEINFO
 {
-    char     *pszName;
-    int      (* pfnInit)             (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
-    unsigned (__stdcall * pfnThread) (void *pInstance);
-    void     (* pfnStop)             (const VBOXSERVICEENV *pEnv, void *pInstance);
-    void     (* pfnDestroy)          (const VBOXSERVICEENV *pEnv, void *pInstance);
-
-    /* Variables. */
-    HANDLE   hThread;
-    void    *pInstance;
-    bool     fStarted;
-} VBOXSERVICEINFO;
+    /** Pointer to the service descriptor. */
+    PVBOXSERVICEDESC pDesc;
+    /** Thread handle. */
+    RTTHREAD         hThread;
+    /** Pointer to service-specific instance data.
+     *  Must be free'd by the service itself. */
+    void            *pInstance;
+    /** Whether Pre-init was called. */
+    bool             fPreInited;
+    /** Shutdown indicator. */
+    bool volatile    fShutdown;
+    /** Indicator set by the service thread exiting. */
+    bool volatile    fStopped;
+    /** Whether the service was started or not. */
+    bool             fStarted;
+    /** Whether the service is enabled or not. */
+    bool             fEnabled;
+} VBOXSERVICEINFO, *PVBOXSERVICEINFO;
 
 /* Globally unique (system wide) message registration. */
 typedef struct _VBOXGLOBALMESSAGE
@@ -115,8 +181,8 @@ typedef struct _VBOXGLOBALMESSAGE
     UINT     uMsgID;
 } VBOXGLOBALMESSAGE, *PVBOXGLOBALMESSAGE;
 
-extern HWND         ghwndToolWindow;
-extern HINSTANCE    ghInstance;
+extern HWND         g_hwndToolWindow;
+extern HINSTANCE    g_hInstance;
 
 #endif /* !___VBOXTRAY_H */
 

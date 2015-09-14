@@ -23,11 +23,6 @@
 #include <iprt/cpp/mtlist.h>
 #include <iprt/cpp/ministring.h>
 
-int                VBoxDnDInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
-unsigned __stdcall VBoxDnDThread  (void *pInstance);
-void               VBoxDnDStop    (const VBOXSERVICEENV *pEnv, void *pInstance);
-void               VBoxDnDDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
-
 class VBoxDnDWnd;
 
 class VBoxDnDDataObject : public IDataObject
@@ -224,6 +219,8 @@ typedef struct VBOXDNDCONTEXT
     const VBOXSERVICEENV      *pEnv;
     /** Shutdown indicator. */
     bool                       fShutdown;
+    /** The registered window class. */
+    ATOM                       wndClass;
     /** The DnD main event queue. */
     RTCMTList<VBOXDNDEVENT>    lstEvtQueue;
     /** Semaphore for waiting on main event queue
@@ -232,9 +229,10 @@ typedef struct VBOXDNDCONTEXT
     /** List of drag'n drop proxy windows.
      *  Note: At the moment only one window is supported. */
     RTCMTList<VBoxDnDWnd*>     lstWnd;
+    /** The DnD command context. */
+    VBGLR3GUESTDNDCMDCTX       cmdCtx;
 
 } VBOXDNDCONTEXT, *PVBOXDNDCONTEXT;
-static VBOXDNDCONTEXT gCtx = {0};
 
 /**
  * Everything which is required to successfully start
@@ -334,6 +332,7 @@ public:
     int OnGhDropped(const char *pszFormat, uint32_t cbFormats, uint32_t uDefAction);
 #endif
 
+    void PostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     int ProcessEvent(PVBOXDNDEVENT pEvent);
 
 public:
@@ -351,7 +350,7 @@ protected:
 public: /** @todo Make protected! */
 
     /** Pointer to DnD context. */
-    PVBOXDNDCONTEXT            pContext;
+    PVBOXDNDCONTEXT            pCtx;
     /** The proxy window's main thread for processing
      *  window messages. */
     RTTHREAD                   hThread;

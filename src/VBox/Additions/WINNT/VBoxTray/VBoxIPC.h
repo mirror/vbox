@@ -21,7 +21,7 @@
 #define __VBOXTRAYIPCSERVER__H
 
 int                VBoxIPCInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
-unsigned __stdcall VBoxIPCThread  (void *pInstance);
+unsigned __stdcall VBoxIPCWorker  (void *pInstance);
 void               VBoxIPCStop    (const VBOXSERVICEENV *pEnv, void *pInstance);
 void               VBoxIPCDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,8 +18,5 @@
 #ifndef __VBOXSERVICELA__H
 #define __VBOXSERVICELA__H
 
-int                VBoxLAInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
-unsigned __stdcall VBoxLAThread  (void *pInstance);
-void               VBoxLADestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
-
 #endif /* __VBOXSERVICELA__H */
+
