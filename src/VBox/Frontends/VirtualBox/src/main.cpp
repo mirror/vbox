@@ -114,10 +114,8 @@ QString g_QStrHintReinstall = QApplication::tr(
   );
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
-
 #include <signal.h>
 #include <execinfo.h>
-
 /* get REG_EIP from ucontext.h */
 #ifndef __USE_GNU
 #define __USE_GNU
@@ -129,40 +127,52 @@ QString g_QStrHintReinstall = QApplication::tr(
 # define REG_PC REG_EIP
 #endif
 
-
-
-/**
- * the signal handler that prints out a backtrace of the call stack.
- * the code is taken from http://www.linuxjournal.com/article/6391.
- */
-void bt_sighandler (int sig, siginfo_t *info, void *secret) {
-
+/** X11, Linux, Debug: The signal handler that prints out a backtrace of the call stack.
+  * @remarks The code is taken from http://www.linuxjournal.com/article/6391. */
+static void BackTraceSignalHandler(int sig, siginfo_t *pInfo, void *pSecret)
+{
     void *trace[16];
-    char **messages = (char **)NULL;
-    int i, trace_size = 0;
-    ucontext_t *uc = (ucontext_t *)secret;
+    char **messages = (char **)0;
+    int i, iTraceSize = 0;
+    ucontext_t *uc = (ucontext_t *)pSecret;
 
-    /* Do something useful with siginfo_t */
+    /* Do something useful with siginfo_t: */
     if (sig == SIGSEGV)
-        Log (("GUI: Got signal %d, faulty address is %p, from %p\n",
-              sig, info->si_addr, uc->uc_mcontext.gregs[REG_PC]));
+        Log(("GUI: Got signal %d, faulty address is %p, from %p\n",
+             sig, pInfo->si_addr, uc->uc_mcontext.gregs[REG_PC]));
+    /* Or do nothing by default: */
     else
-        Log (("GUI: Got signal %d\n", sig));
+        Log(("GUI: Got signal %d\n", sig));
 
-    trace_size = backtrace (trace, 16);
-    /* overwrite sigaction with caller's address */
-    trace[1] = (void *) uc->uc_mcontext.gregs [REG_PC];
+    /* Acquire backtrace of 16 lvls depth: */
+    iTraceSize = backtrace(trace, 16);
 
-    messages = backtrace_symbols (trace, trace_size);
-    /* skip first stack frame (points here) */
-    Log (("GUI: [bt] Execution path:\n"));
-    for (i = 1; i < trace_size; ++i)
-        Log (("GUI: [bt] %s\n", messages[i]));
+    /* Overwrite sigaction with caller's address: */
+    trace[1] = (void *)uc->uc_mcontext.gregs[REG_PC];
 
-    exit (0);
+    /* Translate the addresses into an array of messages: */
+    messages = backtrace_symbols(trace, iTraceSize);
+
+    /* Skip first stack frame (points here): */
+    Log(("GUI: [bt] Execution path:\n"));
+    for (i = 1; i < iTraceSize; ++i)
+        Log(("GUI: [bt] %s\n", messages[i]));
+
+    exit(0);
 }
 
-#endif /* DEBUG && X11 && LINUX*/
+/** X11, Linux, Debug: Installs signal handler printing backtrace of the call stack. */
+static void InstallSignalHandler()
+{
+    struct sigaction sa;
+    sa.sa_sigaction = BackTraceSignalHandler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigaction(SIGSEGV, &sa, 0);
+    sigaction(SIGBUS,  &sa, 0);
+    sigaction(SIGUSR1, &sa, 0);
+}
+#endif /* DEBUG && Q_WS_X11 && RT_OS_LINUX */
 
 #ifdef Q_WS_MAC
 # include <dlfcn.h>
@@ -343,15 +353,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         }
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
-        /* Install our signal handler to backtrace the call stack: */
-        struct sigaction sa;
-        sa.sa_sigaction = bt_sighandler;
-        sigemptyset(&sa.sa_mask);
-        sa.sa_flags = SA_RESTART | SA_SIGINFO;
-        sigaction(SIGSEGV, &sa, NULL);
-        sigaction(SIGBUS, &sa, NULL);
-        sigaction(SIGUSR1, &sa, NULL);
-#endif
+        /* Install signal handler to backtrace the call stack: */
+        InstallSignalHandler();
+#endif /* DEBUG && Q_WS_X11 && RT_OS_LINUX */
 
 #ifdef VBOX_WITH_HARDENING
         /* Make sure the image verification code works (VBoxDbg.dll and other plugins). */
