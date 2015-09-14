@@ -27,6 +27,12 @@
 #include "DrvAudio.h"
 #include "VBoxDD.h"
 
+/* Dynamically load dsound.dll. */
+typedef HRESULT WINAPI FNDIRECTSOUNDENUMERATEW(LPDSENUMCALLBACKW pDSEnumCallback, LPVOID pContext);
+typedef FNDIRECTSOUNDENUMERATEW *PFNDIRECTSOUNDENUMERATEW;
+typedef HRESULT WINAPI FNDIRECTSOUNDCAPTUREENUMERATEW(LPDSENUMCALLBACKW pDSEnumCallback, LPVOID pContext);
+typedef FNDIRECTSOUNDCAPTUREENUMERATEW *PFNDIRECTSOUNDCAPTUREENUMERATEW;
+
 typedef struct DSOUNDHOSTCFG
 {
     DWORD   cbBufferIn;
@@ -322,7 +328,7 @@ static int dsoundPlayInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSo
                                   IID_IDirectSound8, (void **)&pDSoundStrmOut->pDS);
     if (FAILED(hr))
     {
-        LogRel(("DSound: Error creating DirectSound instance: %Rhrc\n", hr));
+        LogRelMax(s_cMaxRelLogEntries, ("DSound: Error creating DirectSound instance: %Rhrc\n", hr));
     }
     else
     {
@@ -1486,21 +1492,51 @@ static DECLCALLBACK(int) drvHostDSoundGetConf(PPDMIHOSTAUDIO pInterface, PPDMAUD
     pCfg->cMaxHstStrmsOut = 0;
     pCfg->cMaxHstStrmsIn  = 0;
 
-    DSOUNDENUMCBCTX ctx = { pThis, pCfg };
+    RTLDRMOD hDSound = NULL;
+    int rc = RTLdrLoadSystem("dsound.dll", true /*fNoUnload*/, &hDSound);
+    if (RT_SUCCESS(rc))
+    {
+        PFNDIRECTSOUNDENUMERATEW pfnDirectSoundEnumerateW = NULL;
+        PFNDIRECTSOUNDCAPTUREENUMERATEW pfnDirectSoundCaptureEnumerateW = NULL;
 
-    HRESULT hr = DirectSoundEnumerateW(&dsoundEnumCallback, &ctx);
-    if (FAILED(hr))
-        LogRel(("DSound: Error enumerating host playback devices: %Rhrc\n", hr));
+        rc = RTLdrGetSymbol(hDSound, "DirectSoundEnumerateW", (void**)&pfnDirectSoundEnumerateW);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTLdrGetSymbol(hDSound, "DirectSoundCaptureEnumerateW", (void**)&pfnDirectSoundCaptureEnumerateW);
+        }
 
-    LogRel(("DSound: Found %RU32 host playback devices\n", pCfg->cMaxHstStrmsOut));
+        if (RT_SUCCESS(rc))
+        {
+            DSOUNDENUMCBCTX ctx = { pThis, pCfg };
+
+            HRESULT hr = pfnDirectSoundEnumerateW(&dsoundEnumCallback, &ctx);
+            if (FAILED(hr))
+                LogRel(("DSound: Error enumerating host playback devices: %Rhrc\n", hr));
+
+            LogRel(("DSound: Found %RU32 host playback devices\n", pCfg->cMaxHstStrmsOut));
+
+            hr = pfnDirectSoundCaptureEnumerateW(&dsoundCaptureEnumCallback, &ctx);
+            if (FAILED(hr))
+                LogRel(("DSound: Error enumerating host capturing devices: %Rhrc\n", hr));
+
+            LogRel(("DSound: Found %RU32 host capturing devices\n", pCfg->cMaxHstStrmsIn));
+        }
+
+        RTLdrClose(hDSound);
+    }
+    else
+    {
+        /* No dsound.dll on this system.  */
+        LogRel(("DSound: could not load dsound.dll %Rrc\n", rc));
+    }
+
+    /* Always return success and at least default values to make the caller happy. */
     if (pCfg->cMaxHstStrmsOut == 0)
+    {
+        LogRel(("DSound: Adjusting the number of host playback devices to 1\n"));
         pCfg->cMaxHstStrmsOut = 1; /* Support at least one stream. */
+    }
 
-    hr = DirectSoundCaptureEnumerateW(&dsoundCaptureEnumCallback, &ctx);
-    if (FAILED(hr))
-        LogRel(("DSound: Error enumerating host capturing devices: %Rhrc\n", hr));
-
-    LogRel(("DSound: Found %RU32 host capturing devices\n", pCfg->cMaxHstStrmsIn));
     if (pCfg->cMaxHstStrmsIn < 2)
     {
         LogRel(("DSound: Adjusting the number of host capturing devices from %RU32 to 2\n", pCfg->cMaxHstStrmsIn));

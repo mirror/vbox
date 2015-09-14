@@ -558,8 +558,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifeq ($(KBUILD_TARGET),win)
   VBoxDD_SOURCES += \
    Audio/DrvHostDSound.cpp
-  VBoxDD_LIBS    += \
-   $(PATH_SDK_$(VBOX_WINDDK)_LIB)/dsound.lib
  endif
 
  ifeq ($(KBUILD_TARGET),linux)
