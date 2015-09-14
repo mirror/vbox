@@ -116,7 +116,8 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibStat.cpp \
 	VBoxGuestR3LibTime.cpp \
- 	VBoxGuestR3LibModule.cpp
+ 	VBoxGuestR3LibModule.cpp \
+ 	VBoxGuestR3LibPidFile.cpp
 ifneq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all implemented / #defined).
  VBoxGuestR3Lib_SOURCES   += \
  	VBoxGuestR3LibDaemonize.cpp \
