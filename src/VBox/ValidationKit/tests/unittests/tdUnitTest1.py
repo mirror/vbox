@@ -705,7 +705,7 @@ class tdUnitTest1(vbox.TestDriver):
 
         # Determin the host OS specific exclusion lists.
         dTestCasesBuggyForHostOs = self.kdTestCasesBuggyPerOs.get(utils.getHostOs(), []);
-        dTestCasesBuggyForHostOs.update(self.kdTestCasesBuggyPerOs.get(utils.getHostOsDotArch(), []);)
+        dTestCasesBuggyForHostOs.update(self.kdTestCasesBuggyPerOs.get(utils.getHostOsDotArch(), []));
 
         #
         # Process the file list and run everything looking like a testcase.
