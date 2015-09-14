@@ -1645,13 +1645,16 @@ void UIMachineLogic::sltTakeScreenshot()
     if (!isMachineWindowsCreated())
         return;
 
-    /* Formatting default and temporary filenames for screenshot accroding to current time: */
+    /* Formatting default filename for screenshot. VM folder is the default directory to save: */
     const QFileInfo fi(machine().GetSettingsFilePath());
     const QString strCurrentTime = QDateTime::currentDateTime().toString("dd_MM_yyyy_hh_mm_ss");
-    const QString strFormatDefaultFileName = QString("VirtualBox").append("_").append(machine().GetName()).append("_").
-            append(strCurrentTime);
+    const QString strFormatDefaultFileName = QString("VirtualBox").append("_").append(machine().GetName()).append("_").append(strCurrentTime);
     const QString strDefaultFileName = QDir(fi.absolutePath()).absoluteFilePath(strFormatDefaultFileName);
-    const QString strTempFile = QDir(fi.absolutePath()).absoluteFilePath("temp").append(strCurrentTime).append(".png");
+
+    /* Formatting temporary filename for screenshot. It is saved in system temporary directory if available, else in VM folder: */
+    QString strTempFile = QDir(fi.absolutePath()).absoluteFilePath("temp").append("_").append(strCurrentTime).append(".png");
+    if (QDir::temp().exists())
+        strTempFile = QDir::temp().absoluteFilePath("temp").append("_").append(strCurrentTime).append(".png");
 
     /* Do the screenshot: */
     takeScreenshot(strTempFile, "png");
@@ -1693,12 +1696,12 @@ void UIMachineLogic::sltTakeScreenshot()
 
     /* Request the filename from the user: */
     const QString strFilename = QIFileDialog::getSaveFileName(strDefaultFileName,
-                                                        filters.join(";;"),
-                                                        activeMachineWindow(),
-                                                        tr("Select a filename for the screenshot ..."),
-                                                        &strFilter,
-                                                        true /* resolve symlinks */,
-                                                        true /* confirm overwrite */);
+                                                              filters.join(";;"),
+                                                              activeMachineWindow(),
+                                                              tr("Select a filename for the screenshot ..."),
+                                                              &strFilter,
+                                                              true /* resolve symlinks */,
+                                                              true /* confirm overwrite */);
 
 #ifdef Q_WS_WIN
     /* Due to Qt bug, modal QFileDialog appeared above the active machine-window
@@ -1715,15 +1718,14 @@ void UIMachineLogic::sltTakeScreenshot()
         const QString strFormat = strFilter.split(" ").value(0, "png");
         const QImage tmpImage(strTempFile);
 
-    /* On X11 Qt Filedialog returns the filepath without the filetype suffix,
-     * so adding it ourselves: */
-    #ifdef Q_WS_X11
+        /* On X11 Qt Filedialog returns the filepath without the filetype suffix, so adding it ourselves: */
+#ifdef Q_WS_X11
         tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(QString("%1.%2").arg(strFilename, strFormat))),
-                    strFormat.toAscii().constData());
-    #else /* !Q_WS_X11 */
+                      strFormat.toAscii().constData());
+#else /* !Q_WS_X11 */
         tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(strFilename)),
-                    strFormat.toAscii().constData());
-    #endif /* !Q_WS_X11 */
+                      strFormat.toAscii().constData());
+#endif /* !Q_WS_X11 */
     }
     QFile::remove(strTempFile);
 }
