@@ -65,6 +65,9 @@ BLDPROGS.win += VBoxPeSetVersion
 VBoxPeSetVersion_TEMPLATE = VBoxBldProg
 VBoxPeSetVersion_SOURCES  = VBoxPeSetVersion.cpp
 
+BLDPROGS += VBoxCoffNullThunkDataGen
+VBoxCoffNullThunkDataGen_TEMPLATE = VBoxBldProg
+VBoxCoffNullThunkDataGen_SOURCES  = VBoxCoffNullThunkDataGen.cpp
 
 BLDPROGS += VBoxDef2LazyLoad
 VBoxDef2LazyLoad_TEMPLATE = VBoxBldProg
