@@ -458,6 +458,12 @@ $$(SUPR0_0_OUTDIR)/SUPR0.def: \
 		-f $(dir $<)/SUPR0-def-$(VBOX_LDR_FMT).sed \
 		--output $@ \
 		$<
+ # Experiment: Let's see how blunt the ones messing our NULL_THUNK_DATA entries on W10 are.
+ ifeq ($(KBUILD_TARGET),win)
+  ifdef KLIBTWEAKER_EXT
+   SUPR0_POST_CMDS = $(KLIBTWEAKER_EXT) --clear-timestamps --fill-null_thunk_data $(out)
+  endif
+ endif
 endif
 
 
