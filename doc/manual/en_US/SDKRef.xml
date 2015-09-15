@@ -3913,6 +3913,16 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
+      <title>Incompatible API changes with version 5.x</title>
+
+      <itemizedlist>
+        <listitem>TODO: Rename EXECUTEPROCESSFLAG_NO_PROFILE to EXECUTEPROCESSFLAG_PROFILE (also in Main).</link>
+        </listitem>
+      </itemizedlist>
+
+    </sect1>
+
+    <sect1>
       <title>Incompatible API changes with version 5.0</title>
 
       <itemizedlist>
@@ -5907,7 +5917,7 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>New attributes in IMachine:
           <link linkend="IMachine__accelerate3DEnabled">accelerate3DEnabled</link>,
-          HWVirtExVPIDEnabled, 
+          HWVirtExVPIDEnabled,
           <computeroutput>IMachine::guestPropertyNotificationPatterns</computeroutput>,
           <link linkend="IMachine__CPUCount">CPUCount</link>.</para>
         </listitem>
