@@ -17,59 +17,76 @@
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include <precomp.h>
+#else /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+/* Qt includes: */
+# include <QLocale>
+# include <QMessageBox>
+# include <QTranslator>
+
+/* GUI includes: */
+# include "VBoxUtils.h"
+# include "VBoxGlobal.h"
+# include "UIMachine.h"
+# include "UIMessageCenter.h"
+# include "UISelectorWindow.h"
+# include "UIExtraDataManager.h"
+# include "UIModalWindowManager.h"
 # ifdef Q_WS_MAC
 #  include "UICocoaApplication.h"
 # endif /* Q_WS_MAC */
-#else /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
-# include "UISelectorWindow.h"
-# include "UIMachine.h"
-# include "VBoxUtils.h"
-# include "UIModalWindowManager.h"
-# include "UIExtraDataManager.h"
-# ifdef Q_WS_MAC
-#  include "UICocoaApplication.h"
-# endif
-
-# ifdef Q_WS_X11
-#  include <iprt/env.h>
-# endif
-
-# include <QMessageBox>
-# include <QLocale>
-# include <QTranslator>
-
+/* Other VBox includes: */
+# include <iprt/asm.h>
 # include <iprt/buildconfig.h>
-# include <iprt/ctype.h>
 # include <iprt/initterm.h>
 # include <iprt/process.h>
 # include <iprt/stream.h>
+# include <iprt/system.h>
 # include <VBox/version.h>
+# ifdef Q_WS_X11
+#  include <iprt/env.h>
+# endif /* Q_WS_X11 */
+#ifdef VBOX_WITH_HARDENING
+# include <VBox/sup.h>
+#endif /* VBOX_WITH_HARDENING */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <VBox/err.h>
-
+/* Qt includes: */
 #include <QCleanlooksStyle>
 #include <QPlastiqueStyle>
-
 #ifdef Q_WS_X11
 # include <QFontDatabase>
-# include <X11/Xlib.h>
-# include <dlfcn.h>
-#endif
+#endif /* Q_WS_X11 */
 
-#ifdef VBOX_WITH_HARDENING
-# include <VBox/sup.h>
-#endif
+/* Other VBox includes: */
+#include <iprt/ctype.h>
+#include <VBox/err.h>
 
-#ifdef RT_OS_LINUX
-# include <unistd.h>
-#endif
-
+/* Other includes: */
 #include <cstdio>
+#ifdef Q_WS_MAC
+# include <dlfcn.h>
+# include <sys/mman.h>
+#endif /* Q_WS_MAC */
+#ifdef Q_WS_X11
+# include <dlfcn.h>
+# include <X11/Xlib.h>
+# if defined(RT_OS_LINUX) && defined(DEBUG)
+#  include <signal.h>
+#  include <execinfo.h>
+#  ifndef __USE_GNU
+#   define __USE_GNU
+#  endif /* !__USE_GNU */
+#  include <ucontext.h>
+#  ifdef RT_ARCH_AMD64
+#   define REG_PC REG_RIP
+#  else /* !RT_ARCH_AMD64 */
+#   define REG_PC REG_EIP
+#  endif /* !RT_ARCH_AMD64 */
+# endif /* RT_OS_LINUX && DEBUG */
+#endif /* Q_WS_X11 */
 
 
 /* XXX Temporarily. Don't rely on the user to hack the Makefile himself! */
@@ -113,20 +130,8 @@ QString g_QStrHintReinstall = QApplication::tr(
   "Please try reinstalling VirtualBox."
   );
 
-#if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
-#include <signal.h>
-#include <execinfo.h>
-/* get REG_EIP from ucontext.h */
-#ifndef __USE_GNU
-#define __USE_GNU
-#endif
-#include <ucontext.h>
-#ifdef RT_ARCH_AMD64
-# define REG_PC REG_RIP
-#else
-# define REG_PC REG_EIP
-#endif
 
+#if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
 /** X11, Linux, Debug: The signal handler that prints out a backtrace of the call stack.
   * @remarks The code is taken from http://www.linuxjournal.com/article/6391. */
 static void BackTraceSignalHandler(int sig, siginfo_t *pInfo, void *pSecret)
@@ -175,11 +180,6 @@ static void InstallSignalHandler()
 #endif /* DEBUG && Q_WS_X11 && RT_OS_LINUX */
 
 #ifdef Q_WS_MAC
-# include <dlfcn.h>
-# include <sys/mman.h>
-# include <iprt/asm.h>
-# include <iprt/system.h>
-
 /** Mac OS X: Really ugly hack to prevent silly check in AppKit. */
 static void PreventCheckInAppKit()
 {
