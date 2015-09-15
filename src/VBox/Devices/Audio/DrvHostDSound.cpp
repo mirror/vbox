@@ -64,7 +64,7 @@ typedef struct DSOUNDSTREAMOUT
     LPDIRECTSOUNDBUFFER8 pDSB;
     DWORD                cbPlayWritePos;
     DWORD                csPlaybackBufferSize;
-    bool                 fReinitPlayPos;
+    bool                 fRestartPlayback;
     PDMAUDIOSTREAMCFG    streamCfg;
 } DSOUNDSTREAMOUT, *PDSOUNDSTREAMOUT;
 
@@ -559,6 +559,7 @@ static void dsoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut
 
         LogFlowFunc(("Playback stopped\n"));
 
+        /* @todo Wait until all data in the buffer has been played. */
         HRESULT hr = IDirectSoundBuffer8_Stop(pDSoundStrmOut->pDSB);
         if (SUCCEEDED(hr))
         {
@@ -589,16 +590,13 @@ static int dsoundPlayStart(PDSOUNDSTREAMOUT pDSoundStrmOut)
             {
                 dsoundPlayClearSamples(pDSoundStrmOut);
 
-                pDSoundStrmOut->fReinitPlayPos = true;
+                pDSoundStrmOut->fRestartPlayback = true;
 
                 LogFlowFunc(("Playback started\n"));
 
-                HRESULT hr = IDirectSoundBuffer8_Play(pDSoundStrmOut->pDSB, 0, 0, DSBPLAY_LOOPING);
-                if (FAILED(hr))
-                {
-                    LogRelMax(s_cMaxRelLogEntries, ("DSound: Error starting playback: %Rhrc\n", hr));
-                    rc = VERR_NOT_SUPPORTED;
-                }
+                /* The actual IDirectSoundBuffer8_Play call will be made in drvHostDSoundPlayOut,
+                 * because it is necessary to put some samples into the buffer first.
+                 */
             }
         }
     }
@@ -1037,7 +1035,7 @@ static DECLCALLBACK(int) drvHostDSoundInitOut(PPDMIHOSTAUDIO pInterface,
         pDSoundStrmOut->pDS = NULL;
         pDSoundStrmOut->pDSB = NULL;
         pDSoundStrmOut->cbPlayWritePos = 0;
-        pDSoundStrmOut->fReinitPlayPos = true;
+        pDSoundStrmOut->fRestartPlayback = true;
         pDSoundStrmOut->csPlaybackBufferSize = 0;
 
         if (pcSamples)
@@ -1125,15 +1123,16 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
         int cShift = pHstStrmOut->Props.cShift;
         DWORD cbBuffer = pDSoundStrmOut->csPlaybackBufferSize << cShift;
 
-        DWORD cbPlayPos, cbWritePos;
-        HRESULT hr = IDirectSoundBuffer8_GetCurrentPosition(pDSB, &cbPlayPos, &cbWritePos);
+        /* Get the current play position which is used for calculating the free space in the buffer. */
+        DWORD cbPlayPos;
+        HRESULT hr = IDirectSoundBuffer8_GetCurrentPosition(pDSB, &cbPlayPos, NULL);
         if (hr == DSERR_BUFFERLOST)
         {
             rc = dsoundPlayRestore(pDSB);
             if (RT_FAILURE(rc))
                 break;
 
-            hr = IDirectSoundBuffer8_GetCurrentPosition(pDSB, &cbPlayPos, &cbWritePos);
+            hr = IDirectSoundBuffer8_GetCurrentPosition(pDSB, &cbPlayPos, NULL);
             if (hr == DSERR_BUFFERLOST) /* Avoid log flooding if the error is still there. */
                 break;
         }
@@ -1144,26 +1143,14 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
             break;
         }
 
-        DWORD cbFree;
-        DWORD cbPlayWritePos;
-        if (pDSoundStrmOut->fReinitPlayPos)
-        {
-            pDSoundStrmOut->fReinitPlayPos = false;
+        DWORD cbFree = cbBuffer - dsoundRingDistance(pDSoundStrmOut->cbPlayWritePos, cbPlayPos, cbBuffer);
 
-            pDSoundStrmOut->cbPlayWritePos = cbWritePos;
-
-            cbPlayWritePos = pDSoundStrmOut->cbPlayWritePos;
-            cbFree = cbBuffer - dsoundRingDistance(cbWritePos, cbPlayPos, cbBuffer);
-        }
-        else
-        {
-            /* Full buffer? */
-            if (pDSoundStrmOut->cbPlayWritePos == cbPlayPos)
-                break;
-
-            cbPlayWritePos = pDSoundStrmOut->cbPlayWritePos;
-            cbFree         = dsoundRingDistance(cbPlayPos, cbPlayWritePos, cbBuffer);
-        }
+        /* Check for full buffer, do not allow the cbPlayWritePos to catch cbPlayPos during playback,
+         * i.e. always leave a free space for 1 audio sample.
+         */
+        if (cbFree <= (1U << cShift))
+            break;
+        cbFree -= (1U << cShift);
 
         uint32_t csLive = drvAudioHstOutSamplesLive(pHstStrmOut);
         uint32_t cbLive = csLive << cShift;
@@ -1175,13 +1162,13 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
         if (cbLive == 0 || cbLive > cbBuffer)
         {
             LogFlowFunc(("cbLive=%RU32, cbBuffer=%ld, cbPlayWritePos=%ld, cbPlayPos=%ld\n",
-                         cbLive, cbBuffer, cbPlayWritePos, cbPlayPos));
+                         cbLive, cbBuffer, pDSoundStrmOut->cbPlayWritePos, cbPlayPos));
             break;
         }
 
         LPVOID pv1, pv2;
         DWORD cb1, cb2;
-        rc = dsoundLockOutput(pDSB, &pHstStrmOut->Props, cbPlayWritePos, cbLive,
+        rc = dsoundLockOutput(pDSB, &pHstStrmOut->Props, pDSoundStrmOut->cbPlayWritePos, cbLive,
                               &pv1, &pv2, &cb1, &cb2, 0 /* dwFlags */);
         if (RT_FAILURE(rc))
             break;
@@ -1209,12 +1196,12 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
 
         dsoundUnlockOutput(pDSB, pv1, pv2, cb1, cb2);
 
-        pDSoundStrmOut->cbPlayWritePos = (cbPlayWritePos + (cReadTotal << cShift)) % cbBuffer;
+        pDSoundStrmOut->cbPlayWritePos = (pDSoundStrmOut->cbPlayWritePos + (cReadTotal << cShift)) % cbBuffer;
 
-        LogFlowFunc(("%RU32 (%RU32 samples) out of %RU32%s, buffer write pos %ld -> %ld, rc=%Rrc\n",
+        LogFlowFunc(("%RU32 (%RU32 samples) out of %RU32%s, buffer write pos %ld, rc=%Rrc\n",
                      AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cReadTotal), cReadTotal, cbLive,
                      cbLive != AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cReadTotal) ? " !!!": "",
-                     cbPlayWritePos, pDSoundStrmOut->cbPlayWritePos, rc));
+                     pDSoundStrmOut->cbPlayWritePos, rc));
 
         if (cReadTotal)
         {
@@ -1222,6 +1209,20 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
             rc = VINF_SUCCESS; /* Played something. */
         }
 
+        if (pDSoundStrmOut->fRestartPlayback)
+        {
+            /* The playback has been just started.
+             * Some samples of the new sound have been copied to the buffer
+             * and it can start playing.
+             */
+            pDSoundStrmOut->fRestartPlayback = false;
+            HRESULT hr = IDirectSoundBuffer8_Play(pDSoundStrmOut->pDSB, 0, 0, DSBPLAY_LOOPING);
+            if (FAILED(hr))
+            {
+                LogRelMax(s_cMaxRelLogEntries, ("DSound: Error starting playback: %Rhrc\n", hr));
+                rc = VERR_NOT_SUPPORTED;
+            }
+        }
     } while (0);
 
     if (pcSamplesPlayed)
@@ -1238,7 +1239,7 @@ static DECLCALLBACK(int) drvHostDSoundFiniOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
     dsoundPlayClose(pDSoundStrmOut);
 
     pDSoundStrmOut->cbPlayWritePos = 0;
-    pDSoundStrmOut->fReinitPlayPos = true;
+    pDSoundStrmOut->fRestartPlayback = true;
     pDSoundStrmOut->csPlaybackBufferSize = 0;
     RT_ZERO(pDSoundStrmOut->streamCfg);
 
