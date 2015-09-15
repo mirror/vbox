@@ -1958,57 +1958,6 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                                 | RTPROC_FLAGS_PROFILE /** @todo Not implemented for non-Windows yet. */
 #endif
                                 | RTPROC_FLAGS_HIDDEN; /** @todo More flags from startup info? */
-            /*
-             * Create the session process' environment block.
-             */
-            RTENV hEnv = NIL_RTENV;
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo At the moment a session process does not have the ability to use the
-                 *        per-session environment variables itself, only the session's guest
-                 *        processes do so. Implement that later, also needs tweaking of
-                 *        VbglR3GuestCtrlSessionGetOpen(). */
-                rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
-
-                if (g_cVerbosity > 3)
-                {
-                    VBoxServiceVerbose(4, "Environment variables:\n");
-
-                    uint32_t cVars = RTEnvCountEx(hEnv);
-                    for (uint32_t iVar = 0; iVar < cVars; iVar++)
-                    {
-                        char szVar[_1K];
-                        char szValue[_16K];
-                        rc2 = RTEnvGetByIndexEx(hEnv, iVar, szVar, sizeof(szVar), szValue, sizeof(szValue));
-                        if (RT_SUCCESS(rc2))
-                            VBoxServiceVerbose(4, "\t%s=%s\n", szVar, szValue);
-                        else if (rc2 == VERR_BUFFER_OVERFLOW)
-                            VBoxServiceVerbose(4, "\t%s=%s [VERR_BUFFER_OVERFLOW]\n", szVar, szValue);
-                        else
-                        {
-                            VBoxServiceVerbose(4, "\tUnable to enumerate environment variable #%RU32: %Rrc\n", iVar, rc2);
-                            /* Keep going. */
-                        }
-                    }
-                }
-
-#ifdef RT_OS_WINDOWS
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * On Windows, when VBoxService was started as local service via SCM, the environment variable
-                     * USERPROFILE was set to point to LocalService's user directory.
-                     *
-                     * As we want to make sure that USERPROFILE actually points to the directory of the user we want
-                     * to spawn the guest process for, unset the variable here before handing the environment block over
-                     * to RTProcCreateEx().
-                     *
-                     * Note: RTProcCreateEx() in turn will *not* overwrite _any_ of already set
-                     *       environment variables by default! */
-                    RTEnvUnsetEx(hEnv, "USERPROFILE");
-                }
-#endif
-            }
 
 #if 0 /* Pipe handling not needed (yet). */
             /* Setup pipes. */
@@ -2071,7 +2020,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 {
                     hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
 
-                        rc = RTProcCreateEx(pszExeName, papszArgs, hEnv, uProcFlags,
+                    rc = RTProcCreateEx(pszExeName, papszArgs, RTENV_DEFAULT, uProcFlags,
                                         &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                         !fAnonymous ? pSessionThread->StartupInfo.szUser : NULL,
                                         !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
@@ -2083,8 +2032,6 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 RTFileClose(hStdIn.u.hFile);
             }
 #endif
-            if (hEnv != NIL_RTENV)
-                RTEnvDestroy(hEnv);
         }
         else
             rc = VERR_FILE_NOT_FOUND;
