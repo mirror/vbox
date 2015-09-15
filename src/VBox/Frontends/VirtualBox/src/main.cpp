@@ -324,20 +324,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     /* Failed result initially: */
     int iResultCode = 1;
 
-#ifdef Q_WS_X11
-    /* Make sure multi-threaded environment is safe: */
-    if (!MakeSureMultiThreadingIsSafe())
-        return iResultCode;
-#endif /* Q_WS_X11 */
-
     /* Simulate try-catch block: */
     do
     {
-#ifdef Q_WS_MAC
-        /* Prevent check in AppKit: */
-        PreventCheckInAppKit();
-#endif /* Q_WS_MAC */
-
         /* Console help preprocessing: */
         bool fHelpShown = false;
         for (int i = 0; i < argc; ++i)
@@ -358,70 +347,45 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             break;
         }
 
-#if defined(Q_WS_X11) && defined(RT_OS_LINUX) && defined(DEBUG)
-        /* Install signal handler to backtrace the call stack: */
-        InstallSignalHandler();
-#endif /* Q_WS_X11 && RT_OS_LINUX && DEBUG */
-
 #ifdef VBOX_WITH_HARDENING
         /* Make sure the image verification code works: */
         SUPR3HardenedVerifyInit();
 #endif /* VBOX_WITH_HARDENING */
 
 #ifdef Q_WS_MAC
-        /* Apply font fixes: */
+        /* Prevent check in AppKit: */
+        PreventCheckInAppKit();
+
+        /* Apply font fixes (before QApplication get created and instantiated font-hints): */
         switch (VBoxGlobal::osRelease())
         {
             case MacOSXRelease_Mavericks: QFont::insertSubstitution(".Lucida Grande UI", "Lucida Grande"); break;
             case MacOSXRelease_Yosemite:  QFont::insertSubstitution(".Helvetica Neue DeskInterface", "Helvetica Neue"); break;
             default: break;
         }
+
 # ifdef QT_MAC_USE_COCOA
         /* Instantiate own NSApplication before QApplication do it for us: */
         UICocoaApplication::instance();
 # endif /* QT_MAC_USE_COCOA */
 #endif /* Q_WS_MAC */
 
+#ifdef Q_WS_X11
+        /* Make sure multi-threaded environment is safe: */
+        if (!MakeSureMultiThreadingIsSafe())
+            break;
+
+# if defined(RT_OS_LINUX) && defined(DEBUG)
+        /* Install signal handler to backtrace the call stack: */
+        InstallSignalHandler();
+# endif /* RT_OS_LINUX && DEBUG */
+#endif /* Q_WS_X11 */
+
         /* Install Qt console message handler: */
         qInstallMsgHandler(QtMessageOutput);
 
         /* Create application: */
         QApplication a(argc, argv);
-
-#ifdef Q_WS_X11
-        /* Make all widget native.
-         * We did it to avoid various Qt crashes while testing widget attributes or acquiring winIds.
-         * Yes, we aware of note that alien widgets faster to draw but the only widget we need to be fast
-         * is viewport of VM which was always native since we are using his id for 3D service needs. */
-        a.setAttribute(Qt::AA_NativeWindows);
-#endif /* Q_WS_X11 */
-
-#ifdef Q_WS_MAC
-# ifdef VBOX_GUI_WITH_HIDPI
-        /* Enable HiDPI icons.
-         * For this we require a patched version of Qt 4.x with
-         * the changes from https://codereview.qt-project.org/#change,54636 applied. */
-        a.setAttribute(Qt::AA_UseHighDpiPixmaps);
-# endif /* VBOX_GUI_WITH_HIDPI */
-#endif /* Q_WS_MAC */
-
-#ifdef Q_OS_SOLARIS
-        /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
-        QApplication::setStyle(new QPlastiqueStyle);
-#endif /* Q_OS_SOLARIS */
-
-#ifdef Q_WS_X11
-# ifndef Q_OS_SOLARIS
-        /* Apply font fixes: */
-        QFontDatabase fontDataBase;
-        QString currentFamily(QApplication::font().family());
-        bool isCurrentScaleable = fontDataBase.isScalable(currentFamily);
-        QString subFamily(QFont::substitute(currentFamily));
-        bool isSubScaleable = fontDataBase.isScalable(subFamily);
-        if (isCurrentScaleable && !isSubScaleable)
-            QFont::removeSubstitution(currentFamily);
-# endif /* !Q_OS_SOLARIS */
-#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_WIN
         /* Drag in the sound drivers and DLLs early to get rid of the delay taking
@@ -434,11 +398,40 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #endif /* Q_WS_WIN */
 
 #ifdef Q_WS_MAC
+# ifdef VBOX_GUI_WITH_HIDPI
+        /* Enable HiDPI icons.
+         * For this we require a patched version of Qt 4.x with
+         * the changes from https://codereview.qt-project.org/#change,54636 applied. */
+        a.setAttribute(Qt::AA_UseHighDpiPixmaps);
+# endif /* VBOX_GUI_WITH_HIDPI */
+
         /* Disable menu icons on MacOS X host: */
         ::darwinDisableIconsInMenus();
 #endif /* Q_WS_MAC */
 
 #ifdef Q_WS_X11
+        /* Make all widget native.
+         * We did it to avoid various Qt crashes while testing widget attributes or acquiring winIds.
+         * Yes, we aware of note that alien widgets faster to draw but the only widget we need to be fast
+         * is viewport of VM which was always native since we are using his id for 3D service needs. */
+        a.setAttribute(Qt::AA_NativeWindows);
+
+# ifdef Q_OS_SOLARIS
+        /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
+        QApplication::setStyle(new QPlastiqueStyle);
+# endif /* Q_OS_SOLARIS */
+
+# ifndef Q_OS_SOLARIS
+        /* Apply font fixes (after QApplication get created and instantiated font-family): */
+        QFontDatabase fontDataBase;
+        QString currentFamily(QApplication::font().family());
+        bool isCurrentScaleable = fontDataBase.isScalable(currentFamily);
+        QString subFamily(QFont::substitute(currentFamily));
+        bool isSubScaleable = fontDataBase.isScalable(subFamily);
+        if (isCurrentScaleable && !isSubScaleable)
+            QFont::removeSubstitution(currentFamily);
+# endif /* !Q_OS_SOLARIS */
+
         /* Qt version check (major.minor are sensitive, fix number is ignored): */
         if (VBoxGlobal::qtRTVersion() < (VBoxGlobal::qtCTVersion() & 0xFFFF00))
         {
@@ -647,6 +640,7 @@ int main(int argc, char **argv, char **envp)
 extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
 {
 # ifdef Q_WS_MAC
+    /* Prevent check in AppKit: */
     PreventCheckInAppKit();
 # endif /* Q_WS_MAC */
 
