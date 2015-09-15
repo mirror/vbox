@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -92,44 +92,44 @@
 
 /* XXX Temporarily. Don't rely on the user to hack the Makefile himself! */
 QString g_QStrHintLinuxNoMemory = QApplication::tr(
-  "This error means that the kernel driver was either not able to "
-  "allocate enough memory or that some mapping operation failed."
-  );
+    "This error means that the kernel driver was either not able to "
+    "allocate enough memory or that some mapping operation failed."
+    );
 
 QString g_QStrHintLinuxNoDriver = QApplication::tr(
-  "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
-  "there is a permission problem with /dev/vboxdrv. Please reinstall the kernel "
-  "module by executing<br/><br/>"
-  "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
-  "as root. If it is available in your distribution, you should install the "
-  "DKMS package first. This package keeps track of Linux kernel changes and "
-  "recompiles the vboxdrv kernel module if necessary."
-  );
+    "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
+    "there is a permission problem with /dev/vboxdrv. Please reinstall the kernel "
+    "module by executing<br/><br/>"
+    "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
+    "as root. If it is available in your distribution, you should install the "
+    "DKMS package first. This package keeps track of Linux kernel changes and "
+    "recompiles the vboxdrv kernel module if necessary."
+    );
 
 QString g_QStrHintOtherWrongDriverVersion = QApplication::tr(
-  "The VirtualBox kernel modules do not match this version of "
-  "VirtualBox. The installation of VirtualBox was apparently not "
-  "successful. Please try completely uninstalling and reinstalling "
-  "VirtualBox."
-  );
+    "The VirtualBox kernel modules do not match this version of "
+    "VirtualBox. The installation of VirtualBox was apparently not "
+    "successful. Please try completely uninstalling and reinstalling "
+    "VirtualBox."
+    );
 
 QString g_QStrHintLinuxWrongDriverVersion = QApplication::tr(
-  "The VirtualBox kernel modules do not match this version of "
-  "VirtualBox. The installation of VirtualBox was apparently not "
-  "successful. Executing<br/><br/>"
-  "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
-  "may correct this. Make sure that you do not mix the "
-  "OSE version and the PUEL version of VirtualBox."
-  );
+    "The VirtualBox kernel modules do not match this version of "
+    "VirtualBox. The installation of VirtualBox was apparently not "
+    "successful. Executing<br/><br/>"
+    "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
+    "may correct this. Make sure that you do not mix the "
+    "OSE version and the PUEL version of VirtualBox."
+    );
 
 QString g_QStrHintOtherNoDriver = QApplication::tr(
-  "Make sure the kernel module has been loaded successfully."
-  );
+    "Make sure the kernel module has been loaded successfully."
+    );
 
 /* I hope this isn't (C), (TM) or (R) Microsoft support ;-) */
 QString g_QStrHintReinstall = QApplication::tr(
-  "Please try reinstalling VirtualBox."
-  );
+    "Please try reinstalling VirtualBox."
+    );
 
 
 #ifdef Q_WS_MAC
@@ -325,14 +325,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     int iResultCode = 1;
 
 #ifdef Q_WS_X11
+    /* Make sure multi-threaded environment is safe: */
     if (!MakeSureMultiThreadingIsSafe())
-        return 1;
+        return iResultCode;
 #endif /* Q_WS_X11 */
 
     /* Simulate try-catch block: */
     do
     {
 #ifdef Q_WS_MAC
+        /* Prevent check in AppKit: */
         PreventCheckInAppKit();
 #endif /* Q_WS_MAC */
 
@@ -356,18 +358,18 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             break;
         }
 
-#if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
+#if defined(Q_WS_X11) && defined(RT_OS_LINUX) && defined(DEBUG)
         /* Install signal handler to backtrace the call stack: */
         InstallSignalHandler();
-#endif /* DEBUG && Q_WS_X11 && RT_OS_LINUX */
+#endif /* Q_WS_X11 && RT_OS_LINUX && DEBUG */
 
 #ifdef VBOX_WITH_HARDENING
-        /* Make sure the image verification code works (VBoxDbg.dll and other plugins). */
+        /* Make sure the image verification code works: */
         SUPR3HardenedVerifyInit();
-#endif
+#endif /* VBOX_WITH_HARDENING */
 
 #ifdef Q_WS_MAC
-        /* Font fixes: */
+        /* Apply font fixes: */
         switch (VBoxGlobal::osRelease())
         {
             case MacOSXRelease_Mavericks: QFont::insertSubstitution(".Lucida Grande UI", "Lucida Grande"); break;
@@ -375,8 +377,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             default: break;
         }
 # ifdef QT_MAC_USE_COCOA
-        /* Instantiate our NSApplication derivative before QApplication
-         * forces NSApplication to be instantiated. */
+        /* Instantiate own NSApplication before QApplication do it for us: */
         UICocoaApplication::instance();
 # endif /* QT_MAC_USE_COCOA */
 #endif /* Q_WS_MAC */
@@ -388,20 +389,19 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         QApplication a(argc, argv);
 
 #ifdef Q_WS_X11
-        /* To avoid various Qt crashes
-         * when testing widget attributes or acquiring winIds
-         * we decided to make our widgets native under x11 hosts.
-         * Yes, we aware of note that alien widgets faster to draw
-         * but the only widget we need to be fast - viewport of VM
-         * was always native since we are using his id for 3d service needs. */
+        /* Make all widget native.
+         * We did it to avoid various Qt crashes while testing widget attributes or acquiring winIds.
+         * Yes, we aware of note that alien widgets faster to draw but the only widget we need to be fast
+         * is viewport of VM which was always native since we are using his id for 3D service needs. */
         a.setAttribute(Qt::AA_NativeWindows);
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
 # ifdef VBOX_GUI_WITH_HIDPI
-        /* Enable HiDPI icons. For this we require a patched version of Qt 4.x with
+        /* Enable HiDPI icons.
+         * For this we require a patched version of Qt 4.x with
          * the changes from https://codereview.qt-project.org/#change,54636 applied. */
-        qApp->setAttribute(Qt::AA_UseHighDpiPixmaps);
+        a.setAttribute(Qt::AA_UseHighDpiPixmaps);
 # endif /* VBOX_GUI_WITH_HIDPI */
 #endif /* Q_WS_MAC */
 
@@ -411,24 +411,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #endif /* Q_OS_SOLARIS */
 
 #ifdef Q_WS_X11
-        /* This patch is not used for now on Solaris & OpenSolaris because
-         * there is no anti-aliasing enabled by default, Qt4 to be rebuilt. */
 # ifndef Q_OS_SOLARIS
-        /* Cause Qt4 has the conflict with fontconfig application as a result
-         * sometimes substituting some fonts with non scaleable-anti-aliased
-         * bitmap font we are reseting substitutes for the current application
-         * font family if it is non scaleable-anti-aliased. */
+        /* Apply font fixes: */
         QFontDatabase fontDataBase;
-
         QString currentFamily(QApplication::font().family());
         bool isCurrentScaleable = fontDataBase.isScalable(currentFamily);
-
         QString subFamily(QFont::substitute(currentFamily));
         bool isSubScaleable = fontDataBase.isScalable(subFamily);
-
         if (isCurrentScaleable && !isSubScaleable)
             QFont::removeSubstitution(currentFamily);
-# endif /* Q_OS_SOLARIS */
+# endif /* !Q_OS_SOLARIS */
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_WIN
