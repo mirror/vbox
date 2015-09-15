@@ -696,11 +696,13 @@ static int rtProcWinEnvironmentCreateInternal(VOID *pvEnvBlock, RTENV hEnv,
  *
  * @return  IPRT status code.
  *
- * @param   hToken          Token of the user to use.
- * @param   hEnv            Own environment block to extend/overwrite the profile's data with.
- * @param   ppwszBlock      Pointer to a pointer of the final UTF16 environment block.
+ * @param   hToken              Token of the user to use.
+ * @param   hEnv                Own environment block to extend/overwrite the profile's data with.
+ * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv
+ *                              with the ones defined in pvEnvBlock.
+ * @param   ppwszBlock          Pointer to a pointer of the final UTF16 environment block.
  */
-static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppwszBlock)
+static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, bool fOverwriteExisting, PRTUTF16 *ppwszBlock)
 {
     Assert(hToken);
     Assert(hEnv != NIL_RTENV);
@@ -721,7 +723,7 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppws
                 if (pfnCreateEnvironmentBlock(&pvEnvBlockProfile, hToken, FALSE /* Don't inherit from parent. */))
                 {
                     rc = rtProcWinEnvironmentCreateInternal(pvEnvBlockProfile, hEnv,
-                                                            false /* fOverwriteExisting */,
+                                                            fOverwriteExisting,
                                                             ppwszBlock);
                     pfnDestroyEnvironmentBlock(pvEnvBlockProfile);
                 }
@@ -749,20 +751,22 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppws
  *
  * @return  IPRT status code.
  *
- * @param   pwszUser        User name.
- * @param   pwszPassword    Password.
- * @param   pwszDomain      Domain.
- * @param   hEnv            Own environment block to extend/overwrite the profile's data with.
- * @param   ppwszBlock      Pointer to a pointer of the final UTF16 environment block.
+ * @param   pwszUser            User name.
+ * @param   pwszPassword        Password.
+ * @param   pwszDomain          Domain.
+ * @param   hEnv                Own environment block to extend/overwrite the profile's data with.
+ * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv
+ *                              with the ones defined in pvEnvBlock.
+ * @param   ppwszBlock          Pointer to a pointer of the final UTF16 environment block.
  */
 static int rtProcWinCreateEnvFromAccount(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain,
-                                         RTENV hEnv, PRTUTF16 *ppwszBlock)
+                                         RTENV hEnv, bool fOverwriteExisting, PRTUTF16 *ppwszBlock)
 {
     HANDLE hToken;
     int rc = rtProcWinUserLogon(pwszUser, pwszPassword, pwszDomain, &hToken);
     if (RT_SUCCESS(rc))
     {
-        rc = rtProcWinCreateEnvFromToken(hToken, hEnv, ppwszBlock);
+        rc = rtProcWinCreateEnvFromToken(hToken, hEnv, fOverwriteExisting, ppwszBlock);
         rtProcWinUserLogoff(hToken);
     }
     return rc;
@@ -925,8 +929,21 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
 
                         if (dwErr == NO_ERROR)
                         {
+                            bool fOverwriteExisting;
+                            if (fFlags & RTPROC_FLAGS_PROFILE)
+                            {
+                                /*
+                                 * If we want to use the user profile and RTENV_DEFAULT as environment block,
+                                 * always overwrite existing env vars in hEnv in favor of the ones provided
+                                 * by Windows for the actual user profile.
+                                 */
+                                fOverwriteExisting = hEnv == RTENV_DEFAULT;
+                            }
+                            else /* Favor hEnv env vars which were passed-in. */
+                                fOverwriteExisting = false;
+
                             PRTUTF16 pwszzBlock;
-                            rc = rtProcWinCreateEnvFromToken(*phToken, hEnv, &pwszzBlock);
+                            rc = rtProcWinCreateEnvFromToken(*phToken, hEnv, fOverwriteExisting, &pwszzBlock);
                             if (RT_SUCCESS(rc))
                             {
                                 /*
@@ -1005,9 +1022,22 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
     if (!pfnCreateProcessWithLogonW)
         return VERR_SYMBOL_NOT_FOUND;
 
+    bool fOverwriteExisting;
+    if (fFlags & RTPROC_FLAGS_PROFILE)
+    {
+        /*
+         * If we want to use the user profile and RTENV_DEFAULT as environment block,
+         * always overwrite existing env vars in hEnv in favor of the ones provided
+         * by Windows for the actual user profile.
+         */
+        fOverwriteExisting = hEnv == RTENV_DEFAULT;
+    }
+    else /* Favor hEnv env vars which were passed-in. */
+        fOverwriteExisting = false;
+
     PRTUTF16 pwszzBlock;
     int rc = rtProcWinCreateEnvFromAccount(pwszUser, pwszPassword, NULL /* Domain */,
-                                           hEnv, &pwszzBlock);
+                                           hEnv, fOverwriteExisting, &pwszzBlock);
     if (RT_SUCCESS(rc))
     {
         BOOL fRc = pfnCreateProcessWithLogonW(pwszUser,
