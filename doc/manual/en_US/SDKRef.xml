@@ -3916,8 +3916,7 @@ AuthResult AUTHCALL AuthEntry(
       <title>Incompatible API changes with version 5.x</title>
 
       <itemizedlist>
-        <listitem>TODO: Rename EXECUTEPROCESSFLAG_NO_PROFILE to EXECUTEPROCESSFLAG_PROFILE (also in Main).</link>
-        </listitem>
+        <listitem>TODO: Rename EXECUTEPROCESSFLAG_NO_PROFILE to EXECUTEPROCESSFLAG_PROFILE (also in Main).</listitem>
       </itemizedlist>
 
     </sect1>
