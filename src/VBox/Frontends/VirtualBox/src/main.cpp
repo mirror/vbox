@@ -197,35 +197,40 @@ static void PreventCheckInAppKit()
 }
 #endif /* Q_WS_MAC */
 
-static void QtMessageOutput (QtMsgType type, const char *msg)
+/** Qt message handler, function that prints out
+  * debug messages, warnings, critical and fatal error messages.
+  * @param type describes the type of message sent to a message handler.
+  * @param pMsg holds the pointer to the message body. */
+static void QtMessageOutput(QtMsgType type, const char *pMsg)
 {
 #ifndef Q_WS_X11
-    NOREF(msg);
-#endif
+    NOREF(pMsg);
+#endif /* !Q_WS_X11 */
     switch (type)
     {
         case QtDebugMsg:
-            Log (("Qt DEBUG: %s\n", msg));
+            Log(("Qt DEBUG: %s\n", pMsg));
             break;
         case QtWarningMsg:
-            Log (("Qt WARNING: %s\n", msg));
+            Log(("Qt WARNING: %s\n", pMsg));
 #ifdef Q_WS_X11
-            /* Needed for instance for the message ``cannot connect to X server'' */
-            RTStrmPrintf(g_pStdErr, "Qt WARNING: %s\n", msg);
-#endif
+            /* Needed for instance for the message ``cannot connect to X server'': */
+            RTStrmPrintf(g_pStdErr, "Qt WARNING: %s\n", pMsg);
+#endif /* Q_WS_X11 */
             break;
         case QtCriticalMsg:
-            Log (("Qt CRITICAL: %s\n", msg));
+            Log(("Qt CRITICAL: %s\n", pMsg));
 #ifdef Q_WS_X11
-            /* Needed for instance for the message ``cannot connect to X server'' */
-            RTStrmPrintf(g_pStdErr, "Qt CRITICAL: %s\n", msg);
-#endif
+            /* Needed for instance for the message ``cannot connect to X server'': */
+            RTStrmPrintf(g_pStdErr, "Qt CRITICAL: %s\n", pMsg);
+#endif /* Q_WS_X11 */
             break;
         case QtFatalMsg:
-            Log (("Qt FATAL: %s\n", msg));
+            Log(("Qt FATAL: %s\n", pMsg));
 #ifdef Q_WS_X11
-            RTStrmPrintf(g_pStdErr, "Qt FATAL: %s\n", msg);
-#endif
+            /* Needed for instance for the message ``cannot connect to X server'': */
+            RTStrmPrintf(g_pStdErr, "Qt FATAL: %s\n", pMsg);
+#endif /* Q_WS_X11 */
     }
 }
 
