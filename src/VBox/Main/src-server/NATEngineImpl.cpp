@@ -337,6 +337,11 @@ HRESULT NATEngine::removeRedirect(const com::Utf8Str &aName)
     if (it == mData->m->mNATRules.end())
         return E_INVALIDARG;
     mData->m.backup();
+    /*
+     * NB: "it" may now point to the backup!  In that case it's ok to
+     * get data from the backup copy of mNATRules via it, but we can't
+     * erase(it) from potentially new mNATRules.
+     */
     settings::NATRule r = it->second;
     Utf8Str strHostIP = r.strHostIP;
     Utf8Str strGuestIP = r.strGuestIP;
@@ -346,7 +351,7 @@ HRESULT NATEngine::removeRedirect(const com::Utf8Str &aName)
     ULONG ulSlot;
     mAdapter->COMGETTER(Slot)(&ulSlot);
 
-    mData->m->mNATRules.erase(it);
+    mData->m->mNATRules.erase(aName); /* NB: erase by key, "it" may not be valid */
     mParent->i_setModified(Machine::IsModified_NetworkAdapters);
     alock.release();
     mParent->i_onNATRedirectRuleChange(ulSlot, TRUE, Bstr(aName).raw(), proto, Bstr(strHostIP).raw(),
