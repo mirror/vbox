@@ -278,19 +278,9 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
 
         /* Note: New since protocol version 2. */
         case DragAndDropSvc::GUEST_DND_CONNECT:
-        {
-            /*
-             * Never block the initial connect call, as the clients do this when
-             * initializing and might get stuck if drag and drop is set to "disabled" at
-             * that time.
-             */
-            rc = VINF_SUCCESS;
-            break;
-        }
+            /* Fall through is intentional. */
         case DragAndDropSvc::GUEST_DND_HG_ACK_OP:
-            /* Fall through is intentional. */
         case DragAndDropSvc::GUEST_DND_HG_REQ_DATA:
-            /* Fall through is intentional. */
         case DragAndDropSvc::GUEST_DND_HG_EVT_PROGRESS:
         {
             if (   modeGet() == VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
@@ -689,8 +679,6 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             }
         }
     }
-
-#undef DO_HOST_CALLBACK
 
     /*
      * If async execution is requested, we didn't notify the guest yet about
