@@ -234,10 +234,8 @@ static void QtMessageOutput(QtMsgType type, const char *pMsg)
     }
 }
 
-/**
- * Show all available command line parameters.
- */
-static void showHelp()
+/** Shows all available command line parameters. */
+static void ShowHelp()
 {
     RTPrintf(VBOX_PRODUCT " Manager %s\n"
             "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
@@ -257,7 +255,7 @@ static void showHelp()
             "  --dvd <image|none>         Mount the specified DVD image\n"
 # ifdef VBOX_GUI_WITH_PIDFILE
             "  --pidfile <file>           create a pidfile file when a VM is up and running\n"
-# endif
+# endif /* VBOX_GUI_WITH_PIDFILE */
 # ifdef VBOX_WITH_DEBUGGER_GUI
             "  --dbg                      enable the GUI debug menu\n"
             "  --debug                    like --dbg and show debug windows at VM startup\n"
@@ -267,7 +265,7 @@ static void showHelp()
             "  --start-paused             start the VM in the paused state\n"
             "  --start-running            start the VM running (for overriding --debug*)\n"
             "\n"
-# endif
+# endif /* VBOX_WITH_DEBUGGER_GUI */
             "Expert options:\n"
             "  --disable-patm             disable code patching (ignored by AMD-V/VT-x)\n"
             "  --disable-csam             disable code scanning (ignored by AMD-V/VT-x)\n"
@@ -286,7 +284,7 @@ static void showHelp()
             "  VBOX_GUI_DBG_AUTO_SHOW (GUI/Dbg/AutoShow)\n"
             "                             show debug windows at VM startup\n"
             "  VBOX_GUI_NO_DEBUGGER       disable the GUI debug menu and debug windows\n"
-# endif
+# endif /* VBOX_WITH_DEBUGGER_GUI */
             "\n",
             RTBldCfgVersion());
     /** @todo Show this as a dialog on windows. */
@@ -346,8 +344,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
                 || !strcmp(argv[i], "-help")
                 || !strcmp(argv[i], "--help"))
             {
-                showHelp();
                 fHelpShown = true;
+                ShowHelp();
                 break;
             }
         }
