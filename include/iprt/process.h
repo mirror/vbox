@@ -186,7 +186,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * be possible to wait for it, i.e. @a phProcess shall be NULL. */
 #define RTPROC_FLAGS_DETACHED               RT_BIT(0)
 /** Don't show the started process.
- * This is a window (and maybe OS/2) concept, do not use on other platforms. */
+ * This is a Windows (and maybe OS/2) concept, do not use on other platforms. */
 #define RTPROC_FLAGS_HIDDEN                 RT_BIT(1)
 /** Use special code path for starting child processes from a service (daemon).
  * This is a windows concept for dealing with the so called "Session 0"
@@ -197,9 +197,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * on Solaris.  Without this flag the contract id is always changed, as that's
  * the more frequently used case. */
 #define RTPROC_FLAGS_SAME_CONTRACT          RT_BIT(3)
-/** Do not load user profile data when executing a process.
+/** Load user profile data when executing a process.
  * This bit at the moment only is valid on Windows. */
-#define RTPROC_FLAGS_NO_PROFILE             RT_BIT(4)
+#define RTPROC_FLAGS_PROFILE                RT_BIT(4)
 /** Create process without a console window.
  * This is a Windows (and OS/2) concept, do not use on other platforms. */
 #define RTPROC_FLAGS_NO_WINDOW              RT_BIT(5)

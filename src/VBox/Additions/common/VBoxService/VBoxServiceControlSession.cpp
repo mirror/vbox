@@ -1953,8 +1953,11 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
             }
 
             uint32_t uProcFlags = RTPROC_FLAGS_SERVICE
+#ifdef RT_OS_WINDOWS
+                                /* Make sure to also load the profile data on a Windows guest. */
+                                | RTPROC_FLAGS_PROFILE /** @todo Not implemented for non-Windows yet. */
+#endif
                                 | RTPROC_FLAGS_HIDDEN; /** @todo More flags from startup info? */
-
             /*
              * Create the session process' environment block.
              */

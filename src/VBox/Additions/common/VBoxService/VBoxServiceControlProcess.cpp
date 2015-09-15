@@ -1371,8 +1371,9 @@ static int gstcntlProcessCreateProcess(const char *pszExec, const char * const *
             {
                 if (fFlags & EXECUTEPROCESSFLAG_HIDDEN)
                     uProcFlags |= RTPROC_FLAGS_HIDDEN;
-                if (fFlags & EXECUTEPROCESSFLAG_NO_PROFILE)
-                    uProcFlags |= RTPROC_FLAGS_NO_PROFILE;
+                /** @todo Rename to EXECUTEPROCESSFLAG_PROFILE in next API change. */
+                if (!(fFlags & EXECUTEPROCESSFLAG_NO_PROFILE))
+                    uProcFlags |= RTPROC_FLAGS_PROFILE;
                 if (fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
                     uProcFlags |= RTPROC_FLAGS_UNQUOTED_ARGS;
             }

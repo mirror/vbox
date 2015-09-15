@@ -867,7 +867,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                     /* Array of process names we want to look for. */
                     static const char * const s_papszProcNames[] =
                     {
-#ifdef VBOX                 /* The explorer entry is a fallback in case GA aren't installed. */
+#ifdef VBOX             /* The explorer entry is a fallback in case GA aren't installed. */
                         { "VBoxTray.exe" },
 #endif
                         { "explorer.exe" },
@@ -912,12 +912,12 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                     if (RT_SUCCESS(rc))
                     {
                         PROFILEINFOW profileInfo;
-                        if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
+                        if (fFlags & RTPROC_FLAGS_PROFILE)
                         {
                             RT_ZERO(profileInfo);
-                            profileInfo.dwSize = sizeof(profileInfo);
+                            profileInfo.dwSize     = sizeof(profileInfo);
                             profileInfo.lpUserName = pwszUser;
-                            profileInfo.dwFlags = PI_NOUI; /* Prevents the display of profile error messages. */
+                            profileInfo.dwFlags    = PI_NOUI; /* Prevents the display of profile error messages. */
 
                             if (!pfnLoadUserProfileW(*phToken, &profileInfo))
                                 dwErr = GetLastError();
@@ -955,7 +955,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                 rtProcWinDestroyEnv(pwszzBlock);
                             }
 
-                            if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
+                            if (fFlags & RTPROC_FLAGS_PROFILE)
                             {
                                 fRc = pfnUnloadUserProfile(*phToken, profileInfo.hProfile);
 #ifdef RT_STRICT
