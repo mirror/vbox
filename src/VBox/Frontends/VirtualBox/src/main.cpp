@@ -72,6 +72,7 @@
 #endif /* Q_WS_MAC */
 #ifdef Q_WS_X11
 # include <dlfcn.h>
+# include <unistd.h>
 # include <X11/Xlib.h>
 # if defined(RT_OS_LINUX) && defined(DEBUG)
 #  include <signal.h>
@@ -742,13 +743,11 @@ extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat
     strText += "</html>";
 
 
-# ifdef RT_OS_LINUX
-    /*
-     * We have to to make sure that we display the error-message
-     * after the parent displayed its own message.
-     */
+# ifdef Q_WS_X11
+    /* We have to to make sure that we display the error-message
+     * after the parent displayed its own message. */
     sleep(2);
-# endif
+# endif /* Q_WS_X11 */
 
     /*
      * Create the message box and show it.
