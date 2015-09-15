@@ -131,7 +131,49 @@ QString g_QStrHintReinstall = QApplication::tr(
   );
 
 
-#if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
+#ifdef Q_WS_MAC
+/** Mac OS X: Really ugly hack to prevent silly check in AppKit. */
+static void PreventCheckInAppKit()
+{
+    /* Check for Snow Leopard or higher: */
+    char szInfo[64];
+    int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
+    if (RT_SUCCESS(rc) && szInfo[0] == '1') /* higher than 1x.x.x */
+    {
+        /* Find issetguid() and make it always return 0 by modifying the code: */
+        void *pAddr = dlsym(RTLD_DEFAULT, "issetugid");
+        int rc = mprotect((void *)((uintptr_t)pAddr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE|PROT_READ|PROT_EXEC);
+        if (!rc)
+            ASMAtomicWriteU32((volatile uint32_t *)pAddr, 0xccc3c031); /* xor eax, eax; ret; int3 */
+    }
+}
+#endif /* Q_WS_MAC */
+
+#ifdef Q_WS_X11
+/** X11: For versions of Xlib which are aware of multi-threaded environments this function
+  *      calls for XInitThreads() which initializes Xlib support for concurrent threads.
+  * @returns @c non-zero unless it is unsafe to make multi-threaded calls to Xlib.
+  * @remarks This is a workaround for a bug on old Xlib versions, fixed in commit
+  *          941f02e and released in Xlib version 1.1. We check for the symbol
+  *          "xcb_connect" which was introduced in that version. */
+static Status MakeSureMultiThreadingIsSafe()
+{
+    /* Success by default: */
+    Status rc = 1;
+    /* Get a global handle to process symbols: */
+    void *pvProcess = dlopen(0, RTLD_GLOBAL | RTLD_LAZY);
+    /* Initialize multi-thread environment only if we can obtain
+     * an address of xcb_connect symbol in this process: */
+    if (pvProcess && dlsym(pvProcess, "xcb_connect"))
+        rc = XInitThreads();
+    /* Close the handle: */
+    if (pvProcess)
+        dlclose(pvProcess);
+    /* Return result: */
+    return rc;
+}
+
+# if defined(RT_OS_LINUX) && defined(DEBUG)
 /** X11, Linux, Debug: The signal handler that prints out a backtrace of the call stack.
   * @remarks The code is taken from http://www.linuxjournal.com/article/6391. */
 static void BackTraceSignalHandler(int sig, siginfo_t *pInfo, void *pSecret)
@@ -177,25 +219,8 @@ static void InstallSignalHandler()
     sigaction(SIGBUS,  &sa, 0);
     sigaction(SIGUSR1, &sa, 0);
 }
-#endif /* DEBUG && Q_WS_X11 && RT_OS_LINUX */
-
-#ifdef Q_WS_MAC
-/** Mac OS X: Really ugly hack to prevent silly check in AppKit. */
-static void PreventCheckInAppKit()
-{
-    /* Check for Snow Leopard or higher: */
-    char szInfo[64];
-    int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
-    if (RT_SUCCESS(rc) && szInfo[0] == '1') /* higher than 1x.x.x */
-    {
-        /* Find issetguid() and make it always return 0 by modifying the code: */
-        void *pAddr = dlsym(RTLD_DEFAULT, "issetugid");
-        int rc = mprotect((void *)((uintptr_t)pAddr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE|PROT_READ|PROT_EXEC);
-        if (!rc)
-            ASMAtomicWriteU32((volatile uint32_t *)pAddr, 0xccc3c031); /* xor eax, eax; ret; int3 */
-    }
-}
-#endif /* Q_WS_MAC */
+# endif /* RT_OS_LINUX && DEBUG */
+#endif /* Q_WS_X11 */
 
 /** Qt message handler, function that prints out
   * debug messages, warnings, critical and fatal error messages.
@@ -289,31 +314,6 @@ static void ShowHelp()
             RTBldCfgVersion());
     /** @todo Show this as a dialog on windows. */
 }
-
-#ifdef Q_WS_X11
-/** X11: For versions of Xlib which are aware of multi-threaded environments this function
-  *      calls for XInitThreads() which initializes Xlib support for concurrent threads.
-  * @returns @c non-zero unless it is unsafe to make multi-threaded calls to Xlib.
-  * @remarks This is a workaround for a bug on old Xlib versions, fixed in commit
-  *          941f02e and released in Xlib version 1.1. We check for the symbol
-  *          "xcb_connect" which was introduced in that version. */
-static Status MakeSureMultiThreadingIsSafe()
-{
-    /* Success by default: */
-    Status rc = 1;
-    /* Get a global handle to process symbols: */
-    void *pvProcess = dlopen(0, RTLD_GLOBAL | RTLD_LAZY);
-    /* Initialize multi-thread environment only if we can obtain
-     * an address of xcb_connect symbol in this process: */
-    if (pvProcess && dlsym(pvProcess, "xcb_connect"))
-        rc = XInitThreads();
-    /* Close the handle: */
-    if (pvProcess)
-        dlclose(pvProcess);
-    /* Return result: */
-    return rc;
-}
-#endif /* Q_WS_X11 */
 
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 {
