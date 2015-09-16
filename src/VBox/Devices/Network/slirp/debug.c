@@ -301,13 +301,25 @@ printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                 "socket(%d)", so->s);
 
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-            "socket %d:(proto:%u) exp. in %d"
+            "socket %d", so->s);
+
+    if (so->so_type == IPPROTO_TCP)
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                " (tcp)");
+    else if (so->so_type == IPPROTO_UDP)
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                " (udp)");
+    else
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                " (proto %u)", so->so_type);
+
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+            " exp. in %d"
             " state=%R[natsockstate]"
             "%s" /* fUnderPolling */
             "%s" /* fShouldBeRemoved */
             " f_(addr:port)=%RTnaipv4:%d"
             " l_(addr:port)=%RTnaipv4:%d",
-            so->s, so->so_type,
             so->so_expire ? so->so_expire - curtime : 0,
             so->so_state,
             so->fUnderPolling ? " fUnderPolling" : "",
