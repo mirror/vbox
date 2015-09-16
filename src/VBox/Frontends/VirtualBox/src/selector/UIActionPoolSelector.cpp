@@ -1068,6 +1068,7 @@ void UIActionPoolSelector::prepareConnections()
 {
     /* Prepare connections: */
     connect(gShortcutPool, SIGNAL(sigSelectorShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
+    connect(gShortcutPool, SIGNAL(sigMachineShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
 
     /* Call to base-class: */
     UIActionPool::prepareConnections();
@@ -1079,10 +1080,10 @@ void UIActionPoolSelector::updateMenus()
     updateMenuHelp();
 }
 
-void UIActionPoolSelector::retranslateUi()
+void UIActionPoolSelector::updateShortcuts()
 {
     /* Call to base-class: */
-    UIActionPool::retranslateUi();
+    UIActionPool::updateShortcuts();
     /* Create temporary Runtime UI pool to do the same: */
     if (!m_fTemporary)
         UIActionPool::createTemporary(UIActionPoolType_Runtime);

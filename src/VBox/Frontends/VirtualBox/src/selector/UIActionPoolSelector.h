@@ -113,8 +113,8 @@ protected:
     /** Update menus routine. */
     virtual void updateMenus();
 
-    /** Translation handler. */
-    virtual void retranslateUi();
+    /** Update shortcuts. */
+    virtual void updateShortcuts();
 
     /** Returns extra-data ID to save keyboard shortcuts under. */
     virtual QString shortcutsExtraDataID() const;
