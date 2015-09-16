@@ -76,6 +76,18 @@ ifneq ($(MAKECMDGOALS),clean)
   rpmrel  := $(shell cat /etc/fedora-release | sed -e 's/^Fedora  *release  *\([1-9][0-9]*\) .*/fedora\1/')
  endif
  ifeq ($(rpmrel),)
+ # look for OL
+  rpmrel  := $(shell cat /etc/enterprise-release | sed -ne 's/^Enterprise Linux[a-zA-Z ]*\([1-9][0-9]*\).*/ol\1/p')
+ endif
+ ifeq ($(rpmrel),)
+ # look for CentOS
+  rpmrel  := $(shell cat /etc/redhat-release | sed -ne 's/^CentOS[a-zA-Z ]*\([1-9][0-9]*\).*/centos\1/p')
+ endif
+ ifeq ($(rpmrel),)
+ # look for Red Hat
+  rpmrel  := $(shell cat /etc/redhat-release | sed -ne 's/^Red Hat[a-zA-Z ]*\([1-9][0-9]*\).*/centos\1/p')
+ endif
+ ifeq ($(rpmrel),)
   $(error failed to detect the release type. Add /etc/distname or hack the detection.)
  endif
 
