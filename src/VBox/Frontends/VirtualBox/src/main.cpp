@@ -133,20 +133,22 @@ QString g_QStrHintReinstall = QApplication::tr(
 
 
 #ifdef Q_WS_MAC
-/** Mac OS X: Really ugly hack to prevent silly check in AppKit. */
+/**
+ * Mac OS X: Really ugly hack to bypass a set-uid check in AppKit.
+ *
+ * This will modify the issetugid() function to always return zero.  This must
+ * be done _before_ AppKit is initialized, otherwise it will refuse to play ball
+ * with us as it distrusts set-uid processes since Snow Leopard.  We, however,
+ * have carefully dropped all root privileges at this point and there should be
+ * no reason for any security concern here.
+ */
 static void HideSetUidRootFromAppKit()
 {
-    /* Check for Snow Leopard or higher: */
-    char szInfo[64];
-    int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
-    if (RT_SUCCESS(rc) && szInfo[0] == '1') /* higher than 1x.x.x */
-    {
-        /* Find issetguid() and make it always return 0 by modifying the code: */
-        void *pAddr = dlsym(RTLD_DEFAULT, "issetugid");
-        int rc = mprotect((void *)((uintptr_t)pAddr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE|PROT_READ|PROT_EXEC);
-        if (!rc)
-            ASMAtomicWriteU32((volatile uint32_t *)pAddr, 0xccc3c031); /* xor eax, eax; ret; int3 */
-    }
+    /* Find issetguid() and make it always return 0 by modifying the code: */
+    void *pvAddr = dlsym(RTLD_DEFAULT, "issetugid");
+    int rc = mprotect((void *)((uintptr_t)pvAddr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE | PROT_READ | PROT_EXEC);
+    if (!rc)
+        ASMAtomicWriteU32((volatile uint32_t *)pvAddr, 0xccc3c031); /* xor eax, eax; ret; int3 */
 }
 #endif /* Q_WS_MAC */
 
