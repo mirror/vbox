@@ -115,17 +115,19 @@ cd icons
 cd -
 rmdir icons
 mv virtualbox.xml $RPM_BUILD_ROOT/usr/share/mime/packages
-for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless VBoxDTrace VBoxExtPackHelperApp VBoxBalloonCtrl VBoxAutostart vbox-img; do
+for i in VBoxManage VBoxSVC VirtualBox VBoxHeadless VBoxDTrace VBoxExtPackHelperApp VBoxBalloonCtrl VBoxAutostart vbox-img; do
   mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
 if %WEBSVC%; then
   for i in vboxwebsrv webtest; do
     mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
 fi
-for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetNAT VBoxNetAdpCtl; do
+test -f VBoxSDL && mv VBoxSDL $RPM_BUILD_ROOT/usr/lib/virtualbox
+for i in VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetNAT VBoxNetAdpCtl; do
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
 if [ -f $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo ]; then
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo
 fi
+test -f VBoxSDL && chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxSDL
 if [ -d ExtensionPacks/VNC ]; then
   mv ExtensionPacks/VNC $RPM_BUILD_ROOT/usr/lib/virtualbox/ExtensionPacks
 fi
@@ -182,8 +184,8 @@ ln -s VBox $RPM_BUILD_ROOT/usr/bin/VirtualBox
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/virtualbox
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxManage
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxmanage
-ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxSDL
-ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxsdl
+test -f VBoxSDL && ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxSDL
+test -f VBoxSDL && ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxsdl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxVRDP
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxHeadless
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxheadless

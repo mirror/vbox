@@ -1134,7 +1134,7 @@ EOF
       fi
     fi
   else
-    log_failure "SDL not found"
+    log_failure "SDL not found (can be disabled using --disable-sdl)"
     fail
   fi
 }
@@ -2513,6 +2513,9 @@ for option in "$@"; do
     --disable-libvpx)
       WITH_LIBVPX=0
       ;;
+    --disable-vboxsdl)
+      WITH_SDL=0
+      ;;
     --build-debug|-d)
       BUILD_TYPE=debug
       ;;
@@ -2720,7 +2723,11 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
  [ "$OS" != "darwin"  ] && check_z
   [ "$OS" != "darwin"  ] && check_png
   [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
-  [ $WITH_SDL -eq 1 ]    && check_sdl
+  if [ $WITH_SDL -eq 1 ]; then
+    check_sdl
+  else
+    cnf_append "VBOX_WITH_VBOXSDL" ""
+  fi
   [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
   [ $WITH_X11    -eq 1 ] && check_x
   # TODO check for xcomposite-dev (X11/extensions/Xcomposite.h, additions only)
