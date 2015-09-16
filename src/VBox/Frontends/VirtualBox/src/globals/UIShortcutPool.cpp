@@ -186,8 +186,12 @@ void UIShortcutPool::sltReloadSelectorShortcuts()
     foreach (const QString &strShortcutKey, shortcutKeyList)
         if (strShortcutKey.startsWith(GUI_Input_SelectorShortcuts))
             m_shortcuts.remove(strShortcutKey);
+
+    /* Load selector defaults: */
+    loadDefaultsFor(GUI_Input_SelectorShortcuts);
     /* Load selector overrides: */
     loadOverridesFor(GUI_Input_SelectorShortcuts);
+
     /* Notify selector shortcuts reloaded: */
     emit sigSelectorShortcutsReloaded();
 }
@@ -199,8 +203,12 @@ void UIShortcutPool::sltReloadMachineShortcuts()
     foreach (const QString &strShortcutKey, shortcutKeyList)
         if (strShortcutKey.startsWith(GUI_Input_MachineShortcuts))
             m_shortcuts.remove(strShortcutKey);
+
+    /* Load machine defaults: */
+    loadDefaultsFor(GUI_Input_MachineShortcuts);
     /* Load machine overrides: */
     loadOverridesFor(GUI_Input_MachineShortcuts);
+
     /* Notify machine shortcuts reloaded: */
     emit sigMachineShortcutsReloaded();
 }
@@ -245,10 +253,27 @@ void UIShortcutPool::retranslateUi()
 
 void UIShortcutPool::loadDefaults()
 {
-    /* Default shortcut for the Runtime Popup Menu invokation: */
-    m_shortcuts.insert(m_sstrShortcutKeyTemplateRuntime.arg("PopupMenu"),
-                       UIShortcut(QApplication::translate("UIActionPool", "Popup Menu"),
-                                  QString("Home"), QString("Home")));
+    /* Load selector defaults: */
+    loadDefaultsFor(GUI_Input_SelectorShortcuts);
+    /* Load machine defaults: */
+    loadDefaultsFor(GUI_Input_MachineShortcuts);
+}
+
+void UIShortcutPool::loadDefaultsFor(const QString &strPoolExtraDataID)
+{
+    /* Default shortcuts for Selector UI: */
+    if (strPoolExtraDataID == GUI_Input_SelectorShortcuts)
+    {
+        /* Nothing for now.. */
+    }
+    /* Default shortcuts for Runtime UI: */
+    else if (strPoolExtraDataID == GUI_Input_MachineShortcuts)
+    {
+        /* Default shortcut for the Runtime Popup Menu: */
+        m_shortcuts.insert(m_sstrShortcutKeyTemplateRuntime.arg("PopupMenu"),
+                           UIShortcut(QApplication::translate("UIActionPool", "Popup Menu"),
+                                      QString("Home"), QString("Home")));
+    }
 }
 
 void UIShortcutPool::loadOverrides()
