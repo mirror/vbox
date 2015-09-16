@@ -209,27 +209,6 @@ int main()
     CHECK(!ASMAtomicBitTestAndClear(&p->au32[0], 16)  && p->au32[0] == ~0x40010001U);
     CHECK(ASMAtomicBitTestAndClear(&p->au32[0], 80)   && p->au32[2] == ~0x00010001U);
 
-    /* set range */
-    MAP_CLEAR(p);
-    ASMBitSetRange(&p->au32[0], 0, 5);
-    ASMBitSetRange(&p->au32[0], 6, 44);
-    ASMBitSetRange(&p->au32[0], 64, 65);
-    CHECK(p->au32[0] == UINT32_C(0xFFFFFFDF));
-    CHECK(p->au32[1] == UINT32_C(0x00000FFF));
-    CHECK(p->au32[2] == UINT32_C(0x00000001));
-
-    MAP_CLEAR(p);
-    volatile int iLow = 0;
-    volatile int iHigh = 5;
-    ASMBitSetRange(&p->au32[0], iLow, iHigh);
-    iLow = 6; iHigh = 44;
-    ASMBitSetRange(&p->au32[0], iLow, iHigh);
-    iLow = 64; iHigh = 65;
-    ASMBitSetRange(&p->au32[0], iLow, iHigh);
-    CHECK(p->au32[0] == UINT32_C(0xFFFFFFDF));
-    CHECK(p->au32[1] == UINT32_C(0x00000FFF));
-    CHECK(p->au32[2] == UINT32_C(0x00000001));
-
     /* toggle */
     MAP_SET(p);
     ASMBitToggle(&p->au32[0], 0);
@@ -359,6 +338,41 @@ int main()
                 CHECK_BIT3(!ASMBitTest(&p->au32[0], k), i, j, k);
             for (k = j; k < 128; k++)
                 CHECK_BIT3(ASMBitTest(&p->au32[0], k), i, j, k);
+        }
+    }
+
+    /* set range. */
+    MAP_CLEAR(p);
+    ASMBitSetRange(&p->au32[0], 0, 5);
+    ASMBitSetRange(&p->au32[0], 6, 44);
+    ASMBitSetRange(&p->au32[0], 64, 65);
+    CHECK(p->au32[0] == UINT32_C(0xFFFFFFDF));
+    CHECK(p->au32[1] == UINT32_C(0x00000FFF));
+    CHECK(p->au32[2] == UINT32_C(0x00000001));
+
+    MAP_CLEAR(p);
+    ASMBitSetRange(&p->au32[0], 0, 1);
+    ASMBitSetRange(&p->au32[0], 62, 63);
+    ASMBitSetRange(&p->au32[0], 63, 64);
+    ASMBitSetRange(&p->au32[0], 127, 128);
+    CHECK(p->au32[0] == UINT32_C(0x00000001) && p->au32[1] == UINT32_C(0xC0000000));
+    CHECK(p->au32[2] == UINT32_C(0x00000000) && p->au32[3] == UINT32_C(0x80000000));
+
+    MAP_CLEAR(p);
+    ASMBitSetRange(&p->au32, 0, 128);
+    CHECK(!~p->au32[0] && !~p->au32[1] && !~p->au32[2] && !~p->au32[3]);
+    for (i = 0; i < 128; i++)
+    {
+        for (j = i + 1; j <= 128; j++)
+        {
+            MAP_CLEAR(p);
+            ASMBitSetRange(&p->au32, i, j);
+            for (k = 0; k < i; k++)
+                CHECK_BIT3(!ASMBitTest(&p->au32[0], k), i, j, k);
+            for (k = i; k < j; k++)
+                CHECK_BIT3(ASMBitTest(&p->au32[0], k), i, j, k);
+            for (k = j; k < 128; k++)
+                CHECK_BIT3(!ASMBitTest(&p->au32[0], k), i, j, k);
         }
     }
 
