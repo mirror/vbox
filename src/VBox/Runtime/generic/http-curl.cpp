@@ -332,6 +332,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
     int rcCurl;
     AssertReturn(pszHost, VERR_INVALID_PARAMETER);
 
+#ifdef CURLOPT_NOPROXY
     if (pThis->fNoProxy)
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOPROXY, (const char *)NULL);
@@ -339,6 +340,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
                         VERR_HTTP_CURL_PROXY_CONFIG);
         pThis->fNoProxy = false;
     }
+#endif
 
     if (enmProxyType != pThis->enmProxyType)
     {
@@ -450,9 +452,11 @@ static int rtHttpUpdateAutomaticProxyDisable(PRTHTTPINTERNAL pThis)
         pThis->pszProxyHost = NULL;
     }
 
+#ifdef CURLOPT_NOPROXY
     /* No proxy for everything! */
     AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_NOPROXY, "*") == CURLE_OK, CURLOPT_PROXY);
     pThis->fNoProxy = true;
+#endif
 
     return VINF_SUCCESS;
 }
