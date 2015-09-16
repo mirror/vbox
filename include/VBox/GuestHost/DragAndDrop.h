@@ -38,12 +38,35 @@
 #include <iprt/cpp/ministring.h>
 
 /**
- * Structure for maintaining a "dropped files" directory
+ * Class for maintaining a "dropped files" directory
  * on the host or guest. This will contain all received files & directories
  * for a single drag and drop operation.
+ *
+ * In case of a failed drag and drop operation this class can also
+ * perform a gentle rollback if required.
  */
-typedef struct DNDDIRDROPPEDFILES
+class DnDDroppedFiles
 {
+
+public:
+
+    DnDDroppedFiles(void);
+    DnDDroppedFiles(const char *pszPath, uint32_t fFlags);
+    virtual ~DnDDroppedFiles(void);
+
+public:
+
+    int AddFile(const char *pszFile);
+    int AddDir(const char *pszDir);
+    bool IsOpen(void) const;
+    int OpenEx(const char *pszPath, uint32_t fFlags);
+    int OpenTemp(uint32_t fFlags);
+    const char *GetDirAbs(void) const;
+    int Reset(bool fDeleteContent);
+    int Rollback(void);
+
+protected:
+
     /** Directory handle for drop directory. */
     PRTDIR                       hDir;
     /** Flag indicating whether the drop directory
@@ -55,17 +78,7 @@ typedef struct DNDDIRDROPPEDFILES
     RTCList<RTCString>           lstDirs;
     /** List for holding created files in the case of a rollback. */
     RTCList<RTCString>           lstFiles;
-
-} DNDDIRDROPPEDFILES, *PDNDDIRDROPPEDFILES;
-
-int DnDDirDroppedAddFile(PDNDDIRDROPPEDFILES pDir, const char *pszFile);
-int DnDDirDroppedAddDir(PDNDDIRDROPPEDFILES pDir, const char *pszDir);
-int DnDDirDroppedFilesCreateAndOpenEx(const char *pszPath, uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir);
-int DnDDirDroppedFilesCreateAndOpenTemp(uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir);
-int DnDDirDroppedFilesClose(PDNDDIRDROPPEDFILES pDir, bool fRemove);
-void DnDDirDroppedFilesDestroy(PDNDDIRDROPPEDFILES pDir);
-const char *DnDDirDroppedFilesGetDirAbs(PDNDDIRDROPPEDFILES pDir);
-int DnDDirDroppedFilesRollback(PDNDDIRDROPPEDFILES pDir);
+};
 
 bool DnDMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool DnDMIMENeedsDropDir(const char *pcszFormat, size_t cchFormatMax);

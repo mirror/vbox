@@ -27,69 +27,68 @@
 
 #include <VBox/GuestHost/DragAndDrop.h>
 
-int DnDDirDroppedAddFile(PDNDDIRDROPPEDFILES pDir, const char *pszFile)
+DnDDroppedFiles::DnDDroppedFiles(void)
+    : hDir(NULL)
+    , fOpen(false) { }
+
+DnDDroppedFiles::DnDDroppedFiles(const char *pszPath, uint32_t fFlags)
+    : hDir(NULL)
+    , fOpen(false)
 {
-    AssertPtrReturn(pDir, VERR_INVALID_POINTER);
+    OpenEx(pszPath, fFlags);
+}
+
+DnDDroppedFiles::~DnDDroppedFiles(void)
+{
+    Reset(true /* fRemoveDropDir */);
+}
+
+int DnDDroppedFiles::AddFile(const char *pszFile)
+{
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
 
-    if (!pDir->lstFiles.contains(pszFile))
-        pDir->lstFiles.append(pszFile);
+    if (!this->lstFiles.contains(pszFile))
+        this->lstFiles.append(pszFile);
     return VINF_SUCCESS;
 }
 
-int DnDDirDroppedAddDir(PDNDDIRDROPPEDFILES pDir, const char *pszDir)
+int DnDDroppedFiles::AddDir(const char *pszDir)
 {
-    AssertPtrReturn(pDir, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
 
-    if (!pDir->lstDirs.contains(pszDir))
-        pDir->lstDirs.append(pszDir);
+    if (!this->lstDirs.contains(pszDir))
+        this->lstDirs.append(pszDir);
     return VINF_SUCCESS;
 }
 
-static int dndDirDroppedFilesCreate(uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir)
+const char *DnDDroppedFiles::GetDirAbs(void) const
 {
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
-    AssertPtrReturn(ppDir, VERR_INVALID_POINTER);
-
-    PDNDDIRDROPPEDFILES pDir = (PDNDDIRDROPPEDFILES)RTMemAlloc(sizeof(DNDDIRDROPPEDFILES));
-    if (pDir)
-    {
-        pDir->hDir  = NULL;
-        pDir->fOpen = false;
-
-        *ppDir = pDir;
-        return VINF_SUCCESS;
-    }
-
-    return VERR_NO_MEMORY;
+    return this->strPathAbs.c_str();
 }
 
-int DnDDirDroppedFilesCreateAndOpenEx(const char *pszPath, uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir)
+bool DnDDroppedFiles::IsOpen(void) const
+{
+    return this->fOpen;
+}
+
+int DnDDroppedFiles::OpenEx(const char *pszPath, uint32_t fFlags)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppDir, VERR_INVALID_POINTER);
+    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
 
-    PDNDDIRDROPPEDFILES pDir;
-    int rc = dndDirDroppedFilesCreate(fFlags, &pDir);
-    if (RT_FAILURE(rc))
-        return rc;
+    int rc;
 
     do
     {
         char pszDropDir[RTPATH_MAX];
-        if (RTStrPrintf(pszDropDir, sizeof(pszDropDir), "%s", pszPath) <= 0)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
+        size_t cchDropDir = RTStrPrintf(pszDropDir, sizeof(pszDropDir), "%s", pszPath);
 
         /** @todo On Windows we also could use the registry to override
          *        this path, on Posix a dotfile and/or a guest property
          *        can be used. */
 
         /* Append our base drop directory. */
-        int rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), "VirtualBox Dropped Files"); /** @todo Make this tag configurable? */
+        rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), "VirtualBox Dropped Files"); /** @todo Make this tag configurable? */
         if (RT_FAILURE(rc))
             break;
 
@@ -127,30 +126,20 @@ int DnDDirDroppedFilesCreateAndOpenEx(const char *pszPath, uint32_t fFlags, PDND
             rc = RTDirOpen(&phDir, pszDropDir);
             if (RT_SUCCESS(rc))
             {
-                pDir->hDir       = phDir;
-                pDir->strPathAbs = pszDropDir;
-                pDir->fOpen      = true;
+                this->hDir       = phDir;
+                this->strPathAbs = pszDropDir;
+                this->fOpen      = true;
             }
         }
 
     } while (0);
 
-    if (RT_SUCCESS(rc))
-    {
-        *ppDir = pDir;
-    }
-    else
-        DnDDirDroppedFilesDestroy(pDir);
-
     return rc;
 }
 
-int DnDDirDroppedFilesCreateAndOpenTemp(uint32_t fFlags, PDNDDIRDROPPEDFILES *ppDir)
+int DnDDroppedFiles::OpenTemp(uint32_t fFlags)
 {
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
-    AssertPtrReturn(ppDir, VERR_INVALID_POINTER);
-
-    PDNDDIRDROPPEDFILES pDir;
 
     /*
      * Get the user's temp directory. Don't use the user's root directory (or
@@ -160,69 +149,48 @@ int DnDDirDroppedFilesCreateAndOpenTemp(uint32_t fFlags, PDNDDIRDROPPEDFILES *pp
     char szTemp[RTPATH_MAX];
     int rc = RTPathTemp(szTemp, sizeof(szTemp));
     if (RT_SUCCESS(rc))
-        rc = DnDDirDroppedFilesCreateAndOpenEx(szTemp, fFlags, &pDir);
-
-    if (RT_SUCCESS(rc))
-    {
-        *ppDir = pDir;
-    }
-    else
-        DnDDirDroppedFilesDestroy(pDir);
+        rc = OpenEx(szTemp, fFlags);
 
     return rc;
 }
 
-void DnDDirDroppedFilesDestroy(PDNDDIRDROPPEDFILES pDir)
+int DnDDroppedFiles::Reset(bool fRemoveDropDir)
 {
-    AssertPtrReturnVoid(pDir);
-
-    RTMemFree(pDir);
-}
-
-int DnDDirDroppedFilesClose(PDNDDIRDROPPEDFILES pDir, bool fRemove)
-{
-    AssertPtrReturn(pDir, VERR_INVALID_POINTER);
-
     int rc = VINF_SUCCESS;
-    if (pDir->fOpen)
+    if (this->fOpen)
     {
-        rc = RTDirClose(pDir->hDir);
+        rc = RTDirClose(this->hDir);
         if (RT_SUCCESS(rc))
         {
-            pDir->fOpen = false;
-            pDir->hDir  = NULL;
+            this->fOpen = false;
+            this->hDir  = NULL;
         }
     }
     if (RT_SUCCESS(rc))
     {
-        pDir->lstDirs.clear();
-        pDir->lstFiles.clear();
+        this->lstDirs.clear();
+        this->lstFiles.clear();
 
-        if (   fRemove
-            && pDir->strPathAbs.isNotEmpty())
+        if (   fRemoveDropDir
+            && this->strPathAbs.isNotEmpty())
         {
             /* Try removing the (empty) drop directory in any case. */
-            rc = RTDirRemove(pDir->strPathAbs.c_str());
+            rc = RTDirRemove(this->strPathAbs.c_str());
             if (RT_SUCCESS(rc)) /* Only clear if successfully removed. */
-                pDir->strPathAbs = "";
+                this->strPathAbs = "";
         }
     }
 
     return rc;
 }
 
-const char *DnDDirDroppedFilesGetDirAbs(PDNDDIRDROPPEDFILES pDir)
+int DnDDroppedFiles::Rollback(void)
 {
-    AssertPtrReturn(pDir, NULL);
-    return pDir->strPathAbs.c_str();
-}
-
-int DnDDirDroppedFilesRollback(PDNDDIRDROPPEDFILES pDir)
-{
-    AssertPtrReturn(pDir, VERR_INVALID_POINTER);
-
-    if (pDir->strPathAbs.isEmpty())
+    if (this->strPathAbs.isEmpty())
         return VINF_SUCCESS;
+
+    Assert(this->fOpen);
+    Assert(this->hDir != NULL);
 
     int rc = VINF_SUCCESS;
     int rc2;
@@ -230,22 +198,22 @@ int DnDDirDroppedFilesRollback(PDNDDIRDROPPEDFILES pDir)
     /* Rollback by removing any stuff created.
      * Note: Only remove empty directories, never ever delete
      *       anything recursive here! Steam (tm) knows best ... :-) */
-    for (size_t i = 0; i < pDir->lstFiles.size(); i++)
+    for (size_t i = 0; i < this->lstFiles.size(); i++)
     {
-        rc2 = RTFileDelete(pDir->lstFiles.at(i).c_str());
+        rc2 = RTFileDelete(this->lstFiles.at(i).c_str());
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
 
-    for (size_t i = 0; i < pDir->lstDirs.size(); i++)
+    for (size_t i = 0; i < this->lstDirs.size(); i++)
     {
-        rc2 = RTDirRemove(pDir->lstDirs.at(i).c_str());
+        rc2 = RTDirRemove(this->lstDirs.at(i).c_str());
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
 
     /* Try to remove the empty root dropped files directory as well. */
-    rc2 = RTDirRemove(pDir->strPathAbs.c_str());
+    rc2 = RTDirRemove(this->strPathAbs.c_str());
     if (RT_SUCCESS(rc))
         rc = rc2;
 

@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 VBOX_DND_GUESTHOST_FILES := \
-	DnDDir.cpp \
+	DnDDroppedFiles.cpp \
 	DnDMIME.cpp \
 	DnDPath.cpp \
 	DnDURIList.cpp \

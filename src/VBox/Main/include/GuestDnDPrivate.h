@@ -137,8 +137,7 @@ public:
 typedef struct GuestDnDURIData
 {
     GuestDnDURIData(void)
-        : pDropDir(NULL)
-        , pvScratchBuf(NULL)
+        : pvScratchBuf(NULL)
         , cbScratchBuf(0) { }
 
     virtual ~GuestDnDURIData(void)
@@ -158,25 +157,21 @@ typedef struct GuestDnDURIData
         return VINF_SUCCESS;
     }
 
-    void * GetBufferMutable(void) { return pvScratchBuf; }
+    const void *GetBuffer(void) const { return pvScratchBuf; }
 
-    size_t GetBufferSize(void) { return cbScratchBuf; }
+    void *GetBufferMutable(void) { return pvScratchBuf; }
+
+    size_t GetBufferSize(void) const { return cbScratchBuf; }
 
     void Reset(void)
     {
         lstURI.Clear();
         objCtx.Reset();
 
-        if (pDropDir)
-        {
-            int rc2 = DnDDirDroppedFilesRollback(pDropDir);
-            AssertRC(rc2);
-            rc2 = DnDDirDroppedFilesClose(pDropDir, true /* fRemove */);
-            AssertRC(rc2);
-
-            DnDDirDroppedFilesDestroy(pDropDir);
-            pDropDir = NULL;
-        }
+        int rc2 = droppedFiles.Rollback();
+        AssertRC(rc2);
+        rc2 = droppedFiles.Reset(true /* fRemoveDropDir */);
+        AssertRC(rc2);
 
         if (pvScratchBuf)
         {
@@ -187,8 +182,8 @@ typedef struct GuestDnDURIData
         cbScratchBuf = 0;
     }
 
-    /** Pointer to dropped files object. */
-    PDNDDIRDROPPEDFILES             pDropDir;
+    /** Handles all drop files for this operation. */
+    DnDDroppedFiles                 droppedFiles;
     /** (Non-recursive) List of URI objects to handle. */
     DnDURIList                      lstURI;
     /** Context to current object being handled.
