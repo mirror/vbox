@@ -33,19 +33,20 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/cidr.h>
 #include <iprt/crypto/store.h>
 #include <iprt/ctype.h>
 #include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
-#ifdef RT_OS_WINDOWS
-# include <iprt/ldr.h>
-#endif
+#include <iprt/ldr.h>
 #include <iprt/mem.h>
+#include <iprt/net.h>
 #include <iprt/once.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/uni.h>
 #include <iprt/uri.h>
 
 #include "internal/magics.h"
@@ -550,6 +551,96 @@ static bool rtHttpUrlInNoProxyList(const char *pszUrl, const char *pszNoProxyLis
 
 
 /**
+ * Configures a proxy given a "URL" like specification.
+ *
+ * Format is [<scheme>"://"][<userid>[@<password>]:]<server>[":"<port>].
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The HTTP client instance.
+ * @param   pszProxyUrl         The proxy server "URL".
+ */
+static int rtHttpConfigureProxyFromUrl(PRTHTTPINTERNAL pThis, const char *pszProxyUrl)
+{
+    /*
+     * Make sure it can be parsed as an URL.
+     */
+    char *pszFreeMe = NULL;
+    if (!strstr(pszProxyUrl, "://"))
+    {
+        static const char s_szPrefix[] = "http://";
+        size_t cchProxyUrl = strlen(pszProxyUrl);
+        pszFreeMe = (char *)RTMemTmpAlloc(sizeof(s_szPrefix) + cchProxyUrl);
+        if (pszFreeMe)
+        {
+            memcpy(pszFreeMe, s_szPrefix, sizeof(s_szPrefix) - 1);
+            memcpy(&pszFreeMe[sizeof(s_szPrefix) - 1], pszProxyUrl, cchProxyUrl);
+            pszFreeMe[sizeof(s_szPrefix) - 1 + cchProxyUrl] = '\0';
+            pszProxyUrl = pszFreeMe;
+        }
+        else
+            return VERR_NO_TMP_MEMORY;
+    }
+
+    RTURIPARSED Parsed;
+    int rc = RTUriParse(pszProxyUrl, &Parsed);
+    if (RT_SUCCESS(rc))
+    {
+        bool fDone = false;
+        char *pszHost = RTUriParsedAuthorityHost(pszProxyUrl, &Parsed);
+        if (pszHost)
+        {
+            /*
+             * We've got a host name, try get the rest.
+             */
+            char    *pszUsername = RTUriParsedAuthorityUsername(pszProxyUrl, &Parsed);
+            char    *pszPassword = RTUriParsedAuthorityPassword(pszProxyUrl, &Parsed);
+            uint32_t uProxyPort  = RTUriParsedAuthorityPort(pszProxyUrl, &Parsed);
+            curl_proxytype enmProxyType;
+            if (RTUriIsSchemeMatch(pszProxyUrl, "http"))
+            {
+                enmProxyType  = CURLPROXY_HTTP;
+                if (uProxyPort == UINT32_MAX)
+                    uProxyPort = 80;
+            }
+            else if (   RTUriIsSchemeMatch(pszProxyUrl, "socks4")
+                     || RTUriIsSchemeMatch(pszProxyUrl, "socks"))
+                enmProxyType = CURLPROXY_SOCKS4;
+            else if (RTUriIsSchemeMatch(pszProxyUrl, "socks4a"))
+                enmProxyType = CURLPROXY_SOCKS4A;
+            else if (RTUriIsSchemeMatch(pszProxyUrl, "socks5"))
+                enmProxyType = CURLPROXY_SOCKS5;
+            else if (RTUriIsSchemeMatch(pszProxyUrl, "socks5h"))
+                enmProxyType = CURLPROXY_SOCKS5_HOSTNAME;
+            else
+            {
+                enmProxyType = CURLPROXY_HTTP;
+                if (uProxyPort == UINT32_MAX)
+                    uProxyPort = 8080;
+            }
+
+            /* Guess the port from the proxy type if not given. */
+            if (uProxyPort == UINT32_MAX)
+                uProxyPort = 1080; /* CURL_DEFAULT_PROXY_PORT */
+
+            rc = rtHttpUpdateProxyConfig(pThis, enmProxyType, pszHost, uProxyPort, pszUsername, pszPassword);
+
+            RTStrFree(pszUsername);
+            RTStrFree(pszPassword);
+            RTStrFree(pszHost);
+        }
+        else
+            AssertMsgFailed(("RTUriParsedAuthorityHost('%s',) -> NULL\n", pszProxyUrl));
+    }
+    else
+        AssertMsgFailed(("RTUriParse('%s',) -> %Rrc\n", pszProxyUrl, rc));
+
+    if (pszFreeMe)
+        RTMemTmpFree(pszFreeMe);
+    return rc;
+}
+
+
+/**
  * Consults enviornment variables that cURL/lynx/wget/lynx uses for figuring out
  * the proxy config.
  *
@@ -618,75 +709,16 @@ static int rtHttpConfigureProxyForUrlFromEnv(PRTHTTPINTERNAL pThis, const char *
             {
                 if (cchValue != 0)
                 {
-                    /* Add a http:// prefix so RTUriParse groks it. */
+                    /* Add a http:// prefix so RTUriParse groks it (cheaper to do it here). */
                     if (!strstr(szTmp, "://"))
                     {
                         memmove(&szTmp[sizeof("http://") - 1], szTmp, cchValue + 1);
                         memcpy(szTmp, RT_STR_TUPLE("http://"));
                     }
 
-                    RTURIPARSED Parsed;
-                    rc2 = RTUriParse(szTmp, &Parsed);
-                    if (RT_SUCCESS(rc))
-                    {
-                        bool fDone = false;
-                        char *pszHost = RTUriParsedAuthorityHost(szTmp, &Parsed);
-                        if (pszHost)
-                        {
-                            /*
-                             * We've got a host name, try get the rest.
-                             */
-                            char    *pszUsername = RTUriParsedAuthorityUsername(szTmp, &Parsed);
-                            char    *pszPassword = RTUriParsedAuthorityPassword(szTmp, &Parsed);
-                            uint32_t uProxyPort  = RTUriParsedAuthorityPort(szTmp, &Parsed);
-                            curl_proxytype enmProxyType;
-                            if (RTUriIsSchemeMatch(szTmp, "http"))
-                                enmProxyType  = CURLPROXY_HTTP;
-                            else if (   RTUriIsSchemeMatch(szTmp, "socks4")
-                                     || RTUriIsSchemeMatch(szTmp, "socks"))
-                                enmProxyType = CURLPROXY_SOCKS4;
-                            else if (RTUriIsSchemeMatch(szTmp, "socks4a"))
-                                enmProxyType = CURLPROXY_SOCKS4A;
-                            else if (RTUriIsSchemeMatch(szTmp, "socks5"))
-                                enmProxyType = CURLPROXY_SOCKS5;
-                            else if (RTUriIsSchemeMatch(szTmp, "socks5h"))
-                                enmProxyType = CURLPROXY_SOCKS5_HOSTNAME;
-                            else
-                                enmProxyType = CURLPROXY_HTTP;
-
-                            /* Guess the port from the proxy type if not given. */
-                            if (uProxyPort == UINT32_MAX)
-                                switch (enmProxyType)
-                                {
-                                    case CURLPROXY_HTTP: uProxyPort = 80; break;
-                                    default:             uProxyPort = 1080 /* CURL_DEFAULT_PROXY_PORT */; break;
-                                }
-
-                            rc2 = rtHttpUpdateProxyConfig(pThis, enmProxyType, pszHost, uProxyPort, pszUsername, pszPassword);
-
-                            RTStrFree(pszUsername);
-                            RTStrFree(pszPassword);
-                            RTStrFree(pszHost);
-
-                            /* If that succeeded we're done. */
-                            if (RT_SUCCESS(rc2))
-                            {
-                                rc = rc2;
-                                break;
-                            }
-
-                            if (RT_SUCCESS(rc))
-                                rc = rc2;
-                        }
-                        else
-                            AssertMsgFailed(("RTUriParsedAuthorityHost('%s',) -> NULL\n", szTmp));
-                    }
-                    else
-                    {
-                        AssertMsgFailed(("RTUriParse('%s',) -> %Rrc\n", szTmp, rc2));
-                        if (RT_SUCCESS(rc))
-                            rc = rc2;
-                    }
+                    rc2 = rtHttpConfigureProxyFromUrl(pThis, szTmp);
+                    if (RT_SUCCESS(rc2))
+                        rc = rc2;
                 }
                 /*
                  * The variable is empty.  Guess that means no proxying wanted.
@@ -740,13 +772,234 @@ static DECLCALLBACK(int) rtHttpWinResolveImports(void *pvUser)
 
 
 /**
+ * Matches the URL against the given Windows by-pass list.
+ *
+ * @returns true if we should by-pass the proxy for this URL, false if not.
+ * @param   pszUrl              The URL.
+ * @param   pwszBypass          The Windows by-pass list.
+ */
+static bool rtHttpWinIsUrlInBypassList(const char *pszUrl, PCRTUTF16 pwszBypass)
+{
+    /*
+     * Don't bother parsing the URL if we've actually got nothing to work with
+     * in the by-pass list.
+     */
+    if (!pwszBypass)
+        return false;
+
+    RTUTF16 wc;
+    while (   (wc = *pwszBypass) != '\0'
+           && (   RTUniCpIsSpace(wc)
+               || wc == ';') )
+        pwszBypass++;
+    if (wc == '\0')
+        return false;
+
+    /*
+     * We now need to parse the URL and extract the host name.
+     */
+    RTURIPARSED Parsed;
+    int rc = RTUriParse(pszUrl, &Parsed);
+    AssertRCReturn(rc, false);
+    char *pszHost = RTUriParsedAuthorityHost(pszUrl, &Parsed);
+    if (!pszHost) /* Don't assert, in case of file:///xxx or similar blunder. */
+        return false;
+
+    bool  fRet = false;
+    char *pszBypassFree;
+    rc = RTUtf16ToUtf8(pwszBypass, &pszBypassFree);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Walk the by-pass list.
+         *
+         * According to https://msdn.microsoft.com/en-us/library/aa384098(v=vs.85).aspx
+         * a by-pass list is semicolon delimited list.  The entries are either host
+         * names or IP addresses, and may use wildcard ('*', '?', I guess).  There
+         * special "<local>" entry matches anything without a dot.
+         */
+        RTNETADDRU  HostAddr;
+        int         fIsHostIpv4Address = -1;
+        char *pszEntry = pszBypassFree;
+        while (*pszEntry != '\0')
+        {
+            /*
+             * Find end of entry.
+             */
+            char   ch;
+            size_t cchEntry = 1;
+            while (   (ch = pszEntry[cchEntry]) != '\0'
+                   && ch != ';'
+                   && !RT_C_IS_SPACE(ch))
+                cchEntry++;
+
+            char chSaved = pszEntry[cchEntry];
+            pszEntry[cchEntry] = '\0';
+            if (   cchEntry == sizeof("<local>")  - 1
+                && memcmp(pszEntry, RT_STR_TUPLE("<local>")) == 0)
+                fRet = strchr(pszHost, '.') == NULL;
+            else if (   memchr(pszEntry, '*', cchEntry) != NULL
+                     || memchr(pszEntry, '?', cchEntry) != NULL)
+                fRet = RTStrSimplePatternMatch(pszEntry, pszHost);
+            else
+            {
+                if (fIsHostIpv4Address == -1)
+                    fIsHostIpv4Address = RT_SUCCESS(RTNetStrToIPv4Addr(pszHost, &HostAddr.IPv4));
+                RTNETADDRIPV4 Network, Netmask;
+                if (   fIsHostIpv4Address
+                    && RT_SUCCESS(RTCidrStrToIPv4(pszEntry, &Network, &Netmask)) )
+                    fRet = (HostAddr.IPv4.u & Netmask.u) == Network.u;
+                else
+                    fRet = RTStrICmp(pszEntry, pszHost) == 0;
+            }
+            pszEntry[cchEntry] = chSaved;
+            if (fRet)
+                break;
+
+            /*
+             * Next entry.
+             */
+            pszEntry += cchEntry;
+            while (   (ch = *pszEntry) != '\0'
+                   && (   ch == ';'
+                       || RT_C_IS_SPACE(ch)) )
+                pszEntry++;
+        }
+
+        RTStrFree(pszBypassFree);
+    }
+
+    RTStrFree(pszHost);
+    return false;
+}
+
+
+/**
+ * Searches a Windows proxy server list for the best fitting proxy to use, then
+ * reconfigures the HTTP client instance to use it.
+ *
+ * @returns IPRT status code, VINF_NOT_SUPPORTED if we need to consult fallback.
+ * @param   pThis               The HTTP client instance.
+ * @param   pszUrl              The URL needing proxying.
+ * @param   pwszProxies         The list of proxy servers to choose from.
+ */
+static int rtHttpWinSelectProxyFromList(PRTHTTPINTERNAL pThis, const char *pszUrl, PCRTUTF16 pwszProxies)
+{
+    /*
+     * Fend off empty strings (very unlikely, but just in case).
+     */
+    if (!pwszProxies)
+        return VINF_NOT_SUPPORTED;
+
+    RTUTF16 wc;
+    while (   (wc = *pwszProxies) != '\0'
+           && (   RTUniCpIsSpace(wc)
+               || wc == ';') )
+        pwszProxies++;
+    if (wc == '\0')
+        return VINF_NOT_SUPPORTED;
+
+    /*
+     * We now need to parse the URL and extract the scheme.
+     */
+    RTURIPARSED Parsed;
+    int rc = RTUriParse(pszUrl, &Parsed);
+    AssertRCReturn(rc, false);
+    char *pszUrlScheme = RTUriParsedScheme(pszUrl, &Parsed);
+    AssertReturn(pszUrlScheme, VERR_NO_STR_MEMORY);
+    size_t const cchUrlScheme = strlen(pszUrlScheme);
+
+    int rcRet = VINF_NOT_SUPPORTED;
+    char *pszProxiesFree;
+    rc = RTUtf16ToUtf8(pwszProxies, &pszProxiesFree);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Walk the server list.
+         *
+         * According to https://msdn.microsoft.com/en-us/library/aa383912(v=vs.85).aspx
+         * this is also a semicolon delimited list.  The entries are on the form:
+         *      [<scheme>=][<scheme>"://"]<server>[":"<port>]
+         */
+        bool        fBestEntryHasSameScheme = false;
+        const char *pszBestEntry = NULL;
+        char       *pszEntry = pszProxiesFree;
+        while (*pszEntry != '\0')
+        {
+            /*
+             * Find end of entry.  We include spaces here in addition to ';'.
+             */
+            char   ch;
+            size_t cchEntry = 1;
+            while (   (ch = pszEntry[cchEntry]) != '\0'
+                   && ch != ';'
+                   && !RT_C_IS_SPACE(ch))
+                cchEntry++;
+
+            char const chSaved = pszEntry[cchEntry];
+            pszEntry[cchEntry] = '\0';
+
+            /* Parse the entry. */
+            const char *pszEndOfScheme = strstr(pszEntry, "://");
+            const char *pszEqual       = (const char *)memchr(pszEntry, '=',
+                                                              pszEndOfScheme ? pszEndOfScheme - pszEntry : cchEntry);
+            if (pszEqual)
+            {
+                if (   pszEqual - pszEntry == cchUrlScheme
+                    && RTStrNICmp(pszEntry, pszUrlScheme, cchUrlScheme) == 0)
+                {
+                    pszBestEntry = pszEqual + 1;
+                    break;
+                }
+            }
+            else
+            {
+                bool fSchemeMatch = pszEndOfScheme
+                                 && pszEndOfScheme - pszEntry == cchUrlScheme
+                                 && RTStrNICmp(pszEntry, pszUrlScheme, cchUrlScheme) == 0;
+                if (   !pszBestEntry
+                    || (   !fBestEntryHasSameScheme
+                        && fSchemeMatch) )
+                {
+                    pszBestEntry = pszEntry;
+                    fBestEntryHasSameScheme = fSchemeMatch;
+                }
+            }
+
+            /*
+             * Next entry.
+             */
+            if (!chSaved)
+                break;
+            pszEntry += cchEntry + 1;
+            while (   (ch = *pszEntry) != '\0'
+                   && (   ch == ';'
+                       || RT_C_IS_SPACE(ch)) )
+                pszEntry++;
+        }
+
+        /*
+         * If we found something, try use it.
+         */
+        if (pszBestEntry)
+            rcRet = rtHttpConfigureProxyFromUrl(pThis, pszBestEntry);
+
+        RTStrFree(pszProxiesFree);
+    }
+
+    RTStrFree(pszUrlScheme);
+    return rc;
+}
+
+
+/**
  * Reconfigures the cURL proxy settings for the given URL.
  *
  * @returns IPRT status code. VINF_NOT_SUPPORTED if we should try fallback.
  * @param   pThis       The HTTP client instance.
  * @param   pszUrl      The URL.
  */
-static int rtHttpConfigureProxyForUrlWindows(PRTHTTPINTERNAL pThis, const char *pszUrl)
+static int rtHttpWinConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
 {
     int rcRet = VINF_NOT_SUPPORTED;
 
@@ -879,8 +1132,10 @@ static int rtHttpConfigureProxyForUrlWindows(PRTHTTPINTERNAL pThis, const char *
                 break;
 
             case WINHTTP_ACCESS_TYPE_NAMED_PROXY:
-/** @todo Continue here: parse the proxy thingy. */
-//AssertMsgFailed(("lpszProxy='%ls'\n", ProxyInfo.lpszProxy));
+                if (!rtHttpWinIsUrlInBypassList(pszUrl, ProxyInfo.lpszProxyBypass))
+                    rcRet = rtHttpWinSelectProxyFromList(pThis, pszUrl, ProxyInfo.lpszProxy);
+                else
+                    rcRet = rtHttpUpdateAutomaticProxyDisable(pThis);
                 break;
 
             case 0:
@@ -912,7 +1167,7 @@ static int rtHttpConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
     if (pThis->fUseSystemProxySettings)
     {
 #ifdef RT_OS_WINDOWS
-        int rc = rtHttpConfigureProxyForUrlWindows(pThis, pszUrl);
+        int rc = rtHttpWinConfigureProxyForUrl(pThis, pszUrl);
         if (rc == VINF_SUCCESS || RT_FAILURE(rc))
             return rc;
         Assert(rc == VINF_NOT_SUPPORTED);
