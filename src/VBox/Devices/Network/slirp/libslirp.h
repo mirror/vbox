@@ -62,7 +62,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs);
 #endif /* !RT_OS_WINDOWS */
 
 void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf);
-void slirp_set_ethaddr_and_activate_port_forwarding(PNATState pData, const uint8_t *ethaddr, uint32_t GuestIP);
 
 /* you must provide the following functions: */
 void slirp_arm_fast_timer(void *pvUser);
@@ -72,9 +71,11 @@ void slirp_output_pending(void * pvUser);
 void slirp_urg_output(void *pvUser, struct mbuf *, const uint8_t *pu8Buf, int cb);
 void slirp_post_sent(PNATState pData, void *pvArg);
 
+void slirp_update_guest_addr_guess(PNATState pData, uint32_t guess, const char *msg);
+
 int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
                 int host_port, struct in_addr guest_addr,
-                int guest_port, const uint8_t *);
+                int guest_port);
 int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
                 int host_port, struct in_addr guest_addr,
                 int guest_port);

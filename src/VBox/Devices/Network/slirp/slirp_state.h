@@ -138,6 +138,7 @@ typedef struct NATState
     struct in_addr our_addr;
     struct in_addr alias_addr;
     struct in_addr special_addr;
+    struct in_addr guest_addr_guess;
 
     int tcp_rcvspace;
     int tcp_sndspace;
@@ -297,8 +298,6 @@ typedef struct NATState
     /** Critical R/W section to protect the handler chain list. */
     RTCRITSECTRW CsRwHandlerChain;
     struct port_forward_rule_list port_forward_rule_head;
-    int cRedirectionsActive;
-    int cRedirectionsStored;
     struct arp_cache_head arp_cache;
     /* libalis modules' handlers*/
     struct proto_handler *ftp_module;

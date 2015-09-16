@@ -463,6 +463,22 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
     LogFlowFunc(("ENTER: so = %R[natsock], m = %p, saddr = %RTnaipv4\n",
                  so, (long)m, addr->sin_addr.s_addr));
 
+    if (so->so_laddr.s_addr == INADDR_ANY)
+    {
+        if (pData->guest_addr_guess.s_addr != INADDR_ANY)
+        {
+            LogRel2(("NAT: port-forward: using %RTnaipv4 for %R[natsock]\n",
+                     pData->guest_addr_guess.s_addr, so));
+            so->so_laddr = pData->guest_addr_guess;
+        }
+        else
+        {
+            LogRel2(("NAT: port-forward: guest address unknown for %R[natsock]\n", so));
+            m_freem(pData, m);
+            return 0;
+        }
+    }
+
     saddr = *addr;
     if ((so->so_faddr.s_addr & RT_H2N_U32(pData->netmask)) == pData->special_addr.s_addr)
     {

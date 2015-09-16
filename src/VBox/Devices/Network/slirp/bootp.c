@@ -362,6 +362,7 @@ static int dhcp_send_ack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, s
     int offReply = 0; /* boot_reply will fill general options and add END before sending response */
 
     dhcp_create_msg(pData, bp, m, DHCPACK);
+    slirp_update_guest_addr_guess(pData, bc->addr.s_addr, "DHCP ACK");
     offReply = dhcp_do_ack_offer(pData, m, bc, fDhcpRequest);
     return offReply;
 }

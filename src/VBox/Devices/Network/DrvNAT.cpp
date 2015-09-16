@@ -690,11 +690,6 @@ static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
                                                 bool fUdp, const char *pHostIp,
                                                 uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
 {
-    RTMAC Mac;
-    RT_ZERO(Mac); /* can't get MAC here */
-    if (pThis->pIAboveConfig)
-        pThis->pIAboveConfig->pfnGetMac(pThis->pIAboveConfig, &Mac);
-
     struct in_addr guestIp, hostIp;
 
     if (   pHostIp == NULL
@@ -708,7 +703,7 @@ static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
     if (fRemove)
         slirp_remove_redirect(pThis->pNATState, fUdp, hostIp, u16HostPort, guestIp, u16GuestPort);
     else
-        slirp_add_redirect(pThis->pNATState, fUdp, hostIp, u16HostPort, guestIp, u16GuestPort, Mac.au8);
+        slirp_add_redirect(pThis->pNATState, fUdp, hostIp, u16HostPort, guestIp, u16GuestPort);
 }
 
 static DECLCALLBACK(int) drvNATNetworkNatConfigRedirect(PPDMINETWORKNATCONFIG pInterface, bool fRemove,
@@ -1063,13 +1058,13 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, const cha
  */
 static void drvNATSetMac(PDRVNAT pThis)
 {
+#if 0 /* XXX: do we still need this for anything? */
     if (pThis->pIAboveConfig)
     {
         RTMAC Mac;
         pThis->pIAboveConfig->pfnGetMac(pThis->pIAboveConfig, &Mac);
-        /* Re-activate the port forwarding. If  */
-        slirp_set_ethaddr_and_activate_port_forwarding(pThis->pNATState, Mac.au8, pThis->GuestIP);
     }
+#endif
 }
 
 
@@ -1246,9 +1241,6 @@ static int drvNATConstructDNSMappings(unsigned iInstance, PDRVNAT pThis, PCFGMNO
  */
 static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfg, PRTNETADDRIPV4 pNetwork)
 {
-    RTMAC Mac;
-    RT_ZERO(Mac); /* can't get MAC here */
-
     /*
      * Enumerate redirections.
      */
@@ -1301,21 +1293,18 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
         int32_t iGuestPort;
         GET_S32_STRICT(rc, pThis, pNode, "GuestPort", iGuestPort);
 
+        /* host address ("BindIP" name is rather unfortunate given "HostPort" to go with it) */
+        struct in_addr BindIP;
+        GETIP_DEF(rc, pThis, pNode, BindIP, INADDR_ANY);
+
         /* guest address */
         struct in_addr GuestIP;
-        GETIP_DEF(rc, pThis, pNode, GuestIP, RT_H2N_U32(pNetwork->u | CTL_GUEST));
-
-        /* Store the guest IP for re-establishing the port-forwarding rules. Note that GuestIP
-         * is not documented. Without */
-        if (pThis->GuestIP == INADDR_ANY)
-            pThis->GuestIP = GuestIP.s_addr;
+        GETIP_DEF(rc, pThis, pNode, GuestIP, INADDR_ANY);
 
         /*
          * Call slirp about it.
          */
-        struct in_addr BindIP;
-        GETIP_DEF(rc, pThis, pNode, BindIP, INADDR_ANY);
-        if (slirp_add_redirect(pThis->pNATState, fUDP, BindIP, iHostPort, GuestIP, iGuestPort, Mac.au8) < 0)
+        if (slirp_add_redirect(pThis->pNATState, fUDP, BindIP, iHostPort, GuestIP, iGuestPort) < 0)
             return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_NAT_REDIR_SETUP, RT_SRC_POS,
                                        N_("NAT#%d: configuration error: failed to set up "
                                        "redirection of %d to %d. Probably a conflict with "

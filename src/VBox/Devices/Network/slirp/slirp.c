@@ -260,8 +260,6 @@
 #define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) \
     DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
 
-static void activate_port_forwarding(PNATState, const uint8_t *pEther);
-
 static const uint8_t special_ethaddr[6] =
 {
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
@@ -476,14 +474,6 @@ void slirp_link_up(PNATState pData)
 
     if (!pData->fUseHostResolverPermanent)
         slirpInitializeDnsSettings(pData);
-
-    if (LIST_EMPTY(&pData->arp_cache))
-        return;
-
-    LIST_FOREACH(ac, &pData->arp_cache, list)
-    {
-        activate_port_forwarding(pData, ac->ether);
-    }
 }
 
 /**
@@ -497,16 +487,6 @@ void slirp_link_down(PNATState pData)
         return;
 
     slirpReleaseDnsSettings(pData);
-
-    /*
-     *  Clear the active state of port-forwarding rules to force
-     *  re-setup on restoration of communications.
-     */
-    LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
-    {
-        rule->activated = 0;
-    }
-    pData->cRedirectionsActive = 0;
 
     link_up = 0;
 }
@@ -1318,6 +1298,7 @@ static void arp_output(PNATState pData, const uint8_t *pcu8EtherSource, const st
     memcpy(pARPHeaderResponse->ar_tip, pcARPHeaderSource->ar_sip, 4);
     if_encap(pData, ETH_P_ARP, pMbufResponse, ETH_ENCAP_URG);
 }
+
 /**
  * @note This function will free m!
  */
@@ -1340,23 +1321,21 @@ static void arp_input(PNATState pData, struct mbuf *m)
             if (   CTL_CHECK(ip4TargetAddress, CTL_DNS)
                 || CTL_CHECK(ip4TargetAddress, CTL_ALIAS)
                 || CTL_CHECK(ip4TargetAddress, CTL_TFTP))
+            {
+                slirp_update_guest_addr_guess(pData, *(uint32_t *)pARPHeader->ar_sip, "arp request");
                 arp_output(pData, pEtherHeader->h_source, pARPHeader, ip4TargetAddress);
+                break;
+            }
 
             /* Gratuitous ARP */
-            if (  *(uint32_t *)pARPHeader->ar_sip == *(uint32_t *)pARPHeader->ar_tip
-                && memcmp(pARPHeader->ar_tha, broadcast_ethaddr, ETH_ALEN) == 0
+            if (   *(uint32_t *)pARPHeader->ar_sip == *(uint32_t *)pARPHeader->ar_tip
+                && (   memcmp(pARPHeader->ar_tha, zerro_ethaddr, ETH_ALEN) == 0
+                    || memcmp(pARPHeader->ar_tha, broadcast_ethaddr, ETH_ALEN) == 0)
                 && memcmp(pEtherHeader->h_dest, broadcast_ethaddr, ETH_ALEN) == 0)
             {
-                /* We've received an announce about address assignment,
-                 * let's do an ARP cache update
-                 */
-                static bool fGratuitousArpReported;
-                if (!fGratuitousArpReported)
-                {
-                    LogRel(("NAT: Gratuitous ARP [IP:%RTnaipv4, ether:%RTmac]\n",
-                            *(uint32_t *)pARPHeader->ar_sip, pARPHeader->ar_sha));
-                    fGratuitousArpReported = true;
-                }
+                LogRel2(("NAT: gratuitous ARP from %RTnaipv4 at %RTmac\n",
+                         *(uint32_t *)pARPHeader->ar_sip, pARPHeader->ar_sha));
+                slirp_update_guest_addr_guess(pData, *(uint32_t *)pARPHeader->ar_sip, "gratuitous arp");
                 slirp_arp_cache_update_or_add(pData, *(uint32_t *)pARPHeader->ar_sip, &pARPHeader->ar_sha[0]);
             }
             break;
@@ -1427,9 +1406,6 @@ void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
             m_freem(pData, m);
             break;
     }
-
-    if (pData->cRedirectionsActive != pData->cRedirectionsStored)
-        activate_port_forwarding(pData, au8Ether);
 }
 
 /**
@@ -1497,134 +1473,71 @@ done:
     LogFlowFuncLeave();
 }
 
-/**
- * Still we're using dhcp server leasing to map ether to IP
- * @todo  see rt_lookup_in_cache
- */
-static uint32_t find_guest_ip(PNATState pData, const uint8_t *eth_addr)
+
+void
+slirp_update_guest_addr_guess(PNATState pData, uint32_t guess, const char *msg)
 {
-    uint32_t ip = INADDR_ANY;
-    int rc;
+    Assert(msg != NULL);
 
-    if (eth_addr == NULL)
-        return INADDR_ANY;
-
-    if (   memcmp(eth_addr, zerro_ethaddr, ETH_ALEN) == 0
-        || memcmp(eth_addr, broadcast_ethaddr, ETH_ALEN) == 0)
-        return INADDR_ANY;
-
-    rc = slirp_arp_lookup_ip_by_ether(pData, eth_addr, &ip);
-    if (RT_SUCCESS(rc))
-        return ip;
-
-    bootp_cache_lookup_ip_by_ether(pData, eth_addr, &ip);
-    /* ignore return code, ip will be set to INADDR_ANY on error */
-    return ip;
-}
-
-/**
- * We need check if we've activated port forwarding
- * for specific machine ... that of course relates to
- * service mode
- * @todo finish this for service case
- */
-static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
-{
-    struct port_forward_rule *rule, *tmp;
-    const uint8_t *pu8EthSource = h_source;
-
-    /* check mac here */
-    LIST_FOREACH_SAFE(rule, &pData->port_forward_rule_head, list, tmp)
+    if (pData->guest_addr_guess.s_addr == guess)
     {
-        struct socket *so;
-        struct sockaddr sa;
-        struct sockaddr_in *psin;
-        socklen_t socketlen;
-        int rc;
-        uint32_t guest_addr; /* need to understand if we already give address to guest */
+        LogRel2(("NAT: guest address guess %RTnaipv4 re-confirmed by %s\n",
+                 pData->guest_addr_guess.s_addr, msg));
+        return;
+    }
 
-        if (rule->activated)
-            continue;
-
-        guest_addr = find_guest_ip(pData, pu8EthSource);
-        if (guest_addr == INADDR_ANY)
-        {
-            /* the address wasn't granted */
-            return;
-        }
-
-        if (   rule->guest_addr.s_addr != guest_addr
-            && rule->guest_addr.s_addr != INADDR_ANY)
-            continue;
-        if (rule->guest_addr.s_addr == INADDR_ANY)
-            rule->guest_addr.s_addr = guest_addr;
-
-        LogRel(("NAT: set redirect %s host %RTnaipv4:%d => guest %RTnaipv4:%d\n",
-                rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
-                rule->bind_ip.s_addr, rule->host_port,
-                guest_addr, rule->guest_port));
-
-        if (rule->proto == IPPROTO_UDP)
-            so = udp_listen(pData, rule->bind_ip.s_addr, RT_H2N_U16(rule->host_port), guest_addr,
-                            RT_H2N_U16(rule->guest_port), 0);
-        else
-            so = solisten(pData, rule->bind_ip.s_addr, RT_H2N_U16(rule->host_port), guest_addr,
-                          RT_H2N_U16(rule->guest_port), 0);
-
-        if (so == NULL)
-            goto remove_port_forwarding;
-
-        psin = (struct sockaddr_in *)&sa;
-        psin->sin_family = AF_INET;
-        psin->sin_port = 0;
-        psin->sin_addr.s_addr = INADDR_ANY;
-        socketlen = sizeof(struct sockaddr);
-
-        rc = getsockname(so->s, &sa, &socketlen);
-        if (rc < 0 || sa.sa_family != AF_INET)
-            goto remove_port_forwarding;
-
-        rule->activated = 1;
-        rule->so = so;
-        pData->cRedirectionsActive++;
-        continue;
-
-    remove_port_forwarding:
-        LogRel(("NAT: failed to redirect %s %RTnaipv4:%d => %RTnaipv4:%d\n",
-                (rule->proto == IPPROTO_UDP ? "UDP" : "TCP"),
-                rule->bind_ip.s_addr, rule->host_port,
-                guest_addr, rule->guest_port));
-        LIST_REMOVE(rule, list);
-        pData->cRedirectionsStored--;
-        RTMemFree(rule);
+    if (pData->guest_addr_guess.s_addr == INADDR_ANY)
+    {
+        pData->guest_addr_guess.s_addr = guess;
+        LogRel(("NAT: guest address guess set to %RTnaipv4 by %s\n",
+                pData->guest_addr_guess.s_addr, msg));
+        return;
+    }
+    else
+    {
+        LogRel(("NAT: guest address guess changed from %RTnaipv4 to %RTnaipv4 by %s\n",
+                pData->guest_addr_guess.s_addr, guess, msg));
+        pData->guest_addr_guess.s_addr = guess;
+        return;
     }
 }
 
-/**
- * Changes in 3.1 instead of opening new socket do the following:
- * gain more information:
- *  1. bind IP
- *  2. host port
- *  3. guest port
- *  4. proto
- *  5. guest MAC address
- * the guest's MAC address is rather important for service, but we easily
- * could get it from VM configuration in DrvNAT or Service, the idea is activating
- * corresponding port-forwarding
- */
-int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
-                struct in_addr guest_addr, int guest_port, const uint8_t *ethaddr)
+
+static struct port_forward_rule *
+slirp_find_redirect(PNATState pData,
+                    int is_udp,
+                    struct in_addr host_addr, int host_port,
+                    struct in_addr guest_addr, int guest_port)
 {
-    struct port_forward_rule *rule = NULL;
+    struct port_forward_rule *rule;
+    uint16_t proto = (is_udp ? IPPROTO_UDP : IPPROTO_TCP);
+
     LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
     {
-        if (   rule->proto == (is_udp ? IPPROTO_UDP : IPPROTO_TCP)
+        if (   rule->proto == proto
             && rule->host_port == host_port
             && rule->bind_ip.s_addr == host_addr.s_addr
             && rule->guest_port == guest_port
-            && rule->guest_addr.s_addr == guest_addr.s_addr
-            )
-            return 0; /* rule has been already registered */
+            && rule->guest_addr.s_addr == guest_addr.s_addr)
+        {
+            return rule;
+        }
+    }
+
+    return NULL;
+}
+
+
+int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
+                struct in_addr guest_addr, int guest_port)
+{
+    struct port_forward_rule *rule;
+
+    rule = slirp_find_redirect(pData, is_udp, host_addr, host_port, guest_addr, guest_port);
+    if (rule != NULL) /* rule has been already registered */
+    {
+        /* XXX: this shouldn't happen */
+        return 0;
     }
 
     rule = RTMemAllocZ(sizeof(struct port_forward_rule));
@@ -1632,60 +1545,71 @@ int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, in
         return 1;
 
     rule->proto = (is_udp ? IPPROTO_UDP : IPPROTO_TCP);
-    rule->host_port = host_port;
-    rule->guest_port = guest_port;
-    rule->guest_addr.s_addr = guest_addr.s_addr;
     rule->bind_ip.s_addr = host_addr.s_addr;
+    rule->host_port = host_port;
+    rule->guest_addr.s_addr = guest_addr.s_addr;
+    rule->guest_port = guest_port;
+
+    if (rule->proto == IPPROTO_UDP)
+        rule->so = udp_listen(pData, rule->bind_ip.s_addr, RT_H2N_U16(rule->host_port),
+                              rule->guest_addr.s_addr, RT_H2N_U16(rule->guest_port), 0);
+    else
+        rule->so = solisten(pData, rule->bind_ip.s_addr, RT_H2N_U16(rule->host_port),
+                            rule->guest_addr.s_addr, RT_H2N_U16(rule->guest_port), 0);
+
+    if (rule->so == NULL)
+    {
+        LogRel(("NAT: failed to redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
+                rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
+                rule->bind_ip.s_addr, rule->host_port,
+                guest_addr, rule->guest_port));
+        RTMemFree(rule);
+        return 1;
+    }
+
+    LogRel(("NAT: set redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
+            rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
+            rule->bind_ip.s_addr, rule->host_port,
+            guest_addr, rule->guest_port));
+
     LIST_INSERT_HEAD(&pData->port_forward_rule_head, rule, list);
-    pData->cRedirectionsStored++;
-    /* activate port-forwarding if guest has already got assigned IP */
-    if (   ethaddr
-        && memcmp(ethaddr, zerro_ethaddr, ETH_ALEN))
-        activate_port_forwarding(pData, ethaddr);
     return 0;
 }
+
 
 int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
                 struct in_addr guest_addr, int guest_port)
 {
-    struct port_forward_rule *rule = NULL;
-    LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
+    struct port_forward_rule *rule;
+
+    rule = slirp_find_redirect(pData, is_udp, host_addr, host_port, guest_addr, guest_port);
+    if (rule == NULL)
     {
-        if (   rule->proto == (is_udp ? IPPROTO_UDP : IPPROTO_TCP)
-            && rule->host_port == host_port
-            && rule->guest_port == guest_port
-            && rule->bind_ip.s_addr == host_addr.s_addr
-            && rule->guest_addr.s_addr == guest_addr.s_addr
-            && rule->activated)
-        {
-            LogRel(("NAT: remove redirect %s host %RTnaipv4:%d => guest %RTnaipv4:%d\n",
-                    rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
-                    rule->bind_ip.s_addr, rule->host_port,
-                    guest_addr.s_addr, rule->guest_port));
-
-            if (is_udp)
-                udp_detach(pData, rule->so);
-            else
-                tcp_close(pData, sototcpcb(rule->so));
-            LIST_REMOVE(rule, list);
-            RTMemFree(rule);
-            pData->cRedirectionsStored--;
-            break;
-        }
-
+        LogRel(("NAT: unable to find redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
+                rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
+                rule->bind_ip.s_addr, rule->host_port,
+                guest_addr.s_addr, rule->guest_port));
+        return 0;
     }
+
+    LogRel(("NAT: remove redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
+            rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
+            rule->bind_ip.s_addr, rule->host_port,
+            guest_addr.s_addr, rule->guest_port));
+
+    if (rule->so != NULL)
+    {
+        if (is_udp)
+            udp_detach(pData, rule->so);
+        else
+            tcp_close(pData, sototcpcb(rule->so));
+    }
+
+    LIST_REMOVE(rule, list);
+    RTMemFree(rule);
     return 0;
 }
 
-void slirp_set_ethaddr_and_activate_port_forwarding(PNATState pData, const uint8_t *ethaddr, uint32_t GuestIP)
-{
-    memcpy(client_ethaddr, ethaddr, ETH_ALEN);
-    if (GuestIP != INADDR_ANY)
-    {
-        slirp_arp_cache_update_or_add(pData, GuestIP, ethaddr);
-        activate_port_forwarding(pData, ethaddr);
-    }
-}
 
 #if defined(RT_OS_WINDOWS)
 HANDLE *slirp_get_events(PNATState pData)
