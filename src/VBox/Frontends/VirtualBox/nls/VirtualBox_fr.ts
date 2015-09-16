@@ -7349,7 +7349,7 @@
     <message>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation>VirtialBox - Erreur critique</translation>
+        <translation>VirtualBox - Erreur critique</translation>
     </message>
     <message>
         <source>Do not show this message again</source>

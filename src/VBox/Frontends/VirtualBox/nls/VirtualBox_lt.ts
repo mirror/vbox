@@ -7129,7 +7129,7 @@
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title
 </comment>
-        <translation type="obsolete">VirtialBox - lemtinga klaida</translation>
+        <translation type="obsolete">VirtualBox - lemtinga klaida</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
@@ -8009,7 +8009,7 @@
     <message>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation>VirtialBox - lemtinga klaida</translation>
+        <translation>VirtualBox - lemtinga klaida</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
@@ -11496,7 +11496,7 @@
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 adresą šiai plokštei, jei palaikomas 
+        <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 adresą šiai plokštei, jei palaikomas
 IPv6.</translation>
     </message>
     <message>
@@ -15039,7 +15039,7 @@ IPv6.</translation>
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;Iš sąrašo kairėje pusėje pasirinkite nuostatų grupę. Užvedę pelę virš 
+        <translation type="obsolete">&lt;i&gt;Iš sąrašo kairėje pusėje pasirinkite nuostatų grupę. Užvedę pelę virš
 konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
