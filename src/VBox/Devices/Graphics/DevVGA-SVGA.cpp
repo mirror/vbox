@@ -534,6 +534,7 @@ static const char *vmsvgaFIFOCmdToString(uint32_t u32Cmd)
 }
 #endif
 
+#ifdef IN_RING3
 /**
  * @interface_method_impl{PDMIDISPLAYPORT::pfnSetViewport}
  */
@@ -542,6 +543,7 @@ DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t u
     PVGASTATE pThis = RT_FROM_MEMBER(pInterface, VGASTATE, IPort);
 
     Log(("vmsvgaPortSetViewPort: screen %d (%d,%d)(%d,%d)\n", uScreenId, x, y, cx, cy));
+    VMSVGAVIEWPORT const OldViewport = pThis->svga.viewport;
 
     if (x < pThis->svga.uWidth)
     {
@@ -569,7 +571,16 @@ DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t u
         pThis->svga.viewport.yLowWC  = 0;
         pThis->svga.viewport.yHighWC = 0;
     }
+
+# ifdef VBOX_WITH_VMSVGA3D
+    /*
+     * Now inform the 3D backend.
+     */
+    if (pThis->svga.f3DEnabled)
+        vmsvga3dUpdateHostScreenViewport(pThis, uScreenId, &OldViewport);
+# endif
 }
+#endif /* IN_RING3 */
 
 /**
  * Read port register

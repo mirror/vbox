@@ -23,6 +23,7 @@ EXPORTS
     vmsvga3dCocoaViewInfo
     vmsvga3dCocoaViewSetPosition
     vmsvga3dCocoaViewSetSize
+    vmsvga3dCocoaViewUpdateViewport
     vmsvga3dCocoaViewMakeCurrentContext
     vmsvga3dCocoaSwapBuffers
 

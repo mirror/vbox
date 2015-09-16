@@ -117,12 +117,13 @@
 - (id)initWithFrameAndFormat:(NSRect)frame parentView:(NSView*)pparentView pixelFormat:(NSOpenGLPixelFormat *)pFmt;
 - (void)vboxSetPos:(NSPoint)pos;
 - (void)vboxSetSize:(NSSize)size;
+- (void)vboxScheduleCtxUpdate;
 - (void)vboxReshapePerform;
 - (void)vboxReshape;
-#if 0 // doesn't work or isn't needed :/
-- (void)vboxFrameDidChange;
+- (void)vboxBoundsDidChange:(NSNotification *)pNotification;
+- (void)vboxFrameDidChange:(NSNotification *)pNotification;
+- (void)vboxFrameDidChangeGlobal:(NSNotification *)pNotification;
 - (BOOL)postsFrameChangedNotifications;
-#endif
 - (void)vboxRemoveFromSuperviewAndHide;
 - (void)vboxUpdateCtxIfNecessary;
 - (void)vboxClearBackBufferIfNecessary;
@@ -250,19 +251,6 @@
 
                 [pFmt release];
 
-#if 0 // doesn't work or isn't needed :/
-                /*
-                 * Get notifications when we're moved...
-                 */
-                if (pParams->pParentView)
-                {
-                    [[NSNotificationCenter defaultCenter] addObserver:self
-                                                             selector:@selector(vboxFrameDidChange)
-                                                                 name:NSViewFrameDidChangeNotification
-                                                               object:self];
-                }
-#endif
-
                 LogFlow(("OvlView createViewAndContext: returns successfully\n"));
                 return;
             }
@@ -299,6 +287,30 @@
     {
         //self.autoresizingMask = NSViewMinXMargin | NSViewMaxXMargin | NSViewMinYMargin | NSViewMaxYMargin;
         self.autoresizingMask = NSViewNotSizable;
+
+        /*
+         * Get notifications when we're moved or resized and when we're moved 
+         * to a different screen or GPU or when the GL context simply needs updating. 
+         */
+        if (pParentView)
+        {
+            [[NSNotificationCenter defaultCenter] addObserver:self
+                                                     selector:@selector(vboxBoundsDidChange:)
+                                                         name:NSViewBoundsDidChangeNotification
+                                                       object:self];
+            [[NSNotificationCenter defaultCenter] addObserver:self
+                                                     selector:@selector(vboxFrameDidChange:)
+                                                         name:NSViewFrameDidChangeNotification
+                                                       object:self];
+            //[[NSNotificationCenter defaultCenter] addObserver:self
+            //                                         selector:@selector(vboxFrameDidChange:)
+            //                                             name:NSViewDidUpdateTrackingAreasNotification
+            //                                           object:self];
+            [[NSNotificationCenter defaultCenter] addObserver:self
+                                                     selector:@selector(vboxFrameDidChangeGlobal:)
+                                                         name:NSViewGlobalFrameDidChangeNotification
+                                                       object:self];
+        }
     }
     LogFlow(("OvlView(%p) initWithFrameAndFormat: returns %p\n", (void *)self, (void *)self));
     return self;
@@ -344,6 +356,10 @@
     LogFlow(("OvlView(%p) vboxSetSize: returns\n", (void *)self));
 }
 
+- (void)vboxScheduleCtxUpdate
+{
+    m_fUpdateCtx = true;
+}
 
 - (void)vboxUpdateCtxIfNecessary
 {
@@ -453,18 +469,46 @@
     LogFlow(("OvlView(%p) vboxReshape: returns\n", (void *)self));
 }
 
-#if 0 // doesn't work or isn't needed :/
-- (void)vboxFrameDidChange
+/**
+ * This is called when the bounds change.
+ *  
+ * We indicate that the FIFO thread must update the GL context.
+ */
+- (void)vboxBoundsDidChange:(NSNotification *)pNotification
 {
-    LogFlow(("OvlView(%p) vboxFrameDidChange:\n", (void *)self));
+    LogFlow(("OvlView(%p) vboxBoundsDidChange:\n", (void *)self));
+    self->m_fUpdateCtx = true;
 }
 
+/**
+ * This is called when the frame changes size or position.
+ *  
+ * We indicate that the FIFO thread must update the GL context.
+ */
+- (void)vboxFrameDidChange:(NSNotification *)pNotification
+{
+    LogFlow(("OvlView(%p) vboxFrameDidChange:\n", (void *)self));
+    self->m_fUpdateCtx = true;
+}
+
+/** 
+ * This is called when moved to different screen/GPU or/and when the GL context 
+ * needs updating.
+ *  
+ * We indicate that the FIFO thread must update the GL context.
+ */
+- (void)vboxFrameDidChangeGlobal:(NSNotification *)pNotification
+{
+    LogFlow(("OvlView(%p) vboxFrameDidChangeGlobal:\n", (void *)self));
+    self->m_fUpdateCtx = true;
+}
+
+/** This enables the vboxFrameDidChange notification. */
 - (BOOL)postsFrameChangedNotifications
 {
     LogFlow(("OvlView(%p) postsFrameChangedNotifications:\n", (void *)self));
     return YES;
 }
-#endif
 
 /**
  * Removes the view from the parent, if it has one, and makes sure it's hidden.
@@ -492,10 +536,8 @@
             [self removeFromSuperview];
             LogFlow(("OvlView(%p) vboxRemoveFromSuperviewAndHide: calling setHidden\n", (void *)self));
             [self setHidden:YES];
-#if 0 /* doesn't work, or isn't really needed (scroll bar mess). */
             LogFlow(("OvlView(%p) vboxRemoveFromSuperviewAndHide: calling setHidden\n", (void *)self));
             [[NSNotificationCenter defaultCenter] removeObserver:self];
-#endif
         }
         else
         {
@@ -794,6 +836,21 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, Nat
 
     [pPool release];
     LogFlow(("vmsvga3dCocoaViewSetPosition: returns\n"));
+}
+
+
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewUpdateViewport(NativeNSViewRef pView)
+{
+    LogFlow(("vmsvga3dCocoaViewSetSize: pView=%p\n", (void *)pView));
+    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    VMSVGA3DOverlayView *pOverlayView = (VMSVGA3DOverlayView *)pView;
+
+    /* Possible that we don't actually need to do this (i.e. this API), but right now I'm
+       leaving it to be sure things actually work right when scrolling. */
+    [pOverlayView vboxScheduleCtxUpdate];
+
+    [pPool release];
+    LogFlow(("vmsvga3dCocoaViewSetSize: returns\n"));
 }
 
 

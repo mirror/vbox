@@ -1080,6 +1080,25 @@ int vmsvga3dTerminate(PVGASTATE pThis)
 }
 
 
+void vmsvga3dUpdateHostScreenViewport(PVGASTATE pThis, uint32_t idScreen, VMSVGAVIEWPORT const *pOldViewport)
+{
+    /** @todo Move the visible framebuffer content here, don't wait for the guest to
+     *        redraw it. */
+
+#ifdef RT_OS_DARWIN
+    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+    if (   pState
+        && idScreen == 0
+        && pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
+    {
+        vmsvga3dCocoaViewUpdateViewport(pState->SharedCtx.cocoaView);
+    }
+#else
+    NOREF(pThis); NOREF(idScreen);
+#endif
+}
+
+
 /**
  * Worker for vmsvga3dQueryCaps that figures out supported operations for a
  * given surface format capability.
@@ -2994,6 +3013,11 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
          *      Copy.cx   -= cyAdjust = 2;
          *   => Copy = { .yDst = 2, .ySrc = 5, .cy = 2 }
          *
+         * Update: On darwin, it turns out that when we call [NSOpenGLContext updates]
+         *         when the view is resized, moved and otherwise messed with,
+         *         the visible part of the framebuffer is actually the bottom
+         *         one.  It's easy to adjust for this, just have to adjust the
+         *         destination rectangle such that yBottom is zero.
          */
         /* X - no inversion, so kind of simple. */
         if (ClippedRect.x >= DstViewport.x)
@@ -3055,7 +3079,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
             else
             {
                 /* adjustment #2 */
-                uint32_t cyAdjust = ClippedRect.y + ClippedRect.h - DstViewport.yHighWC;
+                cyAdjust = ClippedRect.y + ClippedRect.h - DstViewport.yHighWC;
                 ClippedRect.srcy += cyAdjust;
                 ClippedRect.h    -= cyAdjust;
             }
@@ -3078,8 +3102,13 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
         /* Adjust for viewport. */
         DstRect.xLeft   -= DstViewport.x;
         DstRect.xRight  -= DstViewport.x;
+# ifdef RT_OS_DARWIN /* We actually seeing the bottom of the FB, not the top as on windows and X11. */
+        DstRect.yTop    -= DstRect.yBottom;
+        DstRect.yBottom  = 0;
+# else
         DstRect.yBottom += DstViewport.y;
         DstRect.yTop    += DstViewport.y;
+# endif
 
         Log(("SrcRect: (%d,%d)(%d,%d) DstRect: (%d,%d)(%d,%d)\n",
              SrcRect.xLeft, SrcRect.yBottom, SrcRect.xRight, SrcRect.yTop,

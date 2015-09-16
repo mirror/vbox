@@ -55,6 +55,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
 int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM);
 int vmsvga3dTerminate(PVGASTATE pThis);
 int vmsvga3dReset(PVGASTATE pThis);
+void vmsvga3dUpdateHostScreenViewport(PVGASTATE pThis, uint32_t idScreen, VMSVGAVIEWPORT const *pOldViewport);
 int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val);
 
 int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, SVGA3dSurfaceFormat format, SVGA3dSurfaceFace face[SVGA3D_MAX_SURFACE_FACES], uint32_t multisampleCount, SVGA3dTextureFilter autogenFilter, uint32_t cMipLevels, SVGA3dSize *pMipLevelSize);

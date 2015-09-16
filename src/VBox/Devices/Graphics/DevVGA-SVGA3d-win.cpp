@@ -323,6 +323,11 @@ int vmsvga3dTerminate(PVGASTATE pThis)
     return VINF_SUCCESS;
 }
 
+void vmsvga3dUpdateHostScreenViewport(PVGASTATE pThis, uint32_t idScreen, VMSVGAVIEWPORT const *pOldViewport)
+{
+    /** @todo Scroll the screen content without requiring the guest to redraw. */
+    NOREF(pThis); NOREF(idScreen); NOREF(pOldViewport);
+}
 
 static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_t idx3dCaps, D3DFORMAT format)
 {
