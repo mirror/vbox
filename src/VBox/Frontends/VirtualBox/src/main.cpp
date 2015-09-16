@@ -134,7 +134,7 @@ QString g_QStrHintReinstall = QApplication::tr(
 
 #ifdef Q_WS_MAC
 /** Mac OS X: Really ugly hack to prevent silly check in AppKit. */
-static void PreventCheckInAppKit()
+static void HideSetUidRootFromAppKit()
 {
     /* Check for Snow Leopard or higher: */
     char szInfo[64];
@@ -327,6 +327,17 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     /* Simulate try-catch block: */
     do
     {
+#ifdef Q_WS_MAC
+        /* Hide setuid root from AppKit: */
+        HideSetUidRootFromAppKit();
+#endif /* Q_WS_MAC */
+
+#ifdef Q_WS_X11
+        /* Make sure multi-threaded environment is safe: */
+        if (!MakeSureMultiThreadingIsSafe())
+            break;
+#endif /* Q_WS_X11 */
+
         /* Console help preprocessing: */
         bool fHelpShown = false;
         for (int i = 0; i < argc; ++i)
@@ -353,9 +364,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #endif /* VBOX_WITH_HARDENING */
 
 #ifdef Q_WS_MAC
-        /* Prevent check in AppKit: */
-        PreventCheckInAppKit();
-
         /* Apply font fixes (before QApplication get created and instantiated font-hints): */
         switch (VBoxGlobal::osRelease())
         {
@@ -371,10 +379,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #endif /* Q_WS_MAC */
 
 #ifdef Q_WS_X11
-        /* Make sure multi-threaded environment is safe: */
-        if (!MakeSureMultiThreadingIsSafe())
-            break;
-
 # if defined(RT_OS_LINUX) && defined(DEBUG)
         /* Install signal handler to backtrace the call stack: */
         InstallSignalHandler();
@@ -533,6 +537,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 int main(int argc, char **argv, char **envp)
 {
 #ifdef Q_WS_X11
+    /* Make sure multi-threaded environment is safe: */
     if (!MakeSureMultiThreadingIsSafe())
         return 1;
 #endif /* Q_WS_X11 */
@@ -640,8 +645,8 @@ int main(int argc, char **argv, char **envp)
 extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
 {
 # ifdef Q_WS_MAC
-    /* Prevent check in AppKit: */
-    PreventCheckInAppKit();
+    /* Hide setuid root from AppKit: */
+    HideSetUidRootFromAppKit();
 # endif /* Q_WS_MAC */
 
     char szMsgBuf[_16K];
