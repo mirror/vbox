@@ -1527,7 +1527,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-      for q in $QT4DIR; do
+      for q in $QT4DIR `pwd`/tools/linux."$TARGET_MACHINE"/qt/v4.8.*; do
         INCQT4="$q/include $q/include/QtCore"
         FLGQT4="-DQT_SHARED"
         I_INCQT4=`prefix_I "$INCQT4"`
