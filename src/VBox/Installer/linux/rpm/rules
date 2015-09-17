@@ -158,7 +158,7 @@ cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(filter sles10.1,$(rpmrel)),--build-libxml2,) \
 	     $(if $(filter el5 ol5 centos5 el6 ol6 centos6 sles10.1 sles11.0 mdv2011.0,$(rpmrel)),--build-libvpx,) \
 	     $(if $(filter el5 ol5 centos5 sles10.1 sles11.0,$(rpmrel)),--build-libcurl,) \
-	     $(if $(filter el5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
+	     $(if $(filter el5 ol5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
 	     $(if $(filter el5 ol5 centos5 sles10.1,$(rpmrel)),--disable-pulse,) \
 	     $(if $(filter el5 ol5 centos5 el6 ol6 centos6 sles10.1 sles11.0,$(rpmrel)),--with-qt4-dir=/home/vbox/Qt-4.8.6-stdc++6-$(arch)) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
@@ -174,7 +174,7 @@ bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     PATH_OUT=$(builddir) \
 	     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
 	     VBOX_WITHOUT_EXTPACK_VNC_PACKING=1 \
-	     $(if $(filter el5 el6 sles10.1 sles11.0,$(rpmrel)),,VBOX_WITH_VMSVGA3D=1) \
+	     $(if $(filter el5 ol5 centos5 el6 ol6 centos6 sles10.1 sles11.0,$(rpmrel)),,VBOX_WITH_VMSVGA3D=1) \
 	     VBOX_DO_STRIP= \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     $(doc_dir) \
