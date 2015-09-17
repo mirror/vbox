@@ -259,6 +259,7 @@ binary: rpm/build-stamp
 	tar -cf rpm/VirtualBox.tar -C rpm $(rpmname)
 	rm -f rpmbuild/RPMS/*/VirtualBox*rpm
 	rm -f rpmbuild/SPECS/*
+	mkdir -p rpmbuild/BUILD rpmbuild/RPMS/i386 rpmbuild/RPMS/x86_64 rpmbuild/SOURCES rpmbuild/SPECS rpmbuild/SRPMS
 	(cd rpm; rpmbuild --define '_topdir $(current)/rpmbuild' -tb --clean VirtualBox.tar)
 	mv rpmbuild/RPMS/*/$(verpkg)-debug* $(pkgdir) || true
 	file=`find rpmbuild/RPMS -name $(verpkg)*rpm -print`; \
