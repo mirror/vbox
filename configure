@@ -158,6 +158,11 @@ KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
 DEVDIR="`cd \`dirname $0\`; pwd`/tools"
 if [ -d "/lib/modules/`uname -r`/build" ]; then
  LINUX="/lib/modules/`uname -r`/build"
+elif [ /lib/modules/* != "/lib/modules/*" ]; then
+  # Get the most recent kernel headers if none match the current kernel.
+  for i in /lib/modules/*; do
+    LINUX="$i/build"
+  done
 else
  LINUX="/usr/src/linux"
 fi
