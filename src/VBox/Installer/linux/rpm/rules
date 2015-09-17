@@ -160,7 +160,6 @@ cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(filter el5 ol5 centos5 sles10.1 sles11.0,$(rpmrel)),--build-libcurl,) \
 	     $(if $(filter el5 ol5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
 	     $(if $(filter el5 ol5 centos5 sles10.1,$(rpmrel)),--disable-pulse,) \
-	     $(if $(filter el5 ol5 centos5 el6 ol6 centos6 sles10.1 sles11.0,$(rpmrel)),--with-qt4-dir=/home/vbox/Qt-4.8.6-stdc++6-$(arch)) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
