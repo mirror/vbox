@@ -176,8 +176,6 @@ public:
 
     UISelectorWindow &selectorWnd();
 
-    /** Returns current virtual machine. */
-    UIMachine* virtualMachine() const;
     /** Returns currently active virtual machine window. */
     QWidget* activeMachineWindow() const;
 

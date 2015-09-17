@@ -1982,10 +1982,10 @@ void UISession::updateHostScreenData()
 /* static */
 static void signalHandlerSIGUSR1(int sig, siginfo_t * /* pInfo */, void * /*pSecret */)
 {
-    /* only SIGUSR1 is interesting */
+    /* Only SIGUSR1 is interesting: */
     if (sig == SIGUSR1)
-        if (UIMachine *pMachine = vboxGlobal().virtualMachine())
-            pMachine->uisession()->machineLogic()->keyboardHandler()->releaseAllPressedKeys();
+        if (gpMachine)
+            gpMachine->uisession()->machineLogic()->keyboardHandler()->releaseAllPressedKeys();
 }
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 

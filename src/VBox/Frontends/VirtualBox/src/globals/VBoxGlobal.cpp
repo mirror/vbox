@@ -457,11 +457,6 @@ UISelectorWindow &VBoxGlobal::selectorWnd()
     return *mSelectorWnd;
 }
 
-UIMachine* VBoxGlobal::virtualMachine() const
-{
-    return gpMachine;
-}
-
 QWidget* VBoxGlobal::activeMachineWindow() const
 {
     if (isVMConsoleProcess() && gpMachine && gpMachine->activeWindow())
