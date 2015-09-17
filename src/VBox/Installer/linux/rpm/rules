@@ -248,10 +248,10 @@ binary: rpm/build-stamp
 	    -e 's|%PACKAGE%|virtualbox|g' \
 	    -e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
 	    -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
-	    vboxdrv.sh.in > $(archdir)/vboxdrv.sh
-	cp vboxballoonctrl-service.sh $(archdir)
-	cp vboxautostart-service.sh $(archdir)
-	cp vboxweb-service.sh $(archdir)
+	    vboxdrv.sh.in > $(archdir)/vboxdrv.init
+	cp vboxballoonctrl-service.sh $(archdir)/vboxballoonctrl-service.init
+	cp vboxautostart-service.sh $(archdir)/vboxautostart-service.init
+	cp vboxweb-service.sh $(archdir)/vboxweb-service.init
 	cp VBox.sh $(archdir)
 	mv rpm/VirtualBox-$(ver) rpm/$(rpmname)
 	tar -cf rpm/VirtualBox.tar -C rpm $(rpmname)

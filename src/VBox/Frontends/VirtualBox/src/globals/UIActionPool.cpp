@@ -111,17 +111,17 @@ UIAction::UIAction(UIActionPool *pParent, UIActionType type)
 
 UIMenu* UIAction::menu() const
 {
-    return QAction::menu() ? qobject_cast<UIMenu*>(QAction::menu()) : NULL;
+    return qobject_cast<UIMenu*>(QAction::menu());
 }
 
 UIActionPolymorphic* UIAction::toActionPolymorphic()
 {
-    return this ? qobject_cast<UIActionPolymorphic*>(this) : NULL;
+    return qobject_cast<UIActionPolymorphic*>(this);
 }
 
 UIActionPolymorphicMenu* UIAction::toActionPolymorphicMenu()
 {
-    return this ? qobject_cast<UIActionPolymorphicMenu*>(this) : NULL;
+    return qobject_cast<UIActionPolymorphicMenu*>(this);
 }
 
 void UIAction::setName(const QString &strName)
@@ -889,12 +889,12 @@ UIActionPool::UIActionPool(UIActionPoolType type, bool fTemporary /* = false */)
 
 UIActionPoolRuntime* UIActionPool::toRuntime()
 {
-    return this ? qobject_cast<UIActionPoolRuntime*>(this) : NULL;
+    return qobject_cast<UIActionPoolRuntime*>(this);
 }
 
 UIActionPoolSelector* UIActionPool::toSelector()
 {
-    return this ? qobject_cast<UIActionPoolSelector*>(this) : NULL;
+    return qobject_cast<UIActionPoolSelector*>(this);
 }
 
 bool UIActionPool::isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType type) const
@@ -958,11 +958,11 @@ void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIE
 void UIActionPool::sltHandleMenuPrepare()
 {
     /* Make sure menu is valid: */
-    AssertPtrReturnVoid(sender());
     UIMenu *pMenu = qobject_cast<UIMenu*>(sender());
+    AssertPtrReturnVoid(pMenu);
     /* Make sure action is valid: */
-    AssertPtrReturnVoid(pMenu->menuAction());
     UIAction *pAction = qobject_cast<UIAction*>(pMenu->menuAction());
+    AssertPtrReturnVoid(pAction);
 
     /* Determine action index: */
     const int iIndex = m_pool.key(pAction);

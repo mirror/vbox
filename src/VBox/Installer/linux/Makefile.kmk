@@ -209,9 +209,6 @@ VBOX_LNX_NO_STRIP = \
 	  ExtensionPacks/VNC/ExtPack-license.html \
 	  ExtensionPacks/VNC/ExtPack-license.rtf \
 	  ExtensionPacks/VNC/ExtPack-license.txt,) \
-	postinst-common.sh \
-	prerm-common.sh \
-	routines.sh \
 	VBoxSysInfo.sh \
 	vboxautostart-service.sh \
 	vboxballoonctrl-service.sh \

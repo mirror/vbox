@@ -3512,14 +3512,6 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
 #endif
         }
 #endif
-#ifdef VBOX_WITH_VIRTIO_GPU
-        PCFGMNODE pDevVirtioGpu = NULL;          /* Virtio GPU device */
-        PCFGMNODE pInstVirtioGpu = NULL;
-        const char *pszVirtioGpuDevice = "virtio-gpu";
-        InsertConfigNode(pDevices,      pszVirtioGpuDevice, &pDevVirtioGpu);
-        InsertConfigNode(pDevVirtioGpu, "0", &pInstVirtioGpu);
-        hrc = pBusMgr->assignPCIDevice(pszVirtioGpuDevice, pInstVirtioGpu);                 H();
-#endif /* VBOX_WITH_VIRTIO_GPU */
 
         /* Custom VESA mode list */
         unsigned cModes = 0;

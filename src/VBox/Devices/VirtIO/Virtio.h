@@ -32,11 +32,8 @@
 /** @} */
 
 #define DEVICE_PCI_VENDOR_ID                0x1AF4
-#define DEVICE_PCI_BASE_ID                  0x1000
-#define DEVICE_PCI_BASE_ID_V1               0x1040
+#define DEVICE_PCI_DEVICE_ID                0x1000
 #define DEVICE_PCI_SUBSYSTEM_VENDOR_ID      0x1AF4
-#define DEVICE_PCI_SUBSYSTEM_BASE_ID       1
-#define DEVICE_PCI_SUBSYSTEM_BASE_ID_V1    0x40
 
 #define VIRTIO_MAX_NQUEUES                  3
 
@@ -154,7 +151,6 @@ enum VirtioDeviceType
 {
     VIRTIO_NET_ID = 0,
     VIRTIO_BLK_ID = 1,
-    VIRTIO_GPU_ID = 16,
     VIRTIO_32BIT_HACK = 0x7fffffff
 };
 
@@ -263,7 +259,7 @@ void  vpciSetReadLed(PVPCISTATE pState, bool fOn);
 int   vpciSaveExec(PVPCISTATE pState, PSSMHANDLE pSSM);
 int   vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t nQueues);
 int   vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState, int iInstance, const char *pcszNameFmt,
-                    uint16_t uDeviceId, uint16_t uClass, uint32_t nQueues, bool fVersion1);
+                    uint16_t uSubsystemId, uint16_t uClass, uint32_t nQueues);
 int   vpciDestruct(VPCISTATE* pState);
 void  vpciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 void  vpciReset(PVPCISTATE pState);

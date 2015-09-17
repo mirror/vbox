@@ -313,10 +313,8 @@ void UIPopupStack::propagateWidth()
 int UIPopupStack::parentMenuBarHeight(QWidget *pParent)
 {
     /* Menu-bar can exist only on QMainWindow sub-class: */
-    if (pParent)
+    if (QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent))
     {
-        QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent);
-
         /* Search for existing menu-bar child: */
         if (QMenuBar *pMenuBar = pMainWindow->findChild<QMenuBar*>())
             return pMenuBar->height();
@@ -329,10 +327,8 @@ int UIPopupStack::parentMenuBarHeight(QWidget *pParent)
 int UIPopupStack::parentStatusBarHeight(QWidget *pParent)
 {
     /* Status-bar can exist only on QMainWindow sub-class: */
-    if (pParent)
+    if (QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent))
     {
-        QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent);
-
         /* Search for existing status-bar child: */
         if (QStatusBar *pStatusBar = pMainWindow->findChild<QStatusBar*>())
             return pStatusBar->height();
