@@ -210,8 +210,12 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * just join up argv with a space between each.  Ignored on platforms
  * passing argument the vector. */
 #define RTPROC_FLAGS_UNQUOTED_ARGS          RT_BIT(7)
+/** Only valid in combination with RTPROC_FLAGS_PROFILE.
+ * This will overwrite environment variables of the passed-in hEnv
+ * environment block with variables of the loaded profile. */
+#define RTPROC_FLAGS_OVERWRITE_WITH_PROFILE RT_BIT(8)
 /** Valid flag mask. */
-#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0xff)
+#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x1ff)
 /** @}  */
 
 
