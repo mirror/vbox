@@ -152,7 +152,11 @@ LIBVPX="-lvpx"
 PKGCONFIG="`which_wrapper pkg-config`"
 PYTHONDIR="/usr /usr/local"
 QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr /usr/local"
-QT4DIR_PKGCONFIG=1
+if pkg-config QtCore 2>/dev/null; then
+ QT4DIR_PKGCONFIG=1
+else
+ QT4DIR_PKGCONFIG=0
+fi
 QT4UIC3DIR="/usr/bin"
 KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
 DEVDIR="`cd \`dirname $0\`; pwd`/tools"
@@ -1527,7 +1531,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-      for q in $QT4DIR `pwd`/tools/linux."$TARGET_MACHINE"/qt/v4.8.*; do
+      for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
         INCQT4="$q/include $q/include/QtCore"
         FLGQT4="-DQT_SHARED"
         I_INCQT4=`prefix_I "$INCQT4"`
@@ -1592,7 +1596,7 @@ EOF
             cnf_append "VBOX_WITH_QT4_SUN" "1"
           fi
           test_header "Qt4 devtools"
-          for q in $QT4DIR; do
+          for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
             # first try it with a suffix, some platforms use that
             if which_wrapper "$q/bin/moc-qt4" > /dev/null; then
               moc_ver=`$q/bin/moc-qt4 -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
