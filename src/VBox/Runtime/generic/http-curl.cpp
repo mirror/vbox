@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_HTTP
 #include <iprt/http.h>
 #include "internal/iprt.h"
 
@@ -40,6 +41,7 @@
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/ldr.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/net.h>
 #include <iprt/once.h>
@@ -53,6 +55,11 @@
 
 #include <curl/curl.h>
 
+#ifdef RT_OS_DARWIN
+# include <CoreFoundation/CoreFoundation.h>
+# include <SystemConfiguration/SystemConfiguration.h>
+# include <CoreServices/CoreServices.h>
+#endif
 #ifdef RT_OS_WINDOWS
 # include <Winhttp.h>
 #endif
@@ -78,6 +85,11 @@ typedef struct RTHTTPINTERNAL
     char               *pszCaFile;
     /** Whether to delete the CA on destruction. */
     bool                fDeleteCaFile;
+
+    /** Set if we've applied a CURLOTP_USERAGENT already.  */
+    bool                fHaveSetUserAgent;
+    /** Set if we've got a user agent header, otherwise clear.  */
+    bool                fHaveUserAgentHeader;
 
     /** @name Proxy settings.
      * When fUseSystemProxySettings is set, the other members will be updated each
@@ -204,6 +216,9 @@ static PFNWINHTTPGETIEPROXYCONFIGFORCURRENTUSER g_pfnWinHttpGetIEProxyConfigForC
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static void rtHttpUnsetCaFile(PRTHTTPINTERNAL pThis);
+#ifdef RT_OS_DARWIN
+static int rtHttpDarwinTryConfigProxies(PRTHTTPINTERNAL pThis, CFArrayRef hArrayProxies, CFURLRef hUrlTarget, bool fIgnorePacType);
+#endif
 
 
 RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
@@ -332,6 +347,8 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
 {
     int rcCurl;
     AssertReturn(pszHost, VERR_INVALID_PARAMETER);
+    Log(("rtHttpUpdateProxyConfig: pThis=%p type=%d host='%s' port=%u user='%s'%s\n",
+         pThis, enmProxyType, pszHost, uPort, pszUsername, pszPassword ? " with password" : " without password"));
 
 #ifdef CURLOPT_NOPROXY
     if (pThis->fNoProxy)
@@ -426,6 +443,8 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
  */
 static int rtHttpUpdateAutomaticProxyDisable(PRTHTTPINTERNAL pThis)
 {
+    Log(("rtHttpUpdateAutomaticProxyDisable: pThis=%p\n", pThis));
+
     AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYTYPE,   (long)CURLPROXY_HTTP) == CURLE_OK, VERR_INTERNAL_ERROR_2);
     pThis->enmProxyType = CURLPROXY_HTTP;
 
@@ -742,6 +761,466 @@ static int rtHttpConfigureProxyForUrlFromEnv(PRTHTTPINTERNAL pThis, const char *
     return rc;
 }
 
+#ifdef RT_OS_DARWIN
+
+/**
+ * Get a boolean like integer value from a dictionary.
+ *
+ * @returns true / false.
+ * @param   hDict       The dictionary.
+ * @param   pvKey       The dictionary value key.
+ */
+static bool rtHttpDarwinGetBooleanFromDict(CFDictionaryRef hDict, void const *pvKey, bool fDefault)
+{
+    CFNumberRef hNum = (CFNumberRef)CFDictionaryGetValue(hDict, pvKey);
+    if (hNum)
+    {
+        int fEnabled;
+        if (!CFNumberGetValue(hNum, kCFNumberIntType, &fEnabled))
+            return fDefault;
+        return fEnabled != 0;
+    }
+    return fDefault;
+}
+
+
+/**
+ * Creates a CFURL object for an URL.
+ *
+ * @returns CFURL object reference.
+ * @param   pszUrl              The URL.
+ */
+static CFURLRef rtHttpDarwinUrlToCFURL(const char *pszUrl)
+{
+    CFURLRef    hUrl = NULL;
+    CFStringRef hStrUrl = CFStringCreateWithCString(kCFAllocatorDefault, pszUrl, kCFStringEncodingUTF8);
+    if (hStrUrl)
+    {
+        CFStringRef hStrUrlEscaped = CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, hStrUrl,
+                                                                             NULL /*charactersToLeaveUnescaped*/,
+                                                                             NULL /*legalURLCharactersToBeEscaped*/,
+                                                                             kCFStringEncodingUTF8);
+        if (hStrUrlEscaped)
+        {
+            hUrl = CFURLCreateWithString(kCFAllocatorDefault, hStrUrlEscaped, NULL /*baseURL*/);
+            Assert(hUrl);
+            CFRelease(hStrUrlEscaped);
+        }
+        else
+            AssertFailed();
+        CFRelease(hStrUrl);
+    }
+    else
+        AssertFailed();
+    return hUrl;
+}
+
+
+/**
+ * For passing results from rtHttpDarwinPacCallback to
+ * rtHttpDarwinExecuteProxyAutoConfigurationUrl.
+ */
+typedef struct RTHTTPDARWINPACRESULT
+{
+    CFArrayRef  hArrayProxies;
+    CFErrorRef  hError;
+} RTHTTPDARWINPACRESULT;
+typedef RTHTTPDARWINPACRESULT *PRTHTTPDARWINPACRESULT;
+
+/**
+ * Stupid callback for getting the result from
+ * CFNetworkExecuteProxyAutoConfigurationURL.
+ *
+ * @param   pvUser          Pointer to a RTHTTPDARWINPACRESULT on the stack of
+ *                          rtHttpDarwinExecuteProxyAutoConfigurationUrl.
+ * @param   hArrayProxies   The result array.
+ * @param   hError          Errors, if any.
+ */
+static void rtHttpDarwinPacCallback(void *pvUser, CFArrayRef hArrayProxies, CFErrorRef hError)
+{
+    PRTHTTPDARWINPACRESULT pResult = (PRTHTTPDARWINPACRESULT)pvUser;
+
+    Assert(pResult->hArrayProxies == NULL);
+    if (hArrayProxies)
+        pResult->hArrayProxies  = (CFArrayRef)CFRetain(hArrayProxies);
+
+    Assert(pResult->hError == NULL);
+    if (hError)
+        pResult->hError         = (CFErrorRef)CFRetain(hError);
+
+    CFRunLoopStop(CFRunLoopGetCurrent());
+}
+
+
+/**
+ * Executes a PAC script and returning the proxies it suggests.
+ *
+ * @returns Array of proxy configs (CFProxySupport.h style).
+ * @param   pThis           The HTTP client instance.
+ * @param   hUrlTarget      The URL we're about to use.
+ * @param   hUrlScript      The PAC script URL.
+ */
+static CFArrayRef rtHttpDarwinExecuteProxyAutoConfigurationUrl(PRTHTTPINTERNAL pThis, CFURLRef hUrlTarget, CFURLRef hUrlScript)
+{
+    char szTmp[256];
+    if (LogIsFlowEnabled())
+    {
+        szTmp[0] = '\0';
+        CFStringGetCString(CFURLGetString(hUrlScript), szTmp, sizeof(szTmp), kCFStringEncodingUTF8);
+        LogFlow(("rtHttpDarwinExecuteProxyAutoConfigurationUrl: hUrlScript=%p:%s\n", hUrlScript, szTmp));
+    }
+
+    /*
+     * Use CFNetworkExecuteProxyAutoConfigurationURL here so we don't have to
+     * download the script ourselves and mess around with too many CF APIs.
+     */
+    CFRunLoopRef hRunLoop = CFRunLoopGetCurrent();
+    AssertReturn(hRunLoop, NULL);
+
+    RTHTTPDARWINPACRESULT Result = { NULL, NULL };
+    CFStreamClientContext Ctx    = { 0, &Result, NULL, NULL, NULL };
+    CFRunLoopSourceRef hRunLoopSrc = CFNetworkExecuteProxyAutoConfigurationURL(hUrlScript, hUrlTarget,
+                                                                               rtHttpDarwinPacCallback, &Ctx);
+    AssertReturn(hRunLoopSrc, NULL);
+
+    CFStringRef kMode = CFSTR("com.apple.dts.CFProxySupportTool");
+    CFRunLoopAddSource(hRunLoop, hRunLoopSrc, kMode);
+    CFRunLoopRunInMode(kMode, 1.0e10, false); /* callback will force a return. */
+    CFRunLoopRemoveSource(hRunLoop, hRunLoopSrc, kMode);
+
+    /** @todo convert errors, maybe even fail. */
+
+    /*
+     * Autoconfig (or missing wpad server) typically results in:
+     *      domain:kCFErrorDomainCFNetwork; code=kCFHostErrorUnknown (2).
+     *
+     * In the autoconfig case, it looks like we're getting two entries, first
+     * one that's http://wpad/wpad.dat and a noproxy entry.  So, no reason to
+     * be very upset if this fails, just continue trying alternatives.
+     */
+    if (Result.hError)
+    {
+        if (LogIsEnabled())
+        {
+            szTmp[0] = '\0';
+            CFStringGetCString(CFErrorCopyDescription(Result.hError), szTmp, sizeof(szTmp), kCFStringEncodingUTF8);
+            Log(("rtHttpDarwinExecuteProxyAutoConfigurationUrl: error! code=%ld desc='%s'\n", (long)CFErrorGetCode(Result.hError), szTmp));
+        }
+        CFRelease(Result.hError);
+    }
+    return Result.hArrayProxies;
+}
+
+
+/**
+ * Attempt to configure the proxy according to @a hDictProxy.
+ *
+ * @returns IPRT status code. VINF_NOT_SUPPORTED if not able to configure it and
+ *          the caller should try out alternative proxy configs and fallbacks.
+ * @param   pThis           The HTTP client instance.
+ * @param   hDictProxy      The proxy configuration (see CFProxySupport.h).
+ * @param   hUrlTarget      The URL we're about to use.
+ * @param   fIgnorePacType  Whether to ignore PAC type proxy entries (i.e.
+ *                          javascript URL).  This is set when we're processing
+ *                          the output from a PAC script.
+ */
+static int rtHttpDarwinTryConfigProxy(PRTHTTPINTERNAL pThis, CFDictionaryRef hDictProxy, CFURLRef hUrlTarget, bool fIgnorePacType)
+{
+    CFStringRef hStrProxyType = (CFStringRef)CFDictionaryGetValue(hDictProxy, kCFProxyTypeKey);
+    AssertStmt(hStrProxyType, continue);
+
+    /*
+     * No proxy is fairly simple and common.
+     */
+    if (CFEqual(hStrProxyType, kCFProxyTypeNone))
+        return rtHttpUpdateAutomaticProxyDisable(pThis);
+
+    /*
+     * PAC URL means recursion, however we only do one level.
+     */
+    if (CFEqual(hStrProxyType, kCFProxyTypeAutoConfigurationURL))
+    {
+        AssertReturn(!fIgnorePacType, VINF_NOT_SUPPORTED);
+
+        CFURLRef hUrlScript = (CFURLRef)CFDictionaryGetValue(hDictProxy, kCFProxyAutoConfigurationURLKey);
+        AssertReturn(hUrlScript, VINF_NOT_SUPPORTED);
+
+        int rcRet = VINF_NOT_SUPPORTED;
+        CFArrayRef hArray = rtHttpDarwinExecuteProxyAutoConfigurationUrl(pThis, hUrlTarget, hUrlScript);
+        if (hArray)
+        {
+            rcRet = rtHttpDarwinTryConfigProxies(pThis, hArray, hUrlTarget, true /*fIgnorePacType*/);
+            CFRelease(hArray);
+        }
+        return rcRet;
+    }
+
+    /*
+     * Determine the proxy type (not entirely sure about type == proxy type and
+     * not scheme/protocol)...
+     */
+    curl_proxytype  enmProxyType      = CURLPROXY_HTTP;
+    uint32_t        uDefaultProxyPort = 8080;
+    if (   CFEqual(hStrProxyType, kCFProxyTypeHTTP)
+        || CFEqual(hStrProxyType, kCFProxyTypeHTTPS))
+    {  /* defaults */ }
+    else if (CFEqual(hStrProxyType, kCFProxyTypeSOCKS))
+    {
+        /** @todo All we get from darwin is 'SOCKS', no idea whether it's SOCK4 or
+         *        SOCK5 on the other side... Selecting SOCKS5 for now. */
+        enmProxyType = CURLPROXY_SOCKS5;
+        uDefaultProxyPort = 1080;
+    }
+    /* Unknown proxy type. */
+    else
+        return VINF_NOT_SUPPORTED;
+
+    /*
+     * Extract the proxy configuration.
+     */
+    /* The proxy host name. */
+    char szHostname[_1K];
+    CFStringRef hStr = (CFStringRef)CFDictionaryGetValue(hDictProxy, kCFProxyHostNameKey);
+    AssertReturn(hStr, VINF_NOT_SUPPORTED);
+    AssertReturn(CFStringGetCString(hStr, szHostname, sizeof(szHostname), kCFStringEncodingUTF8), VINF_NOT_SUPPORTED);
+
+    /* Get the port number (optional). */
+    SInt32      iProxyPort;
+    CFNumberRef hNum = (CFNumberRef)CFDictionaryGetValue(hDictProxy, kCFProxyPortNumberKey);
+    if (hNum && CFNumberGetValue(hNum, kCFNumberSInt32Type, &iProxyPort))
+        AssertMsgStmt(iProxyPort > 0 && iProxyPort < _64K, ("%d\n", iProxyPort), iProxyPort = uDefaultProxyPort);
+    else
+        iProxyPort = uDefaultProxyPort;
+
+    /* The proxy username. */
+    char szUsername[256];
+    hStr = (CFStringRef)CFDictionaryGetValue(hDictProxy, kCFProxyUsernameKey);
+    if (hStr)
+        AssertReturn(CFStringGetCString(hStr, szUsername, sizeof(szUsername), kCFStringEncodingUTF8), VINF_NOT_SUPPORTED);
+    else
+        szUsername[0] = '\0';
+
+    /* The proxy password. */
+    char szPassword[384];
+    hStr = (CFStringRef)CFDictionaryGetValue(hDictProxy, kCFProxyPasswordKey);
+    if (hStr)
+        AssertReturn(CFStringGetCString(hStr, szPassword, sizeof(szPassword), kCFStringEncodingUTF8), VINF_NOT_SUPPORTED);
+    else
+        szPassword[0] = '\0';
+
+    /*
+     * Apply the proxy config.
+     */
+    return rtHttpUpdateProxyConfig(pThis, enmProxyType, szHostname, iProxyPort,
+                                   szUsername[0] ? szUsername : NULL, szPassword[0] ? szPassword : NULL);
+}
+
+
+/**
+ * Try do proxy config for our HTTP client instance given an array of proxies.
+ *
+ * This is used with the output from a CFProxySupport.h API.
+ *
+ * @returns IPRT status code. VINF_NOT_SUPPORTED if not able to configure it and
+ *          we might want to try out fallbacks.
+ * @param   pThis           The HTTP client instance.
+ * @param   hArrayProxies   The proxies CFPRoxySupport have given us.
+ * @param   hUrlTarget      The URL we're about to use.
+ * @param   fIgnorePacType  Whether to ignore PAC type proxy entries (i.e.
+ *                          javascript URL).  This is set when we're processing
+ *                          the output from a PAC script.
+ */
+static int rtHttpDarwinTryConfigProxies(PRTHTTPINTERNAL pThis, CFArrayRef hArrayProxies, CFURLRef hUrlTarget, bool fIgnorePacType)
+{
+    int rcRet = VINF_NOT_SUPPORTED;
+    CFIndex const cEntries = CFArrayGetCount(hArrayProxies);
+    LogFlow(("rtHttpDarwinTryConfigProxies: cEntries=%d\n", cEntries));
+    for (CFIndex i = 0; i < cEntries; i++)
+    {
+        CFDictionaryRef hDictProxy = (CFDictionaryRef)CFArrayGetValueAtIndex(hArrayProxies, i);
+        AssertStmt(hDictProxy, continue);
+
+        rcRet = rtHttpDarwinTryConfigProxy(pThis, hDictProxy, hUrlTarget, fIgnorePacType);
+        if (rcRet != VINF_NOT_SUPPORTED)
+            break;
+    }
+    return rcRet;
+}
+
+
+/**
+ * Inner worker for rtHttpWinConfigureProxyForUrl.
+ *
+ * @returns IPRT status code. VINF_NOT_SUPPORTED if we should try fallback.
+ * @param   pThis       The HTTP client instance.
+ * @param   pszUrl      The URL.
+ */
+static int rtHttpDarwinConfigureProxyForUrlWorker(PRTHTTPINTERNAL pThis, CFDictionaryRef hDictProxies,
+                                                  const char *pszUrl, PRTURIPARSED pParsed, const char *pszHost)
+{
+    CFArrayRef  hArray;
+
+    /*
+     * From what I can tell, the CFNetworkCopyProxiesForURL API doesn't apply
+     * proxy exclusion rules (tested on 10.9).  So, do that manually.
+     */
+    RTNETADDRU  HostAddr;
+    int         fIsHostIpv4Address = -1;
+    char        szTmp[_4K];
+
+    /* If we've got a simple hostname, something containing no dots, we must check
+       whether such simple hostnames are excluded from proxying by default or not. */
+    if (strchr(pszHost, '.') == NULL)
+    {
+        if (rtHttpDarwinGetBooleanFromDict(hDictProxies, kSCPropNetProxiesExcludeSimpleHostnames, false))
+            return rtHttpUpdateAutomaticProxyDisable(pThis);
+        fIsHostIpv4Address = false;
+    }
+
+    /* Consult the exclusion list.  This is an array of strings.
+       This is very similar to what we do on windows. */
+    hArray = (CFArrayRef)CFDictionaryGetValue(hDictProxies, kSCPropNetProxiesExceptionsList);
+    if (hArray)
+    {
+        CFIndex const cEntries = CFArrayGetCount(hArray);
+        for (CFIndex i = 0; i < cEntries; i++)
+        {
+            CFStringRef hStr = (CFStringRef)CFArrayGetValueAtIndex(hArray, i);
+            AssertStmt(hStr, continue);
+            AssertStmt(CFStringGetCString(hStr, szTmp, sizeof(szTmp), kCFStringEncodingUTF8), continue);
+            RTStrToLower(szTmp);
+
+            bool fRet;
+            if (   strchr(szTmp, '*')
+                || strchr(szTmp, '?'))
+                fRet = RTStrSimplePatternMatch(szTmp, pszHost);
+            else
+            {
+                if (fIsHostIpv4Address == -1)
+                    fIsHostIpv4Address = RT_SUCCESS(RTNetStrToIPv4Addr(pszHost, &HostAddr.IPv4));
+                RTNETADDRIPV4 Network, Netmask;
+                if (   fIsHostIpv4Address
+                    && RT_SUCCESS(RTCidrStrToIPv4(szTmp, &Network, &Netmask)) )
+                    fRet = (HostAddr.IPv4.u & Netmask.u) == Network.u;
+                else
+                    fRet = strcmp(szTmp, pszHost) == 0;
+            }
+            if (fRet)
+                return rtHttpUpdateAutomaticProxyDisable(pThis);
+        }
+    }
+
+#if 0 /* The start of a manual alternative to CFNetworkCopyProxiesForURL below, hopefully we won't need this. */
+    /*
+     * Is proxy auto config (PAC) enabled?  If so, we must consult it first.
+     */
+    if (rtHttpDarwinGetBooleanFromDict(hDictProxies, kSCPropNetProxiesProxyAutoConfigEnable, false))
+    {
+        /* Convert the auto config url string to a CFURL object. */
+        CFStringRef hStrAutoConfigUrl = (CFStringRef)CFDictionaryGetValue(hDictProxies, kSCPropNetProxiesProxyAutoConfigURLString);
+        if (hStrAutoConfigUrl)
+        {
+            if (CFStringGetCString(hStrAutoConfigUrl, szTmp, sizeof(szTmp), kCFStringEncodingUTF8))
+            {
+                CFURLRef hUrlScript = rtHttpDarwinUrlToCFURL(szTmp);
+                if (hUrlScript)
+                {
+                    int      rcRet      = VINF_NOT_SUPPORTED;
+                    CFURLRef hUrlTarget = rtHttpDarwinUrlToCFURL(pszUrl);
+                    if (hUrlTarget)
+                    {
+                        /* Work around for <rdar://problem/5530166>, whatever that is.  Initializes
+                           some internal CFNetwork state, they say.  See CFPRoxySupportTool example. */
+                        hArray = CFNetworkCopyProxiesForURL(hUrlTarget, NULL);
+                        if (hArray)
+                            CFRelease(hArray);
+
+                        hArray = rtHttpDarwinExecuteProxyAutoConfigurationUrl(pThis, hUrlTarget, hUrlScript);
+                        if (hArray)
+                        {
+                            rcRet = rtHttpDarwinTryConfigProxies(pThis, hArray, hUrlTarget, true /*fIgnorePacType*/);
+                            CFRelease(hArray);
+                        }
+                    }
+                    CFRelease(hUrlScript);
+                    if (rcRet != VINF_NOT_SUPPORTED)
+                        return rcRet;
+                }
+            }
+        }
+    }
+
+    /*
+     * Try static proxy configs.
+     */
+    /** @todo later if needed. */
+    return VERR_NOT_SUPPORTED;
+
+#else
+    /*
+     * Simple solution - "just" use CFNetworkCopyProxiesForURL.
+     */
+    CFURLRef hUrlTarget = rtHttpDarwinUrlToCFURL(pszUrl);
+    AssertReturn(hUrlTarget, VERR_INTERNAL_ERROR);
+    int rcRet = VINF_NOT_SUPPORTED;
+
+    /* Work around for <rdar://problem/5530166>, whatever that is.  Initializes
+       some internal CFNetwork state, they say.  See CFPRoxySupportTool example. */
+    hArray = CFNetworkCopyProxiesForURL(hUrlTarget, NULL);
+    if (hArray)
+        CFRelease(hArray);
+
+    /* The actual run. */
+    hArray = CFNetworkCopyProxiesForURL(hUrlTarget, hDictProxies);
+    if (hArray)
+    {
+        rcRet = rtHttpDarwinTryConfigProxies(pThis, hArray, hUrlTarget, false /*fIgnorePacType*/);
+        CFRelease(hArray);
+    }
+    CFRelease(hUrlTarget);
+
+    return rcRet;
+#endif
+}
+
+/**
+ * Reconfigures the cURL proxy settings for the given URL, OS X style.
+ *
+ * @returns IPRT status code. VINF_NOT_SUPPORTED if we should try fallback.
+ * @param   pThis       The HTTP client instance.
+ * @param   pszUrl      The URL.
+ */
+static int rtHttpDarwinConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
+{
+    /*
+     * Parse the URL, if there isn't any host name (like for file:///xxx.txt)
+     * we don't need to run thru proxy settings to know what to do.
+     */
+    RTURIPARSED Parsed;
+    int rc = RTUriParse(pszUrl, &Parsed);
+    AssertRCReturn(rc, false);
+    if (Parsed.cchAuthorityHost == 0)
+        return rtHttpUpdateAutomaticProxyDisable(pThis);
+    char *pszHost = RTUriParsedAuthorityHost(pszUrl, &Parsed);
+    AssertReturn(pszHost, VERR_NO_STR_MEMORY);
+    RTStrToLower(pszHost);
+
+    /*
+     * Get a copy of the proxy settings (10.6 API).
+     */
+    CFDictionaryRef hDictProxies = CFNetworkCopySystemProxySettings(); /* Alt for 10.5: SCDynamicStoreCopyProxies(NULL); */
+    if (hDictProxies)
+        rc = rtHttpDarwinConfigureProxyForUrlWorker(pThis, hDictProxies, pszUrl, &Parsed, pszHost);
+    else
+        rc = VINF_NOT_SUPPORTED;
+    CFRelease(hDictProxies);
+
+    RTStrFree(pszHost);
+    return rc;
+}
+
+#endif /* RT_OS_DARWIN */
+
 #ifdef RT_OS_WINDOWS
 
 /**
@@ -804,6 +1283,7 @@ static bool rtHttpWinIsUrlInBypassList(const char *pszUrl, PCRTUTF16 pwszBypass)
     char *pszHost = RTUriParsedAuthorityHost(pszUrl, &Parsed);
     if (!pszHost) /* Don't assert, in case of file:///xxx or similar blunder. */
         return false;
+    RTStrToLower(pszHost);
 
     bool  fRet = false;
     char *pszBypassFree;
@@ -835,6 +1315,8 @@ static bool rtHttpWinIsUrlInBypassList(const char *pszUrl, PCRTUTF16 pwszBypass)
 
             char chSaved = pszEntry[cchEntry];
             pszEntry[cchEntry] = '\0';
+            RTStrToLower(pszEntry);
+
             if (   cchEntry == sizeof("<local>")  - 1
                 && memcmp(pszEntry, RT_STR_TUPLE("<local>")) == 0)
                 fRet = strchr(pszHost, '.') == NULL;
@@ -850,8 +1332,9 @@ static bool rtHttpWinIsUrlInBypassList(const char *pszUrl, PCRTUTF16 pwszBypass)
                     && RT_SUCCESS(RTCidrStrToIPv4(pszEntry, &Network, &Netmask)) )
                     fRet = (HostAddr.IPv4.u & Netmask.u) == Network.u;
                 else
-                    fRet = RTStrICmp(pszEntry, pszHost) == 0;
+                    fRet = strcmp(pszEntry, pszHost) == 0;
             }
+
             pszEntry[cchEntry] = chSaved;
             if (fRet)
                 break;
@@ -993,7 +1476,7 @@ static int rtHttpWinSelectProxyFromList(PRTHTTPINTERNAL pThis, const char *pszUr
 
 
 /**
- * Reconfigures the cURL proxy settings for the given URL.
+ * Reconfigures the cURL proxy settings for the given URL, Windows style.
  *
  * @returns IPRT status code. VINF_NOT_SUPPORTED if we should try fallback.
  * @param   pThis       The HTTP client instance.
@@ -1166,6 +1649,12 @@ static int rtHttpConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
 {
     if (pThis->fUseSystemProxySettings)
     {
+#ifdef RT_OS_DARWIN
+        int rc = rtHttpDarwinConfigureProxyForUrl(pThis, pszUrl);
+        if (rc == VINF_SUCCESS || RT_FAILURE(rc))
+            return rc;
+        Assert(rc == VINF_NOT_SUPPORTED);
+#endif
 #ifdef RT_OS_WINDOWS
         int rc = rtHttpWinConfigureProxyForUrl(pThis, pszUrl);
         if (rc == VINF_SUCCESS || RT_FAILURE(rc))
@@ -1204,6 +1693,7 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
 
+    pThis->fHaveUserAgentHeader = false;
     if (!cHeaders)
     {
         if (pThis->pHeaders)
@@ -1214,12 +1704,27 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const
 
     struct curl_slist *pHeaders = NULL;
     for (size_t i = 0; i < cHeaders; i++)
+    {
         pHeaders = curl_slist_append(pHeaders, papszHeaders[i]);
+        if (strncmp(papszHeaders[i], RT_STR_TUPLE("User-Agent:")) == 0)
+            pThis->fHaveUserAgentHeader = true;
+    }
 
     pThis->pHeaders = pHeaders;
     int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pHeaders);
     if (CURL_FAILURE(rcCurl))
         return VERR_INVALID_PARAMETER;
+
+    /*
+     * Unset the user agent if it's in one of the headers.
+     */
+    if (   pThis->fHaveUserAgentHeader
+        && pThis->fHaveSetUserAgent)
+    {
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_USERAGENT, (char *)NULL);
+        Assert(CURL_SUCCESS(rcCurl));
+        pThis->fHaveSetUserAgent = false;
+    }
 
     return VINF_SUCCESS;
 }
@@ -1428,6 +1933,11 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl)
                 rc = VERR_HTTP_NOT_FOUND;
                 break;
         }
+
+        if (pThis->pszRedirLocation)
+            Log(("rtHttpGetCalcStatus: rc=%Rrc lastResp=%lu redir='%s'\n", rc, pThis->lLastResp, pThis->pszRedirLocation));
+        else
+            Log(("rtHttpGetCalcStatus: rc=%Rrc lastResp=%lu\n", rc, pThis->lLastResp));
     }
     else
     {
@@ -1467,6 +1977,7 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl)
             default:
                 break;
         }
+        Log(("rtHttpGetCalcStatus: rc=%Rrc rcCurl=%u\n", rc, rcCurl));
     }
 
     return rc;
@@ -1558,6 +2069,19 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOPROGRESS, (long)0);
     if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
+
+    /*
+     * Set default user agent string if necessary.  Some websites take offence
+     * if we don't set it.
+     */
+    if (   !pThis->fHaveSetUserAgent
+        && !pThis->fHaveUserAgentHeader)
+    {
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_USERAGENT, "Mozilla/5.0 (AgnosticOS; Blend) IPRT/64.42");
+        if (CURL_FAILURE(rcCurl))
+            return VERR_HTTP_CURL_ERROR;
+        pThis->fHaveSetUserAgent = true;
+    }
 
     return VINF_SUCCESS;
 }
@@ -1684,6 +2208,7 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, uint8_t **ppvRespons
             {
                 *ppvResponse = pThis->Output.Mem.pb;
                 *pcb         = pThis->Output.Mem.cb;
+                Log(("rtHttpGetToMem: %zx bytes (allocated %zx)\n", pThis->Output.Mem.cb, pThis->Output.Mem.cbAllocated));
             }
             else if (pThis->Output.Mem.pb)
                 RTMemFree(pThis->Output.Mem.pb);
@@ -1700,6 +2225,7 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, uint8_t **ppvRespons
 
 RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pszUrl, char **ppszNotUtf8)
 {
+    Log(("RTHttpGetText: hHttp=%p pszUrl=%s\n", hHttp, pszUrl));
     uint8_t *pv;
     size_t   cb;
     int rc = rtHttpGetToMem(hHttp, pszUrl, &pv, &cb);
@@ -1724,6 +2250,7 @@ RTR3DECL(void) RTHttpFreeResponseText(char *pszNotUtf8)
 
 RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pszUrl, void **ppvResponse, size_t *pcb)
 {
+    Log(("RTHttpGetBinary: hHttp=%p pszUrl=%s\n", hHttp, pszUrl));
     return rtHttpGetToMem(hHttp, pszUrl, (uint8_t **)ppvResponse, pcb);
 }
 
@@ -1744,6 +2271,7 @@ static size_t rtHttpWriteDataToFile(void *pvBuf, size_t cbUnit, size_t cUnits, v
     int rc = RTFileWrite(pThis->Output.hFile, pvBuf, cbUnit * cUnits, &cbWritten);
     if (RT_SUCCESS(rc))
         return cbWritten;
+    Log(("rtHttpWriteDataToFile: rc=%Rrc cbUnit=%zd cUnits=%zu\n", rc, cbUnit, cUnits));
     pThis->rcOutput = rc;
     return 0;
 }
@@ -1751,6 +2279,7 @@ static size_t rtHttpWriteDataToFile(void *pvBuf, size_t cbUnit, size_t cUnits, v
 
 RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDstFile)
 {
+    Log(("RTHttpGetBinary: hHttp=%p pszUrl=%s pszDstFile=%s\n", hHttp, pszUrl, pszDstFile));
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
 

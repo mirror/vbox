@@ -1438,6 +1438,7 @@ VBoxRT_LDFLAGS.darwin          = \
 	-framework CoreFoundation \
 	-framework CoreServices \
 	-framework Security \
+	-framework SystemConfiguration \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 VBoxRT_LDFLAGS.win             = /MANIFEST \
 	/delayload:gdi32.dll \
