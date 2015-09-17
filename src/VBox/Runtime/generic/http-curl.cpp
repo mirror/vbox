@@ -64,6 +64,13 @@
 # include <Winhttp.h>
 #endif
 
+#ifdef RT_OS_LINUX
+//# define IPRT_USE_LIBPROXY
+#endif
+#ifdef IPRT_USE_LIBPROXY
+# include <stdlib.h> /* free */
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -157,6 +164,13 @@ typedef BOOL      (WINAPI * PFNWINHTTPGETIEPROXYCONFIGFORCURRENTUSER)(WINHTTP_CU
 /** @} */
 #endif
 
+#ifdef IPRT_USE_LIBPROXY
+typedef struct px_proxy_factory *PLIBPROXYFACTORY;
+typedef PLIBPROXYFACTORY (* PFNLIBPROXYFACTORYCTOR)(void);
+typedef void             (* PFNLIBPROXYFACTORYDTOR)(PLIBPROXYFACTORY);
+typedef char          ** (* PFNLIBPROXYFACTORYGETPROXIES)(PLIBPROXYFACTORY, const char *);
+#endif
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -202,12 +216,22 @@ typedef BOOL      (WINAPI * PFNWINHTTPGETIEPROXYCONFIGFORCURRENTUSER)(WINHTTP_CU
 /** @name Windows: Dynamically resolved APIs
  * @{ */
 static RTONCE                                   g_WinResolveImportsOnce = RTONCE_INITIALIZER;
-static RTLDRMOD                                 g_hWinHttpMod = NIL_RTLDRMOD;
 static PFNWINHTTPOPEN                           g_pfnWinHttpOpen = NULL;
 static PFNWINHTTPCLOSEHANDLE                    g_pfnWinHttpCloseHandle = NULL;
 static PFNWINHTTPGETPROXYFORURL                 g_pfnWinHttpGetProxyForUrl = NULL;
 static PFNWINHTTPGETDEFAULTPROXYCONFIGURATION   g_pfnWinHttpGetDefaultProxyConfiguration = NULL;
 static PFNWINHTTPGETIEPROXYCONFIGFORCURRENTUSER g_pfnWinHttpGetIEProxyConfigForCurrentUser = NULL;
+/** @} */
+#endif
+
+#ifdef IPRT_USE_LIBPROXY
+/** @name Dynamaically resolved libproxy APIs.
+ * @{ */
+static RTONCE                                   g_LibProxyResolveImportsOnce = RTONCE_INITIALIZER;
+static RTLDRMOD                                 g_hLdrLibProxy = NIL_RTLDRMOD;
+static PFNLIBPROXYFACTORYCTOR                   g_pfnLibProxyFactoryCtor = NULL;
+static PFNLIBPROXYFACTORYDTOR                   g_pfnLibProxyFactoryDtor = NULL;
+static PFNLIBPROXYFACTORYGETPROXIES             g_pfnLibProxyFactoryGetProxies = NULL;
 /** @} */
 #endif
 
@@ -760,6 +784,90 @@ static int rtHttpConfigureProxyForUrlFromEnv(PRTHTTPINTERNAL pThis, const char *
 
     return rc;
 }
+
+#ifdef IPRT_USE_LIBPROXY
+
+/**
+ * @callback_method_impl{FNRTONCE,
+ *      Attempts to load libproxy.so.1 and resolves APIs}
+ */
+static DECLCALLBACK(int) rtHttpLibProxyResolveImports(void *pvUser)
+{
+    RTLDRMOD hMod;
+    int rc = RTLdrLoad("/usr/lib/libproxy.so.1", &hMod);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hMod, "px_proxy_factory_new", (void **)&g_pfnLibProxyFactoryCtor);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hMod, "px_proxy_factory_free", (void **)&g_pfnLibProxyFactoryDtor);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hMod, "px_proxy_factory_get_proxies", (void **)&g_pfnLibProxyFactoryGetProxies);
+        if (RT_SUCCESS(rc))
+            g_hLdrLibProxy = hMod;
+        else
+            RTLdrClose(hMod);
+        AssertRC(rc);
+    }
+
+    NOREF(pvUser);
+    return rc;
+}
+
+/**
+ * Reconfigures the cURL proxy settings for the given URL, libproxy style.
+ *
+ * @returns IPRT status code. VINF_NOT_SUPPORTED if we should try fallback.
+ * @param   pThis       The HTTP client instance.
+ * @param   pszUrl      The URL.
+ */
+static int rtHttpLibProxyConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
+{
+    int rcRet = VINF_NOT_SUPPORTED;
+
+    int rc = RTOnce(&g_LibProxyResolveImportsOnce, rtHttpLibProxyResolveImports, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Instance the factory and ask for a list of proxies.
+         */
+        PLIBPROXYFACTORY pFactory = g_pfnLibProxyFactoryCtor();
+        if (pFactory)
+        {
+            char **papszProxies = g_pfnLibProxyFactoryGetProxies(pFactory, pszUrl);
+            g_pfnLibProxyFactoryDtor(pFactory);
+            if (papszProxies)
+            {
+                /*
+                 * Look for something we can use.
+                 */
+                for (unsigned i = 0; papszProxies[i]; i++)
+                {
+                    if (strncmp(papszProxies[i], RT_STR_TUPLE("direct://")) == 0)
+                        rcRet = rtHttpUpdateAutomaticProxyDisable(pThis);
+                    else if (   strncmp(papszProxies[i], RT_STR_TUPLE("http://")) == 0
+                             || strncmp(papszProxies[i], RT_STR_TUPLE("socks5://")) == 0
+                             || strncmp(papszProxies[i], RT_STR_TUPLE("socks4://")) == 0
+                             || strncmp(papszProxies[i], RT_STR_TUPLE("socks://")) == 0 /** @todo same problem as on OS X. */
+                            )
+                        rcRet = rtHttpConfigureProxyFromUrl(pThis, papszProxies[i]);
+                    else
+                        continue;
+                    if (rcRet != VINF_NOT_SUPPORTED)
+                        break;
+                }
+
+                /* free the result. */
+                for (unsigned i = 0; papszProxies[i]; i++)
+                    free(papszProxies[i]);
+                free(papszProxies);
+            }
+        }
+    }
+
+    return rcRet;
+}
+
+#endif /* IPRT_USE_LIBPROXY */
 
 #ifdef RT_OS_DARWIN
 
@@ -1649,6 +1757,12 @@ static int rtHttpConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszUrl)
 {
     if (pThis->fUseSystemProxySettings)
     {
+#ifdef IPRT_USE_LIBPROXY
+        int rc = rtHttpLibProxyConfigureProxyForUrl(pThis, pszUrl);
+        if (rc == VINF_SUCCESS || RT_FAILURE(rc))
+            return rc;
+        Assert(rc == VINF_NOT_SUPPORTED);
+#endif
 #ifdef RT_OS_DARWIN
         int rc = rtHttpDarwinConfigureProxyForUrl(pThis, pszUrl);
         if (rc == VINF_SUCCESS || RT_FAILURE(rc))
