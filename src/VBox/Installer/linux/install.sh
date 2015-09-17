@@ -347,8 +347,7 @@ if [ "$ACTION" = "install" ]; then
         abort "Error installing VirtualBox.  Installation aborted"
     fi
 
-    cp uninstall.sh routines.sh $INSTALLATION_DIR
-    echo "routines.sh" >> $CONFIG_DIR/$CONFIG_FILES
+    cp uninstall.sh $INSTALLATION_DIR
     echo "uninstall.sh" >> $CONFIG_DIR/$CONFIG_FILES
 
     # XXX SELinux: allow text relocation entries
