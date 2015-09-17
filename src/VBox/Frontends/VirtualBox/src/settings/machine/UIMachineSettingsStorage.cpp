@@ -1215,7 +1215,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                         {
                             case ConfigurationAccessLevel_Full:
                                 return true;
-                            case ConfigurationAccessLevel_Runtime:
+                            case ConfigurationAccessLevel_Partial_Running:
                             {
                                 switch (ctr->ctrBusType())
                                 {

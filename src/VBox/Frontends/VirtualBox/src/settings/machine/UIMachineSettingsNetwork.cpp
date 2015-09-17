@@ -364,7 +364,7 @@ void UIMachineSettingsNetwork::polishTab()
                                         attachmentType() == KNetworkAttachmentType_NAT);
 
     /* Postprocessing: */
-    if ((m_pParent->isMachineSaved() || m_pParent->isMachineOnline()) && !m_pAdvancedArrow->isExpanded())
+    if ((m_pParent->isMachinePoweredOff() || m_pParent->isMachineSaved() || m_pParent->isMachineOnline()) && !m_pAdvancedArrow->isExpanded())
         m_pAdvancedArrow->animateClick();
     sltHandleAdvancedButtonStateChange();
 }

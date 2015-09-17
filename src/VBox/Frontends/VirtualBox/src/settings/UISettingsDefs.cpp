@@ -35,10 +35,12 @@ ConfigurationAccessLevel UISettingsDefs::configurationAccessLevel(KSessionState 
     {
         case KMachineState_PoweredOff:
         case KMachineState_Teleported:
-        case KMachineState_Aborted:    return sessionState == KSessionState_Unlocked ? ConfigurationAccessLevel_Full : ConfigurationAccessLevel_Runtime;
-        case KMachineState_Saved:      return ConfigurationAccessLevel_Saved;
+        case KMachineState_Aborted:    return sessionState == KSessionState_Unlocked ?
+                                              ConfigurationAccessLevel_Full :
+                                              ConfigurationAccessLevel_Partial_PoweredOff;
+        case KMachineState_Saved:      return ConfigurationAccessLevel_Partial_Saved;
         case KMachineState_Running:
-        case KMachineState_Paused:     return ConfigurationAccessLevel_Runtime;
+        case KMachineState_Paused:     return ConfigurationAccessLevel_Partial_Running;
         default: break;
     }
     /* Null by default: */
