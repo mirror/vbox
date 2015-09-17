@@ -49,7 +49,7 @@ remove_init_script vboxautostart-service
 delrunlevel vboxweb-service
 remove_init_script vboxweb-service
 # Stop kernel module and uninstall runlevel script
-stop_init_script vboxdrv
+stop_init_script vboxdrv 2>/dev/null
 delrunlevel vboxdrv
 remove_init_script vboxdrv
 # Stop host networking and uninstall runlevel script (obsolete)

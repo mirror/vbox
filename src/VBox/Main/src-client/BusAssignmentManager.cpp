@@ -55,6 +55,7 @@ static const DeviceAssignmentRule aGenericRules[] =
 {
     /* VGA controller */
     {"vga",           0,  2, 0,  0},
+    {"virtio-gpu",    0, 15, 0,  0},
 
     /* VMM device */
     {"VMMDev",        0,  4, 0,  0},

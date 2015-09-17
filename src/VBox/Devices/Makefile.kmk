@@ -310,6 +310,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_DEFS           += VBOX_VDMA_WITH_WATCHDOG
  endif
 
+ ifdef VBOX_WITH_VIRTIO_GPU
+  VBoxDD_DEFS           += VBOX_WITH_VIRTIO_GPU
+  VBoxDD_SOURCES        += Graphics/DevVirtioGpu.cpp
+ endif
+
  ifdef VBOX_WITH_PXE_ROM
   VBoxDD_DEFS           += VBOX_WITH_PXE_ROM
  endif
