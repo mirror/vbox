@@ -156,7 +156,7 @@ endif
 cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(NOSDL),--disable-vboxsdl,) \
 	     $(if $(filter sles10.1,$(rpmrel)),--build-libxml2,) \
-	     $(if $(filter el5 el6 sles10.1 sles11.0 mdv2011.0,$(rpmrel)),--build-libvpx,) \
+	     $(if $(filter el5 ol5 centos5 el6 ol6 centos6 sles10.1 sles11.0 mdv2011.0,$(rpmrel)),--build-libvpx,) \
 	     $(if $(filter el5 ol5 centos5 sles10.1 sles11.0,$(rpmrel)),--build-libcurl,) \
 	     $(if $(filter el5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
 	     $(if $(filter sles10.1,$(rpmrel)),--disable-pulse,) \
