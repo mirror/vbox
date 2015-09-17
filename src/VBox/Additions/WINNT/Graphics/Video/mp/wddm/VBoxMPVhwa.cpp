@@ -537,11 +537,22 @@ int vboxVhwaHlpPopulateSurInfo(VBOXVHWA_SURFACEDESC *pInfo, PVBOXWDDM_ALLOCATION
 {
     memset(pInfo, 0, sizeof(VBOXVHWA_SURFACEDESC));
 
+#if 0
+    /**
+     * The following breaks 2D accelerated video playback because this method is called just after the surface was created
+     * and most its members are still 0.
+     *
+     * @todo: Not 100% sure this is the correct way. It looks like the SegmentId specifies where the  memory
+     *        for the surface is stored (VRAM vs. system memory) but because this method is only used
+     *        to query some parameters (using VBOXVHWACMD_SURF_GETINFO) and this command doesn't access any surface memory
+     *        on the host it should be safe.
+     */
     if (pSurf->AllocData.Addr.SegmentId != 1)
     {
         WARN(("invalid segment id!"));
         return VERR_INVALID_PARAMETER;
     }
+#endif
 
     pInfo->height = pSurf->AllocData.SurfDesc.height;
     pInfo->width = pSurf->AllocData.SurfDesc.width;

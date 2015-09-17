@@ -2652,7 +2652,7 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
 #ifdef VBOX_WITH_VIDEOHWACCEL
         case VBVA_VHWA_CMD:
         {
-            if (cbBuffer < sizeof(VBOXVHWACMD))
+            if (cbBuffer < VBOXVHWACMD_HEADSIZE())
             {
                 rc = VERR_INVALID_PARAMETER;
                 break;
