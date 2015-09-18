@@ -254,10 +254,12 @@ int DnDURIObject::RebaseURIPath(RTCString &strPath,
                                 const RTCString &strBaseOld /* = "" */,
                                 const RTCString &strBaseNew /* = "" */)
 {
+    char *pszPath = RTUriFilePath(strPath.c_str(), URI_FILE_FORMAT_AUTO);
+    if (!pszPath) /* No URI? */
+         pszPath = RTStrDup(strPath.c_str());
+
     int rc;
-    const char *pszPath = RTUriPath(strPath.c_str());
-    if (!pszPath)
-        pszPath = strPath.c_str();
+
     if (pszPath)
     {
         const char *pszPathStart = pszPath;
@@ -284,8 +286,6 @@ int DnDURIObject::RebaseURIPath(RTCString &strPath,
 
                     strPath = RTCString(pszPathURI) + "\r\n";
                     RTStrFree(pszPathURI);
-
-                    rc = VINF_SUCCESS;
                 }
                 else
                     rc = VERR_INVALID_PARAMETER;
@@ -295,9 +295,11 @@ int DnDURIObject::RebaseURIPath(RTCString &strPath,
             else
                 rc = VERR_NO_MEMORY;
         }
+
+        RTStrFree(pszPath);
     }
     else
-        rc = VERR_INVALID_PARAMETER;
+        rc = VERR_NO_MEMORY;
 
     return rc;
 }

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -315,90 +315,96 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                         QStringList lstFiles;
                         for (size_t i = 0; i < lstFilesURI.size(); i++)
                         {
-                            /* Extract path from URI. */
-                            char *pszPath = RTUriPath(lstFilesURI.at(i).toAscii().constData());
-                            if (   pszPath
-                                && strlen(pszPath) > 1)
+                            char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).toAscii().constData(), URI_FILE_FORMAT_AUTO);
+                            if (pszFilePath)
                             {
-                                pszPath++; /** @todo Skip first '/' (part of URI). Correct? */
-                                pszPath = RTPathChangeToDosSlashes(pszPath, false /* fForce */);
-                                lstFiles.append(pszPath);
+                                lstFiles.append(pszFilePath);
+                                RTStrFree(pszFilePath);
+                            }
+                            else /* Unable to parse -- refuse entire request. */
+                            {
+                                lstFiles.clear();
+                                rc = VERR_INVALID_PARAMETER;
+                                break;
                             }
                         }
 
                         size_t cFiles = lstFiles.size();
-                        Assert(cFiles);
+                        if (   RT_SUCCESS(rc)
+                            && cFiles)
+                        {
 #ifdef DEBUG
-                        LogFlowFunc(("Files (%zu)\n", cFiles));
-                        for (size_t i = 0; i < cFiles; i++)
-                            LogFlowFunc(("\tFile: %s\n", lstFiles.at(i).toAscii().constData()));
+                            LogFlowFunc(("Files (%zu)\n", cFiles));
+                            for (size_t i = 0; i < cFiles; i++)
+                                LogFlowFunc(("\tFile: %s\n", lstFiles.at(i).toAscii().constData()));
 #endif
-                        size_t cchFiles = 0; /* Number of ASCII characters. */
-                        for (size_t i = 0; i < cFiles; i++)
-                        {
-                            cchFiles += strlen(lstFiles.at(i).toAscii().constData());
-                            cchFiles += 1; /* Terminating '\0'. */
-                        }
-
-                        size_t cbBuf = sizeof(DROPFILES) + ((cchFiles + 1) * sizeof(RTUTF16));
-                        DROPFILES *pDropFiles = (DROPFILES *)RTMemAllocZ(cbBuf);
-                        if (pDropFiles)
-                        {
-                            pDropFiles->pFiles = sizeof(DROPFILES);
-                            pDropFiles->fWide = 1; /* We use unicode. Always. */
-
-                            uint8_t *pCurFile = (uint8_t *)pDropFiles + pDropFiles->pFiles;
-                            AssertPtr(pCurFile);
-
+                            size_t cchFiles = 0; /* Number of ASCII characters. */
                             for (size_t i = 0; i < cFiles; i++)
                             {
-                                size_t cchCurFile;
-                                PRTUTF16 pwszFile;
-                                rc = RTStrToUtf16(lstFiles.at(i).toAscii().constData(), &pwszFile);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    cchCurFile = RTUtf16Len(pwszFile);
-                                    Assert(cchCurFile);
-                                    memcpy(pCurFile, pwszFile, cchCurFile * sizeof(RTUTF16));
-                                    RTUtf16Free(pwszFile);
-                                }
-                                else
-                                    break;
-
-                                pCurFile += cchCurFile * sizeof(RTUTF16);
-
-                                /* Terminate current file name. */
-                                *pCurFile = L'\0';
-                                pCurFile += sizeof(RTUTF16);
+                                cchFiles += strlen(lstFiles.at(i).toAscii().constData());
+                                cchFiles += 1; /* Terminating '\0'. */
                             }
 
-                            if (RT_SUCCESS(rc))
+                            size_t cbBuf = sizeof(DROPFILES) + ((cchFiles + 1) * sizeof(RTUTF16));
+                            DROPFILES *pDropFiles = (DROPFILES *)RTMemAllocZ(cbBuf);
+                            if (pDropFiles)
                             {
-                                *pCurFile = L'\0'; /* Final list terminator. */
+                                pDropFiles->pFiles = sizeof(DROPFILES);
+                                pDropFiles->fWide = 1; /* We use unicode. Always. */
 
-                                pMedium->tymed = TYMED_HGLOBAL;
-                                pMedium->pUnkForRelease = NULL;
-                                pMedium->hGlobal = GlobalAlloc(  GMEM_ZEROINIT
-                                                               | GMEM_MOVEABLE
-                                                               | GMEM_DDESHARE, cbBuf);
-                                if (pMedium->hGlobal)
+                                uint8_t *pCurFile = (uint8_t *)pDropFiles + pDropFiles->pFiles;
+                                AssertPtr(pCurFile);
+
+                                for (size_t i = 0; i < cFiles; i++)
                                 {
-                                    LPVOID pvMem = GlobalLock(pMedium->hGlobal);
-                                    if (pvMem)
+                                    size_t cchCurFile;
+                                    PRTUTF16 pwszFile;
+                                    rc = RTStrToUtf16(lstFiles.at(i).toAscii().constData(), &pwszFile);
+                                    if (RT_SUCCESS(rc))
                                     {
-                                        memcpy(pvMem, pDropFiles, cbBuf);
-                                        GlobalUnlock(pMedium->hGlobal);
-
-                                        hr = S_OK;
+                                        cchCurFile = RTUtf16Len(pwszFile);
+                                        Assert(cchCurFile);
+                                        memcpy(pCurFile, pwszFile, cchCurFile * sizeof(RTUTF16));
+                                        RTUtf16Free(pwszFile);
                                     }
                                     else
-                                        rc = VERR_ACCESS_DENIED;
-                                }
-                                else
-                                    rc = VERR_NO_MEMORY;
-                            }
+                                        break;
 
-                            RTMemFree(pDropFiles);
+                                    pCurFile += cchCurFile * sizeof(RTUTF16);
+
+                                    /* Terminate current file name. */
+                                    *pCurFile = L'\0';
+                                    pCurFile += sizeof(RTUTF16);
+                                }
+
+                                if (RT_SUCCESS(rc))
+                                {
+                                    *pCurFile = L'\0'; /* Final list terminator. */
+
+                                    pMedium->tymed = TYMED_HGLOBAL;
+                                    pMedium->pUnkForRelease = NULL;
+                                    pMedium->hGlobal = GlobalAlloc(  GMEM_ZEROINIT
+                                                                   | GMEM_MOVEABLE
+                                                                   | GMEM_DDESHARE, cbBuf);
+                                    if (pMedium->hGlobal)
+                                    {
+                                        LPVOID pvMem = GlobalLock(pMedium->hGlobal);
+                                        if (pvMem)
+                                        {
+                                            memcpy(pvMem, pDropFiles, cbBuf);
+                                            GlobalUnlock(pMedium->hGlobal);
+
+                                            hr = S_OK;
+                                        }
+                                        else
+                                            rc = VERR_ACCESS_DENIED;
+                                    }
+                                    else
+                                        rc = VERR_NO_MEMORY;
+                                }
+
+                                RTMemFree(pDropFiles);
+                            }
                         }
                     }
                     else if (   strMIMEType.startsWith("text/plain")

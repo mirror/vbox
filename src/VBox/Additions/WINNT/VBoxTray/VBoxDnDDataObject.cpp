@@ -229,143 +229,152 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
          */
         if (mstrFormat.equalsIgnoreCase("text/uri-list"))
         {
+            int rc = VINF_SUCCESS;
+
             RTCList<RTCString> lstFilesURI = RTCString((char*)mpvData, mcbData).split("\r\n");
             RTCList<RTCString> lstFiles;
             for (size_t i = 0; i < lstFilesURI.size(); i++)
             {
-                /* Extract path from URI. */
-                char *pszPath = RTUriPath(lstFilesURI.at(i).c_str());
-                if (   pszPath
-                    && strlen(pszPath) > 1)
+                char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).c_str(), URI_FILE_FORMAT_WIN);
+                if (pszFilePath)
                 {
-                    pszPath++; /** @todo Skip first '/' (part of URI). Correct? */
-                    pszPath = RTPathChangeToDosSlashes(pszPath, false /* fForce */);
-                    lstFiles.append(pszPath);
+                    lstFiles.append(pszFilePath);
+                    RTStrFree(pszFilePath);
+                }
+                else /* Unable to parse -- refuse entire request. */
+                {
+                    lstFiles.clear();
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
                 }
             }
+
+            size_t cFiles = lstFiles.size();
+            if (   RT_SUCCESS(rc)
+                && cFiles)
+            {
 #ifdef DEBUG
-            LogFlowFunc(("Files (%zu)\n", lstFiles.size()));
-            for (size_t i = 0; i < lstFiles.size(); i++)
-                LogFlowFunc(("\tFile: %s\n", lstFiles.at(i).c_str()));
+                LogFlowFunc(("Files (%zu)\n", cFiles));
+                for (size_t i = 0; i < cFiles; i++)
+                    LogFlowFunc(("\tFile: %s\n", lstFiles.at(i).c_str()));
 #endif
 
 #if 0
-            if (   (pFormatEtc->tymed & TYMED_ISTREAM)
-                && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                && (pFormatEtc->cfFormat == CF_FILECONTENTS))
-            {
-
-            }
-            else if  (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                      && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                      && (pFormatEtc->cfFormat == CF_FILEDESCRIPTOR))
-            {
-
-            }
-            else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                     && (pFormatEtc->cfFormat == CF_PREFERREDDROPEFFECT))
-            {
-                HGLOBAL hData = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE | GMEM_ZEROINIT, sizeof(DWORD));
-                DWORD *pdwEffect = (DWORD *)GlobalLock(hData);
-                AssertPtr(pdwEffect);
-                *pdwEffect = DROPEFFECT_COPY;
-                GlobalUnlock(hData);
-
-                pMedium->hGlobal = hData;
-                pMedium->tymed = TYMED_HGLOBAL;
-            }
-            else
-#endif
-                 if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                     && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                     && (pFormatEtc->cfFormat == CF_TEXT))
-            {
-                pMedium->hGlobal = GlobalAlloc(GHND, mcbData + 1);
-                if (pMedium->hGlobal)
+                if (   (pFormatEtc->tymed & TYMED_ISTREAM)
+                    && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
+                    && (pFormatEtc->cfFormat == CF_FILECONTENTS))
                 {
-                    char *pcDst  = (char *)GlobalLock(pMedium->hGlobal);
-                    memcpy(pcDst, mpvData, mcbData);
-                    pcDst[mcbData] = '\0';
-                    GlobalUnlock(pMedium->hGlobal);
 
-                    hr = S_OK;
                 }
-            }
-            else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                     && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                     && (pFormatEtc->cfFormat == CF_HDROP))
-            {
-                int rc = VINF_SUCCESS;
-
-                size_t cchFiles = 0; /* Number of ASCII characters. */
-                for (size_t i = 0; i < lstFiles.size(); i++)
+                else if  (   (pFormatEtc->tymed & TYMED_HGLOBAL)
+                          && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
+                          && (pFormatEtc->cfFormat == CF_FILEDESCRIPTOR))
                 {
-                    cchFiles += strlen(lstFiles.at(i).c_str());
-                    cchFiles += 1; /* Terminating '\0'. */
+
                 }
-
-                size_t cbBuf = sizeof(DROPFILES) + ((cchFiles + 1) * sizeof(RTUTF16));
-                DROPFILES *pBuf = (DROPFILES *)RTMemAllocZ(cbBuf);
-                if (pBuf)
+                else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
+                         && (pFormatEtc->cfFormat == CF_PREFERREDDROPEFFECT))
                 {
-                    pBuf->pFiles = sizeof(DROPFILES);
-                    pBuf->fWide = 1; /* We use unicode. Always. */
+                    HGLOBAL hData = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE | GMEM_ZEROINIT, sizeof(DWORD));
+                    DWORD *pdwEffect = (DWORD *)GlobalLock(hData);
+                    AssertPtr(pdwEffect);
+                    *pdwEffect = DROPEFFECT_COPY;
+                    GlobalUnlock(hData);
 
-                    uint8_t *pCurFile = (uint8_t *)pBuf + pBuf->pFiles;
-                    AssertPtr(pCurFile);
-
-                    for (size_t i = 0; i < lstFiles.size() && RT_SUCCESS(rc); i++)
-                    {
-                        size_t cchCurFile;
-                        PRTUTF16 pwszFile;
-                        rc = RTStrToUtf16(lstFiles.at(i).c_str(), &pwszFile);
-                        if (RT_SUCCESS(rc))
-                        {
-                            cchCurFile = RTUtf16Len(pwszFile);
-                            Assert(cchCurFile);
-                            memcpy(pCurFile, pwszFile, cchCurFile * sizeof(RTUTF16));
-                            RTUtf16Free(pwszFile);
-                        }
-                        else
-                            break;
-
-                        pCurFile += cchCurFile * sizeof(RTUTF16);
-
-                        /* Terminate current file name. */
-                        *pCurFile = L'\0';
-                        pCurFile += sizeof(RTUTF16);
-                    }
-
-                    if (RT_SUCCESS(rc))
-                    {
-                        *pCurFile = L'\0'; /* Final list terminator. */
-
-                        pMedium->tymed = TYMED_HGLOBAL;
-                        pMedium->pUnkForRelease = NULL;
-                        pMedium->hGlobal = GlobalAlloc(  GMEM_ZEROINIT
-                                                       | GMEM_MOVEABLE
-                                                       | GMEM_DDESHARE, cbBuf);
-                        if (pMedium->hGlobal)
-                        {
-                            LPVOID pMem = GlobalLock(pMedium->hGlobal);
-                            if (pMem)
-                            {
-                                memcpy(pMem, pBuf, cbBuf);
-                                GlobalUnlock(pMedium->hGlobal);
-
-                                hr = S_OK;
-                            }
-                        }
-                    }
-
-                    RTMemFree(pBuf);
+                    pMedium->hGlobal = hData;
+                    pMedium->tymed = TYMED_HGLOBAL;
                 }
                 else
-                    rc = VERR_NO_MEMORY;
+#endif
+                if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
+                    && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
+                    && (pFormatEtc->cfFormat == CF_TEXT))
+                {
+                    pMedium->hGlobal = GlobalAlloc(GHND, mcbData + 1);
+                    if (pMedium->hGlobal)
+                    {
+                        char *pcDst  = (char *)GlobalLock(pMedium->hGlobal);
+                        memcpy(pcDst, mpvData, mcbData);
+                        pcDst[mcbData] = '\0';
+                        GlobalUnlock(pMedium->hGlobal);
 
-                if (RT_FAILURE(rc))
-                    hr = DV_E_FORMATETC;
+                        hr = S_OK;
+                    }
+                }
+                else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
+                         && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
+                         && (pFormatEtc->cfFormat == CF_HDROP))
+                {
+                    size_t cchFiles = 0; /* Number of ASCII characters. */
+                    for (size_t i = 0; i < cFiles; i++)
+                    {
+                        cchFiles += strlen(lstFiles.at(i).c_str());
+                        cchFiles += 1; /* Terminating '\0'. */
+                    }
+
+                    size_t cbBuf = sizeof(DROPFILES) + ((cchFiles + 1) * sizeof(RTUTF16));
+                    DROPFILES *pBuf = (DROPFILES *)RTMemAllocZ(cbBuf);
+                    if (pBuf)
+                    {
+                        pBuf->pFiles = sizeof(DROPFILES);
+                        pBuf->fWide = 1; /* We use unicode. Always. */
+
+                        uint8_t *pCurFile = (uint8_t *)pBuf + pBuf->pFiles;
+                        AssertPtr(pCurFile);
+
+                        for (size_t i = 0; i < cFiles && RT_SUCCESS(rc); i++)
+                        {
+                            size_t cchCurFile;
+                            PRTUTF16 pwszFile;
+                            rc = RTStrToUtf16(lstFiles.at(i).c_str(), &pwszFile);
+                            if (RT_SUCCESS(rc))
+                            {
+                                cchCurFile = RTUtf16Len(pwszFile);
+                                Assert(cchCurFile);
+                                memcpy(pCurFile, pwszFile, cchCurFile * sizeof(RTUTF16));
+                                RTUtf16Free(pwszFile);
+                            }
+                            else
+                                break;
+
+                            pCurFile += cchCurFile * sizeof(RTUTF16);
+
+                            /* Terminate current file name. */
+                            *pCurFile = L'\0';
+                            pCurFile += sizeof(RTUTF16);
+                        }
+
+                        if (RT_SUCCESS(rc))
+                        {
+                            *pCurFile = L'\0'; /* Final list terminator. */
+
+                            pMedium->tymed = TYMED_HGLOBAL;
+                            pMedium->pUnkForRelease = NULL;
+                            pMedium->hGlobal = GlobalAlloc(  GMEM_ZEROINIT
+                                                           | GMEM_MOVEABLE
+                                                           | GMEM_DDESHARE, cbBuf);
+                            if (pMedium->hGlobal)
+                            {
+                                LPVOID pMem = GlobalLock(pMedium->hGlobal);
+                                if (pMem)
+                                {
+                                    memcpy(pMem, pBuf, cbBuf);
+                                    GlobalUnlock(pMedium->hGlobal);
+
+                                    hr = S_OK;
+                                }
+                            }
+                        }
+
+                        RTMemFree(pBuf);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
             }
+
+            if (RT_FAILURE(rc))
+                hr = DV_E_FORMATETC;
         }
         /*
          * Plain text handling.
