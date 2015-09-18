@@ -983,7 +983,7 @@ extern "C" uint32_t g_uNtVerCombined;
 
 DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
 {
-    static const char s_szLogOption[] = "--sup-startup-log=";
+    static const char s_szLogOption[] = "--sup-hardening-log=";
 
     /*
      * Scan the argument vector.
