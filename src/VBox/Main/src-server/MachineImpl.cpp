@@ -6587,7 +6587,7 @@ HRESULT Machine::queryLogFilename(ULONG aIdx, com::Utf8Str &aFilename)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Utf8Str log = i_queryLogFilename(aIdx);
+    Utf8Str log = i_getLogFilename(aIdx);
     if (!RTFileExists(log.c_str()))
         log.setNull();
     aFilename = log;
@@ -6603,7 +6603,7 @@ HRESULT Machine::readLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, std::vector<B
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
-    Utf8Str log = i_queryLogFilename(aIdx);
+    Utf8Str log = i_getLogFilename(aIdx);
 
     /* do not unnecessarily hold the lock while doing something which does
      * not need the lock and potentially takes a long time. */
@@ -7285,19 +7285,24 @@ void Machine::i_getLogFolder(Utf8Str &aLogFolder)
 /**
  *  Returns the full path to the machine's log file for an given index.
  */
-Utf8Str Machine::i_queryLogFilename(ULONG idx) /** @todo r=bird: Misnamed. Should be i_getLogFilename as it cannot fail.
-                                                   See VBox-CodingGuidelines.cpp, Compulsory seciont, line 79. */
+Utf8Str Machine::i_getLogFilename(ULONG idx)
 {
     Utf8Str logFolder;
     getLogFolder(logFolder);
     Assert(logFolder.length());
+
     Utf8Str log;
     if (idx == 0)
-        log = Utf8StrFmt("%s%cVBox.log",
-                         logFolder.c_str(), RTPATH_DELIMITER);
+        log = Utf8StrFmt("%s%cVBox.log", logFolder.c_str(), RTPATH_DELIMITER);
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_HARDENING)
+    else if (idx == 1)
+        log = Utf8StrFmt("%s%cVBoxHardening.log", logFolder.c_str(), RTPATH_DELIMITER);
     else
-        log = Utf8StrFmt("%s%cVBox.log.%d",
-                         logFolder.c_str(), RTPATH_DELIMITER, idx);
+        log = Utf8StrFmt("%s%cVBox.log.%u", logFolder.c_str(), RTPATH_DELIMITER, idx - 1);
+#else
+    else
+        log = Utf8StrFmt("%s%cVBox.log.%u", logFolder.c_str(), RTPATH_DELIMITER, idx);
+#endif
     return log;
 }
 
