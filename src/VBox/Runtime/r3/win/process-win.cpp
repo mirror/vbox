@@ -128,6 +128,12 @@ static struct RTPROCWINENTRY
 }                  *g_paProcesses;
 
 
+/*********************************************************************************************************************************
+*   Forward declarations                                                                                                         *
+*********************************************************************************************************************************/
+static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, uint32_t fFlags, PRTENV *pphEnv);
+
+
 /**
  * Clean up the globals.
  *
@@ -321,7 +327,6 @@ static int rtProcWinMapErrorCodes(DWORD dwError)
  * matches.
  *
  * @returns IPRT status code.
- *
  * @param   dwPid           The process identifier.
  * @param   pSid            The secure identifier of the user.
  * @param   phToken         Where to return the a duplicate of the process token
@@ -566,7 +571,6 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
  * Logs on a specified user and returns its primary token.
  *
  * @return  int
- *
  * @param   pwszUser            User name.
  * @param   pwszPassword        Password.
  * @param   pwszDomain          Domain (not used at the moment).
@@ -574,7 +578,10 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
  */
 static int rtProcWinUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain, HANDLE *phToken)
 {
-    /** @todo Add domain support! */
+    AssertPtrReturn(pwszUser, VERR_INVALID_POINTER);
+    AssertPtrReturn(pwszPassword, VERR_INVALID_POINTER);
+    NOREF(pwszDomain); /** @todo Add domain support! */
+
     BOOL fRc = LogonUserW(pwszUser,
                           /*
                            * Because we have to deal with http://support.microsoft.com/kb/245683
@@ -612,100 +619,16 @@ static void rtProcWinUserLogoff(HANDLE hToken)
 
 
 /**
- * Creates an environment block out of a handed-in Unicode and
- * RTENV block. The RTENV block can overwrite entries already
- * present in the Unicode block.
+ * Retrieves the environment block for a specified user (identified by a token).
+ * Using Userenv.dll.
  *
  * @return  IPRT status code.
- *
- * @param   pvEnvBlock          Unicode block (array) of environment entries;
- *                              in form of "FOO=BAR\0BAR=BAZ".
- * @param   hEnv                Handle of an existing RTENV block to use.
- * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv
- *                              with the ones defined in pvEnvBlock.
- * @param   ppwszBlock          Pointer to the final output.
- */
-static int rtProcWinEnvironmentCreateInternal(VOID *pvEnvBlock, RTENV hEnv,
-                                              bool fOverwriteExisting,
-                                              PRTUTF16 *ppwszBlock)
-{
-    RTENV hEnvTemp;
-    int rc = RTEnvClone(&hEnvTemp, hEnv);
-    if (RT_SUCCESS(rc))
-    {
-        PCRTUTF16 pwch = (PCRTUTF16)pvEnvBlock;
-        while (   pwch
-               && RT_SUCCESS(rc))
-        {
-            if (*pwch)
-            {
-                char *pszEntry;
-                rc = RTUtf16ToUtf8(pwch, &pszEntry);
-                if (RT_SUCCESS(rc))
-                {
-                    const char *pszEq = strchr(pszEntry, '=');
-                    if (   !pszEq
-                        && fOverwriteExisting)
-                    {
-                        rc = RTEnvUnsetEx(hEnvTemp, pszEntry);
-                    }
-                    else if (pszEq)
-                    {
-                        const char *pszValue = pszEq + 1;
-                        size_t cchVar = pszEq - pszEntry;
-                        char *pszVar = (char *)RTMemAlloc(cchVar + 1);
-                        if (pszVar)
-                        {
-                            memcpy(pszVar, pszEntry, cchVar);
-                            pszVar[cchVar] = '\0';
-                            if (   !RTEnvExistEx(hEnv, pszVar)
-                                || fOverwriteExisting)
-                            {
-                                rc = RTEnvSetEx(hEnvTemp, pszVar, pszValue);
-                            }
-                            RTMemFree(pszVar);
-                        }
-                        else
-                            rc = VERR_NO_MEMORY;
-                    }
-                    RTStrFree(pszEntry);
-                }
-            }
-            else
-                break;
-            pwch += RTUtf16Len(pwch) + 1;
-            if (!*pwch)
-                break;
-        }
-
-        if (RT_SUCCESS(rc))
-            rc = RTEnvQueryUtf16Block(hEnvTemp, ppwszBlock);
-        RTEnvDestroy(hEnvTemp);
-    }
-    return rc;
-}
-
-
-/**
- * Creates the environment block using Userenv.dll.
- *
- * Builds up the environment block for a specified user (identified by a token),
- * whereas hEnv is an additional set of environment variables which overwrite existing
- * values of the user profile.  ppwszBlock needs to be destroyed after usage
- * calling rtProcWinDestroyEnv().
- *
- * @return  IPRT status code.
- *
  * @param   hToken              Token of the user to use.
- * @param   hEnv                Own environment block to extend/overwrite the profile's data with.
- * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv
- *                              with the ones defined in the user's profile.
- * @param   ppwszBlock          Pointer to a pointer of the final UTF16 environment block.
+ * @param   hEnv                Environment block where to store the user profile environment variables.
  */
-static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, bool fOverwriteExisting, PRTUTF16 *ppwszBlock)
+static int rtProcWinRetrieveEnvFromToken(HANDLE hToken, RTENV hEnv)
 {
-    Assert(hToken);
-    Assert(hEnv != NIL_RTENV);
+    AssertReturn(hToken, VERR_INVALID_PARAMETER);
 
     RTLDRMOD hUserenv;
     int rc = RTLdrLoadSystem("Userenv.dll", true /*fNoUnload*/, &hUserenv);
@@ -722,9 +645,7 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, bool fOverwrit
                 LPVOID pvEnvBlockProfile = NULL;
                 if (pfnCreateEnvironmentBlock(&pvEnvBlockProfile, hToken, FALSE /* Don't inherit from parent. */))
                 {
-                    rc = rtProcWinEnvironmentCreateInternal(pvEnvBlockProfile, hEnv,
-                                                            fOverwriteExisting,
-                                                            ppwszBlock);
+                    rc = RTEnvFromUtf16Block(hEnv, (PCRTUTF16)pvEnvBlockProfile, true /* fOverwriteExisting */);
                     pfnDestroyEnvironmentBlock(pvEnvBlockProfile);
                 }
                 else
@@ -734,54 +655,25 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, bool fOverwrit
         RTLdrClose(hUserenv);
     }
 
-    /* If we don't have the Userenv-API for whatever reason or something with the
-     * native environment block failed, try to return at least our own environment block. */
-    /** @todo this probably isn't a great idea if CreateEnvironmentBlock fails. */
-    if (RT_FAILURE(rc))
-        rc = RTEnvQueryUtf16Block(hEnv, ppwszBlock);
     return rc;
 }
 
 
 /**
- * Builds up the environment block for a specified user (identified by user name, password
- * and domain), whereas hEnv is an additional set of environment variables which overwrite
- * existing values of the user profile.  ppwszBlock needs to be destroyed after usage
- * calling rtProcWinDestroyEnv().
- *
- * @return  IPRT status code.
- *
- * @param   pwszUser            User name.
- * @param   pwszPassword        Password.
- * @param   pwszDomain          Domain.
- * @param   hEnv                Own environment block to extend/overwrite the profile's data with.
- * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv
- *                              with the ones defined in the user's profile.
- * @param   ppwszBlock          Pointer to a pointer of the final UTF16 environment block.
- */
-static int rtProcWinCreateEnvFromAccount(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain,
-                                         RTENV hEnv, bool fOverwriteExisting, PRTUTF16 *ppwszBlock)
-{
-    HANDLE hToken;
-    int rc = rtProcWinUserLogon(pwszUser, pwszPassword, pwszDomain, &hToken);
-    if (RT_SUCCESS(rc))
-    {
-        rc = rtProcWinCreateEnvFromToken(hToken, hEnv, fOverwriteExisting, ppwszBlock);
-        rtProcWinUserLogoff(hToken);
-    }
-    return rc;
-}
-
-
-/**
- * Destroys an environment block formerly created by rtProcWinEnvironmentCreateInternal(),
- * rtProcWinCreateEnvFromToken() or rtProcWinCreateEnvFromAccount().
+ * Destroys an environment formerly created by rtProcWinCreateEnvFromToken().
  *
  * @param   ppwszBlock      Environment block to destroy.
  */
-static void rtProcWinDestroyEnv(PRTUTF16 ppwszBlock)
+static void rtProcWinDestroyEnvFromToken(PRTENV phEnv, uint32_t fFlags)
 {
-    RTEnvFreeUtf16Block(ppwszBlock);
+    if (!phEnv)
+        return;
+
+    if (fFlags & RTPROC_MODIFY_DEFAULT_ENV)
+    {
+        RTEnvDestroy(*phEnv);
+        RTMemFree(phEnv);
+    }
 }
 
 
@@ -929,42 +821,43 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
 
                         if (dwErr == NO_ERROR)
                         {
-                            PRTUTF16 pwszzBlock;
-                            if (fFlags & RTPROC_FLAGS_PROFILE)
-                            {
-                                rc = rtProcWinCreateEnvFromToken(*phToken, hEnv,
-                                                                 RT_BOOL(fFlags & RTPROC_FLAGS_OVERWRITE_WITH_PROFILE),
-                                                                 &pwszzBlock);
-                            }
-                            else /* Use hEnv exclusively without any profile variables. */
-                                rc = RTEnvQueryUtf16Block(hEnv, &pwszzBlock);
-
+                            PRTENV phEnv;
+                            rc = rtProcWinCreateEnvFromToken(*phToken, hEnv, fFlags, &phEnv);
                             if (RT_SUCCESS(rc))
                             {
-                                /*
-                                 * Useful KB articles:
-                                 *      http://support.microsoft.com/kb/165194/
-                                 *      http://support.microsoft.com/kb/184802/
-                                 *      http://support.microsoft.com/kb/327618/
-                                 */
-                                fRc = CreateProcessAsUserW(*phToken,
-                                                           pwszExec,
-                                                           pwszCmdLine,
-                                                           NULL,         /* pProcessAttributes */
-                                                           NULL,         /* pThreadAttributes */
-                                                           TRUE,         /* fInheritHandles */
-                                                           dwCreationFlags,
-                                                           /** @todo Warn about exceeding 8192 bytes
-                                                            *        on XP and up. */
-                                                           pwszzBlock,   /* lpEnvironment */
-                                                           NULL,         /* pCurrentDirectory */
-                                                           pStartupInfo,
-                                                           pProcInfo);
-                                if (fRc)
-                                    dwErr = NO_ERROR;
-                                else
-                                    dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
-                                rtProcWinDestroyEnv(pwszzBlock);
+                                PRTUTF16 pwszzBlock;
+                                rc = RTEnvQueryUtf16Block(*phEnv, &pwszzBlock);
+                                if (RT_SUCCESS(rc))
+                                {
+
+
+                                    /*
+                                     * Useful KB articles:
+                                     *      http://support.microsoft.com/kb/165194/
+                                     *      http://support.microsoft.com/kb/184802/
+                                     *      http://support.microsoft.com/kb/327618/
+                                     */
+                                    fRc = CreateProcessAsUserW(*phToken,
+                                                               pwszExec,
+                                                               pwszCmdLine,
+                                                               NULL,         /* pProcessAttributes */
+                                                               NULL,         /* pThreadAttributes */
+                                                               TRUE,         /* fInheritHandles */
+                                                               dwCreationFlags,
+                                                               /** @todo Warn about exceeding 8192 bytes
+                                                                *        on XP and up. */
+                                                               pwszzBlock,   /* lpEnvironment */
+                                                               NULL,         /* pCurrentDirectory */
+                                                               pStartupInfo,
+                                                               pProcInfo);
+                                    if (fRc)
+                                        dwErr = NO_ERROR;
+                                    else
+                                        dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
+                                    RTEnvFreeUtf16Block(pwszzBlock);
+                                }
+
+                                rtProcWinDestroyEnvFromToken(phEnv, fFlags);
                             }
 
                             if (fFlags & RTPROC_FLAGS_PROFILE)
@@ -1017,40 +910,46 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
     if (!pfnCreateProcessWithLogonW)
         return VERR_SYMBOL_NOT_FOUND;
 
-    int rc;
+    PRTENV phEnv;
 
-    PRTUTF16 pwszzBlock;
-    if (fFlags & RTPROC_FLAGS_PROFILE)
+    HANDLE hToken;
+    int rc = rtProcWinUserLogon(pwszUser, pwszPassword, NULL /* Domain */, &hToken);
+    if (RT_SUCCESS(rc))
     {
-        rc = rtProcWinCreateEnvFromAccount(pwszUser, pwszPassword, NULL /* Domain */,
-                                           hEnv, RT_BOOL(fFlags & RTPROC_FLAGS_OVERWRITE_WITH_PROFILE), &pwszzBlock);
+        rc = rtProcWinCreateEnvFromToken(hToken, hEnv, fFlags, &phEnv);
+        rtProcWinUserLogoff(hToken);
     }
-    else /* Use hEnv exclusively without any profile variables. */
-        rc = RTEnvQueryUtf16Block(hEnv, &pwszzBlock);
 
     if (RT_SUCCESS(rc))
     {
-        BOOL fRc = pfnCreateProcessWithLogonW(pwszUser,
-                                              NULL,                       /* lpDomain*/
-                                              pwszPassword,
-                                              1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
-                                              pwszExec,
-                                              pwszCmdLine,
-                                              dwCreationFlags,
-                                              pwszzBlock,
-                                              NULL,                       /* pCurrentDirectory */
-                                              pStartupInfo,
-                                              pProcInfo);
-        if (!fRc)
+        PRTUTF16 pwszzBlock;
+        rc = RTEnvQueryUtf16Block(*phEnv, &pwszzBlock);
+        if (RT_SUCCESS(rc))
         {
-            DWORD dwErr = GetLastError();
-            rc = rtProcWinMapErrorCodes(dwErr);
-            if (rc == VERR_UNRESOLVED_ERROR)
-                LogRelFunc(("pfnCreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
-                            pfnCreateProcessWithLogonW, dwErr, dwErr, rc));
+            BOOL fRc = pfnCreateProcessWithLogonW(pwszUser,
+                                                  NULL,                       /* lpDomain*/
+                                                  pwszPassword,
+                                                  1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
+                                                  pwszExec,
+                                                  pwszCmdLine,
+                                                  dwCreationFlags,
+                                                  pwszzBlock,
+                                                  NULL,                       /* pCurrentDirectory */
+                                                  pStartupInfo,
+                                                  pProcInfo);
+            if (!fRc)
+            {
+                DWORD dwErr = GetLastError();
+                rc = rtProcWinMapErrorCodes(dwErr);
+                if (rc == VERR_UNRESOLVED_ERROR)
+                    LogRelFunc(("pfnCreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
+                                pfnCreateProcessWithLogonW, dwErr, dwErr, rc));
+            }
+            RTEnvFreeUtf16Block(pwszzBlock);
         }
-        rtProcWinDestroyEnv(pwszzBlock);
     }
+
+    rtProcWinDestroyEnvFromToken(phEnv, fFlags);
     return rc;
 }
 
@@ -1073,6 +972,62 @@ static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
      */
     if (RT_FAILURE(rc))
         rc = rtProcWinCreateAsUser2(pwszUser, pwszPassword, pwszExec, pwszCmdLine, hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags);
+
+    return rc;
+}
+
+
+/**
+ * Creates an environment block based on an authentication token and given process startup flags.
+ *
+ * @return  IPRT status code.
+ * @param   hToken              Token of the user to use.
+ * @param   hEnv                Base environment block to use, either solely or, if RTPROC_MODIFY_DEFAULT_ENV
+ *                              is specified, for modifying the (profile's) default environment block.
+ * @param   fFlags              Process creation flags of type RTPROC_XXX.
+ * @param   pphEnv              Where to store the created environment block. Needs to be free'd by
+ *                              rtProcWinDestroyEnvFromToken().
+ */
+static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, uint32_t fFlags, PRTENV *pphEnv)
+{
+    int rc = VINF_SUCCESS;
+
+    PRTENV phEnv;
+    if (fFlags & RTPROC_MODIFY_DEFAULT_ENV)
+    {
+        phEnv = (PRTENV)RTMemAlloc(sizeof(RTENV));
+        if (!phEnv)
+            rc = VERR_NO_MEMORY;
+
+        if (RT_SUCCESS(rc))
+        {
+            if (fFlags & RTPROC_FLAGS_PROFILE)
+            {
+                rc = RTEnvCreate(phEnv);
+                if (RT_SUCCESS(rc))
+                    rc = rtProcWinRetrieveEnvFromToken(hToken, *phEnv);
+            }
+            else
+                rc = RTEnvClone(phEnv, RTENV_DEFAULT);
+        }
+
+        if (   RT_SUCCESS(rc)
+            /* Make sure to not apply a wrong default environment if we
+             * want to just *modify* the loaded (profile) environment. */
+            && hEnv != RTENV_DEFAULT)
+        {
+            rc = RTEnvApplyChanges(*phEnv, hEnv);
+        }
+    }
+    else /* Only use the environment block handed-in. */
+        phEnv = &hEnv;
+
+    if (RT_SUCCESS(rc))
+    {
+        *pphEnv = phEnv;
+    }
+    else
+        rtProcWinDestroyEnvFromToken(phEnv, fFlags);
 
     return rc;
 }

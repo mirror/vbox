@@ -1173,3 +1173,60 @@ RTDECL(int) RTEnvApplyChanges(RTENV hEnvDst, RTENV hEnvChanges)
 }
 RT_EXPORT_SYMBOL(RTEnvApplyChanges);
 
+
+RTDECL(int) RTEnvFromUtf16Block(RTENV hEnv, PCRTUTF16 pcwszBlock,
+                                bool fOverwriteExisting)
+{
+    AssertPtrReturn(pcwszBlock, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    PCRTUTF16 pwch = (PCRTUTF16)pcwszBlock;
+    while (   pwch
+           && RT_SUCCESS(rc))
+    {
+        if (*pwch)
+        {
+            char *pszEntry;
+            rc = RTUtf16ToUtf8(pwch, &pszEntry);
+            if (RT_SUCCESS(rc))
+            {
+                const char *pszEq = strchr(pszEntry, '=');
+                if (   !pszEq
+                    && fOverwriteExisting)
+                {
+                    rc = RTEnvUnsetEx(hEnv, pszEntry);
+                }
+                else if (pszEq)
+                {
+                    const char *pszValue = pszEq + 1;
+                    size_t cchVar = pszEq - pszEntry;
+                    char *pszVar = (char *)RTMemAlloc(cchVar + 1);
+                    if (pszVar)
+                    {
+                        memcpy(pszVar, pszEntry, cchVar);
+                        pszVar[cchVar] = '\0';
+                        if (   !RTEnvExistEx(hEnv, pszVar)
+                            || fOverwriteExisting)
+                        {
+                            rc = RTEnvSetEx(hEnv, pszVar, pszValue);
+                        }
+                        RTMemFree(pszVar);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+                RTStrFree(pszEntry);
+            }
+        }
+        else
+            break;
+        pwch += RTUtf16Len(pwch) + 1;
+        if (!*pwch)
+            break;
+    }
+
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTEnvFromUtf16Block);
+

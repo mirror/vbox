@@ -384,6 +384,19 @@ RTDECL(bool) RTEnvIsChangeRecord(RTENV hEnv);
  */
 RTDECL(int) RTEnvApplyChanges(RTENV hEnvDst, RTENV hEnvChanges);
 
+/**
+ * Creates an environment block out of a handed-in Unicode block.
+ *
+ * @return  IPRT status code.
+ * @param   hEnv                Handle of an existing RTENV block to store the
+ *                              result into.
+ * @param   pcwszBlock          Unicode block (array) of environment entries;
+ *                              in form of "FOO=BAR\0BAR=BAZ".
+ * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv
+ *                              with the ones defined in pcwszBlock.
+
+ */
+RTDECL(int) RTEnvFromUtf16Block(RTENV hEnv, PCRTUTF16 pcwszBlock, bool fOverwriteExisting);
 
 #endif /* IN_RING3 */
 
