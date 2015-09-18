@@ -677,18 +677,6 @@ RTDECL(bool)   RTUriIsSchemeMatch(const char *pszUri, const char *pszScheme)
 }
 
 
-/* temporarily kept around till Andy stops using it. */
-RTDECL(char *) RTUriPath(const char *pszUri)
-{
-    RTURIPARSED Parsed;
-    int rc = rtUriParse(pszUri, &Parsed);
-    if (RT_SUCCESS(rc))
-        if (Parsed.cchPath)
-            return rtUriPercentDecodeN(&pszUri[Parsed.offPath], Parsed.cchPath);
-    return NULL;
-}
-
-
 RTDECL(char *) RTUriFileCreate(const char *pszPath)
 {
     char *pszResult = NULL;

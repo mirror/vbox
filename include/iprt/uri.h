@@ -254,16 +254,6 @@ RTDECL(char *) RTUriCreate(const char *pszScheme, const char *pszAuthority, cons
  */
 RTDECL(bool)   RTUriIsSchemeMatch(const char *pszUri, const char *pszScheme);
 
-/**
- * Extract the path out of an URI.
- *
- * @returns the path if the URI contains one, NULL otherwise.
- * @param   pszUri              The URI to extract from.
- * @deprecated
- */
-RTDECL(char *) RTUriPath(const char *pszUri);
-
-
 /** @defgroup grp_rt_uri_file   RTUriFile - Uri file parsing and creation
  *
  * Implements basic "file:" scheme support to the generic RTUri interface.  This
