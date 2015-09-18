@@ -633,7 +633,7 @@ DECLINLINE(void) vboxNetFltDarwinMBufToSG(PVBOXNETFLTINS pThis, mbuf_t pMBuf, vo
      * yet been padded. The current solution is to add a segment pointing
      * to a buffer containing all zeros and pray that works for all frames...
      */
-    if (pSG->cbTotal < 60 && (fSrc & INTNETTRUNKDIR_HOST))
+    if (pSG->cbTotal < 60 && (fSrc == INTNETTRUNKDIR_HOST))
     {
         AssertReturnVoid(iSeg < cSegs);
 
@@ -902,7 +902,7 @@ static errno_t vboxNetFltDarwinIffInputOutputWorker(PVBOXNETFLTINS pThis, mbuf_t
      * TCP/IP checksums as long as possible.
      * ASSUMES this only applies to outbound IP packets.
      */
-    if (    (fSrc & INTNETTRUNKDIR_HOST)
+    if (    (fSrc == INTNETTRUNKDIR_HOST)
         &&  eProtocol == PF_INET)
     {
         Assert(!pvFrame);
