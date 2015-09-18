@@ -69,6 +69,9 @@
  *
  *      - char strings are UTF-8.
  *
+ *      - Strings from any external source must be treated with utmost care as
+ *        they do not have to be valid UTF-8.  Only trust internal strings.
+ *
  *      - All functions return VBox status codes. There are three general
  *        exceptions from this:
  *              -# Predicate functions. These are function which are boolean in
@@ -92,19 +95,24 @@
  *      - The code shall not cause compiler warnings. Check this on ALL
  *        the platforms.
  *
+ *      - The use of symbols leading with single or double underscores is
+ *        forbidden as that intrudes on reserved compiler/system namespace. (3)
+ *
  *      - All files have file headers with $Id and a file tag which describes
  *        the file in a sentence or two.
- *        Note: Remember to enable keyword expansion when adding files to svn.
+ *        Note: Use the svn-ps.cmd/svn-ps.sh utility with the -a option to add
+ *              new sources with keyword expansion and exporting correctly
+ *              configured.
  *
  *      - All public functions are fully documented in Doxygen style using the
  *        javadoc dialect (using the 'at' instead of the 'slash' as
  *        commandprefix.)
  *
  *      - All structures in header files are described, including all their
- *        members.
+ *        members. (Doxygen style, of course.)
  *
- *      - All modules have a documentation 'page' in the main source file which
- *        describes the intent and actual implementation.
+ *      - All modules have a documentation '\@page' in the main source file
+ *        which describes the intent and actual implementation.
  *
  *      - Code which is doing things that are not immediately comprehensible
  *        shall include explanatory comments.
@@ -115,7 +123,8 @@
  *        comments, only ANSI C comments!
  *
  *      - Comments on \#else indicates what begins while the comment on a
- *        \#endif indicates what ended.
+ *        \#endif indicates what ended.  Only add these when there are more than
+ *        a few lines (6-10) of \#ifdef'ed code, otherwise they're just clutter.
  *
  *
  * (1) It is common practice on Unix to have a single symbol namespace for an
@@ -126,6 +135,11 @@
  *     shared libraries. The Windows / PE __declspect(import) and
  *     __declspect(export) constructs are the main reason for this.
  *     OTOH, we do perhaps have a bit too detailed graining of this in VMM...
+ *
+ * (3) There are guys out there grepping public sources for symbols leading with
+ *     single and double underscores as well as gotos and other things
+ *     considered bad practice.  They'll post statistics on how bad our sources
+ *     are on some mailing list, forum or similar.
  *
  *
  * @subsection sec_vbox_guideline_compulsory_sub64  64-bit and 32-bit
@@ -273,6 +287,38 @@
  *      - When output type is 'text' make sure to call xsltprocNewlineOutputHack
  *        from typemap-shared.inc.xsl every few KB of output, or xsltproc will
  *        end up wasting all the time reallocating the output buffer.
+ *
+ *
+ * @subsection sec_vbox_guideline_compulsory_doxygen    Doxygen Comments
+ *
+ * As mentioned above, we shall use doxygen/javadoc style commenting of public
+ * functions, typedefs, classes and such.  It is preferred to use this style in
+ * as many places as possible.
+ *
+ * A couple of hints on how to best write doxygen comments:
+ *
+ *      - A good class, method, function, structure or enum doxygen comment
+ *        starts with a one line sentence giving a brief description of the
+ *        item.  Details comes in a new paragraph (after blank line).
+ *
+ *      - Except for list generators like \@todo, \@cfgm, \@gcfgm and others,
+ *        all doxygen comments are related to things in the code.  So, for
+ *        instance you DO NOT add a doxygen \@note comment in the middle of a
+ *        because you've got something important to note, you add a normal
+ *        comment like 'Note! blah, very importan blah!'
+ *
+ *      - We do NOT use TODO/XXX/BUGBUG or similar markers in the code to flag
+ *        things needing fixing later, we always use \@todo doxygen comments.
+ *
+ *      - There is no colon after the \@todo.  And it is ALWAYS in a doxygen
+ *        comment.
+ *
+ *      - The \@retval tag is used to explain status codes a method/function may
+ *        returns.  It is not used to describe output parameters, that is done
+ *        using the \@param or \@param[out] tag.
+ *
+ * See https://www.stack.nl/~dimitri/doxygen/manual/index.html for the official
+ * doxygen documention.
  *
  *
  * @section sec_vbox_guideline_optional         Optional
