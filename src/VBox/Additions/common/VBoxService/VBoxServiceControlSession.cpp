@@ -1956,7 +1956,6 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
 #ifdef RT_OS_WINDOWS
                                 /* Make sure to also load the profile data on a Windows guest. */
                                 | RTPROC_FLAGS_PROFILE       /** @todo Not implemented for non-Windows yet. */
-                                | RTPROC_MODIFY_DEFAULT_ENV
 #endif
                                 | RTPROC_FLAGS_HIDDEN;       /** @todo More flags from startup info? */
             /*
