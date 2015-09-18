@@ -2142,7 +2142,7 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
              */
             
             task = new VMPowerDownTask(this, pProgress);
-            AssertBreakStmt(!task->isOk(), rc = E_FAIL);
+            AssertBreakStmt(task->isOk(), rc = E_FAIL);
             int vrc = RTThreadCreate(NULL, Console::i_powerDownThread,
                                      (void *) task, 0,
                                      RTTHREADTYPE_MAIN_WORKER, 0,
