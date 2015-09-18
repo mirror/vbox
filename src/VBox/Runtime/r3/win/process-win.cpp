@@ -669,11 +669,8 @@ static void rtProcWinDestroyEnvFromToken(PRTENV phEnv, uint32_t fFlags)
     if (!phEnv)
         return;
 
-    if (fFlags & RTPROC_MODIFY_DEFAULT_ENV)
-    {
-        RTEnvDestroy(*phEnv);
-        RTMemFree(phEnv);
-    }
+    RTEnvDestroy(*phEnv);
+    RTMemFree(phEnv);
 }
 
 
@@ -990,26 +987,21 @@ static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
  */
 static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, uint32_t fFlags, PRTENV *pphEnv)
 {
-    int rc = VINF_SUCCESS;
+    PRTENV phEnv = (PRTENV)RTMemAlloc(sizeof(RTENV));
+    if (!phEnv)
+        return VERR_NO_MEMORY;
 
-    PRTENV phEnv;
+    int rc = VINF_SUCCESS;
     if (fFlags & RTPROC_MODIFY_DEFAULT_ENV)
     {
-        phEnv = (PRTENV)RTMemAlloc(sizeof(RTENV));
-        if (!phEnv)
-            rc = VERR_NO_MEMORY;
-
-        if (RT_SUCCESS(rc))
+        if (fFlags & RTPROC_FLAGS_PROFILE)
         {
-            if (fFlags & RTPROC_FLAGS_PROFILE)
-            {
-                rc = RTEnvCreate(phEnv);
-                if (RT_SUCCESS(rc))
-                    rc = rtProcWinRetrieveEnvFromToken(hToken, *phEnv);
-            }
-            else
-                rc = RTEnvClone(phEnv, RTENV_DEFAULT);
+            rc = RTEnvCreate(phEnv);
+            if (RT_SUCCESS(rc))
+                rc = rtProcWinRetrieveEnvFromToken(hToken, *phEnv);
         }
+        else
+            rc = RTEnvClone(phEnv, RTENV_DEFAULT);
 
         if (   RT_SUCCESS(rc)
             /* Make sure to not apply a wrong default environment if we
@@ -1020,7 +1012,7 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, uint32_t fFlag
         }
     }
     else /* Only use the environment block handed-in. */
-        phEnv = &hEnv;
+        rc = RTEnvClone(phEnv, hEnv);
 
     if (RT_SUCCESS(rc))
     {
