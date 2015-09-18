@@ -1489,7 +1489,8 @@ check_qt4()
       fail
     fi
   else
-    if [ $QT4DIR_PKGCONFIG -eq 1 ]; then
+    if ! test -d "$PWD/tools/linux.$TARGET_MACHINE/qt" &&
+      test $QT4DIR_PKGCONFIG -eq 1; then
       # default is to use pkg-config
       if which_wrapper pkg-config > /dev/null; then
         # this braindead path is necessary for mdv2008.1
@@ -1531,7 +1532,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-      for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
+      for q in "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.* $QT4DIR; do
         INCQT4="$q/include $q/include/QtCore"
         FLGQT4="-DQT_SHARED"
         I_INCQT4=`prefix_I "$INCQT4"`
@@ -1596,7 +1597,7 @@ EOF
             cnf_append "VBOX_WITH_QT4_SUN" "1"
           fi
           test_header "Qt4 devtools"
-          for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
+          for q in "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.* $QT4DIR; do
             # first try it with a suffix, some platforms use that
             if which_wrapper "$q/bin/moc-qt4" > /dev/null; then
               moc_ver=`$q/bin/moc-qt4 -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
