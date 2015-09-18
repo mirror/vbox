@@ -929,14 +929,17 @@ static errno_t vboxNetFltDarwinIffInputOutputWorker(PVBOXNETFLTINS pThis, mbuf_t
              */
             if (vboxNetFltDarwinIsPromiscuous(pThis))
                 fDropIt = false;
-            else
-                mbuf_freem(pMBuf);
         }
     }
 
     vboxNetFltRelease(pThis, true /* fBusy */);
 
-    return fDropIt ? EJUSTRETURN : 0;
+    if (fDropIt)
+    {
+        mbuf_freem(pMBuf);
+        return EJUSTRETURN;
+    }
+    return 0;
 }
 
 
