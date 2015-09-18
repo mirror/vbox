@@ -1873,6 +1873,7 @@
 # define RTUriParsedScheme                              RT_MANGLER(RTUriParsedScheme)
 # define RTUriParsedQuery                               RT_MANGLER(RTUriParsedQuery)
 # define RTUriIsSchemeMatch                             RT_MANGLER(RTUriIsSchemeMatch)
+# define RTUriPath                                      RT_MANGLER(RTUriPath)
 # define RTUtf16AllocTag                                RT_MANGLER(RTUtf16AllocTag)
 # define RTUtf16CalcLatin1Len                           RT_MANGLER(RTUtf16CalcLatin1Len)
 # define RTUtf16CalcLatin1LenEx                         RT_MANGLER(RTUtf16CalcLatin1LenEx)
