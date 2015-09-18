@@ -125,7 +125,7 @@
 #include <algorithm>
 #include <memory> // for auto_ptr
 #include <vector>
-
+#include <exception>// std::exception
 
 // VMTask and friends
 ////////////////////////////////////////////////////////////////////////////////
@@ -2100,6 +2100,7 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
 
     HRESULT rc = S_OK;
     bool fBeganPowerDown = false;
+    VMPowerDownTask* task = NULL;
 
     do
     {
@@ -2132,23 +2133,33 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
 
         /* sync the state with the server */
         i_setMachineStateLocally(MachineState_Stopping);
-
-        /* setup task object and thread to carry out the operation asynchronously */
-        std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(this, pProgress));
-        AssertBreakStmt(task->isOk(), rc = E_FAIL);
-
-        int vrc = RTThreadCreate(NULL, Console::i_powerDownThread,
-                                 (void *) task.get(), 0,
-                                 RTTHREADTYPE_MAIN_WORKER, 0,
-                                 "VMPwrDwn");
-        if (RT_FAILURE(vrc))
+        try
         {
-            rc = setError(E_FAIL, "Could not create VMPowerDown thread (%Rrc)", vrc);
+            /* Setup task object and thread to carry out the operation asynchronously.
+             * We are going to pass ownership of task pointer to another thread.
+             * So we are in charge of deletion this task pointer in case if RTThreadCreate 
+             * returns not successful result or in case of any exception 
+             */
+            
+            task = new VMPowerDownTask(this, pProgress);
+            AssertBreakStmt(!task->isOk(), rc = E_FAIL);
+            int vrc = RTThreadCreate(NULL, Console::i_powerDownThread,
+                                     (void *) task, 0,
+                                     RTTHREADTYPE_MAIN_WORKER, 0,
+                                     "VMPwrDwn");
+            if (RT_FAILURE(vrc))
+            {
+                rc = setError(E_FAIL, "Could not create VMPowerDown thread (%Rrc)", vrc);
+                break;
+            }
+            /* task is now owned by powerDownThread(), so release it */
+            //task.release();
+        }
+        catch(const std::exception &e)
+        {
+            rc = setError(E_FAIL, "Cought exception! Could not create VMPowerDown thread (%s)", e.what());
             break;
         }
-
-        /* task is now owned by powerDownThread(), so release it */
-        task.release();
 
         /* pass the progress to the caller */
         pProgress.queryInterfaceTo(aProgress.asOutParam());
@@ -2157,6 +2168,13 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
 
     if (FAILED(rc))
     {
+        if (task != NULL)
+        {
+            //we can delete this pointer because something
+            //was wrong and we hadn't passed pointer to another thread
+            LogFlowFunc(("Delete task VMPowerDownTask from Console::powerDown()\n"));
+            delete task;
+        }
         /* preserve existing error info */
         ErrorInfoKeeper eik;
 
@@ -8221,28 +8239,49 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                  * is one or more mpUVM callers (added with addVMCaller()) we'll
                  * deadlock).
                  */
-                std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(that, pProgress));
-
-                 /* If creating a task failed, this can currently mean one of
-                  * two: either Console::uninit() has been called just a ms
-                  * before (so a powerDown() call is already on the way), or
-                  * powerDown() itself is being already executed. Just do
-                  * nothing.
-                  */
-                if (!task->isOk())
+                VMPowerDownTask* task = NULL;
+                try
                 {
-                    LogFlowFunc(("Console is already being uninitialized.\n"));
-                    return;
+                    task = new VMPowerDownTask(that, pProgress);
+                     /* If creating a task failed, this can currently mean one of
+                      * two: either Console::uninit() has been called just a ms
+                      * before (so a powerDown() call is already on the way), or
+                      * powerDown() itself is being already executed. Just do
+                      * nothing.
+                      */
+                    if (!task->isOk())
+                    {
+                        LogFlowFunc(("Console is already being uninitialized.\n"));
+                    }
+                    else
+                    {
+                        /*
+                         * We are going to pass ownership of task pointer to another thread.
+                         * So we are in charge of deletion this task pointer in case if RTThreadCreate
+                         * returns not successful result or in case of any exception
+                         */
+                        int vrc = RTThreadCreate(NULL, Console::i_powerDownThread,
+                                                 (void *) task, 0,
+                                                 RTTHREADTYPE_MAIN_WORKER, 0,
+                                                 "VMPwrDwn");
+                        if (RT_FAILURE(vrc))
+                        {
+                            rc = E_FAIL;
+                            LogFlowFunc(("Could not create VMPowerDown thread (%Rrc)\n", vrc));
+                        }
+                    }
+                }
+                catch(const std::exception &e)
+                {
+                    rc = E_FAIL;
+                    LogFlowFunc(("Cought exception! Could not create VMPowerDown thread (%s)\n", e.what()));
                 }
 
-                int vrc = RTThreadCreate(NULL, Console::i_powerDownThread,
-                                         (void *)task.get(), 0,
-                                         RTTHREADTYPE_MAIN_WORKER, 0,
-                                         "VMPwrDwn");
-                AssertMsgRCReturnVoid(vrc, ("Could not create VMPowerDown thread (%Rrc)\n", vrc));
-
-                /* task is now owned by powerDownThread(), so release it */
-                task.release();
+                if(FAILED(rc) || !task->isOk())
+                {
+                    LogFlowFunc(("Delete task VMPowerDownTask from Console::i_vmstateChangeCallback()\n"));
+                    delete task;
+                }
             }
             break;
         }
@@ -9933,33 +9972,43 @@ DECLCALLBACK(int) Console::i_powerDownThread(RTTHREAD Thread, void *pvUser)
 {
     LogFlowFuncEnter();
 
-    std::auto_ptr<VMPowerDownTask> task(static_cast<VMPowerDownTask *>(pvUser));
-    AssertReturn(task.get(), VERR_INVALID_PARAMETER);
+    int rc = VINF_SUCCESS;
+    //we get pvUser pointer from another thread (see Console::powerDown) where one was allocated.
+    //and here we are in charge of correct deletion this pointer.
+    VMPowerDownTask* task = static_cast<VMPowerDownTask *>(pvUser);
+    try
+    {
+        if (task->isOk() == false)
+            rc = VERR_GENERAL_FAILURE;
 
-    AssertReturn(task->isOk(), VERR_GENERAL_FAILURE);
+        const ComObjPtr<Console> &that = task->mConsole;
 
-    Assert(task->mProgress.isNull());
+        /* Note: no need to use addCaller() to protect Console because VMTask does
+         * that */
 
-    const ComObjPtr<Console> &that = task->mConsole;
+        /* wait until the method tat started us returns */
+        AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
-    /* Note: no need to use addCaller() to protect Console because VMTask does
-     * that */
+        /* release VM caller to avoid the powerDown() deadlock */
+        task->releaseVMCaller();
 
-    /* wait until the method tat started us returns */
-    AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
+        thatLock.release();
 
-    /* release VM caller to avoid the powerDown() deadlock */
-    task->releaseVMCaller();
+        that->i_powerDown(task->mServerProgress);
 
-    thatLock.release();
+        /* complete the operation */
+        that->mControl->EndPoweringDown(S_OK, Bstr().raw());
 
-    that->i_powerDown(task->mServerProgress);
+    }
+    catch(const std::exception &e)
+    {
+        AssertMsgFailed(("Exception %s was cought, rc=%Rrc\n", e.what(), rc));
+    }
 
-    /* complete the operation */
-    that->mControl->EndPoweringDown(S_OK, Bstr().raw());
-
+    LogFlowFunc(("Delete task VMPowerDownTask from Console::i_powerDownThread()\n"));
+    delete task;
     LogFlowFuncLeave();
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
