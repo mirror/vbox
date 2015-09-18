@@ -50,9 +50,7 @@ public:
     /** Constructs selector-window passing @a pParent to the QMainWindow base-class.
       * @param ppSelf brings the pointer to pointer to this window instance used by the external caller.
       * @param flags  brings the selector-window flags dialogs should have. */
-    UISelectorWindow(UISelectorWindow **ppSelf,
-                     QWidget *pParent = 0,
-                     Qt::WindowFlags flags = Qt::Window);
+    UISelectorWindow(UISelectorWindow **ppSelf, QWidget *pParent = 0, Qt::WindowFlags flags = Qt::Window);
     /** Destructs selector-window. */
     ~UISelectorWindow();
 
@@ -61,10 +59,13 @@ public:
 
 private slots:
 
-    /** Handles CVirtualBox event about state change for machine with @a strId. */
-    void sltStateChanged(QString strId);
-    /** Handles CVirtualBox event about snapshot change for machine with @a strId. */
-    void sltSnapshotChanged(QString strId);
+    /** @name CVirtualBox event handling stuff.
+      * @{ */
+        /** Handles CVirtualBox event about state change for machine with @a strId. */
+        void sltStateChanged(QString strId);
+        /** Handles CVirtualBox event about snapshot change for machine with @a strId. */
+        void sltSnapshotChanged(QString strId);
+    /** @} */
 
     /** Handles signal about Details-view @a iWidgetIndex change. */
     void sltDetailsViewIndexChanged(int iWidgetIndex);
@@ -75,64 +76,70 @@ private slots:
     /** Handles selector-window context-menu call for passed @a pos. */
     void sltShowSelectorContextMenu(const QPoint &pos);
 
-    /** Handles call to open Media Manager dialog. */
-    void sltShowMediumManager();
-    /** Handles call to open Import Appliance wizard.
-      * @param strFileName can bring the name of file to import appliance from. */
-    void sltShowImportApplianceWizard(const QString &strFileName = QString());
-    /** Handles call to open Export Appliance wizard. */
-    void sltShowExportApplianceWizard();
+    /** @name File menu stuff.
+      * @{ */
+        /** Handles call to open Media Manager dialog. */
+        void sltShowMediumManager();
+        /** Handles call to open Import Appliance wizard.
+          * @param strFileName can bring the name of file to import appliance from. */
+        void sltShowImportApplianceWizard(const QString &strFileName = QString());
+        /** Handles call to open Export Appliance wizard. */
+        void sltShowExportApplianceWizard();
 #ifdef DEBUG
-    /** Handles call to open Extra-data Manager dialog. */
-    void sltOpenExtraDataManagerWindow();
+        /** Handles call to open Extra-data Manager dialog. */
+        void sltOpenExtraDataManagerWindow();
 #endif /* DEBUG */
-    /** Handles call to open Preferences dialog. */
-    void sltShowPreferencesDialog();
-    /** Handles call to exit application. */
-    void sltPerformExit();
+        /** Handles call to open Preferences dialog. */
+        void sltShowPreferencesDialog();
+        /** Handles call to exit application. */
+        void sltPerformExit();
+    /** @} */
 
-    /** Handles call to open Add Machine dialog.
-      * @param strFileName can bring the name of file to add machine from. */
-    void sltShowAddMachineDialog(const QString &strFileName = QString());
-    /** Handles call to open Machine Settings dialog.
-      * @param strCategory can bring the settings category to start from.
-      * @param strControl  can bring the widget of the page to focus.
-      * @param strId       can bring the ID of machine to manage. */
-    void sltShowMachineSettingsDialog(const QString &strCategory = QString(),
-                                      const QString &strControl = QString(),
-                                      const QString &strId = QString());
-    /** Handles call to open Clone Machine wizard. */
-    void sltShowCloneMachineWizard();
-    /** Handles call to start or show machine. */
-    void sltPerformStartOrShowAction();
-    /** Handles call to start machine in normal mode. */
-    void sltPerformStartNormal();
-    /** Handles call to start machine in headless mode. */
-    void sltPerformStartHeadless();
-    /** Handles call to start machine in detachable mode. */
-    void sltPerformStartDetachable();
-    /** Handles call to discard machine state. */
-    void sltPerformDiscardAction();
-    /** Handles call to @a fPause or resume machine otherwise. */
-    void sltPerformPauseResumeAction(bool fPause);
-    /** Handles call to reset machine. */
-    void sltPerformResetAction();
-    /** Handles call to save machine state. */
-    void sltPerformSaveAction();
-    /** Handles call to ask machine for shutdown. */
-    void sltPerformACPIShutdownAction();
-    /** Handles call to power machine off. */
-    void sltPerformPowerOffAction();
-    /** Handles call to open machine Log dialog. */
-    void sltShowLogDialog();
-    /** Handles call to show machine in File Manager. */
-    void sltShowMachineInFileManager();
-    /** Handles call to create machine shortcut. */
-    void sltPerformCreateShortcutAction();
-    /** Handles call to show group Close menu. */
-    void sltGroupCloseMenuAboutToShow();
-    /** Handles call to show machine Close menu. */
-    void sltMachineCloseMenuAboutToShow();
+    /** @name Machine menu stuff.
+      * @{ */
+        /** Handles call to open Add Machine dialog.
+          * @param strFileName can bring the name of file to add machine from. */
+        void sltShowAddMachineDialog(const QString &strFileName = QString());
+        /** Handles call to open Machine Settings dialog.
+          * @param strCategory can bring the settings category to start from.
+          * @param strControl  can bring the widget of the page to focus.
+          * @param strId       can bring the ID of machine to manage. */
+        void sltShowMachineSettingsDialog(const QString &strCategory = QString(),
+                                          const QString &strControl = QString(),
+                                          const QString &strId = QString());
+        /** Handles call to open Clone Machine wizard. */
+        void sltShowCloneMachineWizard();
+        /** Handles call to start or show machine. */
+        void sltPerformStartOrShowAction();
+        /** Handles call to start machine in normal mode. */
+        void sltPerformStartNormal();
+        /** Handles call to start machine in headless mode. */
+        void sltPerformStartHeadless();
+        /** Handles call to start machine in detachable mode. */
+        void sltPerformStartDetachable();
+        /** Handles call to discard machine state. */
+        void sltPerformDiscardAction();
+        /** Handles call to @a fPause or resume machine otherwise. */
+        void sltPerformPauseResumeAction(bool fPause);
+        /** Handles call to reset machine. */
+        void sltPerformResetAction();
+        /** Handles call to save machine state. */
+        void sltPerformSaveAction();
+        /** Handles call to ask machine for shutdown. */
+        void sltPerformACPIShutdownAction();
+        /** Handles call to power machine off. */
+        void sltPerformPowerOffAction();
+        /** Handles call to open machine Log dialog. */
+        void sltShowLogDialog();
+        /** Handles call to show machine in File Manager. */
+        void sltShowMachineInFileManager();
+        /** Handles call to create machine shortcut. */
+        void sltPerformCreateShortcutAction();
+        /** Handles call to show group Close menu. */
+        void sltGroupCloseMenuAboutToShow();
+        /** Handles call to show machine Close menu. */
+        void sltMachineCloseMenuAboutToShow();
+    /** @} */
 
     /** Handles signal about Chooser-pane index change.
       * @param fRefreshDetails     brings whether details should be updated.
@@ -148,86 +155,95 @@ private slots:
 
 private:
 
-    /** Handles translation event. */
-    void retranslateUi();
+    /** @name Event handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void retranslateUi();
 
-    /** Handles any Qt @a pEvent. */
-    bool event(QEvent *pEvent);
-    /** Handles Qt show @a pEvent. */
-    void showEvent(QShowEvent *pEvent);
-    /** Handles Qt polish @a pEvent. */
-    void polishEvent(QShowEvent *pEvent);
+        /** Handles any Qt @a pEvent. */
+        bool event(QEvent *pEvent);
+        /** Handles Qt show @a pEvent. */
+        void showEvent(QShowEvent *pEvent);
+        /** Handles Qt polish @a pEvent. */
+        void polishEvent(QShowEvent *pEvent);
 #ifdef Q_WS_MAC
-    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
+        /** Preprocesses any Qt @a pEvent for passed @a pObject. */
+        bool eventFilter(QObject *pObject, QEvent *pEvent);
 #endif /* Q_WS_MAC */
+    /** @} */
 
-    /** Prepares icon. */
-    void prepareIcon();
-    /** Prepares menu-bar. */
-    void prepareMenuBar();
-    /** Prepares @a pMenu File. */
-    void prepareMenuFile(QMenu *pMenu);
-    /** Prepares @a pMenu Group. */
-    void prepareMenuGroup(QMenu *pMenu);
-    /** Prepares @a pMenu Machine. */
-    void prepareMenuMachine(QMenu *pMenu);
-    /** Prepares @a pMenu Group => Start or Show. */
-    void prepareMenuGroupStartOrShow(QMenu *pMenu);
-    /** Prepares @a pMenu Machine => Start or Show. */
-    void prepareMenuMachineStartOrShow(QMenu *pMenu);
-    /** Prepares @a pMenu Group => Close. */
-    void prepareMenuGroupClose(QMenu *pMenu);
-    /** Prepares @a pMenu Machine => Close. */
-    void prepareMenuMachineClose(QMenu *pMenu);
-    /** Prepares status-bar. */
-    void prepareStatusBar();
-    /** Prepares widgets. */
-    void prepareWidgets();
-    /** Prepares connections. */
-    void prepareConnections();
-    /** Loads settings. */
-    void loadSettings();
+    /** @name Prepare/Cleanup cascade.
+      * @{ */
+        /** Prepares icon. */
+        void prepareIcon();
+        /** Prepares menu-bar. */
+        void prepareMenuBar();
+        /** Prepares @a pMenu File. */
+        void prepareMenuFile(QMenu *pMenu);
+        /** Prepares @a pMenu Group. */
+        void prepareMenuGroup(QMenu *pMenu);
+        /** Prepares @a pMenu Machine. */
+        void prepareMenuMachine(QMenu *pMenu);
+        /** Prepares @a pMenu Group => Start or Show. */
+        void prepareMenuGroupStartOrShow(QMenu *pMenu);
+        /** Prepares @a pMenu Machine => Start or Show. */
+        void prepareMenuMachineStartOrShow(QMenu *pMenu);
+        /** Prepares @a pMenu Group => Close. */
+        void prepareMenuGroupClose(QMenu *pMenu);
+        /** Prepares @a pMenu Machine => Close. */
+        void prepareMenuMachineClose(QMenu *pMenu);
+        /** Prepares status-bar. */
+        void prepareStatusBar();
+        /** Prepares widgets. */
+        void prepareWidgets();
+        /** Prepares connections. */
+        void prepareConnections();
+        /** Loads settings. */
+        void loadSettings();
 
-    /** Saves settings. */
-    void saveSettings();
-    /** Cleanups connections. */
-    void cleanupConnections();
-    /** Cleanups menu-bar. */
-    void cleanupMenuBar();
+        /** Saves settings. */
+        void saveSettings();
+        /** Cleanups connections. */
+        void cleanupConnections();
+        /** Cleanups menu-bar. */
+        void cleanupMenuBar();
+    /** @} */
 
     /** Returns current-item. */
     UIVMItem* currentItem() const;
     /** Returns a list of current-items. */
     QList<UIVMItem*> currentItems() const;
 
-    /** Performs update of actions appearance. */
-    void updateActionsAppearance();
+    /** @name Action update stuff.
+      * @{ */
+        /** Performs update of actions appearance. */
+        void updateActionsAppearance();
 
-    /** Returns whether the action with @a iActionIndex is enabled.
-      * @param items used to calculate verdict about should the action be enabled. */
-    bool isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items);
+        /** Returns whether the action with @a iActionIndex is enabled.
+          * @param items used to calculate verdict about should the action be enabled. */
+        bool isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items);
 
-    /** Returns whether all passed @a items are powered off. */
-    static bool isItemsPoweredOff(const QList<UIVMItem*> &items);
-    /** Returns whether at least one of passed @a items is able to shutdown. */
-    static bool isAtLeastOneItemAbleToShutdown(const QList<UIVMItem*> &items);
-    /** Returns whether at least one of passed @a items supports shortcut creation. */
-    static bool isAtLeastOneItemSupportsShortcuts(const QList<UIVMItem*> &items);
-    /** Returns whether at least one of passed @a items is accessible. */
-    static bool isAtLeastOneItemAccessible(const QList<UIVMItem*> &items);
-    /** Returns whether at least one of passed @a items is inaccessible. */
-    static bool isAtLeastOneItemInaccessible(const QList<UIVMItem*> &items);
-    /** Returns whether at least one of passed @a items is removable. */
-    static bool isAtLeastOneItemRemovable(const QList<UIVMItem*> &items);
-    /** Returns whether at least one of passed @a items can be started or shown. */
-    static bool isAtLeastOneItemCanBeStartedOrShowed(const QList<UIVMItem*> &items);
-    /** Returns whether at least one of passed @a items can be discarded. */
-    static bool isAtLeastOneItemDiscardable(const QList<UIVMItem*> &items);
-    /** Returns whether at least one of passed @a items is started. */
-    static bool isAtLeastOneItemStarted(const QList<UIVMItem*> &items);
-    /** Returns whether at least one of passed @a items is running. */
-    static bool isAtLeastOneItemRunning(const QList<UIVMItem*> &items);
+        /** Returns whether all passed @a items are powered off. */
+        static bool isItemsPoweredOff(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items is able to shutdown. */
+        static bool isAtLeastOneItemAbleToShutdown(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items supports shortcut creation. */
+        static bool isAtLeastOneItemSupportsShortcuts(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items is accessible. */
+        static bool isAtLeastOneItemAccessible(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items is inaccessible. */
+        static bool isAtLeastOneItemInaccessible(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items is removable. */
+        static bool isAtLeastOneItemRemovable(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items can be started or shown. */
+        static bool isAtLeastOneItemCanBeStartedOrShowed(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items can be discarded. */
+        static bool isAtLeastOneItemDiscardable(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items is started. */
+        static bool isAtLeastOneItemStarted(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items is running. */
+        static bool isAtLeastOneItemRunning(const QList<UIVMItem*> &items);
+    /** @} */
 
     /** Holds whether the dialog is polished. */
     bool m_fPolished : 1;
