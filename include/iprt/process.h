@@ -198,7 +198,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * the more frequently used case. */
 #define RTPROC_FLAGS_SAME_CONTRACT          RT_BIT(3)
 /** Load user profile data when executing a process.
- * This bit at the moment only is valid on Windows. */
+ * This redefines the meaning of RTENV_DEFAULT to the profile environment.
+ * This bit is at the moment only supported on Windows using the RTProcCreateEx
+ * with a user specified. */
 #define RTPROC_FLAGS_PROFILE                RT_BIT(4)
 /** Create process without a console window.
  * This is a Windows (and OS/2) concept, do not use on other platforms. */
@@ -210,11 +212,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * just join up argv with a space between each.  Ignored on platforms
  * passing argument the vector. */
 #define RTPROC_FLAGS_UNQUOTED_ARGS          RT_BIT(7)
-/** Indicates that the passed hEnv environment block should be used to
- *  modify the default environment block. If this flag is not specified,
- *  then hEnv will be used exclusively. If hEnv is RTENV_DEFAULT, however,
- *  this flag does nothing. */
-#define RTPROC_MODIFY_DEFAULT_ENV           RT_BIT(8)
+/** Consider hEnv an environment change record to be applied to RTENV_DEFAULT.
+ * If hEnv is RTENV_DEFAULT, the flag has no effect. */
+#define RTPROC_FLAGS_ENV_CHANGE_RECORD      RT_BIT(8)
 /** Valid flag mask. */
 #define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x1ff)
 /** @}  */

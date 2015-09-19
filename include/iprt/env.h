@@ -70,6 +70,24 @@ RTDECL(int) RTEnvCreate(PRTENV pEnv);
 RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone);
 
 /**
+ * Creates an environment block from an UTF-16 environment raw block.
+ *
+ * This is the reverse of RTEnvQueryUtf16Block.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NO_MEMORY
+ * @retval  VERR_NO_STR_MEMORY
+ *
+ * @param   phEnv       Where to store the handle of the new environment block.
+ * @param   pwszzBlock  List of zero terminated string end with a zero length
+ *                      string (or two zero terminators if you prefer).  The
+ *                      strings are on the RTPutEnv format (VAR=VALUE), except
+ *                      they are all expected to include an equal sign.
+ * @param   fFlags      Flags served for the future.
+ */
+RTDECL(int) RTEnvCloneUtf16Block(PRTENV phEnv, PCRTUTF16 pwszzBlock, uint32_t fFlags);
+
+/**
  * Destroys an environment block.
  *
  * @returns IPRT status code.
@@ -383,20 +401,6 @@ RTDECL(bool) RTEnvIsChangeRecord(RTENV hEnv);
  *                      change record.  RTENV_DEFAULT is not supported here.
  */
 RTDECL(int) RTEnvApplyChanges(RTENV hEnvDst, RTENV hEnvChanges);
-
-/**
- * Creates an environment block out of a handed-in Unicode block.
- *
- * @return  IPRT status code.
- * @param   hEnv                Handle of an existing RTENV block to store the
- *                              result into.
- * @param   pcwszBlock          Unicode block (array) of environment entries;
- *                              in form of "FOO=BAR\0BAR=BAZ".
- * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv
- *                              with the ones defined in pcwszBlock.
-
- */
-RTDECL(int) RTEnvFromUtf16Block(RTENV hEnv, PCRTUTF16 pcwszBlock, bool fOverwriteExisting);
 
 #endif /* IN_RING3 */
 
