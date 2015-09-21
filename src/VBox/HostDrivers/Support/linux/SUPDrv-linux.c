@@ -485,16 +485,8 @@ static void __exit VBoxDrvLinuxUnload(void)
      * opened, at least we'll blindly assume that here.
      */
 #ifdef CONFIG_VBOXDRV_AS_MISC
-    rc = misc_deregister(&gMiscDeviceUsr);
-    if (rc < 0)
-    {
-        Log(("misc_deregister failed with rc=%#x on vboxdrvu\n", rc));
-    }
-    rc = misc_deregister(&gMiscDeviceSys);
-    if (rc < 0)
-    {
-        Log(("misc_deregister failed with rc=%#x on vboxdrv\n", rc));
-    }
+    misc_deregister(&gMiscDeviceUsr);
+    misc_deregister(&gMiscDeviceSys);
 #else  /* !CONFIG_VBOXDRV_AS_MISC */
 # ifdef CONFIG_DEVFS_FS
     /*
