@@ -61,36 +61,36 @@ private slots:
 
     /** @name CVirtualBox event handling stuff.
       * @{ */
-        /** Handles CVirtualBox event about state change for machine with @a strId. */
-        void sltStateChanged(QString strId);
-        /** Handles CVirtualBox event about snapshot change for machine with @a strId. */
-        void sltSnapshotChanged(QString strId);
+        /** Handles CVirtualBox event about state change for machine with @a strID. */
+        void sltHandleStateChange(QString strID);
+        /** Handles CVirtualBox event about snapshot change for machine with @a strID. */
+        void sltHandleSnapshotChange(QString strID);
     /** @} */
 
-    /** Handles signal about Details-view @a iWidgetIndex change. */
-    void sltDetailsViewIndexChanged(int iWidgetIndex);
+    /** Handles signal about Details-container @a iIndex change. */
+    void sltHandleDetailsContainerIndexChange(int iIndex);
 
     /** Handles signal about medium-enumeration finished. */
     void sltHandleMediumEnumerationFinish();
 
-    /** Handles selector-window context-menu call for passed @a pos. */
-    void sltShowSelectorContextMenu(const QPoint &pos);
+    /** Handles selector-window context-menu call for passed @a position. */
+    void sltShowSelectorWindowContextMenu(const QPoint &position);
 
     /** @name File menu stuff.
       * @{ */
-        /** Handles call to open Media Manager dialog. */
-        void sltShowMediumManager();
+        /** Handles call to open Media Manager window. */
+        void sltOpenMediaManagerWindow();
         /** Handles call to open Import Appliance wizard.
           * @param strFileName can bring the name of file to import appliance from. */
-        void sltShowImportApplianceWizard(const QString &strFileName = QString());
+        void sltOpenImportApplianceWizard(const QString &strFileName = QString());
         /** Handles call to open Export Appliance wizard. */
-        void sltShowExportApplianceWizard();
+        void sltOpenExportApplianceWizard();
 #ifdef DEBUG
-        /** Handles call to open Extra-data Manager dialog. */
+        /** Handles call to open Extra-data Manager window. */
         void sltOpenExtraDataManagerWindow();
 #endif /* DEBUG */
         /** Handles call to open Preferences dialog. */
-        void sltShowPreferencesDialog();
+        void sltOpenPreferencesDialog();
         /** Handles call to exit application. */
         void sltPerformExit();
     /** @} */
@@ -99,42 +99,42 @@ private slots:
       * @{ */
         /** Handles call to open Add Machine dialog.
           * @param strFileName can bring the name of file to add machine from. */
-        void sltShowAddMachineDialog(const QString &strFileName = QString());
+        void sltOpenAddMachineDialog(const QString &strFileName = QString());
         /** Handles call to open Machine Settings dialog.
           * @param strCategory can bring the settings category to start from.
           * @param strControl  can bring the widget of the page to focus.
-          * @param strId       can bring the ID of machine to manage. */
-        void sltShowMachineSettingsDialog(const QString &strCategory = QString(),
+          * @param strID       can bring the ID of machine to manage. */
+        void sltOpenMachineSettingsDialog(const QString &strCategory = QString(),
                                           const QString &strControl = QString(),
-                                          const QString &strId = QString());
+                                          const QString &strID = QString());
         /** Handles call to open Clone Machine wizard. */
-        void sltShowCloneMachineWizard();
+        void sltOpenCloneMachineWizard();
         /** Handles call to start or show machine. */
-        void sltPerformStartOrShowAction();
+        void sltPerformStartOrShowMachine();
         /** Handles call to start machine in normal mode. */
-        void sltPerformStartNormal();
+        void sltPerformStartMachineNormal();
         /** Handles call to start machine in headless mode. */
-        void sltPerformStartHeadless();
+        void sltPerformStartMachineHeadless();
         /** Handles call to start machine in detachable mode. */
-        void sltPerformStartDetachable();
+        void sltPerformStartMachineDetachable();
         /** Handles call to discard machine state. */
-        void sltPerformDiscardAction();
+        void sltPerformDiscardMachineState();
         /** Handles call to @a fPause or resume machine otherwise. */
-        void sltPerformPauseResumeAction(bool fPause);
+        void sltPerformPauseOrResumeMachine(bool fPause);
         /** Handles call to reset machine. */
-        void sltPerformResetAction();
+        void sltPerformResetMachine();
         /** Handles call to save machine state. */
-        void sltPerformSaveAction();
+        void sltPerformSaveMachineState();
         /** Handles call to ask machine for shutdown. */
-        void sltPerformACPIShutdownAction();
+        void sltPerformShutdownMachine();
         /** Handles call to power machine off. */
-        void sltPerformPowerOffAction();
+        void sltPerformPowerOffMachine();
         /** Handles call to open machine Log dialog. */
-        void sltShowLogDialog();
+        void sltOpenMachineLogDialog();
         /** Handles call to show machine in File Manager. */
         void sltShowMachineInFileManager();
         /** Handles call to create machine shortcut. */
-        void sltPerformCreateShortcutAction();
+        void sltPerformCreateMachineShortcut();
         /** Handles call to show group Close menu. */
         void sltGroupCloseMenuAboutToShow();
         /** Handles call to show machine Close menu. */
@@ -145,30 +145,30 @@ private slots:
       * @param fRefreshDetails     brings whether details should be updated.
       * @param fRefreshSnapshots   brings whether snapshots should be updated.
       * @param fRefreshDescription brings whether description should be updated. */
-    void sltCurrentVMItemChanged(bool fRefreshDetails = true, bool fRefreshSnapshots = true, bool fRefreshDescription = true);
+    void sltHandleChooserPaneIndexChange(bool fRefreshDetails = true, bool fRefreshSnapshots = true, bool fRefreshDescription = true);
 
     /** Handles call to open a @a list of URLs. */
     void sltOpenUrls(QList<QUrl> list = QList<QUrl>());
 
-    /** Handles signal about group saving process status change. */
-    void sltGroupSavingUpdate();
+    /** Handles signal about group saving progress change. */
+    void sltHandleGroupSavingProgressChange();
 
 private:
 
     /** @name Event handling stuff.
       * @{ */
         /** Handles translation event. */
-        void retranslateUi();
+        virtual void retranslateUi();
 
         /** Handles any Qt @a pEvent. */
-        bool event(QEvent *pEvent);
+        virtual bool event(QEvent *pEvent);
         /** Handles Qt show @a pEvent. */
-        void showEvent(QShowEvent *pEvent);
-        /** Handles Qt polish @a pEvent. */
-        void polishEvent(QShowEvent *pEvent);
+        virtual void showEvent(QShowEvent *pEvent);
+        /** Handles first Qt show @a pEvent. */
+        virtual void polishEvent(QShowEvent *pEvent);
 #ifdef Q_WS_MAC
-        /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-        bool eventFilter(QObject *pObject, QEvent *pEvent);
+        /** Mac OS X: Preprocesses any Qt @a pEvent for passed @a pObject. */
+        virtual bool eventFilter(QObject *pObject, QEvent *pEvent);
 #endif /* Q_WS_MAC */
     /** @} */
 
@@ -247,8 +247,8 @@ private:
 
     /** Holds whether the dialog is polished. */
     bool m_fPolished : 1;
-    /** Holds whether the warning about inaccessible mediums shown. */
-    bool m_fWarningAboutInaccessibleMediumShown : 1;
+    /** Holds whether the warning about inaccessible media shown. */
+    bool m_fWarningAboutInaccessibleMediaShown : 1;
 
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;
@@ -261,18 +261,17 @@ private:
     UIMainBar *m_pBar;
 #endif /* !Q_WS_MAC */
     /** Holds the main toolbar instance. */
-    UIToolBar *mVMToolBar;
+    UIToolBar *m_pToolBar;
 
-    /** Holds the Details-view container instance. */
-    QStackedWidget *m_pContainer;
+    /** Holds the Details-container instance. */
+    QStackedWidget *m_pContainerDetails;
 
     /** Holds the Chooser-pane instance. */
-    UIGChooser *m_pChooser;
+    UIGChooser *m_pPaneChooser;
     /** Holds the Details-pane instance. */
-    UIGDetails *m_pDetails;
-
-    /** Holds the Desktop-widget instance. */
-    UIVMDesktop *m_pVMDesktop;
+    UIGDetails *m_pPaneDetails;
+    /** Holds the Desktop-pane instance. */
+    UIVMDesktop *m_pPaneDesktop;
 
     /** Holds the list of Group menu actions. */
     QList<UIAction*> m_groupActions;
