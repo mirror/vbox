@@ -131,7 +131,6 @@ static void test1Worker(RTTEST hTest, const char *pszBaseDir,
 static void test1(RTTEST hTest, const char *pszBaseDir)
 {
     char szPath1[RTPATH_MAX];
-    char szPath2[RTPATH_MAX];
 
     /*
      * Making some assumptions about how we are executed from to start with...
