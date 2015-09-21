@@ -1013,8 +1013,7 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                 BOOL fRc = g_pfnCreateProcessWithLogonW(pwszUser,
                                                         NULL,                       /* lpDomain*/
                                                         pwszPassword,
-/** @todo r=bird: Not respecting the RTPROF_FLAGS_PROFILE flag here.  */
-                                                        1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
+                                                        fFlags & RTPROC_FLAGS_PROFILE ? 1 /*LOGON_WITH_PROFILE*/ : 0,
                                                         *ppwszExec,
                                                         pwszCmdLine,
                                                         dwCreationFlags,
@@ -1156,7 +1155,10 @@ static int rtProcWinCreateEnvBlockAndFindExe(uint32_t fFlags, RTENV hEnv, const 
     if (   !(fFlags & (RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_ENV_CHANGE_RECORD))
         || (hEnv == RTENV_DEFAULT && !(fFlags & RTPROC_FLAGS_PROFILE))
         || (hEnv != RTENV_DEFAULT && !(fFlags & RTPROC_FLAGS_ENV_CHANGE_RECORD)) )
+    {
         hEnvToUse = hEnv;
+        rc = VINF_SUCCESS;
+    }
     else if (fFlags & RTPROC_FLAGS_PROFILE)
     {
         /*
