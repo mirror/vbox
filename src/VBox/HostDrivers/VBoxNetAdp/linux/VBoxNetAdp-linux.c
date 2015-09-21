@@ -427,7 +427,6 @@ static int __init VBoxNetAdpLinuxInit(void)
  */
 static void __exit VBoxNetAdpLinuxUnload(void)
 {
-    int rc;
     Log(("VBoxNetAdpLinuxUnload\n"));
 
     /*
