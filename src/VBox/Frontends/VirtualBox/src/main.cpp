@@ -510,7 +510,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #endif /* !VBOX_BLEEDING_EDGE*/
 
                 /* Create/show selector window: */
-                vboxGlobal().selectorWnd().show();
+                UISelectorWindow::create();
 
                 /* Start application: */
                 iResultCode = a.exec();

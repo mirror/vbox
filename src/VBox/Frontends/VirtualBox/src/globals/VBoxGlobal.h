@@ -72,7 +72,6 @@ class UIDesktopWidgetWatchdog;
 // VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////
 
-class UISelectorWindow;
 class VBoxUpdateDlg;
 
 class VBoxGlobal : public QObject
@@ -173,8 +172,6 @@ public:
 
     VBoxGlobalSettings &settings() { return gset; }
     bool setSettings (VBoxGlobalSettings &gs);
-
-    UISelectorWindow &selectorWnd();
 
     /** Returns currently active virtual machine window. */
     QWidget* activeMachineWindow() const;
@@ -535,8 +532,6 @@ private:
     bool m_fVBoxSVCAvailable;
 
     VBoxGlobalSettings gset;
-
-    UISelectorWindow *mSelectorWnd;
 
     /** Holds whether GUI is separate (from VM) process. */
     bool m_fSeparateProcess;

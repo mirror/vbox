@@ -232,7 +232,6 @@ void VBoxGlobal::destroy()
 VBoxGlobal::VBoxGlobal()
     : mValid (false)
     , m_fVBoxSVCAvailable(true)
-    , mSelectorWnd (NULL)
     , m_fSeparateProcess(false)
     , m_pMediumEnumerator(0)
 #ifdef Q_WS_X11
@@ -427,34 +426,6 @@ bool VBoxGlobal::setSettings (VBoxGlobalSettings &gs)
      * sent to the VirtualBox server by gs.save(). */
 
     return true;
-}
-
-/**
- *  Returns a reference to the main VBox VM Selector window.
- *  The reference is valid until application termination.
- *
- *  There is only one such a window per VirtualBox application.
- */
-UISelectorWindow &VBoxGlobal::selectorWnd()
-{
-    AssertMsg (!vboxGlobal().isVMConsoleProcess(),
-               ("Must NOT be a VM console process"));
-    Assert (mValid);
-
-    if (!mSelectorWnd)
-    {
-        /*
-         *  We pass the address of mSelectorWnd to the constructor to let it be
-         *  initialized right after the constructor is called. It is necessary
-         *  to avoid recursion, since this method may be (and will be) called
-         *  from the below constructor or from constructors/methods it calls.
-         */
-        UISelectorWindow *w = new UISelectorWindow (&mSelectorWnd);
-        Assert (w == mSelectorWnd);
-        NOREF(w);
-    }
-
-    return *mSelectorWnd;
 }
 
 QWidget* VBoxGlobal::activeMachineWindow() const
@@ -3996,7 +3967,8 @@ bool VBoxGlobal::processArgs()
     if (!list.isEmpty())
     {
         m_ArgUrlList = list;
-        QTimer::singleShot(0, &vboxGlobal().selectorWnd(), SLOT(sltOpenUrls()));
+        UISelectorWindow::create();
+        QTimer::singleShot(0, gpSelectorWindow, SLOT(sltOpenUrls()));
     }
     return fResult;
 }
@@ -4431,11 +4403,8 @@ void VBoxGlobal::cleanup()
 
     /* Destroy the GUI root windows _BEFORE_ the media-mess, because there is
        code in the GUI that's using the media code an will be racing us! */
-    if (mSelectorWnd)
-    {
-        delete mSelectorWnd;
-        mSelectorWnd = NULL;
-    }
+    if (gpSelectorWindow)
+        UISelectorWindow::destroy();
     if (gpMachine)
         UIMachine::destroy();
 

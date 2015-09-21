@@ -99,8 +99,9 @@ QWidget* UIModalWindowManager::mainWindowShown() const
     else
     {
         /* It will be the selector window if visible: */
-        if (vboxGlobal().selectorWnd().isVisible())
-            return &vboxGlobal().selectorWnd();
+        if (gpSelectorWindow &&
+            gpSelectorWindow->isVisible())
+            return gpSelectorWindow;
     }
 
     /* NULL by default: */

@@ -77,7 +77,36 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf)
+/* static */
+UISelectorWindow* UISelectorWindow::m_spInstance = 0;
+
+/* static */
+void UISelectorWindow::create()
+{
+    /* Make sure selector-window is not created: */
+    AssertReturnVoid(!m_spInstance);
+
+    /* Create selector-window: */
+    new UISelectorWindow;
+    /* Prepare selector-window: */
+    m_spInstance->prepare();
+    /* Show selector-window: */
+    m_spInstance->show();
+}
+
+/* static */
+void UISelectorWindow::destroy()
+{
+    /* Make sure selector-window is created: */
+    AssertPtrReturnVoid(m_spInstance);
+
+    /* Cleanup selector-window: */
+    m_spInstance->cleanup();
+    /* Destroy machine UI: */
+    delete m_spInstance;
+}
+
+UISelectorWindow::UISelectorWindow()
     : m_fPolished(false)
     , m_fWarningAboutInaccessibleMediaShown(false)
     , m_pActionPool(0)
@@ -93,18 +122,12 @@ UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
 {
-    /* Remember self: */
-    if (ppSelf)
-        *ppSelf = this;
-
-    /* Prepare: */
-    prepare();
+    m_spInstance = this;
 }
 
 UISelectorWindow::~UISelectorWindow()
 {
-    /* Cleanup: */
-    cleanup();
+    m_spInstance = 0;
 }
 
 void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)

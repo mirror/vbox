@@ -882,7 +882,7 @@ void UIGChooserModel::sltCreateNewMachine()
         strGroupName = pGroup->fullName();
 
     /* Prepare the new VM wizard: */
-    UISafePointerWizardNewVM pWizard = new UIWizardNewVM(&vboxGlobal().selectorWnd(), strGroupName);
+    UISafePointerWizardNewVM pWizard = new UIWizardNewVM(m_pChooser->selector(), strGroupName);
     pWizard->prepare();
 
     /* Execute wizard and store created VM Id

@@ -39,7 +39,7 @@ class QISplitter;
 class QMenu;
 class QStackedWidget;
 
-/** QMainWindow extension
+/** Singleton QMainWindow extension
   * used as VirtualBox Manager (selector-window) instance. */
 class UISelectorWindow : public QIWithRetranslateUI<QMainWindow>
 {
@@ -47,15 +47,24 @@ class UISelectorWindow : public QIWithRetranslateUI<QMainWindow>
 
 public:
 
-    /** Constructs selector-window passing @a pParent to the QMainWindow base-class.
-      * @param ppSelf brings the pointer to pointer to this window instance used by the external caller.
-      * @param flags  brings the selector-window flags dialogs should have. */
-    UISelectorWindow(UISelectorWindow **ppSelf);
-    /** Destructs selector-window. */
-    ~UISelectorWindow();
+    /** Static constructor. */
+    static void create();
+    /** Static destructor. */
+    static void destroy();
+    /** Static instance. */
+    static UISelectorWindow* instance() { return m_spInstance; }
 
     /** Returns the action-pool instance. */
     UIActionPool* actionPool() const { return m_pActionPool; }
+
+protected:
+
+    /** Constructs selector-window.
+      * @param ppSelf brings the pointer to pointer to this window instance used by the external caller.
+      * @param flags  brings the selector-window flags dialogs should have. */
+    UISelectorWindow();
+    /** Destructs selector-window. */
+    ~UISelectorWindow();
 
 private slots:
 
@@ -249,6 +258,9 @@ private:
         static bool isAtLeastOneItemRunning(const QList<UIVMItem*> &items);
     /** @} */
 
+    /** Static instance. */
+    static UISelectorWindow *m_spInstance;
+
     /** Holds whether the dialog is polished. */
     bool m_fPolished : 1;
     /** Holds whether the warning about inaccessible media shown. */
@@ -290,6 +302,8 @@ private:
     /** Holds the dialog geometry. */
     QRect m_geometry;
 };
+
+#define gpSelectorWindow UISelectorWindow::instance()
 
 #endif /* !___UISelectorWindow_h___ */
 
