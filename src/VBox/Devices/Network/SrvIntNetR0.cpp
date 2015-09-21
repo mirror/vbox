@@ -3490,11 +3490,17 @@ static void intnetR0NetworkEditDhcpFromIntNet(PINTNETNETWORK pNetwork, PINTNETSG
                 intnetR0SgWritePart(pSG, (uintptr_t)&pDhcp->bp_flags - (uintptr_t)pIpHdr + sizeof(RTNETETHERHDR), sizeof(uFlags), &uFlags);
 
                 /* Patch UDP checksum */
-                uint32_t uChecksum = (uint32_t)~pUdpHdr->uh_sum + RT_H2BE_U16_C(RTNET_DHCP_FLAG_BROADCAST);
-                while (uChecksum >> 16)
-                    uChecksum = (uChecksum >> 16) + (uChecksum & 0xFFFF);
-                uChecksum = ~uChecksum;
-                intnetR0SgWritePart(pSG, (uintptr_t)&pUdpHdr->uh_sum - (uintptr_t)pIpHdr + sizeof(RTNETETHERHDR), sizeof(pUdpHdr->uh_sum), &uChecksum);
+                if (pUdpHdr->uh_sum != 0)
+                {
+                    uint32_t uChecksum = (uint32_t)~pUdpHdr->uh_sum + RT_H2BE_U16_C(RTNET_DHCP_FLAG_BROADCAST);
+                    while (uChecksum >> 16)
+                        uChecksum = (uChecksum >> 16) + (uChecksum & 0xFFFF);
+                    uChecksum = ~uChecksum;
+                    intnetR0SgWritePart(pSG,
+                                        (uintptr_t)&pUdpHdr->uh_sum - (uintptr_t)pIpHdr + sizeof(RTNETETHERHDR),
+                                        sizeof(pUdpHdr->uh_sum),
+                                        &uChecksum);
+                }
             }
 
 #ifdef RT_OS_DARWIN
