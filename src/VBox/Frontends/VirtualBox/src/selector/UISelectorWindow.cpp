@@ -156,73 +156,6 @@ UISelectorWindow::~UISelectorWindow()
     cleanupMenuBar();
 }
 
-void UISelectorWindow::sltHandleStateChange(QString)
-{
-    /* Get current item: */
-    UIVMItem *pItem = currentItem();
-
-    /* Make sure current item present: */
-    if (!pItem)
-        return;
-
-    /* Update actions: */
-    updateActionsAppearance();
-}
-
-void UISelectorWindow::sltHandleSnapshotChange(QString strID)
-{
-    /* Get current item: */
-    UIVMItem *pItem = currentItem();
-
-    /* Make sure current item present: */
-    if (!pItem)
-        return;
-
-    /* If signal is for the current item: */
-    if (pItem->id() == strID)
-        m_pPaneDesktop->updateSnapshots(pItem, pItem->machine());
-}
-
-void UISelectorWindow::sltHandleDetailsContainerIndexChange(int iIndex)
-{
-    if (iIndex)
-        m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
-    else
-        m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
-}
-
-void UISelectorWindow::sltHandleMediumEnumerationFinish()
-{
-    /* We try to warn about inaccessible mediums only once
-     * (after media emumeration started from main() at startup),
-     * to avoid annoying the user: */
-    if (m_fWarningAboutInaccessibleMediaShown)
-        return;
-    m_fWarningAboutInaccessibleMediaShown = true;
-
-    /* Make sure MM window is not opened: */
-    if (UIMediumManager::instance())
-        return;
-
-    /* Look for at least one inaccessible medium: */
-    bool fIsThereAnyInaccessibleMedium = false;
-    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
-    {
-        if (vboxGlobal().medium(strMediumID).state() == KMediumState_Inaccessible)
-        {
-            fIsThereAnyInaccessibleMedium = true;
-            break;
-        }
-    }
-
-    /* Warn the user about inaccessible medium: */
-    if (fIsThereAnyInaccessibleMedium && !msgCenter().warnAboutInaccessibleMedia())
-    {
-        /* Open the MM window (without refresh): */
-        UIMediumManager::showModeless(this, false /* refresh? */);
-    }
-}
-
 void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
 {
     /* Populate toolbar/statusbar acctions: */
@@ -271,6 +204,214 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
         else
             statusBar()->hide();
     }
+}
+
+void UISelectorWindow::sltHandleDetailsContainerIndexChange(int iIndex)
+{
+    if (iIndex)
+        m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
+    else
+        m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
+}
+
+void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, bool fRefreshSnapshots, bool)
+{
+    /* Get current item: */
+    UIVMItem *pItem = currentItem();
+
+    /* Determine which menu to show: */
+    m_pGroupMenuAction->setVisible(m_pPaneChooser->isSingleGroupSelected());
+    m_pMachineMenuAction->setVisible(!m_pPaneChooser->isSingleGroupSelected());
+    if (m_pGroupMenuAction->isVisible())
+    {
+        foreach (UIAction *pAction, m_machineActions)
+            pAction->hideShortcut();
+        foreach (UIAction *pAction, m_groupActions)
+            pAction->showShortcut();
+    }
+    else if (m_pMachineMenuAction->isVisible())
+    {
+        foreach (UIAction *pAction, m_groupActions)
+            pAction->hideShortcut();
+        foreach (UIAction *pAction, m_machineActions)
+            pAction->showShortcut();
+    }
+
+    /* Update action appearance: */
+    updateActionsAppearance();
+
+    /* Refresh details-pane even if there are no items selected: */
+    if (fRefreshDetails)
+        m_pPaneDetails->setItems(currentItems());
+
+    /* If currently selected VM item is accessible: */
+    if (pItem && pItem->accessible())
+    {
+        /* Make sure valid widget raised: */
+        if (m_pPaneDesktop->widgetIndex())
+            m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
+        else
+            m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
+
+        if (fRefreshSnapshots)
+        {
+            m_pPaneDesktop->updateSnapshots(pItem, pItem->machine());
+            /* Always hide snapshots-view if
+             * single group or more than one machine is selected: */
+            if (currentItems().size() > 1 || m_pPaneChooser->isSingleGroupSelected())
+                m_pPaneDesktop->lockSnapshots();
+        }
+    }
+    /* If currently selected VM item is NOT accessible: */
+    else
+    {
+        /* Make sure valid widget raised: */
+        m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
+
+        /* Note that the machine becomes inaccessible (or if the last VM gets
+         * deleted), we have to update all fields, ignoring input arguments. */
+        if (pItem)
+        {
+            /* The VM is inaccessible: */
+            m_pPaneDesktop->updateDetailsError(UIMessageCenter::formatErrorInfo(pItem->accessError()));
+        }
+        else
+        {
+            /* Default HTML support in Qt is terrible so just try to get something really simple: */
+            m_pPaneDesktop->updateDetailsText(
+                tr("<h3>Welcome to VirtualBox!</h3>"
+                   "<p>The left part of this window is  "
+                   "a list of all virtual machines on your computer. "
+                   "The list is empty now because you haven't created any virtual "
+                   "machines yet."
+                   "<img src=:/welcome.png align=right/></p>"
+                   "<p>In order to create a new virtual machine, press the "
+                   "<b>New</b> button in the main tool bar located "
+                   "at the top of the window.</p>"
+                   "<p>You can press the <b>%1</b> key to get instant help, "
+                   "or visit "
+                   "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
+                   "for the latest information and news.</p>")
+                   .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
+        }
+
+        /* Empty and disable other tabs: */
+        m_pPaneDesktop->updateSnapshots(0, CMachine());
+    }
+}
+
+void UISelectorWindow::sltHandleMediumEnumerationFinish()
+{
+    /* We try to warn about inaccessible mediums only once
+     * (after media emumeration started from main() at startup),
+     * to avoid annoying the user: */
+    if (m_fWarningAboutInaccessibleMediaShown)
+        return;
+    m_fWarningAboutInaccessibleMediaShown = true;
+
+    /* Make sure MM window is not opened: */
+    if (UIMediumManager::instance())
+        return;
+
+    /* Look for at least one inaccessible medium: */
+    bool fIsThereAnyInaccessibleMedium = false;
+    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
+    {
+        if (vboxGlobal().medium(strMediumID).state() == KMediumState_Inaccessible)
+        {
+            fIsThereAnyInaccessibleMedium = true;
+            break;
+        }
+    }
+
+    /* Warn the user about inaccessible medium: */
+    if (fIsThereAnyInaccessibleMedium && !msgCenter().warnAboutInaccessibleMedia())
+    {
+        /* Open the MM window (without refresh): */
+        UIMediumManager::showModeless(this, false /* refresh? */);
+    }
+}
+
+void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
+{
+    /* Make sure any pending D&D events are consumed. */
+    // TODO: What? So dangerous method for so cheap purpose?
+    qApp->processEvents();
+
+    if (list.isEmpty())
+    {
+        list = vboxGlobal().argUrlList();
+        vboxGlobal().argUrlList().clear();
+    }
+    /* Check if we are can handle the dropped urls. */
+    for (int i = 0; i < list.size(); ++i)
+    {
+#ifdef Q_WS_MAC
+        QString strFile = ::darwinResolveAlias(list.at(i).toLocalFile());
+#else /* Q_WS_MAC */
+        QString strFile = list.at(i).toLocalFile();
+#endif /* !Q_WS_MAC */
+        if (!strFile.isEmpty() && QFile::exists(strFile))
+        {
+            if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
+            {
+                /* VBox config files. */
+                CVirtualBox vbox = vboxGlobal().virtualBox();
+                CMachine machine = vbox.FindMachine(strFile);
+                if (!machine.isNull())
+                {
+                    CVirtualBox vbox = vboxGlobal().virtualBox();
+                    CMachine machine = vbox.FindMachine(strFile);
+                    if (!machine.isNull())
+                        vboxGlobal().launchMachine(machine);
+                }
+                else
+                    sltOpenAddMachineDialog(strFile);
+            }
+            else if (VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
+            {
+                /* OVF/OVA. Only one file at the time. */
+                sltOpenImportApplianceWizard(strFile);
+                break;
+            }
+            else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxExtPackFileExts))
+            {
+                UIGlobalSettingsExtension::doInstallation(strFile, QString(), this, NULL);
+            }
+        }
+    }
+}
+
+void UISelectorWindow::sltHandleGroupSavingProgressChange()
+{
+    updateActionsAppearance();
+}
+
+void UISelectorWindow::sltHandleStateChange(QString)
+{
+    /* Get current item: */
+    UIVMItem *pItem = currentItem();
+
+    /* Make sure current item present: */
+    if (!pItem)
+        return;
+
+    /* Update actions: */
+    updateActionsAppearance();
+}
+
+void UISelectorWindow::sltHandleSnapshotChange(QString strID)
+{
+    /* Get current item: */
+    UIVMItem *pItem = currentItem();
+
+    /* Make sure current item present: */
+    if (!pItem)
+        return;
+
+    /* If signal is for the current item: */
+    if (pItem->id() == strID)
+        m_pPaneDesktop->updateSnapshots(pItem, pItem->machine());
 }
 
 void UISelectorWindow::sltOpenMediaManagerWindow()
@@ -875,145 +1016,14 @@ void UISelectorWindow::sltMachineCloseMenuAboutToShow()
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
 }
 
-void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, bool fRefreshSnapshots, bool)
+UIVMItem* UISelectorWindow::currentItem() const
 {
-    /* Get current item: */
-    UIVMItem *pItem = currentItem();
-
-    /* Determine which menu to show: */
-    m_pGroupMenuAction->setVisible(m_pPaneChooser->isSingleGroupSelected());
-    m_pMachineMenuAction->setVisible(!m_pPaneChooser->isSingleGroupSelected());
-    if (m_pGroupMenuAction->isVisible())
-    {
-        foreach (UIAction *pAction, m_machineActions)
-            pAction->hideShortcut();
-        foreach (UIAction *pAction, m_groupActions)
-            pAction->showShortcut();
-    }
-    else if (m_pMachineMenuAction->isVisible())
-    {
-        foreach (UIAction *pAction, m_groupActions)
-            pAction->hideShortcut();
-        foreach (UIAction *pAction, m_machineActions)
-            pAction->showShortcut();
-    }
-
-    /* Update action appearance: */
-    updateActionsAppearance();
-
-    /* Refresh details-pane even if there are no items selected: */
-    if (fRefreshDetails)
-        m_pPaneDetails->setItems(currentItems());
-
-    /* If currently selected VM item is accessible: */
-    if (pItem && pItem->accessible())
-    {
-        /* Make sure valid widget raised: */
-        if (m_pPaneDesktop->widgetIndex())
-            m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
-        else
-            m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
-
-        if (fRefreshSnapshots)
-        {
-            m_pPaneDesktop->updateSnapshots(pItem, pItem->machine());
-            /* Always hide snapshots-view if
-             * single group or more than one machine is selected: */
-            if (currentItems().size() > 1 || m_pPaneChooser->isSingleGroupSelected())
-                m_pPaneDesktop->lockSnapshots();
-        }
-    }
-    /* If currently selected VM item is NOT accessible: */
-    else
-    {
-        /* Make sure valid widget raised: */
-        m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
-
-        /* Note that the machine becomes inaccessible (or if the last VM gets
-         * deleted), we have to update all fields, ignoring input arguments. */
-        if (pItem)
-        {
-            /* The VM is inaccessible: */
-            m_pPaneDesktop->updateDetailsError(UIMessageCenter::formatErrorInfo(pItem->accessError()));
-        }
-        else
-        {
-            /* Default HTML support in Qt is terrible so just try to get something really simple: */
-            m_pPaneDesktop->updateDetailsText(
-                tr("<h3>Welcome to VirtualBox!</h3>"
-                   "<p>The left part of this window is  "
-                   "a list of all virtual machines on your computer. "
-                   "The list is empty now because you haven't created any virtual "
-                   "machines yet."
-                   "<img src=:/welcome.png align=right/></p>"
-                   "<p>In order to create a new virtual machine, press the "
-                   "<b>New</b> button in the main tool bar located "
-                   "at the top of the window.</p>"
-                   "<p>You can press the <b>%1</b> key to get instant help, "
-                   "or visit "
-                   "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-                   "for the latest information and news.</p>")
-                   .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
-        }
-
-        /* Empty and disable other tabs: */
-        m_pPaneDesktop->updateSnapshots(0, CMachine());
-    }
+    return m_pPaneChooser->currentItem();
 }
 
-void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
+QList<UIVMItem*> UISelectorWindow::currentItems() const
 {
-    /* Make sure any pending D&D events are consumed. */
-    // TODO: What? So dangerous method for so cheap purpose?
-    qApp->processEvents();
-
-    if (list.isEmpty())
-    {
-        list = vboxGlobal().argUrlList();
-        vboxGlobal().argUrlList().clear();
-    }
-    /* Check if we are can handle the dropped urls. */
-    for (int i = 0; i < list.size(); ++i)
-    {
-#ifdef Q_WS_MAC
-        QString strFile = ::darwinResolveAlias(list.at(i).toLocalFile());
-#else /* Q_WS_MAC */
-        QString strFile = list.at(i).toLocalFile();
-#endif /* !Q_WS_MAC */
-        if (!strFile.isEmpty() && QFile::exists(strFile))
-        {
-            if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
-            {
-                /* VBox config files. */
-                CVirtualBox vbox = vboxGlobal().virtualBox();
-                CMachine machine = vbox.FindMachine(strFile);
-                if (!machine.isNull())
-                {
-                    CVirtualBox vbox = vboxGlobal().virtualBox();
-                    CMachine machine = vbox.FindMachine(strFile);
-                    if (!machine.isNull())
-                        vboxGlobal().launchMachine(machine);
-                }
-                else
-                    sltOpenAddMachineDialog(strFile);
-            }
-            else if (VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
-            {
-                /* OVF/OVA. Only one file at the time. */
-                sltOpenImportApplianceWizard(strFile);
-                break;
-            }
-            else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxExtPackFileExts))
-            {
-                UIGlobalSettingsExtension::doInstallation(strFile, QString(), this, NULL);
-            }
-        }
-    }
-}
-
-void UISelectorWindow::sltHandleGroupSavingProgressChange()
-{
-    updateActionsAppearance();
+    return m_pPaneChooser->currentItems();
 }
 
 void UISelectorWindow::retranslateUi()
@@ -1689,16 +1699,6 @@ void UISelectorWindow::cleanupMenuBar()
 {
     /* Destroy action-pool: */
     UIActionPool::destroy(m_pActionPool);
-}
-
-UIVMItem* UISelectorWindow::currentItem() const
-{
-    return m_pPaneChooser->currentItem();
-}
-
-QList<UIVMItem*> UISelectorWindow::currentItems() const
-{
-    return m_pPaneChooser->currentItems();
 }
 
 void UISelectorWindow::updateActionsAppearance()

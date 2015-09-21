@@ -59,6 +59,27 @@ public:
 
 private slots:
 
+    /** Handles selector-window context-menu call for passed @a position. */
+    void sltShowSelectorWindowContextMenu(const QPoint &position);
+
+    /** Handles signal about Details-container @a iIndex change. */
+    void sltHandleDetailsContainerIndexChange(int iIndex);
+
+    /** Handles signal about Chooser-pane index change.
+      * @param fRefreshDetails     brings whether details should be updated.
+      * @param fRefreshSnapshots   brings whether snapshots should be updated.
+      * @param fRefreshDescription brings whether description should be updated. */
+    void sltHandleChooserPaneIndexChange(bool fRefreshDetails = true, bool fRefreshSnapshots = true, bool fRefreshDescription = true);
+
+    /** Handles signal about medium-enumeration finished. */
+    void sltHandleMediumEnumerationFinish();
+
+    /** Handles call to open a @a list of URLs. */
+    void sltOpenUrls(QList<QUrl> list = QList<QUrl>());
+
+    /** Handles signal about group saving progress change. */
+    void sltHandleGroupSavingProgressChange();
+
     /** @name CVirtualBox event handling stuff.
       * @{ */
         /** Handles CVirtualBox event about state change for machine with @a strID. */
@@ -66,15 +87,6 @@ private slots:
         /** Handles CVirtualBox event about snapshot change for machine with @a strID. */
         void sltHandleSnapshotChange(QString strID);
     /** @} */
-
-    /** Handles signal about Details-container @a iIndex change. */
-    void sltHandleDetailsContainerIndexChange(int iIndex);
-
-    /** Handles signal about medium-enumeration finished. */
-    void sltHandleMediumEnumerationFinish();
-
-    /** Handles selector-window context-menu call for passed @a position. */
-    void sltShowSelectorWindowContextMenu(const QPoint &position);
 
     /** @name File menu stuff.
       * @{ */
@@ -141,19 +153,12 @@ private slots:
         void sltMachineCloseMenuAboutToShow();
     /** @} */
 
-    /** Handles signal about Chooser-pane index change.
-      * @param fRefreshDetails     brings whether details should be updated.
-      * @param fRefreshSnapshots   brings whether snapshots should be updated.
-      * @param fRefreshDescription brings whether description should be updated. */
-    void sltHandleChooserPaneIndexChange(bool fRefreshDetails = true, bool fRefreshSnapshots = true, bool fRefreshDescription = true);
-
-    /** Handles call to open a @a list of URLs. */
-    void sltOpenUrls(QList<QUrl> list = QList<QUrl>());
-
-    /** Handles signal about group saving progress change. */
-    void sltHandleGroupSavingProgressChange();
-
 private:
+
+    /** Returns current-item. */
+    UIVMItem* currentItem() const;
+    /** Returns a list of current-items. */
+    QList<UIVMItem*> currentItems() const;
 
     /** @name Event handling stuff.
       * @{ */
@@ -208,11 +213,6 @@ private:
         /** Cleanups menu-bar. */
         void cleanupMenuBar();
     /** @} */
-
-    /** Returns current-item. */
-    UIVMItem* currentItem() const;
-    /** Returns a list of current-items. */
-    QList<UIVMItem*> currentItems() const;
 
     /** @name Action update stuff.
       * @{ */
