@@ -471,9 +471,7 @@ static int __init VBoxDrvLinuxInit(void)
  */
 static void __exit VBoxDrvLinuxUnload(void)
 {
-    int                 rc;
     Log(("VBoxDrvLinuxUnload\n"));
-    NOREF(rc);
 
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
     platform_device_unregister(&gPlatformDevice);
