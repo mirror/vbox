@@ -240,6 +240,19 @@ static struct
         /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
     {   /* #14 */
+        "file:///dir/dir/file",
+        /*.pszScheme    =*/ "file",
+        /*.pszAuthority =*/ "",
+        /*.pszPath      =*/ "/dir/dir/file",
+        /*.pszQuery     =*/ NULL,
+        /*.pszFragment  =*/ NULL,
+        /*.pszUsername  =*/ NULL,
+        /*.pszPassword  =*/ NULL,
+        /*.pszHost      =*/ NULL,
+        /*.uPort        =*/ UINT32_MAX,
+        /*.pszCreated   =*/ NULL /* same as pszUri*/,
+    },
+    {   /* #15 */
         "foo:///",
         /*.pszScheme    =*/ "foo",
         /*.pszAuthority =*/ "",
@@ -252,7 +265,7 @@ static struct
         /*.uPort        =*/ UINT32_MAX,
         /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
-    {   /* #15 */
+    {   /* #16 */
         "foo://",
         /*.pszScheme    =*/ "foo",
         /*.pszAuthority =*/ "",
@@ -265,7 +278,7 @@ static struct
         /*.uPort        =*/ UINT32_MAX,
         /*.pszCreated   =*/ NULL /* same as pszUri*/,
     },
-    {   /* #16 - UTF-8 escape sequences. */
+    {   /* #17 - UTF-8 escape sequences. */
         "http://example.com/%ce%b3%ce%bb%cf%83%ce%b1%20%e0%a4%95\xe0\xa4\x95",
         /*.pszScheme    =*/ "http",
         /*.pszAuthority =*/ "example.com",
@@ -289,11 +302,41 @@ struct URIFILETEST
 }
 g_apCreateFileURIs[] =
 {
-    { "C:\\over\\ <>#%\"{}|^[]`\\there", "file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere", URI_FILE_FORMAT_WIN },
-    { "/over/ <>#%\"{}|^[]`/there", "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there", URI_FILE_FORMAT_UNIX },
-    { "/", "file:///", URI_FILE_FORMAT_UNIX },
-    { "/C:/over/ <>#%\"{}|^[]`/there", "file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere", URI_FILE_FORMAT_UNIX },
-    { "\\over\\ <>#%\"{}|^[]`\\there", "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there", URI_FILE_FORMAT_WIN }
+    {
+        "C:\\over\\ <>#%\"{}|^[]`\\there",
+        "file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
+        URI_FILE_FORMAT_WIN
+    },
+    {
+        "/over/ <>#%\"{}|^[]`/there",
+        "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
+        URI_FILE_FORMAT_UNIX
+    },
+    {
+        "/",
+        "file:///",
+        URI_FILE_FORMAT_UNIX
+    },
+    {
+        "/C:/over/ <>#%\"{}|^[]`/there",
+        "file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
+        URI_FILE_FORMAT_UNIX
+    },
+    {
+        "\\over\\ <>#%\"{}|^[]`\\there",
+        "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
+        URI_FILE_FORMAT_WIN
+    },
+    {
+        "/",
+        "file:///",
+        URI_FILE_FORMAT_UNIX
+    },
+    {
+        "\\",
+        "file:///",
+        URI_FILE_FORMAT_WIN
+    },
 };
 
 
