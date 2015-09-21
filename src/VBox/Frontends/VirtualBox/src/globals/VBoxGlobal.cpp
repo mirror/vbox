@@ -449,7 +449,7 @@ UISelectorWindow &VBoxGlobal::selectorWnd()
          *  to avoid recursion, since this method may be (and will be) called
          *  from the below constructor or from constructors/methods it calls.
          */
-        UISelectorWindow *w = new UISelectorWindow (&mSelectorWnd, 0);
+        UISelectorWindow *w = new UISelectorWindow (&mSelectorWnd);
         Assert (w == mSelectorWnd);
         NOREF(w);
     }

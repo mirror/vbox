@@ -77,10 +77,8 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf, QWidget *pParent,
-                                   Qt::WindowFlags flags /* = Qt::Window */)
-    : QIWithRetranslateUI2<QMainWindow>(pParent, flags)
-    , m_fPolished(false)
+UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf)
+    : m_fPolished(false)
     , m_fWarningAboutInaccessibleMediaShown(false)
     , m_pActionPool(0)
     , m_pSplitter(0)
@@ -99,61 +97,14 @@ UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf, QWidget *pParent,
     if (ppSelf)
         *ppSelf = this;
 
-#ifdef Q_WS_MAC
-    /* We have to make sure that we are getting the front most process.
-     * This is necessary for Qt versions > 4.3.3: */
-    ::darwinSetFrontMostProcess();
-#endif /* Q_WS_MAC */
-
     /* Prepare: */
-    prepareIcon();
-    prepareMenuBar();
-    prepareStatusBar();
-    prepareWidgets();
-    prepareConnections();
-
-    /* Load settings: */
-    loadSettings();
-
-    /* Translate UI: */
-    retranslateUi();
-
-#ifdef Q_WS_MAC
-# if MAC_LEOPARD_STYLE
-    /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3.
-     * We do this after setting the window pos/size, cause Qt sometimes
-     * includes the toolbar height in the content height. */
-    m_pToolBar->enableMacToolbar();
-# endif /* MAC_LEOPARD_STYLE */
-
-    UIWindowMenuManager::instance()->addWindow(this);
-    /* Beta label? */
-    if (vboxGlobal().isBeta())
-    {
-        QPixmap betaLabel = ::betaLabelSleeve(QSize(107, 16));
-        ::darwinLabelWindow(this, &betaLabel, false);
-    }
-
-    /* General event filter: */
-    qApp->installEventFilter(this);
-#endif /* Q_WS_MAC */
+    prepare();
 }
 
 UISelectorWindow::~UISelectorWindow()
 {
-    /* Destroy event handlers: */
-    UIVirtualBoxEventHandler::destroy();
-
-#ifdef Q_WS_MAC
-    UIWindowMenuManager::destroy();
-#endif /* Q_WS_MAC */
-
-    /* Save settings: */
-    saveSettings();
-
     /* Cleanup: */
-    cleanupConnections();
-    cleanupMenuBar();
+    cleanup();
 }
 
 void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
@@ -1044,10 +995,7 @@ void UISelectorWindow::retranslateUi()
     sltHandleChooserPaneIndexChange();
 
 #ifdef QT_MAC_USE_COCOA
-    /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
-       the necessary size of the toolbar is increased. Also for some languages
-       the with doesn't match if the text increase. So manually adjust the size
-       after changing the text. */
+    /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
     m_pToolBar->updateLayout();
 #endif /* QT_MAC_USE_COCOA */
 }
@@ -1132,12 +1080,12 @@ bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Ignore for non-active window: */
     if (!isActiveWindow())
-        return QIWithRetranslateUI2<QMainWindow>::eventFilter(pObject, pEvent);
+        return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
 
     /* Ignore for other objects: */
     if (qobject_cast<QWidget*>(pObject) &&
         qobject_cast<QWidget*>(pObject)->window() != this)
-        return QIWithRetranslateUI2<QMainWindow>::eventFilter(pObject, pEvent);
+        return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
 
     /* Which event do we have? */
     switch (pEvent->type())
@@ -1153,22 +1101,61 @@ bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
             break;
     }
     /* Call to base-class: */
-    return QIWithRetranslateUI2<QMainWindow>::eventFilter(pObject, pEvent);
+    return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
 }
 #endif /* Q_WS_MAC */
 
+void UISelectorWindow::prepare()
+{
+#ifdef Q_WS_MAC
+    /* We have to make sure that we are getting the front most process: */
+    ::darwinSetFrontMostProcess();
+#endif /* Q_WS_MAC */
+
+    /* Prepare: */
+    prepareIcon();
+    prepareMenuBar();
+    prepareStatusBar();
+    prepareWidgets();
+    prepareConnections();
+
+    /* Load settings: */
+    loadSettings();
+
+    /* Translate UI: */
+    retranslateUi();
+
+#ifdef Q_WS_MAC
+# if MAC_LEOPARD_STYLE
+    /* Enable unified toolbars on Mac OS X: */
+    m_pToolBar->enableMacToolbar();
+# endif /* MAC_LEOPARD_STYLE */
+
+    UIWindowMenuManager::instance()->addWindow(this);
+    /* Beta label? */
+    if (vboxGlobal().isBeta())
+    {
+        QPixmap betaLabel = ::betaLabelSleeve(QSize(107, 16));
+        ::darwinLabelWindow(this, &betaLabel, false);
+    }
+
+    /* General event filter: */
+    qApp->installEventFilter(this);
+#endif /* Q_WS_MAC */
+}
+
 void UISelectorWindow::prepareIcon()
 {
-    /* Prepare application icon: */
-#if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
-    /* On Win host it's built-in to the executable.
+    /* Prepare application icon.
+     * On Win host it's built-in to the executable.
      * On Mac OS X the icon referenced in info.plist is used.
-     * On X11 we will provide as much icons as we can.. */
+     * On X11 we will provide as much icons as we can. */
+#if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
     QIcon icon(":/VirtualBox.svg");
     icon.addFile(":/VirtualBox_48px.png");
     icon.addFile(":/VirtualBox_64px.png");
     setWindowIcon(icon);
-#endif
+#endif /* !Q_WS_WIN && !Q_WS_MAC */
 }
 
 void UISelectorWindow::prepareMenuBar()
@@ -1592,9 +1579,8 @@ void UISelectorWindow::prepareConnections()
     /* Tool-bar connections: */
 #ifndef Q_WS_MAC
     connect(m_pToolBar, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorWindowContextMenu(const QPoint&)));
-#else /* !Q_WS_MAC */
-    /* A simple connect doesn't work on the Mac, also we want receive right
-     * click notifications on the title bar. So register our own handler. */
+#else /* Q_WS_MAC */
+    /* We want to receive right click notifications on the title bar, so register our own handler: */
     ::darwinRegisterForUnifiedToolbarContextMenuEvents(this);
 #endif /* Q_WS_MAC */
 
@@ -1701,6 +1687,23 @@ void UISelectorWindow::cleanupMenuBar()
     UIActionPool::destroy(m_pActionPool);
 }
 
+void UISelectorWindow::cleanup()
+{
+    /* Destroy event handlers: */
+    UIVirtualBoxEventHandler::destroy();
+
+#ifdef Q_WS_MAC
+    UIWindowMenuManager::destroy();
+#endif /* Q_WS_MAC */
+
+    /* Save settings: */
+    saveSettings();
+
+    /* Cleanup: */
+    cleanupConnections();
+    cleanupMenuBar();
+}
+
 void UISelectorWindow::updateActionsAppearance()
 {
     /* Get current item(s): */
@@ -1787,10 +1790,7 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->blockSignals(false);
 
 #ifdef QT_MAC_USE_COCOA
-    /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
-       the necessary size of the toolbar is increased. Also for some languages
-       the with doesn't match if the text increase. So manually adjust the size
-       after changing the text. */
+    /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
     m_pToolBar->updateLayout();
 #endif /* QT_MAC_USE_COCOA */
 }
@@ -1970,8 +1970,7 @@ bool UISelectorWindow::isAtLeastOneItemSupportsShortcuts(const QList<UIVMItem*> 
     foreach (UIVMItem *pItem, items)
         if (pItem->accessible()
 #ifdef Q_WS_MAC
-            /* On Mac OS X this are real alias files, which don't work with the old
-             * legacy xml files. On the other OS's some kind of start up script is used. */
+            /* On Mac OS X this are real alias files, which don't work with the old legacy xml files. */
             && pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive)
 #endif /* Q_WS_MAC */
             )

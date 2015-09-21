@@ -41,7 +41,7 @@ class QStackedWidget;
 
 /** QMainWindow extension
   * used as VirtualBox Manager (selector-window) instance. */
-class UISelectorWindow : public QIWithRetranslateUI2<QMainWindow>
+class UISelectorWindow : public QIWithRetranslateUI<QMainWindow>
 {
     Q_OBJECT;
 
@@ -50,7 +50,7 @@ public:
     /** Constructs selector-window passing @a pParent to the QMainWindow base-class.
       * @param ppSelf brings the pointer to pointer to this window instance used by the external caller.
       * @param flags  brings the selector-window flags dialogs should have. */
-    UISelectorWindow(UISelectorWindow **ppSelf, QWidget *pParent = 0, Qt::WindowFlags flags = Qt::Window);
+    UISelectorWindow(UISelectorWindow **ppSelf);
     /** Destructs selector-window. */
     ~UISelectorWindow();
 
@@ -179,6 +179,8 @@ private:
 
     /** @name Prepare/Cleanup cascade.
       * @{ */
+        /** Prepares window. */
+        void prepare();
         /** Prepares icon. */
         void prepareIcon();
         /** Prepares menu-bar. */
@@ -212,6 +214,8 @@ private:
         void cleanupConnections();
         /** Cleanups menu-bar. */
         void cleanupMenuBar();
+        /** Cleanups window. */
+        void cleanup();
     /** @} */
 
     /** @name Action update stuff.
