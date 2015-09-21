@@ -131,6 +131,10 @@ static PFNUNLOADUSERPROFILE             g_pfnUnloadUserProfile          = NULL;
 /** @} */
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int rtProcWinFindExe(uint32_t fFlags, RTENV hEnv, const char *pszExec, PRTUTF16 *ppwszExec);
 
 
 /**
@@ -639,7 +643,7 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
 /**
  * Logs on a specified user and returns its primary token.
  *
- * @return  int
+ * @returns IPRT status code.
  * @param   pwszUser            User name.
  * @param   pwszPassword        Password.
  * @param   pwszDomain          Domain (not used at the moment).
@@ -749,13 +753,13 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, uint32_t fFlag
 }
 
 
-
 /**
  * Method \#2.
  */
-static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
+static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 *ppwszExec, PRTUTF16 pwszCmdLine,
                                   RTENV hEnv, DWORD dwCreationFlags,
-                                  STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
+                                  STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo,
+                                  uint32_t fFlags, const char *pszExec)
 {
     /*
      * So if we want to start a process from a service (RTPROC_FLAGS_SERVICE),
@@ -783,6 +787,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
      *
      * We may fail here with ERROR_PRIVILEGE_NOT_HELD.
      */
+/** @todo r=bird: Both methods starts with rtProcWinUserLogon, so we could probably do that once in the parent function, right... */
     DWORD   dwErr       = NO_ERROR;
     HANDLE  hTokenLogon = INVALID_HANDLE_VALUE;
     int rc = rtProcWinUserLogon(pwszUser, pwszPassword, NULL /* Domain */, &hTokenLogon);
@@ -857,7 +862,6 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                 RT_ZERO(ProfileInfo);
                 if (fFlags & RTPROC_FLAGS_PROFILE)
                 {
-/* @todo r=bird: I'm not convinced that the unload function restores our original environment... */
                     ProfileInfo.dwSize     = sizeof(ProfileInfo);
                     ProfileInfo.lpUserName = pwszUser;
                     ProfileInfo.dwFlags    = PI_NOUI; /* Prevents the display of profile error messages. */
@@ -878,29 +882,33 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                         rc = RTEnvQueryUtf16Block(hEnvFinal, &pwszzBlock);
                         if (RT_SUCCESS(rc))
                         {
-                            /*
-                             * Useful KB articles:
-                             *      http://support.microsoft.com/kb/165194/
-                             *      http://support.microsoft.com/kb/184802/
-                             *      http://support.microsoft.com/kb/327618/
-                             */
-                            fRc = CreateProcessAsUserW(hTokenToUse,
-                                                       pwszExec,
-                                                       pwszCmdLine,
-                                                       NULL,         /* pProcessAttributes */
-                                                       NULL,         /* pThreadAttributes */
-                                                       TRUE,         /* fInheritHandles */
-                                                       dwCreationFlags,
-                                                       /** @todo Warn about exceeding 8192 bytes
-                                                        *        on XP and up. */
-                                                       pwszzBlock,   /* lpEnvironment */
-                                                       NULL,         /* pCurrentDirectory */
-                                                       pStartupInfo,
-                                                       pProcInfo);
-                            if (fRc)
-                                dwErr = NO_ERROR;
-                            else
-                                dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
+                            rc = rtProcWinFindExe(fFlags, hEnv, pszExec, ppwszExec);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Useful KB articles:
+                                 *      http://support.microsoft.com/kb/165194/
+                                 *      http://support.microsoft.com/kb/184802/
+                                 *      http://support.microsoft.com/kb/327618/
+                                 */
+                                fRc = CreateProcessAsUserW(hTokenToUse,
+                                                           *ppwszExec,
+                                                           pwszCmdLine,
+                                                           NULL,         /* pProcessAttributes */
+                                                           NULL,         /* pThreadAttributes */
+                                                           TRUE,         /* fInheritHandles */
+                                                           dwCreationFlags,
+                                                           /** @todo Warn about exceeding 8192 bytes
+                                                            *        on XP and up. */
+                                                           pwszzBlock,   /* lpEnvironment */
+                                                           NULL,         /* pCurrentDirectory */
+                                                           pStartupInfo,
+                                                           pProcInfo);
+                                if (fRc)
+                                    dwErr = NO_ERROR;
+                                else
+                                    dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
+                            }
                             RTEnvFreeUtf16Block(pwszzBlock);
                         }
 
@@ -952,19 +960,45 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
  * is running on a SYSTEM account (like a service, ERROR_ACCESS_DENIED) on newer
  * platforms (however, this works on W2K!).
  */
-static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
+static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 *ppwszExec, PRTUTF16 pwszCmdLine,
                                   RTENV hEnv, DWORD dwCreationFlags,
-                                  STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
+                                  STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo,
+                                  uint32_t fFlags, const char *pszExec)
 {
     if (!g_pfnCreateProcessWithLogonW)
         return VERR_SYMBOL_NOT_FOUND;
 
-    RTENV  hEnvToUse;
+    RTENV  hEnvToUse = NIL_RTENV;
     HANDLE hToken;
     int rc = rtProcWinUserLogon(pwszUser, pwszPassword, NULL /* Domain */, &hToken);
     if (RT_SUCCESS(rc))
     {
-        rc = rtProcWinCreateEnvFromToken(hToken, hEnv, fFlags, &hEnvToUse);
+/** @todo r=bird: Why didn't we load the environment here?  The
+ *       CreateEnvironmentBlock docs indicate that USERPROFILE isn't set
+ *       unless we call LoadUserProfile first.  However, experiments here on W10
+ *       shows it isn't really needed though. Weird. */
+#if 0
+        if (fFlags & RTPROC_FLAGS_PROFILE)
+        {
+            PROFILEINFOW ProfileInfo;
+            RT_ZERO(ProfileInfo);
+            ProfileInfo.dwSize     = sizeof(ProfileInfo);
+            ProfileInfo.lpUserName = pwszUser;
+            ProfileInfo.dwFlags    = PI_NOUI; /* Prevents the display of profile error messages. */
+
+            if (g_pfnLoadUserProfileW(hToken, &ProfileInfo))
+            {
+                rc = rtProcWinCreateEnvFromToken(hToken, hEnv, fFlags, &hEnvToUse);
+
+                if (!g_pfnUnloadUserProfile(hToken, ProfileInfo.hProfile))
+                    AssertFailed();
+            }
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
+        }
+        else
+#endif
+            rc = rtProcWinCreateEnvFromToken(hToken, hEnv, fFlags, &hEnvToUse);
         CloseHandle(hToken);
     }
     if (RT_SUCCESS(rc))
@@ -973,26 +1007,31 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
         rc = RTEnvQueryUtf16Block(hEnvToUse, &pwszzBlock);
         if (RT_SUCCESS(rc))
         {
-            BOOL fRc = g_pfnCreateProcessWithLogonW(pwszUser,
-                                                    NULL,                       /* lpDomain*/
-                                                    pwszPassword,
-                                                    1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
-                                                    pwszExec,
-                                                    pwszCmdLine,
-                                                    dwCreationFlags,
-                                                    pwszzBlock,
-                                                    NULL,                       /* pCurrentDirectory */
-                                                    pStartupInfo,
-                                                    pProcInfo);
-            if (fRc)
-                rc = VINF_SUCCESS;
-            else
+            rc = rtProcWinFindExe(fFlags, hEnv, pszExec, ppwszExec);
+            if (RT_SUCCESS(rc))
             {
-                DWORD dwErr = GetLastError();
-                rc = rtProcWinMapErrorCodes(dwErr);
-                if (rc == VERR_UNRESOLVED_ERROR)
-                    LogRelFunc(("g_pfnCreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
-                                g_pfnCreateProcessWithLogonW, dwErr, dwErr, rc));
+                BOOL fRc = g_pfnCreateProcessWithLogonW(pwszUser,
+                                                        NULL,                       /* lpDomain*/
+                                                        pwszPassword,
+/** @todo r=bird: Not respecting the RTPROF_FLAGS_PROFILE flag here.  */
+                                                        1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
+                                                        *ppwszExec,
+                                                        pwszCmdLine,
+                                                        dwCreationFlags,
+                                                        pwszzBlock,
+                                                        NULL,                       /* pCurrentDirectory */
+                                                        pStartupInfo,
+                                                        pProcInfo);
+                if (fRc)
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    DWORD dwErr = GetLastError();
+                    rc = rtProcWinMapErrorCodes(dwErr);
+                    if (rc == VERR_UNRESOLVED_ERROR)
+                        LogRelFunc(("g_pfnCreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
+                                    g_pfnCreateProcessWithLogonW, dwErr, dwErr, rc));
+                }
             }
             RTEnvFreeUtf16Block(pwszzBlock);
         }
@@ -1003,9 +1042,10 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
 }
 
 
-static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
+static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 *ppwszExec, PRTUTF16 pwszCmdLine,
                                  RTENV hEnv, DWORD dwCreationFlags,
-                                 STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
+                                 STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo,
+                                 uint32_t fFlags, const char *pszExec)
 {
     /*
      * If we run as a service CreateProcessWithLogon will fail, so don't even
@@ -1014,18 +1054,19 @@ static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
      */
     if (!(fFlags & RTPROC_FLAGS_SERVICE))
     {
-        int rc = rtProcWinCreateAsUser1(pwszUser, pwszPassword, pwszExec, pwszCmdLine,
-                                        hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags);
+        int rc = rtProcWinCreateAsUser1(pwszUser, pwszPassword, ppwszExec, pwszCmdLine,
+                                        hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags, pszExec);
         if (RT_SUCCESS(rc))
             return rc;
     }
-    return rtProcWinCreateAsUser2(pwszUser, pwszPassword, pwszExec, pwszCmdLine,
-                                  hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags);
+    return rtProcWinCreateAsUser2(pwszUser, pwszPassword, ppwszExec, pwszCmdLine,
+                                  hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags, pszExec);
 }
 
 
 /**
- * RTPathTraverseList callback used by RTProcCreateEx to locate the executable.
+ * RTPathTraverseList callback used by rtProcWinFindExe to locate the
+ * executable.
  */
 static DECLCALLBACK(int) rtPathFindExec(char const *pchPath, size_t cchPath, void *pvUser1, void *pvUser2)
 {
@@ -1037,6 +1078,130 @@ static DECLCALLBACK(int) rtPathFindExec(char const *pchPath, size_t cchPath, voi
     if (RTFileExists(pszRealExec))
         return VINF_SUCCESS;
     return VERR_TRY_AGAIN;
+}
+
+
+/**
+ * Locate the executable file if necessary.
+ *
+ * @returns IPRT status code.
+ * @param   pszExec         The UTF-8 executable string passed in by the user.
+ * @param   fFlags          The process creation flags pass in by the user.
+ * @param   hEnv            The environment to get the path variabel from.
+ * @param   ppwszExec       Pointer to the variable pointing to the UTF-16
+ *                          converted string.  If we find something, the current
+ *                          pointer will be free (RTUtf16Free) and
+ *                          replaced by a new one.
+ */
+static int rtProcWinFindExe(uint32_t fFlags, RTENV hEnv, const char *pszExec, PRTUTF16 *ppwszExec)
+{
+    /*
+     * Return immediately if we're not asked to search, or if the file has a
+     * path already or if it actually exists in the current directory.
+     */
+    if (   !(fFlags & RTPROC_FLAGS_SEARCH_PATH)
+        || RTPathHavePath(pszExec)
+        || RTPathExists(pszExec) )
+        return VINF_SUCCESS;
+
+    /*
+     * Search the Path or PATH variable for the file.
+     */
+    char *pszPath;
+    if (RTEnvExistEx(hEnv, "PATH"))
+        pszPath = RTEnvDupEx(hEnv, "PATH");
+    else if (RTEnvExistEx(hEnv, "Path"))
+        pszPath = RTEnvDupEx(hEnv, "Path");
+    else
+        return VERR_FILE_NOT_FOUND;
+
+    char szRealExec[RTPATH_MAX];
+    int rc = RTPathTraverseList(pszPath, ';', rtPathFindExec, (void *)pszExec, &szRealExec[0]);
+    RTStrFree(pszPath);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Replace the executable string.
+         */
+        RTUtf16Free(*ppwszExec);
+        *ppwszExec = NULL;
+        rc = RTStrToUtf16(szRealExec, ppwszExec);
+    }
+    else if (rc == VERR_END_OF_STRING)
+        rc = VERR_FILE_NOT_FOUND;
+    return rc;
+}
+
+
+/**
+ * Creates the UTF-16 environment block and, if necessary, find the executable.
+ *
+ * @returns IPRT status code.
+ * @param   fFlags          The process creation flags pass in by the user.
+ * @param   hEnv            The environment handle passed by the user.
+ * @param   pszExec         See rtProcWinFindExe.
+ * @param   ppwszzBlock     Where RTEnvQueryUtf16Block returns the block.
+ * @param   ppwszExec       See rtProcWinFindExe.
+ */
+static int rtProcWinCreateEnvBlockAndFindExe(uint32_t fFlags, RTENV hEnv, const char *pszExec,
+                                             PRTUTF16 *ppwszzBlock, PRTUTF16 *ppwszExec)
+{
+    int rc;
+
+    /*
+     * In most cases, we just need to convert the incoming enviornment to a
+     * UTF-16 environment block.
+     */
+    RTENV hEnvToUse;
+    if (   !(fFlags & (RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_ENV_CHANGE_RECORD))
+        || (hEnv == RTENV_DEFAULT && !(fFlags & RTPROC_FLAGS_PROFILE))
+        || (hEnv != RTENV_DEFAULT && !(fFlags & RTPROC_FLAGS_ENV_CHANGE_RECORD)) )
+        hEnvToUse = hEnv;
+    else if (fFlags & RTPROC_FLAGS_PROFILE)
+    {
+        /*
+         * We need to get the profile environment for the current user.
+         */
+        Assert((fFlags & RTPROC_FLAGS_ENV_CHANGE_RECORD) || hEnv == RTENV_DEFAULT);
+        AssertReturn(g_pfnCreateEnvironmentBlock && g_pfnDestroyEnvironmentBlock, VERR_SYMBOL_NOT_FOUND);
+        AssertReturn(g_pfnLoadUserProfileW && g_pfnUnloadUserProfile, VERR_SYMBOL_NOT_FOUND);
+        HANDLE hToken;
+        if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_IMPERSONATE, &hToken))
+        {
+            rc = rtProcWinCreateEnvFromToken(hToken, hEnv, fFlags, &hEnvToUse);
+            CloseHandle(hToken);
+        }
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+    }
+    else
+    {
+        /*
+         * Apply hEnv as a change record on top of the default environment.
+         */
+        Assert(fFlags & RTPROC_FLAGS_ENV_CHANGE_RECORD);
+        rc = RTEnvClone(&hEnvToUse, RTENV_DEFAULT);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTEnvApplyChanges(hEnvToUse, hEnv);
+            if (RT_FAILURE(rc))
+                RTEnvDestroy(hEnvToUse);
+        }
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Query the UTF-16 environment block and locate the executable (if needed).
+         */
+        rc = RTEnvQueryUtf16Block(hEnvToUse, ppwszzBlock);
+        if (RT_SUCCESS(rc))
+            rc = rtProcWinFindExe(fFlags, hEnvToUse, pszExec, ppwszExec);
+
+        if (hEnvToUse != hEnv)
+            RTEnvDestroy(hEnvToUse);
+    }
+
+    return rc;
 }
 
 
@@ -1052,9 +1217,6 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     AssertReturn(!(fFlags & ~RTPROC_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & RTPROC_FLAGS_DETACHED) || !phProcess, VERR_INVALID_PARAMETER);
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
-    AssertReturn(   !(fFlags & RTPROC_FLAGS_PROFILE) /* Profile flag isn't fully implemented in all cases: */
-                 || pszAsUser
-                 || (hEnv != RTENV_DEFAULT && !(fFlags & RTPROC_FLAGS_ENV_CHANGE_RECORD)), VERR_NOT_SUPPORTED);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pszAsUser, VERR_INVALID_POINTER);
     AssertReturn(!pszAsUser || *pszAsUser, VERR_INVALID_PARAMETER);
@@ -1070,37 +1232,6 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     {
         rc = RTOnce(&g_rtProcWinResolveOnce, rtProcWinResolveOnce, NULL);
         AssertRCReturn(rc, rc);
-    }
-
-    /*
-     * Resolve the executable name via the PATH if requested.
-     */
-    char szRealExec[RTPATH_MAX];
-    if (   (fFlags & RTPROC_FLAGS_SEARCH_PATH)
-        && !RTPathHavePath(pszExec)
-        && !RTPathExists(pszExec) )
-    {
-        /* search */
-/** @todo RTPROC_FLAGS_PROFILE/win: Could be searching the wrong PATH/Path env var for executable. */
-        char *pszPath;
-        if (RTEnvExistEx(hEnv, "PATH"))
-            pszPath = RTEnvDupEx(hEnv, "PATH");
-        else if (RTEnvExistEx(hEnv, "Path"))
-            pszPath = RTEnvDupEx(hEnv, "Path");
-        else if (   !(fFlags & RTPROC_FLAGS_ENV_CHANGE_RECORD)
-                 || hEnv == RTENV_DEFAULT)
-            return VERR_FILE_NOT_FOUND;
-        else if (RTEnvExistEx(RTENV_DEFAULT, "PATH"))
-            pszPath = RTEnvDupEx(RTENV_DEFAULT, "PATH");
-        else if (RTEnvExistEx(RTENV_DEFAULT, "Path"))
-            pszPath = RTEnvDupEx(RTENV_DEFAULT, "Path");
-        else
-            return VERR_FILE_NOT_FOUND;
-        rc = RTPathTraverseList(pszPath, ';', rtPathFindExec, (void *)pszExec, &szRealExec[0]);
-        RTStrFree(pszPath);
-        if (RT_FAILURE(rc))
-            return rc == VERR_END_OF_STRING ? VERR_FILE_NOT_FOUND : rc;
-        pszExec = szRealExec;
     }
 
     /*
@@ -1190,43 +1321,42 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
         }
 
     /*
-     * Create the environment block, command line and convert the executable
-     * name.
+     * Create the command line and convert the executable name.
      */
-/** @todo this environment creation isn't needed for the rtProcWinCreateAsUser case...  Also, we need to take the _PROFILE and _CHANGE_RECORD flags into account here */
-    PRTUTF16 pwszzBlock;
+    PRTUTF16 pwszCmdLine;
     if (RT_SUCCESS(rc))
-        rc = RTEnvQueryUtf16Block(hEnv, &pwszzBlock);
-    if (RT_SUCCESS(rc))
-    {
-        PRTUTF16 pwszCmdLine;
         rc = RTGetOptArgvToUtf16String(&pwszCmdLine, papszArgs,
                                        !(fFlags & RTPROC_FLAGS_UNQUOTED_ARGS)
                                        ? RTGETOPTARGV_CNV_QUOTE_MS_CRT : RTGETOPTARGV_CNV_UNQUOTED);
+    if (RT_SUCCESS(rc))
+    {
+        PRTUTF16 pwszExec;
+        rc = RTStrToUtf16(pszExec, &pwszExec);
         if (RT_SUCCESS(rc))
         {
-            PRTUTF16 pwszExec;
-            rc = RTStrToUtf16(pszExec, &pwszExec);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Get going...
-                 */
-                PROCESS_INFORMATION ProcInfo;
-                RT_ZERO(ProcInfo);
-                DWORD dwCreationFlags = CREATE_UNICODE_ENVIRONMENT;
-                if (fFlags & RTPROC_FLAGS_DETACHED)
-                    dwCreationFlags |= DETACHED_PROCESS;
-                if (fFlags & RTPROC_FLAGS_NO_WINDOW)
-                    dwCreationFlags |= CREATE_NO_WINDOW;
+            /*
+             * Get going...
+             */
+            PROCESS_INFORMATION ProcInfo;
+            RT_ZERO(ProcInfo);
+            DWORD dwCreationFlags = CREATE_UNICODE_ENVIRONMENT;
+            if (fFlags & RTPROC_FLAGS_DETACHED)
+                dwCreationFlags |= DETACHED_PROCESS;
+            if (fFlags & RTPROC_FLAGS_NO_WINDOW)
+                dwCreationFlags |= CREATE_NO_WINDOW;
 
-                /*
-                 * Only use the normal CreateProcess stuff if we have no user name
-                 * and we are not running from a (Windows) service. Otherwise use
-                 * the more advanced version in rtProcWinCreateAsUser().
-                 */
-                if (   pszAsUser == NULL
-                    && !(fFlags & RTPROC_FLAGS_SERVICE))
+            /*
+             * Only use the normal CreateProcess stuff if we have no user name
+             * and we are not running from a (Windows) service. Otherwise use
+             * the more advanced version in rtProcWinCreateAsUser().
+             */
+            if (   pszAsUser == NULL
+                && !(fFlags & RTPROC_FLAGS_SERVICE))
+            {
+                /* Create the environment block first. */
+                PRTUTF16 pwszzBlock;
+                rc = rtProcWinCreateEnvBlockAndFindExe(fFlags, hEnv, pszExec, &pwszzBlock, &pwszExec);
+                if (RT_SUCCESS(rc))
                 {
                     if (CreateProcessW(pwszExec,
                                        pwszCmdLine,
@@ -1241,53 +1371,53 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                         rc = VINF_SUCCESS;
                     else
                         rc = RTErrConvertFromWin32(GetLastError());
+                    RTEnvFreeUtf16Block(pwszzBlock);
                 }
-                else
-                {
-                    /*
-                     * Convert the additional parameters and use a helper
-                     * function to do the actual work.
-                     */
-                    PRTUTF16 pwszUser;
-                    rc = RTStrToUtf16(pszAsUser, &pwszUser);
-                    if (RT_SUCCESS(rc))
-                    {
-                        PRTUTF16 pwszPassword;
-                        rc = RTStrToUtf16(pszPassword ? pszPassword : "", &pwszPassword);
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = rtProcWinCreateAsUser(pwszUser, pwszPassword,
-                                                       pwszExec, pwszCmdLine, hEnv, dwCreationFlags,
-                                                       &StartupInfo, &ProcInfo, fFlags);
-
-                            if (pwszPassword && *pwszPassword)
-                                RTMemWipeThoroughly(pwszPassword, RTUtf16Len(pwszPassword), 5);
-                            RTUtf16Free(pwszPassword);
-                        }
-                        RTUtf16Free(pwszUser);
-                    }
-                }
+            }
+            else
+            {
+                /*
+                 * Convert the additional parameters and use a helper
+                 * function to do the actual work.
+                 */
+                PRTUTF16 pwszUser;
+                rc = RTStrToUtf16(pszAsUser, &pwszUser);
                 if (RT_SUCCESS(rc))
                 {
-                    CloseHandle(ProcInfo.hThread);
-                    if (phProcess)
+                    PRTUTF16 pwszPassword;
+                    rc = RTStrToUtf16(pszPassword ? pszPassword : "", &pwszPassword);
+                    if (RT_SUCCESS(rc))
                     {
-                        /*
-                         * Add the process to the child process list so
-                         * RTProcWait can reuse and close the process handle.
-                         */
-                        rtProcWinAddPid(ProcInfo.dwProcessId, ProcInfo.hProcess);
-                        *phProcess = ProcInfo.dwProcessId;
+                        rc = rtProcWinCreateAsUser(pwszUser, pwszPassword,
+                                                   &pwszExec, pwszCmdLine, hEnv, dwCreationFlags,
+                                                   &StartupInfo, &ProcInfo, fFlags, pszExec);
+
+                        if (pwszPassword && *pwszPassword)
+                            RTMemWipeThoroughly(pwszPassword, RTUtf16Len(pwszPassword), 5);
+                        RTUtf16Free(pwszPassword);
                     }
-                    else
-                        CloseHandle(ProcInfo.hProcess);
-                    rc = VINF_SUCCESS;
+                    RTUtf16Free(pwszUser);
                 }
-                RTUtf16Free(pwszExec);
             }
-            RTUtf16Free(pwszCmdLine);
+            if (RT_SUCCESS(rc))
+            {
+                CloseHandle(ProcInfo.hThread);
+                if (phProcess)
+                {
+                    /*
+                     * Add the process to the child process list so
+                     * RTProcWait can reuse and close the process handle.
+                     */
+                    rtProcWinAddPid(ProcInfo.dwProcessId, ProcInfo.hProcess);
+                    *phProcess = ProcInfo.dwProcessId;
+                }
+                else
+                    CloseHandle(ProcInfo.hProcess);
+                rc = VINF_SUCCESS;
+            }
+            RTUtf16Free(pwszExec);
         }
-        RTEnvFreeUtf16Block(pwszzBlock);
+        RTUtf16Free(pwszCmdLine);
     }
 
     /* Undo any handle inherit changes. */

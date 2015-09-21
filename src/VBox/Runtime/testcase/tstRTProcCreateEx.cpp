@@ -53,7 +53,8 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static char g_szExecName[RTPATH_MAX];
+static RTENV g_hEnvInitial = NIL_RTENV;
+static char  g_szExecName[RTPATH_MAX];
 
 
 static const char * const g_apszArgs4[] =
@@ -79,6 +80,250 @@ static const char * const g_apszArgs4[] =
     /*18 */ "%%X",
     NULL
 };
+
+
+static int tstRTCreateProcEx6Child(int argc, char **argv)
+{
+    int rc = RTR3InitExeNoArguments(0);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+
+    int cErrors = 0;
+    char szValue[_1K];
+
+    /*
+     * Check for the environment variable we've set in the parent process.
+     */
+    if (argc >= 3 && strcmp(argv[2], "inherit") == 0)
+    {
+        if (!RTEnvExistEx(RTENV_DEFAULT, "testcase-child-6"))
+        {
+            RTStrmPrintf(g_pStdErr, "child6: Env.var. 'testcase-child-6' was not inherited from parent\n");
+            cErrors++;
+        }
+    }
+    else if (argc >= 3 && strstr(argv[2], "change-record") != NULL)
+    {
+        rc = RTEnvGetEx(RTENV_DEFAULT, "testcase-child-6", szValue, sizeof(szValue), NULL);
+        if (RT_SUCCESS(rc) && strcmp(szValue, "changed"))
+        {
+            RTStrmPrintf(g_pStdErr, "child6: Env.var. 'testcase-child-6'='%s', expected 'changed'.\n", szValue);
+            cErrors++;
+        }
+        else if (RT_FAILURE(rc))
+        {
+            RTStrmPrintf(g_pStdErr, "child6: RTEnvGetEx(,'testcase-child-6',,) -> %Rrc\n", rc);
+            cErrors++;
+        }
+    }
+    else
+    {
+        if (RTEnvExistEx(RTENV_DEFAULT, "testcase-child-6"))
+        {
+            RTStrmPrintf(g_pStdErr, "child6: Env.var. 'testcase-child-6' was inherited from parent\n");
+            cErrors++;
+        }
+    }
+
+    /*
+     * Check the user name if present we didn't inherit from parent.
+     */
+    if (   argc >= 4
+        && argv[3][0] != '\0'
+        && strstr(argv[2], "noinherit") != NULL)
+    {
+        static struct
+        {
+            const char *pszVarNm;
+            bool fReq;
+        } const s_aVars[] =
+        {
+#ifdef RT_OS_WINDOWS
+            { "USERNAME", true },
+#else
+            { "LOGNAME",  true },
+            { "USER",    false },
+#endif
+        };
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aVars); i++)
+        {
+            rc = RTEnvGetEx(RTENV_DEFAULT, s_aVars[i].pszVarNm, szValue, sizeof(szValue), NULL);
+            if (RT_SUCCESS(rc))
+            {
+                if (strcmp(szValue, argv[3]))
+                {
+                    RTStrmPrintf(g_pStdErr, "child6: env.var. '%s'='%s', expected '%s'\n",
+                                 s_aVars[i].pszVarNm, szValue, argv[3]);
+                    cErrors++;
+                }
+            }
+            else if (rc != VERR_ENV_VAR_NOT_FOUND || s_aVars[i].fReq)
+            {
+                RTStrmPrintf(g_pStdErr, "child6: RTGetEnv('%s') -> %Rrc\n", s_aVars[i].pszVarNm, rc);
+                cErrors++;
+            }
+        }
+    }
+
+#if 0
+    /* For manual testing. */
+    if (strcmp(argv[2],"noinherit-change-record") == 0)
+    {
+        RTENV hEnv;
+        rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cVars = RTEnvCountEx(hEnv);
+            for (uint32_t i = 0; i < cVars; i++)
+            {
+                char szVarNm[_1K];
+                char szValue[_16K];
+                rc = RTEnvGetByIndexEx(hEnv, i, szVarNm, sizeof(szVarNm), szValue, sizeof(szValue));
+                if (RT_SUCCESS(rc))
+                    RTStrmPrintf(g_pStdErr, "child6: #%u: %s=%s\n", i, szVarNm, szValue);
+                else
+                {
+                    RTStrmPrintf(g_pStdErr, "child6: #%u: %Rrc\n", rc);
+                    cErrors++;
+                }
+            }
+            RTEnvDestroy(hEnv);
+        }
+        else
+        {
+            RTStrmPrintf(g_pStdErr, "child6: RTEnvClone failed: %Rrc\n", rc);
+            cErrors++;
+        }
+    }
+#endif
+
+    return cErrors == 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static void tstRTCreateProcEx6(const char *pszAsUser, const char *pszPassword)
+{
+    RTTestISub("Profile environment");
+
+    const char *apszArgs[5] =
+    {
+        g_szExecName,
+        "--testcase-child-6",
+        "inherit",
+        pszAsUser,
+        NULL
+    };
+
+    RTTESTI_CHECK_RC_RETV(RTEnvSetEx(RTENV_DEFAULT, "testcase-child-6", "true"), VINF_SUCCESS);
+
+    /* Use the process environment first. */
+    RTPROCESS hProc;
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+    RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+
+    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+
+    /* Use the process environment first with a little change. */
+    apszArgs[2] = "change-record";
+    RTENV hEnvChange;
+    RTTESTI_CHECK_RC_RETV(RTEnvCreateChangeRecord(&hEnvChange), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTEnvSetEx(hEnvChange, "testcase-child-6", "changed"), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, hEnvChange, RTPROC_FLAGS_ENV_CHANGE_RECORD,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+    ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
+    ProcStatus.iStatus   = -1;
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+
+    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+
+
+    /* Use profile environment this time. */
+    apszArgs[2] = "noinherit";
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, RTPROC_FLAGS_PROFILE,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+    ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
+    ProcStatus.iStatus   = -1;
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+
+    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+
+    /* Use profile environment this time. */
+    apszArgs[2] = "noinherit-change-record";
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, hEnvChange,
+                                         RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_ENV_CHANGE_RECORD,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+    ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
+    ProcStatus.iStatus   = -1;
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+
+    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+
+
+    RTTESTI_CHECK_RC(RTEnvDestroy(hEnvChange), VINF_SUCCESS);
+
+    /*
+     * Restore the environment and check that the PROFILE flag didn't mess with
+     * the process environment.  (Note! The bug may be elsewhere as well.)
+     */
+    RTTESTI_CHECK_RC(RTEnvUnsetEx(RTENV_DEFAULT, "testcase-child-6"), VINF_SUCCESS);
+
+    RTENV hEnvCur;
+    RTTESTI_CHECK_RC_RETV(RTEnvClone(&hEnvCur, RTENV_DEFAULT), VINF_SUCCESS);
+    uint32_t cCurrent = RTEnvCountEx(hEnvCur);
+    uint32_t cInitial = RTEnvCountEx(g_hEnvInitial);
+    RTTESTI_CHECK_MSG(cInitial == cInitial, ("cCurrent=%u cInitial=%u\n", cCurrent, cInitial));
+    uint32_t    cVars1;
+    RTENV       hEnv1,    hEnv2;
+    const char *pszEnv1, *pszEnv2;
+    if (cCurrent >= cInitial)
+    {
+        hEnv1   = hEnvCur;
+        pszEnv1 = "current";
+        cVars1  = cCurrent;
+        hEnv2   = g_hEnvInitial;
+        pszEnv2 = "initial";
+    }
+    else
+    {
+        hEnv2   = hEnvCur;
+        pszEnv2 = "current";
+        hEnv1   = g_hEnvInitial;
+        pszEnv1 = "initial";
+        cVars1  = cInitial;
+    }
+    for (uint32_t i = 0; i < cVars1; i++)
+    {
+        char szValue1[_16K];
+        char szVarNm[_1K];
+        int rc = RTEnvGetByIndexEx(hEnv1, i, szVarNm, sizeof(szVarNm), szValue1, sizeof(szValue1));
+        if (RT_SUCCESS(rc))
+        {
+            char szValue2[_16K];
+            rc = RTEnvGetEx(hEnv2, szVarNm, szValue2, sizeof(szValue2), NULL);
+            if (RT_SUCCESS(rc))
+            {
+                if (strcmp(szValue1, szValue2) != 0)
+                {
+                    RTTestIFailed("Variable '%s' differs", szVarNm);
+                    RTTestIFailureDetails("%s: '%s'\n"
+                                          "%s: '%s'\n",
+                                          pszEnv1, szValue1,
+                                          pszEnv2, szValue2);
+                }
+            }
+            else
+                RTTestIFailed("RTEnvGetEx(%s,%s,,) failed: %Rrc", pszEnv2, szVarNm, rc);
+
+        }
+        else
+            RTTestIFailed("RTEnvGetByIndexEx(%s,%u,,,,) failed: %Rrc", pszEnv1, i, rc);
+    }
+}
 
 
 static int tstRTCreateProcEx5Child(int argc, char **argv)
@@ -409,6 +654,9 @@ static void tstRTCreateProcEx1(const char *pszAsUser, const char *pszPassword)
 
 int main(int argc, char **argv)
 {
+    /*
+     * Deal with child processes first.
+     */
     if (argc == 2 && !strcmp(argv[1], "--testcase-child-1"))
         return tstRTCreateProcEx1Child();
     if (argc == 2 && !strcmp(argv[1], "--testcase-child-2"))
@@ -419,6 +667,13 @@ int main(int argc, char **argv)
         return tstRTCreateProcEx4Child(argc, argv);
     if (argc == 2 && !strcmp(argv[1], "--testcase-child-5"))
         return tstRTCreateProcEx5Child(argc, argv);
+    if (argc >= 2 && !strcmp(argv[1], "--testcase-child-6"))
+        return tstRTCreateProcEx6Child(argc, argv);
+
+
+    /*
+     * Main process.
+     */
     const char *pszAsUser   = NULL;
     const char *pszPassword = NULL;
     if (argc != 1)
@@ -435,8 +690,12 @@ int main(int argc, char **argv)
         return rc;
     RTTestBanner(hTest);
 
+    /*
+     * Init globals.
+     */
     if (!RTProcGetExecutablePath(g_szExecName, sizeof(g_szExecName)))
         RTStrCopy(g_szExecName, sizeof(g_szExecName), argv[0]);
+    RTTESTI_CHECK_RC(RTEnvClone(&g_hEnvInitial, RTENV_DEFAULT), VINF_SUCCESS);
 
     /*
      * The tests.
@@ -447,7 +706,13 @@ int main(int argc, char **argv)
     tstRTCreateProcEx4(pszAsUser, pszPassword);
     if (pszAsUser)
         tstRTCreateProcEx5(pszAsUser, pszPassword);
+#ifdef RT_OS_WINDOWS
+    tstRTCreateProcEx6(pszAsUser, pszPassword);
+#endif
+
     /** @todo Cover files, ++ */
+
+    RTEnvDestroy(g_hEnvInitial);
 
     /*
      * Summary.
