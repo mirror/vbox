@@ -4722,6 +4722,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
         {
             /** @todo Do we need to do more validations here, like that the
              *        name + version + cbModule matches? */
+            NOREF(cbModule);
             Assert(pRecVM->pGlobalModule);
             gmmR0ShModDeletePerVM(pGMM, pGVM, pRecVM, true /*fRemove*/);
         }
@@ -4817,6 +4818,7 @@ DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, RTHCPHYS HCPhys,
     pPageDesc->u32StrictChecksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
     pPage->Shared.u14Checksum = pPageDesc->u32StrictChecksum;
 #else
+    NOREF(pPageDesc);
     pPage->Shared.u14Checksum = 0;
 #endif
     pPage->Shared.u2State     = GMM_PAGE_STATE_SHARED;
@@ -4834,6 +4836,7 @@ static int gmmR0SharedModuleCheckPageFirstTime(PGMM pGMM, PGVM pGVM, PGMMSHAREDM
     AssertMsgReturn(pPage, ("idPage=%#x (GCPhys=%RGp HCPhys=%RHp idxRegion=%#x idxPage=%#x) #1\n",
                             pPageDesc->idPage, pPageDesc->GCPhys, pPageDesc->HCPhys, idxRegion, idxPage),
                     VERR_PGM_PHYS_INVALID_PAGE_ID);
+    NOREF(idxRegion);
 
     AssertMsg(pPageDesc->GCPhys == (pPage->Private.pfn << 12), ("desc %RGp gmm %RGp\n", pPageDesc->HCPhys, (pPage->Private.pfn << 12)));
 
