@@ -1858,6 +1858,8 @@ VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *psz
     Log(("%s %04x - %08x %08x - base=%08x limit=%08x dpl=%d %s\n", pszMsg,
          Sel, pDesc->au32[0], pDesc->au32[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 # endif
+#else
+    NOREF(Sel); NOREF(pszMsg);
 #endif
 }
 
@@ -2008,6 +2010,8 @@ VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pCtx->msrLSTAR,
         pCtx->msrSFMASK,
         pCtx->msrKERNELGSBASE));
+
+    NOREF(pFpuCtx);
 }
 
 #endif /* VBOX_STRICT */

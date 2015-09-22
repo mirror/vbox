@@ -2109,7 +2109,7 @@ VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchB
 
     return 2;
 #else
-    NOREF(pLogger); NOREF(pcbBuf); NOREF(cchBuf);
+    NOREF(pLogger); NOREF(pchBuf); NOREF(cchBuf);
     return 0;
 #endif
 }
