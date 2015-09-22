@@ -496,6 +496,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
         {
             Log(("drvNATNetowrkUp_AllocBuf: drops over-sized frame (%u bytes), returns VERR_INVALID_PARAMETER\n",
                  cbMin));
+            RTMemFree(pSgBuf);
             return VERR_INVALID_PARAMETER;
         }
 
@@ -517,6 +518,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
         {
             Log(("drvNATNetowrkUp_AllocBuf: drops over-sized frame (%u bytes), returns VERR_INVALID_PARAMETER\n",
                  pGso->cbHdrsTotal + pGso->cbMaxSeg));
+            RTMemFree(pSgBuf);
             return VERR_INVALID_PARAMETER;
         }
 
