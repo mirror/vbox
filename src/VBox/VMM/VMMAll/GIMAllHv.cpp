@@ -43,6 +43,7 @@
  */
 VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    NOREF(pCtx);
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (!MSR_GIM_HV_HYPERCALL_IS_ENABLED(pVM->gim.s.u.Hv.u64HypercallMsr))
         return VERR_GIM_HYPERCALLS_NOT_ENABLED;
@@ -78,6 +79,7 @@ VMM_INT_DECL(bool) gimHvIsParavirtTscEnabled(PVM pVM)
 }
 
 
+#ifdef IN_RING3
 /**
  * Gets the descriptive OS ID variant as identified via the
  * MSR_GIM_HV_GUEST_OS_ID MSR.
@@ -105,6 +107,7 @@ static const char *gimHvGetGuestOsIdVariantName(uint64_t uGuestOsIdMsr)
     }
     return "Unknown";
 }
+#endif
 
 
 /**

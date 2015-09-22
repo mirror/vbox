@@ -813,6 +813,8 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRawMode(PVM pVM, PVMCPU pVCpu, RTSEL
 DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, RTSEL SelCS, PCCPUMSELREGHID pSRegCS,
                                                    RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
+    NOREF(SelCPL); NOREF(SelCS);
+
     /*
      * Check if present.
      */

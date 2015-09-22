@@ -86,6 +86,7 @@ DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRelease(PVM pVM, PPGMPHYSHANDLERTYPEI
  */
 DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRetain(PVM pVM, PPGMPHYSHANDLERTYPEINT pType)
 {
+    NOREF(pVM);
     AssertMsgReturn(pType->u32Magic == PGMPHYSHANDLERTYPEINT_MAGIC, ("%#x\n", pType->u32Magic), UINT32_MAX);
     uint32_t cRefs = ASMAtomicIncU32(&pType->cRefs);
     Assert(cRefs < _1M && cRefs > 0);
@@ -1399,6 +1400,7 @@ DECLINLINE(uint32_t) pgmHandlerVirtualTypeRelease(PVM pVM, PPGMVIRTHANDLERTYPEIN
  */
 DECLINLINE(uint32_t) pgmHandlerVirtualTypeRetain(PVM pVM, PPGMVIRTHANDLERTYPEINT pType)
 {
+    NOREF(pVM);
     AssertMsgReturn(pType->u32Magic == PGMVIRTHANDLERTYPEINT_MAGIC, ("%#x\n", pType->u32Magic), UINT32_MAX);
     uint32_t cRefs = ASMAtomicIncU32(&pType->cRefs);
     Assert(cRefs < _1M && cRefs > 0);

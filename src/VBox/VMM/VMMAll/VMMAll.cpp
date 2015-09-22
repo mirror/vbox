@@ -409,6 +409,8 @@ VMM_INT_DECL(int) VMMPatchHypercall(PVM pVM, void *pvBuf, size_t cbBuf, size_t *
     AssertReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(pcbWritten, VERR_INVALID_POINTER);
 
+    NOREF(pVM);
+
     if (ASMIsAmdCpu())
     {
         uint8_t abHypercall[] = { 0x0F, 0x01, 0xD9 };   /* VMMCALL */

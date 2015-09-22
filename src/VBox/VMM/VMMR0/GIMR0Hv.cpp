@@ -136,6 +136,8 @@ VMM_INT_DECL(int) gimR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
 
     Assert(pRefTsc->u32TscSequence != 0);
     Assert(pRefTsc->u32TscSequence != UINT32_C(0xffffffff));
+#else
+    NOREF(u64Offset);
 #endif
     return VINF_SUCCESS;
 }
