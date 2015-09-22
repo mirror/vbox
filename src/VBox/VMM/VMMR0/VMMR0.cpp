@@ -2076,7 +2076,9 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     else
         SUPR0Printf("vmmR0LoggerFlush: invalid VCPU context!\n");
 # endif
-#endif
+#else
+    NOREF(pLogger);
+#endif  /* LOG_ENABLED */
 }
 
 /**
@@ -2107,6 +2109,7 @@ VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchB
 
     return 2;
 #else
+    NOREF(pLogger); NOREF(pcbBuf); NOREF(cchBuf);
     return 0;
 #endif
 }
@@ -2232,7 +2235,9 @@ DECLEXPORT(void) RTCALL RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, co
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars)
 {
     for (size_t i = 0; i < cbChars; i++)
-        LogAlways(("%c", pachChars[i]));
+    {
+        LogAlways(("%c", pachChars[i])); NOREF(pachChars);
+    }
 
     NOREF(pv);
     return cbChars;

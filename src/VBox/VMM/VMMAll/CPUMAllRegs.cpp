@@ -2703,6 +2703,7 @@ VMMDECL(bool) CPUMIsHyperDebugStateActivePending(PVMCPU pVCpu)
 VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)
 {
     Assert(!(pVCpu->cpum.s.fUseFlags & (CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER | CPUM_USED_DEBUG_REGS_HOST)));
+    NOREF(pVCpu);
 }
 
 
