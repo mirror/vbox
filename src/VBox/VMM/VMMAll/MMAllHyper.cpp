@@ -1138,6 +1138,7 @@ static void mmHyperHeapDumpOne(PMMHYPERHEAP pHeap, PMMHYPERCHUNKFREE pCur)
                  pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core),
                  (MMTAG)pStat->Core.Key, pszSelf));
 #endif
+            NOREF(pStat); NOREF(pszSelf);
         }
         else
             Log(("%p  %06x USED offNext=%06x offPrev=-%06x\n",
