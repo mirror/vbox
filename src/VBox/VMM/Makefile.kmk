@@ -552,7 +552,7 @@ ifndef VBOX_ONLY_EXTPACKS
  VMMR0_DEFS.win.amd64  = VBOX_WITH_KERNEL_USING_XMM
 
  ifeq ($(VBOX_LDR_FMT),elf)
-  VMMR0_CXXFLAGS += $(filter-out -Wno-unused,$(TEMPLATE_VBoxR0_CXXFLAGS)) -Wunused-variable
+  VMMR0_CXXFLAGS += $(filter-out -Wno-unused,$(TEMPLATE_VBoxR0_CXXFLAGS)) -Wunused-variable -Wno-unused-parameter
  endif
 
  VMMR0_INCS      = \
@@ -732,9 +732,7 @@ ifneq ($(KBUILD_TARGET),win)
  VMMR3/PGMPool.cpp_CXXFLAGS       = $(VBOX_GCC_Wno-array_bounds)
  VMMAll/PGMAllPool.cpp_CXXFLAGS   = $(VBOX_GCC_Wno-array_bounds)
  VMMAll/PGMAll.cpp_CXXFLAGS       = -Wno-unused-function
- VMMAll/IEMAll.cpp_CXXFLAGS       = -Wno-unused-parameter -Wno-unused-function
- VMMAll/IEMAllAImplC.cpp_CXXFLAGS = -Wno-unused-parameter
- VMMAll/CPUMAllMsrs.cpp_CXXFLAGS  = -Wno-unused-parameter
+ VMMAll/IEMAll.cpp_CXXFLAGS       = -Wno-unused-function
  VMMR0/GMMR0.cpp_CXXFLAGS         = -Wno-unused-value
 endif
 

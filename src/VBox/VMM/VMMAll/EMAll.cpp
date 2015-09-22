@@ -475,7 +475,7 @@ VMM_INT_DECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtr
                                         PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
     NOREF(pVM);
-    Assert(pCtxCore == CPUMGetGuestCtxCore(pVCpu));
+    Assert(pCtxCore == CPUMGetGuestCtxCore(pVCpu)); NOREF(pCtxCore);
     DISCPUMODE enmCpuMode = CPUMGetGuestDisMode(pVCpu);
     /** @todo Deal with too long instruction (=> \#GP), opcode read errors (=>
      *        \#PF, \#GP, \#??), undefined opcodes (=> \#UD), and such. */
@@ -2598,7 +2598,7 @@ static int emInterpretBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
 
             Log2(("emInterpret%s: pvFault=%RGv pParam1=%RGv val2=%x\n", emGetMnemonic(pDis), pvFault, pParam1, valpar2));
             pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + valpar2/8);
-            EM_ASSERT_FAULT_RETURN((RTGCPTR)((RTGCUINTPTR)pParam1 & ~3) == pvFault, VERR_EM_INTERPRETER);
+            EM_ASSERT_FAULT_RETURN((RTGCPTR)((RTGCUINTPTR)pParam1 & ~3) == pvFault, VERR_EM_INTERPRETER); NOREF(pvFault);
             rc = emRamRead(pVM, pVCpu, pRegFrame, &valpar1, pParam1, 1);
             if (RT_FAILURE(rc))
             {
@@ -2674,6 +2674,7 @@ static int emInterpretLockBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPU
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
 
     Log2(("emInterpretLockBitTest %s: pvFault=%RGv GCPtrPar1=%RGv imm=%RX64\n", emGetMnemonic(pDis), pvFault, GCPtrPar1, ValPar2));
+    NOREF(pvFault);
 
     /* Try emulate it with a one-shot #PF handler in place. (RC) */
     RTGCUINTREG32 eflags = 0;

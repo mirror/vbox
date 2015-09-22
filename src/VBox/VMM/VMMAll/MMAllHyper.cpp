@@ -261,6 +261,8 @@ static int mmHyperAllocInternal(PVM pVM, size_t cb, unsigned uAlignment, MMTAG e
         AssertMsgFailed(("Failed to allocate statistics!\n"));
         return VERR_MM_HYPER_NO_MEMORY;
     }
+#else
+    NOREF(enmTag);
 #endif
     if (uAlignment < PAGE_SIZE)
     {
@@ -836,7 +838,7 @@ static int mmHyperFreeInternal(PVM pVM, void *pv)
     AssertMsgReturn(pHeap->u32Magic == MMHYPERHEAP_MAGIC,
                     ("%p: u32Magic=%#x\n", pv, pHeap->u32Magic),
                     VERR_INVALID_POINTER);
-    Assert(pHeap == pVM->mm.s.CTX_SUFF(pHyperHeap));
+    Assert(pHeap == pVM->mm.s.CTX_SUFF(pHyperHeap)); NOREF(pVM);
 
     /* Some more verifications using additional info from pHeap. */
     AssertMsgReturn((uintptr_t)pChunk + offPrev >= (uintptr_t)pHeap->CTX_SUFF(pbHeap),
@@ -1220,6 +1222,8 @@ VMMDECL(void) MMHyperHeapCheck(PVM pVM)
     AssertRC(rc);
     mmHyperHeapCheck(pVM->mm.s.CTX_SUFF(pHyperHeap));
     mmHyperUnlock(pVM);
+#else
+    NOREF(pVM);
 #endif
 }
 

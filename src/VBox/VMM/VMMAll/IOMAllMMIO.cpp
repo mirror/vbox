@@ -451,6 +451,8 @@ static VBOXSTRICTRC iomMMIODoWrite(PVM pVM, PVMCPU pVCpu, PIOMMMIORANGE pRange, 
         return VINF_IOM_R3_MMIO_WRITE;
 # endif
     STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
+#else
+    NOREF(pVCpu);
 #endif
 
     VBOXSTRICTRC rcStrict;
@@ -668,6 +670,8 @@ DECLINLINE(VBOXSTRICTRC) iomMMIODoRead(PVM pVM, PVMCPU pVCpu, PIOMMMIORANGE pRan
         return VINF_IOM_R3_MMIO_READ;
 # endif
     STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfRead), a);
+#else
+    NOREF(pVCpu);
 #endif
 
     VBOXSTRICTRC rcStrict;
@@ -1757,6 +1761,7 @@ static VBOXSTRICTRC iomMmioCommonPfHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErro
      */
     VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
 
+    NOREF(pCtxCore); NOREF(GCPhysFault);
     STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
     PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     iomMmioReleaseRange(pVM, pRange);
@@ -1931,7 +1936,7 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uError
                                           RTGCPHYS GCPhysFault, void *pvUser)
 {
     LogFlow(("iomMmioPfHandler: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
-             GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
+             GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip)); NOREF(pvFault);
     return iomMmioCommonPfHandler(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pvUser);
 }
 
