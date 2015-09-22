@@ -2987,6 +2987,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
     }
 #else
+    NOREF(pVM);
     uintptr_t uTRBase = X86DESC_BASE(pDesc);
 #endif
     rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_TR_BASE, uTRBase);
@@ -5076,10 +5077,7 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
 VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp,
                                          uint32_t cParams, uint32_t *paParam)
 {
-    int             rc, rc2;
-    PHMGLOBALCPUINFO pCpu;
-    RTHCPHYS        HCPhysCpuPage;
-    RTCCUINTREG     fOldEFlags;
+    NOREF(pCtx);
 
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
     Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
@@ -5095,15 +5093,15 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 #endif
 
     /* Disable interrupts. */
-    fOldEFlags = ASMIntDisableFlags();
+    RTCCUINTREG fOldEFlags = ASMIntDisableFlags();
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     RTCPUID idHostCpu = RTMpCpuId();
     CPUMR0SetLApic(pVCpu, idHostCpu);
 #endif
 
-    pCpu = HMR0GetCurrentCpu();
-    HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
+    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
+    RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
 
     /* Clear VMCS. Marking it inactive, clearing implementation-specific data and writing VMCS data back to memory. */
     VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
@@ -5121,7 +5119,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);
 
     /* Call the switcher. */
-    rc = pVM->hm.s.pfnHost32ToGuest64R0(pVM, RT_OFFSETOF(VM, aCpus[pVCpu->idCpu].cpum) - RT_OFFSETOF(VM, cpum));
+    int rc = pVM->hm.s.pfnHost32ToGuest64R0(pVM, RT_OFFSETOF(VM, aCpus[pVCpu->idCpu].cpum) - RT_OFFSETOF(VM, cpum));
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatWorldSwitch3264, z);
 
     /** @todo replace with hmR0VmxEnterRootMode() and hmR0VmxLeaveRootMode(). */
@@ -5129,7 +5127,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     SUPR0ChangeCR4(X86_CR4_VMXE, ~0);
 
     /* Re-enter VMX Root Mode */
-    rc2 = VMXEnable(HCPhysCpuPage);
+    int rc2 = VMXEnable(HCPhysCpuPage);
     if (RT_FAILURE(rc2))
     {
         SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
@@ -5159,12 +5157,10 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
  */
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu)
 {
-    PHMGLOBALCPUINFO pCpu          = NULL;
-    RTHCPHYS         HCPhysCpuPage = 0;
-    int              rc            = VERR_INTERNAL_ERROR_5;
+    NOREF(fResume);
 
-    pCpu = HMR0GetCurrentCpu();
-    HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
+    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
+    RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     pCache->uPos = 1;
@@ -5198,7 +5194,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     pCtx->dr[4] = pVM->hm.s.vmx.pScratchPhys + 16 + 8;
     *(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) = 1;
 #endif
-    rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_VMXRCStartVM64, RT_ELEMENTS(aParam), &aParam[0]);
+    int rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_VMXRCStartVM64, RT_ELEMENTS(aParam), &aParam[0]);
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     Assert(*(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) == 5);

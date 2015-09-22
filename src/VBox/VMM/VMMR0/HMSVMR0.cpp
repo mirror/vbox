@@ -1056,6 +1056,8 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
     Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
 
+    NOREF(pCtx);
+
     /* Disable interrupts. */
     RTHCUINTREG uOldEFlags = ASMIntDisableFlags();
 
