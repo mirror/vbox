@@ -441,10 +441,6 @@ static int vbsfPathCheckRootEscape(const char *pszPath)
  * '<', '>' and '"' are allowed as possible wildcards (see ANSI_DOS_STAR, etc in ntifs.h)
  */
 static const char sachCharBlackList[] = ":/\\|";
-#elif defined(RT_OS_DARWIN)
-/* Technically only '/' is not allowed, but apparently ':' has a special meaning in Finder.
- */
-static const char sachCharBlackList[] = ":/";
 #else
 /* Something else. */
 static const char sachCharBlackList[] = "/";
