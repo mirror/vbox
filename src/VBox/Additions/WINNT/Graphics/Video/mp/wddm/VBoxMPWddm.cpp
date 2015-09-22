@@ -2576,10 +2576,13 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
                                 Assert(pAllocation->AllocData.SurfDesc.pitch);
                                 Assert(pAllocation->AllocData.SurfDesc.cbSize);
 
-//                                if (!pAllocInfo->fFlags.SharedResource && !pAllocInfo->hostID)
-//                                    pAllocationInfo->Flags.CpuVisible = 1;
-
-                                Assert(!pAllocationInfo->Flags.CpuVisible);
+                                /*
+                                 * Mark the allocation as visible to the CPU so we can
+                                 * lock it in the user mode driver for SYSTEM pool allocations.
+                                 * See @bugref{8040} for further information.
+                                 */
+                                if (!pAllocInfo->fFlags.SharedResource && !pAllocInfo->hostID)
+                                    pAllocationInfo->Flags.CpuVisible = 1;
 
                                 if (pAllocInfo->fFlags.SharedResource)
                                 {
