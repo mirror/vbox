@@ -1112,7 +1112,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
 }
 
 
-#if defined(DEBUG) || defined(MMHYPER_HEAP_STRICT)
+#if defined(DEBUG) || defined(MMHYPER_HEAP_STRICT_FENCE)
 /**
  * Dumps a heap chunk to the log.
  *
