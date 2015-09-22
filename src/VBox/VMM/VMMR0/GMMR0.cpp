@@ -3879,7 +3879,7 @@ GMMR0DECL(int)  GMMR0QueryMemoryStatsReq(PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ
  */
 static int gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 {
-    Assert(!pGMM->fLegacyAllocationMode);
+    Assert(!pGMM->fLegacyAllocationMode); NOREF(pGMM);
 
     /*
      * Find the mapping and try unmapping it.

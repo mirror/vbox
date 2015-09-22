@@ -1220,6 +1220,8 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
 {
     LogFlow(("gvmmR0HandleObjDestructor: %p %p %p\n", pvObj, pvGVMM, pvHandle));
 
+    NOREF(pvObj);
+
     /*
      * Some quick, paranoid, input validation.
      */
