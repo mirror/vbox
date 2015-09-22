@@ -2512,6 +2512,8 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         AssertRC(rc);
         rc = PDMR3Term(pVM);
         AssertRC(rc);
+        rc = GIMR3Term(pVM);
+        AssertRC(rc);
         rc = DBGFR3Term(pVM);
         AssertRC(rc);
         rc = IEMR3Term(pVM);
