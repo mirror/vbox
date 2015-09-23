@@ -773,6 +773,12 @@ void UISession::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, 
     emit sigGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
+void UISession::sltHandleStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent)
+{
+    /* Notify listeners about storage device change: */
+    emit sigStorageDeviceChange(attachment, fRemoved, fSilent);
+}
+
 #ifdef RT_OS_DARWIN
 /**
  * MacOS X: Restarts display-reconfiguration watchdog timer from the beginning.
@@ -1190,6 +1196,9 @@ void UISession::prepareConsoleEventHandlers()
 
     connect(gConsoleEvents, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
             this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)));
+
+    connect(gConsoleEvents, SIGNAL(sigStorageDeviceChange(CMediumAttachment, bool, bool)),
+            this, SLOT(sltHandleStorageDeviceChange(CMediumAttachment, bool, bool)));
 
     connect(gConsoleEvents, SIGNAL(sigMediumChange(CMediumAttachment)),
             this, SIGNAL(sigMediumChange(CMediumAttachment)));

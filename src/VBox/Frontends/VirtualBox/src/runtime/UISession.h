@@ -261,6 +261,8 @@ signals:
     void sigAdditionsStateChange();
     void sigAdditionsStateActualChange();
     void sigNetworkAdapterChange(const CNetworkAdapter &networkAdapter);
+    /** Notifies about storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
+    void sigStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);
     void sigMediumChange(const CMediumAttachment &mediumAttachment);
     void sigVRDEChange();
     void sigVideoCaptureChange();
@@ -316,6 +318,8 @@ private slots:
     void sltVRDEChange();
     void sltVideoCaptureChange();
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    /** Handles storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
+    void sltHandleStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);
 
     /* Handlers: Display reconfiguration stuff: */
 #ifdef RT_OS_DARWIN
