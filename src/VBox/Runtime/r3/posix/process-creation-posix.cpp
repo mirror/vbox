@@ -40,7 +40,6 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <grp.h>
-#include <paths.h>
 #include <pwd.h>
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 # include <crypt.h>
@@ -71,6 +70,15 @@
 # include <sys/contract/process.h>
 # include <libcontract.h>
 #endif
+
+#ifndef RT_OS_SOLARIS
+# include <paths.h>
+#else
+# define _PATH_MAILDIR "/var/mail"
+# define _PATH_DEFPATH "/usr/bin:/bin"
+# define _PATH_STDPATH "/sbin:/usr/sbin:/bin:/usr/bin"
+#endif
+
 
 #include <iprt/process.h>
 #include "internal/iprt.h"
