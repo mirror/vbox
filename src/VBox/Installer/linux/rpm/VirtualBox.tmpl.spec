@@ -320,33 +320,27 @@ else
   if lsmod | grep -q "vboxdrv[^_-]"; then
     /sbin/rcvboxdrv stop || true
   fi
-  if [ $REGISTER_MODULES -eq 1 ]; then
-    DKMS=`which dkms 2>/dev/null`
-    if [ -n "$DKMS" ]; then
-      $DKMS remove -m vboxhost -v %VER% --all > /dev/null 2>&1 || true
-    fi
-  fi
 fi
 # Install and start the new service scripts.
-/usr/lib/virtualbox/prerm-common.sh
-/usr/lib/virtualbox/postinst-common.sh /usr/lib/virtualbox --start > /dev/null
+PRERM_DKMS=
+test "${REGISTER_MODULES}" = 1 && PRERM_DKMS="--dkms %VER%"
+POSTINST_START=--start
+test "${INSTALL_NO_VBOXDRV}" = 1 && POSTINST_START=
+/usr/lib/virtualbox/prerm-common.sh ${PRERM_DKMS} || true
+/usr/lib/virtualbox/postinst-common.sh /usr/lib/virtualbox "${POSTINST_START}" > /dev/null || true
 
 
 %preun
+# Called before the package is removed, or during upgrade after (not before)
+# the new version's "post" scriptlet. 
 # $1==0: remove the last version of the package
-# $1==1: install the first time
-# $1>=2: upgrade
+# $1>=1: upgrade
 if [ "$1" = 0 ]; then
-  /usr/lib/virtualbox/prerm-common.sh || exit 1
+  /usr/lib/virtualbox/prerm-common.sh --dkms || exit 1
   rm -f /etc/udev/rules.d/60-vboxdrv.rules
   rm -f /etc/vbox/license_agreed
   rm -f /etc/vbox/module_not_compiled
 fi
-DKMS=`which dkms 2>/dev/null`
-if [ -n "$DKMS" ]; then
-  $DKMS remove -m vboxhost -v %VER% --all > /dev/null 2>&1 || true
-fi
-
 
 %postun
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}

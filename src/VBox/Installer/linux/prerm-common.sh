@@ -30,13 +30,37 @@ MY_PATH="$(dirname $(readlink -f -- "${0}"))/"
 cd "${MY_PATH}"
 . "./routines.sh"
 
+DO_DKMS=
+VERSION=
+while true
+do
+    test -z "${1}" && break
+    case "${1}" in
+        --dkms)
+            DO_DKMS=true
+            shift
+            VERSION="${1}"
+            if test -z "${VERSION}"; then
+                echo "--dkms requires a version"
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Bad argument ${1}" >&2
+            exit 1
+            ;;
+    esac
+    shift
+done
+
 # Stop the ballon control service
 stop_init_script vboxballoonctrl-service 2>/dev/null
 # Stop the autostart service
 stop_init_script vboxautostart-service 2>/dev/null
 # Stop the web service
 stop_init_script vboxweb-service 2>/dev/null
-# Do this check here after we terminated the web service
+# Do this check here after we terminated the web service: check whether VBoxSVC
+# is running and exit if it can't be stopped.
 check_running
 # Terminate VBoxNetDHCP if running
 terminate_proc VBoxNetDHCP
@@ -48,6 +72,13 @@ delrunlevel vboxautostart-service
 remove_init_script vboxautostart-service
 delrunlevel vboxweb-service
 remove_init_script vboxweb-service
+DKMS=`which dkms 2>/dev/null`
+if test "$DO_DKMS" = true && test -n "$DKMS"; then
+  $DKMS remove -m vboxhost -v "${VERSION}" --all > /dev/null 2>&1
+  $DKMS remove -m vboxdrv -v "${VERSION}" --all > /dev/null 2>&1
+  $DKMS remove -m vboxnetflt -v "${VERSION}" --all > /dev/null 2>&1
+  $DKMS remove -m vboxnetadp -v "${VERSION}" --all > /dev/null 2>&1
+fi
 # Stop kernel module and uninstall runlevel script
 stop_init_script vboxdrv 2>/dev/null
 delrunlevel vboxdrv
