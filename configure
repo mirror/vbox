@@ -162,7 +162,7 @@ KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
 DEVDIR="`cd \`dirname $0\`; pwd`/tools"
 if [ -d "/lib/modules/`uname -r`/build" ]; then
  LINUX="/lib/modules/`uname -r`/build"
-elif [ /lib/modules/* != "/lib/modules/*" ]; then
+elif [ "`echo /lib/modules/*`" != "/lib/modules/*" ]; then
   # Get the most recent kernel headers if none match the current kernel.
   for i in /lib/modules/*; do
     LINUX="$i/build"
@@ -431,9 +431,9 @@ check_gcc()
              -o \( $cc_maj -eq 3 -a $cc_min -lt 2 \) \
              -o \( $cc_maj -eq 4 -a $cc_min -lt 1 -a "$OS" != "darwin" \) \
              -o \( $cc_maj -eq 4 -a $cc_min -gt 9 \) \
-             -o \( $cc_maj -eq 5 -a $cc_min -gt 1 \) \
+             -o \( $cc_maj -eq 5 -a $cc_min -gt 2 \) \
              -o $cc_maj -gt 5 ]; then
-        log_failure "gcc version $cc_maj.$cc_min found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<10 or gcc 5.1"
+        log_failure "gcc version $cc_maj.$cc_min found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<10 or gcc 5.2"
         fail really
       else
         log_success "found version $cc_ver"
