@@ -741,6 +741,9 @@ endif
 if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_NATIVE_DTRACE = 1
 endif
+# Makes it possible to run some of the testcases and tools on older
+# windows versions (only define when buildling win.x86).
+#VBOX_WITH_MORE_NT4_COMPAT_BINARIES = 1
 ## @}
 
 
@@ -3993,6 +3996,19 @@ ifeq ($(KBUILD_TARGET),win)
  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib
  TEMPLATE_VBOXR3EXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
+ if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
+  TEMPLATE_VBOXR3EXE_POST_CMDS.win.x86 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_VBOXR3EXE_POST_CMDS))
+  TEMPLATE_VBOXR3EXE_LNK_DEPS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
+  TEMPLATE_VBOXR3EXE_LDFLAGS.win.x86   = \
+  	-Include:_vcc100_kernel32_fakes_cpp \
+	-Include:_vcc100_kernel32_fakes_asm
+  TEMPLATE_VBOXR3EXE_LIBS.win.x86      = \
+  	$(PATH_STAGE_LIB)/RuntimeR3VccTricks$(VBOX_SUFF_LIB)
+  TEMPLATE_VBOXR3EXE_LIBS.x86          = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/oldnames.lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+ endif
 
 else # the gcc guys
 TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
@@ -4395,6 +4411,11 @@ else
  endif
 endif
 TEMPLATE_VBoxR3Tool_LIBS       = $(LIB_RUNTIME) $(TEMPLATE_VBOXR3EXE_LIBS)
+if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
+ TEMPLATE_VBoxR3Tool_LIBS.x86  = \
+ 	$(PATH_STAGE_LIB)/RuntimeR3VccTricks$(VBOX_SUFF_LIB) \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/oldnames.lib
+endif
 
 #
 # Template for building R3 shared objects / DLLs with the 10.5 Mac OS X SDK.
@@ -4462,6 +4483,12 @@ endif
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_SIGNING_MODE)
  TEMPLATE_VBOXR3TSTEXE_POST_CMDS =
  TEMPLATE_VBOXR3TSTEXE_LDFLAGS = $(filter-out -IntegrityCheck, $(TEMPLATE_VBOXR3EXE_LDFLAGS))
+endif
+if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
+ TEMPLATE_VBOXR3TSTEXE_POST_CMDS.win.x86 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out))
+ TEMPLATE_VBOXR3TSTEXE_LIBS.x86 = \
+ 	$(PATH_STAGE_LIB)/RuntimeR3VccTricks$(VBOX_SUFF_LIB) \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/oldnames.lib
 endif
 
 #
@@ -4551,6 +4578,33 @@ TEMPLATE_VBoxR3DllNonPedantic-x86_BLD_TRG_ARCH = x86
 TEMPLATE_VBoxR3DllNonPedantic-x86_DEFS      = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VBoxR3Dll_DEFS)) \
 	HC_ARCH_BITS=32 ARCH_BITS=32
 
+
+
+#
+# Template for building libraries that are linked into VBoxRT.dll
+# and it's variations, pedantic variation.
+#
+TEMPLATE_VBoxR3RuntimeDll = For libraries that are linked into VBoxRT.
+TEMPLATE_VBoxR3RuntimeDll_EXTENDS = VBoxR3Dll
+if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
+ TEMPLATE_VBoxR3RuntimeDll_CFLAGS   = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBoxR3Dll_CFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
+ TEMPLATE_VBoxR3RuntimeDll_CXXFLAGS = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBoxR3Dll_CXXFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
+ TEMPLATE_VBoxR3RuntimeDll_LIBS.x86 = $(filter-out $(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/%, $(TEMPLATE_VBoxR3Dll_LIBS.x86)) \
+ 	$(PATH_TOOL_$(TEMPLATE_VBoxR3RuntimeDll_TOOL.win.x86)_LIB)/oldnames.lib \
+ 	$(PATH_TOOL_$(TEMPLATE_VBoxR3RuntimeDll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+ 	$(PATH_TOOL_$(TEMPLATE_VBoxR3RuntimeDll_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+endif
+
+#
+# Template for building libraries that are linked into VBoxRT.dll
+# and it's variations, non-pedantic variation.
+#
+TEMPLATE_VBoxR3RuntimeDllNonPedantic = For libraries that are linked into VBoxRT, but must be excluded from -pedantic warnings.
+TEMPLATE_VBoxR3RuntimeDllNonPedantic_EXTENDS = VBoxR3DllNonPedantic
+if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && $(KBUILD_TARGET_ARCH) == "x86"
+ TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS   = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBoxR3DllNonPedantic_CFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
+ TEMPLATE_VBoxR3RuntimeDllNonPedantic_CXXFLAGS = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
+endif
 
 
 #

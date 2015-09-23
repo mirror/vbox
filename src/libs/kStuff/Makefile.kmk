@@ -22,7 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # The library for dynamic linking.
 #
 LIBRARIES += VBox-kStuff
-VBox-kStuff_TEMPLATE = VBOXR3
+VBox-kStuff_TEMPLATE = VBoxR3RuntimeDll
 VBox-kStuff_DEFS = IN_RT_R3
 VBox-kStuff_DEFS.strict = K_STRICT KLDRMODMACHO_STRICT KLDRMODMACHO_STRICT2
 VBox-kStuff_DEFS.debug  = $(VBox-kStuff_DEFS.strict)

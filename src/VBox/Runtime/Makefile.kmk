@@ -1335,7 +1335,9 @@ ifdef VBOX_WITH_LIBCURL
 endif
 VBoxRT_SDKS                   += VBOX_OPENSSL
 VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
-if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win$(VBOX_WITH_HARDENING))
+if1of ($(KBUILD_TARGET), win)
+VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE) $(VBOX_INST_TOOLS)
+else if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win$(VBOX_WITH_HARDENING))
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                   := $(filter-out RT_NO_GIP, $(RuntimeR3_DEFS)) \
@@ -1451,13 +1453,42 @@ VBoxRT_LDFLAGS.win             = /MANIFEST \
 if1of ($(DLLS), VBoxRT)
 $$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-$$(if-expr $$(KBUILD_TARGET_ARCH) == amd64,win64,win32).def \
-		$(PATH_SUB_CURRENT)/r3/win/$(if $(VBOX_OSE),VBoxRT-openssl-ose.def,VBoxRT-openssl.def)
+		$(PATH_SUB_CURRENT)/r3/win/$(if $(VBOX_OSE),VBoxRT-openssl-ose.def,VBoxRT-openssl.def) \
+		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" && defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES)\
+		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) #$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcp100-win32.def
 	$(RM) -f -- $@
 	$(REDIRECT) -wto $@ -- $(CAT_EXT) $^
 endif
 
 if1of (VBoxRT,$(DLLS))
  $(call VBOX_SET_VER_INFO_DLL,VBoxRT,VirtualBox Runtime)
+endif
+
+
+if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
+ #
+ # Hacks for running tests on NT 4.  Really ugly!
+ #
+ # We put most of the CRT in VBoxRT because we cannot even load msvcr100.dll
+ # or msvcp100.dll on NT4 because of kernel32.dll dependencies.  More hacks
+ # in RuntimeR3VccTricks.
+ #
+ TEMPLATE_VBoxR3RuntimeDllItself = xx
+ TEMPLATE_VBoxR3RuntimeDllItself_EXTENDS = VBoxR3RuntimeDll
+ TEMPLATE_VBoxR3RuntimeDllItself_LIBS.win.x86 = \
+ 	$(filter-out $(PATH_STAGE_LIB)/RuntimeR3VccTricks%, $(TEMPLATE_VBoxR3RuntimeDll_LIBS.win.x86))
+ TEMPLATE_VBoxR3RuntimeDllItself_SOURCES = \
+ 	r3/win/vcc100-kernel32-fakes.cpp \
+ 	r3/win/vcc100-kernel32-fakesA.asm \
+	r3/win/vcc100-msvcrt-fakes.cpp
+ VBoxRT_TEMPLATE         = VBoxR3RuntimeDllItself
+ VBoxRT_TEMPLATE.win.x86 = VBoxR3RuntimeDllItself
+ VBoxRT_DEFS.win.x86     = $(TEMPLATE_VBoxR3RuntimeDll_DEFS.win.x86) _CRTIMP_PURE="__declspec(dllexport)"
+ VBoxRT_LDFLAGS.win.x86  = /IGNORE:4049 /IGNORE:4217
+ VBoxRT_LIBS.win.x86 = \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/oldnames.lib \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/libcmt.lib \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/libcpmt.lib
 endif
 
 
@@ -2491,6 +2522,30 @@ RuntimeR3VccTricks_TEMPLATE = VBoxR3Dll
 RuntimeR3VccTricks_SOURCES  = \
  	r3/win/vcc100-kernel32-fakes.cpp \
  	r3/win/vcc100-kernel32-fakesA.asm
+
+if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" # Ugly hacks... :-)
+RuntimeR3VccTricks_SOURCES += $(RuntimeR3VccTricks_0_OUTDIR)/dynobjs.lib
+RuntimeR3VccTricks_CLEAN    = $(RuntimeR3VccTricks_0_OUTDIR)/dynobjs.lib
+RuntimeR3VccTricks_VBOX_LIBCMT_NEEDED = \
+
+$$(RuntimeR3VccTricks_0_OUTDIR)/dynobjs.lib: \
+		$$(PATH_TOOL_$$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+		$$(PATH_TOOL_$$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+		$$(LIB_RUNTIME) \
+		$(MAKEFILE) | $$(dir $$@)
+	$(RM) -f -- "$@"
+#	$(REDIRECT) -C $(dir $@) -- $(KBUILD_DEVTOOLS)/common/openwatcom/v1.9-r2/binnt/wlib \
+#               $(PATH_TOOL_$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+#               $(foreach file, $(RuntimeR3VccTricks_VBOX_LIBCMT_NEEDED), *$(file))
+	$(KBUILD_DEVTOOLS)/common/openwatcom/v1.9-r2/binnt/wlib -o=$@.tmp.lib $< \
+		-MSVCR100.dll \
+		$(addprefix $(RuntimeR3VccTricks_0_OUTDIR)/, $(RuntimeR3VccTricks_VBOX_LIBCMT_NEEDED)) \
+               -chandler4gs.obj
+	$(KBUILD_DEVTOOLS)/common/openwatcom/v1.9-r2/binnt/wlib -o=$@ \
+               $(LIB_RUNTIME) \
+		+$@.tmp.lib
+	$(RM) -f -- $@.tmp.lib $(addprefix $(RuntimeR3VccTricks_0_OUTDIR)/, $(RuntimeR3VccTricks_VBOX_LIBCMT_NEEDED))
+endif
 
 
 #

@@ -92,6 +92,8 @@ extern DECLHIDDEN(RTWINOSTYPE)      g_enmWinVer;
 extern DECLHIDDEN(HMODULE)          g_hModKernel32;
 extern DECLHIDDEN(HMODULE)          g_hModNtDll;
 extern DECLHIDDEN(OSVERSIONINFOEXW) g_WinOsInfoEx;
+typedef UINT (WINAPI *PFNGETWINSYSDIR)(LPWSTR,UINT);
+extern DECLHIDDEN(PFNGETWINSYSDIR)  g_pfnGetSystemWindowsDirectoryW;
 #endif
 
 

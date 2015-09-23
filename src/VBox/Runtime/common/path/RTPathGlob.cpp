@@ -44,6 +44,7 @@
 
 #if defined(RT_OS_WINDOWS)
 # include <Windows.h>
+# include "../../r3/win/internal-r3-win.h"
 
 #elif defined(RT_OS_OS2)
 # define INCL_BASE
@@ -499,8 +500,9 @@ static DECLCALLBACK(int) rtPathVarQuery_DosSystemDrive(uint32_t iItem, char *psz
 # ifdef RT_OS_WINDOWS
         /* Since this is used at the start of a pattern, we assume
            we've got more than enough buffer space. */
+        AssertReturn(g_pfnGetSystemWindowsDirectoryW, VERR_SYMBOL_NOT_FOUND);
         PRTUTF16 pwszTmp = (PRTUTF16)pszBuf;
-        UINT cch = GetSystemWindowsDirectoryW(pwszTmp, (UINT)(cbBuf / sizeof(WCHAR)));
+        UINT cch = g_pfnGetSystemWindowsDirectoryW(pwszTmp, (UINT)(cbBuf / sizeof(WCHAR)));
         if (cch >= 2)
         {
             RTUTF16 wcDrive = pwszTmp[0];
@@ -546,8 +548,9 @@ static DECLCALLBACK(int) rtPathVarQuery_WinSystemRoot(uint32_t iItem, char *pszB
     if (iItem == 0)
     {
         Assert(pszBuf); Assert(cbBuf);
+        AssertReturn(g_pfnGetSystemWindowsDirectoryW, VERR_SYMBOL_NOT_FOUND);
         RTUTF16 wszSystemRoot[MAX_PATH];
-        UINT cchSystemRoot = GetSystemWindowsDirectoryW(wszSystemRoot, MAX_PATH);
+        UINT cchSystemRoot = g_pfnGetSystemWindowsDirectoryW(wszSystemRoot, MAX_PATH);
         if (cchSystemRoot > 0)
             return RTUtf16ToUtf8Ex(wszSystemRoot, cchSystemRoot, &pszBuf, cbBuf, pcchValue);
         return RTErrConvertFromWin32(GetLastError());

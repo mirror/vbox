@@ -17,6 +17,7 @@ __imp__ %+ %1 %+ @ %+ %2:
 
 
 BEGINDATA
+GLOBALNAME vcc100_kernel32_fakes_asm
 
 MAKE_IMPORT_ENTRY DecodePointer, 4
 MAKE_IMPORT_ENTRY EncodePointer, 4

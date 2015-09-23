@@ -24,7 +24,7 @@ if1of ($(KBUILD_TARGET),os2 win)
  # only required for vbox-img
  LIBRARIES += VBox-liblzf-static
 endif
-VBox-liblzf_TEMPLATE = VBOXR3
+VBox-liblzf_TEMPLATE = VBoxR3RuntimeDll
 VBox-liblzf_BLD_TYPE = release # WARNING! Always optimizing this lib.
 VBox-liblzf_DEFS = ULTRA_FAST=1 HLOG=12
 VBox-liblzf_DEFS.x86 = STRICT_ALIGN=0

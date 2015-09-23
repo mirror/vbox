@@ -29,6 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/cdefs.h>
+#include <iprt/types.h>
 
 #ifndef RT_ARCH_X86
 # error "This code is X86 only"
@@ -137,5 +138,11 @@ HeapQueryInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS enmInfoClass, PVOID pv
 
     SetLastError(ERROR_INVALID_PARAMETER);
     return FALSE;
+}
+
+
+extern "C" int vcc100_kernel32_fakes_cpp(void)
+{
+    return 42;
 }
 
