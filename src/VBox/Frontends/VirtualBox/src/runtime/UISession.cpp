@@ -775,6 +775,9 @@ void UISession::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, 
 
 void UISession::sltHandleStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent)
 {
+    /* Update action restrictions: */
+    updateActionRestrictions();
+
     /* Notify listeners about storage device change: */
     emit sigStorageDeviceChange(attachment, fRemoved, fSilent);
 }
@@ -1056,83 +1059,8 @@ void UISession::prepareActions()
         /* Configure action-pool: */
         actionPool()->toRuntime()->setSession(this);
 
-        /* Get host: */
-        const CHost host = vboxGlobal().host();
-        UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictionForView = UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
-        UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictionForDevices = UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
-
-        /* VRDE server stuff: */
-        {
-            /* Initialize 'View' menu: */
-            const CVRDEServer server = machine().GetVRDEServer();
-            if (server.isNull())
-                restrictionForView = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)(restrictionForView | UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer);
-        }
-
-        /* Storage stuff: */
-        {
-            /* Initialize CD/FD menus: */
-            int iDevicesCountCD = 0;
-            int iDevicesCountFD = 0;
-            foreach (const CMediumAttachment &attachment, machine().GetMediumAttachments())
-            {
-                if (attachment.GetType() == KDeviceType_DVD)
-                    ++iDevicesCountCD;
-                if (attachment.GetType() == KDeviceType_Floppy)
-                    ++iDevicesCountFD;
-            }
-            QAction *pOpticalDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices);
-            QAction *pFloppyDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices);
-            pOpticalDevicesMenu->setData(iDevicesCountCD);
-            pFloppyDevicesMenu->setData(iDevicesCountFD);
-            if (!iDevicesCountCD)
-                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
-            if (!iDevicesCountFD)
-                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
-        }
-
-        /* Network stuff: */
-        {
-            /* Initialize Network menu: */
-            bool fAtLeastOneAdapterActive = false;
-            const KChipsetType chipsetType = machine().GetChipsetType();
-            ULONG uSlots = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType);
-            for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
-            {
-                const CNetworkAdapter &adapter = machine().GetNetworkAdapter(uSlot);
-                if (adapter.GetEnabled())
-                {
-                    fAtLeastOneAdapterActive = true;
-                    break;
-                }
-            }
-            if (!fAtLeastOneAdapterActive)
-                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
-        }
-
-        /* USB stuff: */
-        {
-            /* Check whether there is at least one USB controller with an available proxy. */
-            const bool fUSBEnabled =    !machine().GetUSBDeviceFilters().isNull()
-                                     && !machine().GetUSBControllers().isEmpty()
-                                     && machine().GetUSBProxyAvailable();
-            if (!fUSBEnabled)
-                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
-        }
-
-        /* WebCams stuff: */
-        {
-            /* Check whether there is an accessible video input devices pool: */
-            host.GetVideoInputDevices();
-            const bool fWebCamsEnabled = host.isOk() && !machine().GetUSBControllers().isEmpty();
-            if (!fWebCamsEnabled)
-                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
-        }
-
-        /* Apply cumulative restriction for 'View' menu: */
-        actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Session, restrictionForView);
-        /* Apply cumulative restriction for 'Devices' menu: */
-        actionPool()->toRuntime()->setRestrictionForMenuDevices(UIActionRestrictionLevel_Session, restrictionForDevices);
+        /* Update action restrictions: */
+        updateActionRestrictions();
 
 #ifdef Q_WS_MAC
         /* Create Mac OS X menu-bar: */
@@ -1979,6 +1907,87 @@ void UISession::updateHostScreenData()
     m_hostScreens.clear();
     for (int iScreenIndex = 0; iScreenIndex < vboxGlobal().screenCount(); ++iScreenIndex)
         m_hostScreens << vboxGlobal().screenGeometry(iScreenIndex);
+}
+
+void UISession::updateActionRestrictions()
+{
+    /* Get host and prepare restrictions: */
+    const CHost host = vboxGlobal().host();
+    UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictionForView = UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
+    UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictionForDevices = UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
+
+    /* VRDE server stuff: */
+    {
+        /* Initialize 'View' menu: */
+        const CVRDEServer server = machine().GetVRDEServer();
+        if (server.isNull())
+            restrictionForView = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)(restrictionForView | UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer);
+    }
+
+    /* Storage stuff: */
+    {
+        /* Initialize CD/FD menus: */
+        int iDevicesCountCD = 0;
+        int iDevicesCountFD = 0;
+        foreach (const CMediumAttachment &attachment, machine().GetMediumAttachments())
+        {
+            if (attachment.GetType() == KDeviceType_DVD)
+                ++iDevicesCountCD;
+            if (attachment.GetType() == KDeviceType_Floppy)
+                ++iDevicesCountFD;
+        }
+        QAction *pOpticalDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices);
+        QAction *pFloppyDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices);
+        pOpticalDevicesMenu->setData(iDevicesCountCD);
+        pFloppyDevicesMenu->setData(iDevicesCountFD);
+        if (!iDevicesCountCD)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
+        if (!iDevicesCountFD)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
+    }
+
+    /* Network stuff: */
+    {
+        /* Initialize Network menu: */
+        bool fAtLeastOneAdapterActive = false;
+        const KChipsetType chipsetType = machine().GetChipsetType();
+        ULONG uSlots = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType);
+        for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
+        {
+            const CNetworkAdapter &adapter = machine().GetNetworkAdapter(uSlot);
+            if (adapter.GetEnabled())
+            {
+                fAtLeastOneAdapterActive = true;
+                break;
+            }
+        }
+        if (!fAtLeastOneAdapterActive)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
+    }
+
+    /* USB stuff: */
+    {
+        /* Check whether there is at least one USB controller with an available proxy. */
+        const bool fUSBEnabled =    !machine().GetUSBDeviceFilters().isNull()
+                                 && !machine().GetUSBControllers().isEmpty()
+                                 && machine().GetUSBProxyAvailable();
+        if (!fUSBEnabled)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
+    }
+
+    /* WebCams stuff: */
+    {
+        /* Check whether there is an accessible video input devices pool: */
+        host.GetVideoInputDevices();
+        const bool fWebCamsEnabled = host.isOk() && !machine().GetUSBControllers().isEmpty();
+        if (!fWebCamsEnabled)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
+    }
+
+    /* Apply cumulative restriction for 'View' menu: */
+    actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Session, restrictionForView);
+    /* Apply cumulative restriction for 'Devices' menu: */
+    actionPool()->toRuntime()->setRestrictionForMenuDevices(UIActionRestrictionLevel_Session, restrictionForDevices);
 }
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER

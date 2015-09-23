@@ -380,6 +380,9 @@ private:
     /** Update host-screen data. */
     void updateHostScreenData();
 
+    /** Updates action restrictions. */
+    void updateActionRestrictions();
+
     /* Private variables: */
     UIMachine *m_pMachine;
 
