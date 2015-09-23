@@ -199,7 +199,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 #define RTPROC_FLAGS_SAME_CONTRACT          RT_BIT(3)
 /** Load user profile data when executing a process.
  * This redefines the meaning of RTENV_DEFAULT to the profile environment.
- * This bit is at the moment only supported on Windows. */
+ * @remarks On non-windows platforms, the resulting environment maybe very
+ *          different from what you see in your shell.  Among other reasons,
+ *          we cannot run shell profile scripts which typically sets up the
+ *          environment. */
 #define RTPROC_FLAGS_PROFILE                RT_BIT(4)
 /** Create process without a console window.
  * This is a Windows (and OS/2) concept, do not use on other platforms. */
