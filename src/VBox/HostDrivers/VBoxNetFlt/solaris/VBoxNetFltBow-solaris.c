@@ -328,7 +328,7 @@ int _fini(void)
     rc = vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltSolarisGlobals);
     if (RT_FAILURE(rc))
     {
-        LogRel((DEVICE_NAME ":_fini - busy!\n"));
+        LogRel((DEVICE_NAME ":_fini - busy! rc=%d\n", rc));
         return EBUSY;
     }
 
