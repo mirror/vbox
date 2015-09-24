@@ -115,6 +115,15 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         {
             DWORD uError = GetLastError();
 
+            if (uError == ERROR_IO_PENDING)
+            {
+                uError = 0;
+
+                /* Wait for incoming bytes. */
+                if (GetOverlappedResult(pThis->NamedPipe, &pThis->OverlappedRead, &cbReallyRead, TRUE) == FALSE)
+                    uError = GetLastError();
+            }
+
             if (   uError == ERROR_PIPE_LISTENING
                 || uError == ERROR_PIPE_NOT_CONNECTED)
             {
@@ -126,15 +135,6 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
             }
             else
             {
-                if (uError == ERROR_IO_PENDING)
-                {
-                    uError = 0;
-
-                    /* Wait for incoming bytes. */
-                    if (GetOverlappedResult(pThis->NamedPipe, &pThis->OverlappedRead, &cbReallyRead, TRUE) == FALSE)
-                        uError = GetLastError();
-                }
-
                 rc = RTErrConvertFromWin32(uError);
                 Log(("drvNamedPipeRead: ReadFile returned %d (%Rrc)\n", uError, rc));
             }
