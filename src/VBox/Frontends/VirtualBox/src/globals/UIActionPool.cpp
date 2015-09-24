@@ -111,7 +111,7 @@ UIAction::UIAction(UIActionPool *pParent, UIActionType type)
 
 UIMenu* UIAction::menu() const
 {
-    return qobject_cast<UIMenu*>(QAction::menu());
+    return QAction::menu() ? qobject_cast<UIMenu*>(QAction::menu()) : 0;
 }
 
 UIActionPolymorphic* UIAction::toActionPolymorphic()
@@ -958,9 +958,11 @@ void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIE
 void UIActionPool::sltHandleMenuPrepare()
 {
     /* Make sure menu is valid: */
+    AssertPtrReturnVoid(sender());
     UIMenu *pMenu = qobject_cast<UIMenu*>(sender());
     AssertPtrReturnVoid(pMenu);
     /* Make sure action is valid: */
+    AssertPtrReturnVoid(pMenu->menuAction());
     UIAction *pAction = qobject_cast<UIAction*>(pMenu->menuAction());
     AssertPtrReturnVoid(pAction);
 
