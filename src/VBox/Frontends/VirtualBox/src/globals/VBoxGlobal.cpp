@@ -231,6 +231,7 @@ void VBoxGlobal::destroy()
 
 VBoxGlobal::VBoxGlobal()
     : mValid (false)
+    , m_fWrappersValid(false)
     , m_fVBoxSVCAvailable(true)
     , m_fSeparateProcess(false)
     , m_pMediumEnumerator(0)
@@ -4021,6 +4022,8 @@ void VBoxGlobal::prepare()
     m_vbox = virtualBoxClient().GetVirtualBox();
     m_host = virtualBox().GetHost();
     m_strHomeFolder = virtualBox().GetHomeFolder();
+    /* Mark wrappers valid: */
+    m_fWrappersValid = true;
 
     /* Watch for the VBoxSVC availability changes: */
     connect(gVBoxEvents, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
@@ -4378,6 +4381,11 @@ void VBoxGlobal::prepare()
     /* Schedule update manager: */
     UIUpdateManager::schedule();
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+#ifdef RT_OS_LINUX
+    /* Make sure no wrong USB mounted: */
+    checkForWrongUSBMounted();
+#endif /* RT_OS_LINUX */
 }
 
 void VBoxGlobal::cleanup()
@@ -4466,6 +4474,39 @@ void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
 
     /* Cache the new VBoxSVC availability value: */
     m_fVBoxSVCAvailable = fAvailable;
+
+    /* If VBoxSVC is not available: */
+    if (!m_fVBoxSVCAvailable)
+    {
+        /* Mark wrappers invalid: */
+        m_fWrappersValid = false;
+        /* Re-fetch corresponding CVirtualBox to restart VBoxSVC: */
+        // CVirtualBox is still NULL in current Main implementation,
+        // and this call do not restart anything, so we are waiting
+        // for subsequent event about VBoxSVC is available again.
+        m_vbox = virtualBoxClient().GetVirtualBox();
+    }
+    /* If VBoxSVC is available: */
+    else
+    {
+        if (!m_fWrappersValid)
+        {
+            /* Re-fetch corresponding objects/values: */
+            m_vbox = virtualBoxClient().GetVirtualBox();
+            m_host = virtualBox().GetHost();
+            m_strHomeFolder = virtualBox().GetHomeFolder();
+            /* Mark wrappers valid: */
+            m_fWrappersValid = true;
+
+            /* If that is Selector UI: */
+            if (!isVMConsoleProcess())
+            {
+                /* Recreate/show selector-window: */
+                UISelectorWindow::destroy();
+                UISelectorWindow::create();
+            }
+        }
+    }
 
     /* Notify listeners about the VBoxSVC availability change: */
     emit sigVBoxSVCAvailabilityChange();
@@ -4584,10 +4625,48 @@ bool VBoxGlobal::isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-/** @fn vboxGlobal
- *
- *  Shortcut to the static VBoxGlobal::instance() method, for convenience.
- */
+bool VBoxGlobal::showUI()
+{
+    /* Load application settings: */
+    VBoxGlobalSettings appSettings = settings();
+
+    /* Show Selector UI: */
+    if (!isVMConsoleProcess())
+    {
+        /* Make sure Selector UI is permitted: */
+        if (appSettings.isFeatureActive("noSelector"))
+        {
+            msgCenter().cannotStartSelector();
+            return false;
+        }
+
+#ifdef VBOX_BLEEDING_EDGE
+        /* Show EXPERIMENTAL BUILD warning: */
+        msgCenter().showExperimentalBuildWarning();
+#else /* !VBOX_BLEEDING_EDGE */
+# ifndef DEBUG
+        /* Show BETA warning if necessary: */
+        const QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
+        if (   vboxVersion.contains("BETA")
+            && gEDataManager->preventBetaBuildWarningForVersion() != vboxVersion)
+            msgCenter().showBetaBuildWarning();
+# endif /* !DEBUG */
+#endif /* !VBOX_BLEEDING_EDGE */
+
+        /* Create/show selector-window: */
+        UISelectorWindow::create();
+    }
+    /* Show Runtime UI: */
+    else
+    {
+        /* Make sure machine is started: */
+        if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
+            return false;
+    }
+
+    /* True by default: */
+    return true;
+}
 
 bool VBoxGlobal::switchToMachine(CMachine &machine)
 {

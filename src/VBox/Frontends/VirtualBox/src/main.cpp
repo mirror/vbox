@@ -20,52 +20,57 @@
 #else /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QLocale>
 # include <QMessageBox>
-# include <QTranslator>
 
 /* GUI includes: */
-# include "VBoxUtils.h"
 # include "VBoxGlobal.h"
 # include "UIMachine.h"
-# include "UIMessageCenter.h"
 # include "UISelectorWindow.h"
-# include "UIExtraDataManager.h"
 # include "UIModalWindowManager.h"
+# ifdef VBOX_WITH_HARDENING
+#  include "QIMessageBox.h"
+# endif /* VBOX_WITH_HARDENING */
 # ifdef Q_WS_MAC
+#  include "VBoxUtils.h"
 #  include "UICocoaApplication.h"
 # endif /* Q_WS_MAC */
 
 /* Other VBox includes: */
-# include <iprt/asm.h>
 # include <iprt/buildconfig.h>
-# include <iprt/initterm.h>
-# include <iprt/process.h>
 # include <iprt/stream.h>
-# include <iprt/system.h>
 # include <VBox/version.h>
+# ifdef VBOX_WITH_HARDENING
+#  include <VBox/sup.h>
+# else /* !VBOX_WITH_HARDENING */
+#  include <iprt/initterm.h>
+#  ifdef Q_WS_MAC
+#   include <iprt/asm.h>
+#  endif /* Q_WS_MAC */
+# endif /* !VBOX_WITH_HARDENING */
 # ifdef Q_WS_X11
 #  include <iprt/env.h>
 # endif /* Q_WS_X11 */
-#ifdef VBOX_WITH_HARDENING
-# include <VBox/sup.h>
-#endif /* VBOX_WITH_HARDENING */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QCleanlooksStyle>
-#include <QPlastiqueStyle>
 #ifdef Q_WS_X11
-# include <QFontDatabase>
+# ifdef Q_OS_SOLARIS
+#  include <QPlastiqueStyle>
+# endif /* Q_OS_SOLARIS */
+# ifndef Q_OS_SOLARIS
+#  include <QFontDatabase>
+# endif /* !Q_OS_SOLARIS */
 #endif /* Q_WS_X11 */
 
 /* Other VBox includes: */
-#include <iprt/ctype.h>
-#include <VBox/err.h>
+#ifdef VBOX_WITH_HARDENING
+# include <iprt/ctype.h>
+#else /* !VBOX_WITH_HARDENING */
+# include <VBox/err.h>
+#endif /* !VBOX_WITH_HARDENING */
 
 /* Other includes: */
-#include <cstdio>
 #ifdef Q_WS_MAC
 # include <dlfcn.h>
 # include <sys/mman.h>
@@ -320,11 +325,11 @@ static void ShowHelp()
 
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 {
-    /* Start logging: */
-    LogFlowFuncEnter();
-
     /* Failed result initially: */
     int iResultCode = 1;
+
+    /* Start logging: */
+    LogFlowFuncEnter();
 
     /* Simulate try-catch block: */
     do
@@ -465,56 +470,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             if (!vboxGlobal().isValid())
                 break;
 
-            /* Exit if VBoxGlobal was able to pre-process arguments: */
+            /* Exit if VBoxGlobal pre-processed arguments: */
             if (vboxGlobal().processArgs())
                 break;
 
-#ifdef RT_OS_LINUX
-            /* Make sure no wrong USB mounted: */
-            VBoxGlobal::checkForWrongUSBMounted();
-#endif /* RT_OS_LINUX */
+            /* Exit if VBoxGlobal is unable to show UI: */
+            if (!vboxGlobal().showUI())
+                break;
 
-            /* Load application settings: */
-            VBoxGlobalSettings settings = vboxGlobal().settings();
-
-            /* VM console process: */
-            if (vboxGlobal().isVMConsoleProcess())
-            {
-                /* Make sure VM is started: */
-                if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
-                    break;
-
-                /* Start application: */
-                iResultCode = a.exec();
-            }
-            /* VM selector process: */
-            else
-            {
-                /* Make sure VM selector is permitted: */
-                if (settings.isFeatureActive("noSelector"))
-                {
-                    msgCenter().cannotStartSelector();
-                    break;
-                }
-
-#ifdef VBOX_BLEEDING_EDGE
-                msgCenter().showExperimentalBuildWarning();
-#else /* VBOX_BLEEDING_EDGE */
-# ifndef DEBUG
-                /* Check for BETA version: */
-                const QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
-                if (   vboxVersion.contains("BETA")
-                    && gEDataManager->preventBetaBuildWarningForVersion() != vboxVersion)
-                    msgCenter().showBetaBuildWarning();
-# endif /* !DEBUG */
-#endif /* !VBOX_BLEEDING_EDGE*/
-
-                /* Create/show selector window: */
-                UISelectorWindow::create();
-
-                /* Start application: */
-                iResultCode = a.exec();
-            }
+            /* Start application: */
+            iResultCode = a.exec();
         }
         while (0);
 

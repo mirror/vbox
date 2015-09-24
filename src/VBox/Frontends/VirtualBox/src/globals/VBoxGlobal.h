@@ -190,6 +190,9 @@ public:
 
     bool processArgs();
 
+    /** Shows UI. */
+    bool showUI();
+
     bool switchToMachine(CMachine &machine);
 
     bool launchMachine(CMachine &machine, LaunchMode enmLaunchMode = LaunchMode_Default);
@@ -528,7 +531,9 @@ private:
     /** Holds the symbolic VirtualBox home-folder representation. */
     QString m_strHomeFolder;
 
-    /** Holds the VBoxSVC availability value. */
+    /** Holds whether acquired COM wrappers are currently valid. */
+    bool m_fWrappersValid;
+    /** Holds whether VBoxSVC is currently available. */
     bool m_fVBoxSVCAvailable;
 
     VBoxGlobalSettings gset;
