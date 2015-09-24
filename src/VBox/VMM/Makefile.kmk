@@ -375,6 +375,9 @@ if1of ($(VBOX_LDR_FMT), pe lx)
  VMMR0Imp_TEMPLATE = VBoxR0
  VMMR0Imp_SOURCES  = $(VMMR0Imp_0_OUTDIR)/VMMR0.def
  VMMR0Imp_CLEAN    = $(VMMR0Imp_0_OUTDIR)/VMMR0.def
+ ifeq ($(KBUILD_TARGET),win) # Experiment: Let's see how blunt the ones messing our NULL_THUNK_DATA entries on W10 are.
+  VMMR0Imp_POST_CMDS = $(KLIBTWEAKER_EXT) --clear-timestamps --fill-null_thunk_data $(out)
+ endif
 
  $$(VMMR0Imp_0_OUTDIR)/VMMR0.def: $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def | $$(dir $$@)
  ifeq ($(VBOX_LDR_FMT),lx)
@@ -644,12 +647,6 @@ ifndef VBOX_ONLY_EXTPACKS
  ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
   VMMR0_LIBS += \
   	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
- endif
-
- ifeq ($(KBUILD_TARGET),win) # Experiment: Let's see how blunt the ones messing our NULL_THUNK_DATA entries on W10 are.
-  ifdef KLIBTWEAKER_EXT
-   VMMR0_POST_CMDS = $(KLIBTWEAKER_EXT) --clear-timestamps --fill-null_thunk_data $(outbase).lib
-  endif
  endif
 
  $(call VBOX_SET_VER_INFO_R0,VMMR0,VirtualBox VMM - ring-0 context parts) # Version info / description.
