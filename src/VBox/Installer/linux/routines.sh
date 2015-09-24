@@ -236,16 +236,17 @@ install_init_script()
     ## Name for the service.
     name="$2"
 
-    test -x "$script" && test ! "$name" = "" ||
-        { echo "$self: invalid arguments" >&2; return 1; }
+    test -x "${script}" && test ! "${name}" = "" ||
+        { echo "${self}: invalid arguments" >&2; return 1; }
+    ln -s "${script}" "/sbin/rc${name}"
     test -x "`which systemctl 2>/dev/null`" &&
         { systemd_wrap_init_script "$script" "$name"; return; }
     if test -d /etc/rc.d/init.d; then
-        cp "$script" "/etc/rc.d/init.d/$name" &&
-            chmod 755 "/etc/rc.d/init.d/$name"
+        cp "${script}" "/etc/rc.d/init.d/${name}" &&
+            chmod 755 "/etc/rc.d/init.d/${name}"
     elif test -d /etc/init.d; then
-        cp "$script" "/etc/init.d/$name" &&
-            chmod 755 "/etc/init.d/$name"
+        cp "${script}" "/etc/init.d/${name}" &&
+            chmod 755 "/etc/init.d/${name}"
     else
         { echo "${self}: error: unknown init type" >&2; return 1; }
     fi
@@ -258,8 +259,9 @@ remove_init_script()
     ## Name of the service to remove.
     name="$1"
 
-    test -n "$name" ||
+    test -n "${name}" ||
         { echo "$self: missing argument"; return 1; }
+    rm -f "/sbin/rc${name}"
     rm -f /lib/systemd/system/"$name".service /usr/lib/systemd/system/"$name".service
     rm -f "/etc/rc.d/init.d/$name"
     rm -f "/etc/init.d/$name"

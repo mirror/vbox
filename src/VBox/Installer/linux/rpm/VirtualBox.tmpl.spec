@@ -171,13 +171,9 @@ if [ -d accessible ]; then
   mv accessible $RPM_BUILD_ROOT/usr/lib/virtualbox
 fi
 mv vboxdrv.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-ln -sf /usr/lib/virtualbox/vboxdrv.sh $RPM_BUILD_ROOT/sbin/rcvboxdrv
 mv vboxballoonctrl-service.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-ln -sf /usr/lib/virtualbox/vboxballoonctrl-service.sh $RPM_BUILD_ROOT/sbin/rcvboxballoonctrl-service
 mv vboxautostart-service.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-ln -sf /usr/lib/virtualbox/vboxautostart-service.sh $RPM_BUILD_ROOT/sbin/rcvboxautostart-service
 mv vboxweb-service.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-ln -sf /usr/lib/virtualbox/vboxweb-service.sh $RPM_BUILD_ROOT/sbin/rcvboxweb-service
 mv postinst-common.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv prerm-common.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv routines.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
@@ -315,10 +311,10 @@ if [ "$INSTALL_NO_VBOXDRV" = "1" ]; then
   rm -f /lib/modules/*/misc/vboxpci.ko
 fi
 if [ $BUILD_MODULES -eq 1 ]; then
-  /sbin/rcvboxdrv setup || true
+  /usr/lib/virtualbox/vboxdrv.sh setup || true
 else
   if lsmod | grep -q "vboxdrv[^_-]"; then
-    /sbin/rcvboxdrv stop || true
+    /usr/lib/virtualbox/vboxdrv.sh stop || true
   fi
 fi
 # Install and start the new service scripts.
@@ -366,10 +362,6 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{!?is_ose: VirtualBox*.chm}
 %{?rpm_suse: %{py_sitedir}/*}
 %{!?rpm_suse: %{python_sitelib}/*}
-/sbin/rcvboxdrv
-/sbin/rcvboxballoonctrl-service
-/sbin/rcvboxautostart-service
-/sbin/rcvboxweb-service
 /etc/vbox
 /usr/bin/*
 /usr/src/vbox*

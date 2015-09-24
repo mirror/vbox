@@ -401,7 +401,6 @@ if [ "$ACTION" = "install" ]; then
     if [ -f $INSTALLATION_DIR/VBoxDTrace ]; then
         ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxDTrace
     fi
-    ln -sf $INSTALLATION_DIR/vboxdrv.sh /sbin/rcvboxdrv
     # Unity and Nautilus seem to look here for their icons
     ln -sf $INSTALLATION_DIR/icons/128x128/virtualbox.png /usr/share/pixmaps/virtualbox.png
     ln -sf $INSTALLATION_DIR/virtualbox.desktop /usr/share/applications/virtualbox.desktop
