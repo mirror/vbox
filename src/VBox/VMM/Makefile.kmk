@@ -648,7 +648,7 @@ ifndef VBOX_ONLY_EXTPACKS
 
  ifeq ($(KBUILD_TARGET),win) # Experiment: Let's see how blunt the ones messing our NULL_THUNK_DATA entries on W10 are.
   ifdef KLIBTWEAKER_EXT
-   VMMR0_POST_CMDS = $(KLIBTWEAKER_EXT) --clear-timestamps --fill-null_thunk_data $(out)
+   VMMR0_POST_CMDS = $(KLIBTWEAKER_EXT) --clear-timestamps --fill-null_thunk_data $(outbase).lib
   endif
  endif
 
