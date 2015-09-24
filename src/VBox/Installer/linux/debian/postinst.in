@@ -89,83 +89,41 @@ fi # $1 = "configure"
 
 #DEBHELPER#
 
-if [ "$1" = "configure" ]; then
-  # Start vboxdrv/vboxballoonctrl/vboxweb-service manually as we use our own error handling in postrm
-  if [ -x "/etc/init.d/vboxdrv" ]; then
-    update-rc.d vboxdrv defaults 20 80 >/dev/null
-
-    BUILD_MODULES=0
-    REGISTER_MODULES=1
-    # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
-    if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
-      REGISTER_MODULES=0
-      if [ "$INSTALL_NO_VBOXDRV" != "1" ]; then
-        db_get virtualbox/module-compilation-allowed
-        if [ "$RET" = "false" ]; then
-          cat << EOF
+BUILD_MODULES=0
+REGISTER_MODULES=1
+# Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
+if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
+  REGISTER_MODULES=0
+  if [ "$1" = "configure" ]; then
+    if [ "$INSTALL_NO_VBOXDRV" != "1" ]; then
+      db_get virtualbox/module-compilation-allowed
+      if [ "$RET" = "false" ]; then
+        cat << EOF
 Unable to find a precompiled module for the current kernel
 though module compilation denied by debconf setting.
 EOF
-        else
-          db_input low virtualbox/module-compilation-allowed || true
-          db_go || true
-          db_get virtualbox/module-compilation-allowed
-          if [ "$RET" = "true" ]; then
-            BUILD_MODULES=1
-          fi
+      else
+        db_input low virtualbox/module-compilation-allowed || true
+        db_go || true
+        db_get virtualbox/module-compilation-allowed
+        if [ "$RET" = "true" ]; then
+          BUILD_MODULES=1
         fi
       fi
     fi
+  fi # $1 = "configure"
+fi
 
-    if [ $BUILD_MODULES -eq 1 ]; then
-      if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-        invoke-rc.d vboxdrv setup || true
-      else
-        /etc/init.d/vboxdrv setup || true
-      fi
-    else
-      # shipped modules found, register sources at DKMS anyway
-      if lsmod | grep -q "vboxdrv[^_-]"; then
-        /etc/init.d/vboxdrv stop || true
-      fi
-      if [ $REGISTER_MODULES -eq 1 ]; then
-        DKMS=`which dkms 2>/dev/null`
-        if [ -n "$DKMS" ]; then
-          $DKMS add -m vboxhost -v %VER% > /dev/null 2>&1 || true
-        fi
-      fi
-      if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-        invoke-rc.d vboxdrv start || exit $?
-      else
-        /etc/init.d/vboxdrv start || exit $?
-      fi
-    fi
-  fi
-  if [ -x "/etc/init.d/vboxballoonctrl-service" ]; then
-    update-rc.d vboxballoonctrl-service defaults 35 65 >/dev/null
-    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-        invoke-rc.d vboxballoonctrl-service start || exit $?
-    else
-        /etc/init.d/vboxballoonctrl-service start || exit $?
-    fi
-  fi
-  if [ -x "/etc/init.d/vboxautostart-service" ]; then
-    update-rc.d vboxautostart-service defaults 35 65 >/dev/null
-    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-        invoke-rc.d vboxautostart-service start || exit $?
-    else
-        /etc/init.d/vboxautostart-service start || exit $?
-    fi
-  fi
-  if [ -x "/etc/init.d/vboxweb-service" ]; then
-    update-rc.d vboxweb-service defaults 35 65 >/dev/null
-    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-        invoke-rc.d vboxweb-service start || exit $?
-    else
-        /etc/init.d/vboxweb-service start || exit $?
-    fi
-  fi
+if [ $BUILD_MODULES -eq 1 ]; then
+  /usr/lib/virtualbox/vboxdrv.sh setup || true
+fi
 
-fi # $1 = "configure"
+# Install and start the new service scripts.
+PRERM_DKMS=
+test "${REGISTER_MODULES}" = 1 && PRERM_DKMS="--dkms %VER%"
+POSTINST_START=--start
+test "${INSTALL_NO_VBOXDRV}" = 1 && POSTINST_START=
+/usr/lib/virtualbox/prerm-common.sh ${PRERM_DKMS} || true
+/usr/lib/virtualbox/postinst-common.sh /usr/lib/virtualbox "${POSTINST_START}" > /dev/null || true
 
 exit 0

@@ -25,35 +25,6 @@ if [ "$1" = "install" -o "$1" = "upgrade" ]; then
   db_version 2.0
   db_capb backup
 
-  # check for active VMs
-  VBOXSVC_PID=`pidof VBoxSVC 2> /dev/null || true`
-  if [ -n "$VBOXSVC_PID" ]; then
-    if [ -f /etc/init.d/vboxballoonctrl-service ]; then
-      # try graceful termination; terminate the ballon control service first
-      if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-        invoke-rc.d vboxballoonctrl-service stop || true
-      else
-        /etc/init.d/vboxballoonctrl-service stop || true
-      fi
-    fi
-    if [ -f /etc/init.d/vboxweb-service ]; then
-      # try graceful termination; terminate the webservice first
-      if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-        invoke-rc.d vboxweb-service stop || true
-      else
-        /etc/init.d/vboxweb-service stop || true
-      fi
-    fi
-    kill -USR1 $VBOXSVC_PID
-    sleep 1
-    if pidof VBoxSVC > /dev/null 2>&1; then
-      db_fset virtualbox/old-running seen false || true
-      db_input critical virtualbox/old-running || true
-      db_go || true
-      exit 1
-    fi
-  fi
-
   # check for old installation
   if [ -r /etc/vbox/vbox.cfg ]; then
     . /etc/vbox/vbox.cfg
@@ -64,6 +35,29 @@ if [ "$1" = "install" -o "$1" = "upgrade" ]; then
       exit 1
     fi
     # we will remove that file in postinst
+  fi
+
+  # check for active VMs
+  # Execute the installed package's pre-uninstaller if present.
+  /usr/lib/virtualbox/prerm-common.sh 2>/dev/null || true
+  # Stop services from older versions without pre-uninstaller.
+  invoke-rc.d vboxballoonctrl-service stop 2>/dev/null || true
+  /etc/init.d/vboxballoonctrl-service stop 2>/dev/null || true
+  invoke-rc.d vboxautostart-service stop 2>/dev/null || true
+  /etc/init.d/vboxautostart-service stop 2>/dev/null || true
+  invoke-rc.d vboxweb-service stop 2>/dev/null || true
+  /etc/init.d/vboxweb-service stop 2>/dev/null || true
+  VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null || true`
+  if [ -n "$VBOXSVC_PID" ]; then
+    # ask the daemon to terminate immediately
+    kill -USR1 $VBOXSVC_PID
+    sleep 1
+    if pidof VBoxSVC > /dev/null 2>&1; then
+      db_fset virtualbox/old-running seen false || true
+      db_input critical virtualbox/old-running || true
+      db_go || true
+      exit 1
+    fi
   fi
 
   # check for old vboxdrv modules

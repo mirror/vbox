@@ -16,7 +16,6 @@
 #  upgrade:          (new version): upgrade to a new version
 #  failed-upgrade:   (our version): failed to upgrade
 #  remove:           (our version): remove this package
-#  purge:            (our version): purge this package
 #  deconfigure:      (our version): removing conflicting version
 
 rm -f /etc/udev/rules.d/60-vboxdrv.rules
@@ -26,61 +25,17 @@ rm -f /etc/vbox/module_not_compiled
 # defaults
 [ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
-if [ "$1" = "upgrade" -o "$1" = "remove" -o "$1" = "failed-upgrade" ]; then
-  . /usr/share/debconf/confmodule
-  db_version 2.0
-  db_capb backup
+. /usr/share/debconf/confmodule
+db_version 2.0
+db_capb backup
 
-  # check for active VMs
-  VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null`
-  if [ -n "$VBOXSVC_PID" ]; then
-    # try graceful termination; terminate the balloon control servic first
-    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-      invoke-rc.d vboxballoonctrl-service stop || true
-    else
-      /etc/init.d/vboxballoonctrl-service stop || true
-    fi
-    # try graceful termination; terminate the webservice first
-    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-      invoke-rc.d vboxweb-service stop || true
-    else
-      /etc/init.d/vboxweb-service stop || true
-    fi
-    kill -USR1 $VBOXSVC_PID
-    sleep 1
-    if pidof VBoxSVC > /dev/null 2>&1; then
-      if [ "$1" != "failed-upgrade" ]; then
-        db_fset virtualbox/old-running seen false || true
-        db_input critical virtualbox/old-running || true
-        db_go || true
-      fi
-      exit 1
-    fi
+if ! /usr/lib/virtualbox/prerm-common.sh --dkms %VER% > /dev/null 2>&1; then
+  if [ "$1" != "failed-upgrade" ]; then
+    db_fset virtualbox/old-running seen false || true
+    db_input critical virtualbox/old-running || true
+    db_go || true
   fi
-fi
-
-# make sure we de-register the DMKS modules before the files get removed
-if [ "$1" = "upgrade" -o "$1" = "remove" -o "$1" = "deconfigure" ]; then
-  DKMS=`which dkms 2>/dev/null`
-  if [ -n "$DKMS" ]; then
-    $DKMS remove -m vboxhost -v %VER% --all > /dev/null 2>&1 || true
-  fi
-fi
-
-# stop vboxnet/vboxdrv manually as we use our own error handling in postrm
-if [ -x "/etc/init.d/vboxdrv" ]; then
-  if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-    invoke-rc.d vboxdrv stop || exit $?
-  else
-    /etc/init.d/vboxdrv stop || exit $?
-  fi
-fi
-if [ -x "/etc/init.d/vboxnet" ]; then
-  if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-    invoke-rc.d vboxnet stop || exit $?
-  else
-    /etc/init.d/vboxnet stop || exit $?
-  fi
+  exit 1
 fi
 
 #DEBHELPER#
