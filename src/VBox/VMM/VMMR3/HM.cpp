@@ -670,8 +670,9 @@ static int hmR3InitCPU(PVM pVM)
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM, &pVM->hm.s.StatTprPatchSuccess,   STAMTYPE_COUNTER, "/HM/TPR/Patch/Success",  STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
     STAM_REG(pVM, &pVM->hm.s.StatTprPatchFailure,   STAMTYPE_COUNTER, "/HM/TPR/Patch/Failed",   STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
-    STAM_REG(pVM, &pVM->hm.s.StatTprReplaceSuccess, STAMTYPE_COUNTER, "/HM/TPR/Replace/Success",STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
-    STAM_REG(pVM, &pVM->hm.s.StatTprReplaceFailure, STAMTYPE_COUNTER, "/HM/TPR/Replace/Failed", STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
+    STAM_REG(pVM, &pVM->hm.s.StatTprReplaceSuccessCr8, STAMTYPE_COUNTER, "/HM/TPR/Replace/SuccessCR8",STAMUNIT_OCCURENCES, "Number of instruction replacements by MOV CR8.");
+    STAM_REG(pVM, &pVM->hm.s.StatTprReplaceSuccessVmc, STAMTYPE_COUNTER, "/HM/TPR/Replace/SuccessVMC",STAMUNIT_OCCURENCES, "Number of instruction replacements by VMMCALL.");
+    STAM_REG(pVM, &pVM->hm.s.StatTprReplaceFailure, STAMTYPE_COUNTER, "/HM/TPR/Replace/Failed", STAMUNIT_OCCURENCES, "Number of unsuccessful replace attempts.");
 #endif
 
     /*
@@ -1993,6 +1994,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
 
             memcpy(pPatch->aNewOpcode, s_abVMMCall, sizeof(s_abVMMCall));
             pPatch->cbNewOp = sizeof(s_abVMMCall);
+            STAM_COUNTER_INC(&pVM->hm.s.StatTprReplaceSuccessVmc);
         }
         else
         {
@@ -2045,6 +2047,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
 
                 memcpy(pPatch->aNewOpcode, abInstr, pPatch->cbOp);
                 pPatch->cbNewOp = pPatch->cbOp;
+                STAM_COUNTER_INC(&pVM->hm.s.StatTprReplaceSuccessCr8);
 
                 Log(("Acceptable read/shr candidate!\n"));
                 pPatch->enmType = HMTPRINSTR_READ_SHR4;
@@ -2059,6 +2062,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
 
                 memcpy(pPatch->aNewOpcode, s_abVMMCall, sizeof(s_abVMMCall));
                 pPatch->cbNewOp = sizeof(s_abVMMCall);
+                STAM_COUNTER_INC(&pVM->hm.s.StatTprReplaceSuccessVmc);
                 Log(("hmR3ReplaceTprInstr: HMTPRINSTR_READ %u\n", pPatch->uDstOperand));
             }
         }
@@ -2068,7 +2072,6 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
         AssertRC(rc);
 
         pVM->hm.s.cPatches++;
-        STAM_COUNTER_INC(&pVM->hm.s.StatTprReplaceSuccess);
         return VINF_SUCCESS;
     }
 

@@ -516,7 +516,8 @@ typedef struct HM
 
     STAMCOUNTER             StatTprPatchSuccess;
     STAMCOUNTER             StatTprPatchFailure;
-    STAMCOUNTER             StatTprReplaceSuccess;
+    STAMCOUNTER             StatTprReplaceSuccessCr8;
+    STAMCOUNTER             StatTprReplaceSuccessVmc;
     STAMCOUNTER             StatTprReplaceFailure;
 } HM;
 /** Pointer to HM VM instance data. */
