@@ -45,6 +45,11 @@ signals:
     /* Ask listeners (network-requests) to cancel: */
     void sigCancelNetworkRequests();
 
+    /** Requests to add @a pNetworkRequest to network-manager state-indicators. */
+    void sigAddNetworkManagerIndicatorDescription(UINetworkRequest *pNetworkRequest);
+    /** Requests to remove network-request with @a uuid from network-manager state-indicators. */
+    void sigRemoveNetworkManagerIndicatorDescription(const QUuid &uuid);
+
 public:
 
     /* Instance: */
@@ -57,8 +62,14 @@ public:
     /* Pointer to network-manager dialog: */
     UINetworkManagerDialog* window() const;
 
-    /* Pointer to network-manager state-indicator: */
-    UINetworkManagerIndicator* indicator() const;
+    /** Creates network-manager state-indicator.
+      * @remarks To be cleaned up by the caller. */
+    UINetworkManagerIndicator* createIndicator() const;
+
+    /** Registers @a pNetworkRequest in network-manager. */
+    void registerNetworkRequest(UINetworkRequest *pNetworkRequest);
+    /** Unregisters network-request with @a uuid from network-manager. */
+    void unregisterNetworkRequest(const QUuid &uuid);
 
 public slots:
 
@@ -113,7 +124,6 @@ private:
 
     /* Network-manager dialog: */
     UINetworkManagerDialog *m_pNetworkManagerDialog;
-    UINetworkManagerIndicator *m_pNetworkManagerIndicator;
 };
 #define gNetworkManager UINetworkManager::instance()
 

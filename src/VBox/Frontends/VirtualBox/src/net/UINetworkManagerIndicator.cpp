@@ -39,7 +39,7 @@ UINetworkManagerIndicator::UINetworkManagerIndicator()
     retranslateUi();
 }
 
-void UINetworkManagerIndicator::addNetworkRequest(UINetworkRequest *pNetworkRequest)
+void UINetworkManagerIndicator::sltAddNetworkManagerIndicatorDescription(UINetworkRequest *pNetworkRequest)
 {
     /* Make sure network-request is really exists: */
     AssertMsg(pNetworkRequest, ("Invalid network-request passed!"));
@@ -66,7 +66,7 @@ void UINetworkManagerIndicator::addNetworkRequest(UINetworkRequest *pNetworkRequ
     recalculateIndicatorState();
 }
 
-void UINetworkManagerIndicator::removeNetworkRequest(const QUuid &uuid)
+void UINetworkManagerIndicator::sldRemoveNetworkManagerIndicatorDescription(const QUuid &uuid)
 {
     /* Make sure network-request still registered: */
     AssertMsg(m_ids.contains(uuid), ("Network-request already unregistered!"));

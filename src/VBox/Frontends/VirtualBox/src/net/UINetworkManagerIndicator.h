@@ -43,24 +43,18 @@ class UINetworkManagerIndicator : public QIStateStatusBarIndicator
 
 public:
 
-    /** Update routine. */
-    void updateAppearance();
-
-protected:
-
-    /* Allow creation of UINetworkManagerIndicator to UINetworkManager: */
-    friend class UINetworkManager;
     /* Constructor: */
     UINetworkManagerIndicator();
 
-    /* Allow adding/removing network-request tokens to UINetworkRequest: */
-    friend class UINetworkRequest;
-    /* Add network-request token: */
-    void addNetworkRequest(UINetworkRequest *pNetworkRequest);
-    /* Remove network-request token: */
-    void removeNetworkRequest(const QUuid &uuid);
+    /** Update routine. */
+    void updateAppearance();
 
 private slots:
+
+    /** Adds @a pNetworkRequest to network-manager state-indicators. */
+    void sltAddNetworkManagerIndicatorDescription(UINetworkRequest *pNetworkRequest);
+    /** Removes network-request with @a uuid from network-manager state-indicators. */
+    void sldRemoveNetworkManagerIndicatorDescription(const QUuid &uuid);
 
     /* Set particular network-request progress to 'started': */
     void sltSetProgressToStarted(const QUuid &uuid);

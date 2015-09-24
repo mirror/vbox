@@ -39,8 +39,6 @@ UINetworkRequest::UINetworkRequest(const QNetworkRequest &request, UINetworkRequ
                                    UINetworkCustomer *pCustomer,
                                    UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
-    , m_pNetworkManagerDialog(pNetworkManager->window())
-    , m_pNetworkManagerIndicator(pNetworkManager->indicator())
     , m_uuid(QUuid::createUuid())
     , m_requests(QList<QNetworkRequest>() << request)
     , m_iCurrentRequestIndex(0)
@@ -57,8 +55,6 @@ UINetworkRequest::UINetworkRequest(const QList<QNetworkRequest> &requests, UINet
                                    UINetworkCustomer *pCustomer,
                                    UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
-    , m_pNetworkManagerDialog(pNetworkManager->window())
-    , m_pNetworkManagerIndicator(pNetworkManager->indicator())
     , m_uuid(QUuid::createUuid())
     , m_requests(requests)
     , m_iCurrentRequestIndex(0)
@@ -77,12 +73,14 @@ UINetworkRequest::~UINetworkRequest()
     /* Destroy network-reply: */
     cleanupNetworkReply();
 
-    /* Remove network-request description from network-manager state-indicator: */
-    if (m_pNetworkManagerIndicator)
-        m_pNetworkManagerIndicator->removeNetworkRequest(m_uuid);
+    /* Unregister network-request from network-manager: */
+    manager()->unregisterNetworkRequest(m_uuid);
+}
 
-    /* Remove network-request widget from network-manager dialog: */
-    m_pNetworkManagerDialog->removeNetworkRequestWidget(m_uuid);
+UINetworkManager* UINetworkRequest::manager() const
+{
+    AssertPtrReturn(parent(), 0);
+    return qobject_cast<UINetworkManager*>(parent());
 }
 
 /* Network-reply progress handler: */
@@ -187,12 +185,8 @@ void UINetworkRequest::initialize()
     /* Prepare listeners for parent(): */
     connect(parent(), SIGNAL(sigCancelNetworkRequests()), this, SLOT(sltCancel()), Qt::QueuedConnection);
 
-    /* Create network-request widget in network-manager dialog: */
-    m_pNetworkManagerDialog->addNetworkRequestWidget(this);
-
-    /* Create network-request description in network-manager state-indicator: */
-    if (m_pNetworkManagerIndicator)
-        m_pNetworkManagerIndicator->addNetworkRequest(this);
+    /* Register network-request in network-manager: */
+    manager()->registerNetworkRequest(this);
 
     /* Choose first network-request as current: */
     m_iCurrentRequestIndex = 0;

@@ -66,9 +66,38 @@ UINetworkManagerDialog* UINetworkManager::window() const
     return m_pNetworkManagerDialog;
 }
 
-UINetworkManagerIndicator* UINetworkManager::indicator() const
+UINetworkManagerIndicator* UINetworkManager::createIndicator() const
 {
-    return m_pNetworkManagerIndicator;
+    /* For Selector UI only: */
+    AssertReturn(!vboxGlobal().isVMConsoleProcess(), 0);
+
+    /* Create network-manager state-indicator: */
+    UINetworkManagerIndicator *pNetworkManagerIndicator = new UINetworkManagerIndicator;
+    connect(pNetworkManagerIndicator, SIGNAL(sigMouseDoubleClick(QIStatusBarIndicator*, QMouseEvent*)),
+            this, SLOT(show()));
+    connect(this, SIGNAL(sigAddNetworkManagerIndicatorDescription(UINetworkRequest*)),
+            pNetworkManagerIndicator, SLOT(sltAddNetworkManagerIndicatorDescription(UINetworkRequest*)));
+    connect(this, SIGNAL(sigRemoveNetworkManagerIndicatorDescription(const QUuid &)),
+            pNetworkManagerIndicator, SLOT(sldRemoveNetworkManagerIndicatorDescription(const QUuid &)));
+    return pNetworkManagerIndicator;
+}
+
+void UINetworkManager::registerNetworkRequest(UINetworkRequest *pNetworkRequest)
+{
+    /* Add network-request widget to network-manager dialog: */
+    m_pNetworkManagerDialog->addNetworkRequestWidget(pNetworkRequest);
+
+    /* Add network-request description to network-manager state-indicators: */
+    emit sigAddNetworkManagerIndicatorDescription(pNetworkRequest);
+}
+
+void UINetworkManager::unregisterNetworkRequest(const QUuid &uuid)
+{
+    /* Remove network-request description from network-manager state-indicator: */
+    emit sigRemoveNetworkManagerIndicatorDescription(uuid);
+
+    /* Remove network-request widget from network-manager dialog: */
+    m_pNetworkManagerDialog->removeNetworkRequestWidget(uuid);
 }
 
 void UINetworkManager::show()
@@ -97,7 +126,6 @@ void UINetworkManager::createNetworkRequest(const QList<QNetworkRequest> &reques
 
 UINetworkManager::UINetworkManager()
     : m_pNetworkManagerDialog(0)
-    , m_pNetworkManagerIndicator(0)
 {
     /* Prepare instance: */
     m_pInstance = this;
@@ -114,26 +142,12 @@ void UINetworkManager::prepare()
     /* Prepare network-manager dialog: */
     m_pNetworkManagerDialog = new UINetworkManagerDialog;
     connect(m_pNetworkManagerDialog, SIGNAL(sigCancelNetworkRequests()), this, SIGNAL(sigCancelNetworkRequests()));
-
-    /* Prepare network-manager state-indicator: */
-    if (!vboxGlobal().isVMConsoleProcess())
-    {
-        m_pNetworkManagerIndicator = new UINetworkManagerIndicator;
-        connect(m_pNetworkManagerIndicator, SIGNAL(sigMouseDoubleClick(QIStatusBarIndicator*, QMouseEvent*)), this, SLOT(show()));
-    }
 }
 
 void UINetworkManager::cleanup()
 {
     /* Cleanup network-requests first: */
     cleanupNetworkRequests();
-
-    /* Cleanup network-manager state-indicator: */
-    if (!vboxGlobal().isVMConsoleProcess())
-    {
-        delete m_pNetworkManagerIndicator;
-        m_pNetworkManagerIndicator = 0;
-    }
 
     /* Cleanup network-manager dialog: */
     delete m_pNetworkManagerDialog;
