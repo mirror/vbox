@@ -4628,7 +4628,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             rc |= hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK,       false, NULL);
             rc |= hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE, false, NULL);
             AssertRCReturn(rc, rc);
-#ifdef DEBUG
+# ifdef LOG_ENABLED
             PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
             for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
             {
@@ -9116,44 +9116,43 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitStep(PVMCPU pVCpu, PCPUMCTX pMixedCtx,
 }
 
 
-#ifdef DEBUG
+#ifdef VBOX_STRICT
 /* Is there some generic IPRT define for this that are not in Runtime/internal/\* ?? */
 # define HMVMX_ASSERT_PREEMPT_CPUID_VAR() \
     RTCPUID const idAssertCpu = RTThreadPreemptIsEnabled(NIL_RTTHREAD) ? NIL_RTCPUID : RTMpCpuId()
 
 # define HMVMX_ASSERT_PREEMPT_CPUID() \
-   do \
-   { \
-        RTCPUID const idAssertCpuNow = RTThreadPreemptIsEnabled(NIL_RTTHREAD) ? NIL_RTCPUID : RTMpCpuId(); \
-        AssertMsg(idAssertCpu == idAssertCpuNow,  ("VMX %#x, %#x\n", idAssertCpu, idAssertCpuNow)); \
-   } while (0)
+    do { \
+         RTCPUID const idAssertCpuNow = RTThreadPreemptIsEnabled(NIL_RTTHREAD) ? NIL_RTCPUID : RTMpCpuId(); \
+         AssertMsg(idAssertCpu == idAssertCpuNow,  ("VMX %#x, %#x\n", idAssertCpu, idAssertCpuNow)); \
+    } while (0)
 
 # define HMVMX_VALIDATE_EXIT_HANDLER_PARAMS() \
-            do { \
-                AssertPtr(pVCpu); \
-                AssertPtr(pMixedCtx); \
-                AssertPtr(pVmxTransient); \
-                Assert(pVmxTransient->fVMEntryFailed == false); \
-                Assert(ASMIntAreEnabled()); \
-                HMVMX_ASSERT_PREEMPT_SAFE(); \
-                HMVMX_ASSERT_PREEMPT_CPUID_VAR(); \
-                Log4Func(("vcpu[%RU32] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v\n", pVCpu->idCpu)); \
-                HMVMX_ASSERT_PREEMPT_SAFE(); \
-                if (VMMR0IsLogFlushDisabled(pVCpu)) \
-                    HMVMX_ASSERT_PREEMPT_CPUID(); \
-                HMVMX_STOP_EXIT_DISPATCH_PROF(); \
-            } while (0)
+    do { \
+        AssertPtr(pVCpu); \
+        AssertPtr(pMixedCtx); \
+        AssertPtr(pVmxTransient); \
+        Assert(pVmxTransient->fVMEntryFailed == false); \
+        Assert(ASMIntAreEnabled()); \
+        HMVMX_ASSERT_PREEMPT_SAFE(); \
+        HMVMX_ASSERT_PREEMPT_CPUID_VAR(); \
+        Log4Func(("vcpu[%RU32] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v\n", pVCpu->idCpu)); \
+        HMVMX_ASSERT_PREEMPT_SAFE(); \
+        if (VMMR0IsLogFlushDisabled(pVCpu)) \
+            HMVMX_ASSERT_PREEMPT_CPUID(); \
+        HMVMX_STOP_EXIT_DISPATCH_PROF(); \
+    } while (0)
 
 # define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS() \
-            do { \
-                Log4Func(("\n")); \
-            } while (0)
-#else   /* Release builds */
+    do { \
+        Log4Func(("\n")); \
+    } while (0)
+#else /* nonstrict builds: */
 # define HMVMX_VALIDATE_EXIT_HANDLER_PARAMS() \
-            do { \
-                HMVMX_STOP_EXIT_DISPATCH_PROF(); \
-                NOREF(pVCpu); NOREF(pMixedCtx); NOREF(pVmxTransient); \
-            } while (0)
+    do { \
+        HMVMX_STOP_EXIT_DISPATCH_PROF(); \
+        NOREF(pVCpu); NOREF(pMixedCtx); NOREF(pVmxTransient); \
+    } while (0)
 # define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS() do { } while (0)
 #endif
 
@@ -11099,16 +11098,16 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         }
     }
 
-#ifdef DEBUG
+#ifdef VBOX_STRICT
     if (rcStrict == VINF_IOM_R3_IOPORT_READ)
         Assert(!fIOWrite);
     else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
         Assert(fIOWrite);
     else
     {
-        /** @todo r=bird: This is missing a bunch of VINF_EM_FIRST..VINF_EM_LAST
-         *        statuses, that the VMM device and some others may return. See
-         *        IOM_SUCCESS() for guidance. */
+#if 0 /** @todo r=bird: This is missing a bunch of VINF_EM_FIRST..VINF_EM_LAST
+       *        statuses, that the VMM device and some others may return. See
+       *        IOM_SUCCESS() for guidance. */
         AssertMsg(   RT_FAILURE(rcStrict)
                   || rcStrict == VINF_SUCCESS
                   || rcStrict == VINF_EM_RAW_EMULATE_INSTR
@@ -11116,6 +11115,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
                   || rcStrict == VINF_EM_RAW_GUEST_TRAP
                   || rcStrict == VINF_EM_RAW_TO_R3
                   || rcStrict == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+#endif
     }
 #endif
 
