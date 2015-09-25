@@ -936,6 +936,20 @@ RT_C_DECLS_END
 #define VERR_MISMATCH                       (-22408)
 /** Wrong type. */
 #define VERR_WRONG_TYPE                     (-22409)
+/** This indicates that the process does not have sufficient privileges to
+ * perform the operation. */
+#define VERR_PRIVILEGE_NOT_HELD             (-22410)
+/** Process does not have the trusted code base (TCB) privilege needed for user
+ * authentication or/and process creation as a given user.  TCB is also called
+ * 'Act as part of the operating system'. */
+#define VERR_PROC_TCB_PRIV_NOT_HELD         (-22411)
+/** Process does not have the assign primary token (APT) privilege needed
+ * for creating process as a given user.  APT is also called 'Replace a process
+ * level token'. */
+#define VERR_PROC_APT_PRIV_NOT_HELD         (-22412)
+/** Process does not have the increase quota (IQ) privilege needed for
+ * creating a process as a given user. IQ is also called 'Increase quotas'. */
+#define VERR_PROC_IQ_PRIV_NOT_HELD          (-22413)
 /** @} */
 
 

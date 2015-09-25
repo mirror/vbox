@@ -167,7 +167,8 @@ static int tstRTCreateProcEx6Child(int argc, char **argv)
 
 #if 1
     /* For manual testing. */
-    if (strcmp(argv[2],"noinherit-change-record") == 0)
+    if (strcmp(argv[2],"noinherit") == 0)
+    //if (strcmp(argv[2],"noinherit-change-record") == 0)
     {
         RTENV hEnv;
         rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
@@ -229,38 +230,48 @@ static void tstRTCreateProcEx6(const char *pszAsUser, const char *pszPassword)
     RTENV hEnvChange;
     RTTESTI_CHECK_RC_RETV(RTEnvCreateChangeRecord(&hEnvChange), VINF_SUCCESS);
     RTTESTI_CHECK_RC_RETV(RTEnvSetEx(hEnvChange, "testcase-child-6", "changed"), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, hEnvChange, RTPROC_FLAGS_ENV_CHANGE_RECORD,
+    int rc;
+    RTTESTI_CHECK_RC(rc = RTProcCreateEx(g_szExecName, apszArgs, hEnvChange, RTPROC_FLAGS_ENV_CHANGE_RECORD,
                                          NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
-    ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
-    ProcStatus.iStatus   = -1;
-    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
+        ProcStatus.iStatus   = -1;
+        RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
-    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
-        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+        if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+            RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+    }
 
 
     /* Use profile environment this time. */
     apszArgs[2] = "noinherit";
-    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, RTPROC_FLAGS_PROFILE,
+    RTTESTI_CHECK_RC(rc = RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, RTPROC_FLAGS_PROFILE,
                                          NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
-    ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
-    ProcStatus.iStatus   = -1;
-    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
+        ProcStatus.iStatus   = -1;
+        RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
-    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
-        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+        if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+            RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+    }
 
     /* Use profile environment this time. */
     apszArgs[2] = "noinherit-change-record";
-    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, hEnvChange,
+    RTTESTI_CHECK_RC(rc = RTProcCreateEx(g_szExecName, apszArgs, hEnvChange,
                                          RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_ENV_CHANGE_RECORD,
                                          NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
-    ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
-    ProcStatus.iStatus   = -1;
-    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
+        ProcStatus.iStatus   = -1;
+        RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
-    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
-        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+        if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+            RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+    }
 
 
     RTTESTI_CHECK_RC(RTEnvDestroy(hEnvChange), VINF_SUCCESS);
@@ -402,11 +413,14 @@ static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
     RTPROCESS hProc;
 
     /* Test for invalid logons. */
-    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, NULL, "non-existing-user", "wrong-password", &hProc), VERR_AUTHENTICATION_FAILURE);
+    int rc = RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL, NULL, NULL,
+                            "non-existing-user", "wrong-password", &hProc);
+    if (rc != VERR_AUTHENTICATION_FAILURE && rc != VERR_PRIVILEGE_NOT_HELD && rc != VERR_PROC_TCB_PRIV_NOT_HELD)
+        RTTestIFailed("rc=%Rrc");
+
     /* Test for invalid application. */
-    RTTESTI_CHECK_RC_RETV(RTProcCreateEx("non-existing-app", apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, NULL, NULL, NULL, &hProc), VERR_FILE_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTProcCreateEx("non-existing-app", apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
+                                    NULL, NULL, NULL, NULL, &hProc), VERR_FILE_NOT_FOUND);
     /* Test a (hopefully) valid user/password logon (given by parameters of this function). */
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
                                          NULL, NULL, pszUser, pszPassword, &hProc), VINF_SUCCESS);
