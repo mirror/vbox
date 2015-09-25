@@ -1211,7 +1211,7 @@ void UISelectorWindow::prepareMenuBar()
     m_pMachineMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Machine)->menu());
 
 #ifdef Q_WS_MAC
-    menuBar()->addMenu(UIWindowMenuManager::instance(this)->createMenu(this));
+    menuBar()->addMenu(UIWindowMenuManager::instance()->createMenu(this));
 #endif /* Q_WS_MAC */
 
     /* Prepare Help-menu: */

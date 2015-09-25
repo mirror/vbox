@@ -22,25 +22,28 @@
 #include <QObject>
 #include <QHash>
 
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
 /* Forward declarations: */
 class UIMenuHelper;
 class QMenu;
 
 /** Singleton QObject extension
   * used as Mac OS X 'Window' menu Manager. */
-class UIWindowMenuManager: public QObject
+class UIWindowMenuManager : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
 public:
 
     /** Static constructor and instance provider. */
-    static UIWindowMenuManager *instance(QWidget *pParent = 0);
+    static UIWindowMenuManager *instance();
     /** Static destructor. */
     static void destroy();
 
     /** Creates 'Window' menu for passed @a pWindow. */
-    QMenu *createMenu(QWidget *pWindow);
+    QMenu* createMenu(QWidget *pWindow);
     /** Destroys 'Window' menu for passed @a pWindow. */
     void destroyMenu(QWidget *pWindow);
 
@@ -50,28 +53,25 @@ public:
     void removeWindow(QWidget *pWindow);
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi();
 
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    bool eventFilter(QObject *pObj, QEvent *pEvent);
+    bool eventFilter(QObject *pObject, QEvent *pEvent);
 
 private:
 
     /** Constructs 'Window' menu Manager. */
-    UIWindowMenuManager(QWidget *pParent = 0);
+    UIWindowMenuManager();
     /** Destructs 'Window' menu Manager. */
     ~UIWindowMenuManager();
 
     /** Holds the static instance. */
-    static UIWindowMenuManager *m_pInstance;
-
-    /** Holds the passed parent reference. */
-    QWidget *m_pParent;
+    static UIWindowMenuManager *m_spInstance;
 
     /** Holds the list of the registered window references. */
-    QList<QWidget*> m_regWindows;
+    QList<QWidget*> m_windows;
 
     /** Holds the hash of the registered menu-helper instances. */
     QHash<QWidget*, UIMenuHelper*> m_helpers;
