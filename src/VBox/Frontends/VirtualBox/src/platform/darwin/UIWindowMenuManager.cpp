@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,21 +19,24 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Local includes */
+/* GUI includes: */
 # include "UIWindowMenuManager.h"
 
-/* Global includes */
+/* Qt includes: */
 # include <QApplication>
 # include <QMenu>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
+/** QObject extension
+  * used as Mac OS X 'Window' menu helper. */
 class UIMenuHelper: public QObject
 {
     Q_OBJECT;
 
 public:
+
+    /** Constructs menu-helper on the basis of passed @a winList. */
     UIMenuHelper(const QList<QWidget*> &winList)
     {
         m_pWindowMenu = new QMenu(0);
@@ -50,14 +53,18 @@ public:
 
         retranslateUi();
     }
+
+    /** Destructs menu-helper. */
     ~UIMenuHelper()
     {
         delete m_pWindowMenu;
         qDeleteAll(m_regWindows);
     }
 
+    /** Returns 'Window' menu. */
     QMenu *menu() const { return m_pWindowMenu; }
 
+    /** Adds window into 'Window' menu. */
     QAction* addWindow(QWidget *pWindow)
     {
         QAction *pAction = 0;
@@ -83,6 +90,8 @@ public:
         }
         return pAction;
     }
+
+    /** Removes window from 'Window' menu. */
     void removeWindow(QWidget *pWindow)
     {
         if (m_regWindows.contains(pWindow->windowTitle()))
@@ -92,6 +101,7 @@ public:
         }
     }
 
+    /** Handles translation event. */
     void retranslateUi()
     {
         m_pWindowMenu->setTitle(tr("&Window"));
@@ -99,6 +109,7 @@ public:
         m_pMinimizeAction->setShortcut(QKeySequence("Ctrl+M"));
     }
 
+    /** Updates toggle action states according to passed @a pActive. */
     void updateStatus(QWidget *pActive)
     {
         m_pMinimizeAction->setEnabled(pActive != 0);
@@ -117,11 +128,14 @@ public:
 
 private slots:
 
+    /** Handles request to minimize active-window. */
     void minimizeActive(bool /* fToggle */)
     {
         if (QWidget *pActive = qApp->activeWindow())
             pActive->showMinimized();
     }
+
+    /** Handles request to raise sender window. */
     void raiseSender(bool /* fToggle */)
     {
         if (QAction *pAction= qobject_cast<QAction*>(sender()))
@@ -137,15 +151,20 @@ private slots:
 
 private:
 
-    /* Private member vars */
+    /** Holds the 'Window' menu instance. */
     QMenu *m_pWindowMenu;
+    /** Holds the action group instance. */
     QActionGroup *m_pGroup;
+    /** Holds the 'Minimize' action instance. */
     QAction *m_pMinimizeAction;
+    /** Holds the hash of the registered menu-helper instances. */
     QHash<QString, QAction*> m_regWindows;
 };
 
+/* static */
 UIWindowMenuManager *UIWindowMenuManager::m_pInstance = 0;
 
+/* static */
 UIWindowMenuManager *UIWindowMenuManager::instance(QWidget *pParent /* = 0 */)
 {
     if (!m_pInstance)
@@ -154,6 +173,7 @@ UIWindowMenuManager *UIWindowMenuManager::instance(QWidget *pParent /* = 0 */)
     return m_pInstance;
 }
 
+/* static */
 void UIWindowMenuManager::destroy()
 {
     if (!m_pInstance)
