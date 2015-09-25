@@ -7730,7 +7730,8 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
         pAhciPort->PCHSGeometry.cCylinders = 0;
         pAhciPort->PCHSGeometry.cHeads     = 0;
         pAhciPort->PCHSGeometry.cSectors   = 0;
-        LogRel(("AHCI LUN#%d: CD/DVD, total number of sectors %Ld, passthrough %s\n", pAhciPort->iLUN, pAhciPort->cTotalSectors, (pAhciPort->fATAPIPassthrough ? "enabled" : "disabled")));
+        LogRel(("AHCI: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough %s\n", pAhciPort->iLUN,
+                pAhciPort->cTotalSectors, (pAhciPort->fATAPIPassthrough ? "enabled" : "disabled")));
     }
     else
     {
