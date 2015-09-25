@@ -51,7 +51,7 @@ public:
     static void create();
     /** Static destructor. */
     static void destroy();
-    /** Static instance. */
+    /** Static instance provider. */
     static UISelectorWindow* instance() { return m_spInstance; }
 
     /** Returns the action-pool instance. */
@@ -59,9 +59,7 @@ public:
 
 protected:
 
-    /** Constructs selector-window.
-      * @param ppSelf brings the pointer to pointer to this window instance used by the external caller.
-      * @param flags  brings the selector-window flags dialogs should have. */
+    /** Constructs selector-window. */
     UISelectorWindow();
     /** Destructs selector-window. */
     ~UISelectorWindow();
@@ -258,7 +256,7 @@ private:
         static bool isAtLeastOneItemRunning(const QList<UIVMItem*> &items);
     /** @} */
 
-    /** Static instance. */
+    /** Holds the static instance. */
     static UISelectorWindow *m_spInstance;
 
     /** Holds whether the dialog is polished. */

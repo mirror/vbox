@@ -37,10 +37,12 @@ class UIWindowMenuManager : public QIWithRetranslateUI3<QObject>
 
 public:
 
-    /** Static constructor and instance provider. */
-    static UIWindowMenuManager* instance();
+    /** Static constructor. */
+    static void create();
     /** Static destructor. */
     static void destroy();
+    /** Static instance provider. */
+    static UIWindowMenuManager* instance() { return m_spInstance; }
 
     /** Creates 'Window' menu for passed @a pWindow. */
     QMenu* createMenu(QWidget *pWindow);
@@ -76,6 +78,8 @@ private:
     /** Holds the hash of the registered menu-helper instances. */
     QHash<QWidget*, UIMenuHelper*> m_helpers;
 };
+
+#define gpWindowMenuManager UIWindowMenuManager::instance()
 
 #endif /* !___UIWindowMenuManager_h___ */
 

@@ -955,12 +955,6 @@ void UIMediumManager::prepare()
     /* Translate dialog: */
     retranslateUi();
 
-#ifdef Q_WS_MAC
-    /* Prepare Mac window-menu.
-     * Should go *after* translation! */
-    prepareMacWindowMenu();
-#endif /* Q_WS_MAC */
-
     /* Center according pseudo-parent widget: */
     VBoxGlobal::centerWidget(this, m_pPseudoParentWidget, false);
 
@@ -1080,17 +1074,24 @@ void UIMediumManager::prepareActions()
 
 void UIMediumManager::prepareMenuBar()
 {
-    /* Create menu-bar-menu: */
+    /* Create 'Actions' menu: */
     m_pMenu = menuBar()->addMenu(QString());
     AssertPtrReturnVoid(m_pMenu);
     {
-        /* Configure menu-bar-menu: */
+        /* Configure 'Actions' menu: */
         m_pMenu->addAction(m_pActionCopy);
         m_pMenu->addAction(m_pActionModify);
         m_pMenu->addAction(m_pActionRemove);
         m_pMenu->addAction(m_pActionRelease);
         m_pMenu->addAction(m_pActionRefresh);
     }
+
+#ifdef Q_WS_MAC
+    /* Prepare 'Window' menu: */
+    AssertPtrReturnVoid(gpWindowMenuManager);
+    menuBar()->addMenu(gpWindowMenuManager->createMenu(this));
+    gpWindowMenuManager->addWindow(this);
+#endif /* Q_WS_MAC */
 }
 
 void UIMediumManager::prepareContextMenu()
@@ -1327,15 +1328,6 @@ void UIMediumManager::prepareProgressBar()
         m_pButtonBox->addExtraWidget(m_pProgressBar);
     }
 }
-
-#ifdef Q_WS_MAC
-void UIMediumManager::prepareMacWindowMenu()
-{
-    /* Create window-menu for menu-bar: */
-    menuBar()->addMenu(UIWindowMenuManager::instance()->createMenu(this));
-    UIWindowMenuManager::instance()->addWindow(this);
-}
-#endif /* Q_WS_MAC */
 
 void UIMediumManager::repopulateTreeWidgets()
 {
@@ -1708,21 +1700,20 @@ void UIMediumManager::updateInformationFieldsFD()
         infoContainer(UIMediumType_Floppy)->setEnabled(pCurrentItem);
 }
 
-#ifdef Q_WS_MAC
-void UIMediumManager::cleanupMacWindowMenu()
+void UIMediumManager::cleanupMenuBar()
 {
-    /* Destroy window-menu of menu-bar: */
-    UIWindowMenuManager::instance()->removeWindow(this);
-    UIWindowMenuManager::instance()->destroyMenu(this);
-}
+#ifdef Q_WS_MAC
+    /* Cleanup 'Window' menu: */
+    AssertPtrReturnVoid(gpWindowMenuManager);
+    gpWindowMenuManager->removeWindow(this);
+    gpWindowMenuManager->destroyMenu(this);
 #endif /* Q_WS_MAC */
+}
 
 void UIMediumManager::cleanup()
 {
-#ifdef Q_WS_MAC
-    /* Cleanup Mac window-menu: */
-    cleanupMacWindowMenu();
-#endif /* Q_WS_MAC */
+    /* Cleanup menu-bar: */
+    cleanupMenuBar();
 }
 
 void UIMediumManager::retranslateUi()

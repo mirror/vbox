@@ -133,10 +133,6 @@ private:
     void prepareButtonBox();
     /** Prepare progress-bar. */
     void prepareProgressBar();
-#ifdef Q_WS_MAC
-    /** Mac OS X: Prepare <i>Window</i> menu. */
-    void prepareMacWindowMenu();
-#endif /* Q_WS_MAC */
 
     /** Repopulates tree-widgets content. */
     void repopulateTreeWidgets();
@@ -163,10 +159,8 @@ private:
     /** Update information fields for floppy-disk tab. */
     void updateInformationFieldsFD();
 
-#ifdef Q_WS_MAC
-    /** Mac OS X: Cleanup <i>Window</i> menu. */
-    void cleanupMacWindowMenu();
-#endif /* Q_WS_MAC */
+    /** Cleanup menu-bar. */
+    void cleanupMenuBar();
     /** General cleanup wrapper. */
     void cleanup();
 
