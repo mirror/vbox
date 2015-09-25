@@ -143,13 +143,11 @@ static void vboxNetAdpDarwinComposeUUID(PVBOXNETADP pThis, PRTUUID pUuid)
 
 static errno_t vboxNetAdpDarwinOutput(ifnet_t pIface, mbuf_t pMBuf)
 {
-    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
-    Assert(pThis);
-    if (pThis->u.s.nTapMode & BPF_MODE_OUTPUT)
-    {
-        Log2(("vboxnetadp: out len=%d\n%.*Rhxd\n", mbuf_len(pMBuf), 14, mbuf_data(pMBuf)));
-        bpf_tap_out(pIface, DLT_EN10MB, pMBuf, NULL, 0);
-    }
+    /*
+     * We are a dummy interface with all the real work done in
+     * VBoxNetFlt bridged networking filter.  If anything makes it
+     * this far, just drop it, we have nowhere to send it to.
+     */
     mbuf_freem_list(pMBuf);
     return 0;
 }
@@ -204,14 +202,10 @@ static errno_t vboxNetAdpDarwinDemux(ifnet_t pIface, mbuf_t pMBuf,
                                      char *pFrameHeader,
                                      protocol_family_t *pProtocolFamily)
 {
-    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
-    Assert(pThis);
-    Log2(("vboxNetAdpDarwinDemux: mode=%d\n", pThis->u.s.nTapMode));
-    if (pThis->u.s.nTapMode & BPF_MODE_INPUT)
-    {
-        Log2(("vboxnetadp: in len=%d\n%.*Rhxd\n", mbuf_len(pMBuf), 14, pFrameHeader));
-        bpf_tap_in(pIface, DLT_EN10MB, pMBuf, pFrameHeader, ETHER_HDR_LEN);
-    }
+    /*
+     * Anything we get here comes from VBoxNetFlt bridged networking
+     * filter where it has already been accounted for and fed to bpf.
+     */
     return ether_demux(pIface, pMBuf, pFrameHeader, pProtocolFamily);
 }
 

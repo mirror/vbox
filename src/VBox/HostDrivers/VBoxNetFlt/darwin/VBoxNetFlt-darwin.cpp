@@ -58,6 +58,9 @@ RT_C_DECLS_END
 #include <sys/kpi_socket.h>
 #include <net/if.h>
 #include <net/if_var.h>
+RT_C_DECLS_BEGIN
+#include <net/bpf.h>
+RT_C_DECLS_END
 #include <netinet/in.h>
 #include <netinet/in_var.h>
 #include <netinet6/in6_var.h>
@@ -923,12 +926,25 @@ static errno_t vboxNetFltDarwinIffInputOutputWorker(PVBOXNETFLTINS pThis, mbuf_t
         if (fDropIt)
         {
             /*
-             * Check if this interface is in promiscuous mode. We should not drop
-             * any packets before they get to the driver as it passes them to tap
-             * callbacks in order for BPF to work properly.
+             * If the interface is in promiscuous mode we should let
+             * all inbound packets (this one was for a bridged guest)
+             * reach the driver as it passes them to tap callbacks in
+             * order for BPF to work properly.
              */
-            if (vboxNetFltDarwinIsPromiscuous(pThis))
+            if (   fSrc == INTNETTRUNKDIR_WIRE
+                && vboxNetFltDarwinIsPromiscuous(pThis))
+            {
                 fDropIt = false;
+            }
+
+            /*
+             * A packet from the host to a guest.  As we won't pass it
+             * to the drvier/wire we need to feed it to bpf ourselves.
+             */
+            if (fSrc == INTNETTRUNKDIR_HOST)
+            {
+                bpf_tap_out(pThis->u.s.pIfNet, DLT_EN10MB, pMBuf, NULL, 0);
+            }
         }
     }
 
@@ -1087,7 +1103,15 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
         {
             Assert(pThis->pSwitchPort);
             pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+#if 0
+            /* 
+             * XXX: Don't tell SrvIntNetR0 if the interface is
+             * promiscuous, because there's no code yet to update that
+             * information and we don't want it stuck, spamming all
+             * traffic to the host.
+             */
             pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltDarwinIsPromiscuous(pThis));
+#endif
             pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,  INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
             pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
             vboxNetFltRelease(pThis, true /*fBusy*/);
@@ -1126,12 +1150,8 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
     {
         /*
          * Create a mbuf for the gather list and push it onto the wire.
-         *
-         * Note! If the interface is in the promiscuous mode we need to send the
-         *       packet down the stack so it reaches the driver and Berkeley
-         *       Packet Filter (see @bugref{5817}).
          */
-        if ((fDst & INTNETTRUNKDIR_WIRE) || vboxNetFltDarwinIsPromiscuous(pThis))
+        if (fDst & INTNETTRUNKDIR_WIRE)
         {
             mbuf_t pMBuf = vboxNetFltDarwinMBufFromSG(pThis, pSG);
             if (pMBuf)
@@ -1152,13 +1172,14 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
             mbuf_t pMBuf = vboxNetFltDarwinMBufFromSG(pThis, pSG);
             if (pMBuf)
             {
-                /* This is what IONetworkInterface::inputPacket does. */
+                void *pvEthHdr = mbuf_data(pMBuf);
                 unsigned const cbEthHdr = 14;
-                mbuf_pkthdr_setheader(pMBuf, mbuf_data(pMBuf));
-                mbuf_pkthdr_setlen(pMBuf, mbuf_pkthdr_len(pMBuf) - cbEthHdr);
-                mbuf_setdata(pMBuf, (uint8_t *)mbuf_data(pMBuf) + cbEthHdr, mbuf_len(pMBuf) - cbEthHdr);
-                mbuf_pkthdr_setrcvif(pMBuf, pIfNet); /* will crash without this. */
 
+                mbuf_pkthdr_setrcvif(pMBuf, pIfNet);
+                mbuf_pkthdr_setheader(pMBuf, pvEthHdr); /* link-layer header */
+                mbuf_adj(pMBuf, cbEthHdr);              /* move to payload */
+
+                bpf_tap_in(pIfNet, DLT_EN10MB, pMBuf, pvEthHdr, cbEthHdr);
                 errno_t err = ifnet_input(pIfNet, pMBuf, NULL);
                 if (err)
                     rc = RTErrConvertFromErrno(err);
