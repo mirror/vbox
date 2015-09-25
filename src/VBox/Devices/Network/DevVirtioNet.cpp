@@ -47,14 +47,12 @@
 
 #ifdef IN_RING3
 
-#define VNET_PCI_SUBSYSTEM_ID        1 + VIRTIO_NET_ID
 #define VNET_PCI_CLASS               0x0200
 #define VNET_N_QUEUES                3
 #define VNET_NAME_FMT                "VNet%d"
 
 #if 0
 /* Virtio Block Device */
-#define VNET_PCI_SUBSYSTEM_ID        1 + VIRTIO_BLK_ID
 #define VNET_PCI_CLASS               0x0180
 #define VNET_N_QUEUES                2
 #define VNET_NAME_FMT                "VBlk%d"
@@ -1950,7 +1948,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Initialize PCI part. */
     pThis->VPCI.IBase.pfnQueryInterface    = vnetQueryInterface;
     rc = vpciConstruct(pDevIns, &pThis->VPCI, iInstance,
-                       VNET_NAME_FMT, VNET_PCI_SUBSYSTEM_ID,
+                       VNET_NAME_FMT, VIRTIO_NET_ID,
                        VNET_PCI_CLASS, VNET_N_QUEUES);
     pThis->pRxQueue  = vpciAddQueue(&pThis->VPCI, 256, vnetQueueReceive,  "RX ");
     pThis->pTxQueue  = vpciAddQueue(&pThis->VPCI, 256, vnetQueueTransmit, "TX ");

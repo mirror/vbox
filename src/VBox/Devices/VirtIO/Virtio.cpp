@@ -768,19 +768,19 @@ int vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
  * Set PCI configuration space registers.
  *
  * @param   pci          Reference to PCI device structure.
- * @param   uSubsystemId PCI Subsystem Id
+ * @param   uDeviceId    VirtiO Device Id
  * @param   uClass       Class of PCI device (network, etc)
  * @thread  EMT
  */
 static DECLCALLBACK(void) vpciConfigure(PCIDEVICE& pci,
-                                        uint16_t uSubsystemId,
+                                        uint16_t uDeviceId,
                                         uint16_t uClass)
 {
     /* Configure PCI Device, assume 32-bit mode ******************************/
     PCIDevSetVendorId(&pci, DEVICE_PCI_VENDOR_ID);
-    PCIDevSetDeviceId(&pci, DEVICE_PCI_DEVICE_ID);
+    PCIDevSetDeviceId(&pci, DEVICE_PCI_BASE_ID + uDeviceId);
     vpciCfgSetU16(pci, VBOX_PCI_SUBSYSTEM_VENDOR_ID, DEVICE_PCI_SUBSYSTEM_VENDOR_ID);
-    vpciCfgSetU16(pci, VBOX_PCI_SUBSYSTEM_ID, uSubsystemId);
+    vpciCfgSetU16(pci, VBOX_PCI_SUBSYSTEM_ID, DEVICE_PCI_SUBSYSTEM_BASE_ID + uDeviceId);
 
     /* ABI version, must be equal 0 as of 2.6.30 kernel. */
     vpciCfgSetU8( pci, VBOX_PCI_REVISION_ID,          0x00);
@@ -811,7 +811,7 @@ static const char *vpciCounter(const char *pszDevFmt,
 // TODO: header
 int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
                   int iInstance, const char *pcszNameFmt,
-                  uint16_t uSubsystemId, uint16_t uClass,
+                  uint16_t uDeviceId, uint16_t uClass,
                   uint32_t nQueues)
 {
     /* Init handles and log related stuff. */
@@ -831,7 +831,7 @@ int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
         return rc;
 
     /* Set PCI config registers */
-    vpciConfigure(pState->pciDevice, uSubsystemId, uClass);
+    vpciConfigure(pState->pciDevice, uDeviceId, uClass);
     /* Register PCI device */
     rc = PDMDevHlpPCIRegister(pDevIns, &pState->pciDevice);
     if (RT_FAILURE(rc))
