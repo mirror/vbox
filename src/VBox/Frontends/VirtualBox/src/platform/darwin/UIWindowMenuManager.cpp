@@ -252,23 +252,15 @@ void UIWindowMenuManager::addWindow(QWidget *pWindow)
     /* Register window: */
     m_windows.append(pWindow);
     /* Add window to all menus we have: */
-    QHash<QWidget*, UIMenuHelper*>::const_iterator i = m_helpers.constBegin();
-    while (i != m_helpers.constEnd())
-    {
-        i.value()->addWindow(pWindow);
-        ++i;
-    }
+    foreach (UIMenuHelper *pHelper, m_helpers.values())
+        pHelper->addWindow(pWindow);
 }
 
 void UIWindowMenuManager::removeWindow(QWidget *pWindow)
 {
     /* Remove window from all menus we have: */
-    QHash<QWidget*, UIMenuHelper*>::const_iterator i = m_helpers.constBegin();
-    while (i != m_helpers.constEnd())
-    {
-        i.value()->removeWindow(pWindow);
-        ++i;
-    }
+    foreach (UIMenuHelper *pHelper, m_helpers.values())
+        pHelper->removeWindow(pWindow);
     /* Unregister window: */
     m_windows.removeAll(pWindow);
 }
@@ -276,12 +268,8 @@ void UIWindowMenuManager::removeWindow(QWidget *pWindow)
 void UIWindowMenuManager::retranslateUi()
 {
     /* Translate all the helpers: */
-    QHash<QWidget*, UIMenuHelper*>::const_iterator i = m_helpers.constBegin();
-    while (i != m_helpers.constEnd())
-    {
-        i.value()->retranslateUi();
-        ++i;
-    }
+    foreach (UIMenuHelper *pHelper, m_helpers.values())
+        pHelper->retranslateUi();
 }
 
 bool UIWindowMenuManager::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -320,12 +308,8 @@ bool UIWindowMenuManager::eventFilter(QObject *pObject, QEvent *pEvent)
         || type == QEvent::Hide)
     {
         QWidget *pActiveWindow = qApp->activeWindow();
-        QHash<QWidget*, UIMenuHelper*>::const_iterator i = m_helpers.constBegin();
-        while (i != m_helpers.constEnd())
-        {
-            i.value()->updateStatus(pActiveWindow);
-            ++i;
-        }
+        foreach (UIMenuHelper *pHelper, m_helpers.values())
+            pHelper->updateStatus(pActiveWindow);
     }
 
     /* Call to base-class: */
