@@ -19,7 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <Windows.h>
+#ifdef RT_OS_WINDOWS
+# include <Windows.h>
+#else
+# include <iprt/stdint.h>
+# include "../VBox/Runtime/include/internal/ldrPE.h"
+# include "../VBox/Runtime/include/internal/ldrMZ.h"
+#endif
 #include <stdio.h>
 #include <string.h>
 
