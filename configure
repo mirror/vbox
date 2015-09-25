@@ -1540,6 +1540,7 @@ EOF
         FLGQT4="-DQT_SHARED"
         I_INCQT4=`prefix_I "$INCQT4"`
         LIBQT4="-L$q/lib -lQtCoreVBox"
+        TOOLQT4="$q"
         if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal &&
             test_execute_path "`strip_L "$LIBQT4"`" nofatal; then
           foundqt4=2
@@ -1602,7 +1603,7 @@ EOF
             cnf_append "VBOX_WITH_QT4_SUN" "1"
           fi
           test_header "Qt4 devtools"
-          for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
+          for q in $TOOLQT4; do
             # first try it with a suffix, some platforms use that
             if which_wrapper "$q/bin/moc-qt4" > /dev/null; then
               moc_ver=`$q/bin/moc-qt4 -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
