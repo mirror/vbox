@@ -326,12 +326,18 @@ test_execute()
 # Execute a compiled test binary
 test_execute_path()
 {
+  ## LD_LIBRARY_PATH to set.
+  local_path="${1}"
+  ## Set this to non-empty to make this test non-fatal.
+  local_nofail="${2}"
   echo "executing the binary (LD_LIBRARY_PATH=$1)" >> $LOG
-  LD_LIBRARY_PATH=$1 $ODIR.tmp_out > $ODIR.test_execute.log
+  LD_LIBRARY_PATH="${local_path}" $ODIR.tmp_out > $ODIR.test_execute.log
   rc=$?
   cat $ODIR.test_execute.log | tee -a $LOG
   if [ $rc -ne 0 ]; then
-    fail
+    test -z "${local_nofail}" && fail
+    echo >> $LOG
+    echo >> $LOG
     return 1
   fi
   echo >> $LOG
@@ -1459,6 +1465,17 @@ check_qt4()
 {
   foundqt4=
   test_header Qt4
+  cat > $ODIR.tmp_src.cc << EOF
+#include <QtGlobal>
+extern "C" int main(void)
+{
+#if QT_VERSION >= 0x040800
+  return 0;
+#else
+  return 1;
+#endif
+}
+EOF
   if [ "$OS" = "darwin" ]; then
     # First check if there is the internal version of Qt. If yes nothing else
     # has to be done.
@@ -1489,8 +1506,7 @@ check_qt4()
       fail
     fi
   else
-    if ! test -d "$PWD/tools/linux.$TARGET_MACHINE/qt" &&
-      test $QT4DIR_PKGCONFIG -eq 1; then
+    if test $QT4DIR_PKGCONFIG -eq 1; then
       # default is to use pkg-config
       if which_wrapper pkg-config > /dev/null; then
         # this braindead path is necessary for mdv2008.1
@@ -1509,40 +1525,29 @@ check_qt4()
               PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/qt4/lib/pkgconfig \
               PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 \
               pkg-config QtCore --libs`
-          foundqt4=1
+          test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal &&
+            test_execute_path "`strip_L "$LIBQT4"`" nofatal && foundqt4=1
         fi
       else
         log_failure "pkg-config not found"
         fail
       fi
-    else
+    fi
+    if ! test -n "${foundqt4}"; then
       # do it the old way (e.g. user has specified QT4DIR)
-      cat > $ODIR.tmp_src.cc << EOF
-#include <cstdio>
-#include <QtGlobal>
-extern "C" int main(void)
-{
-  printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x040800
-  printf(", OK.\n");
-  return 0;
-#else
-  printf(", expected version 4.8.0 or higher\n");
-  return 1;
-#endif
-}
-EOF
-      for q in "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.* $QT4DIR; do
+      for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
         INCQT4="$q/include $q/include/QtCore"
         FLGQT4="-DQT_SHARED"
         I_INCQT4=`prefix_I "$INCQT4"`
         LIBQT4="-L$q/lib -lQtCoreVBox"
-        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
+        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal &&
+            test_execute_path "`strip_L "$LIBQT4"`" nofatal; then
           foundqt4=2
           break;
         fi
         LIBQT4="-L$q/lib -lQtCore"
-        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
+        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal &&
+            test_execute_path "`strip_L "$LIBQT4"`" nofatal; then
           foundqt4=1
           break;
         fi
@@ -1597,7 +1602,7 @@ EOF
             cnf_append "VBOX_WITH_QT4_SUN" "1"
           fi
           test_header "Qt4 devtools"
-          for q in "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.* $QT4DIR; do
+          for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
             # first try it with a suffix, some platforms use that
             if which_wrapper "$q/bin/moc-qt4" > /dev/null; then
               moc_ver=`$q/bin/moc-qt4 -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
