@@ -1301,7 +1301,11 @@ RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).amd64:= $(RuntimeR3_SOURCES.$(KBUILD_TAR
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
 RuntimeGuestR3_SOURCES.win.x86               += \
  	r3/win/vcc100-kernel32-fakes.cpp \
- 	r3/win/vcc100-kernel32-fakesA.asm
+ 	r3/win/vcc100-kernel32-fakesA.asm \
+	r3/win/vcc100-ntdll-fakes.cpp \
+	r3/win/vcc100-ntdll-fakesA.asm \
+ 	r3/win/vcc100-ws2_32-fakes.cpp \
+ 	r3/win/vcc100-ws2_32-fakesA.asm
 
 #
 # RuntimeGuestR3-x86 - Same as RuntimeGuestR3, except that it's targeting x86.
@@ -1480,6 +1484,10 @@ if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TAR
  TEMPLATE_VBoxR3RuntimeDllItself_SOURCES = \
  	r3/win/vcc100-kernel32-fakes.cpp \
  	r3/win/vcc100-kernel32-fakesA.asm \
+ 	r3/win/vcc100-ws2_32-fakes.cpp \
+ 	r3/win/vcc100-ws2_32-fakesA.asm \
+	r3/win/vcc100-ntdll-fakes.cpp \
+	r3/win/vcc100-ntdll-fakesA.asm \
 	r3/win/vcc100-msvcrt-fakes.cpp
  VBoxRT_TEMPLATE         = VBoxR3RuntimeDllItself
  VBoxRT_TEMPLATE.win.x86 = VBoxR3RuntimeDllItself

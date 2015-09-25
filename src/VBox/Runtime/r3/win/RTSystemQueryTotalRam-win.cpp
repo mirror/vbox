@@ -36,32 +36,86 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
+#include "internal-r3-win.h"
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static bool volatile            g_fInitialized = false;
+typedef BOOL (WINAPI *PFNGLOBALMEMORYSTATUSEX)(LPMEMORYSTATUSEX);
+static PFNGLOBALMEMORYSTATUSEX  g_pfnGlobalMemoryStatusEx = NULL;
+
+
+/**
+ * The GlobalMemoryStatusEx API is not available on older Windows version.
+ *
+ * @returns Pointer to GlobalMemoryStatusEx or NULL if not available.
+ */
+DECLINLINE(PFNGLOBALMEMORYSTATUSEX) rtSystemWinGetExApi(void)
+{
+    PFNGLOBALMEMORYSTATUSEX pfnEx;
+    if (g_fInitialized)
+        pfnEx = g_pfnGlobalMemoryStatusEx;
+    else
+    {
+        pfnEx = (PFNGLOBALMEMORYSTATUSEX)GetProcAddress(g_hModKernel32, "GlobalMemoryStatusEx");
+        g_pfnGlobalMemoryStatusEx = pfnEx;
+        g_fInitialized = true;
+    }
+    return pfnEx;
+}
+
 
 RTDECL(int) RTSystemQueryTotalRam(uint64_t *pcb)
 {
-    MEMORYSTATUSEX MemStatus;
-
     AssertPtrReturn(pcb, VERR_INVALID_POINTER);
 
-    MemStatus.dwLength = sizeof(MemStatus);
-    if (!GlobalMemoryStatusEx(&MemStatus))
-        return RTErrConvertFromWin32(GetLastError());
-
-    *pcb = MemStatus.ullTotalPhys;
-    return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    PFNGLOBALMEMORYSTATUSEX pfnGlobalMemoryStatusEx = rtSystemWinGetExApi();
+    if (pfnGlobalMemoryStatusEx)
+    {
+        MEMORYSTATUSEX MemStatus;
+        MemStatus.dwLength = sizeof(MemStatus);
+        if (pfnGlobalMemoryStatusEx(&MemStatus))
+            *pcb = MemStatus.ullTotalPhys;
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+    }
+    else
+    {
+        MEMORYSTATUS MemStatus;
+        RT_ZERO(MemStatus);
+        MemStatus.dwLength = sizeof(MemStatus);
+        GlobalMemoryStatus(&MemStatus);
+        *pcb = MemStatus.dwTotalPhys;
+    }
+    return rc;
 }
 
 
 RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb)
 {
-    MEMORYSTATUSEX MemStatus;
-
     AssertPtrReturn(pcb, VERR_INVALID_POINTER);
 
-    MemStatus.dwLength = sizeof(MemStatus);
-    if (!GlobalMemoryStatusEx(&MemStatus))
-        return RTErrConvertFromWin32(GetLastError());
-
-    *pcb = MemStatus.ullAvailPhys;
-    return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    PFNGLOBALMEMORYSTATUSEX pfnGlobalMemoryStatusEx = rtSystemWinGetExApi();
+    if (pfnGlobalMemoryStatusEx)
+    {
+        MEMORYSTATUSEX MemStatus;
+        MemStatus.dwLength = sizeof(MemStatus);
+        if (pfnGlobalMemoryStatusEx(&MemStatus))
+            *pcb = MemStatus.ullAvailPhys;
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+    }
+    else
+    {
+        MEMORYSTATUS MemStatus;
+        RT_ZERO(MemStatus);
+        MemStatus.dwLength = sizeof(MemStatus);
+        GlobalMemoryStatus(&MemStatus);
+        *pcb = MemStatus.dwAvailPhys;
+    }
+    return rc;
 }

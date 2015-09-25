@@ -24,5 +24,16 @@ MAKE_IMPORT_ENTRY EncodePointer, 4
 MAKE_IMPORT_ENTRY InitializeCriticalSectionAndSpinCount, 8
 MAKE_IMPORT_ENTRY HeapSetInformation, 16
 MAKE_IMPORT_ENTRY HeapQueryInformation, 20
+MAKE_IMPORT_ENTRY CreateTimerQueue, 0
+MAKE_IMPORT_ENTRY CreateTimerQueueTimer, 28
+MAKE_IMPORT_ENTRY DeleteTimerQueueTimer, 12
+MAKE_IMPORT_ENTRY InitializeSListHead, 4
+MAKE_IMPORT_ENTRY InterlockedFlushSList, 4
+MAKE_IMPORT_ENTRY InterlockedPopEntrySList, 4
+MAKE_IMPORT_ENTRY InterlockedPushEntrySList, 8
+MAKE_IMPORT_ENTRY QueryDepthSList, 4
+MAKE_IMPORT_ENTRY VerifyVersionInfoA, 16
+MAKE_IMPORT_ENTRY VerSetConditionMask, 16
+
 
 

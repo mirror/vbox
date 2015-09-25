@@ -62,6 +62,7 @@
 #endif
 #ifdef RT_OS_WINDOWS
 # include <Winhttp.h>
+# include "../r3/win/internal-r3-win.h"
 #endif
 
 #ifdef RT_OS_LINUX
@@ -1336,6 +1337,9 @@ static int rtHttpDarwinConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *p
  */
 static DECLCALLBACK(int) rtHttpWinResolveImports(void *pvUser)
 {
+    /*
+     * winhttp.dll is not present on NT4 and probably was first introduced with XP.
+     */
     RTLDRMOD hMod;
     int rc = RTLdrLoadSystem("winhttp.dll", true /*fNoUnload*/, &hMod);
     if (RT_SUCCESS(rc))
@@ -1350,8 +1354,10 @@ static DECLCALLBACK(int) rtHttpWinResolveImports(void *pvUser)
         if (RT_SUCCESS(rc))
             rc = RTLdrGetSymbol(hMod, "WinHttpGetIEProxyConfigForCurrentUser", (void **)&g_pfnWinHttpGetIEProxyConfigForCurrentUser);
         RTLdrClose(hMod);
+        AssertRC(rc);
     }
-    AssertRC(rc);
+    else
+        AssertMsg(g_enmWinVer < kRTWinOSType_XP, ("%Rrc\n", rc));
 
     NOREF(pvUser);
     return rc;
