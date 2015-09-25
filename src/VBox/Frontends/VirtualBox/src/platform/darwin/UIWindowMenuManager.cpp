@@ -77,7 +77,7 @@ public:
     {
         QAction *pAction = 0;
         if (   pWindow
-            && !m_windows.contains(pWindow->windowTitle()))
+            && !m_windows.contains(pWindow))
         {
             if (m_windows.size() < 2)
                 m_pWindowMenu->addSeparator();
@@ -95,7 +95,7 @@ public:
             connect(pAction, SIGNAL(triggered(bool)),
                     this, SLOT(sltRaiseSender()));
             m_pWindowMenu->addAction(pAction);
-            m_windows[pWindow->windowTitle()] = pAction;
+            m_windows[pWindow] = pAction;
         }
         return pAction;
     }
@@ -103,10 +103,10 @@ public:
     /** Removes @a pWindow from 'Window' menu. */
     void removeWindow(QWidget *pWindow)
     {
-        if (m_windows.contains(pWindow->windowTitle()))
+        if (m_windows.contains(pWindow))
         {
-            delete m_windows.value(pWindow->windowTitle());
-            m_windows.remove(pWindow->windowTitle());
+            delete m_windows.value(pWindow);
+            m_windows.remove(pWindow);
         }
     }
 
@@ -130,8 +130,8 @@ public:
         if (pActiveWindow)
         {
             /* Toggle corresponding action on: */
-            if (m_windows.contains(pActiveWindow->windowTitle()))
-                m_windows.value(pActiveWindow->windowTitle())->setChecked(true);
+            if (m_windows.contains(pActiveWindow))
+                m_windows.value(pActiveWindow)->setChecked(true);
         }
         /* If there is no active-window: */
         else
@@ -175,7 +175,7 @@ private:
     /** Holds the 'Minimize' action instance. */
     QAction *m_pMinimizeAction;
     /** Holds the hash of the registered menu-helper instances. */
-    QHash<QString, QAction*> m_windows;
+    QHash<QWidget*, QAction*> m_windows;
 };
 
 /*********************************************************************************************************************************
