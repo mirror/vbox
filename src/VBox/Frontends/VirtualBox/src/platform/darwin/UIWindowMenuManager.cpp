@@ -114,11 +114,20 @@ public:
     void retranslateUi()
     {
         /* Translate menu: */
-        m_pWindowMenu->setTitle(tr("&Window"));
+        m_pWindowMenu->setTitle(QApplication::translate("UIActionPool", "&Window"));
 
         /* Translate menu 'Minimize' action: */
-        m_pMinimizeAction->setText(tr("Minimize"));
+        m_pMinimizeAction->setText(QApplication::translate("UIActionPool", "&Minimize"));
         m_pMinimizeAction->setShortcut(QKeySequence("Ctrl+M"));
+
+        /* Translate other menu-actions: */
+        foreach (QAction *pAction, m_windows.values())
+        {
+            /* Get corresponding window from action's data: */
+            QWidget *pWindow = pAction->data().value<QWidget*>();
+            /* Use the window's title as the action's text: */
+            pAction->setText(pWindow->windowTitle());
+        }
     }
 
     /** Updates toggle action states according to passed @a pActiveWindow. */
@@ -310,6 +319,15 @@ bool UIWindowMenuManager::eventFilter(QObject *pObject, QEvent *pEvent)
         QWidget *pActiveWindow = qApp->activeWindow();
         foreach (UIMenuHelper *pHelper, m_helpers.values())
             pHelper->updateStatus(pActiveWindow);
+    }
+
+    /* Besides our own retranslation, we should also retranslate
+     * everything on any registered widget title change event: */
+    if (pObject && type == QEvent::WindowTitleChange)
+    {
+        QWidget *pWidget = qobject_cast<QWidget*>(pObject);
+        if (pWidget && m_helpers.contains(pWidget))
+            retranslateUi();
     }
 
     /* Call to base-class: */
