@@ -172,11 +172,11 @@ start()
     fi
     # ensure the character special exists
     if [ ! -c $DEVICE ]; then
-        MAJOR=`sed -n 's;\([0-9]\+\) vboxdrv;\1;p' /proc/devices`
+        MAJOR=`sed -n 's;\([0-9]\+\) vboxdrv$;\1;p' /proc/devices`
         if [ ! -z "$MAJOR" ]; then
             MINOR=0
         else
-            MINOR=`sed -n 's;\([0-9]\+\) vboxdrv;\1;p' /proc/misc`
+            MINOR=`sed -n 's;\([0-9]\+\) vboxdrv$;\1;p' /proc/misc`
             if [ ! -z "$MINOR" ]; then
                 MAJOR=10
             fi
