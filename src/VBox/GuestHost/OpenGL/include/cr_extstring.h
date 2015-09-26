@@ -243,6 +243,9 @@ static const char *crExtensions =
 #ifdef CR_ARB_texture_float
     "GL_ARB_texture_float "
 #endif
+#ifdef CR_ARB_draw_buffers
+    "GL_ARB_draw_buffers "
+#endif
 
 	"";
 
