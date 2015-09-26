@@ -355,8 +355,6 @@ extensions_num_get_values = {
     'GL_FOG_COORDINATE_ARRAY_BUFFER_BINDING_ARB': (1, 'CR_ARB_vertex_buffer_object'),
     'GL_WEIGHT_ARRAY_BUFFER_BINDING_ARB': (1, 'CR_ARB_vertex_buffer_object'),
     'GL_MAX_TEXTURE_IMAGE_UNITS_ARB': (1, 'CR_ARB_fragment_program'),
-    # We don't support GL_ARB_draw_buffers, but for some reason ubuntu64 8.10 vm queries it on macos host
-    'GL_MAX_DRAW_BUFFERS_ARB': (1, 'VBOX'),
     'GL_MAX_PROGRAM_MATRICES_ARB': (1, 'CR_ARB_vertex_program'),
     'GL_MAX_PROGRAM_MATRIX_STACK_DEPTH_ARB': (1, 'CR_ARB_vertex_program'),
     # Vertex shaders (2.0) #
@@ -372,7 +370,7 @@ extensions_num_get_values = {
     # Fragment shaders (2.0) #
     'GL_MAX_FRAGMENT_UNIFORM_COMPONENTS': (1, 'CR_OPENGL_VERSION_2_0'),
     'GL_FRAGMENT_SHADER_DERIVATIVE_HINT': (1, 'CR_OPENGL_VERSION_2_0'),
-    # Draw buffers (2.0) #
+    # Draw buffers (2.0) / GL_ARB_draw_buffers #
     'GL_MAX_DRAW_BUFFERS': (1, 'CR_OPENGL_VERSION_2_0'),
     'GL_DRAW_BUFFER0': (1, 'CR_OPENGL_VERSION_2_0'),
     'GL_DRAW_BUFFER1': (1, 'CR_OPENGL_VERSION_2_0'),
