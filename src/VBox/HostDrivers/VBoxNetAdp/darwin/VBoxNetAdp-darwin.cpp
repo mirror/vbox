@@ -50,9 +50,9 @@ RT_C_DECLS_END
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <miscfs/devfs/devfs.h>
-extern "C" {
+RT_C_DECLS_BEGIN
 #include <net/bpf.h>
-}
+RT_C_DECLS_END
 
 #define VBOXNETADP_OS_SPECFIC 1
 #include "../VBoxNetAdpInternal.h"
@@ -209,23 +209,6 @@ static errno_t vboxNetAdpDarwinDemux(ifnet_t pIface, mbuf_t pMBuf,
     return ether_demux(pIface, pMBuf, pFrameHeader, pProtocolFamily);
 }
 
-static errno_t vboxNetAdpDarwinBpfTap(ifnet_t pIface, u_int32_t uLinkType, bpf_tap_mode nMode)
-{
-    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
-    Assert(pThis);
-    Log2(("vboxNetAdpDarwinBpfTap: mode=%d\n", nMode));
-    pThis->u.s.nTapMode = nMode;
-    return 0;
-}
-
-static errno_t vboxNetAdpDarwinBpfSend(ifnet_t pIface, u_int32_t uLinkType, mbuf_t pMBuf)
-{
-    LogRel(("vboxnetadp: BPF send function is not implemented (dlt=%d)\n", uLinkType));
-    mbuf_freem_list(pMBuf);
-    return 0;
-}
-
-
 int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
 {
     int rc;
@@ -240,8 +223,6 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
         printf("vboxNetAdpOsCreate: failed to create semaphore (rc=%d).\n", rc);
         return rc;
     }
-
-    pThis->u.s.nTapMode = BPF_MODE_DISABLED;
 
     mac.sdl_len = sizeof(mac);
     mac.sdl_family = AF_LINK;
@@ -278,12 +259,8 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
         err = ifnet_attach(pThis->u.s.pIface, &mac);
         if (!err)
         {
-            err = bpf_attach(pThis->u.s.pIface, DLT_EN10MB, ETHER_HDR_LEN,
-                      vboxNetAdpDarwinBpfSend, vboxNetAdpDarwinBpfTap);
-            if (err)
-            {
-                LogRel(("vboxnetadp: bpf_attach failed with %d\n", err));
-            }
+            bpfattach(pThis->u.s.pIface, DLT_EN10MB, ETHER_HDR_LEN);
+
             err = ifnet_set_flags(pThis->u.s.pIface, IFF_RUNNING | IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST, 0xFFFF);
             if (!err)
             {
