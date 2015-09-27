@@ -940,10 +940,13 @@ static errno_t vboxNetFltDarwinIffInputOutputWorker(PVBOXNETFLTINS pThis, mbuf_t
             /*
              * A packet from the host to a guest.  As we won't pass it
              * to the drvier/wire we need to feed it to bpf ourselves.
+             *
+             * XXX: TODO: bpf should be done before; use pfnPreRecv?
              */
             if (fSrc == INTNETTRUNKDIR_HOST)
             {
                 bpf_tap_out(pThis->u.s.pIfNet, DLT_EN10MB, pMBuf, NULL, 0);
+                ifnet_stat_increment_out(pThis->u.s.pIfNet, 1, mbuf_len(pMBuf), 0);
             }
         }
     }
@@ -1150,6 +1153,7 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
     {
         /*
          * Create a mbuf for the gather list and push it onto the wire.
+         * BPF tap and stats will be taken care of by the driver.
          */
         if (fDst & INTNETTRUNKDIR_WIRE)
         {
@@ -1166,6 +1170,7 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
 
         /*
          * Create a mbuf for the gather list and push it onto the host stack.
+         * BPF tap and stats are on us.
          */
         if (fDst & INTNETTRUNKDIR_HOST)
         {
@@ -1174,13 +1179,18 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
             {
                 void *pvEthHdr = mbuf_data(pMBuf);
                 unsigned const cbEthHdr = 14;
+                struct ifnet_stat_increment_param stats;
+
+                RT_ZERO(stats);
+                stats.packets_in = 1;
+                stats.bytes_in = mbuf_len(pMBuf); /* full ethernet frame */
 
                 mbuf_pkthdr_setrcvif(pMBuf, pIfNet);
                 mbuf_pkthdr_setheader(pMBuf, pvEthHdr); /* link-layer header */
                 mbuf_adj(pMBuf, cbEthHdr);              /* move to payload */
 
                 bpf_tap_in(pIfNet, DLT_EN10MB, pMBuf, pvEthHdr, cbEthHdr);
-                errno_t err = ifnet_input(pIfNet, pMBuf, NULL);
+                errno_t err = ifnet_input(pIfNet, pMBuf, &stats);
                 if (err)
                     rc = RTErrConvertFromErrno(err);
             }
