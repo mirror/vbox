@@ -391,14 +391,14 @@ RTR3DECL(int) RTProcQueryParent(RTPROCESS hProcess, PRTPROCESS phParent);
  * @returns IPRT status code.
  * @retval VERR_BUFFER_OVERFLOW if the given buffer size is to small for the username.
  * @param   hProcess     The process handle to query the username for.
+ *                       NIL_PROCESS is an alias for the current process.
  * @param   pszUser      Where to store the user name on success.
  * @param   cbUser       The size of the user name buffer.
  * @param   pcbUser      Where to store the username length on success
  *                       or the required buffer size if VERR_BUFFER_OVERFLOW
  *                       is returned.
  */
-RTR3DECL(int)   RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUser,
-                                    size_t *pcbUser);
+RTR3DECL(int)   RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUser, size_t *pcbUser);
 
 /**
  * Query the username of the given process allocating the string for the username.

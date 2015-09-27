@@ -598,7 +598,6 @@ RuntimeR3_SOURCES       = \
 	generic/RTLogWriteUser-generic.cpp \
 	generic/RTPathGetCurrentDrive-generic.cpp \
 	generic/RTPathIsSame-generic.cpp \
-	generic/RTProcessQueryUsernameA-generic.cpp \
 	generic/RTTimerLRCreate-generic.cpp \
 	generic/mempool-generic.cpp \
 	generic/semfastmutex-generic.cpp \

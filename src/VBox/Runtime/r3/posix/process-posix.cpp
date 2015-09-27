@@ -158,45 +158,112 @@ RTR3DECL(int) RTProcQueryParent(RTPROCESS hProcess, PRTPROCESS phParent)
 }
 
 
-RTR3DECL(int) RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUser,
-                                  size_t *pcbUser)
+RTR3DECL(int) RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUser, size_t *pcbUser)
 {
     AssertReturn(   (pszUser && cbUser > 0)
                  || (!pszUser && !cbUser), VERR_INVALID_PARAMETER);
+    AssertReturn(pcbUser || pszUser, VERR_INVALID_PARAMETER);
 
-    if (hProcess != RTProcSelf())
-        return VERR_NOT_SUPPORTED;
-
-    int32_t cbPwdMax = sysconf(_SC_GETPW_R_SIZE_MAX);
-    if (cbPwdMax == -1)
-        return RTErrConvertFromErrno(errno);
-
-    char *pbBuf = (char *)RTMemAllocZ(cbPwdMax);
-    if (!pbBuf)
-        return VERR_NO_MEMORY;
-
-    struct passwd Pwd, *pPwd;
-    int rc = getpwuid_r(geteuid(), &Pwd, pbBuf, cbPwdMax, &pPwd);
-    if (!rc)
+    int rc;
+    if (   hProcess == NIL_RTPROCESS
+        || hProcess == RTProcSelf())
     {
-        size_t cbPwdUser = strlen(pPwd->pw_name) + 1;
-
-        if (pcbUser)
-            *pcbUser = cbPwdUser;
-
-        if (cbPwdUser > cbUser)
-            rc = VERR_BUFFER_OVERFLOW;
+        /*
+         * Figure a good buffer estimate.
+         */
+        int32_t cbPwdMax = sysconf(_SC_GETPW_R_SIZE_MAX);
+        if (cbPwdMax <= sizeof(_1K))
+            cbPwdMax = _1K;
         else
+            AssertStmt(cbPwdMax <= 32U*_1M, cbPwdMax = 32U*_1M);
+        char *pchBuf = (char *)RTMemTmpAllocZ(cbPwdMax);
+        if (pbBuf)
         {
-/** @todo this needs to be UTF-8 checked or converted...   */
-            memcpy(pszUser, pPwd->pw_name, cbPwdUser);
-            rc = VINF_SUCCESS;
+            /*
+             * Get the password file entry.
+             */
+            struct passwd  Pwd;
+            struct passwd *pPwd = NULL;
+            rc = getpwuid_r(geteuid(), &Pwd, pchBuf, cbPwdMax, &pPwd);
+            if (!rc)
+            {
+                /*
+                 * Convert the name to UTF-8, assuming that we're getting it in the local codeset.
+                 */
+                /** @todo This isn't exactly optimal... the current codeset/page conversion
+                 *        stuff never was.  Should optimize that for UTF-8 and ASCII one day.
+                 *        And also optimize for avoiding heap. */
+                char *pszTmp = NULL;
+                rc = RTStrCurrentCPToUtf8(&pszTmp, pPwd->pw_name);
+                if (RT_SUCCESS(rc))
+                {
+                    size_t cbTmp = strlen(pszTmp) + 1;
+                    if (pcbUser)
+                        *pcbUser = cbTmp;
+                    if (cbPwdUser <= cbUser)
+                    {
+                        memcpy(pszUser, pszTmp, cbTmp);
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                        rc = VERR_BUFFER_OVERFLOW;
+                    RTStrFree(pszTmp);
+                }
+            }
+            else
+                rc = RTErrConvertFromErrno(rc);
+            RTMemFree(pchBuf);
         }
+        else
+            rc = VERR_NO_TMP_MEMORY;
     }
     else
-        rc = RTErrConvertFromErrno(rc);
+        rc = VERR_NOT_SUPPORTED;
+    return rc;
+}
 
-    RTMemFree(pbBuf);
+
+RTR3DECL(int) RTProcQueryUsernameA(RTPROCESS hProcess, char **ppszUser)
+{
+    AssertPtrReturn(ppszUser, VERR_INVALID_POINTER);
+
+    int rc;
+    if (   hProcess == NIL_RTPROCESS
+        || hProcess == RTProcSelf())
+    {
+        /*
+         * Figure a good buffer estimate.
+         */
+        int32_t cbPwdMax = sysconf(_SC_GETPW_R_SIZE_MAX);
+        if (cbPwdMax <= sizeof(_1K))
+            cbPwdMax = _1K;
+        else
+            AssertStmt(cbPwdMax <= 32U*_1M, cbPwdMax = 32U*_1M);
+        char *pchBuf = (char *)RTMemTmpAllocZ(cbPwdMax);
+        if (pbBuf)
+        {
+            /*
+             * Get the password file entry.
+             */
+            struct passwd  Pwd;
+            struct passwd *pPwd = NULL;
+            rc = getpwuid_r(geteuid(), &Pwd, pchBuf, cbPwdMax, &pPwd);
+            if (!rc)
+            {
+                /*
+                 * Convert the name to UTF-8, assuming that we're getting it in the local codeset.
+                 */
+                rc = RTStrCurrentCPToUtf8(ppszUser, pPwd->pw_name);
+            }
+            else
+                rc = RTErrConvertFromErrno(rc);
+            RTMemFree(pchBuf);
+        }
+        else
+            rc = VERR_NO_TMP_MEMORY;
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
     return rc;
 }
 
