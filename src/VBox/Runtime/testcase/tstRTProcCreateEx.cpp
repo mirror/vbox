@@ -338,81 +338,52 @@ static void tstRTCreateProcEx6(const char *pszAsUser, const char *pszPassword)
 
 static int tstRTCreateProcEx5Child(int argc, char **argv)
 {
-    int rc = RTR3InitExeNoArguments(0);
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
+    uint32_t cErrors = 0;
+
+    /* Check that the OS thinks we're running as the user we're supposed to. */
+    char *pszUser;
+    rc = RTProcQueryUsernameA(NIL_RTPROCESS, &pszUser);
+    if (RT_SUCCESS(rc))
+    {
 #ifdef RT_OS_WINDOWS
-    char szUser[_1K];
-    DWORD cbLen = sizeof(szUser);
-    /** @todo Does not yet handle ERROR_MORE_DATA for user names longer than 32767. */
-    if (!GetUserName(szUser, &cbLen))
-    {
-        RTPrintf("GetUserName failed with last error=%ld\n", GetLastError());
-        return RTEXITCODE_FAILURE;
-    }
-# if 0 /* Does not work on NT4 (yet). */
-    DWORD cbSid = 0;
-    DWORD cbDomain = 0;
-    SID_NAME_USE sidUse;
-    /* First try to figure out how much space for SID + domain name we need. */
-    BOOL bRet = LookupAccountName(NULL /* current system*/,
-                                  szUser,
-                                  NULL,
-                                  &cbSid,
-                                  NULL,
-                                  &cbDomain,
-                                  &sidUse);
-    if (!bRet)
-    {
-        DWORD dwErr = GetLastError();
-        if (dwErr != ERROR_INSUFFICIENT_BUFFER)
-        {
-            RTPrintf("LookupAccountName(1) failed with last error=%ld\n", dwErr);
-            return RTEXITCODE_FAILURE;
-        }
-    }
-
-    /* Now try getting the real SID + domain name. */
-    SID *pSid = (SID *)RTMemAlloc(cbSid);
-    AssertPtr(pSid);
-    char *pszDomain = (char *)RTMemAlloc(cbDomain); /* Size in TCHAR! */
-    AssertPtr(pszDomain);
-
-    if (!LookupAccountName(NULL /* Current system */,
-                           szUser,
-                           pSid,
-                           &cbSid,
-                           pszDomain,
-                           &cbDomain,
-                           &sidUse))
-    {
-        RTPrintf("LookupAccountName(2) failed with last error=%ld\n", GetLastError());
-        return RTEXITCODE_FAILURE;
-    }
-    RTMemFree(pSid);
-    RTMemFree(pszDomain);
-# endif
+        if (RTStrICmp(pszUser, argv[2]) != 0)
 #else
-    /** @todo Lookup UID/effective UID, maybe GID? */
+        if (RTStrCmp(pszUser, argv[2]) != 0)
 #endif
-    return RTEXITCODE_SUCCESS;
+        {
+            RTStrmPrintf(g_pStdErr, "child4: user name is '%s', expected '%s'\n", pszUser, argv[2]);
+            cErrors++;
+        }
+        RTStrFree(pszUser);
+    }
+    else
+    {
+        RTStrmPrintf(g_pStdErr, "child4: RTProcQueryUsernameA failed: %Rrc\n", rc);
+        cErrors++;
+    }
+
+    return cErrors == 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
 {
     RTTestISubF("As user \"%s\" with password \"%s\"", pszUser, pszPassword);
+    RTTESTI_CHECK_RETV(pszUser && *pszUser);
 
-    const char * apszArgs[3] =
+    const char * apszArgs[] =
     {
         "test", /* user name */
         "--testcase-child-5",
+        pszUser,
         NULL
     };
 
-    RTPROCESS hProc;
-
     /* Test for invalid logons. */
+    RTPROCESS hProc;
     int rc = RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL, NULL, NULL,
                             "non-existing-user", "wrong-password", &hProc);
     if (rc != VERR_AUTHENTICATION_FAILURE && rc != VERR_PRIVILEGE_NOT_HELD && rc != VERR_PROC_TCB_PRIV_NOT_HELD)
@@ -421,6 +392,7 @@ static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
     /* Test for invalid application. */
     RTTESTI_CHECK_RC(RTProcCreateEx("non-existing-app", apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
                                     NULL, NULL, NULL, NULL, &hProc), VERR_FILE_NOT_FOUND);
+
     /* Test a (hopefully) valid user/password logon (given by parameters of this function). */
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
                                          NULL, NULL, pszUser, pszPassword, &hProc), VINF_SUCCESS);
@@ -678,11 +650,10 @@ int main(int argc, char **argv)
         return tstRTCreateProcEx3Child();
     if (argc >= 5 && !strcmp(argv[1], "--testcase-child-4"))
         return tstRTCreateProcEx4Child(argc, argv);
-    if (argc == 2 && !strcmp(argv[1], "--testcase-child-5"))
+    if (argc >= 2 && !strcmp(argv[1], "--testcase-child-5"))
         return tstRTCreateProcEx5Child(argc, argv);
     if (argc >= 2 && !strcmp(argv[1], "--testcase-child-6"))
         return tstRTCreateProcEx6Child(argc, argv);
-
 
     /*
      * Main process.
