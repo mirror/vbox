@@ -172,12 +172,12 @@ RTR3DECL(int) RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUs
          * Figure a good buffer estimate.
          */
         int32_t cbPwdMax = sysconf(_SC_GETPW_R_SIZE_MAX);
-        if (cbPwdMax <= sizeof(_1K))
+        if (cbPwdMax <= _1K)
             cbPwdMax = _1K;
         else
-            AssertStmt(cbPwdMax <= 32U*_1M, cbPwdMax = 32U*_1M);
+            AssertStmt(cbPwdMax <= 32*_1M, cbPwdMax = 32*_1M);
         char *pchBuf = (char *)RTMemTmpAllocZ(cbPwdMax);
-        if (pbBuf)
+        if (pchBuf)
         {
             /*
              * Get the password file entry.
@@ -200,7 +200,7 @@ RTR3DECL(int) RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUs
                     size_t cbTmp = strlen(pszTmp) + 1;
                     if (pcbUser)
                         *pcbUser = cbTmp;
-                    if (cbPwdUser <= cbUser)
+                    if (cbTmp <= cbUser)
                     {
                         memcpy(pszUser, pszTmp, cbTmp);
                         rc = VINF_SUCCESS;
@@ -235,12 +235,12 @@ RTR3DECL(int) RTProcQueryUsernameA(RTPROCESS hProcess, char **ppszUser)
          * Figure a good buffer estimate.
          */
         int32_t cbPwdMax = sysconf(_SC_GETPW_R_SIZE_MAX);
-        if (cbPwdMax <= sizeof(_1K))
+        if (cbPwdMax <= _1K)
             cbPwdMax = _1K;
         else
-            AssertStmt(cbPwdMax <= 32U*_1M, cbPwdMax = 32U*_1M);
+            AssertStmt(cbPwdMax <= 32*_1M, cbPwdMax = 32*_1M);
         char *pchBuf = (char *)RTMemTmpAllocZ(cbPwdMax);
-        if (pbBuf)
+        if (pchBuf)
         {
             /*
              * Get the password file entry.
