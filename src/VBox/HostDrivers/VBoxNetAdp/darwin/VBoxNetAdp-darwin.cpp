@@ -146,8 +146,12 @@ static errno_t vboxNetAdpDarwinOutput(ifnet_t pIface, mbuf_t pMBuf)
     /*
      * We are a dummy interface with all the real work done in
      * VBoxNetFlt bridged networking filter.  If anything makes it
-     * this far, just drop it, we have nowhere to send it to.
+     * this far, it must be a broadcast or a packet for an unknown
+     * guest that intnet didn't know where to dispatch.  In that case
+     * we must still do the BPF tap and stats.
      */
+    bpf_tap_out(pIface, DLT_EN10MB, pMBuf, NULL, 0);
+
     mbuf_freem_list(pMBuf);
     return 0;
 }
