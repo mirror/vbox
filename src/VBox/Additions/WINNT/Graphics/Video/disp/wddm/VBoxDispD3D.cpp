@@ -2936,6 +2936,42 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
     return hr;
 }
 
+static UINT vboxWddmVertexCountFromPrimitive(D3DPRIMITIVETYPE PrimitiveType, UINT PrimitiveCount)
+{
+    Assert(PrimitiveCount > 0); /* Callers ensure this. */
+
+    UINT cVertices;
+    switch (PrimitiveType)
+    {
+        case D3DPT_POINTLIST:
+            cVertices = PrimitiveCount;     /* Vertex per point. */
+            break;
+
+        case D3DPT_LINELIST:
+            cVertices = PrimitiveCount * 2; /* Two vertices for each line. */
+            break;
+
+        case D3DPT_LINESTRIP:
+            cVertices = PrimitiveCount + 1; /* Two vertices for the first line and one vertex for each subsequent. */
+            break;
+
+        case D3DPT_TRIANGLELIST:
+            cVertices = PrimitiveCount * 3; /* Three vertices for each triangle. */
+            break;
+
+        case D3DPT_TRIANGLESTRIP:
+        case D3DPT_TRIANGLEFAN:
+            cVertices = PrimitiveCount + 2; /* Three vertices for the first triangle and one vertex for each subsequent. */
+            break;
+
+        default:
+            cVertices = 0; /* No such primitive in d3d9types.h. */
+            break;
+    }
+
+    return cVertices;
+}
+
 static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST D3DDDIARG_DRAWINDEXEDPRIMITIVE2* pData, UINT dwIndicesSize, CONST VOID* pIndexBuffer, CONST UINT* pFlagBuffer)
 {
     VBOXDISP_DDI_PROLOGUE_DEV(hDevice);
@@ -2948,15 +2984,41 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST 
     const uint8_t *pvVertexBuffer = NULL;
     DWORD cbVertexStride = 0;
 
-    if (dwIndicesSize != 2 && dwIndicesSize != 4)
-        WARN(("unsupported dwIndicesSize %d", dwIndicesSize));
+    LOGF(("\n  PrimitiveType %d, BaseVertexOffset %d, MinIndex %d, NumVertices %d, StartIndexOffset %d, PrimitiveCount %d,\n"
+          "  dwIndicesSize %d, pIndexBuffer %p, pFlagBuffer %p\n",
+          pData->PrimitiveType,
+          pData->BaseVertexOffset,
+          pData->MinIndex,
+          pData->NumVertices,
+          pData->StartIndexOffset,
+          pData->PrimitiveCount,
+          dwIndicesSize,
+          pIndexBuffer,
+          pFlagBuffer));
 
+    if (dwIndicesSize != 2 && dwIndicesSize != 4)
+    {
+        WARN(("unsupported dwIndicesSize %d", dwIndicesSize));
+        return E_INVALIDARG;
+    }
+
+    if (pData->PrimitiveCount == 0)
+    {
+        /* Nothing to draw. */
+        return S_OK;
+    }
+
+    /* Fetch the appropriate stream source:
+     * "Stream zero contains transform indices and is the only stream that should be accessed."
+     */
     if (pDevice->aStreamSourceUm[0].pvBuffer)
     {
         Assert(pDevice->aStreamSourceUm[0].cbStride);
 
         pvVertexBuffer = (const uint8_t *)pDevice->aStreamSourceUm[0].pvBuffer;
         cbVertexStride = pDevice->aStreamSourceUm[0].cbStride;
+        LOGF(("aStreamSourceUm %p, stride %d\n",
+              pvVertexBuffer, cbVertexStride));
     }
     else if (pDevice->aStreamSource[0])
     {
@@ -2966,6 +3028,9 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST 
             Assert(pDevice->StreamSourceInfo[0].uiStride);
             pvVertexBuffer = ((const uint8_t *)pAlloc->pvMem) + pDevice->StreamSourceInfo[0].uiOffset;
             cbVertexStride = pDevice->StreamSourceInfo[0].uiStride;
+            LOGF(("aStreamSource %p, cbSize %d, stride %d, uiOffset %d (elements %d)\n",
+                  pvVertexBuffer, pAlloc->SurfDesc.cbSize, cbVertexStride, pDevice->StreamSourceInfo[0].uiOffset,
+                  cbVertexStride? pAlloc->SurfDesc.cbSize / cbVertexStride: 0));
         }
         else
         {
@@ -2981,33 +3046,82 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST 
 
     if (SUCCEEDED(hr))
     {
-        pvVertexBuffer = pvVertexBuffer + pData->BaseVertexOffset /*  * cbVertexStride */;
+        /* Convert input data to appropriate DrawIndexedPrimitiveUP parameters.
+         * In particular prepare zero based vertex array becuase wine does not
+         * handle MinVertexIndex correctly.
+         */
 
-        hr = pDevice9If->DrawIndexedPrimitiveUP(pData->PrimitiveType,
-                        pData->MinIndex,
-                        pData->NumVertices,
-                        pData->PrimitiveCount,
-                        ((uint8_t*)pIndexBuffer) + dwIndicesSize * pData->StartIndexOffset,
-                        dwIndicesSize == 2 ? D3DFMT_INDEX16 : D3DFMT_INDEX32,
-                        pvVertexBuffer,
-                        cbVertexStride);
-        if(SUCCEEDED(hr))
-            hr = S_OK;
-        else
-            WARN(("DrawIndexedPrimitiveUP failed hr = 0x%x", hr));
+        /* Take the offset, which corresponds to the index == 0, into account. */
+        const uint8_t *pu8VertexStart = pvVertexBuffer + pData->BaseVertexOffset;
 
-        if (pDevice->aStreamSource[0])
+        /* Where the pData->MinIndex starts. */
+        pu8VertexStart += pData->MinIndex * cbVertexStride;
+
+        /* Convert indexes to zero based relative to pData->MinIndex. */
+        const uint8_t *pu8IndicesStartSrc = (uint8_t *)pIndexBuffer + pData->StartIndexOffset;
+        UINT cIndices = vboxWddmVertexCountFromPrimitive(pData->PrimitiveType, pData->PrimitiveCount);
+
+        /* Allocate memory for converted indices. */
+        uint8_t *pu8IndicesStartConv = (uint8_t *)RTMemAlloc(cIndices * dwIndicesSize);
+        if (pu8IndicesStartConv != NULL)
         {
-            HRESULT tmpHr = pDevice9If->SetStreamSource(0, (IDirect3DVertexBuffer9*)pDevice->aStreamSource[0]->pD3DIf, pDevice->StreamSourceInfo[0].uiOffset, pDevice->StreamSourceInfo[0].uiStride);
-            if(!SUCCEEDED(tmpHr))
-                WARN(("SetStreamSource failed hr = 0x%x", tmpHr));
+            UINT i;
+            if (dwIndicesSize == 2)
+            {
+                uint16_t *pu16Src = (uint16_t *)pu8IndicesStartSrc;
+                uint16_t *pu16Dst = (uint16_t *)pu8IndicesStartConv;
+                for (i = 0; i < cIndices; ++i, ++pu16Dst, ++pu16Src)
+                {
+                    *pu16Dst = *pu16Src - pData->MinIndex;
+                }
+            }
+            else
+            {
+                uint32_t *pu32Src = (uint32_t *)pu8IndicesStartSrc;
+                uint32_t *pu32Dst = (uint32_t *)pu8IndicesStartConv;
+                for (i = 0; i < cIndices; ++i, ++pu32Dst, ++pu32Src)
+                {
+                    *pu32Dst = *pu32Src - pData->MinIndex;
+                }
+            }
+
+            hr = pDevice9If->DrawIndexedPrimitiveUP(pData->PrimitiveType,
+                                                    0,
+                                                    pData->NumVertices,
+                                                    pData->PrimitiveCount,
+                                                    pu8IndicesStartConv,
+                                                    dwIndicesSize == 2 ? D3DFMT_INDEX16 : D3DFMT_INDEX32,
+                                                    pu8VertexStart,
+                                                    cbVertexStride);
+
+            if (SUCCEEDED(hr))
+                hr = S_OK;
+            else
+                WARN(("DrawIndexedPrimitiveUP failed hr = 0x%x", hr));
+
+            RTMemFree(pu8IndicesStartConv);
+
+            /* Following any IDirect3DDevice9::DrawIndexedPrimitiveUP call, the stream 0 settings,
+             * referenced by IDirect3DDevice9::GetStreamSource, are set to NULL. Also, the index
+             * buffer setting for IDirect3DDevice9::SetIndices is set to NULL.
+             */
+            if (pDevice->aStreamSource[0])
+            {
+                HRESULT tmpHr = pDevice9If->SetStreamSource(0, (IDirect3DVertexBuffer9*)pDevice->aStreamSource[0]->pD3DIf, pDevice->StreamSourceInfo[0].uiOffset, pDevice->StreamSourceInfo[0].uiStride);
+                if(!SUCCEEDED(tmpHr))
+                    WARN(("SetStreamSource failed hr = 0x%x", tmpHr));
+            }
+
+            if (pDevice->IndiciesInfo.pIndicesAlloc)
+            {
+                HRESULT tmpHr = pDevice9If->SetIndices((IDirect3DIndexBuffer9*)pDevice->IndiciesInfo.pIndicesAlloc->pD3DIf);
+                if(!SUCCEEDED(tmpHr))
+                    WARN(("SetIndices failed hr = 0x%x", tmpHr));
+            }
         }
-
-        if (pDevice->IndiciesInfo.pIndicesAlloc)
+        else
         {
-            HRESULT tmpHr = pDevice9If->SetIndices((IDirect3DIndexBuffer9*)pDevice->IndiciesInfo.pIndicesAlloc->pD3DIf);
-            if(!SUCCEEDED(tmpHr))
-                WARN(("SetIndices failed hr = 0x%x", tmpHr));
+            hr = E_OUTOFMEMORY;
         }
     }
 
