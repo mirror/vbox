@@ -214,6 +214,38 @@ static errno_t vboxNetAdpDarwinDemux(ifnet_t pIface, mbuf_t pMBuf,
     return ether_demux(pIface, pMBuf, pFrameHeader, pProtocolFamily);
 }
 
+
+static errno_t vboxNetAdpDarwinIfIOCtl(ifnet_t pIface, unsigned long uCmd, void *pvData)
+{
+    errno_t error = 0;
+
+    switch (uCmd)
+    {
+        /*
+         * Common pattern in the kernel code is:
+         *   ifnet_set_flags(interface, ...);
+         *   ifnet_ioctl(interface, 0, SIOCSIFFLAGS, NULL);
+         *
+         * Stub this case out so that VBoxNetFlt-darwin.cpp doesn't
+         * complain that it failed to put vboxnet into promiscuous
+         * mode.
+         */
+        case SIOCSIFFLAGS:
+            if (pvData != NULL)
+            {
+                error = ENOTSUP;
+            }
+            break;
+
+        default:
+            error = ether_ioctl(pIface, uCmd, pvData);
+            break;
+    }
+
+    return error;
+}
+
+
 int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
 {
     int rc;
@@ -251,7 +283,7 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
     Params.check_multi = ether_check_multi;
     Params.framer = ether_frameout;
     Params.softc = pThis;
-    Params.ioctl = (ifnet_ioctl_func)ether_ioctl;
+    Params.ioctl = vboxNetAdpDarwinIfIOCtl;
     Params.set_bpf_tap = NULL;
     Params.detach = vboxNetAdpDarwinDetach;
     Params.event = NULL;
