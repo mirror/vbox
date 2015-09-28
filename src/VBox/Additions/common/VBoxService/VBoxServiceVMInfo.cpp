@@ -961,45 +961,64 @@ static int vboxserviceVMInfoWriteNetwork(void)
         return RTErrConvertFromWin32(wsaErr);
     }
 
-    INTERFACE_INFO InterfaceList[20] = {0};
-    unsigned long nBytesReturned = 0;
-    if (WSAIoctl(sd,
-                 SIO_GET_INTERFACE_LIST,
-                 0,
-                 0,
-                 &InterfaceList,
-                 sizeof(InterfaceList),
-                 &nBytesReturned,
-                 0,
-                 0) ==  SOCKET_ERROR)
+    INTERFACE_INFO aInterfaces[20] = {0};
+    DWORD cbReturned = 0;
+# ifdef TARGET_NT4
+    /* Workaround for uninitialized variable used in memcpy in GetTcpipInterfaceList
+       (NT4SP1 at least).  It seems to be happy enough with garbages, no failure
+       returns so far, so we just need to prevent it from crashing by filling the
+       stack with valid pointer values prior to the API call. */
+    _asm
+    {
+        mov     edx, edi
+        lea     eax, aInterfaces
+        mov     [esp - 0x1000], eax
+        mov     [esp - 0x2000], eax
+        mov     ecx, 0x2000/4 - 1
+        cld
+        lea     edi, [esp - 0x2000]
+        rep stosd
+        mov     edi, edx
+    }
+# endif
+    if (   WSAIoctl(sd,
+                    SIO_GET_INTERFACE_LIST,
+                    NULL,                /* pvInBuffer */
+                    0,                   /* cbInBuffer */
+                    &aInterfaces[0],     /* pvOutBuffer */
+                    sizeof(aInterfaces), /* cbOutBuffer */
+                    &cbReturned,
+                    NULL,                /* pOverlapped */
+                    NULL)                /* pCompletionRoutine */
+        == SOCKET_ERROR)
     {
         VBoxServiceError("VMInfo/Network: Failed to WSAIoctl() on socket: Error: %d\n", WSAGetLastError());
         if (pAdpInfo)
             RTMemFree(pAdpInfo);
         return RTErrConvertFromWin32(WSAGetLastError());
     }
-    int cIfacesSystem = nBytesReturned / sizeof(INTERFACE_INFO);
+    int cIfacesSystem = cbReturned / sizeof(INTERFACE_INFO);
 
     /** @todo Use GetAdaptersInfo() and GetAdapterAddresses (IPv4 + IPv6) for more information. */
     for (int i = 0; i < cIfacesSystem; ++i)
     {
         sockaddr_in *pAddress;
         u_long nFlags = 0;
-        if (InterfaceList[i].iiFlags & IFF_LOOPBACK) /* Skip loopback device. */
+        if (aInterfaces[i].iiFlags & IFF_LOOPBACK) /* Skip loopback device. */
             continue;
-        nFlags = InterfaceList[i].iiFlags;
-        pAddress = (sockaddr_in *)&(InterfaceList[i].iiAddress);
+        nFlags = aInterfaces[i].iiFlags;
+        pAddress = (sockaddr_in *)&(aInterfaces[i].iiAddress);
         Assert(pAddress);
         char szIp[32];
         RTStrPrintf(szIp, sizeof(szIp), "%s", inet_ntoa(pAddress->sin_addr));
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/IP", cIfsReported);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szIp);
 
-        pAddress = (sockaddr_in *) & (InterfaceList[i].iiBroadcastAddress);
+        pAddress = (sockaddr_in *) & (aInterfaces[i].iiBroadcastAddress);
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Broadcast", cIfsReported);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
-        pAddress = (sockaddr_in *)&(InterfaceList[i].iiNetmask);
+        pAddress = (sockaddr_in *)&(aInterfaces[i].iiNetmask);
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Netmask", cIfsReported);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
