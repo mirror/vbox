@@ -1334,6 +1334,19 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffer( GLenum mode )
     cr_server.head_spu->dispatch_table.DrawBuffer( mode );
 }
 
+void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffers( GLsizei n, const GLenum* bufs )
+{
+    if (n == 1)
+    {
+        crServerDispatchDrawBuffer( bufs[0] );
+    }
+    else
+    {
+        /** @todo State tracker. */
+        cr_server.head_spu->dispatch_table.DrawBuffers( n, bufs );
+    }
+}
+
 void SERVER_DISPATCH_APIENTRY crServerDispatchReadBuffer( GLenum mode )
 {
     crStateReadBuffer( mode );

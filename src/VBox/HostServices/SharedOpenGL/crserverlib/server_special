@@ -265,3 +265,4 @@ TexEnvi
 TexEnviv
 GetTexEnvfv
 GetTexEnviv
+DrawBuffers
