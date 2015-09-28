@@ -132,7 +132,7 @@ typedef struct RTLOCALIPCSERVERINT
     uint32_t volatile cRefs;
     /** Indicates that there is a pending cancel request. */
     bool volatile fCancelled;
-    /** The name pipe handle. */
+    /** The named pipe handle. */
     HANDLE hNmPipe;
     /** The handle to the event object we're using for overlapped I/O. */
     HANDLE hEvent;
@@ -163,7 +163,7 @@ typedef struct RTLOCALIPCSESSIONINT
     bool                fZeroByteRead;
     /** Indicates that there is a pending cancel request. */
     bool volatile       fCancelled;
-    /** The name pipe handle. */
+    /** The named pipe handle. */
     HANDLE              hNmPipe;
     /** The handle to the event object we're using for overlapped I/O. */
     HANDLE              hEvent;
@@ -425,7 +425,7 @@ RTDECL(int) RTLocalIpcServerDestroy(RTLOCALIPCSERVER hServer)
         return VINF_SUCCESS;
     PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)hServer;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTLOCALIPCSERVER_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSERVER_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Cancel any thread currently busy using the server,
@@ -458,7 +458,7 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
      */
     PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)hServer;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTLOCALIPCSERVER_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSERVER_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Enter the critsect before inspecting the object further.
@@ -565,7 +565,7 @@ RTDECL(int) RTLocalIpcServerCancel(RTLOCALIPCSERVER hServer)
      */
     PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)hServer;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTLOCALIPCSERVER_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSERVER_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Enter the critical section, then set the cancellation flag
@@ -759,7 +759,7 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession)
         return VINF_SUCCESS;
     PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Cancel any thread currently busy using the session,
