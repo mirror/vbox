@@ -246,6 +246,9 @@ static const char *crExtensions =
 #ifdef CR_ARB_draw_buffers
     "GL_ARB_draw_buffers "
 #endif
+#ifdef CR_ARB_shader_texture_lod
+    "GL_ARB_shader_texture_lod "
+#endif
 
 	"";
 
