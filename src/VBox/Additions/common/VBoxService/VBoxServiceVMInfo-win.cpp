@@ -19,9 +19,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#if defined(_WIN32_WINNT) && _WIN32_WINNT < 0x0502
+#if defined(_WIN32_WINNT) && _WIN32_WINNT < 0x0600
 # undef  _WIN32_WINNT
-# define _WIN32_WINNT 0x0502 /* CachedRemoteInteractive in recent SDKs. */
+# define _WIN32_WINNT 0x0600 /* QueryFullProcessImageNameW in recent SDKs. */
 #endif
 #include <Windows.h>
 #include <wtsapi32.h>        /* For WTS* calls. */
@@ -32,11 +32,13 @@
 #include <iprt/ldr.h>
 #include <iprt/localipc.h>
 #include <iprt/mem.h>
-#include <iprt/thread.h>
+#include <iprt/once.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
 #include <iprt/system.h>
 #include <iprt/time.h>
+#include <iprt/thread.h>
+
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
@@ -89,42 +91,147 @@ typedef struct VBOXSERVICEVMINFOPROC
 } VBOXSERVICEVMINFOPROC, *PVBOXSERVICEVMINFOPROC;
 
 
-/*******************************************************************************
-*   Prototypes
-*******************************************************************************/
-uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs);
-bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
-int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
-void VBoxServiceVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs);
-int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain);
-
-typedef BOOL WINAPI FNQUERYFULLPROCESSIMAGENAME(HANDLE,  DWORD, LPWSTR, PDWORD);
-typedef FNQUERYFULLPROCESSIMAGENAME *PFNQUERYFULLPROCESSIMAGENAME;
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs);
+static bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
+static int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
+static void VBoxServiceVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs);
+static int  vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain);
 
 
-#ifndef TARGET_NT4
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static RTONCE                                   g_vgsvcWinVmInitOnce = RTONCE_INITIALIZER;
+
+/** @name Secur32.dll imports are dynamically resolved because of NT4.
+ * @{ */
+static decltype(LsaGetLogonSessionData)        *g_pfnLsaGetLogonSessionData = NULL;
+static decltype(LsaEnumerateLogonSessions)     *g_pfnLsaEnumerateLogonSessions = NULL;
+static decltype(LsaFreeReturnBuffer)           *g_pfnLsaFreeReturnBuffer = NULL;
+/** @} */
+
+/** @name WtsApi32.dll imports are dynamically resolved because of NT4.
+ * @{ */
+static decltype(WTSFreeMemory)                 *g_pfnWTSFreeMemory = NULL;
+static decltype(WTSQuerySessionInformationA)   *g_pfnWTSQuerySessionInformationA = NULL;
+/** @} */
+
+/** @name PsApi.dll imports are dynamically resolved because of NT4.
+ * @{ */
+static decltype(EnumProcesses)                 *g_pfnEnumProcesses = NULL;
+static decltype(GetModuleFileNameExW)          *g_pfnGetModuleFileNameExW = NULL;
+/** @} */
+
+/** @name New Kernel32.dll APIs we may use when present.
+ * @{  */
+static decltype(QueryFullProcessImageNameW)    *g_pfnQueryFullProcessImageNameW = NULL;
+
+/** @} */
+
+/** Windows version.  */
+static OSVERSIONINFOEXA                         g_WinVersion;
+
+
+/**
+ * An RTOnce callback function.
+ */
+static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
+{
+    /* SECUR32 */
+    RTLDRMOD hLdrMod;
+    int rc = RTLdrLoadSystem("secur32.dll", true, &hLdrMod);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hLdrMod, "LsaGetLogonSessionData", (void **)&g_pfnLsaGetLogonSessionData);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hLdrMod, "LsaEnumerateLogonSessions", (void **)&g_pfnLsaEnumerateLogonSessions);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hLdrMod, "LsaFreeReturnBuffer", (void **)&g_pfnLsaFreeReturnBuffer);
+        AssertRC(rc);
+        RTLdrClose(hLdrMod);
+    }
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceVerbose(1, "Secur32.dll APIs are not availble (%Rrc)\n", rc);
+        g_pfnLsaGetLogonSessionData = NULL;
+        g_pfnLsaEnumerateLogonSessions = NULL;
+        g_pfnLsaFreeReturnBuffer = NULL;
+        Assert(g_WinVersion.dwMajorVersion < 5);
+    }
+
+    /* WTSAPI32 */
+    rc = RTLdrLoadSystem("wtsapi32.dll", true, &hLdrMod);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hLdrMod, "WTSFreeMemory", (void **)&g_pfnWTSFreeMemory);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hLdrMod, "WTSQuerySessionInformationA", (void **)&g_pfnWTSQuerySessionInformationA);
+        AssertRC(rc);
+        RTLdrClose(hLdrMod);
+    }
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceVerbose(1, "WtsApi32.dll APIs are not availble (%Rrc)\n", rc);
+        g_pfnWTSFreeMemory = NULL;
+        g_pfnWTSQuerySessionInformationA = NULL;
+        Assert(g_WinVersion.dwMajorVersion < 5);
+    }
+
+    /* PSAPI */
+    rc = RTLdrLoadSystem("psapi.dll", true, &hLdrMod);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hLdrMod, "EnumProcesses", (void **)&g_pfnEnumProcesses);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hLdrMod, "GetModuleFileNameExW", (void **)&g_pfnGetModuleFileNameExW);
+        AssertRC(rc);
+        RTLdrClose(hLdrMod);
+    }
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceVerbose(1, "psapi.dll APIs are not availble (%Rrc)\n", rc);
+        g_pfnEnumProcesses = NULL;
+        g_pfnGetModuleFileNameExW = NULL;
+        Assert(g_WinVersion.dwMajorVersion < 5);
+    }
+
+    /* Kernel32: */
+    rc = RTLdrLoadSystem("kerne32.dll", true, &hLdrMod);
+    AssertRCReturn(rc, rc);
+    rc = RTLdrGetSymbol(hLdrMod, "QueryFullProcessImageNameW", (void **)&g_pfnQueryFullProcessImageNameW);
+    if (RT_FAILURE(rc))
+    {
+        Assert(g_WinVersion.dwMajorVersion < 6);
+        g_pfnQueryFullProcessImageNameW = NULL;
+    }
+    RTLdrClose(hLdrMod);
+
+    /*
+     * Get the extended windows version once and for all.
+     */
+    g_WinVersion.dwOSVersionInfoSize = sizeof(g_WinVersion);
+    if (!GetVersionExA((OSVERSIONINFO *)&g_WinVersion))
+    {
+        AssertFailed();
+        RT_ZERO(g_WinVersion);
+        g_WinVersion.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+        if (!GetVersionExA((OSVERSIONINFO *)&g_WinVersion))
+            RT_ZERO(g_WinVersion);
+    }
+
+    return VINF_SUCCESS;
+}
+
 
 static bool vboxServiceVMInfoSession0Separation(void)
 {
-    /** @todo Only do this once. Later. */
-    OSVERSIONINFOEX OSInfoEx;
-    RT_ZERO(OSInfoEx);
-    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    if (   !GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
-        || OSInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT)
-    {
-        /* Platform other than NT (e.g. Win9x) not supported. */
-        return false;
-    }
-
-    if (   OSInfoEx.dwMajorVersion >= 6
-        && OSInfoEx.dwMinorVersion >= 0)
-    {
-        return true;
-    }
-
-    return false;
+    return g_WinVersion.dwPlatformId == VER_PLATFORM_WIN32_NT
+        && g_WinVersion.dwMajorVersion >= 6; /* Vista = 6.0 */
 }
+
 
 /**
  * Retrieves the module name of a given process.
@@ -138,21 +245,15 @@ static int VBoxServiceVMInfoWinProcessesGetModuleNameA(PVBOXSERVICEVMINFOPROC co
     AssertPtrReturn(ppszName, VERR_INVALID_POINTER);
 
     /** @todo Only do this once. Later. */
-    OSVERSIONINFOEX OSInfoEx;
-    RT_ZERO(OSInfoEx);
-    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    if (   !GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
-        || OSInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT)
-    {
-        /* Platform other than NT (e.g. Win9x) not supported. */
+    /* Platform other than NT (e.g. Win9x) not supported. */
+    if (g_WinVersion.dwPlatformId != VER_PLATFORM_WIN32_NT)
         return VERR_NOT_SUPPORTED;
-    }
 
     int rc = VINF_SUCCESS;
 
     DWORD dwFlags = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
-    if (OSInfoEx.dwMajorVersion >= 6 /* Vista or later */)
-        dwFlags = 0x1000; /* = PROCESS_QUERY_LIMITED_INFORMATION; less privileges needed. */
+    if (g_WinVersion.dwMajorVersion >= 6 /* Vista or later */)
+        dwFlags = PROCESS_QUERY_LIMITED_INFORMATION; /* possible to do on more processes */
 
     HANDLE h = OpenProcess(dwFlags, FALSE, pProc->id);
     if (h == NULL)
@@ -168,27 +269,16 @@ static int VBoxServiceVMInfoWinProcessesGetModuleNameA(PVBOXSERVICEVMINFOPROC co
         /* Since GetModuleFileNameEx has trouble with cross-bitness stuff (32-bit apps cannot query 64-bit
            apps and vice verse) we have to use a different code path for Vista and up. */
         WCHAR wszName[_1K];
-        DWORD dwLen = sizeof(wszName);
+        DWORD dwLen = sizeof(wszName); /** @todo r=bird: wrong? */
 
-        /* Note: For 2000 + NT4 we might just use GetModuleFileNameW() instead. */
-        if (OSInfoEx.dwMajorVersion >= 6 /* Vista or later */)
+        /* Use QueryFullProcessImageNameW if available (Vista+). */
+        if (g_pfnQueryFullProcessImageNameW)
         {
-            /* Loading the module and getting the symbol for each and every process is expensive
-             * -- since this function (at the moment) only is used for debugging purposes it's okay. */
-            PFNQUERYFULLPROCESSIMAGENAME pfnQueryFullProcessImageName;
-            pfnQueryFullProcessImageName = (PFNQUERYFULLPROCESSIMAGENAME)
-                RTLdrGetSystemSymbol("kernel32.dll", "QueryFullProcessImageNameW");
-            if (pfnQueryFullProcessImageName)
-            {
-                if (!pfnQueryFullProcessImageName(h, 0 /*PROCESS_NAME_NATIVE*/, wszName, &dwLen))
-                    rc = VERR_ACCESS_DENIED;
-            }
-        }
-        else
-        {
-            if (!GetModuleFileNameExW(h, NULL /* Get main executable */, wszName, dwLen))
+            if (!g_pfnQueryFullProcessImageNameW(h, 0 /*PROCESS_NAME_NATIVE*/, wszName, &dwLen))
                 rc = VERR_ACCESS_DENIED;
         }
+        else if (!g_pfnGetModuleFileNameExW(h, NULL /* Get main executable */, wszName, dwLen))
+            rc = VERR_ACCESS_DENIED;
 
         if (   RT_FAILURE(rc)
             && g_cVerbosity > 3)
@@ -435,10 +525,13 @@ static int VBoxServiceVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pPro
  *
  * @param   pcProcs     Where to store the returned process count.
  */
-int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDWORD pcProcs)
+static int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDWORD pcProcs)
 {
     AssertPtr(ppaProcs);
     AssertPtr(pcProcs);
+
+    if (!g_pfnEnumProcesses)
+        return VERR_NOT_SUPPORTED;
 
     /*
      * Call EnumProcesses with an increasingly larger buffer until it all fits
@@ -461,7 +554,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDW
 
         /* Query the processes. Not the cbRet == buffer size means there could be more work to be done. */
         DWORD cbRet;
-        if (!EnumProcesses(paPID, cProcesses * sizeof(DWORD), &cbRet))
+        if (!g_pfnEnumProcesses(paPID, cProcesses * sizeof(DWORD), &cbRet))
         {
             rc = RTErrConvertFromWin32(GetLastError());
             break;
@@ -527,7 +620,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDW
  *
  * @param   paProcs     What
  */
-void VBoxServiceVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs)
+static void VBoxServiceVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs)
 {
     for (DWORD i = 0; i < cProcs; i++)
     {
@@ -550,18 +643,20 @@ void VBoxServiceVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paPr
  * @param   cProcs          The number of processes in the snaphot.
  * @param   puSession       Looked up session number.  Optional.
  */
-uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession,
-                                                 PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs,
-                                                 PULONG puTerminalSession)
+static uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession,
+                                                        PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs,
+                                                        PULONG puTerminalSession)
 {
     if (!pSession)
     {
         VBoxServiceVerbose(1, "Session became invalid while enumerating!\n");
         return 0;
     }
+    if (!g_pfnLsaGetLogonSessionData)
+        return VERR_NOT_SUPPORTED;
 
     PSECURITY_LOGON_SESSION_DATA pSessionData = NULL;
-    NTSTATUS rcNt = LsaGetLogonSessionData(pSession, &pSessionData);
+    NTSTATUS rcNt = g_pfnLsaGetLogonSessionData(pSession, &pSessionData);
     if (rcNt != STATUS_SUCCESS)
     {
         VBoxServiceError("Could not get logon session data! rcNt=%#x\n", rcNt);
@@ -572,19 +667,18 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession,
     {
        VBoxServiceError("User SID=%p is not valid\n", pSessionData->Sid);
        if (pSessionData)
-           LsaFreeReturnBuffer(pSessionData);
+           g_pfnLsaFreeReturnBuffer(pSessionData);
        return 0;
     }
 
-    int rc = VINF_SUCCESS;
 
     /*
      * Even if a user seems to be logged in, it could be a stale/orphaned logon
      * session. So check if we have some processes bound to it by comparing the
      * session <-> process LUIDs.
      */
-    uint32_t cNumProcs = 0;
-
+    int rc = VINF_SUCCESS;
+    uint32_t cProcessesFound = 0;
     for (DWORD i = 0; i < cProcs; i++)
     {
         PSID pProcSID = paProcs[i].pSid;
@@ -607,7 +701,7 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession,
 
                 if (paProcs[i].fInteractive)
                 {
-                    cNumProcs++;
+                    cProcessesFound++;
                     if (!g_cVerbosity) /* We want a bit more info on higher verbosity. */
                         break;
                 }
@@ -618,9 +712,9 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession,
     if (puTerminalSession)
         *puTerminalSession = pSessionData->Session;
 
-    LsaFreeReturnBuffer(pSessionData);
+    g_pfnLsaFreeReturnBuffer(pSessionData);
 
-    return cNumProcs;
+    return cProcessesFound;
 }
 
 
@@ -656,14 +750,16 @@ static void VBoxServiceVMInfoWinSafeCopy(PWCHAR pwszDst, size_t cbDst, LSA_UNICO
  * @param   pUserInfo           Where to return the user information.
  * @param   pSession            The session to check.
  */
-bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSession)
+static bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSession)
 {
     AssertPtrReturn(pUserInfo, false);
     if (!pSession)
         return false;
+    if (!g_pfnLsaGetLogonSessionData)
+        return false;
 
     PSECURITY_LOGON_SESSION_DATA pSessionData = NULL;
-    NTSTATUS rcNt = LsaGetLogonSessionData(pSession, &pSessionData);
+    NTSTATUS rcNt = g_pfnLsaGetLogonSessionData(pSession, &pSessionData);
     if (rcNt != STATUS_SUCCESS)
     {
         ULONG ulError = LsaNtStatusToWinError(rcNt);
@@ -685,7 +781,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
                 break;
         }
         if (pSessionData)
-            LsaFreeReturnBuffer(pSessionData);
+            g_pfnLsaFreeReturnBuffer(pSessionData);
         return false;
     }
     if (!pSessionData)
@@ -708,7 +804,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
         /* Also check the logon time. */
             || pSessionData->LogonTime.QuadPart == 0)
         {
-            LsaFreeReturnBuffer(pSessionData);
+            g_pfnLsaFreeReturnBuffer(pSessionData);
             return false;
         }
     }
@@ -780,25 +876,20 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
                  */
                 if (!s_fSkipRDPDetection)
                 {
-                    /** @todo Only do this once. Later. */
-                    OSVERSIONINFOEX OSInfoEx;
-                    RT_ZERO(OSInfoEx);
-                    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-
                     /* Skip RDP detection on non-NT systems. */
-                    if (   !GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
-                        || OSInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT)
-                    {
+                    if (g_WinVersion.dwPlatformId != VER_PLATFORM_WIN32_NT)
                         s_fSkipRDPDetection = true;
-                    }
+
                     /* Skip RDP detection on Windows 2000.
                      * For Windows 2000 however we don't have any hotfixes, so just skip the
                      * RDP detection in any case. */
-                    if (   OSInfoEx.dwMajorVersion == 5
-                        && OSInfoEx.dwMinorVersion == 0)
-                    {
+                    if (   g_WinVersion.dwMajorVersion == 5
+                        && g_WinVersion.dwMinorVersion == 0)
                         s_fSkipRDPDetection = true;
-                    }
+
+                    /* Skip if we don't have the WTS API. */
+                    if (!g_pfnWTSQuerySessionInformationA)
+                        s_fSkipRDPDetection = true;
 
                     if (s_fSkipRDPDetection)
                         VBoxServiceVerbose(0, "Detection of logged-in users via RDP is disabled\n");
@@ -806,15 +897,18 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
 
                 if (!s_fSkipRDPDetection)
                 {
+                    Assert(g_pfnWTSQuerySessionInformationA);
+                    Assert(g_pfnWTSFreeMemory);
+
                     /* Detect RDP sessions as well. */
                     LPTSTR  pBuffer = NULL;
                     DWORD   cbRet   = 0;
                     int     iState  = -1;
-                    if (WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
-                                                   pSessionData->Session,
-                                                   WTSConnectState,
-                                                   &pBuffer,
-                                                   &cbRet))
+                    if (g_pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE,
+                                                         pSessionData->Session,
+                                                         WTSConnectState,
+                                                         &pBuffer,
+                                                         &cbRet))
                     {
                         if (cbRet)
                             iState = *pBuffer;
@@ -831,7 +925,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
                             fFoundUser = true;
                         }
                         if (pBuffer)
-                            WTSFreeMemory(pBuffer);
+                            g_pfnWTSFreeMemory(pBuffer);
                     }
                     else
                     {
@@ -870,7 +964,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
     if (fFoundUser)
         pUserInfo->ulLastSession = pSessionData->Session;
 
-    LsaFreeReturnBuffer(pSessionData);
+    g_pfnLsaFreeReturnBuffer(pSessionData);
     return fFoundUser;
 }
 
@@ -1014,8 +1108,14 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
     AssertPtrReturn(ppszUserList, VERR_INVALID_POINTER);
     AssertPtrReturn(pcUsersInList, VERR_INVALID_POINTER);
 
-    int rc2 = VbglR3GuestPropConnect(&s_uDebugGuestPropClientID);
-    AssertRC(rc2);
+    int rc = RTOnce(&g_vgsvcWinVmInitOnce, vgsvcWinVmInfoInitOnce, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (!g_pfnLsaEnumerateLogonSessions || !g_pfnEnumProcesses)
+        return VERR_NOT_SUPPORTED;
+
+    rc = VbglR3GuestPropConnect(&s_uDebugGuestPropClientID);
+    AssertRC(rc);
 
     char *pszUserList = NULL;
     uint32_t cUsersInList = 0;
@@ -1024,7 +1124,7 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
        of already logged off users (especially in Windows 2000). */
     PLUID    paSessions = NULL;
     ULONG    cSessions = 0;
-    NTSTATUS rcNt = LsaEnumerateLogonSessions(&cSessions, &paSessions);
+    NTSTATUS rcNt = g_pfnLsaEnumerateLogonSessions(&cSessions, &paSessions);
     if (rcNt != STATUS_SUCCESS)
     {
         ULONG ulError = LsaNtStatusToWinError(rcNt);
@@ -1047,7 +1147,7 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
         }
 
         if (paSessions)
-            LsaFreeReturnBuffer(paSessions);
+            g_pfnLsaFreeReturnBuffer(paSessions);
 
         return RTErrConvertFromWin32(ulError);
     }
@@ -1055,7 +1155,7 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
 
     PVBOXSERVICEVMINFOPROC  paProcs;
     DWORD                   cProcs;
-    int rc = VBoxServiceVMInfoWinProcessesEnumerate(&paProcs, &cProcs);
+    rc = VBoxServiceVMInfoWinProcessesEnumerate(&paProcs, &cProcs);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_NO_MEMORY)
@@ -1073,7 +1173,7 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
         {
             ULONG cUniqueUsers = 0;
 
-            /**
+            /*
              * Note: The cSessions loop variable does *not* correlate with
              *       the Windows session ID!
              */
@@ -1097,8 +1197,9 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
 
                     if (g_cVerbosity > 3)
                     {
-                        char szDebugSessionPath[255]; RTStrPrintf(szDebugSessionPath,  sizeof(szDebugSessionPath), "/VirtualBox/GuestInfo/Debug/LSA/Session/%RU32",
-                                                                  userSession.ulLastSession);
+                        char szDebugSessionPath[255];
+                        RTStrPrintf(szDebugSessionPath,  sizeof(szDebugSessionPath),
+                                    "/VirtualBox/GuestInfo/Debug/LSA/Session/%RU32", userSession.ulLastSession);
                         VBoxServiceWritePropF(s_uDebugGuestPropClientID, szDebugSessionPath,
                                               "#%RU32: cSessionProcs=%RU32 (of %RU32 procs total)", s_uDebugIter, cCurSessionProcs, cProcs);
                     }
@@ -1224,7 +1325,7 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
         VBoxServiceVMInfoWinProcessesFree(cProcs, paProcs);
     }
     if (paSessions)
-        LsaFreeReturnBuffer(paSessions);
+        g_pfnLsaFreeReturnBuffer(paSessions);
 
     if (RT_SUCCESS(rc))
     {
@@ -1238,7 +1339,6 @@ int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
     return rc;
 }
 
-#endif /* TARGET_NT4 */
 
 int VBoxServiceWinGetComponentVersions(uint32_t uClientID)
 {
@@ -1257,21 +1357,24 @@ int VBoxServiceWinGetComponentVersions(uint32_t uClientID)
 #endif
 
     /* The file information table. */
-#ifndef TARGET_NT4
     const VBOXSERVICEVMINFOFILE aVBoxFiles[] =
     {
         { szSysDir, "VBoxControl.exe" },
         { szSysDir, "VBoxHook.dll" },
         { szSysDir, "VBoxDisp.dll" },
-        { szSysDir, "VBoxMRXNP.dll" },
-        { szSysDir, "VBoxService.exe" },
         { szSysDir, "VBoxTray.exe" },
+#ifdef TARGET_NT4
+        { szSysDir, "VBoxServiceNT.exe" },
+#else
+        { szSysDir, "VBoxService.exe" },
+        { szSysDir, "VBoxMRXNP.dll" },
         { szSysDir, "VBoxGINA.dll" },
         { szSysDir, "VBoxCredProv.dll" },
+#endif
 
  /* On 64-bit we don't yet have the OpenGL DLLs in native format.
     So just enumerate the 32-bit files in the SYSWOW directory. */
-# ifdef RT_ARCH_AMD64
+#ifdef RT_ARCH_AMD64
         { szSysWowDir, "VBoxOGLarrayspu.dll" },
         { szSysWowDir, "VBoxOGLcrutil.dll" },
         { szSysWowDir, "VBoxOGLerrorspu.dll" },
@@ -1279,7 +1382,8 @@ int VBoxServiceWinGetComponentVersions(uint32_t uClientID)
         { szSysWowDir, "VBoxOGLpassthroughspu.dll" },
         { szSysWowDir, "VBoxOGLfeedbackspu.dll" },
         { szSysWowDir, "VBoxOGL.dll" },
-# else  /* !RT_ARCH_AMD64 */
+#else  /* !RT_ARCH_AMD64 */
+# ifdef TARGET_NT4
         { szSysDir, "VBoxOGLarrayspu.dll" },
         { szSysDir, "VBoxOGLcrutil.dll" },
         { szSysDir, "VBoxOGLerrorspu.dll" },
@@ -1287,28 +1391,19 @@ int VBoxServiceWinGetComponentVersions(uint32_t uClientID)
         { szSysDir, "VBoxOGLpassthroughspu.dll" },
         { szSysDir, "VBoxOGLfeedbackspu.dll" },
         { szSysDir, "VBoxOGL.dll" },
-# endif /* !RT_ARCH_AMD64 */
+# endif
+#endif /* !RT_ARCH_AMD64 */
 
+#ifdef TARGET_NT4
+        { szDriversDir, "VBoxGuestNT.sys" },
+        { szDriversDir, "VBoxMouseNT.sys" },
+#else
         { szDriversDir, "VBoxGuest.sys" },
         { szDriversDir, "VBoxMouse.sys" },
         { szDriversDir, "VBoxSF.sys"    },
+#endif
         { szDriversDir, "VBoxVideo.sys" },
     };
-
-#else  /* TARGET_NT4 */
-    const VBOXSERVICEVMINFOFILE aVBoxFiles[] =
-    {
-        { szSysDir, "VBoxControl.exe" },
-        { szSysDir, "VBoxHook.dll" },
-        { szSysDir, "VBoxDisp.dll" },
-        { szSysDir, "VBoxServiceNT.exe" },
-        { szSysDir, "VBoxTray.exe" },
-
-        { szDriversDir, "VBoxGuestNT.sys" },
-        { szDriversDir, "VBoxMouseNT.sys" },
-        { szDriversDir, "VBoxVideo.sys" },
-    };
-#endif /* TARGET_NT4 */
 
     for (unsigned i = 0; i < RT_ELEMENTS(aVBoxFiles); i++)
     {
