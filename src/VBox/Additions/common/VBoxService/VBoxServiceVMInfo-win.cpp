@@ -199,7 +199,7 @@ static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
     }
 
     /* Kernel32: */
-    rc = RTLdrLoadSystem("kerne32.dll", true, &hLdrMod);
+    rc = RTLdrLoadSystem("kernel32.dll", true, &hLdrMod);
     AssertRCReturn(rc, rc);
     rc = RTLdrGetSymbol(hLdrMod, "QueryFullProcessImageNameW", (void **)&g_pfnQueryFullProcessImageNameW);
     if (RT_FAILURE(rc))
