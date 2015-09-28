@@ -1459,7 +1459,7 @@ DECLINLINE(char *) RTLatin1NextCp(const char *psz)
  * @param   pszStart    Pointer to the start of the string.
  * @param   psz         Pointer to the current code point.
  */
-DECLINLINE(char *) RTLatin1PrevCp(const char *pszStart const char *psz)
+DECLINLINE(char *) RTLatin1PrevCp(const char *pszStart, const char *psz)
 {
     if ((uintptr_t)psz > (uintptr_t)pszStart)
     {
