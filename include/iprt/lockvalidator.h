@@ -693,6 +693,7 @@ RTDECL(uint32_t) RTLockValidatorRecSharedSetSubClass(PRTLOCKVALRECSHRD pRec, uin
  * @param   hThreadSelf         The handle of the calling thread.  If not known,
  *                              pass NIL_RTTHREAD and we'll figure it out.
  * @param   pSrcPos             The source position of the lock operation.
+ * @param   cMillies            Intended sleep time in milliseconds.
  */
 RTDECL(int)  RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
                                                 PCRTLOCKVALSRCPOS pSrcPos, RTMSINTERVAL cMillies);
@@ -715,6 +716,7 @@ RTDECL(int)  RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD
  * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   cMillies            Intended sleep time in milliseconds.
  * @param   enmSleepState       The sleep state to enter on successful return.
  * @param   fReallySleeping     Is it really going to sleep now or not.  Use
  *                              false before calls to other IPRT synchronization
@@ -733,6 +735,7 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
  * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   cMillies            Intended sleep time in milliseconds.
  * @param   enmSleepState       The sleep state to enter on successful return.
  * @param   fReallySleeping     Is it really going to sleep now or not.  Use
  *                              false before calls to other IPRT synchronization
@@ -987,9 +990,8 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
  * @param   fAutodidact         Whether the class should be allowed to teach
  *                              itself new locking order rules (true), or if the
  *                              user will teach it all it needs to know (false).
- * @param   pszFile             The source position of the call, file.
- * @param   iLine               The source position of the call, line.
- * @param   pszFunction         The source position of the call, function.
+ * @param   SRC_POS             The source position where call is being made from.
+ *                              Use RT_SRC_POS when possible.  Optional.
  * @param   pszNameFmt          Class name format string, optional (NULL).  Max
  *                              length is 32 bytes.
  * @param   ...                 Format string arguments.
@@ -1006,9 +1008,8 @@ RTDECL(int) RTLockValidatorClassCreate(PRTLOCKVALCLASS phClass, bool fAutodidact
  * @returns Class handle with a reference that is automatically consumed by the
  *          first retainer.  NIL_RTLOCKVALCLASS if we run into trouble.
  *
- * @param   pszFile             The source position of the call, file.
- * @param   iLine               The source position of the call, line.
- * @param   pszFunction         The source position of the call, function.
+ * @param   SRC_POS             The source position where call is being made from.
+ *                              Use RT_SRC_POS when possible.  Optional.
  * @param   pszNameFmt          Class name format string, optional (NULL).  Max
  *                              length is 32 bytes.
  * @param   ...                 Format string arguments.
@@ -1028,9 +1029,8 @@ RTDECL(RTLOCKVALCLASS) RTLockValidatorClassFindForSrcPos(PRTLOCKVALSRCPOS pSrcPo
  * Finds or creates a class given the source position.
  *
  * @returns Class handle (not retained!) or NIL_RTLOCKVALCLASS.
- * @param   pszFile             The source file.
- * @param   iLine               The line in that source file.
- * @param   pszFunction         The function name.
+ * @param   SRC_POS             The source position where call is being made from.
+ *                              Use RT_SRC_POS when possible.  Optional.
  * @param   pszNameFmt          Class name format string, optional (NULL).  Max
  *                              length is 32 bytes.
  * @param   ...                 Format string arguments.
@@ -1057,7 +1057,7 @@ RTDECL(uint32_t) RTLockValidatorClassRelease(RTLOCKVALCLASS hClass);
 
 /**
  * Teaches the class @a hClass that locks in the class @a hPriorClass can be
- * held when taking a lock of class @hClass
+ * held when taking a lock of class @a hClass
  *
  * @returns IPRT status.
  * @param   hClass              Handle to the pupil class.
@@ -1072,7 +1072,7 @@ RTDECL(int) RTLockValidatorClassAddPriorClass(RTLOCKVALCLASS hClass, RTLOCKVALCL
  *
  * @returns IPRT status.
  * @param   hClass              Handle to the class to change.
- * @param   fEnable             Enable it (true) or disable it (false).
+ * @param   fEnabled            Enable it (true) or disable it (false).
  */
 RTDECL(int) RTLockValidatorClassEnforceStrictReleaseOrder(RTLOCKVALCLASS hClass, bool fEnabled);
 

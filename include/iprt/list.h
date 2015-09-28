@@ -178,7 +178,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
  * @retval  @c false otherwise.
  *
  * @param   pList               The list.
- * @param   pNodeStruct         The node structure to check.  Typically
+ * @param   pNode               The node structure to check.  Typically
  *                              something obtained from RTListNodeGetNext() or
  *                              RTListNodeGetPrev().  This is NOT a PRTLISTNODE
  *                              but something that contains a RTLISTNODE member!

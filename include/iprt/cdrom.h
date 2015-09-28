@@ -63,7 +63,7 @@ typedef RTCDROM            *PRTCDROM;
  * @param   fFlags              Open flags, see RTCDROM_O_XXX.
  * @param   phCdrom             Where to return the CDROM handle.
  */
-RTDECL(int)         RTCdromOpen(const char *psz, uint32_t fFlags, PRTCDROM phCdrom);
+RTDECL(int)         RTCdromOpen(const char *pszName, uint32_t fFlags, PRTCDROM phCdrom);
 
 /**
  * Retains a reference to the CD-ROM handle.
@@ -165,7 +165,7 @@ RTDECL(int)         RTCdromOrdinalToName(unsigned iCdrom, char *pszName, size_t 
  * Combination of RTCdromOrdinalToName() and RTCdromOpen().
  *
  * @returns IPRT status code.
- * @param   pszName             The CD-ROM name (path).
+ * @param   iCdrom              The CD-ROM number.
  * @param   fFlags              Open flags, see RTCDROM_O_XXX.
  * @param   phCdrom             Where to return the CDROM handle .
  * @remarks See remarks on RTCdromOrdinalToName().

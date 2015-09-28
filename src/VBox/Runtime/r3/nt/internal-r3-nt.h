@@ -48,7 +48,7 @@
  *
  * @returns @c true if equal, @c false if not.
  * @param   pwsz1               The first string.
- * @param   cb1                 The length of the first string, in bytes.
+ * @param   cch1                The length of the first string, in bytes.
  * @param   psz2                The second string.
  * @param   cch2                The length of the second string.
  */

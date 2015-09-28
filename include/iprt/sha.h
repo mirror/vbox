@@ -62,10 +62,10 @@ typedef RTSHA1CONTEXT *PRTSHA1CONTEXT;
  *
  * @param   pvBuf       Pointer to the data.
  * @param   cbBuf       The amount of data (in bytes).
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(void) RTSha1(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA1_HASH_SIZE]);
+RTDECL(void) RTSha1(const void *pvBuf, size_t cbBuf, uint8_t pabHash[RTSHA1_HASH_SIZE]);
 
 /**
  * Computes the SHA-1 hash for the given data comparing it with the one given.
@@ -76,7 +76,7 @@ RTDECL(void) RTSha1(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA1_HA
  * @param   pabHash     The hash to verify. (What is passed is a pointer to the
  *                      caller's buffer.)
  */
-RTDECL(bool) RTSha1Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA1_HASH_SIZE]);
+RTDECL(bool) RTSha1Check(const void *pvBuf, size_t cbBuf, uint8_t const pabHash[RTSHA1_HASH_SIZE]);
 
 /**
  * Initializes the SHA-1 context.
@@ -98,22 +98,22 @@ RTDECL(void) RTSha1Update(PRTSHA1CONTEXT pCtx, const void *pvBuf, size_t cbBuf);
  * Compute the SHA-1 hash of the data.
  *
  * @param   pCtx        Pointer to the SHA-1 context.
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabDigest[RTSHA1_HASH_SIZE]);
+RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabHash[RTSHA1_HASH_SIZE]);
 
 /**
  * Converts a SHA-1 hash to a digest string.
  *
  * @returns IPRT status code.
  *
- * @param   pabDigest   The binary digest returned by RTSha1Final or RTSha1.
+ * @param   pabHash     The binary digest returned by RTSha1Final or RTSha1.
  * @param   pszDigest   Where to return the stringified digest.
  * @param   cchDigest   The size of the output buffer. Should be at least
  *                      RTSHA1_DIGEST_LEN + 1 bytes.
  */
-RTDECL(int) RTSha1ToString(uint8_t const pabDigest[RTSHA1_HASH_SIZE], char *pszDigest, size_t cchDigest);
+RTDECL(int) RTSha1ToString(uint8_t const pabHash[RTSHA1_HASH_SIZE], char *pszDigest, size_t cchDigest);
 
 /**
  * Converts a SHA-1 hash to a digest string.
@@ -122,10 +122,10 @@ RTDECL(int) RTSha1ToString(uint8_t const pabDigest[RTSHA1_HASH_SIZE], char *pszD
  *
  * @param   pszDigest   The stringified digest. Leading and trailing spaces are
  *                      ignored.
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(int) RTSha1FromString(char const *pszDigest, uint8_t pabDigest[RTSHA1_HASH_SIZE]);
+RTDECL(int) RTSha1FromString(char const *pszDigest, uint8_t pabHash[RTSHA1_HASH_SIZE]);
 
 /**
  * Creates a SHA1 digest for the given memory buffer.
@@ -181,10 +181,10 @@ typedef RTSHA256CONTEXT *PRTSHA256CONTEXT;
  *
  * @param   pvBuf       Pointer to the data.
  * @param   cbBuf       The amount of data (in bytes).
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(void) RTSha256(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA256_HASH_SIZE]);
+RTDECL(void) RTSha256(const void *pvBuf, size_t cbBuf, uint8_t pabHash[RTSHA256_HASH_SIZE]);
 
 /**
  * Computes the SHA-256 hash for the given data comparing it with the one given.
@@ -195,7 +195,7 @@ RTDECL(void) RTSha256(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA25
  * @param   pabHash     The hash to verify. (What is passed is a pointer to the
  *                      caller's buffer.)
  */
-RTDECL(bool) RTSha256Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA256_HASH_SIZE]);
+RTDECL(bool) RTSha256Check(const void *pvBuf, size_t cbBuf, uint8_t const pabHash[RTSHA256_HASH_SIZE]);
 
 /**
  * Initializes the SHA-256 context.
@@ -217,22 +217,22 @@ RTDECL(void) RTSha256Update(PRTSHA256CONTEXT pCtx, const void *pvBuf, size_t cbB
  * Compute the SHA-256 hash of the data.
  *
  * @param   pCtx        Pointer to the SHA-256 context.
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(void) RTSha256Final(PRTSHA256CONTEXT pCtx, uint8_t pabDigest[RTSHA256_HASH_SIZE]);
+RTDECL(void) RTSha256Final(PRTSHA256CONTEXT pCtx, uint8_t pabHash[RTSHA256_HASH_SIZE]);
 
 /**
  * Converts a SHA-256 hash to a digest string.
  *
  * @returns IPRT status code.
  *
- * @param   pabDigest   The binary digest returned by RTSha256Final or RTSha256.
+ * @param   pabHash     The binary digest returned by RTSha256Final or RTSha256.
  * @param   pszDigest   Where to return the stringified digest.
  * @param   cchDigest   The size of the output buffer. Should be at least
  *                      RTSHA256_DIGEST_LEN + 1 bytes.
  */
-RTDECL(int) RTSha256ToString(uint8_t const pabDigest[RTSHA256_HASH_SIZE], char *pszDigest, size_t cchDigest);
+RTDECL(int) RTSha256ToString(uint8_t const pabHash[RTSHA256_HASH_SIZE], char *pszDigest, size_t cchDigest);
 
 /**
  * Converts a SHA-256 hash to a digest string.
@@ -241,10 +241,10 @@ RTDECL(int) RTSha256ToString(uint8_t const pabDigest[RTSHA256_HASH_SIZE], char *
  *
  * @param   pszDigest   The stringified digest. Leading and trailing spaces are
  *                      ignored.
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(int) RTSha256FromString(char const *pszDigest, uint8_t pabDigest[RTSHA256_HASH_SIZE]);
+RTDECL(int) RTSha256FromString(char const *pszDigest, uint8_t pabHash[RTSHA256_HASH_SIZE]);
 
 /**
  * Creates a SHA256 digest for the given memory buffer.
@@ -290,10 +290,10 @@ typedef RTSHA256CONTEXT *PRTSHA224CONTEXT;
  *
  * @param   pvBuf       Pointer to the data.
  * @param   cbBuf       The amount of data (in bytes).
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(void) RTSha224(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA224_HASH_SIZE]);
+RTDECL(void) RTSha224(const void *pvBuf, size_t cbBuf, uint8_t pabHash[RTSHA224_HASH_SIZE]);
 
 /**
  * Computes the SHA-224 hash for the given data comparing it with the one given.
@@ -304,7 +304,7 @@ RTDECL(void) RTSha224(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA22
  * @param   pabHash     The hash to verify. (What is passed is a pointer to the
  *                      caller's buffer.)
  */
-RTDECL(bool) RTSha224Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA224_HASH_SIZE]);
+RTDECL(bool) RTSha224Check(const void *pvBuf, size_t cbBuf, uint8_t const pabHash[RTSHA224_HASH_SIZE]);
 
 /**
  * Initializes the SHA-224 context.
@@ -326,22 +326,22 @@ RTDECL(void) RTSha224Update(PRTSHA224CONTEXT pCtx, const void *pvBuf, size_t cbB
  * Compute the SHA-224 hash of the data.
  *
  * @param   pCtx        Pointer to the SHA-224 context.
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(void) RTSha224Final(PRTSHA224CONTEXT pCtx, uint8_t pabDigest[RTSHA224_HASH_SIZE]);
+RTDECL(void) RTSha224Final(PRTSHA224CONTEXT pCtx, uint8_t pabHash[RTSHA224_HASH_SIZE]);
 
 /**
  * Converts a SHA-224 hash to a digest string.
  *
  * @returns IPRT status code.
  *
- * @param   pabDigest   The binary digest returned by RTSha224Final or RTSha224.
+ * @param   pabHash     The binary digest returned by RTSha224Final or RTSha224.
  * @param   pszDigest   Where to return the stringified digest.
  * @param   cchDigest   The size of the output buffer. Should be at least
  *                      RTSHA224_DIGEST_LEN + 1 bytes.
  */
-RTDECL(int) RTSha224ToString(uint8_t const pabDigest[RTSHA224_HASH_SIZE], char *pszDigest, size_t cchDigest);
+RTDECL(int) RTSha224ToString(uint8_t const pabHash[RTSHA224_HASH_SIZE], char *pszDigest, size_t cchDigest);
 
 /**
  * Converts a SHA-224 hash to a digest string.
@@ -350,10 +350,10 @@ RTDECL(int) RTSha224ToString(uint8_t const pabDigest[RTSHA224_HASH_SIZE], char *
  *
  * @param   pszDigest   The stringified digest. Leading and trailing spaces are
  *                      ignored.
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(int) RTSha224FromString(char const *pszDigest, uint8_t pabDigest[RTSHA224_HASH_SIZE]);
+RTDECL(int) RTSha224FromString(char const *pszDigest, uint8_t pabHash[RTSHA224_HASH_SIZE]);
 
 /**
  * Creates a SHA224 digest for the given memory buffer.
@@ -409,10 +409,10 @@ typedef RTSHA512CONTEXT *PRTSHA512CONTEXT;
  *
  * @param   pvBuf       Pointer to the data.
  * @param   cbBuf       The amount of data (in bytes).
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(void) RTSha512(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA512_HASH_SIZE]);
+RTDECL(void) RTSha512(const void *pvBuf, size_t cbBuf, uint8_t pabHash[RTSHA512_HASH_SIZE]);
 
 /**
  * Computes the SHA-512 hash for the given data comparing it with the one given.
@@ -423,7 +423,7 @@ RTDECL(void) RTSha512(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA51
  * @param   pabHash     The hash to verify. (What is passed is a pointer to the
  *                      caller's buffer.)
  */
-RTDECL(bool) RTSha512Check(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RTSHA512_HASH_SIZE]);
+RTDECL(bool) RTSha512Check(const void *pvBuf, size_t cbBuf, uint8_t const pabHash[RTSHA512_HASH_SIZE]);
 
 /**
  * Initializes the SHA-512 context.
@@ -445,22 +445,22 @@ RTDECL(void) RTSha512Update(PRTSHA512CONTEXT pCtx, const void *pvBuf, size_t cbB
  * Compute the SHA-512 hash of the data.
  *
  * @param   pCtx        Pointer to the SHA-512 context.
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(void) RTSha512Final(PRTSHA512CONTEXT pCtx, uint8_t pabDigest[RTSHA512_HASH_SIZE]);
+RTDECL(void) RTSha512Final(PRTSHA512CONTEXT pCtx, uint8_t pabHash[RTSHA512_HASH_SIZE]);
 
 /**
  * Converts a SHA-512 hash to a digest string.
  *
  * @returns IPRT status code.
  *
- * @param   pabDigest   The binary digest returned by RTSha512Final or RTSha512.
+ * @param   pabHash     The binary digest returned by RTSha512Final or RTSha512.
  * @param   pszDigest   Where to return the stringified digest.
  * @param   cchDigest   The size of the output buffer. Should be at least
  *                      RTSHA512_DIGEST_LEN + 1 bytes.
  */
-RTDECL(int) RTSha512ToString(uint8_t const pabDigest[RTSHA512_HASH_SIZE], char *pszDigest, size_t cchDigest);
+RTDECL(int) RTSha512ToString(uint8_t const pabHash[RTSHA512_HASH_SIZE], char *pszDigest, size_t cchDigest);
 
 /**
  * Converts a SHA-512 hash to a digest string.
@@ -469,10 +469,10 @@ RTDECL(int) RTSha512ToString(uint8_t const pabDigest[RTSHA512_HASH_SIZE], char *
  *
  * @param   pszDigest   The stringified digest. Leading and trailing spaces are
  *                      ignored.
- * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
+ * @param   pabHash     Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
  */
-RTDECL(int) RTSha512FromString(char const *pszDigest, uint8_t pabDigest[RTSHA512_HASH_SIZE]);
+RTDECL(int) RTSha512FromString(char const *pszDigest, uint8_t pabHash[RTSHA512_HASH_SIZE]);
 
 
 /** Macro for declaring the interface for a SHA-512 variation.
@@ -480,13 +480,13 @@ RTDECL(int) RTSha512FromString(char const *pszDigest, uint8_t pabDigest[RTSHA512
 #define RTSHA512_DECLARE_VARIANT(a_Name, a_UName) \
     typedef RTSHA512CONTEXT RT_CONCAT3(RTSHA,a_UName,CONTEXT); \
     typedef RTSHA512CONTEXT *RT_CONCAT3(PRTSHA,a_UName,CONTEXT); \
-    RTDECL(void) RT_CONCAT(RTSha,a_Name)(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)]); \
-    RTDECL(bool) RT_CONCAT3(RTSha,a_Name,Check)(const void *pvBuf, size_t cbBuf, uint8_t const pabDigest[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)]); \
+    RTDECL(void) RT_CONCAT(RTSha,a_Name)(const void *pvBuf, size_t cbBuf, uint8_t pabHash[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)]); \
+    RTDECL(bool) RT_CONCAT3(RTSha,a_Name,Check)(const void *pvBuf, size_t cbBuf, uint8_t const pabHash[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)]); \
     RTDECL(void) RT_CONCAT3(RTSha,a_Name,Init)(RT_CONCAT3(PRTSHA,a_UName,CONTEXT) pCtx); \
     RTDECL(void) RT_CONCAT3(RTSha,a_Name,Update)(RT_CONCAT3(PRTSHA,a_UName,CONTEXT) pCtx, const void *pvBuf, size_t cbBuf); \
-    RTDECL(void) RT_CONCAT3(RTSha,a_Name,Final)(RT_CONCAT3(PRTSHA,a_UName,CONTEXT) pCtx, uint8_t pabDigest[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)]); \
-    RTDECL(int)  RT_CONCAT3(RTSha,a_Name,ToString)(uint8_t const pabDigest[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)], char *pszDigest, size_t cchDigest); \
-    RTDECL(int)  RT_CONCAT3(RTSha,a_Name,FromString)(char const *pszDigest, uint8_t pabDigest[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)])
+    RTDECL(void) RT_CONCAT3(RTSha,a_Name,Final)(RT_CONCAT3(PRTSHA,a_UName,CONTEXT) pCtx, uint8_t pabHash[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)]); \
+    RTDECL(int)  RT_CONCAT3(RTSha,a_Name,ToString)(uint8_t const pabHash[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)], char *pszDigest, size_t cchDigest); \
+    RTDECL(int)  RT_CONCAT3(RTSha,a_Name,FromString)(char const *pszDigest, uint8_t pabHash[RT_CONCAT3(RTSHA,a_UName,_HASH_SIZE)])
 
 
 /** The size of a SHA-384 hash. */

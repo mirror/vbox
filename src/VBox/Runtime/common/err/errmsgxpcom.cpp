@@ -106,7 +106,7 @@ static const RTCOMERRMSG  g_aStatusMsgs[] =
     MY_ERR("NS_ERROR_FILE_ACCESS_DENIED",           "NS_ERROR_FILE_ACCESS_DENIED",                  UINT32_C(0x80520015)),
     MY_ERR("NS_SUCCESS_FILE_DIRECTORY_EMPTY",       "NS_SUCCESS_FILE_DIRECTORY_EMPTY",              UINT32_C(0x00520001)),
 
-#if defined(VBOX) && !defined(IN_GUEST)
+#if defined(VBOX) && !defined(IN_GUEST) && !defined(DOXYGEN_RUNNING)
 # include "errmsgvboxcomdata.h"
 #endif
 

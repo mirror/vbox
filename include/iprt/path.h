@@ -806,7 +806,7 @@ RTDECL(void) RTPathSplitFree(PRTPATHSPLIT pSplit);
  * @retval  VERR_BUFFER_OVERFLOW if @a cbDstPath is less than or equal to
  *          RTPATHSPLIT::cchPath.
  *
- * @param   pParsed             The parser output for @a pszSrcPath.
+ * @param   pSplit              A split path (see RTPathSplit, RTPathSplitA).
  * @param   fFlags              Combination of RTPATH_STR_F_STYLE_XXX.
  *                              Most users will pass 0.
  * @param   pszDstPath          Pointer to the buffer where the path is to be

@@ -134,7 +134,7 @@ typedef struct RTMANIFESTEQUALS
     /** Name of entries to ignore. */
     const char * const *papszIgnoreEntries;
     /** Name of attributes to ignore. */
-    const char * const *papszIgnoreAttr;
+    const char * const *papszIgnoreAttrs;
     /** Flags governing the comparision. */
     uint32_t            fFlags;
     /** Where to return an error message (++) on failure.  Can be NULL. */
@@ -349,7 +349,7 @@ static DECLCALLBACK(int) rtManifestAttributeFindMissing2(PRTSTRSPACECORE pStr, v
     /*
      * Ignore this entry?
      */
-    char const * const *ppsz = pEquals->papszIgnoreAttr;
+    char const * const *ppsz = pEquals->papszIgnoreAttrs;
     if (ppsz)
     {
         while (*ppsz)
@@ -424,7 +424,7 @@ static DECLCALLBACK(int) rtManifestAttributeCompare(PRTSTRSPACECORE pStr, void *
     /*
      * Ignore this entry?
      */
-    char const * const *ppsz = pEquals->papszIgnoreAttr;
+    char const * const *ppsz = pEquals->papszIgnoreAttrs;
     if (ppsz)
     {
         while (*ppsz)
@@ -570,7 +570,7 @@ static DECLCALLBACK(int) rtManifestEntryCompare(PRTSTRSPACECORE pStr, void *pvUs
 
 
 RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, const char * const *papszIgnoreEntries,
-                               const char * const *papszIgnoreAttr, uint32_t fFlags, char *pszError, size_t cbError)
+                               const char * const *papszIgnoreAttrs, uint32_t fFlags, char *pszError, size_t cbError)
 {
     /*
      * Validate input.
@@ -613,7 +613,7 @@ RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, con
     Equals.pThis2               = pThis2;
     Equals.fFlags               = fFlags;
     Equals.papszIgnoreEntries   = papszIgnoreEntries;
-    Equals.papszIgnoreAttr      = papszIgnoreAttr;
+    Equals.papszIgnoreAttrs     = papszIgnoreAttrs;
     Equals.pszError             = pszError;
     Equals.cbError              = cbError;
 

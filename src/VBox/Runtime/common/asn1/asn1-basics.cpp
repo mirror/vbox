@@ -333,13 +333,13 @@ RTDECL(void) RTAsn1ContentFree(PRTASN1CORE pAsn1Core)
  * Virtual method table based API.
  */
 
-RTDECL(void) RTAsn1VtDelete(PRTASN1CORE pAsn1Core)
+RTDECL(void) RTAsn1VtDelete(PRTASN1CORE pThisCore)
 {
-    if (pAsn1Core)
+    if (pThisCore)
     {
-        PCRTASN1COREVTABLE pOps = pAsn1Core->pOps;
+        PCRTASN1COREVTABLE pOps = pThisCore->pOps;
         if (pOps)
-            pOps->pfnDtor(pAsn1Core);
+            pOps->pfnDtor(pThisCore);
     }
 }
 
@@ -354,32 +354,32 @@ typedef struct RTASN1DEEPENUMCTX
 } RTASN1DEEPENUMCTX;
 
 
-static DECLCALLBACK(int) rtAsn1VtDeepEnumDepthFirst(PRTASN1CORE pAsn1Core, const char *pszName, uint32_t uDepth, void *pvUser)
+static DECLCALLBACK(int) rtAsn1VtDeepEnumDepthFirst(PRTASN1CORE pThisCore, const char *pszName, uint32_t uDepth, void *pvUser)
 {
-    AssertReturn(pAsn1Core, VINF_SUCCESS);
+    AssertReturn(pThisCore, VINF_SUCCESS);
 
-    if (pAsn1Core->pOps && pAsn1Core->pOps->pfnEnum)
+    if (pThisCore->pOps && pThisCore->pOps->pfnEnum)
     {
-        int rc = pAsn1Core->pOps->pfnEnum(pAsn1Core, rtAsn1VtDeepEnumDepthFirst, uDepth, pvUser);
+        int rc = pThisCore->pOps->pfnEnum(pThisCore, rtAsn1VtDeepEnumDepthFirst, uDepth, pvUser);
         if (rc != VINF_SUCCESS)
             return rc;
     }
 
     RTASN1DEEPENUMCTX *pCtx = (RTASN1DEEPENUMCTX *)pvUser;
-    return pCtx->pfnCallback(pAsn1Core, pszName, uDepth, pCtx->pvUser);
+    return pCtx->pfnCallback(pThisCore, pszName, uDepth, pCtx->pvUser);
 }
 
 
-static DECLCALLBACK(int) rtAsn1VtDeepEnumDepthLast(PRTASN1CORE pAsn1Core, const char *pszName, uint32_t uDepth, void *pvUser)
+static DECLCALLBACK(int) rtAsn1VtDeepEnumDepthLast(PRTASN1CORE pThisCore, const char *pszName, uint32_t uDepth, void *pvUser)
 {
-    AssertReturn(pAsn1Core, VINF_SUCCESS);
+    AssertReturn(pThisCore, VINF_SUCCESS);
 
     RTASN1DEEPENUMCTX *pCtx = (RTASN1DEEPENUMCTX *)pvUser;
-    int rc = pCtx->pfnCallback(pAsn1Core, pszName, uDepth, pCtx->pvUser);
+    int rc = pCtx->pfnCallback(pThisCore, pszName, uDepth, pCtx->pvUser);
     if (rc == VINF_SUCCESS)
     {
-        if (pAsn1Core->pOps && pAsn1Core->pOps->pfnEnum)
-            rc = pAsn1Core->pOps->pfnEnum(pAsn1Core, rtAsn1VtDeepEnumDepthFirst, uDepth, pvUser);
+        if (pThisCore->pOps && pThisCore->pOps->pfnEnum)
+            rc = pThisCore->pOps->pfnEnum(pThisCore, rtAsn1VtDeepEnumDepthFirst, uDepth, pvUser);
     }
     return rc;
 }

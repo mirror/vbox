@@ -163,10 +163,13 @@ RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp);
  * @returns iprt status code.
  *
  * @param   hHttp           The HTTP client instance.
- * @param   pszProxy        URL of the proxy.
+ * @param   pszProxyUrl     URL of the proxy server.
  * @param   uPort           port number of the proxy, use 0 for not specifying a port.
  * @param   pszProxyUser    Username, pass NULL for no authentication.
  * @param   pszProxyPwd     Password, pass NULL for no authentication.
+ *
+ * @todo    This API does not allow specifying the type of proxy server... We're
+ *          currently assuming it's a HTTP proxy.
  */
 RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pszProxyUrl, uint32_t uPort,
                              const char *pszProxyUser, const char *pszProxyPwd);

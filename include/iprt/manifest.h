@@ -113,7 +113,7 @@ RTDECL(int) RTManifestDup(RTMANIFEST hManifestSrc, PRTMANIFEST phManifestDst);
  *                              pszError.
  */
 RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, const char * const *papszIgnoreEntries,
-                               const char * const *papszIgnoreAttr, uint32_t fFlags, char *pszError, size_t cbError);
+                               const char * const *papszIgnoreAttrs, uint32_t fFlags, char *pszError, size_t cbError);
 
 /** @defgroup RTMANIFEST_EQUALS_XXX     RTManifestEqualsEx flags
  * @{ */
@@ -163,7 +163,7 @@ RTDECL(int) RTManifestSetAttr(RTMANIFEST hManifest, const char *pszAttr, const c
 RTDECL(int) RTManifestUnsetAttr(RTMANIFEST hManifest, const char *pszAttr);
 
 /**
- * Query a manifest entry attribute.
+ * Query a manifest attribute.
  *
  * @returns IPRT status code.
  * @retval  VERR_BUFFER_OVERFLOW if the value buffer is too small. The @a
@@ -173,7 +173,6 @@ RTDECL(int) RTManifestUnsetAttr(RTMANIFEST hManifest, const char *pszAttr);
  * @retval  VERR_MANIFEST_ATTR_TYPE_MISMATCH
  *
  * @param   hManifest           The manifest handle.
- * @param   pszEntry            The entry name.
  * @param   pszAttr             The attribute name.  If NULL, it will be
  *                              selected by @a fType alone.
  * @param   fType               The attribute types the entry should match. Pass
@@ -491,7 +490,7 @@ RTR3DECL(int) RTManifestVerifyDigestType(void const *pvBuf, size_t cbSize, RTDIG
  * @param   pvBuf                Pointer to memory buffer of the manifest file.
  * @param   cbSize               Size of the memory buffer.
  * @param   paTests              Array of file names and digests.
- * @param   cTest                Number of entries in paTests.
+ * @param   cTests               Number of entries in paTests.
  * @param   piFailed             A index to paTests in the
  *                               VERR_MANIFEST_DIGEST_MISMATCH error case
  *                               (optional).

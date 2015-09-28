@@ -227,22 +227,21 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies);
  * Checks if the socket is ready for one of the given events.
  *
  * @returns iprt status code.
- * @param   Sock        Socket descriptor.
- * @param   fEvents     Event mask to wait for.
- * @param   pfEvents    Where to store the event mask on return.
- * @param   cMillies    Number of milliseconds to wait for the socket.
- *                      Use RT_INDEFINITE_WAIT to wait for ever.
+ * @param   hSocket         The Socket handle.
+ * @param   fEvents         Event mask to wait for.
+ * @param   pfEvents        Where to store the event mask on return.
+ * @param   cMillies        Number of milliseconds to wait for the socket.  Use
+ *                          RT_INDEFINITE_WAIT to wait for ever.
  */
-RTR3DECL(int)  RTSocketSelectOneEx(RTSOCKET Sock, uint32_t fEvents, uint32_t *pfEvents,
-                                   RTMSINTERVAL cMillies);
+RTR3DECL(int)  RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pfEvents, RTMSINTERVAL cMillies);
 
 /**
  * Shuts down one or both directions of communciation.
  *
  * @returns IPRT status code.
- * @param   hSocket             The socket handle.
- * @param   fRead               Whether to shutdown our read direction.
- * @param   fWrite              Whether to shutdown our write direction.
+ * @param   hSocket         The socket handle.
+ * @param   fRead           Whether to shutdown our read direction.
+ * @param   fWrite          Whether to shutdown our write direction.
  */
 RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite);
 
@@ -250,7 +249,7 @@ RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite);
  * Gets the address of the local side.
  *
  * @returns IPRT status code.
- * @param   Sock            Socket descriptor.
+ * @param   hSocket         The Socket handle.
  * @param   pAddr           Where to store the local address on success.
  */
 RTDECL(int) RTSocketGetLocalAddress(RTSOCKET hSocket, PRTNETADDR pAddr);
@@ -259,7 +258,7 @@ RTDECL(int) RTSocketGetLocalAddress(RTSOCKET hSocket, PRTNETADDR pAddr);
  * Gets the address of the other party.
  *
  * @returns IPRT status code.
- * @param   Sock            Socket descriptor.
+ * @param   hSocket         The Socket handle.
  * @param   pAddr           Where to store the peer address on success.
  */
 RTDECL(int) RTSocketGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr);
@@ -348,11 +347,11 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
  *
  * @returns iprt status code.
  *
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     The Socket handle.
  * @param   pSgBuf      Scatter/gather buffer to write data to socket.
  * @param   pcbWritten  Number of bytes written.
  */
-RTR3DECL(int)  RTSocketSgWriteNB(RTSOCKET Sock, PCRTSGBUF pSgBuf, size_t *pcbWritten);
+RTR3DECL(int)  RTSocketSgWriteNB(RTSOCKET hSocket, PCRTSGBUF pSgBuf, size_t *pcbWritten);
 
 
 /**

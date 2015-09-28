@@ -72,8 +72,6 @@ RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore);
  *
  * @param   pszOutputDir        The directory to store the cores in.  If NULL
  *                              the current directory will be used.
- * @param   pszBaseName         Base file name, no directory.  If NULL the
- *                              dumper will generate an appropriate name.
  * @param   fFlags              Setup flags, 0 in NOT a valid flag, it must be
  *                              one or more of RTCOREDUMPER_FLAGS_*.
  */

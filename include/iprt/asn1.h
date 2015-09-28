@@ -290,7 +290,7 @@ typedef FNRTASN1COREVTCOMPARE *PFNRTASN1COREVTCOMPARE;
  * @returns IPRT status code.
  * @param   pThisCore       Pointer to the ASN.1 core of the object to check out.
  * @param   fFlags          See RTASN1_CHECK_SANITY_F_XXX.
- * @param   pszErrInfo      Where to return additional error details. Optional.
+ * @param   pErrInfo        Where to return additional error details. Optional.
  * @param   pszErrorTag     Tag for the additional error details.
  */
 typedef DECLCALLBACK(int) FNRTASN1COREVTCHECKSANITY(PCRTASN1CORE pThisCore, uint32_t fFlags,
@@ -771,7 +771,7 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1INTEGER, RTDECL, RTAsn1Integer, Asn1Core);
 /**
  * Initializes an interger object to a default value.
  * @returns VINF_SUCCESS.
- * @param   pBoolean            The integer object representation.
+ * @param   pInteger            The integer object representation.
  * @param   uValue              The default value (unsigned 64-bit).
  * @param   pAllocator          The allocator (pro forma).
  */
@@ -1349,7 +1349,7 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1DYNTYPE, RTDECL, RTAsn1DynType, u.Core);
 /**
  * Calls the destructor of the ASN.1 object.
  *
- * @param   pAsn1Core           The IPRT representation of an ASN.1 object.
+ * @param   pThisCore           The IPRT representation of an ASN.1 object.
  */
 RTDECL(void) RTAsn1VtDelete(PRTASN1CORE pThisCore);
 
@@ -1399,7 +1399,7 @@ RTDECL(int) RTAsn1VtCompare(PCRTASN1CORE pLeftCore, PCRTASN1CORE pRightCore);
  * @returns IPRT status code.
  * @param   pThisCore       Pointer to the ASN.1 core of the object to check out.
  * @param   fFlags          See RTASN1_CHECK_SANITY_F_XXX.
- * @param   pszErrInfo      Where to return additional error details. Optional.
+ * @param   pErrInfo        Where to return additional error details. Optional.
  * @param   pszErrorTag     Tag for the additional error details.
  */
 RTDECL(int) RTAsn1VtCheckSanity(PCRTASN1CORE pThisCore, uint32_t fFlags,
@@ -1585,7 +1585,7 @@ RTDECL(int) RTAsn1CursorInitSubFromCore(PRTASN1CURSOR pParent, PRTASN1CORE pAsn1
  *
  * @returns Pointer to the allocator info (for call in alloc parameter).
  * @param   pCursor             The cursor.
- * @param   pAllocator          The allocation structure to initialize.
+ * @param   pAllocation         The allocation structure to initialize.
  */
 RTDECL(PRTASN1ALLOCATION) RTAsn1CursorInitAllocation(PRTASN1CURSOR pCursor, PRTASN1ALLOCATION pAllocation);
 
@@ -1924,7 +1924,8 @@ RTDECL(int) RTAsn1CursorGetSetCursor(PRTASN1CURSOR pCursor, uint32_t fFlags,
  * @returns IPRT status code.
  * @param   pCursor             The cursor we're decoding from.
  * @param   fFlags              RTASN1CURSOR_GET_F_XXX.
- * @param   pCtxTagCore         The output context tag object.
+ * @param   uExpectedTag        The expected tag.
+ * @param   pCtxTag             The output context tag object.
  * @param   pCtxTagCursor       The output cursor for the context tag content.
  * @param   pszErrorTag         Error tag, this will be associated with the
  *                              returned cursor.

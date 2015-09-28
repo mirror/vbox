@@ -159,7 +159,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
  *                      guest.
  * @param   pszAsUser   User to run the process as.  Pass NULL to use the same
  *                      user as the current process.
- *                      Windows: Use user@domain format to specify a domain.
+ *                      Windows: Use user\@domain format to specify a domain.
  * @param   pszPassword Password to use to authenticate @a pszAsUser.  Must be
  *                      NULL wif pszAsUser is NULL.  Whether this is actually
  *                      used or not depends on the platform.
@@ -340,9 +340,9 @@ RTR3DECL(char *) RTProcGetExecutablePath(char *pszExecPath, size_t cbExecPath);
  * @returns IPRT status code.  On success it is normal for the caller to exit
  *          the process by returning from main().
  *
- * @param   papszArgs       The argument vector of the calling process.
- * @param   pszDaemonized   The daemonized option.  This is appended to the end
- *                          of the parameter list of the daemonized process.
+ * @param   papszArgs           The argument vector of the calling process.
+ * @param   pszDaemonizedOpt    The daemonized option.  This is appended to the
+ *                              end of the parameter list of the daemonized process.
  */
 RTR3DECL(int)   RTProcDaemonize(const char * const *papszArgs, const char *pszDaemonizedOpt);
 

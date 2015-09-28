@@ -100,7 +100,6 @@ typedef RTR0SEMSOLWAIT *PRTR0SEMSOLWAIT;
  * @param   pWait               The wait structure.
  * @param   fFlags              The wait flags.
  * @param   uTimeout            The timeout.
- * @param   pWaitQueue          The wait queue head.
  */
 DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint64_t uTimeout)
 {

@@ -182,7 +182,7 @@ RT_C_DECLS_BEGIN
  * the pointer to the current file name.  The string API will make of use of
  * this as pointer to a volatile but read-only string.
  */
-#ifndef RTSTR_TAG
+#if !defined(RTSTR_TAG) || defined(DOXYGEN_RUNNING)
 # define RTSTR_TAG      (__FILE__)
 #endif
 
@@ -728,7 +728,7 @@ RTDECL(size_t) RTStrPurgeEncoding(char *psz);
  *          string is not correctly encoded.  In this last case the string
  *          may be partially processed.
  * @param   psz            The string to sanitise.
- * @param   puszValidSets  A zero-terminated array of pairs of Unicode points.
+ * @param   puszValidSet   A zero-terminated array of pairs of Unicode points.
  *                         Each pair is the start and end point of a range,
  *                         and the union of these ranges forms the white list.
  * @param   chReplacement  The ASCII replacement character.
@@ -928,7 +928,7 @@ RTDECL(size_t) RTStrCalcLatin1Len(const char *psz);
  * @param   pcch        Where to store the string length. Optional.
  *                      This is undefined on failure.
  */
-RTDECL(int) RTStrCalcLatin1LenEx(const char *psz, size_t cch, size_t *pcwc);
+RTDECL(int) RTStrCalcLatin1LenEx(const char *psz, size_t cch, size_t *pcch);
 
 /**
  * Translate a UTF-8 string into a Latin-1 allocating the result buffer (default
@@ -1459,10 +1459,14 @@ DECLINLINE(char *) RTLatin1NextCp(const char *psz)
  * @param   pszStart    Pointer to the start of the string.
  * @param   psz         Pointer to the current code point.
  */
-DECLINLINE(char *) RTLatin1PrevCp(const char *psz)
+DECLINLINE(char *) RTLatin1PrevCp(const char *pszStart const char *psz)
 {
-    psz--;
-    return (char *)psz;
+    if ((uintptr_t)psz > (uintptr_t)pszStart)
+    {
+        psz--;
+        return (char *)psz;
+    }
+    return (char *)pszStart;
 }
 
 
@@ -3479,7 +3483,7 @@ RTDECL(int) RTUtf16CopyEx(PRTUTF16 pwszDst, size_t cwcDst, PCRTUTF16 pwszSrc, si
  *          buffer will contain as much of the string as it can hold, fully
  *          terminated.
  *
- * @param   pszDst              The destination buffer.
+ * @param   pwszDst             The destination buffer.
  * @param   cwcDst              The size of the destination buffer in RTUTF16s.
  * @param   pwszSrc             The source string.  NULL is not OK.
  */
@@ -3493,11 +3497,11 @@ RTDECL(int) RTUtf16Cat(PRTUTF16 pwszDst, size_t cwcDst, PCRTUTF16 pwszSrc);
  *          buffer will contain as much of the string as it can hold, fully
  *          terminated.
  *
- * @param   pszDst              The destination buffer.
+ * @param   pwszDst             The destination buffer.
  * @param   cwcDst              The size of the destination buffer in RTUTF16s.
  * @param   pszSrc              The source string, pure ASCII.  NULL is not OK.
  */
-RTDECL(int) RTUtf16CatAscii(PRTUTF16 pwszDst, size_t cwcDst, const char *pwszSrc);
+RTDECL(int) RTUtf16CatAscii(PRTUTF16 pwszDst, size_t cwcDst, const char *pszSrc);
 
 /**
  * String concatenation with overflow handling.
@@ -3649,7 +3653,7 @@ RTDECL(bool) RTUtf16IsValidEncoding(PCRTUTF16 pwsz);
  *          string is not correctly encoded.  In this last case the string
  *          may be partially processed.
  * @param   pwsz           The string to sanitise.
- * @param   puszValidSets  A zero-terminated array of pairs of Unicode points.
+ * @param   puszValidSet   A zero-terminated array of pairs of Unicode points.
  *                         Each pair is the start and end point of a range,
  *                         and the union of these ranges forms the white list.
  * @param   chReplacement  The ASCII replacement character.

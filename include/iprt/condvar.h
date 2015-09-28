@@ -53,7 +53,7 @@ RT_C_DECLS_BEGIN
  * @param   phCondVar           Where to store the handle to the newly created
  *                              condition variable.
  */
-RTDECL(int)  RTConvVarCreate(PRTCONDVAR phCondVar);
+RTDECL(int)  RTCondVarCreate(PRTCONDVAR phCondVar);
 
 /**
  * Create a condition variable.
@@ -71,10 +71,10 @@ RTDECL(int)  RTConvVarCreate(PRTCONDVAR phCondVar);
  *                              optional (NULL).  Max length is 32 bytes.
  * @param   ...                 Format string arguments.
  */
-RTDECL(int)  RTConvVarCreateEx(PRTCONDVAR phCondVar, uint32_t fFlags, RTLOCKVALCLASS hClass,
+RTDECL(int)  RTCondVarCreateEx(PRTCONDVAR phCondVar, uint32_t fFlags, RTLOCKVALCLASS hClass,
                                const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 
-/** @name RTConvVarCreateEx flags
+/** @name RTCondVarCreateEx flags
  * @{ */
 /** Disables lock validation. */
 #define RTCONDVAR_FLAGS_NO_LOCK_VAL     UINT32_C(0x00000001)
@@ -87,7 +87,7 @@ RTDECL(int)  RTConvVarCreateEx(PRTCONDVAR phCondVar, uint32_t fFlags, RTLOCKVALC
  * @param   hCondVar            Handle of the condition variable.  NIL_RTCONDVAR
  *                              is quietly ignored (VINF_SUCCESS).
  */
-RTDECL(int)  RTConvVarDestroy(RTCONDVAR hCondVar);
+RTDECL(int)  RTCondVarDestroy(RTCONDVAR hCondVar);
 
 /**
  * Signal the condition variable, waking up exactly one thread.
@@ -99,9 +99,9 @@ RTDECL(int)  RTConvVarDestroy(RTCONDVAR hCondVar);
  * effect on the variable.
  *
  * @returns iprt status code.
- * @param   hConvVar            The condition variable to signal.
+ * @param   hCondVar            The condition variable to signal.
  */
-RTDECL(int)  RTConvVarSignal(RTCONDVAR hCondVar);
+RTDECL(int)  RTCondVarSignal(RTCONDVAR hCondVar);
 
 /**
  * Signal the condition variable, waking up all blocked threads.
@@ -113,9 +113,9 @@ RTDECL(int)  RTConvVarSignal(RTCONDVAR hCondVar);
  * effect on the variable.
  *
  * @returns iprt status code.
- * @param   hConvVar            The condition variable to broadcast.
+ * @param   hCondVar            The condition variable to broadcast.
  */
-RTDECL(int)  RTConvVarBroadcast(RTCONDVAR hCondVar);
+RTDECL(int)  RTCondVarBroadcast(RTCONDVAR hCondVar);
 
 /**
  * Wait for the condition variable to be signaled, resume on interruption.
@@ -125,13 +125,13 @@ RTDECL(int)  RTConvVarBroadcast(RTCONDVAR hCondVar);
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
- * @param   hConvVar            The condition variable to wait on.
+ * @param   hCondVar            The condition variable to wait on.
  * @param   hMtx                The mutex to leave during the wait and which
  *                              will be re-enter before returning.
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait forever.
  */
-RTDECL(int)  RTConvVarMutexWait(RTCONDVAR hCondVar, RTSEMMUTEX hMtx, RTMSINTERVAL cMillies);
+RTDECL(int)  RTCondVarMutexWait(RTCONDVAR hCondVar, RTSEMMUTEX hMtx, RTMSINTERVAL cMillies);
 
 /**
  * Wait for the condition variable to be signaled, return on interruption.
@@ -139,13 +139,13 @@ RTDECL(int)  RTConvVarMutexWait(RTCONDVAR hCondVar, RTSEMMUTEX hMtx, RTMSINTERVA
  * This function will not resume the wait if interrupted.
  *
  * @returns iprt status code.
- * @param   hConvVar            The condition variable to wait on.
+ * @param   hCondVar            The condition variable to wait on.
  * @param   hMtx                The mutex to leave during the wait and which
  *                              will be re-enter before returning.
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait forever.
  */
-RTDECL(int)  RTConvVarMutexWaitNoResume(RTCONDVAR hCondVar, RTSEMMUTEX hMtx, RTMSINTERVAL cMillies);
+RTDECL(int)  RTCondVarMutexWaitNoResume(RTCONDVAR hCondVar, RTSEMMUTEX hMtx, RTMSINTERVAL cMillies);
 
 /**
  * Wait for the condition variable to be signaled, resume on interruption.
@@ -155,14 +155,14 @@ RTDECL(int)  RTConvVarMutexWaitNoResume(RTCONDVAR hCondVar, RTSEMMUTEX hMtx, RTM
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
- * @param   hConvVar            The condition variable to wait on.
+ * @param   hCondVar            The condition variable to wait on.
  * @param   hRWSem              The read/write semaphore to write-leave during
  *                              the wait and which will be re-enter in write
  *                              mode before returning.
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait forever.
  */
-RTDECL(int)  RTConvVarRWWriteWait(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERVAL cMillies);
+RTDECL(int)  RTCondVarRWWriteWait(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERVAL cMillies);
 
 /**
  * Wait for the condition variable to be signaled, return on interruption.
@@ -170,14 +170,14 @@ RTDECL(int)  RTConvVarRWWriteWait(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERV
  * This function will not resume the wait if interrupted.
  *
  * @returns iprt status code.
- * @param   hConvVar            The condition variable to wait on.
+ * @param   hCondVar            The condition variable to wait on.
  * @param   hRWSem              The read/write semaphore to write-leave during
  *                              the wait and which will be re-enter in write
  *                              mode before returning.
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait forever.
  */
-RTDECL(int)  RTConvVarRWWriteWaitNoResume(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERVAL cMillies);
+RTDECL(int)  RTCondVarRWWriteWaitNoResume(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERVAL cMillies);
 
 /**
  * Wait for the condition variable to be signaled, resume on interruption.
@@ -187,14 +187,14 @@ RTDECL(int)  RTConvVarRWWriteWaitNoResume(RTCONDVAR hCondVar, RTSEMRW hRWSem, RT
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
- * @param   hConvVar            The condition variable to wait on.
+ * @param   hCondVar            The condition variable to wait on.
  * @param   hRWSem              The read/write semaphore to read-leave during
  *                              the wait and which will be re-enter in read mode
  *                              before returning.
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait forever.
  */
-RTDECL(int)  RTConvVarRWReadWait(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERVAL cMillies);
+RTDECL(int)  RTCondVarRWReadWait(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERVAL cMillies);
 
 /**
  * Wait for the condition variable to be signaled, return on interruption.
@@ -202,14 +202,14 @@ RTDECL(int)  RTConvVarRWReadWait(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERVA
  * This function will not resume the wait if interrupted.
  *
  * @returns iprt status code.
- * @param   hConvVar            The condition variable to wait on.
+ * @param   hCondVar            The condition variable to wait on.
  * @param   hRWSem              The read/write semaphore to read-leave during
  *                              the wait and which will be re-enter in read mode
  *                              before returning.
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait forever.
  */
-RTDECL(int)  RTConvVarRWReadWaitNoResume(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERVAL cMillies);
+RTDECL(int)  RTCondVarRWReadWaitNoResume(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTMSINTERVAL cMillies);
 
 /**
  * Wait for the condition variable to be signaled, resume on interruption.
@@ -219,13 +219,13 @@ RTDECL(int)  RTConvVarRWReadWaitNoResume(RTCONDVAR hCondVar, RTSEMRW hRWSem, RTM
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
- * @param   hConvVar            The condition variable to wait on.
+ * @param   hCondVar            The condition variable to wait on.
  * @param   pCritSect           The critical section to leave during the wait
  *                              and which will be re-enter before returning.
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait forever.
  */
-RTDECL(int)  RTConvVarCritSectWait(RTCONDVAR hCondVar, PRTCRITSECT pCritSect, RTMSINTERVAL cMillies);
+RTDECL(int)  RTCondVarCritSectWait(RTCONDVAR hCondVar, PRTCRITSECT pCritSect, RTMSINTERVAL cMillies);
 
 /**
  * Wait for the condition variable to be signaled, return on interruption.
@@ -233,48 +233,48 @@ RTDECL(int)  RTConvVarCritSectWait(RTCONDVAR hCondVar, PRTCRITSECT pCritSect, RT
  * This function will not resume the wait if interrupted.
  *
  * @returns iprt status code.
- * @param   hConvVar            The condition variable to wait on.
+ * @param   hCondVar            The condition variable to wait on.
  * @param   pCritSect           The critical section to leave during the wait
  *                              and which will be re-enter before returning.
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait forever.
  */
-RTDECL(int)  RTConvVarCritSectWaitNoResume(RTCONDVAR hCondVar, PRTCRITSECT pCritSect, RTMSINTERVAL cMillies);
+RTDECL(int)  RTCondVarCritSectWaitNoResume(RTCONDVAR hCondVar, PRTCRITSECT pCritSect, RTMSINTERVAL cMillies);
 
 /**
  * Sets the signaller thread to one specific thread.
  *
  * This is only used for validating usage and deadlock detection.  When used
- * after calls to RTConvVarAddSignaller, the specified thread will be the only
+ * after calls to RTCondVarAddSignaller, the specified thread will be the only
  * signalling thread.
  *
- * @param   hConvVar            The condition variable.
+ * @param   hCondVar            The condition variable.
  * @param   hThread             The thread that will signal it.  Pass
  *                              NIL_RTTHREAD to indicate that there is no
  *                              special signalling thread.
  */
-RTDECL(void) RTConvVarSetSignaller(RTCONDVAR hCondVar, RTTHREAD hThread);
+RTDECL(void) RTCondVarSetSignaller(RTCONDVAR hCondVar, RTTHREAD hThread);
 
 /**
  * To add more signalling threads.
  *
  * First call RTCondVarSetSignaller then add further threads with this.
  *
- * @param   hConvVar            The condition variable.
+ * @param   hCondVar            The condition variable.
  * @param   hThread             The thread that will signal it. NIL_RTTHREAD is
  *                              not accepted.
  */
-RTDECL(void) RTConvVarAddSignaller(RTCONDVAR hCondVar, RTTHREAD hThread);
+RTDECL(void) RTCondVarAddSignaller(RTCONDVAR hCondVar, RTTHREAD hThread);
 
 /**
  * To remove a signalling thread.
  *
  * Reverts work done by RTCondVarAddSignaller and RTCondVarSetSignaller.
  *
- * @param   hConvVar            The condition variable.
+ * @param   hCondVar            The condition variable.
  * @param   hThread             A previously added thread.
  */
-RTDECL(void) RTConvVarRemoveSignaller(RTCONDVAR hCondVar, RTTHREAD hThread);
+RTDECL(void) RTCondVarRemoveSignaller(RTCONDVAR hCondVar, RTTHREAD hThread);
 
 /** @} */
 

@@ -689,7 +689,7 @@ typedef enum RTLDRDBGINFOTYPE
     RTLDRDBGINFOTYPE_COFF,
     /** Watcom debug info. */
     RTLDRDBGINFOTYPE_WATCOM,
-    /** IBM High Level Language debug info.. */
+    /** IBM High Level Language debug info. */
     RTLDRDBGINFOTYPE_HLL,
     /** The end of the valid debug info values (exclusive). */
     RTLDRDBGINFOTYPE_END,
@@ -930,9 +930,9 @@ RTDECL(int) RTLdrLinkAddressToRva(RTLDRMOD hLdrMod, RTLDRADDR LinkAddress, PRTLD
  * @returns IPRT status code.
  *
  * @param   hLdrMod         The module handle.
- * @param   Rva             The link address to convert.
- * @param   piSeg           Where to return the segment index.
- * @param   poffSeg         Where to return the segment offset.
+ * @param   Rva             The segment index.
+ * @param   offSeg          The segment offset.
+ * @param   pRva            Where to return the RVA.
  */
 RTDECL(int) RTLdrSegOffsetToRva(RTLDRMOD hLdrMod, uint32_t iSeg, RTLDRADDR offSeg, PRTLDRADDR pRva);
 
@@ -942,9 +942,9 @@ RTDECL(int) RTLdrSegOffsetToRva(RTLDRMOD hLdrMod, uint32_t iSeg, RTLDRADDR offSe
  * @returns IPRT status code.
  *
  * @param   hLdrMod         The module handle.
- * @param   iSeg            The segment index.
- * @param   offSeg          The segment offset.
- * @param   pRva            Where to return the RVA.
+ * @param   Rva             The link address to convert.
+ * @param   piSeg           Where to return the segment index.
+ * @param   poffSeg         Where to return the segment offset.
  */
 RTDECL(int) RTLdrRvaToSegOffset(RTLDRMOD hLdrMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg);
 
@@ -1035,7 +1035,7 @@ typedef enum RTLDRPROP
  * @retval  VERR_INVALID_HANDLE if the handle is invalid.
  *
  * @param   hLdrMod         The module handle.
- * @param   enmLdrProp      The property to query.
+ * @param   enmProp         The property to query.
  * @param   pvBuf           Pointer to the input / output buffer.  In most cases
  *                          it's only used for returning data.
  * @param   cbBuf           The size of the buffer.
@@ -1058,7 +1058,7 @@ RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, siz
  * @retval  VERR_INVALID_HANDLE if the handle is invalid.
  *
  * @param   hLdrMod         The module handle.
- * @param   enmLdrProp      The property to query.
+ * @param   enmProp         The property to query.
  * @param   pvBits          Optional pointer to bits returned by
  *                          RTLdrGetBits().  This can be utilized by some module
  *                          interpreters to reduce memory consumption and file

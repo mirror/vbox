@@ -76,7 +76,7 @@ RTR3DECL(int) RTR3InitExeNoArguments(uint32_t fFlags);
  * @param   ppapszArgs      Pointer to the argument vector pointer.
  * @param   fFlags          Flags, see RTR3INIT_XXX.
  */
-RTR3DECL(int) RTR3InitExe(int cArgs, char ***papszArgs, uint32_t fFlags);
+RTR3DECL(int) RTR3InitExe(int cArgs, char ***ppapszArgs, uint32_t fFlags);
 
 /**
  * Initializes the runtime library.
@@ -100,7 +100,7 @@ RTR3DECL(int) RTR3InitDll(uint32_t fFlags);
  * @param   pszProgramPath  The program path.  Pass NULL if we're to figure it
  *                          out ourselves.
  */
-RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***papszArgs, const char *pszProgramPath);
+RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *pszProgramPath);
 
 /**
  * Terminates the runtime library.

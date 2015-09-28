@@ -58,6 +58,8 @@
 # define __X86__
 # define RT_ARCH_AMD64
 # define RT_ARCH_X86
+# define RT_ARCH_SPARC
+# define RT_ARCH_SPARC64
 # define IN_RING0
 # define IN_RING3
 # define IN_RC
@@ -72,7 +74,7 @@
 # define RT_LOCK_NO_STRICT
 # define RT_LOCK_STRICT_ORDER
 # define RT_LOCK_NO_STRICT_ORDER
-# define Breakpoint
+# define RT_BREAKPOINT
 # define RT_NO_DEPRECATED_MACROS
 # define RT_EXCEPTIONS_ENABLED
 # define RT_BIG_ENDIAN
@@ -80,6 +82,8 @@
 # define RT_COMPILER_GROKS_64BIT_BITFIELDS
 # define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 # define RT_NO_VISIBILITY_HIDDEN
+# define RT_GCC_SUPPORTS_VISIBILITY_HIDDEN
+# define RT_COMPILER_SUPPORTS_LAMBDA
 #endif /* DOXYGEN_RUNNING */
 
 /** @def RT_ARCH_X86
@@ -338,7 +342,7 @@
  * Replace: # elif defined(RT_OS_\1)\n#  define RT_OPSYS RT_OPSYS_\1
  */
 #ifndef RT_OPSYS
-# if defined(RT_OS_UNKNOWN)
+# if defined(RT_OS_UNKNOWN) || defined(DOXYGEN_RUNNING)
 #  define RT_OPSYS RT_OPSYS_UNKNOWN
 # elif defined(RT_OS_AGNOSTIC)
 #  define RT_OPSYS RT_OPSYS_AGNOSTIC
@@ -1425,7 +1429,7 @@
 /** RT_CONCAT helper, don't use.  */
 #define RT_CONCAT_HLP(a,b)          a##b
 
-/** @def RT_CONCAT
+/** @def RT_CONCAT3
  * Concatenate the expanded arguments without any extra spaces in between.
  *
  * @param   a       The 1st part.
@@ -1436,7 +1440,7 @@
 /** RT_CONCAT3 helper, don't use.  */
 #define RT_CONCAT3_HLP(a,b,c)       a##b##c
 
-/** @def RT_CONCAT
+/** @def RT_CONCAT4
  * Concatenate the expanded arguments without any extra spaces in between.
  *
  * @param   a       The 1st part.

@@ -1589,7 +1589,7 @@ RT_C_DECLS_END
         return (rc); \
     } while (0)
 
-/** @def AssertLogRelMsgFailedReturn
+/** @def AssertLogRelMsgFailedReturnStmt
  * An assertion failed, execute @a stmt and return @a rc.
  * Strict builds will hit a breakpoint, non-strict will only do LogRel.
  *
@@ -1621,7 +1621,7 @@ RT_C_DECLS_END
         return; \
     } while (0)
 
-/** @def AssertLogRelMsgFailedReturnVoid
+/** @def AssertLogRelMsgFailedReturnVoidStmt
  * An assertion failed, execute @a stmt and return void.
  * Strict builds will hit a breakpoint, non-strict will only do LogRel.
  *
@@ -2095,7 +2095,7 @@ RT_C_DECLS_END
  */
 #define AssertRCReturn(rc, rcRet)   AssertMsgRCReturn(rc, ("%Rra\n", (rc)), rcRet)
 
-/** @def AssertRCReturn
+/** @def AssertRCReturnStmt
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only), execute
  * @a stmt and returns @a rcRet if it isn't.
  *
@@ -2115,7 +2115,7 @@ RT_C_DECLS_END
  */
 #define AssertRCReturnVoid(rc)      AssertMsgRCReturnVoid(rc, ("%Rra\n", (rc)))
 
-/** @def AssertReturnVoidStmt
+/** @def AssertRCReturnVoidStmt
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only), and
  * execute the given statement/return if it isn't.
  *

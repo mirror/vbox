@@ -205,6 +205,31 @@ ALIASES                += \
 \
 Implements the callback \link \1 \1 "
 
+# bugref - xTracker bug reference, takes one to four bug numbers.
+ALIASES               += bugref{1}="https://xtracker.innotek.de/index.php?bug=\1"
+ALIASES               += bugref{2}="https://xtracker.innotek.de/index.php?bug=\1, \
+https://xtracker.innotek.de/index.php?bug=\2"
+ALIASES               += bugref{3}="https://xtracker.innotek.de/index.php?bug=\1, \
+https://xtracker.innotek.de/index.php?bug=\2, \
+https://xtracker.innotek.de/index.php?bug=\3"
+ALIASES               += bugref{4}="https://xtracker.innotek.de/index.php?bug=\1, \
+https://xtracker.innotek.de/index.php?bug=\2, \
+https://xtracker.innotek.de/index.php?bug=\3, \
+https://xtracker.innotek.de/index.php?bug=\4"
+
+# ticketref - Track ticket reference, takes one to four ticket numbers.
+ALIASES               += ticketref{1}="http://www.virtualbox.org/ticket/\1"
+ALIASES               += ticketref{2}="http://www.virtualbox.org/ticket/\1, \
+http://www.virtualbox.org/ticket/\2"
+ALIASES               += ticketref{3}="http://www.virtualbox.org/ticket/\1, \
+http://www.virtualbox.org/ticket/\2, \
+http://www.virtualbox.org/ticket/\3"
+ALIASES               += ticketref{4}="http://www.virtualbox.org/ticket/\1, \
+http://www.virtualbox.org/ticket/\2, \
+http://www.virtualbox.org/ticket/\3, \
+http://www.virtualbox.org/ticket/\4"
+
+
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C
 # sources only. Doxygen will then generate output that is more tailored for C.
 # For instance, some of the names that are used will be different. The list
@@ -1193,6 +1218,7 @@ PREDEFINED             = \
     \
     "DECLINLINE(type)=inline type" \
     DECL_FORCE_INLINE(type)=DECLINLINE(type) \
+    DECL_NO_INLINE(type)=type \
     \
     AssertCompile(expr) \
     AssertCompileSize(a,b) \
@@ -1202,6 +1228,13 @@ PREDEFINED             = \
     AssertCompileMemberOffset(a,b,c) \
     AssertCompile2MemberOffsets(a,b,c) \
     \
+    RT_SRC_POS=1 \
+    RT_SRC_POS_ARGS=SRC_POS \
+    "RT_SRC_POS_DECL=int SRC_POS" \
+    \
+    RT_IPRT_FORMAT_ATTR(a,b)= \
+    RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)= \
+    RT_NO_THROW_PROTO=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.
@@ -1244,10 +1277,6 @@ EXPAND_AS_DEFINED      = \
     OTHERCTXSUFF \
     CTXMID \
     OTHERCTXMID \
-    \
-    RT_SRC_POS \
-    RT_SRC_POS_ARGS \
-    RT_SRC_POS_DECL
 
 
 # If the SKIP_FUNCTION_MACROS tag is set to YES (the default) then

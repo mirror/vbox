@@ -162,7 +162,7 @@ RTDECL(void *) RTMemSaferAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_PR
  * @param   pvOld       The current allocation.
  * @param   cbNew       The size of the new allocation.
  * @param   ppvNew      Where to return the pointer to the new memory.
- * @param   a_fFlags    Flags for controlling the allocation, see
+ * @param   fFlags      Flags for controlling the allocation, see
  *                      RTMEMSAFER_F_XXX.  It is not permitted to drop saftely
  *                      requirments after the initial allocation.
  * @param   pszTag      Allocation tag used for statistics and such.

@@ -132,7 +132,7 @@
 # define RT_INLINE_ASM_GCC_4_3_X_X86 0
 #endif
 
-/** @def RT_INLINE_DONT_USE_CMPXCHG8B
+/** @def RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
  * i686-apple-darwin9-gcc-4.0.1 (GCC) 4.0.1 (Apple Inc. build 5493) screws up
  * RTSemRWRequestWrite semsemrw-lockless-generic.cpp in release builds. PIC
  * mode, x86.

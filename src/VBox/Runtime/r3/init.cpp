@@ -368,7 +368,7 @@ static void rtR3SigChildHandler(int iSignal)
 /**
  * rtR3Init worker.
  */
-static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const char *pszProgramPath)
+static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *pszProgramPath)
 {
     /*
      * Early native initialization.
@@ -447,7 +447,7 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const cha
     rc = rtR3InitProgramPath(pszProgramPath);
     AssertLogRelMsgRCReturn(rc, ("Failed to get executable directory path, rc=%Rrc!\n", rc), rc);
 
-    rc = rtR3InitArgv(fFlags, cArgs, papszArgs);
+    rc = rtR3InitArgv(fFlags, cArgs, ppapszArgs);
     AssertLogRelMsgRCReturn(rc, ("Failed to convert the arguments, rc=%Rrc!\n", rc), rc);
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
@@ -549,7 +549,7 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const cha
  * @param   pszProgramPath  The program path.  Pass NULL if we're to figure it
  *                          out ourselves.
  */
-static int rtR3Init(uint32_t fFlags, int cArgs, char ***papszArgs, const char *pszProgramPath)
+static int rtR3Init(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *pszProgramPath)
 {
     /* no entry log flow, because prefixes and thread may freak out. */
     Assert(!(fFlags & ~(  RTR3INIT_FLAGS_DLL
@@ -589,7 +589,7 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***papszArgs, const char *p
         if (pszProgramPath)
             rc = rtR3InitProgramPath(pszProgramPath);
         if (RT_SUCCESS(rc))
-            rc = rtR3InitArgv(fFlags, cArgs, papszArgs);
+            rc = rtR3InitArgv(fFlags, cArgs, ppapszArgs);
         return rc;
     }
     ASMAtomicWriteBool(&g_fInitializing, true);
@@ -597,7 +597,7 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***papszArgs, const char *p
     /*
      * Do the initialization.
      */
-    int rc = rtR3InitBody(fFlags, cArgs, papszArgs, pszProgramPath);
+    int rc = rtR3InitBody(fFlags, cArgs, ppapszArgs, pszProgramPath);
     if (RT_FAILURE(rc))
     {
         /* failure */
@@ -613,10 +613,10 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***papszArgs, const char *p
 }
 
 
-RTR3DECL(int) RTR3InitExe(int cArgs, char ***papszArgs, uint32_t fFlags)
+RTR3DECL(int) RTR3InitExe(int cArgs, char ***ppapszArgs, uint32_t fFlags)
 {
     Assert(!(fFlags & RTR3INIT_FLAGS_DLL));
-    return rtR3Init(fFlags, cArgs, papszArgs, NULL);
+    return rtR3Init(fFlags, cArgs, ppapszArgs, NULL);
 }
 
 
@@ -634,10 +634,10 @@ RTR3DECL(int) RTR3InitDll(uint32_t fFlags)
 }
 
 
-RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***papszArgs, const char *pszProgramPath)
+RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *pszProgramPath)
 {
     AssertReturn(iVersion == RTR3INIT_VER_CUR, VERR_NOT_SUPPORTED);
-    return rtR3Init(fFlags, cArgs, papszArgs, pszProgramPath);
+    return rtR3Init(fFlags, cArgs, ppapszArgs, pszProgramPath);
 }
 
 

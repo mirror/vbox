@@ -45,7 +45,7 @@
  */
 static const RTSTATUSMSG  g_aStatusMsgs[] =
 {
-#ifndef IPRT_NO_ERROR_DATA
+#if !defined(IPRT_NO_ERROR_DATA) && !defined(DOXYGEN_RUNNING)
 # include "errmsgdata.h"
 #else
     { "Success.", "Success.", "VINF_SUCCESS", 0 },

@@ -261,7 +261,7 @@ DECLINLINE(void) ASMGetGDTR(PRTGDTR pGdtr)
 
 /**
  * Sets the content of the GDTR CPU register.
- * @param   pIdtr   Where to load the GDTR contents from
+ * @param   pGdtr   Where to load the GDTR contents from
  */
 #if RT_INLINE_ASM_EXTERNAL
 DECLASM(void) ASMSetGDTR(const RTGDTR *pGdtr);

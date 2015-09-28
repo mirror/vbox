@@ -193,28 +193,29 @@ RTR3DECL(void) RTIsoFsClose(PRTISOFSFILE pFile);
 /**
  * Retrieves the offset + length (both in bytes) of a given file
  * stored in the ISO.
+ *
  * @note    According to the standard, a file cannot be larger than 2^32-1 bytes.
  *          Therefore using size_t / uint32_t is not a problem.
  *
  * @return  IPRT status code.
  * @param   pFile       Pointer to open ISO file returned by RTIsoFsOpen().
  * @param   pszPath     Path of file within the ISO to retrieve information for.
- * @param   pcbOffset   Pointer to store the file's absolute offset within the ISO.
+ * @param   poffInIso   Wheter to store the file's absolute offset within the
+ *                      ISO.
  * @param   pcbLength   Pointer to store the file's size.
  */
-RTR3DECL(int) RTIsoFsGetFileInfo(PRTISOFSFILE pFile, const char *pszPath,
-                                 uint32_t *pcbOffset, size_t *pcbLength);
+RTR3DECL(int) RTIsoFsGetFileInfo(PRTISOFSFILE pFile, const char *pszPath, uint32_t *poffInIso, size_t *pcbLength);
 
 /**
  * Extracts a file from an ISO to the given destination.
  *
  * @return  IPRT status code.
  * @param   pFile       Pointer to open ISO file returned by RTIsoFsOpen().
- * @param   pszPath     Path of file within the ISO to extract.
- * @param   pszDest     Where to store the extracted file.
+ * @param   pszSrcPath  Path of file within the ISO to extract.
+ * @param   pszDstPath  Where to store the extracted file.
  */
-RTR3DECL(int) RTIsoFsExtractFile(PRTISOFSFILE pFile, const char *pszSource,
-                                 const char *pszDest);
+RTR3DECL(int) RTIsoFsExtractFile(PRTISOFSFILE pFile, const char *pszSrcPath, const char *pszDstPath);
+
 #endif /* IN_RING3 */
 
 /** @} */

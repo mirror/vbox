@@ -1103,7 +1103,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
 /** @name Misc Logging Macros
  * @{ */
 
-/** @def LogWarning1
+/** @def Log1Warning
  * The same as Log(), but prepents a <tt>"WARNING! "</tt> string to the message.
  *
  * @param   a   Custom log message in format <tt>("string\n" [, args])</tt>.
@@ -1114,7 +1114,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
 # define Log1Warning(a)     do { Log(("WARNING! ")); Log(a); } while (0)
 #endif
 
-/** @def LogWarningFunc
+/** @def Log1WarningFunc
  * The same as LogWarning(), but prepents the log message with the function name.
  *
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
@@ -1127,7 +1127,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
     do { Log((LOG_FN_FMT ": WARNING! ", __PRETTY_FUNCTION__)); Log(a); } while (0)
 #endif
 
-/** @def LogWarningThisFunc
+/** @def Log1WarningThisFunc
  * The same as LogWarningFunc() but for class functions (methods): the resulting
  * log line is additionally prepended with a hex value of |this| pointer.
  *

@@ -46,8 +46,8 @@ RT_C_DECLS_BEGIN
  * @returns VINF_SUCCESS on success, VERR_GETOPT_INVALID_ARGUMENT_FORMAT on
  *          failure.
  *
- * @param   pszValue        The value to convert.
- * @param   pAddr           Where to store the result.
+ * @param   pszAddr         The address string to convert.
+ * @param   pMacAddr        Where to store the result.
  */
 RTDECL(int) RTNetStrToMacAddr(const char *pszAddr, PRTMAC pMacAddr);
 
