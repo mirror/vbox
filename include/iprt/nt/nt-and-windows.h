@@ -36,6 +36,7 @@
 #define PTEB    IncompleteWindows_PTEB
 
 #define IPRT_NT_USE_WINTERNL
+#define IPRT_NT_HAVE_CURRENT_TEB_MACRO
 #define WIN32_NO_STATUS
 #include <Windows.h>
 #undef WIN32_NO_STATUS
