@@ -1533,7 +1533,7 @@ EOF
         fail
       fi
     fi
-    if ! test -n "${foundqt4}"; then
+    if test -z "${foundqt4}"; then
       # do it the old way (e.g. user has specified QT4DIR)
       for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
         INCQT4="$q/include $q/include/QtCore"
