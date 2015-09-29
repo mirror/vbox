@@ -738,7 +738,7 @@ static BOOL match_intel(const struct wined3d_gl_info *gl_info, const char *gl_re
         enum wined3d_gl_vendor gl_vendor, enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
 {
     if (card_vendor == HW_VENDOR_INTEL) return TRUE;
-    if (gl_vendor == HW_VENDOR_INTEL) return TRUE;
+    if (gl_vendor == GL_VENDOR_INTEL) return TRUE;
     return FALSE;
 }
 
