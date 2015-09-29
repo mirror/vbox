@@ -715,7 +715,7 @@ RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PR
         if (RT_SUCCESS(rc))
         {
             if (pDefaultDstAddr)
-                rc = rtSocketConnect(Sock, pDefaultDstAddr, 0);
+                rc = rtSocketConnect(Sock, pDefaultDstAddr, RT_SOCKETCONNECT_DEFAULT_WAIT);
             if (RT_SUCCESS(rc))
             {
                 *pSock = Sock;
