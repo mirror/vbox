@@ -565,7 +565,7 @@ VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULON
             Status = IoGetDeviceObjectPointer(&UnicodeName, FILE_READ_DATA, &pHubFileObj, &pHubDevObj);
             if (Status == STATUS_SUCCESS)
             {
-                LOG(("IoGetDeviceObjectPointer for %S returned %p %p", szwHubName, pHubDevObj, pHubFileObj));
+                LOG(("IoGetDeviceObjectPointer for \\Device\\USBPDO-%d returned %p %p", i, pHubDevObj, pHubFileObj));
 
                 VBOXUSBOBJDRVOBJSEARCHER Data = {0};
                 Data.pDrvName = &szStandardHubName;
@@ -598,12 +598,12 @@ VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULON
             }
             else
             {
-                LOG(("IoGetDeviceObjectPointer returned Status (0x%x) for (%S)", Status, szwHubName));
+                LOG(("IoGetDeviceObjectPointer returned Status (0x%x) for (\\Device\\USBPDO-%d)", Status, i));
             }
         }
         else
         {
-            WARN(("RtlAnsiStringToUnicodeString failed, Status (0x%x) for Ansu name (%s)", Status, szHubName));
+            WARN(("RtlAnsiStringToUnicodeString failed, Status (0x%x) for Ansu name (\\Device\\USBPDO-%d)", Status, i));
         }
     }
 #else /* VBOX_USB3PORT */
@@ -626,8 +626,8 @@ VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULON
             Status = IoGetDeviceObjectPointer(&UnicodeName, FILE_READ_DATA, &pHubFileObj, &pHubDevObj);
             if (Status == STATUS_SUCCESS)
             {
-                /** @todo Replace %S with something else as it does not work for PWSTR. */
-                LOG(("IoGetDeviceObjectPointer for %S returned %p %p", szwHubName, pHubDevObj, pHubFileObj));
+                /* We can't log HubName here couse string logging could lead to BSOD */
+                LOG(("IoGetDeviceObjectPointer returned %p %p", pHubDevObj, pHubFileObj));
                 if (!pfnWalker(pHubFileObj, pHubDevObj, pHubDevObj, pvWalker))
                 {
                     LOG(("the walker said to stop"));
