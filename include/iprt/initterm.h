@@ -35,7 +35,13 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** @defgroup grp_rt_initterm  Init / Term
+/** @defgroup grp_rt_initterm  RTInit/RTTerm - Initialization and Termination
+ *
+ * APIs for initializing and terminating the IPRT, optionally it can also
+ * convert input arguments to UTF-8 (in ring-3).
+ *
+ * @sa RTOnce, RTOnceEx.
+ *
  * @{
  */
 

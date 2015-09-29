@@ -28,9 +28,16 @@
 
 #include <iprt/ldr.h>
 
-/** @defgroup grp_rt_ldrlazy        Lazy shared library linking.
+/** @defgroup grp_rt_ldrlazy        RTLdrLazy - Lazy shared library linking.
  * @ingroup grp_rt
  *
+ * This is a set of macros which will produce code for dynamically loading and
+ * resolving symbols in shared libraries (DLLs).
+ *
+ * There is an assembly language alternative to this that only requires writing
+ * a list of symbols in a format similar to what the microsoft linkers take as
+ * input when producing DLLs and import libraries.  That is probably preferable
+ * over this code.  See src/bldprog/VBoxDef2LazyLoad.cpp.
  *
  * @{
  */
