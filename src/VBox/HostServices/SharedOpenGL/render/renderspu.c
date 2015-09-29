@@ -425,6 +425,58 @@ WindowInfo* renderspuGetDummyWindow(GLint visBits)
     return window;
 }
 
+/* Check that OpenGL extensions listed in pszRequiredExts string also exist in the pszAvailableExts string. */
+static void renderCompareGLExtensions(const char *pszAvailableExts, const char *pszRequiredExts)
+{
+    unsigned char fPrintHeader = 1;
+    const char *pszExt = pszRequiredExts;
+
+    for (;;)
+    {
+        const char *pszSrc = pszAvailableExts;
+        size_t offExtEnd;
+
+        while (*pszExt == ' ')
+            ++pszExt;
+
+        if (!*pszExt)
+            break;
+
+        offExtEnd = RTStrOffCharOrTerm(pszExt, ' ');
+
+        for (;;)
+        {
+            size_t offSrcEnd;
+
+            while (*pszSrc == ' ')
+                ++pszSrc;
+
+            if (!*pszSrc)
+                break;
+
+            offSrcEnd = RTStrOffCharOrTerm(pszSrc, ' ');
+
+            if (   offSrcEnd == offExtEnd
+                && memcmp(pszSrc, pszExt, offSrcEnd) == 0)
+                    break;
+
+            pszSrc += offSrcEnd;
+        }
+
+        if (!*pszSrc)
+        {
+            if (fPrintHeader)
+            {
+                fPrintHeader = 0;
+                crInfo("Host does not support OpenGL extension(s):");
+            }
+            crInfo("%.*s", offExtEnd, pszExt);
+        }
+
+        pszExt += offExtEnd;
+    }
+}
+
 void renderspuPerformMakeCurrent(WindowInfo *window, GLint nativeWindow, ContextInfo *context)
 {
     if (window && context)
@@ -448,6 +500,7 @@ void renderspuPerformMakeCurrent(WindowInfo *window, GLint nativeWindow, Context
 
         renderspu_SystemMakeCurrent( window, nativeWindow, context );
         if (!context->everCurrent) {
+            static volatile uint32_t u32ExtCompared = 0;
             /* print OpenGL info */
             const char *extString = (const char *) render_spu.ws.glGetString( GL_EXTENSIONS );
             /*
@@ -457,6 +510,10 @@ void renderspuPerformMakeCurrent(WindowInfo *window, GLint nativeWindow, Context
             crInfo( "Render SPU: GL_RENDERER: %s", render_spu.ws.glGetString( GL_RENDERER ) );
             crInfo( "Render SPU: GL_VERSION:  %s", render_spu.ws.glGetString( GL_VERSION ) );
             crInfo( "Render SPU: GL_EXTENSIONS: %s", render_spu.ws.glGetString( GL_EXTENSIONS ) );
+
+            if (ASMAtomicCmpXchgU32(&u32ExtCompared, 1, 0))
+                renderCompareGLExtensions(extString, crExtensions);
+
             if (crStrstr(extString, "GL_ARB_window_pos"))
                 context->haveWindowPosARB = GL_TRUE;
             else
