@@ -1515,10 +1515,12 @@ EOF
           FLGQT4=`pkg-config QtCore --cflags`
           INCQT4=`strip_I "$FLGQT4"`
           LIBQT4=`PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config QtCore --libs`
-          foundqt4=3 # pkg-config
           TOOLQT4=`pkg-config QtCore --variable=prefix`
           TOOLQT4MOC="`pkg-config QtCore --variable=moc_location`"
           TOOLQT4BIN="`dirname $TOOLQT4MOC`"
+          if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
+            test_execute_path "`strip_L "$LIBQT4"`" nofatal && foundqt4=3 # pkg-config
+          fi
         fi
       else
         log_failure "pkg-config not found"
@@ -1605,9 +1607,9 @@ EOF
           else
             QT4BINSUFF=""
           fi
-          moc_ver=`$TOOLQT4/bin/moc-$QT4BINSUFF -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
+          moc_ver=`$TOOLQT4/bin/moc$QT4BINSUFF -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
           if [ $? -ne 0 ]; then
-            log_failure "moc-$QT4BINSUFF not working"
+            log_failure "moc$QT4BINSUFF not working"
             fail
           else
             log_success "found version $moc_ver"
