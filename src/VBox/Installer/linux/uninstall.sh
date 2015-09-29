@@ -49,7 +49,8 @@ fi
 
 # Do pre-removal common to all installer types, currently service script
 # clean-up.
-./prerm-common.sh
+test "${BUILD_MODULE}" = true && DO_DKMS="--dkms ${INSTALL_VER}"
+`dirname $0`/prerm-common.sh ${DO_DKMS} || exit 1  # Arguments intentionally not quoted.
 
 # Remove kernel module installed
 if [ -n "$DKMS" ]; then

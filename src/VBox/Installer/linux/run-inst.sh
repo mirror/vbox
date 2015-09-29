@@ -177,8 +177,6 @@ EOF
 
 info "$PACKAGE_NAME installer"
 
-check_bzip2
-
 # Check architecture
 cpu=`uname -m`;
 case "$cpu" in
