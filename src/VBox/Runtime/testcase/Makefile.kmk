@@ -135,6 +135,7 @@ PROGRAMS += \
 	tstTimer \
 	tstTimerLR \
 	tstRTTimeSpec \
+	tstRTUdp-1 \
 	tstUtf8 \
 	tstRTUuid \
 	tstRTCircBuf \
@@ -627,6 +628,9 @@ tstTSC_CXXFLAGS.linux += -O3
 
 tstRTUuid_TEMPLATE = VBOXR3TSTEXE
 tstRTUuid_SOURCES = tstRTUuid.cpp
+
+tstRTUdp-1_TEMPLATE = VBOXR3TSTEXE
+tstRTUdp-1_SOURCES = tstRTUdp-1.cpp
 
 tstUtf8_TEMPLATE = VBOXR3TSTEXE
 tstUtf8_SOURCES = tstUtf8.cpp
