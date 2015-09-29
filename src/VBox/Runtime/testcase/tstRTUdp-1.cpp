@@ -98,7 +98,7 @@ static void test1()
 
     int rc;
     RTSOCKET hSocket;
-    RTTESTI_CHECK_RC(rc = RTUdpCreateClientSocket(RT_TEST_UDP_CLIENT_ADDRESS, RT_TEST_UDP_CLIENT_PORT, &hSocket),
+    RTTESTI_CHECK_RC(rc = RTUdpCreateClientSocket(RT_TEST_UDP_CLIENT_ADDRESS, RT_TEST_UDP_CLIENT_PORT, &ServerAddress, &hSocket),
                      VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
@@ -106,13 +106,13 @@ static void test1()
         {
             char szBuf[512];
             RT_ZERO(szBuf);
-            RTTESTI_CHECK_RC_BREAK(RTSocketWriteTo(hSocket, "dude!\n", sizeof("dude!\n") - 1, &ServerAddress), VINF_SUCCESS);
+            RTTESTI_CHECK_RC_BREAK(RTSocketWrite(hSocket, "dude!\n", sizeof("dude!\n") - 1), VINF_SUCCESS);
 
             RTTESTI_CHECK_RC_BREAK(RTSocketRead(hSocket, szBuf, sizeof("hello\n") - 1, NULL), VINF_SUCCESS);
             szBuf[sizeof("hello!\n") - 1] = '\0';
             RTTESTI_CHECK_BREAK(strcmp(szBuf, "hello\n") == 0);
 
-            RTTESTI_CHECK_RC_BREAK(RTSocketWriteTo(hSocket, "byebye\n", sizeof("byebye\n") - 1, &ServerAddress), VINF_SUCCESS);
+            RTTESTI_CHECK_RC_BREAK(RTSocketWrite(hSocket, "byebye\n", sizeof("byebye\n") - 1), VINF_SUCCESS);
             RT_ZERO(szBuf);
             RTTESTI_CHECK_RC_BREAK(RTSocketRead(hSocket, szBuf, sizeof("buh bye\n") - 1, NULL), VINF_SUCCESS);
             RTTESTI_CHECK_BREAK(strcmp(szBuf, "buh bye\n") == 0);
