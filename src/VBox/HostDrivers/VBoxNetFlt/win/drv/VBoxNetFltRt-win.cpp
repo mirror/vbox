@@ -118,7 +118,7 @@ VBOXNETFLTGLOBALS_WIN g_VBoxNetFltGlobalsWin = {0};
 
 static int vboxNetFltWinAttachToInterface(PVBOXNETFLTINS pThis, void * pContext, bool fRediscovery);
 static int vboxNetFltWinConnectIt(PVBOXNETFLTINS pThis);
-static int vboxNetFltWinTryFiniIdc();
+static int vboxNetFltWinFiniIdc();
 static void vboxNetFltWinFiniNetFltBase();
 static int vboxNetFltWinInitNetFltBase();
 static int vboxNetFltWinFiniNetFlt();
@@ -1666,13 +1666,13 @@ DECLHIDDEN(VOID) vboxNetFltWinUnload(IN PDRIVER_OBJECT DriverObject)
 
     LogFlow((__FUNCTION__" ==> DO (0x%x)\n", DriverObject));
 
-    rc = vboxNetFltWinTryFiniIdc();
+    rc = vboxNetFltWinFiniIdc();
     if (RT_FAILURE(rc))
     {
         /* TODO: we can not prevent driver unload here */
         AssertFailed();
 
-        Log((__FUNCTION__": vboxNetFltWinTryFiniIdc - failed, busy.\n"));
+        Log((__FUNCTION__": vboxNetFltWinFiniIdc - failed, busy.\n"));
     }
 
     vboxNetFltWinJobFiniQueue(&g_VBoxJobQueue);
@@ -2449,15 +2449,39 @@ static void vboxNetFltWinFiniNetFltBase()
     } while (0);
 }
 
-static int vboxNetFltWinTryFiniIdc()
+/*
+ * Defines max timeout for waiting for driver unloading
+ * (3000 * 100 ms = 5 minutes)
+ */
+#define MAX_UNLOAD_PROBES 3000
+
+static int vboxNetFltWinFiniIdc()
 {
     int rc;
+    int i;
 
     vboxNetFltWinStopInitIdcProbing();
 
     if (g_bVBoxIdcInitialized)
     {
-        rc = vboxNetFltTryDeleteIdc(&g_VBoxNetFltGlobals);
+         for (i = 0; (rc = vboxNetFltTryDeleteIdc(&g_VBoxNetFltGlobals)) == VERR_WRONG_ORDER
+            && i < MAX_UNLOAD_PROBES; i++)
+        {
+            RTThreadSleep(100);
+        }
+        if (i == MAX_UNLOAD_PROBES)
+        {
+            // seems something hungs in driver
+            LogFlow(("vboxNetFltWinFiniIdc - Can't delete Idc. pInH=%p cFRefs=%d fIDcOpen=%s",
+                        g_VBoxNetFltGlobals.pInstanceHead, g_VBoxNetFltGlobals.cFactoryRefs,
+                        g_VBoxNetFltGlobals.fIDCOpen ? "true" : "false"));
+            LogFlow(("vboxNetFltWinFiniIdc g_VBoxNetFltGlobalsWin cDvRefs=%d hDev=%x pDev=%p Mp=%x \n",
+                        g_VBoxNetFltGlobalsWin.cDeviceRefs, g_VBoxNetFltGlobalsWin.hDevice,
+                        g_VBoxNetFltGlobalsWin.pDevObj, g_VBoxNetFltGlobalsWin.Mp.hMiniport));
+            Assert(i == MAX_UNLOAD_PROBES);
+            return VERR_WRONG_ORDER;
+        }
+
         if (RT_SUCCESS(rc))
         {
             g_bVBoxIdcInitialized = false;
@@ -2473,7 +2497,7 @@ static int vboxNetFltWinTryFiniIdc()
 
 static int vboxNetFltWinFiniNetFlt()
 {
-    int rc = vboxNetFltWinTryFiniIdc();
+    int rc = vboxNetFltWinFiniIdc();
     if (RT_SUCCESS(rc))
     {
         vboxNetFltWinFiniNetFltBase();
