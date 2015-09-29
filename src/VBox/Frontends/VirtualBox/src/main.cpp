@@ -372,7 +372,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
 #ifdef Q_WS_MAC
         /* Apply font fixes (before QApplication get created and instantiated font-hints): */
-        switch (VBoxGlobal::osRelease())
+        switch (VBoxGlobal::determineOsRelease())
         {
             case MacOSXRelease_Mavericks: QFont::insertSubstitution(".Lucida Grande UI", "Lucida Grande"); break;
             case MacOSXRelease_Yosemite:  QFont::insertSubstitution(".Helvetica Neue DeskInterface", "Helvetica Neue"); break;

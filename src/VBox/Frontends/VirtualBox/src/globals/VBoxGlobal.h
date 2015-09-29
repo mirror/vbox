@@ -119,8 +119,10 @@ public:
     bool isSeparateProcess() const { return m_fSeparateProcess; }
 
 #ifdef Q_WS_MAC
-    /** Returns #MacOSXRelease determined using <i>uname</i> call. */
-    static MacOSXRelease osRelease();
+    /** Mac OS X: Returns #MacOSXRelease determined using <i>uname</i> call. */
+    static MacOSXRelease determineOsRelease();
+    /** Mac OS X: Returns #MacOSXRelease determined during VBoxGlobal prepare routine. */
+    MacOSXRelease osRelease() const { return m_osRelease; }
 #endif /* Q_WS_MAC */
 
     /** Try to acquire COM cleanup protection token for reading. */
@@ -519,6 +521,11 @@ private:
 #endif
 
     bool mValid;
+
+#ifdef Q_WS_MAC
+    /** Mac OS X: Holds the #MacOSXRelease determined using <i>uname</i> call. */
+    MacOSXRelease m_osRelease;
+#endif /* Q_WS_MAC */
 
     /** COM cleanup protection token. */
     QReadWriteLock m_comCleanupProtectionToken;

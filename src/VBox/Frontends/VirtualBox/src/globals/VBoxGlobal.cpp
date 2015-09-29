@@ -231,6 +231,9 @@ void VBoxGlobal::destroy()
 
 VBoxGlobal::VBoxGlobal()
     : mValid (false)
+#ifdef Q_WS_MAC
+    , m_osRelease(MacOSXRelease_Old)
+#endif /* Q_WS_MAC */
     , m_fWrappersValid(false)
     , m_fVBoxSVCAvailable(true)
     , m_fSeparateProcess(false)
@@ -314,7 +317,7 @@ bool VBoxGlobal::isBeta() const
 
 #ifdef Q_WS_MAC
 /* static */
-MacOSXRelease VBoxGlobal::osRelease()
+MacOSXRelease VBoxGlobal::determineOsRelease()
 {
     /* Prepare 'utsname' struct: */
     utsname info;
@@ -3976,6 +3979,11 @@ void VBoxGlobal::prepare()
 {
     /* Make sure QApplication cleanup us on exit: */
     connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(cleanup()));
+
+#ifdef Q_WS_MAC
+    /* Determine OS release early: */
+    m_osRelease = determineOsRelease();
+#endif /* Q_WS_MAC */
 
     /* Create message-center: */
     UIMessageCenter::create();
