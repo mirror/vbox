@@ -1439,8 +1439,8 @@ AttributeNode* ElementNode::setAttributeHex(const char *pcszName, uint32_t u)
  * otherwise a new attribute is created. Returns the attribute node
  * that was either created or changed.
  *
- * @param pcszName
- * @param i
+ * @param   pcszName    The attribute name.
+ * @param   f           The attribute value.
  * @return
  */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, bool f)
@@ -1457,7 +1457,7 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, bool f)
  *                      despite the type).  NULL for the root node.
  * @param   pListAnchor Pointer to the m_children member of the parent.  NULL
  *                      for the root node.
- * @param   pLibNode    Pointer to the libxml2 node structure.
+ * @param   pLibAttr    Pointer to the libxml2 attribute structure.
  */
 AttributeNode::AttributeNode(const ElementNode *pElmRoot,
                              Node *pParent,

@@ -52,11 +52,11 @@ RT_C_DECLS_BEGIN
  * @returns iprt status code.
  * @returns VERR_TCP_SERVER_STOP to terminate the server loop forcing
  *          the RTTcpCreateServer() call to return.
- * @param   Sock        The socket which the client is connected to.
- *                      The call will close this socket.
+ * @param   hSocket     The socket which the client is connected to. The call
+ *                      will close this socket.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(int) FNRTTCPSERVE(RTSOCKET Sock, void *pvUser);
+typedef DECLCALLBACK(int) FNRTTCPSERVE(RTSOCKET hSocket, void *pvUser);
 /** Pointer to a RTTCPSERVE(). */
 typedef FNRTTCPSERVE *PFNRTTCPSERVE;
 
@@ -212,9 +212,9 @@ RTR3DECL(int) RTTcpClientCancelConnect(PRTTCPCLIENTCONNECTCANCEL volatile *ppCan
  * Close a socket returned by RTTcpClientConnect().
  *
  * @returns iprt status code.
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  */
-RTR3DECL(int) RTTcpClientClose(RTSOCKET Sock);
+RTR3DECL(int) RTTcpClientClose(RTSOCKET hSocket);
 
 /**
  * Close a socket returned by RTTcpClientConnect().
@@ -227,20 +227,20 @@ RTR3DECL(int) RTTcpClientClose(RTSOCKET Sock);
  *                              If false, just close the connection without
  *                              further ado.
  */
-RTR3DECL(int) RTTcpClientCloseEx(RTSOCKET Sock, bool fGracefulShutdown);
+RTR3DECL(int) RTTcpClientCloseEx(RTSOCKET hSocket, bool fGracefulShutdown);
 
 /**
  * Receive data from a socket.
  *
  * @returns iprt status code.
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   pvBuffer    Where to put the data we read.
  * @param   cbBuffer    Read buffer size.
  * @param   pcbRead     Number of bytes read.
  *                      If NULL the entire buffer will be filled upon successful return.
  *                      If not NULL a partial read can be done successfully.
  */
-RTR3DECL(int)  RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
+RTR3DECL(int)  RTTcpRead(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
 
 /**
  * Send data to a socket.
@@ -248,19 +248,19 @@ RTR3DECL(int)  RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t 
  * @returns iprt status code.
  * @retval  VERR_INTERRUPTED if interrupted before anything was written.
  *
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   pvBuffer    Buffer to write data to socket.
  * @param   cbBuffer    How much to write.
  */
-RTR3DECL(int)  RTTcpWrite(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer);
+RTR3DECL(int)  RTTcpWrite(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffer);
 
 /**
  * Flush socket write buffers.
  *
  * @returns iprt status code.
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  */
-RTR3DECL(int)  RTTcpFlush(RTSOCKET Sock);
+RTR3DECL(int)  RTTcpFlush(RTSOCKET hSocket);
 
 /**
  * Enables or disables delaying sends to coalesce packets.
@@ -269,57 +269,56 @@ RTR3DECL(int)  RTTcpFlush(RTSOCKET Sock);
  * coalescing.
  *
  * @returns iprt status code.
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   fEnable     When set to true enables coalescing.
  */
-RTR3DECL(int)  RTTcpSetSendCoalescing(RTSOCKET Sock, bool fEnable);
+RTR3DECL(int)  RTTcpSetSendCoalescing(RTSOCKET hSocket, bool fEnable);
 
 /**
  * Socket I/O multiplexing.
  * Checks if the socket is ready for reading.
  *
  * @returns iprt status code.
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   cMillies    Number of milliseconds to wait for the socket.
  *                      Use RT_INDEFINITE_WAIT to wait for ever.
  */
-RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies);
+RTR3DECL(int)  RTTcpSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies);
 
 /**
  * Socket I/O multiplexing
  * Checks if the socket is ready for one of the given events.
  *
  * @returns iprt status code.
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   fEvents     Event mask to wait for.
  *                      Use the RTSOCKET_EVT_* defines.
  * @param   pfEvents    Where to store the event mask on return.
  * @param   cMillies    Number of milliseconds to wait for the socket.
  *                      Use RT_INDEFINITE_WAIT to wait for ever.
  */
-RTR3DECL(int)  RTTcpSelectOneEx(RTSOCKET Sock, uint32_t fEvents, uint32_t *pfEvents,
-                                RTMSINTERVAL cMillies);
+RTR3DECL(int)  RTTcpSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pfEvents, RTMSINTERVAL cMillies);
 
 #if 0 /* skipping these for now - RTTcpServer* handles this. */
 /**
  * Listen for connection on a socket.
  *
  * @returns iprt status code.
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   cBackLog    The maximum length the queue of pending connections
  *                      may grow to.
  */
-RTR3DECL(int)  RTTcpListen(RTSOCKET Sock, int cBackLog);
+RTR3DECL(int)  RTTcpListen(RTSOCKET hSocket, int cBackLog);
 
 /**
  * Accept a connection on a socket.
  *
  * @returns iprt status code.
- * @param   Sock            Socket descriptor.
+ * @param   hSocket         Socket descriptor.
  * @param   uPort           The port for accepting connection.
  * @param   pSockAccepted   Where to store the handle to the accepted connection.
  */
-RTR3DECL(int)  RTTcpAccept(RTSOCKET Sock, unsigned uPort, PRTSOCKET pSockAccepted);
+RTR3DECL(int)  RTTcpAccept(RTSOCKET hSocket, unsigned uPort, PRTSOCKET pSockAccepted);
 
 #endif
 
@@ -327,19 +326,19 @@ RTR3DECL(int)  RTTcpAccept(RTSOCKET Sock, unsigned uPort, PRTSOCKET pSockAccepte
  * Gets the address of the local side.
  *
  * @returns IPRT status code.
- * @param   Sock            Socket descriptor.
+ * @param   hSocket         Socket descriptor.
  * @param   pAddr           Where to store the local address on success.
  */
-RTR3DECL(int) RTTcpGetLocalAddress(RTSOCKET Sock, PRTNETADDR pAddr);
+RTR3DECL(int) RTTcpGetLocalAddress(RTSOCKET hSocket, PRTNETADDR pAddr);
 
 /**
  * Gets the address of the other party.
  *
  * @returns IPRT status code.
- * @param   Sock            Socket descriptor.
+ * @param   hSocket         Socket descriptor.
  * @param   pAddr           Where to store the peer address on success.
  */
-RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr);
+RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr);
 
 /**
  * Send data from a scatter/gather buffer to a socket.
@@ -347,10 +346,10 @@ RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr);
  * @returns iprt status code.
  * @retval  VERR_INTERRUPTED if interrupted before anything was written.
  *
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   pSgBuf      Scatter/gather buffer to write data to socket.
  */
-RTR3DECL(int)  RTTcpSgWrite(RTSOCKET Sock, PCRTSGBUF pSgBuf);
+RTR3DECL(int)  RTTcpSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf);
 
 
 /**
@@ -398,12 +397,12 @@ RTR3DECL(int) RTTcpSgWriteLV(RTSOCKET hSocket, size_t cSegs, va_list va);
  *
  * @returns IPRT status code.
  *
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   pvBuffer    Where to put the data we read.
  * @param   cbBuffer    Read buffer size.
  * @param   pcbRead     Number of bytes read.
  */
-RTR3DECL(int)  RTTcpReadNB(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
+RTR3DECL(int)  RTTcpReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
 
 /**
  * Send data to a socket.
@@ -412,12 +411,12 @@ RTR3DECL(int)  RTTcpReadNB(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_
  *
  * @returns IPRT status code.
  *
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   pvBuffer    Buffer to write data to socket.
  * @param   cbBuffer    How much to write.
  * @param   pcbWritten  Number of bytes written.
  */
-RTR3DECL(int)  RTTcpWriteNB(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten);
+RTR3DECL(int)  RTTcpWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten);
 
 /**
  * Send data from a scatter/gather buffer to a socket.
@@ -427,11 +426,11 @@ RTR3DECL(int)  RTTcpWriteNB(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer
  * @returns iprt status code.
  * @retval  VERR_INTERRUPTED if interrupted before anything was written.
  *
- * @param   Sock        Socket descriptor.
+ * @param   hSocket     Socket descriptor.
  * @param   pSgBuf      Scatter/gather buffer to write data to socket.
  * @param   pcbWritten  Number of bytes written.
  */
-RTR3DECL(int)  RTTcpSgWriteNB(RTSOCKET Sock, PCRTSGBUF pSgBuf, size_t *pcbWritten);
+RTR3DECL(int)  RTTcpSgWriteNB(RTSOCKET hSocket, PCRTSGBUF pSgBuf, size_t *pcbWritten);
 
 
 /**

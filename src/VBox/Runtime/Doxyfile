@@ -1219,6 +1219,7 @@ PREDEFINED             = \
     "DECLINLINE(type)=inline type" \
     DECL_FORCE_INLINE(type)=DECLINLINE(type) \
     DECL_NO_INLINE(type)=type \
+    DECLCALLBACK(type)=type \
     \
     AssertCompile(expr) \
     AssertCompileSize(a,b) \
@@ -1260,7 +1261,6 @@ EXPAND_AS_DEFINED      = \
     DECLHIDDEN \
     DECLASM \
     DECLASMTYPE \
-    DECLCALLBACK \
     DECLCALLBACKMEMBER \
     DECLHCCALLBACKMEMBER \
     DECLRCCALLBACKMEMBER \

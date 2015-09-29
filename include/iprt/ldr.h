@@ -634,9 +634,9 @@ RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR NewBaseAddre
  * @param   Value           Symbol value.
  * @param   pvUser          The user argument specified to RTLdrEnumSymbols().
  */
-typedef DECLCALLBACK(int) RTLDRENUMSYMS(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTLDRADDR Value, void *pvUser);
-/** Pointer to a RTLDRENUMSYMS() callback function. */
-typedef RTLDRENUMSYMS *PFNRTLDRENUMSYMS;
+typedef DECLCALLBACK(int) FNRTLDRENUMSYMS(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTLDRADDR Value, void *pvUser);
+/** Pointer to a FNRTLDRENUMSYMS() callback function. */
+typedef FNRTLDRENUMSYMS *PFNRTLDRENUMSYMS;
 
 /**
  * Enumerates all symbols in a module.
@@ -930,7 +930,7 @@ RTDECL(int) RTLdrLinkAddressToRva(RTLDRMOD hLdrMod, RTLDRADDR LinkAddress, PRTLD
  * @returns IPRT status code.
  *
  * @param   hLdrMod         The module handle.
- * @param   Rva             The segment index.
+ * @param   iSeg            The segment index.
  * @param   offSeg          The segment offset.
  * @param   pRva            Where to return the RVA.
  */
@@ -1070,7 +1070,7 @@ RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, siz
  *                          buffer size errors, this is set to the correct size.
  *                          Optional.
  */
-RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBits, void *pvBuf, size_t cbBuf, size_t *pcbBuf);
+RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBits, void *pvBuf, size_t cbBuf, size_t *pcbRet);
 
 
 /**

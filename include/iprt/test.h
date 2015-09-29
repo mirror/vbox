@@ -174,7 +174,7 @@ RTR3DECL(RTEXITCODE) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest);
  * @param   pszTest     The test name.
  * @param   phTest      Where to store the test instance handle.
  */
-RTR3DECL(RTEXITCODE) RTTestInitExAndCreate(int cArgs, char ***papszArgs, uint32_t fRtInit, const char *pszTest, PRTTEST phTest);
+RTR3DECL(RTEXITCODE) RTTestInitExAndCreate(int cArgs, char ***ppapszArgs, uint32_t fRtInit, const char *pszTest, PRTTEST phTest);
 
 /**
  * Destroys a test instance previously created by RTTestCreate.
@@ -539,7 +539,7 @@ RTR3DECL(int) RTTestValueF(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit,
  * @param   u64Value    The value.
  * @param   enmUnit     The value unit.
  * @param   pszNameFmt  The value name format string.
- * @param   va_list     String arguments.
+ * @param   va          String arguments.
  */
 RTR3DECL(int) RTTestValueV(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit,
                            const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
@@ -990,7 +990,7 @@ RTR3DECL(int) RTTestIValueF(uint64_t u64Value, RTTESTUNIT enmUnit, const char *p
  * @param   u64Value    The value.
  * @param   enmUnit     The value unit.
  * @param   pszNameFmt  The value name format string.
- * @param   va_list     String arguments.
+ * @param   va          String arguments.
  */
 RTR3DECL(int) RTTestIValueV(uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
@@ -1155,7 +1155,6 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...) RT_IPRT_FORMAT_A
  * @param   expr            The expression to evaluate.
  * @param   DetailsArgs     Argument list for RTTestIFailureDetails, including
  *                          parenthesis.
- * @param   rcRet           What to return on failure.
  */
 #define RTTESTI_CHECK_MSG_BREAK(expr, DetailsArgs) \
     if (!(expr)) { \

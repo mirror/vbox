@@ -398,7 +398,8 @@ static void *GetMemoryChunk(PRTSOLCORE pSolCore, size_t cb)
  * Reads the proc file's content into a newly allocated buffer.
  *
  * @param pSolCore          Pointer to the core object.
- * @param pszFileFmt        Only the name of the file to read from (/proc/<pid> will be prepended)
+ * @param pszProcFileName   Only the name of the file to read from
+ *                          (/proc/\<pid\> will be prepended)
  * @param ppv               Where to store the allocated buffer.
  * @param pcb               Where to store size of the buffer.
  *
@@ -512,10 +513,10 @@ static int ProcReadStatus(PRTSOLCORE pSolCore)
 /**
  * Read process credential information (format prcred_t + array of guid_t)
  *
+ * @return IPRT status code.
  * @param pSolCore          Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return IPRT status code.
  */
 static int ProcReadCred(PRTSOLCORE pSolCore)
 {
@@ -529,10 +530,10 @@ static int ProcReadCred(PRTSOLCORE pSolCore)
 /**
  * Read process privilege information (format prpriv_t + array of priv_chunk_t)
  *
+ * @return IPRT status code.
  * @param pSolCore          Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return IPRT status code.
  */
 static int ProcReadPriv(PRTSOLCORE pSolCore)
 {
@@ -555,10 +556,10 @@ static int ProcReadPriv(PRTSOLCORE pSolCore)
 /**
  * Read process LDT information (format array of struct ssd) from /proc.
  *
- * @param pSolProc         Pointer to the core object.
+ * @return  IPRT status code.
+ * @param   pSolCore        Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return IPRT status code.
  */
 static int ProcReadLdt(PRTSOLCORE pSolCore)
 {
@@ -572,10 +573,10 @@ static int ProcReadLdt(PRTSOLCORE pSolCore)
 /**
  * Read process auxiliary vectors (format auxv_t) for the process.
  *
+ * @return IPRT status code.
  * @param pSolCore          Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return IPRT status code.
  */
 static int ProcReadAuxVecs(PRTSOLCORE pSolCore)
 {
@@ -662,10 +663,10 @@ static long GetAuxVal(PRTSOLCOREPROCESS pSolProc, int Type)
 /**
  * Read the process mappings (format prmap_t array).
  *
+ * @return IPRT status code.
  * @param   pSolCore            Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return IPRT status code.
  */
 static int ProcReadMappings(PRTSOLCORE pSolCore)
 {
@@ -800,10 +801,10 @@ static int ProcReadMappings(PRTSOLCORE pSolCore)
 /**
  * Reads the thread information for all threads in the process.
  *
+ * @return IPRT status code.
  * @param pSolCore          Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return IPRT status code.
  */
 static int ProcReadThreads(PRTSOLCORE pSolCore)
 {
@@ -1842,12 +1843,12 @@ static int rtCoreDumperWriteCoreDoIt(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWri
  * Write a prepared core file using a user-passed in writer function, requires all threads
  * to be in suspended state (i.e. called after CreateCore).
  *
+ * @return IPRT status.
  * @param pSolCore          Pointer to the core object.
  * @param pfnWriter         Pointer to the writer function to override default writer (NULL uses default).
  *
  * @remarks Resumes all suspended threads, unless it's an invalid core. This
  *          function must be called only -after- rtCoreDumperCreateCore().
- * @return IPRT status.
  */
 static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
 {
@@ -1912,13 +1913,13 @@ static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
  * all threads which can lead to things like spurious wakeups of threads (if and when threads
  * are ultimately resumed en-masse) already suspended while calling this function.
  *
+ * @return IPRT status code.
  * @param pSolCore          Pointer to a core object.
  * @param pContext          Pointer to the caller context thread.
  * @param pszCoreFilePath   Path to the core file. If NULL is passed, the global
  *                          path specified in RTCoreDumperSetup() would be used.
  *
  * @remarks Halts all threads.
- * @return IPRT status code.
  */
 static int rtCoreDumperCreateCore(PRTSOLCORE pSolCore, ucontext_t *pContext, const char *pszCoreFilePath)
 {

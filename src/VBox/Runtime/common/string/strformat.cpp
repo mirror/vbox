@@ -554,7 +554,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             cchWidth -= cchStr;
                             while (cchStr-- > 0)
                             {
-/**@todo #ifndef IN_RC*/
+/**@todo \#ifndef IN_RC*/
 #ifdef IN_RING3
                                 RTUNICP Cp;
                                 RTUtf16GetCpEx(&pwszStr, &Cp);
@@ -588,7 +588,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             cchWidth -= cchStr;
                             while (cchStr-- > 0)
                             {
-/**@todo #ifndef IN_RC*/
+/**@todo \#ifndef IN_RC*/
 #ifdef IN_RING3
                                 char szUtf8[8]; /* Cp=0x7fffffff -> 6 bytes. */
                                 char *pszEnd = RTStrPutCp(szUtf8, *puszStr++);

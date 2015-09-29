@@ -494,8 +494,8 @@ DECLINLINE(PRTUINT128U) RTUInt128Assign(PRTUINT128U pResult, PCRTUINT128U pValue
 /**
  * Assigns a boolean value to 128-bit unsigned integer.
  *
- * @returns pResult
- * @param   pResult             The result variable.
+ * @returns pValueResult
+ * @param   pValueResult        The result variable.
  * @param   fValue              The boolean value.
  */
 DECLINLINE(PRTUINT128U) RTUInt128AssignBoolean(PRTUINT128U pValueResult, bool fValue)
@@ -516,8 +516,8 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignBoolean(PRTUINT128U pValueResult, bool fV
 /**
  * Assigns a 8-bit unsigned integer value to 128-bit unsigned integer.
  *
- * @returns pResult
- * @param   pResult             The result variable.
+ * @returns pValueResult
+ * @param   pValueResult        The result variable.
  * @param   u8Value             The 8-bit unsigned integer value.
  */
 DECLINLINE(PRTUINT128U) RTUInt128AssignU8(PRTUINT128U pValueResult, uint8_t u8Value)
@@ -538,8 +538,8 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignU8(PRTUINT128U pValueResult, uint8_t u8Va
 /**
  * Assigns a 16-bit unsigned integer value to 128-bit unsigned integer.
  *
- * @returns pResult
- * @param   pResult             The result variable.
+ * @returns pValueResult
+ * @param   pValueResult        The result variable.
  * @param   u16Value            The 16-bit unsigned integer value.
  */
 DECLINLINE(PRTUINT128U) RTUInt128AssignU16(PRTUINT128U pValueResult, uint16_t u16Value)
@@ -560,8 +560,8 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignU16(PRTUINT128U pValueResult, uint16_t u1
 /**
  * Assigns a 16-bit unsigned integer value to 128-bit unsigned integer.
  *
- * @returns pResult
- * @param   pResult             The result variable.
+ * @returns pValueResult
+ * @param   pValueResult        The result variable.
  * @param   u32Value            The 32-bit unsigned integer value.
  */
 DECLINLINE(PRTUINT128U) RTUInt128AssignU32(PRTUINT128U pValueResult, uint32_t u32Value)
@@ -582,9 +582,9 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignU32(PRTUINT128U pValueResult, uint32_t u3
 /**
  * Assigns a 64-bit unsigned integer value to 128-bit unsigned integer.
  *
- * @returns pResult
- * @param   pResult             The result variable.
- * @param   u32Value            The 32-bit unsigned integer value.
+ * @returns pValueResult
+ * @param   pValueResult        The result variable.
+ * @param   u64Value            The 64-bit unsigned integer value.
  */
 DECLINLINE(PRTUINT128U) RTUInt128AssignU64(PRTUINT128U pValueResult, uint64_t u64Value)
 {
@@ -833,8 +833,8 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignXor(PRTUINT128U pValue1Result, PCRTUINT12
  * Performs a bitwise left shift on a 128-bit unsigned integer value, assigning
  * the result to it.
  *
- * @returns pValue1Result.
- * @param   pValue1Result   The first value and result.
+ * @returns pValueResult.
+ * @param   pValueResult    The first value and result.
  * @param   cBits           The number of bits to shift.
  */
 DECLINLINE(PRTUINT128U) RTUInt128AssignShiftLeft(PRTUINT128U pValueResult, int cBits)
@@ -884,8 +884,8 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignShiftLeft(PRTUINT128U pValueResult, int c
  * Performs a bitwise left shift on a 128-bit unsigned integer value, assigning
  * the result to it.
  *
- * @returns pValue1Result.
- * @param   pValue1Result   The first value and result.
+ * @returns pValueResult.
+ * @param   pValueResult    The first value and result.
  * @param   cBits           The number of bits to shift.
  */
 DECLINLINE(PRTUINT128U) RTUInt128AssignShiftRight(PRTUINT128U pValueResult, int cBits)

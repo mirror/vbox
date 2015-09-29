@@ -427,13 +427,13 @@ public:
     /**
      * Shortcut to append(), char variant.
      *
-     * @param pszThat           The character to append.
+     * @param ch                The character to append.
      *
      * @returns                 Reference to the object.
      */
-    RTCString &operator+=(char c)
+    RTCString &operator+=(char ch)
     {
-        return append(c);
+        return append(ch);
     }
 
     /**
@@ -602,28 +602,28 @@ public:
     /**
      * Compares the member string to another RTCString.
      *
-     * @param   pcszThat    The string to compare with.
+     * @param   rThat       The string to compare with.
      * @param   cs          Whether comparison should be case-sensitive.
      * @returns 0 if equal, negative if this is smaller than @a pcsz, positive
      *          if larger.
      */
-    int compare(const RTCString &that, CaseSensitivity cs = CaseSensitive) const
+    int compare(const RTCString &rThat, CaseSensitivity cs = CaseSensitive) const
     {
         if (cs == CaseSensitive)
-            return ::RTStrCmp(m_psz, that.m_psz);
-        return ::RTStrICmp(m_psz, that.m_psz);
+            return ::RTStrCmp(m_psz, rThat.m_psz);
+        return ::RTStrICmp(m_psz, rThat.m_psz);
     }
 
     /**
      * Compares the two strings.
      *
      * @returns true if equal, false if not.
-     * @param   that    The string to compare with.
+     * @param   rThat    The string to compare with.
      */
-    bool equals(const RTCString &that) const
+    bool equals(const RTCString &rThat) const
     {
-        return that.length() == length()
-            && memcmp(that.m_psz, m_psz, length()) == 0;
+        return rThat.length() == length()
+            && memcmp(rThat.m_psz, m_psz, length()) == 0;
     }
 
     /**

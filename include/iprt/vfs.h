@@ -226,7 +226,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromVfs(RTVFS hVfs);
  * Converts a VFS filesystem stream handle to a VFS base object handle.
  *
  * @returns Referenced handle on success, NIL if the input handle was invalid.
- * @param   hVfsFSs         The VFS filesystem stream handle.
+ * @param   hVfsFss         The VFS filesystem stream handle.
  */
 RTDECL(RTVFSOBJ)        RTVfsObjFromFsStream(RTVFSFSSTREAM hVfsFss);
 
@@ -297,12 +297,12 @@ RTDECL(int)         RTVfsFsStrmQueryInfo(RTVFSFSSTREAM hVfsFss, PRTFSOBJINFO pOb
  * @retval  VINF_SUCCESS if a new object was retrieved.
  * @retval  VERR_EOF when there are no more objects.
  *
- * @param   pvThis      The implementation specific directory data.
+ * @param   hVfsFss     The file system stream handle.
  * @param   ppszName    Where to return the object name.  Must be freed by
  *                      calling RTStrFree.
  * @param   penmType    Where to return the object type.
- * @param   hVfsObj     Where to return the object handle (referenced).
- *                      This must be cast to the desired type before use.
+ * @param   phVfsObj    Where to return the object handle (referenced). This
+ *                      must be cast to the desired type before use.
  */
 RTDECL(int)         RTVfsFsStrmNext(RTVFSFSSTREAM hVfsFss, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj);
 
@@ -325,7 +325,7 @@ RTDECL(uint32_t)    RTVfsDirRetain(RTVFSDIR hVfsDir);
  * Releases a reference to the VFS directory handle.
  *
  * @returns New reference count on success (0 if closed), UINT32_MAX on failure.
- * @param   hVfsIos         The VFS directory handle.
+ * @param   hVfsDir         The VFS directory handle.
  */
 RTDECL(uint32_t)    RTVfsDirRelease(RTVFSDIR hVfsDir);
 
@@ -566,7 +566,7 @@ RTDECL(int)         RTVfsIoStrmReadAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, void *p
  * @param   cbToWrite       The number of bytes to write.
  * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
  *                          not, the @a pcbWritten parameter must not be NULL.
- * @param   pcbRead         Where to always store the number of bytes actually
+ * @param   pcbWritten      Where to always store the number of bytes actually
  *                          written.  This can be NULL if @a fBlocking is true.
  * @sa      RTVfsFileWrite, RTFileWrite, RTPipeWrite, RTPipeWriteBlocking,
  *          RTSocketWrite
@@ -770,7 +770,7 @@ RTDECL(uint32_t)    RTVfsFileRelease(RTVFSFILE hVfsFile);
  * @retval  VERR_NOT_SUPPORTED if the @a enmAddAttr value is not handled by the
  *          implementation.
  *
- * @param   hVfsObj         The VFS object handle.
+ * @param   hVfsFile        The VFS file handle.
  * @param   pObjInfo        Where to return the info.
  * @param   enmAddAttr      Which additional attributes should be retrieved.
  * @sa      RTVfsObjQueryInfo, RTVfsFsStrmQueryInfo, RTVfsDirQueryInfo,
@@ -800,10 +800,8 @@ RTDECL(int)         RTVfsFileQueryInfo(RTVFSFILE hVfsFile, PRTFSOBJINFO pObjInfo
  * @param   hVfsFile        The VFS file handle.
  * @param   pvBuf           Where to store the read bytes.
  * @param   cbToRead        The number of bytes to read.
- * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
- *                          not, the @a pcbRead parameter must not be NULL.
  * @param   pcbRead         Where to always store the number of bytes actually
- *                          read.  This can be NULL if @a fBlocking is true.
+ *                          read.  Optional.
  * @sa      RTVfsIoStrmRead, RTFileRead, RTPipeRead, RTPipeReadBlocking,
  *          RTSocketRead
  */
@@ -819,10 +817,8 @@ RTDECL(int)         RTVfsFileReadAt(RTVFSFILE hVfsFile, RTFOFF off, void *pvBuf,
  * @param   hVfsFile        The VFS file handle.
  * @param   pvBuf           The bytes to write.
  * @param   cbToWrite       The number of bytes to write.
- * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
- *                          not, the @a pcbWritten parameter must not be NULL.
- * @param   pcbRead         Where to always store the number of bytes actually
- *                          written.  This can be NULL if @a fBlocking is true.
+ * @param   pcbWritten      Where to always store the number of bytes actually
+ *                          written.  This can be NULL.
  * @sa      RTVfsIoStrmRead, RTFileWrite, RTPipeWrite, RTPipeWriteBlocking,
  *          RTSocketWrite
  */
@@ -909,7 +905,7 @@ RTDECL(int) RTVfsMemorizeIoStreamAsFile(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, 
  * Pumps data from one I/O stream to another.
  *
  * The data is read in chunks from @a hVfsIosSrc and written to @a hVfsIosDst
- * until @hVfsIosSrc indicates end of stream.
+ * until @a hVfsIosSrc indicates end of stream.
  *
  * @returns IPRT status code
  *

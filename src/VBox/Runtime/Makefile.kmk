@@ -2730,6 +2730,10 @@ $(IPRT_OUT_DIR)/Doxyfile.iprt: \
 	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include include . common/table"
 	$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
 	$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
+	$(APPEND) $@.tmp 'EXCLUDE = '\
+		'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-flags.cpp' \
+       	'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-lower.cpp' \
+       	'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-upper.cpp'
 	$(APPEND) $@.tmp
 	$(APPEND) $@.tmp "INPUT = $(IPRT_DOXYFILE_INPUT)"
 	$(APPEND) $@.tmp

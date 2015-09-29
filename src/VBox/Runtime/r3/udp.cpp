@@ -127,7 +127,7 @@ static int  rtUdpClose(RTSOCKET Sock, const char *pszMsg);
  * Atomicly updates a socket variable.
  * @returns The old handle value.
  * @param   phSock          The socket handle variable to update.
- * @param   hSock           The new socket handle value.
+ * @param   hNew            The new socket handle value.
  */
 DECLINLINE(RTSOCKET) rtUdpAtomicXchgSock(RTSOCKET volatile *phSock, const RTSOCKET hNew)
 {

@@ -426,13 +426,13 @@ RTR3DECL(RTEXITCODE) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest)
 }
 
 
-RTR3DECL(RTEXITCODE) RTTestInitExAndCreate(int cArgs, char ***papszArgs, uint32_t fRtInit, const char *pszTest, PRTTEST phTest)
+RTR3DECL(RTEXITCODE) RTTestInitExAndCreate(int cArgs, char ***ppapszArgs, uint32_t fRtInit, const char *pszTest, PRTTEST phTest)
 {
     int rc;
-    if (cArgs <= 0 && papszArgs == NULL)
+    if (cArgs <= 0 && ppapszArgs == NULL)
         rc = RTR3InitExeNoArguments(fRtInit);
     else
-        rc = RTR3InitExe(cArgs, papszArgs, fRtInit);
+        rc = RTR3InitExe(cArgs, ppapszArgs, fRtInit);
     if (RT_FAILURE(rc))
     {
         RTStrmPrintf(g_pStdErr, "%s: fatal error: RTR3InitExe(,,%#x) failed with rc=%Rrc\n", pszTest, fRtInit, rc);

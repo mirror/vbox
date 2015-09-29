@@ -450,6 +450,7 @@ static bool rtDbgCfgIsDirAndFixCase(char *pszPath, const char *pszSubDir, bool f
  * @param   pszPath             The path buffer containing an existing
  *                              directory.  RTPATH_MAX in size.
  * @param   pszSubDir           The sub directory to append.
+ * @param   pszSuffix           The suffix to append.
  * @param   fCaseInsensitive    Whether case insensitive searching is required.
  */
 static bool rtDbgCfgIsDirAndFixCase2(char *pszPath, const char *pszSubDir, const char *pszSuffix, bool fCaseInsensitive)
@@ -567,7 +568,7 @@ static bool rtDbgCfgIsFileAndFixCase(char *pszPath, const char *pszFilename, con
 
 
 static int rtDbgCfgTryOpenDir(PRTDBGCFGINT pThis, char *pszPath, PRTPATHSPLIT pSplitFn, uint32_t fFlags,
-                              PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                              PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     int rcRet = VWRN_NOT_FOUND;
     int rc2;
@@ -735,7 +736,7 @@ static int rtDbgCfgUnpackMsCacheFile(PRTDBGCFGINT pThis, char *pszPath, const ch
 static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer, char *pszPath,
                                       const char *pszCacheSubDir, const char *pszUuidMappingSubDir,
                                       PRTPATHSPLIT pSplitFn, const char *pszCacheSuffix, uint32_t fFlags,
-                                      PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                                      PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
 #ifdef IPRT_WITH_HTTP
     NOREF(pszUuidMappingSubDir); /** @todo do we bother trying pszUuidMappingSubDir? */
@@ -887,7 +888,7 @@ static int rtDbgCfgCopyFileToCache(PRTDBGCFGINT pThis, char const *pszSrc, const
 static int rtDbgCfgTryOpenCache(PRTDBGCFGINT pThis, char *pszPath, size_t cchCachePath,
                                 const char *pszCacheSubDir, const char *pszUuidMappingSubDir,
                                 PCRTPATHSPLIT pSplitFn, const char *pszCacheSuffix, uint32_t fFlags,
-                                PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                                PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     Assert(pszPath[cchCachePath] == '\0');
 
@@ -976,7 +977,7 @@ static int rtDbgCfgTryOpenCache(PRTDBGCFGINT pThis, char *pszPath, size_t cchCac
 
 static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHSPLIT pSplitFn, const char *pszCacheSubDir,
                                const char *pszUuidMappingSubDir, uint32_t fFlags, char *pszPath,
-                               PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                               PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     int rcRet = VWRN_NOT_FOUND;
     int rc2 = VINF_SUCCESS;
@@ -1143,7 +1144,7 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
  */
 static int rtDbgCfgOpenWithSubDir(RTDBGCFG hDbgCfg, const char *pszFilename, const char *pszCacheSubDir,
                                   const char *pszUuidMappingSubDir, uint32_t fFlags,
-                                  PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                                  PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     int rcRet = VINF_SUCCESS;
     int rc2;
@@ -1270,7 +1271,7 @@ static int rtDbgCfgOpenWithSubDir(RTDBGCFG hDbgCfg, const char *pszFilename, con
 
 
 RTDECL(int) RTDbgCfgOpenPeImage(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t cbImage, uint32_t uTimestamp,
-                                PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                                PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     char szSubDir[32];
     RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%x", uTimestamp, cbImage);
@@ -1282,7 +1283,7 @@ RTDECL(int) RTDbgCfgOpenPeImage(RTDBGCFG hDbgCfg, const char *pszFilename, uint3
 
 
 RTDECL(int) RTDbgCfgOpenPdb70(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUID pUuid, uint32_t uAge,
-                              PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                              PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     char szSubDir[64];
     if (!pUuid)
@@ -1311,7 +1312,7 @@ RTDECL(int) RTDbgCfgOpenPdb70(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUI
 
 
 RTDECL(int) RTDbgCfgOpenPdb20(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t cbImage, uint32_t uTimestamp, uint32_t uAge,
-                              PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                              PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     /** @todo test this! */
     char szSubDir[32];
@@ -1324,7 +1325,7 @@ RTDECL(int) RTDbgCfgOpenPdb20(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_
 
 
 RTDECL(int) RTDbgCfgOpenDbg(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t cbImage, uint32_t uTimestamp,
-                            PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                            PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     char szSubDir[32];
     RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%x", uTimestamp, cbImage);
@@ -1336,7 +1337,7 @@ RTDECL(int) RTDbgCfgOpenDbg(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t 
 
 
 RTDECL(int) RTDbgCfgOpenDwo(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t uCrc32,
-                            PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                            PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     char szSubDir[32];
     RTStrPrintf(szSubDir, sizeof(szSubDir), "%08x", uCrc32);
@@ -1360,7 +1361,7 @@ RTDECL(int) RTDbgCfgOpenDwo(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t 
  */
 static int rtDbgCfgTryOpenDsymBundleInDir(PRTDBGCFGINT pThis, char *pszPath, PRTPATHSPLIT pSplitFn,
                                           const char * const *papszSuffixes, uint32_t fFlags,
-                                          PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                                          PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     int rcRet = VWRN_NOT_FOUND;
     int rc2;
@@ -1449,7 +1450,7 @@ static int rtDbgCfgTryOpenBundleInList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, 
                                        const char * const *papszSuffixes, const char *pszCacheSubDir,
                                        const char *pszCacheSuffix, const char *pszUuidMappingSubDir,
                                        uint32_t fFlags, char *pszPath,
-                                       PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                                       PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     int rcRet = VWRN_NOT_FOUND;
     int rc2;
@@ -1642,7 +1643,7 @@ static int rtDbgCfgConstructUuidMappingSubDir(char *pszSubDir, size_t cbSubDir, 
 static int rtDbgCfgOpenBundleFile(RTDBGCFG hDbgCfg, const char *pszImage, const char * const *papszSuffixes,
                                   const char *pszBundleSubDir, PCRTUUID pUuid, const char *pszUuidMapDirName,
                                   const char *pszCacheSuffix, bool fOpenImage,
-                                  PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                                  PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     /*
      * Bundles are directories, means we can forget about sharing code much
@@ -1784,7 +1785,7 @@ static int rtDbgCfgOpenBundleFile(RTDBGCFG hDbgCfg, const char *pszImage, const 
 
 
 RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTUUID pUuid,
-                                   PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                                   PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     return rtDbgCfgOpenBundleFile(hDbgCfg, pszImage, g_apszDSymBundleSuffixes,
                                   "Contents" RTPATH_SLASH_STR "Resources" RTPATH_SLASH_STR "DWARF",
@@ -1794,7 +1795,7 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
 
 
 RTDECL(int) RTDbgCfgOpenMachOImage(RTDBGCFG hDbgCfg, const char *pszImage, PCRTUUID pUuid,
-                                   PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+                                   PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     return rtDbgCfgOpenBundleFile(hDbgCfg, pszImage, g_apszBundleSuffixes,
                                   "Contents" RTPATH_SLASH_STR "MacOS",
@@ -1932,7 +1933,7 @@ static int rtDbgCfgChangeStringList(PRTDBGCFGINT pThis, RTDBGCFGOP enmOp, const 
  * @param   pThis               The config instance.
  * @param   enmOp               The change operation.
  * @param   pszValue            The input value.
- * @param   pszMnemonics        The mnemonics map for this value.
+ * @param   paMnemonics         The mnemonics map for this value.
  * @param   puValue             The value to change.
  */
 static int rtDbgCfgChangeStringU64(PRTDBGCFGINT pThis, RTDBGCFGOP enmOp, const char *pszValue,
@@ -2086,7 +2087,7 @@ RTDECL(int) RTDbgCfgChangeUInt(RTDBGCFG hDbgCfg, RTDBGCFGPROP enmProp, RTDBGCFGO
  * Querys a string list as a single string (semicolon separators).
  *
  * @returns VINF_SUCCESS, VERR_BUFFER_OVERFLOW.
- * @param   pThis               The config instance.
+ * @param   hDbgCfg             The config instance handle.
  * @param   pList               The string list anchor.
  * @param   pszValue            The output buffer.
  * @param   cbValue             The size of the output buffer.
@@ -2125,9 +2126,9 @@ static int rtDbgCfgQueryStringList(RTDBGCFG hDbgCfg, PRTLISTANCHOR pList,
  * Querys the string value of a 64-bit unsigned int.
  *
  * @returns VINF_SUCCESS, VERR_BUFFER_OVERFLOW.
- * @param   pThis               The config instance.
+ * @param   hDbgCfg             The config instance handle.
  * @param   uValue              The value to query.
- * @param   pszMnemonics        The mnemonics map for this value.
+ * @param   paMnemonics         The mnemonics map for this value.
  * @param   pszValue            The output buffer.
  * @param   cbValue             The size of the output buffer.
  */

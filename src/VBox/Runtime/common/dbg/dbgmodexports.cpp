@@ -55,7 +55,7 @@ typedef RTDBGMODEXPORTARGS *PRTDBGMODEXPORTARGS;
 
 
 /** @callback_method_impl{FNRTLDRENUMSYMS,
- *  Copies the symbols over into the container.} */
+ *      Copies the symbols over into the container} */
 static DECLCALLBACK(int) rtDbgModExportsAddSymbolCallback(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol,
                                                           RTLDRADDR Value, void *pvUser)
 {
@@ -75,7 +75,7 @@ static DECLCALLBACK(int) rtDbgModExportsAddSymbolCallback(RTLDRMOD hLdrMod, cons
 
 
 /** @callback_method_impl{FNRTLDRENUMSEGS,
- *  Copies the segments over into the container.} */
+ *      Copies the segments over into the container} */
 static DECLCALLBACK(int) rtDbgModExportsAddSegmentsCallback(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
 {
     PRTDBGMODEXPORTARGS pArgs = (PRTDBGMODEXPORTARGS)pvUser;

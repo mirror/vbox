@@ -176,7 +176,7 @@ typedef char          ** (* PFNLIBPROXYFACTORYGETPROXIES)(PLIBPROXYFACTORY, cons
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def RTHTTP_MAX_MEM_DOWNLOAD
+/** @def RTHTTP_MAX_MEM_DOWNLOAD_SIZE
  * The max size we are allowed to download to a memory buffer.
  *
  * @remarks The minus 1 is for the trailing zero terminator we always add.
@@ -597,7 +597,8 @@ static bool rtHttpUrlInNoProxyList(const char *pszUrl, const char *pszNoProxyLis
 /**
  * Configures a proxy given a "URL" like specification.
  *
- * Format is [<scheme>"://"][<userid>[@<password>]:]<server>[":"<port>].
+ * Format is:
+ * <pre> [<scheme>"://"][<userid>[@<password>]:]<server>[":"<port>] </pre>
  *
  * @returns IPRT status code.
  * @param   pThis               The HTTP client instance.

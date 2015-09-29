@@ -1446,6 +1446,7 @@
  * @param   a       The 1st part.
  * @param   b       The 2nd part.
  * @param   c       The 3rd part.
+ * @param   d       The 4th part.
  */
 #define RT_CONCAT4(a,b,c,d)         RT_CONCAT4_HLP(a,b,c,d)
 /** RT_CONCAT4 helper, don't use.  */

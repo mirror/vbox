@@ -207,7 +207,7 @@ public:
      *
      * This preallocates @a cCapacity elements within the list.
      *
-     * @param   cCapacitiy   The initial capacity the list has.
+     * @param   cCapacity    The initial capacity the list has.
      * @throws  std::bad_alloc
      */
     RTCListBase(size_t cCapacity = kDefaultCapacity)
@@ -923,7 +923,7 @@ public:
      *
      * This preallocates @a cCapacity elements within the list.
      *
-     * @param   cCapacitiy   The initial capacity the list has.
+     * @param   cCapacity    The initial capacity the list has.
      * @throws  std::bad_alloc
      */
     RTCList(size_t cCapacity = BASE::kDefaultCapacity)
@@ -954,7 +954,7 @@ public:
      *
      * This preallocates @a cCapacity elements within the list.
      *
-     * @param   cCapacitiy   The initial capacity the list has.
+     * @param   cCapacity    The initial capacity the list has.
      * @throws  std::bad_alloc
      */
     RTCList(size_t cCapacity = BASE::kDefaultCapacity)
@@ -982,7 +982,7 @@ public:
      *
      * This preallocates @a cCapacity elements within the list.
      *
-     * @param   cCapacitiy   The initial capacity the list has.
+     * @param   cCapacity    The initial capacity the list has.
      * @throws  std::bad_alloc
      */
     RTCList(size_t cCapacity = BASE::kDefaultCapacity)

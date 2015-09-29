@@ -720,6 +720,8 @@ RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew, const char *pszTag, RT
  * Free memory allocated by any of the RTMemEf* allocators.
  *
  * @param   pv      Pointer to memory block.
+ * @param   SRC_POS The source position where call is being made from.  Use
+ *                  RT_SRC_POS when possible.  Optional.
  */
 RTDECL(void)    RTMemEfFree(void *pv, RT_SRC_POS_DECL) RT_NO_THROW_PROTO;
 

@@ -54,7 +54,7 @@ typedef FNRTSORTCMP *PFNRTSORTCMP;
  *
  * @param   papvArray       The array to sort.
  * @param   cElements       The number of elements in the array.
- * @param   cbElements      The size of an array element.
+ * @param   cbElement       The size of an array element.
  * @param   pfnCmp          Callback function comparing two elements.
  * @param   pvUser          User argument for the callback.
  */
@@ -77,9 +77,9 @@ typedef FNRTSORTAPV *PFNRTSORTAPV;
 /**
  * Shell sort an array of variable sized elementes.
  *
- * @param   papvArray       The array to sort.
+ * @param   pvArray         The array to sort.
  * @param   cElements       The number of elements in the array.
- * @param   cbElements      The size of an array element.
+ * @param   cbElement       The size of an array element.
  * @param   pfnCmp          Callback function comparing two elements.
  * @param   pvUser          User argument for the callback.
  */
@@ -100,9 +100,9 @@ RTDECL(void) RTSortApvShell(void **papvArray, size_t cElements, PFNRTSORTCMP pfn
  * Checks if an array of variable sized elementes is sorted.
  *
  * @returns true if it is sorted, false if it isn't.
- * @param   papvArray       The array to check.
+ * @param   pvArray         The array to check.
  * @param   cElements       The number of elements in the array.
- * @param   cbElements      The size of an array element.
+ * @param   cbElement       The size of an array element.
  * @param   pfnCmp          Callback function comparing two elements.
  * @param   pvUser          User argument for the callback.
  */

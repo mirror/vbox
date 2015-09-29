@@ -453,7 +453,7 @@ RTDECL(int) RTGetOptArgvToString(char **ppszCmdLine, const char * const *papszAr
  *
  * @param   ppwszCmdLine    Where to return the command line string.  This must
  *                          be freed by calling RTUtf16Free.
- * @param   papszArgs       The argument vector to convert.
+ * @param   papszArgv       The argument vector to convert.
  * @param   fFlags          A combination of the RTGETOPTARGV_CNV_XXX flags.
  */
 RTDECL(int) RTGetOptArgvToUtf16String(PRTUTF16 *ppwszCmdLine, const char * const *papszArgv, uint32_t fFlags);

@@ -869,7 +869,7 @@ static int rtLatin1CalcUtf8Length(const char *psz, size_t cchIn, size_t *pcch)
  * Recodes a Latin-1 string as UTF-8.
  *
  * @returns iprt status code.
- * @param   psz         The Latin-1 string.
+ * @param   pszIn       The Latin-1 string.
  * @param   cchIn       The number of characters to process from psz. The recoding
  *                      will stop when cch or '\\0' is reached.
  * @param   psz         Where to store the UTF-8 string.

@@ -131,6 +131,7 @@ RTR3DECL(int) RTUdpServerListen(PRTUDPSERVER pServer, PFNRTUDPSERVE pfnServe, vo
  * @param   pvBuffer    Where to put the data we read.
  * @param   cbBuffer    Read buffer size.
  * @param   pcbRead     Number of bytes read. Must be non-NULL.
+ * @param   pSrcAddr    The network address to read from.
  */
 RTR3DECL(int)  RTUdpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead, PRTNETADDR pSrcAddr);
 

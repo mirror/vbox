@@ -711,8 +711,9 @@ static int YesNoMaybePropertyValueInv(char **ppszNextField)
 /**
  * Applies a property to a code point.
  *
- * @param   StartCP     The code point.
- * @param   pszProperty The property name.
+ * @param   StartCP         The code point.
+ * @param   pszProperty     The property name.
+ * @param   pszNextField    The next field.
  */
 static void ApplyProperty(RTUNICP StartCP, const char *pszProperty, char *pszNextField)
 {

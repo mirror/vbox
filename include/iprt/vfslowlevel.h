@@ -236,7 +236,7 @@ typedef RTVFSOPS const *PCRTVFSOPS;
  * Creates a new VFS handle.
  *
  * @returns IPRT status code
- * @param   pVfs Ops            The VFS operations.
+ * @param   pVfsOps             The VFS operations.
  * @param   cbInstance          The size of the instance data.
  * @param   hVfs                The VFS handle to associate this VFS with.
  *                              NIL_VFS is ok.
@@ -302,7 +302,7 @@ typedef RTVFSOBJOPS const *PCRTVFSOBJOPS;
  * @param   hLock               Handle to a custom lock to be used with the new
  *                              object.  The reference is consumed.  NIL and
  *                              special lock handles are fine.
- * @param   phVfsFss            Where to return the new handle.
+ * @param   phVfsObj            Where to return the new handle.
  * @param   ppvInstance         Where to return the pointer to the instance data
  *                              (size is @a cbInstance).
  */
@@ -955,7 +955,6 @@ RTDECL(void) RTVfsParsePathFree(PRTVFSPARSEDPATH pPath);
  * all that is required is to wait according to the parameters.
  *
  * @returns IPRT status code.
- * @param   pvThis      The implementation specific file data.
  * @param   fEvents     The events to poll for (RTPOLL_EVT_XXX).
  * @param   cMillies    How long to wait for event to eventuate.
  * @param   fIntr       Whether the wait is interruptible and can return

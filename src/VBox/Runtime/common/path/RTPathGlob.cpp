@@ -237,6 +237,57 @@ typedef struct RTPATHGLOB
 typedef RTPATHGLOB *PRTPATHGLOB;
 
 
+/**
+ * Matching variable lookup table.
+ * Currently so small we don't bother sorting it and doing binary lookups.
+ */
+typedef struct RTPATHMATCHVAR
+{
+    /** The variable name. */
+    const char     *pszName;
+    /** The variable name length. */
+    uint16_t        cchName;
+    /** Only available as the verify first component.  */
+    bool            fFirstOnly;
+
+    /**
+     * Queries a given variable value.
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_BUFFER_OVERFLOW
+     * @retval  VERR_TRY_AGAIN if the caller should skip this value item and try the
+     *          next one instead (e.g. env var not present).
+     * @retval  VINF_EOF when retrieving the last one, if possible.
+     * @retval  VERR_EOF when @a iItem is past the item space.
+     *
+     * @param   iItem       The variable value item to retrieve. (A variable may
+     *                      have more than one value, e.g. 'BothProgramFile' on a
+     *                      64-bit system or 'Path'.)
+     * @param   pszBuf      Where to return the value.
+     * @param   cbBuf       The buffer size.
+     * @param   pcchValue   Where to return the length of the return string.
+     * @param   pCache      Pointer to the path matching cache.  May speed up
+     *                      enumerating PATH items and similar.
+     */
+    DECLCALLBACKMEMBER(int, pfnQuery)(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue, PRTPATHMATCHCACHE pCache);
+
+    /**
+     * Matching method, optional.
+     *
+     * @returns IPRT status code.
+     * @retval  VINF_SUCCESS on match.
+     * @retval  VERR_MISMATCH on mismatch.
+     *
+     * @param   pszMatch    String to match with (not terminated).
+     * @param   cchMatch    The length of what we match with.
+     * @param   fIgnoreCase Whether to ignore case or not when comparing.
+     * @param   pcchMatched Where to return the length of the match (value length).
+     */
+    DECLCALLBACKMEMBER(int, pfnMatch)(const char *pchMatch, size_t cchMatch, bool fIgnoreCase, size_t *pcchMatched);
+
+} RTPATHMATCHVAR;
+
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
@@ -399,7 +450,7 @@ RTPATHMATCHVAR_MULTIPLE_ENVVARS(WinAllCommonProgramFiles, a_apszWinCommonProgram
 
 
 /**
- * @interface_method_impl{RTPATHMATCHVAR::pfnQuery, Enumerates the PATH}.
+ * @interface_method_impl{RTPATHMATCHVAR,pfnQuery, Enumerates the PATH}.
  */
 static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue,
                                              PRTPATHMATCHCACHE pCache)
@@ -487,7 +538,7 @@ static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 /**
- * @interface_method_impl{RTPATHMATCHVAR::pfnQuery,
+ * @interface_method_impl{RTPATHMATCHVAR,pfnQuery,
  *      The system drive letter + colon.}.
  */
 static DECLCALLBACK(int) rtPathVarQuery_DosSystemDrive(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue,
@@ -539,7 +590,7 @@ static DECLCALLBACK(int) rtPathVarQuery_DosSystemDrive(uint32_t iItem, char *psz
 
 #ifdef RT_OS_WINDOWS
 /**
- * @interface_method_impl{RTPATHMATCHVAR::pfnQuery,
+ * @interface_method_impl{RTPATHMATCHVAR,pfnQuery,
  *      The system root directory (C:\Windows).}.
  */
 static DECLCALLBACK(int) rtPathVarQuery_WinSystemRoot(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue,
@@ -564,54 +615,11 @@ static DECLCALLBACK(int) rtPathVarQuery_WinSystemRoot(uint32_t iItem, char *pszB
 #undef RTPATHMATCHVAR_DOUBLE_ENVVAR
 
 /**
- * Matching variable lookup table.
- * Currently so small we don't bother sorting it and doing binary lookups.
+ *
+ *
+ * @author bird (9/29/2015)
  */
-static struct RTPATHMATCHVAR
-{
-    /** The variable name. */
-    const char     *pszName;
-    /** The variable name length. */
-    uint16_t        cchName;
-    /** Only available as the verify first component.  */
-    bool            fFirstOnly;
-
-    /**
-     * Queries a given variable value.
-     *
-     * @returns IPRT status code.
-     * @retval  VERR_BUFFER_OVERFLOW
-     * @retval  VERR_TRY_AGAIN if the caller should skip this value item and try the
-     *          next one instead (e.g. env var not present).
-     * @retval  VINF_EOF when retrieving the last one, if possible.
-     * @retval  VERR_EOF when @a iItem is past the item space.
-     *
-     * @param   iItem       The variable value item to retrieve. (A variable may
-     *                      have more than one value, e.g. 'BothProgramFile' on a
-     *                      64-bit system or 'Path'.)
-     * @param   pszBuf      Where to return the value.
-     * @param   cbBuf       The buffer size.
-     * @param   pcchValue   Where to return the length of the return string.
-     * @param   pCache      Pointer to the path matching cache.  May speed up
-     *                      enumerating PATH items and similar.
-     */
-    DECLCALLBACKMEMBER(int, pfnQuery)(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue, PRTPATHMATCHCACHE pCache);
-
-    /**
-     * Matching method, optional.
-     *
-     * @returns IPRT status code.
-     * @retval  VINF_SUCCESS on match.
-     * @retval  VERR_MISMATCH on mismatch.
-     *
-     * @param   pszMatch    String to match with (not terminated).
-     * @param   cchMatch    The length of what we match with.
-     * @param   fIgnoreCase Whether to ignore case or not when comparing.
-     * @param   pcchMatched Where to return the length of the match (value length).
-     */
-    DECLCALLBACKMEMBER(int, pfnMatch)(const char *pchMatch, size_t cchMatch, bool fIgnoreCase, size_t *pcchMatched);
-
-} const g_aVariables[] =
+static RTPATHMATCHVAR const g_aVariables[] =
 {
     { RT_STR_TUPLE("Arch"),                     false,  rtPathVarQuery_Arch, rtPathVarMatch_Arch },
     { RT_STR_TUPLE("Bits"),                     false,  rtPathVarQuery_Bits, rtPathVarMatch_Bits },

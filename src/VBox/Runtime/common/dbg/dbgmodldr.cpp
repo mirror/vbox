@@ -123,8 +123,8 @@ static DECLCALLBACK(int) rtDbgModLdr_MapPart(PRTDBGMODINT pMod, uint32_t iDbgInf
 }
 
 
-/** @interface_method_impl{RTDBGMODVTIMG,pfnGetLoadedSize} */
-static DECLCALLBACK(RTUINTPTR) rtDbgModLdr_GetLoadedSize(PRTDBGMODINT pMod)
+/** @interface_method_impl{RTDBGMODVTIMG,pfnImageSize} */
+static DECLCALLBACK(RTUINTPTR) rtDbgModLdr_ImageSize(PRTDBGMODINT pMod)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
     return RTLdrSize(pThis->hLdrMod);
@@ -215,7 +215,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnEnumDbgInfo = */              rtDbgModLdr_EnumDbgInfo,
     /*.pfnEnumSegments = */             rtDbgModLdr_EnumSegments,
     /*.pfnEnumSymbols = */              rtDbgModLdr_EnumSymbols,
-    /*.pfnGetLoadedSize = */            rtDbgModLdr_GetLoadedSize,
+    /*.pfnImageSize = */                rtDbgModLdr_ImageSize,
     /*.pfnLinkAddressToSegOffset = */   rtDbgModLdr_LinkAddressToSegOffset,
     /*.pfnRvaToSegOffset= */            rtDbgModLdr_RvaToSegOffset,
     /*.pfnMapPart = */                  rtDbgModLdr_MapPart,

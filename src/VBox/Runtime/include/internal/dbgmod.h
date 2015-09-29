@@ -232,7 +232,7 @@ typedef struct RTDBGMODVTIMG
      *
      * @returns IPRT status code.
      * @param   pMod            Pointer to the module structure.
-     * @param   enmLdrProp      The property to query.
+     * @param   enmProp         The property to query.
      * @param   pvBuf           Pointer to the return buffer.
      * @param   cbBuf           The size of the return buffer.
      * @sa      RTLdrQueryProp
@@ -523,10 +523,10 @@ typedef RTDBGMODVTDBG const *PCRTDBGMODVTDBG;
  *
  * @returns IPRT status code. On success the necessary method tables should be
  *          installed in @a pMod.
- * @param   pMod            Pointer to the debug module structure.
+ * @param   pDbgMod         Pointer to the debug module structure.
  * @param   pDeferred       The deferred load data.
  */
-typedef DECLCALLBACK(int) FNRTDBGMODDEFERRED(PRTDBGMODINT pMod, struct RTDBGMODDEFERRED *pDeferred);
+typedef DECLCALLBACK(int) FNRTDBGMODDEFERRED(PRTDBGMODINT pDbgMod, struct RTDBGMODDEFERRED *pDeferred);
 /** Pointer to a deferred loading callback. */
 typedef FNRTDBGMODDEFERRED *PFNRTDBGMODDEFERRED;
 

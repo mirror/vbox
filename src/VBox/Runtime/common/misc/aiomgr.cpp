@@ -243,7 +243,7 @@ static int rtAioMgrReqsEnqueue(PRTAIOMGRINT pThis, PRTAIOMGRFILEINT pFile,
  *
  * @returns TRUE if there are still requests pending on the current manager for this endpoint.
  *          FALSE otherwise.
- * @param   pEndpointRemove    The endpoint to remove.
+ * @param   pFile           The endpoint to remove.
  */
 static bool rtAioMgrFileRemove(PRTAIOMGRFILEINT pFile)
 {

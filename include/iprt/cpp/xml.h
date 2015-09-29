@@ -600,11 +600,11 @@ public:
      * @param   pcszPath            The attribute name.  Slashes can be used to make a
      *                              simple path to any decendant.
      * @param   pcszAttribute       The attribute name.
-     * @param   pcszPathNamespace   The namespace to match @pcszPath with, NULL
+     * @param   pcszPathNamespace   The namespace to match @a pcszPath with, NULL
      *                              (default) match any namespace.  When using a
      *                              path, this matches all elements along the way.
-     * @param   pcszAttribNamespace The namespace prefix to apply to the attribute,
-     *                              NULL (default) match any namespace.
+     * @param   pcszAttributeNamespace  The namespace prefix to apply to the
+     *                              attribute, NULL (default) match any namespace.
      * @see     findChildElementP and findAttributeValue
      */
     const char *findChildElementAttributeValueP(const char *pcszPath, const char *pcszAttribute,

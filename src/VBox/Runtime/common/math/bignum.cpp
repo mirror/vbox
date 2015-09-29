@@ -2075,8 +2075,8 @@ DECLINLINE(bool) rtBigNumKnuthD4_MulSub(PRTBIGNUMELEMENT pauDividendJ, PRTBIGNUM
  *
  * @param   pauDividendJ    Pointer to the j-th (normalized) dividend element.
  *                          Will access up to two elements prior to this.
- * @param   uDivZ           The last element in the (normalized) divisor.
- * @param   uDivY           The penultimate element in the (normalized) divisor.
+ * @param   pauDivisor      The last element in the (normalized) divisor.
+ * @param   cDivisor        The penultimate element in the (normalized) divisor.
  */
 DECLINLINE(void) rtBigNumKnuthD6_AddBack(PRTBIGNUMELEMENT pauDividendJ, PRTBIGNUMELEMENT pauDivisor, uint32_t cDivisor)
 {
