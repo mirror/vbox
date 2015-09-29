@@ -1850,6 +1850,7 @@
 # define RTTraceBufRetain                               RT_MANGLER(RTTraceBufRetain)
 # define RTTraceGetDefaultBuf                           RT_MANGLER(RTTraceGetDefaultBuf)
 # define RTTraceSetDefaultBuf                           RT_MANGLER(RTTraceSetDefaultBuf)
+# define RTUdpCreateClientSocket                        RT_MANGLER(RTUdpCreateClientSocket)
 # define RTUdpRead                                      RT_MANGLER(RTUdpRead)
 # define RTUdpServerCreate                              RT_MANGLER(RTUdpServerCreate)
 # define RTUdpServerCreateEx                            RT_MANGLER(RTUdpServerCreateEx)

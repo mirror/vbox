@@ -686,3 +686,38 @@ RTR3DECL(int)  RTUdpWrite(PRTUDPSERVER pServer, const void *pvBuffer, size_t cbB
     return rc;
 }
 
+
+RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock)
+{
+    /*
+     * Validate input.
+     */
+    AssertReturn(uPort > 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszAddress, VERR_INVALID_POINTER);
+
+    /*
+     * Resolve the address.
+     */
+    RTNETADDR Addr;
+    int rc = RTSocketParseInetAddress(pszAddress, uPort, &Addr);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Create the socket and connect.
+     */
+    RTSOCKET Sock;
+    rc = rtSocketCreate(&Sock, AF_INET, SOCK_DGRAM, 0);
+    if (RT_SUCCESS(rc))
+    {
+        RTSocketSetInheritance(Sock, false /* fInheritable */);
+        rc = rtSocketBind(Sock, &Addr);
+        if (RT_SUCCESS(rc))
+        {
+            *pSock = Sock;
+            return VINF_SUCCESS;
+        }
+        RTSocketClose(Sock);
+    }
+    return rc;
+}
