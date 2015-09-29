@@ -1457,7 +1457,7 @@ Utf8Str GuestSession::i_guestErrorToString(int guestRc)
             strError += Utf8StrFmt(tr("The session operation was canceled"));
             break;
 
-        case VERR_PERMISSION_DENIED:
+        case VERR_PERMISSION_DENIED: /** @todo r=bird: This is probably completely and utterly misleading. VERR_AUTHENTICATION_FAILURE could have this message. */
             strError += Utf8StrFmt(tr("Invalid user/password credentials"));
             break;
 
