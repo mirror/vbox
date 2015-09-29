@@ -1508,10 +1508,7 @@ EOF
       # default is to use pkg-config
       if which_wrapper pkg-config > /dev/null; then
         qt4_ver=`pkg-config QtCore --modversion 2>> $LOG`
-        if [ $? -ne 0 ]; then
-          log_failure "QtCore not found"
-          fail
-        else
+        if [ $? -eq 0 ]; then
           FLGQT4=`pkg-config QtCore --cflags`
           INCQT4=`strip_I "$FLGQT4"`
           LIBQT4=`PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config QtCore --libs`
