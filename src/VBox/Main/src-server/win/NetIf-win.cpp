@@ -1649,6 +1649,70 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
 }
 
 #else /* !NETIF_WITHOUT_NETCFG */
+
+static void getTypeAndName(PIP_ADAPTER_ADDRESSES pAdapter, HostNetworkInterfaceType *enmType, PWCHAR pwszName, int cbName)
+{
+    /* In case we fail to get the right values we initialize them with best-effort defaults. */
+    *enmType = wcsncmp(pAdapter->Description, L"VirtualBox", 10) == 0
+                       ? HostNetworkInterfaceType_HostOnly
+                       : HostNetworkInterfaceType_Bridged;
+    wcscpy_s(pwszName, cbName / sizeof(*pwszName), pAdapter->Description);
+
+    char szKeyName[256];
+    sprintf_s(szKeyName, sizeof(szKeyName),
+              "SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}\\%s\\Connection",
+              pAdapter->AdapterName);
+    HKEY hkeyConnection;
+    LONG status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, szKeyName, 0, KEY_READ, &hkeyConnection);
+    if (status != ERROR_SUCCESS)
+    {
+        LogRel(("NetIf: Failed to find connection key in registry for %ls at %s\n",
+                pAdapter->Description, szKeyName));
+    }
+    else
+    {
+        WCHAR wszId[256];
+        DWORD dwLen = sizeof(wszId);
+        status = RegQueryValueExW(hkeyConnection, L"PnPInstanceID", NULL, NULL, (LPBYTE)wszId, &dwLen);
+        if (status != ERROR_SUCCESS)
+        {
+            LogRel(("NetIf: Failed to get PnPInstanceID from registry for %ls\n", pAdapter->Description));
+        }
+        else
+        {
+            HDEVINFO hDevInfo = SetupDiCreateDeviceInfoList(&GUID_DEVCLASS_NET, NULL);
+            if (hDevInfo != INVALID_HANDLE_VALUE)
+            {
+                SP_DEVINFO_DATA DevInfoData;
+                
+                DevInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+                if (SetupDiOpenDeviceInfo(hDevInfo, wszId, NULL, 0, &DevInfoData))
+                {
+                    if (SetupDiGetDeviceRegistryPropertyW(hDevInfo, &DevInfoData,
+                                                          SPDRP_HARDWAREID, NULL,
+                                                          (PBYTE)wszId, sizeof(wszId), NULL))
+                    {
+                        /*
+                         * We do not care for multiple strings that may have been
+                         * returned since our host-only adapter has a single id.
+                         */
+                        if (_wcsnicmp(wszId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
+                            *enmType = HostNetworkInterfaceType_Bridged;
+                        else
+                            *enmType = HostNetworkInterfaceType_HostOnly;
+                    }
+                    SetupDiGetDeviceRegistryPropertyW(hDevInfo, &DevInfoData,
+                                                      SPDRP_FRIENDLYNAME, NULL,
+                                                      (PBYTE)pwszName, cbName, NULL);
+                }
+                SetupDiDestroyDeviceInfoList(hDevInfo);
+            }
+            LogRel(("PnP ID: %ls\n", wszId));
+        }
+        RegCloseKey(hkeyConnection);
+    }
+}
+
 int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
 {
     DWORD dwRc;
@@ -1690,20 +1754,6 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
 
             if (pAdapter->AdapterName[0] == '{')
             {
-                char *pszUuid = pAdapter->AdapterName + 1;
-                size_t len = strlen(pszUuid) - 1;
-                if (pszUuid[len] != '}')
-                {
-                    LogRel(("%s is not a valid UUID!\n", pAdapter->AdapterName));
-                    continue;
-                }
-                pszUuid[len] = 0;
-                rc = RTUuidFromStr(&Info.Uuid, pszUuid);
-                if (RT_FAILURE(rc))
-                {
-                    LogRel(("NetIfList: Failed to convert %s to UUID (%Rrc)\n", pszUuid, rc));
-                    continue;
-                }
                 bool fIPv4Found, fIPv6Found;
                 PIP_ADAPTER_UNICAST_ADDRESS pAddr;
                 fIPv4Found = fIPv6Found = false;
@@ -1778,21 +1828,34 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                 Info.enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
                 Info.bDhcpEnabled = !!(pAdapter->Flags & IP_ADAPTER_DHCP_ENABLED);
                 Info.bIsDefault = (pAdapter->IfIndex == iDefault);
+
                 HostNetworkInterfaceType enmType;
-                /*
-                 * For some reason, I would not even want to speculate what it is, the users see
-                 * adapter's description as its name in its property dialog box.
-                 */
-                enmType = wcsncmp(pAdapter->Description, L"VirtualBox", 10) == 0
-                    ? HostNetworkInterfaceType_HostOnly
-                    : HostNetworkInterfaceType_Bridged;
-                Log(("Adding %ls as %s\n", pAdapter->Description,
-                     enmType == HostNetworkInterfaceType_Bridged ? "bridged" : "host-only"));
+                WCHAR wszName[256];
+                /* Try to get name and type via Setup API */
+                getTypeAndName(pAdapter, &enmType, wszName, sizeof(wszName));
+
+                char *pszUuid = pAdapter->AdapterName + 1;
+                size_t len = strlen(pszUuid) - 1;
+                if (pszUuid[len] != '}')
+                {
+                    LogRel(("%s is not a valid UUID!\n", pAdapter->AdapterName));
+                    continue;
+                }
+                pszUuid[len] = 0;
+                rc = RTUuidFromStr(&Info.Uuid, pszUuid);
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("NetIfList: Failed to convert %s to UUID (%Rrc)\n", pszUuid, rc));
+                    continue;
+                }
+                LogRel(("Adding %ls as %s\n", pAdapter->Description,
+                        enmType == HostNetworkInterfaceType_Bridged ? "bridged" :
+                        enmType == HostNetworkInterfaceType_HostOnly ? "host-only" : "unknown"));
                 /* create a new object and add it to the list */
                 ComObjPtr<HostNetworkInterface> iface;
                 iface.createObject();
                 /* remove the curly bracket at the end */
-                rc = iface->init(pAdapter->Description, enmType, &Info);
+                rc = iface->init(wszName, enmType, &Info);
                 if (SUCCEEDED(rc))
                 {
                     if (Info.bIsDefault)
