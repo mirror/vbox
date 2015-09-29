@@ -119,6 +119,7 @@ public:
     bool isSeparateProcess() const { return m_fSeparateProcess; }
 
 #ifdef Q_WS_MAC
+    /** Returns #MacOSXRelease determined using <i>uname</i> call. */
     static MacOSXRelease osRelease();
 #endif /* Q_WS_MAC */
 

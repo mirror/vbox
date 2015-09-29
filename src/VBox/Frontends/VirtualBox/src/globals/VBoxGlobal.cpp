@@ -313,31 +313,29 @@ bool VBoxGlobal::isBeta() const
 }
 
 #ifdef Q_WS_MAC
-/** Returns #MacOSXRelease determined using <i>uname</i> call. */
+/* static */
 MacOSXRelease VBoxGlobal::osRelease()
 {
     /* Prepare 'utsname' struct: */
     utsname info;
     if (uname(&info) != -1)
     {
-        /* Parse known .release types: */
-            if (QString(info.release).startsWith("14."))
-                return MacOSXRelease_Yosemite;
-        else
-            if (QString(info.release).startsWith("13."))
-                return MacOSXRelease_Mavericks;
-        else
-            if (QString(info.release).startsWith("12."))
-                return MacOSXRelease_MountainLion;
-        else
-            if (QString(info.release).startsWith("11."))
-                return MacOSXRelease_Lion;
-        else
-            if (QString(info.release).startsWith("10."))
-                return MacOSXRelease_SnowLeopard;
+        /* Compose map of known releases: */
+        QMap<int, MacOSXRelease> release;
+        release[10] = MacOSXRelease_SnowLeopard;
+        release[11] = MacOSXRelease_Lion;
+        release[12] = MacOSXRelease_MountainLion;
+        release[13] = MacOSXRelease_Mavericks;
+        release[14] = MacOSXRelease_Yosemite;
+
+        /* Cut the major release index of the string we have, s.a. 'man uname': */
+        const int iRelease = QString(info.release).section('.', 0, 0).toInt();
+
+        /* Return release if determined, return 'Old' if version less than 'New', return 'New' otherwise: */
+        return release.value(iRelease, iRelease < MacOSXRelease_New ? MacOSXRelease_Old : MacOSXRelease_New);
     }
-    /* Unknown by default: */
-    return MacOSXRelease_Unknown;
+    /* Return 'Old' by default: */
+    return MacOSXRelease_Old;
 }
 #endif /* Q_WS_MAC */
 
