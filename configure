@@ -152,6 +152,7 @@ LIBVPX="-lvpx"
 PKGCONFIG="`which_wrapper pkg-config`"
 PYTHONDIR="/usr /usr/local"
 QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr /usr/local"
+QT4DIR_PKGCONFIG=1
 KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
 DEVDIR="`cd \`dirname $0\`; pwd`/tools"
 if [ -d "/lib/modules/`uname -r`/build" ]; then
@@ -1478,19 +1479,19 @@ EOF
     # has to be done.
     QT_INTERNAL=`/bin/ls -rd1 $PWD/tools/$BUILD_TARGET.$BUILD_PLATFORM_ARCH/qt/* 2> /dev/null`
     for t in $QT_INTERNAL; do
-        if [ -f "$t/Frameworks/QtCoreVBox.framework/QtCoreVBox" ]; then
-          cnf_append "VBOX_WITH_QT4_SUN" "1"
-          log_success "use internal version"
-          return
-        fi
+      if [ -f "$t/Frameworks/QtCoreVBox.framework/QtCoreVBox" ]; then
+        cnf_append "VBOX_WITH_QT4_SUN" "1"
+        log_success "use internal version"
+        return
+      fi
     done
     # Now try the user provided directory and some of the standard directories.
     QT_TRIES="$QT4DIR /System/Library /Library"
     for t in $QT_TRIES; do
-        if [ -f "$t/Frameworks/QtCore.framework/QtCore" ]; then
-          PATH_SDK_QT4="$t"
-          break
-        fi
+      if [ -f "$t/Frameworks/QtCore.framework/QtCore" ]; then
+        PATH_SDK_QT4="$t"
+        break
+      fi
     done
     # Add the necessary params for building the test application
     if [ -n "$PATH_SDK_QT4" ]; then
@@ -1502,8 +1503,29 @@ EOF
       log_failure "Qt4 framework not found (can be disabled using --disable-qt4)"
       fail
     fi
-  else
-    if test -z "${foundqt4}"; then
+  else # !darwin
+    if [ $QT4DIR_PKGCONFIG -eq 1 ]; then
+      # default is to use pkg-config
+      if which_wrapper pkg-config > /dev/null; then
+        qt4_ver=`pkg-config QtCore --modversion 2>> $LOG`
+        if [ $? -ne 0 ]; then
+          log_failure "QtCore not found"
+          fail
+        else
+          FLGQT4=`pkg-config QtCore --cflags`
+          INCQT4=`strip_I "$FLGQT4"`
+          LIBQT4=`PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config QtCore --libs`
+          foundqt4=3 # pkg-config
+          TOOLQT4=`pkg-config QtCore --variable=prefix`
+          TOOLQT4MOC="`pkg-config QtCore --variable=moc_location`"
+          TOOLQT4BIN="`dirname $TOOLQT4MOC`"
+        fi
+      else
+        log_failure "pkg-config not found"
+        fail
+      fi
+    fi
+    if [ -z "$foundqt4" ]; then
       # do it the old way (e.g. user has specified QT4DIR)
       for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
         INCQT4="$q/include $q/include/QtCore"
@@ -1513,19 +1535,20 @@ EOF
         TOOLQT4="$q"
         if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal &&
             test_execute_path "`strip_L "$LIBQT4"`" nofatal; then
-          foundqt4=2
+          foundqt4=2 # internal
           break;
         fi
         LIBQT4="-L$q/lib -lQtCore"
         if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal &&
             test_execute_path "`strip_L "$LIBQT4"`" nofatal; then
-          foundqt4=1
+          foundqt4=1 # no pkg-config, Qt directory
           break;
         fi
       done
     fi
   fi
   if [ -n "$foundqt4" ]; then
+    # we decided which version of Qt to use. Now enforce the version requirement
     cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <QtGlobal>
@@ -1554,7 +1577,6 @@ EOF
           # directories.
           for q in $PATH_SDK_QT4 /usr /Developer/Tools/Qt; do
             if which_wrapper "$q/bin/moc" > /dev/null; then
-              cnf_append "PATH_TOOL_QT4" "$q"
               cnf_append "PATH_TOOL_QT4_BIN" "$q/bin"
             fi
           done
@@ -1565,45 +1587,35 @@ EOF
           # most likely pkg-config gave us -I/usr/include/qt4 -I/usr/include/qt4/QtCore
           INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|\([^ ]*\) .*|\1|'`
           cnf_append "VBOX_PATH_QT4_LIB" "`strip_L "$LIBQT4"`"
-          cnf_append "SDK_QT4_LIBPATH" "`strip_L "$LIBQT4"`"
           cnf_append "PATH_SDK_QT4_INC" "$INCQT4"
           # this is not quite right since the qt libpath does not have to be first...
           cnf_append "PATH_SDK_QT4_LIB" '$'"(firstword `strip_L "$LIBQT4"`)"
           if [ "$foundqt4" = "2" ]; then
             cnf_append "VBOX_WITH_QT4_SUN" "1"
+          elif [ "$foundqt4" = "3" ]; then
+            cnf_append "VBOX_PATH_QT4" "$TOOLQT4"
+            cnf_append "PATH_SDK_QT4" "$TOOLQT4"
+            cnf_append "PATH_TOOL_QT4_BIN" "$TOOLQT4BIN"
+            return
           fi
           test_header "Qt4 devtools"
-          for q in $TOOLQT4; do
-            # first try it with a suffix, some platforms use that
-            if which_wrapper "$q/bin/moc-qt4" > /dev/null; then
-              moc_ver=`$q/bin/moc-qt4 -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
-              if [ $? -ne 0 ]; then
-                log_failure "moc-qt4 not working"
-                fail
-              else
-                log_success "found version $moc_ver"
-                cnf_append "VBOX_PATH_QT4" "$q"
-                cnf_append "PATH_SDK_QT4" "$q"
-                cnf_append "PATH_TOOL_QT4" "$q"
-                cnf_append "PATH_TOOL_QT4_BIN" "$q/bin"
-                cnf_append "TOOL_QT4_BIN_SUFF" "-qt4"
-                return
-              fi
-            elif which_wrapper "$q/bin/moc" > /dev/null; then
-              moc_ver=`$q/bin/moc -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
-              if [ $? -ne 0 ]; then
-                log_failure "moc not working"
-                fail
-              else
-                log_success "found version $moc_ver"
-                cnf_append "VBOX_PATH_QT4" "$q"
-                cnf_append "PATH_SDK_QT4" "$q"
-                cnf_append "PATH_TOOL_QT4" "$q"
-                cnf_append "PATH_TOOL_QT4_BIN" "$q/bin"
-                return
-              fi
-            fi
-          done
+          # try it with a suffix, some platforms use that
+          if which_wrapper "$TOOLQT4/bin/moc-qt4" > /dev/null; then
+            QT4BINSUFF="-qt4"
+          else
+            QT4BINSUFF=""
+          fi
+          moc_ver=`$TOOLQT4/bin/moc-$QT4BINSUFF -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
+          if [ $? -ne 0 ]; then
+            log_failure "moc-$QT4BINSUFF not working"
+            fail
+          else
+            log_success "found version $moc_ver"
+            cnf_append "VBOX_PATH_QT4" "$TOOLQT4"
+            cnf_append "PATH_SDK_QT4" "$TOOLQT4"
+            cnf_append "PATH_TOOL_QT4_BIN" "$TOOLQT4/bin"
+            [ -n "$QT4BINSUFF" ] && cnf_append "TOOL_QT4_BIN_SUFF" "$QT4BINSUFF"
+          fi
         fi
       fi
     else
@@ -1615,6 +1627,7 @@ EOF
     fail
   fi
 }
+
 
 #
 # Check for libvpx
@@ -2392,6 +2405,7 @@ for option in "$@"; do
       ;;
     --with-qt-dir=*|--with-qt4-dir=*)
       QT4DIR=`echo $option | cut -d'=' -f2`
+      QT4DIR_PKGCONFIG=0
       ;;
     --with-openssl-dir=*)
       OPENSSLDIR=`echo $option | cut -d'=' -f2`
