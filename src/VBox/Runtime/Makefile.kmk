@@ -2531,11 +2531,14 @@ RuntimeR3VccTricks_SOURCES  = \
  	r3/win/vcc100-kernel32-fakesA.asm
 
 if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" # Ugly hacks... :-)
-RuntimeR3VccTricks_SOURCES += $(RuntimeR3VccTricks_0_OUTDIR)/dynobjs.lib
-RuntimeR3VccTricks_CLEAN    = $(RuntimeR3VccTricks_0_OUTDIR)/dynobjs.lib
-RuntimeR3VccTricks_VBOX_LIBCMT_NEEDED = \
+LIBRARIES += RuntimeR3VccTricks2
+RuntimeR3VccTricks2_TEMPLATE = VBoxR3Dll
+RuntimeR3VccTricks2_SOURCES  = $(RuntimeR3VccTricks_SOURCES)
+RuntimeR3VccTricks2_SOURCES += $(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib
+RuntimeR3VccTricks2_CLEAN    = $(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib
+RuntimeR3VccTricks2_VBOX_LIBCMT_NEEDED =
 
-$$(RuntimeR3VccTricks_0_OUTDIR)/dynobjs.lib: \
+$$(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib: \
 		$$(PATH_TOOL_$$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
 		$$(PATH_TOOL_$$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
 		$$(LIB_RUNTIME) \
@@ -2543,15 +2546,15 @@ $$(RuntimeR3VccTricks_0_OUTDIR)/dynobjs.lib: \
 	$(RM) -f -- "$@"
 #	$(REDIRECT) -C $(dir $@) -- $(KBUILD_DEVTOOLS)/common/openwatcom/v1.9-r2/binnt/wlib \
 #               $(PATH_TOOL_$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
-#               $(foreach file, $(RuntimeR3VccTricks_VBOX_LIBCMT_NEEDED), *$(file))
+#               $(foreach file, $(RuntimeR3VccTricks2_VBOX_LIBCMT_NEEDED), *$(file))
 	$(KBUILD_DEVTOOLS)/common/openwatcom/v1.9-r2/binnt/wlib -o=$@.tmp.lib $< \
 		-MSVCR100.dll \
-		$(addprefix $(RuntimeR3VccTricks_0_OUTDIR)/, $(RuntimeR3VccTricks_VBOX_LIBCMT_NEEDED)) \
+		$(addprefix $(RuntimeR3VccTricks2_0_OUTDIR)/, $(RuntimeR3VccTricks2_VBOX_LIBCMT_NEEDED)) \
                -chandler4gs.obj
 	$(KBUILD_DEVTOOLS)/common/openwatcom/v1.9-r2/binnt/wlib -o=$@ \
                $(LIB_RUNTIME) \
 		+$@.tmp.lib
-	$(RM) -f -- $@.tmp.lib $(addprefix $(RuntimeR3VccTricks_0_OUTDIR)/, $(RuntimeR3VccTricks_VBOX_LIBCMT_NEEDED))
+	$(RM) -f -- $@.tmp.lib $(addprefix $(RuntimeR3VccTricks2_0_OUTDIR)/, $(RuntimeR3VccTricks_VBOX_LIBCMT_NEEDED))
 endif
 
 
