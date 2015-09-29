@@ -26,17 +26,20 @@
 # Short-Description: VirtualBox Linux kernel module
 ### END INIT INFO
 
+## @todo get rid of the autogeneration, perhaps write "version" and "group" to
+##       a configuration file in /etc
+
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
 VERSION=%VERSION%
 MODPROBE=/sbin/modprobe
+SCRIPTNAME=vboxdrv
 
 if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
 fi
 
-[ -f /etc/debian_release -a -f /lib/lsb/init-functions ] || NOLSB=yes
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
 export BUILD_TYPE
 export USERNAME
@@ -56,93 +59,29 @@ DODKMS="$MODULE_SRC/do_dkms"
 # applies to Debian packages only (but shouldn't hurt elsewhere)
 [ ! -f /etc/debian_release -o -x $VBOXMANAGE -a -x $BUILDINTMP ] || exit 0
 
-if [ -n "$NOLSB" ]; then
-    if [ -f /etc/redhat-release ]; then
-        system=redhat
-    elif [ -f /etc/SuSE-release ]; then
-        system=suse
-    elif [ -f /etc/gentoo-release ]; then
-        system=gentoo
-    fi
-fi
-
 [ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
-if [ -z "$NOLSB" ]; then
-    . /lib/lsb/init-functions
-    fail_msg() {
-        echo ""
-        log_failure_msg "$1"
-    }
-    succ_msg() {
-        log_end_msg 0
-    }
-    begin_msg() {
-        log_daemon_msg "$@"
-    }
-else
-    if [ "$system" = "redhat" ]; then
-        . /etc/init.d/functions
-        fail_msg() {
-            echo -n " "
-            echo_failure
-            echo
-            echo "  ($1)"
-        }
-        succ_msg() {
-            echo -n " "
-            echo_success
-            echo
-        }
-    elif [ "$system" = "suse" ]; then
-        . /etc/rc.status
-        fail_msg() {
-            rc_failed 1
-            rc_status -v
-            echo "  ($1)"
-        }
-        succ_msg() {
-            rc_reset
-            rc_status -v
-        }
-    elif [ "$system" = "gentoo" ]; then
-        if [ -f /sbin/functions.sh ]; then
-            . /sbin/functions.sh
-        elif [ -f /etc/init.d/functions.sh ]; then
-            . /etc/init.d/functions.sh
-        fi
-        fail_msg() {
-            eerror "$1"
-        }
-        succ_msg() {
-            eend "$?"
-        }
-        begin_msg() {
-            ebegin "$1"
-        }
-        if [ "`which $0`" = "/sbin/rc" ]; then
-            shift
-        fi
-    else
-        fail_msg() {
-            echo " ...failed!"
-            echo "  ($1)"
-        }
-        succ_msg() {
-            echo " ...done."
-        }
-    fi
-    if [ "$system" != "gentoo" ]; then
-        begin_msg() {
-            [ -z "${1:-}" ] && return 1
-            if [ -z "${2:-}" ]; then
-                echo -n "$1"
-            else
-                echo -n "$1: $2"
-            fi
-        }
-    fi
+# Preamble for Gentoo
+if [ "`which $0`" = "/sbin/rc" ]; then
+    shift
 fi
+
+begin_msg()
+{
+    test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
+    logger "${SCRIPTNAME}: ${1}."
+}
+
+succ_msg()
+{
+    logger "${SCRIPTNAME}: done."
+}
+
+fail_msg()
+{
+    echo "${SCRIPTNAME}: failed: ${1}." >&2
+    logger "${SCRIPTNAME}: failed: ${1}."
+}
 
 failure()
 {
@@ -157,7 +96,7 @@ running()
 
 start()
 {
-    begin_msg "Starting VirtualBox kernel modules"
+    begin_msg "Starting VirtualBox kernel modules" console
     if [ -d /proc/xen ]; then
         failure "Running VirtualBox in a Xen environment is not supported"
     fi
@@ -218,7 +157,7 @@ start()
 
 stop()
 {
-    begin_msg "Stopping VirtualBox kernel modules"
+    begin_msg "Stopping VirtualBox kernel modules" console
     if running vboxpci; then
         if ! rmmod vboxpci 2>/dev/null; then
             failure "Cannot unload module vboxpci"

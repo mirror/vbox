@@ -33,6 +33,7 @@ PACKAGE=VBoxGuestAdditions
 LOG="/var/log/vboxadd-install.log"
 MODPROBE=/sbin/modprobe
 OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
+SCRIPTNAME=vboxadd
 
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
@@ -57,100 +58,32 @@ for i in $lib_candidates; do
   fi
 done
 
-if [ -f /etc/redhat-release ]; then
-    system=redhat
-elif [ -f /etc/SuSE-release ]; then
-    system=suse
-elif [ -f /etc/gentoo-release ]; then
-    system=gentoo
-elif [ -f /etc/lfs-release -a -d /etc/rc.d/init.d ]; then
-    system=lfs
-else
-    system=other
+# Preamble for Gentoo
+if [ "`which $0`" = "/sbin/rc" ]; then
+    shift
 fi
 
-if [ "$system" = "redhat" ]; then
-    . /etc/init.d/functions
-    fail_msg() {
-        echo_failure
-        echo
-    }
-    succ_msg() {
-        echo_success
-        echo
-    }
-    begin() {
-        echo -n "$1"
-    }
-fi
+begin()
+{
+    test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
+    logger "${SCRIPTNAME}: ${1}."
+}
 
-if [ "$system" = "suse" ]; then
-    . /etc/rc.status
-    fail_msg() {
-        rc_failed 1
-        rc_status -v
-    }
-    succ_msg() {
-        rc_reset
-        rc_status -v
-    }
-    begin() {
-        echo -n "$1"
-    }
-fi
+succ_msg()
+{
+    logger "${SCRIPTNAME}: done."
+}
 
-if [ "$system" = "gentoo" ]; then
-    if [ -f /sbin/functions.sh ]; then
-        . /sbin/functions.sh
-    elif [ -f /etc/init.d/functions.sh ]; then
-        . /etc/init.d/functions.sh
-    fi
-    fail_msg() {
-        eend 1
-    }
-    succ_msg() {
-        eend $?
-    }
-    begin() {
-        ebegin $1
-    }
-    if [ "`which $0`" = "/sbin/rc" ]; then
-        shift
-    fi
-fi
-
-if [ "$system" = "lfs" ]; then
-    . /etc/rc.d/init.d/functions
-    fail_msg() {
-        echo_failure
-    }
-    succ_msg() {
-        echo_ok
-    }
-    begin() {
-        echo $1
-    }
-fi
-
-if [ "$system" = "other" ]; then
-    fail_msg() {
-        echo " ...fail!"
-    }
-    succ_msg() {
-        echo " ...done."
-    }
-    begin() {
-        echo -n $1
-    }
-fi
+fail_msg()
+{
+    echo "${SCRIPTNAME}: failed." >&2
+    logger "${SCRIPTNAME}: failed."
+}
 
 show_error()
 {
-    if [ "$system" = "gentoo" ]; then
-        eerror $1
-    fi
-    fail_msg
-    echo "($1)"
+    echo "${SCRIPTNAME}: failed: ${1}." >&2
+    logger "${SCRIPTNAME}: ${1}."
 }
 
 fail()
@@ -182,17 +115,17 @@ test_sane_kernel_dir()
         fi
     fi
     printf "\nThe headers for the current running kernel were not found. If the following\nmodule compilation fails then this could be the reason.\n"
-    if [ "$system" = "redhat" ]; then
+    if which yum >/dev/null; then
         if echo "$KERN_VER" | grep -q "uek"; then
             printf "The missing package can be probably installed with\nyum install kernel-uek-devel-$KERN_VER\n"
         else
             printf "The missing package can be probably installed with\nyum install kernel-devel-$KERN_VER\n"
         fi
-    elif [ "$system" = "suse" ]; then
+    elif which zypper >/dev/null; then
         KERN_VER_SUSE=`echo "$KERN_VER" | sed 's/.*-\([^-]*\)/\1/g'`
         KERN_VER_BASE=`echo "$KERN_VER" | sed 's/\(.*\)-[^-]*/\1/g'`
         printf "The missing package can be probably installed with\nzypper install kernel-$KERN_VER_SUSE-devel-$KERN_VER_BASE\n"
-    elif [ "$system" = "debian" ]; then
+    elif which apt-get >/dev/null; then
         printf "The missing package can be probably installed with\napt-get install linux-headers-$KERN_VER\n"
     fi
 }
@@ -267,7 +200,7 @@ do_vboxguest_non_udev()
 
 start()
 {
-    begin "Starting the VirtualBox Guest Additions ";
+    begin "Starting the VirtualBox Guest Additions" console;
     uname -r | grep -q -E '^2\.6|^3|^4' 2>/dev/null &&
         ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
         no_udev=1
@@ -317,7 +250,7 @@ start()
 
 stop()
 {
-    begin "Stopping VirtualBox Additions ";
+    begin "Stopping VirtualBox Additions" console;
     if ! umount -a -t vboxsf 2>/dev/null; then
         fail "Cannot unmount vboxsf folders"
     fi

@@ -32,6 +32,7 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 LOG="/var/log/vboxadd-install-x11.log"
 CONFIG_DIR="/var/lib/VBoxGuestAdditions"
 CONFIG="config"
+SCRIPTNAME=vboxadd-x11
 
 # Check architecture
 cpu=`uname -m`;
@@ -68,94 +69,27 @@ x11conf_files="/etc/X11/xorg.conf /etc/X11/xorg.conf-4 /etc/X11/.xorg.conf \
     /usr/X11R6/etc/X11/XF86Config /usr/X11R6/lib/X11/XF86Config-4 \
     /usr/X11R6/lib/X11/XF86Config"
 
-if [ -f /etc/redhat-release ]; then
-    system=redhat
-elif [ -f /etc/debian_version ]; then
-    system=debian
-elif [ -f /etc/SuSE-release ]; then
-    system=suse
-elif [ -f /etc/gentoo-release ]; then
-    system=gentoo
-elif [ -f /etc/lfs-release -a -d /etc/rc.d/init.d ]; then
-    system=lfs
-else
-    system=other
+# Preamble for Gentoo
+if [ "`which $0`" = "/sbin/rc" ]; then
+    shift
 fi
 
-if [ "$system" = "redhat" ]; then
-    . /etc/init.d/functions
-    fail_msg() {
-        echo_failure
-        echo
-    }
-    succ_msg() {
-        echo_success
-        echo
-    }
-    begin() {
-        echo -n "$1"
-    }
-fi
+begin()
+{
+    test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
+    logger "${SCRIPTNAME}: ${1}."
+}
 
-if [ "$system" = "suse" ]; then
-    . /etc/rc.status
-    fail_msg() {
-        rc_failed 1
-        rc_status -v
-    }
-    succ_msg() {
-        rc_reset
-        rc_status -v
-    }
-    begin() {
-        echo -n "$1"
-    }
-fi
+succ_msg()
+{
+    logger "${SCRIPTNAME}: done."
+}
 
-if [ "$system" = "gentoo" ]; then
-    if [ -f /sbin/functions.sh ]; then
-        . /sbin/functions.sh
-    elif [ -f /etc/init.d/functions.sh ]; then
-        . /etc/init.d/functions.sh
-    fi
-    fail_msg() {
-        eend 1
-    }
-    succ_msg() {
-        eend $?
-    }
-    begin() {
-        ebegin $1
-    }
-    if [ "`which $0`" = "/sbin/rc" ]; then
-        shift
-    fi
-fi
-
-if [ "$system" = "lfs" ]; then
-    . /etc/rc.d/init.d/functions
-    fail_msg() {
-        echo_failure
-    }
-    succ_msg() {
-        echo_ok
-    }
-    begin() {
-        echo $1
-    }
-fi
-
-if [ "$system" = "debian" -o "$system" = "other" ]; then
-    fail_msg() {
-        echo " ...fail!"
-    }
-    succ_msg() {
-        echo " ...done."
-    }
-    begin() {
-        echo -n $1
-    }
-fi
+fail_msg()
+{
+    echo "${SCRIPTNAME}: failed." >&2
+    logger "${SCRIPTNAME}: failed."
+}
 
 dev=/dev/vboxguest
 userdev=/dev/vboxuser
@@ -164,12 +98,8 @@ group=1
 
 fail()
 {
-    if [ "$system" = "gentoo" ]; then
-        eerror $1
-        exit 1
-    fi
-    fail_msg
-    echo "($1)"
+    echo "${SCRIPTNAME}: failed: ${1}." >&2
+    logger "${SCRIPTNAME}: ${1}."
     exit 1
 }
 
