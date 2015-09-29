@@ -376,6 +376,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         {
             case MacOSXRelease_Mavericks: QFont::insertSubstitution(".Lucida Grande UI", "Lucida Grande"); break;
             case MacOSXRelease_Yosemite:  QFont::insertSubstitution(".Helvetica Neue DeskInterface", "Helvetica Neue"); break;
+            case MacOSXRelease_ElCapitan: QFont::insertSubstitution(".SF NS Text", "Helvetica Neue"); break;
             default: break;
         }
 
