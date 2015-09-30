@@ -281,7 +281,7 @@ static int rtSocketNetAddrFromAddr(RTSOCKADDRUNION const *pSrc, size_t cbSrc, PR
  * @returns IPRT status code.
  * @param   pAddr               Pointer to the generic IPRT network address.
  * @param   pDst                The source address.
- * @param   cbSrc               The size of the source address.
+ * @param   cbDst               The size of the source address.
  * @param   pcbAddr             Where to store the size of the returned address.
  *                              Optional
  */

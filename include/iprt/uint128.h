@@ -743,7 +743,7 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignAndNFirstBits(PRTUINT128U pValueResult, u
     }
     else if (cBits < 128)
         pValueResult->s.Hi &= (RT_BIT_64(cBits - 64) - 1);
-/** @todo #if ARCH_BITS >= 64 */
+/** @todo \#if ARCH_BITS >= 64 */
     return pValueResult;
 }
 
@@ -840,7 +840,7 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignXor(PRTUINT128U pValue1Result, PCRTUINT12
 DECLINLINE(PRTUINT128U) RTUInt128AssignShiftLeft(PRTUINT128U pValueResult, int cBits)
 {
     RTUINT128U const InVal = *pValueResult;
-/** @todo #if ARCH_BITS >= 64 */
+/** @todo \#if ARCH_BITS >= 64 */
     if (cBits > 0)
     {
         /* (left shift) */

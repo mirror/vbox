@@ -135,8 +135,8 @@ static void rtR0NtGetOsVersionInfo(PRTNTSDBOSVER pOsVerInfo)
 /**
  * Tries a set against the current kernel.
  *
- * @retval @c true if it matched up, global variables are updated.
- * @retval @c false otherwise (no globals updated).
+ * @retval  true if it matched up, global variables are updated.
+ * @retval  false otherwise (no globals updated).
  * @param   pSet                The data set.
  * @param   pbPrcb              Pointer to the processor control block.
  * @param   pszVendor           Pointer to the processor vendor string.

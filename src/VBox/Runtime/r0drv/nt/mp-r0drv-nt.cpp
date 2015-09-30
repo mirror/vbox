@@ -302,14 +302,15 @@ static ULONG_PTR __stdcall rtmpNtOnSpecificBroadcastIpiWrapper(ULONG_PTR uUserCt
  * Internal worker for the RTMpOn* APIs using KeIpiGenericCall.
  *
  * @returns VINF_SUCCESS.
- * @param   pfnWorker   The callback.
- * @param   pvUser1     User argument 1.
- * @param   pvUser2     User argument 2.
- * @param   idCpu       First CPU to match, ultimately specific to the
- *                      pfnNativeWrapper used.
- * @param   idCpu2      Second CPU to match, ultimately specific to the
- *                      pfnNativeWrapper used.
- * @param   pcHits      Where to return the number of this. Optional.
+ * @param   pfnWorker           The callback.
+ * @param   pvUser1             User argument 1.
+ * @param   pvUser2             User argument 2.
+ * @param   pfnNativeWrapper    The wrapper between the NT and IPRT callbacks.
+ * @param   idCpu               First CPU to match, ultimately specific to the
+ *                              pfnNativeWrapper used.
+ * @param   idCpu2              Second CPU to match, ultimately specific to the
+ *                              pfnNativeWrapper used.
+ * @param   pcHits              Where to return the number of this. Optional.
  */
 static int rtMpCallUsingBroadcastIpi(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2,
                                      PKIPI_BROADCAST_WORKER pfnNativeWrapper, RTCPUID idCpu, RTCPUID idCpu2,

@@ -173,7 +173,7 @@ static const char *figureCStructName(MYSTRUCT const *pStruct)
 /**
  * Returns the name we wish to use in the C code.
  * @returns Member name.
- * @param   pStruct             The member descriptor.
+ * @param   pMember             The member descriptor.
  */
 static const char *figureCMemberName(MYMEMBER const *pMember)
 {
@@ -338,6 +338,8 @@ static void generateHeader(PRTSTREAM pOut)
  *
  * @returns Fully complained exit code.
  * @param   pOsVerInfo      The OS version info.
+ * @param   enmArch         The NT architecture of the incoming PDB.
+ * @param   pszPdb          The PDB file name.
  */
 static RTEXITCODE saveStructures(PRTNTSDBOSVER pOsVerInfo, MYARCH enmArch, const char *pszPdb)
 {
@@ -986,6 +988,7 @@ static bool isInterestingName(const char *pszName, size_t cchName)
  * @param   pszDir              Pointer to the directory buffer.
  * @param   cchDir              The length of pszDir in pszDir.
  * @param   pDirEntry           Pointer to the directory buffer.
+ * @param   iLogDepth           The logging depth.
  */
 static RTEXITCODE processDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirEntry, int iLogDepth)
 {

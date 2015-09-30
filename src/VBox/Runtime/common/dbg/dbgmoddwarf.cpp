@@ -2136,8 +2136,8 @@ static int rtDwarfCursor_AdvanceToPos(PRTDWARFCURSOR pCursor, uint8_t const *pbN
 /**
  * Check if the cursor is at the end of the current DWARF unit.
  *
- * @retval  @c true if at the end or a cursor error is pending.
- * @retval  @c false if not.
+ * @retval  true if at the end or a cursor error is pending.
+ * @retval  false if not.
  * @param   pCursor             The cursor.
  */
 static bool rtDwarfCursor_IsAtEndOfUnit(PRTDWARFCURSOR pCursor)
@@ -2165,8 +2165,8 @@ static int rtDwarfCursor_SkipUnit(PRTDWARFCURSOR pCursor)
  * Check if the cursor is at the end of the section (or whatever the cursor is
  * processing).
  *
- * @retval  @c true if at the end or a cursor error is pending.
- * @retval  @c false if not.
+ * @retval  true if at the end or a cursor error is pending.
+ * @retval  false if not.
  * @param   pCursor             The cursor.
  */
 static bool rtDwarfCursor_IsAtEnd(PRTDWARFCURSOR pCursor)
@@ -4014,7 +4014,7 @@ static PRTDWARFDIE rtDwarfInfo_NewDie(PRTDBGMODDWARF pThis, PCRTDWARFDIEDESC pDi
  * Free all children of a DIE.
  *
  * @param   pThis               The DWARF instance.
- * @param   pParent             The parent DIE.
+ * @param   pParentDie          The parent DIE.
  */
 static void rtDwarfInfo_FreeChildren(PRTDBGMODDWARF pThis, PRTDWARFDIE pParentDie)
 {

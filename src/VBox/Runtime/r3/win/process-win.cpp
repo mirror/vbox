@@ -110,7 +110,7 @@ static struct RTPROCWINENTRY
  * They're all optional. So in addition to using g_rtProcWinResolveOnce, the
  * caller must also check if any of the necessary APIs are NULL pointers.
  * @{ */
-/** Init once structure for run-as-user functions we need.. */
+/** Init once structure for run-as-user functions we need. */
 static RTONCE                           g_rtProcWinResolveOnce          = RTONCE_INITIALIZER;
 /* kernel32.dll: */
 static PFNCREATETOOLHELP32SNAPSHOT      g_pfnCreateToolhelp32Snapshot   = NULL;
@@ -1153,7 +1153,7 @@ static bool rtProcWinAddSidToWinStation(HWINSTA hWinStation, PSID pSid)
  * Grants the given SID full access to the given desktop.
  *
  * @returns true on success, false on failure.
- * @param   hWinStation         The window station.
+ * @param   hDesktop            The desktop handle.
  * @param   pSid                The SID.
  */
 static bool rtProcWinAddSidToDesktop(HDESK hDesktop, PSID pSid)

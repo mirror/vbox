@@ -645,8 +645,8 @@ RTDECL(int) RTCritSectRwDelete(PRTCRITSECTRW pThis);
 /**
  * Checks the caller is the exclusive (write) owner of the critical section.
  *
- * @retval  @c true if owner.
- * @retval  @c false if not owner.
+ * @retval  true if owner.
+ * @retval  false if not owner.
  * @param   pThis           Pointer to the read/write critical section.
  */
 RTDECL(bool) RTCritSectRwIsWriteOwner(PRTCRITSECTRW pThis);
@@ -704,8 +704,8 @@ RTDECL(uint32_t) RTCritSectRwGetReadCount(PRTCRITSECTRW pThis);
 /**
  * Checks if a critical section is initialized or not.
  *
- * @retval  @c true if initialized.
- * @retval  @c false if not initialized.
+ * @retval  true if initialized.
+ * @retval  false if not initialized.
  * @param   pThis           Pointer to the read/write critical section.
  */
 DECLINLINE(bool) RTCritSectRwIsInitialized(PCRTCRITSECTRW pThis)

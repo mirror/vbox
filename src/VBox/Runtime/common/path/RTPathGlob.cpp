@@ -375,8 +375,11 @@ static int rtPathGlobExecRecursiveGeneric(PRTPATHGLOB pGlob, size_t offPath, uin
 
 /**
  * Implements mapping a glob variable to multiple environment variable values.
+ *
+ * @param   a_Name              The variable name.
  * @param   a_apszVarNames      Assumes to be a global variable that RT_ELEMENTS
  *                              works correctly on.
+ * @param   a_cbMaxValue        The max expected value size.
  */
 #define RTPATHMATCHVAR_MULTIPLE_ENVVARS(a_Name, a_apszVarNames, a_cbMaxValue) \
     static DECLCALLBACK(int) RT_CONCAT(rtPathVarQuery_,a_Name)(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue, \
@@ -450,7 +453,7 @@ RTPATHMATCHVAR_MULTIPLE_ENVVARS(WinAllCommonProgramFiles, a_apszWinCommonProgram
 
 
 /**
- * @interface_method_impl{RTPATHMATCHVAR,pfnQuery, Enumerates the PATH}.
+ * @interface_method_impl{RTPATHMATCHVAR,pfnQuery, Enumerates the PATH}
  */
 static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue,
                                              PRTPATHMATCHCACHE pCache)
@@ -995,6 +998,8 @@ static int rtPathMatchExec(const char *pchInput, size_t cchInput, PCRTPATHMATCHC
  * @returns IPRT status code.
  * @param   pchPattern          The pattern to compile.
  * @param   cchPattern          The length of the pattern.
+ * @param   fIgnoreCase         Whether to ignore case or not when doing the
+ *                              actual matching later on.
  * @param   pAllocator          Pointer to the instruction allocator & result
  *                              array.  The compiled "program" starts at
  *                              PRTPATHMATCHALLOC::paInstructions[PRTPATHMATCHALLOC::iNext]
@@ -1658,7 +1663,9 @@ DECLINLINE(bool) rtPathGlobExecIsMatchFinalWithFileMode(PRTPATHGLOB pGlob, RTFMO
  *
  * @param   pGlob               The glob instance data.
  * @param   offPath             The current path offset/length.
- * @param   iComp               The current component.
+ * @param   iStarStarComp       The star-star component index.
+ * @param   offStarStarPath     The offset of the star-star component in the
+ *                              pattern path.
  */
 DECL_NO_INLINE(static, int) rtPathGlobExecRecursiveStarStar(PRTPATHGLOB pGlob, size_t offPath, uint32_t iStarStarComp,
                                                             size_t offStarStarPath)

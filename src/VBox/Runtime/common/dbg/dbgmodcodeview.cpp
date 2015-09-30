@@ -800,7 +800,7 @@ static int rtDbgModCvAddSymbol(PRTDBGMODCV pThis, uint32_t iSeg, uint64_t off, c
  *
  * @returns IPRT status code
  * @param   pThis               The CodeView debug info reader instance.
- * @param   pbSymTab            The symbol table.
+ * @param   pvSymTab            The symbol table.
  * @param   cbSymTab            The size of the symbol table.
  * @param   fFlags              Flags reserved for future exploits, MBZ.
  */
@@ -2468,6 +2468,7 @@ static int rtDbgModCvProbeCoff(PRTDBGMODINT pDbgMod, RTCVFILETYPE enmFileType, R
  * @param   hFile               The file with debug info in it.
  * @param   off                 The offset where to expect CV debug info.
  * @param   cb                  The number of bytes of debug info.
+ * @param   enmArch             The desired image architecture.
  * @param   pszFilename         The path to the file (for logging).
  */
 static int rtDbgModCvProbeCommon(PRTDBGMODINT pDbgMod, PRTCVHDR pCvHdr, RTCVFILETYPE enmFileType, RTFILE hFile,
@@ -2548,7 +2549,7 @@ static DECLCALLBACK(int) rtDbgModCvEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO
  * Part two of the external file probing.
  *
  * @returns status code.
- * @param   pDbgMod             The debug module instance.  On success pvDbgPriv
+ * @param   pThis               The debug module instance.  On success pvDbgPriv
  *                              will point to a valid RTDBGMODCV.
  * @param   enmFileType         The kind of file this is we're probing.
  * @param   hFile               The file with debug info in it.

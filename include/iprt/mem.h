@@ -893,7 +893,7 @@ RTDECL(void *)  RTMemEfTmpAllocZNP(size_t cb, const char *pszTag) RT_NO_THROW_PR
 
 /**
  * Fenced drop-in replacement for RTMemTmpFreeTag.
- * @copydoc RTMemTmpFreeTag
+ * @copydoc RTMemTmpFree
  */
 RTDECL(void)    RTMemEfTmpFreeNP(void *pv) RT_NO_THROW_PROTO;
 
