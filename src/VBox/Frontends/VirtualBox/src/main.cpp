@@ -27,9 +27,6 @@
 # include "UIMachine.h"
 # include "UISelectorWindow.h"
 # include "UIModalWindowManager.h"
-# ifdef VBOX_WITH_HARDENING
-#  include "QIMessageBox.h"
-# endif /* VBOX_WITH_HARDENING */
 # ifdef Q_WS_MAC
 #  include "VBoxUtils.h"
 #  include "UICocoaApplication.h"
@@ -699,24 +696,21 @@ extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat
             break;
     }
 
-    strText += "</html>";
-
-
 # ifdef Q_WS_X11
     /* We have to to make sure that we display the error-message
      * after the parent displayed its own message. */
     sleep(2);
 # endif /* Q_WS_X11 */
 
-    /*
-     * Create the message box and show it.
-     */
-    QString strTitle = QApplication::tr("VirtualBox - Error In %1").arg(pszWhere);
-    QIMessageBox msgBox(strTitle, strText, AlertIconType_Critical, AlertButton_Ok | AlertButtonOption_Default);
+    /* Update strText with strDetails: */
     if (!strDetails.isEmpty())
-        msgBox.setDetailsText(strDetails);
+        strText += QString("<br><br>%1").arg(strDetails);
 
-    msgBox.exec();
+    /* Close the <html> scope: */
+    strText += "</html>";
+
+    /* Create and show the error message-box: */
+    QMessageBox::critical(0, QApplication::tr("VirtualBox - Error In %1").arg(pszWhere), strText);
 
     qFatal("%s", strText.toUtf8().constData());
 }
