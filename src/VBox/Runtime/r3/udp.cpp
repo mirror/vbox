@@ -687,13 +687,14 @@ RTR3DECL(int)  RTUdpWrite(PRTUDPSERVER pServer, const void *pvBuffer, size_t cbB
 }
 
 
-RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PRTNETADDR pDefaultDstAddr, PRTSOCKET pSock)
+RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PRTNETADDR pLocalAddr, PRTSOCKET pSock)
 {
     /*
      * Validate input.
      */
     AssertReturn(uPort > 0, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszAddress, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSock, VERR_INVALID_POINTER);
 
     /*
      * Resolve the address.
@@ -711,11 +712,11 @@ RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PR
     if (RT_SUCCESS(rc))
     {
         RTSocketSetInheritance(Sock, false /* fInheritable */);
-        rc = rtSocketBind(Sock, &Addr);
+        if (pLocalAddr)
+            rc = rtSocketBind(Sock, pLocalAddr);
         if (RT_SUCCESS(rc))
         {
-            if (pDefaultDstAddr)
-                rc = rtSocketConnect(Sock, pDefaultDstAddr, RT_SOCKETCONNECT_DEFAULT_WAIT);
+            rc = rtSocketConnect(Sock, &Addr, RT_SOCKETCONNECT_DEFAULT_WAIT);
             if (RT_SUCCESS(rc))
             {
                 *pSock = Sock;

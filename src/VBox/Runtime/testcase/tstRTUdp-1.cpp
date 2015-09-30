@@ -30,9 +30,6 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 
-#define RT_TEST_UDP_CLIENT_ADDRESS     "localhost"
-#define RT_TEST_UDP_CLIENT_PORT        52001
-
 /* Server address must be "localhost" */
 #define RT_TEST_UDP_LOCAL_HOST         "localhost"
 #define RT_TEST_UDP_SERVER_PORT        52000
@@ -98,8 +95,7 @@ static void test1()
 
     int rc;
     RTSOCKET hSocket;
-    RTTESTI_CHECK_RC(rc = RTUdpCreateClientSocket(RT_TEST_UDP_CLIENT_ADDRESS, RT_TEST_UDP_CLIENT_PORT, &ServerAddress, &hSocket),
-                     VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rc = RTUdpCreateClientSocket(RT_TEST_UDP_LOCAL_HOST, RT_TEST_UDP_SERVER_PORT, NULL, &hSocket), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
         do /* break non-loop */

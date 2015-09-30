@@ -155,11 +155,11 @@ RTR3DECL(int)  RTUdpWrite(PRTUDPSERVER pServer, const void *pvBuffer,
  * @returns iprt status code.
  * @param   pszAddress          The address to connect to.
  * @param   uPort               The port to connect to.
- * @param   pDefaultDstAddr     A default destination address for sending data
- *                              through this socket, can be NULL.
+ * @param   pLocalAddr          The local address to bind this socket to, can be
+ *                              NULL.
  * @param   pSock               Where to store the handle to the established connection.
  */
-RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PRTNETADDR pDefaultDstAddr, PRTSOCKET pSock);
+RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PRTNETADDR pLocalAddr, PRTSOCKET pSock);
 
 /** @} */
 RT_C_DECLS_END
