@@ -1743,6 +1743,225 @@ int GstCntlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession,
 
 
 /**
+ * Creates the process for a guest session.
+ *
+ *
+ * @return  IPRT status code.
+ * @param   pSessionStartupInfo     Session startup info.
+ * @param   pSessionThread          The session thread under construction.
+ * @param   uCtrlSessionThread      The session thread debug ordinal.
+ */
+static int vgsvcGstCntlSessionThreadCreateProcess(const PVBOXSERVICECTRLSESSIONSTARTUPINFO pSessionStartupInfo,
+                                                  PVBOXSERVICECTRLSESSIONTHREAD pSessionThread, uint32_t uCtrlSessionThread)
+{
+    /*
+     * Is this an anonymous session?  Anonymous sessions run with the same
+     * privileges as the main VBoxService executable.
+     */
+    bool const fAnonymous = pSessionThread->StartupInfo.szUser[0] == '\0';
+    if (fAnonymous)
+    {
+        Assert(!strlen(pSessionThread->StartupInfo.szPassword));
+        Assert(!strlen(pSessionThread->StartupInfo.szDomain));
+
+        VBoxServiceVerbose(3, "New anonymous guest session ID=%RU32 created, fFlags=%x, using protocol %RU32\n",
+                           pSessionStartupInfo->uSessionID,
+                           pSessionStartupInfo->fFlags,
+                           pSessionStartupInfo->uProtocol);
+    }
+    else
+    {
+        VBoxServiceVerbose(3, "Spawning new guest session ID=%RU32, szUser=%s, szPassword=%s, szDomain=%s, fFlags=%x, using protocol %RU32\n",
+                           pSessionStartupInfo->uSessionID,
+                           pSessionStartupInfo->szUser,
+#ifdef DEBUG
+                           pSessionStartupInfo->szPassword,
+#else
+                           "XXX", /* Never show passwords in release mode. */
+#endif
+                           pSessionStartupInfo->szDomain,
+                           pSessionStartupInfo->fFlags,
+                           pSessionStartupInfo->uProtocol);
+    }
+
+    /*
+     * Spawn a child process for doing the actual session handling.
+     * Start by assembling the argument list.
+     */
+    int  rc = VINF_SUCCESS;
+    char szExeName[RTPATH_MAX];
+    char *pszExeName = RTProcGetExecutablePath(szExeName, sizeof(szExeName));
+    if (pszExeName)
+    {
+        char szParmSessionID[32];
+        RTStrPrintf(szParmSessionID, sizeof(szParmSessionID), "--session-id=%RU32", pSessionThread->StartupInfo.uSessionID);
+
+        char szParmSessionProto[32];
+        RTStrPrintf(szParmSessionProto, sizeof(szParmSessionProto), "--session-proto=%RU32",
+                    pSessionThread->StartupInfo.uProtocol);
+#ifdef DEBUG
+        char szParmThreadId[32];
+        RTStrPrintf(szParmThreadId, sizeof(szParmThreadId), "--thread-id=%RU32", uCtrlSessionThread);
+#endif
+        int idxArg = 0; /* Next index in argument vector. */
+        char const *apszArgs[24];
+
+        apszArgs[idxArg++] = pszExeName;
+        apszArgs[idxArg++] = "guestsession";
+        apszArgs[idxArg++] = szParmSessionID;
+        apszArgs[idxArg++] = szParmSessionProto;
+#ifdef DEBUG
+        apszArgs[idxArg++] = szParmThreadId;
+#endif
+        if (!fAnonymous) /* Do we need to pass a user name? */
+        {
+            apszArgs[idxArg++] = "--user";
+            apszArgs[idxArg++] = pSessionThread->StartupInfo.szUser;
+        }
+
+        /* Add same verbose flags as parent process. */
+        char szParmVerbose[32];
+        if (g_cVerbosity > 0)
+        {
+            unsigned cVs = RT_MIN(g_cVerbosity, RT_ELEMENTS(szParmVerbose) - 2);
+            szParmVerbose[0] = '-';
+            memset(&szParmVerbose[1], 'v', cVs);
+            szParmVerbose[1 + cVs] = '\0';
+            apszArgs[idxArg++] = szParmVerbose;
+        }
+
+        /* Add log file handling. Each session will have an own
+         * log file, naming based on the parent log file. */
+        char szParmLogFile[sizeof(g_szLogFile) + 128];
+        if (g_szLogFile)
+        {
+            const char *pszSuffix = RTPathSuffix(g_szLogFile);
+            if (!pszSuffix)
+                pszSuffix = strchr(g_szLogFile, '\0');
+            size_t cchBase = pszSuffix - g_szLogFile;
+#ifndef DEBUG
+            RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%s%s",
+                        cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, pszSuffix);
+#else
+            RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%RU32-%s%s",
+                        cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, uCtrlSessionThread,
+                        pSessionStartupInfo->szUser, pszSuffix);
+#endif
+            apszArgs[idxArg++] = "--logfile";
+            apszArgs[idxArg++] = szParmLogFile;
+        }
+
+#ifdef DEBUG
+        VBoxServiceVerbose(4, "Argv building rc=%Rrc, session flags=%x\n", rc, g_Session.fFlags);
+        if (RT_SUCCESS(rc))
+        {
+            if (g_Session.fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT)
+                apszArgs[idxArg++] = "--dump-stdout";
+            if (g_Session.fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR)
+                apszArgs[idxArg++] = "--dump-stderr";
+        }
+#endif
+        apszArgs[idxArg] = NULL;
+        Assert(idxArg < RT_ELEMENTS(apszArgs));
+
+        if (g_cVerbosity > 3)
+        {
+            VBoxServiceVerbose(4, "Spawning parameters:\n");
+            for (idxArg = 0; apszArgs[idxArg]; idxArg++)
+                VBoxServiceVerbose(4, "\t%s\n", apszArgs[idxArg]);
+        }
+
+        /*
+         * Configure standard handles and finally create the process.
+         */
+        uint32_t fProcCreate = RTPROC_FLAGS_SERVICE
+#ifdef RT_OS_WINDOWS    /** @todo do on unix too! */
+                             /* Make sure to also load the profile data on a Windows guest. */
+                             | RTPROC_FLAGS_PROFILE
+#endif
+                             | RTPROC_FLAGS_HIDDEN;       /** @todo More flags from startup info? */
+
+#if 0 /* Pipe handling not needed (yet). */
+        /* Setup pipes. */
+        rc = GstcntlProcessSetupPipe("|", 0 /*STDIN_FILENO*/,
+                                     &pSession->StdIn.hChild, &pSession->StdIn.phChild, &pSession->hStdInW);
+        if (RT_SUCCESS(rc))
+        {
+            rc = GstcntlProcessSetupPipe("|", 1 /*STDOUT_FILENO*/,
+                                         &pSession->StdOut.hChild, &pSession->StdOut.phChild, &pSession->hStdOutR);
+            if (RT_SUCCESS(rc))
+            {
+                rc = GstcntlProcessSetupPipe("|", 2 /*STDERR_FILENO*/,
+                                             &pSession->StdErr.hChild, &pSession->StdErr.phChild, &pSession->hStdErrR);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTPollSetCreate(&pSession->hPollSet);
+                    if (RT_SUCCESS(rc))
+                        rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdInW, RTPOLL_EVT_ERROR,
+                                              VBOXSERVICECTRLPIPEID_STDIN);
+                    if (RT_SUCCESS(rc))
+                        rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdOutR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
+                                              VBOXSERVICECTRLPIPEID_STDOUT);
+                    if (RT_SUCCESS(rc))
+                        rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdErrR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
+                                              VBOXSERVICECTRLPIPEID_STDERR);
+                }
+
+                if (RT_SUCCESS(rc))
+                    rc = RTProcCreateEx(pszExeName, apszArgs, hEnv, fProcCreate,
+                                        pSession->StdIn.phChild, pSession->StdOut.phChild, pSession->StdErr.phChild,
+                                        !fAnonymous ? pSession->StartupInfo.szUser : NULL,
+                                        !fAnonymous ? pSession->StartupInfo.szPassword : NULL,
+                                        &pSession->hProcess);
+
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Close the child ends of any pipes and redirected files.
+                     */
+                    int rc2 = RTHandleClose(pSession->StdIn.phChild); AssertRC(rc2);
+                    pSession->StdIn.phChild     = NULL;
+                    rc2 = RTHandleClose(pSession->StdOut.phChild);    AssertRC(rc2);
+                    pSession->StdOut.phChild    = NULL;
+                    rc2 = RTHandleClose(pSession->StdErr.phChild);    AssertRC(rc2);
+                    pSession->StdErr.phChild    = NULL;
+                }
+            }
+        }
+#else
+        RTHANDLE hStdIn;
+        if (RT_SUCCESS(rc))
+            rc = RTFileOpenBitBucket(&hStdIn.u.hFile, RTFILE_O_READ);
+        if (RT_SUCCESS(rc))
+        {
+            hStdIn.enmType = RTHANDLETYPE_FILE;
+
+            RTHANDLE hStdOutAndErr;
+            rc = RTFileOpenBitBucket(&hStdOutAndErr.u.hFile, RTFILE_O_WRITE);
+            if (RT_SUCCESS(rc))
+            {
+                hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
+
+                rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
+                                    &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
+                                    !fAnonymous ? pSessionThread->StartupInfo.szUser : NULL,
+                                    !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
+                                    &pSessionThread->hProcess);
+
+                RTFileClose(hStdOutAndErr.u.hFile);
+            }
+
+            RTFileClose(hStdIn.u.hFile);
+        }
+#endif
+    }
+    else
+        rc = VERR_FILE_NOT_FOUND;
+    return rc;
+}
+
+
+/**
  * Creates a guest session.
  *
  * This will spawn a new VBoxService.exe instance under behalf of the given user
@@ -1784,8 +2003,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
     /*
      * Allocate and initialize the session thread structure.
      */
-    PVBOXSERVICECTRLSESSIONTHREAD pSessionThread =
-        (PVBOXSERVICECTRLSESSIONTHREAD)RTMemAllocZ(sizeof(VBOXSERVICECTRLSESSIONTHREAD));
+    PVBOXSERVICECTRLSESSIONTHREAD pSessionThread = (PVBOXSERVICECTRLSESSIONTHREAD)RTMemAllocZ(sizeof(*pSessionThread));
     if (pSessionThread)
     {
         /* Copy over session startup info. */
@@ -1795,258 +2013,63 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
         pSessionThread->fStarted  = false;
         pSessionThread->fStopped  = false;
 
-        /* Is this an anonymous session? */
-        /* Anonymous sessions run with the same privileges as the main VBoxService executable. */
-        bool const fAnonymous = pSessionThread->StartupInfo.szUser[0] == '\0';
-        if (fAnonymous)
-        {
-            Assert(!strlen(pSessionThread->StartupInfo.szPassword));
-            Assert(!strlen(pSessionThread->StartupInfo.szDomain));
-
-            VBoxServiceVerbose(3, "New anonymous guest session ID=%RU32 created, fFlags=%x, using protocol %RU32\n",
-                               pSessionStartupInfo->uSessionID,
-                               pSessionStartupInfo->fFlags,
-                               pSessionStartupInfo->uProtocol);
-        }
-        else
-        {
-            VBoxServiceVerbose(3, "Spawning new guest session ID=%RU32, szUser=%s, szPassword=%s, szDomain=%s, fFlags=%x, using protocol %RU32\n",
-                               pSessionStartupInfo->uSessionID,
-                               pSessionStartupInfo->szUser,
-#ifdef DEBUG
-                               pSessionStartupInfo->szPassword,
-#else
-                               "XXX", /* Never show passwords in release mode. */
-#endif
-                               pSessionStartupInfo->szDomain,
-                               pSessionStartupInfo->fFlags,
-                               pSessionStartupInfo->uProtocol);
-        }
-
         rc = RTCritSectInit(&pSessionThread->CritSect);
-        AssertRC(rc); /* We'll check this again further down, right... */
-
-/** @todo r=bird: split function here, that would simplify failure cleanup... */
-        /*
-         * Spawn a child process for doing the actual session handling.
-         * Start by assembling the argument list.
-         */
-        char szExeName[RTPATH_MAX];
-        char *pszExeName = RTProcGetExecutablePath(szExeName, sizeof(szExeName));
-        if (pszExeName)
-        {
-            char szParmSessionID[32];
-            RTStrPrintf(szParmSessionID, sizeof(szParmSessionID), "--session-id=%RU32", pSessionThread->StartupInfo.uSessionID);
-
-            char szParmSessionProto[32];
-            RTStrPrintf(szParmSessionProto, sizeof(szParmSessionProto), "--session-proto=%RU32",
-                        pSessionThread->StartupInfo.uProtocol);
-#ifdef DEBUG
-            char szParmThreadId[32];
-            RTStrPrintf(szParmThreadId, sizeof(szParmThreadId), "--thread-id=%RU32", s_uCtrlSessionThread);
-#endif
-            int idxArg = 0; /* Next index in argument vector. */
-            char const *apszArgs[24];
-
-            apszArgs[idxArg++] = pszExeName;
-            apszArgs[idxArg++] = "guestsession";
-            apszArgs[idxArg++] = szParmSessionID;
-            apszArgs[idxArg++] = szParmSessionProto;
-#ifdef DEBUG
-            apszArgs[idxArg++] = szParmThreadId;
-#endif
-            if (!fAnonymous) /* Do we need to pass a user name? */
-            {
-                apszArgs[idxArg++] = "--user";
-                apszArgs[idxArg++] = pSessionThread->StartupInfo.szUser;
-            }
-
-            /* Add same verbose flags as parent process. */
-            char szParmVerbose[32];
-            if (g_cVerbosity > 0)
-            {
-                unsigned cVs = RT_MIN(g_cVerbosity, RT_ELEMENTS(szParmVerbose) - 2);
-                szParmVerbose[0] = '-';
-                memset(&szParmVerbose[1], 'v', cVs);
-                szParmVerbose[1 + cVs] = '\0';
-                apszArgs[idxArg++] = szParmVerbose;
-            }
-
-            /* Add log file handling. Each session will have an own
-             * log file, naming based on the parent log file. */
-            char szParmLogFile[sizeof(g_szLogFile) + 128];
-            if (g_szLogFile)
-            {
-                const char *pszSuffix = RTPathSuffix(g_szLogFile);
-                if (!pszSuffix)
-                    pszSuffix = strchr(g_szLogFile, '\0');
-                size_t cchBase = pszSuffix - g_szLogFile;
-#ifndef DEBUG
-                RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%s%s",
-                            cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, pszSuffix);
-#else
-                RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%RU32-%s%s",
-                            cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, s_uCtrlSessionThread,
-                            pSessionStartupInfo->szUser, pszSuffix);
-#endif
-                apszArgs[idxArg++] = "--logfile";
-                apszArgs[idxArg++] = szParmLogFile;
-            }
-
-#ifdef DEBUG
-            VBoxServiceVerbose(4, "Argv building rc=%Rrc, session flags=%x\n", rc, g_Session.fFlags);
-            if (RT_SUCCESS(rc))
-            {
-                if (g_Session.fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT)
-                    apszArgs[idxArg++] = "--dump-stdout";
-                if (g_Session.fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR)
-                    apszArgs[idxArg++] = "--dump-stderr";
-            }
-#endif
-            apszArgs[idxArg] = NULL;
-            Assert(idxArg < RT_ELEMENTS(apszArgs));
-
-            if (g_cVerbosity > 3)
-            {
-                VBoxServiceVerbose(4, "Spawning parameters:\n");
-                for (idxArg = 0; apszArgs[idxArg]; idxArg++)
-                    VBoxServiceVerbose(4, "\t%s\n", apszArgs[idxArg]);
-            }
-
-            /*
-             * Configure standard handles and finally create the process.
-             */
-            uint32_t fProcCreate = RTPROC_FLAGS_SERVICE
-#ifdef RT_OS_WINDOWS    /** @todo do on unix too! */
-                                 /* Make sure to also load the profile data on a Windows guest. */
-                                 | RTPROC_FLAGS_PROFILE
-#endif
-                                 | RTPROC_FLAGS_HIDDEN;       /** @todo More flags from startup info? */
-
-#if 0 /* Pipe handling not needed (yet). */
-            /* Setup pipes. */
-            rc = GstcntlProcessSetupPipe("|", 0 /*STDIN_FILENO*/,
-                                         &pSession->StdIn.hChild, &pSession->StdIn.phChild, &pSession->hStdInW);
-            if (RT_SUCCESS(rc))
-            {
-                rc = GstcntlProcessSetupPipe("|", 1 /*STDOUT_FILENO*/,
-                                             &pSession->StdOut.hChild, &pSession->StdOut.phChild, &pSession->hStdOutR);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = GstcntlProcessSetupPipe("|", 2 /*STDERR_FILENO*/,
-                                                 &pSession->StdErr.hChild, &pSession->StdErr.phChild, &pSession->hStdErrR);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = RTPollSetCreate(&pSession->hPollSet);
-                        if (RT_SUCCESS(rc))
-                            rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdInW, RTPOLL_EVT_ERROR,
-                                                  VBOXSERVICECTRLPIPEID_STDIN);
-                        if (RT_SUCCESS(rc))
-                            rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdOutR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
-                                                  VBOXSERVICECTRLPIPEID_STDOUT);
-                        if (RT_SUCCESS(rc))
-                            rc = RTPollSetAddPipe(pSession->hPollSet, pSession->hStdErrR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
-                                                  VBOXSERVICECTRLPIPEID_STDERR);
-                    }
-
-                    if (RT_SUCCESS(rc))
-                        rc = RTProcCreateEx(pszExeName, apszArgs, hEnv, fProcCreate,
-                                            pSession->StdIn.phChild, pSession->StdOut.phChild, pSession->StdErr.phChild,
-                                            !fAnonymous ? pSession->StartupInfo.szUser : NULL,
-                                            !fAnonymous ? pSession->StartupInfo.szPassword : NULL,
-                                            &pSession->hProcess);
-
-                    if (RT_SUCCESS(rc))
-                    {
-                        /*
-                         * Close the child ends of any pipes and redirected files.
-                         */
-                        int rc2 = RTHandleClose(pSession->StdIn.phChild); AssertRC(rc2);
-                        pSession->StdIn.phChild     = NULL;
-                        rc2 = RTHandleClose(pSession->StdOut.phChild);    AssertRC(rc2);
-                        pSession->StdOut.phChild    = NULL;
-                        rc2 = RTHandleClose(pSession->StdErr.phChild);    AssertRC(rc2);
-                        pSession->StdErr.phChild    = NULL;
-                    }
-                }
-            }
-#else
-            RTHANDLE hStdIn;
-            if (RT_SUCCESS(rc))
-                rc = RTFileOpenBitBucket(&hStdIn.u.hFile, RTFILE_O_READ);
-            if (RT_SUCCESS(rc))
-            {
-                hStdIn.enmType = RTHANDLETYPE_FILE;
-
-                RTHANDLE hStdOutAndErr;
-                rc = RTFileOpenBitBucket(&hStdOutAndErr.u.hFile, RTFILE_O_WRITE);
-                if (RT_SUCCESS(rc))
-                {
-                    hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
-
-                    rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
-                                        &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
-                                        !fAnonymous ? pSessionThread->StartupInfo.szUser : NULL,
-                                        !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
-                                        &pSessionThread->hProcess);
-
-                    RTFileClose(hStdOutAndErr.u.hFile);
-                }
-
-                RTFileClose(hStdIn.u.hFile);
-            }
-#endif
-        }
-        else
-            rc = VERR_FILE_NOT_FOUND;
-
+        AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             /*
-             * Start session the thread.
+             * Start the session thread.
              */
-            rc = RTThreadCreateF(&pSessionThread->Thread, gstcntlSessionThread,
-                                 pSessionThread /*pvUser*/, 0 /*cbStack*/,
-                                 RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "sess%u", s_uCtrlSessionThread);
-            if (RT_FAILURE(rc))
+            rc = vgsvcGstCntlSessionThreadCreateProcess(pSessionStartupInfo, pSessionThread, s_uCtrlSessionThread);
+            if (RT_SUCCESS(rc))
             {
-                VBoxServiceError("Creating session thread failed, rc=%Rrc\n", rc);
-                /** @todo r=bird: what about the process we created? Perhaps a
-                 *        RTProcTerminate would be in order? */
-            }
-            else
-            {
-                /* Wait for the thread to initialize. */
-                rc = RTThreadUserWait(pSessionThread->Thread, 60 * 1000 /* 60s timeout */);
-                if (   ASMAtomicReadBool(&pSessionThread->fShutdown)
-                    || RT_FAILURE(rc))
+                /*
+                 * Start the session thread.
+                 */
+                rc = RTThreadCreateF(&pSessionThread->Thread, gstcntlSessionThread,
+                                     pSessionThread /*pvUser*/, 0 /*cbStack*/,
+                                     RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "sess%u", s_uCtrlSessionThread);
+                if (RT_SUCCESS(rc))
                 {
+                    /* Wait for the thread to initialize. */
+                    rc = RTThreadUserWait(pSessionThread->Thread, RT_MS_1MIN);
+                    if (   RT_SUCCESS(rc)
+                        && !ASMAtomicReadBool(&pSessionThread->fShutdown))
+                    {
+                        VBoxServiceVerbose(2, "Thread for session ID=%RU32 started\n", pSessionThread->StartupInfo.uSessionID);
+
+                        ASMAtomicXchgBool(&pSessionThread->fStarted, true);
+
+                        /* Add session to list. */
+                        /* rc = */ RTListAppend(pList, &pSessionThread->Node);
+                        if (ppSessionThread) /* Return session if wanted. */
+                            *ppSessionThread = pSessionThread;
+                        return VINF_SUCCESS;
+                    }
+
+                    /*
+                     * Bail out.
+                     */
                     VBoxServiceError("Thread for session ID=%RU32 failed to start, rc=%Rrc\n",
                                      pSessionThread->StartupInfo.uSessionID, rc);
-                    if (RT_SUCCESS(rc))
+                    if (RT_SUCCESS_NP(rc))
                         rc = VERR_CANT_CREATE; /** @todo Find a better rc. */
                 }
                 else
+                    VBoxServiceError("Creating session thread failed, rc=%Rrc\n", rc);
+
+                RTProcTerminate(pSessionThread->hProcess);
+                uint32_t cMsWait = 1;
+                while (   RTProcWait(pSessionThread->hProcess, RTPROCWAIT_FLAGS_NOBLOCK, NULL) == VERR_PROCESS_RUNNING
+                       && cMsWait <= 9) /* 1023 ms */
                 {
-                    VBoxServiceVerbose(2, "Thread for session ID=%RU32 started\n",
-                                       pSessionThread->StartupInfo.uSessionID);
-
-                    ASMAtomicXchgBool(&pSessionThread->fStarted, true);
-
-                    /* Add session to list. */
-                    /* rc = */ RTListAppend(pList, &pSessionThread->Node);
-                    if (ppSessionThread) /* Return session if wanted. */
-                        *ppSessionThread = pSessionThread;
+                    RTThreadSleep(cMsWait);
+                    cLoops <<= 2;
                 }
             }
+            RTCritSectDelete(&pSessionThread->CritSect);
         }
-
-        if (RT_FAILURE(rc))
-        {
-            /** @todo r=bird: what about deleting the critsect? You're leaking event
-             *        semaphore handles here. */
-            RTMemFree(pSessionThread);
-        }
+        RTMemFree(pSessionThread);
     }
     else
         rc = VERR_NO_MEMORY;
