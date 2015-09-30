@@ -308,7 +308,7 @@ RTDECL(int) RTManifestDup(RTMANIFEST hManifestSrc, PRTMANIFEST phManifestDst)
 
 
 /**
- * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation.}
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation}
  */
 static DECLCALLBACK(int) rtManifestAttributeClearVisited(PRTSTRSPACECORE pStr, void *pvUser)
 {
@@ -320,7 +320,7 @@ static DECLCALLBACK(int) rtManifestAttributeClearVisited(PRTSTRSPACECORE pStr, v
 
 
 /**
- * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation.}
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation}
  */
 static DECLCALLBACK(int) rtManifestEntryClearVisited(PRTSTRSPACECORE pStr, void *pvUser)
 {
@@ -333,7 +333,7 @@ static DECLCALLBACK(int) rtManifestEntryClearVisited(PRTSTRSPACECORE pStr, void 
 
 
 /**
- * @callback_method_impl{FNRTSTRSPACECALLBACK, Finds the first missing.}
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Finds the first missing}
  */
 static DECLCALLBACK(int) rtManifestAttributeFindMissing2(PRTSTRSPACECORE pStr, void *pvUser)
 {
@@ -374,7 +374,7 @@ static DECLCALLBACK(int) rtManifestAttributeFindMissing2(PRTSTRSPACECORE pStr, v
 
 
 /**
- * @callback_method_impl{FNRTSTRSPACECALLBACK, Finds the first missing.}
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Finds the first missing}
  */
 static DECLCALLBACK(int) rtManifestEntryFindMissing2(PRTSTRSPACECORE pStr, void *pvUser)
 {
@@ -410,7 +410,7 @@ static DECLCALLBACK(int) rtManifestEntryFindMissing2(PRTSTRSPACECORE pStr, void 
 
 
 /**
- * @callback_method_impl{FNRTSTRSPACECALLBACK, Compares attributes.}
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Compares attributes}
  */
 static DECLCALLBACK(int) rtManifestAttributeCompare(PRTSTRSPACECORE pStr, void *pvUser)
 {
@@ -488,7 +488,7 @@ static DECLCALLBACK(int) rtManifestAttributeCompare(PRTSTRSPACECORE pStr, void *
 
 
 /**
- * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation.}
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation}
  */
 DECLINLINE (int) rtManifestEntryCompare2(PRTMANIFESTEQUALS pEquals, PRTMANIFESTENTRY pEntry1, PRTMANIFESTENTRY pEntry2)
 {
@@ -517,7 +517,7 @@ DECLINLINE (int) rtManifestEntryCompare2(PRTMANIFESTEQUALS pEquals, PRTMANIFESTE
 
 
 /**
- * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation.}
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation}
  */
 static DECLCALLBACK(int) rtManifestEntryCompare(PRTSTRSPACECORE pStr, void *pvUser)
 {

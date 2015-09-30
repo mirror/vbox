@@ -113,8 +113,9 @@ RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list va)
 
 
 /* Do nothing for now. */
-RTDECL(void) RTLogFlush(PRTLOGGER)
+RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
 {
+    NOREF(pLogger);
 }
 
 /* Do nothing. */

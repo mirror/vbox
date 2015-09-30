@@ -471,7 +471,7 @@ static void rtldrPEFreePart(PRTLDRMODPE pThis, const void *pvBits, void const *p
 }
 
 
-/** @copydoc RTLDROPS::pfnGetImageSize */
+/** @interface_method_impl{RTLDROPS,pfnGetImageSize} */
 static DECLCALLBACK(size_t) rtldrPEGetImageSize(PRTLDRMODINTERNAL pMod)
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
@@ -568,7 +568,7 @@ static int rtldrPEReadBits(PRTLDRMODPE pModPe)
 }
 
 
-/** @copydoc RTLDROPS::pfnGetBits */
+/** @interface_method_impl{RTLDROPS,pfnGetBits} */
 static DECLCALLBACK(int) rtldrPEGetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
@@ -876,7 +876,7 @@ static int rtldrPEApplyFixups(PRTLDRMODPE pModPe, const void *pvBitsR, void *pvB
 }
 
 
-/** @copydoc RTLDROPS::pfnRelocate. */
+/** @interface_method_impl{RTLDROPS,pfnRelocate} */
 static DECLCALLBACK(int) rtldrPERelocate(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress, RTUINTPTR OldBaseAddress,
                                          PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
@@ -1010,7 +1010,7 @@ static int rtLdrPE_ExportToRva(PRTLDRMODPE pModPe, uint32_t iOrdinal, const char
 }
 
 
-/** @copydoc RTLDROPS::pfnGetSymbolEx. */
+/** @interface_method_impl{RTLDROPS,pfnGetSymbolEx} */
 static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress,
                                             uint32_t iOrdinal, const char *pszSymbol, RTUINTPTR *pValue)
 {
@@ -1036,7 +1036,7 @@ static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *
 }
 
 
-/** @copydoc RTLDROPS::pfnQueryForwarderInfo. */
+/** @interface_method_impl{RTLDROPS,pfnQueryForwarderInfo} */
 static DECLCALLBACK(int) rtldrPE_QueryForwarderInfo(PRTLDRMODINTERNAL pMod, const void *pvBits,  uint32_t iOrdinal,
                                                     const char *pszSymbol, PRTLDRIMPORTINFO pInfo, size_t cbInfo)
 {
@@ -1263,7 +1263,7 @@ static int rtldrPEEnumSymbolsSlow(PRTLDRMODPE pThis, unsigned fFlags, RTUINTPTR 
 }
 
 
-/** @copydoc RTLDROPS::pfnEnumSymbols */
+/** @interface_method_impl{RTLDROPS,pfnEnumSymbols} */
 static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFlags, const void *pvBits, RTUINTPTR BaseAddress,
                                             PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
@@ -1368,7 +1368,7 @@ static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFl
 }
 
 
-/** @copydoc RTLDROPS::pfnEnumDbgInfo. */
+/** @interface_method_impl{RTLDROPS,pfnEnumDbgInfo} */
 static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits,
                                              PFNRTLDRENUMDBG pfnCallback, void *pvUser)
 {
@@ -1557,7 +1557,7 @@ static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void 
 }
 
 
-/** @copydoc RTLDROPS::pfnEnumSegments. */
+/** @interface_method_impl{RTLDROPS,pfnEnumSegments} */
 static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
@@ -1649,7 +1649,7 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
 }
 
 
-/** @copydoc RTLDROPS::pfnLinkAddressToSegOffset. */
+/** @interface_method_impl{RTLDROPS,pfnLinkAddressToSegOffset} */
 static DECLCALLBACK(int) rtldrPE_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
                                                         uint32_t *piSeg, PRTLDRADDR poffSeg)
 {
@@ -1689,7 +1689,7 @@ static DECLCALLBACK(int) rtldrPE_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, 
 }
 
 
-/** @copydoc RTLDROPS::pfnLinkAddressToRva. */
+/** @interface_method_impl{RTLDROPS,pfnLinkAddressToRva} */
 static DECLCALLBACK(int) rtldrPE_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
@@ -1703,7 +1703,7 @@ static DECLCALLBACK(int) rtldrPE_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRA
 }
 
 
-/** @copydoc RTLDROPS::pfnSegOffsetToRva. */
+/** @interface_method_impl{RTLDROPS,pfnSegOffsetToRva} */
 static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg,
                                                 PRTLDRADDR pRva)
 {
@@ -1723,7 +1723,7 @@ static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t
 }
 
 
-/** @copydoc RTLDROPS::pfnRvaToSegOffset. */
+/** @interface_method_impl{RTLDROPS,pfnRvaToSegOffset} */
 static DECLCALLBACK(int) rtldrPE_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva,
                                                 uint32_t *piSeg, PRTLDRADDR poffSeg)
 {
@@ -2775,7 +2775,7 @@ static DECLCALLBACK(int) rtldrPE_HashImage(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE 
 }
 
 
-/** @copydoc RTLDROPS::pfnDone */
+/** @interface_method_impl{RTLDROPS,pfnDone}   */
 static DECLCALLBACK(int) rtldrPEDone(PRTLDRMODINTERNAL pMod)
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
@@ -2788,7 +2788,7 @@ static DECLCALLBACK(int) rtldrPEDone(PRTLDRMODINTERNAL pMod)
 }
 
 
-/** @copydoc RTLDROPS::pfnClose */
+/** @interface_method_impl{RTLDROPS,pfnClose}  */
 static DECLCALLBACK(int) rtldrPEClose(PRTLDRMODINTERNAL pMod)
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;

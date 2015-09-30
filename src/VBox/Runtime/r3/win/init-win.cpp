@@ -257,7 +257,7 @@ static int rtR3InitNativeObtrusiveWorker(void)
             rc = VERR_INTERNAL_ERROR_3;
     }
 
-    /** @bugref 6861: Observed GUI issues on Vista (32-bit and 64-bit). */
+    /** @bugref{6861} Observed GUI issues on Vista (32-bit and 64-bit). */
     if (g_enmWinVer > kRTWinOSType_VISTA)
     {
         typedef BOOL(WINAPI *PFNSETDEFAULTDLLDIRECTORIES)(DWORD);

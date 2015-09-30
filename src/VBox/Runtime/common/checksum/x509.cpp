@@ -66,9 +66,9 @@ RT_EXPORT_SYMBOL(RTX509PrepareOpenSSL);
  *
  * @returns IPRT status code.
  *
- * @param   pvBuf           String representation containing X509
+ * @param   pvPem           String representation containing X509
  *                          certificate in PEM format.
- * @param   cbBuf           The amount of data @a pvBuf points to.
+ * @param   cbPem           The amount of data @a pvBuf points to.
  * @param   ppOutCert       Where to store the pointer to the structure where
  *                          the info about X509 certificate will be stored.
  */

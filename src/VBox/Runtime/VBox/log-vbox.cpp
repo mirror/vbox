@@ -72,7 +72,7 @@
  *
  *
  *
- * @section sec_logging_destination     The Group Specifier.
+ * @section sec_logging_group           The Group Specifier.
  *
  * The {logger-env-base} environment variable can be used to specify which
  * logger groups to enable and which to disable. By default all groups are

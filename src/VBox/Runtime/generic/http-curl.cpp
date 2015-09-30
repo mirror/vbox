@@ -597,8 +597,13 @@ static bool rtHttpUrlInNoProxyList(const char *pszUrl, const char *pszNoProxyLis
 /**
  * Configures a proxy given a "URL" like specification.
  *
- * Format is:
- * <pre> [<scheme>"://"][<userid>[@<password>]:]<server>[":"<port>] </pre>
+ * The format is:
+ * @verbatim
+ *      [<scheme>"://"][<userid>[@<password>]:]<server>[":"<port>]
+ * @endverbatim
+ *
+ * Where the scheme gives the type of proxy server we're dealing with rather
+ * than the protocol of the external server we wish to talk to.
  *
  * @returns IPRT status code.
  * @param   pThis               The HTTP client instance.

@@ -2725,29 +2725,30 @@ $(IPRT_OUT_DIR)/Doxyfile.iprt: \
 		$(comp-vars IPRT_DOXYFILE_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
 		$(comp-vars IPRT_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
 		| $$(dir $$@)
-	$(RM) -f $@ $@.tmp $@.dep
-	$(CP) -f $(VBOX_PATH_RUNTIME_SRC)/Doxyfile $@.tmp
-	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(IPRT_DOXYFILE_OUTPUT)"
-	$(APPEND) $@.tmp "WARN_LOGFILE = $(IPRT_DOXYFILE_OUTPUT)/errors"
-	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include include . common/table"
-	$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
-	$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
-	$(APPEND) $@.tmp 'EXCLUDE = '\
+	$(QUIET)$(RM) -f $@ $@.tmp $@.dep
+	$(QUIET)$(CP) -f $(VBOX_PATH_RUNTIME_SRC)/Doxyfile $@.tmp
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(IPRT_DOXYFILE_OUTPUT)"
+	$(QUIET)$(APPEND) $@.tmp "WARN_LOGFILE = $(IPRT_DOXYFILE_OUTPUT)/errors"
+	$(QUIET)$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include include . common/table"
+	$(QUIET)$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
+	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
+	$(QUIET)$(APPEND) $@.tmp 'EXCLUDE = '\
 		'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-flags.cpp' \
        	'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-lower.cpp' \
-       	'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-upper.cpp'
-	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "INPUT = $(IPRT_DOXYFILE_INPUT)"
-	$(APPEND) $@.tmp
-	$(MV) -f $@.tmp $@
-	@$(APPEND) $@.dep "DOXYGEN_OUTPUT_PREV = $(IPRT_DOXYFILE_OUTPUT)"
-	@$(APPEND) $@.dep "DOXYGEN_INPUT_PREV = $(IPRT_DOXYFILE_INPUT)"
+       	'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-upper.cpp' \
+       	'$(VBOX_PATH_RUNTIME_SRC)/common/ldr/ldrkStuff.cpp'
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(APPEND) $@.tmp "INPUT = $(IPRT_DOXYFILE_INPUT)"
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(MV) -f $@.tmp $@
+	$(QUIET)$(APPEND) $@.dep "DOXYGEN_OUTPUT_PREV = $(IPRT_DOXYFILE_OUTPUT)"
+	$(QUIET)$(APPEND) $@.dep "DOXYGEN_INPUT_PREV = $(IPRT_DOXYFILE_INPUT)"
 
 # Do the actual job.
 $(IPRT_OUT_DIR)/docs.iprt: $(IPRT_OUT_DIR)/Doxyfile.iprt $$(IPRT_DOXYFILE_INPUT) | $(IPRT_DOXYFILE_OUTPUT)/
-	$(RM) -f $(wildcard $(IPRT_DOXYFILE_OUTPUT)/html/*) $(IPRT_OUT_DIR)/docs.iprt
-	doxygen $(IPRT_OUT_DIR)/Doxyfile.iprt
+	$(QUIET)$(RM) -f $(wildcard $(IPRT_DOXYFILE_OUTPUT)/html/*) $(IPRT_OUT_DIR)/docs.iprt
+	doxygen $(DOXYGEN_OPTS) $(IPRT_OUT_DIR)/Doxyfile.iprt
 	$(APPEND) $(IPRT_OUT_DIR)/docs.iprt
 
 # aliases

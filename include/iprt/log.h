@@ -2325,11 +2325,11 @@ RTDECL(void) RTLogPrintf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
  * vprintf like function for writing to the default log.
  *
  * @param   pszFormat   Printf like format string.
- * @param   args        Optional arguments as specified in pszFormat.
+ * @param   va          Optional arguments as specified in pszFormat.
  *
  * @remark The API doesn't support formatting of floating point numbers at the moment.
  */
-RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)  RT_IPRT_FORMAT_ATTR(1, 0);
+RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list va)  RT_IPRT_FORMAT_ATTR(1, 0);
 
 /**
  * Dumper vprintf-like function outputting to a logger.

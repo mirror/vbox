@@ -199,6 +199,7 @@ static int rtLocalIpcWinCreateSession(PRTLOCALIPCSESSION phClientSession, HANDLE
  * @return  IPRT status code.
  * @param   ppDesc              Where to store the allocated security descriptor on success.
  *                              Must be free'd using LocalFree().
+ * @param   fServer             Whether it's for a server or client instance.
  */
 static int rtLocalIpcServerWinAllocSecurityDescriptior(PSECURITY_DESCRIPTOR *ppDesc, bool fServer)
 {
@@ -223,9 +224,10 @@ static int rtLocalIpcServerWinAllocSecurityDescriptior(PSECURITY_DESCRIPTOR *ppD
          * makes some further restrictions to prevent non-authenticated
          * users from screwing around.
          */
+        /** @todo r=bird: Why do you convert a string litteral? the 'L' prefix should
+         *        be sufficient, shouldn't it?? */
         PRTUTF16 pwszSDDL;
-        rc = RTStrToUtf16(fServer
-                          ? RTLOCALIPC_WIN_SDDL_SERVER : RTLOCALIPC_WIN_SDDL_CLIENT, &pwszSDDL);
+        rc = RTStrToUtf16(fServer ? RTLOCALIPC_WIN_SDDL_SERVER : RTLOCALIPC_WIN_SDDL_CLIENT, &pwszSDDL);
         if (RT_SUCCESS(rc))
         {
             if (!pfnConvertStringSecurityDescriptorToSecurityDescriptor((LPCTSTR)pwszSDDL,

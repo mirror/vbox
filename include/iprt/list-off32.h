@@ -206,8 +206,8 @@ DECLINLINE(void) RTListOff32NodeRemove(PRTLISTOFF32NODE pNode)
 /**
  * Checks if a node is the last element in the list.
  *
- * @retval  @c true if the node is the last element in the list.
- * @retval  @c false otherwise
+ * @retval  true if the node is the last element in the list.
+ * @retval  false otherwise
  *
  * @param   pList               The list.
  * @param   pNode               The node to check.
@@ -217,8 +217,8 @@ DECLINLINE(void) RTListOff32NodeRemove(PRTLISTOFF32NODE pNode)
 /**
  * Checks if a node is the first element in the list.
  *
- * @retval  @c true if the node is the first element in the list.
- * @retval  @c false otherwise.
+ * @retval  true if the node is the first element in the list.
+ * @retval  false otherwise.
  *
  * @param   pList               The list.
  * @param   pNode               The node to check.
@@ -228,8 +228,8 @@ DECLINLINE(void) RTListOff32NodeRemove(PRTLISTOFF32NODE pNode)
 /**
  * Checks if a type converted node is actually the dummy element (@a pList).
  *
- * @retval  @c true if the node is the dummy element in the list.
- * @retval  @c false otherwise.
+ * @retval  true if the node is the dummy element in the list.
+ * @retval  false otherwise.
  *
  * @param   pList               The list.
  * @param   pNode               The node structure to check.  Typically
@@ -249,8 +249,8 @@ DECLINLINE(void) RTListOff32NodeRemove(PRTLISTOFF32NODE pNode)
 /**
  * Checks if a list is empty.
  *
- * @retval  @c true if the list is empty.
- * @retval  @c false otherwise.
+ * @retval  true if the list is empty.
+ * @retval  false otherwise.
  *
  * @param   pList               The list to check.
  */

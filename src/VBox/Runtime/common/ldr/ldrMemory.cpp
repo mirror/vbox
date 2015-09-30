@@ -75,8 +75,9 @@ typedef struct RTLDRRDRMEM
 typedef RTLDRRDRMEM *PRTLDRRDRMEM;
 
 
-/** @callback_method_impl{FNRTLDRRDRMEMDTOR,
- *  Default destructor - pvUser points to the image memory block.}
+/**
+ * @callback_method_impl{FNRTLDRRDRMEMDTOR,
+ *      Default destructor - pvUser points to the image memory block}
  */
 static DECLCALLBACK(void) rtldrRdrMemDefaultDtor(void *pvUser)
 {
@@ -84,8 +85,9 @@ static DECLCALLBACK(void) rtldrRdrMemDefaultDtor(void *pvUser)
 }
 
 
-/** @callback_method_impl{FNRTLDRRDRMEMREAD,
- *  Default memory reader - pvUser points to the image memory block.}
+/**
+ * @callback_method_impl{FNRTLDRRDRMEMREAD,
+ *      Default memory reader - pvUser points to the image memory block}
  */
 static DECLCALLBACK(int) rtldrRdrMemDefaultReader(void *pvBuf, size_t cb, size_t off, void *pvUser)
 {
@@ -94,7 +96,7 @@ static DECLCALLBACK(int) rtldrRdrMemDefaultReader(void *pvBuf, size_t cb, size_t
 }
 
 
-/** @copydoc RTLDRREADER::pfnRead */
+/** @interface_method_impl{RTLDRREADER,pfnRead} */
 static DECLCALLBACK(int) rtldrRdrMem_Read(PRTLDRREADER pReader, void *pvBuf, size_t cb, RTFOFF off)
 {
     PRTLDRRDRMEM pThis = (PRTLDRRDRMEM)pReader;
@@ -117,7 +119,7 @@ static DECLCALLBACK(int) rtldrRdrMem_Read(PRTLDRREADER pReader, void *pvBuf, siz
 }
 
 
-/** @copydoc RTLDRREADER::pfnTell */
+/** @interface_method_impl{RTLDRREADER,pfnTell} */
 static DECLCALLBACK(RTFOFF) rtldrRdrMem_Tell(PRTLDRREADER pReader)
 {
     PRTLDRRDRMEM pThis = (PRTLDRRDRMEM)pReader;
@@ -125,7 +127,7 @@ static DECLCALLBACK(RTFOFF) rtldrRdrMem_Tell(PRTLDRREADER pReader)
 }
 
 
-/** @copydoc RTLDRREADER::pfnSize */
+/** @interface_method_impl{RTLDRREADER,pfnSize} */
 static DECLCALLBACK(RTFOFF) rtldrRdrMem_Size(PRTLDRREADER pReader)
 {
     PRTLDRRDRMEM pThis = (PRTLDRRDRMEM)pReader;
@@ -133,7 +135,7 @@ static DECLCALLBACK(RTFOFF) rtldrRdrMem_Size(PRTLDRREADER pReader)
 }
 
 
-/** @copydoc RTLDRREADER::pfnLogName */
+/** @interface_method_impl{RTLDRREADER,pfnLogName} */
 static DECLCALLBACK(const char *) rtldrRdrMem_LogName(PRTLDRREADER pReader)
 {
     PRTLDRRDRMEM pThis = (PRTLDRRDRMEM)pReader;
@@ -141,7 +143,7 @@ static DECLCALLBACK(const char *) rtldrRdrMem_LogName(PRTLDRREADER pReader)
 }
 
 
-/** @copydoc RTLDRREADER::pfnMap */
+/** @interface_method_impl{RTLDRREADER,pfnMap} */
 static DECLCALLBACK(int) rtldrRdrMem_Map(PRTLDRREADER pReader, const void **ppvBits)
 {
     PRTLDRRDRMEM pThis = (PRTLDRRDRMEM)pReader;
@@ -178,7 +180,7 @@ static DECLCALLBACK(int) rtldrRdrMem_Map(PRTLDRREADER pReader, const void **ppvB
 }
 
 
-/** @copydoc RTLDRREADER::pfnUnmap */
+/** @interface_method_impl{RTLDRREADER,pfnUnmap} */
 static DECLCALLBACK(int) rtldrRdrMem_Unmap(PRTLDRREADER pReader, const void *pvBits)
 {
     PRTLDRRDRMEM pThis = (PRTLDRRDRMEM)pReader;
@@ -195,7 +197,7 @@ static DECLCALLBACK(int) rtldrRdrMem_Unmap(PRTLDRREADER pReader, const void *pvB
 }
 
 
-/** @copydoc RTLDRREADER::pfnDestroy */
+/** @interface_method_impl{RTLDRREADER,pfnDestroy} */
 static DECLCALLBACK(int) rtldrRdrMem_Destroy(PRTLDRREADER pReader)
 {
     PRTLDRRDRMEM pThis = (PRTLDRRDRMEM)pReader;

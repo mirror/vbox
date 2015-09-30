@@ -3065,11 +3065,11 @@ static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, PRTLOG
  * vprintf like function for writing to the default log.
  *
  * @param   pszFormat   Printf like format string.
- * @param   args        Optional arguments as specified in pszFormat.
+ * @param   va          Optional arguments as specified in pszFormat.
  *
  * @remark The API doesn't support formatting of floating point numbers at the moment.
  */
-RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)
+RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list va)
 {
     RTLogLoggerV(NULL, pszFormat, args);
 }
@@ -3145,7 +3145,7 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
  * Used by the rtlogFlush() function as well as RTLogCreateExV.
  *
  * @param   pLogger     The logger instance to update. NULL is not allowed!
- * @param   uTimeSlit   Current time slot (for tikme based rotation).
+ * @param   uTimeSlot   Current time slot (for tikme based rotation).
  * @param   fFirst      Flag whether this is the beginning of logging, i.e.
  *                      called from RTLogCreateExV.  Prevents pfnPhase from
  *                      being called.

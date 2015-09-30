@@ -54,7 +54,8 @@ typedef struct RTDBGMODEXPORTARGS
 typedef RTDBGMODEXPORTARGS *PRTDBGMODEXPORTARGS;
 
 
-/** @callback_method_impl{FNRTLDRENUMSYMS,
+/**
+ * @callback_method_impl{FNRTLDRENUMSYMS,
  *      Copies the symbols over into the container} */
 static DECLCALLBACK(int) rtDbgModExportsAddSymbolCallback(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol,
                                                           RTLDRADDR Value, void *pvUser)

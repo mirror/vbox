@@ -61,7 +61,7 @@ typedef enum _FSINFOCLASS {
 typedef struct _FILE_FS_ATTRIBUTE_INFORMATION {
     ULONG FileSystemAttributes;
     LONG MaximumComponentNameLength;
-    ULONG FIleSystemNameLength;
+    ULONG FileSystemNameLength;
     WCHAR FileSystemName[1];
 } FILE_FS_ATTRIBUTE_INFORMATION, *PFILE_FS_ATTRIBUTE_INFORMATION;
 
@@ -348,7 +348,7 @@ RTR3DECL(bool) RTFsIsCaseSensitive(const char *pszFsPath)
  *
  * @returns @c true if equal, @c false if not.
  * @param   pwsz1               The first string.
- * @param   cb1                 The length of the first string, in bytes.
+ * @param   cch1                The length of the first string, in bytes.
  * @param   psz2                The second string.
  * @param   cch2                The length of the second string.
  */
@@ -401,11 +401,8 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
             if (rcNt >= 0)
             {
                 PFILE_FS_ATTRIBUTE_INFORMATION pFsAttrInfo = (PFILE_FS_ATTRIBUTE_INFORMATION)abBuf;
-                if (pFsAttrInfo->FIleSystemNameLength)
-                {
-                }
 #define IS_FS(szName) \
-    rtFsWinAreEqual(pFsAttrInfo->FileSystemName, pFsAttrInfo->FIleSystemNameLength, szName, sizeof(szName) - 1)
+    rtFsWinAreEqual(pFsAttrInfo->FileSystemName, pFsAttrInfo->FileSystemNameLength, szName, sizeof(szName) - 1)
                 if (IS_FS("NTFS"))
                     *penmType = RTFSTYPE_NTFS;
                 else if (IS_FS("FAT"))
