@@ -161,8 +161,6 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetAdp-src_SOURCES = \
 	$(subst $(DQUOTE),,$(VBOX_VBOXNETADP_SOURCES)) \
 	$(VBoxNetAdp-src_0_OUTDIR)/Makefile
- VBoxNetAdp-src_EXEC_SOURCES = \
-	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
  VBoxNetAdp-src_CLEAN = \
 	$(VBoxNetAdp-src_0_OUTDIR)/Makefile \
 	$(PATH_TARGET)/VBoxNetAdp-src-1.dep \

@@ -50,6 +50,11 @@ if test -z "${TARGET}"; then
     exit 1
 fi
 
+# Remove any traces of DKMS from previous installations.
+for i in vboxhost vboxdrv vboxnetflt vboxnetadp; do
+    rm -rf "/var/lib/dkms/${i}"*
+done
+
 # Install runlevel scripts and systemd unit files
 install_init_script "${TARGET}/vboxdrv.sh" vboxdrv
 install_init_script "${TARGET}/vboxballoonctrl-service.sh" vboxballoonctrl-service

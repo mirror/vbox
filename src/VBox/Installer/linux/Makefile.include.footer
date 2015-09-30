@@ -87,7 +87,6 @@ install: $(MODULE)
 
 endif # eq($(MAKECMDGOALS),clean)
 
-# important: Don't remove Module.symvers! DKMS does 'make clean' before building ...
 clean:
 	for f in $(MOD_CLEAN); do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .$(MOD_NAME)* .tmp_ver* $(MOD_NAME).* Modules.symvers modules.order

@@ -697,8 +697,6 @@ if1of ($(KBUILD_TARGET), linux freebsd)
  	$(vboxdrv-mod_0_OUTDIR)/Makefile
  vboxdrv-mod_EXEC_SOURCES  = \
  	$(subst $(DQUOTE),,$(FILES_VBOXDRV_BIN))
- vboxdrv-mod_EXEC_SOURCES.linux = \
- 	$(PATH_ROOT)/src/VBox/HostDrivers/$(KBUILD_TARGET)/do_Module.symvers
  vboxdrv-mod_CLEAN   = \
  	$(vboxdrv-mod_0_OUTDIR)/Makefile \
  	$(PATH_TARGET)/vboxdrv-mod-1.dep \

@@ -17,7 +17,8 @@
 
 ifneq ($(KBUILD_EXTMOD),)
 
-# DKMS
+# Building from kBuild (make -C <kernel_directory> M=`pwd`).
+# KBUILD_EXTMOD is set to $(M) in this case.
 
 obj-m = vboxguest/ vboxsf/ vboxvideo/
 

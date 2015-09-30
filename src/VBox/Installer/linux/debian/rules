@@ -292,8 +292,7 @@ endif
 	dh_gencontrol -- \
 	  -Valsa=$(if $(HEADLESS),,libasound2) \
 	  -Vpulse=$(if $(HEADLESS),,libpulse0) \
-	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
-	  -Vdkms=$(if $(filter _Debian_lenny,$(debrel)),,dkms)
+	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0)
 	dh_md5sums
 	dh_builddeb --destdir $(pkgdir) -- \
 	  $(if $(filter _Ubuntu_lucid,$(debrel)),,-Zxz)

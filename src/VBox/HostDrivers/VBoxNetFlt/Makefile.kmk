@@ -510,8 +510,6 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetFlt-src_SOURCES = \
 	$(subst $(DQUOTE),,$(VBOX_VBOXNETFLT_SOURCES)) \
 	$(VBoxNetFlt-src_0_OUTDIR)/Makefile
- VBoxNetFlt-src_EXEC_SOURCES = \
-	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
  VBoxNetFlt-src_CLEAN   = \
 	$(VBoxNetFlt-src_0_OUTDIR)/Makefile \
 	$(PATH_TARGET)/VBoxNetFlt-src-1.dep \

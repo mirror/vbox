@@ -276,12 +276,11 @@ restart()
 # from the kernel as they may still be in use
 cleanup_modules()
 {
-    if [ -n "$(which dkms 2>/dev/null)" ]; then
-        begin "Removing existing VirtualBox DKMS kernel modules"
-        $DODKMS uninstall $OLDMODULES > $LOG
-        succ_msg
-    fi
-    begin "Removing existing VirtualBox non-DKMS kernel modules"
+    begin "Removing existing VirtualBox kernel modules"
+    # We no longer support DKMS, remove any leftovers.
+    for i in vboxguest vboxadd vboxsf vboxvfs vboxvideo; do
+        rm -rf "/var/lib/dkms/${i}"*
+    done
     for i in $OLDMODULES; do
         find /lib/modules -name $i\* | xargs rm 2>/dev/null
     done
@@ -294,13 +293,6 @@ setup_modules()
     # don't stop the old modules here -- they might be in use
     cleanup_modules
     begin "Building the VirtualBox Guest Additions kernel modules"
-
-    # Short cut out if a dkms build succeeds
-    if [ -n "$(which dkms 2>/dev/null)" ] &&
-       $DODKMS install vboxguest $INSTALL_VER >> $LOG 2>&1; then
-        succ_msg
-        return 0
-    fi
 
     test_for_gcc_and_make
     test_sane_kernel_dir
@@ -423,9 +415,7 @@ setup()
 
     MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
-    DODKMS="$MODULE_SRC/do_dkms"
     chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
-    chcon -t bin_t "$DODKMS"     > /dev/null 2>&1
 
     setup_modules
     mod_succ="$?"
@@ -446,9 +436,6 @@ cleanup()
       . $config
       test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
         fail "Configuration file $config not complete"
-      DODKMS="$INSTALL_DIR/src/vboxguest-$INSTALL_VER/do_dkms"
-    elif test -x ./do_dkms; then  # Executing as part of the installer...
-      DODKMS=./do_dkms
     else
       fail "Configuration file $config not found"
     fi

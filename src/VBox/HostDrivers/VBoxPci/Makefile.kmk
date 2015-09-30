@@ -51,8 +51,6 @@ if1of ($(KBUILD_TARGET), linux)
  VBoxPci-src_SOURCES    = \
 	$(subst $(DQUOTE),,$(VBOX_VBOXPCI_SOURCES)) \
  	$(VBoxPci-src_0_OUTDIR)/Makefile
- VBoxPci-src_EXEC_SOURCES = \
- 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
  VBoxPci-src_CLEAN      = \
  	$(VBoxPci-src_0_OUTDIR)/Makefile \
  	$(PATH_TARGET)/VBoxPciSrc-src-1.dep \

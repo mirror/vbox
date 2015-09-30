@@ -42,7 +42,6 @@ PREV_INSTALLATION=""
 PYTHON="_PYTHON_"
 ACTION=""
 SELF=$1
-DKMS=`which dkms 2> /dev/null`
 RC_SCRIPT=0
 if [ -n "$HARDENED" ]; then
     VBOXDRV_MODE=0600
@@ -215,12 +214,6 @@ if [ "$ACTION" = "install" ]; then
     fi
 
     # Remove previous installation
-    if [ ! "$VERSION" = "$INSTALL_VER" -a ! "$BUILD_MODULE" = "true" -a -n "$DKMS" ]
-    then
-        # Not doing this can confuse dkms
-        info "Rebuilding the kernel module after version change"
-        BUILD_MODULE=true
-    fi
     test "${BUILD_MODULE}" = true || VBOX_DONT_REMOVE_OLD_MODULES=1
 
     if [ -n "$PREV_INSTALLATION" ]; then

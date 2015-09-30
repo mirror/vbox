@@ -31,8 +31,7 @@ vboxvideo_drm-mod_INST         = $(INST_ADDITIONS)src/vboxvideo/
 vboxvideo_drm-mod_SOURCES      = \
 	$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_NOBIN))
 vboxvideo_drm-mod_EXEC_SOURCES = \
-	$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_BIN)) \
-	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
+	$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_BIN))
 
 
 #

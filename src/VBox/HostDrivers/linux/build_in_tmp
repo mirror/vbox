@@ -2,7 +2,7 @@
 
 #
 # Script to build a kernel module in /tmp. Useful if the module sources
-# are installed in read-only directory. Not for DKMS!
+# are installed in read-only directory.
 #
 # Copyright (C) 2007-2015 Oracle Corporation
 #

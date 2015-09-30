@@ -21,27 +21,11 @@ include $(KBUILD_PATH)/subheader.kmk
 INSTALLS += HostDrivers-scripts
 HostDrivers-scripts_INST        = $(INST_DIST)
 HostDrivers-scripts_SOURCES     = \
-	Makefile=>src/Makefile \
-	$(HostDrivers-scripts_0_OUTDIR)/dkms.conf=>src/dkms.conf
+	Makefile=>src/Makefile
 HostDrivers-scripts_EXEC_SOURCES = \
 	loadall.sh \
 	load.sh \
-	do_dkms=>src/do_dkms \
 	build_in_tmp=>src/build_in_tmp
-HostDrivers-scripts_CLEAN       = \
-	$(HostDrivers-scripts_0_OUTDIR)/dkms.conf
-
-$$(HostDrivers-scripts_0_OUTDIR)/dkms.conf: \
-		$(PATH_SUB_CURRENT)/dkms.conf \
-		$(VBOX_VERSION_STAMP) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) \
-		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
-		-e "s;_OMIT_VBOXNETFLT_;$(if $(VBOX_WITH_NETFLT),,#);g" \
-		-e "s;_OMIT_VBOXNETADP_;$(if $(VBOX_WITH_NETADP),,#);g" \
-		-e "s;_OMIT_VBOXPCI_;$(if $(VBOX_WITH_PCI_PASSTHROUGH),,#);g" \
-		--output $@ $<
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

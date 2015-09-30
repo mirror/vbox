@@ -26,13 +26,12 @@
 # Short-Description: VirtualBox Linux kernel module
 ### END INIT INFO
 
-## @todo get rid of the autogeneration, perhaps write "version" and "group" to
+## @todo get rid of the autogeneration, perhaps write "group" to
 ##       a configuration file in /etc
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
-VERSION=%VERSION%
 MODPROBE=/sbin/modprobe
 SCRIPTNAME=vboxdrv
 
@@ -53,7 +52,6 @@ else
     MODULE_SRC="/usr/share/virtualbox/src/vboxhost"
 fi
 BUILDINTMP="$MODULE_SRC/build_in_tmp"
-DODKMS="$MODULE_SRC/do_dkms"
 
 # silently exit if the package was uninstalled but not purged,
 # applies to Debian packages only (but shouldn't hurt elsewhere)
@@ -235,12 +233,6 @@ stop_vms()
 setup()
 {
     stop
-    DKMS=`which dkms 2>/dev/null`
-    if [ -n "$DKMS" ]; then
-      begin_msg "Uninstalling old VirtualBox DKMS kernel modules"
-      $DODKMS uninstall vboxhost vboxdrv vboxnetflt vboxnetadp > $LOG
-      succ_msg
-    fi
     if find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|grep -q vboxpci; then
         begin_msg "Removing old VirtualBox pci kernel module"
         find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|xargs rm -f 2>/dev/null
@@ -261,39 +253,30 @@ setup()
         find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
     fi
-    if [ -n "$DKMS" ]; then
-      begin_msg "Trying to register the VirtualBox kernel modules using DKMS"
-      if ! $DODKMS install vboxhost $VERSION >> $LOG; then
-        fail_msg "Failed, trying without DKMS"
-        DKMS=""
-      fi
+    begin_msg "Recompiling VirtualBox kernel modules"
+    if ! $BUILDINTMP \
+        --save-module-symvers /tmp/vboxdrv-Module.symvers \
+        --module-source "$MODULE_SRC/vboxdrv" \
+        --no-print-directory install >> $LOG 2>&1; then
+        failure "Look at $LOG to find out what went wrong"
     fi
-    if [ -z "$DKMS" ]; then
-      begin_msg "Recompiling VirtualBox kernel modules"
-      if ! $BUILDINTMP \
-          --save-module-symvers /tmp/vboxdrv-Module.symvers \
-          --module-source "$MODULE_SRC/vboxdrv" \
-          --no-print-directory install >> $LOG 2>&1; then
-          failure "Look at $LOG to find out what went wrong"
-      fi
-      if ! $BUILDINTMP \
-          --use-module-symvers /tmp/vboxdrv-Module.symvers \
-          --module-source "$MODULE_SRC/vboxnetflt" \
-          --no-print-directory install >> $LOG 2>&1; then
-          failure "Look at $LOG to find out what went wrong"
-      fi
-      if ! $BUILDINTMP \
-          --use-module-symvers /tmp/vboxdrv-Module.symvers \
-          --module-source "$MODULE_SRC/vboxnetadp" \
-          --no-print-directory install >> $LOG 2>&1; then
-          failure "Look at $LOG to find out what went wrong"
-      fi
-      if ! $BUILDINTMP \
-          --use-module-symvers /tmp/vboxdrv-Module.symvers \
-          --module-source "$MODULE_SRC/vboxpci" \
-          --no-print-directory install >> $LOG 2>&1; then
-          failure "Look at $LOG to find out what went wrong"
-      fi
+    if ! $BUILDINTMP \
+        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+        --module-source "$MODULE_SRC/vboxnetflt" \
+        --no-print-directory install >> $LOG 2>&1; then
+        failure "Look at $LOG to find out what went wrong"
+    fi
+    if ! $BUILDINTMP \
+        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+        --module-source "$MODULE_SRC/vboxnetadp" \
+        --no-print-directory install >> $LOG 2>&1; then
+        failure "Look at $LOG to find out what went wrong"
+    fi
+    if ! $BUILDINTMP \
+        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+        --module-source "$MODULE_SRC/vboxpci" \
+        --no-print-directory install >> $LOG 2>&1; then
+        failure "Look at $LOG to find out what went wrong"
     fi
     rm -f /etc/vbox/module_not_compiled
     succ_msg

@@ -17,7 +17,8 @@
 
 ifneq ($(KBUILD_EXTMOD),)
 
-# DKMS
+# Building from kBuild (make -C <kernel_directory> M=`pwd`).
+# KBUILD_EXTMOD is set to $(M) in this case.
 
 obj-m = vboxdrv/
 ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxnetflt/Makefile),)
@@ -31,7 +32,7 @@ ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxpci/Makefile),)
 endif
 else # ! KBUILD_EXTMOD
 
-# convenience Makefile without DKMS
+# convenience Makefile without KBUILD_EXTMOD
 
 KBUILD_VERBOSE =
 

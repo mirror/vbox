@@ -119,11 +119,9 @@ if [ $BUILD_MODULES -eq 1 ]; then
 fi
 
 # Install and start the new service scripts.
-PRERM_DKMS=
-test "${REGISTER_MODULES}" = 1 && PRERM_DKMS="--dkms %VER%"
 POSTINST_START=--start
 test "${INSTALL_NO_VBOXDRV}" = 1 && POSTINST_START=
-/usr/lib/virtualbox/prerm-common.sh ${PRERM_DKMS} || true
+/usr/lib/virtualbox/prerm-common.sh || true
 /usr/lib/virtualbox/postinst-common.sh /usr/lib/virtualbox "${POSTINST_START}" > /dev/null || true
 
 exit 0

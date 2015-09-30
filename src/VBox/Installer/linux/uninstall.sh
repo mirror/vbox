@@ -29,7 +29,6 @@ fi
 
 check_root
 
-[ -z "$DKMS"       ]    && DKMS=`which dkms 2> /dev/null`
 [ -z "$CONFIG_DIR" ]    && CONFIG_DIR="/etc/vbox"
 [ -z "$CONFIG" ]        && CONFIG="vbox.cfg"
 [ -z "$CONFIG_FILES" ]  && CONFIG_FILES="filelist"
@@ -49,13 +48,9 @@ fi
 
 # Do pre-removal common to all installer types, currently service script
 # clean-up.
-test "${BUILD_MODULE}" = true && DO_DKMS="--dkms ${INSTALL_VER}"
-`dirname $0`/prerm-common.sh ${DO_DKMS} || exit 1  # Arguments intentionally not quoted.
+`dirname $0`/prerm-common.sh || exit 1  # Arguments intentionally not quoted.
 
 # Remove kernel module installed
-if [ -n "$DKMS" ]; then
-    $DKMS remove -m vboxhost -v $INSTALL_VER --all > /dev/null 2>&1
-fi
 if [ -z "$VBOX_DONT_REMOVE_OLD_MODULES" ]; then
     find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2> /dev/null
     find /lib/modules/`uname -r` -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2> /dev/null
