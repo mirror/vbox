@@ -1763,18 +1763,15 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
     AssertPtrReturn(pSessionStartupInfo, VERR_INVALID_POINTER);
     /* ppSessionThread is optional. */
 
-#ifdef DEBUG
-    PVBOXSERVICECTRLSESSIONTHREAD pSessionCur;
+#ifdef VBOX_STRICT
     /* Check for existing session in debug mode. Should never happen because of
      * Main consistency. */
+    PVBOXSERVICECTRLSESSIONTHREAD pSessionCur;
     RTListForEach(pList, pSessionCur, VBOXSERVICECTRLSESSIONTHREAD, Node)
     {
-        if (pSessionCur->StartupInfo.uSessionID == pSessionStartupInfo->uSessionID)
-        {
-            AssertMsgFailed(("Guest session thread ID=%RU32 (%p) already exists when it should not\n",
-                             pSessionCur->StartupInfo.uSessionID, pSessionCur));
-            return VERR_ALREADY_EXISTS;
-        }
+        AssertMsgReturn(pSessionCur->StartupInfo.uSessionID != pSessionStartupInfo->uSessionID,
+                        ("Guest session thread ID=%RU32 (%p) already exists when it should not\n",
+                         pSessionCur->StartupInfo.uSessionID, pSessionCur), VERR_ALREADY_EXISTS);
     }
 #endif
     int rc = VINF_SUCCESS;
@@ -1784,13 +1781,15 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
     if (s_uCtrlSessionThread++ == UINT32_MAX)
         s_uCtrlSessionThread = 0; /* Wrap around to not let IPRT freak out. */
 
+    /*
+     * Allocate and initialize the session thread structure.
+     */
     PVBOXSERVICECTRLSESSIONTHREAD pSessionThread =
         (PVBOXSERVICECTRLSESSIONTHREAD)RTMemAllocZ(sizeof(VBOXSERVICECTRLSESSIONTHREAD));
     if (pSessionThread)
     {
         /* Copy over session startup info. */
-        memcpy(&pSessionThread->StartupInfo, pSessionStartupInfo,
-               sizeof(VBOXSERVICECTRLSESSIONSTARTUPINFO));
+        memcpy(&pSessionThread->StartupInfo, pSessionStartupInfo, sizeof(VBOXSERVICECTRLSESSIONSTARTUPINFO));
 
         pSessionThread->fShutdown = false;
         pSessionThread->fStarted  = false;
@@ -1804,14 +1803,14 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
             Assert(!strlen(pSessionThread->StartupInfo.szPassword));
             Assert(!strlen(pSessionThread->StartupInfo.szDomain));
 
-            VBoxServiceVerbose(3, "New anonymous guest session ID=%RU32 created, uFlags=%x, using protocol %RU32\n",
+            VBoxServiceVerbose(3, "New anonymous guest session ID=%RU32 created, fFlags=%x, using protocol %RU32\n",
                                pSessionStartupInfo->uSessionID,
                                pSessionStartupInfo->fFlags,
                                pSessionStartupInfo->uProtocol);
         }
         else
         {
-            VBoxServiceVerbose(3, "Spawning new guest session ID=%RU32, szUser=%s, szPassword=%s, szDomain=%s, uFlags=%x, using protocol %RU32\n",
+            VBoxServiceVerbose(3, "Spawning new guest session ID=%RU32, szUser=%s, szPassword=%s, szDomain=%s, fFlags=%x, using protocol %RU32\n",
                                pSessionStartupInfo->uSessionID,
                                pSessionStartupInfo->szUser,
 #ifdef DEBUG
@@ -1825,10 +1824,12 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
         }
 
         rc = RTCritSectInit(&pSessionThread->CritSect);
-        AssertRC(rc);
+        AssertRC(rc); /* We'll check this again further down, right... */
 
+/** @todo r=bird: split function here, that would simplify failure cleanup... */
         /*
          * Spawn a child process for doing the actual session handling.
+         * Start by assembling the argument list.
          */
         char szExeName[RTPATH_MAX];
         char *pszExeName = RTProcGetExecutablePath(szExeName, sizeof(szExeName));
@@ -1861,87 +1862,18 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
             }
 
             /* Add same verbose flags as parent process. */
-/** @todo r=bird: how does this stuff work when g_cVerbosity = 0?  Also, why do you need rc2 here?  Do we actually care about the RC anyway? */
-            int rc2 = VINF_SUCCESS;
-            char szParmVerbose[32] = { 0 };
-            for (int i = 0; i < g_cVerbosity && RT_SUCCESS(rc2); i++)
+            char szParmVerbose[32];
+            if (g_cVerbosity > 0)
             {
-                if (i == 0)
-                    rc2 = RTStrCat(szParmVerbose, sizeof(szParmVerbose), "-");
-                if (RT_FAILURE(rc2))
-                    break;
-                rc2 = RTStrCat(szParmVerbose, sizeof(szParmVerbose), "v");
-            }
-            if (RT_SUCCESS(rc2))
+                unsigned cVs = RT_MIN(g_cVerbosity, RT_ELEMENTS(szParmVerbose) - 2);
+                szParmVerbose[0] = '-';
+                memset(&szParmVerbose[1], 'v', cVs);
+                szParmVerbose[1 + cVs] = '\0';
                 apszArgs[idxArg++] = szParmVerbose;
-
-/** @todo r=bird: As I already mentioned in the review comment you removed in
- * r102561, the log file name handling is rather mangled.  You have a 4K stack
- * buffer, but you insist on doing 2-5 heap allocations when constructing the
- * name.  Either you do it in the stack buffer or you do it on the heap.
- *
- * Now, if you make sure szParmLogFile is, say, 128 byte larger than
- * g_szLogFile, you won't need to consider overflows any more.  You can easily
- * construct the whole thing with a strcpy, RTPathStripSuffix and a sprintf.
- */
+            }
 
             /* Add log file handling. Each session will have an own
              * log file, naming based on the parent log file. */
-#if 1
-            char szParmLogFile[RTPATH_MAX];
-            if (   RT_SUCCESS(rc2)
-                && strlen(g_szLogFile))
-            {
-                char *pszLogFile = RTStrDup(g_szLogFile);
-                if (pszLogFile)
-                {
-                    char *pszLogSuff = NULL;
-                    if (RTPathHasSuffix(pszLogFile))
-                        pszLogSuff = RTStrDup(RTPathSuffix(pszLogFile));
-                    RTPathStripSuffix(pszLogFile);
-                    char *pszLogNewSuffix;
-#ifndef DEBUG
-                    if (RTStrAPrintf(&pszLogNewSuffix, "-%RU32-%s",
-                                     pSessionStartupInfo->uSessionID,
-                                     pSessionStartupInfo->szUser) < 0)
-                    {
-                        rc2 = VERR_NO_MEMORY;
-                    }
-#else /* DEBUG */
-                    /* Include the session thread ID in the log file name. */
-                    if (RTStrAPrintf(&pszLogNewSuffix, "-%RU32-%RU32-%s",
-                                     pSessionStartupInfo->uSessionID,
-                                     s_uCtrlSessionThread,
-                                     pSessionStartupInfo->szUser) < 0)
-                    {
-                        rc2 = VERR_NO_MEMORY;
-                    }
-#endif /* DEBUG */
-                    else
-                    {
-                        rc2 = RTStrAAppend(&pszLogFile, pszLogNewSuffix);
-                        if (RT_SUCCESS(rc2) && pszLogSuff)
-                            rc2 = RTStrAAppend(&pszLogFile, pszLogSuff);
-                        if (RT_SUCCESS(rc2))
-                            RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "--logfile=%s", pszLogFile);
-
-                        RTStrFree(pszLogNewSuffix);
-                    }
-                    if (RT_FAILURE(rc2))
-                        VBoxServiceError("Error building session logfile string for session %RU32 (user %s), rc=%Rrc\n",
-                                         pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, rc2);
-                    if (pszLogSuff)
-                        RTStrFree(pszLogSuff);
-                    RTStrFree(pszLogFile);
-                }
-                if (RT_SUCCESS(rc2))
-                    apszArgs[idxArg++] = szParmLogFile;
-
-                rc = rc2;
-            }
-            else if (RT_FAILURE(rc2))
-                rc = rc2;
-#else
             char szParmLogFile[sizeof(g_szLogFile) + 128];
             if (g_szLogFile)
             {
@@ -1960,7 +1892,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 apszArgs[idxArg++] = "--logfile";
                 apszArgs[idxArg++] = szParmLogFile;
             }
-#endif /* alternative version */
+
 #ifdef DEBUG
             VBoxServiceVerbose(4, "Argv building rc=%Rrc, session flags=%x\n", rc, g_Session.fFlags);
             if (RT_SUCCESS(rc))
@@ -1977,56 +1909,19 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
             if (g_cVerbosity > 3)
             {
                 VBoxServiceVerbose(4, "Spawning parameters:\n");
-
-                idxArg = 0;
-                while (apszArgs[idxArg])
-                    VBoxServiceVerbose(4, "\t%s\n", apszArgs[idxArg++]);
+                for (idxArg = 0; apszArgs[idxArg]; idxArg++)
+                    VBoxServiceVerbose(4, "\t%s\n", apszArgs[idxArg]);
             }
 
-            uint32_t uProcFlags = RTPROC_FLAGS_SERVICE
-#ifdef RT_OS_WINDOWS
-                                /* Make sure to also load the profile data on a Windows guest. */
-                                | RTPROC_FLAGS_PROFILE       /** @todo Not implemented for non-Windows yet. */
-#endif
-                                | RTPROC_FLAGS_HIDDEN;       /** @todo More flags from startup info? */
             /*
-             * Create the session process' environment block.
+             * Configure standard handles and finally create the process.
              */
-            if (RT_SUCCESS(rc))
-            {
-                if (g_cVerbosity > 3)
-                {
-                    /** @todo At the moment a session process does not have the ability to use the
-                     *        per-session environment variables itself, only the session's guest
-                     *        processes do so. Implement that later, also needs tweaking of
-                     *        VbglR3GuestCtrlSessionGetOpen(). */
-                    RTENV hEnv = NIL_RTENV;
-                    rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
-                    if (RT_SUCCESS(rc))
-                    {
-                        VBoxServiceVerbose(4, "Environment variables:\n");
-
-                        uint32_t cVars = RTEnvCountEx(hEnv);
-                        for (uint32_t iVar = 0; iVar < cVars; iVar++)
-                        {
-                            char szVar[_1K];
-                            char szValue[_16K];
-                            rc2 = RTEnvGetByIndexEx(hEnv, iVar, szVar, sizeof(szVar), szValue, sizeof(szValue));
-                            if (RT_SUCCESS(rc2))
-                                VBoxServiceVerbose(4, "\t%s=%s\n", szVar, szValue);
-                            else if (rc2 == VERR_BUFFER_OVERFLOW)
-                                VBoxServiceVerbose(4, "\t%s=%s [VERR_BUFFER_OVERFLOW]\n", szVar, szValue);
-                            else
-                            {
-                                VBoxServiceVerbose(4, "\tUnable to enumerate environment variable #%RU32: %Rrc\n", iVar, rc2);
-                                /* Keep going. */
-                            }
-                        }
-
-                        RTEnvDestroy(hEnv);
-                    }
-                }
-            }
+            uint32_t fProcCreate = RTPROC_FLAGS_SERVICE
+#ifdef RT_OS_WINDOWS    /** @todo do on unix too! */
+                                 /* Make sure to also load the profile data on a Windows guest. */
+                                 | RTPROC_FLAGS_PROFILE
+#endif
+                                 | RTPROC_FLAGS_HIDDEN;       /** @todo More flags from startup info? */
 
 #if 0 /* Pipe handling not needed (yet). */
             /* Setup pipes. */
@@ -2055,7 +1950,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                     }
 
                     if (RT_SUCCESS(rc))
-                        rc = RTProcCreateEx(pszExeName, apszArgs, hEnv, uProcFlags,
+                        rc = RTProcCreateEx(pszExeName, apszArgs, hEnv, fProcCreate,
                                             pSession->StdIn.phChild, pSession->StdOut.phChild, pSession->StdErr.phChild,
                                             !fAnonymous ? pSession->StartupInfo.szUser : NULL,
                                             !fAnonymous ? pSession->StartupInfo.szPassword : NULL,
@@ -2089,7 +1984,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 {
                     hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
 
-                    rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, uProcFlags,
+                    rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
                                         &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                         !fAnonymous ? pSessionThread->StartupInfo.szUser : NULL,
                                         !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
@@ -2107,13 +2002,17 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
 
         if (RT_SUCCESS(rc))
         {
-            /* Start session thread. */
+            /*
+             * Start session the thread.
+             */
             rc = RTThreadCreateF(&pSessionThread->Thread, gstcntlSessionThread,
                                  pSessionThread /*pvUser*/, 0 /*cbStack*/,
                                  RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "sess%u", s_uCtrlSessionThread);
             if (RT_FAILURE(rc))
             {
                 VBoxServiceError("Creating session thread failed, rc=%Rrc\n", rc);
+                /** @todo r=bird: what about the process we created? Perhaps a
+                 *        RTProcTerminate would be in order? */
             }
             else
             {
@@ -2144,6 +2043,8 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
 
         if (RT_FAILURE(rc))
         {
+            /** @todo r=bird: what about deleting the critsect? You're leaking event
+             *        semaphore handles here. */
             RTMemFree(pSessionThread);
         }
     }
