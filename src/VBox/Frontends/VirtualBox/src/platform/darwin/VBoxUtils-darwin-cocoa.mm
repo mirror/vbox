@@ -166,6 +166,23 @@ void darwinSetHidesAllTitleButtonsImpl(NativeNSWindowRef pWindow)
     }
 }
 
+void darwinSetHideTitleButtonImpl(NativeNSWindowRef pWindow, CocoaWindowButtonType buttonType)
+{
+    NSButton *pButton = Nil;
+    switch (buttonType)
+    {
+        case CocoaWindowButtonType_Close:            pButton = [pWindow standardWindowButton:NSWindowCloseButton]; break;
+        case CocoaWindowButtonType_Miniaturize:      pButton = [pWindow standardWindowButton:NSWindowMiniaturizeButton]; break;
+        case CocoaWindowButtonType_Zoom:             pButton = [pWindow standardWindowButton:NSWindowZoomButton]; break;
+        case CocoaWindowButtonType_Toolbar:          pButton = [pWindow standardWindowButton:NSWindowToolbarButton]; break;
+        case CocoaWindowButtonType_DocumentIcon:     pButton = [pWindow standardWindowButton:NSWindowDocumentIconButton]; break;
+        case CocoaWindowButtonType_DocumentVersions: /*pButton = [pWindow standardWindowButton:NSWindowDocumentVersionsButton];*/ break;
+        case CocoaWindowButtonType_FullScreen:       /*pButton = [pWindow standardWindowButton:NSWindowFullScreenButton];*/ break;
+    }
+    if (pButton != Nil)
+        [pButton setHidden: YES];
+}
+
 void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnabled)
 {
     if (fEnabled)

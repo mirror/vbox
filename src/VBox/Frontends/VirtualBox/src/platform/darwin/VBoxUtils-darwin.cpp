@@ -78,6 +78,11 @@ void darwinSetHidesAllTitleButtons(QWidget *pWidget)
 #endif /* !QT_MAC_USE_COCOA */
 }
 
+void darwinSetHideTitleButton(QWidget *pWidget, CocoaWindowButtonType buttonType)
+{
+    ::darwinSetHideTitleButtonImpl(::darwinToNativeWindow(pWidget), buttonType);
+}
+
 void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled)
 {
     ::darwinSetShowsWindowTransparentImpl(::darwinToNativeWindow(pWidget), fEnabled);

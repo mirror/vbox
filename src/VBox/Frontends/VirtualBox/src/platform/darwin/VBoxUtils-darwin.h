@@ -37,6 +37,18 @@ class QPixmap;
 class QToolBar;
 class QWidget;
 
+/** Cocoa window button types. */
+enum CocoaWindowButtonType
+{
+    CocoaWindowButtonType_Close,            // Since OS X 10.2
+    CocoaWindowButtonType_Miniaturize,      // Since OS X 10.2
+    CocoaWindowButtonType_Zoom,             // Since OS X 10.2
+    CocoaWindowButtonType_Toolbar,          // Since OS X 10.2
+    CocoaWindowButtonType_DocumentIcon,     // Since OS X 10.2
+    CocoaWindowButtonType_DocumentVersions, // Since OS X 10.7
+    CocoaWindowButtonType_FullScreen        // Since OS X 10.7
+};
+
 RT_C_DECLS_BEGIN
 
 /********************************************************************************
@@ -57,6 +69,7 @@ QString darwinFromNativeString(NativeNSStringRef pString);
 void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled);
 void darwinSetShowsResizeIndicatorImpl(NativeNSWindowRef pWindow, bool fEnabled);
 void darwinSetHidesAllTitleButtonsImpl(NativeNSWindowRef pWindow);
+void darwinSetHideTitleButtonImpl(NativeNSWindowRef pWindow, CocoaWindowButtonType buttonType);
 void darwinLabelWindow(NativeNSWindowRef pWindow, NativeNSImageRef pImage, bool fCenter);
 void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnabled);
 void darwinSetWindowHasShadow(NativeNSWindowRef pWindow, bool fEnabled);
@@ -227,6 +240,7 @@ void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool fEnabled);
 void darwinLabelWindow(QWidget *pWidget, QPixmap *pPixmap, bool fCenter);
 void darwinSetShowsResizeIndicator(QWidget *pWidget, bool fEnabled);
 void darwinSetHidesAllTitleButtons(QWidget *pWidget);
+void darwinSetHideTitleButton(QWidget *pWidget, CocoaWindowButtonType buttonType);
 void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled);
 void darwinSetWindowHasShadow(QWidget *pWidget, bool fEnabled);
 void darwinSetDockIconMenu(QMenu *pMenu);
