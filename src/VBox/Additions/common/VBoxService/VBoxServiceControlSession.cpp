@@ -1833,7 +1833,7 @@ static int vgsvcGstCntlSessionThreadCreateProcess(const PVBOXSERVICECTRLSESSIONS
         /* Add log file handling. Each session will have an own
          * log file, naming based on the parent log file. */
         char szParmLogFile[sizeof(g_szLogFile) + 128];
-        if (g_szLogFile)
+        if (g_szLogFile[0])
         {
             const char *pszSuffix = RTPathSuffix(g_szLogFile);
             if (!pszSuffix)
