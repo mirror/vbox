@@ -45,7 +45,7 @@ ALIASES                += \
 ALIASES                += \
     callback_method_impl{2}="\2. \
 \
-Implements the callback \link \1 \1 "
+Implements the callback \link \1 \1 \endlink "
 
 # The following is for Global Configuration options.
 ALIASES                += \
