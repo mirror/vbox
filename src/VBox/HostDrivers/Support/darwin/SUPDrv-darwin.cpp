@@ -1621,11 +1621,9 @@ bool org_virtualbox_SupDrvClient::initWithTask(task_t OwningTask, void *pvSecuri
 
     if (u32Type != SUP_DARWIN_IOSERVICE_COOKIE)
     {
-        LogRel(("org_virtualbox_SupDrvClient::initWithTask: Bad cookie %#x (%s)\n", u32Type, pszProcName));
+        LogRelMax(10,("org_virtualbox_SupDrvClient::initWithTask: Bad cookie %#x (%s)\n", u32Type, pszProcName));
         return false;
     }
-    else
-        LogRel(("org_virtualbox_SupDrvClient::initWithTask: Expected cookie %#x (%s)\n", u32Type, pszProcName));
 
     if (IOUserClient::initWithTask(OwningTask, pvSecurityId , u32Type))
     {
