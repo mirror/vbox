@@ -1844,25 +1844,24 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
             char szParmThreadId[32];
             RTStrPrintf(szParmThreadId, sizeof(szParmThreadId), "--thread-id=%RU32", s_uCtrlSessionThread);
 #endif
-            char szParmUserName[GUESTPROCESS_MAX_USER_LEN + 32];
+            int idxArg = 0; /* Next index in argument vector. */
+            char const *apszArgs[24];
 
-            int iArgIdx = 0; /* Current index in argument vector. */
-            char const *papszArgs[16];
-
-            papszArgs[iArgIdx++] = pszExeName;
-            papszArgs[iArgIdx++] = "guestsession";
-            papszArgs[iArgIdx++] = szParmSessionID;
-            papszArgs[iArgIdx++] = szParmSessionProto;
+            apszArgs[idxArg++] = pszExeName;
+            apszArgs[idxArg++] = "guestsession";
+            apszArgs[idxArg++] = szParmSessionID;
+            apszArgs[idxArg++] = szParmSessionProto;
 #ifdef DEBUG
-            papszArgs[iArgIdx++] = szParmThreadId;
+            apszArgs[idxArg++] = szParmThreadId;
 #endif
             if (!fAnonymous) /* Do we need to pass a user name? */
             {
-                RTStrPrintf(szParmUserName, sizeof(szParmUserName), "--user=%s", pSessionThread->StartupInfo.szUser);
-                papszArgs[iArgIdx++] = szParmUserName;
+                apszArgs[idxArg++] = "--user";
+                apszArgs[idxArg++] = pSessionThread->StartupInfo.szUser;
             }
 
             /* Add same verbose flags as parent process. */
+/** @todo r=bird: how does this stuff work when g_cVerbosity = 0?  Also, why do you need rc2 here?  Do we actually care about the RC anyway? */
             int rc2 = VINF_SUCCESS;
             char szParmVerbose[32] = { 0 };
             for (int i = 0; i < g_cVerbosity && RT_SUCCESS(rc2); i++)
@@ -1874,10 +1873,21 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 rc2 = RTStrCat(szParmVerbose, sizeof(szParmVerbose), "v");
             }
             if (RT_SUCCESS(rc2))
-                papszArgs[iArgIdx++] = szParmVerbose;
+                apszArgs[idxArg++] = szParmVerbose;
+
+/** @todo r=bird: As I already mentioned in the review comment you removed in
+ * r102561, the log file name handling is rather mangled.  You have a 4K stack
+ * buffer, but you insist on doing 2-5 heap allocations when constructing the
+ * name.  Either you do it in the stack buffer or you do it on the heap.
+ *
+ * Now, if you make sure szParmLogFile is, say, 128 byte larger than
+ * g_szLogFile, you won't need to consider overflows any more.  You can easily
+ * construct the whole thing with a strcpy, RTPathStripSuffix and a sprintf.
+ */
 
             /* Add log file handling. Each session will have an own
              * log file, naming based on the parent log file. */
+#if 1
             char szParmLogFile[RTPATH_MAX];
             if (   RT_SUCCESS(rc2)
                 && strlen(g_szLogFile))
@@ -1925,31 +1935,52 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                     RTStrFree(pszLogFile);
                 }
                 if (RT_SUCCESS(rc2))
-                    papszArgs[iArgIdx++] = szParmLogFile;
+                    apszArgs[idxArg++] = szParmLogFile;
 
                 rc = rc2;
             }
             else if (RT_FAILURE(rc2))
                 rc = rc2;
+#else
+            char szParmLogFile[sizeof(g_szLogFile) + 128];
+            if (g_szLogFile)
+            {
+                const char *pszSuffix = RTPathSuffix(g_szLogFile);
+                if (!pszSuffix)
+                    pszSuffix = strchr(g_szLogFile, '\0');
+                size_t cchBase = pszSuffix - g_szLogFile;
+#ifndef DEBUG
+                RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%s%s",
+                            cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, pszSuffix);
+#else
+                RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%RU32-%s%s",
+                            cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, s_uCtrlSessionThread,
+                            pSessionStartupInfo->szUser, pszSuffix);
+#endif
+                apszArgs[idxArg++] = "--logfile";
+                apszArgs[idxArg++] = szParmLogFile;
+            }
+#endif /* alternative version */
 #ifdef DEBUG
             VBoxServiceVerbose(4, "Argv building rc=%Rrc, session flags=%x\n", rc, g_Session.fFlags);
             if (RT_SUCCESS(rc))
             {
                 if (g_Session.fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT)
-                    papszArgs[iArgIdx++] = "--dump-stdout";
+                    apszArgs[idxArg++] = "--dump-stdout";
                 if (g_Session.fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR)
-                    papszArgs[iArgIdx++] = "--dump-stderr";
+                    apszArgs[idxArg++] = "--dump-stderr";
             }
 #endif
-            papszArgs[iArgIdx++] = NULL;
+            apszArgs[idxArg] = NULL;
+            Assert(idxArg < RT_ELEMENTS(apszArgs));
 
             if (g_cVerbosity > 3)
             {
                 VBoxServiceVerbose(4, "Spawning parameters:\n");
 
-                iArgIdx = 0;
-                while (papszArgs[iArgIdx])
-                    VBoxServiceVerbose(4, "\t%s\n", papszArgs[iArgIdx++]);
+                idxArg = 0;
+                while (apszArgs[idxArg])
+                    VBoxServiceVerbose(4, "\t%s\n", apszArgs[idxArg++]);
             }
 
             uint32_t uProcFlags = RTPROC_FLAGS_SERVICE
@@ -2024,7 +2055,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                     }
 
                     if (RT_SUCCESS(rc))
-                        rc = RTProcCreateEx(pszExeName, papszArgs, hEnv, uProcFlags,
+                        rc = RTProcCreateEx(pszExeName, apszArgs, hEnv, uProcFlags,
                                             pSession->StdIn.phChild, pSession->StdOut.phChild, pSession->StdErr.phChild,
                                             !fAnonymous ? pSession->StartupInfo.szUser : NULL,
                                             !fAnonymous ? pSession->StartupInfo.szPassword : NULL,
@@ -2058,7 +2089,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 {
                     hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
 
-                    rc = RTProcCreateEx(pszExeName, papszArgs, RTENV_DEFAULT, uProcFlags,
+                    rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, uProcFlags,
                                         &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                         !fAnonymous ? pSessionThread->StartupInfo.szUser : NULL,
                                         !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
