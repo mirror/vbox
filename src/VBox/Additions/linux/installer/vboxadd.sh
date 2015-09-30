@@ -297,7 +297,6 @@ setup_modules()
     test_for_gcc_and_make
     test_sane_kernel_dir
 
-    echo
     begin "Building the main Guest Additions module"
     if ! $BUILDINTMP \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
@@ -403,6 +402,7 @@ extra_setup()
 # setup_script
 setup()
 {
+    begin "Building Guest Additions kernel modules" console
     if test -r $config; then
       . $config
     else
@@ -422,7 +422,7 @@ setup()
     extra_setup
     if [ "$mod_succ" -eq "0" ]; then
         if running_vboxguest || running_vboxadd; then
-            printf "You should restart your guest to make sure the new modules are actually used\n\n"
+            begin "You should restart your guest to make sure the new modules are actually used" console
         else
             start
         fi

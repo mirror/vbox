@@ -232,6 +232,7 @@ stop_vms()
 # setup_script
 setup()
 {
+    begin_msg "Building VirtualBox kernel modules" console
     stop
     if find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|grep -q vboxpci; then
         begin_msg "Removing old VirtualBox pci kernel module"

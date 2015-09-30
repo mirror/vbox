@@ -86,7 +86,7 @@ vboxaddrunning() {
 
 start() {
     if ! test -f $PIDFILE; then
-        begin "Starting VirtualBox Guest Addition service " console;
+        begin "Starting VirtualBox Guest Addition service" console;
         vboxaddrunning || {
             echo "VirtualBox Additions module not loaded!"
             exit 1
@@ -101,7 +101,7 @@ start() {
 
 stop() {
     if test -f $PIDFILE; then
-        begin "Stopping VirtualBox Guest Addition service " console;
+        begin "Stopping VirtualBox Guest Addition service" console;
         killproc $binary
         RETVAL=$?
         if ! pidof VBoxService > /dev/null 2>&1; then
