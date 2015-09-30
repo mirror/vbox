@@ -2064,7 +2064,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                        && cMsWait <= 9) /* 1023 ms */
                 {
                     RTThreadSleep(cMsWait);
-                    cLoops <<= 2;
+                    cMsWait <<= 1;
                 }
             }
             RTCritSectDelete(&pSessionThread->CritSect);
