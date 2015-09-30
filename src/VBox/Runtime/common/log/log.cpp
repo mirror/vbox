@@ -3071,7 +3071,7 @@ static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, PRTLOG
  */
 RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list va)
 {
-    RTLogLoggerV(NULL, pszFormat, args);
+    RTLogLoggerV(NULL, pszFormat, va);
 }
 RT_EXPORT_SYMBOL(RTLogPrintfV);
 
