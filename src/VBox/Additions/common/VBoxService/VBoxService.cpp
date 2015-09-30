@@ -68,7 +68,7 @@
 /** The program name (derived from argv[0]). */
 char                *g_pszProgName =  (char *)"";
 /** The current verbosity level. */
-int                  g_cVerbosity = 0;
+unsigned             g_cVerbosity = 0;
 char                 g_szLogFile[RTPATH_MAX + 128] = "";
 char                 g_szPidFile[RTPATH_MAX] = "";
 /** Logging parameters. */
@@ -372,7 +372,7 @@ RTEXITCODE VBoxServiceError(const char *pszFormat, ...)
  * @param   pszFormat   The message text.
  * @param   ...         Format arguments.
  */
-void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...)
+void VBoxServiceVerbose(unsigned iLevel, const char *pszFormat, ...)
 {
     if (iLevel <= g_cVerbosity)
     {
