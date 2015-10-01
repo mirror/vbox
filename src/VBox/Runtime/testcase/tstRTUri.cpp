@@ -35,6 +35,11 @@
 #include <iprt/mem.h>
 #include <iprt/test.h>
 
+#ifdef _DEBUG
+# ifdef RT_OS_WINDOWS
+#  include <Shlwapi.h> /* For generating the PathCreateFromUrl/UrlCreateFromPath reference on Windows. */
+# endif
+#endif
 
 /*********************************************************************************************************************************
 *   Test data                                                                                                                    *
@@ -313,18 +318,13 @@ g_apCreateFileURIs[] =
         URI_FILE_FORMAT_UNIX
     },
     {
-        "/",
-        "file:///",
+        NULL,
+        "file://",
         URI_FILE_FORMAT_UNIX
     },
     {
-        "/C:/over/ <>#%\"{}|^[]`/there",
-        "file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
-        URI_FILE_FORMAT_UNIX
-    },
-    {
-        "\\over\\ <>#%\"{}|^[]`\\there",
-        "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
+        NULL,
+        "file://",
         URI_FILE_FORMAT_WIN
     },
     {
@@ -337,9 +337,107 @@ g_apCreateFileURIs[] =
         "file:///",
         URI_FILE_FORMAT_WIN
     },
+    {
+        "/foo/bar",
+        "file:///foo/bar",
+        URI_FILE_FORMAT_UNIX
+    },
+    {
+        "\\foo\\bar",
+        "file:///foo%5Cbar",
+        URI_FILE_FORMAT_WIN
+    },
+    {
+        "C:/over/ <>#%\"{}|^[]`/there",
+        "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
+        URI_FILE_FORMAT_UNIX
+    },
+    {
+        "\\over\\ <>#%\"{}|^[]`\\there",
+        "file:///over%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
+        URI_FILE_FORMAT_WIN
+    },
+    {
+        "/usr/bin/grep",
+        "file:///usr/bin/grep",
+        URI_FILE_FORMAT_UNIX
+    },
+    {
+        "\\usr\\bin\\grep",
+        "file:///usr%5Cbin%5Cgrep",
+        URI_FILE_FORMAT_WIN
+    },
+    {
+        "/unixserver/isos/files.lst",
+        "file:///unixserver/isos/files.lst",
+        URI_FILE_FORMAT_UNIX
+    },
+    {
+        "\\winserver\\isos\\files.lst",
+        "file:///winserver%5Cisos%5Cfiles.lst",
+        URI_FILE_FORMAT_WIN
+    },
+    {
+        "/myserver/isos/files.lst",
+        "file:///myserver/isos/files.lst",
+        URI_FILE_FORMAT_UNIX
+    },
+    {
+        "\\myserver\\isos\\files.lst",
+        "file:///myserver%5Cisos%5Cfiles.lst",
+        URI_FILE_FORMAT_WIN
+    }
 };
 
-
+/**
+ * For reference, taken from output of PathCreateFromUrl/UrlCreateFromPath on Windows:
+ *
+ * #0: Path=C:\over\ <>#%"{}|^[]`\there, URL=file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere
+ *       PathCreateFromUrl: file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere -> C:\over\ <>#%"{}|^[]`\there
+ *       UrlCreateFromPath: C:\over\ <>#%"{}|^[]`\there -> file:%2F%2F%2FC:%2Fover%2F%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%2Fthere
+ * #1: Path=/over/ <>#%"{}|^[]`/there, URL=file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there
+ *       PathCreateFromUrl: file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there -> \over\ <>#%"{}|^[]`\there
+ *       UrlCreateFromPath: /over/ <>#%"{}|^[]`/there -> file:%2F%2F%2Fover%2F%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%2Fthere
+ * #2: Path=<NULL>, URL=file://
+ *       PathCreateFromUrl: file:// ->
+ *       UrlCreateFromPath: <NULL> ->
+ * #3: Path=<NULL>, URL=file://
+ *       PathCreateFromUrl: file:// ->
+ *       UrlCreateFromPath: <NULL> ->
+ * #4: Path=/, URL=file:///
+ *       PathCreateFromUrl: file:/// ->
+ *       UrlCreateFromPath: / -> file:%2F%2F%2F
+ * #5: Path=/foo/bar, URL=file:///foo/bar
+ *       PathCreateFromUrl: file:///foo/bar -> \foo\bar
+ *       UrlCreateFromPath: /foo/bar -> file:%2F%2F%2Ffoo%2Fbar
+ * #6: Path=\foo\bar, URL=file:///foo%5Cbar
+ *       PathCreateFromUrl: file:///foo%5Cbar -> \foo\bar
+ *       UrlCreateFromPath: \foo\bar -> file:%2F%2F%2Ffoo%2Fbar
+ * #7: Path=C:/over/ <>#%"{}|^[]`/there, URL=file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there
+ *       PathCreateFromUrl: file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there -> C:\over\ <>#%"{}|^[]`\there
+ *       UrlCreateFromPath: C:/over/ <>#%"{}|^[]`/there -> file:%2F%2F%2FC:%2Fover%2F%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%2Fthere
+ * #8: Path=\over\ <>#%"{}|^[]`\there, URL=file:///over%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere
+ *       PathCreateFromUrl: file:///over%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere -> \over\ <>#%"{}|^[]`\there
+ *       UrlCreateFromPath: \over\ <>#%"{}|^[]`\there -> file:%2F%2F%2Fover%2F%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%2Fthere
+ * #9: Path=/usr/bin/grep, URL=file:///usr/bin/grep
+ *       PathCreateFromUrl: file:///usr/bin/grep -> \usr\bin\grep
+ *       UrlCreateFromPath: /usr/bin/grep -> file:%2F%2F%2Fusr%2Fbin%2Fgrep
+ * #10: Path=\usr\bin\grep, URL=file:///usr%5Cbin%5Cgrep
+ *       PathCreateFromUrl: file:///usr%5Cbin%5Cgrep -> \usr\bin\grep
+ *       UrlCreateFromPath: \usr\bin\grep -> file:%2F%2F%2Fusr%2Fbin%2Fgrep
+ * #11: Path=/unixserver/isos/files.lst, URL=file:///unixserver/isos/files.lst
+ *       PathCreateFromUrl: file:///unixserver/isos/files.lst -> \unixserver\isos\files.lst
+ *       UrlCreateFromPath: /unixserver/isos/files.lst -> file:%2F%2F%2Funixserver%2Fisos%2Ffiles.lst
+ * #12: Path=\winserver\isos\files.lst, URL=file:///winserver%5Cisos%5Cfiles.lst
+ *       PathCreateFromUrl: file:///winserver%5Cisos%5Cfiles.lst -> \winserver\isos\files.lst
+ *       UrlCreateFromPath: \winserver\isos\files.lst -> file:%2F%2F%2Fwinserver%2Fisos%2Ffiles.lst
+ * #13: Path=/myserver/isos/files.lst, URL=file:///myserver/isos/files.lst
+ *       PathCreateFromUrl: file:///myserver/isos/files.lst -> \myserver\isos\files.lst
+ *       UrlCreateFromPath: /myserver/isos/files.lst -> file:%2F%2F%2Fmyserver%2Fisos%2Ffiles.lst
+ * #14: Path=\myserver\isos\files.lst, URL=file:///myserver%5Cisos%5Cfiles.lst
+ *       PathCreateFromUrl: file:///myserver%5Cisos%5Cfiles.lst -> \myserver\isos\files.lst
+ *       UrlCreateFromPath: \myserver\isos\files.lst -> file:%2F%2F%2Fmyserver%2Fisos%2Ffiles.lst
+ */
 
 static void tstCreate(size_t idxTest, const char *pszScheme, const char *pszAuthority, const char *pszPath, const char *pszQuery, const char *pszFragment, const char *pszTest)
 {
@@ -362,11 +460,11 @@ static void tstFileCreate(size_t idxTest, const char *pszPath, const char *pszTe
     char *pszResult = RTUriFileCreate(pszPath);
     if (pszTest)
     {
-        RTTESTI_CHECK_MSG_RETV(pszResult, ("#%u: Result '%s' != '%s'", idxTest, pszResult, pszTest));
-        RTTESTI_CHECK_MSG(RTStrCmp(pszResult, pszTest) == 0, ("#%u: Result '%s' != '%s'", idxTest, pszResult, pszTest));
+        RTTESTI_CHECK_MSG_RETV(pszResult, ("#%u: Result '%s' != '%s'\n", idxTest, pszResult, pszTest));
+        RTTESTI_CHECK_MSG(RTStrCmp(pszResult, pszTest) == 0, ("#%u: Result '%s' != '%s'\n", idxTest, pszResult, pszTest));
     }
     else
-        RTTESTI_CHECK_MSG(!pszResult, ("#%u: Result '%s' != '%s'", idxTest, pszResult, pszTest));
+        RTTESTI_CHECK_MSG(!pszResult, ("#%u: Result '%s' != '%s'\n", idxTest, pszResult, pszTest));
 
     if (pszResult)
         RTStrFree(pszResult);
@@ -378,11 +476,11 @@ static void tstFilePath(size_t idxTest, const char *pszUri, const char *pszTest,
     char *pszResult = RTUriFilePath(pszUri, uFormat);
     if (pszTest)
     {
-        RTTESTI_CHECK_MSG_RETV(pszResult, ("#%u: Result '%s' != '%s'", idxTest, pszResult, pszTest));
-        RTTESTI_CHECK_MSG(RTStrCmp(pszResult, pszTest) == 0, ("#%u: Result '%s' != '%s'", idxTest, pszResult, pszTest));
+        RTTESTI_CHECK_MSG_RETV(pszResult, ("#%u: Result '%s' != '%s'\n", idxTest, pszResult, pszTest));
+        RTTESTI_CHECK_MSG(RTStrCmp(pszResult, pszTest) == 0, ("#%u: Result '%s' != '%s'\n", idxTest, pszResult, pszTest));
     }
     else
-        RTTESTI_CHECK_MSG(!pszResult, ("#%u: Result '%s' != '%s'", idxTest, pszResult, pszTest));
+        RTTESTI_CHECK_MSG(!pszResult, ("#%u: Result '%s' != '%s'\n", idxTest, pszResult, pszTest));
 
     if (pszResult)
         RTStrFree(pszResult);
@@ -440,14 +538,35 @@ int main()
                                   g_aTests[i].pszQuery, g_aTests[i].pszFragment),
                       g_aTests[i].pszCreated ? g_aTests[i].pszCreated : g_aTests[i].pszUri);
 
+#ifdef _DEBUG
+# ifdef RT_OS_WINDOWS
+    /* To generate the PathCreateFromUrl/UrlCreateFromPath reference on Windows. */
+    for (size_t i = 0; i < RT_ELEMENTS(g_apCreateFileURIs); ++i)
+    {
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "#%u: Path=%s, URL=%s\n", i, g_apCreateFileURIs[i].pcszPath, g_apCreateFileURIs[i].pcszUri);
+        char szPath[255] = { 0 };
+        DWORD dw = 255;
+        PathCreateFromUrl(g_apCreateFileURIs[i].pcszUri, szPath, &dw, NULL);
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "\tPathCreateFromUrl: %s -> %s\n", g_apCreateFileURIs[i].pcszUri, szPath);
+        char szURL[255] = { 0 };
+        dw = 255;
+        UrlCreateFromPath(g_apCreateFileURIs[i].pcszPath, szURL, &dw, NULL);
+        char szURLEsc[255] = { 0 };
+        dw = 255;
+        UrlEscape(szURL, szURLEsc, &dw, URL_ESCAPE_SEGMENT_ONLY);
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "\tUrlCreateFromPath: %s -> %s\n", g_apCreateFileURIs[i].pcszPath, szURLEsc);
+    }
+# endif
+#endif
+
     /* File Uri path */
     RTTestISub("RTUriFilePath");
     for (size_t i = 0; i < RT_ELEMENTS(g_apCreateFileURIs); ++i)
-        tstFilePath(i, g_apCreateFileURIs[i].pcszUri, g_apCreateFileURIs[i].pcszPath, g_apCreateFileURIs[i].uFormat);
+        tstFilePath(i,  g_apCreateFileURIs[i].pcszUri, g_apCreateFileURIs[i].pcszPath, g_apCreateFileURIs[i].uFormat);
 
     /* File Uri creation */
     RTTestISub("RTUriFileCreate");
-    for (size_t i = 0; i < 3; ++i)
+    for (size_t i = 0; i < RT_ELEMENTS(g_apCreateFileURIs); ++i)
         tstFileCreate(i, g_apCreateFileURIs[i].pcszPath, g_apCreateFileURIs[i].pcszUri);
 
     return RTTestSummaryAndDestroy(hTest);

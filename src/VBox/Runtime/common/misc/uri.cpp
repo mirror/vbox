@@ -47,7 +47,7 @@
 
     foo://example.com:8042/over/there?name=ferret#nose
     \_/   \______________/\_________/ \_________/ \__/
-     |           |            |            |        |
+     |           |             |           |        |
   scheme     authority       path        query   fragment
      |   _____________________|__
     / \ /                        \
@@ -120,8 +120,8 @@ static char *rtUriPercentEncodeN(const char *pszString, size_t cchMax)
 
 static char *rtUriPercentDecodeN(const char *pszString, size_t cchString)
 {
-    AssertPtr(pszString);
-    Assert(strlen(pszString) >= cchString);
+    AssertPtrReturn(pszString, NULL);
+    AssertReturn(strlen(pszString) >= cchString, NULL);
 
     /*
      * The new string can only get smaller, so use the input length as a
@@ -477,7 +477,6 @@ static int rtUriParse(const char *pszUri, PRTURIPARSED pParsed)
 }
 
 
-
 RTDECL(int) RTUriParse(const char *pszUri, PRTURIPARSED pParsed)
 {
     return rtUriParse(pszUri, pParsed);
@@ -682,17 +681,29 @@ RTDECL(char *) RTUriFileCreate(const char *pszPath)
     char *pszResult = NULL;
     if (pszPath)
     {
-        /* Create the percent encoded strings and calculate the necessary uri length. */
+        /* Check if it's an UNC path. Skip any leading slashes. */
+        while (pszPath)
+        {
+            if (   *pszPath != '\\'
+                && *pszPath != '/')
+                break;
+            pszPath++;
+        }
+
+        /* Create the percent encoded strings and calculate the necessary URI length. */
         char *pszPath1 = rtUriPercentEncodeN(pszPath, RTSTR_MAX);
         if (pszPath1)
         {
+            /* Always change DOS slashes to Unix slashes. */
+            RTPathChangeToUnixSlashes(pszPath1, true); /** @todo Flags? */
+
             size_t cbSize = 7 /* file:// */ + strlen(pszPath1) + 1; /* plus zero byte */
             if (pszPath1[0] != '/')
                 ++cbSize;
             char *pszTmp = pszResult = RTStrAlloc(cbSize);
             if (pszResult)
             {
-                /* Compose the target uri string. */
+                /* Compose the target URI string. */
                 *pszTmp = '\0';
                 RTStrCatP(&pszTmp, &cbSize, "file://");
                 if (pszPath1[0] != '/')
@@ -702,6 +713,14 @@ RTDECL(char *) RTUriFileCreate(const char *pszPath)
             RTStrFree(pszPath1);
         }
     }
+    else
+    {
+        char *pszResTmp;
+        int cchRes = RTStrAPrintf(&pszResTmp, "file://");
+        if (cchRes)
+            pszResult = pszResTmp;
+    }
+
     return pszResult;
 }
 
@@ -725,33 +744,106 @@ RTDECL(char *) RTUriFileNPath(const char *pszUri, uint32_t uFormat, size_t cchMa
         uFormat = URI_FILE_FORMAT_UNIX;
 #endif
 
-    /* Check that this is a file Uri */
+    /* Check that this is a file URI. */
     if (RTStrNICmp(pszUri, RT_STR_TUPLE("file:")) != 0)
         return NULL;
 
     RTURIPARSED Parsed;
     int rc = rtUriParse(pszUri, &Parsed);
-    if (RT_SUCCESS(rc) && Parsed.cchPath)
+    if (RT_SUCCESS(rc))
     {
-        /* Special hack for DOS path like file:///c:/WINDOWS/clock.avi where we
-           have to drop the leading slash that was used to separate the authority
-           from the path. */
-        if (  uFormat == URI_FILE_FORMAT_WIN
-            && Parsed.cchPath >= 3
-            && pszUri[Parsed.offPath] == '/'
-            && pszUri[Parsed.offPath + 2] == ':'
-            && RT_C_IS_ALPHA(pszUri[Parsed.offPath + 1]) )
+        /* No path detected? Take authority as path then. */
+        if (!Parsed.cchPath)
+        {
+            Parsed.cchPath      = Parsed.cchAuthority;
+            Parsed.offPath      = Parsed.offAuthority;
+            Parsed.cchAuthority = 0;
+        }
+    }
+
+    if (   RT_SUCCESS(rc)
+        && Parsed.cchPath)
+    {
+        const char *pszPathOff = &pszUri[Parsed.offPath];
+        size_t cbResult = 0;
+
+        /* Skip the leading slash if a DOS drive letter (e.g. "C:") is detected right after it. */
+        if (   Parsed.cchPath >= 3
+            && pszPathOff[0]  == '/'        /* Leading slash. */
+            && RT_C_IS_ALPHA(pszPathOff[1]) /* Drive letter. */
+            && pszPathOff[2]  == ':')
         {
             Parsed.offPath++;
             Parsed.cchPath--;
+            pszPathOff++;
         }
 
-        char *pszPath = rtUriPercentDecodeN(&pszUri[Parsed.offPath], Parsed.cchPath);
-        if (uFormat == URI_FILE_FORMAT_UNIX)
-            return RTPathChangeToUnixSlashes(pszPath, true);
-        Assert(uFormat == URI_FILE_FORMAT_WIN);
-        return RTPathChangeToDosSlashes(pszPath, true);
+        if (uFormat == URI_FILE_FORMAT_WIN)
+        {
+            /* Authority given? */
+            if (Parsed.cchAuthority)
+            {
+                /* Include authority as part of UNC path. */
+                cbResult += 2; /* UNC slashes "\\". */
+                cbResult += Parsed.cchAuthority;
+            }
+        }
+
+        cbResult += Parsed.cchPath;
+        cbResult += 1; /* Zero termination. */
+
+        /*
+         * Compose string.
+         */
+        int rc = VINF_SUCCESS;
+        char *pszResult;
+
+        do
+        {
+            char *pszTmp = pszResult = RTStrAlloc(cbResult);
+            if (pszTmp)
+            {
+                size_t cbTmp = cbResult;
+
+                if (uFormat == URI_FILE_FORMAT_WIN)
+                {
+                    /* If an authority is given, add the required UNC prefix. */
+                    if (Parsed.cchAuthority)
+                    {
+                        rc = RTStrCatP(&pszTmp, &cbTmp, "\\\\");
+                        if (RT_SUCCESS(rc))
+                            rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offAuthority], Parsed.cchAuthority);
+                    }
+                    else
+                    {
+
+                    }
+                }
+
+                if (RT_SUCCESS(rc))
+                    rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offPath], Parsed.cchPath);
+
+                if (RT_FAILURE(rc))
+                    RTStrFree(pszResult);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+
+        } while (0);
+
+        if (RT_SUCCESS(rc))
+        {
+            AssertPtr(pszResult);
+            Assert(cbResult);
+            char *pszPath = rtUriPercentDecodeN(pszResult, cbResult - 1 /* Minus termination */);
+            RTStrFree(pszResult);
+            if (uFormat == URI_FILE_FORMAT_UNIX)
+                return RTPathChangeToUnixSlashes(pszPath, true);
+            Assert(uFormat == URI_FILE_FORMAT_WIN);
+            return RTPathChangeToDosSlashes(pszPath, true);
+        }
     }
+
     return NULL;
 }
 
