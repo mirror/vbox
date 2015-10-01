@@ -795,7 +795,6 @@ RTDECL(char *) RTUriFileNPath(const char *pszUri, uint32_t uFormat, size_t cchMa
         /*
          * Compose string.
          */
-        int rc = VINF_SUCCESS;
         char *pszResult;
 
         do
