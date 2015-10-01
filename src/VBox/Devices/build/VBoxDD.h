@@ -145,6 +145,7 @@ extern const PDMDRVREG g_DrvHostWebcam;
 extern const PDMDRVREG g_DrvChar;
 extern const PDMDRVREG g_DrvNamedPipe;
 extern const PDMDRVREG g_DrvTCP;
+extern const PDMDRVREG g_DrvUDP;
 extern const PDMDRVREG g_DrvRawFile;
 extern const PDMDRVREG g_DrvHostParallel;
 extern const PDMDRVREG g_DrvHostSerial;

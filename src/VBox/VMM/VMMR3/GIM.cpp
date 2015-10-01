@@ -71,7 +71,7 @@
 *********************************************************************************************************************************/
 static DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion, uint32_t uPass);
-static FNPGMPHYSHANDLER gimR3Mmio2WriteHandler;
+static FNPGMPHYSHANDLER  gimR3Mmio2WriteHandler;
 
 
 /**
@@ -409,12 +409,55 @@ VMMR3_INT_DECL(void) GIMR3Reset(PVM pVM)
 /**
  * Registers the GIM device with VMM.
  *
- * @param   pVM         Pointer to the VM.
- * @param   pDevIns     Pointer to the GIM device instance.
+ * @param   pVM             Pointer to the VM.
+ * @param   pDevInsR3       Pointer to the GIM device instance.
+ * @param   pDebugStream    Pointer to the GIM device debug connection, can be
+ *                          NULL.
  */
-VMMR3DECL(void) GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevIns)
+VMMR3DECL(void) GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevInsR3, PPDMISTREAM pDebugStreamR3)
 {
-    pVM->gim.s.pDevInsR3 = pDevIns;
+    pVM->gim.s.pDevInsR3 = pDevInsR3;
+    pVM->gim.s.pDebugStreamR3 = pDebugStreamR3;
+}
+
+
+/**
+ * Read data from a host debug session.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pvRead      The read buffer.
+ * @param   pcbRead     The size of the read buffer as well as where to store
+ *                      the number of bytes read.
+ * @thread  EMT.
+ */
+VMMR3_INT_DECL(int) GIMR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead)
+{
+    PPDMISTREAM pDebugStream = pVM->gim.s.pDebugStreamR3;
+    if (pDebugStream)
+        return pDebugStream->pfnRead(pDebugStream, pvRead, pcbRead);
+    return VERR_GIM_NO_DEBUG_CONNECTION;
+}
+
+
+/**
+ * Write data to a host debug session.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pvWrite     The write buffer.
+ * @param   pcbWrite    The size of the write buffer as well as where to store
+ *                      the number of bytes written.
+ * @thread  EMT.
+ */
+VMMR3_INT_DECL(int) GIMR3DebugWrite(PVM pVM, void *pvWrite, size_t *pcbWrite)
+{
+    PPDMISTREAM pDebugStream = pVM->gim.s.pDebugStreamR3;
+    if (pDebugStream)
+        return pDebugStream->pfnWrite(pDebugStream, pvWrite, pcbWrite);
+    return VERR_GIM_NO_DEBUG_CONNECTION;
 }
 
 

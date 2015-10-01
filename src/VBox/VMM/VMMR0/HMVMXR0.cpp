@@ -10152,12 +10152,13 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         AssertRCReturn(rc, rc);
 
         rc = GIMHypercall(pVCpu, pMixedCtx);
-        if (RT_SUCCESS(rc))
+        if (   rc == VINF_SUCCESS
+            || rc == VINF_GIM_R3_HYPERCALL)
         {
             /* If the hypercall changes anything other than guest general-purpose registers,
                we would need to reload the guest changed bits here before VM-reentry. */
             hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
-            return VINF_SUCCESS;
+            return rc;
         }
     }
 

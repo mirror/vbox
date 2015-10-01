@@ -338,6 +338,9 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvTCP);
     if (RT_FAILURE(rc))
         return rc;
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvUDP);
+    if (RT_FAILURE(rc))
+        return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRawFile);
     if (RT_FAILURE(rc))
         return rc;

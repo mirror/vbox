@@ -227,6 +227,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_TRANSPORT_ASYNC,
     /** TUN network transport driver group */
     LOG_GROUP_DRV_TUN,
+    /** UDP socket stream driver group. */
+    LOG_GROUP_DRV_UDP,
     /** UDP tunnet network transport driver group. */
     LOG_GROUP_DRV_UDPTUNNEL,
     /** USB Proxy driver group. */
@@ -884,6 +886,7 @@ typedef enum LOGGROUP
     "DRV_TELNETSERVER", \
     "DRV_TRANSPORT_ASYNC", \
     "DRV_TUN",      \
+    "DRV_UDP", \
     "DRV_UDPTUNNEL", \
     "DRV_USBPROXY", \
     "DRV_VBOXHDD",  \

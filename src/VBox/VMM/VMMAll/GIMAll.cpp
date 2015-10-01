@@ -87,6 +87,8 @@ VMM_INT_DECL(bool) GIMAreHypercallsEnabled(PVMCPU pVCpu)
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks Guest RIP may or may not have been incremented at this point.
  */
 VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -161,6 +163,9 @@ VMM_INT_DECL(bool) GIMShouldTrapXcptUD(PVMCPU pVCpu)
         case GIMPROVIDERID_KVM:
             return gimKvmShouldTrapXcptUD(pVCpu);
 
+        case GIMPROVIDERID_HYPERV:
+            return gimHvShouldTrapXcptUD(pVCpu);
+
         default:
             return false;
     }
@@ -184,6 +189,9 @@ VMM_INT_DECL(int) GIMXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
     {
         case GIMPROVIDERID_KVM:
             return gimKvmXcptUD(pVCpu, pCtx, pDis);
+
+        case GIMPROVIDERID_HYPERV:
+            return gimHvXcptUD(pVCpu, pCtx, pDis);
 
         default:
             return VERR_GIM_OPERATION_FAILED;

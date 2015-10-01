@@ -31,6 +31,7 @@
 #include <VBox/param.h>
 
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/pdmifs.h>
 
 /** The value used to specify that VirtualBox must use the newest
  *  implementation version of the GIM provider. */
@@ -163,7 +164,7 @@ VMMR3_INT_DECL(int)         GIMR3Init(PVM pVM);
 VMMR3_INT_DECL(int)         GIMR3InitCompleted(PVM pVM);
 VMMR3_INT_DECL(int)         GIMR3Term(PVM pVM);
 VMMR3_INT_DECL(void)        GIMR3Reset(PVM pVM);
-VMMR3DECL(void)             GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevIns);
+VMMR3DECL(void)             GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevInsR3, PPDMISTREAM pDebugStreamR3);
 VMMR3DECL(PGIMMMIO2REGION)  GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 /** @} */
 #endif /* IN_RING3 */

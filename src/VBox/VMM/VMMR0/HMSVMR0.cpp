@@ -5155,12 +5155,13 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         if (pVCpu->hm.s.fHypercallsEnabled)
         {
             rc = GIMHypercall(pVCpu, pCtx);
-            if (RT_SUCCESS(rc))
+            if (   rc == VINF_SUCCESS
+                || rc == VINF_GIM_R3_HYPERCALL)
             {
                 /* If the hypercall changes anything other than guest general-purpose registers,
                    we would need to reload the guest changed bits here before VM-reentry. */
                 hmR0SvmUpdateRip(pVCpu, pCtx, 3);
-                return VINF_SUCCESS;
+                return rc;
             }
         }
     }

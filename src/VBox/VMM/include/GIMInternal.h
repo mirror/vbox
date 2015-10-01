@@ -51,8 +51,10 @@ typedef struct GIM
     /** Alignment padding. */
     uint32_t                        u32Padding;
 
-    /** Pointer to the GIM device - ring-3 context. */
+    /** Pointer to the GIM device - R3 ptr. */
     R3PTRTYPE(PPDMDEVINS)            pDevInsR3;
+    /** Pointer to the GIM device debug stream - R3 ptr. */
+    R3PTRTYPE(PPDMISTREAM)           pDebugStreamR3;
 #if 0
     /** Pointer to the provider's ring-3 hypercall handler. */
     R3PTRTYPE(PFNGIMHYPERCALL)       pfnHypercallR3;
@@ -104,6 +106,9 @@ VMMR3_INT_DECL(int)           GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion);
 VMMR3_INT_DECL(int)           GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhysRegion);
 VMMR3_INT_DECL(int)           GIMR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION pRegion);
 VMMR3_INT_DECL(int)           GIMR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION pRegion);
+
+VMMR3_INT_DECL(int)           GIMR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead);
+VMMR3_INT_DECL(int)           GIMR3DebugWrite(PVM pVM, void *pvWrite, size_t *pcbWrite);
 #endif /* IN_RING3 */
 
 /** @} */

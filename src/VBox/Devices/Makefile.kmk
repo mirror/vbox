@@ -152,6 +152,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevFwCommon.cpp \
  	PC/DevPcArch.cpp \
 	GIMDev/GIMDev.cpp \
+	GIMDev/DrvUDP.cpp \
  	VMMDev/VMMDev.cpp \
  	$(if $(VBOX_WITH_HGCM),VMMDev/VMMDevHGCM.cpp,) \
  	VMMDev/VMMDevTesting.cpp \

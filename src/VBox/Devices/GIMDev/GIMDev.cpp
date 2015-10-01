@@ -25,6 +25,9 @@
 #include <VBox/vmm/vm.h>
 
 #include "VBoxDD.h"
+#include <iprt/uuid.h>
+
+#define GIMDEV_DEBUG_LUN                998
 
 /**
  * GIM device.
@@ -39,14 +42,39 @@ typedef struct GIMDEV
     PPDMDEVINSRC                    pDevInsRC;
     /** Alignment. */
     RTRCPTR                         Alignment0;
+
+    /** LUN\#998: The debug interface. */
+    PDMIBASE                        IDbgBase;
+    /** LUN\#998: The stream port interface. */
+    PDMISTREAM                      IDbgStreamPort;
+    /** Pointer to the attached base debug driver. */
+    R3PTRTYPE(PPDMIBASE)            pDbgDrvBase;
+    /** Pointer to the attached debug stream driver. */
+    R3PTRTYPE(PPDMISTREAM)          pDbgDrvStream;
 } GIMDEV;
 /** Pointer to the GIM device state. */
 typedef GIMDEV *PGIMDEV;
-
+AssertCompileMemberAlignment(GIMDEV, IDbgBase, 8);
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 #ifdef IN_RING3
+
+
+/* -=-=-=-=-=-=-=-=- PDMIBASE on LUN#GIMDEV_DEBUG_LUN -=-=-=-=-=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIBASE, pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) gimdevR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PGIMDEV pThis = RT_FROM_MEMBER(pInterface, GIMDEV, IDbgBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IDbgBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMISTREAM, &pThis->IDbgStreamPort);
+    return NULL;
+}
+
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
@@ -64,10 +92,36 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     pThis->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
 
     /*
+     * Attach the stream driver for the debug connection.
+     */
+    pThis->IDbgBase.pfnQueryInterface = gimdevR3QueryInterface;
+    int rc = PDMDevHlpDriverAttach(pDevIns, GIMDEV_DEBUG_LUN, &pThis->IDbgBase, &pThis->pDbgDrvBase, "GIM Debug Port");
+    if (RT_SUCCESS(rc))
+    {
+        pThis->pDbgDrvStream = PDMIBASE_QUERY_INTERFACE(pThis->pDbgDrvBase, PDMISTREAM);
+        if (pThis->pDbgDrvStream)
+            LogRel(("GIMDev: LUN#%u: Debug port configured\n", GIMDEV_DEBUG_LUN));
+        else
+            LogRel(("GIMDev: LUN#%u: No unit\n", GIMDEV_DEBUG_LUN));
+    }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    {
+        pThis->pDbgDrvBase   = NULL;
+        pThis->pDbgDrvStream = NULL;
+        LogRel(("GIMDev: LUN#%u: No debug port configured\n", GIMDEV_DEBUG_LUN));
+    }
+    else
+    {
+        AssertLogRelMsgFailed(("GIMDev: LUN#%u: Failed to attach to driver on debug port. rc=%Rrc\n", GIMDEV_DEBUG_LUN, rc));
+        /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
+        return rc;
+    }
+
+    /*
      * Register ourselves with the GIM VMM component.
      */
     PVM pVM = PDMDevHlpGetVM(pDevIns);
-    GIMR3GimDeviceRegister(pVM, pDevIns);
+    GIMR3GimDeviceRegister(pVM, pDevIns, pThis->pDbgDrvStream);
 
     /*
      * Get the MMIO2 regions from the GIM provider.
@@ -84,7 +138,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         for (uint32_t i = 0; i < cRegions; i++, pCur++)
         {
             Assert(!pCur->fRegistered);
-            int rc = PDMDevHlpMMIO2Register(pDevIns, pCur->iRegion, pCur->cbRegion, 0 /* fFlags */, &pCur->pvPageR3,
+            rc = PDMDevHlpMMIO2Register(pDevIns, pCur->iRegion, pCur->cbRegion, 0 /* fFlags */, &pCur->pvPageR3,
                                             pCur->szDescription);
             if (RT_FAILURE(rc))
                 return rc;
@@ -125,6 +179,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}

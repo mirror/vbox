@@ -2670,6 +2670,16 @@
 #define VERR_GIM_DEVICE_NOT_REGISTERED              (-6310)
 /** Hypercall cannot be enabled/performed due to access/permissions/CPL. */
 #define VERR_GIM_HYPERCALL_ACCESS_DENIED            (-6311)
+/** Failed to read to a memory region while performing a hypercall. */
+#define VERR_GIM_HYPERCALL_MEMORY_READ_FAILED       (-6312)
+/** Failed to write to a memory region while performing a hypercall. */
+#define VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED      (-6313)
+/** Generic hypercall operation failure. */
+#define VERR_GIM_HYPERCALL_FAILED                   (-6314)
+/** No debug connection configured. */
+#define VERR_GIM_NO_DEBUG_CONNECTION                (-6315)
+/** Return to ring-3 to perform the hypercall there. */
+#define VINF_GIM_R3_HYPERCALL                       6316
 /** @} */
 
 /** @name Main API Status Codes

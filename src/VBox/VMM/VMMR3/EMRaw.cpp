@@ -42,6 +42,7 @@
 #include <VBox/vmm/patm.h>
 #include "EMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/gim.h>
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>

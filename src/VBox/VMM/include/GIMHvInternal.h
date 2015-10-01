@@ -21,6 +21,7 @@
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/cpum.h>
 
+#include <iprt/net.h>
 
 /** @name Hyper-V base feature identification.
  * Features based on current partition privileges (per-VM).
@@ -31,9 +32,9 @@
 /** Partition reference counter MSR available. */
 #define GIM_HV_BASE_FEAT_PART_TIME_REF_COUNT_MSR  RT_BIT(1)
 /** Basic Synthetic Interrupt Controller MSRs available. */
-#define GIM_HV_BASE_FEAT_BASIC_SYNTH_IC           RT_BIT(2)
+#define GIM_HV_BASE_FEAT_BASIC_SYNIC_MSRS         RT_BIT(2)
 /** Synthetic Timer MSRs available. */
-#define GIM_HV_BASE_FEAT_SYNTH_TIMER_MSRS         RT_BIT(3)
+#define GIM_HV_BASE_FEAT_STIMER_MSRS              RT_BIT(3)
 /** APIC access MSRs (EOI, ICR, TPR) available. */
 #define GIM_HV_BASE_FEAT_APIC_ACCESS_MSRS         RT_BIT(4)
 /** Hypercall MSRs available. */
@@ -124,7 +125,7 @@
 /** Support for determining timer frequencies. */
 #define GIM_HV_MISC_FEAT_TIMER_FREQ               RT_BIT(8)
 /** Support for injecting synthetic machine checks. */
-#define GIM_HV_MISC_FEAT_INJECT_SYNTH_MC_XCPT     RT_BIT(9)
+#define GIM_HV_MISC_FEAT_INJECT_SYNMC_XCPT        RT_BIT(9)
 /** Support for guest crash MSRs. */
 #define GIM_HV_MISC_FEAT_GUEST_CRASH_MSRS         RT_BIT(10)
 /** Support for debug MSRs. */
@@ -359,7 +360,14 @@
 #define MSR_GIM_HV_RANGE10_END                    MSR_GIM_HV_SYNTH_DEBUG_PENDING_BUFFER
 
 /** Start of range 11. */
-#define MSR_GIM_HV_RANGE11_START                  UINT32_C(0x40000100)
+#define MSR_GIM_HV_RANGE11_START                  UINT32_C(0x400000FF)
+/** Undocumented debug options MSR. */
+#define MSR_GIM_HV_DEBUG_OPTIONS_MSR              UINT32_C(0x400000FF)
+/** End of range 11. */
+#define MSR_GIM_HV_RANGE11_END                    MSR_GIM_HV_DEBUG_OPTIONS_MSR
+
+/** Start of range 12. */
+#define MSR_GIM_HV_RANGE12_START                  UINT32_C(0x40000100)
 /** Guest crash MSR 0. */
 #define MSR_GIM_HV_CRASH_P0                       UINT32_C(0x40000100)
 /** Guest crash MSR 1. */
@@ -372,8 +380,8 @@
 #define MSR_GIM_HV_CRASH_P4                       UINT32_C(0x40000104)
 /** Guest crash control. */
 #define MSR_GIM_HV_CRASH_CTL                      UINT32_C(0x40000105)
-/** End of range 11. */
-#define MSR_GIM_HV_RANGE11_END                    MSR_GIM_HV_CRASH_CTL
+/** End of range 12. */
+#define MSR_GIM_HV_RANGE12_END                    MSR_GIM_HV_CRASH_CTL
 /** @} */
 
 AssertCompile(MSR_GIM_HV_RANGE0_START  <= MSR_GIM_HV_RANGE0_END);
@@ -446,8 +454,291 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 #define MSR_GIM_HV_GUEST_OS_ID_BUILD(a)           ((a) & 0xffff)
 /** @} */
 
+/** @name Hyper-V hypercall op codes.
+ * @{
+ */
+/** Post debug data to hypervisor. */
+#define GIM_HV_HYPERCALL_OP_POST_DEBUG_DATA       0x69
+/** Retreive debug data from hypervisor. */
+#define GIM_HV_HYPERCALL_OP_RETREIVE_DEBUG_DATA   0x6A
+/** Reset debug session. */
+#define GIM_HV_HYPERCALL_OP_RESET_DEBUG_SESSION   0x6B
+/** @} */
+
+/** @name Hyper-V hypercall inputs.
+ * @{
+ */
+/** The hypercall call operation code. */
+#define GIM_HV_HYPERCALL_IN_CALL_CODE(a)         ((a) & UINT64_C(0xffff))
+/** Whether it's a fast (register based) hypercall or not (memory-based). */
+#define GIM_HV_HYPERCALL_IN_IS_FAST(a)           RT_BOOL((a) & RT_BIT_64(16))
+/** Total number of reps for a rep hypercall. */
+#define GIM_HV_HYPERCALL_IN_REP_COUNT(a)         (((a) << 32) & UINT64_C(0xfff))
+/** Rep start index for a rep hypercall. */
+#define GIM_HV_HYPERCALL_IN_REP_START_IDX(a)     (((a) << 48) & UINT64_C(0xfff))
+/** Reserved bits range 1. */
+#define GIM_HV_HYPERCALL_IN_RSVD_1(a)            (((a) << 17) & UINT64_C(0x7fff))
+/** Reserved bits range 2. */
+#define GIM_HV_HYPERCALL_IN_RSVD_2(a)            (((a) << 44) & UINT64_C(0xf))
+/** Reserved bits range 3. */
+#define GIM_HV_HYPERCALL_IN_RSVD_3(a)            (((a) << 60) & UINT64_C(0x7))
+/** @} */
+
+
+/** @name Hyper-V hypercall status codes.
+ * @{
+ */
+/** Success. */
+#define GIM_HV_STATUS_SUCCESS                                        0x00
+/** Unrecognized hypercall. */
+#define GIM_HV_STATUS_INVALID_HYPERCALL_CODE                         0x02
+/** Invalid hypercall input (rep count, rsvd bits). */
+#define GIM_HV_STATUS_INVALID_HYPERCALL_INPUT                        0x03
+/** Hypercall guest-physical address not 8-byte aligned or crosses page boundary. */
+#define GIM_HV_STATUS_INVALID_ALIGNMENT                              0x04
+/** Invalid hypercall parameters. */
+#define GIM_HV_STATUS_INVALID_PARAMETER                              0x05
+/** Access denied. */
+#define GIM_HV_STATUS_ACCESS_DENIED                                  0x06
+/** The partition state not valid for specified op. */
+#define GIM_HV_STATUS_INVALID_PARTITION_STATE                        0x07
+/** The hypercall operation could not be performed. */
+#define GIM_HV_STATUS_OPERATION_DENIED                               0x08
+/** Specified partition property ID not recognized. */
+#define GIM_HV_STATUS_UNKNOWN_PROPERTY                               0x09
+/** Specified partition property value not within range. */
+#define GIM_HV_STATUS_PROPERTY_VALUE_OUT_OF_RANGE                    0x0a
+/** Insufficient memory for performing the hypercall. */
+#define GIM_HV_STATUS_INSUFFICIENT_MEMORY                            0x0b
+/** Maximum partition depth has been exceeded for the partition hierarchy. */
+#define GIM_HV_STATUS_PARTITION_TOO_DEEP                             0x0c
+/** The specified partition ID is not valid. */
+#define GIM_HV_STATUS_INVALID_PARTITION_ID                           0x0d
+/** The specified virtual processor index in invalid. */
+#define GIM_HV_STATUS_INVALID_VP_INDEX                               0x0e
+/** The specified port ID is not unique or doesn't exist. */
+#define GIM_HV_STATUS_INVALID_PORT_ID                                0x11
+/** The specified connection ID is not unique or doesn't exist. */
+#define GIM_HV_STATUS_INVALID_CONNECTION_ID                          0x12
+/** The target port doesn't have sufficient buffers for the caller to post a message. */
+#define GIM_HV_STATUS_INSUFFICIENT_BUFFERS                           0x13
+/** External interrupt not acknowledged.*/
+#define GIM_HV_STATUS_NOT_ACKNOWLEDGED                               0x14
+/** External interrupt acknowledged. */
+#define GIM_HV_STATUS_ACKNOWLEDGED                                   0x16
+/** Invalid state due to misordering Hv[Save|Restore]PartitionState. */
+#define GIM_HV_STATUS_INVALID_SAVE_RESTORE_STATE                     0x17
+/** Operation not perform due to a required feature of SynIc was disabled. */
+#define GIM_HV_STATUS_INVALID_SYNIC_STATE                            0x18
+/** Object or value already in use. */
+#define GIM_HV_STATUS_OBJECT_IN_USE                                  0x19
+/** Invalid proximity domain information. */
+#define GIM_HV_STATUS_INVALID_PROXIMITY_DOMAIN_INFO                  0x1A
+/** Attempt to retrieve data failed. */
+#define GIM_HV_STATUS_NO_DATA                                        0x1B
+/** Debug connection has not recieved any new data since the last time. */
+#define GIM_HV_STATUS_INACTIVE                                       0x1C
+/** A resource is unavailable for allocation. */
+#define GIM_HV_STATUS_NO_RESOURCES                                   0x1D
+/** A hypervisor feature is not available to the caller. */
+#define GIM_HV_STATUS_FEATURE_UNAVAILABLE                            0x1E
+/** The debug packet returned is partial due to an I/O error. */
+#define GIM_HV_STATUS_PARTIAL_PACKET                                 0x1F
+/** Processor feature SSE3 unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_SSE3_NOT_SUPPORTED                   0x20
+/** Processor feature LAHSAHF unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_LAHSAHF_NOT_SUPPORTED                0x21
+/** Processor feature SSSE3 unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_SSSE3_NOT_SUPPORTED                  0x22
+/** Processor feature SSE4.1 unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_SSE4_1_NOT_SUPPORTED                 0x23
+/** Processor feature SSE4.2 unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_SSE4_2_NOT_SUPPORTED                 0x24
+/** Processor feature SSE4A unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_SSE4A_NOT_SUPPORTED                  0x25
+/** Processor feature XOP unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_XOP_NOT_SUPPORTED                    0x26
+/** Processor feature POPCNT unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_POPCNT_NOT_SUPPORTED                 0x27
+/** Processor feature CMPXCHG16B unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_CMPXCHG16B_NOT_SUPPORTED             0x28
+/** Processor feature ALTMOVCR8 unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_ALTMOVCR8_NOT_SUPPORTED              0x29
+/** Processor feature LZCNT unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_LZCNT_NOT_SUPPORTED                  0x2A
+/** Processor feature misaligned SSE unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_MISALIGNED_SSE_NOT_SUPPORTED         0x2B
+/** Processor feature MMX extensions unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_MMX_EXT_NOT_SUPPORTED                0x2C
+/** Processor feature 3DNow! unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_3DNOW_NOT_SUPPORTED                  0x2D
+/** Processor feature Extended 3DNow! unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_EXTENDED_3DNOW_NOT_SUPPORTED         0x2E
+/** Processor feature 1GB large page unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_PAGE_1GB_NOT_SUPPORTED               0x2F
+/** Processor cache line flush size incompatible. */
+#define GIM_HV_STATUS_PROC_CACHE_LINE_FLUSH_SIZE_INCOMPATIBLE        0x30
+/** Processor feature XSAVE unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_XSAVE_NOT_SUPPORTED                  0x31
+/** Processor feature XSAVEOPT unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_XSAVEOPT_NOT_SUPPORTED               0x32
+/** The specified buffer was too small for all requested data. */
+#define GIM_HV_STATUS_INSUFFICIENT_BUFFER                            0x33
+/** Processor feature XSAVEOPT unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_XSAVE_AVX_NOT_SUPPORTED              0x34
+/** Processor feature XSAVEOPT unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_XSAVE_FEAT_NOT_SUPPORTED             0x35   /** Huh, isn't this same as 0x31? */
+/** Processor feature XSAVEOPT unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_PAGE_XSAVE_SAVE_AREA_INCOMPATIBLE    0x36
+/** Processor architecture unsupoorted. */
+#define GIM_HV_STATUS_INCOMPATIBLE_PROCESSOR                         0x37
+/** Max. domains for platform I/O remapping reached. */
+#define GIM_HV_STATUS_INSUFFICIENT_DEVICE_DOMAINS                    0x38
+/** Processor feature AES unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_AES_NOT_SUPPORTED                    0x39
+/** Processor feature PCMULQDQ unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_PCMULQDQ_NOT_SUPPORTED               0x3A
+/** Processor feature XSAVE features unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_XSAVE_FEATURES_INCOMPATIBLE          0x3B
+/** Generic CPUID validation error. */
+#define GIM_HV_STATUS_CPUID_FEAT_VALIDATION_ERROR                    0x3C
+/** XSAVE CPUID validation error. */
+#define GIM_HV_STATUS_CPUID_XSAVE_FEAT_VALIDATION_ERROR              0x3D
+/** Processor startup timed out. */
+#define GIM_HV_STATUS_PROCESSOR_STARTUP_TIMEOUT                      0x3E
+/** SMX enabled by the BIOS. */
+#define GIM_HV_STATUS_SMX_ENABLED                                    0x3F
+/** Processor feature PCID unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_PCID_NOT_SUPPORTED                   0x40
+/** Invalid LP index. */
+#define GIM_HV_STATUS_INVALID_LP_INDEX                               0x41
+/** Processor feature PCID unsupported. */
+#define GIM_HV_STATUS_FEAT_FMA4_NOT_SUPPORTED                        0x42
+/** Processor feature PCID unsupported. */
+#define GIM_HV_STATUS_FEAT_F16C_NOT_SUPPORTED                        0x43
+/** Processor feature PCID unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_RDRAND_NOT_SUPPORTED                 0x44
+/** Processor feature RDWRFSGS unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_RDWRFSGS_NOT_SUPPORTED               0x45
+/** Processor feature SMEP unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_SMEP_NOT_SUPPORTED                   0x46
+/** Processor feature enhanced fast string unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_ENHANCED_FAST_STRING_NOT_SUPPORTED   0x47
+/** Processor feature MOVBE unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_MOVBE_NOT_SUPPORTED                  0x48
+/** Processor feature BMI1 unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_BMI1_NOT_SUPPORTED                   0x49
+/** Processor feature BMI2 unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_BMI2_NOT_SUPPORTED                   0x4A
+/** Processor feature HLE unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_HLE_NOT_SUPPORTED                    0x4B
+/** Processor feature RTM unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_RTM_NOT_SUPPORTED                    0x4C
+/** Processor feature XSAVE FMA unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_XSAVE_FMA_NOT_SUPPORTED              0x4D
+/** Processor feature XSAVE AVX2 unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_XSAVE_AVX2_NOT_SUPPORTED             0x4E
+/** Processor feature NPIEP1 unsupported. */
+#define GIM_HV_STATUS_PROC_FEAT_NPIEP1_NOT_SUPPORTED                 0x4F
+/** @} */
+
+
+/** @name Hyper-V debug support.
+ * Options and constants for Hyper-V debug hypercalls.
+ * @{
+ */
+/** Maximum debug data payload size in bytes. */
+#define GIM_HV_DEBUG_MAX_DATA_SIZE                4088
+
+/** The undocumented bit for MSR_GIM_HV_DEBUG_OPTIONS_MSR that makes it all
+ *  work. */
+#define GIM_HV_DEBUG_OPTIONS_MSR_ENABLE           RT_BIT(2)
+
+/** Guest will perform the HvPostDebugData hypercall until completion. */
+#define GIM_HV_DEBUG_POST_LOOP                    RT_BIT_32(0)
+/** Mask of valid HvPostDebugData options. */
+#define GIM_HV_DEBUG_POST_OPTIONS_MASK            RT_BIT_32(0)
+
+/** Guest will perform the HvRetrieveDebugData hypercall until completion. */
+#define GIM_HV_DEBUG_RETREIVE_LOOP                RT_BIT_32(0)
+/** Guest checks if any global debug session is active. */
+#define GIM_HV_DEBUG_RETREIVE_TEST_ACTIVITY       RT_BIT_32(1)
+/** Mask of valid HvRetrieveDebugData options. */
+#define GIM_HV_DEBUG_RETREIVE_OPTIONS_MASK        RT_BIT_32(0) | RT_BIT_32(1)
+
+/** Guest requests purging of incoming debug data. */
+#define GIM_HV_DEBUG_PURGE_INCOMING_DATA          RT_BIT_32(0)
+/** Guest requests purging of outgoing debug data. */
+#define GIM_HV_DEBUG_PURGE_OUTGOING_DATA          RT_BIT_32(1)
+
+/**
+ * HvResetDebugData hypercall input.
+ */
+typedef struct GIMHVDEBUGRESETIN
+{
+    uint32_t fFlags;
+    uint32_t uPadding;
+} GIMHVDEBUGRESETIN;
+/** Pointer to a HvResetDebugData input struct. */
+typedef GIMHVDEBUGRESETIN *PGIMHVDEBUGRESETIN;
+AssertCompileSize(GIMHVDEBUGRESETIN, 8);
+
+/**
+ * HvPostDebugData hypercall input.
+ */
+typedef struct GIMHVDEBUGPOSTIN
+{
+    uint32_t cbWrite;
+    uint32_t fFlags;
+} GIMHVDEBUGPOSTIN;
+/** Pointer to a HvPostDebugData input struct. */
+typedef GIMHVDEBUGPOSTIN *PGIMHVDEBUGPOSTIN;
+AssertCompileSize(GIMHVDEBUGPOSTIN, 8);
+
+/**
+ * HvPostDebugData hypercall output.
+ */
+typedef struct GIMHVDEBUGPOSTOUT
+{
+    uint32_t cbPending;
+    uint32_t uPadding;
+} GIMHVDEBUGPOSTOUT;
+/** Pointer to a HvPostDebugData output struct. */
+typedef GIMHVDEBUGPOSTOUT *PGIMHVDEBUGPOSTOUT;
+AssertCompileSize(GIMHVDEBUGPOSTOUT, 8);
+
+/**
+ * HvRetrieveDebugData hypercall input.
+ */
+typedef struct GIMHVDEBUGRETRIEVEIN
+{
+    uint32_t cbRead;
+    uint32_t fFlags;
+    uint64_t u64Timeout;
+} GIMHVDEBUGRETRIEVEIN;
+/** Pointer to a HvRetrieveDebugData input struct. */
+typedef GIMHVDEBUGRETRIEVEIN *PGIMHVDEBUGRETRIEVEIN;
+AssertCompileSize(GIMHVDEBUGRETRIEVEIN, 16);
+
+/**
+ * HvRetriveDebugData hypercall output.
+ */
+typedef struct GIMHVDEBUGRETRIEVEOUT
+{
+    uint32_t cbRead;
+    uint32_t cbRemaining;
+} GIMHVDEBUGRETRIEVEOUT;
+/** Pointer to a HvRetrieveDebugData output struct. */
+typedef GIMHVDEBUGRETRIEVEOUT *PGIMHVDEBUGRETRIEVEOUT;
+AssertCompileSize(GIMHVDEBUGRETRIEVEOUT, 8);
+/** @} */
+
+
 /** Hyper-V page size.  */
-#define GIM_HV_PAGE_SIZE                          0x1000
+#define GIM_HV_PAGE_SIZE                          4096
+
+/** Microsoft Hyper-V vendor signature. */
+#define GIM_HV_VENDOR_MICROSOFT                   "Microsoft Hv"
 
 /**
  * MMIO2 region indices.
@@ -475,15 +766,14 @@ typedef GIMHVREFTSC *PGIMHVREFTSC;
 /** Pointer to a const Hyper-V reference TSC. */
 typedef GIMHVREFTSC const *PCGIMHVREFTSC;
 
-
 /**
  * GIM Hyper-V VM instance data.
  * Changes to this must checked against the padding of the gim union in VM!
  */
 typedef struct GIMHV
 {
-    /** @name MSRs.
-     *  { */
+    /** @name Primary MSRs.
+     * @{ */
     /** Guest OS identity MSR. */
     uint64_t                    u64GuestOsIdMsr;
     /** Hypercall MSR. */
@@ -493,7 +783,7 @@ typedef struct GIMHV
     /** @}  */
 
     /** @name CPUID features.
-     *  { */
+     * @{ */
     /** Basic features. */
     uint32_t                    uBaseFeat;
     /** Partition flags. */
@@ -509,7 +799,7 @@ typedef struct GIMHV
     /** @} */
 
     /** @name Guest Crash MSRs.
-     *  @{
+     * @{
      */
     /** Guest crash control MSR. */
     uint64_t                    uCrashCtl;
@@ -525,6 +815,8 @@ typedef struct GIMHV
     uint64_t                    uCrashP4;
     /** @} */
 
+    /** @name Time management.
+     * @{ */
     /** Per-VM R0 Spinlock for protecting EMT writes to the TSC page. */
     RTSPINLOCK                  hSpinlockR0;
 #if HC_ARCH_BITS == 32
@@ -532,6 +824,25 @@ typedef struct GIMHV
 #endif
     /** The TSC frequency (in HZ) reported to the guest. */
     uint64_t                    cTscTicksPerSecond;
+    /** @} */
+
+    /** @name Hypercalls. */
+    /* @{ */
+    /** Pointer to the hypercall input parameter page - R3. */
+    R3PTRTYPE(uint8_t *)        pbHypercallIn;
+    /** Pointer to the hypercall output parameter page - R3. */
+    R3PTRTYPE(uint8_t *)        pbHypercallOut;
+    /** @} */
+
+    /** @name Guest debugging.
+     * @{ */
+    /** Whether we're posing as the official Microsoft vendor. */
+    bool                        fIsVendorMsHv;
+    bool                        afAlignment0[7];
+    /** The auto IP address last chosen by the guest after failed ARP queries. */
+    RTNETADDRIPV4               DbgGuestAddr;
+    uint32_t                    uAlignment1;
+    /** @} */
 
     /** Array of MMIO2 regions. */
     GIMMMIO2REGION              aMmio2Regions[GIM_HV_REGION_IDX_MAX + 1];
@@ -565,10 +876,15 @@ VMMR3_INT_DECL(int)             gimR3HvDisableTscPage(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSeq, uint32_t uTscSeq);
 VMMR3_INT_DECL(int)             gimR3HvDisableHypercallPage(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage);
+
+VMMR3_INT_DECL(int)             gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv);
+VMMR3_INT_DECL(int)             gimR3HvHypercallRetrieveDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv);
 #endif /* IN_RING3 */
 
 VMM_INT_DECL(bool)              gimHvIsParavirtTscEnabled(PVM pVM);
 VMM_INT_DECL(bool)              gimHvAreHypercallsEnabled(PVMCPU pVCpu);
+VMM_INT_DECL(bool)              gimHvShouldTrapXcptUD(PVMCPU pVCpu);
+VMM_INT_DECL(int)               gimHvXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis);
 VMM_INT_DECL(int)               gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);

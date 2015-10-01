@@ -23,7 +23,13 @@
 #include "GIMHvInternal.h"
 #include "GIMInternal.h"
 
+#include <iprt/asm-amd64-x86.h>
+#ifdef IN_RING3
+# include <iprt/mem.h>
+#endif
+
 #include <VBox/err.h>
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/vm.h>
@@ -31,25 +37,231 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmapi.h>
 
-#include <iprt/asm-amd64-x86.h>
+
+#ifdef IN_RING3
+/**
+ * Helper for reading and validating slow hypercall input/output parameters.
+ *
+ * A 'slow' hypercall is one that passes parameters pointers through guest
+ * memory as opposed to a 'fast' hypercall which passes parameters through guest
+ * general-purpose registers.
+ *
+ * @returns VBox status code.
+ * @param   pVM               Pointer to the VM.
+ * @param   pCtx              Pointer to the guest-CPU context.
+ * @param   fIs64BitMode      Whether the guest is currently in 64-bit mode or not.
+ * @param   pGCPhysIn         Where to store the guest-physical address of the
+ *                            hypercall input page. Optional, can be NULL.
+ * @param   pGCPhysOut        Where to store the guest-physical address of the
+ *                            hypercall output page. Optional, can be NULL.
+ * @param   prcHv             Where to store the Hyper-V status code. Only valid
+ *                            to the caller when this function returns
+ *                            VINF_SUCCESS.
+ */
+static int gimHvReadSlowHypercallParams(PVM pVM, PCPUMCTX pCtx, bool fIs64BitMode, PRTGCPHYS pGCPhysIn, PRTGCPHYS pGCPhysOut,
+                                        int *prcHv)
+{
+    int rc = VINF_SUCCESS;
+    RTGCPHYS GCPhysIn  = fIs64BitMode ? pCtx->rdx : (pCtx->rbx << 32) | pCtx->ecx;
+    RTGCPHYS GCPhysOut = fIs64BitMode ? pCtx->r8  : (pCtx->rdi << 32) | pCtx->esi;
+    if (pGCPhysIn)
+        *pGCPhysIn = GCPhysIn;
+    if (pGCPhysOut)
+        *pGCPhysOut = GCPhysOut;
+    if (   RT_ALIGN_64(GCPhysIn,  8) == GCPhysIn
+        && RT_ALIGN_64(GCPhysOut, 8) == GCPhysOut)
+    {
+        if (   PGMPhysIsGCPhysNormal(pVM, GCPhysIn)
+            && PGMPhysIsGCPhysNormal(pVM, GCPhysOut))
+        {
+            PGIMHV pHv = &pVM->gim.s.u.Hv;
+            rc = PGMPhysSimpleReadGCPhys(pVM, pHv->pbHypercallIn, GCPhysIn, GIM_HV_PAGE_SIZE);
+            if (RT_SUCCESS(rc))
+            {
+                rc = PGMPhysSimpleReadGCPhys(pVM, pHv->pbHypercallOut, GCPhysOut, GIM_HV_PAGE_SIZE);
+                if (RT_SUCCESS(rc))
+                {
+                    *prcHv = GIM_HV_STATUS_SUCCESS;
+                    return VINF_SUCCESS;
+                }
+                Log(("GIM: HyperV: gimHvReadSlowHypercallParams reading GCPhysOut=%#RGp failed. rc=%Rrc\n", GCPhysOut, rc));
+                rc = VERR_GIM_HYPERCALL_MEMORY_READ_FAILED;
+            }
+            else
+            {
+                Log(("GIM: HyperV: gimHvReadSlowHypercallParams reading GCPhysIn=%#RGp failed. rc=%Rrc\n", GCPhysIn,rc));
+                rc = VERR_GIM_HYPERCALL_MEMORY_READ_FAILED;
+            }
+        }
+        else
+            *prcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+    }
+    else
+        *prcHv = GIM_HV_STATUS_INVALID_ALIGNMENT;
+    return rc;
+}
+#endif
 
 
 /**
- * Handles the Hyper-V hypercall.
+ * Handles all Hyper-V hypercalls.
  *
  * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Pointer to the guest-CPU context.
+ *
+ * @thread  EMT.
+ * @remarks Guest RIP may or may not have been incremented at this point.
  */
 VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    NOREF(pCtx);
+#ifndef IN_RING3
+    return VINF_GIM_R3_HYPERCALL;
+#else
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+
+    /*
+     * Verify that hypercalls are enabled.
+     */
     if (!MSR_GIM_HV_HYPERCALL_IS_ENABLED(pVM->gim.s.u.Hv.u64HypercallMsr))
         return VERR_GIM_HYPERCALLS_NOT_ENABLED;
 
-    /** @todo Handle hypercalls. Fail for now */
-    return VERR_GIM_IPE_3;
+    /*
+     * Verify guest is in ring-0 protected mode.
+     */
+    uint32_t uCpl = CPUMGetGuestCPL(pVCpu);
+    if (   uCpl
+        || CPUMIsGuestInRealModeEx(pCtx))
+    {
+        return VERR_GIM_HYPERCALL_ACCESS_DENIED;
+    }
+
+    /*
+     * Get the hypercall operation code and modes.
+     */
+    const bool       fIs64BitMode     = CPUMIsGuestIn64BitCodeEx(pCtx);
+    const uint64_t   uHyperIn         = fIs64BitMode ? pCtx->rcx : (pCtx->rdx << 32) | pCtx->eax;
+    const uint16_t   uHyperOp         = GIM_HV_HYPERCALL_IN_CALL_CODE(uHyperIn);
+    const bool       fHyperFast       = GIM_HV_HYPERCALL_IN_IS_FAST(uHyperIn);
+    const uint16_t   cHyperReps       = GIM_HV_HYPERCALL_IN_REP_COUNT(uHyperIn);
+    const uint16_t   idxHyperRepStart = GIM_HV_HYPERCALL_IN_REP_START_IDX(uHyperIn);
+    uint64_t         cHyperRepsDone   = 0;
+
+    int rc     = VINF_SUCCESS;
+    int rcHv   = GIM_HV_STATUS_OPERATION_DENIED;
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+
+    /*
+     * Validate common hypercall input parameters.
+     */
+    if (   !GIM_HV_HYPERCALL_IN_RSVD_1(uHyperIn)
+        && !GIM_HV_HYPERCALL_IN_RSVD_2(uHyperIn)
+        && !GIM_HV_HYPERCALL_IN_RSVD_3(uHyperIn))
+    {
+        /*
+         * Perform the hypercall.
+         */
+        switch (uHyperOp)
+        {
+            case GIM_HV_HYPERCALL_OP_RETREIVE_DEBUG_DATA:   /* Non-rep, memory IO. */
+            {
+                if (pHv->uPartFlags & GIM_HV_PART_FLAGS_DEBUGGING)
+                {
+                    RTGCPHYS GCPhysOut;
+                    rc = gimHvReadSlowHypercallParams(pVM, pCtx, fIs64BitMode, NULL /*pGCPhysIn*/, &GCPhysOut, &rcHv);
+                    if (   RT_SUCCESS(rc)
+                        && rcHv == GIM_HV_STATUS_SUCCESS)
+                    {
+                        rc = gimR3HvHypercallRetrieveDebugData(pVM, GCPhysOut, &rcHv);
+                        if (RT_FAILURE(rc))
+                            LogRelMax(10, ("GIM: HyperV: gimR3HvHypercallRetrieveDebugData failed. rc=%Rrc\n", rc));
+                    }
+                }
+                else
+                    rcHv = GIM_HV_STATUS_ACCESS_DENIED;
+                break;
+            }
+
+            case GIM_HV_HYPERCALL_OP_POST_DEBUG_DATA:   /* Non-rep, memory IO. */
+            {
+                if (pHv->uPartFlags & GIM_HV_PART_FLAGS_DEBUGGING)
+                {
+                    RTGCPHYS GCPhysOut;
+                    rc = gimHvReadSlowHypercallParams(pVM, pCtx, fIs64BitMode, NULL /*pGCPhysIn*/, &GCPhysOut, &rcHv);
+                    if (   RT_SUCCESS(rc)
+                        && rcHv == GIM_HV_STATUS_SUCCESS)
+                    {
+                        rc = gimR3HvHypercallPostDebugData(pVM, GCPhysOut, &rcHv);
+                        if (RT_FAILURE(rc))
+                            LogRelMax(10, ("GIM: HyperV: gimR3HvHypercallPostDebugData failed. rc=%Rrc\n", rc));
+                    }
+                }
+                else
+                    rcHv = GIM_HV_STATUS_ACCESS_DENIED;
+                break;
+            }
+
+            case GIM_HV_HYPERCALL_OP_RESET_DEBUG_SESSION:   /* Non-rep, fast (register IO). */
+            {
+                if (pHv->uPartFlags & GIM_HV_PART_FLAGS_DEBUGGING)
+                {
+                    uint32_t fFlags = 0;
+                    if (!fHyperFast)
+                    {
+                        rc = gimHvReadSlowHypercallParams(pVM, pCtx, fIs64BitMode, NULL /*pGCPhysIn*/, NULL /*pGCPhysOut*/,
+                                                            &rcHv);
+                        if (   RT_SUCCESS(rc)
+                            && rcHv == GIM_HV_STATUS_SUCCESS)
+                        {
+                            PGIMHVDEBUGRESETIN pIn = (PGIMHVDEBUGRESETIN)pHv->pbHypercallIn;
+                            fFlags = pIn->fFlags;
+                        }
+                    }
+                    else
+                    {
+                        rcHv = GIM_HV_STATUS_SUCCESS;
+                        fFlags = fIs64BitMode ? pCtx->rdx : pCtx->ebx;
+                    }
+
+                    /*
+                     * Since we don't really maintain our own buffers for the debug
+                     * communication channel, we don't have anything to flush.
+                     */
+                    if (rcHv == GIM_HV_STATUS_SUCCESS)
+                    {
+                        if (!fFlags)
+                            rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+                    }
+                }
+                else
+                    rcHv = GIM_HV_STATUS_ACCESS_DENIED;
+                break;
+            }
+
+            default:
+                rcHv = GIM_HV_STATUS_INVALID_HYPERCALL_CODE;
+                break;
+        }
+    }
+    else
+        rcHv = GIM_HV_STATUS_INVALID_HYPERCALL_INPUT;
+
+    /*
+     * Update the guest with results of the hypercall.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        if (fIs64BitMode)
+            pCtx->rax = (cHyperRepsDone << 32) | rcHv;
+        else
+        {
+            pCtx->edx = cHyperRepsDone;
+            pCtx->eax = rcHv;
+        }
+    }
+
+    return rc;
+#endif
 }
 
 
@@ -121,6 +333,8 @@ static const char *gimHvGetGuestOsIdVariantName(uint64_t uGuestOsIdMsr)
  * @param   idMsr       The MSR being read.
  * @param   pRange      The range this MSR belongs to.
  * @param   puValue     Where to store the MSR value read.
+ *
+ * @thread  EMT.
  */
 VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
@@ -194,12 +408,24 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
         case MSR_GIM_HV_CRASH_P3: *puValue = pHv->uCrashP3;   return VINF_SUCCESS;
         case MSR_GIM_HV_CRASH_P4: *puValue = pHv->uCrashP4;   return VINF_SUCCESS;
 
+        case MSR_GIM_HV_DEBUG_OPTIONS_MSR:
+        {
+            if (pHv->fIsVendorMsHv)
+            {
+                *puValue = GIM_HV_DEBUG_OPTIONS_MSR_ENABLE;
+                return VINF_SUCCESS;
+            }
+            return VERR_CPUM_RAISE_GP_0;
+        }
+
         default:
         {
 #ifdef IN_RING3
             static uint32_t s_cTimes = 0;
             if (s_cTimes++ < 20)
                 LogRel(("GIM: HyperV: Unknown/invalid RdMsr (%#x) -> #GP(0)\n", idMsr));
+#else
+            return VINF_CPUM_R3_MSR_READ;
 #endif
             LogFunc(("Unknown/invalid RdMsr (%#RX32) -> #GP(0)\n", idMsr));
             break;
@@ -221,6 +447,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
  * @param   idMsr       The MSR being written.
  * @param   pRange      The range this MSR belongs to.
  * @param   uRawValue   The raw value with the ignored bits not masked.
+ *
+ * @thread  EMT.
  */
 VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
 {
@@ -252,6 +480,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             {
                 gimR3HvDisableHypercallPage(pVM);
                 pHv->u64HypercallMsr &= ~MSR_GIM_HV_HYPERCALL_ENABLE_BIT;
+                LogRel(("GIM: HyperV: Hypercalls disabled via Guest OS ID Msr\n"));
             }
             else
             {
@@ -285,13 +514,14 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else  /* IN_RING3 */
+# if 0
             /*
              * For now ignore writes to the hypercall MSR (i.e. keeps it disabled).
              * This is required to boot FreeBSD 10.1 (with Hyper-V enabled ofc),
              * see @bugref{7270#c116}.
              */
             return VINF_SUCCESS;
-# if 0
+# else
             /* First, update all but the hypercall enable bit. */
             pHv->u64HypercallMsr = (uRawValue & ~MSR_GIM_HV_HYPERCALL_ENABLE_BIT);
 
@@ -398,6 +628,13 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             LogFunc(("WrMsr on read-only MSR %#RX32 -> #GP(0)\n", idMsr));
             return VERR_CPUM_RAISE_GP_0;
 
+        case MSR_GIM_HV_DEBUG_OPTIONS_MSR:
+        {
+            if (pHv->fIsVendorMsHv)
+                return VINF_SUCCESS;
+            return VERR_CPUM_RAISE_GP_0;
+        }
+
         default:
         {
 #ifdef IN_RING3
@@ -405,6 +642,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             if (s_cTimes++ < 20)
                 LogRel(("GIM: HyperV: Unknown/invalid WrMsr (%#x,%#x`%08x) -> #GP(0)\n", idMsr,
                         uRawValue & UINT64_C(0xffffffff00000000), uRawValue & UINT64_C(0xffffffff)));
+#else
+            return VINF_CPUM_R3_MSR_WRITE;
 #endif
             LogFunc(("Unknown/invalid WrMsr (%#RX32,%#RX64) -> #GP(0)\n", idMsr, uRawValue));
             break;
@@ -412,5 +651,83 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
     }
 
     return VERR_CPUM_RAISE_GP_0;
+}
+
+
+/**
+ * Whether we need to trap #UD exceptions in the guest.
+ *
+ * We only need to trap #UD exceptions for raw-mode guests when hypercalls are
+ * enabled. For HM VMs, the hypercall would be handled via the
+ * VMCALL/VMMCALL VM-exit.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+VMM_INT_DECL(bool) gimHvShouldTrapXcptUD(PVMCPU pVCpu)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (   !HMIsEnabled(pVM)
+        && gimHvAreHypercallsEnabled(pVCpu))
+        return true;
+    return false;
+}
+
+
+/**
+ * Exception handler for #UD.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pDis        Pointer to the disassembled instruction state at RIP.
+ *                      Optional, can be NULL.
+ *
+ * @thread  EMT.
+ */
+VMM_INT_DECL(int) gimHvXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
+{
+    /*
+     * If we didn't ask for #UD to be trapped, bail.
+     */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (!gimHvShouldTrapXcptUD(pVCpu))
+        return VERR_GIM_OPERATION_FAILED;
+
+    int rc = VINF_SUCCESS;
+    if (!pDis)
+    {
+        /*
+         * Disassemble the instruction at RIP to figure out if it's the Intel VMCALL instruction
+         * or the AMD VMMCALL instruction and if so, handle it as a hypercall.
+         */
+        DISCPUSTATE Dis;
+        rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, NULL /* pcbInstr */);
+        pDis = &Dis;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        CPUMCPUVENDOR enmGuestCpuVendor = CPUMGetGuestCpuVendor(pVM);
+        if (   (   pDis->pCurInstr->uOpcode == OP_VMCALL
+                && (   enmGuestCpuVendor == CPUMCPUVENDOR_INTEL
+                    || enmGuestCpuVendor == CPUMCPUVENDOR_VIA))
+            || (   pDis->pCurInstr->uOpcode == OP_VMMCALL
+                && enmGuestCpuVendor == CPUMCPUVENDOR_AMD))
+        {
+            /*
+             * Make sure guest ring-0 is the one making the hypercall.
+             */
+            if (CPUMGetGuestCPL(pVCpu))
+                return VERR_GIM_HYPERCALL_ACCESS_DENIED;
+
+            /*
+             * Perform the hypercall and update RIP.
+             */
+            rc = gimHvHypercall(pVCpu, pCtx);
+            pCtx->rip += pDis->cbInstr;
+            return rc;
+        }
+        return VERR_GIM_OPERATION_FAILED;
+    }
+    return VERR_GIM_OPERATION_FAILED;
 }
 

@@ -26,9 +26,11 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
+#include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/mm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/hm.h>
@@ -39,17 +41,11 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-//#define GIMHV_HYPERCALL                 "GIMHvHypercall"
-
 /**
  * GIM Hyper-V saved-state version.
  */
 #define GIM_HV_SAVED_STATE_VERSION          UINT32_C(1)
 
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
 #ifdef VBOX_WITH_STATISTICS
 # define GIMHV_MSRRANGE(a_uFirst, a_uLast, a_szName) \
     { (a_uFirst), (a_uLast), kCpumMsrRdFn_Gim, kCpumMsrWrFn_Gim, 0, 0, 0, 0, 0, a_szName, { 0 }, { 0 }, { 0 }, { 0 } }
@@ -58,6 +54,10 @@
     { (a_uFirst), (a_uLast), kCpumMsrRdFn_Gim, kCpumMsrWrFn_Gim, 0, 0, 0, 0, 0, a_szName }
 #endif
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /**
  * Array of MSR ranges supported by Hyper-V.
  */
@@ -74,9 +74,17 @@ static CPUMMSRRANGE const g_aMsrRanges_HyperV[] =
     GIMHV_MSRRANGE(MSR_GIM_HV_RANGE8_START,  MSR_GIM_HV_RANGE8_END,  "Hyper-V range 8"),
     GIMHV_MSRRANGE(MSR_GIM_HV_RANGE9_START,  MSR_GIM_HV_RANGE9_END,  "Hyper-V range 9"),
     GIMHV_MSRRANGE(MSR_GIM_HV_RANGE10_START, MSR_GIM_HV_RANGE10_END, "Hyper-V range 10"),
-    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE11_START, MSR_GIM_HV_RANGE11_END, "Hyper-V range 11")
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE11_START, MSR_GIM_HV_RANGE11_END, "Hyper-V range 11"),
+    GIMHV_MSRRANGE(MSR_GIM_HV_RANGE12_START, MSR_GIM_HV_RANGE12_END, "Hyper-V range 12")
 };
 #undef GIMHV_MSRRANGE
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int    gimR3HvInitDebugSupport(PVM pVM);
+static void   gimR3HvTermDebugSupport(PVM pVM);
 
 
 /**
@@ -105,6 +113,9 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
     rc = CFGMR3QueryStringDef(pCfgNode, "VendorID", szVendor, sizeof(szVendor), "VBoxVBoxVBox");
     AssertLogRelRCReturn(rc, rc);
 
+    if (!RTStrNCmp(szVendor, GIM_HV_VENDOR_MICROSOFT, sizeof(GIM_HV_VENDOR_MICROSOFT) - 1))
+        pHv->fIsVendorMsHv = true;
+
     /*
      * Determine interface capabilities based on the version.
      */
@@ -128,12 +139,26 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
                        ;
 
         /* Miscellaneous features. */
-        pHv->uMiscFeat = GIM_HV_MISC_FEAT_TIMER_FREQ
-                       | GIM_HV_MISC_FEAT_GUEST_CRASH_MSRS;
+        pHv->uMiscFeat = 0
+                       //| GIM_HV_MISC_FEAT_GUEST_DEBUGGING
+                       //| GIM_HV_MISC_FEAT_XMM_HYPERCALL_INPUT
+                       | GIM_HV_MISC_FEAT_TIMER_FREQ
+                       | GIM_HV_MISC_FEAT_GUEST_CRASH_MSRS
+                       //| GIM_HV_MISC_FEAT_DEBUG_MSRS
+                       ;
 
         /* Hypervisor recommendations to the guest. */
         pHv->uHyperHints = GIM_HV_HINT_MSR_FOR_SYS_RESET
                          | GIM_HV_HINT_RELAX_TIME_CHECKS;
+
+        /* Expose more if we're posing as Microsoft. */
+        if (pHv->fIsVendorMsHv)
+        {
+            pHv->uMiscFeat  |= GIM_HV_MISC_FEAT_GUEST_DEBUGGING
+                             | GIM_HV_MISC_FEAT_DEBUG_MSRS;
+
+            pHv->uPartFlags |= GIM_HV_PART_FLAGS_DEBUGGING;
+        }
     }
 
     /*
@@ -189,7 +214,10 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
     RT_ZERO(HyperLeaf);
     HyperLeaf.uLeaf        = UINT32_C(0x40000000);
     HyperLeaf.uEax         = UINT32_C(0x40000006); /* Minimum value for Hyper-V is 0x40000005. */
-    /* Don't report vendor as 'Microsoft Hv' by default, see @bugref{7270#c152}. */
+    /*
+     * Don't report vendor as 'Microsoft Hv'[1] by default, see @bugref{7270#c152}.
+     * [1]: ebx=0x7263694d ('rciM') ecx=0x666f736f ('foso') edx=0x76482074 ('vH t')
+     */
     {
         uint32_t uVendorEbx;
         uint32_t uVendorEcx;
@@ -257,6 +285,26 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
     if (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_CRASH_MSRS)
         pHv->uCrashCtl = MSR_GIM_HV_CRASH_CTL_NOTIFY_BIT;
 
+    /*
+     * Setup guest-host debugging connection.
+     */
+    if (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_DEBUGGING)
+    {
+        rc = gimR3HvInitDebugSupport(pVM);
+        AssertLogRelRCReturn(rc, rc);
+
+        /*
+         * Pretend that hypercalls are enabled unconditionally when posing as Microsoft,
+         * as Windows guests invoke debug hypercalls before enabling them via the hypercall MSR.
+         */
+        if (pHv->fIsVendorMsHv)
+        {
+            pHv->u64HypercallMsr |= MSR_GIM_HV_HYPERCALL_ENABLE_BIT;
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+                VMMHypercallsEnable(&pVM->aCpus[i]);
+        }
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -322,6 +370,10 @@ VMMR3_INT_DECL(int) gimR3HvInitFinalize(PVM pVM)
 VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
 {
     gimR3HvReset(pVM);
+
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    if (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_DEBUGGING)
+        gimR3HvTermDebugSupport(pVM);
     return VINF_SUCCESS;
 }
 
@@ -351,7 +403,8 @@ VMMR3_INT_DECL(void) gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
  * This is called when the VM is being reset.
  *
  * @param   pVM     Pointer to the VM.
- * @thread EMT(0).
+ *
+ * @thread  EMT(0).
  */
 VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
 {
@@ -374,7 +427,7 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     }
 
     /*
-     * Reset MSRs.
+     * Reset MSRs (Careful! Don't reset non-zero MSRs).
      */
     pHv->u64GuestOsIdMsr = 0;
     pHv->u64HypercallMsr = 0;
@@ -384,6 +437,15 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     pHv->uCrashP2        = 0;
     pHv->uCrashP3        = 0;
     pHv->uCrashP4        = 0;
+
+    /* Extra faking required while posing as Microsoft, see gimR3HvInit(). */
+    if (   (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_DEBUGGING)
+        && pHv->fIsVendorMsHv)
+    {
+        pHv->u64HypercallMsr |= MSR_GIM_HV_HYPERCALL_ENABLE_BIT;
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            VMMHypercallsEnable(&pVM->aCpus[i]);
+    }
 }
 
 
@@ -867,5 +929,339 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
     RTMemFree(pvHypercallPage);
     return rc;
 #endif
+}
+
+
+/**
+ * Initializes Hyper-V guest debugging support.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the VM.
+ */
+static int gimR3HvInitDebugSupport(PVM pVM)
+{
+    int rc = VINF_SUCCESS;
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    pHv->pbHypercallIn = (uint8_t *)RTMemAllocZ(GIM_HV_PAGE_SIZE);
+    if (RT_LIKELY(pHv->pbHypercallIn))
+    {
+        pHv->pbHypercallOut = (uint8_t *)RTMemAllocZ(GIM_HV_PAGE_SIZE);
+        if (RT_LIKELY(pHv->pbHypercallOut))
+            return VINF_SUCCESS;
+        RTMemFree(pHv->pbHypercallIn);
+    }
+    return VERR_NO_MEMORY;
+}
+
+
+/**
+ * Terminates Hyper-V guest debugging support.
+ *
+ * @param   pVM     Pointer to the VM.
+ */
+static void gimR3HvTermDebugSupport(PVM pVM)
+{
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    RTMemFree(pHv->pbHypercallIn);
+    pHv->pbHypercallIn = NULL;
+
+    RTMemFree(pHv->pbHypercallOut);
+    pHv->pbHypercallOut = NULL;
+}
+
+
+/**
+ * Reads data from a debugger connection, asynchronous.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pvBuf       Where to read the data.
+ * @param   cbBuf       Size of the read buffer @a pvBuf.
+ * @param   pcbRead     Where to store how many bytes were really read.
+ * @param   cMsTimeout  Timeout of the read operation in milliseconds.
+ *
+ * @thread  EMT.
+ */
+static int gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t cMsTimeout)
+{
+    NOREF(cMsTimeout);      /** @todo implement */
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    AssertCompile(sizeof(size_t) >= sizeof(uint32_t));
+    size_t cbRead = cbBuf;
+    int rc = GIMR3DebugRead(pVM, pvBuf, &cbRead);
+    *pcbRead = (uint32_t)cbRead;
+    return rc;
+}
+
+
+/**
+ * Writes data to the debugger connection, asynchronous.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pvBuf       Pointer to the data to be written.
+ * @param   cbBuf       Size of the write buffer @a pvBuf.
+ * @param   pcbWritten  Where to store how many bytes were really written.
+ *
+ * @thread  EMT.
+ */
+static int gimR3HvDebugWrite(PVM pVM, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+{
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    AssertCompile(sizeof(size_t) >= sizeof(uint32_t));
+    size_t cbWrite = cbBuf;
+    int rc = GIMR3DebugWrite(pVM, pvBuf, &cbWrite);
+    *pcbWritten = (uint32_t)cbWrite;
+    return rc;
+}
+
+
+/**
+ * Performs the HvPostDebugData hypercall.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   GCPhysOut   Where to write the hypercall output parameters after
+ *                      performing the hypercall.
+ * @param   prcHv       Where to store the result of the hypercall operation.
+ *
+ * @thread  EMT.
+ */
+VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv)
+{
+    AssertPtr(pVM);
+    AssertPtr(prcHv);
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    int    rcHv = GIM_HV_STATUS_OPERATION_DENIED;
+
+    /*
+     * Grab the parameters.
+     */
+    PGIMHVDEBUGPOSTIN pIn = (PGIMHVDEBUGPOSTIN)pHv->pbHypercallIn;
+    AssertPtrReturn(pIn, VERR_GIM_IPE_1);
+    uint32_t   cbWrite = pIn->cbWrite;
+    uint32_t   fFlags = pIn->fFlags;
+    uint8_t   *pbData = ((uint8_t *)pIn) + sizeof(PGIMHVDEBUGPOSTIN);
+
+    PGIMHVDEBUGPOSTOUT pOut = (PGIMHVDEBUGPOSTOUT)pHv->pbHypercallOut;
+    AssertPtrReturn(pOut, VERR_GIM_IPE_2);
+    uint32_t *pcbPendingWrite = &pOut->cbPending;
+
+    /*
+     * Perform the hypercall.
+     */
+#if 0
+    /* Currently disabled as Windows 10 guest passes us undocumented flags. */
+    if (fFlags & ~GIM_HV_DEBUG_POST_OPTIONS_MASK))
+        rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+#endif
+    if (cbWrite > GIM_HV_DEBUG_MAX_DATA_SIZE)
+        rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+    else if (!cbWrite)
+        rcHv = GIM_HV_STATUS_SUCCESS;
+    else if (cbWrite > 0)
+    {
+        bool fIgnorePacket = false;
+        if (pHv->fIsVendorMsHv)
+        {
+            /*
+             * Windows guests sends us ethernet frames over the Hyper-V debug connection.
+             * It sends DHCP/ARP queries with zero'd out MAC addresses and requires fudging up the
+             * packets somewhere.
+             *
+             * The Microsoft WinDbg debugger talks UDP and thus only expects the actual debug
+             * protocol payload.
+             *
+             * At present, we only handle guests configured with the "nodhcp" option. This makes
+             * the guest send ARP queries with a self-chosen IP and after a couple of attempts of
+             * receiving no replies, the guest picks its own IP address. After this, the guest
+             * starts sending the UDP packets we require. We thus ignore the initial ARP packets
+             * (and to be safe all non-UDP packets) until the guest eventually starts talking
+             * UDP. Then we can finally feed the UDP payload over the debug connection.
+             */
+            if (cbWrite > sizeof(RTNETETHERHDR))
+            {
+                PRTNETETHERHDR pEtherHdr = (PRTNETETHERHDR)pbData;
+                if (pEtherHdr->EtherType != RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4))
+                    fIgnorePacket = true;       /* Supress passing ARP and other non IPv4 frames to debugger. */
+                else if (cbWrite > sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN)
+                {
+                    /* Extract UDP payload, recording the guest IP address to pass to the debugger. */
+                    PRTNETIPV4 pIp4Hdr = (PRTNETIPV4)(pbData + sizeof(RTNETETHERHDR));
+                    if (   pIp4Hdr->ip_v == 4
+                        && pIp4Hdr->ip_p == RTNETIPV4_PROT_UDP)
+                    {
+                        pHv->DbgGuestAddr = pIp4Hdr->ip_src;
+                        pbData += sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN;
+                        cbWrite -= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN;
+                    }
+                    else
+                        fIgnorePacket = true;   /* Supress passing non-UDP packets to the debugger. */
+                }
+            }
+        }
+
+        if (!fIgnorePacket)
+        {
+            uint32_t cbReallyWritten = 0;
+            int rc2 = gimR3HvDebugWrite(pVM, pbData, cbWrite, &cbReallyWritten);
+            if (   RT_SUCCESS(rc2)
+                && cbReallyWritten == cbWrite)
+            {
+                *pcbPendingWrite = 0;
+                rcHv = GIM_HV_STATUS_SUCCESS;
+            }
+            else
+            {
+                /*
+                 * No need to update "*pcbPendingWrite" here as the guest isn't supposed to/doesn't
+                 * look at any of the output parameters when we fail the hypercall operation.
+                 */
+                rcHv = GIM_HV_STATUS_INSUFFICIENT_BUFFERS;
+            }
+        }
+        else
+        {
+            /* Pretend success. */
+            *pcbPendingWrite = 0;
+            rcHv = GIM_HV_STATUS_SUCCESS;
+        }
+    }
+
+    /*
+     * Update the guest memory with result.
+     */
+    int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysOut, pHv->pbHypercallOut, sizeof(GIMHVDEBUGPOSTOUT));
+    if (RT_FAILURE(rc))
+    {
+        LogRelMax(10, ("GIM: HyperV: HvPostDebugData failed to update guest memory. rc=%Rrc\n", rc));
+        rc = VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED;
+    }
+
+    *prcHv = rcHv;
+    return rc;
+}
+
+
+/**
+ * Performs the HvRetrieveDebugData hypercall.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   GCPhysOut   Where to write the hypercall output parameters after
+ *                      performing the hypercall.
+ * @param   prcHv       Where to store the result of the hypercall operation.
+ *
+ * @thread  EMT.
+ */
+VMMR3_INT_DECL(int) gimR3HvHypercallRetrieveDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv)
+{
+    AssertPtr(pVM);
+    AssertPtr(prcHv);
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    int    rcHv = GIM_HV_STATUS_OPERATION_DENIED;
+
+    /*
+     * Grab the parameters.
+     */
+    PGIMHVDEBUGRETRIEVEIN pIn = (PGIMHVDEBUGRETRIEVEIN)pHv->pbHypercallIn;
+    AssertPtrReturn(pIn, VERR_GIM_IPE_1);
+    uint32_t   cbRead = pIn->cbRead;
+    uint32_t   fFlags = pIn->fFlags;
+    uint64_t   uTimeout = pIn->u64Timeout;
+    uint32_t   cMsTimeout = (fFlags & GIM_HV_DEBUG_RETREIVE_LOOP) ? (uTimeout * 100) / RT_NS_1MS_64 : 0;
+
+    PGIMHVDEBUGRETRIEVEOUT pOut = (PGIMHVDEBUGRETRIEVEOUT)pHv->pbHypercallOut;
+    AssertPtrReturn(pOut, VERR_GIM_IPE_2);
+    uint32_t   *pcbReallyRead = &pOut->cbRead;
+    uint32_t   *pcbRemainingRead = &pOut->cbRemaining;
+    void       *pvData = ((uint8_t *)pOut) + sizeof(GIMHVDEBUGRETRIEVEOUT);
+
+    /*
+     * Perform the hypercall.
+     */
+    *pcbReallyRead    = 0;
+    *pcbRemainingRead = cbRead;
+#if 0
+    /* Currently disabled as Windows 10 guest passes us undocumented flags. */
+    if (fFlags & ~GIM_HV_DEBUG_RETREIVE_OPTIONS_MASK)
+        rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+#endif
+    if (cbRead > GIM_HV_DEBUG_MAX_DATA_SIZE)
+        rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+    else if (fFlags & GIM_HV_DEBUG_RETREIVE_TEST_ACTIVITY)
+        rcHv = GIM_HV_STATUS_SUCCESS; /** @todo implement this. */
+    else if (!cbRead)
+        rcHv = GIM_HV_STATUS_SUCCESS;
+    else if (cbRead > 0)
+    {
+        int rc2 = gimR3HvDebugRead(pVM, pvData, cbRead, pcbReallyRead, cMsTimeout);
+        Assert(*pcbReallyRead <= cbRead);
+        if (   RT_SUCCESS(rc2)
+            && *pcbReallyRead > 0)
+        {
+            uint8_t abFrame[sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + sizeof(RTNETUDP)];
+            if (   pHv->fIsVendorMsHv
+                && *pcbReallyRead + sizeof(abFrame) <= GIM_HV_PAGE_SIZE)
+            {
+                /*
+                 * Windows guests pumps ethernet frames over the Hyper-V debug connection as
+                 * explained in gimR3HvHypercallPostDebugData(). Here, we reconstruct the packet
+                 * with the guest's self-chosen IP ARP address we saved in pHv->DbgGuestAddr.
+                 *
+                 * Note! We really need to pass the minimum IPv4 header length. The Windows 10 guest
+                 * is -not- happy if we include the IPv4 options field, i.e. using sizeof(RTNETIPV4)
+                 * instead of RTNETIPV4_MIN_LEN.
+                 */
+                RT_ZERO(abFrame);
+                PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)&abFrame[0];
+                PRTNETIPV4     pIpHdr  = (PRTNETIPV4)    (pEthHdr + 1);
+                PRTNETUDP      pUdpHdr = (PRTNETUDP)     ((uint8_t *)pIpHdr + RTNETIPV4_MIN_LEN);
+
+                /* Ethernet */
+                pEthHdr->EtherType = RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4);
+                /* IPv4 */
+                pIpHdr->ip_v       = 4;
+                pIpHdr->ip_hl      = RTNETIPV4_MIN_LEN / sizeof(uint32_t);
+                pIpHdr->ip_tos     = 0;
+                pIpHdr->ip_len     = RT_H2N_U16((uint16_t)*pcbReallyRead + sizeof(RTNETUDP) + RTNETIPV4_MIN_LEN);
+                pIpHdr->ip_id      = 0;
+                pIpHdr->ip_off     = 0;
+                pIpHdr->ip_ttl     = 255;
+                pIpHdr->ip_p       = RTNETIPV4_PROT_UDP;
+                pIpHdr->ip_sum     = 0;
+                pIpHdr->ip_src.u   = 0;
+                pIpHdr->ip_dst.u   = pHv->DbgGuestAddr.u;
+                pIpHdr->ip_sum     = RTNetIPv4HdrChecksum(pIpHdr);
+                /* UDP */
+                pUdpHdr->uh_ulen   = RT_H2N_U16_C((uint16_t)*pcbReallyRead + sizeof(*pUdpHdr));
+
+                /* Make room by moving the payload and prepending the headers. */
+                uint8_t *pbData = (uint8_t *)pvData;
+                memmove(pbData + sizeof(abFrame), pbData, *pcbReallyRead);
+                memcpy(pbData, &abFrame[0], sizeof(abFrame));
+
+                /* Update the adjusted sizes. */
+                *pcbReallyRead += sizeof(abFrame);
+                *pcbRemainingRead = cbRead - *pcbReallyRead;
+            }
+            rcHv = GIM_HV_STATUS_SUCCESS;
+        }
+        else
+            rcHv = GIM_HV_STATUS_NO_DATA;
+    }
+
+    /*
+     * Update the guest memory with result.
+     */
+    int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysOut, pHv->pbHypercallOut, sizeof(GIMHVDEBUGRETRIEVEOUT) + *pcbReallyRead);
+    if (RT_FAILURE(rc))
+    {
+        LogRelMax(10, ("GIM: HyperV: HvRetrieveDebugData failed to update guest memory. rc=%Rrc\n", rc));
+        rc = VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED;
+    }
+
+    *prcHv = rcHv;
+    return rc;
 }
 

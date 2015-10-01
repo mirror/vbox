@@ -224,7 +224,7 @@ typedef struct VMCPU
 #ifdef ___GIMInternal_h
         struct GIMCPU s;
 #endif
-        uint8_t             padding[64];      /* multiple of 64 */
+        uint8_t             padding[64];        /* multiple of 64 */
     } gim;
 
     /** Align the following members on page boundary. */
@@ -1118,7 +1118,7 @@ typedef struct VM
 #ifdef ___SSMInternal_h
         struct SSM  s;
 #endif
-        uint8_t     padding[128];        /* multiple of 64 */
+        uint8_t     padding[128];       /* multiple of 64 */
     } ssm;
 
     /** FTM part. */
@@ -1127,7 +1127,7 @@ typedef struct VM
 #ifdef ___FTMInternal_h
         struct FTM  s;
 #endif
-        uint8_t     padding[512];        /* multiple of 64 */
+        uint8_t     padding[512];       /* multiple of 64 */
     } ftm;
 
     /** REM part. */
@@ -1144,7 +1144,7 @@ typedef struct VM
 #ifdef ___GIMInternal_h
         struct GIM s;
 #endif
-        uint8_t     padding[320];        /* multiple of 64 */
+        uint8_t     padding[320+64];    /* multiple of 64 */
     } gim;
 
     /* ---- begin small stuff ---- */
@@ -1169,7 +1169,7 @@ typedef struct VM
 
 
     /** Padding for aligning the cpu array on a page boundary. */
-    uint8_t         abAlignment2[30];
+    uint8_t         abAlignment2[4062];
 
     /* ---- end small stuff ---- */
 

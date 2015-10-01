@@ -231,6 +231,13 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             rc = emR3ExecuteInstruction(pVM, pVCpu, "MSR");
             break;
 
+        /*
+         * GIM hypercall.
+         */
+        case VINF_GIM_R3_HYPERCALL:
+            rc = GIMHypercall(pVCpu, pCtx);
+            break;
+
 #ifdef EMHANDLERC_WITH_HM
         /*
          * (MM)IO intensive code block detected; fall back to the recompiler for better performance
