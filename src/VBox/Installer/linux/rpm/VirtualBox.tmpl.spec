@@ -289,37 +289,28 @@ touch --no-create /usr/share/icons/hicolor
 gtk-update-icon-cache -q /usr/share/icons/hicolor 2> /dev/null || :
 
 # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
-BUILD_MODULES=0
-REGISTER_MODULES=1
-if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
-  REGISTER_MODULES=0
-  if [ "$INSTALL_NO_VBOXDRV" != "1" ]; then
+if test "${INSTALL_NO_VBOXDRV}" = 1; then
+  POSTINST_START=
+  if lsmod | grep -q "vboxdrv[^_-]"; then
+    /usr/lib/virtualbox/vboxdrv.sh stop || true
+  fi
+  # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
+  rm -f /lib/modules/*/misc/vboxdrv.ko
+  rm -f /lib/modules/*/misc/vboxnetflt.ko
+  rm -f /lib/modules/*/misc/vboxnetadp.ko
+  rm -f /lib/modules/*/misc/vboxpci.ko
+else
+  POSTINST_START=--start
+  if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
     # compile problem
     cat << EOF
 No precompiled module for this kernel found -- trying to build one. Messages
 emitted during module compilation will be logged to $LOG.
 
 EOF
-    BUILD_MODULES=1
-  fi
-fi
-# if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
-if [ "$INSTALL_NO_VBOXDRV" = "1" ]; then
-  rm -f /lib/modules/*/misc/vboxdrv.ko
-  rm -f /lib/modules/*/misc/vboxnetflt.ko
-  rm -f /lib/modules/*/misc/vboxnetadp.ko
-  rm -f /lib/modules/*/misc/vboxpci.ko
-fi
-if [ $BUILD_MODULES -eq 1 ]; then
-  /usr/lib/virtualbox/vboxdrv.sh setup || true
-else
-  if lsmod | grep -q "vboxdrv[^_-]"; then
-    /usr/lib/virtualbox/vboxdrv.sh stop || true
   fi
 fi
 # Install and start the new service scripts.
-POSTINST_START=--start
-test "${INSTALL_NO_VBOXDRV}" = 1 && POSTINST_START=
 /usr/lib/virtualbox/prerm-common.sh || true
 /usr/lib/virtualbox/postinst-common.sh /usr/lib/virtualbox "${POSTINST_START}" > /dev/null || true
 

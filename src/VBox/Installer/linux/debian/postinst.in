@@ -77,50 +77,44 @@ if [ "$1" = "configure" ]; then
       chmod 4511 /usr/lib/virtualbox/VBoxVolInfo
     fi
   fi
-
-  # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
-  if [ "$INSTALL_NO_VBOXDRV" = "1" ]; then
-    rm -f /lib/modules/*/misc/vboxdrv.ko
-    rm -f /lib/modules/*/misc/vboxnetflt.ko
-    rm -f /lib/modules/*/misc/vboxnetadp.ko
-  fi
-
 fi # $1 = "configure"
 
 #DEBHELPER#
 
-BUILD_MODULES=0
-REGISTER_MODULES=1
-# Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
-if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
-  REGISTER_MODULES=0
+if test "${INSTALL_NO_VBOXDRV}" = 1; then
+  POSTINST_START=
+  # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
   if [ "$1" = "configure" ]; then
-    if [ "$INSTALL_NO_VBOXDRV" != "1" ]; then
+    rm -f /lib/modules/*/misc/vboxdrv.ko
+    rm -f /lib/modules/*/misc/vboxnetflt.ko
+    rm -f /lib/modules/*/misc/vboxnetadp.ko
+    rm -f /lib/modules/*/misc/vboxpci.ko
+  fi
+else
+  POSTINST_START=--start
+  # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
+  if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
+    if [ "$1" = "configure" ]; then
       db_get virtualbox/module-compilation-allowed
       if [ "$RET" = "false" ]; then
         cat << EOF
 Unable to find a precompiled module for the current kernel
 though module compilation denied by debconf setting.
 EOF
+        POSTINST_START=
       else
         db_input low virtualbox/module-compilation-allowed || true
         db_go || true
         db_get virtualbox/module-compilation-allowed
-        if [ "$RET" = "true" ]; then
-          BUILD_MODULES=1
+        if [ "$RET" = "false" ]; then
+          POSTINST_START=
         fi
       fi
-    fi
-  fi # $1 = "configure"
-fi
-
-if [ $BUILD_MODULES -eq 1 ]; then
-  /usr/lib/virtualbox/vboxdrv.sh setup || true
+    fi # $1 = "configure"
+  fi
 fi
 
 # Install and start the new service scripts.
-POSTINST_START=--start
-test "${INSTALL_NO_VBOXDRV}" = 1 && POSTINST_START=
 /usr/lib/virtualbox/prerm-common.sh || true
 /usr/lib/virtualbox/postinst-common.sh /usr/lib/virtualbox "${POSTINST_START}" > /dev/null || true
 

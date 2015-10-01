@@ -284,7 +284,8 @@ if [ "$ACTION" = "install" ]; then
     test -e $INSTALLATION_DIR/VBoxNetAdpCtl && chmod 4511 $INSTALLATION_DIR/VBoxNetAdpCtl
     test -e $INSTALLATION_DIR/VBoxVolInfo && chmod 4511 $INSTALLATION_DIR/VBoxVolInfo
 
-    # Write the configuration. Do this before we call /sbin/rcvboxdrv setup!
+    # Write the configuration.  Needs to be done before the vboxdrv service is
+    # started.
     echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
     echo "INSTALL_DIR='$INSTALLATION_DIR'" >> $CONFIG_DIR/$CONFIG
     echo "# VirtualBox version" >> $CONFIG_DIR/$CONFIG
@@ -362,30 +363,13 @@ if [ "$ACTION" = "install" ]; then
 
     install_device_node_setup "$VBOXDRV_GRP" "$VBOXDRV_MODE" "$INSTALLATION_DIR"
 
-    # Make kernel module
-    MODULE_FAILED="false"
-    if [ "$BUILD_MODULE" = "true" ]
-    then
-        info "Building the VirtualBox kernel modules"
-        log "Output from the module build process (the Linux kernel build system) follows:"
-        cur=`pwd`
-        log ""
-        # Start VirtualBox kernel module
-        if ! ./vboxdrv.sh setup || ! ./vboxdrv.sh start; then
-            info "Failed to load the kernel module."
-            MODULE_FAILED="true"
-            RC_SCRIPT=1
-        fi
-        log ""
-        log "End of the output from the Linux kernel build system."
-        cd $cur
-    fi
-
     # Do post-installation common to all installer types, currently service
     # script set-up.
-    START_SERVICES=
-    test "${BUILD_MODULE}" = "true" && test "${MODULE_FAILED}" = "false" &&
-        START_SERVICES="--start"
+    if test "${BUILD_MODULE}" = "true"; then
+      START_SERVICES="--start"
+    else
+      START_SERVICES=
+    fi
     ./postinst-common.sh "${INSTALLATION_DIR}" "${START_SERVICES}" >> "${LOG}"
 
     info ""

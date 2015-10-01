@@ -214,7 +214,9 @@ start()
         }
 
         $MODPROBE vboxguest >/dev/null 2>&1 || {
-            fail "modprobe vboxguest failed"
+            setup
+            $MODPROBE vboxguest >/dev/null 2>&1 ||
+                fail "modprobe vboxguest failed"
         }
         case "$no_udev" in 1)
             sleep .5;;
