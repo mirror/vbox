@@ -210,7 +210,13 @@ static RTEXITCODE handleDebugVM_LogXXXX(HandlerArg *pArgs, IMachineDebugger *pDe
         { "--debug",        DEBUGVM_LOG_DEBUG,   RTGETOPT_REQ_NOTHING },
         { "--release",      DEBUGVM_LOG_RELEASE, RTGETOPT_REQ_NOTHING }
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2,
+                          /*
+                           * Note: RTGETOPTINIT_FLAGS_NO_STD_OPTS is needed to not get into an infinite hang in the following
+                           *       while-loop when processing log groups starting with "h",
+                           *       e.g. "VBoxManage debugvm <VM Name> log --debug -hex".
+                           */
+                          RTGETOPTINIT_FLAGS_OPTS_FIRST | RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
     while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
@@ -246,6 +252,8 @@ static RTEXITCODE handleDebugVM_LogXXXX(HandlerArg *pArgs, IMachineDebugger *pDe
         strSettings = "release: ";
         strSettings.append(strTmp);
     }
+
+
 
     com::Bstr bstrSettings(strSettings);
     if (!strcmp(pszSubCmd, "log"))
