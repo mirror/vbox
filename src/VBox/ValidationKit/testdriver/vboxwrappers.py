@@ -1434,6 +1434,14 @@ class SessionWrapper(TdTaskBase):
             sHostName = ''
             try:
                 sHostName = socket.getfqdn()
+                if not '.' in sHostName:
+                    # somewhat misconfigured system, needs expensive approach to guessing FQDN
+                    for aAI in socket.getaddrinfo(sHostName, None):
+                        sName, _ = socket.getnameinfo(aAI[4], 0)
+                        if '.' in sName and not set(sName).issubset(set('0123456789.')):
+                            sHostName = sName
+                            break
+
                 sHostIP = socket.gethostbyname(sHostName)
                 abHostIP = socket.inet_aton(sHostIP)
                 if ord(abHostIP[0]) == 127 \
