@@ -253,8 +253,6 @@ static RTEXITCODE handleDebugVM_LogXXXX(HandlerArg *pArgs, IMachineDebugger *pDe
         strSettings.append(strTmp);
     }
 
-
-
     com::Bstr bstrSettings(strSettings);
     if (!strcmp(pszSubCmd, "log"))
         CHECK_ERROR2I_RET(pDebugger, ModifyLogGroups(bstrSettings.raw()), RTEXITCODE_FAILURE);
