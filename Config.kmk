@@ -478,8 +478,6 @@ endif
 VBOX_WITH_AHCI = 1
 # Enable the new async completion manager
 VBOX_WITH_PDM_ASYNC_COMPLETION = 1
-# Temporary switch for enabling / disabling the new USB code on Darwin.
-VBOX_WITH_NEW_USB_CODE_ON_DARWIN = 1
 ifdef VBOX_WITH_USB
  VBOX_WITH_VUSB = 1
  VBOX_WITH_XHCI_IMPL=1

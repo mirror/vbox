@@ -441,8 +441,7 @@ HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSet
      * when the request succeeds (i.e. asynchronously).
      */
     LogFlowThisFunc(("{%s} capturing the device.\n", mName));
-#if (defined(RT_OS_DARWIN) && defined(VBOX_WITH_NEW_USB_CODE_ON_DARWIN)) /* PORTME */ \
- || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) /* PORTME */
     i_setState(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_UsedByVM, kHostUSBDeviceSubState_AwaitingDetach);
 #else
     i_setState(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_UsedByVM);
@@ -704,8 +703,7 @@ HRESULT HostUSBDevice::i_requestReleaseToHost()
     /*
      * Try release it.
      */
-#if (defined(RT_OS_DARWIN) && defined(VBOX_WITH_NEW_USB_CODE_ON_DARWIN)) /* PORTME */ \
- || defined(RT_OS_WINDOWS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) /* PORTME */
     i_startTransition(kHostUSBDeviceState_ReleasingToHost, kHostUSBDeviceState_Unused, kHostUSBDeviceSubState_AwaitingDetach);
 #else
     i_startTransition(kHostUSBDeviceState_ReleasingToHost, kHostUSBDeviceState_Unused);
@@ -758,8 +756,7 @@ HRESULT HostUSBDevice::i_requestHold()
     /*
      * Do the job.
      */
-#if (defined(RT_OS_DARWIN) && defined(VBOX_WITH_NEW_USB_CODE_ON_DARWIN)) /* PORTME */ \
- || defined(RT_OS_WINDOWS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) /* PORTME */
     i_startTransition(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_HeldByProxy, kHostUSBDeviceSubState_AwaitingDetach);
 #else
     i_startTransition(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_HeldByProxy);

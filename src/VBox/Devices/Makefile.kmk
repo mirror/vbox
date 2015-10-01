@@ -69,9 +69,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   if defined(VBOX_WITH_XHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
    VBoxDDU_DEFS          += VBOX_WITH_XHCI_IMPL
   endif
-  ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-   VBoxDDU_DEFS.darwin   += VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-  endif
  else
   VBoxDDU_SDKS.win        = ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
@@ -100,9 +97,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
  VBoxDDU_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDDU.dylib
  ifdef VBOX_WITH_USB
-  ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
   VBoxDDU_LDFLAGS.darwin += -framework IOKit
-  endif
  endif
 
  VBoxDDU_LDFLAGS.linux    = -Wl,--no-undefined
@@ -324,9 +319,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	USB/usbip/USBProxyDevice-usbip.cpp
 
   VBoxDD_DEFS.darwin    += VUSB_HAVE_USBPROXY_DEVICE
-  ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-   VBoxDD_DEFS.darwin   += VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-  endif
   VBoxDD_SOURCES.darwin += \
  	USB/USBProxyDevice.cpp \
  	USB/darwin/USBProxyDevice-darwin.cpp

@@ -153,10 +153,8 @@ public:
     HRESULT init(void);
     ~USBProxyServiceDarwin();
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     virtual void *insertFilter(PCUSBFILTER aFilter);
     virtual void removeFilter(void *aId);
-#endif
 
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
@@ -182,10 +180,6 @@ private:
     /** A hack to work around the problem with the usb device enumeration
      * not including newly attached devices. */
     bool mWaitABitNextTime;
-#ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-    /** Whether we've got a fake async event and should return without entering the runloop. */
-    bool volatile mFakeAsync;
-#endif
     /** Whether we've successfully initialized the USBLib and should call USBLibTerm in the destructor. */
     bool mUSBLibInitialized;
 };

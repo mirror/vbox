@@ -52,7 +52,6 @@ USBProxyServiceDarwin::USBProxyServiceDarwin(Host *aHost)
  */
 HRESULT USBProxyServiceDarwin::init(void)
 {
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     /*
      * Initialize the USB library.
      */
@@ -63,7 +62,6 @@ HRESULT USBProxyServiceDarwin::init(void)
         return S_OK;
     }
     mUSBLibInitialized = true;
-#endif
 
     /*
      * Start the poller thread.
@@ -86,7 +84,6 @@ USBProxyServiceDarwin::~USBProxyServiceDarwin()
     if (isActive())
         stop();
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     /*
      * Terminate the USB library - it'll
      */
@@ -95,11 +92,9 @@ USBProxyServiceDarwin::~USBProxyServiceDarwin()
         USBLibTerm();
         mUSBLibInitialized = false;
     }
-#endif
 }
 
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
 void *USBProxyServiceDarwin::insertFilter(PCUSBFILTER aFilter)
 {
     return USBLibAddFilter(aFilter);
@@ -110,7 +105,6 @@ void USBProxyServiceDarwin::removeFilter(void *aId)
 {
     USBLibRemoveFilter(aId);
 }
-#endif /* VBOX_WITH_NEW_USB_CODE_ON_DARWIN */
 
 
 int USBProxyServiceDarwin::captureDevice(HostUSBDevice *aDevice)
@@ -126,16 +120,6 @@ int USBProxyServiceDarwin::captureDevice(HostUSBDevice *aDevice)
 
     Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_Capturing);
 
-#ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-    /*
-     * Fake it.
-     */
-    ASMAtomicWriteBool(&mFakeAsync, true);
-    devLock.release();
-    interruptWait();
-    return VINF_SUCCESS;
-
-#else
     /*
      * Create a one-shot capture filter for the device (don't
      * match on port) and trigger a re-enumeration of it.
@@ -158,14 +142,13 @@ int USBProxyServiceDarwin::captureDevice(HostUSBDevice *aDevice)
     }
     LogFlowThisFunc(("returns %Rrc pvId=%p\n", rc, pvId));
     return rc;
-#endif
 }
 
 
 void USBProxyServiceDarwin::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
     AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
+
     /*
      * Remove the one-shot filter if necessary.
      */
@@ -173,7 +156,6 @@ void USBProxyServiceDarwin::captureDeviceCompleted(HostUSBDevice *aDevice, bool 
     if (!aSuccess && aDevice->mOneShotId)
         USBLibRemoveFilter(aDevice->mOneShotId);
     aDevice->mOneShotId = NULL;
-#endif
 }
 
 
@@ -190,16 +172,6 @@ int USBProxyServiceDarwin::releaseDevice(HostUSBDevice *aDevice)
 
     Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_ReleasingToHost);
 
-#ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-    /*
-     * Fake it.
-     */
-    ASMAtomicWriteBool(&mFakeAsync, true);
-    devLock.release();
-    interruptWait();
-    return VINF_SUCCESS;
-
-#else
     /*
      * Create a one-shot ignore filter for the device
      * and trigger a re-enumeration of it.
@@ -224,14 +196,13 @@ int USBProxyServiceDarwin::releaseDevice(HostUSBDevice *aDevice)
     }
     LogFlowThisFunc(("returns %Rrc pvId=%p\n", rc, pvId));
     return rc;
-#endif
 }
 
 
 void USBProxyServiceDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
     AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
+
     /*
      * Remove the one-shot filter if necessary.
      */
@@ -239,18 +210,13 @@ void USBProxyServiceDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool 
     if (!aSuccess && aDevice->mOneShotId)
         USBLibRemoveFilter(aDevice->mOneShotId);
     aDevice->mOneShotId = NULL;
-#endif
 }
 
 
 /** @todo unused */
 void USBProxyServiceDarwin::detachingDevice(HostUSBDevice *aDevice)
 {
-#ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-    aDevice->setLogicalReconnect(HostUSBDevice::kDetachingPendingDetach);
-#else
     NOREF(aDevice);
-#endif
 }
 
 
@@ -258,24 +224,13 @@ bool USBProxyServiceDarwin::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE
 {
     AssertReturn(aDevice, false);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
-#ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-    /* We're faking async state stuff. */
-    return updateDeviceStateFake(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-#else
-    /* Nothing special here so far, so fall back on parent */
+    /* Nothing special here so far, so fall back on parent. */
     return USBProxyService::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-#endif
 }
 
 
 int USBProxyServiceDarwin::wait(RTMSINTERVAL aMillies)
 {
-#ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-    if (    mFakeAsync
-        &&  ASMAtomicXchgBool(&mFakeAsync, false))
-        return VINF_SUCCESS;
-#endif
-
     SInt32 rc = CFRunLoopRunInMode(CFSTR(VBOX_IOKIT_MODE_STRING),
                                    mWaitABitNextTime && aMillies >= 1000
                                    ? 1.0 /* seconds */

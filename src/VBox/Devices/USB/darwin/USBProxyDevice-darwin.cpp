@@ -1183,7 +1183,6 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
         return VERR_VUSB_DEVICE_NAME_NOT_FOUND;
     }
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     /*
      * Call the USBLib init to make sure we're a valid VBoxUSB client.
      * For now we'll ignore failures here and just plunge on, it might still work...
@@ -1191,7 +1190,6 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
     vrc = USBLibInit();
     if (RT_FAILURE(vrc))
         LogRel(("USB: USBLibInit failed - %Rrc\n", vrc));
-#endif
 
     /*
      * Create a plugin interface for the device and query its IOUSBDeviceInterface.
@@ -1329,9 +1327,7 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
         vrc = RTErrConvertFromDarwin(irc);
     }
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     USBLibTerm();
-#endif
     return vrc;
 }
 
@@ -1378,10 +1374,6 @@ static DECLCALLBACK(void) usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
     }
 
     IOReturn irc = (*pDevOsX->ppDevI)->ResetDevice(pDevOsX->ppDevI);
-#ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-    if (irc == kIOReturnSuccess)
-        irc = (*pDevOsX->ppDevI)->USBDeviceReEnumerate(pDevOsX->ppDevI, 0);
-#endif
 
     irc = (*pDevOsX->ppDevI)->USBDeviceClose(pDevOsX->ppDevI);
     if (irc != kIOReturnSuccess && irc != kIOReturnNoDevice)
@@ -1408,9 +1400,7 @@ static DECLCALLBACK(void) usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
         RTMemFree(pUrbOsX);
     }
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     USBLibTerm();
-#endif
     LogFlow(("usbProxyDarwinClose: returns\n"));
 }
 
