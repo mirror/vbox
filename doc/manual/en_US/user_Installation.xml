@@ -463,7 +463,7 @@
 
           <listitem>
             <para>It creates
-            <computeroutput>/etc/init.d/vboxdrv</computeroutput>, an init
+            <computeroutput>/sbin/rcvboxdrv</computeroutput>, an init
             script to start the VirtualBox kernel module.</para>
           </listitem>
 
@@ -584,7 +584,7 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen></para>
         read/writable only for the user.</para>
 
         <para>Next, you will have to install the system initialization script
-        for the kernel module:<screen>cp /opt/VirtualBox/vboxdrv.sh /etc/init.d/vboxdrv</screen>(assuming
+        for the kernel module:<screen>cp /opt/VirtualBox/vboxdrv.sh /sbin/rcvboxdrv</screen>(assuming
         you installed VirtualBox to the
         <computeroutput>/opt/VirtualBox</computeroutput> directory) and
         activate the initialization script using the right method for your

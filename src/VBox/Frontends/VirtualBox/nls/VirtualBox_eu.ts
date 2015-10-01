@@ -93,8 +93,8 @@
     </message>
     <message>
         <location line="+7"/>
-        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation>VirtualBox kernel moduloak ez datoz bat VirtualBox bertsio honekin. VirtualBox-en ezarpena dirudienez ez da ongi egin. &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; exekutatzeak hau zuzendu dezake. Zihurtatu ez dituzula VirtualBox-en OSE bertsioa eta PUEL bertsioa nahastu.</translation>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
+        <translation>VirtualBox kernel moduloak ez datoz bat VirtualBox bertsio honekin. VirtualBox-en ezarpena dirudienez ez da ongi egin. &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; exekutatzeak hau zuzendu dezake. Zihurtatu ez dituzula VirtualBox-en OSE bertsioa eta PUEL bertsioa nahastu.</translation>
     </message>
     <message>
         <location line="-22"/>
@@ -103,8 +103,8 @@
     </message>
     <message>
         <location line="+5"/>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation>VirtualBox Linux kernel gidatzailea (vboxdrv) ez dago gertatuta edo baimen arazo bat dago /dev/vboxdrv-rekin. Mesedez ber-ezarri kernel moduloa &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;exekutatuz erro bezala. Zure banaketan eskuragarri badago, lehenik DKMS paketea ezarri behar duzu. Pakete honek Linux kernelaren aldaketak aztarnatzen ditu eta vboxdrv kernel moduloa berbiltzen du beharrezkoa bada.</translation>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <translation>VirtualBox Linux kernel gidatzailea (vboxdrv) ez dago gertatuta edo baimen arazo bat dago /dev/vboxdrv-rekin. Mesedez ber-ezarri kernel moduloa &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;exekutatuz erro bezala. Zure banaketan eskuragarri badago, lehenik DKMS paketea ezarri behar duzu. Pakete honek Linux kernelaren aldaketak aztarnatzen ditu eta vboxdrv kernel moduloa berbiltzen du beharrezkoa bada.</translation>
     </message>
 </context>
 <context>

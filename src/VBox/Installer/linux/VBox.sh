@@ -40,7 +40,7 @@ WARNING: The vboxdrv kernel module is not loaded. Either there is no module
          available for the current kernel (`uname -r`) or it failed to
          load. Please recompile the kernel module and install it by
 
-           sudo /etc/init.d/vboxdrv setup
+           sudo /sbin/rcvboxdrv setup
 
          You will not be able to start VMs until this problem is fixed.
 EOF
@@ -48,7 +48,7 @@ elif [ ! -c /dev/vboxdrv ]; then
     cat << EOF
 WARNING: The character device /dev/vboxdrv does not exist. Try
 
-           sudo /etc/init.d/vboxdrv restart
+           sudo /sbin/rcvboxdrv restart
 
          and if that is not successful, try to re-install the package.
 

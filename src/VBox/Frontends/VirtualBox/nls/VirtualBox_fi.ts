@@ -77,12 +77,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="obsolete">Tämä virhe tarkoittaa, että ytimen ajuri ei voinut varata tarpeeksi muistia  tai että joku muistin kartoitustoiminto epäonnistui.&lt;br/&gt;&lt;br/&gt;Ydintä 2.6.29 käytettäessä on tunnettuja käyttöongelmia. Jos käytät tätä ydintä,  muokkaa tiedostoja /usr/src/vboxdrv-*/Makefile ja aseta arvo &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Tämän jälkeen sinun täytyy kääntää ytimen moduli uudestaan komennolla &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; root-käyttäjän oikeuksilla.</translation>
+        <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
+        <translation type="obsolete">Tämä virhe tarkoittaa, että ytimen ajuri ei voinut varata tarpeeksi muistia  tai että joku muistin kartoitustoiminto epäonnistui.&lt;br/&gt;&lt;br/&gt;Ydintä 2.6.29 käytettäessä on tunnettuja käyttöongelmia. Jos käytät tätä ydintä,  muokkaa tiedostoja /usr/src/vboxdrv-*/Makefile ja aseta arvo &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Tämän jälkeen sinun täytyy kääntää ytimen moduli uudestaan komennolla &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; root-käyttäjän oikeuksilla.</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="obsolete">VirtualBoxin Linux-ytimen ajuri (vboxdrv) ei ole joko ladattu tai laitetiedoston /dev/vboxdrv oikeudet ovat väärin. Määrittele ytimen moduulin asetukset uudestaan root-käyttäjänä komennolla &lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;. Ubuntun, fedoran ja mandrivan käyttäjien tulisi ensin asentaa paketti dkms. Tämä paketti pitää kirjaa ytimen muutoksista ja kääntää moduulit automaattisesti tarvittaessa.</translation>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <translation type="obsolete">VirtualBoxin Linux-ytimen ajuri (vboxdrv) ei ole joko ladattu tai laitetiedoston /dev/vboxdrv oikeudet ovat väärin. Määrittele ytimen moduulin asetukset uudestaan root-käyttäjänä komennolla &lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;. Ubuntun, fedoran ja mandrivan käyttäjien tulisi ensin asentaa paketti dkms. Tämä paketti pitää kirjaa ytimen muutoksista ja kääntää moduulit automaattisesti tarvittaessa.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
@@ -129,7 +129,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -137,7 +137,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

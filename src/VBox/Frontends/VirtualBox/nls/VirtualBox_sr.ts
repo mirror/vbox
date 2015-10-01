@@ -67,12 +67,12 @@
         <translation>Поново инсталирати VirtualBox.</translation>
     </message>
     <message>
-        <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="obsolete">Грешка пошто драјвер језгра није могао да допуни меморију или је имало грешке у мапирању.&lt;br/&gt;&lt;br/&gt;Ово су познате грешке са Linux 2.6.29. Ако користите то језгро, уредити /usr/src/vboxdrv-*/Makefile и упалити &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. После тога, поново компулујте језгро са &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;као root.</translation>
+        <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
+        <translation type="obsolete">Грешка пошто драјвер језгра није могао да допуни меморију или је имало грешке у мапирању.&lt;br/&gt;&lt;br/&gt;Ово су познате грешке са Linux 2.6.29. Ако користите то језгро, уредити /usr/src/vboxdrv-*/Makefile и упалити &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. После тога, поново компулујте језгро са &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;као root.</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="obsolete">VirtualBox Linux kernel driver (vboxdrv) или није учитан или нема довољно права са /dev/vboxdrv. Поново инсталирати модул са&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;као root. Корисници Ubuntu, Fedora или Mandriva требају да прво инсталирају DKMS пакет. Пакет компилује vboxdrv ако потребно према промене језгра.</translation>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <translation type="obsolete">VirtualBox Linux kernel driver (vboxdrv) или није учитан или нема довољно права са /dev/vboxdrv. Поново инсталирати модул са&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;као root. Корисници Ubuntu, Fedora или Mandriva требају да прво инсталирају DKMS пакет. Пакет компилује vboxdrv ако потребно према промене језгра.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
@@ -95,8 +95,8 @@
         <translation>Кернел VirtualBox-а није исти као у овој верзији. Можда је инсталација програма погрешна. Може помоћи да се уклони и поново инсталира програм.</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation>Кернел VirtualBox-а није исти као у овој верзији. Можда је инсталација програма погрешна. Покретање&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;требало би да поправи проблем. Проверите да не промешате верзију OSE и PUEL „VirtualBox-а“.</translation>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
+        <translation>Кернел VirtualBox-а није исти као у овој верзији. Можда је инсталација програма погрешна. Покретање&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;требало би да поправи проблем. Проверите да не промешате верзију OSE и PUEL „VirtualBox-а“.</translation>
     </message>
     <message>
         <source>Kernel driver not accessible</source>
@@ -107,7 +107,7 @@
         <translation>Грешка знаћи да или кернел ноије успео да алоцира довољно меморије или да је нека мапажа погрешна.</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

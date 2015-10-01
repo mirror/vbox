@@ -315,7 +315,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
                     pszError = N_("One of the kernel modules was not successfully loaded. Make sure "
                                   "that no kernel modules from an older version of VirtualBox exist. "
                                   "Then try to recompile and reload the kernel modules by executing "
-                                  "'/etc/init.d/vboxdrv setup' as root");
+                                  "'/sbin/rcvboxdrv setup' as root");
                     break;
 #endif
 
@@ -381,7 +381,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
                     pszError = N_("VirtualBox kernel driver not loaded. The vboxdrv kernel module "
                                   "was either not loaded or /dev/vboxdrv is not set up properly. "
                                   "Re-setup the kernel module by executing "
-                                  "'/etc/init.d/vboxdrv setup' as root");
+                                  "'/sbin/rcvboxdrv setup' as root");
 #else
                     pszError = N_("VirtualBox kernel driver not loaded");
 #endif
@@ -423,7 +423,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
                     pszError = N_("VirtualBox kernel driver not installed. The vboxdrv kernel module "
                                   "was either not loaded or /dev/vboxdrv was not created for some "
                                   "reason. Re-setup the kernel module by executing "
-                                  "'/etc/init.d/vboxdrv setup' as root");
+                                  "'/sbin/rcvboxdrv setup' as root");
 #else
                     pszError = N_("VirtualBox kernel driver not installed");
 #endif

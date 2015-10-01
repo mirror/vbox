@@ -284,7 +284,7 @@ if [ "$ACTION" = "install" ]; then
     test -e $INSTALLATION_DIR/VBoxNetAdpCtl && chmod 4511 $INSTALLATION_DIR/VBoxNetAdpCtl
     test -e $INSTALLATION_DIR/VBoxVolInfo && chmod 4511 $INSTALLATION_DIR/VBoxVolInfo
 
-    # Write the configuration. Do this before we call /etc/init.d/vboxdrv setup!
+    # Write the configuration. Do this before we call /sbin/rcvboxdrv setup!
     echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
     echo "INSTALL_DIR='$INSTALLATION_DIR'" >> $CONFIG_DIR/$CONFIG
     echo "# VirtualBox version" >> $CONFIG_DIR/$CONFIG
@@ -395,7 +395,7 @@ if [ "$ACTION" = "install" ]; then
     else
         info "VirtualBox has been installed successfully, but the kernel module could not"
         info "be built.  When you have fixed the problems preventing this, execute"
-        info "  /etc/init.d/vboxdrv setup"
+        info "  /sbin/rcvboxdrv setup"
         info "as administrator to build it."
     fi
     info ""
