@@ -55,6 +55,7 @@ if [ -z "$VBOX_DONT_REMOVE_OLD_MODULES" ]; then
     find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2> /dev/null
     find /lib/modules/`uname -r` -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2> /dev/null
     find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2> /dev/null
+    find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|xargs rm -f 2> /dev/null
     # Remove directories we have installed to in the past
     find /lib/modules/`uname -r` -name vbox\* 2>/dev/null|xargs rmdir -p 2> /dev/null
     find /lib/modules/`uname -r` -name misc\* 2>/dev/null|xargs rmdir -p 2> /dev/null
@@ -62,6 +63,7 @@ if [ -z "$VBOX_DONT_REMOVE_OLD_MODULES" ]; then
     rm -f /usr/src/vboxdrv-$INSTALL_VER 2> /dev/null
     rm -f /usr/src/vboxnetflt-$INSTALL_VER 2> /dev/null
     rm -f /usr/src/vboxnetadp-$INSTALL_VER 2> /dev/null
+    rm -f /usr/src/vboxpci-$INSTALL_VER 2> /dev/null
 fi
 
 # Remove symlinks
@@ -125,6 +127,10 @@ if [ -f $PREV_INSTALLATION/src/vboxnetflt/Makefile ]; then
 fi
 if [ -f $PREV_INSTALLATION/src/vboxnetadp/Makefile ]; then
     cd $PREV_INSTALLATION/src/vboxnetadp
+    make clean > /dev/null 2>&1
+fi
+if [ -f $PREV_INSTALLATION/src/vboxpci/Makefile ]; then
+    cd $PREV_INSTALLATION/src/vboxpci
     make clean > /dev/null 2>&1
 fi
 cd $PREV_INSTALLATION
