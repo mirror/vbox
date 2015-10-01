@@ -239,7 +239,7 @@ protected:
     bool i_startTransition (HostUSBDeviceState aNewState, HostUSBDeviceState aFinalState,
                             HostUSBDeviceSubState aNewSubState = kHostUSBDeviceSubState_Default);
     bool i_advanceTransition(bool aSkipReAttach = false);
-    bool i_failTransition();
+    bool i_failTransition(HostUSBDeviceState a_enmStateHint);
     USBDeviceState_T i_canonicalState() const;
 
 private:
