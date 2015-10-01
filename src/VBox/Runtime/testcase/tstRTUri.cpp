@@ -543,18 +543,18 @@ int main()
     /* To generate the PathCreateFromUrl/UrlCreateFromPath reference on Windows. */
     for (size_t i = 0; i < RT_ELEMENTS(g_apCreateFileURIs); ++i)
     {
-        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "#%u: Path=%s, URL=%s\n", i, g_apCreateFileURIs[i].pcszPath, g_apCreateFileURIs[i].pcszUri);
+        RTTestPrintf(hTest, RTTESTLVL_DEBUG, "#%u: Path=%s, URL=%s\n", i, g_apCreateFileURIs[i].pcszPath, g_apCreateFileURIs[i].pcszUri);
         char szPath[255] = { 0 };
         DWORD dw = 255;
         PathCreateFromUrl(g_apCreateFileURIs[i].pcszUri, szPath, &dw, NULL);
-        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "\tPathCreateFromUrl: %s -> %s\n", g_apCreateFileURIs[i].pcszUri, szPath);
+        RTTestPrintf(hTest, RTTESTLVL_DEBUG, "\tPathCreateFromUrl: %s -> %s\n", g_apCreateFileURIs[i].pcszUri, szPath);
         char szURL[255] = { 0 };
         dw = 255;
         UrlCreateFromPath(g_apCreateFileURIs[i].pcszPath, szURL, &dw, NULL);
         char szURLEsc[255] = { 0 };
         dw = 255;
         UrlEscape(szURL, szURLEsc, &dw, URL_ESCAPE_SEGMENT_ONLY);
-        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "\tUrlCreateFromPath: %s -> %s\n", g_apCreateFileURIs[i].pcszPath, szURLEsc);
+        RTTestPrintf(hTest, RTTESTLVL_DEBUG, "\tUrlCreateFromPath: %s -> %s\n", g_apCreateFileURIs[i].pcszPath, szURLEsc);
     }
 # endif
 #endif
@@ -562,7 +562,7 @@ int main()
     /* File Uri path */
     RTTestISub("RTUriFilePath");
     for (size_t i = 0; i < RT_ELEMENTS(g_apCreateFileURIs); ++i)
-        tstFilePath(i,  g_apCreateFileURIs[i].pcszUri, g_apCreateFileURIs[i].pcszPath, g_apCreateFileURIs[i].uFormat);
+        tstFilePath(i, g_apCreateFileURIs[i].pcszUri, g_apCreateFileURIs[i].pcszPath, g_apCreateFileURIs[i].uFormat);
 
     /* File Uri creation */
     RTTestISub("RTUriFileCreate");

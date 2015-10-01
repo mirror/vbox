@@ -814,10 +814,6 @@ RTDECL(char *) RTUriFileNPath(const char *pszUri, uint32_t uFormat, size_t cchMa
                         if (RT_SUCCESS(rc))
                             rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offAuthority], Parsed.cchAuthority);
                     }
-                    else
-                    {
-
-                    }
                 }
 
                 if (RT_SUCCESS(rc))
