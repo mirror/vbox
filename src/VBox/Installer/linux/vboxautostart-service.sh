@@ -71,7 +71,7 @@ start_daemon() {
     su - $usr -c "$*"
 }
 
-if which start-stop-daemon >/dev/null; then
+if which start-stop-daemon >/dev/null 2>&1; then
     start_daemon() {
         usr="$1"
         shift

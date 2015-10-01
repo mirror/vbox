@@ -61,7 +61,7 @@ killproc() {
     rm -f $PIDFILE
 }
 
-if which start-stop-daemon >/dev/null; then
+if which start-stop-daemon >/dev/null 2>&1; then
     daemon() {
         start-stop-daemon --start --exec $1 -- $2 $3
     }
