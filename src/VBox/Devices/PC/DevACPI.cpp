@@ -182,7 +182,11 @@ enum
     SYSTEM_INFO_INDEX_SERIAL0_IRQ       = 23,
     SYSTEM_INFO_INDEX_SERIAL1_IOBASE    = 24,
     SYSTEM_INFO_INDEX_SERIAL1_IRQ       = 25,
-    SYSTEM_INFO_INDEX_END               = 26,
+    SYSTEM_INFO_INDEX_PARALLEL0_IOBASE  = 26,
+    SYSTEM_INFO_INDEX_PARALLEL0_IRQ     = 27,
+    SYSTEM_INFO_INDEX_PARALLEL1_IOBASE  = 28,
+    SYSTEM_INFO_INDEX_PARALLEL1_IRQ     = 29,
+    SYSTEM_INFO_INDEX_END               = 30,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -312,6 +316,21 @@ typedef struct ACPIState
     RTIOPORT            uSerial0IoPortBase;
     /** Serial 1 IO port base */
     RTIOPORT            uSerial1IoPortBase;
+
+    /** @name Parallel port config bits
+     * @{ */
+    /** Parallel 0 IRQ number */
+    uint8_t             uParallel0Irq;
+    /** Parallel 1 IRQ number */
+    uint8_t             uParallel1Irq;
+    /** Parallel 0 IO port base */
+    RTIOPORT            uParallel0IoPortBase;
+    /** Parallel 1 IO port base */
+    RTIOPORT            uParallel1IoPortBase;
+    /** @} */
+
+    uint32_t            u32Alignment1;
+
     /** ACPI port base interface. */
     PDMIBASE            IBase;
     /** ACPI port interface. */
@@ -321,7 +340,7 @@ typedef struct ACPIState
     PPDMDEVINSR0        pDevInsR0;
     PPDMDEVINSRC        pDevInsRC;
 
-    uint32_t            Alignment1;
+    uint32_t            Alignment2;
     /** Pointer to the driver base interface. */
     R3PTRTYPE(PPDMIBASE) pDrvBase;
     /** Pointer to the driver connector interface. */
@@ -344,7 +363,7 @@ typedef struct ACPIState
     uint8_t             au8OemTabId[8];
     /** ACPI custom OEM Rev */
     uint32_t            u32OemRevision;
-    uint32_t            Alignment2;
+    uint32_t            Alignment3;
 
     /** The custom table binary data. */
     R3PTRTYPE(uint8_t *) pu8CustBin;
@@ -1316,6 +1335,22 @@ PDMBOTHCBDECL(int) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
         case SYSTEM_INFO_INDEX_SERIAL1_IRQ:
             *pu32 = pThis->uSerial1Irq;
+            break;
+
+        case SYSTEM_INFO_INDEX_PARALLEL0_IOBASE:
+            *pu32 = pThis->uParallel0IoPortBase;
+            break;
+
+        case SYSTEM_INFO_INDEX_PARALLEL0_IRQ:
+            *pu32 = pThis->uParallel0Irq;
+            break;
+
+        case SYSTEM_INFO_INDEX_PARALLEL1_IOBASE:
+            *pu32 = pThis->uParallel1IoPortBase;
+            break;
+
+        case SYSTEM_INFO_INDEX_PARALLEL1_IRQ:
+            *pu32 = pThis->uParallel1Irq;
             break;
 
         case SYSTEM_INFO_INDEX_END:
@@ -3056,6 +3091,10 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               "AcpiCreatorRev\0"
                               "CustomTable\0"
                               "SLICTable\0"
+                              "Parallel0IoPortBase\0"
+                              "Parallel1IoPortBase\0"
+                              "Parallel0Irq\0"
+                              "Parallel1Irq\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config key for ACPI device"));
@@ -3193,6 +3232,30 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"Serial1IoPortBase\""));
+
+    /*
+     * Query settings for both parallel ports, if the CFGM keys don't exist pretend that
+     * the corresponding parallel port is not enabled.
+     */
+    rc = CFGMR3QueryU8Def(pCfg, "Parallel0Irq", &pThis->uSerial0Irq, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Parallel0Irq\""));
+
+    rc = CFGMR3QueryU16Def(pCfg, "Parallel0IoPortBase", &pThis->uParallel0IoPortBase, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Parallel0IoPortBase\""));
+
+    rc = CFGMR3QueryU8Def(pCfg, "Parallel1Irq", &pThis->uParallel1Irq, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Parallel1Irq\""));
+
+    rc = CFGMR3QueryU16Def(pCfg, "Parallel1IoPortBase", &pThis->uParallel1IoPortBase, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Parallel1IoPortBase\""));
 
     /* Try to attach the other CPUs */
     for (unsigned i = 1; i < pThis->cCpus; i++)

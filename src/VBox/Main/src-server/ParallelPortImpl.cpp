@@ -214,12 +214,6 @@ HRESULT ParallelPort::setEnabled(BOOL aEnabled)
 
     if (m->bd->fEnabled != !!aEnabled)
     {
-        if (aEnabled &&
-            m->bd->strPath.isEmpty())
-            return setError(E_INVALIDARG,
-                            tr("Cannot enable the parallel port %d because the port path is empty or null"),
-                            m->bd->ulSlot);
-
         m->bd.backup();
         m->bd->fEnabled = !!aEnabled;
 
@@ -351,9 +345,6 @@ HRESULT ParallelPort::setPath(const com::Utf8Str &aPath)
 
     if (aPath != m->bd->strPath)
     {
-        HRESULT rc = i_checkSetPath(aPath);
-        if (FAILED(rc)) return rc;
-
         m->bd.backup();
         m->bd->strPath = aPath;
 
@@ -497,22 +488,33 @@ void ParallelPort::i_copyFrom(ParallelPort *aThat)
 }
 
 /**
- *  Validates COMSETTER(Path) arguments.
+ * Applies the defaults for the given parallel port.
  */
-HRESULT ParallelPort::i_checkSetPath(const Utf8Str &str)
+void ParallelPort::i_applyDefaults()
 {
-    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid (autoCaller.rc());
 
-    if (    m->bd->fEnabled
-         && str.isEmpty()
-       )
-        return setError(E_INVALIDARG,
-                        tr("Path of the parallel port %d may not be empty or null "
-                           "when the port is enabled"),
-                        m->bd->ulSlot);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return S_OK;
+    /* Set some more defaults based on the slot. */
+    switch (m->bd->ulSlot)
+    {
+        case 0:
+        {
+            m->bd->ulIOBase = 0x378;
+            m->bd->ulIRQ = 7;
+            break;
+        }
+        case 1:
+        {
+            m->bd->ulIOBase = 0x278;
+            m->bd->ulIRQ = 5;
+            break;
+        }
+        default: break;
+    }
 }
-
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

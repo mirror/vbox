@@ -153,6 +153,10 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         SL0I,  32, // Serial0 IRQ
         SL1B,  32, // Serial1 base IO address  
         SL1I,  32, // Serial1 IRQ
+        PP0B,  32, // Parallel0 base IO address  
+        PP0I,  32, // Parallel0 IRQ
+        PP1B,  32, // Parallel1 base IO address  
+        PP1I,  32, // Parallel1 IRQ
         Offset (0x80),
         ININ, 32,
         Offset (0x200),
@@ -666,21 +670,72 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     })
                 }
 
-                // Parallel port
-                Device (LPT)
+                // Parallel port 0
+                Device (^LPT0)
                 {
                     Name (_HID, EisaId ("PNP0400"))
+                    Name (_UID, 0x01)
                     Method (_STA, 0, NotSerialized)
                     {
-                        Return (0x0F)
+                        If (LEqual (PP0B, Zero))
+                        {
+                            Return (0x00)
+                        }
+                        Else
+                        {
+                            Return (0x0F)
+                        }
                     }
-                    Name (_CRS, ResourceTemplate ()
+                    Name (CRS, ResourceTemplate ()
                     {
-                        IO (Decode16, 0x0378, 0x0378, 0x08, 0x08)
-                        IO (Decode16, 0x0778, 0x0778, 0x08, 0x08)
-                        IRQNoFlags () {7}
+                        IO (Decode16, 0x0378, 0x0378, 0x08, 0x08, _Y18)
+                        IRQNoFlags (_Y19) {7}
                     })
+                    Method (_CRS, 0, NotSerialized)
+                    {
+                        CreateWordField (CRS, \_SB.PCI0.LPT0._Y18._MIN, PMI0)
+                        CreateWordField (CRS, \_SB.PCI0.LPT0._Y18._MAX, PMA0)
+                        CreateWordField (CRS, \_SB.PCI0.LPT0._Y19._INT, PIQ0)
+                        Store (PP0B, PMI0)
+                        Store (PP0B, PMA0)
+                        ShiftLeft (0x01, PP0I, PIQ0)
+                        Return (CRS)
+                    }
                 }
+
+                // Parallel port 1
+                Device (^LPT1)
+                {
+                    Name (_HID, EisaId ("PNP0400"))
+                    Name (_UID, 0x02)
+                    Method (_STA, 0, NotSerialized)
+                    {
+                        If (LEqual (PP1B, Zero))
+                        {
+                            Return (0x00)
+                        }
+                        Else
+                        {
+                            Return (0x0F)
+                        }
+                    }
+                    Name (CRS, ResourceTemplate ()
+                    {
+                        IO (Decode16, 0x0278, 0x0278, 0x08, 0x08, _Y20)
+                        IRQNoFlags (_Y21) {5}
+                    })
+                    Method (_CRS, 0, NotSerialized)
+                    {
+                        CreateWordField (CRS, \_SB.PCI0.LPT1._Y20._MIN, PMI1)
+                        CreateWordField (CRS, \_SB.PCI0.LPT1._Y20._MAX, PMA1)
+                        CreateWordField (CRS, \_SB.PCI0.LPT1._Y21._INT, PIQ1)
+                        Store (PP1B, PMI1)
+                        Store (PP1B, PMA1)
+                        ShiftLeft (0x01, PP1I, PIQ1)
+                        Return (CRS)
+                    }
+                }
+
 
                 // Serial port 0
                 Device (^SRL0)

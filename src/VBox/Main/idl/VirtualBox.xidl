@@ -17254,7 +17254,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Host parallel device name. If this parallel port is enabled, setting a
         @c null or an empty string as this attribute's value will result in
-        an error.
+        the parallel port behaving as if not connected to any device.
       </desc>
     </attribute>
 

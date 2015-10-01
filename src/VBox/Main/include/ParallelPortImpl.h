@@ -50,6 +50,7 @@ public:
     void i_rollback();
     void i_commit();
     void i_copyFrom(ParallelPort *aThat);
+    void i_applyDefaults();
 
 private:
 
@@ -63,8 +64,6 @@ private:
     HRESULT setIOBase(ULONG aIOBase);
     HRESULT getPath(com::Utf8Str &aPath);
     HRESULT setPath(const com::Utf8Str &aPath);
-
-    HRESULT i_checkSetPath(const Utf8Str &str);
 
     struct Data;
     Data *m;
