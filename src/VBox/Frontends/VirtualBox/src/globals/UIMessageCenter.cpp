@@ -1336,7 +1336,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
     /* Show the question: */
     return questionBinary(pParent, MessageType_Question,
                           strMessage.arg(medium.location()),
-                          "confirmMediumRemoval" /* auto-confirm id */,
+                          0 /* auto-confirm id */,
                           tr("Remove", "medium") /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
