@@ -412,8 +412,13 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
         {
             if (pHv->fIsVendorMsHv)
             {
+#ifndef IN_RING_3
+                return VINF_CPUM_R3_MSR_READ;
+#else
+                LogRelMax(1, ("GIM: HyperV: Guest querying debug options MSR, returning %#x\n", GIM_HV_DEBUG_OPTIONS_MSR_ENABLE));
                 *puValue = GIM_HV_DEBUG_OPTIONS_MSR_ENABLE;
                 return VINF_SUCCESS;
+#endif
             }
             return VERR_CPUM_RAISE_GP_0;
         }
@@ -631,7 +636,14 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
         case MSR_GIM_HV_DEBUG_OPTIONS_MSR:
         {
             if (pHv->fIsVendorMsHv)
+            {
+#ifndef IN_RING_3
+                return VINF_CPUM_R3_MSR_WRITE;
+#else
+                LogRelMax(1, ("GIM: HyperV: Guest setting debug options MSR to %#RX64, ignoring\n", uRawValue));
                 return VINF_SUCCESS;
+#endif
+            }
             return VERR_CPUM_RAISE_GP_0;
         }
 
