@@ -72,7 +72,6 @@
 #include "VBoxEvents.h"
 #include "AutoCaller.h"
 #include "Logging.h"
-#include "ThreadTask.h"
 
 #include <VBox/com/array.h>
 #include "VBox/com/ErrorInfo.h"
@@ -150,15 +149,13 @@
  * as a Console::mpUVM caller with the same meaning as above. See
  * Console::addVMCaller() for more info.
  */
-class VMTask: public ThreadTask
+struct VMTask
 {
-public:
     VMTask(Console *aConsole,
            Progress *aProgress,
            const ComPtr<IProgress> &aServerProgress,
            bool aUsesVMPtr)
-        : ThreadTask("GenericVMTask"),
-          mConsole(aConsole),
+        : mConsole(aConsole),
           mConsoleCaller(aConsole),
           mProgress(aProgress),
           mServerProgress(aServerProgress),
@@ -177,7 +174,7 @@ public:
         }
     }
 
-    virtual ~VMTask()
+    ~VMTask()
     {
         releaseVMCaller();
     }
@@ -207,9 +204,8 @@ private:
 };
 
 
-class VMPowerUpTask : public VMTask
+struct VMPowerUpTask : public VMTask
 {
-public:
     VMPowerUpTask(Console *aConsole,
                   Progress *aProgress)
         : VMTask(aConsole, aProgress, NULL /* aServerProgress */,
@@ -218,9 +214,7 @@ public:
           mStartPaused(false),
           mTeleporterEnabled(FALSE),
           mEnmFaultToleranceState(FaultToleranceState_Inactive)
-    {
-        m_strTaskName = "VMPwrUp";
-    }
+    {}
 
     PFNCFGMCONSTRUCTOR mConfigConstructor;
     Utf8Str mSavedStateFile;
@@ -232,29 +226,15 @@ public:
     /* array of progress objects for hard disk reset operations */
     typedef std::list<ComPtr<IProgress> > ProgressList;
     ProgressList hardDiskProgresses;
-
-    void handler()
-    {
-        int vrc = Console::i_powerUpThread(NULL, this);
-    }
-
 };
 
-class VMPowerDownTask : public VMTask
+struct VMPowerDownTask : public VMTask
 {
-public:
     VMPowerDownTask(Console *aConsole,
                     const ComPtr<IProgress> &aServerProgress)
         : VMTask(aConsole, NULL /* aProgress */, aServerProgress,
                  true /* aUsesVMPtr */)
-    {
-        m_strTaskName = "VMPwrDwn";
-    }
-
-    void handler()
-    {
-        int vrc = Console::i_powerDownThread(NULL, this);
-    }
+    {}
 };
 
 // Handler for global events
@@ -2155,20 +2135,31 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
         i_setMachineStateLocally(MachineState_Stopping);
         try
         {
+            /* Setup task object and thread to carry out the operation asynchronously.
+             * We are going to pass ownership of task pointer to another thread.
+             * So we are in charge of deletion this task pointer in case if RTThreadCreate 
+             * returns not successful result or in case of any exception 
+             */
+            
             task = new VMPowerDownTask(this, pProgress);
-            if (!task->isOk())
+            AssertBreakStmt(task->isOk(), rc = E_FAIL);
+            int vrc = RTThreadCreate(NULL, Console::i_powerDownThread,
+                                     (void *) task, 0,
+                                     RTTHREADTYPE_MAIN_WORKER, 0,
+                                     "VMPwrDwn");
+            if (RT_FAILURE(vrc))
             {
-                throw E_FAIL;
+                rc = setError(E_FAIL, "Could not create VMPowerDown thread (%Rrc)", vrc);
+                break;
             }
+            /* task is now owned by powerDownThread(), so release it */
+            //task.release();
         }
-        catch(...)
+        catch(const std::exception &e)
         {
-            delete task;
-            rc = setError(E_FAIL, "Could not create VMPowerDownTask object \n");
+            rc = setError(E_FAIL, "Cought exception! Could not create VMPowerDown thread (%s)", e.what());
             break;
         }
-
-        rc = task->createThread();
 
         /* pass the progress to the caller */
         pProgress.queryInterfaceTo(aProgress.asOutParam());
@@ -2177,6 +2168,13 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
 
     if (FAILED(rc))
     {
+        if (task != NULL)
+        {
+            //we can delete this pointer because something
+            //was wrong and we hadn't passed pointer to another thread
+            LogFlowFunc(("Delete task VMPowerDownTask from Console::powerDown()\n"));
+            delete task;
+        }
         /* preserve existing error info */
         ErrorInfoKeeper eik;
 
@@ -6979,6 +6977,7 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
  */
 HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 {
+
     LogFlowThisFuncEnter();
 
     CheckComArgOutPointerValid(aProgress);
@@ -6995,7 +6994,6 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 
     LONG cOperations = 1;
     LONG ulTotalOperationsWeight = 1;
-    VMPowerUpTask* task = NULL;
 
     try
     {
@@ -7111,22 +7109,11 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             }
         }
 
+
         /* Setup task object and thread to carry out the operation
          * asynchronously */
-        try
-        {
-            task = new VMPowerUpTask(this, pPowerupProgress);
-            if (!task->isOk())
-            {
-                throw E_FAIL;
-            }
-        }
-        catch(...)
-        {
-            delete task;
-            rc = setError(E_FAIL, "Could not create VMPowerUpTask object \n");
-            throw rc;
-        }
+        std::auto_ptr<VMPowerUpTask> task(new VMPowerUpTask(this, pPowerupProgress));
+        ComAssertComRCRetRC(task->rc());
 
         task->mConfigConstructor = i_configConstructor;
         task->mSharedFolders = sharedFolders;
@@ -7384,7 +7371,6 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
         }
 #endif // 0
 
-        
         /* setup task object and thread to carry out the operation
          * asynchronously */
         if (aProgress){
@@ -7392,10 +7378,14 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                 AssertComRCReturnRC(rc);
         }
 
-        rc = task->createThread();
+        int vrc = RTThreadCreate(NULL, Console::i_powerUpThread,
+                                 (void *)task.get(), 0,
+                                 RTTHREADTYPE_MAIN_WORKER, 0, "VMPwrUp");
+        if (RT_FAILURE(vrc))
+            throw setError(E_FAIL, "Could not create VMPowerUp thread (%Rrc)", vrc);
 
-        if (FAILED(rc))
-            throw rc;
+        /* task is now owned by powerUpThread(), so release it */
+        task.release();
 
         /* finally, set the state: no right to fail in this method afterwards
          * since we've already started the thread and it is now responsible for
@@ -8262,23 +8252,37 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                       */
                     if (!task->isOk())
                     {
-                        LogFlowFunc(("Console is already being uninitialized. \n"));
-                        throw E_FAIL;
+                        LogFlowFunc(("Console is already being uninitialized.\n"));
+                    }
+                    else
+                    {
+                        /*
+                         * We are going to pass ownership of task pointer to another thread.
+                         * So we are in charge of deletion this task pointer in case if RTThreadCreate
+                         * returns not successful result or in case of any exception
+                         */
+                        int vrc = RTThreadCreate(NULL, Console::i_powerDownThread,
+                                                 (void *) task, 0,
+                                                 RTTHREADTYPE_MAIN_WORKER, 0,
+                                                 "VMPwrDwn");
+                        if (RT_FAILURE(vrc))
+                        {
+                            rc = E_FAIL;
+                            LogFlowFunc(("Could not create VMPowerDown thread (%Rrc)\n", vrc));
+                        }
                     }
                 }
-                catch(...)
+                catch(const std::exception &e)
                 {
+                    rc = E_FAIL;
+                    LogFlowFunc(("Cought exception! Could not create VMPowerDown thread (%s)\n", e.what()));
+                }
+
+                if(FAILED(rc) || !task->isOk())
+                {
+                    LogFlowFunc(("Delete task VMPowerDownTask from Console::i_vmstateChangeCallback()\n"));
                     delete task;
-                    LogFlowFunc(("Problem with creating VMPowerDownTask object. \n"));
                 }
-
-                rc = task->createThread();
-
-                if (FAILED(rc))
-                {
-                    LogFlowFunc(("Problem with creating thread for VMPowerDownTask. \n"));
-                }
-
             }
             break;
         }
@@ -9436,8 +9440,8 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
 {
     LogFlowFuncEnter();
 
-    VMPowerUpTask* task = static_cast<VMPowerUpTask *>(pvUser);
-    AssertReturn(task, VERR_INVALID_PARAMETER);
+    std::auto_ptr<VMPowerUpTask> task(static_cast<VMPowerUpTask *>(pvUser));
+    AssertReturn(task.get(), VERR_INVALID_PARAMETER);
 
     AssertReturn(!task->mConsole.isNull(), VERR_INVALID_PARAMETER);
     AssertReturn(!task->mProgress.isNull(), VERR_INVALID_PARAMETER);
@@ -10002,9 +10006,12 @@ DECLCALLBACK(int) Console::i_powerDownThread(RTTHREAD Thread, void *pvUser)
         AssertMsgFailed(("Exception %s was cought, rc=%Rrc\n", e.what(), rc));
     }
 
+    LogFlowFunc(("Delete task VMPowerDownTask from Console::i_powerDownThread()\n"));
+    delete task;
     LogFlowFuncLeave();
     return rc;
 }
+
 
 /**
  * @interface_method_impl{VMM2USERMETHODS,pfnSaveState}

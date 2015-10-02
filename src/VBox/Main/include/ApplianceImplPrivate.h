@@ -22,7 +22,6 @@ class VirtualSystemDescription;
 
 #include "ovfreader.h"
 #include "SecretKeyStore.h"
-#include "ThreadTask.h"
 #include <map>
 #include <vector>
 #include <iprt/vfs.h>
@@ -122,9 +121,8 @@ struct Appliance::XMLStack
     std::map<Utf8Str, bool> mapNetworks;
 };
 
-class Appliance::TaskOVF: public ThreadTask
+struct Appliance::TaskOVF
 {
-public:
     enum TaskType
     {
         Read,
@@ -136,24 +134,17 @@ public:
             TaskType aType,
             LocationInfo aLocInfo,
             ComObjPtr<Progress> &aProgress)
-      : ThreadTask("TaskOVF"),
-        pAppliance(aThat),
+      : pAppliance(aThat),
         taskType(aType),
         locInfo(aLocInfo),
         pProgress(aProgress),
         enFormat(ovf::OVFVersion_unknown),
         rc(S_OK)
-    {
-        switch (taskType)
-        {
-            case TaskOVF::Read:     m_strTaskName = "ApplRead"; break;
-            case TaskOVF::Import:   m_strTaskName = "ApplImp"; break;
-            case TaskOVF::Write:    m_strTaskName = "ApplWrit"; break;
-            default:                m_strTaskName = "ApplTask"; break;
-        }
-    }
+    {}
 
     static DECLCALLBACK(int) updateProgress(unsigned uPercent, void *pvUser);
+
+    HRESULT startThread();
 
     Appliance *pAppliance;
     TaskType taskType;
@@ -163,11 +154,6 @@ public:
     ovf::OVFVersion_T enFormat;
 
     HRESULT rc;
-
-    void handler()
-    {
-        int vrc = Appliance::i_taskThreadImportOrExport(NULL, this);
-    }
 };
 
 struct MyHardDiskAttachment

@@ -27,6 +27,7 @@
 
 #include "ApplianceImpl.h"
 #include "VirtualBoxImpl.h"
+
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
 #include "MediumImpl.h"
@@ -752,24 +753,15 @@ HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aL
                              (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
 
         /* Initialize our worker task */
-        TaskOVF* task = NULL;
-        try
-        {
-            task = new TaskOVF(this, TaskOVF::Write, aLocInfo, aProgress);
-        }
-        catch(...)
-        {
-            delete task;
-            throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
-                                tr("Could not create TaskOVF object for for writing out the OVF to disk"));
-        }
-
+        std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Write, aLocInfo, aProgress));
         /* The OVF version to write */
         task->enFormat = aFormat;
 
-        rc = task->createThread();
+        rc = task->startThread();
         if (FAILED(rc)) throw rc;
 
+        /* Don't destruct on success */
+        task.release();
     }
     catch (HRESULT aRC)
     {

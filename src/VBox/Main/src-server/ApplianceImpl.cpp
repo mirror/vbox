@@ -1184,6 +1184,30 @@ void Appliance::i_parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
 }
 
 /**
+ * Starts the worker thread for the task.
+ *
+ * @return COM status code.
+ */
+HRESULT Appliance::TaskOVF::startThread()
+{
+    /* Pick a thread name suitable for logging (<= 8 chars). */
+    const char *pszTaskNm;
+    switch (taskType)
+    {
+        case TaskOVF::Read:     pszTaskNm = "ApplRead"; break;
+        case TaskOVF::Import:   pszTaskNm = "ApplImp"; break;
+        case TaskOVF::Write:    pszTaskNm = "ApplWrit"; break;
+        default:                pszTaskNm = "ApplTask"; break;
+    }
+
+    int vrc = RTThreadCreate(NULL, Appliance::i_taskThreadImportOrExport, this,
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0, pszTaskNm);
+    if (RT_SUCCESS(vrc))
+        return S_OK;
+    return Appliance::i_setErrorStatic(E_FAIL, Utf8StrFmt("Could not create OVF task thread (%Rrc)\n", vrc));
+}
+
+/**
  * Thread function for the thread started in Appliance::readImpl() and Appliance::importImpl()
  * and Appliance::writeImpl().
  * This will in turn call Appliance::readFS() or Appliance::readS3() or Appliance::importFS()
@@ -1195,8 +1219,8 @@ void Appliance::i_parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
 /* static */
 DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, void *pvUser)
 {
-    TaskOVF* task = static_cast<TaskOVF*>(pvUser);
-    AssertReturn(task, VERR_GENERAL_FAILURE);
+    std::auto_ptr<TaskOVF> task(static_cast<TaskOVF*>(pvUser));
+    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
 
     Appliance *pAppliance = task->pAppliance;
 
@@ -1209,10 +1233,10 @@ DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, 
     {
         case TaskOVF::Read:
             if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->i_readFS(task);
+                taskrc = pAppliance->i_readFS(task.get());
             else if (task->locInfo.storageType == VFSType_S3)
 #ifdef VBOX_WITH_S3
-                taskrc = pAppliance->i_readS3(task);
+                taskrc = pAppliance->i_readS3(task.get());
 #else
                 taskrc = VERR_NOT_IMPLEMENTED;
 #endif
@@ -1220,10 +1244,10 @@ DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, 
 
         case TaskOVF::Import:
             if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->i_importFS(task);
+                taskrc = pAppliance->i_importFS(task.get());
             else if (task->locInfo.storageType == VFSType_S3)
 #ifdef VBOX_WITH_S3
-                taskrc = pAppliance->i_importS3(task);
+                taskrc = pAppliance->i_importS3(task.get());
 #else
                 taskrc = VERR_NOT_IMPLEMENTED;
 #endif
@@ -1231,10 +1255,10 @@ DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, 
 
         case TaskOVF::Write:
             if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->i_writeFS(task);
+                taskrc = pAppliance->i_writeFS(task.get());
             else if (task->locInfo.storageType == VFSType_S3)
 #ifdef VBOX_WITH_S3
-                taskrc = pAppliance->i_writeS3(task);
+                taskrc = pAppliance->i_writeS3(task.get());
 #else
                 taskrc = VERR_NOT_IMPLEMENTED;
 #endif

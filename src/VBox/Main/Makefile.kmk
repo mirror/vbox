@@ -358,7 +358,6 @@ VBoxSVC_SOURCES = \
 	src-all/SecretKeyStore.cpp \
 	src-all/SharedFolderImpl.cpp \
 	src-all/AutoCaller.cpp \
-        src-all/ThreadTask.cpp \
 	src-all/VirtualBoxBase.cpp \
 	src-all/VirtualBoxErrorInfoImpl.cpp \
 	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
@@ -737,7 +736,6 @@ VBoxC_SOURCES = \
 	src-all/SecretKeyStore.cpp \
 	src-all/SharedFolderImpl.cpp \
 	src-all/AutoCaller.cpp \
-        src-all/ThreadTask.cpp \
 	src-all/VirtualBoxBase.cpp \
 	src-all/VirtualBoxErrorInfoImpl.cpp \
 	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
@@ -858,7 +856,6 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  	src-all/EventImpl.cpp \
  	src-all/Global.cpp \
 	src-all/AutoCaller.cpp \
-        src-all/ThreadTask.cpp \
  	src-all/VirtualBoxBase.cpp \
  	src-all/VirtualBoxErrorInfoImpl.cpp \
  	src-client/ClientTokenHolder.cpp \

@@ -873,20 +873,13 @@ HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
     if (FAILED(rc)) throw rc;
 
     /* Initialize our worker task */
-    TaskOVF* task = NULL;
-    try
-    {
-        task = new TaskOVF(this, TaskOVF::Read, aLocInfo, aProgress);
-    }
-    catch(...)
-    {
-        delete task;
-        throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
-                            tr("Could not create TaskOVF object for reading the OVF from disk"));
-    }
+    std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Read, aLocInfo, aProgress));
 
-    rc = task->createThread();
+    rc = task->startThread();
     if (FAILED(rc)) throw rc;
+
+    /* Don't destruct on success */
+    task.release();
 
     return rc;
 }
@@ -1377,20 +1370,13 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
     if (FAILED(rc)) throw rc;
 
     /* Initialize our worker task */
-    TaskOVF* task = NULL;
-    try
-    {
-        task = new TaskOVF(this, TaskOVF::Import, locInfo, progress);
-    }
-    catch(...)
-    {
-        delete task;
-        throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
-                            tr("Could not create TaskOVF object for importing OVF data into VirtualBox"));
-    }
+    std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Import, locInfo, progress));
 
-    rc = task->createThread();
+    rc = task->startThread();
     if (FAILED(rc)) throw rc;
+
+    /* Don't destruct on success */
+    task.release();
 
     return rc;
 }
