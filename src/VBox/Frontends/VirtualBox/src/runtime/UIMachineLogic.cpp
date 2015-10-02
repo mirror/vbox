@@ -1720,8 +1720,13 @@ void UIMachineLogic::sltTakeScreenshot()
 
         /* On X11 Qt Filedialog returns the filepath without the filetype suffix, so adding it ourselves: */
 #ifdef Q_WS_X11
-        tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(QString("%1.%2").arg(strFilename, strFormat))),
-                      strFormat.toAscii().constData());
+        /* Add filetype suffix only if user has not added it explicitly: */
+        if (!strFilename.endsWith(QString(".%1").arg(strFormat)))
+            tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(QString("%1.%2").arg(strFilename, strFormat))),
+                          strFormat.toAscii().constData());
+        else
+            tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(strFilename)),
+                          strFormat.toAscii().constData());
 #else /* !Q_WS_X11 */
         tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(strFilename)),
                       strFormat.toAscii().constData());
