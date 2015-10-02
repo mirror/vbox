@@ -17,8 +17,8 @@
 
 #include "USBIdDatabase.h"
 
-Product         AliasDictionary::productArray[] = {0};
-const size_t    AliasDictionary::products_size  = 0;
-Vendor          AliasDictionary::vendorArray[]  = {0};
-const size_t    AliasDictionary::vendors_size   = 0;
+Product const   AliasDictionary::productArray[] = {0};
+const size_t    AliasDictionary::cProducts      = 1; /* std::lower_bound cannot deal with empty array */
+Vendor const    AliasDictionary::vendorArray[]  = {0};
+const size_t    AliasDictionary::cVendors       = 1; /* std::lower_bound cannot deal with empty array */
 

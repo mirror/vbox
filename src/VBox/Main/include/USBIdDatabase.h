@@ -75,23 +75,23 @@ public:
 class AliasDictionary
 {
 protected:
-    static Product productArray[];
-    static const size_t cProducts;
-    static Vendor vendorArray[];
-    static const size_t cVendors;
+    static Product const aProducts[];
+    static const size_t  cProducts;
+    static Vendor const  aVendors[];
+    static const size_t  cVendors;
 
 public:
     static const char *findProduct(unsigned short vendorId, unsigned short productId)
     {
         Product lookFor = { USBKEY(vendorId, productId) };
-        Product* it = std::lower_bound(productArray, productArray + cProducts, lookFor, ProductLess());
+        Product const *it = std::lower_bound(aProducts, aProducts + cProducts, lookFor, ProductLess());
         return lookFor.key == it->key ? it->product : NULL;
     }
 
     static const char *findVendor(unsigned short vendorID)
     {
         Vendor lookFor = { vendorID };
-        Vendor* it = std::lower_bound(vendorArray, vendorArray + cVendors, lookFor, VendorLess());
+        Vendor const *it = std::lower_bound(aVendors, aVendors + cVendors, lookFor, VendorLess());
         return lookFor.vendorID == it->vendorID ? it->vendor : NULL;
     }
 };

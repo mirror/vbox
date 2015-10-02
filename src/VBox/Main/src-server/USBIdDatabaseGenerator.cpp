@@ -55,21 +55,21 @@ static const char * const header =
     " * Format: VendorId, ProductId, Vendor Name, Product Name\n"
     " * The source of the list is http://www.linux-usb.org/usb.ids\n"
     " */\n"
-    "Product AliasDictionary::productArray[] =\n"
+    "Product const AliasDictionary::aProducts[] =\n"
     "{\n";
 
 const char *footer =
     "};\n"
     "\n"
-    "const size_t AliasDictionary::cProducts = sizeof(AliasDictionary::productArray) / sizeof(Product);\n";
+    "const size_t AliasDictionary::cProducts = RT_ELEMENTS(AliasDictionary::aProducts);\n";
 
 const char *vendor_header =
-    "\nVendor AliasDictionary::vendorArray[] =\n"
+    "\nVendor const AliasDictionary::aVendors[] =\n"
     "{\n";
 const char *vendor_footer =
     "};\n"
     "\n"
-    "const size_t AliasDictionary::cVendors = sizeof(AliasDictionary::vendorArray) / sizeof(Vendor);\n";
+    "const size_t AliasDictionary::cVendors = RT_ELEMENTS(AliasDictionary::aVendors);\n";
 
 const char *start_block = "# Vendors, devices and interfaces. Please keep sorted.";
 const char *end_block = "# List of known device classes, subclasses and protocols";
