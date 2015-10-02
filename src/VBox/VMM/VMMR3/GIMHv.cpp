@@ -113,9 +113,10 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
     rc = CFGMR3QueryStringDef(pCfgNode, "VendorID", szVendor, sizeof(szVendor), "VBoxVBoxVBox");
     AssertLogRelRCReturn(rc, rc);
 
+    LogRel(("GIM: HyperV: Reporting vendor as '%s'\n", szVendor));
     if (!RTStrNCmp(szVendor, GIM_HV_VENDOR_MICROSOFT, sizeof(GIM_HV_VENDOR_MICROSOFT) - 1))
     {
-        LogRel(("GIM: HyperV: Reporting vendor as Microsoft\n"));
+        LogRel(("GIM: HyperV: Warning! Posing as the Microsoft vendor, guest behavior may be altered!\n"));
         pHv->fIsVendorMsHv = true;
     }
 
