@@ -216,7 +216,7 @@ void UIMachineViewSeamless::adjustGuestScreenSize()
         frameBuffer()->setAutoEnabled(false);
         sltPerformGuestResize(workingArea().size());
         /* And remember the size to know what we are resizing out of when we exit: */
-        uisession()->setLastFullScreenSize(screenId(), workingArea().size());
+        uisession()->setLastFullScreenSize(screenId(), scaledForward(scaledBackward(workingArea().size())));
     }
 }
 
