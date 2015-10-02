@@ -563,6 +563,9 @@ public:
     typedef std::map<Utf8Str, ComPtr<IMediumAttachment> > MediumAttachmentMap;
     typedef std::list <USBStorageDevice> USBStorageDeviceList;
 
+    static DECLCALLBACK(int)    i_powerUpThread(RTTHREAD Thread, void *pvUser);
+    static DECLCALLBACK(int)    i_powerDownThread(RTTHREAD Thread, void *pvUser);
+
 private:
 
     typedef std::list <ComObjPtr<OUSBDevice> > USBDeviceList;
@@ -738,8 +741,6 @@ private:
     HRESULT                     i_captureUSBDevices(PUVM pUVM);
     void                        i_detachAllUSBDevices(bool aDone);
 
-    static DECLCALLBACK(int)    i_powerUpThread(RTTHREAD Thread, void *pvUser);
-    static DECLCALLBACK(int)    i_powerDownThread(RTTHREAD Thread, void *pvUser);
 
     static DECLCALLBACK(int)    i_vmm2User_SaveState(PCVMM2USERMETHODS pThis, PUVM pUVM);
     static DECLCALLBACK(void)   i_vmm2User_NotifyEmtInit(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu);
