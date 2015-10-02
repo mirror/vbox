@@ -123,7 +123,7 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Verify that hypercalls are enabled.
      */
-    if (!MSR_GIM_HV_HYPERCALL_IS_ENABLED(pVM->gim.s.u.Hv.u64HypercallMsr))
+    if (!gimHvAreHypercallsEnabled(pVCpu))
         return VERR_GIM_HYPERCALLS_NOT_ENABLED;
 
     /*
@@ -274,7 +274,7 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMM_INT_DECL(bool) gimHvAreHypercallsEnabled(PVMCPU pVCpu)
 {
-    return MSR_GIM_HV_HYPERCALL_IS_ENABLED(pVCpu->CTX_SUFF(pVM)->gim.s.u.Hv.u64HypercallMsr);
+    return RT_BOOL(pVCpu->CTX_SUFF(pVM)->gim.s.u.Hv.u64GuestOsIdMsr != 0);
 }
 
 
@@ -480,12 +480,15 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
-            /* Disable the hypercall-page if 0 is written to this MSR. */
+            /* Disable the hypercall-page and hypercalls if 0 is written to this MSR. */
             if (!uRawValue)
             {
-                gimR3HvDisableHypercallPage(pVM);
-                pHv->u64HypercallMsr &= ~MSR_GIM_HV_HYPERCALL_ENABLE_BIT;
-                LogRel(("GIM: HyperV: Hypercalls disabled via Guest OS ID Msr\n"));
+                if (MSR_GIM_HV_HYPERCALL_PAGE_IS_ENABLED(pHv->u64HypercallMsr))
+                {
+                    gimR3HvDisableHypercallPage(pVM);
+                    pHv->u64HypercallMsr &= ~MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT;
+                    LogRel(("GIM: HyperV: Hypercall page disabled via Guest OS ID MSR\n"));
+                }
             }
             else
             {
@@ -509,7 +512,20 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
                 int rc2 = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
                 AssertRC(rc2);
             }
+
             pHv->u64GuestOsIdMsr = uRawValue;
+
+            /*
+             * Notify VMM that hypercalls are now disabled/enabled.
+             */
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            {
+                if (uRawValue)
+                    VMMHypercallsEnable(&pVM->aCpus[i]);
+                else
+                    VMMHypercallsDisable(&pVM->aCpus[i]);
+            }
+
             return VINF_SUCCESS;
 #endif /* IN_RING3 */
         }
@@ -527,13 +543,13 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
              */
             return VINF_SUCCESS;
 # else
-            /* First, update all but the hypercall enable bit. */
-            pHv->u64HypercallMsr = (uRawValue & ~MSR_GIM_HV_HYPERCALL_ENABLE_BIT);
+            /* First, update all but the hypercall page enable bit. */
+            pHv->u64HypercallMsr = (uRawValue & ~MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT);
 
-            /* Hypercalls can only be enabled when the guest has set the Guest-OS Id Msr. */
-            bool fEnable = RT_BOOL(uRawValue & MSR_GIM_HV_HYPERCALL_ENABLE_BIT);
+            /* Hypercall page can only be enabled when the guest has enabled hypercalls. */
+            bool fEnable = RT_BOOL(uRawValue & MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT);
             if (   fEnable
-                && !pHv->u64GuestOsIdMsr)
+                && !gimHvAreHypercallsEnabled(pVCpu))
             {
                 return VINF_SUCCESS;
             }

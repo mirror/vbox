@@ -5164,6 +5164,8 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 return rc;
             }
         }
+        else
+            Log4(("hmR0SvmExitVmmCall: Hypercalls not enabled\n"));
     }
 
     hmR0SvmSetPendingXcptUD(pVCpu);

@@ -296,17 +296,6 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
     {
         rc = gimR3HvInitDebugSupport(pVM);
         AssertLogRelRCReturn(rc, rc);
-
-        /*
-         * Pretend that hypercalls are enabled unconditionally when posing as Microsoft,
-         * as Windows guests invoke debug hypercalls before enabling them via the hypercall MSR.
-         */
-        if (pHv->fIsVendorMsHv)
-        {
-            pHv->u64HypercallMsr |= MSR_GIM_HV_HYPERCALL_ENABLE_BIT;
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                VMMHypercallsEnable(&pVM->aCpus[i]);
-        }
     }
 
     return VINF_SUCCESS;
@@ -441,15 +430,6 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     pHv->uCrashP2        = 0;
     pHv->uCrashP3        = 0;
     pHv->uCrashP4        = 0;
-
-    /* Extra faking required while posing as Microsoft, see gimR3HvInit(). */
-    if (   (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_DEBUGGING)
-        && pHv->fIsVendorMsHv)
-    {
-        pHv->u64HypercallMsr |= MSR_GIM_HV_HYPERCALL_ENABLE_BIT;
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
-            VMMHypercallsEnable(&pVM->aCpus[i]);
-    }
 }
 
 
@@ -595,7 +575,7 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
         return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Hypercall page region size %u invalid, expected %u"),
                                 pRegion->cbRegion, PAGE_SIZE);
 
-    if (MSR_GIM_HV_HYPERCALL_IS_ENABLED(pHv->u64HypercallMsr))
+    if (MSR_GIM_HV_HYPERCALL_PAGE_IS_ENABLED(pHv->u64HypercallMsr))
     {
         Assert(pRegion->GCPhysPage != NIL_RTGCPHYS);
         if (RT_LIKELY(pRegion->fRegistered))
@@ -804,8 +784,6 @@ VMMR3_INT_DECL(int) gimR3HvDisableHypercallPage(PVM pVM)
 #else
         pRegion->fMapped = false;
 #endif
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
-            VMMHypercallsDisable(&pVM->aCpus[i]);
         LogRel(("GIM: HyperV: Disabled Hypercall-page\n"));
         return VINF_SUCCESS;
     }
@@ -872,7 +850,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
                 VMMHypercallsEnable(&pVM->aCpus[i]);
 
-            LogRel(("GIM: HyperV: Enabled hypercalls at %#RGp\n", GCPhysHypercallPage));
+            LogRel(("GIM: HyperV: Enabled hypercall page at %#RGp\n", GCPhysHypercallPage));
             return VINF_SUCCESS;
         }
         else
@@ -910,15 +888,9 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
         rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysHypercallPage, pvHypercallPage, PAGE_SIZE);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Notify VMM that hypercalls are now enabled for all VCPUs.
-             */
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                VMMHypercallsEnable(&pVM->aCpus[i]);
-
             pRegion->GCPhysPage = GCPhysHypercallPage;
             pRegion->fMapped = true;
-            LogRel(("GIM: HyperV: Enabled hypercalls at %#RGp\n", GCPhysHypercallPage));
+            LogRel(("GIM: HyperV: Enabled hypercall page at %#RGp\n", GCPhysHypercallPage));
         }
         else
             LogRel(("GIM: HyperV: PGMPhysSimpleWriteGCPhys failed during hypercall page setup. rc=%Rrc\n", rc));

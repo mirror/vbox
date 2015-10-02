@@ -412,9 +412,9 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 /** Guest-physical page frame number of the hypercall-page. */
 #define MSR_GIM_HV_HYPERCALL_GUEST_PFN(a)         ((a) >> 12)
 /** The hypercall enable bit. */
-#define MSR_GIM_HV_HYPERCALL_ENABLE_BIT           RT_BIT_64(0)
+#define MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT      RT_BIT_64(0)
 /** Whether the hypercall-page is enabled or not. */
-#define MSR_GIM_HV_HYPERCALL_IS_ENABLED(a)        RT_BOOL((a) & MSR_GIM_HV_HYPERCALL_ENABLE_BIT)
+#define MSR_GIM_HV_HYPERCALL_PAGE_IS_ENABLED(a)   RT_BOOL((a) & MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT)
 /** @} */
 
 /** @name Hyper-V MSR - Reference TSC (MSR_GIM_HV_REF_TSC).

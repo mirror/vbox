@@ -10161,6 +10161,8 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             return rc;
         }
     }
+    else
+        Log4(("hmR0VmxExitVmcall: Hypercalls not enabled\n"));
 
     hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
     return VINF_SUCCESS;
