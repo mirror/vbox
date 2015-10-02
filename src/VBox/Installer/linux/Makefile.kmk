@@ -52,13 +52,10 @@ endif
 OTHER_CLEAN   += \
 	$(addprefix $(VBOX_LNX_INST_STAGE_DIR)/,\
 		install.sh \
-		vboxdrv.sh \
 		VirtualBox.tar.bz2 \
 		LICENSE) \
 	$(wildcard $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-*) \
-	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/,\
-		vboxdrv.sh \
-		install.sh)
+	$(VBOX_LNX_INST_OUT_DIR)/install.sh
 
 #
 # Linux installs.
@@ -76,6 +73,7 @@ linux-bin_SOURCES = \
 	vboxautostart-service.sh \
 	vboxballoonctrl-service.sh \
 	VBoxCreateUSBNode.sh \
+	vboxdrv.sh \
 	vboxweb-service.sh \
 	VBox.sh=>VBox.sh \
 	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
@@ -91,6 +89,7 @@ linux-scripts_SOURCES = \
 	uninstall.sh \
 	vboxautostart-service.sh \
 	vboxballoonctrl-service.sh \
+	vboxdrv.sh \
 	vboxweb-service.sh
 
 INSTALLS += linux-misc
@@ -363,37 +362,16 @@ $(PATH_STAGE_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(VBOX_LNX_INST_STAGE_DIR)/VirtualBox.tar.bz2 \
 		$(VBOX_VERSION_STAMP) \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
-		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/install.sh \
 		$(VBOX_PATH_LNX_INST_SRC)/installer-common.sh \
 		$$(linux-scripts_2_STAGE_TARGETS)
 	$(call MSG_TOOL,makeself,,$@)
 	$(QUIET)$(RM) -f $(wildcard $(PATH_STAGE_BIN)/VirtualBox-*.run)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)    $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/install.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(VBOX_MAKESELF) --follow --nocomp $(VBOX_LNX_INST_STAGE_DIR) $@ \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
-
-# files that needs editing before they can be included in the generic installer.
-$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $$(dir $$@)
-	$(QUIET)$(SED_EXT) \
-		-e "s|%NOLSB%|yes|g" \
-		-e "s|%DEBIAN%||g" \
-		-e "s|%PACKAGE%|virtualbox|g" \
-		-e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
-		-e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
-		--output $@ \
-		$<
-
-$(PATH_STAGE_BIN)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $$(dir $$@)
-	$(QUIET)$(SED_EXT) \
-		-e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
-		-e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
-		--output $@ \
-		$<
-	$(QUIET)$(CHMOD) 0755 $@
 
 $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX_PATH_LNX_INST_SRC)/installer-common.sh $(VBOX_VERSION_STAMP) $(VBOX_SVN_REV_KMK).ts | $$(dir $$@)
 	$(QUIET)$(SED) \

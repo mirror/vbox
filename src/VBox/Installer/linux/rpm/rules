@@ -242,13 +242,7 @@ binary: rpm/build-stamp
 	    -e 'd' \
 	    -e '}' \
 	    rpm/VirtualBox.tmpl.spec > $(archdir)/VirtualBox.spec
-	sed \
-	    -e 's|%NOLSB%|yes|g' \
-	    -e 's|%DEBIAN%||g' \
-	    -e 's|%PACKAGE%|virtualbox|g' \
-	    -e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
-	    -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
-	    vboxdrv.sh.in > $(archdir)/vboxdrv.sh
+	cp vboxdrv.sh $(archdir)
 	cp vboxballoonctrl-service.sh $(archdir)
 	cp vboxautostart-service.sh $(archdir)
 	cp vboxweb-service.sh $(archdir)

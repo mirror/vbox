@@ -26,9 +26,6 @@
 # Short-Description: VirtualBox Linux kernel module
 ### END INIT INFO
 
-## @todo get rid of the autogeneration, perhaps write "group" to
-##       a configuration file in /etc
-
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
@@ -45,13 +42,20 @@ export USERNAME
 export USER=$USERNAME
 
 if [ -n "$INSTALL_DIR" ]; then
+    VIRTUALBOX="$INSTALL_DIR/VirtualBox"
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
     MODULE_SRC="$INSTALL_DIR/src/vboxhost"
 else
+    VIRTUALBOX="/usr/lib/virtualbox/VirtualBox"
     VBOXMANAGE="/usr/lib/virtualbox/VBoxManage"
     MODULE_SRC="/usr/share/virtualbox/src/vboxhost"
 fi
 BUILDINTMP="$MODULE_SRC/build_in_tmp"
+if test -u "${VIRTUALBOX}"; then
+    GROUP=root
+else
+    GROUP=vboxusers
+fi
 
 # silently exit if the package was uninstalled but not purged,
 # applies to Debian packages only (but shouldn't hurt elsewhere)
@@ -131,12 +135,12 @@ start()
         fi
     fi
     # ensure permissions
-    if ! chown :%GROUP% $DEVICE 2>/dev/null; then
+    if ! chown :"${GROUP}" $DEVICE 2>/dev/null; then
         rmmod vboxpci 2>/dev/null
         rmmod vboxnetadp 2>/dev/null
         rmmod vboxnetflt 2>/dev/null
         rmmod vboxdrv 2>/dev/null
-        failure "Cannot change group %GROUP% for device $DEVICE"
+        failure "Cannot change group ${GROUP} for device $DEVICE"
     fi
     if ! $MODPROBE vboxnetflt > /dev/null 2>&1; then
         failure "modprobe vboxnetflt failed. Please use 'dmesg' to find out why"
