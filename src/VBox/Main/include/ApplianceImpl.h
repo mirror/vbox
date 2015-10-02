@@ -113,7 +113,7 @@ private:
     VirtualBox* const mVirtualBox;
 
     struct ImportStack;
-    struct TaskOVF;
+    class TaskOVF;
     struct Data;            // opaque, defined in ApplianceImpl.cpp
     Data *m;
 
