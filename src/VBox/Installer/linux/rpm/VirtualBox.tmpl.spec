@@ -304,8 +304,8 @@ else
   if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
     # compile problem
     cat << EOF
-No precompiled module for this kernel found -- trying to build one. Messages
-emitted during module compilation will be logged to $LOG.
+No precompiled module for this kernel found -- trying to build one.  If this
+fails, check the messages logged to $LOG during module compilation.
 
 EOF
   fi
