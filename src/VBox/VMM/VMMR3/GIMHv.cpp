@@ -114,8 +114,10 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
     AssertLogRelRCReturn(rc, rc);
 
     if (!RTStrNCmp(szVendor, GIM_HV_VENDOR_MICROSOFT, sizeof(GIM_HV_VENDOR_MICROSOFT) - 1))
+    {
+        LogRel(("GIM: HyperV: Reporting vendor as Microsoft\n"));
         pHv->fIsVendorMsHv = true;
-    LogRel(("GIM: HyperV: Reporting vendor ID as '%s'\n", szVendor));
+    }
 
     /*
      * Determine interface capabilities based on the version.
