@@ -145,8 +145,8 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
     /* Perform frame-buffer rescaling: */
     frameBuffer()->performRescale();
 
-    // TODO: How to make it work?
-    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
+    /* Update console's display viewport and 3D overlay: */
+    updateViewport();
 }
 
 void UIMachineViewScale::resendSizeHint()

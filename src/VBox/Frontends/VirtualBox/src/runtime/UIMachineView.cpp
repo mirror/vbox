@@ -217,13 +217,18 @@ void UIMachineView::applyMachineViewScaleFactor()
     /* Perform frame-buffer rescaling: */
     frameBuffer()->performRescale();
 
-    // TODO: How to make it work?
-    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
+    /* Update console's display viewport and 3D overlay: */
+    updateViewport();
 }
 
 double UIMachineView::aspectRatio() const
 {
     return frameBuffer() ? (double)(frameBuffer()->width()) / frameBuffer()->height() : 0;
+}
+
+void UIMachineView::updateViewport()
+{
+    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
 }
 
 void UIMachineView::sltPerformGuestResize(const QSize &toSize)
@@ -425,8 +430,8 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     updateScaledPausePixmap();
     viewport()->update();
 
-    // TODO: How to make it work?
-    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
+    /* Update console's display viewport and 3D overlay: */
+    updateViewport();
 }
 
 void UIMachineView::sltHandleScalingOptimizationChange(const QString &strMachineID)
@@ -479,8 +484,8 @@ void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMac
     updateScaledPausePixmap();
     viewport()->update();
 
-    // TODO: How to make it work?
-    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
+    /* Update console's display viewport and 3D overlay: */
+    updateViewport();
 }
 
 void UIMachineView::sltMachineStateChanged()
@@ -553,6 +558,9 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_uScreenId(uScreenId)
     , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
+#ifdef Q_WS_MAC
+    , m_iHostScreenNumber(0)
+#endif /* Q_WS_MAC */
     , m_maxGuestSizePolicy(MaxGuestSizePolicy_Invalid)
     , m_u64MaxGuestSize(0)
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -1240,9 +1248,8 @@ void UIMachineView::scrollContentsBy(int dx, int dy)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
     QAbstractScrollArea::scrollContentsBy(dx, dy);
 
-    display().ViewportChanged(screenId(),
-                              contentsX(), contentsY(),
-                              visibleWidth(), visibleHeight());
+    /* Update console's display viewport and 3D overlay: */
+    updateViewport();
 }
 
 
@@ -1341,9 +1348,8 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 if (m_pFrameBuffer)
                     m_pFrameBuffer->viewportResized(pResizeEvent);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-                display().ViewportChanged(screenId(),
-                                          contentsX(), contentsY(),
-                                          visibleWidth(), visibleHeight());
+                /* Update console's display viewport and 3D overlay: */
+                updateViewport();
                 break;
             }
             default:
@@ -1357,12 +1363,8 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Move:
             {
-                /* In some cases viewport resize-events can provoke the
-                 * machine-view position changes inside the machine-window.
-                 * We have to notify interested listeners like 3D service. */
-                display().ViewportChanged(screenId(),
-                                          contentsX(), contentsY(),
-                                          visibleWidth(), visibleHeight());
+                /* Update console's display viewport and 3D overlay: */
+                updateViewport();
                 break;
             }
             default:
@@ -1393,12 +1395,24 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 #ifdef Q_WS_MAC
             case QEvent::Move:
             {
-                if (m_pFrameBuffer)
+                /* Get current host-screen number: */
+                const int iCurrentHostScreenNumber = vboxGlobal().screenNumber(this);
+                if (m_iHostScreenNumber != iCurrentHostScreenNumber)
                 {
-                    /* Update backing-scale-factor for underlying frame-buffer: */
-                    m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
-                    /* Perform frame-buffer rescaling: */
-                    m_pFrameBuffer->performRescale();
+                    /* Recache current host screen: */
+                    m_iHostScreenNumber = iCurrentHostScreenNumber;
+
+                    /* Update frame-buffer arguments: */
+                    if (m_pFrameBuffer)
+                    {
+                        /* Update backing-scale-factor for underlying frame-buffer: */
+                        m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
+                        /* Perform frame-buffer rescaling: */
+                        m_pFrameBuffer->performRescale();
+                    }
+
+                    /* Update console's display viewport and 3D overlay: */
+                    updateViewport();
                 }
                 break;
             }

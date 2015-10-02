@@ -81,6 +81,8 @@ void UIMachineWindowFullscreen::handleNativeNotification(const QString &strNativ
         m_fIsInFullscreenTransition = false;
         LogRel(("UIMachineWindowFullscreen::handleNativeNotification: "
                 "Native fullscreen mode entered, notifying listener...\n"));
+        /* Update console's display viewport and 3D overlay: */
+        machineView()->updateViewport();
         emit sigNotifyAboutNativeFullscreenDidEnter();
     }
     /* Handle 'NSWindowWillExitFullScreenNotification' notification: */
@@ -97,6 +99,8 @@ void UIMachineWindowFullscreen::handleNativeNotification(const QString &strNativ
         m_fIsInFullscreenTransition = false;
         LogRel(("UIMachineWindowFullscreen::handleNativeNotification: "
                 "Native fullscreen mode exited, notifying listener...\n"));
+        /* Update console's display viewport and 3D overlay: */
+        machineView()->updateViewport();
         emit sigNotifyAboutNativeFullscreenDidExit();
     }
     /* Handle 'NSWindowDidFailToEnterFullScreenNotification' notification: */

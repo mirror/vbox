@@ -107,6 +107,10 @@ public:
     /* Framebuffer aspect ratio: */
     double aspectRatio() const;
 
+    /** Updates console's display viewport.
+      * @remarks Used to update 3D-service overlay viewport as well. */
+    void updateViewport();
+
 protected slots:
 
     /* Slot to perform guest resize: */
@@ -180,7 +184,7 @@ protected:
     CMachine& machine() const;
     /** Returns the session's console reference. */
     CConsole& console() const;
-    /** Returns the display's display reference. */
+    /** Returns the console's display reference. */
     CDisplay& display() const;
     /** Returns the console's guest reference. */
     CGuest& guest() const;
@@ -347,6 +351,11 @@ protected:
      * the default size hint to avoid short resizes back to fullscreen size.
      * Not explicitly initialised (i.e. invalid by default). */
     QSize m_sizeHintOverride;
+
+#ifdef Q_WS_MAC
+    /** Holds current host-screen number. */
+    int m_iHostScreenNumber;
+#endif /* Q_WS_MAC */
 
     /** The policy for calculating the maximum guest resolution which we wish
      * to handle. */
