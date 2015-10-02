@@ -76,12 +76,11 @@ const char *end_block = "# List of known device classes, subclasses and protocol
 
 #define USBKEY(vendorId, productId) (((vendorId) << 16) | (productId))
 
-// error codes
-#define ERROR_INVALID_ARGUMENTS (1)
-#define ERROR_OPEN_FILE         (2)
-#define ERROR_IN_PARSE_LINE     (3)
-#define ERROR_DUPLICATE_ENTRY   (4)
-#define ERROR_WRONG_FILE_FORMAT (5)
+// error codes (complements RTEXITCODE_XXX).
+#define ERROR_OPEN_FILE         (12)
+#define ERROR_IN_PARSE_LINE     (13)
+#define ERROR_DUPLICATE_ENTRY   (14)
+#define ERROR_WRONG_FILE_FORMAT (15)
 
 struct VendorRecord
 {
@@ -302,6 +301,13 @@ int ParseUsbIds(PRTSTREAM instream)
     return 0;
 }
 
+static int usage(ostream &rOut, const char *argv0)
+{
+    rOut << "Usage: " << argv0
+         << " [linux.org usb list file] [custom usb list file] [-o output file]" << endl;
+    return RTEXITCODE_SYNTAX;
+}
+
 int main(int argc, char *argv[])
 {
     int rc = RTR3InitExe(argc, &argv, 0);
@@ -310,10 +316,9 @@ int main(int argc, char *argv[])
 
     if (argc < 4)
     {
-        cerr << "Format: " << argv[0] <<
-            " [linux.org usb list file] [custom usb list file] [-o output file]" << endl;
-        cerr << "Error: Invalid arguments." << endl;
-        return ERROR_INVALID_ARGUMENTS;
+        usage(cerr, argv[0]);
+        cerr << "Error: Not enough arguments." << endl;
+        return RTEXITCODE_SYNTAX;
     }
     ofstream fout;
     PRTSTREAM fin;
@@ -328,23 +333,27 @@ int main(int argc, char *argv[])
             outName = argv[++i];
             continue;
         }
+        if (   strcmp(argv[i], "-h") == 0
+            || strcmp(argv[i], "-?") == 0
+            || strcmp(argv[i], "--help") == 0)
+        {
+            usage(cout, argv[0]);
+            return RTEXITCODE_SUCCESS;
+        }
 
         rc = RTStrmOpen(argv[i], "r", &fin);
         if (RT_FAILURE(rc))
         {
-            cerr << "Format: " << argv[0] <<
-                " [linux.org usb list file] [custom usb list file] [-o output file]" << endl;
-            cerr << "Error: Can not open file '" << argv[i] << "'. Error: " << hex << rc << endl;
+            cerr << "Error: Failed to open file '" << argv[i] << "' for reading. rc=" << rc << endl;
             return ERROR_OPEN_FILE;
         }
 
-        int res = ParseUsbIds(fin);
-        if (res != 0)
+        rc = ParseUsbIds(fin);
+        if (rc != 0)
         {
-            cerr << "Error in parsing USB devices file '" <<
-                argv[i] << "'" << endl;
+            cerr << "Error: Failed parsing USB devices file '" << argv[i] << "'" << endl;
             RTStrmClose(fin);
-            return res;
+            return rc;
         }
         RTStrmClose(fin);
     }
@@ -356,17 +365,13 @@ int main(int argc, char *argv[])
     ProductsSet::iterator ita = adjacent_find(g_products.begin(), g_products.end());
     if (ita != g_products.end())
     {
-        cerr << "Warning: Duplicate alias detected. " << *ita << endl;
-        /** @todo r=bird: Why return success (0) when we didn't generate the
-         *        file?!?!? */
-        return 0;
+        cerr << "Error: Duplicate alias detected. " << *ita << endl;
+        return ERROR_DUPLICATE_ENTRY;
     }
 
     if (!outName)
     {
-        cerr << "Format: " << argv[0] <<
-            " [linux.org usb list file] [custom usb list file] [-o output file]" << endl;
-        cerr << "Error: Output file is not defined." << endl;
+        cerr << "Error: Output file is not specified." << endl;
         return ERROR_OPEN_FILE;
     }
 
@@ -375,9 +380,7 @@ int main(int argc, char *argv[])
     fout.open(outName);
     if (!fout.is_open())
     {
-        cerr << "Format: " << argv[0] <<
-            " [linux.org usb list file] [custom usb list file] [-o output file]" << endl;
-        cerr << "Error: Can not open file to write '" << argv[1] << "'." << endl;
+        cerr << "Error: Can not open file to write '" << outName << "'." << endl;
         return ERROR_OPEN_FILE;
     }
 
@@ -398,6 +401,6 @@ int main(int argc, char *argv[])
     fout.close();
 
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
