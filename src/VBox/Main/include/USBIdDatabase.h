@@ -104,7 +104,7 @@ public:
     {
         Assert(pStr->cch < s_cchStrTab);
         Assert(pStr->off < s_cchStrTab);
-        Assert(pStr->off + pStr->cch < s_cchStrTab);
+        Assert(pStr->off + (size_t)pStr->cch < s_cchStrTab);
 
 #ifdef USB_ID_DATABASE_WITH_COMPRESSION
         char        szTmp[USB_ID_DATABASE_MAX_STRING * 2];
@@ -135,7 +135,7 @@ public:
                 const USBIDDBSTR *pStr2 = &s_aCompDict[uch & 0x7f];
                 Assert(pStr2->cch < s_cchStrTab);
                 Assert(pStr2->off < s_cchStrTab);
-                Assert(pStr2->off + pStr->cch < s_cchStrTab);
+                Assert(pStr2->off + (size_t)pStr->cch < s_cchStrTab);
                 Assert((uintptr_t)(&pchDst[pStr2->cch] - &szTmp[0]) < USB_ID_DATABASE_MAX_STRING);
                 memcpy(pchDst, &s_achStrTab[pStr2->off], pStr2->cch);
                 pchDst += pStr2->cch;
