@@ -17,8 +17,17 @@
 
 #include "USBIdDatabase.h"
 
-Product const   AliasDictionary::aProducts[] = {0};
-const size_t    AliasDictionary::cProducts   = 1; /* std::lower_bound cannot deal with empty array */
-Vendor const    AliasDictionary::aVendors[]  = {0};
-const size_t    AliasDictionary::cVendors    = 1; /* std::lower_bound cannot deal with empty array */
+const char           USBIdDatabase::s_achStrTab[]     = "";
+const size_t         USBIdDatabase::s_cchStrTab       = 0;
+#ifdef USB_ID_DATABASE_WITH_COMPRESSION
+const USBIDDBSTR     USBIdDatabase::s_aCompDict[127];
+#endif
+
+const size_t         USBIdDatabase::s_cVendors        = 0;
+const USBIDDBVENDOR  USBIdDatabase::s_aVendors[]      = { 0 };
+const USBIDDBSTR     USBIdDatabase::s_aVendorNames[]  = { {0,0} };
+
+const size_t         USBIdDatabase::s_cProducts       = 0;
+const USBIDDBPROD    USBIdDatabase::s_aProducts[]     = { 0 };
+const USBIDDBSTR     USBIdDatabase::s_aProductNames[] = { {0,0} };
 
