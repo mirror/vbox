@@ -766,7 +766,6 @@ static void CreateStringTable(void)
  */
 static void CheckStrTabString(PSTRTABSTRING pStr)
 {
-    AssertFailed();
     Assert(pStr->StrRef.cch == pStr->str.length());
     Assert(pStr->StrRef.off < g_cchStrTab);
     Assert(pStr->StrRef.off + pStr->StrRef.cch <= g_cchStrTab);
