@@ -217,7 +217,12 @@ typedef WORDFREQMAP::value_type WORDFREQPAIR;
 /** The 127 words we've picked to be indexed by reference.  */
 static StrTabString g_aCompDict[127];
 
-/** For sorting the frequency fidning in descending order. */
+/**
+ * For sorting the frequency fidning in descending order.
+ *
+ * Comparison operators are put outside to make older gcc versions (like 4.1.1
+ * on lnx64-rel) happy.
+ */
 class WordFreqSortEntry
 {
 public:
@@ -225,10 +230,17 @@ public:
 
 public:
     WordFreqSortEntry(WORDFREQPAIR const *pPair) : m_pPair(pPair) {}
-
-    bool operator == (WordFreqSortEntry const &rRight) { return m_pPair->second == rRight.m_pPair->second; };
-    bool operator <  (WordFreqSortEntry const &rRight) { return m_pPair->second >  rRight.m_pPair->second; };
 };
+
+bool operator == (WordFreqSortEntry const &rLeft, WordFreqSortEntry const &rRight)
+{
+    return rLeft.m_pPair->second == rRight.m_pPair->second;
+}
+
+bool operator <  (WordFreqSortEntry const &rLeft, WordFreqSortEntry const &rRight)
+{
+    return rLeft.m_pPair->second >  rRight.m_pPair->second;
+}
 
 
 /**
