@@ -580,30 +580,36 @@ static void AddString(PSTRTABSTRING pStr)
 static void InsertUniqueString(PSTRTABSTRING pStr)
 {
     size_t iIdx;
-    size_t iStart = 0;
-    size_t iEnd   = g_cSortedStrings;
-    for (;;)
+    size_t iEnd = g_cSortedStrings;
+    if (iEnd)
     {
-        iIdx = iStart + (iEnd - iStart) / 2;
-        if (g_papSortedStrings[iIdx]->StrRef.cch < pStr->StrRef.cch)
+        size_t iStart = 0;
+        for (;;)
         {
-            if (iIdx <= iStart)
+            iIdx = iStart + (iEnd - iStart) / 2;
+            if (g_papSortedStrings[iIdx]->StrRef.cch < pStr->StrRef.cch)
+            {
+                if (iIdx <= iStart)
+                    break;
+                iEnd = iIdx;
+            }
+            else if (g_papSortedStrings[iIdx]->StrRef.cch > pStr->StrRef.cch)
+            {
+                if (++iIdx >= iEnd)
+                    break;
+                iStart = iIdx;
+            }
+            else
                 break;
-            iEnd = iIdx;
         }
-        else if (g_papSortedStrings[iIdx]->StrRef.cch > pStr->StrRef.cch)
-        {
-            if (++iIdx >= g_cSortedStrings)
-                break;
-            iStart = iIdx;
-        }
-        else
-            break;
-    }
 
-    if (iIdx != g_cSortedStrings)
-        memmove(&g_papSortedStrings[iIdx + 1], &g_papSortedStrings[iIdx],
-                (g_cSortedStrings - iIdx) * sizeof(g_papSortedStrings[iIdx]));
+        if (iIdx != g_cSortedStrings)
+            memmove(&g_papSortedStrings[iIdx + 1], &g_papSortedStrings[iIdx],
+                    (g_cSortedStrings - iIdx) * sizeof(g_papSortedStrings[iIdx]));
+    }
+    else
+        iIdx = 0;
+
     g_papSortedStrings[iIdx] = pStr;
     g_cSortedStrings++;
 }
@@ -703,7 +709,6 @@ static void CreateStringTable(void)
         {
             /*
              * See if the start of the string overlaps the end of the string table.
-             * (Currently saves 1 byte...)
              */
             if (g_cchStrTab && cchCur > 1)
             {
@@ -714,7 +719,9 @@ static void CreateStringTable(void)
                     const char *pchCandidate = (const char *)memchr(pchLeft, chFirst, cchLeft);
                     if (!pchCandidate)
                         break;
-                    if (memcmp(pchCandidate, pszCur, cchLeft) == 0)
+                    cchLeft -= pchCandidate - pchLeft;
+                    pchLeft  = pchCandidate;
+                    if (memcmp(pchLeft, pszCur, cchLeft) == 0)
                     {
                         size_t cchToCopy = cchCur - cchLeft;
                         memcpy(&g_pachStrTab[offStrTab], &pszCur[cchLeft], cchToCopy);
@@ -722,9 +729,8 @@ static void CreateStringTable(void)
                         offStrTab = pchCandidate - g_pachStrTab;
                         break;
                     }
-
-                    cchLeft -= pchCandidate + 1 - pchLeft;
-                    pchLeft  = pchCandidate + 1;
+                    cchLeft--;
+                    pchLeft++;
                 }
             }
 
@@ -965,7 +971,7 @@ int ParseUsbIds(PRTSTREAM instream)
                                 return ERROR_IN_PARSE_LINE;
                             }
                             product.key = RT_MAKE_U32(product.productID, product.vendorID);
-                            Assert(product.vendorID != 0);
+                            Assert(product.vendorID == vendor.vendorID);
                             g_products.push_back(product);
                         }
                         else
@@ -1084,7 +1090,8 @@ int main(int argc, char *argv[])
             if (g_products[iProduct].vendorID == idVendor)
                 do
                     iProduct++;
-                while (g_products[iProduct].vendorID == idVendor);
+                while (   iProduct < g_products.size()
+                       && g_products[iProduct].vendorID == idVendor);
             else
             {
                 cerr << "Error: product without vendor after sorting. impossible!" << endl;

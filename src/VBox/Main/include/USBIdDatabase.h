@@ -157,29 +157,33 @@ private:
      */
     static uint32_t lookupVendor(uint16_t idVendor)
     {
-        size_t iStart = 0;
         size_t iEnd   = s_cVendors;
-        for (;;)
+        if (iEnd)
         {
-            size_t idx = iStart + (iEnd - iStart) / 2;
-            if (s_aVendors[idx].idVendor < idVendor)
+            size_t iStart = 0;
+            for (;;)
             {
-                idx++;
-                if (idx < iEnd)
-                    iStart = idx;
+                size_t idx = iStart + (iEnd - iStart) / 2;
+                if (s_aVendors[idx].idVendor < idVendor)
+                {
+                    idx++;
+                    if (idx < iEnd)
+                        iStart = idx;
+                    else
+                        break;
+                }
+                else if (s_aVendors[idx].idVendor > idVendor)
+                {
+                    if (idx != iStart)
+                        iEnd = idx;
+                    else
+                        break;
+                }
                 else
-                    return UINT32_MAX;
+                    return (uint32_t)idx;
             }
-            else if (s_aVendors[idx].idVendor > idVendor)
-            {
-                if (idx != iStart)
-                    iEnd = idx;
-                else
-                    return UINT32_MAX;
-            }
-            else
-                return (uint32_t)idx;
         }
+        return UINT32_MAX;
     }
 
     /**
@@ -192,27 +196,31 @@ private:
      */
     static uint32_t lookupProduct(uint16_t idProduct, size_t iStart, size_t iEnd)
     {
-        for (;;)
+        if (iStart < iEnd)
         {
-            size_t idx = iStart + (iEnd - iStart) / 2;
-            if (s_aProducts[idx].idProduct < idProduct)
+            for (;;)
             {
-                idx++;
-                if (idx < iEnd)
-                    iStart = idx;
+                size_t idx = iStart + (iEnd - iStart) / 2;
+                if (s_aProducts[idx].idProduct < idProduct)
+                {
+                    idx++;
+                    if (idx < iEnd)
+                        iStart = idx;
+                    else
+                        break;
+                }
+                else if (s_aProducts[idx].idProduct > idProduct)
+                {
+                    if (idx != iStart)
+                        iEnd = idx;
+                    else
+                        break;
+                }
                 else
-                    return UINT32_MAX;
+                    return (uint32_t)idx;
             }
-            else if (s_aProducts[idx].idProduct > idProduct)
-            {
-                if (idx != iStart)
-                    iEnd = idx;
-                else
-                    return UINT32_MAX;
-            }
-            else
-                return (uint32_t)idx;
         }
+        return UINT32_MAX;
     }
 
 
