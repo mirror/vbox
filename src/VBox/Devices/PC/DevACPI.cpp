@@ -3237,7 +3237,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Query settings for both parallel ports, if the CFGM keys don't exist pretend that
      * the corresponding parallel port is not enabled.
      */
-    rc = CFGMR3QueryU8Def(pCfg, "Parallel0Irq", &pThis->uSerial0Irq, 0);
+    rc = CFGMR3QueryU8Def(pCfg, "Parallel0Irq", &pThis->uParallel0Irq, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"Parallel0Irq\""));
