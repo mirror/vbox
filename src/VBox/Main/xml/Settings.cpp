@@ -334,6 +334,8 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
                     m->sv = SettingsVersion_v1_14;
                 else if (ulMinor == 15)
                     m->sv = SettingsVersion_v1_15;
+                else if (ulMinor == 16)
+                    m->sv = SettingsVersion_v1_16;
                 else if (ulMinor > 15)
                     m->sv = SettingsVersion_Future;
             }
