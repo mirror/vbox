@@ -16,7 +16,7 @@
  */
 
 
-/** @page pg_vboxservice_timesync       The Time Sync Service
+/** @page pg_vgsvc_timesync     VBoxService - The Time Sync Service
  *
  * The time sync service plays along with the Time Manager (TM) in the VMM
  * to keep the guest time accurate using the host machine as reference.
@@ -67,10 +67,10 @@
  * the drift is noticeable.
  *
  * It now boils down to these three (configuration) factors:
- *  -# g_TimesyncMinAdjust - The minimum drift we will ever bother with.
- *  -# g_TimesyncLatencyFactor - The factor we multiply the latency by to
+ *  -# g_TimeSyncMinAdjust - The minimum drift we will ever bother with.
+ *  -# g_TimeSyncLatencyFactor - The factor we multiply the latency by to
  *     calculate the dynamic minimum adjust factor.
- *  -# g_TimesyncMaxLatency - When to start discarding the data as utterly
+ *  -# g_TimeSyncMaxLatency - When to start discarding the data as utterly
  *     useless and take a rest (someone is too busy to give us good data).
  *  -# g_TimeSyncSetThreshold - The threshold at which we will just set the time
  *     instead of trying to adjust it (milliseconds).

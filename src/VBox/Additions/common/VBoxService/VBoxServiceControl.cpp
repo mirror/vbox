@@ -15,6 +15,31 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/** @page pg_vgsvc_gstctrl VBoxService - Guest Control
+ *
+ * The Guest Control subservice helps implementing the IGuest APIs.
+ *
+ * The IGuest APIs provides means to manipulate (control) files, directories,
+ * symbolic links and processes within the guest.  Most of these means requires
+ * credentials of a guest OS user to operate, though some restricted ones
+ * operates directly as the VBoxService user (root / system service account).
+ *
+ * The current design is that a subprocess is spawned for handling operations as
+ * a given user.  This process is represented as IGuestSession in the API.  The
+ * subprocess will be spawned as the given use, giving up the privileges the
+ * parent subservice had.
+ *
+ * It will try handle as many of the operations directly from within the
+ * subprocess, but for more complicated things (or things that haven't yet been
+ * converted), it will spawn a helper process that does the actual work.
+ *
+ * These helpers are the typically modeled on similar unix core utilities, like
+ * mkdir, rm, rmdir, cat and so on.  The helper tools can also be launched
+ * directly from VBoxManage by the user by prepending the 'vbox_' prefix to the
+ * unix command.
+ *
+ */
+
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *

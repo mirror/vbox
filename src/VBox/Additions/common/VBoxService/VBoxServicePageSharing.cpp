@@ -15,6 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/** @page pg_vgsvc_pagesharing VBoxService - Page Sharing
+ *
+ * The Page Sharing subservice is the driving force in implementing the Page
+ * Fusion feature in VirtualBox.   It is its responsibility to find memory
+ * mappings and other good candidates for page sharing.
+ *
+ * This is currently only implemented on Windows.  There is no technical reason
+ * for it not to be doable for all the other guests too, it's just a matter of
+ * customer demand and engineering time.
+ */
+
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *

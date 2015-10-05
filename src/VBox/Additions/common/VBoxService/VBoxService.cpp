@@ -16,6 +16,37 @@
  */
 
 
+/** @page pg_vgsvc VBoxService
+ *
+ * VBoxService is a root daemon for implementing guest additions features.
+ *
+ * It is structured as one binary that contains many sub-services.  The reason
+ * for this is partially historical and partially practical.  The practical
+ * reason is that the VBoxService binary is typically statically linked, at
+ * least with IPRT and the guest library, so we save quite a lot of space having
+ * on single binary instead individual binaries for each sub-service and their
+ * helpers (currently up to 9 subservices and 8 helpers).  The historical is
+ * simply that it started its life on OS/2 dreaming of conquring Windows next,
+ * so it kind of felt natural to have it all in one binary.
+ *
+ * Even if it's structured as a single binary, it is possible, by using command
+ * line options, to start each subservice as an individual process.
+ *
+ * Subservices:
+ *  - @subpage pg_vgsvc_timesync    "Time Synchronization"
+ *  - @subpage pg_vgsvc_vminfo      "VM Information"
+ *  - @subpage pg_vgsvc_vmstats     "VM Statistics"
+ *  - @subpage pg_vgsvc_gstctrl     "Guest Control"
+ *  - @subpage pg_vgsvc_pagesharing "Page Sharing"
+ *  - @subpage pg_vgsvc_memballoon  "Memory Balooning"
+ *  - @subpage pg_vgsvc_cpuhotplug  "CPU Hot-Plugging"
+ *  - @subpage pg_vgsvc_automount   "Shared Folder Automounting"
+ *  - @subpage pg_vgsvc_clipboard   "Clipboard (OS/2 only)"
+ *
+ * Now, since the service predates a lot of stuff, including RTGetOpt, we're
+ * currently doing our own version of argument parsing here, which is kind of
+ * stupid.  That will hopefully be cleaned up eventually.
+ */
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *

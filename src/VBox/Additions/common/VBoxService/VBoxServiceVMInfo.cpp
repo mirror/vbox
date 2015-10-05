@@ -15,6 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/** @page pg_vgsvc_vminfo VBoxService - VM Information
+ *
+ * The VM Information subservice provides heaps of useful information about the
+ * VM via guest properties.  Check out the "/VirtualBox/GuestInfo/" part of the
+ * guest properties.
+ *
+ *
+ * @section sec_vgsvc_vminfo_beacons    Beacons
+ *
+ * The subservice does not write properties unless there are changes.  So, in
+ * order for the host side to know that information is up to date despite an
+ * oldish timestamp we define a couple of values that are always updated and can
+ * reliably used to figure how old the information actually is.
+ *
+ * For the networking part "/VirtualBox/GuestInfo/Net/Count" is the value to
+ * watch out for.
+ *
+ * For the login part, it's possible that we intended to use
+ * "/VirtualBox/GuestInfo/OS/LoggedInUsers" for this, however it is not defined
+ * correctly and current does NOT work as a beacon.
+ *
+ */
 
 
 /*********************************************************************************************************************************
@@ -885,6 +907,8 @@ static int vgsvcVMInfoWriteUsers(void)
     if (RT_FAILURE(rc))
         VGSvcError("Error writing logged in users count, rc=%Rrc\n", rc);
 
+/** @todo r=bird: What's this 'beacon' nonsense here?  It's _not_ defined with
+ *        the VGSVCPROPCACHE_FLAGS_ALWAYS_UPDATE flag set!!  */
     rc = VGSvcPropCacheUpdate(&g_VMInfoPropCache, g_pszPropCacheValNoLoggedInUsers, cUsersInList == 0 ? "true" : "false");
     if (RT_FAILURE(rc))
         VGSvcError("Error writing no logged in users beacon, rc=%Rrc\n", rc);
