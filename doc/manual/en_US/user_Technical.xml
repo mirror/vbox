@@ -421,8 +421,13 @@
       </listitem>
 
       <listitem>
-        <para>HWACCM (Hardware Acceleration Manager), provides support for
-        VT-x and AMD-V.</para>
+        <para>HM (Hardware Acceleration Manager), provides support for VT-x
+        and AMD-V.</para>
+      </listitem>
+
+      <listitem>
+        <para>GIM (Guest Interface Manager), provides support for various
+        paravirtualization interfaces to the guest.</para>
       </listitem>
 
       <listitem>
