@@ -95,11 +95,10 @@ typedef VBOXSERVICE *PVBOXSERVICE;
 typedef VBOXSERVICE const *PCVBOXSERVICE;
 
 /* Default call-backs for services which do not need special behaviour. */
-DECLCALLBACK(int) VBoxServiceDefaultPreInit(void);
-DECLCALLBACK(int) VBoxServiceDefaultOption(const char **ppszShort, int argc,
-                                           char **argv, int *pi);
-DECLCALLBACK(int) VBoxServiceDefaultInit(void);
-DECLCALLBACK(void) VBoxServiceDefaultTerm(void);
+DECLCALLBACK(int)  VGSvcDefaultPreInit(void);
+DECLCALLBACK(int)  VGSvcDefaultOption(const char **ppszShort, int argc, char **argv, int *pi);
+DECLCALLBACK(int)  VGSvcDefaultInit(void);
+DECLCALLBACK(void) VGSvcDefaultTerm(void);
 
 /** The service name.
  * @note Used on windows to name the service as well as the global mutex. */
@@ -180,40 +179,44 @@ extern VBOXSERVICE  g_AutoMount;
 extern RTCRITSECT   g_csLog; /* For guest process stdout dumping. */
 #endif
 
-extern RTEXITCODE               VBoxServiceSyntax(const char *pszFormat, ...);
-extern RTEXITCODE               VBoxServiceError(const char *pszFormat, ...);
-extern void                     VBoxServiceVerbose(unsigned iLevel, const char *pszFormat, ...);
-extern int                      VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32,
-                                                     uint32_t u32Min, uint32_t u32Max);
-extern int                      VBoxServiceStartServices(void);
-extern int                      VBoxServiceStopServices(void);
-extern void                     VBoxServiceMainWait(void);
-extern int                      VBoxServiceReportStatus(VBoxGuestFacilityStatus enmStatus);
+extern RTEXITCODE               VGSvcSyntax(const char *pszFormat, ...);
+extern RTEXITCODE               VGSvcError(const char *pszFormat, ...);
+extern void                     VGSvcVerbose(unsigned iLevel, const char *pszFormat, ...);
+extern int                      VGSvcLogCreate(const char *pszLogFile);
+extern void                     VGSvcLogDestroy(void);
+extern int                      VGSvcArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32,
+                                               uint32_t u32Min, uint32_t u32Max);
+
+/* Exposing the following bits because of windows: */
+extern int                      VGSvcStartServices(void);
+extern int                      VGSvcStopServices(void);
+extern void                     VGSvcMainWait(void);
+extern int                      VGSvcReportStatus(VBoxGuestFacilityStatus enmStatus);
 #ifdef RT_OS_WINDOWS
-extern RTEXITCODE               VBoxServiceWinInstall(void);
-extern RTEXITCODE               VBoxServiceWinUninstall(void);
-extern RTEXITCODE               VBoxServiceWinEnterCtrlDispatcher(void);
-extern void                     VBoxServiceWinSetStopPendingStatus(uint32_t uCheckPoint);
+extern RTEXITCODE               VGSvcWinInstall(void);
+extern RTEXITCODE               VGSvcWinUninstall(void);
+extern RTEXITCODE               VGSvcWinEnterCtrlDispatcher(void);
+extern void                     VGSvcWinSetStopPendingStatus(uint32_t uCheckPoint);
 #endif
 
 #ifdef VBOXSERVICE_TOOLBOX
-extern bool                     VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit);
+extern bool                     VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit);
 #endif
 
 #ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_GUEST_PROPS
-extern int                      VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList, uint32_t *pcUsersInList);
-extern int                      VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
+extern int                      VGSvcVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList, uint32_t *pcUsersInList);
+extern int                      VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID);
 # endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOXSERVICE_MANAGEMENT
-extern uint32_t                 VBoxServiceBalloonQueryPages(uint32_t cbPage);
+extern uint32_t                 VGSvcBalloonQueryPages(uint32_t cbPage);
 #endif
 #if defined(VBOXSERVICE_PAGE_SHARING)
-extern RTEXITCODE               VBoxServicePageSharingWorkerChild(void);
+extern RTEXITCODE               VGSvcPageSharingWorkerChild(void);
 #endif
-extern int                      VBoxServiceVMInfoSignal(void);
+extern int                      VGSvcVMInfoSignal(void);
 
 RT_C_DECLS_END
 

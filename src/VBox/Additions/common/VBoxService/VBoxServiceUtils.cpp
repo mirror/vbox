@@ -31,6 +31,7 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 
+
 #ifdef VBOX_WITH_GUEST_PROPS
 
 /**
@@ -47,8 +48,7 @@
  * @param   puTimestamp         Where to return the timestamp.  This is only set
  *                              on success.  Optional.
  */
-int VBoxServiceReadProp(uint32_t u32ClientId, const char *pszPropName,
-                        char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
+int VGSvcReadProp(uint32_t u32ClientId, const char *pszPropName, char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
 {
     AssertPtrReturn(pszPropName, VERR_INVALID_POINTER);
     AssertPtrReturn(ppszValue, VERR_INVALID_POINTER);
@@ -68,16 +68,14 @@ int VBoxServiceReadProp(uint32_t u32ClientId, const char *pszPropName,
         pvBuf = RTMemAlloc(cbBuf);
         if (!pvBuf)
         {
-            VBoxServiceError("Guest Property: Failed to allocate %zu bytes\n", cbBuf);
+            VGSvcError("Guest Property: Failed to allocate %zu bytes\n", cbBuf);
             rc = VERR_NO_MEMORY;
             break;
         }
         char    *pszValue;
         char    *pszFlags;
         uint64_t uTimestamp;
-        rc = VbglR3GuestPropRead(u32ClientId, pszPropName,
-                                 pvBuf, cbBuf,
-                                 &pszValue, &uTimestamp, &pszFlags, NULL);
+        rc = VbglR3GuestPropRead(u32ClientId, pszPropName, pvBuf, cbBuf, &pszValue, &uTimestamp, &pszFlags, NULL);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_BUFFER_OVERFLOW)
@@ -87,18 +85,17 @@ int VBoxServiceReadProp(uint32_t u32ClientId, const char *pszPropName,
                 continue;
             }
             if (rc == VERR_NOT_FOUND)
-                VBoxServiceVerbose(2, "Guest Property: %s not found\n", pszPropName);
+                VGSvcVerbose(2, "Guest Property: %s not found\n", pszPropName);
             else
-                VBoxServiceError("Guest Property: Failed to query \"%s\": %Rrc\n", pszPropName, rc);
+                VGSvcError("Guest Property: Failed to query '%s': %Rrc\n", pszPropName, rc);
             break;
         }
 
-        VBoxServiceVerbose(2, "Guest Property: Read \"%s\" = \"%s\", timestamp %RU64n\n",
-                           pszPropName, pszValue, uTimestamp);
+        VGSvcVerbose(2, "Guest Property: Read '%s' = '%s', timestamp %RU64n\n", pszPropName, pszValue, uTimestamp);
         *ppszValue = RTStrDup(pszValue);
         if (!*ppszValue)
         {
-            VBoxServiceError("Guest Property: RTStrDup failed for \"%s\"\n", pszValue);
+            VGSvcError("Guest Property: RTStrDup failed for '%s'\n", pszValue);
             rc = VERR_NO_MEMORY;
             break;
         }
@@ -126,22 +123,18 @@ int VBoxServiceReadProp(uint32_t u32ClientId, const char *pszPropName,
  * @param   pu32                Where to store the 32-bit value.
  *
  */
-int VBoxServiceReadPropUInt32(uint32_t u32ClientId, const char *pszPropName,
-                              uint32_t *pu32, uint32_t u32Min, uint32_t u32Max)
+int VGSvcReadPropUInt32(uint32_t u32ClientId, const char *pszPropName, uint32_t *pu32, uint32_t u32Min, uint32_t u32Max)
 {
     char *pszValue;
-    int rc = VBoxServiceReadProp(u32ClientId, pszPropName, &pszValue,
-                                 NULL /* ppszFlags */, NULL /* puTimestamp */);
+    int rc = VGSvcReadProp(u32ClientId, pszPropName, &pszValue, NULL /* ppszFlags */, NULL /* puTimestamp */);
     if (RT_SUCCESS(rc))
     {
         char *pszNext;
         rc = RTStrToUInt32Ex(pszValue, &pszNext, 0, pu32);
         if (   RT_SUCCESS(rc)
             && (*pu32 < u32Min || *pu32 > u32Max))
-        {
-            rc = VBoxServiceError("The guest property value %s = %RU32 is out of range [%RU32..%RU32].\n",
-                                  pszPropName, *pu32, u32Min, u32Max);
-        }
+            rc = VGSvcError("The guest property value %s = %RU32 is out of range [%RU32..%RU32].\n",
+                            pszPropName, *pu32, u32Min, u32Max);
         RTStrFree(pszValue);
     }
     return rc;
@@ -164,14 +157,14 @@ int VBoxServiceReadPropUInt32(uint32_t u32ClientId, const char *pszPropName,
  * @param   puTimestamp         Where to return the timestamp.  This is only set
  *                              on success.  Optional.
  */
-int VBoxServiceReadHostProp(uint32_t u32ClientId, const char *pszPropName, bool fReadOnly,
-                            char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
+int VGSvcReadHostProp(uint32_t u32ClientId, const char *pszPropName, bool fReadOnly,
+                      char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
 {
     AssertPtrReturn(ppszValue, VERR_INVALID_PARAMETER);
 
     char *pszValue = NULL;
     char *pszFlags = NULL;
-    int rc = VBoxServiceReadProp(u32ClientId, pszPropName, &pszValue, &pszFlags, puTimestamp);
+    int rc = VGSvcReadProp(u32ClientId, pszPropName, &pszValue, &pszFlags, puTimestamp);
     if (RT_SUCCESS(rc))
     {
         /* Check security bits. */
@@ -217,7 +210,7 @@ int VBoxServiceReadHostProp(uint32_t u32ClientId, const char *pszPropName, bool 
  *                          the property will be deleted (if possible).
  * @param   ...             Format arguments.
  */
-int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...)
+int VGSvcWritePropF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...)
 {
     AssertPtr(pszName);
     int rc;
@@ -225,7 +218,7 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
     {
         va_list va;
         va_start(va, pszValueFormat);
-        VBoxServiceVerbose(3, "Writing guest property \"%s\" = \"%N\"\n", pszName, pszValueFormat, &va);
+        VGSvcVerbose(3, "Writing guest property '%s' = '%N'\n", pszName, pszValueFormat, &va);
         va_end(va);
 
         va_start(va, pszValueFormat);
@@ -233,14 +226,14 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
         va_end(va);
 
         if (RT_FAILURE(rc))
-             VBoxServiceError("Error writing guest property \"%s\" (rc=%Rrc)\n", pszName, rc);
+             VGSvcError("Error writing guest property '%s' (rc=%Rrc)\n", pszName, rc);
     }
     else
     {
-        VBoxServiceVerbose(3, "Deleting guest property \"%s\"\n", pszName);
+        VGSvcVerbose(3, "Deleting guest property '%s'\n", pszName);
         rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, NULL);
         if (RT_FAILURE(rc))
-            VBoxServiceError("Error deleting guest property \"%s\" (rc=%Rrc)\n", pszName, rc);
+            VGSvcError("Error deleting guest property '%s' (rc=%Rrc)\n", pszName, rc);
     }
     return rc;
 }
@@ -254,11 +247,8 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
  *
  * @returns Success indicator.
  */
-static bool VBoxServiceGetFileVersionOwn(LPSTR pVerData,
-                                         PDWORD pdwMajor,
-                                         PDWORD pdwMinor,
-                                         PDWORD pdwBuildNumber,
-                                         PDWORD pdwRevisionNumber)
+static bool vgsvcUtilGetFileVersionOwn(LPSTR pVerData, PDWORD pdwMajor, PDWORD pdwMinor, PDWORD pdwBuildNumber,
+                                       PDWORD pdwRevisionNumber)
 {
     UINT    cchStrValue = 0;
     LPTSTR  pStrValue   = NULL;
@@ -274,16 +264,13 @@ static bool VBoxServiceGetFileVersionOwn(LPSTR pVerData,
 
 
 /**
- * Worker for VBoxServiceGetFileVersionString.
+ * Worker for VGSvcUtilWinGetFileVersionString.
  *
  * @returns VBox status code.
  * @param   pszFilename         ASCII & ANSI & UTF-8 compliant name.
  */
-static int VBoxServiceGetFileVersion(const char *pszFilename,
-                                     PDWORD pdwMajor,
-                                     PDWORD pdwMinor,
-                                     PDWORD pdwBuildNumber,
-                                     PDWORD pdwRevisionNumber)
+static int vgsvcUtilGetFileVersion(const char *pszFilename, PDWORD pdwMajor, PDWORD pdwMinor, PDWORD pdwBuildNumber,
+                                   PDWORD pdwRevisionNumber)
 {
     int rc;
 
@@ -306,7 +293,7 @@ static int VBoxServiceGetFileVersion(const char *pszFilename,
                  * since this will give us the correct revision number when
                  * it goes beyond the range of an uint16_t / WORD.
                  */
-                if (VBoxServiceGetFileVersionOwn(pVerData, pdwMajor, pdwMinor, pdwBuildNumber, pdwRevisionNumber))
+                if (vgsvcUtilGetFileVersionOwn(pVerData, pdwMajor, pdwMinor, pdwBuildNumber, pdwRevisionNumber))
                     rc = VINF_SUCCESS;
                 else
                 {
@@ -324,29 +311,29 @@ static int VBoxServiceGetFileVersion(const char *pszFilename,
                     else
                     {
                         rc = RTErrConvertFromWin32(GetLastError());
-                        VBoxServiceVerbose(3, "No file version value for file \"%s\" available! (%d / rc=%Rrc)\n",
-                                           pszFilename,  GetLastError(), rc);
+                        VGSvcVerbose(3, "No file version value for file '%s' available! (%d / rc=%Rrc)\n",
+                                     pszFilename,  GetLastError(), rc);
                     }
                 }
             }
             else
             {
                 rc = RTErrConvertFromWin32(GetLastError());
-                VBoxServiceVerbose(0, "GetFileVersionInfo(%s) -> %u / %Rrc\n", pszFilename, GetLastError(), rc);
+                VGSvcVerbose(0, "GetFileVersionInfo(%s) -> %u / %Rrc\n", pszFilename, GetLastError(), rc);
             }
 
             RTMemTmpFree(pVerData);
         }
         else
         {
-            VBoxServiceVerbose(0, "Failed to allocate %u byte for file version info for '%s'\n", cbVerData, pszFilename);
+            VGSvcVerbose(0, "Failed to allocate %u byte for file version info for '%s'\n", cbVerData, pszFilename);
             rc = VERR_NO_TMP_MEMORY;
         }
     }
     else
     {
         rc = RTErrConvertFromWin32(GetLastError());
-        VBoxServiceVerbose(3, "GetFileVersionInfoSize(%s) -> %u / %Rrc\n", pszFilename, GetLastError(), rc);
+        VGSvcVerbose(3, "GetFileVersionInfoSize(%s) -> %u / %Rrc\n", pszFilename, GetLastError(), rc);
     }
     return rc;
 }
@@ -364,8 +351,7 @@ static int VBoxServiceGetFileVersion(const char *pszFilename,
  * @param   cbVersion       The size of the version string buffer. This MUST be
  *                          at least 2 bytes!
  */
-int VBoxServiceGetFileVersionString(const char *pszPath, const char *pszFilename,
-                                    char *pszVersion, size_t cbVersion)
+int VGSvcUtilWinGetFileVersionString(const char *pszPath, const char *pszFilename, char *pszVersion, size_t cbVersion)
 {
     /*
      * We will ALWAYS return with a valid output buffer.
@@ -382,7 +368,7 @@ int VBoxServiceGetFileVersionString(const char *pszPath, const char *pszFilename
     if (RT_SUCCESS(rc))
     {
         DWORD dwMajor, dwMinor, dwBuild, dwRev;
-        rc = VBoxServiceGetFileVersion(szFullPath, &dwMajor, &dwMinor, &dwBuild, &dwRev);
+        rc = vgsvcUtilGetFileVersion(szFullPath, &dwMajor, &dwMinor, &dwBuild, &dwRev);
         if (RT_SUCCESS(rc))
             RTStrPrintf(pszVersion, cbVersion, "%u.%u.%ur%u", dwMajor, dwMinor, dwBuild, dwRev);
     }

@@ -20,30 +20,34 @@
 
 #include "VBoxServiceInternal.h"
 
-# ifdef VBOX_WITH_GUEST_PROPS
+#ifdef VBOX_WITH_GUEST_PROPS
 
+/** @name VGSVCPROPCACHE_FLAG_XXX - Guest Property Cache Flags.
+ * @{ */
 /** Indicates wheter a guest property is temporary and either should
  *  - a) get a "reset" value assigned (via VBoxServicePropCacheUpdateEntry)
  *       as soon as the property cache gets destroyed, or
  *  - b) get deleted when no reset value is specified.
  */
-#define VBOXSERVICEPROPCACHEFLAG_TEMPORARY              RT_BIT(1)
+# define VGSVCPROPCACHE_FLAGS_TEMPORARY             RT_BIT(1)
 /** Indicates whether a property every time needs to be updated, regardless
  *  if its real value changed or not. */
-#define VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE          RT_BIT(2)
+# define VGSVCPROPCACHE_FLAGS_ALWAYS_UPDATE         RT_BIT(2)
 /** The guest property gets deleted when
  *  - a) the property cache gets destroyed, or
  *  - b) the VM gets reset / shutdown / destroyed.
  */
-#define VBOXSERVICEPROPCACHEFLAG_TRANSIENT              RT_BIT(3)
+# define VGSVCPROPCACHE_FLAGS_TRANSIENT             RT_BIT(3)
+/** @}  */
 
-int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId);
-int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags, const char *pszValueReset);
-int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValueFormat, ...);
-int VBoxServicePropCacheUpdateByPath(PVBOXSERVICEVEPROPCACHE pCache, const char *pszValue, uint32_t fFlags, const char *pszPathFormat, ...);
-int VBoxServicePropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache);
-void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache);
-# endif /* VBOX_WITH_GUEST_PROPS */
+int  VGSvcPropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId);
+int  VGSvcPropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags, const char *pszValueReset);
+int  VGSvcPropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValueFormat, ...);
+int  VGSvcPropCacheUpdateByPath(PVBOXSERVICEVEPROPCACHE pCache, const char *pszValue, uint32_t fFlags,
+                                const char *pszPathFormat, ...);
+int  VGSvcPropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache);
+void VGSvcPropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache);
+#endif /* VBOX_WITH_GUEST_PROPS */
 
-#endif  /* ___VBoxServicePropCache_h */
+#endif
 

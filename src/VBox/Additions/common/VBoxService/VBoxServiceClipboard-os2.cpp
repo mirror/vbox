@@ -123,15 +123,19 @@ static ATOM g_atomOdin32UnicodeText = 0;
 
 
 
-/** @copydoc VBOXSERVICE::pfnPreInit */
-static DECLCALLBACK(int) VBoxServiceClipboardOS2PreInit(void)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnPreInit}
+ */
+static DECLCALLBACK(int) vgsvcClipboardOs2PreInit(void)
 {
     return VINF_SUCCESS;
 }
 
 
-/** @copydoc VBOXSERVICE::pfnOption */
-static DECLCALLBACK(int) VBoxServiceClipboardOS2Option(const char **ppszShort, int argc, char **argv, int *pi)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnOption}
+ */
+static DECLCALLBACK(int) vgsvcClipboardOs2Option(const char **ppszShort, int argc, char **argv, int *pi)
 {
     NOREF(ppszShort);
     NOREF(argc);
@@ -142,8 +146,10 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Option(const char **ppszShort, i
 }
 
 
-/** @copydoc VBOXSERVICE::pfnInit */
-static DECLCALLBACK(int) VBoxServiceClipboardOS2Init(void)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnInit}
+ */
+static DECLCALLBACK(int) vgsvcClipboardOs2Init(void)
 {
     int rc = VERR_GENERAL_FAILURE;
     g_ThreadCtrl = RTThreadSelf();
@@ -163,7 +169,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Init(void)
     g_habCtrl = WinInitialize(0);
     if (g_habCtrl  == NULLHANDLE)
     {
-        VBoxServiceError("WinInitialize(0) failed, lasterr=%lx\n", WinGetLastError(NULLHANDLE));
+        VGSvcError("WinInitialize(0) failed, lasterr=%lx\n", WinGetLastError(NULLHANDLE));
         return VERR_GENERAL_FAILURE;
     }
     g_hmqCtrl = WinCreateMsgQueue(g_habCtrl, 0);
@@ -183,7 +189,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Init(void)
             /*
              * Connect to the clipboard service.
              */
-            VBoxServiceVerbose(4, "clipboard: connecting\n");
+            VGSvcVerbose(4, "clipboard: connecting\n");
             rc = VbglR3ClipboardConnect(&g_u32ClientId);
             if (RT_SUCCESS(rc))
             {
@@ -195,22 +201,22 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Init(void)
                 if (g_atomOdin32UnicodeText == 0)
                     g_atomOdin32UnicodeText = WinFindAtom(WinQuerySystemAtomTable(), SZFMT_ODIN32_UNICODETEXT);
                 if (g_atomOdin32UnicodeText == 0)
-                    VBoxServiceError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n",
+                    VGSvcError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n",
                                      lLastError, WinGetLastError(g_habCtrl));
 
-                VBoxServiceVerbose(2, "g_u32ClientId=%RX32 g_atomNothingChanged=%#x g_atomOdin32UnicodeText=%#x\n",
+                VGSvcVerbose(2, "g_u32ClientId=%RX32 g_atomNothingChanged=%#x g_atomOdin32UnicodeText=%#x\n",
                                    g_u32ClientId, g_atomNothingChanged, g_atomOdin32UnicodeText);
                 return VINF_SUCCESS;
             }
 
-            VBoxServiceError("Failed to connect to the clipboard service, rc=%Rrc!\n", rc);
+            VGSvcError("Failed to connect to the clipboard service, rc=%Rrc!\n", rc);
         }
         else
-            VBoxServiceError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n",
+            VGSvcError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n",
                              lLastError, WinGetLastError(g_habCtrl));
     }
     else
-        VBoxServiceError("WinCreateMsgQueue(,0) failed, lasterr=%lx\n", WinGetLastError(g_habCtrl));
+        VGSvcError("WinCreateMsgQueue(,0) failed, lasterr=%lx\n", WinGetLastError(g_habCtrl));
     WinTerminate(g_habCtrl);
     return rc;
 }
@@ -219,7 +225,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Init(void)
 /**
  * Check that we're still the view / try make us the viewer.
  */
-static void VBoxServiceClipboardOS2PollViewer(void)
+static void vgsvcClipboardOs2PollViewer(void)
 {
     const int iOrgState = g_enmState;
 
@@ -241,17 +247,19 @@ static void VBoxServiceClipboardOS2PollViewer(void)
     if ((int)g_enmState != iOrgState)
     {
         if (g_enmState == kClipboardState_Viewer)
-            VBoxServiceVerbose(3, "clipboard: viewer\n");
+            VGSvcVerbose(3, "clipboard: viewer\n");
         else
-            VBoxServiceVerbose(3, "clipboard: poller\n");
+            VGSvcVerbose(3, "clipboard: poller\n");
     }
 }
 
 
 /**
  * Advertise the formats available from the host.
+ *
+ * @param   fFormats        The formats available on the host.
  */
-static void VBoxServiceClipboardOS2AdvertiseHostFormats(uint32_t fFormats)
+static void vgsvcClipboardOs2AdvertiseHostFormats(uint32_t fFormats)
 {
     /*
      * Open the clipboard and switch to 'destruction' mode.
@@ -281,10 +289,10 @@ static void VBoxServiceClipboardOS2AdvertiseHostFormats(uint32_t fFormats)
                 if (fFormats & (VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT/* | VBOX_SHARED_CLIPBOARD_FMT_HTML ?? */))
                 {
                     if (!WinSetClipbrdData(g_habWorker, 0, CF_TEXT, CFI_POINTER))
-                        VBoxServiceError("WinSetClipbrdData(,,CF_TEXT,) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+                        VGSvcError("WinSetClipbrdData(,,CF_TEXT,) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
                     if (    g_atomOdin32UnicodeText
                         &&  !WinSetClipbrdData(g_habWorker, 0, g_atomOdin32UnicodeText, CFI_POINTER))
-                        VBoxServiceError("WinSetClipbrdData(,,g_atomOdin32UnicodeText,) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+                        VGSvcError("WinSetClipbrdData(,,g_atomOdin32UnicodeText,) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
                 }
                 if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
                 {
@@ -293,30 +301,42 @@ static void VBoxServiceClipboardOS2AdvertiseHostFormats(uint32_t fFormats)
             }
             else
             {
-                VBoxServiceError("WinSetClipbrdOwner failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+                VGSvcError("WinSetClipbrdOwner failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
                 g_enmState = kClipboardState_Polling;
             }
         }
         else
         {
-            VBoxServiceError("WinEmptyClipbrd failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+            VGSvcError("WinEmptyClipbrd failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
             g_enmState = kClipboardState_Polling;
         }
 
         if (g_enmState == kClipboardState_Polling)
         {
             g_fEmptyClipboard = true;
-            VBoxServiceClipboardOS2PollViewer();
+            vgsvcClipboardOs2PollViewer();
         }
 
         WinCloseClipbrd(g_habWorker);
     }
     else
-        VBoxServiceError("VBoxServiceClipboardOS2AdvertiseHostFormats: WinOpenClipbrd failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+        VGSvcError("vgsvcClipboardOs2AdvertiseHostFormats: WinOpenClipbrd failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
 }
 
 
-static void *VBoxServiceClipboardOs2ConvertToOdin32(uint32_t fFormat, USHORT usFmt, void *pv, uint32_t cb)
+/**
+ * Converts (render) to an Odin32 clipboard format.
+ *
+ * We ASSUME we get windows data from the host and all we've got to do here is
+ * slapping an Odin32 header on it.
+ *
+ * @returns Pointer to the data (DosFreeMem).
+ * @param   fFormat             The host format.
+ * @param   usFmt               The PM/Odin32 format.
+ * @param   pv                  The data in host formatting.
+ * @param   cb                  The size of the data.
+ */
+static void *vgsvcClipboardOs2ConvertToOdin32(uint32_t fFormat, USHORT usFmt, void *pv, uint32_t cb)
 {
     PVOID pvPM = NULL;
     APIRET rc = DosAllocSharedMem(&pvPM, NULL, cb + sizeof(CLIPHEADER), OBJ_GIVEABLE | OBJ_GETTABLE | OBJ_TILE | PAG_READ | PAG_WRITE | PAG_COMMIT);
@@ -333,14 +353,23 @@ static void *VBoxServiceClipboardOs2ConvertToOdin32(uint32_t fFormat, USHORT usF
     }
     else
     {
-        VBoxServiceError("DosAllocSharedMem(,,%#x,,) -> %ld\n", cb + sizeof(CLIPHEADER), rc);
+        VGSvcError("DosAllocSharedMem(,,%#x,,) -> %ld\n", cb + sizeof(CLIPHEADER), rc);
         pvPM = NULL;
     }
     return pvPM;
 }
 
 
-static void *VBoxServiceClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, void *pv, uint32_t cb)
+/**
+ * Converts (render) to a PM clipboard format.
+ *
+ * @returns Pointer to the data (DosFreeMem).
+ * @param   fFormat             The host format.
+ * @param   usFmt               The PM/Odin32 format.
+ * @param   pv                  The data in host formatting.
+ * @param   cb                  The size of the data.
+ */
+static void *vgsvcClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, void *pv, uint32_t cb)
 {
     void *pvPM = NULL;
 
@@ -353,7 +382,7 @@ static void *VBoxServiceClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, 
              /* || usFmt == ...*/
             )
        )
-        pvPM = VBoxServiceClipboardOs2ConvertToOdin32(fFormat, usFmt, pv, cb);
+        pvPM = vgsvcClipboardOs2ConvertToOdin32(fFormat, usFmt, pv, cb);
     else if (usFmt == CF_TEXT)
     {
         /*
@@ -378,17 +407,17 @@ static void *VBoxServiceClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, 
                     memcpy(pvPM, pszLocale, cbPM);
                 else
                 {
-                    VBoxServiceError("DosAllocSharedMem(,,%#x,,) -> %ld\n", cb + sizeof(CLIPHEADER), orc);
+                    VGSvcError("DosAllocSharedMem(,,%#x,,) -> %ld\n", cb + sizeof(CLIPHEADER), orc);
                     pvPM = NULL;
                 }
                 RTStrFree(pszLocale);
             }
             else
-                VBoxServiceError("RTStrUtf8ToCurrentCP() -> %Rrc\n", rc);
+                VGSvcError("RTStrUtf8ToCurrentCP() -> %Rrc\n", rc);
             RTStrFree(pszUtf8);
         }
         else
-            VBoxServiceError("RTUtf16ToUtf8() -> %Rrc\n", rc);
+            VGSvcError("RTUtf16ToUtf8() -> %Rrc\n", rc);
     }
 
     return pvPM;
@@ -403,9 +432,8 @@ static void *VBoxServiceClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, 
  * @remark  We must not try open the clipboard here because WM_RENDERFMT is a
  *          request send synchronously by someone who has already opened the
  *          clipboard. We would enter a deadlock trying to open it here.
- *
  */
-static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
+static void vgsvcClipboardOs2RenderFormat(USHORT usFmt)
 {
     bool fSucceeded = false;
 
@@ -430,7 +458,7 @@ static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
         void    *pv = RTMemPageAllocZ(cbAllocated);
         if (pv)
         {
-            VBoxServiceVerbose(4, "clipboard: reading host data (%#x)\n", fFormat);
+            VGSvcVerbose(4, "clipboard: reading host data (%#x)\n", fFormat);
             rc = VbglR3ClipboardReadData(g_u32ClientId, fFormat, pv, cb, &cb);
             if (rc == VINF_BUFFER_OVERFLOW)
             {
@@ -444,19 +472,19 @@ static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
         }
         if (RT_SUCCESS(rc))
         {
-            VBoxServiceVerbose(4, "clipboard: read %u bytes\n", cb);
+            VGSvcVerbose(4, "clipboard: read %u bytes\n", cb);
 
             /*
              * Convert the host clipboard data to PM clipboard data and set it.
              */
-            PVOID pvPM = VBoxServiceClipboardOs2ConvertToPM(fFormat, usFmt, pv, cb);
+            PVOID pvPM = vgsvcClipboardOs2ConvertToPM(fFormat, usFmt, pv, cb);
             if (pvPM)
             {
                 if (WinSetClipbrdData(g_habWorker, (ULONG)pvPM, usFmt, CFI_POINTER))
                     fSucceeded = true;
                 else
                 {
-                    VBoxServiceError("VBoxServiceClipboardOS2RenderFormat: WinSetClipbrdData(,%p,%#x, CF_POINTER) failed, lasterror=%lx\n",
+                    VGSvcError("vgsvcClipboardOs2RenderFormat: WinSetClipbrdData(,%p,%#x, CF_POINTER) failed, lasterror=%lx\n",
                                      pvPM, usFmt, WinGetLastError(g_habWorker));
                     DosFreeMem(pvPM);
                 }
@@ -464,7 +492,7 @@ static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
             RTMemPageFree(pv, cbAllocated);
         }
         else
-            VBoxServiceError("VBoxServiceClipboardOS2RenderFormat: Failed to query / allocate data. rc=%Rrc cb=%#RX32\n", rc, cb);
+            VGSvcError("vgsvcClipboardOs2RenderFormat: Failed to query / allocate data. rc=%Rrc cb=%#RX32\n", rc, cb);
     }
 
     /*
@@ -477,12 +505,17 @@ static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
         WinEmptyClipbrd(g_habWorker);
         g_enmState = kClipboardState_Polling;
         g_fEmptyClipboard = true;
-        VBoxServiceClipboardOS2PollViewer();
+        vgsvcClipboardOs2PollViewer();
     }
 }
 
 
-static void VBoxServiceClipboardOS2SendDataToHost(uint32_t fFormat)
+/**
+ * Sends data to the host.
+ *
+ * @param   fFormat     The data format the host is requesting.
+ */
+static void vgsvcClipboardOs2SendDataToHost(uint32_t fFormat)
 {
     if (WinOpenClipbrd(g_habWorker))
     {
@@ -522,12 +555,12 @@ static void VBoxServiceClipboardOS2SendDataToHost(uint32_t fFormat)
             }
         }
         if (!pv)
-            VBoxServiceError("VBoxServiceClipboardOS2SendDataToHost: couldn't find data for %#x\n", fFormat);
+            VGSvcError("vgsvcClipboardOs2SendDataToHost: couldn't find data for %#x\n", fFormat);
 
         /*
          * Now, sent whatever we've got to the host (it's waiting).
          */
-        VBoxServiceVerbose(4, "clipboard: writing %pv/%#d (fFormat=%#x)\n", pv, cb, fFormat);
+        VGSvcVerbose(4, "clipboard: writing %pv/%#d (fFormat=%#x)\n", pv, cb, fFormat);
         VbglR3ClipboardWriteData(g_u32ClientId, fFormat, pv, cb);
         RTUtf16Free(pwszFree);
 
@@ -535,8 +568,8 @@ static void VBoxServiceClipboardOS2SendDataToHost(uint32_t fFormat)
     }
     else
     {
-        VBoxServiceError("VBoxServiceClipboardOS2SendDataToHost: WinOpenClipbrd failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
-        VBoxServiceVerbose(4, "clipboard: writing NULL/0 (fFormat=%x)\n", fFormat);
+        VGSvcError("vgsvcClipboardOs2SendDataToHost: WinOpenClipbrd failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+        VGSvcVerbose(4, "clipboard: writing NULL/0 (fFormat=%x)\n", fFormat);
         VbglR3ClipboardWriteData(g_u32ClientId, fFormat, NULL, 0);
     }
 }
@@ -545,7 +578,7 @@ static void VBoxServiceClipboardOS2SendDataToHost(uint32_t fFormat)
 /**
  * Figure out what's on the clipboard and report it to the host.
  */
-static void VBoxServiceClipboardOS2ReportFormats(void)
+static void vgsvcClipboardOs2ReportFormats(void)
 {
     uint32_t fFormats = 0;
     ULONG ulFormat = 0;
@@ -556,7 +589,7 @@ static void VBoxServiceClipboardOS2ReportFormats(void)
             fFormats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
         /** @todo else bitmaps and stuff. */
     }
-    VBoxServiceVerbose(4, "clipboard: reporting fFormats=%#x\n", fFormats);
+    VGSvcVerbose(4, "clipboard: reporting fFormats=%#x\n", fFormats);
     VbglR3ClipboardReportFormats(g_u32ClientId, fFormats);
 }
 
@@ -568,7 +601,7 @@ static void VBoxServiceClipboardOS2ReportFormats(void)
  * falling back to polling. If something has changed it will
  * notify the host.
  */
-static void VBoxServiceClipboardOS2Poll(void)
+static void vgsvcClipboardOs2Poll(void)
 {
     if (WinOpenClipbrd(g_habWorker))
     {
@@ -582,7 +615,7 @@ static void VBoxServiceClipboardOS2Poll(void)
             if (WinEnumClipbrdFmts(g_habWorker, 0) != 0)
             {
                 g_fEmptyClipboard = false;
-                VBoxServiceClipboardOS2ReportFormats();
+                vgsvcClipboardOs2ReportFormats();
 
                 /* inject the dummy */
                 PVOID pv;
@@ -590,34 +623,34 @@ static void VBoxServiceClipboardOS2Poll(void)
                 if (rc == NO_ERROR)
                 {
                     if (WinSetClipbrdData(g_habWorker, (ULONG)pv, g_atomNothingChanged, CFI_POINTER))
-                        VBoxServiceVerbose(4, "clipboard: Added dummy item.\n");
+                        VGSvcVerbose(4, "clipboard: Added dummy item.\n");
                     else
                     {
-                        VBoxServiceError("VBoxServiceClipboardOS2Poll: WinSetClipbrdData failed, lasterr=%#lx\n", WinGetLastError(g_habWorker));
+                        VGSvcError("vgsvcClipboardOs2Poll: WinSetClipbrdData failed, lasterr=%#lx\n", WinGetLastError(g_habWorker));
                         DosFreeMem(pv);
                     }
                 }
                 else
-                    VBoxServiceError("VBoxServiceClipboardOS2Poll: DosAllocSharedMem(,,1,) -> %ld\n", rc);
+                    VGSvcError("vgsvcClipboardOs2Poll: DosAllocSharedMem(,,1,) -> %ld\n", rc);
             }
             else if (!g_fEmptyClipboard)
             {
                 g_fEmptyClipboard = true;
-                VBoxServiceVerbose(3, "Reporting empty clipboard\n");
+                VGSvcVerbose(3, "Reporting empty clipboard\n");
                 VbglR3ClipboardReportFormats(g_u32ClientId, 0);
             }
         }
         WinCloseClipbrd(g_habWorker);
     }
     else
-        VBoxServiceError("VBoxServiceClipboardOS2Poll: WinOpenClipbrd failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+        VGSvcError("vgsvcClipboardOs2Poll: WinOpenClipbrd failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
 }
 
 
 /**
  * The clipboard we owned was destroyed by someone else.
  */
-static void VBoxServiceClipboardOS2Destroyed(void)
+static void vgsvcClipboardOs2Destroyed(void)
 {
     /* make sure we're no longer the owner. */
     if (WinQueryClipbrdOwner(g_habWorker) == g_hwndWorker)
@@ -626,10 +659,10 @@ static void VBoxServiceClipboardOS2Destroyed(void)
     /* switch to polling state and notify the host. */
     g_enmState = kClipboardState_Polling;
     g_fEmptyClipboard = true;
-    VBoxServiceVerbose(3, "Reporting empty clipboard\n");
+    VGSvcVerbose(3, "Reporting empty clipboard\n");
     VbglR3ClipboardReportFormats(g_u32ClientId, 0);
 
-    VBoxServiceClipboardOS2PollViewer();
+    vgsvcClipboardOs2PollViewer();
 }
 
 
@@ -643,10 +676,10 @@ static void VBoxServiceClipboardOS2Destroyed(void)
  * @param   mp1     Message parameter 1.
  * @param   mp2     Message parameter 2.
  */
-static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
+static MRESULT EXPENTRY vgsvcClipboardOs2WinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
 {
     if (msg != WM_TIMER)
-        VBoxServiceVerbose(6, "VBoxServiceClipboardOS2WinProc: hwnd=%#lx msg=%#lx mp1=%#lx mp2=%#lx\n", hwnd, msg, mp1, mp2);
+        VGSvcVerbose(6, "vgsvcClipboardOs2WinProc: hwnd=%#lx msg=%#lx mp1=%#lx mp2=%#lx\n", hwnd, msg, mp1, mp2);
 
     switch (msg)
     {
@@ -677,7 +710,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
             if (g_enmState == kClipboardState_SettingViewer)
                 break;
             AssertMsgBreak(g_enmState == kClipboardState_Viewer, ("g_enmState=%d\n", g_enmState));
-            VBoxServiceClipboardOS2Poll();
+            vgsvcClipboardOs2Poll();
             break;
 
         /*
@@ -688,7 +721,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
             if (g_enmState == kClipboardState_Destroying)
                 break; /* it's us doing the replacing, ignore. */
             AssertMsgBreak(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState));
-            VBoxServiceClipboardOS2Destroyed();
+            vgsvcClipboardOs2Destroyed();
             break;
 
         /*
@@ -697,7 +730,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
          */
         case WM_RENDERFMT:
             AssertMsgBreak(g_enmState == kClipboardState_Owner, ("g_enmState=%d\n", g_enmState));
-            VBoxServiceClipboardOS2RenderFormat(SHORT1FROMMP(mp1));
+            vgsvcClipboardOs2RenderFormat(SHORT1FROMMP(mp1));
             break;
 
         /*
@@ -722,14 +755,14 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
          * Listener message - the host has new formats to offer.
          */
         case WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
-            VBoxServiceClipboardOS2AdvertiseHostFormats(LONGFROMMP(mp1));
+            vgsvcClipboardOs2AdvertiseHostFormats(LONGFROMMP(mp1));
             break;
 
         /*
          * Listener message - the host wish to read our clipboard data.
          */
         case WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
-            VBoxServiceClipboardOS2SendDataToHost(LONGFROMMP(mp1));
+            vgsvcClipboardOs2SendDataToHost(LONGFROMMP(mp1));
             break;
 
         /*
@@ -756,8 +789,8 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
             }
 
             /* poll for changes */
-            VBoxServiceClipboardOS2Poll();
-            VBoxServiceClipboardOS2PollViewer();
+            vgsvcClipboardOs2Poll();
+            vgsvcClipboardOs2PollViewer();
             break;
 
 
@@ -800,11 +833,11 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
  * @param   ThreadSelf  Our thread handle.
  * @param   pvUser      Pointer to the clipboard service shutdown indicator.
  */
-static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) vgsvcClipboardOs2Listener(RTTHREAD ThreadSelf, void *pvUser)
 {
     bool volatile *pfShutdown = (bool volatile *)pvUser;
     int rc = VERR_GENERAL_FAILURE;
-    VBoxServiceVerbose(3, "VBoxServiceClipboardOS2Listener: ThreadSelf=%RTthrd\n", ThreadSelf);
+    VGSvcVerbose(3, "vgsvcClipboardOs2Listener: ThreadSelf=%RTthrd\n", ThreadSelf);
 
     g_habListener = WinInitialize(0);
     if (g_habListener != NULLHANDLE)
@@ -820,7 +853,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, vo
             rc = VINF_SUCCESS;
             ASMAtomicXchgBool(&g_fListenerOkay, true);
             RTThreadUserSignal(ThreadSelf);
-            VBoxServiceVerbose(3, "VBoxServiceClipboardOS2Listener: Started successfully\n");
+            VGSvcVerbose(3, "vgsvcClipboardOs2Listener: Started successfully\n");
 
             /*
              * Loop until termination is requested.
@@ -833,7 +866,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, vo
                 rc = VbglR3ClipboardGetHostMsg(g_u32ClientId, &Msg, &fFormats);
                 if (RT_SUCCESS(rc))
                 {
-                    VBoxServiceVerbose(3, "VBoxServiceClipboardOS2Listener: Msg=%#x  fFormats=%#x\n", Msg, fFormats);
+                    VGSvcVerbose(3, "vgsvcClipboardOs2Listener: Msg=%#x  fFormats=%#x\n", Msg, fFormats);
                     switch (Msg)
                     {
                         /*
@@ -844,7 +877,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, vo
                         case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
                             if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
                                             MPFROMLONG(fFormats), 0))
-                                VBoxServiceError("WinPostMsg(%lx, FORMATS,,) failed, lasterr=%#lx\n",
+                                VGSvcError("WinPostMsg(%lx, FORMATS,,) failed, lasterr=%#lx\n",
                                                  g_hwndWorker, WinGetLastError(g_habListener));
                             break;
 
@@ -854,7 +887,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, vo
                         case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
                             if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                                             MPFROMLONG(fFormats), 0))
-                                VBoxServiceError("WinPostMsg(%lx, READ_DATA,,) failed, lasterr=%#lx\n",
+                                VGSvcError("WinPostMsg(%lx, READ_DATA,,) failed, lasterr=%#lx\n",
                                                  g_hwndWorker, WinGetLastError(g_habListener));
                             break;
 
@@ -866,7 +899,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, vo
                             break;
 
                         default:
-                            VBoxServiceVerbose(1, "VBoxServiceClipboardOS2Listener: Unknown message %RU32\n", Msg);
+                            VGSvcVerbose(1, "vgsvcClipboardOs2Listener: Unknown message %RU32\n", Msg);
                             break;
                     }
                 }
@@ -874,7 +907,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, vo
                 {
                     if (*pfShutdown)
                         break;
-                    VBoxServiceError("VbglR3ClipboardGetHostMsg failed, rc=%Rrc\n", rc);
+                    VGSvcError("VbglR3ClipboardGetHostMsg failed, rc=%Rrc\n", rc);
                     RTThreadSleep(1000);
                 }
             } /* the loop */
@@ -887,13 +920,15 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, vo
 
     /* Signal our semaphore to make the worker catch on. */
     RTThreadUserSignal(ThreadSelf);
-    VBoxServiceVerbose(3, "VBoxServiceClipboardOS2Listener: terminating, rc=%Rrc\n", rc);
+    VGSvcVerbose(3, "vgsvcClipboardOs2Listener: terminating, rc=%Rrc\n", rc);
     return rc;
 }
 
 
-/** @copydoc VBOXSERVICE::pfnWorker */
-static DECLCALLBACK(int) VBoxServiceClipboardOS2Worker(bool volatile *pfShutdown)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnWorker}
+ */
+static DECLCALLBACK(int) vgsvcClipboardOs2Worker(bool volatile *pfShutdown)
 {
     int rc = VERR_GENERAL_FAILURE;
 
@@ -912,7 +947,7 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Worker(bool volatile *pfShutdown
             /*
              * Create the object window.
              */
-            if (WinRegisterClass(g_habWorker, (PCSZ)"VBoxServiceClipboardClass", VBoxServiceClipboardOS2WinProc, 0, 0))
+            if (WinRegisterClass(g_habWorker, (PCSZ)"VBoxServiceClipboardClass", vgsvcClipboardOs2WinProc, 0, 0))
             {
                 g_hwndWorker = WinCreateWindow(HWND_OBJECT,                             /* hwndParent */
                                                (PCSZ)"VBoxServiceClipboardClass",       /* pszClass */
@@ -926,13 +961,13 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Worker(bool volatile *pfShutdown
                                                NULL);                                   /* pPresParams */
                 if (g_hwndWorker != NULLHANDLE)
                 {
-                    VBoxServiceVerbose(3, "g_hwndWorker=%#lx g_habWorker=%#lx g_hmqWorker=%#lx\n", g_hwndWorker, g_habWorker, g_hmqWorker);
+                    VGSvcVerbose(3, "g_hwndWorker=%#lx g_habWorker=%#lx g_hmqWorker=%#lx\n", g_hwndWorker, g_habWorker, g_hmqWorker);
 
                     /*
                      * Create the listener thread.
                      */
                     g_fListenerOkay = false;
-                    rc = RTThreadCreate(&g_ThreadListener, VBoxServiceClipboardOS2Listener, (void *)pfShutdown, 0,
+                    rc = RTThreadCreate(&g_ThreadListener, vgsvcClipboardOs2Listener, (void *)pfShutdown, 0,
                                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "CLIPLISTEN");
                     if (RT_SUCCESS(rc))
                     {
@@ -951,17 +986,17 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Worker(bool volatile *pfShutdown
                             /*
                              * The PM event pump.
                              */
-                            VBoxServiceVerbose(2, "clipboard: Entering PM message loop.\n");
+                            VGSvcVerbose(2, "clipboard: Entering PM message loop.\n");
                             rc = VINF_SUCCESS;
                             QMSG qmsg;
                             while (WinGetMsg(g_habWorker, &qmsg, NULLHANDLE, NULLHANDLE, 0))
                             {
                                 if (qmsg.msg != WM_TIMER)
-                                    VBoxServiceVerbose(6, "WinGetMsg -> hwnd=%p msg=%#x mp1=%p mp2=%p time=%#x ptl=%d,%d rsrv=%#x\n",
+                                    VGSvcVerbose(6, "WinGetMsg -> hwnd=%p msg=%#x mp1=%p mp2=%p time=%#x ptl=%d,%d rsrv=%#x\n",
                                                        qmsg.hwnd, qmsg.msg, qmsg.mp1, qmsg.mp2, qmsg.time, qmsg.ptl.x, qmsg.ptl.y, qmsg.reserved);
                                 WinDispatchMsg(g_habWorker, &qmsg);
                             }
-                            VBoxServiceVerbose(2, "clipboard: Exited PM message loop. *pfShutdown=%RTbool\n", *pfShutdown);
+                            VGSvcVerbose(2, "clipboard: Exited PM message loop. *pfShutdown=%RTbool\n", *pfShutdown);
 
                             RTThreadWait(g_ThreadListener, 60*1000, NULL);
                         }
@@ -978,36 +1013,38 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Worker(bool volatile *pfShutdown
                     }
                 }
                 else
-                    VBoxServiceError("WinCreateWindow() failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+                    VGSvcError("WinCreateWindow() failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
                 /* no class deregistration in PM.  */
             }
             else
-                VBoxServiceError("WinRegisterClass() failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+                VGSvcError("WinRegisterClass() failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
 
             if (g_hmqCtrl != g_hmqWorker)
                 WinDestroyMsgQueue(g_hmqWorker);
             g_hmqWorker = NULLHANDLE;
         }
         else
-            VBoxServiceError("WinCreateMsgQueue(,0) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
+            VGSvcError("WinCreateMsgQueue(,0) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
 
         if (g_habCtrl != g_habWorker)
             WinTerminate(g_habWorker);
         g_habWorker = NULLHANDLE;
     }
     else
-        VBoxServiceError("WinInitialize(0) failed, lasterr=%lx\n", WinGetLastError(NULLHANDLE));
+        VGSvcError("WinInitialize(0) failed, lasterr=%lx\n", WinGetLastError(NULLHANDLE));
 
     return rc;
 }
 
 
-/** @copydoc VBOXSERVICE::pfnStop */
-static DECLCALLBACK(void) VBoxServiceClipboardOS2Stop(void)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnStop}
+ */
+static DECLCALLBACK(void) vgsvcClipboardOs2Stop(void)
 {
     if (    g_hmqWorker != NULLHANDLE
         &&  !WinPostQueueMsg(g_hmqWorker, WM_QUIT, NULL, NULL))
-        VBoxServiceError("WinPostQueueMsg(g_hmqWorker, WM_QUIT, 0,0) failed, lasterr=%lx\n", WinGetLastError(g_habCtrl));
+        VGSvcError("WinPostQueueMsg(g_hmqWorker, WM_QUIT, 0,0) failed, lasterr=%lx\n", WinGetLastError(g_habCtrl));
 
     /* Must disconnect the clipboard here otherwise the listner won't quit and
        the service shutdown will not stop. */
@@ -1016,27 +1053,29 @@ static DECLCALLBACK(void) VBoxServiceClipboardOS2Stop(void)
         if (g_hmqWorker != NULLHANDLE)
             RTThreadSleep(32);      /* fudge */
 
-        VBoxServiceVerbose(4, "clipboard: disconnecting %#x\n", g_u32ClientId);
+        VGSvcVerbose(4, "clipboard: disconnecting %#x\n", g_u32ClientId);
         int rc = VbglR3ClipboardDisconnect(g_u32ClientId);
         if (RT_SUCCESS(rc))
             g_u32ClientId = 0;
         else
-            VBoxServiceError("clipboard: VbglR3ClipboardDisconnect(%#x) -> %Rrc\n", g_u32ClientId, rc);
+            VGSvcError("clipboard: VbglR3ClipboardDisconnect(%#x) -> %Rrc\n", g_u32ClientId, rc);
     }
 }
 
 
-/** @copydoc VBOXSERVICE::pfnTerm */
-static DECLCALLBACK(void) VBoxServiceClipboardOS2Term(void)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnTerm}
+ */
+static DECLCALLBACK(void) vgsvcClipboardOs2Term(void)
 {
     if (g_u32ClientId != 0)
     {
-        VBoxServiceVerbose(4, "clipboard: disconnecting %#x\n", g_u32ClientId);
+        VGSvcVerbose(4, "clipboard: disconnecting %#x\n", g_u32ClientId);
         int rc = VbglR3ClipboardDisconnect(g_u32ClientId);
         if (RT_SUCCESS(rc))
             g_u32ClientId = 0;
         else
-            VBoxServiceError("clipboard: VbglR3ClipboardDisconnect(%#x) -> %Rrc\n", g_u32ClientId, rc);
+            VGSvcError("clipboard: VbglR3ClipboardDisconnect(%#x) -> %Rrc\n", g_u32ClientId, rc);
     }
     WinDestroyMsgQueue(g_hmqCtrl);
     g_hmqCtrl = NULLHANDLE;
@@ -1061,11 +1100,11 @@ VBOXSERVICE g_Clipboard =
     ""
     ,
     /* methods */
-    VBoxServiceClipboardOS2PreInit,
-    VBoxServiceClipboardOS2Option,
-    VBoxServiceClipboardOS2Init,
-    VBoxServiceClipboardOS2Worker,
-    VBoxServiceClipboardOS2Stop,
-    VBoxServiceClipboardOS2Term
+    vgsvcClipboardOs2PreInit,
+    vgsvcClipboardOs2Option,
+    vgsvcClipboardOs2Init,
+    vgsvcClipboardOs2Worker,
+    vgsvcClipboardOs2Stop,
+    vgsvcClipboardOs2Term
 };
 

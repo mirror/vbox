@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxService - Auto-mounting for Shared Folders.
+ * VBoxService - Auto-mounting for Shared Folders, only Linux & Solaris atm.
  */
 
 /*
@@ -53,11 +53,11 @@ RT_C_DECLS_END
 #endif
 
 #ifndef _PATH_MOUNTED
- #ifdef RT_OS_SOLARIS
-  #define _PATH_MOUNTED                          "/etc/mnttab"
- #else
-  #define _PATH_MOUNTED                          "/etc/mtab"
- #endif
+# ifdef RT_OS_SOLARIS
+#  define _PATH_MOUNTED                          "/etc/mnttab"
+# else
+#  define _PATH_MOUNTED                          "/etc/mtab"
+# endif
 #endif
 
 
@@ -70,10 +70,12 @@ static RTSEMEVENTMULTI  g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
 static uint32_t         g_SharedFoldersSvcClientID = 0;
 
 
-/** @copydoc VBOXSERVICE::pfnInit */
-static DECLCALLBACK(int) VBoxServiceAutoMountInit(void)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnInit}
+ */
+static DECLCALLBACK(int) vbsvcAutoMountInit(void)
 {
-    VBoxServiceVerbose(3, "VBoxServiceAutoMountInit\n");
+    VGSvcVerbose(3, "vbsvcAutoMountInit\n");
 
     int rc = RTSemEventMultiCreate(&g_AutoMountEvent);
     AssertRCReturn(rc, rc);
@@ -81,7 +83,7 @@ static DECLCALLBACK(int) VBoxServiceAutoMountInit(void)
     rc = VbglR3SharedFolderConnect(&g_SharedFoldersSvcClientID);
     if (RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(3, "VBoxServiceAutoMountInit: Service Client ID: %#x\n", g_SharedFoldersSvcClientID);
+        VGSvcVerbose(3, "vbsvcAutoMountInit: Service Client ID: %#x\n", g_SharedFoldersSvcClientID);
     }
     else
     {
@@ -89,11 +91,11 @@ static DECLCALLBACK(int) VBoxServiceAutoMountInit(void)
            causing VBoxService to fail. */
         if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
         {
-            VBoxServiceVerbose(0, "VBoxServiceAutoMountInit: Shared Folders service is not available\n");
+            VGSvcVerbose(0, "vbsvcAutoMountInit: Shared Folders service is not available\n");
             rc = VERR_SERVICE_DISABLED;
         }
         else
-            VBoxServiceError("Control: Failed to connect to the Shared Folders service! Error: %Rrc\n", rc);
+            VGSvcError("Control: Failed to connect to the Shared Folders service! Error: %Rrc\n", rc);
         RTSemEventMultiDestroy(g_AutoMountEvent);
         g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
     }
@@ -102,24 +104,24 @@ static DECLCALLBACK(int) VBoxServiceAutoMountInit(void)
 }
 
 
-/** @todo Integrate into RTFsQueryMountpoint().  */
-static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare,
-                                               char *pszMountPoint, size_t cbMountPoint)
+/**
+ * @todo Integrate into RTFsQueryMountpoint()?
+ */
+static bool vbsvcAutoMountShareIsMounted(const char *pszShare, char *pszMountPoint, size_t cbMountPoint)
 {
     AssertPtrReturn(pszShare, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
     AssertReturn(cbMountPoint, VERR_INVALID_PARAMETER);
 
     bool fMounted = false;
-    /* @todo What to do if we have a relative path in mtab instead
+    /** @todo What to do if we have a relative path in mtab instead
      *       of an absolute one ("temp" vs. "/media/temp")?
      * procfs contains the full path but not the actual share name ...
      * FILE *pFh = setmntent("/proc/mounts", "r+t"); */
 #ifdef RT_OS_SOLARIS
     FILE *pFh = fopen(_PATH_MOUNTED, "r");
     if (!pFh)
-        VBoxServiceError("VBoxServiceAutoMountShareIsMounted: Could not open mount tab \"%s\"!\n",
-                         _PATH_MOUNTED);
+        VGSvcError("vbsvcAutoMountShareIsMounted: Could not open mount tab '%s'!\n", _PATH_MOUNTED);
     else
     {
         mnttab mntTab;
@@ -135,10 +137,9 @@ static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare,
         fclose(pFh);
     }
 #else
-    FILE *pFh = setmntent(_PATH_MOUNTED, "r+t");
+    FILE *pFh = setmntent(_PATH_MOUNTED, "r+t"); /** @todo r=bird: why open it for writing? (the '+') */
     if (pFh == NULL)
-        VBoxServiceError("VBoxServiceAutoMountShareIsMounted: Could not open mount tab \"%s\"!\n",
-                         _PATH_MOUNTED);
+        VGSvcError("vbsvcAutoMountShareIsMounted: Could not open mount tab '%s'!\n", _PATH_MOUNTED);
     else
     {
         mntent *pMntEnt;
@@ -155,13 +156,19 @@ static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare,
     }
 #endif
 
-    VBoxServiceVerbose(4, "VBoxServiceAutoMountShareIsMounted: Share \"%s\" at mount point \"%s\" = %s\n",
+    VGSvcVerbose(4, "vbsvcAutoMountShareIsMounted: Share '%s' at mount point '%s' = %s\n",
                        pszShare, fMounted ? pszMountPoint : "<None>", fMounted ? "Yes" : "No");
     return fMounted;
 }
 
 
-static int VBoxServiceAutoMountUnmount(const char *pszMountPoint)
+/**
+ * Unmounts a shared folder.
+ *
+ * @returns VBox status code
+ * @param   pszMountPoint   The shared folder mount point.
+ */
+static int vbsvcAutoMountUnmount(const char *pszMountPoint)
 {
     AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
 
@@ -173,16 +180,26 @@ static int VBoxServiceAutoMountUnmount(const char *pszMountPoint)
         r = umount(pszMountPoint);
         if (r == 0)
             break;
+/** @todo r=bird: Why do sleep 5 seconds after the final retry?
+ *  May also be a good idea to check for EINVAL or other signs that someone
+ *  else have already unmounted the share. */
         RTThreadSleep(5000); /* Wait a while ... */
     }
-    if (r == -1)
+    if (r == -1)  /** @todo r=bird: RTThreadSleep set errno.  */
         rc = RTErrConvertFromErrno(errno);
     return rc;
 }
 
 
-static int VBoxServiceAutoMountPrepareMountPoint(const char *pszMountPoint, const char *pszShareName,
-                                                 vbsf_mount_opts *pOpts)
+/**
+ * Prepares a mount point (create it, set group and mode).
+ *
+ * @returns VBox status code
+ * @param   pszMountPoint   The mount point.
+ * @param   pszShareName    Unused.
+ * @param   pOpts           For getting the group ID.
+ */
+static int vbsvcAutoMountPrepareMountPoint(const char *pszMountPoint, const char *pszShareName, vbsf_mount_opts *pOpts)
 {
     AssertPtrReturn(pOpts, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
@@ -200,86 +217,92 @@ static int VBoxServiceAutoMountPrepareMountPoint(const char *pszMountPoint, cons
             {
                 if (rc == VERR_WRITE_PROTECT)
                 {
-                    VBoxServiceVerbose(3, "VBoxServiceAutoMountPrepareMountPoint: Mount directory \"%s\" already is used/mounted\n", pszMountPoint);
+                    VGSvcVerbose(3, "vbsvcAutoMountPrepareMountPoint: Mount directory '%s' already is used/mounted\n",
+                                       pszMountPoint);
                     rc = VINF_SUCCESS;
                 }
                 else
-                    VBoxServiceError("VBoxServiceAutoMountPrepareMountPoint: Could not set mode %RTfmode for mount directory \"%s\", rc = %Rrc\n",
+                    VGSvcError("vbsvcAutoMountPrepareMountPoint: Could not set mode %RTfmode for mount directory '%s', rc = %Rrc\n",
                                      fMode, pszMountPoint, rc);
             }
         }
         else
-            VBoxServiceError("VBoxServiceAutoMountPrepareMountPoint: Could not set permissions for mount directory \"%s\", rc = %Rrc\n",
+            VGSvcError("vbsvcAutoMountPrepareMountPoint: Could not set permissions for mount directory '%s', rc = %Rrc\n",
                              pszMountPoint, rc);
     }
     else
-        VBoxServiceError("VBoxServiceAutoMountPrepareMountPoint: Could not create mount directory \"%s\" with mode %RTfmode, rc = %Rrc\n",
+        VGSvcError("vbsvcAutoMountPrepareMountPoint: Could not create mount directory '%s' with mode %RTfmode, rc = %Rrc\n",
                          pszMountPoint, fMode, rc);
     return rc;
 }
 
 
-static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char *pszMountPoint,
-                                            vbsf_mount_opts *pOpts)
+/**
+ * Mounts a shared folder.
+ *
+ * @returns VBox status code reflecting unmount and mount point preparation
+ *          results, but not actual mounting
+ *
+ * @param   pszShareName    The shared folder name.
+ * @param   pszMountPoint   The mount point.
+ * @param   pOpts           The mount options.
+ */
+static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszMountPoint, struct vbsf_mount_opts *pOpts)
 {
     AssertPtr(pOpts);
 
     int rc = VINF_SUCCESS;
-    char szAlreadyMountedTo[RTPATH_MAX];
     bool fSkip = false;
 
     /* Already mounted? */
-    if (VBoxServiceAutoMountShareIsMounted(pszShareName, szAlreadyMountedTo, sizeof(szAlreadyMountedTo)))
+    char szAlreadyMountedTo[RTPATH_MAX];
+    if (vbsvcAutoMountShareIsMounted(pszShareName, szAlreadyMountedTo, sizeof(szAlreadyMountedTo)))
     {
         fSkip = true;
         /* Do if it not mounted to our desired mount point */
         if (RTStrICmp(pszMountPoint, szAlreadyMountedTo))
         {
-            VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder \"%s\" already mounted to \"%s\", unmounting ...\n",
+            VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder '%s' already mounted to '%s', unmounting ...\n",
                                pszShareName, szAlreadyMountedTo);
-            rc = VBoxServiceAutoMountUnmount(szAlreadyMountedTo);
-            if (RT_FAILURE(rc))
-                VBoxServiceError("VBoxServiceAutoMountWorker: Failed to unmount \"%s\", %s (%d)!\n",
-                                 szAlreadyMountedTo, strerror(errno), errno);
-            else
+            rc = vbsvcAutoMountUnmount(szAlreadyMountedTo);
+            if (RT_SUCCESS(rc))
                 fSkip = false;
+            else
+                VGSvcError("vbsvcAutoMountWorker: Failed to unmount '%s', %s (%d)! (rc=%Rrc)\n",
+                                 szAlreadyMountedTo, strerror(errno), errno, rc); /** @todo errno isn't reliable at this point */
         }
         if (fSkip)
-            VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder \"%s\" already mounted to \"%s\", skipping\n",
+            VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder '%s' already mounted to '%s', skipping\n",
                                pszShareName, szAlreadyMountedTo);
     }
 
     if (!fSkip && RT_SUCCESS(rc))
-        rc = VBoxServiceAutoMountPrepareMountPoint(pszMountPoint, pszShareName, pOpts);
+        rc = vbsvcAutoMountPrepareMountPoint(pszMountPoint, pszShareName, pOpts);
     if (!fSkip && RT_SUCCESS(rc))
     {
 #ifdef RT_OS_SOLARIS
-        char achOptBuf[MAX_MNTOPT_STR] = { '\0', };
-        int flags = 0;
+        char szOptBuf[MAX_MNTOPT_STR] = { '\0', };
+        int fFlags = 0;
         if (pOpts->ronly)
-            flags |= MS_RDONLY;
-        RTStrPrintf(achOptBuf, sizeof(achOptBuf), "uid=%d,gid=%d,dmode=%0o,fmode=%0o,dmask=%0o,fmask=%0o",
+            fFlags |= MS_RDONLY;
+        RTStrPrintf(szOptBuf, sizeof(szOptBuf), "uid=%d,gid=%d,dmode=%0o,fmode=%0o,dmask=%0o,fmask=%0o",
                     pOpts->uid, pOpts->gid, pOpts->dmode, pOpts->fmode, pOpts->dmask, pOpts->fmask);
         int r = mount(pszShareName,
                       pszMountPoint,
-                      flags | MS_OPTIONSTR,
+                      fFlags | MS_OPTIONSTR,
                       "vboxfs",
                       NULL,                     /* char *dataptr */
                       0,                        /* int datalen */
-                      achOptBuf,
-                      sizeof(achOptBuf));
+                      szOptBuf,
+                      sizeof(szOptBuf));
         if (r == 0)
-        {
-            VBoxServiceVerbose(0, "VBoxServiceAutoMountWorker: Shared folder \"%s\" was mounted to \"%s\"\n", pszShareName, pszMountPoint);
-        }
-        else
-        {
-            if (errno != EBUSY) /* Share is already mounted? Then skip error msg. */
-                VBoxServiceError("VBoxServiceAutoMountWorker: Could not mount shared folder \"%s\" to \"%s\", error = %s\n",
-                                 pszShareName, pszMountPoint, strerror(errno));
-        }
-#else /* !RT_OS_SOLARIS */
-        unsigned long flags = MS_NODEV;
+            VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' was mounted to '%s'\n", pszShareName, pszMountPoint);
+        else if (errno != EBUSY) /* Share is already mounted? Then skip error msg. */
+            VGSvcError("vbsvcAutoMountWorker: Could not mount shared folder '%s' to '%s', error = %s\n",
+                             pszShareName, pszMountPoint, strerror(errno));
+
+#elif defined(RT_OS_LINUX)
+        unsigned long fFlags = MS_NODEV;
 
         const char *szOptions = { "rw" };
         struct vbsf_mount_info_new mntinf;
@@ -304,11 +327,12 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
         int r = mount(NULL,
                       pszMountPoint,
                       "vboxsf",
-                      flags,
+                      fFlags,
                       &mntinf);
         if (r == 0)
         {
-            VBoxServiceVerbose(0, "VBoxServiceAutoMountWorker: Shared folder \"%s\" was mounted to \"%s\"\n", pszShareName, pszMountPoint);
+            VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' was mounted to '%s'\n",
+                               pszShareName, pszMountPoint);
 
             r = vbsfmount_complete(pszShareName, pszMountPoint, flags, pOpts);
             switch (r)
@@ -318,20 +342,21 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
                     break;
 
                 case 1:
-                    VBoxServiceError("VBoxServiceAutoMountWorker: Could not update mount table (failed to create memstream): %s\n", strerror(errno));
+                    VGSvcError("vbsvcAutoMountWorker: Could not update mount table (failed to create memstream): %s\n",
+                                     strerror(errno));
                     break;
 
                 case 2:
-                    VBoxServiceError("VBoxServiceAutoMountWorker: Could not open mount table for update: %s\n", strerror(errno));
+                    VGSvcError("vbsvcAutoMountWorker: Could not open mount table for update: %s\n", strerror(errno));
                     break;
 
                 case 3:
-                    /* VBoxServiceError("VBoxServiceAutoMountWorker: Could not add an entry to the mount table: %s\n", strerror(errno)); */
+                    /* VGSvcError("vbsvcAutoMountWorker: Could not add an entry to the mount table: %s\n", strerror(errno)); */
                     errno = 0;
                     break;
 
                 default:
-                    VBoxServiceError("VBoxServiceAutoMountWorker: Unknown error while completing mount operation: %d\n", r);
+                    VGSvcError("vbsvcAutoMountWorker: Unknown error while completing mount operation: %d\n", r);
                     break;
             }
         }
@@ -339,14 +364,20 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
         {
             if (errno == EPROTO)
             {
-                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Messed up share name, re-trying ...\n");
+                VGSvcVerbose(3, "vbsvcAutoMountWorker: Messed up share name, re-trying ...\n");
+
+                /** @todo r=bird: What on earth is going on here?????  Why can't you
+                 *        strcpy(mntinf.name, pszShareName) to fix it again? */
 
                 /* Sometimes the mount utility messes up the share name.  Try to
                  * un-mangle it again. */
-                char szCWD[4096];
+                char szCWD[RTPATH_MAX];
                 size_t cchCWD;
                 if (!getcwd(szCWD, sizeof(szCWD)))
-                    VBoxServiceError("VBoxServiceAutoMountWorker: Failed to get the current working directory\n");
+                {
+                    VGSvcError("vbsvcAutoMountWorker: Failed to get the current working directory\n");
+                    szCWD[0] = '\0';
+                }
                 cchCWD = strlen(szCWD);
                 if (!strncmp(pszMountPoint, szCWD, cchCWD))
                 {
@@ -359,7 +390,7 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
             }
             if (errno == EPROTO)
             {
-                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Re-trying with old mounting structure ...\n");
+                VGSvcVerbose(3, "vbsvcAutoMountWorker: Re-trying with old mounting structure ...\n");
 
                 /* New mount tool with old vboxsf module? Try again using the old
                  * vbsf_mount_info_old structure. */
@@ -378,7 +409,7 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
                     /* If we get EINVAL here, the system already has mounted the Shared Folder to another
                      * mount point. */
                     case EINVAL:
-                        VBoxServiceVerbose(0, "VBoxServiceAutoMountWorker: Shared folder \"%s\" already is mounted!\n", pszShareName);
+                        VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' already is mounted!\n", pszShareName);
                         /* Ignore this error! */
                         break;
                     case EBUSY:
@@ -386,21 +417,34 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
                         break;
 
                     default:
-                        VBoxServiceError("VBoxServiceAutoMountWorker: Could not mount shared folder \"%s\" to \"%s\": %s (%d)\n",
+                        VGSvcError("vbsvcAutoMountWorker: Could not mount shared folder '%s' to '%s': %s (%d)\n",
                                          pszShareName, pszMountPoint, strerror(errno), errno);
                         rc = RTErrConvertFromErrno(errno);
                         break;
                 }
             }
         }
-#endif /* !RT_OS_SOLARIS */
+#else
+# error "PORTME"
+#endif
     }
-    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Mounting returned with rc=%Rrc\n", rc);
+    VGSvcVerbose(3, "vbsvcAutoMountWorker: Mounting returned with rc=%Rrc\n", rc);
     return rc;
 }
 
-static int VBoxServiceAutoMountProcessMappings(PVBGLR3SHAREDFOLDERMAPPING paMappings, uint32_t cMappings,
-                                               const char *pszMountDir, const char *pszSharePrefix, uint32_t uClientID)
+
+/**
+ * Processes shared folder mappings retrieved from the host.
+ *
+ * @returns VBox status code.
+ * @param   paMappings      The mappings.
+ * @param   cMappings       The number of mappings.
+ * @param   pszMountDir     The mount directory.
+ * @param   pszSharePrefix  The share prefix.
+ * @param   uClientID       The shared folder service (HGCM) client ID.
+ */
+static int vbsvcAutoMountProcessMappings(PCVBGLR3SHAREDFOLDERMAPPING paMappings, uint32_t cMappings,
+                                         const char *pszMountDir, const char *pszSharePrefix, uint32_t uClientID)
 {
     if (cMappings == 0)
         return VINF_SUCCESS;
@@ -409,6 +453,13 @@ static int VBoxServiceAutoMountProcessMappings(PVBGLR3SHAREDFOLDERMAPPING paMapp
     AssertPtrReturn(pszSharePrefix, VERR_INVALID_PARAMETER);
     AssertReturn(uClientID > 0, VERR_INVALID_PARAMETER);
 
+    /** @todo r=bird: Why is this loop schitzoid about status codes? It quits if
+     * RTPathJoin fails (i.e. if the user specifies a very long name), but happily
+     * continues if RTStrAPrintf failes (mem alloc).
+     *
+     * It also happily continues if the 'vboxsf' group is missing, which is a waste
+     * of effort... In fact, retrieving the group ID could probably be done up
+     * front, outside the loop. */
     int rc = VINF_SUCCESS;
     for (uint32_t i = 0; i < cMappings && RT_SUCCESS(rc); i++)
     {
@@ -417,8 +468,16 @@ static int VBoxServiceAutoMountProcessMappings(PVBGLR3SHAREDFOLDERMAPPING paMapp
         if (   RT_SUCCESS(rc)
             && *pszShareName)
         {
-            VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Connecting share %u (%s) ...\n", i+1, pszShareName);
+            VGSvcVerbose(3, "vbsvcAutoMountWorker: Connecting share %u (%s) ...\n", i+1, pszShareName);
 
+            /** @todo r=bird: why do you copy things twice here and waste heap space?
+             * szMountPoint has a fixed size.
+             * @code
+             * char szMountPoint[RTPATH_MAX];
+             * rc = RTPathJoin(szMountPoint, sizeof(szMountPoint), pszMountDir, *pszSharePrefix ? pszSharePrefix : pszShareName);
+             * if (RT_SUCCESS(rc) && *pszSharePrefix)
+             *     rc = RTStrCat(szMountPoint, sizeof(szMountPoint), pszShareName);
+             * @endcode */
             char *pszShareNameFull = NULL;
             if (RTStrAPrintf(&pszShareNameFull, "%s%s", pszSharePrefix, pszShareName) > 0)
             {
@@ -426,7 +485,7 @@ static int VBoxServiceAutoMountProcessMappings(PVBGLR3SHAREDFOLDERMAPPING paMapp
                 rc = RTPathJoin(szMountPoint, sizeof(szMountPoint), pszMountDir, pszShareNameFull);
                 if (RT_SUCCESS(rc))
                 {
-                    VBoxServiceVerbose(4, "VBoxServiceAutoMountWorker: Processing mount point \"%s\"\n", szMountPoint);
+                    VGSvcVerbose(4, "vbsvcAutoMountWorker: Processing mount point '%s'\n", szMountPoint);
 
                     struct group *grp_vboxsf = getgrnam("vboxsf");
                     if (grp_vboxsf)
@@ -450,29 +509,31 @@ static int VBoxServiceAutoMountProcessMappings(PVBGLR3SHAREDFOLDERMAPPING paMapp
                             NULL,                  /* convertcp */
                         };
 
-                        rc = VBoxServiceAutoMountSharedFolder(pszShareName, szMountPoint, &mount_opts);
+                        rc = vbsvcAutoMountSharedFolder(pszShareName, szMountPoint, &mount_opts);
                     }
                     else
-                        VBoxServiceError("VBoxServiceAutoMountWorker: Group \"vboxsf\" does not exist\n");
+                        VGSvcError("vbsvcAutoMountWorker: Group 'vboxsf' does not exist\n");
                 }
                 else
-                    VBoxServiceError("VBoxServiceAutoMountWorker: Unable to join mount point/prefix/shrae, rc = %Rrc\n", rc);
+                    VGSvcError("vbsvcAutoMountWorker: Unable to join mount point/prefix/shrae, rc = %Rrc\n", rc);
                 RTStrFree(pszShareNameFull);
             }
             else
-                VBoxServiceError("VBoxServiceAutoMountWorker: Unable to allocate full share name\n");
+                VGSvcError("vbsvcAutoMountWorker: Unable to allocate full share name\n");
             RTStrFree(pszShareName);
         }
         else
-            VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
+            VGSvcError("vbsvcAutoMountWorker: Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
                              paMappings[i].u32Root, rc);
     } /* for cMappings. */
     return rc;
 }
 
 
-/** @copydoc VBOXSERVICE::pfnWorker */
-DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnWorker}
+ */
+static DECLCALLBACK(int) vbsvcAutoMountWorker(bool volatile *pfShutdown)
 {
     /*
      * Tell the control thread that it can continue
@@ -493,49 +554,49 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
             rc = RTStrDupEx(&pszMountDir, VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR);
         if (RT_SUCCESS(rc))
         {
-            VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder mount dir set to \"%s\"\n", pszMountDir);
+            VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder mount dir set to '%s'\n", pszMountDir);
 
             char *pszSharePrefix;
             rc = VbglR3SharedFolderGetMountPrefix(&pszSharePrefix);
             if (RT_SUCCESS(rc))
             {
-                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder mount prefix set to \"%s\"\n", pszSharePrefix);
+                VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder mount prefix set to '%s'\n", pszSharePrefix);
 #ifdef USE_VIRTUAL_SHARES
                 /* Check for a fixed/virtual auto-mount share. */
                 if (VbglR3SharedFolderExists(g_SharedFoldersSvcClientID, "vbsfAutoMount"))
                 {
-                    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Host supports auto-mount root\n");
+                    VGSvcVerbose(3, "vbsvcAutoMountWorker: Host supports auto-mount root\n");
                 }
                 else
                 {
 #endif
-                    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Got %u shared folder mappings\n", cMappings);
-                    rc = VBoxServiceAutoMountProcessMappings(paMappings, cMappings, pszMountDir, pszSharePrefix, g_SharedFoldersSvcClientID);
+                    VGSvcVerbose(3, "vbsvcAutoMountWorker: Got %u shared folder mappings\n", cMappings);
+                    rc = vbsvcAutoMountProcessMappings(paMappings, cMappings, pszMountDir, pszSharePrefix, g_SharedFoldersSvcClientID);
 #ifdef USE_VIRTUAL_SHARES
                 }
 #endif
                 RTStrFree(pszSharePrefix);
             } /* Mount share prefix. */
             else
-                VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder mount prefix, rc = %Rrc\n", rc);
+                VGSvcError("vbsvcAutoMountWorker: Error while getting the shared folder mount prefix, rc = %Rrc\n", rc);
             RTStrFree(pszMountDir);
         }
         else
-            VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder directory, rc = %Rrc\n", rc);
+            VGSvcError("vbsvcAutoMountWorker: Error while getting the shared folder directory, rc = %Rrc\n", rc);
         VbglR3SharedFolderFreeMappings(paMappings);
     }
     else if (RT_FAILURE(rc))
-        VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder mappings, rc = %Rrc\n", rc);
+        VGSvcError("vbsvcAutoMountWorker: Error while getting the shared folder mappings, rc = %Rrc\n", rc);
     else
-        VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: No shared folder mappings found\n");
+        VGSvcVerbose(3, "vbsvcAutoMountWorker: No shared folder mappings found\n");
 
     /*
      * Because this thread is a one-timer at the moment we don't want to break/change
      * the semantics of the main thread's start/stop sub-threads handling.
      *
-     * This thread exits so fast while doing its own startup in VBoxServiceStartServices()
-     * that this->fShutdown flag is set to true in VBoxServiceThread() before we have the
-     * chance to check for a service failure in VBoxServiceStartServices() to indicate
+     * This thread exits so fast while doing its own startup in VGSvcStartServices()
+     * that this->fShutdown flag is set to true in VGSvcThread() before we have the
+     * chance to check for a service failure in VGSvcStartServices() to indicate
      * a VBoxService startup error.
      *
      * Therefore *no* service threads are allowed to quit themselves and need to wait
@@ -554,14 +615,17 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
     RTSemEventMultiDestroy(g_AutoMountEvent);
     g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
 
-    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Finished with rc=%Rrc\n", rc);
+    VGSvcVerbose(3, "vbsvcAutoMountWorker: Finished with rc=%Rrc\n", rc);
     return VINF_SUCCESS;
 }
 
-/** @copydoc VBOXSERVICE::pfnTerm */
-static DECLCALLBACK(void) VBoxServiceAutoMountTerm(void)
+
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnTerm}
+ */
+static DECLCALLBACK(void) vbsvcAutoMountTerm(void)
 {
-    VBoxServiceVerbose(3, "VBoxServiceAutoMountTerm\n");
+    VGSvcVerbose(3, "vbsvcAutoMountTerm\n");
 
     VbglR3SharedFolderDisconnect(g_SharedFoldersSvcClientID);
     g_SharedFoldersSvcClientID = 0;
@@ -575,8 +639,10 @@ static DECLCALLBACK(void) VBoxServiceAutoMountTerm(void)
 }
 
 
-/** @copydoc VBOXSERVICE::pfnStop */
-static DECLCALLBACK(void) VBoxServiceAutoMountStop(void)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnStop}
+ */
+static DECLCALLBACK(void) vbsvcAutoMountStop(void)
 {
     /*
      * We need this check because at the moment our auto-mount
@@ -602,10 +668,10 @@ VBOXSERVICE g_AutoMount =
     /* pszOptions. */
     NULL,
     /* methods */
-    VBoxServiceDefaultPreInit,
-    VBoxServiceDefaultOption,
-    VBoxServiceAutoMountInit,
-    VBoxServiceAutoMountWorker,
-    VBoxServiceAutoMountStop,
-    VBoxServiceAutoMountTerm
+    VGSvcDefaultPreInit,
+    VGSvcDefaultOption,
+    vbsvcAutoMountInit,
+    vbsvcAutoMountWorker,
+    vbsvcAutoMountStop,
+    vbsvcAutoMountTerm
 };

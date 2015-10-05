@@ -39,6 +39,7 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #ifdef RT_OS_LINUX
+
 /** @name Paths to access the CPU device
  * @{
  */
@@ -75,17 +76,23 @@ typedef struct SYSFSCPUPATH
 } SYSFSCPUPATH, *PSYSFSCPUPATH;
 
 /** Content of uId if the path wasn't probed yet. */
-#define ACPI_CPU_PATH_NOT_PROBED UINT32_MAX
+# define ACPI_CPU_PATH_NOT_PROBED UINT32_MAX
+#endif /* RT_OS_LINUX*/
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+#ifdef RT_OS_LINUX
 /** Possible combinations of all path components for level 1. */
-const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl1[] =
+static const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl1[] =
 {
     /** LNXSYSTEM:<id> */
-    {true, "LNXSYSTM:*"}
+    { true, "LNXSYSTM:*" }
 };
 
 /** Possible combinations of all path components for level 2. */
-const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl2[] =
+static const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl2[] =
 {
     /** device:<id> */
     {true, "device:*"},
@@ -94,14 +101,14 @@ const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl2[] =
 };
 
 /** Possible combinations of all path components for level 3 */
-const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl3[] =
+static const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl3[] =
 {
     /** ACPI0004:<id> */
     {true, "ACPI0004:*"}
 };
 
 /** Possible combinations of all path components for level 4 */
-const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl4[] =
+static const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl4[] =
 {
     /** LNXCPU:<id> */
     {true, "LNXCPU:*"},
@@ -110,7 +117,7 @@ const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl4[] =
 };
 
 /** All possible combinations. */
-SYSFSCPUPATH g_aAcpiCpuPath[] =
+static SYSFSCPUPATH g_aAcpiCpuPath[] =
 {
     /** Level 1 */
     {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl1, RT_ELEMENTS(g_aAcpiCpuPathLvl1), NULL, NULL},
@@ -128,21 +135,24 @@ SYSFSCPUPATH g_aAcpiCpuPath[] =
  * @remark: This is not part of the path above because the eject file is not in one of the directories
  *          below and would make the hot unplug code fail.
  */
-const char *g_apszTopologyPath[] =
+static const char *g_apszTopologyPath[] =
 {
     "sysdev",
     "physical_node"
 };
-#endif
+
+#endif /* RT_OS_LINUX*/
+
 
 #ifdef RT_OS_LINUX
+
 /**
  * Probes for the correct path to the ACPI CPU object in sysfs for the
  * various different kernel versions and distro's.
  *
  * @returns VBox status code.
  */
-static int VBoxServiceCpuHotPlugProbePath(void)
+static int vgsvcCpuHotPlugProbePath(void)
 {
     int rc = VINF_SUCCESS;
 
@@ -220,12 +230,13 @@ static int VBoxServiceCpuHotPlugProbePath(void)
                 break;
         } /* For every level */
 
-        VBoxServiceVerbose(1, "Final path after probing %s rc=%Rrc\n", pszPath, rc);
+        VGSvcVerbose(1, "Final path after probing %s rc=%Rrc\n", pszPath, rc);
         RTStrFree(pszPath);
     }
 
     return rc;
 }
+
 
 /**
  * Returns the path of the ACPI CPU device with the given core and package ID.
@@ -235,13 +246,13 @@ static int VBoxServiceCpuHotPlugProbePath(void)
  * @param   idCpuCore    The core ID of the CPU.
  * @param   idCpuPackage The package ID of the CPU.
  */
-static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCpuCore, uint32_t idCpuPackage)
+static int vgsvcCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCpuCore, uint32_t idCpuPackage)
 {
     int rc = VINF_SUCCESS;
 
     AssertPtrReturn(ppszPath, VERR_INVALID_PARAMETER);
 
-    rc = VBoxServiceCpuHotPlugProbePath();
+    rc = vgsvcCpuHotPlugProbePath();
     if (RT_SUCCESS(rc))
     {
         /* Build the path from all components. */
@@ -315,14 +326,14 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
                             /* Return the path */
                             pszPath = pszPathCurr;
                             fFound = true;
-                            VBoxServiceVerbose(3, "CPU found\n");
+                            VGSvcVerbose(3, "CPU found\n");
                             break;
                         }
                         else
                         {
                             /* Get the next directory. */
                             RTStrFree(pszPathCurr);
-                            VBoxServiceVerbose(3, "CPU doesn't match, next directory\n");
+                            VGSvcVerbose(3, "CPU doesn't match, next directory\n");
                         }
                     }
                     else
@@ -330,7 +341,7 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
                         /* Go deeper */
                         iLvlCurr++;
 
-                        VBoxServiceVerbose(3, "Going deeper (iLvlCurr=%u)\n", iLvlCurr);
+                        VGSvcVerbose(3, "Going deeper (iLvlCurr=%u)\n", iLvlCurr);
 
                         pAcpiCpuPathLvl = &g_aAcpiCpuPath[iLvlCurr];
 
@@ -348,7 +359,7 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
                             break;
                         }
 
-                        VBoxServiceVerbose(3, "New path %s\n", pszPathDir);
+                        VGSvcVerbose(3, "New path %s\n", pszPathDir);
 
                         /* Open the directory */
                         rc = RTDirOpenFiltered(&pAcpiCpuPathLvl->pDir, pszPathDir, RTDIRFILTER_WINNT, 0);
@@ -368,7 +379,7 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
 
                     iLvlCurr--;
                     pAcpiCpuPathLvl = &g_aAcpiCpuPath[iLvlCurr];
-                    VBoxServiceVerbose(3, "Directory not found, going back (iLvlCurr=%u)\n", iLvlCurr);
+                    VGSvcVerbose(3, "Directory not found, going back (iLvlCurr=%u)\n", iLvlCurr);
                 }
             } /* while not found */
         } /* Successful init */
@@ -394,8 +405,8 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
 
     return rc;
 }
-#endif /* RT_OS_LINUX */
 
+#endif /* RT_OS_LINUX */
 
 /**
  * Handles VMMDevCpuEventType_Plug.
@@ -403,7 +414,7 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
  * @param   idCpuCore       The CPU core ID.
  * @param   idCpuPackage    The CPU package ID.
  */
-static void VBoxServiceCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t idCpuPackage)
+static void vgsvcCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t idCpuPackage)
 {
 #ifdef RT_OS_LINUX
     /*
@@ -412,8 +423,8 @@ static void VBoxServiceCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t id
      * and enable every CPU which is not online already.
      * Because the directory might not be available immediately we try a few times.
      *
-     * @todo: Maybe use udev to monitor hot-add events from the kernel
      */
+    /** @todo Maybe use udev to monitor hot-add events from the kernel */
     bool fCpuOnline = false;
     unsigned cTries = 5;
 
@@ -456,20 +467,20 @@ static void VBoxServiceCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t id
                         RTFileClose(hFileCpuOnline);
                         if (RT_SUCCESS(rc))
                         {
-                            VBoxServiceVerbose(1, "CpuHotPlug: CPU %u/%u was brought online\n", idCpuPackage, idCpuCore);
+                            VGSvcVerbose(1, "CpuHotPlug: CPU %u/%u was brought online\n", idCpuPackage, idCpuCore);
                             fCpuOnline = true;
                             break;
                         }
                         /* Error means CPU not present or online already  */
                     }
                     else
-                        VBoxServiceError("CpuHotPlug: Failed to open \"%s/%s/online\" rc=%Rrc\n",
-                                         SYSFS_CPU_PATH, DirFolderContent.szName, rc);
+                        VGSvcError("CpuHotPlug: Failed to open '%s/%s/online' rc=%Rrc\n",
+                                   SYSFS_CPU_PATH, DirFolderContent.szName, rc);
                 }
             }
         }
         else
-            VBoxServiceError("CpuHotPlug: Failed to open path %s rc=%Rrc\n", SYSFS_CPU_PATH, rc);
+            VGSvcError("CpuHotPlug: Failed to open path %s rc=%Rrc\n", SYSFS_CPU_PATH, rc);
 
         /* Sleep a bit */
         if (!fCpuOnline)
@@ -489,41 +500,40 @@ static void VBoxServiceCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t id
  * @param   idCpuCore       The CPU core ID.
  * @param   idCpuPackage    The CPU package ID.
  */
-static void VBoxServiceCpuHotPlugHandleUnplugEvent(uint32_t idCpuCore, uint32_t idCpuPackage)
+static void vgsvcCpuHotPlugHandleUnplugEvent(uint32_t idCpuCore, uint32_t idCpuPackage)
 {
 #ifdef RT_OS_LINUX
     char *pszCpuDevicePath = NULL;
-    int rc = VBoxServiceCpuHotPlugGetACPIDevicePath(&pszCpuDevicePath, idCpuCore, idCpuPackage);
+    int rc = vgsvcCpuHotPlugGetACPIDevicePath(&pszCpuDevicePath, idCpuCore, idCpuPackage);
     if (RT_SUCCESS(rc))
     {
         RTFILE hFileCpuEject;
-        rc = RTFileOpenF(&hFileCpuEject, RTFILE_O_WRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
-                         "%s/eject", pszCpuDevicePath);
+        rc = RTFileOpenF(&hFileCpuEject, RTFILE_O_WRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, "%s/eject", pszCpuDevicePath);
         if (RT_SUCCESS(rc))
         {
             /* Write a 1 to eject the CPU */
             rc = RTFileWrite(hFileCpuEject, "1", 1, NULL);
             if (RT_SUCCESS(rc))
-                VBoxServiceVerbose(1, "CpuHotPlug: CPU %u/%u was ejected\n", idCpuPackage, idCpuCore);
+                VGSvcVerbose(1, "CpuHotPlug: CPU %u/%u was ejected\n", idCpuPackage, idCpuCore);
             else
-                VBoxServiceError("CpuHotPlug: Failed to eject CPU %u/%u rc=%Rrc\n", idCpuPackage, idCpuCore, rc);
+                VGSvcError("CpuHotPlug: Failed to eject CPU %u/%u rc=%Rrc\n", idCpuPackage, idCpuCore, rc);
 
             RTFileClose(hFileCpuEject);
         }
         else
-            VBoxServiceError("CpuHotPlug: Failed to open \"%s/eject\" rc=%Rrc\n", pszCpuDevicePath, rc);
+            VGSvcError("CpuHotPlug: Failed to open '%s/eject' rc=%Rrc\n", pszCpuDevicePath, rc);
         RTStrFree(pszCpuDevicePath);
     }
     else
-        VBoxServiceError("CpuHotPlug: Failed to get CPU device path rc=%Rrc\n", rc);
+        VGSvcError("CpuHotPlug: Failed to get CPU device path rc=%Rrc\n", rc);
 #else
 # error "Port me"
 #endif
 }
 
 
-/** @copydoc VBOXSERVICE::pfnWorker */
-DECLCALLBACK(int) VBoxServiceCpuHotPlugWorker(bool volatile *pfShutdown)
+/** @interface_method_impl{VBOXSERVICE,pfnWorker} */
+static DECLCALLBACK(int) vgsvcCpuHotPlugWorker(bool volatile *pfShutdown)
 {
     /*
      * Tell the control thread that it can continue spawning services.
@@ -549,31 +559,31 @@ DECLCALLBACK(int) VBoxServiceCpuHotPlugWorker(bool volatile *pfShutdown)
         rc = VbglR3CpuHotPlugWaitForEvent(&enmEventType, &idCpuCore, &idCpuPackage);
         if (RT_SUCCESS(rc))
         {
-            VBoxServiceVerbose(3, "CpuHotPlug: Event happened idCpuCore=%u idCpuPackage=%u enmEventType=%d\n",
-                               idCpuCore, idCpuPackage, enmEventType);
+            VGSvcVerbose(3, "CpuHotPlug: Event happened idCpuCore=%u idCpuPackage=%u enmEventType=%d\n",
+                         idCpuCore, idCpuPackage, enmEventType);
             switch (enmEventType)
             {
                 case VMMDevCpuEventType_Plug:
-                    VBoxServiceCpuHotPlugHandlePlugEvent(idCpuCore, idCpuPackage);
+                    vgsvcCpuHotPlugHandlePlugEvent(idCpuCore, idCpuPackage);
                     break;
 
                 case VMMDevCpuEventType_Unplug:
-                    VBoxServiceCpuHotPlugHandleUnplugEvent(idCpuCore, idCpuPackage);
+                    vgsvcCpuHotPlugHandleUnplugEvent(idCpuCore, idCpuPackage);
                     break;
 
                 default:
                 {
                     static uint32_t s_iErrors = 0;
                     if (s_iErrors++ < 10)
-                        VBoxServiceError("CpuHotPlug: Unknown event: idCpuCore=%u idCpuPackage=%u enmEventType=%d\n",
-                                         idCpuCore, idCpuPackage, enmEventType);
+                        VGSvcError("CpuHotPlug: Unknown event: idCpuCore=%u idCpuPackage=%u enmEventType=%d\n",
+                                   idCpuCore, idCpuPackage, enmEventType);
                     break;
                 }
             }
         }
         else if (rc != VERR_INTERRUPTED && rc != VERR_TRY_AGAIN)
         {
-            VBoxServiceError("CpuHotPlug: VbglR3CpuHotPlugWaitForEvent returned %Rrc\n", rc);
+            VGSvcError("CpuHotPlug: VbglR3CpuHotPlugWaitForEvent returned %Rrc\n", rc);
             break;
         }
 
@@ -586,8 +596,8 @@ DECLCALLBACK(int) VBoxServiceCpuHotPlugWorker(bool volatile *pfShutdown)
 }
 
 
-/** @copydoc VBOXSERVICE::pfnStop */
-static DECLCALLBACK(void) VBoxServiceCpuHotPlugStop(void)
+/** @interface_method_impl{VBOXSERVICE,pfnStop} */
+static DECLCALLBACK(void) vgsvcCpuHotPlugStop(void)
 {
     VbglR3InterruptEventWaits();
     return;
@@ -608,11 +618,11 @@ VBOXSERVICE g_CpuHotPlug =
     /* pszOptions. */
     NULL,
     /* methods */
-    VBoxServiceDefaultPreInit,
-    VBoxServiceDefaultOption,
-    VBoxServiceDefaultInit,
-    VBoxServiceCpuHotPlugWorker,
-    VBoxServiceCpuHotPlugStop,
-    VBoxServiceDefaultTerm
+    VGSvcDefaultPreInit,
+    VGSvcDefaultOption,
+    VGSvcDefaultInit,
+    vgsvcCpuHotPlugWorker,
+    vgsvcCpuHotPlugStop,
+    VGSvcDefaultTerm
 };
 

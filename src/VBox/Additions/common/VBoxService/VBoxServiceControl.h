@@ -283,43 +283,43 @@ typedef VBOXSERVICECTRLPROCESS *PVBOXSERVICECTRLPROCESS;
 
 RT_C_DECLS_BEGIN
 
-/**
- * Note on naming conventions:
- * - VBoxServiceControl* is named everything sub service module related, e.g.
- *   everything which is callable by main() and/or the service dispatcher(s).
- * - GstCntl* is named everything which declared extern and thus can be called
- *   by different guest control modules as needed.
- * - gstcntl (all lowercase) is a purely static function to split up functionality
- *   inside a module.
- */
+extern RTLISTANCHOR             g_lstControlSessionThreads;
+extern VBOXSERVICECTRLSESSION   g_Session;
 
-/* Guest session thread handling. */
-extern int                      GstCntlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLSESSIONSTARTUPINFO pSessionStartupInfo, PVBOXSERVICECTRLSESSIONTHREAD *ppSessionThread);
-extern int                      GstCntlSessionThreadDestroy(PVBOXSERVICECTRLSESSIONTHREAD pSession, uint32_t uFlags);
-extern int                      GstCntlSessionThreadDestroyAll(PRTLISTANCHOR pList, uint32_t uFlags);
-extern int                      GstCntlSessionThreadTerminate(PVBOXSERVICECTRLSESSIONTHREAD pSession);
-extern RTEXITCODE               VBoxServiceControlSessionSpawnInit(int argc, char **argv);
-/* Per-session functions. */
-extern PVBOXSERVICECTRLPROCESS  GstCntlSessionRetainProcess(PVBOXSERVICECTRLSESSION pSession, uint32_t uPID);
-extern int                      GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession);
-extern int                      GstCntlSessionDestroy(PVBOXSERVICECTRLSESSION pSession);
-extern int                      GstCntlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t uFlags);
-extern int                      GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, PVBGLR3GUESTCTRLCMDCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf, volatile bool *pfShutdown);
-extern int                      GstCntlSessionProcessAdd(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pProcess);
-extern int                      GstCntlSessionProcessRemove(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pProcess);
-extern int                      GstCntlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession, bool *pbAllowed);
-extern int                      GstCntlSessionReapProcesses(PVBOXSERVICECTRLSESSION pSession);
-/* Per-guest process functions. */
-extern int                      GstCntlProcessFree(PVBOXSERVICECTRLPROCESS pProcess);
-extern int                      GstCntlProcessHandleInput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUESTCTRLCMDCTX pHostCtx, bool fPendingClose, void *pvBuf, uint32_t cbBuf);
-extern int                      GstCntlProcessHandleOutput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUESTCTRLCMDCTX pHostCtx, uint32_t uHandle, uint32_t cbToRead, uint32_t uFlags);
-extern int                      GstCntlProcessHandleTerm(PVBOXSERVICECTRLPROCESS pProcess);
-extern void                     GstCntlProcessRelease(PVBOXSERVICECTRLPROCESS pProcess);
-extern int                      GstCntlProcessStart(const PVBOXSERVICECTRLSESSION pSession, const PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo, uint32_t uContext);
-extern int                      GstCntlProcessStop(PVBOXSERVICECTRLPROCESS pProcess);
-extern int                      GstCntlProcessWait(const PVBOXSERVICECTRLPROCESS pProcess, RTMSINTERVAL msTimeout, int *pRc);
+
+/** @name Guest session thread handling.
+ * @{ */
+extern int                      VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLSESSIONSTARTUPINFO pSessionStartupInfo, PVBOXSERVICECTRLSESSIONTHREAD *ppSessionThread);
+extern int                      VGSvcGstCtrlSessionThreadDestroy(PVBOXSERVICECTRLSESSIONTHREAD pSession, uint32_t uFlags);
+extern int                      VGSvcGstCtrlSessionThreadDestroyAll(PRTLISTANCHOR pList, uint32_t uFlags);
+extern int                      VGSvcGstCtrlSessionThreadTerminate(PVBOXSERVICECTRLSESSIONTHREAD pSession);
+extern RTEXITCODE               VGSvcGstCtrlSessionSpawnInit(int argc, char **argv);
+/** @} */
+/** @name Per-session functions.
+ * @{ */
+extern PVBOXSERVICECTRLPROCESS  VGSvcGstCtrlSessionRetainProcess(PVBOXSERVICECTRLSESSION pSession, uint32_t uPID);
+extern int                      VGSvcGstCtrlSessionClose(PVBOXSERVICECTRLSESSION pSession);
+extern int                      VGSvcGstCtrlSessionDestroy(PVBOXSERVICECTRLSESSION pSession);
+extern int                      VGSvcGstCtrlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t uFlags);
+extern int                      VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, PVBGLR3GUESTCTRLCMDCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf, volatile bool *pfShutdown);
+extern int                      VGSvcGstCtrlSessionProcessAdd(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pProcess);
+extern int                      VGSvcGstCtrlSessionProcessRemove(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pProcess);
+extern int                      VGSvcGstCtrlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession, bool *pbAllowed);
+extern int                      VGSvcGstCtrlSessionReapProcesses(PVBOXSERVICECTRLSESSION pSession);
+/** @} */
+/** @name Per-guest process functions.
+ * @{ */
+extern int                      VGSvcGstCtrlProcessFree(PVBOXSERVICECTRLPROCESS pProcess);
+extern int                      VGSvcGstCtrlProcessHandleInput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUESTCTRLCMDCTX pHostCtx, bool fPendingClose, void *pvBuf, uint32_t cbBuf);
+extern int                      VGSvcGstCtrlProcessHandleOutput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUESTCTRLCMDCTX pHostCtx, uint32_t uHandle, uint32_t cbToRead, uint32_t uFlags);
+extern int                      VGSvcGstCtrlProcessHandleTerm(PVBOXSERVICECTRLPROCESS pProcess);
+extern void                     VGSvcGstCtrlProcessRelease(PVBOXSERVICECTRLPROCESS pProcess);
+extern int                      VGSvcGstCtrlProcessStart(const PVBOXSERVICECTRLSESSION pSession, const PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo, uint32_t uContext);
+extern int                      VGSvcGstCtrlProcessStop(PVBOXSERVICECTRLPROCESS pProcess);
+extern int                      VGSvcGstCtrlProcessWait(const PVBOXSERVICECTRLPROCESS pProcess, RTMSINTERVAL msTimeout, int *pRc);
+/** @} */
 
 RT_C_DECLS_END
 
-#endif /* ___VBoxServiceControl_h */
+#endif
 

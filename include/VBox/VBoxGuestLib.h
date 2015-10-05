@@ -585,8 +585,10 @@ typedef struct VBGLR3SHAREDFOLDERMAPPING
     /** Root handle. */
     uint32_t u32Root;
 } VBGLR3SHAREDFOLDERMAPPING;
-/** Pointer to a shared folder mapping information struct. */
+/** Pointer to a shared folder mapping information structure. */
 typedef VBGLR3SHAREDFOLDERMAPPING *PVBGLR3SHAREDFOLDERMAPPING;
+/** Pointer to a const shared folder mapping information structure. */
+typedef VBGLR3SHAREDFOLDERMAPPING const *PCVBGLR3SHAREDFOLDERMAPPING;
 
 VBGLR3DECL(int)     VbglR3SharedFolderConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3SharedFolderDisconnect(uint32_t u32ClientId);

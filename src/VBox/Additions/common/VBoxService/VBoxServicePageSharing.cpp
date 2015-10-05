@@ -37,28 +37,30 @@
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 
+#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
+# include <tlhelp32.h>
+# include <psapi.h>
+# include <winternl.h>
+#endif
+
 
 /*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
+*   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
-/** The semaphore we're blocking on. */
-static RTSEMEVENTMULTI  g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
-
-#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
-#include <tlhelp32.h>
-#include <psapi.h>
-#include <winternl.h>
-
 typedef struct
 {
     AVLPVNODECORE   Core;
+#ifdef RT_OS_WINDOWS
     HMODULE         hModule;
     char            szFileVersion[16];
     MODULEENTRY32   Info;
-} KNOWN_MODULE, *PKNOWN_MODULE;
+#endif /* RT_OS_WINDOWS */
+} VGSVCPGSHKNOWNMOD, *PVGSVCPGSHKNOWNMOD;
 
-#define SystemModuleInformation     11
+
+#ifdef RT_OS_WINDOWS
+/* NTDLL API we want to use: */
+# define SystemModuleInformation 11
 
 typedef struct _RTL_PROCESS_MODULE_INFORMATION
 {
@@ -81,20 +83,38 @@ typedef struct _RTL_PROCESS_MODULES
 } RTL_PROCESS_MODULES, *PRTL_PROCESS_MODULES;
 
 typedef NTSTATUS (WINAPI *PFNZWQUERYSYSTEMINFORMATION)(ULONG, PVOID, ULONG, PULONG);
+
+#endif /* RT_OS_WINDOWS */
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+#ifdef RT_OS_WINDOWS
 static PFNZWQUERYSYSTEMINFORMATION g_pfnZwQuerySystemInformation = NULL;
+#endif
 
-
-static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *pvUser);
+/** The semaphore we're blocking on. */
+static RTSEMEVENTMULTI  g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
 
 static PAVLPVNODECORE   g_pKnownModuleTree = NULL;
 static uint64_t         g_idSession = 0;
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static DECLCALLBACK(int) vgsvcPageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *pvUser);
+
+
+#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
 
 /**
  * Registers a new module with the VMM
  * @param   pModule         Module ptr
  * @param   fValidateMemory Validate/touch memory pages or not
  */
-void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateMemory)
+static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fValidateMemory)
 {
     VMMDEVSHAREDREGIONDESC   aRegions[VMMDEVSHAREDREGIONDESC_MAX];
     DWORD                    dwModuleSize = pModule->Info.modBaseSize;
@@ -102,12 +122,12 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
     DWORD                    cbVersionSize, dummy;
     BYTE                    *pVersionInfo;
 
-    VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule\n");
+    VGSvcVerbose(3, "vgsvcPageSharingRegisterModule\n");
 
     cbVersionSize = GetFileVersionInfoSize(pModule->Info.szExePath, &dummy);
     if (!cbVersionSize)
     {
-        VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: GetFileVersionInfoSize failed with %d\n", GetLastError());
+        VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: GetFileVersionInfoSize failed with %d\n", GetLastError());
         return;
     }
     pVersionInfo = (BYTE *)RTMemAlloc(cbVersionSize);
@@ -116,22 +136,23 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
 
     if (!GetFileVersionInfo(pModule->Info.szExePath, 0, cbVersionSize, pVersionInfo))
     {
-        VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: GetFileVersionInfo failed with %d\n", GetLastError());
+        VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: GetFileVersionInfo failed with %d\n", GetLastError());
         goto end;
     }
 
     /* Fetch default code page. */
-    struct LANGANDCODEPAGE {
+    struct LANGANDCODEPAGE
+    {
         WORD wLanguage;
         WORD wCodePage;
     } *lpTranslate;
 
     UINT   cbTranslate;
-    BOOL ret = VerQueryValue(pVersionInfo, TEXT("\\VarFileInfo\\Translation"), (LPVOID *)&lpTranslate, &cbTranslate);
-    if (    !ret
-        ||  cbTranslate < 4)
+    BOOL fRet = VerQueryValue(pVersionInfo, TEXT("\\VarFileInfo\\Translation"), (LPVOID *)&lpTranslate, &cbTranslate);
+    if (   !fRet
+        || cbTranslate < 4)
     {
-        VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VerQueryValue failed with %d (cb=%d)\n", GetLastError(), cbTranslate);
+        VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: VerQueryValue failed with %d (cb=%d)\n", GetLastError(), cbTranslate);
         goto end;
     }
 
@@ -146,13 +167,13 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
         char   szFileVersionLocation[256];
 
         sprintf(szFileVersionLocation, TEXT("\\StringFileInfo\\%04x%04x\\FileVersion"), lpTranslate[i].wLanguage, lpTranslate[i].wCodePage);
-        ret = VerQueryValue(pVersionInfo, szFileVersionLocation, (LPVOID *)&lpszFileVersion, &cbFileVersion);
-        if (ret)
+        fRet = VerQueryValue(pVersionInfo, szFileVersionLocation, (LPVOID *)&lpszFileVersion, &cbFileVersion);
+        if (fRet)
             break;
     }
     if (i == cTranslationBlocks)
     {
-        VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: no file version found!\n");
+        VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: no file version found!\n");
         goto end;
     }
 
@@ -166,58 +187,55 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
         do
         {
             MEMORY_BASIC_INFORMATION MemInfo;
-
-            SIZE_T ret = VirtualQuery(pBaseAddress, &MemInfo, sizeof(MemInfo));
-            Assert(ret);
-            if (!ret)
+            SIZE_T cbRet = VirtualQuery(pBaseAddress, &MemInfo, sizeof(MemInfo));
+            Assert(cbRet);
+            if (!cbRet)
             {
-                VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VirtualQueryEx failed with %d\n", GetLastError());
+                VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: VirtualQueryEx failed with %d\n", GetLastError());
                 break;
             }
 
-            if (    MemInfo.State == MEM_COMMIT
-                &&  MemInfo.Type == MEM_IMAGE)
+            if (   MemInfo.State == MEM_COMMIT
+                && MemInfo.Type  == MEM_IMAGE)
             {
                 switch (MemInfo.Protect)
                 {
-                case PAGE_EXECUTE:
-                case PAGE_EXECUTE_READ:
-                case PAGE_READONLY:
-                {
-                    char *pRegion = (char *)MemInfo.BaseAddress;
-
-                    /* Skip the first region as it only contains the image file header. */
-                    if (pRegion != (char *)pModule->Info.modBaseAddr)
+                    case PAGE_EXECUTE:
+                    case PAGE_EXECUTE_READ:
+                    case PAGE_READONLY:
                     {
-                        /* Touch all pages. */
-                        while (pRegion < (char *)MemInfo.BaseAddress + MemInfo.RegionSize)
+                        char *pRegion = (char *)MemInfo.BaseAddress;
+
+                        /* Skip the first region as it only contains the image file header. */
+                        if (pRegion != (char *)pModule->Info.modBaseAddr)
                         {
-                            /* Try to trick the optimizer to leave the page touching code in place. */
-                            ASMProbeReadByte(pRegion);
-                            pRegion += PAGE_SIZE;
+                            /* Touch all pages. */
+                            while ((uintptr_t)pRegion < (uintptr_t)MemInfo.BaseAddress + MemInfo.RegionSize)
+                            {
+                                /* Try to trick the optimizer to leave the page touching code in place. */
+                                ASMProbeReadByte(pRegion);
+                                pRegion += PAGE_SIZE;
+                            }
                         }
-                    }
 #ifdef RT_ARCH_X86
-                    aRegions[idxRegion].GCRegionAddr = (RTGCPTR32)MemInfo.BaseAddress;
+                        aRegions[idxRegion].GCRegionAddr = (RTGCPTR32)MemInfo.BaseAddress;
 #else
-                    aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo.BaseAddress;
+                        aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo.BaseAddress;
 #endif
-                    aRegions[idxRegion].cbRegion     = MemInfo.RegionSize;
-                    idxRegion++;
+                        aRegions[idxRegion].cbRegion     = MemInfo.RegionSize;
+                        idxRegion++;
 
-                    break;
-                }
+                        break;
+                    }
 
-                default:
-                    break; /* ignore */
+                    default:
+                        break; /* ignore */
                 }
             }
 
             pBaseAddress = (BYTE *)MemInfo.BaseAddress + MemInfo.RegionSize;
             if (dwModuleSize > MemInfo.RegionSize)
-            {
                 dwModuleSize -= MemInfo.RegionSize;
-            }
             else
             {
                 dwModuleSize = 0;
@@ -240,43 +258,41 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
         aRegions[idxRegion].cbRegion     = dwModuleSize;
         idxRegion++;
     }
-    VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n", pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
+    VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n", pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
     int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (uintptr_t)pModule->Info.modBaseAddr,
                                         pModule->Info.modBaseSize, idxRegion, aRegions);
     if (RT_FAILURE(rc))
-        VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VbglR3RegisterSharedModule failed with %Rrc\n", rc);
+        VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: VbglR3RegisterSharedModule failed with %Rrc\n", rc);
 
 end:
     RTMemFree(pVersionInfo);
     return;
 }
 
+
 /**
  * Inspect all loaded modules for the specified process
  * @param   dwProcessId     Process id
  */
-void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppNewTree)
+static void vgsvcPageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppNewTree)
 {
-    HANDLE hProcess, hSnapshot;
-
     /* Get a list of all the modules in this process. */
-    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,
-                           FALSE /* no child process handle inheritance */, dwProcessId);
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE /* no child process handle inheritance */, dwProcessId);
     if (hProcess == NULL)
     {
-        VBoxServiceVerbose(3, "VBoxServicePageSharingInspectModules: OpenProcess %x failed with %d\n", dwProcessId, GetLastError());
+        VGSvcVerbose(3, "vgsvcPageSharingInspectModules: OpenProcess %x failed with %d\n", dwProcessId, GetLastError());
         return;
     }
 
-    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwProcessId);
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwProcessId);
     if (hSnapshot == INVALID_HANDLE_VALUE)
     {
-        VBoxServiceVerbose(3, "VBoxServicePageSharingInspectModules: CreateToolhelp32Snapshot failed with %d\n", GetLastError());
+        VGSvcVerbose(3, "vgsvcPageSharingInspectModules: CreateToolhelp32Snapshot failed with %d\n", GetLastError());
         CloseHandle(hProcess);
         return;
     }
 
-    VBoxServiceVerbose(3, "VBoxServicePageSharingInspectModules\n");
+    VGSvcVerbose(3, "vgsvcPageSharingInspectModules\n");
 
     MODULEENTRY32 ModuleInfo;
     BOOL          bRet;
@@ -299,7 +315,7 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
             if (!pRec)
             {
                 /* New module; register it. */
-                PKNOWN_MODULE pModule = (PKNOWN_MODULE)RTMemAllocZ(sizeof(*pModule));
+                PVGSVCPGSHKNOWNMOD pModule = (PVGSVCPGSHKNOWNMOD)RTMemAllocZ(sizeof(*pModule));
                 Assert(pModule);
                 if (!pModule)
                     break;
@@ -308,43 +324,43 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
                 pModule->Core.Key = ModuleInfo.modBaseAddr;
                 pModule->hModule  = LoadLibraryEx(ModuleInfo.szExePath, 0, DONT_RESOLVE_DLL_REFERENCES);
                 if (pModule->hModule)
-                    VBoxServicePageSharingRegisterModule(pModule, true /* validate pages */);
+                    vgsvcPageSharingRegisterModule(pModule, true /* validate pages */);
 
-                VBoxServiceVerbose(3, "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
-                VBoxServiceVerbose(3, "\n     executable     = %s",             ModuleInfo.szExePath );
-                VBoxServiceVerbose(3, "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
-                VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
-                VBoxServiceVerbose(3, "\n     base size      = %d",             ModuleInfo.modBaseSize );
+                VGSvcVerbose(3, "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
+                VGSvcVerbose(3, "\n     executable     = %s",             ModuleInfo.szExePath );
+                VGSvcVerbose(3, "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
+                VGSvcVerbose(3, "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
+                VGSvcVerbose(3, "\n     base size      = %d",             ModuleInfo.modBaseSize );
 
                 pRec = &pModule->Core;
             }
             bool ret = RTAvlPVInsert(ppNewTree, pRec);
             Assert(ret); NOREF(ret);
         }
-    }
-    while (Module32Next(hSnapshot, &ModuleInfo));
+    } while (Module32Next(hSnapshot, &ModuleInfo));
 
     CloseHandle(hSnapshot);
     CloseHandle(hProcess);
 }
+
 
 /**
  * Inspect all running processes for executables and dlls that might be worth sharing
  * with other VMs.
  *
  */
-static void VBoxServicePageSharingInspectGuest(void)
+static void vgsvcPageSharingInspectGuest(void)
 {
     HANDLE hSnapshot;
     PAVLPVNODECORE pNewTree = NULL;
     DWORD dwProcessId = GetCurrentProcessId();
 
-    VBoxServiceVerbose(3, "VBoxServicePageSharingInspectGuest\n");
+    VGSvcVerbose(3, "vgsvcPageSharingInspectGuest\n");
 
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE)
     {
-        VBoxServiceVerbose(3, "VBoxServicePageSharingInspectGuest: CreateToolhelp32Snapshot failed with %d\n", GetLastError());
+        VGSvcVerbose(3, "vgsvcPageSharingInspectGuest: CreateToolhelp32Snapshot failed with %d\n", GetLastError());
         return;
     }
 
@@ -358,7 +374,7 @@ static void VBoxServicePageSharingInspectGuest(void)
     {
         /* Skip our own process. */
         if (ProcessInfo.th32ProcessID != dwProcessId)
-            VBoxServicePageSharingInspectModules(ProcessInfo.th32ProcessID, &pNewTree);
+            vgsvcPageSharingInspectModules(ProcessInfo.th32ProcessID, &pNewTree);
     }
     while (Process32Next(hSnapshot, &ProcessInfo));
 
@@ -374,7 +390,7 @@ static void VBoxServicePageSharingInspectGuest(void)
         NTSTATUS ret = g_pfnZwQuerySystemInformation(SystemModuleInformation, (PVOID)&cbBuffer, 0, &cbBuffer);
         if (!cbBuffer)
         {
-            VBoxServiceVerbose(1, "ZwQuerySystemInformation returned length 0\n");
+            VGSvcVerbose(1, "ZwQuerySystemInformation returned length 0\n");
             goto skipkernelmodules;
         }
 
@@ -385,16 +401,16 @@ static void VBoxServicePageSharingInspectGuest(void)
         ret = g_pfnZwQuerySystemInformation(SystemModuleInformation, pBuffer, cbBuffer, &cbBuffer);
         if (ret != STATUS_SUCCESS)
         {
-            VBoxServiceVerbose(1, "ZwQuerySystemInformation returned %x (1)\n", ret);
+            VGSvcVerbose(1, "ZwQuerySystemInformation returned %x (1)\n", ret);
             goto skipkernelmodules;
         }
 
         pSystemModules = (PRTL_PROCESS_MODULES)pBuffer;
         for (unsigned i = 0; i < pSystemModules->NumberOfModules; i++)
         {
-            VBoxServiceVerbose(4, "\n\n   KERNEL  MODULE NAME:     %s",     pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName] );
-            VBoxServiceVerbose(4, "\n     executable     = %s",             pSystemModules->Modules[i].FullPathName );
-            VBoxServiceVerbose(4, "\n     flags          = 0x%08X\n",       pSystemModules->Modules[i].Flags);
+            VGSvcVerbose(4, "\n\n   KERNEL  MODULE NAME:     %s", pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName] );
+            VGSvcVerbose(4, "\n     executable     = %s",         pSystemModules->Modules[i].FullPathName );
+            VGSvcVerbose(4, "\n     flags          = 0x%08X\n",   pSystemModules->Modules[i].Flags);
 
             /* User-mode modules seem to have no flags set; skip them as we detected them above. */
             if (pSystemModules->Modules[i].Flags == 0)
@@ -408,12 +424,13 @@ static void VBoxServicePageSharingInspectGuest(void)
                 if (!pRec)
                 {
                     /* New module; register it. */
-                    char          szFullFilePath[512];
-                    PKNOWN_MODULE pModule = (PKNOWN_MODULE)RTMemAllocZ(sizeof(*pModule));
+                    char szFullFilePath[512];
+                    PVGSVCPGSHKNOWNMOD pModule = (PVGSVCPGSHKNOWNMOD)RTMemAllocZ(sizeof(*pModule));
                     Assert(pModule);
                     if (!pModule)
                         break;
 
+/** @todo Use unicode APIs! */
                     strcpy(pModule->Info.szModule, &pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName]);
                     GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
 
@@ -424,16 +441,16 @@ static void VBoxServicePageSharingInspectGuest(void)
                         /* Seen just file names in XP; try to locate the file in the system32 and system32\drivers directories. */
                         strcat(szFullFilePath, "\\");
                         strcat(szFullFilePath, pSystemModules->Modules[i].FullPathName);
-                        VBoxServiceVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
+                        VGSvcVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
                         if (RTFileExists(szFullFilePath) == false)
                         {
                             GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
                             strcat(szFullFilePath, "\\drivers\\");
                             strcat(szFullFilePath, pSystemModules->Modules[i].FullPathName);
-                            VBoxServiceVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
+                            VGSvcVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
                             if (RTFileExists(szFullFilePath) == false)
                             {
-                                VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
+                                VGSvcVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
                                 RTMemFree(pModule);
                                 continue;
                             }
@@ -444,7 +461,7 @@ static void VBoxServicePageSharingInspectGuest(void)
                         lpPath = strchr(lpPath+1, '\\');
                         if (!lpPath)
                         {
-                            VBoxServiceVerbose(1, "Unexpected kernel module name %s (2)\n", pSystemModules->Modules[i].FullPathName);
+                            VGSvcVerbose(1, "Unexpected kernel module name %s (2)\n", pSystemModules->Modules[i].FullPathName);
                             RTMemFree(pModule);
                             continue;
                         }
@@ -457,13 +474,13 @@ static void VBoxServicePageSharingInspectGuest(void)
                     pModule->Info.modBaseSize = pSystemModules->Modules[i].ImageSize;
 
                     pModule->Core.Key = pSystemModules->Modules[i].ImageBase;
-                    VBoxServicePageSharingRegisterModule(pModule, false /* don't check memory pages */);
+                    vgsvcPageSharingRegisterModule(pModule, false /* don't check memory pages */);
 
-                    VBoxServiceVerbose(3, "\n\n   KERNEL  MODULE NAME:     %s",     pModule->Info.szModule );
-                    VBoxServiceVerbose(3, "\n     executable     = %s",             pModule->Info.szExePath );
-                    VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) pModule->Info.modBaseAddr );
-                    VBoxServiceVerbose(3, "\n     flags          = 0x%08X",         pSystemModules->Modules[i].Flags);
-                    VBoxServiceVerbose(3, "\n     base size      = %d",             pModule->Info.modBaseSize );
+                    VGSvcVerbose(3, "\n\n   KERNEL  MODULE NAME:     %s",     pModule->Info.szModule );
+                    VGSvcVerbose(3, "\n     executable     = %s",             pModule->Info.szExePath );
+                    VGSvcVerbose(3, "\n     base address   = 0x%08X", (DWORD) pModule->Info.modBaseAddr );
+                    VGSvcVerbose(3, "\n     flags          = 0x%08X",         pSystemModules->Modules[i].Flags);
+                    VGSvcVerbose(3, "\n     base size      = %d",             pModule->Info.modBaseSize );
 
                     pRec = &pModule->Core;
                 }
@@ -477,7 +494,7 @@ skipkernelmodules:
     }
 
     /* Delete leftover modules in the old tree. */
-    RTAvlPVDestroy(&g_pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, NULL);
+    RTAvlPVDestroy(&g_pKnownModuleTree, vgsvcPageSharingEmptyTreeCallback, NULL);
 
     /* Check all registered modules. */
     VbglR3CheckSharedModules();
@@ -486,15 +503,16 @@ skipkernelmodules:
     g_pKnownModuleTree = pNewTree;
 }
 
+
 /**
  * RTAvlPVDestroy callback.
  */
-static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) vgsvcPageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *pvUser)
 {
-    PKNOWN_MODULE pModule = (PKNOWN_MODULE)pNode;
+    PVGSVCPGSHKNOWNMOD pModule = (PVGSVCPGSHKNOWNMOD)pNode;
     bool *pfUnregister = (bool *)pvUser;
 
-    VBoxServiceVerbose(3, "VBoxServicePageSharingEmptyTreeCallback %s %s\n", pModule->Info.szModule, pModule->szFileVersion);
+    VGSvcVerbose(3, "vgsvcPageSharingEmptyTreeCallback %s %s\n", pModule->Info.szModule, pModule->szFileVersion);
 
     /* Dereference module in the hypervisor. */
     if (   !pfUnregister
@@ -513,21 +531,25 @@ static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE 
 
 
 #elif TARGET_NT4
-static void VBoxServicePageSharingInspectGuest(void)
+
+static void vgsvcPageSharingInspectGuest(void)
 {
     /* not implemented */
 }
+
 #else
-static void VBoxServicePageSharingInspectGuest(void)
+
+static void vgsvcPageSharingInspectGuest(void)
 {
     /** @todo other platforms */
 }
+
 #endif
 
-/** @copydoc VBOXSERVICE::pfnInit */
-static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
+/** @interface_method_impl{VBOXSERVICE,pfnInit} */
+static DECLCALLBACK(int) vgsvcPageSharingInit(void)
 {
-    VBoxServiceVerbose(3, "VBoxServicePageSharingInit\n");
+    VGSvcVerbose(3, "vgsvcPageSharingInit\n");
 
     int rc = RTSemEventMultiCreate(&g_PageSharingEvent);
     AssertRCReturn(rc, rc);
@@ -539,9 +561,9 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_IO_GEN_FAILURE)
-            VBoxServiceVerbose(0, "PageSharing: Page sharing support is not available by the host\n");
+            VGSvcVerbose(0, "PageSharing: Page sharing support is not available by the host\n");
         else
-            VBoxServiceError("VBoxServicePageSharingInit: Failed with rc=%Rrc\n", rc);
+            VGSvcError("vgsvcPageSharingInit: Failed with rc=%Rrc\n", rc);
 
         rc = VERR_SERVICE_DISABLED;
 
@@ -554,8 +576,11 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
     return rc;
 }
 
-/** @copydoc VBOXSERVICE::pfnWorker */
-DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
+
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnWorker}
+ */
+static DECLCALLBACK(int) vgsvcPageSharingWorker(bool volatile *pfShutdown)
 {
     /*
      * Tell the control thread that it can continue
@@ -568,12 +593,11 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
      */
     for (;;)
     {
-        BOOL fEnabled = VbglR3PageSharingIsEnabled();
-
-        VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: enabled=%d\n", fEnabled);
+        bool fEnabled = VbglR3PageSharingIsEnabled();
+        VGSvcVerbose(3, "vgsvcPageSharingWorker: enabled=%d\n", fEnabled);
 
         if (fEnabled)
-            VBoxServicePageSharingInspectGuest();
+            vgsvcPageSharingInspectGuest();
 
         /*
          * Block for a minute.
@@ -588,7 +612,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
             break;
         if (rc != VERR_TIMEOUT && RT_FAILURE(rc))
         {
-            VBoxServiceError("VBoxServicePageSharingWorker: RTSemEventMultiWait failed; rc=%Rrc\n", rc);
+            VGSvcError("vgsvcPageSharingWorker: RTSemEventMultiWait failed; rc=%Rrc\n", rc);
             break;
         }
 #if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
@@ -600,9 +624,9 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
         {
             bool fUnregister = false;
 
-            VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: VM was restored!!\n");
+            VGSvcVerbose(3, "vgsvcPageSharingWorker: VM was restored!!\n");
             /* The VM was restored, so reregister all modules the next time. */
-            RTAvlPVDestroy(&g_pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, &fUnregister);
+            RTAvlPVDestroy(&g_pKnownModuleTree, vgsvcPageSharingEmptyTreeCallback, &fUnregister);
             g_pKnownModuleTree = NULL;
 
             g_idSession = idNewSession;
@@ -613,7 +637,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
     RTSemEventMultiDestroy(g_PageSharingEvent);
     g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
 
-    VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: finished thread\n");
+    VGSvcVerbose(3, "vgsvcPageSharingWorker: finished thread\n");
     return 0;
 }
 
@@ -621,26 +645,29 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
 
 /**
  * This gets control when VBoxService is launched with "pagefusion" by
- * VBoxServicePageSharingWorkerProcess().
+ * vgsvcPageSharingWorkerProcess().
  *
  * @returns RTEXITCODE_SUCCESS.
  *
  * @remarks It won't normally return since the parent drops the shutdown hint
  *          via RTProcTerminate().
  */
-RTEXITCODE VBoxServicePageSharingWorkerChild(void)
+RTEXITCODE VGSvcPageSharingWorkerChild(void)
 {
-    VBoxServiceVerbose(3, "VBoxServicePageSharingInitFork\n");
+    VGSvcVerbose(3, "vgsvcPageSharingInitFork\n");
 
     bool fShutdown = false;
-    VBoxServicePageSharingInit();
-    VBoxServicePageSharingWorker(&fShutdown);
+    vgsvcPageSharingInit();
+    vgsvcPageSharingWorker(&fShutdown);
 
     return RTEXITCODE_SUCCESS;
 }
 
-/** @copydoc VBOXSERVICE::pfnWorker */
-DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
+
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnWorker}
+ */
+static DECLCALLBACK(int) vgsvcPageSharingWorkerProcess(bool volatile *pfShutdown)
 {
     RTPROCESS hProcess = NIL_RTPROCESS;
     int rc;
@@ -656,8 +683,8 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
      */
     for (;;)
     {
-        BOOL fEnabled = VbglR3PageSharingIsEnabled();
-        VBoxServiceVerbose(3, "VBoxServicePageSharingWorkerProcess: enabled=%d\n", fEnabled);
+        bool fEnabled = VbglR3PageSharingIsEnabled();
+        VGSvcVerbose(3, "vgsvcPageSharingWorkerProcess: enabled=%d\n", fEnabled);
 
         /*
          * Start a 2nd VBoxService process to deal with page fusion as we do
@@ -677,7 +704,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
                 papszArgs[2] = NULL;
                 rc = RTProcCreate(pszExeName, papszArgs, RTENV_DEFAULT, 0 /* normal child */, &hProcess);
                 if (RT_FAILURE(rc))
-                    VBoxServiceError("VBoxServicePageSharingWorkerProcess: RTProcCreate %s failed; rc=%Rrc\n", pszExeName, rc);
+                    VGSvcError("vgsvcPageSharingWorkerProcess: RTProcCreate %s failed; rc=%Rrc\n", pszExeName, rc);
             }
         }
 
@@ -694,7 +721,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
             break;
         if (rc != VERR_TIMEOUT && RT_FAILURE(rc))
         {
-            VBoxServiceError("VBoxServicePageSharingWorkerProcess: RTSemEventMultiWait failed; rc=%Rrc\n", rc);
+            VGSvcError("vgsvcPageSharingWorkerProcess: RTSemEventMultiWait failed; rc=%Rrc\n", rc);
             break;
         }
     }
@@ -705,14 +732,16 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
     RTSemEventMultiDestroy(g_PageSharingEvent);
     g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
 
-    VBoxServiceVerbose(3, "VBoxServicePageSharingWorkerProcess: finished thread\n");
+    VGSvcVerbose(3, "vgsvcPageSharingWorkerProcess: finished thread\n");
     return 0;
 }
 
 #endif /* RT_OS_WINDOWS */
 
-/** @copydoc VBOXSERVICE::pfnStop */
-static DECLCALLBACK(void) VBoxServicePageSharingStop(void)
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnStop}
+ */
+static DECLCALLBACK(void) vgsvcPageSharingStop(void)
 {
     RTSemEventMultiSignal(g_PageSharingEvent);
 }
@@ -732,14 +761,15 @@ VBOXSERVICE g_PageSharing =
     /* pszOptions. */
     NULL,
     /* methods */
-    VBoxServiceDefaultPreInit,
-    VBoxServiceDefaultOption,
-    VBoxServicePageSharingInit,
+    VGSvcDefaultPreInit,
+    VGSvcDefaultOption,
+    vgsvcPageSharingInit,
 #ifdef RT_OS_WINDOWS
-    VBoxServicePageSharingWorkerProcess,
+    vgsvcPageSharingWorkerProcess,
 #else
-    VBoxServicePageSharingWorker,
+    vgsvcPageSharingWorker,
 #endif
-    VBoxServicePageSharingStop,
-    VBoxServiceDefaultTerm
+    vgsvcPageSharingStop,
+    VGSvcDefaultTerm
 };
+

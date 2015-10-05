@@ -105,10 +105,12 @@ typedef struct VBOXSERVICETOOLBOXDIRENTRY
 } VBOXSERVICETOOLBOXDIRENTRY, *PVBOXSERVICETOOLBOXDIRENTRY;
 
 
+
+
 /**
  * Displays a common header for all help text to stdout.
  */
-static void VBoxServiceToolboxShowUsageHeader(void)
+static void vgsvcToolboxShowUsageHeader(void)
 {
     RTPrintf(VBOX_PRODUCT " Guest Toolbox Version "
              VBOX_VERSION_STRING "\n"
@@ -122,9 +124,9 @@ static void VBoxServiceToolboxShowUsageHeader(void)
 /**
  * Displays a help text to stdout.
  */
-static void VBoxServiceToolboxShowUsage(void)
+static void vgsvcToolboxShowUsage(void)
 {
-    VBoxServiceToolboxShowUsageHeader();
+    vgsvcToolboxShowUsageHeader();
     RTPrintf("  VBoxService [--use-toolbox] vbox_<command> [<general options>] <parameters>\n\n"
              "General options:\n\n"
              "  --machinereadable          produce all output in machine-readable form\n"
@@ -150,7 +152,7 @@ static void VBoxServiceToolboxShowUsage(void)
 /**
  * Displays the program's version number.
  */
-static void VBoxServiceToolboxShowVersion(void)
+static void vgsvcToolboxShowVersion(void)
 {
     RTPrintf("%sr%d\n", VBOX_VERSION_STRING, RTBldCfgRevision());
 }
@@ -161,7 +163,7 @@ static void VBoxServiceToolboxShowVersion(void)
  *
  * @return  IPRT status code.
  */
-static int VBoxServiceToolboxStrmInit(void)
+static int vgsvcToolboxStrmInit(void)
 {
     /* Set stdout's mode to binary. This is required for outputting all the machine-readable
      * data correctly. */
@@ -181,7 +183,7 @@ static int VBoxServiceToolboxStrmInit(void)
  * @param   uVersion                Stream version name. Handy for distinguishing
  *                                  different stream versions later.
  */
-static void VBoxServiceToolboxPrintStrmHeader(const char *pszToolName, uint32_t uVersion)
+static void vgsvcToolboxPrintStrmHeader(const char *pszToolName, uint32_t uVersion)
 {
     AssertPtrReturnVoid(pszToolName);
     RTPrintf("hdr_id=%s%chdr_ver=%u%c", pszToolName, 0, uVersion, 0);
@@ -193,7 +195,7 @@ static void VBoxServiceToolboxPrintStrmHeader(const char *pszToolName, uint32_t 
  * parseable stream just ended.
  *
  */
-static void VBoxServiceToolboxPrintStrmTermination()
+static void vgsvcToolboxPrintStrmTermination()
 {
     RTPrintf("%c%c%c%c", 0, 0, 0, 0);
 }
@@ -203,12 +205,11 @@ static void VBoxServiceToolboxPrintStrmTermination()
  * Parse a file mode string from the command line (currently octal only)
  * and print an error message and return an error if necessary.
  */
-static int vboxServiceToolboxParseMode(const char *pcszMode, RTFMODE *pfMode)
+static int vgsvcToolboxParseMode(const char *pcszMode, RTFMODE *pfMode)
 {
     int rc = RTStrToUInt32Ex(pcszMode, NULL, 8 /* Base */, pfMode);
     if (RT_FAILURE(rc)) /* Only octet based values supported right now! */
-        RTMsgError("Mode flag strings not implemented yet! Use octal numbers instead. (%s)\n",
-                   pcszMode);
+        RTMsgError("Mode flag strings not implemented yet! Use octal numbers instead. (%s)\n", pcszMode);
     return rc;
 }
 
@@ -219,7 +220,7 @@ static int vboxServiceToolboxParseMode(const char *pcszMode, RTFMODE *pfMode)
  * @return  IPRT status code.
  * @param   pList                   Pointer to list to destroy.
  */
-static void VBoxServiceToolboxPathBufDestroy(PRTLISTNODE pList)
+static void vgsvcToolboxPathBufDestroy(PRTLISTNODE pList)
 {
     AssertPtr(pList);
     /** @todo use RTListForEachSafe */
@@ -246,7 +247,7 @@ static void VBoxServiceToolboxPathBufDestroy(PRTLISTNODE pList)
  * @param   pList                   Pointer to list to add entry to.
  * @param   pszName                 Name of entry to add.
  */
-static int VBoxServiceToolboxPathBufAddPathEntry(PRTLISTNODE pList, const char *pszName)
+static int vgsvcToolboxPathBufAddPathEntry(PRTLISTNODE pList, const char *pszName)
 {
     AssertPtrReturn(pList, VERR_INVALID_PARAMETER);
 
@@ -257,7 +258,7 @@ static int VBoxServiceToolboxPathBufAddPathEntry(PRTLISTNODE pList, const char *
         pNode->pszName = RTStrDup(pszName);
         AssertPtr(pNode->pszName);
 
-        /*rc =*/ RTListAppend(pList, &pNode->Node);
+        RTListAppend(pList, &pNode->Node);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -274,7 +275,7 @@ static int VBoxServiceToolboxPathBufAddPathEntry(PRTLISTNODE pList, const char *
  * @param   hOutput                 Handle of output file (if any) to use;
  *                                  else stdout will be used.
  */
-static int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
+static int vgsvcToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
 {
     int rc = VINF_SUCCESS;
     if (hInput == NIL_RTFILE)
@@ -335,7 +336,7 @@ static char g_paszCatHelp[] =
  * @param   argc                    Number of arguments.
  * @param   argv                    Pointer to argument array.
  */
-static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
+static RTEXITCODE vgsvcToolboxCat(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -359,9 +360,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
 
-    RTGetOptInit(&GetState, argc, argv,
-                 s_aOptions, RT_ELEMENTS(s_aOptions),
-                 1 /*iFirst*/, 0 /*fFlags*/);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1 /*iFirst*/, 0 /*fFlags*/);
 
     int rc = VINF_SUCCESS;
     bool fUsageOK = true;
@@ -369,8 +368,8 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
     const char *pszOutput = NULL;
     RTFILE hOutput = NIL_RTFILE;
     uint32_t fFlags = RTFILE_O_CREATE_REPLACE /* Output file flags. */
-                      | RTFILE_O_WRITE
-                      | RTFILE_O_DENY_WRITE;
+                    | RTFILE_O_WRITE
+                    | RTFILE_O_DENY_WRITE;
 
     /* Init directory list. */
     RTLISTANCHOR inputList;
@@ -397,7 +396,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
                 break;
 
             case 'h':
-                VBoxServiceToolboxShowUsageHeader();
+                vgsvcToolboxShowUsageHeader();
                 RTPrintf("%s", g_paszCatHelp);
                 return RTEXITCODE_SUCCESS;
 
@@ -410,7 +409,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
                 break;
 
             case 'V':
-                VBoxServiceToolboxShowVersion();
+                vgsvcToolboxShowVersion();
                 return RTEXITCODE_SUCCESS;
 
             case VBOXSERVICETOOLBOXCATOPT_NO_CONTENT_INDEXED:
@@ -418,16 +417,14 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                {
-                    /* Add file(s) to buffer. This enables processing multiple paths
-                     * at once.
-                     *
-                     * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
-                     * processing this loop it's safe to immediately exit on syntax errors
-                     * or showing the help text (see above). */
-                    rc = VBoxServiceToolboxPathBufAddPathEntry(&inputList, ValueUnion.psz);
-                    break;
-                }
+                /* Add file(s) to buffer. This enables processing multiple paths
+                 * at once.
+                 *
+                 * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
+                 * processing this loop it's safe to immediately exit on syntax errors
+                 * or showing the help text (see above). */
+                rc = vgsvcToolboxPathBufAddPathEntry(&inputList, ValueUnion.psz);
+                break;
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -440,8 +437,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
         {
             rc = RTFileOpen(&hOutput, pszOutput, fFlags);
             if (RT_FAILURE(rc))
-                RTMsgError("Could not create output file '%s', rc=%Rrc\n",
-                           pszOutput, rc);
+                RTMsgError("Could not create output file '%s', rc=%Rrc\n", pszOutput, rc);
         }
 
         if (RT_SUCCESS(rc))
@@ -455,15 +451,14 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
                                 RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = VBoxServiceToolboxCatOutput(hInput, hOutput);
+                    rc = vgsvcToolboxCatOutput(hInput, hOutput);
                     RTFileClose(hInput);
                 }
                 else
                 {
                     PCRTSTATUSMSG pMsg = RTErrGet(rc);
                     if (pMsg)
-                        RTMsgError("Could not open input file '%s': %s\n",
-                                   pNodeIt->pszName, pMsg->pszMsgFull);
+                        RTMsgError("Could not open input file '%s': %s\n", pNodeIt->pszName, pMsg->pszMsgFull);
                     else
                         RTMsgError("Could not open input file '%s', rc=%Rrc\n", pNodeIt->pszName, rc);
                 }
@@ -474,13 +469,13 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
 
             /* If not input files were defined, process stdin. */
             if (RTListNodeIsFirst(&inputList, &inputList))
-                rc = VBoxServiceToolboxCatOutput(hInput, hOutput);
+                rc = vgsvcToolboxCatOutput(hInput, hOutput);
         }
     }
 
     if (hOutput != NIL_RTFILE)
         RTFileClose(hOutput);
-    VBoxServiceToolboxPathBufDestroy(&inputList);
+    vgsvcToolboxPathBufDestroy(&inputList);
 
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
@@ -490,14 +485,13 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
  * to stdout.
  *
  * @return  IPRT status code.
- * @param   pszName                     Object name.
- * @param   cbName                      Size of object name.
- * @param   uOutputFlags                Output / handling flags of type VBOXSERVICETOOLBOXOUTPUTFLAG.
- * @param   pObjInfo                    Pointer to object information.
+ * @param   pszName         Object name.
+ * @param   cbName          Size of object name.
+ * @param   fOutputFlags    Output / handling flags of type
+ *                          VBOXSERVICETOOLBOXOUTPUTFLAG.
+ * @param   pObjInfo        Pointer to object information.
  */
-static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
-                                         uint32_t uOutputFlags,
-                                         PRTFSOBJINFO pObjInfo)
+static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cbName, uint32_t fOutputFlags, PRTFSOBJINFO pObjInfo)
 {
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertReturn(cbName, VERR_INVALID_PARAMETER);
@@ -519,25 +513,25 @@ static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
     }
     /** @todo sticy bits++ */
 
-    if (!(uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_LONG))
+    if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_LONG))
     {
-        if (uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         {
             /** @todo Skip node_id if not present/available! */
-            RTPrintf("ftype=%c%cnode_id=%RU64%cname_len=%RU16%cname=%s%c",
+            RTPrintf("ftype=%c%cnode_id=%RU64%cname_len=%zu%cname=%s%c",
                      chFileType, 0, (uint64_t)pObjInfo->Attr.u.Unix.INodeId, 0,
                      cbName, 0, pszName, 0);
         }
         else
-            RTPrintf("%c %#18llx %3d %s\n",
+            RTPrintf("%c %#18llx %3zu %s\n",
                      chFileType, (uint64_t)pObjInfo->Attr.u.Unix.INodeId, cbName, pszName);
 
-        if (uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* End of data block. */
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* End of data block. */
             RTPrintf("%c%c", 0, 0);
     }
     else
     {
-        if (uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         {
             RTPrintf("ftype=%c%c", chFileType, 0);
             /** @todo Skip node_id if not present/available! */
@@ -590,7 +584,7 @@ static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
                      szTimeChange, 0,
                      szTimeModification, 0,
                      szTimeAccess, 0);
-            RTPrintf("cname_len=%RU16%cname=%s%c",
+            RTPrintf("cname_len=%zu%cname=%s%c",
                      cbName, 0, pszName, 0);
 
             /* End of data block. */
@@ -636,7 +630,7 @@ static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
                      RTTimeSpecGetNano(&pObjInfo->ChangeTime), /** @todo really ns? */
                      RTTimeSpecGetNano(&pObjInfo->ModificationTime), /** @todo really ns? */
                      RTTimeSpecGetNano(&pObjInfo->AccessTime)); /** @todo really ns? */
-            RTPrintf(" %2d %s\n", cbName, pszName);
+            RTPrintf(" %2zu %s\n", cbName, pszName);
         }
     }
 
@@ -650,24 +644,23 @@ static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
  *
  * @return  IPRT status code.
  * @param   pszDir                  Directory (path) to ouptut.
- * @param   uFlags                  Flags of type VBOXSERVICETOOLBOXLSFLAG.
- * @param   uOutputFlags            Flags of type  VBOXSERVICETOOLBOXOUTPUTFLAG.
+ * @param   fFlags                  Flags of type VBOXSERVICETOOLBOXLSFLAG.
+ * @param   fOutputFlags            Flags of type  VBOXSERVICETOOLBOXOUTPUTFLAG.
  */
-static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
-                                         uint32_t uFlags, uint32_t uOutputFlags)
+static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t fOutputFlags)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_PARAMETER);
 
-    if (uFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
+    if (fFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         RTPrintf("dname=%s%c", pszDir, 0);
-    else if (uFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE)
+    else if (fFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE)
         RTPrintf("%s:\n", pszDir);
 
     char szPathAbs[RTPATH_MAX + 1];
     int rc = RTPathAbs(pszDir, szPathAbs, sizeof(szPathAbs));
     if (RT_FAILURE(rc))
     {
-        if (!(uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+        if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
             RTMsgError("Failed to retrieve absolute path of '%s', rc=%Rrc\n", pszDir, rc);
         return rc;
     }
@@ -676,7 +669,7 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
     rc = RTDirOpen(&pDir, szPathAbs);
     if (RT_FAILURE(rc))
     {
-        if (!(uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+        if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
             RTMsgError("Failed to open directory '%s', rc=%Rrc\n", szPathAbs, rc);
         return rc;
     }
@@ -698,7 +691,7 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
             if (pNode)
             {
                 memcpy(&pNode->dirEntry, &DirEntry, sizeof(RTDIRENTRYEX));
-                /*rc =*/ RTListAppend(&dirList, &pNode->Node);
+                RTListAppend(&dirList, &pNode->Node);
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -711,9 +704,8 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
     int rc2 = RTDirClose(pDir);
     if (RT_FAILURE(rc2))
     {
-        if (!(uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-            RTMsgError("Failed to close dir '%s', rc=%Rrc\n",
-                       pszDir, rc2);
+        if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+            RTMsgError("Failed to close dir '%s', rc=%Rrc\n", pszDir, rc2);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -723,16 +715,15 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
         PVBOXSERVICETOOLBOXDIRENTRY pNodeIt;
         RTListForEach(&dirList, pNodeIt, VBOXSERVICETOOLBOXDIRENTRY, Node)
         {
-            rc = VBoxServiceToolboxPrintFsInfo(pNodeIt->dirEntry.szName, pNodeIt->dirEntry.cbName,
-                                               uOutputFlags,
-                                               &pNodeIt->dirEntry.Info);
+            rc = vgsvcToolboxPrintFsInfo(pNodeIt->dirEntry.szName, pNodeIt->dirEntry.cbName,
+                                         fOutputFlags, &pNodeIt->dirEntry.Info);
             if (RT_FAILURE(rc))
                 break;
         }
 
         /* If everything went fine we do the second run (if needed) ... */
         if (   RT_SUCCESS(rc)
-            && (uFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE))
+            && (fFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE))
         {
             /* Process all sub-directories. */
             RTListForEach(&dirList, pNodeIt, VBOXSERVICETOOLBOXDIRENTRY, Node)
@@ -741,27 +732,25 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
                 switch (fMode & RTFS_TYPE_MASK)
                 {
                     case RTFS_TYPE_SYMLINK:
-                        if (!(uFlags & VBOXSERVICETOOLBOXLSFLAG_SYMLINKS))
+                        if (!(fFlags & VBOXSERVICETOOLBOXLSFLAG_SYMLINKS))
                             break;
                         /* Fall through is intentional. */
                     case RTFS_TYPE_DIRECTORY:
+                    {
+                        const char *pszName = pNodeIt->dirEntry.szName;
+                        if (   !RTStrICmp(pszName, ".")
+                            || !RTStrICmp(pszName, ".."))
                         {
-                            const char *pszName = pNodeIt->dirEntry.szName;
-                            if (   !RTStrICmp(pszName, ".")
-                                || !RTStrICmp(pszName, ".."))
-                            {
-                                /* Skip dot directories. */
-                                continue;
-                            }
-
-                            char szPath[RTPATH_MAX];
-                            rc = RTPathJoin(szPath, sizeof(szPath),
-                                            pszDir, pNodeIt->dirEntry.szName);
-                            if (RT_SUCCESS(rc))
-                                rc = VBoxServiceToolboxLsHandleDir(szPath,
-                                                                   uFlags, uOutputFlags);
+                            /* Skip dot directories. */
+                            continue;
                         }
+
+                        char szPath[RTPATH_MAX];
+                        rc = RTPathJoin(szPath, sizeof(szPath), pszDir, pNodeIt->dirEntry.szName);
+                        if (RT_SUCCESS(rc))
+                            rc = vgsvcToolboxLsHandleDir(szPath, fFlags, fOutputFlags);
                         break;
+                    }
 
                     default: /* Ignore the rest. */
                         break;
@@ -803,22 +792,21 @@ static char g_paszLsHelp[] =
  * @param   argc                    Number of arguments.
  * @param   argv                    Pointer to argument array.
  */
-static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
+static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--machinereadable", VBOXSERVICETOOLBOXOPT_MACHINE_READABLE,      RTGETOPT_REQ_NOTHING },
-        { "--dereference",     'L',                                           RTGETOPT_REQ_NOTHING },
-        { NULL,                'l',                                           RTGETOPT_REQ_NOTHING },
-        { NULL,                'R',                                           RTGETOPT_REQ_NOTHING },
+        { "--dereference",     'L',                                         RTGETOPT_REQ_NOTHING },
+        { NULL,                'l',                                         RTGETOPT_REQ_NOTHING },
+        { NULL,                'R',                                         RTGETOPT_REQ_NOTHING },
         { "--verbose",         VBOXSERVICETOOLBOXOPT_VERBOSE,               RTGETOPT_REQ_NOTHING}
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv,
-                          s_aOptions, RT_ELEMENTS(s_aOptions),
+    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions),
                           1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
@@ -831,13 +819,13 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
     RTListInit(&fileList);
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-              && RT_SUCCESS(rc))
+           && RT_SUCCESS(rc))
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
             case 'h':
-                VBoxServiceToolboxShowUsageHeader();
+                vgsvcToolboxShowUsageHeader();
                 RTPrintf("%s", g_paszLsHelp);
                 return RTEXITCODE_SUCCESS;
 
@@ -862,7 +850,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                 break;
 
             case 'V':
-                VBoxServiceToolboxShowVersion();
+                vgsvcToolboxShowVersion();
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -872,7 +860,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                  * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
                  * processing this loop it's safe to immediately exit on syntax errors
                  * or showing the help text (see above). */
-                rc = VBoxServiceToolboxPathBufAddPathEntry(&fileList, ValueUnion.psz);
+                rc = vgsvcToolboxPathBufAddPathEntry(&fileList, ValueUnion.psz);
                 /** @todo r=bird: Nit: creating a list here is not really
                  *        necessary since you've got one in argv that's
                  *        accessible via RTGetOpt. */
@@ -892,7 +880,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
             rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
             if (RT_SUCCESS(rc))
             {
-                rc = VBoxServiceToolboxPathBufAddPathEntry(&fileList, szDirCur);
+                rc = vgsvcToolboxPathBufAddPathEntry(&fileList, szDirCur);
                 if (RT_FAILURE(rc))
                     RTMsgError("Adding current directory failed, rc=%Rrc\n", rc);
             }
@@ -903,10 +891,10 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
         /* Print magic/version. */
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         {
-            rc = VBoxServiceToolboxStrmInit();
+            rc = vgsvcToolboxStrmInit();
             if (RT_FAILURE(rc))
                 RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
-            VBoxServiceToolboxPrintStrmHeader("vbt_ls", 1 /* Stream version */);
+            vgsvcToolboxPrintStrmHeader("vbt_ls", 1 /* Stream version */);
         }
 
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
@@ -916,48 +904,46 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
             {
                 RTFSOBJINFO objInfo;
                 int rc2 = RTPathQueryInfoEx(pNodeIt->pszName, &objInfo,
-                                            RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /* @todo Follow link? */);
+                                            RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /** @todo Follow link? */);
                 if (RT_FAILURE(rc2))
                 {
                     if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                        RTMsgError("Cannot access '%s': No such file or directory\n",
-                                   pNodeIt->pszName);
+                        RTMsgError("Cannot access '%s': No such file or directory\n", pNodeIt->pszName);
                     rc = VERR_FILE_NOT_FOUND;
                     /* Do not break here -- process every element in the list
                      * and keep failing rc. */
                 }
                 else
                 {
-                    rc2 = VBoxServiceToolboxPrintFsInfo(pNodeIt->pszName,
-                                                        strlen(pNodeIt->pszName) /* cbName */,
-                                                        fOutputFlags,
-                                                        &objInfo);
+                    rc2 = vgsvcToolboxPrintFsInfo(pNodeIt->pszName,
+                                                  strlen(pNodeIt->pszName) /* cbName */,
+                                                  fOutputFlags,
+                                                  &objInfo);
                     if (RT_FAILURE(rc2))
                         rc = rc2;
                 }
             }
             else
             {
-                int rc2 = VBoxServiceToolboxLsHandleDir(pNodeIt->pszName,
-                                                        fFlags, fOutputFlags);
+                int rc2 = vgsvcToolboxLsHandleDir(pNodeIt->pszName, fFlags, fOutputFlags);
                 if (RT_FAILURE(rc2))
                     rc = rc2;
             }
         }
 
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
-            VBoxServiceToolboxPrintStrmTermination();
+            vgsvcToolboxPrintStrmTermination();
     }
     else if (fVerbose)
         RTMsgError("Failed with rc=%Rrc\n", rc);
 
-    VBoxServiceToolboxPathBufDestroy(&fileList);
+    vgsvcToolboxPathBufDestroy(&fileList);
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
 /* Try using RTPathRmCmd. */
-static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
+static RTEXITCODE vgsvcToolboxRm(int argc, char **argv)
 {
     return RTPathRmCmd(argc, argv);
 }
@@ -988,8 +974,7 @@ static char g_paszMkTempHelp[] =
  * readable mode.  Sets prc if rc is a non-success code.
  */
 static void toolboxMkTempReport(const char *pcszMessage, const char *pcszFile,
-                                bool fActive, int rc, uint32_t fOutputFlags,
-                                int *prc)
+                                bool fActive, int rc, uint32_t fOutputFlags, int *prc)
 {
     if (!fActive)
         return;
@@ -1012,7 +997,7 @@ static void toolboxMkTempReport(const char *pcszMessage, const char *pcszFile,
  * @param   argc                    Number of arguments.
  * @param   argv                    Pointer to argument array.
  */
-static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
+static RTEXITCODE vgsvcToolboxMkTemp(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -1038,9 +1023,7 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
     int ch, rc;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    rc = RTGetOptInit(&GetState, argc, argv, s_aOptions,
-                      RT_ELEMENTS(s_aOptions), 1 /*iFirst*/,
-                      RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
     bool        fVerbose     = false;
@@ -1060,12 +1043,12 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
         switch (ch)
         {
             case 'h':
-                VBoxServiceToolboxShowUsageHeader();
+                vgsvcToolboxShowUsageHeader();
                 RTPrintf("%s", g_paszMkTempHelp);
                 return RTEXITCODE_SUCCESS;
 
             case 'V':
-                VBoxServiceToolboxShowVersion();
+                vgsvcToolboxShowVersion();
                 return RTEXITCODE_SUCCESS;
 
             case VBOXSERVICETOOLBOXOPT_MACHINE_READABLE:
@@ -1077,7 +1060,7 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
                 break;
 
             case 'm':
-                rc = vboxServiceToolboxParseMode(ValueUnion.psz, &fMode);
+                rc = vgsvcToolboxParseMode(ValueUnion.psz, &fMode);
                 if (RT_FAILURE(rc))
                     return RTEXITCODE_SYNTAX;
                 fModeSet = true;
@@ -1103,13 +1086,14 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
+
     /* Print magic/version. */
     if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
     {
-        rc = VBoxServiceToolboxStrmInit();
+        rc = vgsvcToolboxStrmInit();
         if (RT_FAILURE(rc))
             RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
-        VBoxServiceToolboxPrintStrmHeader("vbt_mktemp", 1 /* Stream version */);
+        vgsvcToolboxPrintStrmHeader("vbt_mktemp", 1 /* Stream version */);
     }
 
     if (fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE && fModeSet)
@@ -1118,39 +1102,35 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
                             true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
         return RTEXITCODE_SYNTAX;
     }
+
     /* We need exactly one template, containing at least one 'X'. */
     if (cNonOptions != 1)
     {
-        toolboxMkTempReport("Please specify exactly one template.\n", "",
-                            true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
+        toolboxMkTempReport("Please specify exactly one template.\n", "", true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
         return RTEXITCODE_SYNTAX;
     }
     pcszTemplate = argv[argc - 1];
+
     /* Validate that the template is as IPRT requires (asserted by IPRT). */
     if (   RTPathHasPath(pcszTemplate)
         || (   !strstr(pcszTemplate, "XXX")
             && pcszTemplate[strlen(pcszTemplate) - 1] != 'X'))
     {
         toolboxMkTempReport("Template '%s' should contain a file name with no path and at least three consecutive 'X' characters or ending in 'X'.\n",
-                            pcszTemplate, true, VERR_INVALID_PARAMETER,
-                            fOutputFlags, &rc);
+                            pcszTemplate, true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
         return RTEXITCODE_FAILURE;
     }
     if (pcszPath && !RTPathStartsWithRoot(pcszPath))
     {
-        toolboxMkTempReport("Path '%s' should be absolute.\n",
-                            pcszPath, true, VERR_INVALID_PARAMETER,
-                            fOutputFlags, &rc);
+        toolboxMkTempReport("Path '%s' should be absolute.\n", pcszPath, true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
         return RTEXITCODE_FAILURE;
     }
     if (pcszPath)
     {
-        rc = RTStrCopy(szTemplateWithPath, sizeof(szTemplateWithPath),
-                       pcszPath);
+        rc = RTStrCopy(szTemplateWithPath, sizeof(szTemplateWithPath), pcszPath);
         if (RT_FAILURE(rc))
         {
-            toolboxMkTempReport("Path '%s' too long.\n", pcszPath, true,
-                                VERR_INVALID_PARAMETER, fOutputFlags, &rc);
+            toolboxMkTempReport("Path '%s' too long.\n", pcszPath, true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
             return RTEXITCODE_FAILURE;
         }
     }
@@ -1159,50 +1139,43 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
         rc = RTPathTemp(szTemplateWithPath, sizeof(szTemplateWithPath));
         if (RT_FAILURE(rc))
         {
-            toolboxMkTempReport("Failed to get the temporary directory.\n",
-                                "", true, VERR_INVALID_PARAMETER,
-                                fOutputFlags, &rc);
+            toolboxMkTempReport("Failed to get the temporary directory.\n", "", true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
             return RTEXITCODE_FAILURE;
         }
     }
-    rc = RTPathAppend(szTemplateWithPath, sizeof(szTemplateWithPath),
-                      pcszTemplate);
+    rc = RTPathAppend(szTemplateWithPath, sizeof(szTemplateWithPath), pcszTemplate);
     if (RT_FAILURE(rc))
     {
-        toolboxMkTempReport("Template '%s' too long for path.\n",
-                            pcszTemplate, true, VERR_INVALID_PARAMETER,
-                            fOutputFlags, &rc);
+        toolboxMkTempReport("Template '%s' too long for path.\n", pcszTemplate, true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
         return RTEXITCODE_FAILURE;
     }
 
     if (fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_DIRECTORY)
     {
-        rc =   fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
-             ? RTDirCreateTempSecure(szTemplateWithPath)
-             : RTDirCreateTemp(szTemplateWithPath, fMode);
+        rc = fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
+           ? RTDirCreateTempSecure(szTemplateWithPath)
+           : RTDirCreateTemp(szTemplateWithPath, fMode);
         toolboxMkTempReport("Created temporary directory '%s'.\n",
                             szTemplateWithPath, RT_SUCCESS(rc), rc,
                             fOutputFlags, NULL);
         /* RTDirCreateTemp[Secure] sets the template to "" on failure. */
         toolboxMkTempReport("The following error occurred while creating a temporary directory from template '%s': %Rrc.\n",
-                            pcszTemplate, RT_FAILURE(rc), rc, fOutputFlags,
-                            NULL);
+                            pcszTemplate, RT_FAILURE(rc), rc, fOutputFlags, NULL /*prc*/);
     }
     else
     {
-        rc =   fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
-             ? RTFileCreateTempSecure(szTemplateWithPath)
-             : RTFileCreateTemp(szTemplateWithPath, fMode);
+        rc = fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
+           ? RTFileCreateTempSecure(szTemplateWithPath)
+           : RTFileCreateTemp(szTemplateWithPath, fMode);
         toolboxMkTempReport("Created temporary file '%s'.\n",
                             szTemplateWithPath, RT_SUCCESS(rc), rc,
                             fOutputFlags, NULL);
         /* RTFileCreateTemp[Secure] sets the template to "" on failure. */
         toolboxMkTempReport("The following error occurred while creating a temporary file from template '%s': %Rrc.\n",
-                            pcszTemplate, RT_FAILURE(rc), rc, fOutputFlags,
-                            NULL);
+                            pcszTemplate, RT_FAILURE(rc), rc, fOutputFlags, NULL /*prc*/);
     }
     if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
-        VBoxServiceToolboxPrintStrmTermination();
+        vgsvcToolboxPrintStrmTermination();
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
@@ -1227,7 +1200,7 @@ static char g_paszMkDirHelp[] =
  * @param   argc                    Number of arguments.
  * @param   argv                    Pointer to argument array.
  */
-static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
+static RTEXITCODE vgsvcToolboxMkDir(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -1239,8 +1212,7 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv,
-                          s_aOptions, RT_ELEMENTS(s_aOptions),
+    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions),
                           1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
@@ -1259,7 +1231,7 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
                 break;
 
             case 'm':
-                rc = vboxServiceToolboxParseMode(ValueUnion.psz, &fDirMode);
+                rc = vgsvcToolboxParseMode(ValueUnion.psz, &fDirMode);
                 if (RT_FAILURE(rc))
                     return RTEXITCODE_SYNTAX;
 #ifndef RT_OS_WINDOWS
@@ -1272,12 +1244,12 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
                 break;
 
             case 'h':
-                VBoxServiceToolboxShowUsageHeader();
+                vgsvcToolboxShowUsageHeader();
                 RTPrintf("%s", g_paszMkDirHelp);
                 return RTEXITCODE_SUCCESS;
 
             case 'V':
-                VBoxServiceToolboxShowVersion();
+                vgsvcToolboxShowVersion();
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -1331,7 +1303,7 @@ static char g_paszStatHelp[] =
  * @param   argc                    Number of arguments.
  * @param   argv                    Pointer to argument array.
  */
-static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
+static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -1345,9 +1317,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv,
-                 s_aOptions, RT_ELEMENTS(s_aOptions),
-                 1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     int rc = VINF_SUCCESS;
     bool fVerbose = false;
@@ -1383,30 +1353,30 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
                 break;
 
             case 'h':
-                VBoxServiceToolboxShowUsageHeader();
+                vgsvcToolboxShowUsageHeader();
                 RTPrintf("%s", g_paszStatHelp);
                 return RTEXITCODE_SUCCESS;
 
             case 'V':
-                VBoxServiceToolboxShowVersion();
+                vgsvcToolboxShowVersion();
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
-                {
+            {
 /** @todo r=bird: The whole fileList is unecessary because you're using
  * RTGETOPTINIT_FLAGS_OPTS_FIRST.  You can obviously do the processing right
  * here, but you could also just drop down and rewind GetState.iNext by one and
  * continue there. */
 
-                    /* Add file(s) to buffer. This enables processing multiple files
-                     * at once.
-                     *
-                     * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
-                     * processing this loop it's safe to immediately exit on syntax errors
-                     * or showing the help text (see above). */
-                    rc = VBoxServiceToolboxPathBufAddPathEntry(&fileList, ValueUnion.psz);
-                    break;
-                }
+                /* Add file(s) to buffer. This enables processing multiple files
+                 * at once.
+                 *
+                 * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
+                 * processing this loop it's safe to immediately exit on syntax errors
+                 * or showing the help text (see above). */
+                rc = vgsvcToolboxPathBufAddPathEntry(&fileList, ValueUnion.psz);
+                break;
+            }
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -1417,10 +1387,10 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
     {
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
         {
-            rc = VBoxServiceToolboxStrmInit();
+            rc = vgsvcToolboxStrmInit();
             if (RT_FAILURE(rc))
                 RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
-            VBoxServiceToolboxPrintStrmHeader("vbt_stat", 1 /* Stream version */);
+            vgsvcToolboxPrintStrmHeader("vbt_stat", 1 /* Stream version */);
         }
 
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
@@ -1432,25 +1402,24 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
             {
 /** @todo r=bird: You can get a number of other errors here, like access denied. */
                 if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                    RTMsgError("Cannot stat for '%s': No such file or directory (%Rrc)\n",
-                               pNodeIt->pszName, rc);
+                    RTMsgError("Cannot stat for '%s': No such file or directory (%Rrc)\n", pNodeIt->pszName, rc);
                 rc = VERR_FILE_NOT_FOUND;
                 /* Do not break here -- process every element in the list
                  * and keep failing rc. */
             }
             else
             {
-                rc2 = VBoxServiceToolboxPrintFsInfo(pNodeIt->pszName,
-                                                    strlen(pNodeIt->pszName) /* cbName */,
-                                                    fOutputFlags,
-                                                    &objInfo);
+                rc2 = vgsvcToolboxPrintFsInfo(pNodeIt->pszName,
+                                              strlen(pNodeIt->pszName) /* cbName */,
+                                              fOutputFlags,
+                                              &objInfo);
                 if (RT_FAILURE(rc2))
                     rc = rc2;
             }
         }
 
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
-            VBoxServiceToolboxPrintStrmTermination();
+            vgsvcToolboxPrintStrmTermination();
 
         /* At this point the overall result (success/failure) should be in rc. */
 
@@ -1460,7 +1429,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
     else if (fVerbose)
         RTMsgError("Failed with rc=%Rrc\n", rc);
 
-    VBoxServiceToolboxPathBufDestroy(&fileList);
+    vgsvcToolboxPathBufDestroy(&fileList);
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
@@ -1472,7 +1441,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
  * @returns Pointer to handler function.  NULL if not found.
  * @param   pszTool     The name of the tool.
  */
-static PFNHANDLER vboxServiceToolboxLookUpHandler(const char *pszTool)
+static PFNHANDLER vgsvcToolboxLookUpHandler(const char *pszTool)
 {
     static struct
     {
@@ -1481,12 +1450,12 @@ static PFNHANDLER vboxServiceToolboxLookUpHandler(const char *pszTool)
     }
     const s_aTools[] =
     {
-        { "cat",    VBoxServiceToolboxCat    },
-        { "ls",     VBoxServiceToolboxLs     },
-        { "rm",     VBoxServiceToolboxRm     },
-        { "mktemp", VBoxServiceToolboxMkTemp },
-        { "mkdir",  VBoxServiceToolboxMkDir  },
-        { "stat",   VBoxServiceToolboxStat   },
+        { "cat",    vgsvcToolboxCat    },
+        { "ls",     vgsvcToolboxLs     },
+        { "rm",     vgsvcToolboxRm     },
+        { "mktemp", vgsvcToolboxMkTemp },
+        { "mkdir",  vgsvcToolboxMkDir  },
+        { "stat",   vgsvcToolboxStat   },
     };
 
     /* Skip optional 'vbox_' prefix. */
@@ -1515,7 +1484,7 @@ static PFNHANDLER vboxServiceToolboxLookUpHandler(const char *pszTool)
  * @param   prcExit                 Where to store the exit code when an
  *                                  internal toolbox command was handled.
  */
-bool VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
+bool VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
 {
 
     /*
@@ -1523,7 +1492,7 @@ bool VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
      */
     AssertReturn(argc > 0, false);
     const char *pszTool    = RTPathFilename(argv[0]);
-    PFNHANDLER  pfnHandler = vboxServiceToolboxLookUpHandler(pszTool);
+    PFNHANDLER  pfnHandler = vgsvcToolboxLookUpHandler(pszTool);
     if (!pfnHandler)
     {
         /*
@@ -1535,19 +1504,19 @@ bool VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
         argc -= 2;
         argv += 2;
         pszTool = argv[0];
-        pfnHandler = vboxServiceToolboxLookUpHandler(pszTool);
+        pfnHandler = vgsvcToolboxLookUpHandler(pszTool);
         if (!pfnHandler)
         {
            *prcExit = RTEXITCODE_SUCCESS;
            if (!strcmp(pszTool, "-V"))
            {
-               VBoxServiceToolboxShowVersion();
+               vgsvcToolboxShowVersion();
                return true;
            }
            if (   (strcmp(pszTool, "help")) && (strcmp(pszTool, "--help"))
                && (strcmp(pszTool, "-h")))
                *prcExit = RTEXITCODE_SYNTAX;
-           VBoxServiceToolboxShowUsage();
+           vgsvcToolboxShowUsage();
            return true;
         }
     }
