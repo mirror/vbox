@@ -966,7 +966,7 @@ plumb_net()
     if test "$HOST_OS_MAJORVERSION" -ge 12; then
         $BIN_IPADM create-ip vboxnet0
         if test "$?" -eq 0; then
-            $BIN_IPADM create-addr -T static -a local 192.168.56.1/24 vboxnet0/v4addr
+            $BIN_IPADM create-addr -T static -a local="192.168.56.1/24" "vboxnet0/v4addr"
             if test "$?" -eq 0; then
                 subprint "Configured: Network interface 'vboxnet0'"
             else
