@@ -20,7 +20,7 @@
  * The VM statistics subservice helps out the performance collector API on the
  * host side by providing metrics from inside the guest.
  *
- * See IPerformanceCollector, CollectorGuest and the "Guest/*" submetrics that
+ * See IPerformanceCollector, CollectorGuest and the "Guest/" submetrics that
  * gets registered by Machine::i_registerMetrics in Main.
  */
 
