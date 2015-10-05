@@ -1874,12 +1874,11 @@ static int vgsvcGstCntlSessionThreadCreateProcess(const PVBOXSERVICECTRLSESSIONS
         /*
          * Configure standard handles and finally create the process.
          */
-        uint32_t fProcCreate = RTPROC_FLAGS_SERVICE
-#ifdef RT_OS_WINDOWS    /** @todo do on unix too! */
-                             /* Make sure to also load the profile data on a Windows guest. */
-                             | RTPROC_FLAGS_PROFILE
+        uint32_t fProcCreate = RTPROC_FLAGS_PROFILE;
+#ifdef RT_OS_WINDOWS /* Windows only flags: */
+        fProcCreate         |= RTPROC_FLAGS_SERVICE
+                            |  RTPROC_FLAGS_HIDDEN;       /** @todo More flags from startup info? */
 #endif
-                             | RTPROC_FLAGS_HIDDEN;       /** @todo More flags from startup info? */
 
 #if 0 /* Pipe handling not needed (yet). */
         /* Setup pipes. */
