@@ -53,7 +53,9 @@ typedef struct
 #ifdef RT_OS_WINDOWS
     HMODULE         hModule;
     char            szFileVersion[16];
+# ifndef TARGET_NT4
     MODULEENTRY32   Info;
+# endif
 #endif /* RT_OS_WINDOWS */
 } VGSVCPGSHKNOWNMOD, *PVGSVCPGSHKNOWNMOD;
 
