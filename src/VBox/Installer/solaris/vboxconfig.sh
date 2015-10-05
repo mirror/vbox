@@ -47,6 +47,7 @@ BIN_SVCS=/usr/bin/svcs
 BIN_ID=/usr/bin/id
 BIN_PKILL=/usr/bin/pkill
 BIN_PGREP=/usr/bin/pgrep
+BIN_IPADM=/usr/sbin/ipadm
 
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
 MOD_VBOXDRV=vboxdrv
@@ -54,7 +55,7 @@ DESC_VBOXDRV="Host"
 
 MOD_VBOXNET=vboxnet
 DESC_VBOXNET="NetAdapter"
-MOD_VBOXNET_INST=32
+MOD_VBOXNET_INST=8
 
 MOD_VBOXFLT=vboxflt
 DESC_VBOXFLT="NetFilter (STREAMS)"
@@ -208,6 +209,10 @@ find_bins()
     if test ! -x "$BIN_PGREP"; then
         BIN_PGREP=`find_bin_path "$BIN_PGREP"`
     fi
+
+    if test ! -x "$BIN_IPADM"; then
+        BIN_IPADM=`find_bin_path "$BIN_IPADM"`
+    fi
 }
 
 # check_root()
@@ -245,7 +250,7 @@ get_sysinfo()
             #            or "pkg://solaris/system/kernel@5.12,5.11-5.12.0.0.0.4.1:20120908T030246Z"
             #            or "pkg://solaris/system/kernel@0.5.11,5.11-0.175.0.0.0.1.0:20111012T032837Z"
             #            or "pkg://solaris/system/kernel@5.12-5.12.0.0.0.9.1.3.0:20121012T032837Z" [1]
-	    # [1]: The sed below doesn't handle this. It's instead parsed below in the PSARC/2012/240 case.
+            # [1]: The sed below doesn't handle this. It's instead parsed below in the PSARC/2012/240 case.
             STR_KERN_MAJOR=`echo "$PKGFMRI" | sed 's/^.*\@//;s/\,.*//'`
             if test ! -z "$STR_KERN_MAJOR"; then
                 # The format is "0.5.11" or "5.12"
@@ -942,6 +947,149 @@ stop_service()
 }
 
 
+# plumb vboxnet0 instance
+# failure: non fatal
+plumb_net()
+{
+    # S11 175a renames vboxnet0 as 'netX', undo this and rename it back (S12+ or S11 b175+)
+    if test "$HOST_OS_MAJORVERSION" -gt 11 || (test "$HOST_OS_MAJORVERSION" -eq 11 && test "$HOST_OS_MINORVERSION" -gt 174); then
+        vanityname=`dladm show-phys -po link,device | grep vboxnet0 | cut -f1 -d':'`
+        if test $? -eq 0 && test ! -z "$vanityname" && test "$vanityname" != "vboxnet0"; then
+            dladm rename-link "$vanityname" vboxnet0
+            if test $? -ne 0; then
+                errorprint "Failed to rename vanity interface ($vanityname) to vboxnet0"
+            fi
+        fi
+    fi
+
+    # use ipadm for Solaris 12 and newer
+    if test "$HOST_OS_MAJORVERSION" -ge 12; then
+        $BIN_IPADM create-ip vboxnet0
+        if test "$?" -eq 0; then
+            $BIN_IPADM create-addr -T static -a local 192.168.56.1/24 vboxnet0/v4addr
+            if test "$?" -ne 0; then
+                warnprint "Failed to create local address for vboxnet0!"
+            fi
+        else
+            warnprint "Failed to create IP instance for vboxnet0!"
+        fi
+    else
+        $BIN_IFCONFIG vboxnet0 plumb
+        $BIN_IFCONFIG vboxnet0 up
+        if test "$?" -eq 0; then
+            $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
+
+            # /etc/netmasks is a symlink, older installers replaced this with
+            # a copy of the actual file, repair that behaviour here.
+            recreatelink=0
+            if test -h "$PKG_INSTALL_ROOT/etc/netmasks"; then
+                nmaskfile="$PKG_INSTALL_ROOT/etc/inet/netmasks"
+            else
+                nmaskfile="$PKG_INSTALL_ROOT/etc/netmasks"
+                recreatelink=1
+            fi
+
+            # add the netmask to stay persistent across host reboots
+            nmaskbackupfile=$nmaskfile.vbox
+            if test -f $nmaskfile; then
+                sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
+
+                if test $recreatelink -eq 1; then
+                    # Check after removing our settings if /etc/netmasks is identifcal to /etc/inet/netmasks
+                    anydiff=`diff $nmaskbackupfile "$PKG_INSTALL_ROOT/etc/inet/netmasks"`
+                    if test ! -z "$anydiff"; then
+                        # User may have some custom settings in /etc/netmasks, don't overwrite /etc/netmasks!
+                        recreatelink=2
+                    fi
+                fi
+
+                echo "#VirtualBox_SectionStart" >> $nmaskbackupfile
+                inst=0
+                networkn=56
+                while test $inst -ne 1; do
+                    echo "192.168.$networkn.0 255.255.255.0" >> $nmaskbackupfile
+                    inst=`expr $inst + 1`
+                    networkn=`expr $networkn + 1`
+                done
+                echo "#VirtualBox_SectionEnd" >> $nmaskbackupfile
+                mv -f $nmaskbackupfile $nmaskfile
+
+                # Recreate /etc/netmasks as a link if necessary
+                if test $recreatelink -eq 1; then
+                    cp -f "$PKG_INSTALL_ROOT/etc/netmasks" "$PKG_INSTALL_ROOT/etc/inet/netmasks"
+                    ln -sf ./inet/netmasks "$PKG_INSTALL_ROOT/etc/netmasks"
+                elif test $recreatelink -eq 2; then
+                    warnprint "/etc/netmasks is a symlink (to /etc/inet/netmasks) that older"
+                    warnprint "VirtualBox installers incorrectly overwrote. Now the contents"
+                    warnprint "of /etc/netmasks and /etc/inet/netmasks differ, therefore "
+                    warnprint "VirtualBox will not attempt to overwrite /etc/netmasks as a"
+                    warnprint "symlink to /etc/inet/netmasks. Please resolve this manually"
+                    warnprint "by updating /etc/inet/netmasks and creating /etc/netmasks as a"
+                    warnprint "symlink to /etc/inet/netmasks"
+                fi
+            fi
+        else
+            # Should this be fatal?
+            warnprint "Failed to bring up vboxnet0!"
+        fi
+    fi
+}
+
+
+# unplumb all vboxnet instances
+# failure: fatal
+unplumb_net()
+{
+    inst=0
+    # use ipadm for Solaris 12 and newer
+    if test "$HOST_OS_MAJORVERSION" -ge 12; then
+        while test $inst -ne $MOD_VBOXNET_INST; do
+            vboxnetup=`$BIN_IPADM show-addr -p -o addrobj vboxnet$inst >/dev/null 2>&1`
+            if test "$?" -eq 0; then
+                $BIN_IPADM delete-addr vboxnet$inst/v4addr
+                $BIN_IPADM delete-ip vboxnet$inst
+                if test "$?" -ne 0;
+                    errorprint "VirtualBox NetAdapter 'vboxnet$inst' couldn't be removed (probably in use)."
+                    if test "$fatal" = "$FATALOP"; then
+                        exit 1
+                    fi
+                fi
+            fi
+
+            inst=`expr $inst + 1`
+        done
+    else
+        inst=0
+        while test $inst -ne $MOD_VBOXNET_INST; do
+            vboxnetup=`$BIN_IFCONFIG vboxnet$inst >/dev/null 2>&1`
+            if test "$?" -eq 0; then
+                $BIN_IFCONFIG vboxnet$inst unplumb
+                if test "$?" -ne 0; then
+                    errorprint "VirtualBox NetAdapter 'vboxnet$inst' couldn't be unplumbed (probably in use)."
+                    if test "$fatal" = "$FATALOP"; then
+                        exit 1
+                    fi
+                fi
+            fi
+
+            # unplumb vboxnet0 ipv6
+            vboxnetup=`$BIN_IFCONFIG vboxnet$inst inet6 >/dev/null 2>&1`
+            if test "$?" -eq 0; then
+                $BIN_IFCONFIG vboxnet$inst inet6 unplumb
+                if test "$?" -ne 0; then
+                    errorprint "VirtualBox NetAdapter 'vboxnet$inst' IPv6 couldn't be unplumbed (probably in use)."
+                    if test "$fatal" = "$FATALOP"; then
+                        exit 1
+                    fi
+                fi
+            fi
+
+            inst=`expr $inst + 1`
+        done
+    fi
+}
+
+
 # cleanup_install([fatal])
 # failure: depends on [fatal]
 cleanup_install()
@@ -967,33 +1115,7 @@ cleanup_install()
     fi
 
     # unplumb all vboxnet instances for non-remote installs
-    inst=0
-    while test $inst -ne $MOD_VBOXNET_INST; do
-        vboxnetup=`$BIN_IFCONFIG vboxnet$inst >/dev/null 2>&1`
-        if test "$?" -eq 0; then
-            $BIN_IFCONFIG vboxnet$inst unplumb
-            if test "$?" -ne 0; then
-                errorprint "VirtualBox NetAdapter 'vboxnet$inst' couldn't be unplumbed (probably in use)."
-                if test "$fatal" = "$FATALOP"; then
-                    exit 1
-                fi
-            fi
-        fi
-
-        # unplumb vboxnet0 ipv6
-        vboxnetup=`$BIN_IFCONFIG vboxnet$inst inet6 >/dev/null 2>&1`
-        if test "$?" -eq 0; then
-            $BIN_IFCONFIG vboxnet$inst inet6 unplumb
-            if test "$?" -ne 0; then
-                errorprint "VirtualBox NetAdapter 'vboxnet$inst' IPv6 couldn't be unplumbed (probably in use)."
-                if test "$fatal" = "$FATALOP"; then
-                    exit 1
-                fi
-            fi
-        fi
-
-        inst=`expr $inst + 1`
-    done
+    unplumb_net
 
     # Stop our other daemons, non-fatal
     stop_process "VBoxNetDHCP"
@@ -1062,75 +1184,7 @@ postinstall()
 
             # plumb and configure vboxnet0 for non-remote installs
             if test "$REMOTEINST" -eq 0; then
-                # S11 175a renames vboxnet0 as 'netX', undo this and rename it back (S12+ or S11 b175+)
-                if test "$HOST_OS_MAJORVERSION" -gt 11 || (test "$HOST_OS_MAJORVERSION" -eq 11 && test "$HOST_OS_MINORVERSION" -gt 174); then
-                    vanityname=`dladm show-phys -po link,device | grep vboxnet0 | cut -f1 -d':'`
-                    if test $? -eq 0 && test ! -z "$vanityname" && test "$vanityname" != "vboxnet0"; then
-                        dladm rename-link "$vanityname" vboxnet0
-                        if test $? -ne 0; then
-                            errorprint "Failed to rename vanity interface ($vanityname) to vboxnet0"
-                        fi
-                    fi
-                fi
-
-                $BIN_IFCONFIG vboxnet0 plumb
-                $BIN_IFCONFIG vboxnet0 up
-                if test "$?" -eq 0; then
-                    $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
-
-                    # /etc/netmasks is a symlink, older installers replaced this with
-                    # a copy of the actual file, repair that behaviour here.
-                    recreatelink=0
-                    if test -h "$PKG_INSTALL_ROOT/etc/netmasks"; then
-                        nmaskfile="$PKG_INSTALL_ROOT/etc/inet/netmasks"
-                    else
-                        nmaskfile="$PKG_INSTALL_ROOT/etc/netmasks"
-                        recreatelink=1
-                    fi
-
-                    # add the netmask to stay persistent across host reboots
-                    nmaskbackupfile=$nmaskfile.vbox
-                    if test -f $nmaskfile; then
-                        sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
-
-                        if test $recreatelink -eq 1; then
-                            # Check after removing our settings if /etc/netmasks is identifcal to /etc/inet/netmasks
-                            anydiff=`diff $nmaskbackupfile "$PKG_INSTALL_ROOT/etc/inet/netmasks"`
-                            if test ! -z "$anydiff"; then
-                                # User may have some custom settings in /etc/netmasks, don't overwrite /etc/netmasks!
-                                recreatelink=2
-                            fi
-                        fi
-
-                        echo "#VirtualBox_SectionStart" >> $nmaskbackupfile
-                        inst=0
-                        networkn=56
-                        while test $inst -ne 1; do
-                            echo "192.168.$networkn.0 255.255.255.0" >> $nmaskbackupfile
-                            inst=`expr $inst + 1`
-                            networkn=`expr $networkn + 1`
-                        done
-                        echo "#VirtualBox_SectionEnd" >> $nmaskbackupfile
-                        mv -f $nmaskbackupfile $nmaskfile
-
-                        # Recreate /etc/netmasks as a link if necessary
-                        if test $recreatelink -eq 1; then
-                            cp -f "$PKG_INSTALL_ROOT/etc/netmasks" "$PKG_INSTALL_ROOT/etc/inet/netmasks"
-                            ln -sf ./inet/netmasks "$PKG_INSTALL_ROOT/etc/netmasks"
-                        elif test $recreatelink -eq 2; then
-                            warnprint "/etc/netmasks is a symlink (to /etc/inet/netmasks) that older"
-                            warnprint "VirtualBox installers incorrectly overwrote. Now the contents"
-                            warnprint "of /etc/netmasks and /etc/inet/netmasks differ, therefore "
-                            warnprint "VirtualBox will not attempt to overwrite /etc/netmasks as a"
-                            warnprint "symlink to /etc/inet/netmasks. Please resolve this manually"
-                            warnprint "by updating /etc/inet/netmasks and creating /etc/netmasks as a"
-                            warnprint "symlink to /etc/inet/netmasks"
-                        fi
-                    fi
-                else
-                    # Should this be fatal?
-                    warnprint "Failed to bring up vboxnet0!!"
-                fi
+                plumb_net
             fi
         fi
 
