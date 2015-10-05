@@ -429,8 +429,7 @@ int VGSvcReportStatus(VBoxGuestFacilityStatus enmStatus)
     VGSvcVerbose(4, "Setting VBoxService status to %u\n", enmStatus);
     if (s_enmLastStatus != VBoxGuestFacilityStatus_Failed)
     {
-        int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_VBoxService,
-                                             enmStatus, 0 /* Flags */);
+        int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_VBoxService, enmStatus, 0 /* Flags */);
         if (RT_FAILURE(rc))
         {
             VGSvcError("Could not report VBoxService status (%u), rc=%Rrc\n", enmStatus, rc);
@@ -619,8 +618,7 @@ int VGSvcStartServices(void)
             {
                 if (rc != VERR_SERVICE_DISABLED)
                 {
-                    VGSvcError("Service '%s' failed to initialize: %Rrc\n",
-                                     g_aServices[j].pDesc->pszName, rc);
+                    VGSvcError("Service '%s' failed to initialize: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
                     VGSvcReportStatus(VBoxGuestFacilityStatus_Failed);
                     return rc;
                 }
@@ -816,7 +814,7 @@ void VGSvcMainWait(void)
 # endif
           );
 
-    VGSvcVerbose(3, "VBoxServiceMainWait: Received signal %d (rc=%d)\n", iSignal, rc);
+    VGSvcVerbose(3, "VGSvcMainWait: Received signal %d (rc=%d)\n", iSignal, rc);
 #endif /* !RT_OS_WINDOWS */
 }
 

@@ -242,7 +242,7 @@ int VGSvcWritePropF(uint32_t u32ClientId, const char *pszName, const char *pszVa
 #ifdef RT_OS_WINDOWS
 
 /**
- * Helper for VBoxServiceGetFileVersion and attempts to read and parse
+ * Helper for vgsvcUtilGetFileVersion and attempts to read and parse
  * FileVersion.
  *
  * @returns Success indicator.

@@ -163,7 +163,7 @@ static int vgsvcBalloonSetUser(uint32_t cNewChunks)
     if (cNewChunks == g_cMemBalloonChunks)
         return VINF_SUCCESS;
 
-    VGSvcVerbose(3, "VBoxServiceBalloonSetUser: cNewChunks=%u g_cMemBalloonChunks=%u\n", cNewChunks, g_cMemBalloonChunks);
+    VGSvcVerbose(3, "vgsvcBalloonSetUser: cNewChunks=%u g_cMemBalloonChunks=%u\n", cNewChunks, g_cMemBalloonChunks);
     int rc = VINF_SUCCESS;
     if (cNewChunks > g_cMemBalloonChunks)
     {
@@ -196,7 +196,7 @@ static int vgsvcBalloonSetUser(uint32_t cNewChunks)
                 break;
             }
         }
-        VGSvcVerbose(3, "VBoxServiceBalloonSetUser: inflation complete. chunks=%u rc=%d\n", i, rc);
+        VGSvcVerbose(3, "vgsvcBalloonSetUser: inflation complete. chunks=%u rc=%d\n", i, rc);
     }
     else
     {
@@ -218,7 +218,7 @@ static int vgsvcBalloonSetUser(uint32_t cNewChunks)
             }
             else
                 break;
-            VGSvcVerbose(3, "VBoxServiceBalloonSetUser: deflation complete. chunks=%u rc=%d\n", i, rc);
+            VGSvcVerbose(3, "vgsvcBalloonSetUser: deflation complete. chunks=%u rc=%d\n", i, rc);
         }
     }
 
@@ -231,7 +231,7 @@ static int vgsvcBalloonSetUser(uint32_t cNewChunks)
  */
 static DECLCALLBACK(int) vgsvcBalloonInit(void)
 {
-    VGSvcVerbose(3, "VBoxServiceBalloonInit\n");
+    VGSvcVerbose(3, "vgsvcBalloonInit\n");
 
     int rc = RTSemEventMultiCreate(&g_MemBalloonEvent);
     AssertRCReturn(rc, rc);
@@ -246,8 +246,7 @@ static DECLCALLBACK(int) vgsvcBalloonInit(void)
     rc = VbglR3MemBalloonRefresh(&cNewChunks, &fHandleInR3);
     if (RT_SUCCESS(rc))
     {
-        VGSvcVerbose(3, "MemBalloon: New balloon size %d MB (%s memory)\n",
-                           cNewChunks, fHandleInR3 ? "R3" : "R0");
+        VGSvcVerbose(3, "MemBalloon: New balloon size %d MB (%s memory)\n", cNewChunks, fHandleInR3 ? "R3" : "R0");
         if (fHandleInR3)
             rc = vgsvcBalloonSetUser(cNewChunks);
         else
@@ -302,7 +301,7 @@ static DECLCALLBACK(int) vgsvcBalloonWorker(bool volatile *pfShutdown)
     int rc = VbglR3CtlFilterMask(VMMDEV_EVENT_BALLOON_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
     {
-        VGSvcVerbose(3, "VBoxServiceBalloonWorker: VbglR3CtlFilterMask failed with %Rrc\n", rc);
+        VGSvcVerbose(3, "vgsvcBalloonInit: VbglR3CtlFilterMask failed with %Rrc\n", rc);
         return rc;
     }
 
@@ -329,24 +328,23 @@ static DECLCALLBACK(int) vgsvcBalloonWorker(bool volatile *pfShutdown)
             rc = VbglR3MemBalloonRefresh(&cNewChunks, &fHandleInR3);
             if (RT_SUCCESS(rc))
             {
-                VGSvcVerbose(3, "VBoxServiceBalloonWorker: new balloon size %d MB (%s memory)\n",
-                                   cNewChunks, fHandleInR3 ? "R3" : "R0");
+                VGSvcVerbose(3, "vgsvcBalloonInit: new balloon size %d MB (%s memory)\n", cNewChunks, fHandleInR3 ? "R3" : "R0");
                 if (fHandleInR3)
                 {
                     rc = vgsvcBalloonSetUser(cNewChunks);
                     if (RT_FAILURE(rc))
                     {
-                        VGSvcVerbose(3, "VBoxServiceBalloonWorker: failed to set balloon size %d MB (%s memory)\n",
-                                    cNewChunks, fHandleInR3 ? "R3" : "R0");
+                        VGSvcVerbose(3, "vgsvcBalloonInit: failed to set balloon size %d MB (%s memory)\n",
+                                     cNewChunks, fHandleInR3 ? "R3" : "R0");
                     }
                     else
-                        VGSvcVerbose(3, "VBoxServiceBalloonWorker: successfully set requested balloon size %d.\n", cNewChunks);
+                        VGSvcVerbose(3, "vgsvcBalloonInit: successfully set requested balloon size %d.\n", cNewChunks);
                 }
                 else
                     g_cMemBalloonChunks = cNewChunks;
             }
             else
-                VGSvcVerbose(3, "VBoxServiceBalloonWorker: VbglR3MemBalloonRefresh failed with %Rrc\n", rc);
+                VGSvcVerbose(3, "vgsvcBalloonInit: VbglR3MemBalloonRefresh failed with %Rrc\n", rc);
         }
 
         /*
@@ -362,7 +360,7 @@ static DECLCALLBACK(int) vgsvcBalloonWorker(bool volatile *pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
         {
-            VGSvcError("VBoxServiceBalloonWorker: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
+            VGSvcError("vgsvcBalloonInit: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
             rc = rc2;
             break;
         }
@@ -371,13 +369,13 @@ static DECLCALLBACK(int) vgsvcBalloonWorker(bool volatile *pfShutdown)
     /* Cancel monitoring of the memory balloon change event. */
     rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_BALLOON_CHANGE_REQUEST);
     if (RT_FAILURE(rc))
-        VGSvcVerbose(3, "VBoxServiceBalloonWorker: VbglR3CtlFilterMask failed with %Rrc\n", rc);
+        VGSvcVerbose(3, "vgsvcBalloonInit: VbglR3CtlFilterMask failed with %Rrc\n", rc);
 
     RTSemEventMultiDestroy(g_MemBalloonEvent);
     g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
 
-    VGSvcVerbose(3, "VBoxServiceBalloonWorker: finished mem balloon change request thread\n");
-    return 0;
+    VGSvcVerbose(3, "vgsvcBalloonInit: finished mem balloon change request thread\n");
+    return VINF_SUCCESS;
 }
 
 

@@ -512,7 +512,7 @@ static int vgsvcVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pProc, TOK
  *
  * @returns VBox status code.
  * @param   ppaProcs    Where to return the process snapshot.  This must be
- *                      freed by calling VBoxServiceVMInfoWinProcessesFree.
+ *                      freed by calling vgsvcVMInfoWinProcessesFree.
  *
  * @param   pcProcs     Where to store the returned process count.
  */

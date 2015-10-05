@@ -967,7 +967,7 @@ static int vgsvcGstCtrlProcessMakeFullPath(const char *pszPath, char *pszExpande
     rc = RTStrCopy(pszExpanded, cbExpanded, pszPath);
 #endif
 #ifdef DEBUG
-    VGSvcVerbose(3, "VBoxServiceControlExecMakeFullPath: %s -> %s\n", pszPath, pszExpanded);
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessMakeFullPath: %s -> %s\n", pszPath, pszExpanded);
 #endif
     return rc;
 }

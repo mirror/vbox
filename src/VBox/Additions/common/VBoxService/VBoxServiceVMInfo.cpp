@@ -423,7 +423,7 @@ int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const 
 
     if (RT_SUCCESS(rc))
         rc = VGSvcPropCacheUpdate(pCache, pszName, pszValue);
-    if (rc == VINF_SUCCESS) /* VBoxServicePropCacheUpdate will also return VINF_NO_CHANGE. */
+    if (rc == VINF_SUCCESS) /* VGSvcPropCacheUpdate will also return VINF_NO_CHANGE. */
     {
         /** @todo Combine updating flags w/ updating the actual value. */
         rc = VGSvcPropCacheUpdateEntry(pCache, pszName,
