@@ -764,76 +764,71 @@ RTDECL(char *) RTUriFileNPath(const char *pszUri, uint32_t uFormat, size_t cchMa
     if (   RT_SUCCESS(rc)
         && Parsed.cchPath)
     {
-        const char *pszPathOff = &pszUri[Parsed.offPath];
+        /*
+         * Calculate the size of the encoded result.
+         */
         size_t cbResult = 0;
 
         /* Skip the leading slash if a DOS drive letter (e.g. "C:") is detected right after it. */
         if (   Parsed.cchPath >= 3
-            && pszPathOff[0]  == '/'        /* Leading slash. */
-            && RT_C_IS_ALPHA(pszPathOff[1]) /* Drive letter. */
-            && pszPathOff[2]  == ':')
+            && pszUri[Parsed.offPath]  == '/'        /* Leading slash. */
+            && RT_C_IS_ALPHA(pszUri[Parsed.offPath + 1]) /* Drive letter. */
+            && pszUri[Parsed.offPath + 2]  == ':')
         {
             Parsed.offPath++;
             Parsed.cchPath--;
-            pszPathOff++;
         }
 
-        if (uFormat == URI_FILE_FORMAT_WIN)
+        /* Windows: Authority given? Include authority as part of UNC path */
+        if (uFormat == URI_FILE_FORMAT_WIN && Parsed.cchAuthority)
         {
-            /* Authority given? */
-            if (Parsed.cchAuthority)
-            {
-                /* Include authority as part of UNC path. */
-                cbResult += 2; /* UNC slashes "\\". */
-                cbResult += Parsed.cchAuthority;
-            }
+            cbResult += 2; /* UNC slashes "\\". */
+            cbResult += Parsed.cchAuthority;
         }
 
         cbResult += Parsed.cchPath;
         cbResult += 1; /* Zero termination. */
 
         /*
-         * Compose string.
+         * Compose encoded string.
          */
         char *pszResult;
         char *pszTmp = pszResult = RTStrAlloc(cbResult);
         if (pszTmp)
         {
             size_t cbTmp = cbResult;
-            if (uFormat == URI_FILE_FORMAT_WIN)
-            {
-                /* If an authority is given, add the required UNC prefix. */
-                if (Parsed.cchAuthority)
-                {
-                    rc = RTStrCatP(&pszTmp, &cbTmp, "\\\\");
-                    if (RT_SUCCESS(rc))
-/** @todo r=bird: YOU MUST DECODE THE STRING!!  */
-                        rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offAuthority], Parsed.cchAuthority);
-                }
-            }
 
-/** @todo r=bird: YOU MUST DECODE THE STRING!!  */
+            /* Windows: If an authority is given, add the required UNC prefix. */
+            if (uFormat == URI_FILE_FORMAT_WIN && Parsed.cchAuthority)
+            {
+                rc = RTStrCatP(&pszTmp, &cbTmp, "\\\\");
+                if (RT_SUCCESS(rc))
+                    rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offAuthority], Parsed.cchAuthority);
+            }
             if (RT_SUCCESS(rc))
                 rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offPath], Parsed.cchPath);
+            AssertRC(rc); /* Shall not happen! */
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Decode the string and switch the slashes around the request way before returning.
+                 */
+                char *pszPath = rtUriPercentDecodeN(pszResult, cbResult - 1 /* Minus termination */);
+                if (pszPath)
+                {
+                    RTStrFree(pszResult);
 
-            if (RT_FAILURE(rc))
-                RTStrFree(pszResult);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-        if (RT_SUCCESS(rc))
-        {
-            AssertPtr(pszResult);
-            Assert(cbResult);
-            char *pszPath = rtUriPercentDecodeN(pszResult, cbResult - 1 /* Minus termination */);
+                    if (uFormat == URI_FILE_FORMAT_UNIX)
+                        return RTPathChangeToUnixSlashes(pszPath, true);
+                    Assert(uFormat == URI_FILE_FORMAT_WIN);
+                    return RTPathChangeToDosSlashes(pszPath, true);
+                }
+
+                /* Failed. */
+            }
             RTStrFree(pszResult);
-            if (uFormat == URI_FILE_FORMAT_UNIX)
-                return RTPathChangeToUnixSlashes(pszPath, true);
-            Assert(uFormat == URI_FILE_FORMAT_WIN);
-            return RTPathChangeToDosSlashes(pszPath, true);
         }
     }
-
     return NULL;
 }
 
