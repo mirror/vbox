@@ -286,7 +286,7 @@ static void tstRTCreateProcEx6(const char *pszAsUser, const char *pszPassword)
     RTTESTI_CHECK_RC_RETV(RTEnvClone(&hEnvCur, RTENV_DEFAULT), VINF_SUCCESS);
     uint32_t cCurrent = RTEnvCountEx(hEnvCur);
     uint32_t cInitial = RTEnvCountEx(g_hEnvInitial);
-    RTTESTI_CHECK_MSG(cInitial == cInitial, ("cCurrent=%u cInitial=%u\n", cCurrent, cInitial));
+    RTTESTI_CHECK_MSG(cCurrent == cInitial, ("cCurrent=%u cInitial=%u\n", cCurrent, cInitial));
     uint32_t    cVars1;
     RTENV       hEnv1,    hEnv2;
     const char *pszEnv1, *pszEnv2;
