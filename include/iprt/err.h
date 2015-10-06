@@ -2535,6 +2535,8 @@ RT_C_DECLS_END
 #define VERR_URI_INVALID_ESCAPED_UTF8_CONTINUATION_BYTE (-24608)
 /** Missing UTF-8 continutation in escaped URI character sequence. */
 #define VERR_URI_MISSING_UTF8_CONTINUATION_BYTE     (-24609)
+/** Expected URI using the 'file:' scheme. */
+#define VERR_URI_NOT_FILE_SCHEME                    (-24610)
 /** @} */
 
 /* SED-END */

@@ -304,6 +304,7 @@ static struct
 static struct URIFILETEST
 {
     const char     *pszPath;
+    uint32_t        fPathPathStyle;
     const char     *pszUri;
     uint32_t        uFormat;
     const char     *pszCreatedPath;
@@ -312,6 +313,7 @@ static struct URIFILETEST
 {
     {   /* #0: */
         /* .pszPath          =*/ "C:\\over\\ <>#%\"{}|^[]`\\there",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///C:%5Cover/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "C:\\over\\ <>#%\"{}|^[]`\\there",
@@ -321,6 +323,7 @@ static struct URIFILETEST
     },
     {   /* #1: */
         /* .pszPath          =*/ "/over/ <>#%\"{}|^[]`/there",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ "/over/ <>#%\"{}|^[]`/there",
@@ -330,6 +333,7 @@ static struct URIFILETEST
     },
     {   /* #2: */
         /* .pszPath          =*/ NULL,
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file://",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ NULL,
@@ -339,6 +343,7 @@ static struct URIFILETEST
     },
     {   /* #3: */
         /* .pszPath          =*/ NULL,
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file://",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ NULL,
@@ -348,6 +353,7 @@ static struct URIFILETEST
     },
     {   /* #4: */
         /* .pszPath          =*/ "/",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ "/",
@@ -357,6 +363,7 @@ static struct URIFILETEST
     },
     {   /* #5: */
         /* .pszPath          =*/ "\\",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\",
@@ -366,6 +373,7 @@ static struct URIFILETEST
     },
     {   /* #6: */
         /* .pszPath          =*/ "/foo/bar",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///foo/bar",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ "/foo/bar",
@@ -375,6 +383,7 @@ static struct URIFILETEST
     },
     {   /* #7: */
         /* .pszPath          =*/ "\\foo\\bar",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///foo%5Cbar",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\foo\\bar",
@@ -384,6 +393,7 @@ static struct URIFILETEST
     },
     {   /* #8: */
         /* .pszPath          =*/ "C:/over/ <>#%\"{}|^[]`/there",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ "C:/over/ <>#%\"{}|^[]`/there",
@@ -393,6 +403,7 @@ static struct URIFILETEST
     },
     {   /* #9: */
         /* .pszPath          =*/ "\\over\\ <>#%\"{}|^[]`\\there",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\over\\ <>#%\"{}|^[]`\\there",
@@ -402,6 +413,7 @@ static struct URIFILETEST
     },
     {   /* #10: */
         /* .pszPath          =*/ "/usr/bin/grep",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///usr/bin/grep",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ "/usr/bin/grep",
@@ -411,6 +423,7 @@ static struct URIFILETEST
     },
     {   /* #11: */
         /* .pszPath          =*/ "\\usr\\bin\\grep",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///usr/bin/grep",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\usr\\bin\\grep",
@@ -420,6 +433,7 @@ static struct URIFILETEST
     },
     {   /* #12: */
         /* .pszPath          =*/ "/somerootsubdir/isos/files.lst",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///somerootsubdir/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ "/somerootsubdir/isos/files.lst",
@@ -429,6 +443,7 @@ static struct URIFILETEST
     },
     {   /* #13: */
         /* .pszPath          =*/ "\\not-a-cifsserver\\isos\\files.lst",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///not-a-cifsserver/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\not-a-cifsserver\\isos\\files.lst",
@@ -438,6 +453,7 @@ static struct URIFILETEST
     },
     {   /* #14: */
         /* .pszPath          =*/ "/rootsubdir/isos/files.lst",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///rootsubdir/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ "/rootsubdir/isos/files.lst",
@@ -447,6 +463,7 @@ static struct URIFILETEST
     },
     {   /* #15: */
         /* .pszPath          =*/ "\\not-a-cifsserver-either\\isos\\files.lst",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///not-a-cifsserver-either/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\not-a-cifsserver-either\\isos\\files.lst",
@@ -456,6 +473,7 @@ static struct URIFILETEST
     },
     {   /* #16: */
         /* .pszPath          =*/ "\\\\cifsserver\\isos\\files.lst",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:////cifsserver/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\\\cifsserver\\isos\\files.lst",
@@ -465,6 +483,7 @@ static struct URIFILETEST
     },
     {   /* #17: */
         /* .pszPath          =*/ "c:boot.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file://localhost/c:boot.ini",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "c:boot.ini",
@@ -474,12 +493,133 @@ static struct URIFILETEST
     },
     {   /* #18: */
         /* .pszPath          =*/ "c:boot.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///c|boot.ini",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "c:boot.ini",
         /* .pszCreatedUri    =*/ "file:///c:boot.ini",
         /* PathCreateFromUrl =   "c:boot.ini" - same */
         /* UrlCreateFromPath =   "file:///c:boot.ini" - same */
+    },
+    {   /* #19: */
+        /* .pszPath          =*/ "c:\\legacy-no-slash.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file:c:\\legacy-no-slash%2Eini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "c:\\legacy-no-slash.ini",
+        /* .pszCreatedUri    =*/ "file:///c:/legacy-no-slash.ini",
+        /* PathCreateFromUrl =   "c:\\legacy-no-slash.ini" - same */
+        /* UrlCreateFromPath =   "file:///c:/legacy-no-slash.ini" - same */
+    },
+    {   /* #20: */
+        /* .pszPath          =*/ "c:\\legacy-no-slash.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file:c|\\legacy-no-slash%2Eini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "c:\\legacy-no-slash.ini",
+        /* .pszCreatedUri    =*/ "file:///c:/legacy-no-slash.ini",
+        /* PathCreateFromUrl =   "c:\\legacy-no-slash.ini" - same */
+        /* UrlCreateFromPath =   "file:///c:/legacy-no-slash.ini" - same */
+    },
+    {   /* #21: */
+        /* .pszPath          =*/ "c:\\legacy-single-slash.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file:/c:\\legacy-single-slash%2Eini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "c:\\legacy-single-slash.ini",
+        /* .pszCreatedUri    =*/ "file:///c:/legacy-single-slash.ini",
+        /* PathCreateFromUrl =   "c:\\legacy-single-slash.ini" - same */
+        /* UrlCreateFromPath =   "file:///c:/legacy-single-slash.ini" - same */
+    },
+    {   /* #22: */
+        /* .pszPath          =*/ "c:\\legacy-single-slash.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file:/c:\\legacy-single-slash%2Eini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "c:\\legacy-single-slash.ini",
+        /* .pszCreatedUri    =*/ "file:///c:/legacy-single-slash.ini",
+        /* PathCreateFromUrl =   "c:\\legacy-single-slash.ini" - same */
+        /* UrlCreateFromPath =   "file:///c:/legacy-single-slash.ini" - same */
+    },
+    {   /* #23: */
+        /* .pszPath          =*/ "\\legacy-single-slash.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file:/legacy-single-slash%2Eini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "\\legacy-single-slash.ini",
+        /* .pszCreatedUri    =*/ "file:///legacy-single-slash.ini",
+        /* PathCreateFromUrl =   "\\legacy-single-slash.ini" - same */
+        /* UrlCreateFromPath =   "file:///legacy-single-slash.ini" - same */
+    },
+    {   /* #24: */
+        /* .pszPath          =*/ "C:\\legacy-double-slash%2E.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file://C:\\legacy-double-slash%2E.ini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "C:\\legacy-double-slash%2E.ini",
+        /* .pszCreatedUri    =*/ "file:///C:/legacy-double-slash%252E.ini",
+        /* PathCreateFromUrl =   "C:\\legacy-double-slash%2E.ini" - same */
+        /* UrlCreateFromPath =   "file:///C:/legacy-double-slash.ini" - same */
+    },
+    {   /* #25: */
+        /* .pszPath          =*/ "C:\\legacy-double-slash%2E.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file://C|/legacy-double-slash%2E.ini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "C:\\legacy-double-slash%2E.ini",
+        /* .pszCreatedUri    =*/ "file:///C:/legacy-double-slash%252E.ini",
+        /* PathCreateFromUrl =   "C:\\legacy-double-slash%2E.ini" - same */
+        /* UrlCreateFromPath =   "file:///C:/legacy-double-slash%252E.ini" - same */
+    },
+    {   /* #26: */
+        /* .pszPath          =*/ "C:\\legacy-4-slashes%2E.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file:////C|/legacy-4-slashes%2E.ini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "C:\\legacy-4-slashes%2E.ini",
+        /* .pszCreatedUri    =*/ "file:///C:/legacy-4-slashes%252E.ini",
+        /* PathCreateFromUrl =   "C:\\legacy-4-slashes%2E.ini" - same */
+        /* UrlCreateFromPath =   "file:///C:/legacy-4-slashes%252E.ini" - same */
+    },
+    {   /* #27: */
+        /* .pszPath          =*/ "C:\\legacy-4-slashes%2E.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file:////C:/legacy-4-slashes%2E.ini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "C:\\legacy-4-slashes%2E.ini",
+        /* .pszCreatedUri    =*/ "file:///C:/legacy-4-slashes%252E.ini",
+        /* PathCreateFromUrl =   "C:\\legacy-4-slashes%2E.ini" - same */
+        /* UrlCreateFromPath =   "file:///C:/legacy-4-slashes%252E.ini" - same */
+    },
+    {   /* #28: */
+        /* .pszPath          =*/ "\\\\cifsserver\\share\\legacy-4-slashes%2E.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file:////cifsserver/share/legacy-4-slashes%2E.ini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "\\\\cifsserver\\share\\legacy-4-slashes%2E.ini",
+        /* .pszCreatedUri    =*/ "file://cifsserver/share/legacy-4-slashes%252E.ini",
+        /* PathCreateFromUrl =   "\\\\cifsserver\\share\\legacy-4-slashes%2E.ini" - same */
+        /* UrlCreateFromPath =   "file://cifsserver/share/legacy-4-slashes%252E.ini" - same */
+    },
+    {   /* #29: */
+        /* .pszPath          =*/ "\\\\cifsserver\\share\\legacy-5-slashes.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file://///cifsserver/share/legacy-5-slashes%2Eini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "\\\\cifsserver\\share\\legacy-5-slashes.ini",
+        /* .pszCreatedUri    =*/ "file://cifsserver/share/legacy-5-slashes.ini",
+        /* PathCreateFromUrl =   "\\\\cifsserver\\share\\legacy-5-slashes.ini" - same */
+        /* UrlCreateFromPath =   "file://cifsserver/share/legacy-5-slashes.ini" - same */
+    },
+    {   /* #30: */
+        /* .pszPath          =*/ "\\\\C|\\share\\legacy-5-slashes.ini",
+        /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
+        /* .pszUri           =*/ "file://///C|/share/legacy-5-slashes%2Eini",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ "\\\\C|\\share\\legacy-5-slashes.ini",
+        /* .pszCreatedUri    =*/ "file://C%7C/share/legacy-5-slashes.ini",
+        /* PathCreateFromUrl =   "\\\\C|\\share\\legacy-5-slashes.ini" - same */
+        /* UrlCreateFromPath =   "file:///C%7C/share/legacy-5-slashes.ini" - differs */
     },
 };
 
@@ -584,7 +724,7 @@ static void tstWindowsReferenceResults(void)
         {
             WCHAR wszResult2[_1K];
             DWORD cwcResult2 = RT_ELEMENTS(wszResult2);
-            hrc = UrlEscapeW(wszResult, wszResult2, &cwcResult2, URL_DONT_ESCAPE_EXTRA_INFO );
+            hrc = UrlEscapeW(wszResult, wszResult2, &cwcResult2, URL_DONT_ESCAPE_EXTRA_INFO | URL_ESCAPE_AS_UTF8 );
             if (SUCCEEDED(hrc))
             {
                 char *pszResult;
@@ -615,10 +755,10 @@ static void tstRTUriFileCreateEx(void)
     RTTestISub("RTUriFileCreateEx");
     for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs); ++i)
     {
-        uint32_t const fPathStyle = g_aCreateFileURIs[i].uFormat == URI_FILE_FORMAT_WIN
-                                  ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX;
+        uint32_t const     fPathStyle = g_aCreateFileURIs[i].fPathPathStyle;
+        const char * const pszPath    = g_aCreateFileURIs[i].pszPath;
         char *pszUri = (char *)&pszUri;
-        int rc = RTUriFileCreateEx(g_aCreateFileURIs[i].pszPath, fPathStyle, &pszUri, 0, NULL);
+        int rc = RTUriFileCreateEx(pszPath, fPathStyle, &pszUri, 0, NULL);
         if (RT_SUCCESS(rc))
         {
             if (g_aCreateFileURIs[i].pszCreatedUri)
@@ -628,15 +768,14 @@ static void tstRTUriFileCreateEx(void)
                     /** @todo check out the other variations of the API. */
                 }
                 else
-                    RTTestIFailed("#%u: '%s'/%#x => '%s', expected '%s'", i,
-                                  g_aCreateFileURIs[i].pszPath, fPathStyle,
-                                  pszUri, g_aCreateFileURIs[i].pszCreatedUri);
+                    RTTestIFailed("#%u: '%s'/%#x => '%s', expected '%s'",
+                                  i, pszPath, fPathStyle, pszUri, g_aCreateFileURIs[i].pszCreatedUri);
             }
             else
                 RTTestIFailed("#%u: bad testcase; pszCreatedUri is NULL\n", i);
         }
-        else if (rc != VERR_INVALID_POINTER || g_aCreateFileURIs[i].pszPath != NULL)
-            RTTestIFailed("#%u: '%s'/%#x => %Rrc", i, g_aCreateFileURIs[i].pszPath, fPathStyle, rc);
+        else if (rc != VERR_INVALID_POINTER || pszPath != NULL)
+            RTTestIFailed("#%u: '%s'/%#x => %Rrc", i, pszPath, fPathStyle, rc);
     }
 }
 
@@ -701,7 +840,7 @@ int main()
 
     /* File Uri path */
     RTTestISub("RTUriFilePath");
-    for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs) - 3; ++i) /** @todo r=bird: Fixed last three tests in RTUriFilePath */
+    for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs); ++i)
         CHECK_STR_API(RTUriFilePath(g_aCreateFileURIs[i].pszUri, g_aCreateFileURIs[i].uFormat),
                       g_aCreateFileURIs[i].pszCreatedPath);
 

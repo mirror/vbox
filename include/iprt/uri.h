@@ -296,7 +296,7 @@ RTDECL(char *) RTUriFileCreate(const char *pszPath);
  *                          to pointer to a buffer of the specified size, or
  *                          pointer to a NULL pointer.  If *ppszUri is NULL or
  *                          cbUri is zero a buffer of at least cbUri chars will
- *                          be allocated to hold the URL.  If a buffer was
+ *                          be allocated to hold the URI.  If a buffer was
  *                          requested it must be freed using RTStrFree().
  * @param   cbUri           The buffer size in bytes (includes terminator).
  * @param   pcchUri         Where to store the length of the URI string,
@@ -311,7 +311,7 @@ RTDECL(char *) RTUriFileCreate(const char *pszPath);
 RTDECL(int) RTUriFileCreateEx(const char *pszPath, uint32_t fPathStyle, char **ppszUri, size_t cbUri, size_t *pcchUri);
 
 /**
- * Returns the file path encoded in the URI.
+ * Returns the file path encoded in the file URI.
  *
  * @returns the path if the URI contains one, NULL otherwise.
  * @param   pszUri              The URI to extract from.
@@ -320,14 +320,39 @@ RTDECL(int) RTUriFileCreateEx(const char *pszPath, uint32_t fPathStyle, char **p
 RTDECL(char *) RTUriFilePath(const char *pszUri, uint32_t uFormat);
 
 /**
- * Returns the file path encoded in the URI, given a max string length.
+ * Queries the file path for the given file URI.
  *
- * @returns the path if the URI contains one, NULL otherwise.
- * @param   pszUri              The URI to extract from.
- * @param   uFormat             In which format should the path returned.
- * @param   cchMax              The max string length to inspect.
+ * This API works like RTStrToUtf16Ex with regard to result allocation or
+ * buffering (i.e. it's a bit complicated but very flexible).
+ *
+ * This differs a quite a bit from RTUriParsedPath in that it tries to be
+ * compatible with URL produced by older windows version.  This API is basically
+ * producing the same results as the PathCreateFromUrl API on Windows.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_URI_NOT_FILE_SCHEME if not file scheme.
+ *
+ * @param   pszUri          The alleged file:// URI.
+ * @param   fPathStyle      The output path style, exactly one of
+ *                          RTPATH_STR_F_STYLE_HOST, RTPATH_STR_F_STYLE_DOS and
+ *                          RTPATH_STR_F_STYLE_UNIX.  Must include iprt/path.h.
+ * @param   ppszPath        If cbPath is non-zero, this must either be pointing
+ *                          to pointer to a buffer of the specified size, or
+ *                          pointer to a NULL pointer.  If *ppszPath is NULL or
+ *                          cbPath is zero a buffer of at least cbPath chars
+ *                          will be allocated to hold the path.  If a buffer was
+ *                          requested it must be freed using RTStrFree().
+ * @param   cbPath          The buffer size in bytes (includes terminator).
+ * @param   pcchPath        Where to store the length of the path string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
+ * @sa      RTUriParsedPath, RTUriFilePath
  */
-RTDECL(char *) RTUriFileNPath(const char *pszUri, uint32_t uFormat, size_t cchMax);
+RTDECL(int) RTUriFilePathEx(const char *pszUri, uint32_t fPathStyle, char **ppszPath, size_t cbPath, size_t *pcchPath);
 
 /** @} */
 
