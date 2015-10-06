@@ -767,89 +767,88 @@ static NTSTATUS vboxUsbRtSetInterface(PVBOXUSBDEV_EXT pDevExt, uint32_t Interfac
     USHORT uUrbSize = GET_SELECT_INTERFACE_REQUEST_SIZE(pIfDr->bNumEndpoints);
     ULONG uTotalIfaceInfoLength = GET_USBD_INTERFACE_SIZE(pIfDr->bNumEndpoints);
     NTSTATUS Status = STATUS_SUCCESS;
-    PURB pUrb = VBoxUsbToolUrbAllocZ(0, uUrbSize);
-    if (!pUrb)
-    {
-        AssertMsgFailed((__FUNCTION__": VBoxUsbToolUrbAlloc failed\n"));
-        return STATUS_NO_MEMORY;
-    }
+    PURB pUrb;
+    PUSBD_INTERFACE_INFORMATION pNewIFInfo;
+    VBOXUSB_PIPE_INFO *pNewPipeInfo;
 
-    /*
-     * Free old interface and pipe info, allocate new again
-     */
     if (pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo)
     {
         /* Clear pipes associated with the interface, else Windows may hang. */
         for(ULONG i = 0; i < pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo->NumberOfPipes; i++)
-        {
             VBoxUsbToolPipeClear(pDevExt->pLowerDO, pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo->Pipes[i].PipeHandle, FALSE);
+    }
+
+    do {
+        /* First allocate all the structures we'll need. */
+        pUrb = VBoxUsbToolUrbAllocZ(0, uUrbSize);
+        if (!pUrb)
+        {
+            AssertMsgFailed((__FUNCTION__": VBoxUsbToolUrbAllocZ failed\n"));
+            Status = STATUS_NO_MEMORY;
+            break;
         }
-        vboxUsbMemFree(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo);
-    }
 
-    if (pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo)
-    {
-        vboxUsbMemFree(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo);
-    }
+        pNewIFInfo = (PUSBD_INTERFACE_INFORMATION)vboxUsbMemAlloc(uTotalIfaceInfoLength);
+        if (!pNewIFInfo)
+        {
+            AssertMsgFailed((__FUNCTION__": Failed allocating interface storage\n"));
+            Status = STATUS_NO_MEMORY;
+            break;
+        }
 
-    pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo = (PUSBD_INTERFACE_INFORMATION)vboxUsbMemAlloc(uTotalIfaceInfoLength);
-    if (pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo)
-    {
         if (pIfDr->bNumEndpoints > 0)
         {
-            pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo = (VBOXUSB_PIPE_INFO*)vboxUsbMemAlloc(pIfDr->bNumEndpoints * sizeof(VBOXUSB_PIPE_INFO));
-            if (!pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo)
+            pNewPipeInfo = (VBOXUSB_PIPE_INFO *)vboxUsbMemAlloc(pIfDr->bNumEndpoints * sizeof(VBOXUSB_PIPE_INFO));
+            if (!pNewPipeInfo)
             {
-                AssertMsgFailed(("VBoxUSBSetInterface: ExAllocatePool failed!\n"));
+                AssertMsgFailed((__FUNCTION__": Failed allocating pipe info storage\n"));
                 Status = STATUS_NO_MEMORY;
+                break;
+            }
+        }
+        else
+            pNewPipeInfo = NULL;
+
+        /* Now that we have all the bits, select the interface. */
+        UsbBuildSelectInterfaceRequest(pUrb, uUrbSize, pDevExt->Rt.hConfiguration, InterfaceNumber, AlternateSetting);
+        pUrb->UrbSelectInterface.Interface.Length = GET_USBD_INTERFACE_SIZE(pIfDr->bNumEndpoints);
+
+        Status = VBoxUsbToolUrbPost(pDevExt->pLowerDO, pUrb, RT_INDEFINITE_WAIT);
+        if (NT_SUCCESS(Status) && USBD_SUCCESS(pUrb->UrbHeader.Status))
+        {
+            /* Free the old memory and put new in. */
+            if (pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo)
+                vboxUsbMemFree(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo);
+            pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo = pNewIFInfo;
+            if (pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo)
+                vboxUsbMemFree(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo);
+            pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo = pNewPipeInfo;
+            pNewPipeInfo = NULL; pNewIFInfo = NULL; /* Don't try to free it again. */
+
+            USBD_INTERFACE_INFORMATION *pIfInfo = &pUrb->UrbSelectInterface.Interface;
+            memcpy(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo, pIfInfo, GET_USBD_INTERFACE_SIZE(pIfDr->bNumEndpoints));
+
+            Assert(pIfInfo->NumberOfPipes == pIfDr->bNumEndpoints);
+            for(ULONG i = 0; i < pIfInfo->NumberOfPipes; i++)
+            {
+                pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo[i].EndpointAddress = pIfInfo->Pipes[i].EndpointAddress;
+                pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo[i].NextScheduledFrame = 0;
             }
         }
         else
         {
-            pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo = NULL;
+            AssertMsgFailed((__FUNCTION__": VBoxUsbToolUrbPost failed Status (0x%x) usb Status (0x%x)\n", Status, pUrb->UrbHeader.Status));
         }
+    } while (0);
 
-        if (NT_SUCCESS(Status))
-        {
-            UsbBuildSelectInterfaceRequest(pUrb, uUrbSize, pDevExt->Rt.hConfiguration, InterfaceNumber, AlternateSetting);
-            pUrb->UrbSelectInterface.Interface.Length = GET_USBD_INTERFACE_SIZE(pIfDr->bNumEndpoints);
-
-            Status = VBoxUsbToolUrbPost(pDevExt->pLowerDO, pUrb, RT_INDEFINITE_WAIT);
-            if (NT_SUCCESS(Status) && USBD_SUCCESS(pUrb->UrbHeader.Status))
-            {
-                USBD_INTERFACE_INFORMATION *pIfInfo = &pUrb->UrbSelectInterface.Interface;
-                memcpy(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo, pIfInfo, GET_USBD_INTERFACE_SIZE(pIfDr->bNumEndpoints));
-
-                Assert(pIfInfo->NumberOfPipes == pIfDr->bNumEndpoints);
-                for(ULONG i = 0; i < pIfInfo->NumberOfPipes; i++)
-                {
-                    pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo[i].EndpointAddress = pIfInfo->Pipes[i].EndpointAddress;
-                    pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo[i].NextScheduledFrame = 0;
-                }
-            }
-            else
-            {
-                AssertMsgFailed((__FUNCTION__": VBoxUsbToolUrbPost failed Status (0x%x) usb Status (0x%x)\n", Status, pUrb->UrbHeader.Status));
-                /* Free up the allocated memory. */
-                vboxUsbMemFree(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo);
-                pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo = NULL;
-                if (pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo)
-                {
-                    vboxUsbMemFree(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo);
-                    pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo = NULL;
-                }
-            }
-        }
-
-    }
-    else
-    {
-        AssertMsgFailed(("VBoxUSBSetInterface: ExAllocatePool failed!\n"));
-        Status = STATUS_NO_MEMORY;
-    }
-
-    VBoxUsbToolUrbFree(pUrb);
-
+    /* Clean up. */
+    if (pUrb) 
+        VBoxUsbToolUrbFree(pUrb);
+    if (pNewIFInfo)
+        vboxUsbMemFree(pNewIFInfo);
+    if (pNewPipeInfo)
+        vboxUsbMemFree(pNewPipeInfo);
+    
     return Status;
 }
 
