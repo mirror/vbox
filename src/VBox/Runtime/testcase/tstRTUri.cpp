@@ -455,6 +455,15 @@ static struct URIFILETEST
     },
 #if 0 /** @todo r=bird: this ain't working right. It's in the wikipedia article on file:// ... */
     {   /* #16: */
+        /* .pszPath          =*/ "\\\\cifsserver\\isos\\files.lst",
+        /* .pszUri           =*/ "file:////cifsserver/isos/files.lst",
+        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
+        /* .pszCreatedUri    =*/ "file://cifsserver/isos/files.lst",
+        /* PathCreateFromUrl =   "\\\\cifsserver\\isos\\files.lst" - same */
+        /* UrlCreateFromPath =   "file:////cifsserver/isos/files.lst" - differs */
+    },
+    {   /* #17: */
         /* .pszPath          =*/ "c:boot.ini",
         /* .pszUri           =*/ "file://localhost/c:boot.ini",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
@@ -463,7 +472,7 @@ static struct URIFILETEST
         /* PathCreateFromUrl =   "c:boot.ini" - same */
         /* UrlCreateFromPath =   "file:///c:boot.ini" - same */
     },
-    {   /* #17: */
+    {   /* #18: */
         /* .pszPath          =*/ "c:boot.ini",
         /* .pszUri           =*/ "file:///c|boot.ini",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
