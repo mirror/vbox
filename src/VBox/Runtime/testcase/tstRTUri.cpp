@@ -418,40 +418,40 @@ static struct URIFILETEST
         /* UrlCreateFromPath =   "file:///usr/bin/grep" - differs */
     },
     {   /* #12: */
-        /* .pszPath          =*/ "/unixserver/isos/files.lst",
-        /* .pszUri           =*/ "file:///unixserver/isos/files.lst",
+        /* .pszPath          =*/ "/somerootsubdir/isos/files.lst",
+        /* .pszUri           =*/ "file:///somerootsubdir/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
         /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
-        /* PathCreateFromUrl =   "\\unixserver\\isos\\files.lst" - differs */
-        /* UrlCreateFromPath =   "file:///unixserver/isos/files.lst" - same */
+        /* PathCreateFromUrl =   "\\somerootsubdir\\isos\\files.lst" - differs */
+        /* UrlCreateFromPath =   "file:///somerootsubdir/isos/files.lst" - same */
     },
     {   /* #13: */
-        /* .pszPath          =*/ "\\winserver\\isos\\files.lst",
-        /* .pszUri           =*/ "file:///winserver%5Cisos%5Cfiles.lst",
+        /* .pszPath          =*/ "\\cifsserver\\isos\\files.lst",
+        /* .pszUri           =*/ "file:///cifsserver%5Cisos%5Cfiles.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
         /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
-        /* PathCreateFromUrl =   "\\winserver\\isos\\files.lst" - same */
-        /* UrlCreateFromPath =   "file:///winserver/isos/files.lst" - differs */
+        /* PathCreateFromUrl =   "\\cifsserver\\isos\\files.lst" - same */
+        /* UrlCreateFromPath =   "file:///cifsserver/isos/files.lst" - differs */
     },
     {   /* #14: */
-        /* .pszPath          =*/ "/myserver/isos/files.lst",
-        /* .pszUri           =*/ "file:///myserver/isos/files.lst",
+        /* .pszPath          =*/ "/rootsubdir/isos/files.lst",
+        /* .pszUri           =*/ "file:///rootsubdir/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
         /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
         /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
-        /* PathCreateFromUrl =   "\\myserver\\isos\\files.lst" - differs */
-        /* UrlCreateFromPath =   "file:///myserver/isos/files.lst" - same */
+        /* PathCreateFromUrl =   "\\rootsubdir\\isos\\files.lst" - differs */
+        /* UrlCreateFromPath =   "file:///rootsubdir/isos/files.lst" - same */
     },
     {   /* #15: */
-        /* .pszPath          =*/ "\\myserver\\isos\\files.lst",
-        /* .pszUri           =*/ "file:///myserver%5Cisos%5Cfiles.lst",
+        /* .pszPath          =*/ "\\cifsserver\\isos\\files.lst",
+        /* .pszUri           =*/ "file:///cifsserver%5Cisos%5Cfiles.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
         /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
-        /* PathCreateFromUrl =   "\\myserver\\isos\\files.lst" - same */
-        /* UrlCreateFromPath =   "file:///myserver/isos/files.lst" - differs */
+        /* PathCreateFromUrl =   "\\cifsserver\\isos\\files.lst" - same */
+        /* UrlCreateFromPath =   "file:///cifsserver/isos/files.lst" - differs */
     },
 };
 
