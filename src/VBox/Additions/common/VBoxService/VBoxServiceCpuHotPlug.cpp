@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/** @page pg_vgsvc_cpuhotplug CPU Hot-Plugging
+/** @page pg_vgsvc_cpuhotplug VBoxService - CPU Hot-Plugging
  *
  * The CPU Hot-Plugging subservice helps execute and coordinate CPU hot-plugging
  * between the guest OS and the VMM.
