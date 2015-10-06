@@ -1414,7 +1414,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pLunL0,  "Driver", "UDP");
             InsertConfigNode(pLunL0,    "Config", &pLunL1);
             InsertConfigString(pLunL1,  "ServerAddress", "127.0.0.1");
-            InsertConfigInteger(pLunL1, "ServerPort", 51000);
+            InsertConfigInteger(pLunL1, "ServerPort", 50000);
         }
 
         /*
