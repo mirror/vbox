@@ -569,7 +569,7 @@ HRESULT VRDEServer::getVRDEProperties(std::vector<com::Utf8Str> &aProperties)
             if (cProperties > 0)
             {
                 aProperties.resize(cProperties);
-                for (size_t i = 0; papszNames[i] != NULL && i < cProperties; ++i)
+                for (size_t i = 0; i < cProperties && papszNames[i] != NULL; ++i)
                 {
                      aProperties[i] = papszNames[i];
                 }
