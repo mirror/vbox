@@ -55,9 +55,9 @@ static int tstTrafficThreadCommon(uintptr_t iThread, bool fNS)
     for (uint32_t iLoop = 0; RTTimeMilliTS() - g_u64StartMilliTS < g_cSecs*1000; iLoop++)
     {
         /* fudge */
-        if ((iLoop % 223) == 223)
+        if ((iLoop % 223) == 222)
             RTThreadYield();
-        else if ((iLoop % 16127) == 16127)
+        else if ((iLoop % 16127) == 16126)
             RTThreadSleep(1);
 
         if (fNS)
