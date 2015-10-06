@@ -1599,10 +1599,10 @@ int vboxVdmaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
 #endif
         )
 {
-    int rc;
     pInfo->fEnabled           = FALSE;
 
 #ifdef VBOX_WITH_VDMA
+    int rc;
     Assert((offBuffer & 0xfff) == 0);
     Assert((cbBuffer & 0xfff) == 0);
     Assert(offBuffer);
@@ -1632,12 +1632,8 @@ int vboxVdmaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
                              offBuffer,
                              &g_hgsmiEnvVdma);
         Assert(RT_SUCCESS(rc));
-        if(RT_SUCCESS(rc))
-#endif
-        {
+        if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
-        }
-#ifdef VBOX_WITH_VDMA
         else
             LOGREL(("HGSMIHeapSetup failed rc = 0x%x", rc));
 
@@ -1645,8 +1641,10 @@ int vboxVdmaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
     }
     else
         LOGREL(("VBoxMapAdapterMemory failed rc = 0x%x\n", rc));
-#endif
     return rc;
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
 int vboxVdmaDisable (PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo)
