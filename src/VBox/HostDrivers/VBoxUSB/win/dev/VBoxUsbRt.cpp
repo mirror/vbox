@@ -830,6 +830,14 @@ static NTSTATUS vboxUsbRtSetInterface(PVBOXUSBDEV_EXT pDevExt, uint32_t Interfac
             else
             {
                 AssertMsgFailed((__FUNCTION__": VBoxUsbToolUrbPost failed Status (0x%x) usb Status (0x%x)\n", Status, pUrb->UrbHeader.Status));
+                /* Free up the allocated memory. */
+                vboxUsbMemFree(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo);
+                pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo = NULL;
+                if (pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo)
+                {
+                    vboxUsbMemFree(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo);
+                    pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo = NULL;
+                }
             }
         }
 
