@@ -149,13 +149,13 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
              * Initialize the device extension.
              */
             if (g_MemMapMMIO != NIL_RTR0MEMOBJ)
-                rc = VbgdCommonInitDevExt(&g_DevExt, g_IOPortBase,
-                                          RTR0MemObjAddress(g_MemMapMMIO),
-                                          RTR0MemObjSize(g_MemMapMMIO),
-                                          vboxGuestOS2DetectVersion(),
-                                          0);
+                rc = VGDrvCommonInitDevExt(&g_DevExt, g_IOPortBase,
+                                           RTR0MemObjAddress(g_MemMapMMIO),
+                                           RTR0MemObjSize(g_MemMapMMIO),
+                                           vboxGuestOS2DetectVersion(),
+                                           0);
             else
-                rc = VbgdCommonInitDevExt(&g_DevExt, g_IOPortBase, NULL, 0, vboxGuestOS2DetectVersion(), 0);
+                rc = VGDrvCommonInitDevExt(&g_DevExt, g_IOPortBase, NULL, 0, vboxGuestOS2DetectVersion(), 0);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -198,7 +198,7 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
                 }
                 else
                     g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: RTSpinlockCreate failed, rc=%Rrc\n", rc);
-                VbgdCommonDeleteDevExt(&g_DevExt);
+                VGDrvCommonDeleteDevExt(&g_DevExt);
             }
             else
                 g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2InitDevExt failed, rc=%Rrc\n", rc);
@@ -358,7 +358,7 @@ DECLASM(int) VBoxGuestOS2Open(uint16_t sfn)
     /*
      * Create a new session.
      */
-    rc = VbgdCommonCreateUserSession(&g_DevExt, &pSession);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
         pSession->sfn = sfn;
@@ -429,7 +429,7 @@ DECLASM(int) VBoxGuestOS2Close(uint16_t sfn)
     /*
      * Close the session.
      */
-    VbgdCommonCloseSession(&g_DevExt, pSession);
+    VGDrvCommonCloseSession(&g_DevExt, pSession);
     return 0;
 }
 
@@ -462,7 +462,7 @@ DECLASM(int) VBoxGuestOS2IOCtlFast(uint16_t sfn, uint8_t iFunction, int32_t *prc
     /*
      * Dispatch the fast IOCtl.
      */
-    *prc = VbgdCommonIoCtlFast(iFunction, &g_DevExt, pSession);
+    *prc = VGDrvCommonIoCtlFast(iFunction, &g_DevExt, pSession);
     return 0;
 }
 
@@ -494,12 +494,12 @@ DECLASM(int) VBoxGuestOS2IDCService(uint32_t u32Session, unsigned iFunction, voi
     switch (iFunction)
     {
         default:
-            rc = VbgdCommonIoCtl(iFunction, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
+            rc = VGDrvCommonIoCtl(iFunction, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
             break;
 
         case VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT:
             pSession->sfn = 0;
-            VbgdCommonCloseSession(&g_DevExt, pSession);
+            VGDrvCommonCloseSession(&g_DevExt, pSession);
             rc = VINF_SUCCESS;
             break;
     }
@@ -515,7 +515,7 @@ DECLASM(int) VBoxGuestOS2IDCService(uint32_t u32Session, unsigned iFunction, voi
 DECLASM(PVBOXGUESTSESSION) VBoxGuestOS2IDCConnect(void)
 {
     PVBOXGUESTSESSION pSession;
-    int rc = VbgdCommonCreateKernelSession(&g_DevExt, &pSession);
+    int rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
         pSession->sfn = 0xffff;
@@ -597,7 +597,7 @@ DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, vo
          * Process the IOCtl.
          */
         size_t cbDataReturned;
-        rc = VbgdCommonIoCtl(iFunction, &g_DevExt, pSession, pvParm, *pcbParm, &cbDataReturned);
+        rc = VGDrvCommonIoCtl(iFunction, &g_DevExt, pSession, pvParm, *pcbParm, &cbDataReturned);
 
         /*
          * Unlock the buffers.
@@ -636,11 +636,11 @@ DECLASM(bool) VBoxGuestOS2ISR(void)
 {
     Log(("VBoxGuestOS2ISR\n"));
 
-    return VbgdCommonISR(&g_DevExt);
+    return VGDrvCommonISR(&g_DevExt);
 }
 
 
-void VbgdNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     /* No polling on OS/2 */
     NOREF(pDevExt);

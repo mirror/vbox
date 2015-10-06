@@ -219,7 +219,7 @@ static int VBoxGuestFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd
     /*
      * Create a new session.
      */
-    rc = VbgdCommonCreateUserSession(&g_DevExt, &pSession);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
         if (ASMAtomicCmpXchgPtr(&pDev->si_drv1, pSession, (void *)0x42))
@@ -229,7 +229,7 @@ static int VBoxGuestFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd
             return 0;
         }
 
-        VbgdCommonCloseSession(&g_DevExt, pSession);
+        VGDrvCommonCloseSession(&g_DevExt, pSession);
     }
 
     LogRel((DEVICE_NAME ":VBoxGuestFreeBSDOpen: failed. rc=%d\n", rc));
@@ -250,7 +250,7 @@ static int VBoxGuestFreeBSDClose(struct cdev *pDev, int fFile, int DevType, stru
      */
     if (VALID_PTR(pSession))
     {
-        VbgdCommonCloseSession(&g_DevExt, pSession);
+        VGDrvCommonCloseSession(&g_DevExt, pSession);
         if (!ASMAtomicCmpXchgPtr(&pDev->si_drv1, NULL, pSession))
             Log(("VBoxGuestFreeBSDClose: si_drv1=%p expected %p!\n", pDev->si_drv1, pSession));
         ASMAtomicDecU32(&cUsers);
@@ -331,7 +331,7 @@ static int VBoxGuestFreeBSDIOCtl(struct cdev *pDev, u_long ulCmd, caddr_t pvData
      * Process the IOCtl.
      */
     size_t cbDataReturned;
-    rc = VbgdCommonIoCtl(ulCmd, &g_DevExt, pSession, pvBuf, ReqWrap->cbData, &cbDataReturned);
+    rc = VGDrvCommonIoCtl(ulCmd, &g_DevExt, pSession, pvBuf, ReqWrap->cbData, &cbDataReturned);
     if (RT_SUCCESS(rc))
     {
         rc = 0;
@@ -419,7 +419,7 @@ static int VBoxGuestFreeBSDDetach(device_t pDevice)
     if (pState->pIOPortRes)
         bus_release_resource(pDevice, SYS_RES_IOPORT, pState->iIOPortResId, pState->pIOPortRes);
 
-    VbgdCommonDeleteDevExt(&g_DevExt);
+    VGDrvCommonDeleteDevExt(&g_DevExt);
 
     RTR0Term();
 
@@ -436,14 +436,14 @@ static int VBoxGuestFreeBSDISR(void *pvState)
 {
     LogFlow((DEVICE_NAME ":VBoxGuestFreeBSDISR pvState=%p\n", pvState));
 
-    bool fOurIRQ = VbgdCommonISR(&g_DevExt);
+    bool fOurIRQ = VGDrvCommonISR(&g_DevExt);
 
     return fOurIRQ ? 0 : 1;
 }
 
-void VbgdNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
-    LogFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
+    LogFlow((DEVICE_NAME ":VGDrvNativeISRMousePollEvent:\n"));
 
     /*
      * Wake up poll waiters.
@@ -545,14 +545,14 @@ static int VBoxGuestFreeBSDAttach(device_t pDevice)
             /*
              * Call the common device extension initializer.
              */
-            rc = VbgdCommonInitDevExt(&g_DevExt, pState->uIOPortBase,
-                                      pState->pMMIOBase, pState->VMMDevMemSize,
+            rc = VGDrvCommonInitDevExt(&g_DevExt, pState->uIOPortBase,
+                                       pState->pMMIOBase, pState->VMMDevMemSize,
 #if ARCH_BITS == 64
-                                      VBOXOSTYPE_FreeBSD_x64,
+                                       VBOXOSTYPE_FreeBSD_x64,
 #else
-                                      VBOXOSTYPE_FreeBSD,
+                                       VBOXOSTYPE_FreeBSD,
 #endif
-                                      VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+                                       VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -578,7 +578,7 @@ static int VBoxGuestFreeBSDAttach(device_t pDevice)
                 }
                 else
                     printf((DEVICE_NAME ":VbgdCommonInitDevExt failed.\n"));
-                VbgdCommonDeleteDevExt(&g_DevExt);
+                VGDrvCommonDeleteDevExt(&g_DevExt);
             }
             else
                 printf((DEVICE_NAME ":VBoxGuestFreeBSDAddIRQ failed.\n"));

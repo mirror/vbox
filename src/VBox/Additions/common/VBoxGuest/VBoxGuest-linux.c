@@ -341,7 +341,7 @@ static irqreturn_t vboxguestLinuxISR(int iIrrq, void *pvDevId)
 static irqreturn_t vboxguestLinuxISR(int iIrrq, void *pvDevId, struct pt_regs *pRegs)
 #endif
 {
-    bool fTaken = VbgdCommonISR(&g_DevExt);
+    bool fTaken = VGDrvCommonISR(&g_DevExt);
     return IRQ_RETVAL(fTaken);
 }
 
@@ -386,9 +386,7 @@ static void vboxguestLinuxTermISR(void)
  * our kernel session. */
 static int vboxguestLinuxSetMouseStatus(uint32_t fStatus)
 {
-    return VbgdCommonIoCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &g_DevExt,
-                           g_pKernelSession, &fStatus, sizeof(fStatus),
-                           NULL);
+    return VGDrvCommonIoCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &g_DevExt, g_pKernelSession, &fStatus, sizeof(fStatus), NULL);
 }
 
 
@@ -396,11 +394,10 @@ static int vboxguestLinuxSetMouseStatus(uint32_t fStatus)
  */
 static int vboxguestOpenInputDevice(struct input_dev *pDev)
 {
-    NOREF(pDev);
-    if (RT_FAILURE(vboxguestLinuxSetMouseStatus
-                                   (  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                    | VMMDEV_MOUSE_NEW_PROTOCOL)))
+    int rc= vboxguestLinuxSetMouseStatus(VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE | VMMDEV_MOUSE_NEW_PROTOCOL);
+    if (RT_FAILURE(rc))
         return ENODEV;
+    NOREF(pDev);
     return 0;
 }
 
@@ -595,19 +592,18 @@ static int __init vboxguestLinuxModInit(void)
 # warning "huh? which arch + version is this?"
             VBOXOSTYPE enmOsType = VBOXOSTYPE_Linux;
 #endif
-            rc = VbgdCommonInitDevExt(&g_DevExt,
-                                      g_IOPortBase,
-                                      g_pvMMIOBase,
-                                      g_cbMMIO,
-                                      enmOSType,
-                                      VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+            rc = VGDrvCommonInitDevExt(&g_DevExt,
+                                       g_IOPortBase,
+                                       g_pvMMIOBase,
+                                       g_cbMMIO,
+                                       enmOSType,
+                                       VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
             if (RT_SUCCESS(rc))
             {
                 /*
                  * Create the kernel session for this driver.
                  */
-                rc = VbgdCommonCreateKernelSession(&g_DevExt,
-                                                  &g_pKernelSession);
+                rc = VGDrvCommonCreateKernelSession(&g_DevExt, &g_pKernelSession);
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -642,9 +638,9 @@ static int __init vboxguestLinuxModInit(void)
                         rc = RTErrConvertFromErrno(rc);
                     }
 #endif
-                    VbgdCommonCloseSession(&g_DevExt, g_pKernelSession);
+                    VGDrvCommonCloseSession(&g_DevExt, g_pKernelSession);
                 }
-                VbgdCommonDeleteDevExt(&g_DevExt);
+                VGDrvCommonDeleteDevExt(&g_DevExt);
             }
             else
             {
@@ -679,8 +675,8 @@ static void __exit vboxguestLinuxModExit(void)
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
     vboxguestLinuxTermInputDevice();
 #endif
-    VbgdCommonCloseSession(&g_DevExt, g_pKernelSession);
-    VbgdCommonDeleteDevExt(&g_DevExt);
+    VGDrvCommonCloseSession(&g_DevExt, g_pKernelSession);
+    VGDrvCommonDeleteDevExt(&g_DevExt);
     vboxguestLinuxTermISR();
     pci_unregister_driver(&g_PciDriver);
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
@@ -705,7 +701,7 @@ static int vboxguestLinuxOpen(struct inode *pInode, struct file *pFilp)
      * Call common code to create the user session. Associate it with
      * the file so we can access it in the other methods.
      */
-    rc = VbgdCommonCreateUserSession(&g_DevExt, &pSession);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
         pFilp->private_data = pSession;
@@ -736,7 +732,7 @@ static int vboxguestLinuxRelease(struct inode *pInode, struct file *pFilp)
      * the file pointer didn't get left on the polling queue. */
     vboxguestFAsync(-1, pFilp, 0);
 #endif
-    VbgdCommonCloseSession(&g_DevExt, (PVBOXGUESTSESSION)pFilp->private_data);
+    VGDrvCommonCloseSession(&g_DevExt, (PVBOXGUESTSESSION)pFilp->private_data);
     pFilp->private_data = NULL;
     return 0;
 }
@@ -787,7 +783,7 @@ static int vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigne
          * Process the IOCtl.
          */
         size_t cbDataReturned;
-        rc = VbgdCommonIoCtl(uCmd, &g_DevExt, pSession, pvBuf, cbData, &cbDataReturned);
+        rc = VGDrvCommonIoCtl(uCmd, &g_DevExt, pSession, pvBuf, cbData, &cbDataReturned);
 
         /*
          * Copy ioctl data and output buffer back to user space.
@@ -906,7 +902,7 @@ static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, lof
 }
 
 
-void VbgdNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
     int rc;
@@ -917,9 +913,9 @@ void VbgdNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
      * Wake up everyone that's in a poll() and post anyone that has
      * subscribed to async notifications.
      */
-    Log3(("VbgdNativeISRMousePollEvent: wake_up_all\n"));
+    Log3(("VGDrvNativeISRMousePollEvent: wake_up_all\n"));
     wake_up_all(&g_PollEventQueue);
-    Log3(("VbgdNativeISRMousePollEvent: kill_fasync\n"));
+    Log3(("VGDrvNativeISRMousePollEvent: kill_fasync\n"));
     kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
     /* Report events to the kernel input device */
@@ -938,7 +934,7 @@ void VbgdNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 # endif
     }
 #endif
-    Log3(("VbgdNativeISRMousePollEvent: done\n"));
+    Log3(("VGDrvNativeISRMousePollEvent: done\n"));
 }
 
 

@@ -114,7 +114,7 @@ static status_t VBoxGuestHaikuOpen(const char *name, uint32 flags, void **cookie
     /*
      * Create a new session.
      */
-    rc = VbgdCommonCreateUserSession(&g_DevExt, &pSession);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
         Log((DRIVER_NAME ":VBoxGuestHaikuOpen success: g_DevExt=%p pSession=%p rc=%d pid=%d\n",&g_DevExt, pSession, rc,(int)RTProcSelf()));
@@ -173,7 +173,7 @@ static status_t VBoxGuestHaikuFree(void *cookie)
      */
     if (VALID_PTR(pSession))
     {
-        VbgdCommonCloseSession(&g_DevExt, pSession);
+        VGDrvCommonCloseSession(&g_DevExt, pSession);
         ASMAtomicDecU32(&cUsers);
     }
     else
@@ -256,7 +256,7 @@ static status_t VBoxGuestHaikuIOCtl(void *cookie, uint32 op, void *data, size_t 
      * Process the IOCtl.
      */
     size_t cbDataReturned;
-    rc = VbgdCommonIoCtl(op, &g_DevExt, pSession, pvBuf, len, &cbDataReturned);
+    rc = VGDrvCommonIoCtl(op, &g_DevExt, pSession, pvBuf, len, &cbDataReturned);
     if (RT_SUCCESS(rc))
     {
         rc = 0;

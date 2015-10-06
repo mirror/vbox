@@ -426,11 +426,11 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
             LogFunc(("pvMMIOBase=0x%p, pDevExt=0x%p, pDevExt->Core.pVMMDevMemory=0x%p\n",
                      pvMMIOBase, pDevExt, pDevExt ? pDevExt->Core.pVMMDevMemory : NULL));
 
-            int vrc = VbgdCommonInitDevExt(&pDevExt->Core,
-                                           pDevExt->Core.IOPortBase,
-                                           pvMMIOBase, cbMMIO,
-                                           vbgdNtVersionToOSType(g_enmVbgdNtVer),
-                                           VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+            int vrc = VGDrvCommonInitDevExt(&pDevExt->Core,
+                                            pDevExt->Core.IOPortBase,
+                                            pvMMIOBase, cbMMIO,
+                                            vbgdNtVersionToOSType(g_enmVbgdNtVer),
+                                            VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
             if (RT_FAILURE(vrc))
             {
                 LogFunc(("Could not init device extension, rc=%Rrc\n", vrc));
@@ -515,7 +515,7 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
 
 #ifdef VBOX_WITH_HGCM
     LogFunc(("Allocating kernel session data ...\n"));
-    int vrc = VbgdCommonCreateKernelSession(&pDevExt->Core, &pDevExt->pKernelSession);
+    int vrc = VGDrvCommonCreateKernelSession(&pDevExt->Core, &pDevExt->pKernelSession);
     if (RT_FAILURE(vrc))
     {
         LogFunc(("Failed to allocated kernel session data, rc=%Rrc\n", rc));
@@ -608,7 +608,7 @@ static void vbgdNtUnload(PDRIVER_OBJECT pDrvObj)
 
     /* Destroy device extension and clean up everything else. */
     if (pDrvObj->DeviceObject && pDrvObj->DeviceObject->DeviceExtension)
-        VbgdCommonDeleteDevExt((PVBOXGUESTDEVEXT)pDrvObj->DeviceObject->DeviceExtension);
+        VGDrvCommonDeleteDevExt((PVBOXGUESTDEVEXT)pDrvObj->DeviceObject->DeviceExtension);
 
     /*
      * I don't think it's possible to unload a driver which processes have
@@ -673,12 +673,12 @@ static NTSTATUS vbgdNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                  * Create a session object if we have a valid file object. This session object
                  * exists for every R3 process.
                  */
-                vrc = VbgdCommonCreateUserSession(&pDevExt->Core, &pSession);
+                vrc = VGDrvCommonCreateUserSession(&pDevExt->Core, &pSession);
             }
             else
             {
                 /* ... otherwise we've been called from R0! */
-                vrc = VbgdCommonCreateKernelSession(&pDevExt->Core, &pSession);
+                vrc = VGDrvCommonCreateKernelSession(&pDevExt->Core, &pSession);
             }
             if (RT_SUCCESS(vrc))
                 pFileObj->FsContext = pSession;
@@ -715,7 +715,7 @@ static NTSTATUS vbgdNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     /* Close both, R0 and R3 sessions. */
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pFileObj->FsContext;
     if (pSession)
-        VbgdCommonCloseSession(&pDevExt->Core, pSession);
+        VGDrvCommonCloseSession(&pDevExt->Core, pSession);
 #endif
 
     pFileObj->FsContext = NULL;
@@ -773,7 +773,7 @@ static NTSTATUS vbgdNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
          * Process the common IOCtls.
          */
         size_t cbDataReturned;
-        int vrc = VbgdCommonIoCtl(uCmd, &pDevExt->Core, pSession, pBuf, cbData, &cbDataReturned);
+        int vrc = VGDrvCommonIoCtl(uCmd, &pDevExt->Core, pSession, pBuf, cbData, &cbDataReturned);
 
         LogFlowFunc(("rc=%Rrc, pBuf=0x%p, cbData=%u, cbDataReturned=%u\n",
                      vrc, pBuf, cbData, cbDataReturned));
@@ -976,7 +976,7 @@ void vbgdNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pCont
 
     /* Process the wake-up list we were asked by the scheduling a DPC
      * in vbgdNtIsrHandler(). */
-    VbgdCommonWaitDoWakeUps(&pDevExt->Core);
+    VGDrvCommonWaitDoWakeUps(&pDevExt->Core);
 }
 
 
@@ -996,7 +996,7 @@ BOOLEAN vbgdNtIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
     /*Log3Func(("pDevExt=0x%p, pVMMDevMemory=0x%p\n", pDevExt, pDevExt ? pDevExt->pVMMDevMemory : NULL));*/
 
     /* Enter the common ISR routine and do the actual work. */
-    BOOLEAN fIRQTaken = VbgdCommonISR(&pDevExt->Core);
+    BOOLEAN fIRQTaken = VGDrvCommonISR(&pDevExt->Core);
 
     /* If we need to wake up some events we do that in a DPC to make
      * sure we're called at the right IRQL. */
@@ -1019,7 +1019,7 @@ BOOLEAN vbgdNtIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
  *
  * @param pDevExt     Device extension structure.
  */
-void VbgdNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     NOREF(pDevExt);
     /* nothing to do here - i.e. since we can not KeSetEvent from ISR level,
@@ -1480,7 +1480,7 @@ static VOID vbgdNtDpcLatencyCallback(PKDPC pDpc, PVOID pvDeferredContext, PVOID 
  *
  * @returns VBox status code.
  */
-int VbgdNtIOCtl_DpcLatencyChecker(void)
+int VGDrvNtIOCtl_DpcLatencyChecker(void)
 {
     /*
      * Allocate a block of non paged memory for samples and related data.

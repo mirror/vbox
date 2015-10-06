@@ -560,7 +560,7 @@ static int VbgdDarwinIOCtlSlow(PVBOXGUESTSESSION pSession, u_long iCmd, caddr_t 
      * Process the IOCtl.
      */
     size_t cbReqRet = 0;
-    int rc = VbgdCommonIoCtl(iCmd, &g_DevExt, pSession, pvReqData, cbReq, &cbReqRet);
+    int rc = VGDrvCommonIoCtl(iCmd, &g_DevExt, pSession, pvReqData, cbReq, &cbReqRet);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -617,7 +617,7 @@ static int VbgdDarwinIOCtlSlow(PVBOXGUESTSESSION pSession, u_long iCmd, caddr_t 
 #include "VBoxGuestIDC-unix.c.h"
 
 
-void VbgdNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     NOREF(pDevExt);
 }
@@ -725,7 +725,7 @@ deferredInterruptHandler(OSObject *pOwner, IOInterruptEventSource *pSrc, int cIn
 {
     NOREF(pOwner); NOREF(pSrc); NOREF(cInts);
 
-    VbgdCommonWaitDoWakeUps(&g_DevExt);
+    VGDrvCommonWaitDoWakeUps(&g_DevExt);
 }
 
 /**
@@ -737,7 +737,7 @@ directInterruptHandler(OSObject *pOwner, IOFilterInterruptEventSource *pSrc)
     if (!pSrc)
         return false;
 
-    bool fTaken = VbgdCommonISR(&g_DevExt);
+    bool fTaken = VGDrvCommonISR(&g_DevExt);
     if (!fTaken) /** @todo r=bird: This looks bogus as we might actually be sharing interrupts with someone. */
         PDEBUG("VbgdCommonISR error\n");
 
@@ -848,16 +848,16 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
                         cbMMIO     = m_pMap->getLength();
                     }
 
-                    int rc = VbgdCommonInitDevExt(&g_DevExt,
-                                                  IOPortBase,
-                                                  pvMMIOBase,
-                                                  cbMMIO,
+                    int rc = VGDrvCommonInitDevExt(&g_DevExt,
+                                                   IOPortBase,
+                                                   pvMMIOBase,
+                                                   cbMMIO,
 #if ARCH_BITS == 64
-                                                  VBOXOSTYPE_MacOS_x64,
+                                                   VBOXOSTYPE_MacOS_x64,
 #else
-                                                  VBOXOSTYPE_MacOS,
+                                                   VBOXOSTYPE_MacOS,
 #endif
-                                                  0);
+                                                   0);
                     if (RT_SUCCESS(rc))
                     {
                         rc = VbgdDarwinCharDevInit();
@@ -877,7 +877,7 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
                         else
                             LogRel(("VBoxGuest: Failed to initialize character device (rc=%d).\n", rc));
 
-                        VbgdCommonDeleteDevExt(&g_DevExt);
+                        VGDrvCommonDeleteDevExt(&g_DevExt);
                     }
                     else
                         LogRel(("VBoxGuest: Failed to initialize common code (rc=%d).\n", rc));
@@ -923,7 +923,7 @@ void org_virtualbox_VBoxGuest::stop(IOService *pProvider)
         PDEBUG("VBoxGuest: unable to unregister interrupt handler\n");
 
     VbgdDarwinCharDevRemove();
-    VbgdCommonDeleteDevExt(&g_DevExt);
+    VGDrvCommonDeleteDevExt(&g_DevExt);
 
     if (m_pMap)
     {
@@ -1020,7 +1020,7 @@ bool org_virtualbox_VBoxGuestClient::start(IOService *pProvider)
             /*
              * Create a new session.
              */
-            int rc = VbgdCommonCreateUserSession(&g_DevExt, &m_pSession);
+            int rc = VGDrvCommonCreateUserSession(&g_DevExt, &m_pSession);
             if (RT_SUCCESS(rc))
             {
                 m_pSession->fOpened = false;
@@ -1058,7 +1058,7 @@ bool org_virtualbox_VBoxGuestClient::start(IOService *pProvider)
                 }
 
                 LogFlow(("org_virtualbox_VBoxGuestClient::start: already got a session for this process (%p)\n", pCur));
-                VbgdCommonCloseSession(&g_DevExt, m_pSession);
+                VGDrvCommonCloseSession(&g_DevExt, m_pSession);
             }
 
             m_pSession = NULL;
@@ -1134,7 +1134,7 @@ bool org_virtualbox_VBoxGuestClient::start(IOService *pProvider)
     /*
      * Close the session.
      */
-    VbgdCommonCloseSession(&g_DevExt, pSession);
+    VGDrvCommonCloseSession(&g_DevExt, pSession);
 }
 
 
