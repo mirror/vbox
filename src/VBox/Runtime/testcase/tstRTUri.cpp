@@ -313,8 +313,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "C:\\over\\ <>#%\"{}|^[]`\\there",
         /* .pszUri           =*/ "file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "C:\\over\\ <>#%\"{}|^[]`\\there",
+        /* .pszCreatedUri    =*/ "file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
         /* PathCreateFromUrl =   "C:\\over\\ <>#%\"{}|^[]`\\there" - same */
         /* UrlCreateFromPath =   "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there" - differs */
     },
@@ -322,8 +322,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/over/ <>#%\"{}|^[]`/there",
         /* .pszUri           =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "/over/ <>#%\"{}|^[]`/there",
+        /* .pszCreatedUri    =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* PathCreateFromUrl =   "\\over\\ <>#%\"{}|^[]`\\there" - differs */
         /* UrlCreateFromPath =   "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there" - same */
     },
@@ -331,8 +331,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ NULL,
         /* .pszUri           =*/ "file://",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ NULL,
+        /* .pszCreatedUri    =*/ "file://",
         /* PathCreateFromUrl =   "" - differs */
         /* UrlCreateFromPath => 0x80070057 (E_INVALIDARG) */
     },
@@ -340,8 +340,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ NULL,
         /* .pszUri           =*/ "file://",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ NULL,
+        /* .pszCreatedUri    =*/ "file://",
         /* PathCreateFromUrl =   "" - differs */
         /* UrlCreateFromPath => 0x80070057 (E_INVALIDARG) */
     },
@@ -349,8 +349,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/",
         /* .pszUri           =*/ "file:///",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "/",
+        /* .pszCreatedUri    =*/ "file:///",
         /* PathCreateFromUrl =   "" - differs */
         /* UrlCreateFromPath =   "file:///" - same */
     },
@@ -358,8 +358,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\",
         /* .pszUri           =*/ "file:///",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "\\",
+        /* .pszCreatedUri    =*/ "file:///",
         /* PathCreateFromUrl =   "" - differs */
         /* UrlCreateFromPath =   "file:///" - same */
     },
@@ -367,8 +367,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/foo/bar",
         /* .pszUri           =*/ "file:///foo/bar",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "/foo/bar",
+        /* .pszCreatedUri    =*/ "file:///foo/bar",
         /* PathCreateFromUrl =   "\\foo\\bar" - differs */
         /* UrlCreateFromPath =   "file:///foo/bar" - same */
     },
@@ -376,8 +376,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\foo\\bar",
         /* .pszUri           =*/ "file:///foo%5Cbar",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "\\foo\\bar",
+        /* .pszCreatedUri    =*/ "file:///foo%5Cbar",
         /* PathCreateFromUrl =   "\\foo\\bar" - same */
         /* UrlCreateFromPath =   "file:///foo/bar" - differs */
     },
@@ -385,8 +385,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "C:/over/ <>#%\"{}|^[]`/there",
         /* .pszUri           =*/ "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "C:/over/ <>#%\"{}|^[]`/there",
+        /* .pszCreatedUri    =*/ "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* PathCreateFromUrl =   "C:\\over\\ <>#%\"{}|^[]`\\there" - differs */
         /* UrlCreateFromPath =   "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there" - same */
     },
@@ -394,8 +394,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\over\\ <>#%\"{}|^[]`\\there",
         /* .pszUri           =*/ "file:///over%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "\\over\\ <>#%\"{}|^[]`\\there",
+        /* .pszCreatedUri    =*/ "file:///over%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
         /* PathCreateFromUrl =   "\\over\\ <>#%\"{}|^[]`\\there" - same */
         /* UrlCreateFromPath =   "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there" - differs */
     },
@@ -403,8 +403,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/usr/bin/grep",
         /* .pszUri           =*/ "file:///usr/bin/grep",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "/usr/bin/grep",
+        /* .pszCreatedUri    =*/ "file:///usr/bin/grep",
         /* PathCreateFromUrl =   "\\usr\\bin\\grep" - differs */
         /* UrlCreateFromPath =   "file:///usr/bin/grep" - same */
     },
@@ -412,8 +412,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\usr\\bin\\grep",
         /* .pszUri           =*/ "file:///usr%5Cbin%5Cgrep",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "\\usr\\bin\\grep",
+        /* .pszCreatedUri    =*/ "file:///usr%5Cbin%5Cgrep",
         /* PathCreateFromUrl =   "\\usr\\bin\\grep" - same */
         /* UrlCreateFromPath =   "file:///usr/bin/grep" - differs */
     },
@@ -421,8 +421,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/somerootsubdir/isos/files.lst",
         /* .pszUri           =*/ "file:///somerootsubdir/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "/somerootsubdir/isos/files.lst",
+        /* .pszCreatedUri    =*/ "file:///somerootsubdir/isos/files.lst",
         /* PathCreateFromUrl =   "\\somerootsubdir\\isos\\files.lst" - differs */
         /* UrlCreateFromPath =   "file:///somerootsubdir/isos/files.lst" - same */
     },
@@ -430,8 +430,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\not-a-cifsserver\\isos\\files.lst",
         /* .pszUri           =*/ "file:///not-a-cifsserver%5Cisos%5Cfiles.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "\\not-a-cifsserver\\isos\\files.lst",
+        /* .pszCreatedUri    =*/ "file:///not-a-cifsserver%5Cisos%5Cfiles.lst",
         /* PathCreateFromUrl =   "\\not-a-cifsserver\\isos\\files.lst" - same */
         /* UrlCreateFromPath =   "file:///not-a-cifsserver/isos/files.lst" - differs */
     },
@@ -439,8 +439,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/rootsubdir/isos/files.lst",
         /* .pszUri           =*/ "file:///rootsubdir/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "/rootsubdir/isos/files.lst",
+        /* .pszCreatedUri    =*/ "file:///rootsubdir/isos/files.lst",
         /* PathCreateFromUrl =   "\\rootsubdir\\isos\\files.lst" - differs */
         /* UrlCreateFromPath =   "file:///rootsubdir/isos/files.lst" - same */
     },
@@ -448,8 +448,8 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\not-a-cifsserver-either\\isos\\files.lst",
         /* .pszUri           =*/ "file:///not-a-cifsserver-either%5Cisos%5Cfiles.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
-        /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
+        /* .pszCreatedPath   =*/ "\\not-a-cifsserver-either\\isos\\files.lst",
+        /* .pszCreatedUri    =*/ "file:///not-a-cifsserver-either%5Cisos%5Cfiles.lst",
         /* PathCreateFromUrl =   "\\not-a-cifsserver-either\\isos\\files.lst" - same */
         /* UrlCreateFromPath =   "file:///not-a-cifsserver-either/isos/files.lst" - differs */
     },
@@ -536,21 +536,11 @@ static void tstWindowsReferenceResults(void)
                  : g_aCreateFileURIs[i].uFormat == URI_FILE_FORMAT_UNIX ? "URI_FILE_FORMAT_UNIX"
                  : g_aCreateFileURIs[i].uFormat == URI_FILE_FORMAT_AUTO ? "URI_FILE_FORMAT_AUTO" : "URI_FILE_FORMAT_INVALID");
         RTPrintf("        /* .pszCreatedPath   =*/ ");
-        if (g_aCreateFileURIs[i].pszCreatedPath == NULL)
-            RTPrintf("NULL,    /* Same as pszPath. */\n");
-        else
-        {
-            tstPrintCString(g_aCreateFileURIs[i].pszCreatedPath);
-            RTPrintf(",\n");
-        }
+        tstPrintCString(g_aCreateFileURIs[i].pszCreatedPath);
+        RTPrintf(",\n");
         RTPrintf("        /* .pszCreatedUri    =*/ ");
-        if (g_aCreateFileURIs[i].pszCreatedUri == NULL)
-            RTPrintf("NULL,    /* Same as pszUri. */\n");
-        else
-        {
-            tstPrintCString(g_aCreateFileURIs[i].pszCreatedUri);
-            RTPrintf(",\n");
-        }
+        tstPrintCString(g_aCreateFileURIs[i].pszCreatedUri);
+        RTPrintf(",\n");
 
         /*
          * PathCreateFromUrl
@@ -571,8 +561,7 @@ static void tstWindowsReferenceResults(void)
             RTPrintf("        /* PathCreateFromUrl =   ");
             tstPrintCString(pszResult);
             if (   g_aCreateFileURIs[i].pszPath
-                && strcmp(pszResult, g_aCreateFileURIs[i].pszCreatedPath
-                                     ? g_aCreateFileURIs[i].pszCreatedPath : g_aCreateFileURIs[i].pszPath) == 0)
+                && strcmp(pszResult, g_aCreateFileURIs[i].pszCreatedPath) == 0)
                 RTPrintf(" - same */\n");
             else
                 RTPrintf(" - differs */\n");
@@ -604,8 +593,7 @@ static void tstWindowsReferenceResults(void)
                 RTPrintf("        /* UrlCreateFromPath =   ");
                 tstPrintCString(pszResult);
                 if (   g_aCreateFileURIs[i].pszUri
-                    && strcmp(pszResult, g_aCreateFileURIs[i].pszCreatedUri
-                                         ? g_aCreateFileURIs[i].pszCreatedUri : g_aCreateFileURIs[i].pszUri) == 0)
+                    && strcmp(pszResult, g_aCreateFileURIs[i].pszCreatedUri) == 0)
                     RTPrintf(" - same */\n");
                 else
                     RTPrintf(" - differs */\n");
@@ -678,17 +666,22 @@ int main()
     tstWindowsReferenceResults();
 #endif
 
+    bool fSavedMayPanic = RTAssertSetMayPanic(false);
+    bool fSavedQuiet    = RTAssertSetQuiet(true);
+
     /* File Uri path */
     RTTestISub("RTUriFilePath");
     for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs); ++i)
         CHECK_STR_API(RTUriFilePath(g_aCreateFileURIs[i].pszUri, g_aCreateFileURIs[i].uFormat),
-                      g_aCreateFileURIs[i].pszCreatedPath ? g_aCreateFileURIs[i].pszCreatedPath : g_aCreateFileURIs[i].pszPath);
+                      g_aCreateFileURIs[i].pszCreatedPath);
 
     /* File Uri creation */
     RTTestISub("RTUriFileCreate");
     for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs); ++i)
-        CHECK_STR_API(RTUriFileCreate(g_aCreateFileURIs[i].pszPath),
-                      g_aCreateFileURIs[i].pszCreatedUri ? g_aCreateFileURIs[i].pszCreatedUri : g_aCreateFileURIs[i].pszUri);
+        CHECK_STR_API(RTUriFileCreate(g_aCreateFileURIs[i].pszPath), g_aCreateFileURIs[i].pszCreatedUri);
+
+    RTAssertSetMayPanic(fSavedMayPanic);
+    RTAssertSetQuiet(fSavedQuiet);
 
     return RTTestSummaryAndDestroy(hTest);
 }
