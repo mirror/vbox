@@ -427,13 +427,13 @@ static struct URIFILETEST
         /* UrlCreateFromPath =   "file:///somerootsubdir/isos/files.lst" - same */
     },
     {   /* #13: */
-        /* .pszPath          =*/ "\\cifsserver\\isos\\files.lst",
-        /* .pszUri           =*/ "file:///cifsserver%5Cisos%5Cfiles.lst",
+        /* .pszPath          =*/ "\\not-a-cifsserver\\isos\\files.lst",
+        /* .pszUri           =*/ "file:///not-a-cifsserver%5Cisos%5Cfiles.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
         /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
-        /* PathCreateFromUrl =   "\\cifsserver\\isos\\files.lst" - same */
-        /* UrlCreateFromPath =   "file:///cifsserver/isos/files.lst" - differs */
+        /* PathCreateFromUrl =   "\\not-a-cifsserver\\isos\\files.lst" - same */
+        /* UrlCreateFromPath =   "file:///not-a-cifsserver/isos/files.lst" - differs */
     },
     {   /* #14: */
         /* .pszPath          =*/ "/rootsubdir/isos/files.lst",
@@ -445,13 +445,13 @@ static struct URIFILETEST
         /* UrlCreateFromPath =   "file:///rootsubdir/isos/files.lst" - same */
     },
     {   /* #15: */
-        /* .pszPath          =*/ "\\cifsserver\\isos\\files.lst",
-        /* .pszUri           =*/ "file:///cifsserver%5Cisos%5Cfiles.lst",
+        /* .pszPath          =*/ "\\not-a-cifsserver-either\\isos\\files.lst",
+        /* .pszUri           =*/ "file:///not-a-cifsserver-either%5Cisos%5Cfiles.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
         /* .pszCreatedUri    =*/ NULL,    /* Same as pszUri. */
-        /* PathCreateFromUrl =   "\\cifsserver\\isos\\files.lst" - same */
-        /* UrlCreateFromPath =   "file:///cifsserver/isos/files.lst" - differs */
+        /* PathCreateFromUrl =   "\\not-a-cifsserver-either\\isos\\files.lst" - same */
+        /* UrlCreateFromPath =   "file:///not-a-cifsserver-either/isos/files.lst" - differs */
     },
 #if 0 /** @todo r=bird: this ain't working right. It's in the wikipedia article on file:// ... */
     {   /* #16: */
