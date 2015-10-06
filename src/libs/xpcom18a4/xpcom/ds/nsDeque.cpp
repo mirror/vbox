@@ -144,7 +144,7 @@ void nsDeque::SetDeallocator(nsDequeFunctor* aDeallocator){
  */
 nsDeque& nsDeque::Empty() {
   if (mSize && mData) {
-    memset(mData, 0, mCapacity*sizeof(mData));
+    memset(mData, 0, mCapacity*sizeof(*mData));
   }
   mSize=0;
   mOrigin=0;
