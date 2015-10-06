@@ -201,7 +201,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         PWCHAR pwsz = pwszNewCmdLine = (PWCHAR)LocalAlloc(LPTR, cchNewCmdLine * sizeof(WCHAR));
         if (!pwsz)
         {
-            fwprintf(stderr, L"ERROR: Out of memory (%u bytes)\n", cchNewCmdLine);
+            fwprintf(stderr, L"ERROR: Out of memory (%u bytes)\n", (unsigned)cchNewCmdLine);
             return 15;
         }
         *pwsz++ = L'"';
