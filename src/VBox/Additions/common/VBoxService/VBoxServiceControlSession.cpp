@@ -1696,7 +1696,7 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
         char szParmThreadId[32];
         RTStrPrintf(szParmThreadId, sizeof(szParmThreadId), "--thread-id=%RU32", uCtrlSessionThread);
 #endif
-        int idxArg = 0; /* Next index in argument vector. */
+        unsigned    idxArg = 0; /* Next index in argument vector. */
         char const *apszArgs[24];
 
         apszArgs[idxArg++] = pszExeName;
