@@ -462,7 +462,7 @@ int VBoxMainDriveInfo::updateDVDs ()
             rc = getDriveInfoFromEnv ("VBOX_CDROM", &mDVDList, true /* isDVD */,
                                       &success);
         setNoProbe(false);
-        if (RT_SUCCESS(rc) && (!success | testing()))
+        if (RT_SUCCESS(rc) && (!success || testing()))
             rc = getDriveInfoFromSysfs(&mDVDList, true /* isDVD */, &success);
         if (RT_SUCCESS(rc) && testing())
         {
