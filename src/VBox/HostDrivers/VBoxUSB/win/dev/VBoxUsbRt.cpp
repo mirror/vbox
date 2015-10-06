@@ -1041,7 +1041,7 @@ static NTSTATUS vboxUsbRtUrbSendCompletion(PDEVICE_OBJECT pDevObj, IRP *pIrp, vo
     PUSBSUP_URB pUrbInfo = (PUSBSUP_URB)pContext->pOut;
     PVBOXUSBDEV_EXT pDevExt = pContext->pDevExt;
 
-    if (!pUrb || !pMdlBuf || !pUrbInfo | !pDevExt)
+    if (!pUrb || !pMdlBuf || !pUrbInfo || !pDevExt)
     {
         AssertMsgFailed((__FUNCTION__": Invalid args\n"));
         if (pDevExt)
