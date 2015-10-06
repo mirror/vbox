@@ -1304,8 +1304,8 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
     {
         DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
 
-        if (  !pFBInfo->pFramebuffer.isNull()
-            & RT_BOOL(pFBInfo->u32Caps & FramebufferCapabilities_VisibleRegion))
+        if (   !pFBInfo->pFramebuffer.isNull()
+            && RT_BOOL(pFBInfo->u32Caps & FramebufferCapabilities_VisibleRegion))
         {
             /* Prepare a new array of rectangles which intersect with the framebuffer.
              */
