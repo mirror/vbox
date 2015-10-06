@@ -121,7 +121,7 @@ static char *rtUriPercentEncodeN(const char *pszString, size_t cchMax)
 static char *rtUriPercentDecodeN(const char *pszString, size_t cchString)
 {
     AssertPtrReturn(pszString, NULL);
-    AssertReturn(strlen(pszString) >= cchString, NULL);
+    AssertReturn(memchr(pszString, '\0', cchString) == NULL, NULL);
 
     /*
      * The new string can only get smaller, so use the input length as a
@@ -796,36 +796,31 @@ RTDECL(char *) RTUriFileNPath(const char *pszUri, uint32_t uFormat, size_t cchMa
          * Compose string.
          */
         char *pszResult;
-
-        do
+        char *pszTmp = pszResult = RTStrAlloc(cbResult);
+        if (pszTmp)
         {
-            char *pszTmp = pszResult = RTStrAlloc(cbResult);
-            if (pszTmp)
+            size_t cbTmp = cbResult;
+            if (uFormat == URI_FILE_FORMAT_WIN)
             {
-                size_t cbTmp = cbResult;
-
-                if (uFormat == URI_FILE_FORMAT_WIN)
+                /* If an authority is given, add the required UNC prefix. */
+                if (Parsed.cchAuthority)
                 {
-                    /* If an authority is given, add the required UNC prefix. */
-                    if (Parsed.cchAuthority)
-                    {
-                        rc = RTStrCatP(&pszTmp, &cbTmp, "\\\\");
-                        if (RT_SUCCESS(rc))
-                            rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offAuthority], Parsed.cchAuthority);
-                    }
+                    rc = RTStrCatP(&pszTmp, &cbTmp, "\\\\");
+                    if (RT_SUCCESS(rc))
+/** @todo r=bird: YOU MUST DECODE THE STRING!!  */
+                        rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offAuthority], Parsed.cchAuthority);
                 }
-
-                if (RT_SUCCESS(rc))
-                    rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offPath], Parsed.cchPath);
-
-                if (RT_FAILURE(rc))
-                    RTStrFree(pszResult);
             }
-            else
-                rc = VERR_NO_MEMORY;
 
-        } while (0);
+/** @todo r=bird: YOU MUST DECODE THE STRING!!  */
+            if (RT_SUCCESS(rc))
+                rc = RTStrCatPEx(&pszTmp, &cbTmp, &pszUri[Parsed.offPath], Parsed.cchPath);
 
+            if (RT_FAILURE(rc))
+                RTStrFree(pszResult);
+        }
+        else
+            rc = VERR_NO_MEMORY;
         if (RT_SUCCESS(rc))
         {
             AssertPtr(pszResult);
