@@ -1861,6 +1861,7 @@
 # define RTUniFree                                      RT_MANGLER(RTUniFree)
 # define RTUriCreate                                    RT_MANGLER(RTUriCreate)
 # define RTUriFileCreate                                RT_MANGLER(RTUriFileCreate)
+# define RTUriFileCreateEx                              RT_MANGLER(RTUriFileCreateEx)
 # define RTUriFileNPath                                 RT_MANGLER(RTUriFileNPath)
 # define RTUriFilePath                                  RT_MANGLER(RTUriFilePath)
 # define RTUriParse                                     RT_MANGLER(RTUriParse)

@@ -118,6 +118,77 @@ static char *rtUriPercentEncodeN(const char *pszString, size_t cchMax)
 }
 
 
+/**
+ * Calculates the encoded string length.
+ *
+ * @returns Number of chars (excluding the terminator).
+ * @param   pszString       The string to encode.
+ * @param   cchMax          The maximum string length (e.g. RTSTR_MAX).
+ * @param   fEncodeDosSlash Whether to encode DOS slashes or not.
+ */
+static size_t rtUriCalcEncodedLength(const char *pszString, size_t cchMax, bool fEncodeDosSlash)
+{
+    size_t cchEncoded = 0;
+    if (pszString)
+    {
+        size_t cchSrcLeft = RTStrNLen(pszString, cchMax);
+        while (cchSrcLeft-- > 0)
+        {
+            char const ch = *pszString++;
+            if (!URI_EXCLUDED(ch) || (ch == '\\' && !fEncodeDosSlash))
+                cchEncoded += 1;
+            else
+                cchEncoded += 3;
+        }
+    }
+    return cchEncoded;
+}
+
+
+/**
+ * Encodes an URI into a caller allocated buffer.
+ *
+ * @returns IPRT status code.
+ * @param   pszString       The string to encode.
+ * @param   cchMax          The maximum string length (e.g. RTSTR_MAX).
+ * @param   fEncodeDosSlash Whether to encode DOS slashes or not.
+ * @param   pszDst          The destination buffer.
+ * @param   cbDst           The size of the destination buffer.
+ */
+static int rtUriEncodeIntoBuffer(const char *pszString, size_t cchMax, bool fEncodeDosSlash, char *pszDst, size_t cbDst)
+{
+    AssertReturn(pszString, VERR_INVALID_POINTER);
+
+    /*
+     * We do buffer size checking up front and every time we encode a special
+     * character.  That's faster than checking for each char.
+     */
+    size_t cchSrcLeft = RTStrNLen(pszString, cchMax);
+    AssertMsgReturn(cbDst > cchSrcLeft, ("cbDst=%zu cchSrcLeft=%zu\n", cbDst, cchSrcLeft), VERR_BUFFER_OVERFLOW);
+    cbDst -= cchSrcLeft;
+
+    while (cchSrcLeft-- > 0)
+    {
+        char const ch = *pszString++;
+        if (!URI_EXCLUDED(ch) || (ch == '\\' && !fEncodeDosSlash))
+            *pszDst++ = ch;
+        else
+        {
+            AssertReturn(cbDst >= 3, VERR_BUFFER_OVERFLOW); /* 2 extra bytes + zero terminator. */
+            cbDst -= 2;
+
+            *pszDst++ = '%';
+            ssize_t cchTmp = RTStrFormatU8(pszDst, 3, (unsigned char)ch, 16, 2, 2, RTSTR_F_CAPITAL | RTSTR_F_ZEROPAD);
+            Assert(cchTmp == 2); NOREF(cchTmp);
+            pszDst += 2;
+        }
+    }
+
+    *pszDst = '\0';
+    return VINF_SUCCESS;
+}
+
+
 static char *rtUriPercentDecodeN(const char *pszString, size_t cchString)
 {
     AssertPtrReturn(pszString, NULL);
@@ -676,49 +747,93 @@ RTDECL(bool)   RTUriIsSchemeMatch(const char *pszUri, const char *pszScheme)
 }
 
 
+RTDECL(int) RTUriFileCreateEx(const char *pszPath, uint32_t fPathStyle, char **ppszUri, size_t cbUri, size_t *pcchUri)
+{
+    /*
+     * Validate and adjust input. (RTPathParse check pszPath out for us)
+     */
+    if (pcchUri)
+    {
+        AssertPtrReturn(pcchUri, VERR_INVALID_POINTER);
+        *pcchUri = ~(size_t)0;
+    }
+    AssertPtrReturn(ppszUri, VERR_INVALID_POINTER);
+    AssertReturn(!(fPathStyle & ~RTPATH_STR_F_STYLE_MASK) && fPathStyle != RTPATH_STR_F_STYLE_RESERVED, VERR_INVALID_FLAGS);
+    if (fPathStyle == RTPATH_STR_F_STYLE_HOST)
+        fPathStyle = RTPATH_STYLE;
+
+    /*
+     * Let the RTPath code parse the stuff (no reason to duplicate path parsing
+     * and get it slightly wrong here).
+     */
+    RTPATHPARSED ParsedPath;
+    int rc = RTPathParse(pszPath, &ParsedPath, sizeof(ParsedPath), fPathStyle);
+    if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW)
+    {
+        /* Skip leading slashes. */
+        if (ParsedPath.fProps & RTPATH_PROP_ROOT_SLASH)
+        {
+            if (fPathStyle == RTPATH_STR_F_STYLE_DOS)
+                while (pszPath[0] == '/' || pszPath[0] == '\\')
+                    pszPath++;
+            else
+                while (pszPath[0] == '/')
+                    pszPath++;
+        }
+        const size_t cchPath = strlen(pszPath);
+
+        /*
+         * Calculate the encoded length and figure destination buffering.
+         */
+        static const char s_szPrefix[] = "file:///";
+        size_t const      cchPrefix    = sizeof(s_szPrefix) - (ParsedPath.fProps & RTPATH_PROP_UNC ? 2 : 1);
+        size_t cchEncoded = rtUriCalcEncodedLength(pszPath, cchPath, fPathStyle != RTPATH_STR_F_STYLE_DOS);
+
+        if (pcchUri)
+            *pcchUri = cchEncoded;
+
+        char  *pszDst;
+        char  *pszFreeMe = NULL;
+        if (!cbUri || *ppszUri == NULL)
+        {
+            cbUri = RT_MAX(cbUri, cchPrefix + cchEncoded + 1);
+            *ppszUri = pszFreeMe = pszDst = RTStrAlloc(cbUri);
+            AssertReturn(pszDst, VERR_NO_STR_MEMORY);
+        }
+        else if (cchEncoded < cbUri)
+            pszDst = *ppszUri;
+        else
+            return VERR_BUFFER_OVERFLOW;
+
+        /*
+         * Construct the URI.
+         */
+        memcpy(pszDst, s_szPrefix, cchPrefix);
+        pszDst[cchPrefix] = '\0';
+        rc = rtUriEncodeIntoBuffer(pszPath, cchPath, fPathStyle != RTPATH_STR_F_STYLE_DOS, &pszDst[cchPrefix], cbUri - cchPrefix);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(strlen(pszDst) == cbUri - 1);
+            if (fPathStyle == RTPATH_STR_F_STYLE_DOS)
+                RTPathChangeToUnixSlashes(pszDst, true /*fForce*/);
+            return VINF_SUCCESS;
+        }
+
+        AssertRC(rc); /* Impossible! rtUriCalcEncodedLength or something above is busted! */
+        if (pszFreeMe)
+            RTStrFree(pszFreeMe);
+    }
+    return rc;
+}
+
+
 RTDECL(char *) RTUriFileCreate(const char *pszPath)
 {
-    /* Empty paths are invalid. */
-    AssertPtrReturn(pszPath, NULL);
-    AssertReturn(*pszPath, NULL);
-
-    char *pszResult = NULL;
-    if (pszPath)
-    {
-        /* Check if it's an UNC path. Skip any leading slashes. */
-        while (pszPath)
-        {
-            if (   *pszPath != '\\'
-                && *pszPath != '/')
-                break;
-            pszPath++;
-        }
-
-        /* Create the percent encoded strings and calculate the necessary URI length. */
-        char *pszPath1 = rtUriPercentEncodeN(pszPath, RTSTR_MAX);
-        if (pszPath1)
-        {
-            /* Always change DOS slashes to Unix slashes. */
-            RTPathChangeToUnixSlashes(pszPath1, true); /** @todo Flags? */
-
-            size_t cbSize = 7 /* file:// */ + strlen(pszPath1) + 1; /* plus zero byte */
-            if (pszPath1[0] != '/')
-                ++cbSize;
-            char *pszTmp = pszResult = RTStrAlloc(cbSize);
-            if (pszResult)
-            {
-                /* Compose the target URI string. */
-                *pszTmp = '\0';
-                RTStrCatP(&pszTmp, &cbSize, "file://");
-                if (pszPath1[0] != '/')
-                    RTStrCatP(&pszTmp, &cbSize, "/");
-                RTStrCatP(&pszTmp, &cbSize, pszPath1);
-            }
-            RTStrFree(pszPath1);
-        }
-    }
-
-    return pszResult;
+    char *pszUri = NULL;
+    int rc = RTUriFileCreateEx(pszPath, RTPATH_STR_F_STYLE_HOST, &pszUri, 0 /*cbUri*/, NULL /*pcchUri*/);
+    if (RT_SUCCESS(rc))
+        return pszUri;
+    return NULL;
 }
 
 

@@ -33,6 +33,7 @@
 #include <iprt/string.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/test.h>
 
 #if 0 && defined(RT_OS_WINDOWS) /* Enable for windows API reference results. */
@@ -311,12 +312,12 @@ static struct URIFILETEST
 {
     {   /* #0: */
         /* .pszPath          =*/ "C:\\over\\ <>#%\"{}|^[]`\\there",
-        /* .pszUri           =*/ "file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
+        /* .pszUri           =*/ "file:///C:%5Cover/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "C:\\over\\ <>#%\"{}|^[]`\\there",
-        /* .pszCreatedUri    =*/ "file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
+        /* .pszCreatedUri    =*/ "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* PathCreateFromUrl =   "C:\\over\\ <>#%\"{}|^[]`\\there" - same */
-        /* UrlCreateFromPath =   "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there" - differs */
+        /* UrlCreateFromPath =   "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there" - same */
     },
     {   /* #1: */
         /* .pszPath          =*/ "/over/ <>#%\"{}|^[]`/there",
@@ -377,9 +378,9 @@ static struct URIFILETEST
         /* .pszUri           =*/ "file:///foo%5Cbar",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\foo\\bar",
-        /* .pszCreatedUri    =*/ "file:///foo%5Cbar",
+        /* .pszCreatedUri    =*/ "file:///foo/bar",
         /* PathCreateFromUrl =   "\\foo\\bar" - same */
-        /* UrlCreateFromPath =   "file:///foo/bar" - differs */
+        /* UrlCreateFromPath =   "file:///foo/bar" - same */
     },
     {   /* #8: */
         /* .pszPath          =*/ "C:/over/ <>#%\"{}|^[]`/there",
@@ -392,12 +393,12 @@ static struct URIFILETEST
     },
     {   /* #9: */
         /* .pszPath          =*/ "\\over\\ <>#%\"{}|^[]`\\there",
-        /* .pszUri           =*/ "file:///over%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
+        /* .pszUri           =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\over\\ <>#%\"{}|^[]`\\there",
-        /* .pszCreatedUri    =*/ "file:///over%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
+        /* .pszCreatedUri    =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* PathCreateFromUrl =   "\\over\\ <>#%\"{}|^[]`\\there" - same */
-        /* UrlCreateFromPath =   "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there" - differs */
+        /* UrlCreateFromPath =   "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there" - same */
     },
     {   /* #10: */
         /* .pszPath          =*/ "/usr/bin/grep",
@@ -410,12 +411,12 @@ static struct URIFILETEST
     },
     {   /* #11: */
         /* .pszPath          =*/ "\\usr\\bin\\grep",
-        /* .pszUri           =*/ "file:///usr%5Cbin%5Cgrep",
+        /* .pszUri           =*/ "file:///usr/bin/grep",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\usr\\bin\\grep",
-        /* .pszCreatedUri    =*/ "file:///usr%5Cbin%5Cgrep",
+        /* .pszCreatedUri    =*/ "file:///usr/bin/grep",
         /* PathCreateFromUrl =   "\\usr\\bin\\grep" - same */
-        /* UrlCreateFromPath =   "file:///usr/bin/grep" - differs */
+        /* UrlCreateFromPath =   "file:///usr/bin/grep" - same */
     },
     {   /* #12: */
         /* .pszPath          =*/ "/somerootsubdir/isos/files.lst",
@@ -428,12 +429,12 @@ static struct URIFILETEST
     },
     {   /* #13: */
         /* .pszPath          =*/ "\\not-a-cifsserver\\isos\\files.lst",
-        /* .pszUri           =*/ "file:///not-a-cifsserver%5Cisos%5Cfiles.lst",
+        /* .pszUri           =*/ "file:///not-a-cifsserver/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\not-a-cifsserver\\isos\\files.lst",
-        /* .pszCreatedUri    =*/ "file:///not-a-cifsserver%5Cisos%5Cfiles.lst",
+        /* .pszCreatedUri    =*/ "file:///not-a-cifsserver/isos/files.lst",
         /* PathCreateFromUrl =   "\\not-a-cifsserver\\isos\\files.lst" - same */
-        /* UrlCreateFromPath =   "file:///not-a-cifsserver/isos/files.lst" - differs */
+        /* UrlCreateFromPath =   "file:///not-a-cifsserver/isos/files.lst" - same */
     },
     {   /* #14: */
         /* .pszPath          =*/ "/rootsubdir/isos/files.lst",
@@ -446,28 +447,27 @@ static struct URIFILETEST
     },
     {   /* #15: */
         /* .pszPath          =*/ "\\not-a-cifsserver-either\\isos\\files.lst",
-        /* .pszUri           =*/ "file:///not-a-cifsserver-either%5Cisos%5Cfiles.lst",
+        /* .pszUri           =*/ "file:///not-a-cifsserver-either/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
         /* .pszCreatedPath   =*/ "\\not-a-cifsserver-either\\isos\\files.lst",
-        /* .pszCreatedUri    =*/ "file:///not-a-cifsserver-either%5Cisos%5Cfiles.lst",
+        /* .pszCreatedUri    =*/ "file:///not-a-cifsserver-either/isos/files.lst",
         /* PathCreateFromUrl =   "\\not-a-cifsserver-either\\isos\\files.lst" - same */
-        /* UrlCreateFromPath =   "file:///not-a-cifsserver-either/isos/files.lst" - differs */
+        /* UrlCreateFromPath =   "file:///not-a-cifsserver-either/isos/files.lst" - same */
     },
-#if 0 /** @todo r=bird: this ain't working right. It's in the wikipedia article on file:// ... */
     {   /* #16: */
         /* .pszPath          =*/ "\\\\cifsserver\\isos\\files.lst",
         /* .pszUri           =*/ "file:////cifsserver/isos/files.lst",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
+        /* .pszCreatedPath   =*/ "\\\\cifsserver\\isos\\files.lst",
         /* .pszCreatedUri    =*/ "file://cifsserver/isos/files.lst",
         /* PathCreateFromUrl =   "\\\\cifsserver\\isos\\files.lst" - same */
-        /* UrlCreateFromPath =   "file:////cifsserver/isos/files.lst" - differs */
+        /* UrlCreateFromPath =   "file://cifsserver/isos/files.lst" - same */
     },
     {   /* #17: */
         /* .pszPath          =*/ "c:boot.ini",
         /* .pszUri           =*/ "file://localhost/c:boot.ini",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
+        /* .pszCreatedPath   =*/ "c:boot.ini",
         /* .pszCreatedUri    =*/ "file:///c:boot.ini",
         /* PathCreateFromUrl =   "c:boot.ini" - same */
         /* UrlCreateFromPath =   "file:///c:boot.ini" - same */
@@ -476,12 +476,11 @@ static struct URIFILETEST
         /* .pszPath          =*/ "c:boot.ini",
         /* .pszUri           =*/ "file:///c|boot.ini",
         /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
-        /* .pszCreatedPath   =*/ NULL,    /* Same as pszPath. */
+        /* .pszCreatedPath   =*/ "c:boot.ini",
         /* .pszCreatedUri    =*/ "file:///c:boot.ini",
         /* PathCreateFromUrl =   "c:boot.ini" - same */
         /* UrlCreateFromPath =   "file:///c:boot.ini" - same */
     },
-#endif
 };
 
 #ifdef TSTRTURI_WITH_WINDOWS_REFERENCE_RESULTS
@@ -560,7 +559,7 @@ static void tstWindowsReferenceResults(void)
             RTTESTI_CHECK_RC_OK_RETV(RTUtf16ToUtf8(wszResult, &pszResult));
             RTPrintf("        /* PathCreateFromUrl =   ");
             tstPrintCString(pszResult);
-            if (   g_aCreateFileURIs[i].pszPath
+            if (   g_aCreateFileURIs[i].pszCreatedPath
                 && strcmp(pszResult, g_aCreateFileURIs[i].pszCreatedPath) == 0)
                 RTPrintf(" - same */\n");
             else
@@ -592,7 +591,7 @@ static void tstWindowsReferenceResults(void)
                 RTTESTI_CHECK_RC_OK_RETV(RTUtf16ToUtf8(wszResult2, &pszResult));
                 RTPrintf("        /* UrlCreateFromPath =   ");
                 tstPrintCString(pszResult);
-                if (   g_aCreateFileURIs[i].pszUri
+                if (   g_aCreateFileURIs[i].pszCreatedUri
                     && strcmp(pszResult, g_aCreateFileURIs[i].pszCreatedUri) == 0)
                     RTPrintf(" - same */\n");
                 else
@@ -609,6 +608,37 @@ static void tstWindowsReferenceResults(void)
 }
 
 #endif /* TSTRTURI_WITH_WINDOWS_REFERENCE_RESULTS */
+
+
+static void tstRTUriFileCreateEx(void)
+{
+    RTTestISub("RTUriFileCreateEx");
+    for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs); ++i)
+    {
+        uint32_t const fPathStyle = g_aCreateFileURIs[i].uFormat == URI_FILE_FORMAT_WIN
+                                  ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX;
+        char *pszUri = (char *)&pszUri;
+        int rc = RTUriFileCreateEx(g_aCreateFileURIs[i].pszPath, fPathStyle, &pszUri, 0, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            if (g_aCreateFileURIs[i].pszCreatedUri)
+            {
+                if (strcmp(pszUri, g_aCreateFileURIs[i].pszCreatedUri) == 0)
+                {
+                    /** @todo check out the other variations of the API. */
+                }
+                else
+                    RTTestIFailed("#%u: '%s'/%#x => '%s', expected '%s'", i,
+                                  g_aCreateFileURIs[i].pszPath, fPathStyle,
+                                  pszUri, g_aCreateFileURIs[i].pszCreatedUri);
+            }
+            else
+                RTTestIFailed("#%u: bad testcase; pszCreatedUri is NULL\n", i);
+        }
+        else if (rc != VERR_INVALID_POINTER || g_aCreateFileURIs[i].pszPath != NULL)
+            RTTestIFailed("#%u: '%s'/%#x => %Rrc", i, g_aCreateFileURIs[i].pszPath, fPathStyle, rc);
+    }
+}
 
 
 int main()
@@ -671,14 +701,12 @@ int main()
 
     /* File Uri path */
     RTTestISub("RTUriFilePath");
-    for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs); ++i)
+    for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs) - 3; ++i) /** @todo r=bird: Fixed last three tests in RTUriFilePath */
         CHECK_STR_API(RTUriFilePath(g_aCreateFileURIs[i].pszUri, g_aCreateFileURIs[i].uFormat),
                       g_aCreateFileURIs[i].pszCreatedPath);
 
     /* File Uri creation */
-    RTTestISub("RTUriFileCreate");
-    for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs); ++i)
-        CHECK_STR_API(RTUriFileCreate(g_aCreateFileURIs[i].pszPath), g_aCreateFileURIs[i].pszCreatedUri);
+    tstRTUriFileCreateEx();
 
     RTAssertSetMayPanic(fSavedMayPanic);
     RTAssertSetQuiet(fSavedQuiet);

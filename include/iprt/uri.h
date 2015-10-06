@@ -274,12 +274,41 @@ RTDECL(bool)   RTUriIsSchemeMatch(const char *pszUri, const char *pszScheme);
  *
  * The returned pointer must be freed using RTStrFree().
  *
- * @see RTUriCreate
- *
  * @returns The new URI on success, NULL otherwise.  Free With RTStrFree.
  * @param   pszPath             The path of the URI.
+ *
+ * @sa      RTUriFileCreateEx, RTUriCreate
  */
 RTDECL(char *) RTUriFileCreate(const char *pszPath);
+
+/**
+ * Creates an file URL for the given path.
+ *
+ * This API works like RTStrToUtf16Ex with regard to result allocation or
+ * buffering (i.e. it's a bit complicated but very flexible).
+ *
+ * @returns iprt status code.
+ * @param   pszPath         The path to convert to a file:// URL.
+ * @param   fPathStyle      The input path style, exactly one of
+ *                          RTPATH_STR_F_STYLE_HOST, RTPATH_STR_F_STYLE_DOS and
+ *                          RTPATH_STR_F_STYLE_UNIX.  Must include iprt/path.h.
+ * @param   ppszUri         If cbUri is non-zero, this must either be pointing
+ *                          to pointer to a buffer of the specified size, or
+ *                          pointer to a NULL pointer.  If *ppszUri is NULL or
+ *                          cbUri is zero a buffer of at least cbUri chars will
+ *                          be allocated to hold the URL.  If a buffer was
+ *                          requested it must be freed using RTStrFree().
+ * @param   cbUri           The buffer size in bytes (includes terminator).
+ * @param   pcchUri         Where to store the length of the URI string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
+ * @sa      RTUriCreate, RTUriFileCreate
+ */
+RTDECL(int) RTUriFileCreateEx(const char *pszPath, uint32_t fPathStyle, char **ppszUri, size_t cbUri, size_t *pcchUri);
 
 /**
  * Returns the file path encoded in the URI.
