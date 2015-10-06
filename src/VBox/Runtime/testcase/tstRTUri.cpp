@@ -389,7 +389,7 @@ g_apCreateFileURIs[] =
     }
 };
 
-/**
+/*
  * For reference, taken from output of PathCreateFromUrl/UrlCreateFromPath on Windows:
  *
  * #0: Path=C:\over\ <>#%"{}|^[]`\there, URL=file:///C:%5Cover%5C%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere
