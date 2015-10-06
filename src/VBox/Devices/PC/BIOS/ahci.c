@@ -884,7 +884,7 @@ static int ahci_hba_init(uint16_t io_base)
     do
     {
         AHCI_READ_REG(io_base, AHCI_REG_GHC, val);
-    } while (val & AHCI_GHC_HR != 0);
+    } while ((val & AHCI_GHC_HR) != 0);
 
     AHCI_READ_REG(io_base, AHCI_REG_CAP, val);
     cPorts = ahci_ctrl_extract_bits(val, 0x1f, 0) + 1; /* Extract number of ports.*/
