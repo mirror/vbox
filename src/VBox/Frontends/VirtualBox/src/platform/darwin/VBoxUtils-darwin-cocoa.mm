@@ -183,6 +183,19 @@ void darwinSetHideTitleButtonImpl(NativeNSWindowRef pWindow, CocoaWindowButtonTy
         [pButton setHidden: YES];
 }
 
+void darwinDisableZoomButtonFullscreenCheckImpl(NativeNSWindowRef pWindow)
+{
+    NSButton *pButton = [pWindow standardWindowButton:NSWindowZoomButton];
+    if (pButton != Nil)
+    {
+        /* By default there is an internal selector "_setNeedsZoom:" used.
+         * Since El Capitan it checks if window is able to enter full-screen
+         * and enters full-screen even if we do not want it, so we are
+         * hacking selector to be "zoom:" instead: */
+        [pButton setAction: @selector(zoom:)];
+    }
+}
+
 void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnabled)
 {
     if (fEnabled)

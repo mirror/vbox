@@ -72,7 +72,7 @@ void UIMachineWindowScale::prepareVisualState()
 
     /* No 'Zoom' button since El Capitan for now: */
     if (vboxGlobal().osRelease() >= MacOSXRelease_ElCapitan)
-        darwinSetHideTitleButton(this, CocoaWindowButtonType_Zoom);
+        darwinDisableZoomButtonFullscreenCheck(this);
 }
 #endif /* Q_WS_MAC */
 
