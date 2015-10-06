@@ -16,6 +16,28 @@
  */
 
 
+/** @page pg_vgsvc_memballoon VBoxService - Memory Ballooning
+ *
+ * The Memory Ballooning subservice works with VBoxGuest, PGM and GMM to
+ * dynamically reallocate memory between VMs.
+ *
+ * Memory ballooning is typically used to deal with overcomitting memory on the
+ * host.  It allowes you to borrow memory from one or more VMs and make it
+ * available to others.  In theory it could also be used to make memory
+ * available to the host system, however memory fragmentation typically makes
+ * that difficult.
+ *
+ * The memory ballooning subservices talks to PGM, GMM and Main via the VMMDev.
+ * It polls for change requests at an interval and executes them when they
+ * arrive.  There are two ways we implement the actual ballooning, either
+ * VBoxGuest allocates kernel memory and donates it to the host, or this service
+ * allocates process memory which VBoxGuest then locks down and donates to the
+ * host.  While we prefer the former method it is not practicable on all OS and
+ * we have to use the latter.
+ *
+ */
+
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/

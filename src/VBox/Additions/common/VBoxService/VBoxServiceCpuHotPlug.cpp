@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxService - Guest Additions CPU Hot Plugging Service.
+ * VBoxService - Guest Additions CPU Hot-Plugging Service.
  */
 
 /*
@@ -15,6 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/** @page pg_vgsvc_cpuhotplug CPU Hot-Plugging
+ *
+ * The CPU Hot-Plugging subservice helps execute and coordinate CPU hot-plugging
+ * between the guest OS and the VMM.
+ *
+ * CPU Hot-Plugging is useful for reallocating CPU resources from one VM to
+ * other VMs or/and the host.  It talks to the VMM via VMMDev, new hot-plugging
+ * events being signalled with an interrupt (no polling).
+ *
+ * Currently only supported for linux guests.
+ */
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -95,38 +106,38 @@ static const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl1[] =
 static const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl2[] =
 {
     /** device:<id> */
-    {true, "device:*"},
+    { true, "device:*" },
     /** LNXSYBUS:<id> */
-    {true, "LNXSYBUS:*"}
+    { true, "LNXSYBUS:*" }
 };
 
 /** Possible combinations of all path components for level 3 */
 static const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl3[] =
 {
     /** ACPI0004:<id> */
-    {true, "ACPI0004:*"}
+    { true, "ACPI0004:*" }
 };
 
 /** Possible combinations of all path components for level 4 */
 static const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl4[] =
 {
     /** LNXCPU:<id> */
-    {true, "LNXCPU:*"},
+    { true, "LNXCPU:*" },
     /** ACPI_CPU:<id> */
-    {true, "ACPI_CPU:*"}
+    { true, "ACPI_CPU:*" }
 };
 
 /** All possible combinations. */
 static SYSFSCPUPATH g_aAcpiCpuPath[] =
 {
     /** Level 1 */
-    {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl1, RT_ELEMENTS(g_aAcpiCpuPathLvl1), NULL, NULL},
+    { ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl1, RT_ELEMENTS(g_aAcpiCpuPathLvl1), NULL, NULL },
     /** Level 2 */
-    {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl2, RT_ELEMENTS(g_aAcpiCpuPathLvl2), NULL, NULL},
+    { ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl2, RT_ELEMENTS(g_aAcpiCpuPathLvl2), NULL, NULL },
     /** Level 3 */
-    {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl3, RT_ELEMENTS(g_aAcpiCpuPathLvl3), NULL, NULL},
+    { ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl3, RT_ELEMENTS(g_aAcpiCpuPathLvl3), NULL, NULL },
     /** Level 4 */
-    {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl4, RT_ELEMENTS(g_aAcpiCpuPathLvl4), NULL, NULL},
+    { ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl4, RT_ELEMENTS(g_aAcpiCpuPathLvl4), NULL, NULL },
 };
 
 /**
@@ -552,7 +563,7 @@ static DECLCALLBACK(int) vgsvcCpuHotPlugWorker(bool volatile *pfShutdown)
      */
     for (;;)
     {
-        /* Wait for CPU hot plugging event. */
+        /* Wait for CPU hot-plugging event. */
         uint32_t            idCpuCore;
         uint32_t            idCpuPackage;
         VMMDevCpuEventType  enmEventType;
@@ -612,7 +623,7 @@ VBOXSERVICE g_CpuHotPlug =
     /* pszName. */
     "cpuhotplug",
     /* pszDescription. */
-    "CPU hot plugging monitor",
+    "CPU hot-plugging monitor",
     /* pszUsage. */
     NULL,
     /* pszOptions. */

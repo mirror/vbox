@@ -15,15 +15,29 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 /** @page pg_vgsvc_pagesharing VBoxService - Page Sharing
  *
- * The Page Sharing subservice is the driving force in implementing the Page
- * Fusion feature in VirtualBox.   It is its responsibility to find memory
- * mappings and other good candidates for page sharing.
+ * The Page Sharing subservice is responsible for finding memory mappings
+ * suitable page fusions.
+ *
+ * It is the driving force behind the Page Fusion feature in VirtualBox.
+ * Working with PGM and GMM (ring-0) thru the VMMDev interface.  Every so often
+ * it reenumerates the memory mappings (executables and shared libraries) of the
+ * guest OS and reports additions and removals to GMM.  For each mapping there
+ * is a filename and version as well as and address range and subsections.  GMM
+ * will match the mapping with mapping with the same name and version from other
+ * VMs and see if there are any identical pages between the two.
+ *
+ * To increase the hit rate and reduce the volatility, the service launches a
+ * child process which loads all the Windows system DLLs it can.  The child
+ * process is necessary as the DLLs are loaded without running the init code,
+ * and therefore not actually callable for other VBoxService code (may crash).
  *
  * This is currently only implemented on Windows.  There is no technical reason
  * for it not to be doable for all the other guests too, it's just a matter of
  * customer demand and engineering time.
+ *
  */
 
 

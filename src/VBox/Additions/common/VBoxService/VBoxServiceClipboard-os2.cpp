@@ -16,6 +16,24 @@
  */
 
 
+/** @page pg_vgsvc_clipboard VBoxService - Clipboard (OS/2)
+ *
+ * The Clipboard subservice provides clipboard sharing for OS/2 guests only.
+ *
+ * This was the second subservice that was added to VBoxService.  OS/2 is a
+ * single user system and we don't provide any VBoxTray or VBoxClient like
+ * processes. Because it's kind of simple system, it became natural to put the
+ * clipboard sharing here in VBoxService for OS/2.
+ *
+ * In addition to integrating with the native OS/2 PM clipboard formats, we also
+ * try provide the Odin32, a windows API layer for OS/2 (developed by Sander van
+ * Leeuwen and friends, later mainly InnoTek), with additional formats.
+ *
+ * Bitmaps are currently not supported, but that can easily be added should the
+ * need ever arrise.
+ */
+
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -202,10 +220,10 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Init(void)
                     g_atomOdin32UnicodeText = WinFindAtom(WinQuerySystemAtomTable(), SZFMT_ODIN32_UNICODETEXT);
                 if (g_atomOdin32UnicodeText == 0)
                     VGSvcError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n",
-                                     lLastError, WinGetLastError(g_habCtrl));
+                               lLastError, WinGetLastError(g_habCtrl));
 
                 VGSvcVerbose(2, "g_u32ClientId=%RX32 g_atomNothingChanged=%#x g_atomOdin32UnicodeText=%#x\n",
-                                   g_u32ClientId, g_atomNothingChanged, g_atomOdin32UnicodeText);
+                             g_u32ClientId, g_atomNothingChanged, g_atomOdin32UnicodeText);
                 return VINF_SUCCESS;
             }
 
@@ -213,7 +231,7 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Init(void)
         }
         else
             VGSvcError("WinAddAtom() failed, lasterr=%lx; WinFindAtom() failed, lasterror=%lx\n",
-                             lLastError, WinGetLastError(g_habCtrl));
+                       lLastError, WinGetLastError(g_habCtrl));
     }
     else
         VGSvcError("WinCreateMsgQueue(,0) failed, lasterr=%lx\n", WinGetLastError(g_habCtrl));
@@ -290,8 +308,8 @@ static void vgsvcClipboardOs2AdvertiseHostFormats(uint32_t fFormats)
                 {
                     if (!WinSetClipbrdData(g_habWorker, 0, CF_TEXT, CFI_POINTER))
                         VGSvcError("WinSetClipbrdData(,,CF_TEXT,) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
-                    if (    g_atomOdin32UnicodeText
-                        &&  !WinSetClipbrdData(g_habWorker, 0, g_atomOdin32UnicodeText, CFI_POINTER))
+                    if (   g_atomOdin32UnicodeText
+                        && !WinSetClipbrdData(g_habWorker, 0, g_atomOdin32UnicodeText, CFI_POINTER))
                         VGSvcError("WinSetClipbrdData(,,g_atomOdin32UnicodeText,) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
                 }
                 if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
@@ -485,7 +503,7 @@ static void vgsvcClipboardOs2RenderFormat(USHORT usFmt)
                 else
                 {
                     VGSvcError("vgsvcClipboardOs2RenderFormat: WinSetClipbrdData(,%p,%#x, CF_POINTER) failed, lasterror=%lx\n",
-                                     pvPM, usFmt, WinGetLastError(g_habWorker));
+                               pvPM, usFmt, WinGetLastError(g_habWorker));
                     DosFreeMem(pvPM);
                 }
             }
@@ -878,7 +896,7 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Listener(RTTHREAD ThreadSelf, void *pv
                             if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
                                             MPFROMLONG(fFormats), 0))
                                 VGSvcError("WinPostMsg(%lx, FORMATS,,) failed, lasterr=%#lx\n",
-                                                 g_hwndWorker, WinGetLastError(g_habListener));
+                                           g_hwndWorker, WinGetLastError(g_habListener));
                             break;
 
                         /*
@@ -888,7 +906,7 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Listener(RTTHREAD ThreadSelf, void *pv
                             if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                                             MPFROMLONG(fFormats), 0))
                                 VGSvcError("WinPostMsg(%lx, READ_DATA,,) failed, lasterr=%#lx\n",
-                                                 g_hwndWorker, WinGetLastError(g_habListener));
+                                           g_hwndWorker, WinGetLastError(g_habListener));
                             break;
 
                         /*
@@ -993,7 +1011,7 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Worker(bool volatile *pfShutdown)
                             {
                                 if (qmsg.msg != WM_TIMER)
                                     VGSvcVerbose(6, "WinGetMsg -> hwnd=%p msg=%#x mp1=%p mp2=%p time=%#x ptl=%d,%d rsrv=%#x\n",
-                                                       qmsg.hwnd, qmsg.msg, qmsg.mp1, qmsg.mp2, qmsg.time, qmsg.ptl.x, qmsg.ptl.y, qmsg.reserved);
+                                                 qmsg.hwnd, qmsg.msg, qmsg.mp1, qmsg.mp2, qmsg.time, qmsg.ptl.x, qmsg.ptl.y, qmsg.reserved);
                                 WinDispatchMsg(g_habWorker, &qmsg);
                             }
                             VGSvcVerbose(2, "clipboard: Exited PM message loop. *pfShutdown=%RTbool\n", *pfShutdown);

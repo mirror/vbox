@@ -19,6 +19,9 @@
  *
  * The Guest Control subservice helps implementing the IGuest APIs.
  *
+ * The communication between this service (and its children) and IGuest goes
+ * over the HGCM GuestControl service.
+ *
  * The IGuest APIs provides means to manipulate (control) files, directories,
  * symbolic links and processes within the guest.  Most of these means requires
  * credentials of a guest OS user to operate, though some restricted ones

@@ -18,8 +18,17 @@
 /** @page pg_vgsvc_vminfo VBoxService - VM Information
  *
  * The VM Information subservice provides heaps of useful information about the
- * VM via guest properties.  Check out the "/VirtualBox/GuestInfo/" part of the
- * guest properties.
+ * VM via guest properties.
+ *
+ * Guest properties is a limited database maintained by the HGCM GuestProperties
+ * service in cooperation with the Main API (VBoxSVC).  Properties have a name
+ * (ours are path like), a string value, and a nanosecond timestamp (unix
+ * epoch).  The timestamp lets the user see how recent the information is.  As
+ * an laternative to polling on changes, it is also possible to wait on changes
+ * via the Main API or VBoxManage on the host side and VBoxControl in the guest.
+ *
+ * The namespace "/VirtualBox/" is reserved for value provided by VirtualBox.
+ * This service provides all the information under "/VirtualBox/GuestInfo/".
  *
  *
  * @section sec_vgsvc_vminfo_beacons    Beacons

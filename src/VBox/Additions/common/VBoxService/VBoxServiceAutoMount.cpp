@@ -16,6 +16,23 @@
  */
 
 
+/** @page pg_vgsvc_automount VBoxService - Shared Folder Automounter
+ *
+ * The Shared Folder Automounter subservice mounts shared folders upon request
+ * from the host.
+ *
+ * This retrieves shared folder automount requests from Main via the VMMDev.
+ * The current implemention only does this once, for some inexplicable reason,
+ * so the run-time addition of automounted shared folders are not heeded.
+ *
+ * This subservice is only used on linux and solaris.  On Windows the current
+ * thinking is this is better of done from VBoxTray, some one argue that for
+ * drive letter assigned shared folders it would be better to do some magic here
+ * (obviously not involving NDAddConnection).
+ *
+ */
+
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -601,6 +618,11 @@ static DECLCALLBACK(int) vbsvcAutoMountWorker(bool volatile *pfShutdown)
      * Therefore *no* service threads are allowed to quit themselves and need to wait
      * for the pfShutdown flag to be set by the main thread.
      */
+/** @todo r=bird: Shared folders have always been configurable at run time, so
+ * this service must be changed to check for changes and execute those changes!
+ *
+ * The 0.5sec sleep here is just soo crude and must go!
+ */
     for (;;)
     {
         /* Do we need to shutdown? */

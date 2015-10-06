@@ -18,10 +18,13 @@
 
 /** @page pg_vgsvc_timesync     VBoxService - The Time Sync Service
  *
+ * The time sync subservice synchronizes the guest OS walltime with the host.
+ *
  * The time sync service plays along with the Time Manager (TM) in the VMM
  * to keep the guest time accurate using the host machine as reference.
- * TM will try its best to make sure all timer ticks gets delivered so that
- * there isn't normally any need to adjust the guest time.
+ * Communication is facilitated by VMMDev.  TM will try its best to make sure
+ * all timer ticks gets delivered so that there isn't normally any need to
+ * adjust the guest time.
  *
  * There are three normal (= acceptable) cases:
  *      -# When the service starts up. This is because ticks and such might
