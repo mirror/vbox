@@ -1057,22 +1057,68 @@ VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, i
              */
             if (cbWrite > sizeof(RTNETETHERHDR))
             {
-                PRTNETETHERHDR pEtherHdr = (PRTNETETHERHDR)pbData;
-                if (pEtherHdr->EtherType != RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4))
-                    fIgnorePacket = true;       /* Supress passing ARP and other non IPv4 frames to debugger. */
-                else if (cbWrite > sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN)
+                PCRTNETETHERHDR pEtherHdr = (PCRTNETETHERHDR)pbData;
+                if (pEtherHdr->EtherType == RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4))
                 {
-                    /* Extract UDP payload, recording the guest IP address to pass to the debugger. */
-                    PRTNETIPV4 pIp4Hdr = (PRTNETIPV4)(pbData + sizeof(RTNETETHERHDR));
-                    if (   pIp4Hdr->ip_v == 4
-                        && pIp4Hdr->ip_p == RTNETIPV4_PROT_UDP)
+                    if (cbWrite > sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN)
                     {
-                        pHv->DbgGuestAddr = pIp4Hdr->ip_src;
-                        pbData += sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN;
-                        cbWrite -= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN;
+                        size_t const cbMaxIpHdr = cbWrite - sizeof(RTNETETHERHDR) - sizeof(RTNETUDP) - 1;
+                        size_t const cbMaxIpPkt = cbWrite - sizeof(RTNETETHERHDR);
+                        PCRTNETIPV4  pIp4Hdr    = (PCRTNETIPV4)(pbData + sizeof(RTNETETHERHDR));
+                        bool const   fValidIp4  = RTNetIPv4IsHdrValid(pIp4Hdr, cbMaxIpHdr, cbMaxIpPkt, false /*fChecksum*/);
+                        if (   fValidIp4
+                            && pIp4Hdr->ip_p == RTNETIPV4_PROT_UDP)
+                        {
+                            size_t const cbIpHdr     = pIp4Hdr->ip_hl * 4;
+                            size_t const cbMaxUdpPkt = cbWrite - sizeof(RTNETETHERHDR) - cbIpHdr;
+                            PCRTNETUDP pUdpHdr       = (PCRTNETUDP)((uint8_t *)pIp4Hdr + cbIpHdr);
+                            if (   pUdpHdr->uh_ulen > RT_H2N_U16(sizeof(RTNETUDP))
+                                && pUdpHdr->uh_ulen <= RT_H2N_U16(cbMaxUdpPkt))
+                            {
+                                /*
+                                 * Extract the UDP payload and pass it to the debugger and record the guest IP address.
+                                 * Hyper-V sends UDP debugger packets with source and destination port as 0. If we don't
+                                 * filter out the ports here, we would receive BOOTP, NETBIOS and other UDP sub-protocol
+                                 * packets which the debugger yells as "Bad packet received from...".
+                                 */
+                                if (   !pUdpHdr->uh_dport
+                                    && !pUdpHdr->uh_sport)
+                                {
+                                    size_t const cbFrameHdr = sizeof(RTNETETHERHDR) + cbIpHdr + sizeof(RTNETUDP);
+                                    pbData  += cbFrameHdr;
+                                    cbWrite -= cbFrameHdr;
+                                    pHv->DbgGuestAddr = pIp4Hdr->ip_src;
+                                }
+                                else
+                                {
+                                    LogFlow(("GIM: HyperV: Ignoring UDP packet not src and dst port 0\n"));
+                                    fIgnorePacket = true;
+                                }
+                            }
+                            else
+                            {
+                                LogFlow(("GIM: HyperV: Ignoring malformed UDP packet. cbMaxUdpPkt=%u UdpPkt.len=%u\n",
+                                         cbMaxUdpPkt, RT_N2H_U16(pUdpHdr->uh_ulen)));
+                                fIgnorePacket = true;
+                            }
+                        }
+                        else
+                        {
+                            LogFlow(("GIM: HyperV: Ignoring non-IP / non-UDP packet. fValidIp4=%RTBool Proto=%u\n", fValidIp4,
+                                      pIp4Hdr->ip_p));
+                            fIgnorePacket = true;
+                        }
                     }
                     else
-                        fIgnorePacket = true;   /* Supress passing non-UDP packets to the debugger. */
+                    {
+                        LogFlow(("GIM: HyperV: Ignoring IPv4 packet; too short to be valid UDP. cbWrite=%u\n", cbWrite));
+                        fIgnorePacket = true;
+                    }
+                }
+                else
+                {
+                    LogFlow(("GIM: HyperV: Ignoring non-IP packet. Ethertype=%#x\n", RT_N2H_U16(pEtherHdr->EtherType)));
+                    fIgnorePacket = true;
                 }
             }
         }
