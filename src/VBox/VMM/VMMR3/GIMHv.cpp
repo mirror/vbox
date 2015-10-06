@@ -1069,11 +1069,11 @@ VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, i
                         if (   fValidIp4
                             && pIp4Hdr->ip_p == RTNETIPV4_PROT_UDP)
                         {
-                            size_t const cbIpHdr     = pIp4Hdr->ip_hl * 4;
-                            size_t const cbMaxUdpPkt = cbWrite - sizeof(RTNETETHERHDR) - cbIpHdr;
+                            uint32_t const cbIpHdr     = pIp4Hdr->ip_hl * 4;
+                            uint32_t const cbMaxUdpPkt = cbWrite - sizeof(RTNETETHERHDR) - cbIpHdr;
                             PCRTNETUDP pUdpHdr       = (PCRTNETUDP)((uint8_t *)pIp4Hdr + cbIpHdr);
-                            if (   pUdpHdr->uh_ulen > RT_H2N_U16(sizeof(RTNETUDP))
-                                && pUdpHdr->uh_ulen <= RT_H2N_U16(cbMaxUdpPkt))
+                            if (   pUdpHdr->uh_ulen >  RT_H2N_U16(sizeof(RTNETUDP))
+                                && pUdpHdr->uh_ulen <= RT_H2N_U16((uint16_t)cbMaxUdpPkt))
                             {
                                 /*
                                  * Extract the UDP payload and pass it to the debugger and record the guest IP address.
@@ -1084,7 +1084,7 @@ VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, i
                                 if (   !pUdpHdr->uh_dport
                                     && !pUdpHdr->uh_sport)
                                 {
-                                    size_t const cbFrameHdr = sizeof(RTNETETHERHDR) + cbIpHdr + sizeof(RTNETUDP);
+                                    uint32_t const cbFrameHdr = sizeof(RTNETETHERHDR) + cbIpHdr + sizeof(RTNETUDP);
                                     pbData  += cbFrameHdr;
                                     cbWrite -= cbFrameHdr;
                                     pHv->DbgGuestAddr = pIp4Hdr->ip_src;
