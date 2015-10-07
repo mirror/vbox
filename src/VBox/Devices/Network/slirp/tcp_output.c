@@ -496,7 +496,7 @@ send:
             tcp_template(tp);
             if(!fWarn)
             {
-                LogRel(("NAT:TCP: TCP template was created forcely from socket information\n"));
+                LogRel(("NAT: TCP: TCP template was created forcely from socket information\n"));
                 fWarn = true;
             }
         }

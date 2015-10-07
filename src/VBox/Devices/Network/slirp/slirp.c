@@ -304,7 +304,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     if (u32Netmask & 0x1f)
     {
         /* CTL is x.x.x.15, bootp passes up to 16 IPs (15..31) */
-        LogRel(("The last 5 bits of the netmask (%RTnaipv4) need to be unset\n", RT_BE2H_U32(u32Netmask)));
+        LogRel(("NAT: The last 5 bits of the netmask (%RTnaipv4) need to be unset\n", RT_BE2H_U32(u32Netmask)));
         return VERR_INVALID_PARAMETER;
     }
     pData = RTMemAllocZ(RT_ALIGN_Z(sizeof(NATState), sizeof(uint64_t)));
@@ -1286,7 +1286,7 @@ static void arp_output(PNATState pData, const uint8_t *pcu8EtherSource, const st
         static bool fTagErrorReported;
         if (!fTagErrorReported)
         {
-            LogRel(("NAT: couldn't add the tag(PACKET_SERVICE:%d)\n",
+            LogRel(("NAT: Couldn't add the tag(PACKET_SERVICE:%d)\n",
                         (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask)));
             fTagErrorReported = true;
         }
@@ -1333,7 +1333,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
                     || memcmp(pARPHeader->ar_tha, broadcast_ethaddr, ETH_ALEN) == 0)
                 && memcmp(pEtherHeader->h_dest, broadcast_ethaddr, ETH_ALEN) == 0)
             {
-                LogRel2(("NAT: gratuitous ARP from %RTnaipv4 at %RTmac\n",
+                LogRel2(("NAT: Gratuitous ARP from %RTnaipv4 at %RTmac\n",
                          *(uint32_t *)pARPHeader->ar_sip, pARPHeader->ar_sha));
                 slirp_update_guest_addr_guess(pData, *(uint32_t *)pARPHeader->ar_sip, "gratuitous arp");
                 slirp_arp_cache_update_or_add(pData, *(uint32_t *)pARPHeader->ar_sip, &pARPHeader->ar_sha[0]);
@@ -1481,7 +1481,7 @@ slirp_update_guest_addr_guess(PNATState pData, uint32_t guess, const char *msg)
 
     if (pData->guest_addr_guess.s_addr == guess)
     {
-        LogRel2(("NAT: guest address guess %RTnaipv4 re-confirmed by %s\n",
+        LogRel2(("NAT: Guest address guess %RTnaipv4 re-confirmed by %s\n",
                  pData->guest_addr_guess.s_addr, msg));
         return;
     }
@@ -1489,13 +1489,13 @@ slirp_update_guest_addr_guess(PNATState pData, uint32_t guess, const char *msg)
     if (pData->guest_addr_guess.s_addr == INADDR_ANY)
     {
         pData->guest_addr_guess.s_addr = guess;
-        LogRel(("NAT: guest address guess set to %RTnaipv4 by %s\n",
+        LogRel(("NAT: Guest address guess set to %RTnaipv4 by %s\n",
                 pData->guest_addr_guess.s_addr, msg));
         return;
     }
     else
     {
-        LogRel(("NAT: guest address guess changed from %RTnaipv4 to %RTnaipv4 by %s\n",
+        LogRel(("NAT: Guest address guess changed from %RTnaipv4 to %RTnaipv4 by %s\n",
                 pData->guest_addr_guess.s_addr, guess, msg));
         pData->guest_addr_guess.s_addr = guess;
         return;
@@ -1559,7 +1559,7 @@ int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, in
 
     if (rule->so == NULL)
     {
-        LogRel(("NAT: failed to redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
+        LogRel(("NAT: Failed to redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
                 rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
                 rule->bind_ip.s_addr, rule->host_port,
                 guest_addr, rule->guest_port));
@@ -1567,7 +1567,7 @@ int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, in
         return 1;
     }
 
-    LogRel(("NAT: set redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
+    LogRel(("NAT: Set redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
             rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
             rule->bind_ip.s_addr, rule->host_port,
             guest_addr, rule->guest_port));
@@ -1585,14 +1585,14 @@ int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
     rule = slirp_find_redirect(pData, is_udp, host_addr, host_port, guest_addr, guest_port);
     if (rule == NULL)
     {
-        LogRel(("NAT: unable to find redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
+        LogRel(("NAT: Unable to find redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
                 rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
                 rule->bind_ip.s_addr, rule->host_port,
                 guest_addr.s_addr, rule->guest_port));
         return 0;
     }
 
-    LogRel(("NAT: remove redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
+    LogRel(("NAT: Remove redirect %s %RTnaipv4:%d -> %RTnaipv4:%d\n",
             rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
             rule->bind_ip.s_addr, rule->host_port,
             guest_addr.s_addr, rule->guest_port));
@@ -1824,7 +1824,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     if (   dst == INADDR_ANY
         && !fWarned)
     {
-        LogRel(("NAT:ARP: \"WHO HAS INADDR_ANY\" request has been detected\n"));
+        LogRel(("NAT: ARP: \"WHO HAS INADDR_ANY\" request has been detected\n"));
         fWarned = true;
     }
 #endif /* !DEBUG_vvl */
@@ -1890,7 +1890,7 @@ void  slirp_add_host_resolver_mapping(PNATState pData, const char *pszHostName, 
             return;
         }
         LIST_INSERT_HEAD(&pData->DNSMapHead, pDnsMapping, MapList);
-        LogRel(("NAT: user-defined mapping %s: %RTnaipv4 is registered\n",
+        LogRel(("NAT: User-defined mapping %s: %RTnaipv4 is registered\n",
                 pDnsMapping->pszCName ? pDnsMapping->pszCName : pDnsMapping->pszPattern,
                 pDnsMapping->u32IpAddress));
     }
@@ -1968,7 +1968,7 @@ void slirp_set_mtu(PNATState pData, int mtu)
 {
     if (mtu < 20 || mtu >= 16000)
     {
-        LogRel(("NAT: mtu(%d) is out of range (20;16000] mtu forcely assigned to 1500\n", mtu));
+        LogRel(("NAT: MTU(%d) is out of range (20;16000] mtu forcely assigned to 1500\n", mtu));
         mtu = 1500;
     }
     /* MTU is maximum transition unit on */

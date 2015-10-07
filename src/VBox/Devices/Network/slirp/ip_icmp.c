@@ -551,7 +551,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 
                     if (!fIcmpSocketErrorReported)
                     {
-                        LogRel(("icmp_input udp sendto tx errno = %d (%s)\n",
+                        LogRel(("NAT: icmp_input udp sendto tx errno = %d (%s)\n",
                                 errno, strerror(errno)));
                         fIcmpSocketErrorReported = true;
                     }
@@ -734,7 +734,7 @@ end_error:
         static bool fIcmpErrorReported;
         if (!fIcmpErrorReported)
         {
-            LogRel(("NAT: error occurred while sending ICMP error message\n"));
+            LogRel(("NAT: Error occurred while sending ICMP error message\n"));
             fIcmpErrorReported = true;
         }
     }

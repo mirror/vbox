@@ -479,7 +479,7 @@ tcp_connect(PNATState pData, struct socket *inso)
     if (   inso->so_laddr.s_addr == INADDR_ANY /* delayed port-forwarding? */
         && pData->guest_addr_guess.s_addr == INADDR_ANY)
     {
-        LogRel2(("NAT: port-forward: guest address unknown for %R[natsock]\n", inso));
+        LogRel2(("NAT: Port-forward: guest address unknown for %R[natsock]\n", inso));
         closesocket(accept(inso->s, NULL, NULL));
         if (inso->so_state & SS_FACCEPTONCE)
             tcp_close(pData, sototcpcb(inso));
@@ -514,7 +514,7 @@ tcp_connect(PNATState pData, struct socket *inso)
 
     if (so->so_laddr.s_addr == INADDR_ANY)
     {
-        LogRel2(("NAT: port-forward: using %RTnaipv4 for %R[natsock]\n",
+        LogRel2(("NAT: Port-forward: using %RTnaipv4 for %R[natsock]\n",
                  pData->guest_addr_guess.s_addr, inso));
         so->so_laddr = pData->guest_addr_guess;
     }
@@ -545,7 +545,7 @@ tcp_connect(PNATState pData, struct socket *inso)
         goto no_sockopt;
     }
     if (cVerbose > 0)
-        LogRel(("NAT: old socket rcv size: %dKB\n", opt / 1024));
+        LogRel(("NAT: Old socket recv size: %dKB\n", opt / 1024));
     /* @todo (r-vvl) make it configurable (via extra data) */
     opt = pData->socket_rcv;
     status = setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&opt, sizeof(int));
@@ -562,7 +562,7 @@ tcp_connect(PNATState pData, struct socket *inso)
         goto no_sockopt;
     }
     if (cVerbose > 0)
-        LogRel(("NAT: old socket snd size: %dKB\n", opt / 1024));
+        LogRel(("NAT: Old socket send size: %dKB\n", opt / 1024));
     opt = pData->socket_rcv;
     status = setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&opt, sizeof(int));
     if (status < 0)
