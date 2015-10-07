@@ -299,7 +299,11 @@ end:
 
 /**
  * Inspect all loaded modules for the specified process
+ *
  * @param   dwProcessId     Process id
+ * @param   ppNewTree       The module tree we're assembling from modules found
+ *                          in this process.  Modules found are moved from
+ *                          g_pKnownModuleTree or created new.
  */
 static void vgsvcPageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppNewTree)
 {

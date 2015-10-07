@@ -97,7 +97,7 @@ DECLEXPORT(void *) VBOXCALL VBoxGuestIDCOpen(uint32_t *pu32Version)
  * Close an IDC connection.
  *
  * @returns VBox error code.
- * @param   pvState             Opaque pointer to the session object.
+ * @param   pvSession           Opaque pointer to the session object.
  */
 DECLEXPORT(int) VBOXCALL VBoxGuestIDCClose(void *pvSession)
 {

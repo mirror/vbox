@@ -606,19 +606,17 @@ static int vgsvcVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PD
  * Frees the process structures returned by
  * vgsvcVMInfoWinProcessesEnumerate() before.
  *
- * @param   paProcs     What
+ * @param   cProcs      Number of processes in paProcs.
+ * @param   paProcs     The process array.
  */
 static void vgsvcVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs)
 {
     for (DWORD i = 0; i < cProcs; i++)
-    {
         if (paProcs[i].pSid)
         {
             HeapFree(GetProcessHeap(), 0 /* Flags */, paProcs[i].pSid);
             paProcs[i].pSid = NULL;
         }
-
-    }
     RTMemFree(paProcs);
 }
 
@@ -626,13 +624,14 @@ static void vgsvcVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paP
  * Determines whether the specified session has processes on the system.
  *
  * @returns Number of processes found for a specified session.
- * @param   pSession        The current user's SID.
- * @param   paProcs         The process snapshot.
- * @param   cProcs          The number of processes in the snaphot.
- * @param   puSession       Looked up session number.  Optional.
+ * @param   pSession            The current user's SID.
+ * @param   paProcs             The process snapshot.
+ * @param   cProcs              The number of processes in the snaphot.
+ * @param   puTerminalSession   Where to return terminal session number.
+ *                              Optional.
  */
-static uint32_t vgsvcVMInfoWinSessionHasProcesses(PLUID pSession,
-                                                  PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs, PULONG puTerminalSession)
+static uint32_t vgsvcVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs,
+                                                  PULONG puTerminalSession)
 {
     if (!pSession)
     {
@@ -1062,7 +1061,7 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
  * user count.
  *
  * @returns VBox status code.
- * @param   pCachce         Property cache to use for storing some of the lookup
+ * @param   pCache          Property cache to use for storing some of the lookup
  *                          data in between calls.
  * @param   ppszUserList    Where to store the user list (separated by commas).
  *                          Must be freed with RTStrFree().

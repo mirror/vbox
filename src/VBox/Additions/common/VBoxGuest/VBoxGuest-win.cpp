@@ -554,7 +554,7 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
  * Cleans up hardware resources.
  * Do not delete DevExt here.
  *
- * @param   pDrvObj     Driver object.
+ * @param   pDevObj     Device object.
  */
 NTSTATUS vbgdNtCleanup(PDEVICE_OBJECT pDevObj)
 {

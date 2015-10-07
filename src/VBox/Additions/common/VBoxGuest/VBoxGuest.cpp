@@ -501,7 +501,6 @@ static int vgdrvBalloonDeflate(PRTR0MEMOBJ pMemObj, VMMDevChangeMemBalloon *pReq
  *
  * @returns VBox status code.
  * @param   pDevExt         The device extension.
- * @param   pSession        The session.
  * @param   cBalloonChunks  The new size of the balloon in chunks of 1MB.
  * @param   pfHandleInR3    Where to return the handle-in-ring3 indicator
  *                          (VINF_SUCCESS if set).
@@ -726,7 +725,7 @@ static int vgdrvSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
  * own it already.
  *
  * @param   pDevExt     The device extension.
- * @param   pDevExt     The session.  Can be NULL at unload.
+ * @param   pSession    The session.  Can be NULL at unload.
  */
 static void vgdrvCloseMemBalloon(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
@@ -1767,6 +1766,7 @@ static int vgdrvIoCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
  * Checks if the VMM request is allowed in the context of the given session.
  *
  * @returns VINF_SUCCESS or VERR_PERMISSION_DENIED.
+ * @param   pDevExt             The device extension.
  * @param   pSession            The calling session.
  * @param   enmType             The request type.
  * @param   pReqHdr             The request.
@@ -2458,6 +2458,8 @@ static int vgdrvIoCtl_WriteCoreDump(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWriteCore
  * @param   pch                 The log message (need not be NULL terminated).
  * @param   cbData              Size of the buffer.
  * @param   pcbDataReturned     Where to store the amount of returned data. Can be NULL.
+ * @param   fUserSession        Copy of VBOXGUESTSESSION::fUserSession for the
+ *                              call.  True normal user, false root user.
  */
 static int vgdrvIoCtl_Log(PVBOXGUESTDEVEXT pDevExt, const char *pch, size_t cbData, size_t *pcbDataReturned, bool fUserSession)
 {
@@ -2955,7 +2957,8 @@ static int vgdrvResetCapabilitiesOnHost(PVBOXGUESTDEVEXT pDevExt)
  * we'll simply clear all bits we don't set.
  *
  * @returns VBox status code.
- * @param   fMask       The new mask.
+ * @param   pDevExt             The device extension.
+ * @param   pReq                The request.
  */
 static int vgdrvUpdateCapabilitiesOnHostWithReqAndLock(PVBOXGUESTDEVEXT pDevExt, VMMDevReqGuestCapabilities2 *pReq)
 {

@@ -223,7 +223,7 @@ void VGSvcGstCtrlProcessRelease(PVBOXSERVICECTRLPROCESS pProcess)
  *
  * @return  IPRT status code.
  * @param   pProcess            Process to wait shutting down for.
- * @param   RTMSINTERVAL        Timeout in ms to wait for shutdown.
+ * @param   msTimeout           Timeout in ms to wait for shutdown.
  * @param   prc                 Where to store the thread's return code.
  *                              Optional.
  */
@@ -279,7 +279,7 @@ int VGSvcGstCtrlProcessWait(const PVBOXSERVICECTRLPROCESS pProcess, RTMSINTERVAL
  * Closes the stdin pipe of a guest process.
  *
  * @return  IPRT status code.
- * @param   hPollSet            The polling set.
+ * @param   pProcess            The process which input pipe we close.
  * @param   phStdInW            The standard input pipe handle.
  */
 static int vgsvcGstCtrlProcessPollsetCloseInput(PVBOXSERVICECTRLPROCESS pProcess, PRTPIPE phStdInW)
@@ -1404,7 +1404,7 @@ static int vgsvcGstCtrlProcessDumpToFile(const char *pszFileName, void *pvBuf, s
  * The actual worker routine (loop) for a started guest process.
  *
  * @return  IPRT status code.
- * @param   PVBOXSERVICECTRLPROCESS         Guest process.
+ * @param   pProcess        The process we're servicing and monitoring.
  */
 static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
 {
@@ -1718,13 +1718,13 @@ static int vgsvcGstCtrlProcessLock(PVBOXSERVICECTRLPROCESS pProcess)
  * Thread main routine for a started process.
  *
  * @return IPRT status code.
- * @param  RTTHREAD             Pointer to the thread's data.
- * @param  void*                User-supplied argument pointer.
+ * @param  hThreadSelf      The thread handle.
+ * @param  pvUser           Pointer to a VBOXSERVICECTRLPROCESS structure.
  *
  */
-static DECLCALLBACK(int) vgsvcGstCtrlProcessThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) vgsvcGstCtrlProcessThread(RTTHREAD hThreadSelf, void *pvUser)
 {
-    PVBOXSERVICECTRLPROCESS pProcess = (VBOXSERVICECTRLPROCESS*)pvUser;
+    PVBOXSERVICECTRLPROCESS pProcess = (PVBOXSERVICECTRLPROCESS)pvUser;
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
     return vgsvcGstCtrlProcessProcessWorker(pProcess);
 }
@@ -1747,7 +1747,6 @@ static int vgsvcGstCtrlProcessUnlock(PVBOXSERVICECTRLPROCESS pProcess)
  * @param   pSession                    Guest session.
  * @param   pStartupInfo                Startup info.
  * @param   uContextID                  Context ID to associate the process to start with.
-
  */
 int VGSvcGstCtrlProcessStart(const PVBOXSERVICECTRLSESSION pSession,
                              const PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo, uint32_t uContextID)

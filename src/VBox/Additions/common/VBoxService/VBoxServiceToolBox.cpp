@@ -966,12 +966,14 @@ static char g_paszMkTempHelp[] =
 
 
 /**
- * Report the result of a vbox_mktemp operation - either errors to stderr (not
- * machine-readable) or everything to stdout as <name>\0<rc>\0 (machine-
- * readable format).  The message may optionally contain a '%s' for the file
- * name and an %Rrc for the result code in that order.  In future a "verbose"
- * flag may be added, without which nothing will be output in non-machine-
- * readable mode.  Sets prc if rc is a non-success code.
+ * Report the result of a vbox_mktemp operation.
+ *
+ * Either errors to stderr (not machine-readable) or everything to stdout as
+ * {name}\0{rc}\0 (machine- readable format).  The message may optionally
+ * contain a '%s' for the file name and an %Rrc for the result code in that
+ * order.  In future a "verbose" flag may be added, without which nothing will
+ * be output in non-machine- readable mode.  Sets prc if rc is a non-success
+ * code.
  */
 static void toolboxMkTempReport(const char *pcszMessage, const char *pcszFile,
                                 bool fActive, int rc, uint32_t fOutputFlags, int *prc)

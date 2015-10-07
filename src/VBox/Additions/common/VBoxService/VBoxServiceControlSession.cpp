@@ -1591,6 +1591,7 @@ int VGSvcGstCtrlSessionProcessRemove(PVBOXSERVICECTRLSESSION pSession, PVBOXSERV
  * maximum number of concurrent guest processes defined is allowed or not.
  *
  * @return  VBox status code.
+ * @param   pSession            The guest session.
  * @param   pbAllowed           True if starting (another) guest process
  *                              is allowed, false if not.
  */

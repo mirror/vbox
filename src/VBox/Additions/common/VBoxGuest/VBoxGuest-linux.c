@@ -55,7 +55,7 @@
 *********************************************************************************************************************************/
 /** The device name. */
 #define DEVICE_NAME             "vboxguest"
-/** The device name for the device node open to everyone.. */
+/** The device name for the device node open to everyone. */
 #define DEVICE_NAME_USER        "vboxuser"
 /** The name of the PCI driver */
 #define DRIVER_NAME             DEVICE_NAME
@@ -333,12 +333,12 @@ static struct pci_driver  g_PciDriver =
  *
  * @param   iIrq            The IRQ number.
  * @param   pvDevId         The device ID, a pointer to g_DevExt.
- * @param   pvRegs          Register set. Removed in 2.6.19.
+ * @param   pRegs           Register set. Removed in 2.6.19.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
-static irqreturn_t vboxguestLinuxISR(int iIrrq, void *pvDevId)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) && !defined(DOXYGEN_RUNNING)
+static irqreturn_t vboxguestLinuxISR(int iIrq, void *pvDevId)
 #else
-static irqreturn_t vboxguestLinuxISR(int iIrrq, void *pvDevId, struct pt_regs *pRegs)
+static irqreturn_t vboxguestLinuxISR(int iIrq, void *pvDevId, struct pt_regs *pRegs)
 #endif
 {
     bool fTaken = VGDrvCommonISR(&g_DevExt);
@@ -741,6 +741,7 @@ static int vboxguestLinuxRelease(struct inode *pInode, struct file *pFilp)
 /**
  * Device I/O Control entry point.
  *
+ * @param   pInode      Associated inode pointer.
  * @param   pFilp       Associated file pointer.
  * @param   uCmd        The function specified to ioctl().
  * @param   ulArg       The argument specified to ioctl().
