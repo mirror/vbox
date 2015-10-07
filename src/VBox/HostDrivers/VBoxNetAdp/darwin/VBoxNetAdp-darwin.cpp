@@ -219,29 +219,45 @@ static errno_t vboxNetAdpDarwinIfIOCtl(ifnet_t pIface, unsigned long uCmd, void 
 {
     errno_t error = 0;
 
-    switch (uCmd)
+    if (pvData == NULL)
     {
         /*
-         * Common pattern in the kernel code is:
+         * Common pattern in the kernel code is to make changes in the
+         * net layer and then notify the device driver by calling its
+         * ioctl function with NULL parameter, e.g.:
+         *
          *   ifnet_set_flags(interface, ...);
          *   ifnet_ioctl(interface, 0, SIOCSIFFLAGS, NULL);
          *
-         * Stub this case out so that VBoxNetFlt-darwin.cpp doesn't
-         * complain that it failed to put vboxnet into promiscuous
-         * mode.
+         * These are no-ops for us, so tell the caller we succeeded
+         * because some callers do check that return value.
          */
-        case SIOCSIFFLAGS:
-            if (pvData != NULL)
-            {
-                error = ENOTSUP;
-            }
-            break;
+        switch (uCmd)
+        {
+            case SIOCSIFFLAGS:
+                Log2(("VBoxNetAdp: %s%d: SIOCSIFFLAGS (null): flags = 0x%04hx\n",
+                      ifnet_name(pIface), ifnet_unit(pIface),
+                      (uint16_t)ifnet_flags(pIface)));
+                return 0;
 
-        default:
-            error = ether_ioctl(pIface, uCmd, pvData);
-            break;
+            case SIOCADDMULTI:
+            case SIOCDELMULTI:
+                Log2(("VBoxNetAdp: %s%d: SIOC%sMULTI (null)\n",
+                      ifnet_name(pIface), ifnet_unit(pIface),
+                      uCmd == SIOCADDMULTI ? "ADD" : "DEL"));
+                return 0;
+        }
     }
 
+    Log2(("VBoxNetAdp: %s%d: %c%c '%c' %u len %u\n",
+          ifnet_name(pIface), ifnet_unit(pIface),
+          uCmd & IOC_OUT ? '<' : '-',
+          uCmd & IOC_IN  ? '>' : '-',
+          IOCGROUP(uCmd),
+          uCmd & 0xff,
+          IOCPARM_LEN(uCmd)));
+
+    error = ether_ioctl(pIface, uCmd, pvData);
     return error;
 }
 
