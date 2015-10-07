@@ -1439,9 +1439,10 @@ typedef struct VDINTERFACECRYPTO
      * @param   pvUser          The opaque user data associated with this interface.
      * @param   pszId           The alias/id for the key to release.
      *
-     * @note: It is advised to release the key whenever it is not used anymore so the entity
-     *        storing the key can do anything to make retrieving the key from memory more
-     *        difficult like scrambling the memory buffer for instance.
+     * @note  It is advised to release the key whenever it is not used anymore so
+     *        the entity storing the key can do anything to make retrieving the key
+     *        from memory more difficult like scrambling the memory buffer for
+     *        instance.
      */
     DECLR3CALLBACKMEMBER(int, pfnKeyRelease, (void *pvUser, const char *pszId));
 
@@ -1520,7 +1521,14 @@ DECLINLINE(PVDINTERFACECRYPTO) VDIfCryptoGet(PVDINTERFACE pVDIfs)
 }
 
 /**
- * @copydoc VDINTERFACECRYPTO::pfnKeyRetain
+ * Retains a key identified by the ID. The caller will only hold a reference
+ * to the key and must not modify the key buffer in any way.
+ *
+ * @returns VBox status code.
+ * @param   pIfCrypto       Pointer to the crypto interface.
+ * @param   pszId           The alias/id for the key to retrieve.
+ * @param   ppbKey          Where to store the pointer to the key buffer on success.
+ * @param   pcbKey          Where to store the size of the key in bytes on success.
  */
 DECLINLINE(int) vdIfCryptoKeyRetain(PVDINTERFACECRYPTO pIfCrypto, const char *pszId, const uint8_t **ppbKey, size_t *pcbKey)
 {
@@ -1528,7 +1536,17 @@ DECLINLINE(int) vdIfCryptoKeyRetain(PVDINTERFACECRYPTO pIfCrypto, const char *ps
 }
 
 /**
- * @copydoc VDINTERFACECRYPTO::pfnKeyRelease
+ * Releases one reference of the key identified by the given identifier.
+ * The caller must not access the key buffer after calling this operation.
+ *
+ * @returns VBox status code.
+ * @param   pIfCrypto       Pointer to the crypto interface.
+ * @param   pszId           The alias/id for the key to release.
+ *
+ * @note  It is advised to release the key whenever it is not used anymore so
+ *        the entity storing the key can do anything to make retrieving the key
+ *        from memory more difficult like scrambling the memory buffer for
+ *        instance.
  */
 DECLINLINE(int) vdIfCryptoKeyRelease(PVDINTERFACECRYPTO pIfCrypto, const char *pszId)
 {
@@ -1536,7 +1554,12 @@ DECLINLINE(int) vdIfCryptoKeyRelease(PVDINTERFACECRYPTO pIfCrypto, const char *p
 }
 
 /**
- * @copydoc VDINTERFACECRYPTO::pfnKeyStorePasswordRetain
+ * Gets a reference to the password identified by the given ID to open a key store supplied through the config interface.
+ *
+ * @returns VBox status code.
+ * @param   pIfCrypto       Pointer to the crypto interface.
+ * @param   pszId           The alias/id for the password to retain.
+ * @param   ppszPassword    Where to store the password to unlock the key store on success.
  */
 DECLINLINE(int) vdIfCryptoKeyStorePasswordRetain(PVDINTERFACECRYPTO pIfCrypto, const char *pszId, const char **ppszPassword)
 {
@@ -1544,7 +1567,12 @@ DECLINLINE(int) vdIfCryptoKeyStorePasswordRetain(PVDINTERFACECRYPTO pIfCrypto, c
 }
 
 /**
- * @copydoc VDINTERFACECRYPTO::pfnKeyStorePasswordRelease
+ * Releases a reference of the password previously acquired with VDINTERFACECRYPTO::pfnKeyStorePasswordRetain()
+ * identified by the given ID.
+ *
+ * @returns VBox status code.
+ * @param   pIfCrypto       Pointer to the crypto interface.
+ * @param   pszId           The alias/id for the password to release.
  */
 DECLINLINE(int) vdIfCryptoKeyStorePasswordRelease(PVDINTERFACECRYPTO pIfCrypto, const char *pszId)
 {
@@ -1552,7 +1580,14 @@ DECLINLINE(int) vdIfCryptoKeyStorePasswordRelease(PVDINTERFACECRYPTO pIfCrypto, 
 }
 
 /**
- * @copydoc VDINTERFACECRYPTO::pfnKeyStoreSave
+ * Saves a key store.
+ *
+ * @returns VBox status code.
+ * @param   pIfCrypto       Pointer to the crypto interface.
+ * @param   pvKeyStore      The key store to save.
+ * @param   cbKeyStore      Size of the key store in bytes.
+ *
+ * @note The format is filter specific and should be treated as binary data.
  */
 DECLINLINE(int) vdIfCryptoKeyStoreSave(PVDINTERFACECRYPTO pIfCrypto, const void *pvKeyStore, size_t cbKeyStore)
 {
@@ -1560,7 +1595,21 @@ DECLINLINE(int) vdIfCryptoKeyStoreSave(PVDINTERFACECRYPTO pIfCrypto, const void 
 }
 
 /**
- * @copydoc VDINTERFACECRYPTO::pfnKeyStoreReturnParameters
+ * Returns the parameters after the key store was loaded successfully.
+ *
+ * @returns VBox status code.
+ * @param   pIfCrypto       Pointer to the crypto interface.
+ * @param   pszCipher       The cipher identifier the DEK is used for.
+ * @param   pbDek           The raw DEK which was contained in the key store loaded by
+ *                          VDINTERFACECRYPTO::pfnKeyStoreLoad().
+ * @param   cbDek           The size of the DEK.
+ *
+ * @note The provided pointer to the DEK is only valid until this call returns.
+ *       The content might change afterwards with out notice (when scrambling the key
+ *       for further protection for example) or might be even freed.
+ *
+ * @note This method is optional and can be NULL if the caller does not require the
+ *       parameters.
  */
 DECLINLINE(int) vdIfCryptoKeyStoreReturnParameters(PVDINTERFACECRYPTO pIfCrypto, const char *pszCipher,
                                                    const uint8_t *pbDek, size_t cbDek)
