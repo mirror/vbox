@@ -152,6 +152,17 @@
   #define XMLCDECL __cdecl
 #endif
 
+/* bird/VirtualBox: Visibility attributes - start  */
+/* frank: changed to "hidden" */
+#if defined(VBOX_HAVE_VISIBILITY_HIDDEN) && !defined(LIBXML_STATIC) && defined(IN_LIBXML)
+  #undef XMLPUBFUN
+  #undef XMLPUBVAR
+  #define XMLPUBFUN __attribute__((visibility("hidden")))
+  #define XMLPUBVAR __attribute__((visibility("hidden"))) extern
+#endif
+/* bird/VirtualBox: Visibility attributes - end  */
+
+
 /* Compatibility */
 #if !defined(LIBXML_DLL_IMPORT)
 #define LIBXML_DLL_IMPORT XMLPUBVAR
