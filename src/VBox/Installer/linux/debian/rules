@@ -39,6 +39,11 @@ export DH_COMPAT=4
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
 #  PKGDIR=<path>    where to store the final package(s)
 #  BLEEDING_EDGE=xyz
+#
+# NODOCS will also be set if UserManual*.pdf and VirtualBox*.chm are placed in
+# $(vboxroot)/prebuild.  STAGEDISO will be set if VBoxGuestAdditions.iso is
+# placed there.  Wine will not be required to be available if both NODOCS and
+# STAGEDISO are set.
 
 package  := virtualbox
 verpkg   := virtualbox-5.0
@@ -57,6 +62,8 @@ svnrev   :=$(if $(svn_revision),$(svn_revision),)
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
 NOWEBSVC ?= $(ose)
+NODOCS   ?= $(if $(wildcard $(vboxroot)/prebuild/UserManual*.pdf),$(if $(wildcard $(vboxroot)/prebuild/VirtualBox*.chm),1,),)
+STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vboxroot)/prebuild,)
 NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
 
 ifneq ($(wildcard $(verfile)),)
