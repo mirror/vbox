@@ -56,7 +56,7 @@
         <translation>កំហុស​នេះ​មាន​ន័យ​ថា កម្មវិធី​បញ្ជា​ខឺណែល​មិនអាច​បម្រុង​ទុក​សតិ​គ្រប់គ្រាន់​ ឬ​បានបរាជ័យ​ក្នុងកា​រ​ផ្គូផ្គង​មួយ​ចំនួន ។</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation type="obsolete">កម្ម​វិធី​ខឺ​ណែល​លីនុច​ VirtualBox (vboxdrv) មិនត្រូវ​បាន​ផ្ទុក​ ឬ​មាន​បញ្ហា​សិទ្ធិ​ជាមួយ​ /dev/vboxdrv ។ សូម​ដំឡើង​ឡើង​វិញ​ម៉ូ​​ឌុល​ខឺ​ណែល​​​ដោយ​ការ​ប្រតិបត្តិ​​ &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv ដំឡើ​ង&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;​ដូច Root ។ អ្នក​ប្រើ​យូប៊ុន​ទូ​ Fedora ឬ​ Mandriva គួរ​តែដំឡើង​កញ្ចប់​ដំបូង​របស់​ DKMS ។ កញ្ចប់​នេះ​​តាម​ដាន​​រក្សា​ទុក​​នៃ​ការ​ផ្លាស់​ប្តូរ​ខឺ​ណែល​លីនុច​ និងចង​​ក្រង​ឡើងវិញ​នៃ​​ម៉ូឌុល​ខឺណែល​របស់​ vboxdrv ប្រសិន​បើ​ចាំ​បាច់ ។</translation>
     </message>
     <message>
@@ -64,8 +64,8 @@
         <translation>ម៉ូ​ឌុល​ខឺ​ណែល​របស់​ VirtualBox មិន​ផ្គូផ្គង​​កំណែ​របស់​ VirtualBox នេះ​ទេ​ ។ ជាក់​ស្តែង​ការ​ដំឡើង VirtualBox ​​​មិន​ទទួល​បាន​ជោគជ័យ​នោះ​ទេ ។ សូម​ព្យាយាម​លុប​​ ហើយ​​ដំឡើង​ VirtualBox ឡើង​វិញ ។</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation>ម៉ូឌុល​ខឺ​ណែល​របស់​ VirtualBox មិន​ផ្គូផ្គង​កំណែ​របស់​ VirtualBox នេះទេ ។ ជាក់​ស្តែង​ការ​ដំឡើង​របស់​ VirtualBox មិន​ទទួល​បាន​ជោគជ័យ​នោះ​ទេ ។ ការ​ប្រតិបត្តិ​&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;នេះ​អាច​ត្រឹមត្រូវ​ ។ សូម​ប្រាកដ​ថា​ អ្នក​មិនបញ្ចូល​កំណែ​ OSE និង​​កំណែ​ PUEL របស់​ VirtualBox ចូល​គ្នា​ឡើយ ។</translation>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
+        <translation>ម៉ូឌុល​ខឺ​ណែល​របស់​ VirtualBox មិន​ផ្គូផ្គង​កំណែ​របស់​ VirtualBox នេះទេ ។ ជាក់​ស្តែង​ការ​ដំឡើង​របស់​ VirtualBox មិន​ទទួល​បាន​ជោគជ័យ​នោះ​ទេ ។ ការ​ប្រតិបត្តិ​&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;នេះ​អាច​ត្រឹមត្រូវ​ ។ សូម​ប្រាកដ​ថា​ អ្នក​មិនបញ្ចូល​កំណែ​ OSE និង​​កំណែ​ PUEL របស់​ VirtualBox ចូល​គ្នា​ឡើយ ។</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
@@ -88,7 +88,7 @@
         <translation>មិន​ស្គាល់​កំហុស​ %2 អំឡុង​ពេល​ដែលការ​ចាប់​ផ្តើមពេលវេលា​រត់​</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
