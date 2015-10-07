@@ -320,6 +320,7 @@ static void LogError(const char *fmt, ...)
 		LogMessage("PyXPCOM Exception:", streamout);
 	}
 	PyErr_Restore(exc_typ, exc_val, exc_tb);
+    va_end(marker);
 }
 /*** - not currently used - silence compiler warning.
 static void LogWarning(const char *fmt, ...)
@@ -335,6 +336,7 @@ static void LogDebug(const char *fmt, ...)
 	va_list marker;
 	va_start(marker, fmt);
 	VLogF("PyXPCOM Loader Debug: ", fmt, marker);
+    va_end(marker);
 }
 #else
 static void LogDebug(const char *fmt, ...)

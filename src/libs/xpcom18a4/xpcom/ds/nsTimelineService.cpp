@@ -370,6 +370,7 @@ PR_IMPLEMENT(nsresult) NS_TimelineForceMark(const char *text, ...)
     va_list args;
     va_start(args, text);
     NS_TimelineMarkV(text, args);
+    va_end(args);
 
     return NS_OK;
 }
@@ -377,7 +378,6 @@ PR_IMPLEMENT(nsresult) NS_TimelineForceMark(const char *text, ...)
 PR_IMPLEMENT(nsresult) NS_TimelineMark(const char *text, ...)
 {
     va_list args;
-    va_start(args, text);
 
     PR_CallOnce(&initonce, TimelineInit);
 
@@ -389,7 +389,9 @@ PR_IMPLEMENT(nsresult) NS_TimelineMark(const char *text, ...)
     if (thread->disabled)
         return NS_ERROR_NOT_AVAILABLE;
 
+    va_start(args, text);
     NS_TimelineMarkV(text, args);
+    va_end(args);
 
     return NS_OK;
 }

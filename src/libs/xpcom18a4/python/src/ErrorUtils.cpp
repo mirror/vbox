@@ -225,6 +225,7 @@ void PyXPCOM_LogError(const char *fmt, ...)
 	if (PyXPCOM_FormatCurrentException(streamout)) {
 		LogMessage(LOGGER_ERROR, streamout);
 	}
+    va_end(marker);
 }
 
 void PyXPCOM_LogWarning(const char *fmt, ...)
@@ -232,6 +233,7 @@ void PyXPCOM_LogWarning(const char *fmt, ...)
 	va_list marker;
 	va_start(marker, fmt);
 	VLogF(LOGGER_WARNING, fmt, marker);
+    va_end(marker);
 }
 
 void PyXPCOM_Log(const char *level, const nsCString &msg)
@@ -245,6 +247,7 @@ void PyXPCOM_LogDebug(const char *fmt, ...)
 	va_list marker;
 	va_start(marker, fmt);
 	VLogF(LOGGER_DEBUG, fmt, marker);
+    va_end(marker);
 }
 #endif
 
