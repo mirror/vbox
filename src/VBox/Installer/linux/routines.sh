@@ -123,7 +123,7 @@ systemd_wrap_init_script()
     test -n "${unit_path}" || \
         { echo "$self: systemd unit path not found" >&2 && return 1; }
     description=`sed -n 's/# *Short-Description: *\(.*\)/\1/p' "${script}"`
-    required=`sed -n 's/# *Required-Start: *\(.*\)/\1/p' "${script}"`
+    required=`sed -n 's/# *Required-Start: *\(.*\)/\1/p' "${script}" | sed 's/\$[a-z]*//'`
     runlevels=`sed -n 's/# *Default-Start: *\(.*\)/\1/p' "${script}"`
     before=`for i in ${runlevels}; do printf "runlevel${i}.target "; done`
     after=`for i in ${required}; do printf "${i}.service "; done`
