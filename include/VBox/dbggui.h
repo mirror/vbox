@@ -32,6 +32,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_dbggui    VirtualBox Debugger GUI
+ * @ingroup grp_dbg
  * @{
  */
 

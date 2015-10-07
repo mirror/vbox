@@ -28,6 +28,13 @@
 
 #define RT_BIT(bit)                             (1UL << (bit))
 
+
+/** @defgroup grp_vboxguest_16bit   Edition for 16-bit Compilers
+ * @ingroup grp_vboxguest
+ * @{
+ */
+
+
 #define VBOXGUEST_DEVICE_NAME                   "vboxgst$"
 
 /* aka VBOXGUESTOS2IDCCONNECT */
@@ -105,6 +112,8 @@ typedef struct VBoxGuestFilterMaskInfo
 #define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST     RT_BIT(2)
 #define VMMDEV_EVENT_JUDGE_CREDENTIALS          RT_BIT(3)
 #define VMMDEV_EVENT_RESTORED                   RT_BIT(4)
+
+/** @} */
 
 #endif
 

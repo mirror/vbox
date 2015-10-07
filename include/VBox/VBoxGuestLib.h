@@ -35,7 +35,8 @@
 #endif
 
 
-/** @defgroup grp_guest_lib     VirtualBox Guest Additions Library
+/** @defgroup grp_vboxguest_lib     VirtualBox Guest Additions Library
+ * @ingroup grp_vboxguest
  * @{
  */
 
@@ -78,7 +79,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_guest_lib_r0     Ring-0 interface.
+/** @defgroup grp_vboxguest_lib_r0     Ring-0 interface.
  * @{
  */
 #if defined(IN_RING0) && !defined(IN_RING0_AGNOSTIC)
@@ -409,7 +410,7 @@ DECLVBGL(int)     VbglSetMouseStatus(uint32_t fFeatures);
 /** @} */
 
 
-/** @defgroup grp_guest_lib_r3     Ring-3 interface.
+/** @defgroup grp_vboxguest_lib_r3      Ring-3 interface.
  * @{
  */
 #ifdef IN_RING3

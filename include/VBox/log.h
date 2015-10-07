@@ -36,7 +36,7 @@
 #include <iprt/log.h>
 
 
-/** @defgroup grp_rt_vbox_log    VirtualBox Logging
+/** @defgroup grp_rt_vbox_log    VBox Logging
  * @ingroup grp_rt_vbox
  * @{
  */

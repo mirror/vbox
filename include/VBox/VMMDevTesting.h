@@ -30,6 +30,12 @@
 
 #include <VBox/types.h>
 
+
+/** @defgroup grp_vmmdev_testing    VMM Device Testing
+ * @ingroup grp_vmmdev
+ * @{
+ */
+
 /** The base address of the MMIO range used for testing.
  * This is intentionally put at the 2nd page above 1M so that it can be
  * accessed from both real (!A20) and protected mode. */
@@ -119,6 +125,8 @@
 
 /** What the NOP accesses returns. */
 #define VMMDEV_TESTING_NOP_RET          UINT32_C(0x64726962) /* bird */
+
+/** @} */
 
 #endif
 

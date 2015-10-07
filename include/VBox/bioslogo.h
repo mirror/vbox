@@ -33,8 +33,11 @@
 #endif
 
 /** @defgroup grp_bios_logo     The Private BIOS Logo Interface.
- * @remark All this is currently duplicated in logo.c.
+ * @ingroup grp_devdrv
  * @internal
+ *
+ * @remark All this is currently duplicated in logo.c.
+ *
  * @{
  */
 

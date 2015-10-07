@@ -39,6 +39,7 @@ RT_C_DECLS_BEGIN
 #endif
 
 /** @defgroup grp_vddbg            VD Debug API
+ * @ingroup grp_vd
  * @{
  */
 

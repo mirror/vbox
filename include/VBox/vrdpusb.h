@@ -36,6 +36,12 @@
 # error "There are no VRDP APIs available Guest Context!"
 #endif
 
+
+/** @defgroup grp_vrdpusb   Remote USB over VURP
+ * @ingroup grp_vusb
+ * @{
+ */
+
 #define REMOTE_USB_BACKEND_PREFIX_S   "REMOTEUSB"
 #define REMOTE_USB_BACKEND_PREFIX_LEN 9
 
@@ -51,10 +57,11 @@ typedef struct _REMOTEUSBQURB *PREMOTEUSBQURB;
 struct _REMOTEUSBBACKEND;
 typedef struct _REMOTEUSBBACKEND *PREMOTEUSBBACKEND;
 
-/* Pointer to this structure is passed to pfnCreateProxyDevice
- * as the device specific pointer, when creating remote devices.
+/**
+ * Pointer to this structure is passed to pfnCreateProxyDevice as the device
+ * specific pointer, when creating remote devices.
  */
-typedef struct _REMOTEUSBCALLBACK
+typedef struct REMOTEUSBCALLBACK
 {
     PREMOTEUSBBACKEND pInstance;
 
@@ -71,6 +78,8 @@ typedef struct _REMOTEUSBCALLBACK
     DECLCALLBACKMEMBER(void, pfnCancelURB)       (PREMOTEUSBDEVICE pDevice, PREMOTEUSBQURB pRemoteURB);
     DECLCALLBACKMEMBER(int, pfnWakeup)           (PREMOTEUSBDEVICE pDevice);
 } REMOTEUSBCALLBACK;
+
+/** @} */
 
 #endif
 

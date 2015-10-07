@@ -33,7 +33,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_dis   The Disassembler
+/** @defgroup grp_dis   VBox Disassembler
  * @{ */
 
 /** @name Prefix byte flags (DISSTATE::fPrefix).

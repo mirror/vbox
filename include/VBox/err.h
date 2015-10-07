@@ -30,7 +30,7 @@
 #include <iprt/err.h>
 
 
-/** @defgroup grp_err       Error Codes
+/** @defgroup grp_err       VBox Error Codes
  * @{
  */
 

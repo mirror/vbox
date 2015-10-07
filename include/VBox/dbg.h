@@ -42,6 +42,11 @@
 RT_C_DECLS_BEGIN
 
 
+
+/** @defgroup grp_dbg       The VirtualBox Debugger
+ * @{
+ */
+
 #ifdef IN_RING3 /* The debugger stuff is ring-3 only. */
 
 /** @defgroup grp_dbgc     The Debugger Console API
@@ -1119,6 +1124,7 @@ DBGDECL(int)    DBGCTcpTerminate(PUVM pUVM, void *pvData);
 
 #endif /* IN_RING3 */
 
+/** @} */
 RT_C_DECLS_END
 
 #endif

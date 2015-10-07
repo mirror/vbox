@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox storage drivers: Virtual SCSI driver
+ * VBox storage drivers - Virtual SCSI driver
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,12 @@ RT_C_DECLS_BEGIN
 #ifdef IN_RING0
 # error "There are no VBox VSCSI APIs available in Ring-0 Host Context!"
 #endif
+
+/** @defgroup grp_drv_vscsi  Virtual VSCSI Driver
+ * @ingroup grp_devdrv
+ * @{
+ */
+/** @todo figure better grouping.   */
 
 /** A virtual SCSI device handle */
 typedef struct VSCSIDEVICEINT *VSCSIDEVICE;
@@ -112,68 +118,55 @@ typedef struct VSCSILUNIOCALLBACKS
      * Retrieve the size of the underlying medium.
      *
      * @returns VBox status status code.
-     * @param   hVScsiLun        Virtual SCSI LUN handle.
-     * @param   pvScsiLunUser    Opaque user data which may
-     *                           be used to identify the medium.
-     * @param   pcbSize          Where to store the size of the
-     *                           medium.
+     * @param   hVScsiLun       Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser   Opaque user data which may be used to identify the
+     *                          medium.
+     * @param   pcbSize         Where to store the size of the medium.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumGetSize, (VSCSILUN hVScsiLun,
-                                                         void *pvScsiLunUser,
-                                                         uint64_t *pcbSize));
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumGetSize,(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pcbSize));
 
     /**
      * Retrieve the sector size of the underlying medium.
      *
      * @returns VBox status status code.
-     * @param   hVScsiLun        Virtual SCSI LUN handle.
-     * @param   pvScsiLunUser    Opaque user data which may
-     *                           be used to identify the medium.
-     * @param   pcbSectorSize    Where to store the sector size of the
-     *                           medium.
+     * @param   hVScsiLun       Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser   Opaque user data which may be used to identify the
+     *                          medium.
+     * @param   pcbSectorSize   Where to store the sector size of the medium.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumGetSectorSize, (VSCSILUN hVScsiLun,
-                                                              void *pvScsiLunUser,
-                                                              uint32_t *pcbSectorSize));
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumGetSectorSize,(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint32_t *pcbSectorSize));
 
     /**
      * Set the lock state of the underlying medium.
      *
      * @returns VBox status status code.
-     * @param   hVScsiLun        Virtual SCSI LUN handle.
-     * @param   pvScsiLunUser    Opaque user data which may
-     *                           be used to identify the medium.
-     * @param   fLocked          New lock state (locked/unlocked).
+     * @param   hVScsiLun       Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser   Opaque user data which may be used to identify the
+     *                          medium.
+     * @param   fLocked         New lock state (locked/unlocked).
      */
-    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumSetLock, (VSCSILUN hVScsiLun,
-                                                         void *pvScsiLunUser,
-                                                         bool fLocked));
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumSetLock,(VSCSILUN hVScsiLun, void *pvScsiLunUser, bool fLocked));
     /**
      * Enqueue a read or write request from the medium.
      *
      * @returns VBox status status code.
-     * @param   hVScsiLun             Virtual SCSI LUN handle.
-     * @param   pvScsiLunUser         Opaque user data which may
-     *                                be used to identify the medium.
-     * @param   hVScsiIoReq           Virtual SCSI I/O request handle.
+     * @param   hVScsiLun       Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser   Opaque user data which may be used to identify the
+     *                          medium.
+     * @param   hVScsiIoReq     Virtual SCSI I/O request handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqTransferEnqueue, (VSCSILUN hVScsiLun,
-                                                              void *pvScsiLunUser,
-                                                              VSCSIIOREQ hVScsiIoReq));
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqTransferEnqueue,(VSCSILUN hVScsiLun, void *pvScsiLunUser, VSCSIIOREQ hVScsiIoReq));
 
     /**
      * Returns flags of supported features.
      *
      * @returns VBox status status code.
-     * @param   hVScsiLun             Virtual SCSI LUN handle.
-     * @param   pvScsiLunUser         Opaque user data which may
-     *                                be used to identify the medium.
-     * @param   hVScsiIoReq           Virtual SCSI I/O request handle.
+     * @param   hVScsiLun       Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser   Opaque user data which may be used to identify the
+     *                          medium.
+     * @param   pfFeatures      Where to return the queried features.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVScsiLunGetFeatureFlags, (VSCSILUN hVScsiLun,
-                                                           void *pvScsiLunUser,
-                                                           uint64_t *pfFeatures));
-
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunGetFeatureFlags,(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pfFeatures));
 
 } VSCSILUNIOCALLBACKS;
 /** Pointer to a virtual SCSI LUN I/O callback table. */
@@ -361,6 +354,7 @@ VBOXDDU_DECL(int) VSCSIIoReqParamsGet(VSCSIIOREQ hVScsiIoReq, uint64_t *puOffset
 VBOXDDU_DECL(int) VSCSIIoReqUnmapParamsGet(VSCSIIOREQ hVScsiIoReq, PCRTRANGE *ppaRanges,
                                            unsigned *pcRanges);
 
+/** @}  */
 RT_C_DECLS_END
 
 #endif /* ___VBox_vscsi_h */

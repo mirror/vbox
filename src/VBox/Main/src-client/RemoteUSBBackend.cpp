@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * VirtualBox Remote USB backend
  */
 

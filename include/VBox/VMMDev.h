@@ -41,7 +41,7 @@ RT_C_DECLS_BEGIN
 
 /** @defgroup grp_vmmdev    VMM Device
  *
- * Note! This interface cannot be changed, it can only be extended!
+ * @note This interface cannot be changed, it can only be extended!
  *
  * @{
  */

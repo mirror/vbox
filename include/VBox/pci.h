@@ -31,6 +31,7 @@
 #include <iprt/assert.h>
 
 /** @defgroup grp_pci       PCI - The PCI Controller.
+ * @ingroup grp_devdrv
  * @{
  */
 
