@@ -28,6 +28,10 @@
 
 #include "VBox/com/defs.h"
 
+/** @defgroup grp_com   MS COM / XPCOM Abstraction Layer
+ * @{
+ */
+
 namespace com
 {
 
@@ -106,5 +110,6 @@ int VBoxLogRelCreate(const char *pcszEntity, const char *pcszLogFile,
 
 } /* namespace com */
 
+/** @} */
 #endif
 

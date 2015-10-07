@@ -43,7 +43,7 @@
 /** @todo merge the usblib-win.h interface into the darwin and linux ports where suitable. */
 
 RT_C_DECLS_BEGIN
-/** @defgroup grp_USBLib    USBLib - USB Support Library
+/** @defgroup grp_usblib    USBLib - USB Support Library
  * This module implements the basic low-level OS interfaces and common USB code.
  * @{
  */

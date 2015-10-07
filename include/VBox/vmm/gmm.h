@@ -37,6 +37,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup   grp_gmm     GMM - The Global Memory Manager
+ * @ingroup grp_vmm
  * @{
  */
 

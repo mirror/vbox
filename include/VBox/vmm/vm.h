@@ -42,6 +42,7 @@
 
 
 /** @defgroup grp_vm    The Virtual Machine
+ * @ingroup grp_vmm
  * @{
  */
 

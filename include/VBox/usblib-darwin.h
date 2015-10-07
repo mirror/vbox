@@ -31,9 +31,11 @@
 #include <VBox/usbfilter.h>
 
 RT_C_DECLS_BEGIN
-/** @defgroup grp_USBLib_darwin Darwin Specifics
- * @addtogroup grp_USBLib
- * @{ */
+
+/** @defgroup grp_usblib_darwin     Darwin USB Specifics
+ * @ingroup grp_usblib
+ * @{
+ */
 
 /** @name VBoxUSB specific device properties.
  * VBoxUSB makes use of the OWNER property for communicating between the probe and
@@ -50,6 +52,8 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 /** @} */
+
 RT_C_DECLS_END
 
 #endif
+

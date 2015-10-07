@@ -31,9 +31,14 @@
 #include <VBox/types.h>
 #include <VBox/usb.h>
 
-#ifdef RT_OS_WINDOWS
-
 #include <initguid.h>
+
+
+/** @defgroup grp_usblib_win    Windows USB Specifics
+ * @ingroup grp_usblib
+ * @{
+ */
+
 // {6068EB61-98E7-4c98-9E20-1F068295909A}
 DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0, 0x4f, 0xb1, 0x72, 0xb);
 
@@ -133,7 +138,6 @@ typedef struct
     uint32_t        u32Minor;
 } USBSUP_VERSION, *PUSBSUP_VERSION;
 
-#endif /* RT_OS_WINDOWS */
 
 typedef struct USBSUP_FLTADDOUT
 {
@@ -307,7 +311,6 @@ USBLIB_DECL(int) USBLibRunFilters();
 /** @} */
 
 RT_C_DECLS_END
-
 
 #endif
 

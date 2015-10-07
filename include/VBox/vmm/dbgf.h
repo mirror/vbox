@@ -38,12 +38,12 @@ RT_C_DECLS_BEGIN
 
 
 /** @defgroup grp_dbgf     The Debugger Facility API
+ * @ingroup grp_vmm
  * @{
  */
 
 #if defined(IN_RC) || defined(IN_RING0)
 /** @defgroup grp_dbgf_rz  The RZ DBGF API
- * @ingroup grp_dbgf
  * @{
  */
 VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6, bool fAltStepping);
@@ -868,7 +868,7 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 
 #ifdef IN_RING3 /* The disassembly API only works in ring-3. */
 
-/** Flags to pass to DBGFR3DisasInstrEx().
+/** @name Flags to pass to DBGFR3DisasInstrEx().
  * @{ */
 /** Disassemble the current guest instruction, with annotations. */
 #define DBGF_DISAS_FLAGS_CURRENT_GUEST      RT_BIT(0)

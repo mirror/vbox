@@ -30,6 +30,11 @@
 
 RT_C_DECLS_BEGIN
 
+/** @defgroup grp_usblib_usb    USB Device Structures & Types
+ * @ingroup grp_usblib
+ * @{
+ */
+
 /**
  * The USB host device state.
  */
@@ -251,6 +256,7 @@ typedef USBCONFIGDESC *PUSBCONFIGDESC;
 
 #endif /* VBOX_USB_H_INCL_DESCRIPTORS */
 
+/** @} */
 RT_C_DECLS_END
 
 #endif

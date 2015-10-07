@@ -1,5 +1,5 @@
 /** @file
- * Automatic locks, implementation
+ * MS COM / XPCOM Abstraction Layer - Automatic locks, implementation.
  */
 
 /*
@@ -27,6 +27,12 @@
 #define ___VBox_com_AutoLock_h
 
 #include <iprt/types.h>
+
+
+/** @defgroup grp_com_autolock  Automatic Locks
+ * @ingroup grp_com
+ * @{
+ */
 
 // macros for automatic lock validation; these will amount to nothing
 // unless lock validation is enabled for the runtime
@@ -631,6 +637,8 @@ public:
 };
 
 } /* namespace util */
+
+/** @} */
 
 #endif
 

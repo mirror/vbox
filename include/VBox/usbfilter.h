@@ -33,8 +33,8 @@
 #include <VBox/usb.h>
 
 
-/** @defgroup grp_USBFilter     USBFilter - USB Filter constructs shared by kernel and user mode
- * @ingroup grp_USBLib
+/** @defgroup grp_usbfilter  USBFilter - USB Filter constructs shared by kernel and user mode
+ * @ingroup grp_usblib
  * @{
  */
 

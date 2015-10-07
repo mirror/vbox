@@ -33,6 +33,8 @@
 
 RT_C_DECLS_BEGIN
 
+/** @defgroup grp_dis   The Disassembler
+ * @{ */
 
 /** @name Prefix byte flags (DISSTATE::fPrefix).
  * @{
@@ -838,6 +840,7 @@ DISDECL(size_t) DISFormatGasEx( PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
 
 DISDECL(bool)   DISFormatYasmIsOddEncoding(PDISSTATE pDis);
 
+/** @} */
 
 RT_C_DECLS_END
 

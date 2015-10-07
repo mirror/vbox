@@ -32,7 +32,7 @@
 #include <iprt/asm.h>
 
 
-/** @defgroup grp_svm   SVM (AMD-V) Types and Definitions
+/** @defgroup grp_hm_svm    SVM (AMD-V) Types and Definitions
  * @ingroup grp_hm
  * @{
  */

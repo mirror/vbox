@@ -34,6 +34,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_cpum      The CPU Monitor / Manager API
+ * @ingroup grp_vmm
  * @{
  */
 

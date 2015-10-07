@@ -32,6 +32,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_ftm        The Fault Tolerance Monitor / Manager API
+ * @ingroup grp_vmm
  * @{
  */
 

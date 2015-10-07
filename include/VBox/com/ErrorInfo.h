@@ -31,6 +31,12 @@
 #include "VBox/com/Guid.h"
 #include "VBox/com/assert.h"
 
+
+/** @defgroup grp_com_errinfo   ErrorInfo Classes
+ * @ingroup grp_com
+ * @{
+ */
+
 COM_STRUCT_OR_CLASS(IProgress);
 COM_STRUCT_OR_CLASS(IVirtualBoxErrorInfo);
 
@@ -519,6 +525,8 @@ private:
 };
 
 } /* namespace com */
+
+/** @} */
 
 #endif
 

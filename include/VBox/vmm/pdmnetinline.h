@@ -38,6 +38,13 @@
 #include <iprt/string.h>
 
 
+
+/** @defgroup grp_pdm_net_inline    The PDM Networking Helper APIs
+ * @ingroup grp_pdm
+ * @{
+ */
+
+
 /**
  * Checksum type.
  */
@@ -660,4 +667,6 @@ DECLINLINE(const char *) PDMNetGsoTypeName(PDMNETWORKGSOTYPE enmType)
     }
     return "bad-gso-type";
 }
+
+/** @} */
 

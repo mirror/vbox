@@ -46,6 +46,12 @@
 
 #include <VBox/com/defs.h>
 
+
+/** @defgroup grp_com_ptr   Smart COM Pointer Classes
+ * @ingroup grp_com
+ * @{
+ */
+
 #ifdef VBOX_WITH_XPCOM
 
 namespace com
@@ -498,5 +504,8 @@ public:
         return rc;
     }
 };
+
+/** @} */
+
 #endif
 

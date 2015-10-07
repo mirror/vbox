@@ -30,6 +30,7 @@
 #include <iprt/stdarg.h>
 
 /** @defgroup   grp_cfgm        The Configuration Manager API
+ * @ingroup grp_vmm
  * @{
  */
 

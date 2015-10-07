@@ -32,7 +32,8 @@
 #include <iprt/mp.h>
 
 
-/** @defgroup grp_hm      The VM Hardware Manager API
+/** @defgroup grp_hm      The Hardware Assisted Virtualization Manager API
+ * @ingroup grp_vmm
  * @{
  */
 
@@ -166,7 +167,7 @@ VMM_INT_DECL(PGMMODE)           HMGetShwPagingMode(PVM pVM);
 #endif
 
 #ifdef IN_RING0
-/** @defgroup grp_hm_r0    The VM Hardware Manager API
+/** @defgroup grp_hm_r0    The HM ring-0 Context API
  * @{
  */
 VMMR0_INT_DECL(int)             HMR0Init(void);
@@ -204,7 +205,7 @@ VMMR0_INT_DECL(int)             HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCP
 
 
 #ifdef IN_RING3
-/** @defgroup grp_hm_r3    The VM Hardware Manager API
+/** @defgroup grp_hm_r3    The HM ring-3 Context API
  * @{
  */
 VMMR3DECL(bool)                 HMR3IsEnabled(PUVM pUVM);

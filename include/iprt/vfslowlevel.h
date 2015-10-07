@@ -968,7 +968,7 @@ RTDECL(int) RTVfsUtilDummyPollOne(uint32_t fEvents, RTMSINTERVAL cMillies, bool 
 /** @}  */
 
 
-/** @defgroup grp_rt_vfs_lowlevel_chain     VFS Chains
+/** @defgroup grp_rt_vfs_lowlevel_chain     VFS Chains (Low Level)
  * @ref grp_rt_vfs_chain
  * @{
  */
@@ -1010,7 +1010,7 @@ typedef struct RTVFSCHAINELEMSPEC
     /** The number of arguments. */
     uint32_t            cArgs;
     /** Arguments. */
-    char               **papszArgs;
+    char              **papszArgs;
 } RTVFSCHAINELEMSPEC;
 /** Pointer to a chain element specification. */
 typedef RTVFSCHAINELEMSPEC *PRTVFSCHAINELEMSPEC;

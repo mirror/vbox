@@ -1,5 +1,5 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer - Common definitions.
+ * MS COM / XPCOM Abstraction Layer - Common Definitions.
  */
 
 /*
@@ -64,6 +64,13 @@
  * gets to stdint.h first, otherwise a system/xpcom header might beat us and
  * we'll be without the macros that are optional in C++. */
 #include <iprt/types.h>
+
+
+
+/** @defgroup grp_com_defs  Common Definitions
+ * @ingroup grp_com
+ * @{
+ */
 
 #if !defined(VBOX_WITH_XPCOM)
 
@@ -560,6 +567,8 @@ namespace com
 
 
 } /* namespace com */
+
+/** @} */
 
 #endif /* !___VBox_com_defs_h */
 

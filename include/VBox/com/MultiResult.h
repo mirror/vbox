@@ -32,6 +32,11 @@
 
 #include <stdarg.h>
 
+/** @defgroup grp_com_mr    MultiResult Classes
+ * @ingroup grp_com
+ * @{
+ */
+
 namespace com
 {
 
@@ -253,6 +258,8 @@ private:
 
 
 } /* namespace com */
+
+/** @} */
 
 #endif /* !___VBox_com_MultiResult_h */
 

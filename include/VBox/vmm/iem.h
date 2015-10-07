@@ -34,6 +34,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_iem       The Interpreted Execution Manager API.
+ * @ingroup grp_vmm
  * @{
  */
 

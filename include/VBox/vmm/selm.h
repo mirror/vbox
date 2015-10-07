@@ -35,6 +35,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_selm      The Selector Monitor(/Manager) API
+ * @ingroup grp_vmm
  * @{
  */
 
@@ -84,7 +85,7 @@ VMM_INT_DECL(void)      SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, 
 
 
 #ifdef IN_RING3
-/** @defgroup grp_selm_r3   The Selector Monitor(/Manager) API
+/** @defgroup grp_selm_r3   The SELM ring-3 Context API
  * @{
  */
 VMMR3DECL(int)          SELMR3Init(PVM pVM);
@@ -120,6 +121,7 @@ VMMR3DECL(bool)         SELMR3CheckShadowTR(PVM pVM);
 #endif /* IN_RING3 */
 
 /** @} */
+
 RT_C_DECLS_END
 
 #endif

@@ -45,6 +45,12 @@
 #include <iprt/mem.h>
 #include <iprt/cpp/ministring.h>
 
+
+/** @defgroup grp_com_str   Smart String Classes
+ * @ingroup grp_com
+ * @{
+ */
+
 namespace com
 {
 
@@ -814,6 +820,8 @@ public:
 };
 
 } /* namespace com */
+
+/** @} */
 
 #endif /* !___VBox_com_string_h */
 

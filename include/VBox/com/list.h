@@ -33,6 +33,11 @@
 #include <iprt/cpp/list.h>
 
 
+/** @defgroup grp_com_list  List Classes
+ * @ingroup grp_com
+ * @{
+ */
+
 /**
  * Specialized list class for using with com::ComPtr<C>
  *
@@ -198,6 +203,8 @@ public:
     /* Define our own new and delete. */
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
+
+/** @} */
 
 #endif /* !___VBox_com_list_h */
 

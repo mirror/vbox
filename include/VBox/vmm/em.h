@@ -33,6 +33,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_em        The Execution Monitor / Manager API
+ * @ingroup grp_vmm
  * @{
  */
 

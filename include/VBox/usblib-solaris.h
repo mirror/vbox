@@ -35,9 +35,11 @@
 #include <sys/param.h>
 
 RT_C_DECLS_BEGIN
-/** @defgroup grp_USBLib_solaris Solaris Specifics
- * @addtogroup grp_USBLib
- * @{ */
+
+/** @defgroup grp_usblib_solaris    Solaris USB Specifics
+ * @ingroup grp_usblib
+ * @{
+ */
 
 /** @name VBoxUSB specific IOCtls.
  * VBoxUSB uses them for resetting USB devices requests from userland.

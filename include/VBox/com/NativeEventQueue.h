@@ -1,6 +1,5 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * Event and EventQueue class declaration
+ * MS COM / XPCOM Abstraction Layer - Event and EventQueue class declaration.
  */
 
 /*
@@ -29,12 +28,18 @@
 
 #ifndef VBOX_WITH_XPCOM
 # include <Windows.h>
-#else // VBOX_WITH_XPCOM
+#else
 # include <nsEventQueueUtils.h>
-#endif // VBOX_WITH_XPCOM
+#endif
 
 #include <VBox/com/defs.h>
 #include <VBox/com/assert.h>
+
+
+/** @defgroup grp_com_evt   Event and EventQueue Classes
+ * @ingroup grp_com
+ * @{
+ */
 
 namespace com
 {
@@ -137,4 +142,7 @@ private:
 
 } /* namespace com */
 
+/** @} */
+
 #endif
+

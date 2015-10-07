@@ -26,7 +26,9 @@
 #ifndef ___VBox_com_array_h
 #define ___VBox_com_array_h
 
-/** @defgroup   grp_COM_arrays    COM/XPCOM Arrays
+
+/** @defgroup   grp_com_arrays    COM/XPCOM Arrays
+ * @ingroup grp_com
  * @{
  *
  * The COM/XPCOM array support layer provides a cross-platform way to pass

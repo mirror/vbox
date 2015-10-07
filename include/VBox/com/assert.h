@@ -28,6 +28,12 @@
 
 #include <iprt/assert.h>
 
+/** @defgroup grp_com_assert    Assertion Macros for COM/XPCOM
+ * @ingroup grp_com
+ * @{
+ */
+
+
 /**
  *  Asserts that the COM result code is succeeded in strict builds.
  *  In non-strict builds the result code will be NOREF'ed to kill compiler warnings.
@@ -109,6 +115,8 @@
  */
 #define AssertComRCThrowRC(hrc) \
     do { if (SUCCEEDED(hrc)) { /*likely*/ } else { AssertComRCFailed(hrc); throw hrc; } } while (0)
+
+/** @} */
 
 #endif // !___VBox_com_assert_h
 

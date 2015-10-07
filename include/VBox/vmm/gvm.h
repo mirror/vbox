@@ -32,7 +32,8 @@
 #include <iprt/thread.h>
 
 
-/** @defgroup grp_gvmcpu GVMCPU - The Global VMCPU Data
+/** @defgroup grp_gvmcpu    GVMCPU - The Global VMCPU Data
+ * @ingroup grp_vmm
  * @{
  */
 
@@ -59,6 +60,7 @@ typedef GVMCPU *PGVMCPU;
 /** @} */
 
 /** @defgroup grp_gvm   GVM - The Global VM Data
+ * @ingroup grp_vmm
  * @{
  */
 
@@ -122,3 +124,4 @@ typedef struct GVM
 /** @} */
 
 #endif
+

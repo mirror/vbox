@@ -30,6 +30,9 @@
 #include <VBox/types.h>
 #include <iprt/assert.h>
 
+/** @addtogroup grp_vm
+ * @{ */
+
 
 /**
  * Per virtual CPU ring-3 (user mode) data.
@@ -175,5 +178,6 @@ AssertCompileMemberAlignment(UVM, aCpus, 32);
                             ("a_pUVM=%p u32Magic=%#x\n", (a_pUVM), \
                              RT_VALID_ALIGNED_PTR(a_pUVM, PAGE_SIZE) ? (a_pUVM)->u32Magic : 0))
 
+/** @} */
 #endif
 

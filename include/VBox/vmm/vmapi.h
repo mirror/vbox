@@ -34,7 +34,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_vmm_apis  VM All Contexts API
+/** @defgroup grp_vm_apis   VM All Contexts API
  * @ingroup grp_vm
  * @{ */
 

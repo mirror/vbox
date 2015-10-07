@@ -31,6 +31,7 @@
 #if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
 
 /** @defgroup grp_csam      The Code Scanning and Analysis API
+ * @ingroup grp_vmm
  * @{
  */
 
@@ -71,7 +72,7 @@ VMM_INT_DECL(bool)      CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr);
 
 
 #ifdef IN_RING3
-/** @defgroup grp_csam_r3      The Code Scanning and Analysis API
+/** @defgroup grp_csam_r3      The CSAM ring-3 Context API
  * @{
  */
 

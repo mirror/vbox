@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * cardreaderinfs - interface between Usb Card Reader device and its driver.
+ * cardreaderinfs - interface between USB Card Reader device and its driver.
  */
 
 /*
@@ -30,20 +30,26 @@
 #include <VBox/types.h>
 
 
+/** @defgroup grp_pdm_ifs_cardreader    PDM USB Card Reader Interfaces
+ * @ingroup grp_pdm_interfaces
+ * @{
+ */
+
+
 typedef struct PDMICARDREADER_IO_REQUEST
 {
-    uint32_t u32Protocol;  /* Protocol identifier */
-    uint32_t cbPciLength;  /* Protocol Control Information Length */
+    uint32_t u32Protocol;       /**< Protocol identifier */
+    uint32_t cbPciLength;       /**< Protocol Control Information Length */
     /* 'cbPciLength - 8' bytes of control info may follow. */
 } PDMICARDREADER_IO_REQUEST;
 
 typedef struct PDMICARDREADER_READERSTATE
 {
     char *pszReaderName;
-    uint32_t u32CurrentState; /* Current state of reader at time of call. */
-    uint32_t u32EventState;   /* State of reader after state change */
-    uint32_t cbAtr;           /* Number of bytes in the returned ATR. */
-    uint8_t au8Atr[36];       /* Atr of inserted card, (extra alignment bytes) */
+    uint32_t u32CurrentState;   /**< Current state of reader at time of call. */
+    uint32_t u32EventState;     /**< State of reader after state change */
+    uint32_t cbAtr;             /**< Number of bytes in the returned ATR. */
+    uint8_t au8Atr[36];         /**< Atr of inserted card, (extra alignment bytes) */
 } PDMICARDREADER_READERSTATE;
 
 
@@ -110,6 +116,8 @@ struct PDMICARDREADERUP
                                             uint32_t u32AttribId, void *pvAttrib, uint32_t cbAttrib));
     DECLR3CALLBACKMEMBER(int, pfnSetAttrib,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc, uint32_t u32AttribId));
 };
+
+/** @} */
 
 #endif
 

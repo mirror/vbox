@@ -30,8 +30,8 @@
 
 
 /** @defgroup grp_mm_int   Internals
- * @internal
  * @ingroup grp_mm
+ * @internal
  * @{
  */
 

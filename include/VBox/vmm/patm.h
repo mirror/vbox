@@ -34,6 +34,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_patm      The Patch Manager API
+ * @ingroup grp_vmm
  * @{
  */
 #define MAX_PATCHES          512

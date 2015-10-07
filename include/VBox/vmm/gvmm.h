@@ -34,7 +34,8 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_GVMM  GVMM - The Global VM Manager.
+/** @defgroup grp_gvmm  GVMM - The Global VM Manager.
+ * @ingroup grp_vmm
  * @{
  */
 

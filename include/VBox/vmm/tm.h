@@ -34,6 +34,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_tm        The Time Manager API
+ * @ingroup grp_vmm
  * @{
  */
 

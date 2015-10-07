@@ -48,7 +48,7 @@
 #endif
 
 
-/** @defgroup grp_vmx   vmx Types and Definitions
+/** @defgroup grp_hm_vmx    VMX Types and Definitions
  * @ingroup grp_hm
  * @{
  */
@@ -1825,7 +1825,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @defgroup grp_vmx_asm   vmx assembly helpers
+/** @defgroup grp_hm_vmx_asm    VMX Assembly Helpers
  * @{
  */
 

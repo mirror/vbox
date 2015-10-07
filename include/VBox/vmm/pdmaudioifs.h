@@ -29,9 +29,17 @@
 #include <VBox/types.h>
 #include <iprt/list.h>
 
+
+/** @defgroup grp_pdm_ifs_audio     PDM Audio Interfaces
+ * @ingroup grp_pdm_interfaces
+ * @{
+ */
+
+/** @todo r=bird: Don't be lazy with documentation! */
 typedef uint32_t PDMAUDIODRVFLAGS;
 
 /** No flags set. */
+/** @todo r=bird: s/PDMAUDIODRVFLAG/PDMAUDIODRV_FLAGS/g */
 #define PDMAUDIODRVFLAG_NONE        0
 /** Marks a primary audio driver which is critical
  *  when running the VM. */
@@ -544,20 +552,27 @@ typedef struct PDMIAUDIOCONNECTOR
 /** PDMIAUDIOCONNECTOR interface ID. */
 #define PDMIAUDIOCONNECTOR_IID                  "a41ca770-ed07-4f57-a0a6-41377d9d484f"
 
-/** Defines all needed interface callbacks for an audio backend. */
-#define PDMAUDIO_IHOSTAUDIO_CALLBACKS(_aDrvName) \
-    pThis->IHostAudio.pfnCaptureIn  = _aDrvName##CaptureIn;  \
-    pThis->IHostAudio.pfnControlIn  = _aDrvName##ControlIn;  \
-    pThis->IHostAudio.pfnControlOut = _aDrvName##ControlOut; \
-    pThis->IHostAudio.pfnFiniIn     = _aDrvName##FiniIn;     \
-    pThis->IHostAudio.pfnFiniOut    = _aDrvName##FiniOut;    \
-    pThis->IHostAudio.pfnGetConf    = _aDrvName##GetConf;    \
-    pThis->IHostAudio.pfnInit       = _aDrvName##Init;       \
-    pThis->IHostAudio.pfnInitIn     = _aDrvName##InitIn;     \
-    pThis->IHostAudio.pfnInitOut    = _aDrvName##InitOut;    \
-    pThis->IHostAudio.pfnIsEnabled  = _aDrvName##IsEnabled;  \
-    pThis->IHostAudio.pfnPlayOut    = _aDrvName##PlayOut;    \
-    pThis->IHostAudio.pfnShutdown   = _aDrvName##Shutdown;
+
+/**
+ * Assign all needed interface callbacks for an audio backend.
+ *
+ * @param   a_NamePrefix        The function name prefix.
+ */
+#define PDMAUDIO_IHOSTAUDIO_CALLBACKS(a_NamePrefix) \
+    do { \
+        pThis->IHostAudio.pfnInit       = RT_CONCAT(a_NamePrefix,Init); \
+        pThis->IHostAudio.pfnShutdown   = RT_CONCAT(a_NamePrefix,Shutdown); \
+        pThis->IHostAudio.pfnInitIn     = RT_CONCAT(a_NamePrefix,InitIn); \
+        pThis->IHostAudio.pfnInitOut    = RT_CONCAT(a_NamePrefix,InitOut); \
+        pThis->IHostAudio.pfnControlOut = RT_CONCAT(a_NamePrefix,ControlOut); \
+        pThis->IHostAudio.pfnControlIn  = RT_CONCAT(a_NamePrefix,ControlIn); \
+        pThis->IHostAudio.pfnFiniIn     = RT_CONCAT(a_NamePrefix,FiniIn); \
+        pThis->IHostAudio.pfnFiniOut    = RT_CONCAT(a_NamePrefix,FiniOut); \
+        pThis->IHostAudio.pfnIsEnabled  = RT_CONCAT(a_NamePrefix,IsEnabled); \
+        pThis->IHostAudio.pfnPlayOut    = RT_CONCAT(a_NamePrefix,PlayOut); \
+        pThis->IHostAudio.pfnCaptureIn  = RT_CONCAT(a_NamePrefix,CaptureIn); \
+        pThis->IHostAudio.pfnGetConf    = RT_CONCAT(a_NamePrefix,GetConf); \
+    } while (0)
 
 /** Pointer to a host audio interface. */
 typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
@@ -681,7 +696,11 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnGetConf, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg));
 
 } PDMIHOSTAUDIO;
+
+/** PDMIHOSTAUDIO interface ID. */
 #define PDMIHOSTAUDIO_IID                           "39feea4f-c824-4197-bcff-7d4a6ede7420"
 
-#endif /* ___VBox_vmm_pdmaudioifs_h */
+/** @} */
+
+#endif /* !___VBox_vmm_pdmaudioifs_h */
 

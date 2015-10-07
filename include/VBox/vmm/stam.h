@@ -37,6 +37,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_stam     The Statistics Manager API
+ * @ingroup grp_vmm
  * @{
  */
 

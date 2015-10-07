@@ -32,6 +32,12 @@
 #include <VBox/com/array.h>
 #include <iprt/cpp/mtlist.h>
 
+
+/** @defgroup grp_com_mtlist    Thread-safe List Classes
+ * @ingroup grp_com
+ * @{
+ */
+
 /**
  * Specialized thread-safe list class for using with com::ComPtr<C>
  *
@@ -194,6 +200,8 @@ public:
     /* Define our own new and delete. */
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
+
+/** @} */
 
 #endif /* !___VBox_com_mtlist_h */
 

@@ -33,6 +33,7 @@ RT_C_DECLS_BEGIN
 
 
 /** @defgroup grp_iom   The Input / Ouput Monitor API
+ * @ingroup grp_vmm
  * @{
  */
 

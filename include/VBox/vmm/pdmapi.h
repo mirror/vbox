@@ -37,6 +37,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_pdm       The Pluggable Device Manager API
+ * @ingroup grp_vmm
  * @{
  */
 

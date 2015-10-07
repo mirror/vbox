@@ -40,6 +40,12 @@
 #include <iprt/uuid.h>
 #include <iprt/err.h>
 
+
+/** @defgroup grp_com_guid  GUID Class
+ * @ingroup grp_com
+ * @{
+ */
+
 namespace com
 {
 
@@ -519,6 +525,8 @@ private:
 };
 
 } /* namespace com */
+
+/** @} */
 
 #endif /* !___VBox_com_Guid_h */
 

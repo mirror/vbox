@@ -34,6 +34,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_ssm       The Saved State Manager API
+ * @ingroup grp_vmm
  * @{
  */
 

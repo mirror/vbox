@@ -35,6 +35,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_mm       The Memory Manager API
+ * @ingroup grp_vmm
  * @{
  */
 

@@ -40,6 +40,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_gim   The Guest Interface Manager API
+ * @ingroup grp_vmm
  * @{
  */
 
