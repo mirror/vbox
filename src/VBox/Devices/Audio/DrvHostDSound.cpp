@@ -1063,6 +1063,7 @@ static DECLCALLBACK(int) drvHostDSoundControlOut(PPDMIHOSTAUDIO pInterface,
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
+            DSLOG(("DSound: Playback PDMAUDIOSTREAMCMD_ENABLE\n"));
             /* Try to start playback. If it fails, then reopen and try again. */
             HRESULT hr = directSoundPlayStart(pDSoundStrmOut);
             if (FAILED(hr))
@@ -1081,6 +1082,7 @@ static DECLCALLBACK(int) drvHostDSoundControlOut(PPDMIHOSTAUDIO pInterface,
 
         case PDMAUDIOSTREAMCMD_DISABLE:
         {
+            DSLOG(("DSound: Playback PDMAUDIOSTREAMCMD_DISABLE\n"));
             directSoundPlayStop(pThis, pDSoundStrmOut);
             break;
         }
