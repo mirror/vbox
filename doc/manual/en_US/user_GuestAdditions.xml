@@ -1359,6 +1359,22 @@ $</screen>
       </para>
     </sect2>
 
+    <sect2 id="guestadd-dnd-limitations">
+      <title>Known limitations</title>
+
+      <para>The following limitations are known:
+        <itemizedlist>
+          <listitem>
+            <para>On Windows hosts, dragging and dropping content from
+            <emphasis role="bold">UAC-elevated (User Account Control)</emphasis> programs
+            to non-UAC-elevated programs and vice versa is now allowed. So when starting
+            VirtualBox with Administrator privileges then drag and drop will not work with
+            the Windows Explorer which runs with regular user privileges by default.</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect2>
+
   </sect1>
 
   <sect1 id="guestadd-video">
