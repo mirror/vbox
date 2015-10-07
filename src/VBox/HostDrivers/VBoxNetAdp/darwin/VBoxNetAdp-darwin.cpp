@@ -157,43 +157,6 @@ static errno_t vboxNetAdpDarwinOutput(ifnet_t pIface, mbuf_t pMBuf)
     return 0;
 }
 
-static void vboxNetAdpDarwinAttachFamily(PVBOXNETADP pThis, protocol_family_t Family)
-{
-    u_int32_t i;
-    for (i = 0; i < VBOXNETADP_MAX_FAMILIES; i++)
-        if (pThis->u.s.aAttachedFamilies[i] == 0)
-        {
-            pThis->u.s.aAttachedFamilies[i] = Family;
-            break;
-        }
-}
-
-static void vboxNetAdpDarwinDetachFamily(PVBOXNETADP pThis, protocol_family_t Family)
-{
-    u_int32_t i;
-    for (i = 0; i < VBOXNETADP_MAX_FAMILIES; i++)
-        if (pThis->u.s.aAttachedFamilies[i] == Family)
-            pThis->u.s.aAttachedFamilies[i] = 0;
-}
-
-static errno_t vboxNetAdpDarwinAddProto(ifnet_t pIface, protocol_family_t Family, const struct ifnet_demux_desc *pDemuxDesc, u_int32_t nDesc)
-{
-    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
-    Assert(pThis);
-    vboxNetAdpDarwinAttachFamily(pThis, Family);
-    LogFlow(("vboxNetAdpAddProto: Family=%d.\n", Family));
-    return ether_add_proto(pIface, Family, pDemuxDesc, nDesc);
-}
-
-static errno_t vboxNetAdpDarwinDelProto(ifnet_t pIface, protocol_family_t Family)
-{
-    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
-    Assert(pThis);
-    LogFlow(("vboxNetAdpDelProto: Family=%d.\n", Family));
-    vboxNetAdpDarwinDetachFamily(pThis, Family);
-    return ether_del_proto(pIface, Family);
-}
-
 static void vboxNetAdpDarwinDetach(ifnet_t pIface)
 {
     PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
@@ -294,8 +257,8 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
     Params.type = IFT_ETHER;
     Params.output = vboxNetAdpDarwinOutput;
     Params.demux = vboxNetAdpDarwinDemux;
-    Params.add_proto = vboxNetAdpDarwinAddProto;
-    Params.del_proto = vboxNetAdpDarwinDelProto;
+    Params.add_proto = ether_add_proto;
+    Params.del_proto = ether_del_proto;
     Params.check_multi = ether_check_multi;
     Params.framer = ether_frameout;
     Params.softc = pThis;
@@ -352,10 +315,6 @@ void vboxNetAdpOsDestroy(PVBOXNETADP pThis)
     if (err)
         Log(("vboxNetAdpDarwinUnregisterDevice: Failed to bring down interface "
              "(err=%d).\n", err));
-    /* Detach all protocols. */
-    for (i = 0; i < VBOXNETADP_MAX_FAMILIES; i++)
-        if (pThis->u.s.aAttachedFamilies[i])
-            ifnet_detach_protocol(pThis->u.s.pIface, pThis->u.s.aAttachedFamilies[i]);
     err = ifnet_detach(pThis->u.s.pIface);
     if (err)
         Log(("vboxNetAdpDarwinUnregisterDevice: Failed to detach interface "
@@ -469,7 +428,6 @@ int  vboxNetAdpOsInit(PVBOXNETADP pThis)
      */
     pThis->u.s.pIface = NULL;
     pThis->u.s.hEvtDetached = NIL_RTSEMEVENT;
-    memset(pThis->u.s.aAttachedFamilies, 0, sizeof(pThis->u.s.aAttachedFamilies));
 
     return VINF_SUCCESS;
 }
