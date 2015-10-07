@@ -1,0 +1,12 @@
+$Id$
+This file documents things which need testing when updating the Linux host
+installers or anything which might indirectly affect them.  This should be
+updated as we discover new things which could break.
+
+ * Test building, installing and running the run, RPM and Debian packages.
+ * Test removing the packages - any errors?  Any files left behind?  Can the
+   package be re-installed and run after removal?
+ * Test upgrading them from any version we are likely to want to upgrade from.
+   Make sure we can start.
+ * Make sure that RPM/deb packages will not install if the run package is
+   installed and vice-versa.
