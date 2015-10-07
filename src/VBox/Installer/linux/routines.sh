@@ -162,6 +162,8 @@ install_init_script()
 
     test -x "${script}" && test ! "${name}" = "" ||
         { echo "${self}: invalid arguments" >&2; return 1; }
+    # Do not unconditionally silence the following "ln".
+    test -L "/sbin/rc${name}" && rm "/sbin/rc${name}"
     ln -s "${script}" "/sbin/rc${name}"
     test -x "`which systemctl 2>/dev/null`" &&
         { systemd_wrap_init_script "$script" "$name"; return; }
