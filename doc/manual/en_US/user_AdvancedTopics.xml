@@ -2421,7 +2421,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
         <glossentry>
           <glossterm><computeroutput>DragAndDrop</computeroutput></glossterm>
           <glossdef>
-            <para>Don't show the <emphasis>Drag'n'Drop</emphasis> menu item in this menu.</para>
+            <para>Don't show the <emphasis>Drag and Drop</emphasis> menu item in this menu.</para>
           </glossdef>
         </glossentry>
         <glossentry>

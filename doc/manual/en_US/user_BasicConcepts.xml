@@ -411,18 +411,18 @@
           </glossentry>
 
           <glossentry>
-            <glossterm>Drag'n'Drop</glossterm>
+            <glossterm>Drag and Drop</glossterm>
             <glossdef>
-              <para>This setting allows to enable support for drag'n drop: Select
+              <para>This setting allows to enable support for drag and drop: Select
               an object (e.g. a file) from the host or guest and directly copy
-              or open it on the guest or host. Multiple per-VM drag'n drop modes
+              or open it on the guest or host. Multiple per-VM drag and drop modes
               allow restricting access in either direction.</para>
 
-              <para>For drag'n drop to work the Guest Additions need to be
+              <para>For drag and drop to work the Guest Additions need to be
               installed on the guest.</para>
 
-              <para><note><para>Drag'n drop is disabled by default. This setting can be
-              changed at any time using the "Drag'n'Drop" menu item in the
+              <para><note><para>Drag and drop is disabled by default. This setting can be
+              changed at any time using the "Drag and Drop" menu item in the
               "Devices" menu of the virtual machine.</para></note></para>
 
               <para>See <xref linkend="guestadd-dnd"/> for more information.
@@ -709,7 +709,7 @@
       VT-x) features, then you can expect a significant performance increase
       by enabling nested paging in addition to hardware virtualization. For
       technical details, see <xref linkend="nestedpaging" />.</para>
-      
+
       <para>Starting with version 5.0, VirtualBox provides paravirtualization
       interfaces to improve time-keeping accuracy and performance of guest
       operating systems. The options available are documented under the

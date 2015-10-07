@@ -3526,22 +3526,22 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
   </chapter>
 
   <chapter id="dnd">
-    <title>Drag'n Drop</title>
+    <title>Drag and Drop</title>
 
     <para>Since VirtualBox 4.2 it's possible to transfer files from host to the
     Linux guests by dragging files, directories or text from the host into the
-    guest's screen. This is called <emphasis>drag'n drop
+    guest's screen. This is called <emphasis>drag and drop
     (DnD)</emphasis>.</para>
 
     <para>In version 5.0 support for Windows guests has been added, as well as
     the ability to transfer data the other way around, that is, from the guest
     to the host.</para>
 
-    <note><para>Currently only the VirtualBox Manager frontend supports drag'n
+    <note><para>Currently only the VirtualBox Manager frontend supports drag and
       drop.</para></note>
 
     <para>This chapter will show how to use the required interfaces provided
-    by VirtualBox for adding drag'n drop functionality to third-party
+    by VirtualBox for adding drag and drop functionality to third-party
     frontends.</para>
 
     <sect1>
@@ -3549,7 +3549,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
       <para>In order to use the interfaces provided by VirtualBox, some basic
       concepts needs to be understood first: To successfully initiate a
-      drag'n drop operation at least two sides needs to be involved, a
+      drag and drop operation at least two sides needs to be involved, a
       <emphasis>source</emphasis> and a <emphasis>target</emphasis>:</para>
 
       <para>The <emphasis>source</emphasis> is the side which provides the
@@ -4043,10 +4043,10 @@ AuthResult AUTHCALL AuthEntry(
           global and didn't distinguish between API clients.</para>
         </listitem>
 
-        <listitem><para>Drag'n drop APIs were changed as follows:<itemizedlist>
+        <listitem><para>Drag and drop APIs were changed as follows:<itemizedlist>
 
           <listitem>
-            <para>Methods for providing host to guest drag'n drop
+            <para>Methods for providing host to guest drag and drop
               functionality, such as
               <computeroutput>IGuest::dragHGEnter</computeroutput>,
               <computeroutput>IGuest::dragHGMove()</computeroutput>,
@@ -4060,7 +4060,7 @@ AuthResult AUTHCALL AuthEntry(
               interface. The implementation can be used by using the
               <link linkend="IGuest__dnDTarget">IGuest::dnDTarget()</link>
               method.</para>
-            <para>Methods for providing guest to host drag'n drop
+            <para>Methods for providing guest to host drag and drop
               functionality, such as
               <computeroutput>IGuest::dragGHPending()</computeroutput>,
               <computeroutput>IGuest::dragGHDropped()</computeroutput> and

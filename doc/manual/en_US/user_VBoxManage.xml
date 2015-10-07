@@ -732,7 +732,7 @@ Statistics update:  disabled</screen></para>
             ROM is used.
             </para>
           </listitem>
-          
+
           <listitem>
             <para><computeroutput>--biospxedebug on|off</computeroutput>:
             This option enables additional debugging output when using the
@@ -886,7 +886,7 @@ Statistics update:  disabled</screen></para>
             <computeroutput>nat</computeroutput>) then this setting specifies
             the name of the NAT network this adapter is connected to.</para>
           </listitem>
-          
+
           <listitem>
             <para><computeroutput>--bridgeadapter&lt;1-N&gt;
             none|&lt;devicename&gt;</computeroutput>: If bridged networking
@@ -1039,7 +1039,7 @@ Statistics update:  disabled</screen></para>
       <title>Miscellaneous settings</title>
 
       <para>The following other hardware settings, such as serial port, audio,
-      clipboard, drag'n drop, monitor and USB settings are available through
+      clipboard, drag and drop, monitor and USB settings are available through
       <computeroutput>VBoxManage modifyvm</computeroutput>:<itemizedlist>
           <listitem>
             <para><computeroutput>--uart&lt;1-N&gt; off|&lt;I/O base&gt;
@@ -1152,7 +1152,7 @@ Statistics update:  disabled</screen></para>
           <listitem>
             <para><computeroutput>--draganddrop
             disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
-            With this setting, you can select the current drag'n drop mode
+            With this setting, you can select the current drag and drop mode
             being used between the host and the virtual machine;
             see <xref linkend="guestadd-dnd" />. This requires that the Guest
             Additions be installed in the virtual machine.</para>
@@ -1417,7 +1417,7 @@ Statistics update:  disabled</screen></para>
           </listitem>
         </itemizedlist></para>
     </sect2>
-    
+
     <sect2 id="vboxmanage-modifyvm-debugging">
       <title>Debugging settings</title>
 
@@ -1867,7 +1867,7 @@ Virtual system 0:
       <listitem>
         <para><computeroutput>draganddrop
         disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
-        With this setting, you can select the current drag'n drop mode
+        With this setting, you can select the current drag and drop mode
         being used between the host and the virtual machine;
         see <xref linkend="guestadd-dnd" />. This requires that the Guest
         Additions be installed in the virtual machine.</para>
