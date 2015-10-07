@@ -189,7 +189,7 @@ typedef struct VBOXHDDRAW
      * partition information below). */
     uint32_t        uFlags;
     /** Filename for the raw disk. Ignored for partitioned raw disks.
-     * For Linux e.g. /dev/sda, and for Windows e.g. \\\\.\\PhysicalDisk0. */
+     * For Linux e.g. /dev/sda, and for Windows e.g. //./PhysicalDisk0. */
     const char      *pszRawDisk;
     /** Number of entries in the partition descriptor array. */
     unsigned        cPartDescs;
@@ -563,7 +563,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
  *
  * @return  VBox status code.
  * @param   pszBackend      The backend name (case insensitive).
- * @param   pEntries        Pointer to an entry.
+ * @param   pEntry          Pointer to an entry.
  */
 VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry);
 
@@ -584,7 +584,7 @@ VBOXDDU_DECL(int) VDFilterInfo(unsigned cEntriesAlloc, PVDFILTERINFO pEntries,
  *
  * @return  VBox status code.
  * @param   pszFilter       The filter name (case insensitive).
- * @param   pEntries        Pointer to an entry.
+ * @param   pEntry          Pointer to an entry.
  */
 VBOXDDU_DECL(int) VDFilterInfoOne(const char *pszFilter, PVDFILTERINFO pEntry);
 
@@ -730,6 +730,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
  *
  * @return  VBox status code.
  * @param   pDisk           Name of the cache file backend to use (case insensitive).
+ * @param   pszBackend      Name of the image file backend to use (case insensitive).
  * @param   pszFilename     Name of the differencing cache file to create.
  * @param   cbSize          Maximum size of the cache.
  * @param   uImageFlags     Flags specifying special cache features.
@@ -763,13 +764,14 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
 /**
  * Copies an image from one HDD container to another - extended version.
- * The copy is opened in the target HDD container.
- * It is possible to convert between different image formats, because the
- * backend for the destination may be different from the source.
- * If both the source and destination reference the same HDD container,
- * then the image is moved (by copying/deleting or renaming) to the new location.
- * The source container is unchanged if the move operation fails, otherwise
- * the image at the new location is opened in the same way as the old one was.
+ *
+ * The copy is opened in the target HDD container.  It is possible to convert
+ * between different image formats, because the backend for the destination may
+ * be different from the source.  If both the source and destination reference
+ * the same HDD container, then the image is moved (by copying/deleting or
+ * renaming) to the new location.  The source container is unchanged if the move
+ * operation fails, otherwise the image at the new location is opened in the
+ * same way as the old one was.
  *
  * @note The read/write accesses across disks are not synchronized, just the
  * accesses to each disk. Once there is a use case which requires a defined
@@ -777,53 +779,64 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  *
  * @return  VBox status code.
  * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ *
  * @param   pDiskFrom       Pointer to source HDD container.
- * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image
+ *                          of container.
  * @param   pDiskTo         Pointer to destination HDD container.
- * @param   pszBackend      Name of the image file backend to use (may be NULL to use the same as the source, case insensitive).
- * @param   pszFilename     New name of the image (may be NULL to specify that the
- *                          copy destination is the destination container, or
- *                          if pDiskFrom == pDiskTo, i.e. when moving).
- * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
+ * @param   pszBackend      Name of the image file backend to use (may be NULL
+ *                          to use the same as the source, case insensitive).
+ * @param   pszFilename     New name of the image (may be NULL to specify that
+ *                          the copy destination is the destination container,
+ *                          or if pDiskFrom == pDiskTo, i.e. when moving).
+ * @param   fMoveByRename   If true, attempt to perform a move by renaming (if
+ *                          successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
- * @param   nImageSameFrom  The number of the last image in the source chain having the same content as the
- *                          image in the destination chain given by nImageSameTo or
- *                          VD_IMAGE_CONTENT_UNKNOWN to indicate that the content of both containers is unknown.
- *                          See the notes for further information.
- * @param   nImageSameTo    The number of the last image in the destination chain having the same content as the
- *                          image in the source chain given by nImageSameFrom or
- *                          VD_IMAGE_CONTENT_UNKNOWN to indicate that the content of both containers is unknown.
- *                          See the notes for further information.
+ * @param   nImageFromSame  The number of the last image in the source chain
+ *                          having the same content as the image in the
+ *                          destination chain given by nImageToSame or
+ *                          VD_IMAGE_CONTENT_UNKNOWN to indicate that the
+ *                          content of both containers is unknown.  See the
+ *                          notes for further information.
+ * @param   nImageToSame    The number of the last image in the destination
+ *                          chain having the same content as the image in the
+ *                          source chain given by nImageFromSame or
+ *                          VD_IMAGE_CONTENT_UNKNOWN to indicate that the
+ *                          content of both containers is unknown. See the notes
+ *                          for further information.
  * @param   uImageFlags     Flags specifying special destination image features.
- * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
- *                          This parameter is used if and only if a true copy is created.
- *                          In all rename/move cases or copy to existing image cases the modification UUIDs are copied over.
+ * @param   pDstUuid        New UUID of the destination image. If NULL, a new
+ *                          UUID is created. This parameter is used if and only
+ *                          if a true copy is created. In all rename/move cases
+ *                          or copy to existing image cases the modification
+ *                          UUIDs are copied over.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  *                          Only used if the destination image is created.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
  *                          destination image.
- * @param   pDstVDIfsOperation Pointer to the per-operation VD interface list,
+ * @param   pDstVDIfsOperation  Pointer to the per-operation VD interface list,
  *                          for the destination operation.
  *
- * @note Using nImageSameFrom and nImageSameTo can lead to a significant speedup
- *       when copying an image but can also lead to a corrupted copy if used incorrectly.
- *       It is mainly useful when cloning a chain of images and it is known that
- *       the virtual disk content of the two chains is exactly the same upto a certain image.
- *       Example:
- *          Imagine the chain of images which consist of a base and one diff image.
- *          Copying the chain starts with the base image. When copying the first
- *          diff image VDCopy() will read the data from the diff of the source chain
- *          and probably from the base image again in case the diff doesn't has data
- *          for the block. However the block will be optimized away because VDCopy()
- *          reads data from the base image of the destination chain compares the to
- *          and suppresses the write because the data is unchanged.
- *          For a lot of diff images this will be a huge waste of I/O bandwidth if
- *          the diff images contain only few changes.
- *          Because it is known that the base image of the source and the destination chain
- *          have the same content it is enough to check the diff image for changed data
- *          and copy it to the destination diff image which is achieved with
- *          nImageSameFrom and nImageSameTo. Setting both to 0 can suppress a lot of I/O.
+ * @note Using nImageFromSame and nImageToSame can lead to a significant speedup
+ *       when copying an image but can also lead to a corrupted copy if used
+ *       incorrectly. It is mainly useful when cloning a chain of images and it
+ *       is known that the virtual disk content of the two chains is exactly the
+ *       same upto a certain image. Example:
+ *          Imagine the chain of images which consist of a base and one diff
+ *          image. Copying the chain starts with the base image. When copying
+ *          the first diff image VDCopy() will read the data from the diff of
+ *          the source chain and probably from the base image again in case the
+ *          diff doesn't has data for the block. However the block will be
+ *          optimized away because VDCopy() reads data from the base image of
+ *          the destination chain compares the to and suppresses the write
+ *          because the data is unchanged. For a lot of diff images this will be
+ *          a huge waste of I/O bandwidth if the diff images contain only few
+ *          changes. Because it is known that the base image of the source and
+ *          the destination chain have the same content it is enough to check
+ *          the diff image for changed data and copy it to the destination diff
+ *          image which is achieved with nImageFromSame and nImageToSame.
+ *          Setting both to 0 can suppress a lot of I/O.
  */
 VBOXDDU_DECL(int) VDCopyEx(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                            const char *pszBackend, const char *pszFilename,
@@ -900,8 +913,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
-VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
-                            PVDINTERFACE pVDIfsOperation);
+VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage, PVDINTERFACE pVDIfsOperation);
 
 /**
  * Resizes the given disk image to the given size. It is OK if there are
@@ -989,13 +1001,13 @@ VBOXDDU_DECL(int) VDFilterRemoveAll(PVBOXHDD pDisk);
  * @return  VBox status code.
  * @return  VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
- * @param   uOffset         Offset of first reading byte from start of disk.
+ * @param   off             Offset of first reading byte from start of disk.
  *                          Must be aligned to a sector boundary.
  * @param   pvBuffer        Pointer to buffer for reading data.
  * @param   cbBuffer        Number of bytes to read.
  *                          Must be aligned to a sector boundary.
  */
-VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuffer, size_t cbBuffer);
+VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t off, void *pvBuffer, size_t cbBuffer);
 
 /**
  * Write data to virtual HDD.
@@ -1003,13 +1015,13 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuffer, size_
  * @return  VBox status code.
  * @return  VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
- * @param   uOffset         Offset of first writing byte from start of disk.
+ * @param   off             Offset of first writing byte from start of disk.
  *                          Must be aligned to a sector boundary.
  * @param   pvBuffer        Pointer to buffer for writing data.
  * @param   cbBuffer        Number of bytes to write.
  *                          Must be aligned to a sector boundary.
  */
-VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuffer, size_t cbBuffer);
+VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t off, const void *pvBuffer, size_t cbBuffer);
 
 /**
  * Make sure the on disk representation of a virtual HDD is up to date.
@@ -1077,8 +1089,7 @@ VBOXDDU_DECL(uint64_t) VDGetFileSize(PVBOXHDD pDisk, unsigned nImage);
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pPCHSGeometry   Where to store PCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
-                                    PVDGEOMETRY pPCHSGeometry);
+VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage, PVDGEOMETRY pPCHSGeometry);
 
 /**
  * Store virtual disk PCHS geometry of an image in HDD container.
@@ -1089,8 +1100,7 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pPCHSGeometry   Where to load PCHS geometry from. Not NULL.
  */
-VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
-                                    PCVDGEOMETRY pPCHSGeometry);
+VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage, PCVDGEOMETRY pPCHSGeometry);
 
 /**
  * Get virtual disk LCHS geometry of an image in HDD container.
@@ -1102,8 +1112,7 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pLCHSGeometry   Where to store LCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
-                                    PVDGEOMETRY pLCHSGeometry);
+VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage, PVDGEOMETRY pLCHSGeometry);
 
 /**
  * Store virtual disk LCHS geometry of an image in HDD container.
@@ -1114,8 +1123,7 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pLCHSGeometry   Where to load LCHS geometry from. Not NULL.
  */
-VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
-                                    PCVDGEOMETRY pLCHSGeometry);
+VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage, PCVDGEOMETRY pLCHSGeometry);
 
 /**
  * Get version of image in HDD container.
@@ -1126,8 +1134,7 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puVersion       Where to store the image version.
  */
-VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
-                               unsigned *puVersion);
+VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage, unsigned *puVersion);
 
 /**
  * List the capabilities of image backend in HDD container.
@@ -1136,10 +1143,9 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
  * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to the HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   pbackendInfo    Where to store the backend information.
+ * @param   pBackendInfo    Where to store the backend information.
  */
-VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
-                                      PVDBACKENDINFO pBackendInfo);
+VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage, PVDBACKENDINFO pBackendInfo);
 
 /**
  * Get flags of image in HDD container.
@@ -1161,8 +1167,7 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage, unsigned *puI
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puOpenFlags     Where to store the image open flags.
  */
-VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
-                                 unsigned *puOpenFlags);
+VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage, unsigned *puOpenFlags);
 
 /**
  * Set open flags of image in HDD container.
@@ -1175,8 +1180,7 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  */
-VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
-                                 unsigned uOpenFlags);
+VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage, unsigned uOpenFlags);
 
 /**
  * Get base filename of image in HDD container. Some image formats use
@@ -1191,8 +1195,7 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
  * @param   pszFilename     Where to store the image file name.
  * @param   cbFilename      Size of buffer pszFilename points to.
  */
-VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
-                                char *pszFilename, unsigned cbFilename);
+VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage, char *pszFilename, unsigned cbFilename);
 
 /**
  * Get the comment line of image in HDD container.
@@ -1205,8 +1208,7 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
  * @param   pszComment      Where to store the comment string of image. NULL is ok.
  * @param   cbComment       The size of pszComment buffer. 0 is ok.
  */
-VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
-                               char *pszComment, unsigned cbComment);
+VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage, char *pszComment, unsigned cbComment);
 
 /**
  * Changes the comment line of image in HDD container.
@@ -1217,8 +1219,7 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pszComment      New comment string (UTF-8). NULL is allowed to reset the comment.
  */
-VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
-                                   const char *pszComment);
+VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage, const char *pszComment);
 
 /**
  * Get UUID of image in HDD container.
@@ -1251,8 +1252,7 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid);
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the image modification UUID.
  */
-VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage,
-                                        PRTUUID pUuid);
+VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid);
 
 /**
  * Set the image's last modification UUID. Should not be used by normal applications.
@@ -1263,8 +1263,7 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           New modification UUID of the image. If NULL, a new UUID is created.
  */
-VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage,
-                                        PCRTUUID pUuid);
+VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid);
 
 /**
  * Get parent UUID of image in HDD container.
@@ -1275,8 +1274,7 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of the container.
  * @param   pUuid           Where to store the parent image UUID.
  */
-VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
-                                  PRTUUID pUuid);
+VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid);
 
 /**
  * Set the image's parent UUID. Should not be used by normal applications.
@@ -1286,8 +1284,7 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           New parent UUID of the image. If NULL, a new UUID is created.
  */
-VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
-                                  PCRTUUID pUuid);
+VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid);
 
 
 /**
@@ -1317,13 +1314,14 @@ VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned c
  *
  * @return  VBox status code.
  * @param   pDisk           Pointer to the HDD container.
- * @param   uOffset         The offset of the virtual disk to read from.
+ * @param   off             The offset of the virtual disk to read from.
  * @param   cbRead          How many bytes to read.
  * @param   pcSgBuf         Pointer to the S/G buffer to read into.
  * @param   pfnComplete     Completion callback.
- * @param   pvUser          User data which is passed on completion
+ * @param   pvUser1         User data which is passed on completion.
+ * @param   pvUser2         User data which is passed on completion.
  */
-VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
+VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t off, size_t cbRead,
                               PCRTSGBUF pcSgBuf,
                               PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                               void *pvUser1, void *pvUser2);
@@ -1334,13 +1332,14 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
  *
  * @return  VBox status code.
  * @param   pDisk           Pointer to the HDD container.
- * @param   uOffset         The offset of the virtual disk to write to.
- * @param   cbWrtie         How many bytes to write.
+ * @param   off             The offset of the virtual disk to write to.
+ * @param   cbWrite         How many bytes to write.
  * @param   pcSgBuf         Pointer to the S/G buffer to write from.
  * @param   pfnComplete     Completion callback.
- * @param   pvUser          User data which is passed on completion.
+ * @param   pvUser1         User data which is passed on completion.
+ * @param   pvUser2         User data which is passed on completion.
  */
-VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
+VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t off, size_t cbWrite,
                                PCRTSGBUF pcSgBuf,
                                PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                void *pvUser1, void *pvUser2);
@@ -1352,7 +1351,8 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
  * @return  VBox status code.
  * @param   pDisk           Pointer to the HDD container.
  * @param   pfnComplete     Completion callback.
- * @param   pvUser          User data which is passed on completion.
+ * @param   pvUser1         User data which is passed on completion.
+ * @param   pvUser2         User data which is passed on completion.
  */
 VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk,
                                PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
@@ -1371,7 +1371,7 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk,
  */
 VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges,
                                        PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
-                                       void *pvUser1, void *pvUser);
+                                       void *pvUser1, void *pvUser2);
 
 /**
  * Tries to repair a corrupted image.
@@ -1382,12 +1382,11 @@ VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsig
  * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
  * @param   pVDIfsImage     Pointer to the per-image VD interface list.
  * @param   pszFilename     Name of the image file to repair.
- * @param   pszFormat       The backend to use.
+ * @param   pszBackend      The backend to use.
  * @param   fFlags          Combination of the VD_REPAIR_* flags.
  */
 VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                           const char *pszFilename, const char *pszBackend,
-                           uint32_t fFlags);
+                           const char *pszFilename, const char *pszBackend, uint32_t fFlags);
 
 /**
  * Create a VFS file handle from the given HDD container.

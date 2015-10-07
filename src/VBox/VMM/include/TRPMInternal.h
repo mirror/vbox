@@ -75,7 +75,7 @@ RT_C_DECLS_BEGIN
 /**
  * Converts a TRPM pointer into a VM pointer.
  * @returns Pointer to the VM structure the TRPM is part of.
- * @param   pTRPM   Pointer to TRPM instance data.
+ * @param   pTRPM       Pointer to TRPM instance data.
  */
 #define TRPM_2_VM(pTRPM)            ( (PVM)((uint8_t *)(pTRPM) - (pTRPM)->offVM) )
 #endif
@@ -83,7 +83,7 @@ RT_C_DECLS_BEGIN
 /**
  * Converts a TRPM pointer into a TRPMCPU pointer.
  * @returns Pointer to the VM structure the TRPMCPU is part of.
- * @param   pTRPM   Pointer to TRPMCPU instance data.
+ * @param   pTrpmCpu    Pointer to TRPMCPU instance data.
  * @remarks Raw-mode only, not SMP safe.
  */
 #define TRPM_2_TRPMCPU(pTrpmCpu)     ( (PTRPMCPU)((uint8_t *)(pTrpmCpu) + (pTrpmCpu)->offTRPMCPU) )
@@ -108,13 +108,13 @@ typedef struct TRPM
      *
      * This configuration option is provided for speeding up guest like Solaris
      * that put the IDT on the same page as a whole lot of other data that is
-     * frequently updated. The updates will cause #PFs and have to be interpreted
+     * frequently updated. The updates will cause \#PFs and have to be interpreted
      * by PGMInterpretInstruction which is slow compared to raw execution.
      *
      * If the guest is well behaved and doesn't change the IDT after loading it,
      * there is no problem with dropping the IDT monitoring.
      *
-     * @cfgm    /TRPM/SafeToDropGuestIDTMonitoring   boolean     defaults to false.
+     * @cfgm{/TRPM/SafeToDropGuestIDTMonitoring, boolean, defaults to false.}
      */
     bool                    fSafeToDropGuestIDTMonitoring;
 
@@ -161,7 +161,7 @@ typedef struct TRPM
     STAMCOUNTER             StatForwardFailRZ;
 
     STAMPROFILE             StatTrap0dDisasm;
-    STAMCOUNTER             StatTrap0dRdTsc;    /**< Number of RDTSC #GPs. */
+    STAMCOUNTER             StatTrap0dRdTsc;    /**< Number of RDTSC \#GPs. */
 
 #ifdef VBOX_WITH_STATISTICS
     /** Statistics for interrupt handlers (allocated on the hypervisor heap) - R3
@@ -184,14 +184,14 @@ typedef TRPM *PTRPM;
 /**
  * Converts a TRPMCPU pointer into a VM pointer.
  * @returns Pointer to the VM structure the TRPMCPU is part of.
- * @param   pTRPM   Pointer to TRPMCPU instance data.
+ * @param   pTrpmCpu    Pointer to TRPMCPU instance data.
  */
 #define TRPMCPU_2_VM(pTrpmCpu)      ( (PVM)((uint8_t *)(pTrpmCpu) - (pTrpmCpu)->offVM) )
 
 /**
  * Converts a TRPMCPU pointer into a VMCPU pointer.
  * @returns Pointer to the VMCPU structure the TRPMCPU is part of.
- * @param   pTRPM   Pointer to TRPMCPU instance data.
+ * @param   pTrpmCpu    Pointer to TRPMCPU instance data.
  */
 #define TRPMCPU_2_VMCPU(pTrpmCpu)   ( (PVMCPU)((uint8_t *)(pTrpmCpu) - (pTrpmCpu)->offVMCpu) )
 
@@ -239,8 +239,8 @@ typedef struct TRPMCPU
     /** Previous trap vector # - for debugging. */
     RTGCUINT                uPrevVector;
 
-    /** Instruction length for software interrupts and software exceptions (#BP,
-     *  #OF) */
+    /** Instruction length for software interrupts and software exceptions
+     * (\#BP, \#OF) */
     uint8_t                 cbInstr;
 
     /** Saved instruction length. */

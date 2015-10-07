@@ -621,7 +621,7 @@ typedef struct PDMUSBHLP
      * @returns rc.
      * @param   pUsbIns             The USB device instance.
      * @param   rc                  VBox status code.
-     * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+     * @param   SRC_POS             Use RT_SRC_POS.
      * @param   pszFormat           Error message format string.
      * @param   va                  Error message arguments.
      */
@@ -657,7 +657,7 @@ typedef struct PDMUSBHLP
      * resuming, and destroying the thread as the VM state changes.
      *
      * @returns VBox status code.
-     * @param   pDevIns             The device instance.
+     * @param   pUsbIns             The USB device instance.
      * @param   ppThread            Where to store the thread 'handle'.
      * @param   pvUser              The user argument to the thread function.
      * @param   pfnThread           The thread function.
@@ -677,7 +677,7 @@ typedef struct PDMUSBHLP
      * for each one.
      *
      * @returns VBox status code.
-     * @param   pUSBIns             The USB device instance.
+     * @param   pUsbIns             The USB device instance.
      * @param   pfnAsyncNotify      The callback.
      * @thread  EMT(0)
      */
@@ -689,7 +689,7 @@ typedef struct PDMUSBHLP
      *
      * This can be called at any time, spurious calls will simply be ignored.
      *
-     * @param   pUSBIns             The USB device instance.
+     * @param   pUsbIns             The USB device instance.
      * @thread  Any
      */
     DECLR3CALLBACKMEMBER(void, pfnAsyncNotificationCompleted, (PPDMUSBINS pUsbIns));
@@ -891,7 +891,7 @@ DECLINLINE(int) PDMUsbHlpDriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun, PPDMIBASE
  *
  * @returns VBox status code which must be passed up to the VMM.
  * @param   pUsbIns             Device instance.
- * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+ * @param   SRC_POS             Use RT_SRC_POS.
  * @param   pszFormat           Message. (optional)
  * @param   ...                 Message parameters.
  */
@@ -926,7 +926,7 @@ DECLINLINE(VMSTATE) PDMUsbHlpVMState(PPDMUSBINS pUsbIns)
  * @copydoc PDMUSBHLP::pfnThreadCreate
  */
 DECLINLINE(int) PDMUsbHlpThreadCreate(PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADUSB pfnThread,
-                                         PFNPDMTHREADWAKEUPUSB pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+                                      PFNPDMTHREADWAKEUPUSB pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     return pUsbIns->pHlpR3->pfnThreadCreate(pUsbIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
@@ -954,7 +954,7 @@ DECLINLINE(void) PDMUsbHlpAsyncNotificationCompleted(PPDMUSBINS pUsbIns)
  * @returns rc.
  * @param   pUsbIns             The USB device instance.
  * @param   rc                  VBox status code.
- * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+ * @param   SRC_POS             Use RT_SRC_POS.
  * @param   pszFormat           Error message format string.
  * @param   ...                 Error message arguments.
  */

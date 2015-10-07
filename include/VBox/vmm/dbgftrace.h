@@ -30,7 +30,7 @@
 #include <VBox/types.h>
 
 RT_C_DECLS_BEGIN
-/** @addgroup grp_dbgf_trace  Tracing
+/** @defgroup grp_dbgf_trace  Tracing
  * @ingroup grp_dbgf
  *
  * @{

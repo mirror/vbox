@@ -197,7 +197,7 @@ DECLINLINE(uint32_t) PDMNetGsoCalcSegmentCount(PCPDMNETWORKGSO pGso, size_t cbFr
  *
  * @returns Offset of the IPv6 header.
  * @param   pbSegHdrs           The headers / frame start.
- * @param   offIpHdr            The offset of the IPv4 header.
+ * @param   offIPv4Hdr          The offset of the IPv4 header.
  */
 DECLINLINE(uint8_t) pgmNetGsoCalcIpv6Offset(uint8_t *pbSegHdrs, uint8_t offIPv4Hdr)
 {
@@ -359,7 +359,6 @@ DECLINLINE(uint32_t) pdmNetGsoUpdateIPv4Hdr(uint8_t *pbSegHdrs, uint8_t offIpHdr
  * @param   offIpHdr            The offset into @a pbSegHdrs of the IP header.
  * @param   cbSegPayload        The amount of segmented payload.
  * @param   offFragment         The offset of this fragment for reassembly.
- * @param   iSeg                The segment index.
  * @param   cbHdrs              The size of all the headers.
  * @param   fLastFragment       True if this is the last fragment of datagram.
  * @internal

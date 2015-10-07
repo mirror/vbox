@@ -151,11 +151,13 @@
 
 /** @def VBOX_WITH_NEW_LAZY_PAGE_ALLOC
  * Enables the experimental lazy page allocation code. */
-/*#define VBOX_WITH_NEW_LAZY_PAGE_ALLOC */
+#ifdef DOXYGEN_RUNNING
+# define VBOX_WITH_NEW_LAZY_PAGE_ALLOC
+#endif
 
 /** @def VBOX_WITH_REAL_WRITE_MONITORED_PAGES
  * Enables real write monitoring of pages, i.e. mapping them read-only and
- * only making them writable when getting a write access #PF. */
+ * only making them writable when getting a write access \#PF. */
 #define VBOX_WITH_REAL_WRITE_MONITORED_PAGES
 
 /** @} */
@@ -875,6 +877,10 @@ typedef PPGMPAGE *PPPGMPAGE;
 /**
  * Initializes the page structure.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ * @param   a_HCPhys    The host physical address of the page.
+ * @param   a_idPage    The (GMM) page ID of the page.
+ * @param   a_uType     The page type (PGMPAGETYPE).
+ * @param   a_uState    The page state (PGM_PAGE_STATE_XXX).
  */
 #define PGM_PAGE_INIT(a_pPage, a_HCPhys, a_idPage, a_uType, a_uState) \
     do { \
@@ -1552,7 +1558,7 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
  * Calculates the RAM range TLB index for the physical address.
  *
  * @returns RAM range TLB index.
- * @param   GCPhys      The guest physical address.
+ * @param   a_GCPhys    The guest physical address.
  */
 #define PGM_RAMRANGE_TLB_IDX(a_GCPhys)      ( ((a_GCPhys) >> 20) & (PGM_RAMRANGE_TLB_ENTRIES - 1) )
 
@@ -2073,7 +2079,7 @@ typedef PGMMAPSET *PPGMMAPSET;
  * Pointer to a page mapper unit for current context. */
 /** @typedef PPPGMPAGEMAP
  * Pointer to a page mapper unit pointer for current context. */
-#ifdef IN_RC
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
 // typedef PPGMPAGEGCMAPTLB               PPGMPAGEMAPTLB;
 // typedef PPGMPAGEGCMAPTLBE              PPGMPAGEMAPTLBE;
 // typedef PPGMPAGEGCMAPTLBE             *PPPGMPAGEMAPTLBE;
@@ -3716,7 +3722,7 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatRZSyncPagePDNAs;                /**< RC/R0: The number of time we've marked a PD not present from SyncPage to virtualize the accessed bit. */
     STAMCOUNTER StatRZSyncPagePDOutOfSync;          /**< RC/R0: The number of time we've encountered an out-of-sync PD in SyncPage. */
     STAMCOUNTER StatRZAccessedPage;                 /**< RC/R0: The number of pages marked not present for accessed bit emulation. */
-    STAMPROFILE StatRZDirtyBitTracking;             /**< RC/R0: Profiling the dirty bit tracking in CheckPageFault().. */
+    STAMPROFILE StatRZDirtyBitTracking;             /**< RC/R0: Profiling the dirty bit tracking in CheckPageFault(). */
     STAMCOUNTER StatRZDirtyPage;                    /**< RC/R0: The number of pages marked read-only for dirty bit tracking. */
     STAMCOUNTER StatRZDirtyPageBig;                 /**< RC/R0: The number of pages marked read-only for dirty bit tracking. */
     STAMCOUNTER StatRZDirtyPageSkipped;             /**< RC/R0: The number of pages already dirty or readonly. */
@@ -3800,14 +3806,14 @@ typedef struct PGMCPUSTATS
 /**
  * Converts a PGMCPU pointer into a VM pointer.
  * @returns Pointer to the VM structure the PGM is part of.
- * @param   pPGM   Pointer to PGMCPU instance data.
+ * @param   pPGM    Pointer to PGMCPU instance data.
  */
 #define PGMCPU2VM(pPGM)         ( (PVM)((char*)(pPGM) - (pPGM)->offVM) )
 
 /**
  * Converts a PGMCPU pointer into a PGM pointer.
  * @returns Pointer to the VM structure the PGM is part of.
- * @param   pPGM   Pointer to PGMCPU instance data.
+ * @param   pPGMCpu Pointer to PGMCPU instance data.
  */
 #define PGMCPU2PGM(pPGMCpu)     ( (PPGM)((char *)(pPGMCpu) - (pPGMCpu)->offPGM) )
 

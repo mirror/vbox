@@ -144,7 +144,7 @@ typedef const OLECHAR *CBSTR;
 #define ComSafeArrayIn(aType, aArg)     SAFEARRAY *aArg
 
 /**
- * Expands to @true if the given input safearray parameter is a "null pointer"
+ * Expands to @c true if the given input safearray parameter is a "null pointer"
  * which makes it impossible to use it for reading safearray data.
  */
 #define ComSafeArrayInIsNull(aArg)      ((aArg) == NULL)
@@ -179,8 +179,8 @@ typedef const OLECHAR *CBSTR;
 #define ComSafeArrayOut(aType, aArg)    SAFEARRAY **aArg
 
 /**
- * Expands to @true if the given output safearray parameter is a "null pointer"
- * which makes it impossible to use it for returning a safearray.
+ * Expands to @c true if the given output safearray parameter is a "null
+ * pointer" which makes it impossible to use it for returning a safearray.
  */
 #define ComSafeArrayOutIsNull(aArg)     ((aArg) == NULL)
 
@@ -240,7 +240,7 @@ typedef const OLECHAR *CBSTR;
  *  Returns the const reference to the IID (i.e., |const GUID &|) of the given
  *  interface.
  *
- *  @param i    interface class
+ *  @param I    interface class
  */
 #define COM_IIDOF(I) _ATL_IIDOF(I)
 

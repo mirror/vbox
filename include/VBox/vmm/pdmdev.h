@@ -2327,7 +2327,7 @@ typedef struct PDMDEVHLPR3
                                                uint32_t fFlags, const char *pszDesc));
 
     /**
-     * Register a Memory Mapped I/O (MMIO) region for GC.
+     * Register a Memory Mapped I/O (MMIO) region for RC.
      *
      * These callbacks are for the raw-mode context (RC). Register ring-3 context
      * (R3) handlers before guest context handlers! There must be a R3 handler for
@@ -2362,7 +2362,6 @@ typedef struct PDMDEVHLPR3
      * @param   pszWrite            Name of the RC function which is gonna handle Write operations.
      * @param   pszRead             Name of the RC function which is gonna handle Read operations.
      * @param   pszFill             Name of the RC function which is gonna handle Fill/memset operations. (optional)
-     * @param   pszDesc             Obsolete. NULL is fine.
      * @remarks Caller enters the device critical section prior to invoking the
      *          registered callback methods.
      */
@@ -2527,9 +2526,6 @@ typedef struct PDMDEVHLPR3
      *
      * @returns VBox status.
      * @param   pDevIns             The device instance.
-     * @param   pszName             Data unit name.
-     * @param   uInstance           The instance identifier of the data unit.
-     *                              This must together with the name be unique.
      * @param   uVersion            Data layout version number.
      * @param   cbGuess             The approximate amount of data in the unit.
      *                              Only for progress indicators.
@@ -2570,7 +2566,8 @@ typedef struct PDMDEVHLPR3
      * @remarks Caller enters the device critical section prior to invoking the
      *          callback.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
+    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback,
+                                                void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
 
     /**
      * Get the real world UTC time adjusted for VM lag, user offset and warpdrive.
@@ -2622,7 +2619,7 @@ typedef struct PDMDEVHLPR3
      *          must fall back on using PGMR3PhysWriteExternal.
      * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
      *
-     * @param   pVM                 The VM handle.
+     * @param   pDevIns             The device instance.
      * @param   GCPhys              The guest physical address of the page that
      *                              should be mapped.
      * @param   fFlags              Flags reserved for future use, MBZ.
@@ -2636,7 +2633,8 @@ typedef struct PDMDEVHLPR3
      *          task to an EMT.
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPhysGCPhys2CCPtr,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock));
+    DECLR3CALLBACKMEMBER(int, pfnPhysGCPhys2CCPtr,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv,
+                                                   PPGMPAGEMAPLOCK pLock));
 
     /**
      * Requests the mapping of a guest page into ring-3, external threads.
@@ -2663,7 +2661,8 @@ typedef struct PDMDEVHLPR3
      * @remark  Avoid calling this API from within critical sections.
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPhysGCPhys2CCPtrReadOnly,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock));
+    DECLR3CALLBACKMEMBER(int, pfnPhysGCPhys2CCPtrReadOnly,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags,
+                                                           void const **ppv, PPGMPAGEMAPLOCK pLock));
 
     /**
      * Release the mapping of a guest page.
@@ -2764,7 +2763,7 @@ typedef struct PDMDEVHLPR3
      * @returns rc.
      * @param   pDevIns             The device instance.
      * @param   rc                  VBox status code.
-     * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+     * @param   SRC_POS             Use RT_SRC_POS.
      * @param   pszFormat           Error message format string.
      * @param   ...                 Error message arguments.
      */
@@ -2777,7 +2776,7 @@ typedef struct PDMDEVHLPR3
      * @returns rc.
      * @param   pDevIns             The device instance.
      * @param   rc                  VBox status code.
-     * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+     * @param   SRC_POS             Use RT_SRC_POS.
      * @param   pszFormat           Error message format string.
      * @param   va                  Error message arguments.
      */
@@ -2970,9 +2969,10 @@ typedef struct PDMDEVHLPR3
      *                              PCI config read function. This way, user can decide when (and if)
      *                              to call default PCI config read function. Can be NULL.
      * @param   pfnWrite            Pointer to the user defined PCI config write function.
-     * @param   pfnWriteOld         Pointer to function pointer which will receive the old (default)
-     *                              PCI config write function. This way, user can decide when (and if)
-     *                              to call default PCI config write function. Can be NULL.
+     * @param   ppfnWriteOld        Pointer to function pointer which will receive
+     *                              the old (default) PCI config write function.
+     *                              This way, user can decide when (and if) to call
+     *                              default PCI config write function. Can be NULL.
      * @remarks The callbacks will be invoked holding the PDM lock. The device lock
      *          is NOT take because that is very likely be a lock order violation.
      * @thread  EMT
@@ -3096,7 +3096,7 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
      * @param   pCritSect           Pointer to the critical section.
-     * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+     * @param   SRC_POS             Use RT_SRC_POS.
      * @param   pszNameFmt          Format string for naming the critical section.
      *                              For statistics and lock validation.
      * @param   va                  Arguments for the format string.
@@ -3258,7 +3258,7 @@ typedef struct PDMDEVHLPR3
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
-     * @param   pHpetReg            Pointer to a raw PCI registration structure.
+     * @param   pPciRawReg          Pointer to a raw PCI registration structure.
      * @param   ppPciRawHlpR3       Where to store the pointer to the raw PCI
      *                              device helpers.
      */
@@ -3654,7 +3654,7 @@ typedef struct PDMDEVHLPR3
      * This is intended for working with the semaphore API.
      *
      * @returns Support driver session handle.
-     * @param   pDrvIns         The driver instance.
+     * @param   pDevIns             The device instance.
      */
     DECLR3CALLBACKMEMBER(PSUPDRVSESSION, pfnGetSupDrvSession,(PPDMDEVINS pDevIns));
 
@@ -3774,7 +3774,7 @@ typedef struct PDMDEVHLPRC
      * @returns rc.
      * @param   pDrvIns         Driver instance.
      * @param   rc              VBox status code.
-     * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+     * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
@@ -3787,7 +3787,7 @@ typedef struct PDMDEVHLPRC
      * @returns rc.
      * @param   pDrvIns         Driver instance.
      * @param   rc              VBox status code.
-     * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+     * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
@@ -4003,7 +4003,7 @@ typedef struct PDMDEVHLPR0
      * @returns rc.
      * @param   pDrvIns         Driver instance.
      * @param   rc              VBox status code.
-     * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+     * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
@@ -4016,7 +4016,7 @@ typedef struct PDMDEVHLPR0
      * @returns rc.
      * @param   pDrvIns         Driver instance.
      * @param   rc              VBox status code.
-     * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+     * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
@@ -4406,7 +4406,7 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
 }
 
 /**
- * Register a Memory Mapped I/O (MMIO) region for GC.
+ * Register a Memory Mapped I/O (MMIO) region for RC.
  *
  * These callbacks are for the raw-mode context (RC). Register ring-3 context
  * (R3) handlers before guest context handlers! There must be a R3 handler for
@@ -4427,7 +4427,21 @@ DECLINLINE(int) PDMDevHlpMMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMIORegisterR0
+ * Register a Memory Mapped I/O (MMIO) region for R0.
+ *
+ * These callbacks are for the ring-0 host context (R0).  Register ring-3
+ * constext (R3) handlers before R0 handlers!  There must be a R3 handler for
+ * every R0 handler!
+ *
+ * @returns VBox status.
+ * @param   pDevIns             The device instance to register the MMIO with.
+ * @param   GCPhysStart         First physical address in the range.
+ * @param   cbRange             The size of the range (in bytes).
+ * @param   pvUser              User argument. (if pointer, then it must be in locked memory!)
+ * @param   pszWrite            Name of the RC function which is gonna handle Write operations.
+ * @param   pszRead             Name of the RC function which is gonna handle Read operations.
+ * @remarks Caller enters the device critical section prior to invoking the
+ *          registered callback methods.
  */
 DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
                                         const char *pszWrite, const char *pszRead)
@@ -4450,7 +4464,7 @@ DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
  * @copydoc PDMDEVHLPR3::pfnMMIORegisterRC
  */
 DECLINLINE(int) PDMDevHlpMMIORegisterRCEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTRCPTR pvUser,
-                                        const char *pszWrite, const char *pszRead, const char *pszFill)
+                                          const char *pszWrite, const char *pszRead, const char *pszFill)
 {
     return pDevIns->pHlpR3->pfnMMIORegisterRC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
 }
@@ -4459,7 +4473,7 @@ DECLINLINE(int) PDMDevHlpMMIORegisterRCEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSta
  * @copydoc PDMDEVHLPR3::pfnMMIORegisterR0
  */
 DECLINLINE(int) PDMDevHlpMMIORegisterR0Ex(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
-                                        const char *pszWrite, const char *pszRead, const char *pszFill)
+                                          const char *pszWrite, const char *pszRead, const char *pszFill)
 {
     return pDevIns->pHlpR3->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
 }
@@ -4589,9 +4603,9 @@ DECLINLINE(int) PDMDevHlpSSMRegisterEx(PPDMDEVINS pDevIns, uint32_t uVersion, si
                                        PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
 {
     return pDevIns->pHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, pszBefore,
-                                              pfnLivePrep, pfnLiveExec, pfnLiveVote,
-                                              pfnSavePrep, pfnSaveExec, pfnSaveDone,
-                                              pfnLoadPrep, pfnLoadExec, pfnLoadDone);
+                                           pfnLivePrep, pfnLiveExec, pfnLiveVote,
+                                           pfnSavePrep, pfnSaveExec, pfnSaveDone,
+                                           pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 }
 
 /**
@@ -4642,7 +4656,8 @@ DECLINLINE(int) PDMDevHlpPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, u
 /**
  * @copydoc PDMDEVHLPR3::pfnPhysGCPhys2CCPtrReadOnly
  */
-DECLINLINE(int) PDMDevHlpPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock)
+DECLINLINE(int) PDMDevHlpPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv,
+                                                  PPGMPAGEMAPLOCK pLock)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhys, fFlags, ppv, pLock);
 }
@@ -4755,7 +4770,7 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(4, 5) PDMDevHlpVMSetRuntimeError(PPDMDEVINS 
  * @returns VBox status code which must be passed up to the VMM.  This will be
  *          VINF_SUCCESS in non-strict builds.
  * @param   pDevIns             The device instance.
- * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+ * @param   SRC_POS             Use RT_SRC_POS.
  * @param   pszFormat           Message. (optional)
  * @param   ...                 Message parameters.
  */
@@ -4837,7 +4852,8 @@ DECLINLINE(int) PDMDevHlpPCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev)
 /**
  * @copydoc PDMDEVHLPR3::pfnPCIIORegionRegister
  */
-DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
+DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion,
+                                             PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
     return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, iRegion, cbRegion, enmType, pfnCallback);
 }
@@ -4937,7 +4953,7 @@ DECLINLINE(int) PDMDevHlpQueueCreate(PPDMDEVINS pDevIns, size_t cbItem, uint32_t
  * @returns VBox status code.
  * @param   pDevIns             The device instance.
  * @param   pCritSect           Pointer to the critical section.
- * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+ * @param   SRC_POS             Use RT_SRC_POS.
  * @param   pszNameFmt          Format string for naming the critical section.
  *                              For statistics and lock validation.
  * @param   ...                 Arguments for the format string.
@@ -5051,7 +5067,7 @@ DECLINLINE(int) PDMDevHlpAPICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, 
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfn
+ * @copydoc PDMDEVHLPR3::pfnIOAPICRegister
  */
 DECLINLINE(int) PDMDevHlpIOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3)
 {
@@ -5147,7 +5163,7 @@ DECLINLINE(int) PDMDevHlpCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu
 }
 
 /**
- * @copydoc PDMDEVHLP::pfnCallR0
+ * @copydoc PDMDEVHLPR3::pfnCallR0
  */
 DECLINLINE(int) PDMDevHlpCallR0(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg)
 {
@@ -5155,7 +5171,7 @@ DECLINLINE(int) PDMDevHlpCallR0(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_
 }
 
 /**
- * @copydoc PDMDEVHLP::pfnVMGetSuspendReason
+ * @copydoc PDMDEVHLPR3::pfnVMGetSuspendReason
  */
 DECLINLINE(VMSUSPENDREASON) PDMDevHlpVMGetSuspendReason(PPDMDEVINS pDevIns)
 {
@@ -5163,7 +5179,7 @@ DECLINLINE(VMSUSPENDREASON) PDMDevHlpVMGetSuspendReason(PPDMDEVINS pDevIns)
 }
 
 /**
- * @copydoc PDMDEVHLP::pfnVMGetResumeReason
+ * @copydoc PDMDEVHLPR3::pfnVMGetResumeReason
  */
 DECLINLINE(VMRESUMEREASON) PDMDevHlpVMGetResumeReason(PPDMDEVINS pDevIns)
 {

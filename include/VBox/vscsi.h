@@ -207,7 +207,7 @@ VBOXDDU_DECL(int) VSCSIDeviceCreate(PVSCSIDEVICE phVScsiDevice,
  * Destroy a SCSI device instance.
  *
  * @returns VBox status code.
- * @param   hScsiDevice    The SCSI device handle to destroy.
+ * @param   hVScsiDevice   The SCSI device handle to destroy.
  */
 VBOXDDU_DECL(int) VSCSIDeviceDestroy(VSCSIDEVICE hVScsiDevice);
 
@@ -215,8 +215,8 @@ VBOXDDU_DECL(int) VSCSIDeviceDestroy(VSCSIDEVICE hVScsiDevice);
  * Attach a LUN to the SCSI device.
  *
  * @returns VBox status code.
- * @param   hScsiDevice    The SCSI device handle to add the LUN to.
- * @param   hScsiLun       The LUN handle to add.
+ * @param   hVScsiDevice   The SCSI device handle to add the LUN to.
+ * @param   hVScsiLun      The LUN handle to add.
  * @param   iLun           The LUN number.
  */
 VBOXDDU_DECL(int) VSCSIDeviceLunAttach(VSCSIDEVICE hVScsiDevice, VSCSILUN hVScsiLun, uint32_t iLun);
@@ -256,7 +256,7 @@ VBOXDDU_DECL(int) VSCSIDeviceReqEnqueue(VSCSIDEVICE hVScsiDevice, VSCSIREQ hVScs
  * Allocate a new request handle.
  *
  * @returns VBox status code.
- * @param   phVScsiDevice     The SCSI device handle.
+ * @param   hVScsiDevice      The SCSI device handle.
  * @param   phVScsiReq        Where to SCSI request handle.
  * @param   iLun              The LUN the request is for.
  * @param   pbCDB             The CDB for the request.

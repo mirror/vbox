@@ -142,10 +142,10 @@ DECLINLINE(PVDINTERFACE) VDInterfaceGet(PVDINTERFACE pVDIfs, VDINTERFACETYPE enm
  * @param  pszName      Name of the interface.
  * @param  enmInterface Type of the interface.
  * @param  pvUser       Opaque user data passed on every function call.
+ * @param  cbInterface  The interface size.
  * @param  ppVDIfs      Pointer to the VD interface list.
  */
-DECLINLINE(int) VDInterfaceAdd(PVDINTERFACE pInterface, const char *pszName,
-                               VDINTERFACETYPE enmInterface, void *pvUser,
+DECLINLINE(int) VDInterfaceAdd(PVDINTERFACE pInterface, const char *pszName, VDINTERFACETYPE enmInterface, void *pvUser,
                                size_t cbInterface, PVDINTERFACE *ppVDIfs)
 {
     /* Argument checks. */
@@ -239,7 +239,7 @@ typedef struct VDINTERFACEERROR
      *
      * @param   pvUser          The opaque data passed on container creation.
      * @param   rc              The VBox error code.
-     * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+     * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
@@ -284,7 +284,7 @@ DECLINLINE(PVDINTERFACEERROR) VDIfErrorGet(PVDINTERFACE pVDIfs)
  * @returns VBox status code.
  * @param   pIfError           The error interface.
  * @param   rc                 The status code.
- * @param   RT_SRC_POS_DECL    The position in the source code.
+ * @param   SRC_POS            The position in the source code.
  * @param   pszFormat          The format string to pass.
  * @param   ...                Arguments to the format string.
  */
@@ -349,7 +349,7 @@ typedef struct VDINTERFACEIO
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pszLocation     Name of the location to open.
      * @param   fOpen           Flags for opening the backend.
-     *                          See RTFILE_O_* #defines, inventing another set
+     *                          See RTFILE_O_* \#defines, inventing another set
      *                          of open flags is not worth the mapping effort.
      * @param   pfnCompleted    The callback which is called whenever a task
      *                          completed. The backend has to pass the user data
@@ -1090,7 +1090,7 @@ typedef struct VDINTERFACETCPNET
      *
      * @return  iprt status code.
      * @retval  VERR_NOT_SUPPORTED if the combination of flags is not supported.
-     * @param   fFlags    Combination of the VD_INTERFACETCPNET_CONNECT_* #defines.
+     * @param   fFlags    Combination of the VD_INTERFACETCPNET_CONNECT_* \#defines.
      * @param   pSock     Where to store the handle.
      */
     DECLR3CALLBACKMEMBER(int, pfnSocketCreate, (uint32_t fFlags, PVDSOCKET pSock));
@@ -1297,9 +1297,9 @@ DECLINLINE(PVDINTERFACETCPNET) VDIfTcpNetGet(PVDINTERFACE pVDIfs)
  * the HDD container has been created, and they must stop before destroying the
  * container. Opening or closing images is covered by the synchronization, but
  * that does not mean it is safe to close images while a thread executes
- * <link to="VDMerge"/> or <link to="VDCopy"/> operating on these images.
- * Making them safe would require the lock to be held during the entire
- * operation, which prevents other concurrent acitivities.
+ * #VDMerge or #VDCopy operating on these images. Making them safe would require
+ * the lock to be held during the entire operation, which prevents other
+ * concurrent acitivities.
  *
  * @note Right now this is kept as simple as possible, and does not even
  * attempt to provide enough information to allow e.g. concurrent write

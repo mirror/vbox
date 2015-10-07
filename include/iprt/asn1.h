@@ -2010,7 +2010,7 @@ RTASN1CONTEXTTAG_IMPL_CURSOR_INLINES(7)
  * Checks if the next object is a boolean.
  *
  * @returns true / false
- * @param   pCursor         The cursore we're decoding from.
+ * @param   pCursor         The cursor we're decoding from.
  * @remarks May produce error info output on mismatch.
  */
 DECLINLINE(bool) RTAsn1CursorIsBooleanNext(PRTASN1CURSOR pCursor)
@@ -2023,7 +2023,7 @@ DECLINLINE(bool) RTAsn1CursorIsBooleanNext(PRTASN1CURSOR pCursor)
  * Checks if the next object is a set.
  *
  * @returns true / false
- * @param   pCursor         The cursore we're decoding from.
+ * @param   pCursor         The cursor we're decoding from.
  * @remarks May produce error info output on mismatch.
  */
 DECLINLINE(bool) RTAsn1CursorIsSetNext(PRTASN1CURSOR pCursor)

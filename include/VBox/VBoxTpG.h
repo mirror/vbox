@@ -104,7 +104,7 @@ typedef VTGPROBELOC const *PCVTGPROBELOC;
 # ifdef _MSC_VER
 #  define VTG_DECL_VTGPROBELOC(a_VarName) \
     __declspec(allocate(VTG_LOC_SECT)) static VTGPROBELOC a_VarName
-# elif defined(__GNUC__)
+# elif defined(__GNUC__) || defined(DOXYGEN_RUNNING)
 #  define VTG_DECL_VTGPROBELOC(a_VarName) \
     static VTGPROBELOC __attribute__((section(VTG_LOC_SECT))) a_VarName
 # else
@@ -115,7 +115,7 @@ typedef VTGPROBELOC const *PCVTGPROBELOC;
 # define VTG_OBJ_SECT       "__VTGObj"
 # define VTG_LOC_SECT       "__VTGPrLc"
 # define VTG_LOC_SEG        "__VTG"
-# ifdef __GNUC__
+# if defined(__GNUC__) || defined(DOXYGEN_RUNNING)
 #  define VTG_DECL_VTGPROBELOC(a_VarName) \
     static VTGPROBELOC __attribute__((section(VTG_LOC_SEG "," VTG_LOC_SECT ",regular")/*, aligned(16)*/)) a_VarName
 # else
@@ -126,7 +126,7 @@ typedef VTGPROBELOC const *PCVTGPROBELOC;
 # define VTG_OBJ_SECT       "__DATA"
 # define VTG_LOC_SECT       "__VTGPrLc"
 # define VTG_LOC_SET        "__VTGPrLcSet"
-# ifdef __GNUC__
+# if defined(__GNUC__) || defined(DOXYGEN_RUNNING)
 #  define VTG_DECL_VTGPROBELOC(a_VarName) \
     static VTGPROBELOC a_VarName; \
     __asm__ (".stabs \"__VTGPrLcSet\",  23, 0, 0, _" #a_VarName );
@@ -138,7 +138,7 @@ typedef VTGPROBELOC const *PCVTGPROBELOC;
 #else /* Assume the rest uses ELF. */
 # define VTG_OBJ_SECT       ".VTGObj"
 # define VTG_LOC_SECT       ".VTGPrLc"
-# ifdef __GNUC__
+# if defined(__GNUC__) || defined(DOXYGEN_RUNNING)
 #  define VTG_DECL_VTGPROBELOC(a_VarName) \
     static VTGPROBELOC __attribute__((section(VTG_LOC_SECT))) a_VarName
 # else

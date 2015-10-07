@@ -1024,8 +1024,8 @@ HRESULT Appliance::i_readFSOVF(TaskOVF *pTask)
                     Utf8Str name = i_applianceIOName(applianceIOFile);
 
                     vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
-                                             VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
-                                             &storage.pVDImageIfaces);
+                                         VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
+                                         &storage.pVDImageIfaces);
                     if (RT_FAILURE(vrc))
                         throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
 

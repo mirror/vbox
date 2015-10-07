@@ -683,7 +683,13 @@ typedef struct DBGCCMDHLP
 #ifdef IN_RING3
 
 /**
- * @copydoc DBGCCMDHLP::pfnPrintf
+ * Command helper for writing formatted text to the debug console.
+ *
+ * @returns VBox status.
+ * @param   pCmdHlp     Pointer to the command callback structure.
+ * @param   pszFormat   The format string.  This may use all IPRT extensions as
+ *                      well as the debugger ones.
+ * @param   ...         Arguments specified in the format string.
  */
 DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, const char *pszFormat, ...)
 {
@@ -715,7 +721,7 @@ DECLINLINE(size_t) RT_IPRT_FORMAT_ATTR(4, 5) DBGCCmdHlpStrPrintf(PDBGCCMDHLP pCm
 }
 
 /**
- * @copydoc FNDBGCHLPVBOXERROR
+ * @copydoc DBGCCMDHLP::pfnVBoxError
  */
 DECLINLINE(int) RT_IPRT_FORMAT_ATTR(3, 4) DBGCCmdHlpVBoxError(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...)
 {
@@ -729,7 +735,7 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(3, 4) DBGCCmdHlpVBoxError(PDBGCCMDHLP pCmdHl
 }
 
 /**
- * @copydoc FNDBGCHLPMEMREAD
+ * @copydoc DBGCCMDHLP::pfnMemRead
  */
 DECLINLINE(int) DBGCCmdHlpMemRead(PDBGCCMDHLP pCmdHlp, void *pvBuffer, size_t cbRead, PCDBGCVAR pVarPointer, size_t *pcbRead)
 {
@@ -844,7 +850,7 @@ DECLINLINE(int) DBGCCmdHlpVarToDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, PDB
 }
 
 /**
- * @copydoc DBGCCMDHLP::pfnVarToDbgfAddr
+ * @copydoc DBGCCMDHLP::pfnVarFromDbgfAddr
  */
 DECLINLINE(int) DBGCCmdHlpVarFromDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGFADDRESS pAddress, PDBGCVAR pResult)
 {

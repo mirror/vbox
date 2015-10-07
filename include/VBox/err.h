@@ -491,7 +491,7 @@
 #define VINF_PGM_PHYS_TLB_CATCH_WRITE           1635
 /** Catch write access and route it thru PGM. */
 #define VERR_PGM_PHYS_TLB_CATCH_WRITE           (-1635)
-/** No CR3 root shadow page table.. */
+/** No CR3 root shadow page table. */
 #define VERR_PGM_NO_CR3_SHADOW_ROOT             (-1636)
 /** Trying to free a page with an invalid Page ID. */
 #define VERR_PGM_PHYS_INVALID_PAGE_ID           (-1637)
@@ -2358,7 +2358,7 @@
 #define VINF_DBGC_BP_NO_COMMAND                     5406
 /** Generic debugger command failure. */
 #define VERR_DBGC_COMMAND_FAILED                    (-5407)
-/** Logic bug in the DBGC code.. */
+/** Logic bug in the DBGC code. */
 #define VERR_DBGC_IPE                               (-5408)
 
 /** The lowest parse status code.   */

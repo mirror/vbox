@@ -246,7 +246,7 @@ typedef struct VMM2USERMETHODS
  * Checks whether we've armed the ring-0 long jump machinery.
  *
  * @returns @c true / @c false
- * @param   pVCpu           The caller's cross context virtual CPU structure.
+ * @param   a_pVCpu     The caller's cross context virtual CPU structure.
  * @thread  EMT
  * @sa      VMMR0IsLongJumpArmed
  */

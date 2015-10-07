@@ -580,7 +580,7 @@ typedef struct VMCPU
  */
 #define VM_FF_IS_PENDING(pVM, fFlags)       RT_BOOL((pVM)->fGlobalForcedActions & (fFlags))
 
-/** @def VM_FF_TESTANDCLEAR
+/** @def VM_FF_TEST_AND_CLEAR
  * Checks if one (!) force action in the specified set is pending and clears it atomically
  *
  * @returns true if the bit was set.
@@ -590,7 +590,7 @@ typedef struct VMCPU
  */
 #define VM_FF_TEST_AND_CLEAR(pVM, iBit)     (ASMAtomicBitTestAndClear(&(pVM)->fGlobalForcedActions, iBit##_BIT))
 
-/** @def VMCPU_FF_TESTANDCLEAR
+/** @def VMCPU_FF_TEST_AND_CLEAR
  * Checks if one (!) force action in the specified set is pending and clears it atomically
  *
  * @returns true if the bit was set.
@@ -925,7 +925,7 @@ typedef struct VM
     bool                        fUseLargePages;
     /** @} */
 
-    /** Alignment padding.. */
+    /** Alignment padding. */
     uint8_t                     uPadding1[2];
 
     /** @name Debugging
@@ -939,7 +939,7 @@ typedef struct VM
     /** @} */
 
 #if HC_ARCH_BITS == 32
-    /** Alignment padding.. */
+    /** Alignment padding. */
     uint32_t                    uPadding2;
 #endif
 

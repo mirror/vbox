@@ -246,7 +246,7 @@ typedef struct GMMPAGEDESC
 
     /** The Page ID.
      *
-     * @intput  GMMR0AllocateHandyPages expects the Page ID of the page to
+     * @input   GMMR0AllocateHandyPages expects the Page ID of the page to
      *          update here. NIL_GMM_PAGEID means no page should be updated.
      *
      *          GMMR0AllocatePages requires this to be initialized to

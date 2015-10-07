@@ -679,6 +679,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @returns Other VBox status code.
      *
      * @param   pInterface  Pointer to this struct.
+     * @param   pDevice     Pointer to a USB device.
      * @param   cMillies    Number of milliseconds to poll for completion.
      */
     DECLR3CALLBACKMEMBER(void, pfnReapAsyncUrbs,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, RTMSINTERVAL cMillies));
@@ -719,7 +720,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface  Pointer to this struct.
-     * @param   pDevice     Pointer to the device (interface) attach.
+     * @param   pDevice     Pointer to the device (interface) to attach.
      */
     DECLR3CALLBACKMEMBER(int, pfnAttachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice));
 
@@ -968,7 +969,7 @@ DECLINLINE(VUSBDEVICESTATE) VUSBIDevGetState(PVUSBIDEVICE pInterface)
 }
 
 /**
- * @copydoc VUSBIDEVICE::pfnIsSaveStateSupported
+ * @copydoc VUSBIDEVICE::pfnIsSavedStateSupported
  */
 DECLINLINE(bool) VUSBIDevIsSavedStateSupported(PVUSBIDEVICE pInterface)
 {

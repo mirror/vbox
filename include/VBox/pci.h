@@ -792,12 +792,14 @@ DECLINLINE(uint8_t) PCIDevGetBIST(PPCIDEVICE pPciDev)
  * Sets a base address config register.
  *
  * @param   pPciDev         The PCI device.
+ * @param   iReg            Base address register number (0..5).
  * @param   fIOSpace        Whether it's I/O (true) or memory (false) space.
  * @param   fPrefetchable   Whether the memory is prefetachable. Must be false if fIOSpace == true.
  * @param   f64Bit          Whether the memory can be mapped anywhere in the 64-bit address space. Otherwise restrict to 32-bit.
  * @param   u32Addr         The address value.
  */
-DECLINLINE(void) PCIDevSetBaseAddress(PPCIDEVICE pPciDev, uint8_t iReg, bool fIOSpace, bool fPrefetchable, bool f64Bit, uint32_t u32Addr)
+DECLINLINE(void) PCIDevSetBaseAddress(PPCIDEVICE pPciDev, uint8_t iReg, bool fIOSpace, bool fPrefetchable, bool f64Bit,
+                                      uint32_t u32Addr)
 {
     if (fIOSpace)
     {

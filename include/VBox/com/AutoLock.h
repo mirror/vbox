@@ -119,8 +119,8 @@ public:
 
     /**
      * Returns the current write lock level of this semaphore. The lock level
-     * determines the number of nested #lock() calls on the given semaphore
-     * handle.
+     * determines the number of nested #lockWrite() calls on the given
+     * semaphore handle.
      *
      * Note that this call is valid only when the current thread owns a write
      * lock on the given semaphore handle and will assert otherwise.
@@ -521,11 +521,11 @@ public:
                   COMMA_LOCKVAL_SRC_POS_DECL);
 
     /**
-     * Release all write locks acquired by this instance through the #lock()
+     * Release all write locks acquired by this instance through the #acquire()
      * call and destroys the instance.
      *
-     * Note that if there there are nested #lock() calls without the
-     * corresponding number of #unlock() calls when the destructor is called, it
+     * Note that if there there are nested #acquire() calls without the
+     * corresponding number of #release() calls when the destructor is called, it
      * will assert. This is because having an unbalanced number of nested locks
      * is a program logic error which must be fixed.
      */

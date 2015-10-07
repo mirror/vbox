@@ -293,7 +293,7 @@ typedef struct PDMCRITSECTINT
     /** Pointer to the VM - GCPtr. */
     PVMRC                           pVMRC;
     /** Set if this critical section is the automatically created default
-     * section of a device.. */
+     * section of a device. */
     bool                            fAutomaticDefaultCritsect;
     /** Set if the critical section is used by a timer or similar.
      * See PDMR3DevGetCritSect.  */
@@ -688,7 +688,7 @@ typedef struct PDMPCIBUS
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
     /** @copydoc PDMPCIBUSREG::pfnRegisterR3 */
     DECLR3CALLBACKMEMBER(int,       pfnRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev));
-    /** @copydoc PDMPCIBUSREG::pfnPCIRegisterMsiR3 */
+    /** @copydoc PDMPCIBUSREG::pfnRegisterMsiR3 */
     DECLR3CALLBACKMEMBER(int,       pfnRegisterMsiR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PPDMMSIREG pMsiReg));
     /** @copydoc PDMPCIBUSREG::pfnIORegionRegisterR3 */
     DECLR3CALLBACKMEMBER(int,       pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion,
@@ -976,7 +976,7 @@ typedef struct PDMDEVHLPTASK
             uint32_t                uTagSrc;
         } SetIRQ;
 
-        /** Expanding the structure.. */
+        /** Expanding the structure. */
         uint64_t    au64[2];
     } u;
 } PDMDEVHLPTASK;

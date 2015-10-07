@@ -31,6 +31,11 @@ ALIASES                = \
     "vmstate=@par VM State In:\n" \
     "vmstateto=@par VM State Out:\n"
 
+# Input / output paragraphs.
+ALIASES                += \
+    "output=@par Output:\n" \
+    "input=@par Input:\n"
+
 # Interface method implementation macros.
 ALIASES                += \
     interface_method_impl{2}="Implements \1 method \link \1::\2 \2 \endlink @copydoc \1::\2 "
@@ -459,7 +464,8 @@ PREDEFINED             =  \
     \
     RT_IPRT_FORMAT_ATTR(a,b)= \
     RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)= \
-    RT_NO_THROW_PROTO=
+    RT_NO_THROW_PROTO= \
+    RTASN1CONTEXTTAG_IMPL_CURSOR_INLINES(a)= 
 
 # decl and calling conventions.
 PREDEFINED += \
@@ -474,13 +480,18 @@ PREDEFINED += \
     DECLASM(type)=type \
     DECLNORETURN(type)=type \
     VBOXCALL= \
-    RTCALL= 
+    RTCALL= \
+    DECLVBGL(type)=type \
+    DECLR0VBGL(type)=type \
+    USBLIB_DECL(type)=type
+
 # context hacks.
 PREDEFINED            += RCPTRTYPE(RCType)=RCType
 PREDEFINED            += R3PTRTYPE(R3Type)=R3Type
 PREDEFINED            += R0PTRTYPE(R0Type)=R0Type
 PREDEFINED            += HCPTRTYPE(HCType)=HCType
 PREDEFINED            += R3R0PTRTYPE(R3R0Type)=R3R0Type
+
 # Compile assertion hacks.
 PREDEFINED            += \
     AssertCompileNS(expr) \
@@ -496,66 +507,73 @@ PREDEFINED            += \
     AssertCompileMemberSizeAlignment(type, member, align) \
     AssertCompileMembersSameSize(type1, member1, type2, member2) \
     AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2)
+
 # COM/XPCOM hacks.
-PREDEFINED            += STDMETHODIMP=HRESULT
-PREDEFINED            += "COMGETTER(n)=get_##n"
-PREDEFINED            += "COMSETTER(n)=set_##n"
+PREDEFINED            += \
+    STDMETHODIMP=HRESULT \
+    "COMGETTER(n)=get_##n" \
+    "COMSETTER(n)=set_##n" \
+    "ComSafeArrayIn(aType,aArg)=aType *aArg" \
+    "ComSafeArrayOut(aType, aArg)=aType **aArg" \
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(a)=
+
 # COM hacks from From http://www.stack.nl/~dimitri/doxygen/preprocessing.html
-PREDEFINED          += "DECLARE_INTERFACE(name)=class name" \
-                       "STDMETHOD_(result,name)=virtual result name" \
-                       "PURE= = 0" \
-                       THIS_= \
-                       THIS= \
-                       DECLARE_REGISTRY_RESOURCEID=// \
-                       DECLARE_PROTECT_FINAL_CONSTRUCT=// \
-                       "DECLARE_AGGREGATABLE(Class)= " \
-                       "DECLARE_REGISTRY_RESOURCEID(Id)= " \
-                       DECLARE_MESSAGE_MAP= \
-                       BEGIN_MESSAGE_MAP=/* \
-                       END_MESSAGE_MAP=*/// \
-                       BEGIN_COM_MAP=/* \
-                       END_COM_MAP=*/// \
-                       BEGIN_PROP_MAP=/* \
-                       END_PROP_MAP=*/// \
-                       BEGIN_MSG_MAP=/* \
-                       END_MSG_MAP=*/// \
-                       BEGIN_PROPERTY_MAP=/* \
-                       END_PROPERTY_MAP=*/// \
-                       BEGIN_OBJECT_MAP=/* \
-                       END_OBJECT_MAP()=*/// \
-                       DECLARE_VIEW_STATUS=// \
-                       "STDMETHOD(a)=HRESULT a" \
-                       "ATL_NO_VTABLE= " \
-                       "__declspec(a)= " \
-                       BEGIN_CONNECTION_POINT_MAP=/* \
-                       END_CONNECTION_POINT_MAP=*/// \
-                       "DECLARE_DYNAMIC(class)= " \
-                       "IMPLEMENT_DYNAMIC(class1, class2)= " \
-                       "DECLARE_DYNCREATE(class)= " \
-                       "IMPLEMENT_DYNCREATE(class1, class2)= " \
-                       "IMPLEMENT_SERIAL(class1, class2, class3)= " \
-                       "DECLARE_MESSAGE_MAP()= " \
-                       TRY=try \
-                       "CATCH_ALL(e)= catch(...)" \
-                       END_CATCH_ALL= \
-                       "THROW_LAST()= throw"\
-                       "RUNTIME_CLASS(class)=class" \
-                       "MAKEINTRESOURCE(nId)=nId" \
-                       "IMPLEMENT_REGISTER(v, w, x, y, z)= " \
-                       "ASSERT(x)=assert(x)" \
-                       "ASSERT_VALID(x)=assert(x)" \
-                       "TRACE0(x)=printf(x)" \
-                       "OS_ERR(A,B)={ #A, B }" \
-                       __cplusplus \
-                       "DECLARE_OLECREATE(class)= " \
-                       "BEGIN_DISPATCH_MAP(class1, class2)= " \
-                       "BEGIN_INTERFACE_MAP(class1, class2)= " \
-                       "INTERFACE_PART(class, id, name)= " \
-                       "END_INTERFACE_MAP()=" \
-                       "DISP_FUNCTION(class, name, function, result, id)=" \
-                       "END_DISPATCH_MAP()=" \
-                       "IMPLEMENT_OLECREATE2(class, name, id1, id2, id3, id4,\
-                        id5, id6, id7, id8, id9, id10, id11)="
+PREDEFINED          += \
+    "DECLARE_INTERFACE(name)=class name" \
+    "STDMETHOD_(result,name)=virtual result name" \
+    "PURE= = 0" \
+    THIS_= \
+    THIS= \
+    DECLARE_REGISTRY_RESOURCEID=// \
+    DECLARE_PROTECT_FINAL_CONSTRUCT=// \
+    "DECLARE_AGGREGATABLE(Class)= " \
+    "DECLARE_REGISTRY_RESOURCEID(Id)= " \
+    DECLARE_MESSAGE_MAP= \
+    BEGIN_MESSAGE_MAP=/* \
+    END_MESSAGE_MAP=*/// \
+    BEGIN_COM_MAP=/* \
+    END_COM_MAP=*/// \
+    BEGIN_PROP_MAP=/* \
+    END_PROP_MAP=*/// \
+    BEGIN_MSG_MAP=/* \
+    END_MSG_MAP=*/// \
+    BEGIN_PROPERTY_MAP=/* \
+    END_PROPERTY_MAP=*/// \
+    BEGIN_OBJECT_MAP=/* \
+    END_OBJECT_MAP()=*/// \
+    DECLARE_VIEW_STATUS=// \
+    "STDMETHOD(a)=HRESULT a" \
+    "ATL_NO_VTABLE= " \
+    "__declspec(a)= " \
+    BEGIN_CONNECTION_POINT_MAP=/* \
+    END_CONNECTION_POINT_MAP=*/// \
+    "DECLARE_DYNAMIC(class)= " \
+    "IMPLEMENT_DYNAMIC(class1, class2)= " \
+    "DECLARE_DYNCREATE(class)= " \
+    "IMPLEMENT_DYNCREATE(class1, class2)= " \
+    "IMPLEMENT_SERIAL(class1, class2, class3)= " \
+    "DECLARE_MESSAGE_MAP()= " \
+    TRY=try \
+    "CATCH_ALL(e)= catch(...)" \
+    END_CATCH_ALL= \
+    "THROW_LAST()= throw"\
+    "RUNTIME_CLASS(class)=class" \
+    "MAKEINTRESOURCE(nId)=nId" \
+    "IMPLEMENT_REGISTER(v, w, x, y, z)= " \
+    "ASSERT(x)=assert(x)" \
+    "ASSERT_VALID(x)=assert(x)" \
+    "TRACE0(x)=printf(x)" \
+    "OS_ERR(A,B)={ #A, B }" \
+    __cplusplus \
+    "DECLARE_OLECREATE(class)= " \
+    "BEGIN_DISPATCH_MAP(class1, class2)= " \
+    "BEGIN_INTERFACE_MAP(class1, class2)= " \
+    "INTERFACE_PART(class, id, name)= " \
+    "END_INTERFACE_MAP()=" \
+    "DISP_FUNCTION(class, name, function, result, id)=" \
+    "END_DISPATCH_MAP()=" \
+    "IMPLEMENT_OLECREATE2(class, name, id1, id2, id3, id4,\
+    id5, id6, id7, id8, id9, id10, id11)="
 
 EXPAND_AS_DEFINED      = \
     RCPTRTYPE \

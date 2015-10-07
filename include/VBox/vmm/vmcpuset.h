@@ -36,7 +36,7 @@
  * @{
  */
 
-/** Tests if a valid CPU ID is present in the set.. */
+/** Tests if a valid CPU ID is present in the set. */
 #define VMCPUSET_IS_PRESENT(pSet, idCpu)    ASMBitTest( &(pSet)->au32Bitmap[0], (idCpu))
 /** Adds a CPU to the set. */
 #define VMCPUSET_ADD(pSet, idCpu)           ASMBitSet(  &(pSet)->au32Bitmap[0], (idCpu))

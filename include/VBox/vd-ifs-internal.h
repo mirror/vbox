@@ -128,7 +128,7 @@ typedef struct VDINTERFACEIOINT
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pszLocation     Name of the location to open.
      * @param   fOpen           Flags for opening the backend.
-     *                          See RTFILE_O_* #defines, inventing another set
+     *                          See RTFILE_O_* \#defines, inventing another set
      *                          of open flags is not worth the mapping effort.
      * @param   ppStorage       Where to store the storage handle.
      */
@@ -255,12 +255,12 @@ typedef struct VDINTERFACEIOINT
      * @param   pfnCompleted   Completion callback.
      * @param   pvCompleteUser Opaque user data passed in the completion callback.
      *
-     * @notes If pIoCtx is NULL the metadata read is handled synchronously
-     *        i.e. the call returns only if the data is available in the given
-     *        buffer. ppMetaXfer, pfnCompleted and pvCompleteUser are ignored in that case.
-     *        Use the synchronous version only when opening/closing the image
-     *        or when doing certain operations like resizing, compacting or repairing
-     *        the disk.
+     * @note    If pIoCtx is NULL the metadata read is handled synchronously
+     *          i.e. the call returns only if the data is available in the given
+     *          buffer. ppMetaXfer, pfnCompleted and pvCompleteUser are ignored in that case.
+     *          Use the synchronous version only when opening/closing the image
+     *          or when doing certain operations like resizing, compacting or repairing
+     *          the disk.
      */
     DECLR3CALLBACKMEMBER(int, pfnReadMeta, (void *pvUser, PVDIOSTORAGE pStorage,
                                             uint64_t uOffset, void *pvBuffer,
@@ -282,7 +282,7 @@ typedef struct VDINTERFACEIOINT
      * @param   pfnCompleted   Completion callback.
      * @param   pvCompleteUser Opaque user data passed in the completion callback.
      *
-     * @notes See pfnReadMeta().
+     * @sa      VDINTERFACEIOINT::pfnReadMeta
      */
     DECLR3CALLBACKMEMBER(int, pfnWriteMeta, (void *pvUser, PVDIOSTORAGE pStorage,
                                              uint64_t uOffset, const void *pvBuffer,
@@ -310,7 +310,7 @@ typedef struct VDINTERFACEIOINT
      * @param   pfnCompleted   Completion callback.
      * @param   pvCompleteUser Opaque user data passed in the completion callback.
      *
-     * @notes See pfnReadMeta().
+     * @sa      VDINTERFACEIOINT::pfnReadMeta
      */
     DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pvUser, PVDIOSTORAGE pStorage,
                                          PVDIOCTX pIoCtx,

@@ -397,6 +397,7 @@ DECLINLINE(void) IntNetRingSkipFrame(PINTNETRINGBUF pRingBuf)
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
  * @param   pRingBuf            The ring buffer.
  * @param   cbFrame             The frame size.
+ * @param   u8Type              The header type.
  * @param   ppHdr               Where to return the frame header.
  *                              Don't touch this!
  * @param   ppvFrame            Where to return the frame pointer.
@@ -737,7 +738,7 @@ DECLINLINE(int) IntNetRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
  * Reads the next frame in the buffer and moves the read cursor past it.
  *
  * @returns Size of the frame in bytes.  0 is returned if nothing in the buffer.
- * @param   pRingBuff   The ring buffer to read from.
+ * @param   pRingBuf    The ring buffer to read from.
  * @param   pvFrameDst  Where to put the frame.  The caller is responsible for
  *                      ensuring that there is sufficient space for the frame.
  *

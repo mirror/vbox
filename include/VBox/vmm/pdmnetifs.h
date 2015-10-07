@@ -336,7 +336,7 @@ typedef struct PDMINETWORKUPR0
     DECLR0CALLBACKMEMBER(int,  pfnFreeBuf,(PPDMINETWORKUPR0 pInterface, PPDMSCATTERGATHER pSgBuf));
     /** @copydoc PDMINETWORKUP::pfnSendBuf */
     DECLR0CALLBACKMEMBER(int,  pfnSendBuf,(PPDMINETWORKUPR0 pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread));
-    /** @copydoc PDMINETWORKUP::pfnEndBuf */
+    /** @copydoc PDMINETWORKUP::pfnEndXmit */
     DECLR0CALLBACKMEMBER(void, pfnEndXmit,(PPDMINETWORKUPR0 pInterface));
     /** @copydoc PDMINETWORKUP::pfnSetPromiscuousMode */
     DECLR0CALLBACKMEMBER(void, pfnSetPromiscuousMode,(PPDMINETWORKUPR0 pInterface, bool fPromiscuous));
@@ -354,7 +354,7 @@ typedef struct PDMINETWORKUPRC
     DECLRCCALLBACKMEMBER(int,  pfnFreeBuf,(PPDMINETWORKUPRC pInterface, PPDMSCATTERGATHER pSgBuf));
     /** @copydoc PDMINETWORKUP::pfnSendBuf */
     DECLRCCALLBACKMEMBER(int,  pfnSendBuf,(PPDMINETWORKUPRC pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread));
-    /** @copydoc PDMINETWORKUP::pfnEndBuf */
+    /** @copydoc PDMINETWORKUP::pfnEndXmit */
     DECLRCCALLBACKMEMBER(void, pfnEndXmit,(PPDMINETWORKUPRC pInterface));
     /** @copydoc PDMINETWORKUP::pfnSetPromiscuousMode */
     DECLRCCALLBACKMEMBER(void, pfnSetPromiscuousMode,(PPDMINETWORKUPRC pInterface, bool fPromiscuous));

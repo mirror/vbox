@@ -31,7 +31,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @addgroup grp_cpum_ctx_v1_6  The CPUM Context Structures from v1.6
+/** @defgroup grp_cpum_ctx_v1_6  The CPUM Context Structures from v1.6
  * @ingroup grp_cpum
  * @{
  */

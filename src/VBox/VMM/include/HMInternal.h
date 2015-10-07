@@ -48,7 +48,7 @@
 
 /** @def HM_PROFILE_EXIT_DISPATCH
  * Enables profiling of the VM exit handler dispatching. */
-#if 0
+#if 0 || defined(DOXYGEN_RUNNING)
 # define HM_PROFILE_EXIT_DISPATCH
 #endif
 
@@ -126,10 +126,10 @@ RT_C_DECLS_BEGIN
 #define HMCPU_CF_VALUE(pVCpu)                     (ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags))
 
 
-/** Resets/initializes the VM-exit/#VMEXIT history array. */
+/** Resets/initializes the VM-exit/\#VMEXIT history array. */
 #define HMCPU_EXIT_HISTORY_RESET(pVCpu)           (memset(&(pVCpu)->hm.s.auExitHistory, 0xff, sizeof((pVCpu)->hm.s.auExitHistory)))
 
-/** Updates the VM-exit/#VMEXIT history array. */
+/** Updates the VM-exit/\#VMEXIT history array. */
 #define HMCPU_EXIT_HISTORY_ADD(pVCpu, a_ExitReason) \
     do { \
         AssertMsg((pVCpu)->hm.s.idxExitHistoryFree < RT_ELEMENTS((pVCpu)->hm.s.auExitHistory), ("%u\n", (pVCpu)->hm.s.idxExitHistoryFree)); \
@@ -622,13 +622,13 @@ typedef struct HMCPU
     bool                        fLeaveDone;
     /** Whether we're using the hyper DR7 or guest DR7. */
     bool                        fUsingHyperDR7;
-    /** Whether to preload the guest-FPU state to avoid #NM VM-exit overhead. */
+    /** Whether to preload the guest-FPU state to avoid \#NM VM-exit overhead. */
     bool                        fPreloadGuestFpu;
     /** Set if XCR0 needs to be loaded and saved when entering and exiting guest
      * code execution. */
     bool                        fLoadSaveGuestXcr0;
 
-    /** Whether #UD needs to be intercepted (required by certain GIM providers). */
+    /** Whether \#UD needs to be intercepted (required by certain GIM providers). */
     bool                        fGIMTrapXcptUD;
     /** Whether paravirt. hypercalls are enabled. */
     bool                        fHypercallsEnabled;
@@ -870,7 +870,7 @@ typedef struct HMCPU
      * HMR0Enter and cleared in HMR0Leave. */
     RTCPUID                 idEnteredCpu;
 
-    /** VT-x/AMD-V VM-exit/#VMXEXIT history, circular array. */
+    /** VT-x/AMD-V VM-exit/\#VMXEXIT history, circular array. */
     uint16_t                auExitHistory[31];
     /** The index of the next free slot in the history array. */
     uint16_t                idxExitHistoryFree;
@@ -902,7 +902,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitAll;
     STAMCOUNTER             StatExitShadowNM;
     STAMCOUNTER             StatExitGuestNM;
-    STAMCOUNTER             StatExitShadowPF;       /* Misleading, currently used for MMIO #PFs as well. */
+    STAMCOUNTER             StatExitShadowPF;       /**< Misleading, currently used for MMIO \#PFs as well. */
     STAMCOUNTER             StatExitShadowPFEM;
     STAMCOUNTER             StatExitGuestPF;
     STAMCOUNTER             StatExitGuestUD;

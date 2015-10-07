@@ -35,6 +35,7 @@
 
 #include <memory>  /* for auto_ptr */
 
+/** @todo  document the poor classes.   */
 namespace HGCM
 {
 
@@ -405,7 +406,7 @@ protected:
     void *m_pvHostData;
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnUnload
+     * @copydoc VBOXHGCMSVCFNTABLE::pfnUnload
      * Simply deletes the service object
      */
     static DECLCALLBACK(int) svcUnload(void *pvService)
@@ -420,7 +421,7 @@ protected:
     }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnConnect
+     * @copydoc VBOXHGCMSVCFNTABLE::pfnConnect
      * Stub implementation of pfnConnect and pfnDisconnect.
      */
     static DECLCALLBACK(int) svcConnect(void *pvService,
@@ -436,7 +437,7 @@ protected:
     }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnConnect
+     * @copydoc VBOXHGCMSVCFNTABLE::pfnConnect
      * Stub implementation of pfnConnect and pfnDisconnect.
      */
     static DECLCALLBACK(int) svcDisconnect(void *pvService,
@@ -452,7 +453,7 @@ protected:
     }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnCall
+     * @copydoc VBOXHGCMSVCFNTABLE::pfnCall
      * Wraps to the call member function
      */
     static DECLCALLBACK(void) svcCall(void * pvService,
@@ -471,7 +472,7 @@ protected:
     }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnHostCall
+     * @copydoc VBOXHGCMSVCFNTABLE::pfnHostCall
      * Wraps to the hostCall member function
      */
     static DECLCALLBACK(int) svcHostCall(void *pvService,
@@ -488,7 +489,7 @@ protected:
     }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnRegisterExtension
+     * @copydoc VBOXHGCMSVCFNTABLE::pfnRegisterExtension
      * Installs a host callback for notifications of property changes.
      */
     static DECLCALLBACK(int) svcRegisterExtension(void *pvService,

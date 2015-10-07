@@ -190,10 +190,10 @@ public:
     }
 
     /** Specialization for the IVirtualBoxErrorInfo smart pointer */
-    ErrorInfo (const ComPtr <IVirtualBoxErrorInfo> &aPtr)
-        : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK), mResultDetail(0)
-        { init (aPtr); }
+    ErrorInfo(const ComPtr<IVirtualBoxErrorInfo> &aPtr)
+        : mIsBasicAvailable(false), mIsFullAvailable(false)
+        , mResultCode(S_OK), mResultDetail(0)
+        { init(aPtr); }
 
     /**
      *  Constructs a new ErrorInfo instance from the IVirtualBoxErrorInfo
@@ -203,10 +203,10 @@ public:
      *  @param aInfo    pointer to the IVirtualBoxErrorInfo interface that
      *                  holds error info to be fetched by this instance
      */
-    ErrorInfo (IVirtualBoxErrorInfo *aInfo)
-        : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK), mResultDetail(0)
-        { init (aInfo); }
+    ErrorInfo(IVirtualBoxErrorInfo *aInfo)
+        : mIsBasicAvailable(false), mIsFullAvailable(false)
+        , mResultCode(S_OK), mResultDetail(0)
+        { init(aInfo); }
 
     ErrorInfo(const ErrorInfo &x)
     {
@@ -319,8 +319,10 @@ public:
      *  Returns the IID of the interface that returned the error.
      *
      *  This method returns a non-null IID only if the instance was created
-     *  using #template <class I> ErrorInfo(I *i) or
+     *  using template <class I> ErrorInfo(I *i) or
      *  template <class I> ErrorInfo(const ComPtr<I> &i) constructor.
+     *
+     *  @todo broken ErrorInfo documentation links, possibly misleading.
      */
     const Guid& getCalleeIID() const
     {
@@ -331,8 +333,10 @@ public:
      *  Returns the name of the interface that returned the error
      *
      *  This method returns a non-null name only if the instance was created
-     *  using #template <class I> ErrorInfo(I *i) or
+     *  using template <class I> ErrorInfo(I *i) or
      *  template <class I> ErrorInfo(const ComPtr<I> &i) constructor.
+     *
+     *  @todo broken ErrorInfo documentation links, possibly misleading.
      */
     const Bstr& getCalleeName() const
     {

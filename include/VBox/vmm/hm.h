@@ -41,8 +41,8 @@ RT_C_DECLS_BEGIN
 /**
  * Checks whether HM (VT-x/AMD-V) is being used by this VM.
  *
- * @retval  @c true if used.
- * @retval  @c false if software virtualization (raw-mode) is used.
+ * @retval  true if used.
+ * @retval  false if software virtualization (raw-mode) is used.
  *
  * @param   a_pVM       The cross context VM structure.
  * @sa      HMIsEnabledNotMacro, HMR3IsEnabled
@@ -57,9 +57,9 @@ RT_C_DECLS_BEGIN
 /**
  * Checks whether raw-mode context is required for any purpose.
  *
- * @retval  @c true if required either by raw-mode itself or by HM for doing
+ * @retval  true if required either by raw-mode itself or by HM for doing
  *          switching the cpu to 64-bit mode.
- * @retval  @c false if not required.
+ * @retval  false if not required.
  *
  * @param   a_pVM       The cross context VM structure.
  * @internal

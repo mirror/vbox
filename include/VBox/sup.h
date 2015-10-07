@@ -1149,7 +1149,7 @@ SUPR3DECL(int) SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation,
  * @returns error code specific to uFunction.
  * @param   pszService  The service name.
  * @param   cchService  The length of the service name.
- * @param   uReq        The request number.
+ * @param   uOperation  The request number.
  * @param   u64Arg      Constant argument.
  * @param   pReqHdr     Pointer to a request header. Optional.
  *                      This will be copied in and out of kernel space. There currently is a size
@@ -1372,7 +1372,7 @@ SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszMo
  * Frees a R0 HC module.
  *
  * @returns VBox status code.
- * @param   pszModule       The module to free.
+ * @param   pvImageBase     The base address of the image to free.
  * @remark  This will not actually 'free' the module, there are of course usage counting.
  */
 SUPR3DECL(int) SUPR3FreeModule(void *pvImageBase);
@@ -1393,7 +1393,7 @@ SUPR3DECL(int) SUPR3LockDownLoader(PRTERRINFO pErrInfo);
  * Get the address of a symbol in a ring-0 module.
  *
  * @returns VBox status code.
- * @param   pszModule       The module name.
+ * @param   pvImageBase     The base address of the image to search.
  * @param   pszSymbol       Symbol name. If it's value is less than 64k it's treated like a
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
@@ -1982,7 +1982,7 @@ typedef struct SUPDRVVDTPROVIDERCORE
     uint8_t                     cbProbeLocsEn;
     /** The actual module bit count (corresponds to cbProbeLocsEn). */
     uint8_t                     cBits;
-    /** Set if this is a Umod, otherwise clear.. */
+    /** Set if this is a Umod, otherwise clear. */
     bool                        fUmod;
     /** Explicit alignment padding (paranoia). */
     uint8_t                     abAlignment[ARCH_BITS == 32 ? 1 : 5];

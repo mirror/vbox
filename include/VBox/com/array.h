@@ -155,8 +155,9 @@
  *
  * Arrays of interface pointers are also supported but they require to use a
  * special SafeArray implementation, com::SafeIfacePointer, which takes the
- * interface class name as a template argument (e.g. com::SafeIfacePointer
- * <IUnknown>). This implementation functions identically to com::SafeArray.
+ * interface class name as a template argument (e.g.
+ * com::SafeIfacePointer\<IUnknown\>). This implementation functions
+ * identically to com::SafeArray.
  */
 
 #ifdef VBOX_WITH_XPCOM
@@ -686,7 +687,7 @@ public:
      *
      * @param aCntr Container object to copy.
      *
-     * @param C     Standard C++ container template class (normally deduced from
+     * @tparam C    Standard C++ container template class (normally deduced from
      *              @c aCntr).
      */
     template<template<typename, typename> class C, class A>
@@ -711,11 +712,11 @@ public:
      *
      * @param aMap  Map object to copy.
      *
-     * @param C     Standard C++ map template class (normally deduced from
-     *              @c aCntr).
-     * @param L     Standard C++ compare class (deduced from @c aCntr).
-     * @param A     Standard C++ allocator class (deduced from @c aCntr).
-     * @param K     Map key class (deduced from @c aCntr).
+     * @tparam C    Standard C++ map template class (normally deduced from
+     *              @a aMap).
+     * @tparam L    Standard C++ compare class (deduced from @a aMap).
+     * @tparam A    Standard C++ allocator class (deduced from @a aMap).
+     * @tparam K    Map key class (deduced from @a aMap).
      */
     template<template<typename, typename, typename, typename>
               class C, class L, class A, class K>
@@ -828,9 +829,9 @@ public:
      * This method is handy for operations like
      * <tt>Bstr("foo").detachTo(array.appendedRaw());</tt>. Don't use it as
      * an l-value (<tt>array.appendedRaw() = SysAllocString(L"tralala");</tt>)
-     * since this doesn't check for a NULL condition; use #resize() and
-     * #setRawAt() instead. If you need to assign a copy of the existing value
-     * instead of transferring the ownership, look at #push_back().
+     * since this doesn't check for a NULL condition; use #resize() instead. If
+     * you need to assign a copy of the existing value instead of transferring
+     * the ownership, look at #push_back().
      *
      * @return          Raw pointer to the added element or NULL if no memory.
      */
@@ -1628,14 +1629,14 @@ public:
 
     /**
      * Creates a deep copy of the given standard C++ container that stores
-     * interface pointers as objects of the ComPtr<I> class.
+     * interface pointers as objects of the ComPtr\<I\> class.
      *
      * @param aCntr Container object to copy.
      *
-     * @param C     Standard C++ container template class (normally deduced from
+     * @tparam C    Standard C++ container template class (normally deduced from
      *              @c aCntr).
-     * @param A     Standard C++ allocator class (deduced from @c aCntr).
-     * @param OI    Argument to the ComPtr template (deduced from @c aCntr).
+     * @tparam A    Standard C++ allocator class (deduced from @c aCntr).
+     * @tparam OI   Argument to the ComPtr template (deduced from @c aCntr).
      */
     template<template<typename, typename> class C, class A, class OI>
     SafeIfaceArray(const C<ComPtr<OI>, A> & aCntr)
@@ -1657,14 +1658,14 @@ public:
 
     /**
      * Creates a deep copy of the given standard C++ container that stores
-     * interface pointers as objects of the ComObjPtr<I> class.
+     * interface pointers as objects of the ComObjPtr\<I\> class.
      *
      * @param aCntr Container object to copy.
      *
-     * @param C     Standard C++ container template class (normally deduced from
+     * @tparam C    Standard C++ container template class (normally deduced from
      *              @c aCntr).
-     * @param A     Standard C++ allocator class (deduced from @c aCntr).
-     * @param OI    Argument to the ComObjPtr template (deduced from @c aCntr).
+     * @tparam A    Standard C++ allocator class (deduced from @c aCntr).
+     * @tparam OI   Argument to the ComObjPtr template (deduced from @c aCntr).
      */
     template<template<typename, typename> class C, class A, class OI>
     SafeIfaceArray(const C<ComObjPtr<OI>, A> & aCntr)
@@ -1686,16 +1687,16 @@ public:
 
     /**
      * Creates a deep copy of the given standard C++ map whose values are
-     * interface pointers stored as objects of the ComPtr<I> class.
+     * interface pointers stored as objects of the ComPtr\<I\> class.
      *
      * @param aMap  Map object to copy.
      *
-     * @param C     Standard C++ map template class (normally deduced from
+     * @tparam C    Standard C++ map template class (normally deduced from
      *              @c aCntr).
-     * @param L     Standard C++ compare class (deduced from @c aCntr).
-     * @param A     Standard C++ allocator class (deduced from @c aCntr).
-     * @param K     Map key class (deduced from @c aCntr).
-     * @param OI    Argument to the ComPtr template (deduced from @c aCntr).
+     * @tparam L    Standard C++ compare class (deduced from @c aCntr).
+     * @tparam A    Standard C++ allocator class (deduced from @c aCntr).
+     * @tparam K    Map key class (deduced from @c aCntr).
+     * @tparam OI   Argument to the ComPtr template (deduced from @c aCntr).
      */
     template<template<typename, typename, typename, typename>
               class C, class L, class A, class K, class OI>
@@ -1718,16 +1719,16 @@ public:
 
     /**
      * Creates a deep copy of the given standard C++ map whose values are
-     * interface pointers stored as objects of the ComObjPtr<I> class.
+     * interface pointers stored as objects of the ComObjPtr\<I\> class.
      *
      * @param aMap  Map object to copy.
      *
-     * @param C     Standard C++ map template class (normally deduced from
+     * @tparam C    Standard C++ map template class (normally deduced from
      *              @c aCntr).
-     * @param L     Standard C++ compare class (deduced from @c aCntr).
-     * @param A     Standard C++ allocator class (deduced from @c aCntr).
-     * @param K     Map key class (deduced from @c aCntr).
-     * @param OI    Argument to the ComObjPtr template (deduced from @c aCntr).
+     * @tparam L    Standard C++ compare class (deduced from @c aCntr).
+     * @tparam A    Standard C++ allocator class (deduced from @c aCntr).
+     * @tparam K    Map key class (deduced from @c aCntr).
+     * @tparam OI   Argument to the ComObjPtr template (deduced from @c aCntr).
      */
     template<template<typename, typename, typename, typename>
               class C, class L, class A, class K, class OI>

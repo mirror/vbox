@@ -238,6 +238,7 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
  * Simplified version of CHECK_ERROR2_EX that executes the |return (rcRet)|
  * statement after error reporting.
  *
+ * @param   hrc         The result variable (type HRESULT).
  * @param   iface       The interface pointer (can be a smart pointer object).
  * @param   method      The method to invoke together with the parameters.
  * @param   rcRet       What to return on failure.

@@ -34,7 +34,7 @@
 RT_C_DECLS_BEGIN
 
 
-/** @addgroup grp_dbgf_corefmt  VM Core File Format
+/** @defgroup grp_dbgf_corefmt  VM Core File Format
  * @ingroup grp_dbgf
  *
  * @todo Add description of the core file format and how the structures in this

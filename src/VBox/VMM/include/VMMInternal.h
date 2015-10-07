@@ -49,7 +49,7 @@
  *
  * Ring-0 logging isn't 100% safe yet (thread id reuse / process exit cleanup),
  * so you have to sign up here by adding your defined(DEBUG_<userid>) to the
- * #if, or by adding VBOX_WITH_R0_LOGGING to your LocalConfig.kmk.
+ * \#if, or by adding VBOX_WITH_R0_LOGGING to your LocalConfig.kmk.
  */
 #if defined(DEBUG_sandervl) || defined(DEBUG_frank) || defined(DEBUG_ramshankar) || defined(DOXYGEN_RUNNING)
 # define VBOX_WITH_R0_LOGGING
@@ -513,7 +513,7 @@ typedef enum VMMRCOPERATION
     VMMRC_DO_TESTCASE_HYPER_INTERRUPT,
     /** Switching testing and profiling stub. */
     VMMRC_DO_TESTCASE_NOP,
-    /** Testcase for checking interrupt masking.. */
+    /** Testcase for checking interrupt masking. */
     VMMRC_DO_TESTCASE_INTERRUPT_MASKING,
     /** Switching testing and profiling stub. */
     VMMRC_DO_TESTCASE_HM_NOP,
@@ -584,6 +584,7 @@ typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
  * @param   pJmpBuf     The jmp_buf to set.
  * @param   pfn         The function to be called when not resuming..
  * @param   pVM         The argument of that function.
+ * @param   pVCpu       The VCPU of the calling EMT.
  */
 DECLASM(int)    vmmR0CallRing3SetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM, PVMCPU pVCpu);
 

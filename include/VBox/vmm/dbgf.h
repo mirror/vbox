@@ -42,7 +42,7 @@ RT_C_DECLS_BEGIN
  */
 
 #if defined(IN_RC) || defined(IN_RING0)
-/** @addgroup grp_dbgf_rz  The RZ DBGF API
+/** @defgroup grp_dbgf_rz  The RZ DBGF API
  * @ingroup grp_dbgf
  * @{
  */

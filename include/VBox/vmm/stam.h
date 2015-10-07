@@ -342,7 +342,7 @@ typedef enum STAMUNIT
 #endif
 
 
-/** @def STAM_REL_U16_INC
+/** @def STAM_REL_U16_ADD
  * Increments a uint16_t sample by a value.
  *
  * @param   pCounter    Pointer to the uint16_t variable to operate on.
@@ -354,7 +354,7 @@ typedef enum STAMUNIT
 #else
 # define STAM_REL_U16_ADD(pCounter, Addend) do { } while (0)
 #endif
-/** @def STAM_U16_INC
+/** @def STAM_U16_ADD
  * Increments a uint16_t sample by a value.
  *
  * @param   pCounter    Pointer to the uint16_t variable to operate on.
@@ -636,7 +636,7 @@ typedef const STAMPROFILE *PCSTAMPROFILE;
 /** @def STAM_REL_PROFILE_ADD_PERIOD
  * Adds a period.
  *
- * @param   pProfileAdv     Pointer to the STAMPROFILEADV structure to operate on.
+ * @param   pProfile        Pointer to the STAMPROFILE structure to operate on.
  * @param   cTicksInPeriod  The number of tick (or whatever) of the preiod
  *                          being added.  This is only referenced once.
  */
@@ -657,7 +657,7 @@ typedef const STAMPROFILE *PCSTAMPROFILE;
 /** @def STAM_PROFILE_ADD_PERIOD
  * Adds a period.
  *
- * @param   pProfileAdv     Pointer to the STAMPROFILEADV structure to operate on.
+ * @param   pProfile        Pointer to the STAMPROFILE structure to operate on.
  * @param   cTicksInPeriod  The number of tick (or whatever) of the preiod
  *                          being added.  This is only referenced once.
  */
@@ -902,8 +902,9 @@ typedef const STAMPROFILEADV *PCSTAMPROFILEADV;
  * Samples the stop time of a profiling period (if running) and updates the
  * sample.
  *
- * @param   pProfileAdv Pointer to the STAMPROFILEADV structure to operate on.
- * @param   Prefix      Identifier prefix used to internal variables.
+ * @param   pProfileAdv1    Pointer to the STAMPROFILEADV structure to stop.
+ * @param   pProfileAdv2    Pointer to the STAMPROFILEADV structure to start.
+ * @param   Prefix          Identifier prefix used to internal variables.
  */
 #ifdef VBOX_WITH_STATISTICS
 # define STAM_PROFILE_ADV_STOP_START(pProfileAdv1, pProfileAdv2, Prefix) \

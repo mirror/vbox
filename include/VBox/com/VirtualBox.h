@@ -8,7 +8,7 @@
  *       /src/VBox/Main/idl/VirtualBox.xidl, which contains all the VirtualBox
  *       interfaces; the include file is called VirtualBox.h on Windows hosts
  *       and VirtualBox_XPCOM.h on Linux hosts.  The build process places it in
- *       out/<platform>/bin/sdk/include, from where it gets
+ *       out/{platform}/bin/sdk/include, from where it gets
  *       included by the rest of the VirtualBox code.
  */
 

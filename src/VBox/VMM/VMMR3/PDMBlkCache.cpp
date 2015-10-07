@@ -1923,21 +1923,21 @@ static bool pdmBlkCacheReqUpdate(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ pReq,
 }
 
 VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
-                                 PCRTSGBUF pcSgBuf, size_t cbRead, void *pvUser)
+                                 PCRTSGBUF pSgBuf, size_t cbRead, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
     PPDMBLKCACHEENTRY  pEntry;
     PPDMBLKCACHEREQ    pReq;
 
-    LogFlowFunc((": pBlkCache=%#p{%s} off=%llu pcSgBuf=%#p cbRead=%u pvUser=%#p\n",
-                 pBlkCache, pBlkCache->pszId, off, pcSgBuf, cbRead, pvUser));
+    LogFlowFunc((": pBlkCache=%#p{%s} off=%llu pSgBuf=%#p cbRead=%u pvUser=%#p\n",
+                 pBlkCache, pBlkCache->pszId, off, pSgBuf, cbRead, pvUser));
 
     AssertPtrReturn(pBlkCache, VERR_INVALID_POINTER);
     AssertReturn(!pBlkCache->fSuspended, VERR_INVALID_STATE);
 
     RTSGBUF SgBuf;
-    RTSgBufClone(&SgBuf, pcSgBuf);
+    RTSgBufClone(&SgBuf, pSgBuf);
 
     /* Allocate new request structure. */
     pReq = pdmBlkCacheReqAlloc(pvUser);
@@ -2143,22 +2143,21 @@ VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
    return rc;
 }
 
-VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
-                                  PCRTSGBUF pcSgBuf, size_t cbWrite, void *pvUser)
+VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off, PCRTSGBUF pSgBuf, size_t cbWrite, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
     PPDMBLKCACHEENTRY pEntry;
     PPDMBLKCACHEREQ pReq;
 
-    LogFlowFunc((": pBlkCache=%#p{%s} off=%llu pcSgBuf=%#p cbWrite=%u pvUser=%#p\n",
-                 pBlkCache, pBlkCache->pszId, off, pcSgBuf, cbWrite, pvUser));
+    LogFlowFunc((": pBlkCache=%#p{%s} off=%llu pSgBuf=%#p cbWrite=%u pvUser=%#p\n",
+                 pBlkCache, pBlkCache->pszId, off, pSgBuf, cbWrite, pvUser));
 
     AssertPtrReturn(pBlkCache, VERR_INVALID_POINTER);
     AssertReturn(!pBlkCache->fSuspended, VERR_INVALID_STATE);
 
     RTSGBUF SgBuf;
-    RTSgBufClone(&SgBuf, pcSgBuf);
+    RTSgBufClone(&SgBuf, pSgBuf);
 
     /* Allocate new request structure. */
     pReq = pdmBlkCacheReqAlloc(pvUser);
@@ -2179,10 +2178,7 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
             AssertPtr(pEntry->pList);
 
             uint64_t offDiff = off - pEntry->Core.Key;
-
-            AssertMsg(off >= pEntry->Core.Key,
-                      ("Overflow in calculation off=%llu OffsetAligned=%llu\n",
-                      off, pEntry->Core.Key));
+            AssertMsg(off >= pEntry->Core.Key, ("Overflow in calculation off=%llu OffsetAligned=%llu\n", off, pEntry->Core.Key));
 
             cbToWrite = RT_MIN(pEntry->cbData - offDiff, cbWrite);
             cbWrite  -= cbToWrite;

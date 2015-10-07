@@ -1160,7 +1160,7 @@ DECLINLINE(bool) CPUMIsGuestInV86ModeEx(PCPUMCTX pCtx)
  * Tests if the guest is running in paged protected or not.
  *
  * @returns true if in paged protected mode, otherwise false.
- * @param   pVM     The VM handle.
+ * @param   pCtx    Current CPU context
  */
 DECLINLINE(bool) CPUMIsGuestInPagedProtectedModeEx(PCPUMCTX pCtx)
 {
@@ -1184,7 +1184,6 @@ VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx);
  * Tests if the guest is running in 64 bits mode or not.
  *
  * @returns true if in 64 bits protected mode, otherwise false.
- * @param   pVCpu   The current virtual CPU.
  * @param   pCtx    Current CPU context
  */
 DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
