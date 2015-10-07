@@ -5658,6 +5658,7 @@ xmlParseEntityDecl(xmlParserCtxtPtr ctxt) {
 	if (RAW != '>') {
 	    xmlFatalErrMsgStr(ctxt, XML_ERR_ENTITY_NOT_FINISHED,
 	            "xmlParseEntityDecl: entity %s not terminated\n", name);
+	    xmlStopParser(ctxt);
 	} else {
 	    if (input != ctxt->input) {
 		xmlFatalErrMsg(ctxt, XML_ERR_ENTITY_BOUNDARY,
@@ -6769,6 +6770,8 @@ xmlParseConditionalSections(xmlParserCtxtPtr ctxt) {
 	SKIP_BLANKS;
 	if (RAW != '[') {
 	    xmlFatalErr(ctxt, XML_ERR_CONDSEC_INVALID, NULL);
+	    xmlStopParser(ctxt);
+	    return;
 	} else {
 	    if (ctxt->input->id != id) {
 		xmlValidityError(ctxt, XML_ERR_ENTITY_BOUNDARY,
@@ -6829,6 +6832,8 @@ xmlParseConditionalSections(xmlParserCtxtPtr ctxt) {
 	SKIP_BLANKS;
 	if (RAW != '[') {
 	    xmlFatalErr(ctxt, XML_ERR_CONDSEC_INVALID, NULL);
+	    xmlStopParser(ctxt);
+	    return;
 	} else {
 	    if (ctxt->input->id != id) {
 		xmlValidityError(ctxt, XML_ERR_ENTITY_BOUNDARY,
@@ -6884,6 +6889,8 @@ xmlParseConditionalSections(xmlParserCtxtPtr ctxt) {
 
     } else {
 	xmlFatalErr(ctxt, XML_ERR_CONDSEC_INVALID_KEYWORD, NULL);
+	xmlStopParser(ctxt);
+	return;
     }
 
     if (RAW == 0)
@@ -7235,7 +7242,8 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
      * far more secure as the parser will only process data coming from
      * the document entity by default.
      */
-    if ((ent->checked == 0) &&
+    if (((ent->checked == 0) ||
+         ((ent->children == NULL) && (ctxt->options & XML_PARSE_NOENT))) &&
         ((ent->etype != XML_EXTERNAL_GENERAL_PARSED_ENTITY) ||
          (ctxt->options & (XML_PARSE_NOENT | XML_PARSE_DTDVALID)))) {
 	unsigned long oldnbent = ctxt->nbentities;
@@ -10396,6 +10404,8 @@ xmlParseEncodingDecl(xmlParserCtxtPtr ctxt) {
 	    encoding = xmlParseEncName(ctxt);
 	    if (RAW != '"') {
 		xmlFatalErr(ctxt, XML_ERR_STRING_NOT_CLOSED, NULL);
+		xmlFree((xmlChar *) encoding);
+		return(NULL);
 	    } else
 	        NEXT;
 	} else if (RAW == '\''){
@@ -10403,6 +10413,8 @@ xmlParseEncodingDecl(xmlParserCtxtPtr ctxt) {
 	    encoding = xmlParseEncName(ctxt);
 	    if (RAW != '\'') {
 		xmlFatalErr(ctxt, XML_ERR_STRING_NOT_CLOSED, NULL);
+		xmlFree((xmlChar *) encoding);
+		return(NULL);
 	    } else
 	        NEXT;
 	} else {
@@ -10459,7 +10471,11 @@ xmlParseEncodingDecl(xmlParserCtxtPtr ctxt) {
 
             handler = xmlFindCharEncodingHandler((const char *) encoding);
 	    if (handler != NULL) {
-		xmlSwitchToEncoding(ctxt, handler);
+		if (xmlSwitchToEncoding(ctxt, handler) < 0) {
+		    /* failed to convert */
+		    ctxt->errNo = XML_ERR_UNSUPPORTED_ENCODING;
+		    return(NULL);
+		}
 	    } else {
 		xmlFatalErrMsgStr(ctxt, XML_ERR_UNSUPPORTED_ENCODING,
 			"Unsupported encoding %s\n", encoding);
@@ -14829,9 +14845,6 @@ xmlInitParser(void) {
 #endif
 #ifdef LIBXML_XPATH_ENABLED
 	xmlXPathInit();
-#endif
-#ifdef LIBXML_CATALOG_ENABLED
-        xmlInitializeCatalog();
 #endif
 	xmlParserInitialized = 1;
 #ifdef LIBXML_THREAD_ENABLED
