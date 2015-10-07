@@ -32,77 +32,83 @@
  *  Asserts that the COM result code is succeeded in strict builds.
  *  In non-strict builds the result code will be NOREF'ed to kill compiler warnings.
  *
- *  @param rc   COM result code
+ *  @param hrc      The COM result code
  */
-#define AssertComRC(rc)      \
-    do { AssertMsg (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", rc, rc)); NOREF (rc); } while (0)
+#define AssertComRC(hrc) \
+    do { AssertMsg(SUCCEEDED(hrc), ("COM RC = %Rhrc (0x%08X)\n", hrc, hrc)); NOREF(hrc); } while (0)
+
+/**
+ *  Same as AssertComRC, except the caller already knows we failed.
+ *
+ *  @param hrc      The COM result code
+ */
+#define AssertComRCFailed(hrc) \
+    do { AssertMsgFailed(("COM RC = %Rhrc (0x%08X)\n", hrc, hrc)); NOREF(hrc); } while (0)
 
 /**
  *  A special version of AssertComRC that returns the given expression
  *  if the result code is failed.
  *
- *  @param rc   COM result code
- *  @param ret  the expression to return
+ *  @param hrc      The COM result code
+ *  @param RetExpr  The expression to return
  */
-#define AssertComRCReturn(rc, ret)      \
-    AssertMsgReturn (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", rc, rc), ret)
+#define AssertComRCReturn(hrc, RetExpr) \
+    AssertMsgReturn(SUCCEEDED(hrc), ("COM RC = %Rhrc (0x%08X)\n", hrc, hrc), RetExpr)
 
 /**
  *  A special version of AssertComRC that returns the given result code
  *  if it is failed.
  *
- *  @param rc   COM result code
- *  @param ret  the expression to return
+ *  @param hrc      The COM result code
  */
-#define AssertComRCReturnRC(rc)         \
-    AssertMsgReturn (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", rc, rc), rc)
+#define AssertComRCReturnRC(hrc) \
+    AssertMsgReturn(SUCCEEDED(hrc), ("COM RC = %Rhrc (0x%08X)\n", hrc, hrc), hrc)
 
 /**
  *  A special version of AssertComRC that returns if the result code is failed.
  *
- *  @param rc   COM result code
- *  @param ret  the expression to return
+ *  @param hrc      The COM result code
  */
-#define AssertComRCReturnVoid(rc)      \
-    AssertMsgReturnVoid (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)\n", rc, rc))
+#define AssertComRCReturnVoid(hrc) \
+    AssertMsgReturnVoid(SUCCEEDED(hrc), ("COM RC = %Rhrc (0x%08X)\n", hrc, hrc))
 
 /**
  *  A special version of AssertComRC that evaluates the given expression and
  *  breaks if the result code is failed.
  *
- *  @param rc   COM result code
- *  @param eval the expression to evaluate
+ *  @param hrc          The COM result code
+ *  @param PreBreakExpr The expression to evaluate on failure.
  */
-#define AssertComRCBreak(rc, eval)      \
-    if (!SUCCEEDED (rc)) { AssertComRC (rc); eval; break; } else do {} while (0)
+#define AssertComRCBreak(hrc, PreBreakExpr) \
+    if (!SUCCEEDED(hrc)) { AssertMsgFailed(hrc); PreBreakExpr; break; } else do {} while (0)
 
 /**
  *  A special version of AssertComRC that evaluates the given expression and
  *  throws it if the result code is failed.
  *
- *  @param rc   COM result code
- *  @param eval the expression to throw
+ *  @param hrc          The COM result code
+ *  @param ThrowMeExpr  The expression which result to be thrown on failure.
  */
-#define AssertComRCThrow(rc, eval)      \
-    if (!SUCCEEDED (rc)) { AssertComRC (rc); throw (eval); } else do {} while (0)
+#define AssertComRCThrow(hrc, ThrowObjExpr) \
+    do { if (SUCCEEDED(hrc)) { /*likely*/} else { AssertMsgFailed(hrc); throw (ThrowMeExpr); } } while (0)
 
 /**
  *  A special version of AssertComRC that just breaks if the result code is
  *  failed.
  *
- *  @param rc   COM result code
+ *  @param hrc      The COM result code
  */
-#define AssertComRCBreakRC(rc)          \
-    if (!SUCCEEDED (rc)) { AssertComRC (rc); break; } else do {} while (0)
+#define AssertComRCBreakRC(hrc) \
+    if (!SUCCEEDED(hrc)) { AssertMsgFailed(hrc); break; } else do {} while (0)
 
 /**
- *  A special version of AssertComRC that just throws @a rc if the result code is
- *  failed.
+ *  A special version of AssertComRC that just throws @a hrc if the result code
+ *  is failed.
  *
- *  @param rc   COM result code
+ *  @param hrc      The COM result code
  */
-#define AssertComRCThrowRC(rc)          \
-    if (!SUCCEEDED (rc)) { AssertComRC (rc); throw rc; } else do {} while (0)
+#define AssertComRCThrowRC(hrc) \
+    do { if (SUCCEEDED(hrc)) { /*likely*/ } else { AssertMsgFailed(hrc); throw hrc; } } while (0)
 
 #endif // !___VBox_com_assert_h
 
