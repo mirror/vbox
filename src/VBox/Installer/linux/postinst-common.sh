@@ -21,8 +21,8 @@
 # We assume that all required files are in the same folder as this script
 # (e.g. /opt/VirtualBox, /usr/lib/VirtualBox, the build output directory).
 
-# This is GNU-specific, sorry Solaris.
-MY_PATH="$(dirname $(readlink -f -- "${0}"))/"
+# This is GNU-specific, sorry Solaris.  It fails on directories ending in '\n'.
+MY_PATH="$(dirname $(readlink -f -- "${0}"))"
 cd "${MY_PATH}"
 . "./routines.sh"
 
