@@ -172,6 +172,7 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                     if (   RT_SUCCESS(rc)
                         && rcHv == GIM_HV_STATUS_SUCCESS)
                     {
+                        LogRelMax(1, ("GIM: HyperV: Guest initiated debug data reception\n"));
                         rc = gimR3HvHypercallRetrieveDebugData(pVM, GCPhysOut, &rcHv);
                         if (RT_FAILURE(rc))
                             LogRelMax(10, ("GIM: HyperV: gimR3HvHypercallRetrieveDebugData failed. rc=%Rrc\n", rc));
@@ -191,6 +192,7 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                     if (   RT_SUCCESS(rc)
                         && rcHv == GIM_HV_STATUS_SUCCESS)
                     {
+                        LogRelMax(1, ("GIM: HyperV: Guest initiated debug data transmission\n"));
                         rc = gimR3HvHypercallPostDebugData(pVM, GCPhysOut, &rcHv);
                         if (RT_FAILURE(rc))
                             LogRelMax(10, ("GIM: HyperV: gimR3HvHypercallPostDebugData failed. rc=%Rrc\n", rc));
@@ -231,6 +233,8 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                     {
                         if (!fFlags)
                             rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+                        else
+                            LogRelMax(1, ("GIM: HyperV: Guest resetting debug session\n"));
                     }
                 }
                 else
