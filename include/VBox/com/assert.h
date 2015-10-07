@@ -80,7 +80,7 @@
  *  @param PreBreakExpr The expression to evaluate on failure.
  */
 #define AssertComRCBreak(hrc, PreBreakExpr) \
-    if (!SUCCEEDED(hrc)) { AssertMsgFailed(hrc); PreBreakExpr; break; } else do {} while (0)
+    if (!SUCCEEDED(hrc)) { AssertComRCFailed(hrc); PreBreakExpr; break; } else do {} while (0)
 
 /**
  *  A special version of AssertComRC that evaluates the given expression and
@@ -90,7 +90,7 @@
  *  @param ThrowMeExpr  The expression which result to be thrown on failure.
  */
 #define AssertComRCThrow(hrc, ThrowObjExpr) \
-    do { if (SUCCEEDED(hrc)) { /*likely*/} else { AssertMsgFailed(hrc); throw (ThrowMeExpr); } } while (0)
+    do { if (SUCCEEDED(hrc)) { /*likely*/} else { AssertComRCFailed(hrc); throw (ThrowMeExpr); } } while (0)
 
 /**
  *  A special version of AssertComRC that just breaks if the result code is
@@ -99,7 +99,7 @@
  *  @param hrc      The COM result code
  */
 #define AssertComRCBreakRC(hrc) \
-    if (!SUCCEEDED(hrc)) { AssertMsgFailed(hrc); break; } else do {} while (0)
+    if (!SUCCEEDED(hrc)) { AssertComRCFailed(hrc); break; } else do {} while (0)
 
 /**
  *  A special version of AssertComRC that just throws @a hrc if the result code
@@ -108,7 +108,7 @@
  *  @param hrc      The COM result code
  */
 #define AssertComRCThrowRC(hrc) \
-    do { if (SUCCEEDED(hrc)) { /*likely*/ } else { AssertMsgFailed(hrc); throw hrc; } } while (0)
+    do { if (SUCCEEDED(hrc)) { /*likely*/ } else { AssertComRCFailed(hrc); throw hrc; } } while (0)
 
 #endif // !___VBox_com_assert_h
 
