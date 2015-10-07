@@ -154,6 +154,7 @@ int CollectorWin::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
         }
 
         VMProcessStats vmStats;
+        RT_ZERO(vmStats);
         if ((it->second & COLLECT_CPU_LOAD) != 0)
         {
             FILETIME ftCreate, ftExit, ftKernel, ftUser;
