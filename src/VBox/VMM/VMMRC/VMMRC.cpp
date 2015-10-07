@@ -81,7 +81,10 @@ VMMRCDECL(int) VMMRCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
 
             uint32_t uBuildType = va_arg(va, uint32_t);
             if (uBuildType != vmmGetBuildType())
+            {
+                va_end(va);
                 return VERR_VMM_RC_VERSION_MISMATCH;
+            }
 
             /*
              * Initialize the runtime.
