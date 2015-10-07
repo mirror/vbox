@@ -35,7 +35,8 @@
  *          - VBoxDbg - Debugger GUI (Qt).
  *      - DIS - Disassembler.
  *      - @ref pg_em
- *      - HWACCM - Intel/AMD VM Hardware Support Manager.
+ *      - @ref pg_gim
+ *      - HM - Intel/AMD Hardware Accelerated Virtualization Manager.
  *      - REM - Recompiled Execution Monitor.
  *          - @ref pg_vboxrem_amd64
  *      - @ref pg_iem
