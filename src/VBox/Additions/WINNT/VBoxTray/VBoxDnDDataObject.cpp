@@ -235,7 +235,7 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
             RTCList<RTCString> lstFiles;
             for (size_t i = 0; i < lstFilesURI.size(); i++)
             {
-                char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).c_str(), URI_FILE_FORMAT_WIN);
+                char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).c_str());
                 if (pszFilePath)
                 {
                     lstFiles.append(pszFilePath);

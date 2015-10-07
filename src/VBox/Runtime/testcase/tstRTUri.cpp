@@ -306,7 +306,7 @@ static struct URIFILETEST
     const char     *pszPath;
     uint32_t        fPathPathStyle;
     const char     *pszUri;
-    uint32_t        uFormat;
+    uint32_t        fUriPathStyle;
     const char     *pszCreatedPath;
     const char     *pszCreatedUri;
 } g_aCreateFileURIs[] =
@@ -315,7 +315,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "C:\\over\\ <>#%\"{}|^[]`\\there",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///C:%5Cover/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60%5Cthere",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "C:\\over\\ <>#%\"{}|^[]`\\there",
         /* .pszCreatedUri    =*/ "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* PathCreateFromUrl =   "C:\\over\\ <>#%\"{}|^[]`\\there" - same */
@@ -325,7 +325,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/over/ <>#%\"{}|^[]`/there",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
-        /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszCreatedPath   =*/ "/over/ <>#%\"{}|^[]`/there",
         /* .pszCreatedUri    =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* PathCreateFromUrl =   "\\over\\ <>#%\"{}|^[]`\\there" - differs */
@@ -335,7 +335,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ NULL,
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file://",
-        /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszCreatedPath   =*/ NULL,
         /* .pszCreatedUri    =*/ NULL,
         /* PathCreateFromUrl =   "" - differs */
@@ -345,7 +345,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ NULL,
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file://",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ NULL,
         /* .pszCreatedUri    =*/ NULL,
         /* PathCreateFromUrl =   "" - differs */
@@ -355,7 +355,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///",
-        /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszCreatedPath   =*/ "/",
         /* .pszCreatedUri    =*/ "file:///",
         /* PathCreateFromUrl =   "" - differs */
@@ -365,7 +365,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\",
         /* .pszCreatedUri    =*/ "file:///",
         /* PathCreateFromUrl =   "" - differs */
@@ -375,7 +375,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/foo/bar",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///foo/bar",
-        /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszCreatedPath   =*/ "/foo/bar",
         /* .pszCreatedUri    =*/ "file:///foo/bar",
         /* PathCreateFromUrl =   "\\foo\\bar" - differs */
@@ -385,7 +385,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\foo\\bar",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///foo%5Cbar",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\foo\\bar",
         /* .pszCreatedUri    =*/ "file:///foo/bar",
         /* PathCreateFromUrl =   "\\foo\\bar" - same */
@@ -395,7 +395,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "C:/over/ <>#%\"{}|^[]`/there",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
-        /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszCreatedPath   =*/ "C:/over/ <>#%\"{}|^[]`/there",
         /* .pszCreatedUri    =*/ "file:///C:/over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* PathCreateFromUrl =   "C:\\over\\ <>#%\"{}|^[]`\\there" - differs */
@@ -405,7 +405,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\over\\ <>#%\"{}|^[]`\\there",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\over\\ <>#%\"{}|^[]`\\there",
         /* .pszCreatedUri    =*/ "file:///over/%20%3C%3E%23%25%22%7B%7D%7C%5E%5B%5D%60/there",
         /* PathCreateFromUrl =   "\\over\\ <>#%\"{}|^[]`\\there" - same */
@@ -415,7 +415,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/usr/bin/grep",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///usr/bin/grep",
-        /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszCreatedPath   =*/ "/usr/bin/grep",
         /* .pszCreatedUri    =*/ "file:///usr/bin/grep",
         /* PathCreateFromUrl =   "\\usr\\bin\\grep" - differs */
@@ -425,7 +425,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\usr\\bin\\grep",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///usr/bin/grep",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\usr\\bin\\grep",
         /* .pszCreatedUri    =*/ "file:///usr/bin/grep",
         /* PathCreateFromUrl =   "\\usr\\bin\\grep" - same */
@@ -435,7 +435,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/somerootsubdir/isos/files.lst",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///somerootsubdir/isos/files.lst",
-        /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszCreatedPath   =*/ "/somerootsubdir/isos/files.lst",
         /* .pszCreatedUri    =*/ "file:///somerootsubdir/isos/files.lst",
         /* PathCreateFromUrl =   "\\somerootsubdir\\isos\\files.lst" - differs */
@@ -445,7 +445,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\not-a-cifsserver\\isos\\files.lst",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///not-a-cifsserver/isos/files.lst",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\not-a-cifsserver\\isos\\files.lst",
         /* .pszCreatedUri    =*/ "file:///not-a-cifsserver/isos/files.lst",
         /* PathCreateFromUrl =   "\\not-a-cifsserver\\isos\\files.lst" - same */
@@ -455,7 +455,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "/rootsubdir/isos/files.lst",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszUri           =*/ "file:///rootsubdir/isos/files.lst",
-        /* .uFormat          =*/ URI_FILE_FORMAT_UNIX,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_UNIX,
         /* .pszCreatedPath   =*/ "/rootsubdir/isos/files.lst",
         /* .pszCreatedUri    =*/ "file:///rootsubdir/isos/files.lst",
         /* PathCreateFromUrl =   "\\rootsubdir\\isos\\files.lst" - differs */
@@ -465,7 +465,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\not-a-cifsserver-either\\isos\\files.lst",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///not-a-cifsserver-either/isos/files.lst",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\not-a-cifsserver-either\\isos\\files.lst",
         /* .pszCreatedUri    =*/ "file:///not-a-cifsserver-either/isos/files.lst",
         /* PathCreateFromUrl =   "\\not-a-cifsserver-either\\isos\\files.lst" - same */
@@ -475,7 +475,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\\\cifsserver\\isos\\files.lst",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:////cifsserver/isos/files.lst",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\\\cifsserver\\isos\\files.lst",
         /* .pszCreatedUri    =*/ "file://cifsserver/isos/files.lst",
         /* PathCreateFromUrl =   "\\\\cifsserver\\isos\\files.lst" - same */
@@ -485,7 +485,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "c:boot.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file://localhost/c:boot.ini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "c:boot.ini",
         /* .pszCreatedUri    =*/ "file:///c:boot.ini",
         /* PathCreateFromUrl =   "c:boot.ini" - same */
@@ -495,7 +495,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "c:boot.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:///c|boot.ini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "c:boot.ini",
         /* .pszCreatedUri    =*/ "file:///c:boot.ini",
         /* PathCreateFromUrl =   "c:boot.ini" - same */
@@ -505,7 +505,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "c:\\legacy-no-slash.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:c:\\legacy-no-slash%2Eini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "c:\\legacy-no-slash.ini",
         /* .pszCreatedUri    =*/ "file:///c:/legacy-no-slash.ini",
         /* PathCreateFromUrl =   "c:\\legacy-no-slash.ini" - same */
@@ -515,7 +515,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "c:\\legacy-no-slash.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:c|\\legacy-no-slash%2Eini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "c:\\legacy-no-slash.ini",
         /* .pszCreatedUri    =*/ "file:///c:/legacy-no-slash.ini",
         /* PathCreateFromUrl =   "c:\\legacy-no-slash.ini" - same */
@@ -525,7 +525,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "c:\\legacy-single-slash.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:/c:\\legacy-single-slash%2Eini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "c:\\legacy-single-slash.ini",
         /* .pszCreatedUri    =*/ "file:///c:/legacy-single-slash.ini",
         /* PathCreateFromUrl =   "c:\\legacy-single-slash.ini" - same */
@@ -535,7 +535,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "c:\\legacy-single-slash.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:/c:\\legacy-single-slash%2Eini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "c:\\legacy-single-slash.ini",
         /* .pszCreatedUri    =*/ "file:///c:/legacy-single-slash.ini",
         /* PathCreateFromUrl =   "c:\\legacy-single-slash.ini" - same */
@@ -545,7 +545,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\legacy-single-slash.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:/legacy-single-slash%2Eini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\legacy-single-slash.ini",
         /* .pszCreatedUri    =*/ "file:///legacy-single-slash.ini",
         /* PathCreateFromUrl =   "\\legacy-single-slash.ini" - same */
@@ -555,7 +555,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "C:\\legacy-double-slash%2E.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file://C:\\legacy-double-slash%2E.ini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "C:\\legacy-double-slash%2E.ini",
         /* .pszCreatedUri    =*/ "file:///C:/legacy-double-slash%252E.ini",
         /* PathCreateFromUrl =   "C:\\legacy-double-slash%2E.ini" - same */
@@ -565,7 +565,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "C:\\legacy-double-slash%2E.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file://C|/legacy-double-slash%2E.ini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "C:\\legacy-double-slash%2E.ini",
         /* .pszCreatedUri    =*/ "file:///C:/legacy-double-slash%252E.ini",
         /* PathCreateFromUrl =   "C:\\legacy-double-slash%2E.ini" - same */
@@ -575,7 +575,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "C:\\legacy-4-slashes%2E.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:////C|/legacy-4-slashes%2E.ini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "C:\\legacy-4-slashes%2E.ini",
         /* .pszCreatedUri    =*/ "file:///C:/legacy-4-slashes%252E.ini",
         /* PathCreateFromUrl =   "C:\\legacy-4-slashes%2E.ini" - same */
@@ -585,7 +585,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "C:\\legacy-4-slashes%2E.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:////C:/legacy-4-slashes%2E.ini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "C:\\legacy-4-slashes%2E.ini",
         /* .pszCreatedUri    =*/ "file:///C:/legacy-4-slashes%252E.ini",
         /* PathCreateFromUrl =   "C:\\legacy-4-slashes%2E.ini" - same */
@@ -595,7 +595,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\\\cifsserver\\share\\legacy-4-slashes%2E.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file:////cifsserver/share/legacy-4-slashes%2E.ini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\\\cifsserver\\share\\legacy-4-slashes%2E.ini",
         /* .pszCreatedUri    =*/ "file://cifsserver/share/legacy-4-slashes%252E.ini",
         /* PathCreateFromUrl =   "\\\\cifsserver\\share\\legacy-4-slashes%2E.ini" - same */
@@ -605,7 +605,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\\\cifsserver\\share\\legacy-5-slashes.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file://///cifsserver/share/legacy-5-slashes%2Eini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\\\cifsserver\\share\\legacy-5-slashes.ini",
         /* .pszCreatedUri    =*/ "file://cifsserver/share/legacy-5-slashes.ini",
         /* PathCreateFromUrl =   "\\\\cifsserver\\share\\legacy-5-slashes.ini" - same */
@@ -615,7 +615,7 @@ static struct URIFILETEST
         /* .pszPath          =*/ "\\\\C|\\share\\legacy-5-slashes.ini",
         /* .fPathPathStyle   =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszUri           =*/ "file://///C|/share/legacy-5-slashes%2Eini",
-        /* .uFormat          =*/ URI_FILE_FORMAT_WIN,
+        /* .fUriPathStyle    =*/ RTPATH_STR_F_STYLE_DOS,
         /* .pszCreatedPath   =*/ "\\\\C|\\share\\legacy-5-slashes.ini",
         /* .pszCreatedUri    =*/ "file://C%7C/share/legacy-5-slashes.ini",
         /* PathCreateFromUrl =   "\\\\C|\\share\\legacy-5-slashes.ini" - same */
@@ -653,6 +653,17 @@ static void tstPrintCString(const char *pszString)
         RTPrintf("NULL");
 }
 
+static const char *tstNamePathStyle(uint32_t fPathStyle)
+{
+    switch (fPathStyle)
+    {
+        case RTPATH_STR_F_STYLE_DOS:   return "RTPATH_STR_F_STYLE_DOS";
+        case RTPATH_STR_F_STYLE_UNIX:  return "RTPATH_STR_F_STYLE_UNIX";
+        case RTPATH_STR_F_STYLE_HOST:  return "RTPATH_STR_F_STYLE_HOST";
+        default: AssertFailedReturn("Invalid");
+    }
+}
+
 static void tstWindowsReferenceResults(void)
 {
     /*
@@ -667,13 +678,11 @@ static void tstWindowsReferenceResults(void)
         RTPrintf("        /* .pszPath          =*/ ");
         tstPrintCString(g_aCreateFileURIs[i].pszPath);
         RTPrintf(",\n");
+        RTPrintf("        /* .fPathPathStyle   =*/ %s,\n", tstNamePathStyle(g_aCreateFileURIs[i].fPathPathStyle));
         RTPrintf("        /* .pszUri           =*/ ");
         tstPrintCString(g_aCreateFileURIs[i].pszUri);
         RTPrintf(",\n");
-        RTPrintf("        /* .uFormat          =*/ %s,\n",
-                   g_aCreateFileURIs[i].uFormat == URI_FILE_FORMAT_WIN  ? "URI_FILE_FORMAT_WIN"
-                 : g_aCreateFileURIs[i].uFormat == URI_FILE_FORMAT_UNIX ? "URI_FILE_FORMAT_UNIX"
-                 : g_aCreateFileURIs[i].uFormat == URI_FILE_FORMAT_AUTO ? "URI_FILE_FORMAT_AUTO" : "URI_FILE_FORMAT_INVALID");
+        RTPrintf("        /* .fUriPathStyle    =*/ %s,\n", tstNamePathStyle(g_aCreateFileURIs[i].fUriPathStyle));
         RTPrintf("        /* .pszCreatedPath   =*/ ");
         tstPrintCString(g_aCreateFileURIs[i].pszCreatedPath);
         RTPrintf(",\n");
@@ -748,6 +757,36 @@ static void tstWindowsReferenceResults(void)
 }
 
 #endif /* TSTRTURI_WITH_WINDOWS_REFERENCE_RESULTS */
+
+
+static void tstRTUriFilePathEx(void)
+{
+    RTTestISub("RTUriFilePathEx");
+    for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs); ++i)
+    {
+        uint32_t const     fPathStyle = g_aCreateFileURIs[i].fUriPathStyle;
+        const char * const pszUri     = g_aCreateFileURIs[i].pszUri;
+        char *pszPath = (char *)&pszPath;
+        int rc = RTUriFilePathEx(pszUri, fPathStyle, &pszPath, 0, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            if (g_aCreateFileURIs[i].pszCreatedPath)
+            {
+                if (strcmp(pszPath, g_aCreateFileURIs[i].pszCreatedPath) == 0)
+                {
+                    /** @todo check out the other variations of the API. */
+                }
+                else
+                    RTTestIFailed("#%u: '%s'/%#x => '%s', expected '%s'",
+                                  i, pszUri, fPathStyle, pszPath, g_aCreateFileURIs[i].pszCreatedPath);
+            }
+            else
+                RTTestIFailed("#%u: bad testcase; pszCreatedPath is NULL\n", i);
+        }
+        else if (rc != VERR_PATH_ZERO_LENGTH || RTStrCmp(pszUri, "file://") != 0)
+            RTTestIFailed("#%u: '%s'/%#x => %Rrc", i, pszUri, fPathStyle, rc);
+    }
+}
 
 
 static void tstRTUriFileCreateEx(void)
@@ -838,13 +877,7 @@ int main()
     bool fSavedMayPanic = RTAssertSetMayPanic(false);
     bool fSavedQuiet    = RTAssertSetQuiet(true);
 
-    /* File Uri path */
-    RTTestISub("RTUriFilePath");
-    for (size_t i = 0; i < RT_ELEMENTS(g_aCreateFileURIs); ++i)
-        CHECK_STR_API(RTUriFilePath(g_aCreateFileURIs[i].pszUri, g_aCreateFileURIs[i].uFormat),
-                      g_aCreateFileURIs[i].pszCreatedPath);
-
-    /* File Uri creation */
+    tstRTUriFilePathEx();
     tstRTUriFileCreateEx();
 
     RTAssertSetMayPanic(fSavedMayPanic);

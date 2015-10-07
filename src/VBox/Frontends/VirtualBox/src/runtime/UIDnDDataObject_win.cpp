@@ -315,7 +315,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                         QStringList lstFiles;
                         for (size_t i = 0; i < lstFilesURI.size(); i++)
                         {
-                            char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).toAscii().constData(), URI_FILE_FORMAT_AUTO);
+                            char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).toAscii().constData());
                             if (pszFilePath)
                             {
                                 lstFiles.append(pszFilePath);

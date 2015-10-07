@@ -1152,19 +1152,10 @@ RTDECL(int) RTUriFilePathEx(const char *pszUri, uint32_t fPathStyle, char **ppsz
 }
 
 
-RTDECL(char *) RTUriFilePath(const char *pszUri, uint32_t uFormat)
+RTDECL(char *) RTUriFilePath(const char *pszUri)
 {
-    uint32_t fPathStyle;
-    switch (uFormat)
-    {
-        case URI_FILE_FORMAT_WIN:  fPathStyle = RTPATH_STR_F_STYLE_DOS; break;
-        case URI_FILE_FORMAT_UNIX: fPathStyle = RTPATH_STR_F_STYLE_UNIX; break;
-        case URI_FILE_FORMAT_AUTO: fPathStyle = RTPATH_STR_F_STYLE_HOST; break;
-        default: AssertFailedReturn(NULL);
-    }
-
     char *pszPath = NULL;
-    int rc = RTUriFilePathEx(pszUri, fPathStyle, &pszPath, 0 /*cbPath*/, NULL /*pcchPath*/);
+    int rc = RTUriFilePathEx(pszUri, RTPATH_STR_F_STYLE_HOST, &pszPath, 0 /*cbPath*/, NULL /*pcchPath*/);
     if (RT_SUCCESS(rc))
         return pszPath;
     return NULL;

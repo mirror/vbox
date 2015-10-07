@@ -262,20 +262,15 @@ RTDECL(bool)   RTUriIsSchemeMatch(const char *pszUri, const char *pszScheme);
  * @{
  */
 
-/** Return the host format. */
-#define URI_FILE_FORMAT_AUTO  UINT32_C(0)
-/** Return a path in UNIX format style. */
-#define URI_FILE_FORMAT_UNIX  UINT32_C(1)
-/** Return a path in Windows format style. */
-#define URI_FILE_FORMAT_WIN   UINT32_C(2)
-
 /**
  * Creates a file URI.
  *
  * The returned pointer must be freed using RTStrFree().
  *
  * @returns The new URI on success, NULL otherwise.  Free With RTStrFree.
- * @param   pszPath             The path of the URI.
+ * @param   pszPath         The path to create an 'file://' URI for.  This is
+ *                          assumed to be using the default path style of the
+ *                          system.
  *
  * @sa      RTUriFileCreateEx, RTUriCreate
  */
@@ -313,11 +308,17 @@ RTDECL(int) RTUriFileCreateEx(const char *pszPath, uint32_t fPathStyle, char **p
 /**
  * Returns the file path encoded in the file URI.
  *
- * @returns the path if the URI contains one, NULL otherwise.
- * @param   pszUri              The URI to extract from.
- * @param   uFormat             In which format should the path returned.
+ * This differs a quite a bit from RTUriParsedPath in that it tries to be
+ * compatible with URL produced by older windows version.  This API is basically
+ * producing the same results as the PathCreateFromUrl API on Windows.
+ *
+ * @returns The path if the URI contains one, system default path style,
+ *          otherwise NULL.
+ * @param   pszUri          The alleged 'file://' URI to extract the path from.
+ *
+ * @sa      RTUriParsedPath, RTUriFilePathEx
  */
-RTDECL(char *) RTUriFilePath(const char *pszUri, uint32_t uFormat);
+RTDECL(char *) RTUriFilePath(const char *pszUri);
 
 /**
  * Queries the file path for the given file URI.
@@ -332,7 +333,7 @@ RTDECL(char *) RTUriFilePath(const char *pszUri, uint32_t uFormat);
  * @returns IPRT status code.
  * @retval  VERR_URI_NOT_FILE_SCHEME if not file scheme.
  *
- * @param   pszUri          The alleged file:// URI.
+ * @param   pszUri          The alleged file:// URI to extract the path from.
  * @param   fPathStyle      The output path style, exactly one of
  *                          RTPATH_STR_F_STYLE_HOST, RTPATH_STR_F_STYLE_DOS and
  *                          RTPATH_STR_F_STYLE_UNIX.  Must include iprt/path.h.

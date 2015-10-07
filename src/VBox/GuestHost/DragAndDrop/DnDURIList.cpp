@@ -341,7 +341,7 @@ int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
 
     /* Query the path component of a file URI. If this hasn't a
      * file scheme NULL is returned. */
-    char *pszSrcPath = RTUriFilePath(pszURI, URI_FILE_FORMAT_AUTO);
+    char *pszSrcPath = RTUriFilePath(pszURI);
     if (pszSrcPath)
     {
         /* Add the path to our internal file list (recursive in
@@ -459,8 +459,7 @@ int DnDURIList::RootFromURIData(const void *pvData, size_t cbData, uint32_t fFla
         /* Query the path component of a file URI. If this hasn't a
          * file scheme, NULL is returned. */
         const char *pszURI = lstURI.at(i).c_str();
-        char *pszFilePath = RTUriFilePath(pszURI,
-                                          URI_FILE_FORMAT_AUTO);
+        char *pszFilePath = RTUriFilePath(pszURI);
 #ifdef DEBUG_andy
         LogFlowFunc(("pszURI=%s, pszFilePath=%s\n", pszURI, pszFilePath));
 #endif

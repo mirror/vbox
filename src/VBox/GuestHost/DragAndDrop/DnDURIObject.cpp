@@ -254,7 +254,7 @@ int DnDURIObject::RebaseURIPath(RTCString &strPath,
                                 const RTCString &strBaseOld /* = "" */,
                                 const RTCString &strBaseNew /* = "" */)
 {
-    char *pszPath = RTUriFilePath(strPath.c_str(), URI_FILE_FORMAT_AUTO);
+    char *pszPath = RTUriFilePath(strPath.c_str());
     if (!pszPath) /* No URI? */
          pszPath = RTStrDup(strPath.c_str());
 
