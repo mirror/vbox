@@ -89,7 +89,7 @@
  *  @param hrc          The COM result code
  *  @param ThrowMeExpr  The expression which result to be thrown on failure.
  */
-#define AssertComRCThrow(hrc, ThrowObjExpr) \
+#define AssertComRCThrow(hrc, ThrowMeExpr) \
     do { if (SUCCEEDED(hrc)) { /*likely*/} else { AssertComRCFailed(hrc); throw (ThrowMeExpr); } } while (0)
 
 /**
