@@ -1189,6 +1189,22 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
                 mbuf_pkthdr_setheader(pMBuf, pvEthHdr); /* link-layer header */
                 mbuf_adj(pMBuf, cbEthHdr);              /* move to payload */
 
+#if 0 /* XXX: disabled since we don't request promiscuous from intnet */
+                /*
+                 * TODO: Since intnet knows whether it forwarded us
+                 * this packet because it's for us or because we are
+                 * promiscuous, it can perhaps set a flag for us in
+                 * INTNETSG::fFlags so that we don't have to re-check
+                 * it here.
+                 */
+                PCRTNETETHERHDR pcEthHdr = (PCRTNETETHERHDR)pvEthHdr;
+                if (   (pcEthHdr->DstMac.au8[0] & 1) == 0 /* unicast? */
+                    && memcmp(&pcEthHdr->DstMac, &pThis->u.s.MacAddr, sizeof(RTMAC)) != 0)
+                {
+                    mbuf_setflags_mask(pMBuf, MBUF_PROMISC, MBUF_PROMISC);
+                }
+#endif
+
                 bpf_tap_in(pIfNet, DLT_EN10MB, pMBuf, pvEthHdr, cbEthHdr);
                 errno_t err = ifnet_input(pIfNet, pMBuf, &stats);
                 if (err)
