@@ -16,7 +16,7 @@ Description: Compilation of the kernel module FAILED!
  name is probably linux-headers-<version> where <version> can be determined
  by 'uname -r') and execute
    
-   /sbin/rcvboxdrv setup
+   /sbin/vboxconfig
    
  as root.
 Description-de.UTF-8: Konnte das Kernmodul nicht compilieren!
@@ -27,7 +27,7 @@ Description-de.UTF-8: Konnte das Kernmodul nicht compilieren!
  Paket (möglicherweise linux-headers-<version> wobei Sie <version> mit
  'uname -r' herausfinden können) und führen Sie danach
    
-   /sbin/rcvboxdrv setup
+   /sbin/vboxconfig
    
  mit Root-Rechten aus.
 
@@ -45,7 +45,7 @@ Description: Should the vboxdrv kernel module be compiled now?
  KDIR=<full_path_to_vboxdrv_module> in /etc/default/virtualbox. You can also
  build the module later by executing
    
-   /sbin/rcvboxdrv setup
+   /sbin/vboxconfig
    
  as root.
 Description-de.UTF-8: Soll das Kernmodul jetzt compiliert werden?
@@ -59,7 +59,7 @@ Description-de.UTF-8: Soll das Kernmodul jetzt compiliert werden?
  in der Datei /etc/default/virtualbox angeben. Sie können das Kernmodul auch
  später compilieren, indem Sie
    
-   /sbin/rcvboxdrv setup
+   /sbin/vboxconfig
    
  mit Root-Rechten ausführen.
 
@@ -71,7 +71,7 @@ Description: Delete old vboxdrv kernel modules?
  might interfere with this version of VirtualBox. You can force re-compilation
  of the module later by executing
    
-   /sbin/rcvboxdrv setup
+   /sbin/vboxconfig
    
  as root.
 Description-de.UTF-8: Alte Kernmodule löschen?
@@ -79,7 +79,7 @@ Description-de.UTF-8: Alte Kernmodule löschen?
  eventuell nicht mit dieser Version von VirtualBox zusammen arbeiten. Das Compilieren
  des Kernmoduls können Sie später durch
    
-   /sbin/rcvboxdrv setup
+   /sbin/vboxconfig
    
  erzwingen.
 

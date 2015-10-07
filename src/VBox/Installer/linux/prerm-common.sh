@@ -57,4 +57,5 @@ remove_init_script vboxdrv
 stop_init_script vboxnet 2>/dev/null
 delrunlevel vboxnet 2>/dev/null
 remove_init_script vboxnet 2>/dev/null
+rm -f /sbin/vboxconfig
 exit 0

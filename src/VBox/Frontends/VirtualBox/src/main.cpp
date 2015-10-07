@@ -102,7 +102,7 @@ QString g_QStrHintLinuxNoDriver = QApplication::tr(
     "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
     "there is a permission problem with /dev/vboxdrv. Please reinstall the kernel "
     "module by executing<br/><br/>"
-    "  <font color=blue>'/sbin/rcvboxdrv setup'</font><br/><br/>"
+    "  <font color=blue>'/sbin/vboxconfig'</font><br/><br/>"
     "as root. If it is available in your distribution, you should install the "
     "DKMS package first. This package keeps track of Linux kernel changes and "
     "recompiles the vboxdrv kernel module if necessary."
@@ -119,7 +119,7 @@ QString g_QStrHintLinuxWrongDriverVersion = QApplication::tr(
     "The VirtualBox kernel modules do not match this version of "
     "VirtualBox. The installation of VirtualBox was apparently not "
     "successful. Executing<br/><br/>"
-    "  <font color=blue>'/sbin/rcvboxdrv setup'</font><br/><br/>"
+    "  <font color=blue>'/sbin/vboxconfig'</font><br/><br/>"
     "may correct this. Make sure that you do not mix the "
     "OSE version and the PUEL version of VirtualBox."
     );

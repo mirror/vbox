@@ -26,29 +26,20 @@ MY_PATH="$(dirname $(readlink -f -- "${0}"))/"
 cd "${MY_PATH}"
 . "./routines.sh"
 
-START=
-TARGET=
-for i in "$@"
-do
-    case "${i}" in
-        --start)
-            START=true
+START=true
+TARGET="${MY_PATH}"
+while test -n "${1}"; do
+    case "${1}" in
+        --nostart)
+            START=
             ;;
         *)
-            if test -z "${TARGET}" && test -d "${i}"; then
-                TARGET="${i}"
-            else
-                echo "Bad argument ${i}" >&2
-                exit 1
-            fi
+            echo "Bad argument ${1}" >&2
+            exit 1
             ;;
     esac
+    shift
 done
-
-if test -z "${TARGET}"; then
-    echo "$0: no installation target specified." >&2
-    exit 1
-fi
 
 # Remove any traces of DKMS from previous installations.
 for i in vboxhost vboxdrv vboxnetflt vboxnetadp; do
@@ -69,6 +60,8 @@ delrunlevel vboxautostart-service
 addrunlevel vboxautostart-service
 delrunlevel vboxweb-service
 addrunlevel vboxweb-service
+
+ln -sf "${MY_PATH}/postinst-common.sh" /sbin/vboxconfig
 
 test -n "${START}" &&
 {

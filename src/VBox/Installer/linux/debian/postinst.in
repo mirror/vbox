@@ -82,7 +82,7 @@ fi # $1 = "configure"
 #DEBHELPER#
 
 if test "${INSTALL_NO_VBOXDRV}" = 1; then
-  POSTINST_START=
+  POSTINST_START=--nostart
   # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
   if [ "$1" = "configure" ]; then
     rm -f /lib/modules/*/misc/vboxdrv.ko
@@ -91,7 +91,7 @@ if test "${INSTALL_NO_VBOXDRV}" = 1; then
     rm -f /lib/modules/*/misc/vboxpci.ko
   fi
 else
-  POSTINST_START=--start
+  POSTINST_START=
   # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
   if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
     if [ "$1" = "configure" ]; then
@@ -101,13 +101,13 @@ else
 Unable to find a precompiled module for the current kernel
 though module compilation denied by debconf setting.
 EOF
-        POSTINST_START=
+        POSTINST_START=--nostart
       else
         db_input low virtualbox/module-compilation-allowed || true
         db_go || true
         db_get virtualbox/module-compilation-allowed
         if [ "$RET" = "false" ]; then
-          POSTINST_START=
+          POSTINST_START=--nostart
         fi
       fi
     fi # $1 = "configure"
@@ -116,6 +116,6 @@ fi
 
 # Install and start the new service scripts.
 /usr/lib/virtualbox/prerm-common.sh || true
-/usr/lib/virtualbox/postinst-common.sh /usr/lib/virtualbox "${POSTINST_START}" > /dev/null || true
+/usr/lib/virtualbox/postinst-common.sh ${POSTINST_START} > /dev/null || true
 
 exit 0

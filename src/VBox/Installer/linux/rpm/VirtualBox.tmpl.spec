@@ -290,7 +290,7 @@ gtk-update-icon-cache -q /usr/share/icons/hicolor 2> /dev/null || :
 
 # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
 if test "${INSTALL_NO_VBOXDRV}" = 1; then
-  POSTINST_START=
+  POSTINST_START=--nostart
   if lsmod | grep -q "vboxdrv[^_-]"; then
     /usr/lib/virtualbox/vboxdrv.sh stop || true
   fi
@@ -300,7 +300,7 @@ if test "${INSTALL_NO_VBOXDRV}" = 1; then
   rm -f /lib/modules/*/misc/vboxnetadp.ko
   rm -f /lib/modules/*/misc/vboxpci.ko
 else
-  POSTINST_START=--start
+  POSTINST_START=
   if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
     # compile problem
     cat << EOF
@@ -312,7 +312,7 @@ EOF
 fi
 # Install and start the new service scripts.
 /usr/lib/virtualbox/prerm-common.sh || true
-/usr/lib/virtualbox/postinst-common.sh /usr/lib/virtualbox "${POSTINST_START}" > /dev/null || true
+/usr/lib/virtualbox/postinst-common.sh ${POSTINST_START} > /dev/null || true
 
 
 %preun
