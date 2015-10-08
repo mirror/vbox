@@ -1,5 +1,5 @@
-/** @file $Id$
- *
+/*  $Id$ */
+/** @file
  * VirtualBox X11 Additions graphics driver, DRI support
  */
 
