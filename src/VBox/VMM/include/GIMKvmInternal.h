@@ -196,7 +196,7 @@ typedef struct GIMKVM
     uint64_t                    u64WallClockMsr;
     /**  CPUID features: Basic. */
     uint32_t                    uBaseFeat;
-    /** Whether GIM needs to trap #UD exceptions. */
+    /** Whether GIM needs to trap \#UD exceptions. */
     bool                        fTrapXcptUD;
     /** Disassembler opcode of hypercall instruction native for this host CPU. */
     uint16_t                    uOpCodeNative;

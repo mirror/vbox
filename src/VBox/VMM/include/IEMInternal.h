@@ -43,7 +43,8 @@ RT_C_DECLS_BEGIN
  * Shorthand for:
  *    defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL)
  */
-#if defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL) && !defined(IEM_VERIFICATION_MODE_FULL)
+#if (defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL) && !defined(IEM_VERIFICATION_MODE_FULL)) \
+  || defined(DOXYGEN_RUNNING)
 # define IEM_VERIFICATION_MODE_FULL
 #endif
 
@@ -630,7 +631,8 @@ AssertCompileSize(IEMTASKSWITCH, 4);
 /** @def IEM_VERIFICATION_MODE
  * Indicates that one of the verfication modes are enabled.
  */
-#if (defined(IEM_VERIFICATION_MODE_FULL) || defined(IEM_VERIFICATION_MODE_MINIMAL)) && !defined(IEM_VERIFICATION_MODE)
+#if (defined(IEM_VERIFICATION_MODE_FULL) || defined(IEM_VERIFICATION_MODE_MINIMAL)) && !defined(IEM_VERIFICATION_MODE) \
+ || defined(DOXYGEN_RUNNING)
 # define IEM_VERIFICATION_MODE
 #endif
 

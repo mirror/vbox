@@ -59,7 +59,7 @@ typedef struct PDMBLKCACHEENTRY
     PPDMBLKLRULIST                  pList;
     /** Cache the entry belongs to. */
     PPDMBLKCACHE                    pBlkCache;
-    /** Flags for this entry. Combinations of PDMACFILECACHE_* #defines */
+    /** Flags for this entry. Combinations of PDMACFILECACHE_* \#defines */
     volatile uint32_t               fFlags;
     /** Reference counter. Prevents eviction of the entry if > 0. */
     volatile uint32_t               cRefs;

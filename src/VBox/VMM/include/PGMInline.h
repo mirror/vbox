@@ -224,6 +224,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   HCPhys      The physical address of the page.
  * @param   ppv         Where to store the mapping address.
+ * @param   SRC_POS     The source location of the caller.
  */
 DECLINLINE(int) pgmRZDynMapHCPageInlined(PVMCPU pVCpu, RTHCPHYS HCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
 {
@@ -263,6 +264,7 @@ DECLINLINE(int) pgmRZDynMapHCPageInlined(PVMCPU pVCpu, RTHCPHYS HCPhys, void **p
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPhys      The guest physical address of the page.
  * @param   ppv         Where to store the mapping address.
+ * @param   SRC_POS     The source location of the caller.
  */
 DECLINLINE(int) pgmRZDynMapGCPageV2Inlined(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
 {
@@ -323,6 +325,7 @@ DECLINLINE(int) pgmRZDynMapGCPageV2Inlined(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhy
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPhys      The guest physical address of the page.
  * @param   ppv         Where to store the mapping address.
+ * @param   SRC_POS     The source location of the caller.
  */
 DECLINLINE(int) pgmRZDynMapGCPageInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
 {
@@ -336,9 +339,10 @@ DECLINLINE(int) pgmRZDynMapGCPageInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **p
  *
  * @returns VBox status code, see pgmRZDynMapGCPageCommon for details.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   HCPhys      The physical address of the page.
+ * @param   GCPhys      The guest physical address of the page.
  * @param   ppv         Where to store the mapping address. The offset is
  *                      preserved.
+ * @param   SRC_POS     The source location of the caller.
  */
 DECLINLINE(int) pgmRZDynMapGCPageOffInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
 {
@@ -400,6 +404,7 @@ DECLINLINE(int) pgmRZDynMapGCPageOffInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void 
  * @returns pointer to the mapping.
  * @param   pVM         The cross context VM structure.
  * @param   pPage       The page.
+ * @param   SRC_POS     The source location of the caller.
  */
 DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage RTLOG_COMMA_SRC_POS_DECL)
 {
@@ -421,6 +426,7 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage RTLOG_COMMA
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pPage       The page.
+ * @param   SRC_POS     The source location of the caller.
  */
 DECLINLINE(void *) pgmPoolMapPageV2Inlined(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pPage RTLOG_COMMA_SRC_POS_DECL)
 {
@@ -1072,6 +1078,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
  *
  * @returns Pointer to the shadow PD.
  * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pPdpt       Pointer to the page directory pointer table.
  * @param   GCPtr       The address.
  */
 DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPU pVCpu, PX86PDPT pPdpt, RTGCPTR GCPtr)
@@ -1397,7 +1404,7 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 /**
  * Locks a page to prevent flushing (important for cr3 root pages or shadow pae pd pages).
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pPool       The pool.
  * @param   pPage       PGM pool page
  */
 DECLINLINE(void) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
@@ -1410,7 +1417,7 @@ DECLINLINE(void) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 /**
  * Unlocks a page to allow flushing again
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pPool       The pool.
  * @param   pPage       PGM pool page
  */
 DECLINLINE(void) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)

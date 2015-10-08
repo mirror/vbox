@@ -459,6 +459,7 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/VMM/VMMR3 \
 	src/VBox/VMM/VMMAll \
 	src/VBox/VMM/VMMSwitcher \
+	src/VBox/VMM/include \
 	src/VBox/Debugger \
 	src/VBox/Devices \
 	src/VBox/Devices/Audio \
@@ -675,26 +676,30 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/vmm/dbgf.h \
 	$(PATH_ROOT)/include/VBox/vmm/stam.h \
 	$(PATH_ROOT)/include/VBox/vmm/em.h \
+	$(PATH_ROOT)/include/VBox/vmm/hm.h \
+	$(PATH_ROOT)/include/VBox/vmm/hm_svm.h \
+	$(PATH_ROOT)/include/VBox/vmm/hm_vmx.h \
+	$(PATH_ROOT)/include/VBox/vmm/iem.h \
 	$(PATH_ROOT)/include/VBox/vmm/pdm.h \
 	$(PATH_ROOT)/include/VBox/vmm/rem.h \
 	$(PATH_ROOT)/include/VBox/vmm/iom.h \
 	$(PATH_ROOT)/include/VBox/vmm/cfgm.h \
+	$(PATH_ROOT)/include/VBox/vmm/gim.h \
 	$(PATH_ROOT)/include/VBox/vmm/tm.h \
 	$(PATH_ROOT)/include/VBox/vmm/csam.h \
 	$(PATH_ROOT)/include/VBox/vmm/ssm.h \
-	$(PATH_ROOT)/include/VBox/vmm/hm.h \
-	$(PATH_ROOT)/include/VBox/vmm/hm_svm.h \
-	$(PATH_ROOT)/include/VBox/vmm/hm_vmx.h \
 	\
 	$(PATH_ROOT)/src/VBox/VMM/include/CFGMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/CPUMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/DBGFInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/EMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/HMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/IEMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/IOMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/MMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/PDMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/PGMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/GIMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/CSAMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/PATMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/REMInternal.h \
@@ -755,19 +760,19 @@ $(PATH_TARGET)/Doxyfile.Core: Doxyfile.Core \
 		$(comp-vars VBOX_CORE_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
 		| $$(dir $$@)
 	$(QUIET)$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.Core.dep
-	$(CP) -f Doxyfile.Core $@.tmp
-	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(VBOX_CORE_DOXYFILE_OUTPUT)"
-	$(APPEND) $@.tmp "WARN_LOGFILE = $(VBOX_CORE_DOXYFILE_OUTPUT)/errors"
-	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include $(PATH_ROOT)/src/VBox/VMM $(PATH_ROOT)/src/VBox/Main/include "
-	$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
-	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "INPUT = $(VBOX_CORE_DOXYFILE_INPUT)"
-	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "PREDEFINED += $(DEFS) $(DEFS.$(KBUILD_TARGET)) $(DEFS.$(KBUILD_TARGET_ARCH)) $(ARCH_BITS_DEFS)"
-	$(APPEND) $@.tmp "PREDEFINED += ARCH_BITS=HC_ARCH_BITS R3_ARCH_BITS=HC_ARCH_BITS R0_ARCH_BITS=HC_ARCH_BITS "
-	$(APPEND) $@.tmp
-	$(MV) -f $@.tmp $@
+	$(QUIET)$(CP) -f Doxyfile.Core $@.tmp
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(VBOX_CORE_DOXYFILE_OUTPUT)"
+	$(QUIET)$(APPEND) $@.tmp "WARN_LOGFILE = $(VBOX_CORE_DOXYFILE_OUTPUT)/errors"
+	$(QUIET)$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include $(PATH_ROOT)/src/VBox/VMM $(PATH_ROOT)/src/VBox/Main/include "
+	$(QUIET)$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(APPEND) $@.tmp "INPUT = $(VBOX_CORE_DOXYFILE_INPUT)"
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += $(DEFS) $(DEFS.$(KBUILD_TARGET)) $(DEFS.$(KBUILD_TARGET_ARCH)) $(ARCH_BITS_DEFS)"
+	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += ARCH_BITS=HC_ARCH_BITS R3_ARCH_BITS=HC_ARCH_BITS R0_ARCH_BITS=HC_ARCH_BITS "
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(MV) -f $@.tmp $@
 	@$(APPEND) $(PATH_TARGET)/Doxyfile.Core.dep "DOXYGEN_OUTPUT_PREV = $(VBOX_CORE_DOXYFILE_OUTPUT)"
 	@$(APPEND) $(PATH_TARGET)/Doxyfile.Core.dep "DOXYGEN_INPUT_PREV = $(VBOX_CORE_DOXYFILE_INPUT)"
 
