@@ -4007,8 +4007,7 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     PVM  pVM              = pVCpu->CTX_SUFF(pVM);
     bool fInterceptDB     = false;
     bool fInterceptMovDRx = false;
-    if (   pVCpu->hm.s.fSingleInstruction
-        || DBGFIsStepping(pVCpu))
+    if (pVCpu->hm.s.fSingleInstruction)
     {
         /* If the CPU supports the monitor trap flag, use it for single stepping in DBGF and avoid intercepting #DB. */
         if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG)
@@ -7358,6 +7357,7 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     else if (   VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
              && !pVCpu->hm.s.fSingleInstruction)
     {
+        Assert(!DBGFIsStepping(pVCpu));
         int rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
         AssertRC(rc);
         bool const fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
@@ -7391,21 +7391,15 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 /**
  * Sets a pending-debug exception to be delivered to the guest if the guest is
- * single-stepping.
+ * single-stepping in the VMCS.
  *
  * @param   pVCpu           Pointer to the VMCPU.
- * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
- *                          out-of-sync. Make sure to update the required fields
- *                          before using them.
  */
-DECLINLINE(void) hmR0VmxSetPendingDebugXcpt(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(void) hmR0VmxSetPendingDebugXcptVmcs(PVMCPU pVCpu)
 {
     Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RFLAGS)); NOREF(pVCpu);
-    if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
-    {
-        int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
-        AssertRC(rc);
-    }
+    int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+    AssertRC(rc);
 }
 
 
@@ -7485,17 +7479,18 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSte
     if (   fBlockSti
         || fBlockMovSS)
     {
-        if (   !pVCpu->hm.s.fSingleInstruction
-            && !DBGFIsStepping(pVCpu))
+        if (!pVCpu->hm.s.fSingleInstruction)
         {
             /*
              * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD,
              * VMX_EXIT_MTF, VMX_EXIT_APIC_WRITE and VMX_EXIT_VIRTUALIZED_EOI.
              * See Intel spec. 27.3.4 "Saving Non-Register State".
              */
+            Assert(!DBGFIsStepping(pVCpu));
             int rc2 = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
             AssertRCReturn(rc2, rc2);
-            hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
+            if (pMixedCtx->eflags.Bits.u1TF)
+                hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
         }
         else if (pMixedCtx->eflags.Bits.u1TF)
         {
@@ -8911,7 +8906,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VMMRZCallRing3SetNotification(pVCpu, hmR0VmxCallRing3Callback, pCtx);
 
     int rc;
-    if (!pVCpu->hm.s.fSingleInstruction && !DBGFIsStepping(pVCpu))
+    if (!pVCpu->hm.s.fSingleInstruction)
         rc = hmR0VmxRunGuestCodeNormal(pVM, pVCpu, pCtx);
     else
         rc = hmR0VmxRunGuestCodeStep(pVM, pVCpu, pCtx);
@@ -9180,7 +9175,9 @@ DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
      *
      * See Intel spec. 32.2.1 "Debug Exceptions".
      */
-    hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
+    if (  !pVCpu->hm.s.fSingleInstruction
+        && pMixedCtx->eflags.Bits.u1TF)
+        hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
 
     return rc;
 }
@@ -10144,22 +10141,20 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         int rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
         rc     |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);    /* For long-mode checks in gimKvmHypercall(). */
 #endif
+        rc     |= hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc, rc);
 
         rc = GIMHypercall(pVCpu, pMixedCtx);
-        if (   rc == VINF_SUCCESS
-            || rc == VINF_GIM_R3_HYPERCALL)
-        {
-            /* If the hypercall changes anything other than guest general-purpose registers,
-               we would need to reload the guest changed bits here before VM-reentry. */
-            hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
-            return rc;
-        }
+        /* If the hypercall changes anything other than guest general-purpose registers,
+           we would need to reload the guest changed bits here before VM-entry. */
+        return rc;
     }
     else
+    {
         Log4(("hmR0VmxExitVmcall: Hypercalls not enabled\n"));
+        hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
+    }
 
-    hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
     return VINF_SUCCESS;
 }
 
@@ -10909,12 +10904,13 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     AssertRCReturn(rc2, rc2);
 
     /* Refer Intel spec. 27-5. "Exit Qualifications for I/O Instructions" for the format. */
-    uint32_t uIOPort   = VMX_EXIT_QUALIFICATION_IO_PORT(pVmxTransient->uExitQualification);
-    uint8_t  uIOWidth  = VMX_EXIT_QUALIFICATION_IO_WIDTH(pVmxTransient->uExitQualification);
-    bool     fIOWrite  = (   VMX_EXIT_QUALIFICATION_IO_DIRECTION(pVmxTransient->uExitQualification)
-                          == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT);
-    bool     fIOString = VMX_EXIT_QUALIFICATION_IO_IS_STRING(pVmxTransient->uExitQualification);
-    bool     fStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
+    uint32_t uIOPort      = VMX_EXIT_QUALIFICATION_IO_PORT(pVmxTransient->uExitQualification);
+    uint8_t  uIOWidth     = VMX_EXIT_QUALIFICATION_IO_WIDTH(pVmxTransient->uExitQualification);
+    bool     fIOWrite     = (   VMX_EXIT_QUALIFICATION_IO_DIRECTION(pVmxTransient->uExitQualification)
+                             == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT);
+    bool     fIOString    = VMX_EXIT_QUALIFICATION_IO_IS_STRING(pVmxTransient->uExitQualification);
+    bool     fGstStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
+    bool     fDbgStepping = pVCpu->hm.s.fSingleInstruction;
     AssertReturn(uIOWidth <= 3 && uIOWidth != 2, VERR_VMX_IPE_1);
 
     /* I/O operation lookup arrays. */
@@ -11048,8 +11044,11 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
             /** @todo Single-step for INS/OUTS with REP prefix? */
             HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RFLAGS);
         }
-        else if (fStepping)
-            hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
+        else if (  !fDbgStepping
+                 && fGstStepping)
+        {
+            hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
+        }
 
         /*
          * If any I/O breakpoints are armed, we need to check if one triggered
@@ -11282,10 +11281,11 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     }
 
     int rc = VERR_INTERNAL_ERROR_5;
-    if (   !DBGFIsStepping(pVCpu)
-        && !pVCpu->hm.s.fSingleInstruction
+    if (   !pVCpu->hm.s.fSingleInstruction
         && !pVmxTransient->fWasHyperDebugStateActive)
     {
+        Assert(!DBGFIsStepping(pVCpu));
+
         /* Don't intercept MOV DRx and #DB any more. */
         pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
@@ -11739,6 +11739,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
     uint32_t cbOp     = 0;
     PVM pVM           = pVCpu->CTX_SUFF(pVM);
+    bool fDbgStepping = pVCpu->hm.s.fSingleInstruction;
     rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
     if (RT_SUCCESS(rc))
     {
@@ -11753,7 +11754,9 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pMixedCtx->eflags.Bits.u1RF = 0;
                 pMixedCtx->rip += pDis->cbInstr;
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
-                hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
+                if (   !fDbgStepping
+                    && pMixedCtx->eflags.Bits.u1TF)
+                    hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCli);
                 break;
             }
@@ -11770,7 +11773,9 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                     Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
                 }
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
-                hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
+                if (   !fDbgStepping
+                    && pMixedCtx->eflags.Bits.u1TF)
+                    hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitSti);
                 break;
             }
@@ -11790,7 +11795,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 Log4(("POPF CS:EIP %04x:%04RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
                 uint32_t cbParm;
                 uint32_t uMask;
-                bool     fStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
+                bool     fGstStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
                 if (pDis->fPrefix & DISPREFIX_OPSIZE)
                 {
                     cbParm = 4;
@@ -11828,10 +11833,11 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                                     | HM_CHANGED_GUEST_RSP
                                     | HM_CHANGED_GUEST_RFLAGS);
-                /* Generate a pending-debug exception when stepping over POPF regardless of how POPF modifies EFLAGS.TF. */
-                if (fStepping)
-                    hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
-
+                /* Generate a pending-debug exception when the guest stepping over POPF regardless of how
+                   POPF restores EFLAGS.TF. */
+                if (  !fDbgStepping
+                    && fGstStepping)
+                    hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPopf);
                 break;
             }
@@ -11880,7 +11886,9 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                                     | HM_CHANGED_GUEST_RSP
                                     | HM_CHANGED_GUEST_RFLAGS);
-                hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
+                if (  !fDbgStepping
+                    && pMixedCtx->eflags.Bits.u1TF)
+                    hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPushf);
                 break;
             }
@@ -11889,9 +11897,9 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
             {
                 /** @todo Handle 32-bit operand sizes and check stack limits. See Intel
                  *        instruction reference. */
-                RTGCPTR  GCPtrStack = 0;
-                uint32_t uMask      = 0xffff;
-                bool     fStepping  = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
+                RTGCPTR  GCPtrStack    = 0;
+                uint32_t uMask         = 0xffff;
+                bool     fGstStepping  = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
                 uint16_t aIretFrame[3];
                 if (pDis->fPrefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
                 {
@@ -11924,8 +11932,9 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                                     | HM_CHANGED_GUEST_RSP
                                     | HM_CHANGED_GUEST_RFLAGS);
                 /* Generate a pending-debug exception when stepping over IRET regardless of how IRET modifies EFLAGS.TF. */
-                if (fStepping)
-                    hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
+                if (   !fDbgStepping
+                    && fGstStepping)
+                    hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
                 Log4(("IRET %#RX32 to %04x:%04x\n", GCPtrStack, pMixedCtx->cs.Sel, pMixedCtx->ip));
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIret);
                 break;

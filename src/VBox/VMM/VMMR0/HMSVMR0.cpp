@@ -1443,7 +1443,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
      * trap flag in the guest EFLAGS since AMD-V doesn't have a trap flag on
      * the VMM level like the VT-x implementations does.
      */
-    bool const fStepping = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
+    bool const fStepping = pVCpu->hm.s.fSingleInstruction;
     if (fStepping)
     {
         pVCpu->hm.s.fClearTrapFlag = true;
@@ -1451,6 +1451,8 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         fInterceptDB = true;
         fInterceptMovDRx = true; /* Need clean DR6, no guest mess. */
     }
+    else
+        Assert(!DBGFIsStepping(pVCpu));
 
     if (   fStepping
         || (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
@@ -3473,7 +3475,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pCtx);
 
     int rc;
-    if (!pVCpu->hm.s.fSingleInstruction && !DBGFIsStepping(pVCpu))
+    if (!pVCpu->hm.s.fSingleInstruction)
         rc = hmR0SvmRunGuestCodeNormal(pVM, pVCpu, pCtx);
     else
         rc = hmR0SvmRunGuestCodeStep(pVM, pVCpu, pCtx);
@@ -5156,15 +5158,11 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     {
         if (pVCpu->hm.s.fHypercallsEnabled)
         {
+            hmR0SvmUpdateRip(pVCpu, pCtx, 3);
             rc = GIMHypercall(pVCpu, pCtx);
-            if (   rc == VINF_SUCCESS
-                || rc == VINF_GIM_R3_HYPERCALL)
-            {
-                /* If the hypercall changes anything other than guest general-purpose registers,
-                   we would need to reload the guest changed bits here before VM-reentry. */
-                hmR0SvmUpdateRip(pVCpu, pCtx, 3);
-                return rc;
-            }
+            /* If the hypercall changes anything other than guest general-purpose registers,
+               we would need to reload the guest changed bits here before VM-entry. */
+            return rc;
         }
         else
             Log4(("hmR0SvmExitVmmCall: Hypercalls not enabled\n"));
