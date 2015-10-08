@@ -46,7 +46,10 @@ typedef int socklen_t;
 
 struct HostDnsServiceResolvConf::Data
 {
-    Data(const char *fileName):resolvConfFilename(fileName){};
+    Data(const char *fileName)
+        : resolvConfFilename(fileName)
+    {
+    };
 
     std::string resolvConfFilename;
 };
@@ -106,3 +109,4 @@ HRESULT HostDnsServiceResolvConf::readResolvConf()
 
     return S_OK;
 }
+
