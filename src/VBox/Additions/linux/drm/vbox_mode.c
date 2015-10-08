@@ -1,5 +1,5 @@
-/** @file $Id$
- *
+/* $Id$ */
+/** @file
  * VirtualBox Additions Linux kernel video driver
  */
 
