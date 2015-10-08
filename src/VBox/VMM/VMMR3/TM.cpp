@@ -284,7 +284,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
      */
     pVM->tm.s.pfnVirtualGetRawR3                 = tmVirtualNanoTSRediscover;
     pVM->tm.s.VirtualGetRawDataR3.pfnRediscover  = tmVirtualNanoTSRediscover;
-    pVM->tm.s.VirtualGetRawDataR3.pfnBad         = tmVirtualNanoTSBadPrev;
+    pVM->tm.s.VirtualGetRawDataR3.pfnBad         = tmVirtualNanoTSBad;
     pVM->tm.s.VirtualGetRawDataR3.pfnBadCpuIndex = tmVirtualNanoTSBadCpuIndex;
     pVM->tm.s.VirtualGetRawDataR3.pu64Prev       = &pVM->tm.s.u64VirtualRawPrev;
     pVM->tm.s.VirtualGetRawDataRC.pu64Prev       = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
@@ -1019,7 +1019,7 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
      */
     if (!HMIsEnabled(pVM))
     {
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBadPrev",       &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBad",           &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
         AssertRCReturn(rc, rc);
         rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBadCpuIndex",   &pVM->tm.s.VirtualGetRawDataRC.pfnBadCpuIndex);
         AssertRCReturn(rc, rc);
@@ -1028,7 +1028,7 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
         pVM->tm.s.pfnVirtualGetRawRC = pVM->tm.s.VirtualGetRawDataRC.pfnRediscover;
     }
 
-    rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBadPrev",       &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
+    rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBad",           &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
     AssertRCReturn(rc, rc);
     rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBadCpuIndex",   &pVM->tm.s.VirtualGetRawDataR0.pfnBadCpuIndex);
     AssertRCReturn(rc, rc);

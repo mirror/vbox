@@ -69,7 +69,7 @@
  *    When caching is enabled, the page isn't flush but remains in the cache.
  *
  *
- * @section sec_pgm_pool_impl       Monitoring
+ * @section sec_pgm_pool_monitoring Monitoring
  *
  * We always monitor PAGE_SIZE chunks of memory. When we've got multiple shadow
  * pages for the same PAGE_SIZE of guest memory (PAE and mixed PD/PT) the pages

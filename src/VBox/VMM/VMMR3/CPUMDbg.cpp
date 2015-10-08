@@ -34,7 +34,7 @@
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGet_Generic(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -57,7 +57,7 @@ static DECLCALLBACK(int) cpumR3RegGet_Generic(void *pvUser, PCDBGFREGDESC pDesc,
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnSet}
+ * @interface_method_impl{DBGFREGDESC,pfnSet}
  */
 static DECLCALLBACK(int) cpumR3RegSet_Generic(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -103,7 +103,7 @@ static DECLCALLBACK(int) cpumR3RegSet_Generic(void *pvUser, PCDBGFREGDESC pDesc,
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGet_XStateGeneric(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -126,7 +126,7 @@ static DECLCALLBACK(int) cpumR3RegGet_XStateGeneric(void *pvUser, PCDBGFREGDESC 
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnSet}
+ * @interface_method_impl{DBGFREGDESC,pfnSet}
  */
 static DECLCALLBACK(int) cpumR3RegSet_XStateGeneric(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -173,7 +173,7 @@ static DECLCALLBACK(int) cpumR3RegSet_XStateGeneric(void *pvUser, PCDBGFREGDESC 
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegSet_seg(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -184,7 +184,7 @@ static DECLCALLBACK(int) cpumR3RegSet_seg(void *pvUser, PCDBGFREGDESC pDesc, PCD
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGet_gdtr(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -201,7 +201,7 @@ static DECLCALLBACK(int) cpumR3RegGet_gdtr(void *pvUser, PCDBGFREGDESC pDesc, PD
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegSet_gdtr(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -211,7 +211,7 @@ static DECLCALLBACK(int) cpumR3RegSet_gdtr(void *pvUser, PCDBGFREGDESC pDesc, PC
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGet_idtr(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -228,7 +228,7 @@ static DECLCALLBACK(int) cpumR3RegGet_idtr(void *pvUser, PCDBGFREGDESC pDesc, PD
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegSet_idtr(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -272,7 +272,7 @@ DECLINLINE(uint16_t) cpumR3RegCalcFpuTagFromFxSave(PCX86FXSTATE pFpu, unsigned i
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGet_ftw(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -295,7 +295,7 @@ static DECLCALLBACK(int) cpumR3RegGet_ftw(void *pvUser, PCDBGFREGDESC pDesc, PDB
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegSet_ftw(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -305,7 +305,7 @@ static DECLCALLBACK(int) cpumR3RegSet_ftw(void *pvUser, PCDBGFREGDESC pDesc, PCD
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGet_Dummy(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -332,7 +332,7 @@ static DECLCALLBACK(int) cpumR3RegGet_Dummy(void *pvUser, PCDBGFREGDESC pDesc, P
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnSet}
+ * @interface_method_impl{DBGFREGDESC,pfnSet}
  */
 static DECLCALLBACK(int) cpumR3RegSet_Dummy(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -349,7 +349,7 @@ static DECLCALLBACK(int) cpumR3RegSet_Dummy(void *pvUser, PCDBGFREGDESC pDesc, P
  */
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGstGet_crX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -371,7 +371,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_crX(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGstSet_crX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -429,7 +429,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_crX(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGstGet_drX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -451,7 +451,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_drX(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGstSet_drX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -499,7 +499,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_drX(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGstGet_msr(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -528,7 +528,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGstSet_msr(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -587,7 +587,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGstGet_stN(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -606,7 +606,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegGstSet_stN(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -623,7 +623,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
  */
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegHyperGet_crX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -653,7 +653,7 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_crX(void *pvUser, PCDBGFREGDESC pDesc
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegHyperSet_crX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -664,7 +664,7 @@ static DECLCALLBACK(int) cpumR3RegHyperSet_crX(void *pvUser, PCDBGFREGDESC pDesc
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegHyperGet_drX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -695,7 +695,7 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_drX(void *pvUser, PCDBGFREGDESC pDesc
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegHyperSet_drX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
@@ -706,7 +706,7 @@ static DECLCALLBACK(int) cpumR3RegHyperSet_drX(void *pvUser, PCDBGFREGDESC pDesc
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegHyperGet_msr(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
@@ -727,7 +727,7 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_msr(void *pvUser, PCDBGFREGDESC pDesc
 
 
 /**
- * @interface_method_impl{DBGFREGDESC, pfnGet}
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
 static DECLCALLBACK(int) cpumR3RegHyperSet_msr(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {

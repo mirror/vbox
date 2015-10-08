@@ -86,6 +86,7 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PCPDMCRITSECT pCritSe
  *
  * @param   pCritSect       The critical section.
  * @param   hNativeSelf     The native handle of this thread.
+ * @param   pSrcPos         The source position of the lock operation.
  */
 DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
@@ -116,6 +117,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
  *
  * @param   pCritSect           The critsect.
  * @param   hNativeSelf         The native thread handle.
+ * @param   pSrcPos             The source position of the lock operation.
  */
 static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
@@ -210,7 +212,7 @@ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD 
  *
  * @param   pCritSect           The PDM critical section to enter.
  * @param   rcBusy              The status code to return when we're in GC or R0
- *                              and the section is busy.
+ * @param   pSrcPos             The source position of the lock operation.
  */
 DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos)
 {
@@ -378,11 +380,8 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
  *                              call if necessary.
  * @param   uId                 Some kind of locking location ID.  Typically a
  *                              return address up the stack.  Optional (0).
- * @param   pszFile             The file where the lock is being acquired from.
- *                              Optional.
- * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The function where the lock is being acquired
- *                              from.  Optional.
+ * @param   SRC_POS             The source position where to lock is being
+ *                              acquired from.  Optional.
  */
 VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
@@ -406,6 +405,7 @@ VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTP
  *          during the operation.
  *
  * @param   pCritSect   The critical section.
+ * @param   pSrcPos     The source position of the lock operation.
  */
 static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos)
 {
@@ -486,11 +486,8 @@ VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
  * @param   pCritSect           The critical section.
  * @param   uId                 Some kind of locking location ID.  Typically a
  *                              return address up the stack.  Optional (0).
- * @param   pszFile             The file where the lock is being acquired from.
- *                              Optional.
- * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The function where the lock is being acquired
- *                              from.  Optional.
+ * @param   SRC_POS             The source position where to lock is being
+ *                              acquired from.  Optional.
  */
 VMMDECL(int) PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {

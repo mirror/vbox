@@ -1466,7 +1466,7 @@ done:
  * @param   fCode32     16 or 32 bits code
  * @param   pfnCSAMR3Analyse Callback for testing the disassembled instruction
  * @param   pUserData   User pointer (callback specific)
- *
+ * @param   pCacheRec   GC to HC cache record.
  */
 static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, bool fCode32,
                                    PFN_CSAMR3ANALYSE pfnCSAMR3Analyse, void *pUserData, PCSAMP2GLOOKUPREC pCacheRec)
@@ -2350,6 +2350,7 @@ static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTRCPTR GCPtr, size_t
  * @param   pVCpu           Pointer to the cross context CPU context for the
  *                          calling EMT.
  * @param   GCPtr           The virtual address the guest has changed.
+ * @param   pvUser          Ignored.
  *
  * @remarks Not currently called by PGM. It was actually only called for a month
  *          back in 2006...

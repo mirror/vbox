@@ -190,7 +190,7 @@ PHYSICAL_TABLE and AVIC LOGICAL_TABLE Pointers). */
 /** @name SVM transient.
  *
  * A state structure for holding miscellaneous information across AMD-V
- * VMRUN/#VMEXIT operation, restored after the transition.
+ * VMRUN/\#VMEXIT operation, restored after the transition.
  *
  * @{ */
 typedef struct SVMTRANSIENT
@@ -201,27 +201,27 @@ typedef struct SVMTRANSIENT
     uint32_t        u32Alignment0;
 #endif
 
-    /** The #VMEXIT exit code (the EXITCODE field in the VMCB). */
+    /** The \#VMEXIT exit code (the EXITCODE field in the VMCB). */
     uint64_t        u64ExitCode;
     /** The guest's TPR value used for TPR shadowing. */
     uint8_t         u8GuestTpr;
     /** Alignment. */
     uint8_t         abAlignment0[7];
 
-    /** Whether the guest FPU state was active at the time of #VMEXIT. */
+    /** Whether the guest FPU state was active at the time of \#VMEXIT. */
     bool            fWasGuestFPUStateActive;
-    /** Whether the guest debug state was active at the time of #VMEXIT. */
+    /** Whether the guest debug state was active at the time of \#VMEXIT. */
     bool            fWasGuestDebugStateActive;
-    /** Whether the hyper debug state was active at the time of #VMEXIT. */
+    /** Whether the hyper debug state was active at the time of \#VMEXIT. */
     bool            fWasHyperDebugStateActive;
     /** Whether the TSC offset mode needs to be updated. */
     bool            fUpdateTscOffsetting;
-    /** Whether the TSC_AUX MSR needs restoring on #VMEXIT. */
+    /** Whether the TSC_AUX MSR needs restoring on \#VMEXIT. */
     bool            fRestoreTscAuxMsr;
-    /** Whether the #VMEXIT was caused by a page-fault during delivery of a
+    /** Whether the \#VMEXIT was caused by a page-fault during delivery of a
      *  contributary exception or a page-fault. */
     bool            fVectoringDoublePF;
-    /** Whether the #VMEXIT was caused by a page-fault during delivery of an
+    /** Whether the \#VMEXIT was caused by a page-fault during delivery of an
      *  external interrupt or NMI. */
     bool            fVectoringPF;
 } SVMTRANSIENT, *PSVMTRANSIENT;
@@ -234,9 +234,9 @@ AssertCompileMemberAlignment(SVMTRANSIENT, fWasGuestFPUStateActive, sizeof(uint6
  */
 typedef enum SVMMSREXITREAD
 {
-    /** Reading this MSR causes a #VMEXIT. */
+    /** Reading this MSR causes a \#VMEXIT. */
     SVMMSREXIT_INTERCEPT_READ = 0xb,
-    /** Reading this MSR does not cause a #VMEXIT. */
+    /** Reading this MSR does not cause a \#VMEXIT. */
     SVMMSREXIT_PASSTHRU_READ
 } SVMMSREXITREAD;
 
@@ -245,14 +245,14 @@ typedef enum SVMMSREXITREAD
  */
 typedef enum SVMMSREXITWRITE
 {
-    /** Writing to this MSR causes a #VMEXIT. */
+    /** Writing to this MSR causes a \#VMEXIT. */
     SVMMSREXIT_INTERCEPT_WRITE = 0xd,
-    /** Writing to this MSR does not cause a #VMEXIT. */
+    /** Writing to this MSR does not cause a \#VMEXIT. */
     SVMMSREXIT_PASSTHRU_WRITE
 } SVMMSREXITWRITE;
 
 /**
- * SVM #VMEXIT handler.
+ * SVM \#VMEXIT handler.
  *
  * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
@@ -269,7 +269,7 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
 static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu);
 static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
-/** @name #VMEXIT handlers.
+/** @name \#VMEXIT handlers.
  * @{
  */
 static FNSVMEXITHANDLER hmR0SvmExitIntr;
@@ -868,7 +868,6 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 /**
  * Flushes the appropriate tagged-TLB entries.
  *
- * @param    pVM        Pointer to the VM.
  * @param    pVCpu      Pointer to the VMCPU.
  */
 static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
@@ -2558,7 +2557,7 @@ DECLINLINE(uint32_t) hmR0SvmGetGuestIntrShadow(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 /**
  * Sets the virtual interrupt intercept control in the VMCB which
- * instructs AMD-V to cause a #VMEXIT as soon as the guest is in a state to
+ * instructs AMD-V to cause a \#VMEXIT as soon as the guest is in a state to
  * receive interrupts.
  *
  * @param pVmcb         Pointer to the VM control block.
@@ -2579,7 +2578,7 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 
 /**
  * Sets the IRET intercept control in the VMCB which instructs AMD-V to cause a
- * #VMEXIT as soon as a guest starts executing an IRET. This is used to unblock
+ * \#VMEXIT as soon as a guest starts executing an IRET. This is used to unblock
  * virtual NMIs.
  *
  * @param pVmcb         Pointer to the VM control block.
@@ -3492,7 +3491,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Handles a #VMEXIT (for all EXITCODE values except SVM_EXIT_INVALID).
+ * Handles a \#VMEXIT (for all EXITCODE values except SVM_EXIT_INVALID).
  *
  * @returns VBox status code (informational status codes included).
  * @param   pVCpu           Pointer to the VMCPU.
@@ -3805,6 +3804,7 @@ static int hmR0SvmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTX pC
  * @retval  VERR_*                  Fatal errors.
  *
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        The guest CPU context.
  *
  * @remarks Updates the RIP if the instruction was executed successfully.
@@ -3832,7 +3832,7 @@ static int hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Sets an invalid-opcode (#UD) exception as pending-for-injection into the VM.
+ * Sets an invalid-opcode (\#UD) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
@@ -3848,7 +3848,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptUD(PVMCPU pVCpu)
 
 
 /**
- * Sets a debug (#DB) exception as pending-for-injection into the VM.
+ * Sets a debug (\#DB) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
@@ -3864,7 +3864,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDB(PVMCPU pVCpu)
 
 
 /**
- * Sets a page fault (#PF) exception as pending-for-injection into the VM.
+ * Sets a page fault (\#PF) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Pointer to the guest-CPU context.
@@ -3895,8 +3895,8 @@ DECLINLINE(void) hmR0SvmSetPendingXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t u
 
 
 /**
- * Sets a device-not-available (#NM) exception as pending-for-injection into the
- * VM.
+ * Sets a device-not-available (\#NM) exception as pending-for-injection into
+ * the VM.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
@@ -3912,7 +3912,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptNM(PVMCPU pVCpu)
 
 
 /**
- * Sets a math-fault (#MF) exception as pending-for-injection into the VM.
+ * Sets a math-fault (\#MF) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
@@ -3928,7 +3928,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptMF(PVMCPU pVCpu)
 
 
 /**
- * Sets a double fault (#DF) exception as pending-for-injection into the VM.
+ * Sets a double fault (\#DF) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
@@ -4060,9 +4060,9 @@ DECLINLINE(bool) hmR0SvmIsContributoryXcpt(const uint32_t uVector)
  * IDT.
  *
  * @returns VBox status code (informational error codes included).
- * @retval VINF_SUCCESS if we should continue handling the #VMEXIT.
- * @retval VINF_HM_DOUBLE_FAULT if a #DF condition was detected and we ought to
- *         continue execution of the guest which will delivery the #DF.
+ * @retval VINF_SUCCESS if we should continue handling the \#VMEXIT.
+ * @retval VINF_HM_DOUBLE_FAULT if a \#DF condition was detected and we ought to
+ *         continue execution of the guest which will delivery the \#DF.
  * @retval VINF_EM_RESET if we detected a triple-fault condition.
  *
  * @param   pVCpu           Pointer to the VMCPU.
@@ -4205,7 +4205,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   cb          RIP increment value in bytes.
  *
- * @remarks Use this function only from #VMEXIT's where the NRIP value is valid
+ * @remarks Use this function only from \#VMEXIT's where the NRIP value is valid
  *          when NRIP_SAVE is supported by the CPU!
  */
 DECLINLINE(void) hmR0SvmUpdateRip(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t cb)
@@ -4225,12 +4225,12 @@ DECLINLINE(void) hmR0SvmUpdateRip(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t cb)
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- #VMEXIT handlers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
-/** @name #VMEXIT handlers.
+/** @name \#VMEXIT handlers.
  * @{
  */
 
 /**
- * #VMEXIT handler for external interrupts, NMIs, FPU assertion freeze and INIT
+ * \#VMEXIT handler for external interrupts, NMIs, FPU assertion freeze and INIT
  * signals (SVM_EXIT_INTR, SVM_EXIT_NMI, SVM_EXIT_FERR_FREEZE, SVM_EXIT_INIT).
  */
 HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -4255,7 +4255,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 
 
 /**
- * #VMEXIT handler for WBINVD (SVM_EXIT_WBINVD). Conditional #VMEXIT.
+ * \#VMEXIT handler for WBINVD (SVM_EXIT_WBINVD). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitWbinvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4270,7 +4270,7 @@ HMSVM_EXIT_DECL hmR0SvmExitWbinvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for INVD (SVM_EXIT_INVD). Unconditional #VMEXIT.
+ * \#VMEXIT handler for INVD (SVM_EXIT_INVD). Unconditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitInvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4285,7 +4285,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 
 
 /**
- * #VMEXIT handler for INVD (SVM_EXIT_CPUID). Conditional #VMEXIT.
+ * \#VMEXIT handler for INVD (SVM_EXIT_CPUID). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4308,7 +4308,7 @@ HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 
 
 /**
- * #VMEXIT handler for RDTSC (SVM_EXIT_RDTSC). Conditional #VMEXIT.
+ * \#VMEXIT handler for RDTSC (SVM_EXIT_RDTSC). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4334,7 +4334,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 
 
 /**
- * #VMEXIT handler for RDTSCP (SVM_EXIT_RDTSCP). Conditional #VMEXIT.
+ * \#VMEXIT handler for RDTSCP (SVM_EXIT_RDTSCP). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4357,7 +4357,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for RDPMC (SVM_EXIT_RDPMC). Conditional #VMEXIT.
+ * \#VMEXIT handler for RDPMC (SVM_EXIT_RDPMC). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitRdpmc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4379,7 +4379,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdpmc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 
 
 /**
- * #VMEXIT handler for INVLPG (SVM_EXIT_INVLPG). Conditional #VMEXIT.
+ * \#VMEXIT handler for INVLPG (SVM_EXIT_INVLPG). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4397,7 +4397,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for HLT (SVM_EXIT_HLT). Conditional #VMEXIT.
+ * \#VMEXIT handler for HLT (SVM_EXIT_HLT). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4414,7 +4414,7 @@ HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
 
 
 /**
- * #VMEXIT handler for MONITOR (SVM_EXIT_MONITOR). Conditional #VMEXIT.
+ * \#VMEXIT handler for MONITOR (SVM_EXIT_MONITOR). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4436,7 +4436,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
 
 /**
- * #VMEXIT handler for MWAIT (SVM_EXIT_MWAIT). Conditional #VMEXIT.
+ * \#VMEXIT handler for MWAIT (SVM_EXIT_MWAIT). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4468,8 +4468,8 @@ HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 
 
 /**
- * #VMEXIT handler for shutdown (triple-fault) (SVM_EXIT_SHUTDOWN).
- * Conditional #VMEXIT.
+ * \#VMEXIT handler for shutdown (triple-fault) (SVM_EXIT_SHUTDOWN). Conditional
+ * \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitShutdown(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4479,7 +4479,7 @@ HMSVM_EXIT_DECL hmR0SvmExitShutdown(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 
 
 /**
- * #VMEXIT handler for CRx reads (SVM_EXIT_READ_CR*). Conditional #VMEXIT.
+ * \#VMEXIT handler for CRx reads (SVM_EXIT_READ_CR*). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4500,7 +4500,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
 
 /**
- * #VMEXIT handler for CRx writes (SVM_EXIT_WRITE_CR*). Conditional #VMEXIT.
+ * \#VMEXIT handler for CRx writes (SVM_EXIT_WRITE_CR*). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4548,8 +4548,8 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 
 
 /**
- * #VMEXIT handler for instructions that result in a #UD exception delivered to
- * the guest.
+ * \#VMEXIT handler for instructions that result in a \#UD exception delivered
+ * to the guest.
  */
 HMSVM_EXIT_DECL hmR0SvmExitSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4560,7 +4560,8 @@ HMSVM_EXIT_DECL hmR0SvmExitSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRA
 
 
 /**
- * #VMEXIT handler for MSR read and writes (SVM_EXIT_MSR). Conditional #VMEXIT.
+ * \#VMEXIT handler for MSR read and writes (SVM_EXIT_MSR). Conditional
+ * \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4662,7 +4663,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
 
 
 /**
- * #VMEXIT handler for DRx read (SVM_EXIT_READ_DRx). Conditional #VMEXIT.
+ * \#VMEXIT handler for DRx read (SVM_EXIT_READ_DRx). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4726,7 +4727,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
 
 /**
- * #VMEXIT handler for DRx write (SVM_EXIT_WRITE_DRx). Conditional #VMEXIT.
+ * \#VMEXIT handler for DRx write (SVM_EXIT_WRITE_DRx). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitWriteDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4740,7 +4741,7 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 
 
 /**
- * #VMEXIT handler for XCRx write (SVM_EXIT_XSETBV). Conditional #VMEXIT.
+ * \#VMEXIT handler for XCRx write (SVM_EXIT_XSETBV). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXsetbv(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4761,7 +4762,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXsetbv(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for I/O instructions (SVM_EXIT_IOIO). Conditional #VMEXIT.
+ * \#VMEXIT handler for I/O instructions (SVM_EXIT_IOIO). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4979,8 +4980,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
 
 /**
- * #VMEXIT handler for Nested Page-faults (SVM_EXIT_NPF). Conditional
- * #VMEXIT.
+ * \#VMEXIT handler for Nested Page-faults (SVM_EXIT_NPF). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5083,7 +5083,8 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 
 
 /**
- * #VMEXIT handler for virtual interrupt (SVM_EXIT_VINTR). Conditional #VMEXIT.
+ * \#VMEXIT handler for virtual interrupt (SVM_EXIT_VINTR). Conditional
+ * \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5104,7 +5105,8 @@ HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 
 
 /**
- * #VMEXIT handler for task switches (SVM_EXIT_TASK_SWITCH). Conditional #VMEXIT.
+ * \#VMEXIT handler for task switches (SVM_EXIT_TASK_SWITCH). Conditional
+ * \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5136,7 +5138,7 @@ HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT
 
 
 /**
- * #VMEXIT handler for VMMCALL (SVM_EXIT_VMMCALL). Conditional #VMEXIT.
+ * \#VMEXIT handler for VMMCALL (SVM_EXIT_VMMCALL). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5174,7 +5176,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
 
 /**
- * #VMEXIT handler for VMMCALL (SVM_EXIT_VMMCALL). Conditional #VMEXIT.
+ * \#VMEXIT handler for VMMCALL (SVM_EXIT_VMMCALL). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitPause(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5185,7 +5187,7 @@ HMSVM_EXIT_DECL hmR0SvmExitPause(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 
 
 /**
- * #VMEXIT handler for IRET (SVM_EXIT_IRET). Conditional #VMEXIT.
+ * \#VMEXIT handler for IRET (SVM_EXIT_IRET). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5204,8 +5206,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 
 
 /**
- * #VMEXIT handler for page-fault exceptions (SVM_EXIT_EXCEPTION_E). Conditional
- * #VMEXIT.
+ * \#VMEXIT handler for page-fault exceptions (SVM_EXIT_EXCEPTION_E).
+ * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5324,8 +5326,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for device-not-available exceptions (SVM_EXIT_EXCEPTION_7).
- * Conditional #VMEXIT.
+ * \#VMEXIT handler for device-not-available exceptions (SVM_EXIT_EXCEPTION_7).
+ * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5375,8 +5377,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for undefined opcode (SVM_EXIT_EXCEPTION_6).
- * Conditional #VMEXIT.
+ * \#VMEXIT handler for undefined opcode (SVM_EXIT_EXCEPTION_6). Conditional
+ * \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5395,8 +5397,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for math-fault exceptions (SVM_EXIT_EXCEPTION_10).
- * Conditional #VMEXIT.
+ * \#VMEXIT handler for math-fault exceptions (SVM_EXIT_EXCEPTION_10).
+ * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5430,8 +5432,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for debug exceptions (SVM_EXIT_EXCEPTION_1). Conditional
- * #VMEXIT.
+ * \#VMEXIT handler for debug exceptions (SVM_EXIT_EXCEPTION_1). Conditional
+ * \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {

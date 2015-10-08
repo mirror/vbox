@@ -483,7 +483,22 @@ PREDEFINED += \
     RTCALL= \
     DECLVBGL(type)=type \
     DECLR0VBGL(type)=type \
-    USBLIB_DECL(type)=type
+    USBLIB_DECL(type)=type \
+    VMMR0_INT_DECL(type)=type \
+    VMMR3_INT_DECL(type)=type \
+    VMMRC_INT_DECL(type)=type \
+    VMMRZ_INT_DECL(type)=type
+
+# templated fun.
+PREDEFINED += \
+    "PGM_BTH_DECL(type,name)=type pgmBth##name" \
+    "PGM_SHW_DECL(type,name)=type pgmShw##name" \
+    "PGM_GST_DECL(type,name)=type pgmGst##name" \
+    "PGM_BTH_NAME(name)=pgmBth##name" \
+    "PGM_SHW_NAME(name)=pgmShw##name" \
+    "PGM_GST_NAME(name)=pgmGst##name" \
+    PGM_ALL_CB_DECL(type)=type \
+    PGM_ALL_CB2_DECL(type)=type \
 
 # context hacks.
 PREDEFINED            += RCPTRTYPE(RCType)=RCType

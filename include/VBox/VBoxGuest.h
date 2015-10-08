@@ -43,7 +43,6 @@
  */
 
 /** @defgroup grp_vboxguest_ioc  VirtualBox Guest Additions Driver Interface
- * @addtogroup grp_vboxguest
  * @{
  */
 

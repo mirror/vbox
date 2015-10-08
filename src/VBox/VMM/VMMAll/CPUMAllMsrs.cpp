@@ -362,7 +362,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32APerf(PVMCPU pVCpu, uint32_t idM
 }
 
 
-/** @callback_method_impl{FNCPUMWRMSR} */
+/** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrCap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     /* This is currently a bit weird. :-) */

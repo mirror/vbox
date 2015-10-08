@@ -131,7 +131,7 @@ VMMR3_INT_DECL(int) PDMR3CritSectBothTerm(PVM pVM)
  * @param   pVM             Pointer to the VM.
  * @param   pCritSect       The critical section.
  * @param   pvKey           The owner key.
- * @param   RT_SRC_POS_DECL The source position.
+ * @param   SRC_POS         The source position.
  * @param   pszName         The name of the critical section (for statistics).
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
@@ -218,7 +218,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
  * @param   pVM             Pointer to the VM.
  * @param   pCritSect       The read/write critical section.
  * @param   pvKey           The owner key.
- * @param   RT_SRC_POS_DECL The source position.
+ * @param   SRC_POS         The source position.
  * @param   pszName         The name of the critical section (for statistics).
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
@@ -324,7 +324,7 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
  * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
- * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+ * @param   SRC_POS         Use RT_SRC_POS.
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   ...             Arguments for the format string.
@@ -354,7 +354,7 @@ VMMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, RT_SRC_POS_DEC
  * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the read/write critical section.
- * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+ * @param   SRC_POS         Use RT_SRC_POS.
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   ...             Arguments for the format string.
@@ -381,6 +381,7 @@ VMMR3DECL(int) PDMR3CritSectRwInit(PVM pVM, PPDMCRITSECTRW pCritSect, RT_SRC_POS
  * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
+ * @param   SRC_POS         The source position.  Optional.
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   va              Arguments for the format string.
@@ -399,6 +400,7 @@ int pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect,
  * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the read/write critical section.
+ * @param   SRC_POS         The source position.  Optional.
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   va              Arguments for the format string.
@@ -416,6 +418,7 @@ int pdmR3CritSectRwInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritS
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
+ * @param   SRC_POS         The source position.  Optional.
  * @param   pCritSect       Pointer to the critical section.
  */
 int pdmR3CritSectInitDeviceAuto(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
@@ -438,6 +441,7 @@ int pdmR3CritSectInitDeviceAuto(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritS
  * @param   pVM             Pointer to the VM.
  * @param   pDrvIns         Driver instance.
  * @param   pCritSect       Pointer to the critical section.
+ * @param   SRC_POS         The source position.  Optional.
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   ...             Arguments for the format string.
@@ -460,6 +464,7 @@ int pdmR3CritSectInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
  * @param   pVM             Pointer to the VM.
  * @param   pDrvIns         Driver instance.
  * @param   pCritSect       Pointer to the read/write critical section.
+ * @param   SRC_POS         The source position.  Optional.
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   ...             Arguments for the format string.

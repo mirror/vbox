@@ -164,7 +164,7 @@ static DECLCALLBACK(void) pdmRCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
 }
 
 
-/** @interface_method_impl{PDMDRVHLPRC,pfnPCISetIrq} */
+/** @interface_method_impl{PDMDEVHLPRC,pfnISASetIrq} */
 static DECLCALLBACK(void) pdmRCDevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -403,7 +403,7 @@ extern DECLEXPORT(const PDMDEVHLPRC) g_pdmRCDevHlp =
  * @{
  */
 
-/** @interface_method_impl{PDMPICHLPGC,pfnSetInterruptFF} */
+/** @interface_method_impl{PDMPICHLPRC,pfnSetInterruptFF} */
 static DECLCALLBACK(void) pdmRCPicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -427,7 +427,7 @@ static DECLCALLBACK(void) pdmRCPicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMPICHLPGC,pfnClearInterruptFF} */
+/** @interface_method_impl{PDMPICHLPRC,pfnClearInterruptFF} */
 static DECLCALLBACK(void) pdmRCPicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -452,7 +452,7 @@ static DECLCALLBACK(void) pdmRCPicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMPICHLPGC,pfnLock} */
+/** @interface_method_impl{PDMPICHLPRC,pfnLock} */
 static DECLCALLBACK(int) pdmRCPicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -460,7 +460,7 @@ static DECLCALLBACK(int) pdmRCPicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @interface_method_impl{PDMPICHLPGC,pfnUnlock} */
+/** @interface_method_impl{PDMPICHLPRC,pfnUnlock} */
 static DECLCALLBACK(void) pdmRCPicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);

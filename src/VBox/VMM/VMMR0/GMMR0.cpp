@@ -521,8 +521,8 @@ typedef struct GMM
     RTLISTANCHOR        ChunkList;
 
     /** The maximum number of pages we're allowed to allocate.
-     * @gcfgm   64-bit GMM/MaxPages Direct.
-     * @gcfgm   32-bit GMM/PctPages Relative to the number of host pages. */
+     * @gcfgm{GMM/MaxPages,64-bit, Direct.}
+     * @gcfgm{GMM/PctPages,32-bit, Relative to the number of host pages.} */
     uint64_t            cMaxPages;
     /** The number of pages that has been reserved.
      * The deal is that cReservedPages - cOverCommittedPages <= cMaxPages. */

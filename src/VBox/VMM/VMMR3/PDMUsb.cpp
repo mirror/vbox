@@ -1482,7 +1482,7 @@ VMMR3DECL(int)  PDMR3UsbQueryLun(PUVM pUVM, const char *pszDevice, unsigned iIns
  * @{
  */
 
-/** @interface_method_impl{PDMUSBHLPR3,pfnDriverAttach} */
+/** @interface_method_impl{PDMUSBHLP,pfnDriverAttach} */
 static DECLCALLBACK(int) pdmR3UsbHlp_DriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun, PPDMIBASE pBaseInterface,
                                                   PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {

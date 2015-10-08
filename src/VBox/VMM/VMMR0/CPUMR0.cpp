@@ -320,7 +320,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
 
 
 /**
- * Trap handler for device-not-available fault (#NM).
+ * Trap handler for device-not-available fault (\#NM).
  * Device not available, FP or (F)WAIT instruction.
  *
  * @returns VBox status code.

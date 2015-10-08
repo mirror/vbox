@@ -63,7 +63,7 @@ RT_C_DECLS_BEGIN
  * @param   pCfg        Configuration node handle for the driver.  This is
  *                      expected to be in high demand in the constructor and is
  *                      therefore passed as an argument.  When using it at other
- *                      times, it can be found in pDrvIns->pCfg.
+ *                      times, it can be found in pDevIns->pCfg.
  */
 typedef DECLCALLBACK(int)   FNPDMDEVCONSTRUCT(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg);
 /** Pointer to a FNPDMDEVCONSTRUCT() function. */
@@ -1498,7 +1498,7 @@ typedef struct PDMAPICHLPR3
      *
      * @param   pDevIns         The APIC device instance.
      * @param   idCpu           Virtual CPU to perform SIPI on
-     * @param   iVector         SIPI vector
+     * @param   uVector         SIPI vector
      */
     DECLR3CALLBACKMEMBER(void,    pfnSendSipi,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector));
 
@@ -1913,7 +1913,8 @@ typedef struct PDMHPETHLPR3
      * @returns VINF_SUCCESS on success.
      * @returns rc if we failed to set legacy mode.
      * @param   pDevIns         Device instance of the HPET.
-     * @param   fActivate       Activate or deactivate legacy mode.
+     * @param   iIrq            IRQ number to set.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
@@ -3772,7 +3773,7 @@ typedef struct PDMDEVHLPRC
      * Set the VM error message
      *
      * @returns rc.
-     * @param   pDrvIns         Driver instance.
+     * @param   pDevIns         Driver instance.
      * @param   rc              VBox status code.
      * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.
@@ -3785,7 +3786,7 @@ typedef struct PDMDEVHLPRC
      * Set the VM error message
      *
      * @returns rc.
-     * @param   pDrvIns         Driver instance.
+     * @param   pDevIns         Driver instance.
      * @param   rc              VBox status code.
      * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.
@@ -4001,7 +4002,7 @@ typedef struct PDMDEVHLPR0
      * Set the VM error message
      *
      * @returns rc.
-     * @param   pDrvIns         Driver instance.
+     * @param   pDevIns         Driver instance.
      * @param   rc              VBox status code.
      * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.
@@ -4014,7 +4015,7 @@ typedef struct PDMDEVHLPR0
      * Set the VM error message
      *
      * @returns rc.
-     * @param   pDrvIns         Driver instance.
+     * @param   pDevIns         Driver instance.
      * @param   rc              VBox status code.
      * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.

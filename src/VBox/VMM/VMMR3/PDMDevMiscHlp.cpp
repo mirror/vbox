@@ -311,6 +311,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCp
     VMMR3SendSipi(pDevIns->Internal.s.pVMR3, idCpu, uVector);
 }
 
+
 /** @interface_method_impl{PDMAPICHLPR3,pfnSendInitIpi} */
 static DECLCALLBACK(void) pdmR3ApicHlp_SendInitIpi(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
@@ -318,6 +319,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SendInitIpi(PPDMDEVINS pDevIns, VMCPUID i
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     VMMR3SendInitIpi(pDevIns->Internal.s.pVMR3, idCpu);
 }
+
 
 /** @interface_method_impl{PDMAPICHLPR3,pfnGetRCHelpers} */
 static DECLCALLBACK(PCPDMAPICHLPRC) pdmR3ApicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
@@ -528,11 +530,11 @@ static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 }
 
 /** @interface_method_impl{PDMPCIHLPR3,pfnIoApicSendMsi} */
-static DECLCALLBACK(void) pdmR3PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc)
+static DECLCALLBACK(void) pdmR3PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    Log4(("pdmR3PciHlp_IoApicSendMsi: address=%p value=%x uTagSrc=%#x\n", GCAddr, uValue, uTagSrc));
-    PDMIoApicSendMsi(pDevIns->Internal.s.pVMR3, GCAddr, uValue, uTagSrc);
+    Log4(("pdmR3PciHlp_IoApicSendMsi: address=%p value=%x uTagSrc=%#x\n", GCPhys, uValue, uTagSrc));
+    PDMIoApicSendMsi(pDevIns->Internal.s.pVMR3, GCPhys, uValue, uTagSrc);
 }
 
 /** @interface_method_impl{PDMPCIHLPR3,pfnIsMMIO2Base} */

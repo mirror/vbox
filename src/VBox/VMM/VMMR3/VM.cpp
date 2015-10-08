@@ -3828,7 +3828,7 @@ VMMR3_INT_DECL(uint32_t) VMR3GetErrorCount(PUVM pUVM)
  * @returns rc.
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   rc              The VBox status code.
- * @param   RT_SRC_POS_DECL The source position of this error.
+ * @param   SRC_POS         The source position of this error.
  * @param   pszFormat       Format string.
  * @param   ...             The arguments.
  * @thread  Any thread.
@@ -3848,7 +3848,7 @@ static int vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszForm
  *
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   rc              The VBox status code.
- * @param   RT_SRC_POS_DECL The source position of this error.
+ * @param   SRC_POS         The source position of this error.
  * @param   pszFormat       Format string.
  * @param   pArgs           Pointer to the format arguments.
  * @thread  EMT
@@ -3908,7 +3908,7 @@ DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char
  *    @endcode
  * @param   pUVM            The user mode VM handle.
  * @param   rc              VBox status code.
- * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+ * @param   SRC_POS         Use RT_SRC_POS.
  * @param   pszFormat       Error message format string.
  * @param   ...             Error message arguments.
  * @thread  Any
@@ -3932,7 +3932,7 @@ VMMR3DECL(int) VMR3SetError(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszF
  *    @endcode
  * @param   pUVM            The user mode VM handle.
  * @param   rc              VBox status code.
- * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+ * @param   SRC_POS         Use RT_SRC_POS.
  * @param   pszFormat       Error message format string.
  * @param   va              Error message arguments.
  * @thread  Any

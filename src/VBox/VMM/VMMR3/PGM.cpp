@@ -155,7 +155,7 @@
  * Placeholder.
  *
  *
- * @subsection      sec_pgm_handlers_virt   Virtual Access Handlers
+ * @subsection      sec_pgm_handlers_phys   Physical Access Handlers
  *
  * Placeholder.
  *
@@ -248,7 +248,7 @@
  *      - Moving or mirroring a VM onto a different physical machine.
  *
  *
- * @subsection subsec_pgmPhys_Definitions       Definitions
+ * @section sec_pgmPhys_Definitions       Definitions
  *
  * Allocation chunk - A RTR0MemObjAllocPhysNC object and the tracking
  * machinery associated with it.
@@ -256,7 +256,7 @@
  *
  *
  *
- * @subsection subsec_pgmPhys_AllocPage         Allocating a page.
+ * @section sec_pgmPhys_AllocPage         Allocating a page.
  *
  * Initially we map *all* guest memory to the (per VM) zero page, which
  * means that none of the read functions will cause pages to be allocated.
@@ -285,7 +285,7 @@
  * zeroed pages as they are going to be filled instantly.
  *
  *
- * @subsection subsec_pgmPhys_FreePage          Freeing a page
+ * @section sec_pgmPhys_FreePage          Freeing a page
  *
  * There are a few points where a page can be freed:
  *      - After being replaced by the zero page.
@@ -315,7 +315,7 @@
  * cpu time or memory into this.
  *
  *
- * @subsection subsec_pgmPhys_SharePage         Sharing a page
+ * @section sec_pgmPhys_SharePage         Sharing a page
  *
  * The basic idea is that there there will be a idle priority kernel
  * thread walking the non-shared VM pages hashing them and looking for
@@ -336,7 +336,7 @@
  * per-VM guest memory structures (presently called PGMRAMRANGE).
  *
  *
- * @subsection subsec_pgmPhys_Fragmentation     Fragmentation Concerns and Counter Measures
+ * @section sec_pgmPhys_Fragmentation     Fragmentation Concerns and Counter Measures
  *
  * The pages are organized in allocation chunks in ring-0, this is a necessity
  * if we wish to have an OS agnostic approach to this whole thing. (On Linux we
@@ -364,7 +364,7 @@
  * the same as when telling it to share/zero a page.
  *
  *
- * @subsection subsec_pgmPhys_Tracking      Tracking Structures And Their Cost
+ * @section sec_pgmPhys_Tracking      Tracking Structures And Their Cost
  *
  * There's a difficult balance between keeping the per-page tracking structures
  * (global and guest page) easy to use and keeping them from eating too much
@@ -374,11 +374,11 @@
  * to 32GB of memory on a 32-bit system and essentially unlimited on 64-bit ones.
  *
  *
- * @subsubsection subsubsec_pgmPhys_Tracking_Kernel     Kernel Space
+ * @subsection subsec_pgmPhys_Tracking_Kernel     Kernel Space
  *
  * @see pg_GMM
  *
- * @subsubsection subsubsec_pgmPhys_Tracking_PerVM      Per-VM
+ * @subsection subsec_pgmPhys_Tracking_PerVM      Per-VM
  *
  * Fixed info is the physical address of the page (HCPhys) and the page id
  * (described above). Theoretically we'll need 48(-12) bits for the HCPhys part.
@@ -470,7 +470,7 @@
  * than once will put the GMM off balance.
  *
  *
- * @subsection subsec_pgmPhys_Serializing       Serializing Access
+ * @section sec_pgmPhys_Serializing       Serializing Access
  *
  * Initially, we'll try a simple scheme:
  *
@@ -495,7 +495,7 @@
  *        one, but not the other way around.
  *
  *
- * @subsection subsec_pgmPhys_Request           VM Request interface
+ * @section sec_pgmPhys_Request           VM Request interface
  *
  * When in ring-0 it will become necessary to send requests to a VM so it can
  * for instance move a page while defragmenting during VM destroy. The idle

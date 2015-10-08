@@ -531,7 +531,7 @@ VMM_INT_DECL(void) HMHypercallsDisable(PVMCPU pVCpu)
 
 
 /**
- * Notifies HM that GIM provider wants to trap #UD.
+ * Notifies HM that GIM provider wants to trap \#UD.
  *
  * @param   pVCpu   Pointer to the VMCPU.
  */
@@ -543,7 +543,7 @@ VMM_INT_DECL(void) HMTrapXcptUDForGIMEnable(PVMCPU pVCpu)
 
 
 /**
- * Notifies HM that GIM provider no longer wants to trap #UD.
+ * Notifies HM that GIM provider no longer wants to trap \#UD.
  *
  * @param   pVCpu   Pointer to the VMCPU.
  */

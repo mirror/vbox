@@ -43,10 +43,10 @@
 
 
 /**
- * @interface_method_impl{RTTIMENANOTSDATA, pfnBadPrev}
+ * @interface_method_impl{RTTIMENANOTSDATA,pfnBad}
  */
-DECLCALLBACK(DECLEXPORT(void)) tmVirtualNanoTSBadPrev(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev,
-                                                      uint64_t u64PrevNanoTS)
+DECLCALLBACK(DECLEXPORT(void)) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev,
+                                                  uint64_t u64PrevNanoTS)
 {
     PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
     pData->cBadPrev++;
@@ -60,7 +60,7 @@ DECLCALLBACK(DECLEXPORT(void)) tmVirtualNanoTSBadPrev(PRTTIMENANOTSDATA pData, u
 
 
 /**
- * @interface_method_impl{RTTIMENANOTSDATA, pfnRediscover}
+ * @interface_method_impl{RTTIMENANOTSDATA,pfnRediscover}
  *
  * This is the initial worker, so the first call in each context ends up here.
  * It is also used should the delta rating of the host CPUs change or if the
@@ -136,7 +136,7 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
 
 
 /**
- * @interface_method_impl{RTTIMENANOTSDATA, pfnBadGipIndex}
+ * @interface_method_impl{RTTIMENANOTSDATA,pfnBadCpuIndex}
  */
 DECLEXPORT(uint64_t) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu)
 {

@@ -528,7 +528,7 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
  *      Write access handler for mapped MMIO2 pages.  Currently ignores writes.}
  *
  * @todo In the future we might want to let the GIM provider decide what the
- *       handler should do (like throwing #GP faults).
+ *       handler should do (like throwing \#GP faults).
  */
 static DECLCALLBACK(VBOXSTRICTRC)
 gimR3Mmio2WriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
@@ -538,13 +538,14 @@ gimR3Mmio2WriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, voi
      * Ignore writes to the mapped MMIO2 page.
      */
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    return VINF_SUCCESS;        /** @todo Hyper-V says we should #GP(0) fault for writes to the Hypercall and TSC page. */
+    return VINF_SUCCESS;        /** @todo Hyper-V says we should \#GP(0) fault for writes to the Hypercall and TSC page. */
 }
 
 
 /**
- * Maps a registered MMIO2 region in the guest address space. The region will be
- * made read-only and writes from the guest will be ignored.
+ * Maps a registered MMIO2 region in the guest address space.
+ *
+ * The region will be made read-only and writes from the guest will be ignored.
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.

@@ -8977,7 +8977,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
  * @returns rc.
  * @param   pSSM                The saved state handle.
  * @param   rc                  The status code of the error. Use RT_SRC_POS.
- * @param   RT_SRC_POS_DECL     The source location.
+ * @param   SRC_POS             The source location.
  * @param   pszFormat           The message format string.
  * @param   ...                 Variable argument list.
  */
@@ -8997,7 +8997,7 @@ VMMR3DECL(int) SSMR3SetLoadError(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, const
  * @returns rc.
  * @param   pSSM                The saved state handle.
  * @param   rc                  The status code of the error.
- * @param   RT_SRC_POS_DECL     The error location, use RT_SRC_POS.
+ * @param   SRC_POS             The error location, use RT_SRC_POS.
  * @param   pszFormat           The message format string.
  * @param   va                  Variable argument list.
  */
@@ -9057,7 +9057,7 @@ VMMR3DECL(int) SSMR3SetLoadErrorV(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, cons
  *
  * @returns VERR_SSM_LOAD_CONFIG_MISMATCH.
  * @param   pSSM                The saved state handle.
- * @param   RT_SRC_POS_DECL     The error location, use RT_SRC_POS.
+ * @param   SRC_POS             The error location, use RT_SRC_POS.
  * @param   pszFormat           The message format string.
  * @param   va                  Variable argument list.
  */

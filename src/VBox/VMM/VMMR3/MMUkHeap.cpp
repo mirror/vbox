@@ -48,7 +48,7 @@ static void *mmR3UkHeapAlloc(PMMUKHEAP pHeap, MMTAG enmTag, size_t cb, bool fZer
  * kernel accessible memory on the first alloc call.
  *
  * @returns VBox status.
- * @param   pVM     The handle to the VM the heap should be associated with.
+ * @param   pUVM    Pointer to the user mode VM structure.
  * @param   ppHeap  Where to store the heap pointer.
  */
 int mmR3UkHeapCreateU(PUVM pUVM, PMMUKHEAP *ppHeap)

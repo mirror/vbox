@@ -595,7 +595,7 @@ VMMR3DECL(void) DBGFR3PlugInUnloadAll(PUVM pUVM)
 
 
 /**
- * @interface_method_impl{FNDBGFHANDLERINT, The 'plugins' info item.}
+ * @callback_method_impl{FNDBGFHANDLERINT, The 'plugins' info item.}
  */
 static DECLCALLBACK(void) dbgfR3PlugInInfoList(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {

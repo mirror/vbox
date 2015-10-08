@@ -319,7 +319,7 @@ VMMDECL(void) CPUMSetHyperLDTR(PVMCPU pVCpu, RTSEL SelLDTR)
 }
 
 
-/** @MAYBE_LOAD_DRx
+/** @def MAYBE_LOAD_DRx
  * Macro for updating DRx values in raw-mode and ring-0 contexts.
  */
 #ifdef IN_RING0

@@ -294,7 +294,7 @@ VMMR3_INT_DECL(void) PATMR3DbgPopulateAddrSpace(PVM pVM, RTDBGAS hDbgAs)
         ADD_MEMBER(hDbgMod, PATMGCSTATE, Restore.eFlags,            "Restore.eFlags");
         ADD_MEMBER(hDbgMod, PATMGCSTATE, Restore.uFlags,            "Restore.uFlags");
 
-        rc = RTDbgAsModuleLink(hDbgAs, hDbgMod, pVM->patm.s.pGCStateGC, 0 /*fFlags/*/);
+        rc = RTDbgAsModuleLink(hDbgAs, hDbgMod, pVM->patm.s.pGCStateGC, 0 /*fFlags*/);
         AssertLogRelRC(rc);
         RTDbgModRelease(hDbgMod);
     }
@@ -308,7 +308,7 @@ VMMR3_INT_DECL(void) PATMR3DbgPopulateAddrSpace(PVM pVM, RTDBGAS hDbgAs)
     {
         ADD_FUNC(hDbgMod, pVM->patm.s.pStatsGC, pVM->patm.s.pStatsGC, PATM_STAT_MEMSIZE, "PATMMemStatsStart");
 
-        rc = RTDbgAsModuleLink(hDbgAs, hDbgMod, pVM->patm.s.pStatsGC, 0 /*fFlags/*/);
+        rc = RTDbgAsModuleLink(hDbgAs, hDbgMod, pVM->patm.s.pStatsGC, 0 /*fFlags*/);
         AssertLogRelRC(rc);
         RTDbgModRelease(hDbgMod);
     }
@@ -322,7 +322,7 @@ VMMR3_INT_DECL(void) PATMR3DbgPopulateAddrSpace(PVM pVM, RTDBGAS hDbgAs)
         pVM->patm.s.hDbgModPatchMem = hDbgMod;
         patmR3DbgAddPatches(pVM, hDbgMod);
 
-        rc = RTDbgAsModuleLink(hDbgAs, hDbgMod, pVM->patm.s.pPatchMemGC, 0 /*fFlags/*/);
+        rc = RTDbgAsModuleLink(hDbgAs, hDbgMod, pVM->patm.s.pPatchMemGC, 0 /*fFlags*/);
         AssertLogRelRC(rc);
     }
 }

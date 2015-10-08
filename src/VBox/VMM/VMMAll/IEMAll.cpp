@@ -73,7 +73,9 @@
 /** @def IEM_VERIFICATION_MODE_MINIMAL
  * Use for pitting IEM against EM or something else in ring-0 or raw-mode
  * context. */
-//#define IEM_VERIFICATION_MODE_MINIMAL
+#if defined(DOXYGEN_RUNNING)
+# define IEM_VERIFICATION_MODE_MINIMAL
+#endif
 //#define IEM_LOG_MEMORY_WRITES
 #define IEM_IMPLEMENTS_TASKSWITCH
 
@@ -1284,7 +1286,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8(PIEMCPU pIemCpu, int8_t *pi8)
  * Fetches the next signed byte from the opcode stream, returning automatically
  * on failure.
  *
- * @param   pi8                 Where to return the signed byte.
+ * @param   a_pi8               Where to return the signed byte.
  * @remark Implicitly references pIemCpu.
  */
 #define IEM_OPCODE_GET_NEXT_S8(a_pi8) \
@@ -1337,7 +1339,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PIEMCPU pIemCpu, uint16_t *pu16
  * Fetches the next signed byte from the opcode stream and sign-extending it to
  * a word, returning automatically on failure.
  *
- * @param   pu16                Where to return the word.
+ * @param   a_pu16              Where to return the word.
  * @remark Implicitly references pIemCpu.
  */
 #define IEM_OPCODE_GET_NEXT_S8_SX_U16(a_pu16) \
@@ -1390,7 +1392,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PIEMCPU pIemCpu, uint32_t *pu32
  * Fetches the next signed byte from the opcode stream and sign-extending it to
  * a word, returning automatically on failure.
  *
- * @param   pu32                Where to return the word.
+ * @param   a_pu32              Where to return the word.
  * @remark Implicitly references pIemCpu.
  */
 #define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) \
@@ -1443,7 +1445,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PIEMCPU pIemCpu, uint64_t *pu64
  * Fetches the next signed byte from the opcode stream and sign-extending it to
  * a word, returning automatically on failure.
  *
- * @param   pu64                Where to return the word.
+ * @param   a_pu64              Where to return the word.
  * @remark Implicitly references pIemCpu.
  */
 #define IEM_OPCODE_GET_NEXT_S8_SX_U64(a_pu64) \
@@ -1642,7 +1644,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS16(PIEMCPU pIemCpu, int16_t *pi16)
  * Fetches the next signed word from the opcode stream, returning automatically
  * on failure.
  *
- * @param   pi16                Where to return the signed word.
+ * @param   a_pi16              Where to return the signed word.
  * @remark Implicitly references pIemCpu.
  */
 #define IEM_OPCODE_GET_NEXT_S16(a_pi16) \
@@ -1795,7 +1797,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32(PIEMCPU pIemCpu, int32_t *pi32)
  * Fetches the next signed double word from the opcode stream, returning
  * automatically on failure.
  *
- * @param   pi32                Where to return the signed double word.
+ * @param   a_pi32              Where to return the signed double word.
  * @remark Implicitly references pIemCpu.
  */
 #define IEM_OPCODE_GET_NEXT_S32(a_pi32) \
@@ -2037,6 +2039,7 @@ IEM_STATIC VBOXSTRICTRC iemMiscValidateNewSS(PIEMCPU pIemCpu, PCCPUMCTX pCtx, RT
  *
  * @param   a_pIemCpu           The IEM per CPU data.
  * @param   a_pCtx              The CPU context.
+ * @param   a_fEfl              The new EFLAGS.
  */
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
 # define IEMMISC_SET_EFL(a_pIemCpu, a_pCtx, a_fEfl) \
@@ -9287,7 +9290,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
             return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
     } while (0)
 
-/** The instruction allows no lock prefixing (in this encoding), throw #UD if
+/** The instruction allows no lock prefixing (in this encoding), throw \#UD if
  * lock prefixed.
  * @deprecated  IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX */
 #define IEMOP_HLP_NO_LOCK_PREFIX() \
@@ -9297,7 +9300,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
             return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
     } while (0)
 
-/** The instruction is not available in 64-bit mode, throw #UD if we're in
+/** The instruction is not available in 64-bit mode, throw \#UD if we're in
  * 64-bit mode. */
 #define IEMOP_HLP_NO_64BIT() \
     do \
@@ -9306,7 +9309,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
-/** The instruction is only available in 64-bit mode, throw #UD if we're not in
+/** The instruction is only available in 64-bit mode, throw \#UD if we're not in
  * 64-bit mode. */
 #define IEMOP_HLP_ONLY_64BIT() \
     do \

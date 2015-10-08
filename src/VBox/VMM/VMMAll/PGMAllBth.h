@@ -438,7 +438,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
 
 
 /**
- * #PF Handler for raw-mode guest execution.
+ * \#PF Handler for raw-mode guest execution.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  *

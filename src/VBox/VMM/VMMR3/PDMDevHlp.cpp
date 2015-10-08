@@ -2135,7 +2135,7 @@ static DECLCALLBACK(bool) pdmR3DevHlp_AssertOther(PPDMDEVINS pDevIns, const char
 }
 
 
-/** @interface_method_impl{PDMDEVHLP,pfnLdrGetRCInterfaceSymbols} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnLdrGetRCInterfaceSymbols} */
 static DECLCALLBACK(int) pdmR3DevHlp_LdrGetRCInterfaceSymbols(PPDMDEVINS pDevIns, void *pvInterface, size_t cbInterface,
                                                               const char *pszSymPrefix, const char *pszSymList)
 {
@@ -2173,7 +2173,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_LdrGetRCInterfaceSymbols(PPDMDEVINS pDevIns
 }
 
 
-/** @interface_method_impl{PDMDEVHLP,pfnLdrGetR0InterfaceSymbols} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnLdrGetR0InterfaceSymbols} */
 static DECLCALLBACK(int) pdmR3DevHlp_LdrGetR0InterfaceSymbols(PPDMDEVINS pDevIns, void *pvInterface, size_t cbInterface,
                                                               const char *pszSymPrefix, const char *pszSymList)
 {
@@ -2211,7 +2211,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_LdrGetR0InterfaceSymbols(PPDMDEVINS pDevIns
 }
 
 
-/** @interface_method_impl{PDMDEVHLP,pfnCallR0} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnCallR0} */
 static DECLCALLBACK(int) pdmR3DevHlp_CallR0(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2260,7 +2260,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CallR0(PPDMDEVINS pDevIns, uint32_t uOperat
 }
 
 
-/** @interface_method_impl{PDMDEVHLP,pfnVMGetSuspendReason} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMGetSuspendReason} */
 static DECLCALLBACK(VMSUSPENDREASON) pdmR3DevHlp_VMGetSuspendReason(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2273,7 +2273,7 @@ static DECLCALLBACK(VMSUSPENDREASON) pdmR3DevHlp_VMGetSuspendReason(PPDMDEVINS p
 }
 
 
-/** @interface_method_impl{PDMDEVHLP,pfnVMGetResumeReason} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMGetResumeReason} */
 static DECLCALLBACK(VMRESUMEREASON) pdmR3DevHlp_VMGetResumeReason(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);

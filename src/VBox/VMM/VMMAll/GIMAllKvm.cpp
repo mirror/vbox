@@ -323,7 +323,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
 
 
 /**
- * Whether we need to trap #UD exceptions in the guest.
+ * Whether we need to trap \#UD exceptions in the guest.
  *
  * On AMD-V we need to trap them because paravirtualized Linux/KVM guests use
  * the Intel VMCALL instruction to make hypercalls and we need to trap and
@@ -332,7 +332,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
  *
  * I guess this was done so that guest teleporation between an AMD and an Intel
  * machine would working without any changes at the time of teleporation.
- * However, this also means we -always- need to intercept #UD exceptions on one
+ * However, this also means we -always- need to intercept \#UD exceptions on one
  * of the two CPU models (Intel or AMD). Hyper-V solves this problem more
  * elegantly by letting the hypervisor supply an opaque hypercall page.
  *
@@ -348,7 +348,7 @@ VMM_INT_DECL(bool) gimKvmShouldTrapXcptUD(PVMCPU pVCpu)
 
 
 /**
- * Exception handler for #UD.
+ * Exception handler for \#UD.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.

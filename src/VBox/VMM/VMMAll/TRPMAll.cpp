@@ -175,7 +175,7 @@ VMMDECL(RTGCUINTPTR) TRPMGetFaultAddress(PVMCPU pVCpu)
 
 /**
  * Gets the instruction-length for the current trap (only relevant for software
- * interrupts and software exceptions #BP and #OF).
+ * interrupts and software exceptions \#BP and \#OF).
  *
  * The caller is responsible for making sure there is an active trap 0x0e when
  * making this request.
@@ -317,7 +317,7 @@ VMMDECL(void) TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode)
 
 
 /**
- * Sets the fault address of the current #PF trap. (This function is for use in
+ * Sets the fault address of the current \#PF trap. (This function is for use in
  * trap handlers and such.)
  *
  * The caller is responsible for making sure there is an active trap 0e
@@ -337,7 +337,7 @@ VMMDECL(void) TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2)
 
 /**
  * Sets the instruction-length of the current trap (relevant for software
- * interrupts and software exceptions like #BP, #OF).
+ * interrupts and software exceptions like \#BP, \#OF).
  *
  * The caller is responsible for making sure there is an active trap 0e
  * when making this request.

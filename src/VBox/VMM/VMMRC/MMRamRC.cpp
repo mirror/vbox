@@ -72,7 +72,7 @@ VMMRCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM)
 
 
 /**
- * Read data in guest context with #PF control.
+ * Read data in guest context with \#PF control.
  *
  * @returns VBox status.
  * @param   pVM         Pointer to the VM.
@@ -129,7 +129,7 @@ VMMRCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
 
 
 /**
- * Write data in guest context with #PF control.
+ * Write data in guest context with \#PF control.
  *
  * @returns VBox status.
  * @param   pVM         Pointer to the VM.

@@ -137,9 +137,9 @@
  * Exception bitmap mask for real-mode guests (real-on-v86).
  *
  * We need to intercept all exceptions manually except:
- * - #NM, #MF handled in hmR0VmxLoadSharedCR0().
- * - #DB handled in hmR0VmxLoadSharedDebugState().
- * - #PF need not be intercepted even in real-mode if we have Nested Paging
+ * - \#NM, \#MF handled in hmR0VmxLoadSharedCR0().
+ * - \#DB handled in hmR0VmxLoadSharedDebugState().
+ * - \#PF need not be intercepted even in real-mode if we have Nested Paging
  * support.
  */
 #define HMVMX_REAL_MODE_XCPT_MASK    (  RT_BIT(X86_XCPT_DE)            /* RT_BIT(X86_XCPT_DB) */ | RT_BIT(X86_XCPT_NMI)   \
@@ -2296,7 +2296,7 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVMCPU      Pointer to the VMCPU.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
 {
@@ -3208,7 +3208,6 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Sets up the VM-exit controls in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -3290,7 +3289,6 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Loads the guest APIC and related state.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -3582,7 +3580,6 @@ DECLINLINE(int) hmR0VmxLoadGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * CR0 is partially shared with the host and we have to consider the FPU bits.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -3773,7 +3770,6 @@ static int hmR0VmxLoadSharedCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -4377,7 +4373,6 @@ static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLim
  * into the guest-state area in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCPU       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -4711,9 +4706,9 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    NOREF(pCtx);
+    NOREF(pMixedCtx);
     /** @todo See if we can make use of other states, e.g.
      *        VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN or HLT.  */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_ACTIVITY_STATE))
@@ -5575,7 +5570,7 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntInfo, uint3
 
 
 /**
- * Sets a double-fault (#DF) exception as pending-for-injection into the VM.
+ * Sets a double-fault (\#DF) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
@@ -5598,8 +5593,8 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @returns VBox status code (informational error codes included).
  * @retval VINF_SUCCESS if we should continue handling the VM-exit.
- * @retval VINF_HM_DOUBLE_FAULT if a #DF condition was detected and we ought to
- *         continue execution of the guest which will delivery the #DF.
+ * @retval VINF_HM_DOUBLE_FAULT if a \#DF condition was detected and we ought to
+ *         continue execution of the guest which will delivery the \#DF.
  * @retval VINF_EM_RESET if we detected a triple-fault condition.
  *
  * @param   pVCpu           Pointer to the VMCPU.
@@ -7527,7 +7522,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSte
 
 
 /**
- * Sets an invalid-opcode (#UD) exception as pending-for-injection into the VM.
+ * Sets an invalid-opcode (\#UD) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
@@ -7543,7 +7538,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
- * Injects a double-fault (#DF) exception into the VM.
+ * Injects a double-fault (\#DF) exception into the VM.
  *
  * @returns VBox status code (informational status code included).
  * @param   pVCpu           Pointer to the VMCPU.
@@ -7569,7 +7564,7 @@ DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStep
 
 
 /**
- * Sets a debug (#DB) exception as pending-for-injection into the VM.
+ * Sets a debug (\#DB) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
@@ -7586,7 +7581,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
- * Sets an overflow (#OF) exception as pending-for-injection into the VM.
+ * Sets an overflow (\#OF) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
@@ -7605,7 +7600,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
 
 
 /**
- * Injects a general-protection (#GP) fault into the VM.
+ * Injects a general-protection (\#GP) fault into the VM.
  *
  * @returns VBox status code (informational status code included).
  * @param   pVCpu               Pointer to the VMCPU.
@@ -7614,7 +7609,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
  *                              before using them.
  * @param   fErrorCodeValid     Whether the error code is valid (depends on the CPU
  *                              mode, i.e. in real-mode it's not valid).
- * @param   u32ErrorCode        The error code associated with the #GP.
+ * @param   u32ErrorCode        The error code associated with the \#GP.
  * @param   fStepping           Whether we're running in
  *                              hmR0VmxRunGuestCodeStep() and should return
  *                              VINF_EM_DBG_STEPPED if the event is injected
@@ -7637,14 +7632,14 @@ DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErro
 
 
 /**
- * Sets a general-protection (#GP) exception as pending-for-injection into the
+ * Sets a general-protection (\#GP) exception as pending-for-injection into the
  * VM.
  *
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
- * @param   u32ErrorCode    The error code associated with the #GP.
+ * @param   u32ErrorCode    The error code associated with the \#GP.
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t u32ErrorCode)
 {
@@ -7723,7 +7718,7 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  *                              software interrupts, exceptions and privileged
  *                              software exceptions).
  * @param   u32ErrCode          The VM-entry exception error code.
- * @param   GCPtrFaultAddress   The page-fault address for #PF exceptions.
+ * @param   GCPtrFaultAddress   The page-fault address for \#PF exceptions.
  * @param   puIntrState         Pointer to the current guest interruptibility-state.
  *                              This interruptibility-state will be updated if
  *                              necessary. This cannot not be NULL.
@@ -10376,7 +10371,7 @@ HMVMX_EXIT_DECL hmR0VmxExitHlt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
 
 
 /**
- * VM-exit handler for instructions that result in a #UD exception delivered to
+ * VM-exit handler for instructions that result in a \#UD exception delivered to
  * the guest.
  */
 HMVMX_EXIT_DECL hmR0VmxExitSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
@@ -11502,7 +11497,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
  */
 
 /**
- * VM-exit exception handler for #MF (Math Fault: floating point exception).
+ * VM-exit exception handler for \#MF (Math Fault: floating point exception).
  */
 static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
@@ -11532,7 +11527,7 @@ static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
 
 /**
- * VM-exit exception handler for #BP (Breakpoint exception).
+ * VM-exit exception handler for \#BP (Breakpoint exception).
  */
 static int hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
@@ -11563,7 +11558,7 @@ static int hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
 
 /**
- * VM-exit exception handler for #DB (Debug exception).
+ * VM-exit exception handler for \#DB (Debug exception).
  */
 static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
@@ -11646,7 +11641,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
 
 /**
- * VM-exit exception handler for #NM (Device-not-available exception: floating
+ * VM-exit exception handler for \#NM (Device-not-available exception: floating
  * point exception).
  */
 static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
@@ -11702,7 +11697,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
 
 /**
- * VM-exit exception handler for #GP (General-protection exception).
+ * VM-exit exception handler for \#GP (General-protection exception).
  *
  * @remarks Requires pVmxTransient->uExitIntInfo to be up-to-date.
  */
@@ -12017,7 +12012,7 @@ static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
 
 /**
- * VM-exit exception handler for #PF (Page-fault exception).
+ * VM-exit exception handler for \#PF (Page-fault exception).
  */
 static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
