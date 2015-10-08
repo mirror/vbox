@@ -228,10 +228,27 @@ check_root()
     fi
 }
 
-# get_sysinfo
+# get_sysinfo_other()
+# cannot fail
+get_unofficial_sysinfo()
+{
+    HOST_OS_MAJORVERSION="11"
+    HOST_OS_MINORVERSION="151"
+}
+
+# get_sysinfo()
 # cannot fail
 get_sysinfo()
 {
+    # First check 'uname -v' and weed out the recognized, unofficial distros of Solaris
+    STR_OSVER=`uname -v`
+    case "$STR_OSVER" in
+        omnios*|oi_*|illumos*)
+            get_unofficial_sysinfo
+            return 0
+            ;;
+    esac
+
     BIN_PKG=`which pkg 2> /dev/null`
     if test -x "$BIN_PKG"; then
         PKGFMRI=`$BIN_PKG $BASEDIR_PKGOPT contents -H -t set -a name=pkg.fmri -o pkg.fmri pkg:/system/kernel 2> /dev/null`
@@ -671,7 +688,9 @@ install_drivers()
         load_vboxbow
     else
         # If host is S10 or S11 (< snv_159) or vboxbow isn't shipped, then load vboxflt
-        if test "$HOST_OS_MAJORVERSION" -eq 10 || (test "$HOST_OS_MAJORVERSION" -eq 11 && test "$HOST_OS_MINORVERSION" -lt 159) || test ! -f "$DIR_CONF/vboxbow.conf"; then
+        if     test "$HOST_OS_MAJORVERSION" -eq 10 \
+           || (test "$HOST_OS_MAJORVERSION" -eq 11 && test "$HOST_OS_MINORVERSION" -lt 159) \
+           ||  test ! -f "$DIR_CONF/vboxbow.conf"; then
             load_vboxflt
         else
             # For S11 snv_159+ load vboxbow
@@ -680,42 +699,52 @@ install_drivers()
     fi
 
     # Load VBoxUSBMon, VBoxUSB
-    if test -f "$DIR_CONF/vboxusbmon.conf" && test "$HOST_OS_MAJORVERSION" != "10"; then
-        # For VirtualBox 3.1 the new USB code requires Nevada > 123 i.e. S12+ or S11 b124+
-        if test "$HOST_OS_MAJORVERSION" -gt 11 || (test "$HOST_OS_MAJORVERSION" -eq 11 && test "$HOST_OS_MINORVERSION" -gt 123); then
-            # Add a group "vboxuser" (8-character limit) for USB access.
-            # All users which need host USB-passthrough support will have to be added to this group.
-            groupadd vboxuser >/dev/null 2>&1
-
-            add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
-            load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
-
-            chown root:vboxuser "/devices/pseudo/vboxusbmon@0:vboxusbmon"
-
-            # Add vboxusbmon to devlink.tab
-            sed -e '/name=vboxusbmon/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
-            echo "type=ddi_pseudo;name=vboxusbmon	\D" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
-            mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
-
-            # Create the device link for non-remote installs
-            if test "$REMOTEINST" -eq 0; then
-                /usr/sbin/devfsadm -i  "$MOD_VBOXUSBMON"
-                if test $? -ne 0; then
-                    errorprint "Failed to create device link for $MOD_VBOXUSBMON."
-                    exit 1
-                fi
-            fi
-
-            # Add vboxusb if present
-            # This driver is special, we need it in the boot-archive but since there is no
-            # USB device to attach to now (it's done at runtime) it will fail to attach so
-            # redirect attaching failure output to /dev/null
-            if test -f "$DIR_CONF/vboxusb.conf"; then
-                add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
-                load_module "drv/$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP"
-            fi
+    try_vboxusb="no"
+    if test -f "$DIR_CONF/vboxusbmon.conf"; then
+        if test -f "$PKG_INSTALL_ROOT/etc/vboxinst_vboxusb"; then
+            subprint "Detected: Force-load file $PKG_INSTALL_ROOT/etc/vboxinst_vboxusb."
+            try_vboxusb="yes"
         else
-            warnprint "Solaris 11 build 124 or higher required for USB support. Skipped installing USB support."
+            # For VirtualBox 3.1 the new USB code requires Nevada > 123 i.e. S12+ or S11 b124+
+            if     test "$HOST_OS_MAJORVERSION" -gt 11 \
+               || (test "$HOST_OS_MAJORVERSION" -eq 11 && test "$HOST_OS_MINORVERSION" -gt 123); then
+                try_vboxusb="yes"
+            else
+                warnprint "Solaris 11 build 124 or higher required for USB support. Skipped installing USB support."
+            fi
+        fi
+    fi
+    if test "$try_vboxusb" = "yes"; then
+        # Add a group "vboxuser" (8-character limit) for USB access.
+        # All users which need host USB-passthrough support will have to be added to this group.
+        groupadd vboxuser >/dev/null 2>&1
+
+        add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
+        load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
+
+        chown root:vboxuser "/devices/pseudo/vboxusbmon@0:vboxusbmon"
+
+        # Add vboxusbmon to devlink.tab
+        sed -e '/name=vboxusbmon/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        echo "type=ddi_pseudo;name=vboxusbmon	\D" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
+
+        # Create the device link for non-remote installs
+        if test "$REMOTEINST" -eq 0; then
+            /usr/sbin/devfsadm -i  "$MOD_VBOXUSBMON"
+            if test $? -ne 0; then
+                errorprint "Failed to create device link for $MOD_VBOXUSBMON."
+                exit 1
+            fi
+        fi
+
+        # Add vboxusb if present
+        # This driver is special, we need it in the boot-archive but since there is no
+        # USB device to attach to now (it's done at runtime) it will fail to attach so
+        # redirect attaching failure output to /dev/null
+        if test -f "$DIR_CONF/vboxusb.conf"; then
+            add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
+            load_module "drv/$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP"
         fi
     fi
 
