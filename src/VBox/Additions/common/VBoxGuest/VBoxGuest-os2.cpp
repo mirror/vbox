@@ -108,11 +108,11 @@ RT_C_DECLS_END
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int vboxGuestOS2MapMemory(void);
-static VBOXOSTYPE vboxGuestOS2DetectVersion(void);
+static int vgdrvOS2MapMemory(void);
+static VBOXOSTYPE vgdrvOS2DetectVersion(void);
 
 /* in VBoxGuestA-os2.asm */
-DECLASM(int) VBoxGuestOS2SetIRQ(uint8_t bIRQ);
+DECLASM(int) vgdrvOS2DevHlpSetIRQ(uint8_t bIRQ);
 
 
 /**
@@ -123,9 +123,9 @@ DECLASM(int) VBoxGuestOS2SetIRQ(uint8_t bIRQ);
  * @returns 0 on success, non-zero on failure.
  * @param   pszArgs     Pointer to the device arguments.
  */
-DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
+DECLASM(int) vgdrvOS2Init(const char *pszArgs)
 {
-    Log(("VBoxGuestOS2Init: pszArgs='%s' MMIO=0x%RX32 IOPort=0x%RX16 Int=%#x Bus=%#x Dev=%#x Fun=%d\n",
+    Log(("vgdrvOS2Init: pszArgs='%s' MMIO=0x%RX32 IOPort=0x%RX16 Int=%#x Bus=%#x Dev=%#x Fun=%d\n",
          pszArgs, g_PhysMMIOBase, g_IOPortBase, g_bInterruptLine, g_bPciBusNo, g_bPciDevFunNo >> 3, g_bPciDevFunNo & 7));
 
     /*
@@ -142,7 +142,7 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
         /*
          * Map the MMIO memory if found.
          */
-        rc = vboxGuestOS2MapMemory();
+        rc = vgdrvOS2MapMemory();
         if (RT_SUCCESS(rc))
         {
             /*
@@ -152,10 +152,10 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
                 rc = VGDrvCommonInitDevExt(&g_DevExt, g_IOPortBase,
                                            RTR0MemObjAddress(g_MemMapMMIO),
                                            RTR0MemObjSize(g_MemMapMMIO),
-                                           vboxGuestOS2DetectVersion(),
+                                           vgdrvOS2DetectVersion(),
                                            0);
             else
-                rc = VGDrvCommonInitDevExt(&g_DevExt, g_IOPortBase, NULL, 0, vboxGuestOS2DetectVersion(), 0);
+                rc = VGDrvCommonInitDevExt(&g_DevExt, g_IOPortBase, NULL, 0, vgdrvOS2DetectVersion(), 0);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -169,10 +169,10 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
                      */
                     if (g_bInterruptLine)
                     {
-                        rc = VBoxGuestOS2SetIRQ(g_bInterruptLine);
+                        rc = vgdrvOS2DevHlpSetIRQ(g_bInterruptLine);
                         if (rc)
                         {
-                            Log(("VBoxGuestOS2SetIRQ(%d) -> %d\n", g_bInterruptLine, rc));
+                            Log(("vgdrvOS2DevHlpSetIRQ(%d) -> %d\n", g_bInterruptLine, rc));
                             rc = RTErrConvertFromOS2(rc);
                         }
                     }
@@ -189,7 +189,7 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
                                    "Copyright (C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\r\n");
                             g_cchInitText = strlen(&g_szInitText[0]);
                         }
-                        Log(("VBoxGuestOS2Init: Successfully loaded\n%s", g_szInitText));
+                        Log(("vgdrvOS2Init: Successfully loaded\n%s", g_szInitText));
                         return VINF_SUCCESS;
                     }
 
@@ -201,7 +201,7 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
                 VGDrvCommonDeleteDevExt(&g_DevExt);
             }
             else
-                g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2InitDevExt failed, rc=%Rrc\n", rc);
+                g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: vgdrvOS2InitDevExt failed, rc=%Rrc\n", rc);
 
             int rc2 = RTR0MemObjFree(g_MemObjMMIO, true /* fFreeMappings */); AssertRC(rc2);
             g_MemObjMMIO = g_MemMapMMIO = NIL_RTR0MEMOBJ;
@@ -213,7 +213,7 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
     else
         g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: RTR0Init failed, rc=%Rrc\n", rc);
 
-    RTLogBackdoorPrintf("VBoxGuestOS2Init: failed rc=%Rrc - %s", rc, &g_szInitText[0]);
+    RTLogBackdoorPrintf("vgdrvOS2Init: failed rc=%Rrc - %s", rc, &g_szInitText[0]);
     return rc;
 }
 
@@ -224,7 +224,7 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
  * @returns VBox status code.
  * @retval  VERR_VERSION_MISMATCH       The VMMDev memory didn't meet our expectations.
  */
-static int vboxGuestOS2MapMemory(void)
+static int vgdrvOS2MapMemory(void)
 {
     const RTCCPHYS PhysMMIOBase = g_PhysMMIOBase;
 
@@ -253,8 +253,7 @@ static int vboxGuestOS2MapMemory(void)
     }
     if (RT_FAILURE(rc))
     {
-        Log(("vboxGuestOS2MapMemory: RTR0MemObjEnterPhys(,%RCp,%zx) -> %Rrc\n",
-             PhysMMIOBase, cb, rc));
+        Log(("vgdrvOS2MapMemory: RTR0MemObjEnterPhys(,%RCp,%zx) -> %Rrc\n", PhysMMIOBase, cb, rc));
         return rc;
     }
 
@@ -266,8 +265,7 @@ static int vboxGuestOS2MapMemory(void)
      * And second, because PGM doesn't necessarily respect the cache/writethru bits
      * anyway for normal RAM.
      */
-    rc = RTR0MemObjMapKernel(&g_MemMapMMIO, g_MemObjMMIO, (void *)-1, 0,
-                             RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    rc = RTR0MemObjMapKernel(&g_MemMapMMIO, g_MemObjMMIO, (void *)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -285,7 +283,7 @@ static int vboxGuestOS2MapMemory(void)
             if (RT_ALIGN_32(pVMMDev->u32Size, PAGE_SIZE) == cb)
                 return VINF_SUCCESS;
 
-            Log(("vboxGuestOS2MapMemory: Actual size %#RX32 (tried %#zx)\n", pVMMDev->u32Size, cb));
+            Log(("vgdrvOS2MapMemory: Actual size %#RX32 (tried %#zx)\n", pVMMDev->u32Size, cb));
             cb = RT_ALIGN_32(pVMMDev->u32Size, PAGE_SIZE);
 
             rc = RTR0MemObjFree(g_MemObjMMIO, true); AssertRC(rc);
@@ -294,28 +292,24 @@ static int vboxGuestOS2MapMemory(void)
             rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb, RTMEM_CACHE_POLICY_DONT_CARE);
             if (RT_SUCCESS(rc))
             {
-                rc = RTR0MemObjMapKernel(&g_MemMapMMIO, g_MemObjMMIO, (void *)-1, 0,
-                                         RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                rc = RTR0MemObjMapKernel(&g_MemMapMMIO, g_MemObjMMIO, (void *)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
                 if (RT_SUCCESS(rc))
                     return VINF_SUCCESS;
 
-                Log(("vboxGuestOS2MapMemory: RTR0MemObjMapKernel [%RCp,%zx] -> %Rrc (2nd)\n",
-                     PhysMMIOBase, cb, rc));
+                Log(("vgdrvOS2MapMemory: RTR0MemObjMapKernel [%RCp,%zx] -> %Rrc (2nd)\n", PhysMMIOBase, cb, rc));
             }
             else
-                Log(("vboxGuestOS2MapMemory: RTR0MemObjEnterPhys(,%RCp,%zx) -> %Rrc (2nd)\n",
-                     PhysMMIOBase, cb, rc));
+                Log(("vgdrvOS2MapMemory: RTR0MemObjEnterPhys(,%RCp,%zx) -> %Rrc (2nd)\n", PhysMMIOBase, cb, rc));
         }
         else
         {
             rc = VERR_VERSION_MISMATCH;
-            LogRel(("vboxGuestOS2MapMemory: Bogus VMMDev memory; u32Version=%RX32 (expected %RX32) u32Size=%RX32\n",
+            LogRel(("vgdrvOS2MapMemory: Bogus VMMDev memory; u32Version=%RX32 (expected %RX32) u32Size=%RX32\n",
                     pVMMDev->u32Version, VMMDEV_MEMORY_VERSION, pVMMDev->u32Size));
         }
     }
     else
-        Log(("vboxGuestOS2MapMemory: RTR0MemObjMapKernel [%RCp,%zx] -> %Rrc\n",
-             PhysMMIOBase, cb, rc));
+        Log(("vgdrvOS2MapMemory: RTR0MemObjMapKernel [%RCp,%zx] -> %Rrc\n", PhysMMIOBase, cb, rc));
 
     int rc2 = RTR0MemObjFree(g_MemObjMMIO, true /* fFreeMappings */); AssertRC(rc2);
     g_MemObjMMIO = g_MemMapMMIO = NIL_RTR0MEMOBJ;
@@ -324,11 +318,11 @@ static int vboxGuestOS2MapMemory(void)
 
 
 /**
- * Called fromn VBoxGuestOS2Init to determine which OS/2 version this is.
+ * Called fromn vgdrvOS2Init to determine which OS/2 version this is.
  *
  * @returns VBox OS/2 type.
  */
-static VBOXOSTYPE vboxGuestOS2DetectVersion(void)
+static VBOXOSTYPE vgdrvOS2DetectVersion(void)
 {
     VBOXOSTYPE enmOSType = VBOXOSTYPE_OS2;
 
@@ -348,7 +342,7 @@ static VBOXOSTYPE vboxGuestOS2DetectVersion(void)
 }
 
 
-DECLASM(int) VBoxGuestOS2Open(uint16_t sfn)
+DECLASM(int) vgdrvOS2Open(uint16_t sfn)
 {
     int                 rc;
     PVBOXGUESTSESSION   pSession;
@@ -371,14 +365,14 @@ DECLASM(int) VBoxGuestOS2Open(uint16_t sfn)
         RTSpinlockRelease(g_Spinlock);
     }
 
-    Log(("VBoxGuestOS2Open: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
+    Log(("vgdrvOS2Open: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
     return rc;
 }
 
 
-DECLASM(int) VBoxGuestOS2Close(uint16_t sfn)
+DECLASM(int) vgdrvOS2Close(uint16_t sfn)
 {
-    Log(("VBoxGuestOS2Close: pid=%d sfn=%d\n", (int)RTProcSelf(), sfn));
+    Log(("vgdrvOS2Close: pid=%d sfn=%d\n", (int)RTProcSelf(), sfn));
 
     /*
      * Remove from the hash table.
@@ -432,7 +426,7 @@ DECLASM(int) VBoxGuestOS2Close(uint16_t sfn)
 }
 
 
-DECLASM(int) VBoxGuestOS2IOCtlFast(uint16_t sfn, uint8_t iFunction, int32_t *prc)
+DECLASM(int) vgdrvOS2IOCtlFast(uint16_t sfn, uint8_t iFunction, int32_t *prc)
 {
     /*
      * Find the session.
@@ -481,7 +475,7 @@ DECLASM(int) VBoxGuestOS2IOCtlFast(uint16_t sfn, uint8_t iFunction, int32_t *prc
  *
  * @remark  This is called from the 16-bit thunker as well as directly from the 32-bit clients.
  */
-DECLASM(int) VBoxGuestOS2IDCService(uint32_t u32Session, unsigned iFunction, void *pvData, size_t cbData, size_t *pcbDataReturned)
+DECLASM(int) VGDrvOS2IDCService(uint32_t u32Session, unsigned iFunction, void *pvData, size_t cbData, size_t *pcbDataReturned)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)u32Session;
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -510,7 +504,7 @@ DECLASM(int) VBoxGuestOS2IDCService(uint32_t u32Session, unsigned iFunction, voi
  *
  * @returns Pointer to the session.
  */
-DECLASM(PVBOXGUESTSESSION) VBoxGuestOS2IDCConnect(void)
+DECLASM(PVBOXGUESTSESSION) vgdrvOS2IDCConnect(void)
 {
     PVBOXGUESTSESSION pSession;
     int rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
@@ -523,7 +517,8 @@ DECLASM(PVBOXGUESTSESSION) VBoxGuestOS2IDCConnect(void)
 }
 
 
-DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *pvParm, void *pvData, uint16_t *pcbParm, uint16_t *pcbData)
+DECLASM(int) vgdrvOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *pvParm, void *pvData,
+                           uint16_t *pcbParm, uint16_t *pcbData)
 {
     /*
      * Find the session.
@@ -559,7 +554,7 @@ DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, vo
      */
     if (RT_LIKELY(iCat == VBOXGUEST_IOCTL_CATEGORY))
     {
-        Log(("VBoxGuestOS2IOCtl: pSession=%p iFunction=%#x pvParm=%p pvData=%p *pcbParm=%d *pcbData=%d\n", pSession, iFunction, pvParm, pvData, *pcbParm, *pcbData));
+        Log(("vgdrvOS2IOCtl: pSession=%p iFunction=%#x pvParm=%p pvData=%p *pcbParm=%d *pcbData=%d\n", pSession, iFunction, pvParm, pvData, *pcbParm, *pcbData));
         Assert(pvParm || !*pcbData);
         Assert(pvData);
         Assert(*pcbData == sizeof(int32_t)); /* the return code */
@@ -618,7 +613,7 @@ DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, vo
         AssertMsgReturn(!rc, ("KernCopyOut(%p, %p, sizeof(int32_t)) -> %d\n", pvData, &rc, rc), VERR_LOCK_FAILED);
 #endif
 
-        Log2(("VBoxGuestOS2IOCtl: returns VINF_SUCCESS / %d\n", rc));
+        Log2(("vgdrvOS2IOCtl: returns VINF_SUCCESS / %d\n", rc));
         return VINF_SUCCESS;
     }
     return VERR_NOT_SUPPORTED;
@@ -630,9 +625,9 @@ DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, vo
  *
  * @returns true if it's our interrupt, false it isn't.
  */
-DECLASM(bool) VBoxGuestOS2ISR(void)
+DECLASM(bool) vgdrvOS2ISR(void)
 {
-    Log(("VBoxGuestOS2ISR\n"));
+    Log(("vgdrvOS2ISR\n"));
 
     return VGDrvCommonISR(&g_DevExt);
 }
@@ -655,7 +650,7 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
  * @param   pachChars   Pointer to an array of utf-8 characters.
  * @param   cbChars     Number of bytes in the character array pointed to by pachChars.
  */
-static DECLCALLBACK(size_t) vboxGuestNativeLogOutput(void *pvArg, const char *pachChars, size_t cbChars)
+static DECLCALLBACK(size_t) vgdrvOS2LogOutput(void *pvArg, const char *pachChars, size_t cbChars)
 {
     size_t cchWritten = 0;
     while (cbChars-- > 0)
@@ -683,7 +678,7 @@ int SUPR0Printf(const char *pszFormat, ...)
 #endif
 
     va_start(va, pszFormat);
-    int cch = RTLogFormatV(vboxGuestNativeLogOutput, NULL, pszFormat, va);
+    int cch = RTLogFormatV(vgdrvOS2LogOutput, NULL, pszFormat, va);
     va_end(va);
 
     return cch;

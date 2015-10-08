@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxGuest - Guest Additions Driver.
+ * VBoxGuest - Guest Additions Driver, Internal Header.
  */
 
 /*
@@ -64,11 +64,11 @@ typedef struct VBOXGUESTWAIT
     /** The events we received. */
     uint32_t volatile           fResEvents;
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-    /** Set by VbgdCommonWaitDoWakeUps before leaving the spinlock to call
+    /** Set by VGDrvCommonWaitDoWakeUps before leaving the spinlock to call
      *  RTSemEventMultiSignal. */
     bool volatile               fPendingWakeUp;
     /** Set by the requestor thread if it got the spinlock before the
-     * signaller.  Deals with the race in VbgdCommonWaitDoWakeUps. */
+     * signaller.  Deals with the race in VGDrvCommonWaitDoWakeUps. */
     bool volatile               fFreeMe;
 #endif
     /** The event semaphore. */

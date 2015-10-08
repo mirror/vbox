@@ -64,21 +64,21 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int VBoxGuestSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred);
-static int VBoxGuestSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred);
-static int VBoxGuestSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred);
-static int VBoxGuestSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred);
-static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCred, int *pVal);
-static int VBoxGuestSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEvents, struct pollhead **ppPollHead);
+static int vgdrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred);
+static int vgdrvSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred);
+static int vgdrvSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred);
+static int vgdrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred);
+static int vgdrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCred, int *pVal);
+static int vgdrvSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEvents, struct pollhead **ppPollHead);
 
-static int VBoxGuestSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
-static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
-static int VBoxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
-static int VBoxGuestSolarisQuiesce(dev_info_t *pDip);
+static int vgdrvSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
+static int vgdrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
+static int vgdrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
+static int vgdrvSolarisQuiesce(dev_info_t *pDip);
 
-static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip);
-static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip);
-static uint_t VBoxGuestSolarisISR(caddr_t Arg);
+static int vgdrvSolarisAddIRQ(dev_info_t *pDip);
+static void vgdrvSolarisRemoveIRQ(dev_info_t *pDip);
+static uint_t vgdrvSolarisISR(caddr_t Arg);
 
 
 /*********************************************************************************************************************************
@@ -87,20 +87,20 @@ static uint_t VBoxGuestSolarisISR(caddr_t Arg);
 /**
  * cb_ops: for drivers that support char/block entry points
  */
-static struct cb_ops g_VBoxGuestSolarisCbOps =
+static struct cb_ops g_vgdrvSolarisCbOps =
 {
-    VBoxGuestSolarisOpen,
-    VBoxGuestSolarisClose,
+    vgdrvSolarisOpen,
+    vgdrvSolarisClose,
     nodev,                  /* b strategy */
     nodev,                  /* b dump */
     nodev,                  /* b print */
-    VBoxGuestSolarisRead,
-    VBoxGuestSolarisWrite,
-    VBoxGuestSolarisIOCtl,
+    vgdrvSolarisRead,
+    vgdrvSolarisWrite,
+    vgdrvSolarisIOCtl,
     nodev,                  /* c devmap */
     nodev,                  /* c mmap */
     nodev,                  /* c segmap */
-    VBoxGuestSolarisPoll,
+    vgdrvSolarisPoll,
     ddi_prop_op,            /* property ops */
     NULL,                   /* streamtab  */
     D_NEW | D_MP,           /* compat. flag */
@@ -110,39 +110,39 @@ static struct cb_ops g_VBoxGuestSolarisCbOps =
 /**
  * dev_ops: for driver device operations
  */
-static struct dev_ops g_VBoxGuestSolarisDevOps =
+static struct dev_ops g_vgdrvSolarisDevOps =
 {
     DEVO_REV,               /* driver build revision */
     0,                      /* ref count */
-    VBoxGuestSolarisGetInfo,
+    vgdrvSolarisGetInfo,
     nulldev,                /* identify */
     nulldev,                /* probe */
-    VBoxGuestSolarisAttach,
-    VBoxGuestSolarisDetach,
+    vgdrvSolarisAttach,
+    vgdrvSolarisDetach,
     nodev,                  /* reset */
-    &g_VBoxGuestSolarisCbOps,
+    &g_vgdrvSolarisCbOps,
     (struct bus_ops *)0,
     nodev,                  /* power */
-    VBoxGuestSolarisQuiesce
+    vgdrvSolarisQuiesce
 };
 
 /**
  * modldrv: export driver specifics to the kernel
  */
-static struct modldrv g_VBoxGuestSolarisModule =
+static struct modldrv g_vgdrvSolarisModule =
 {
     &mod_driverops,         /* extern from kernel */
     DEVICE_DESC " " VBOX_VERSION_STRING "r" RT_XSTR(VBOX_SVN_REV),
-    &g_VBoxGuestSolarisDevOps
+    &g_vgdrvSolarisDevOps
 };
 
 /**
  * modlinkage: export install/remove/info to the kernel
  */
-static struct modlinkage g_VBoxGuestSolarisModLinkage =
+static struct modlinkage g_vgdrvSolarisModLinkage =
 {
     MODREV_1,               /* loadable module system revision */
-    &g_VBoxGuestSolarisModule,
+    &g_vgdrvSolarisModule,
     NULL                    /* terminate array of linkage structures */
 };
 
@@ -164,7 +164,7 @@ typedef struct
 /** Device handle (we support only one instance). */
 static dev_info_t          *g_pDip = NULL;
 /** Opaque pointer to file-descriptor states */
-static void                *g_pVBoxGuestSolarisState = NULL;
+static void                *g_pvgdrvSolarisState = NULL;
 /** Device extention & session data association structure. */
 static VBOXGUESTDEVEXT      g_DevExt;
 /** IO port handle. */
@@ -218,18 +218,18 @@ int _init(void)
         /*
          * Prevent module autounloading.
          */
-        modctl_t *pModCtl = mod_getctl(&g_VBoxGuestSolarisModLinkage);
+        modctl_t *pModCtl = mod_getctl(&g_vgdrvSolarisModLinkage);
         if (pModCtl)
             pModCtl->mod_loadflags |= MOD_NOAUTOUNLOAD;
         else
-            LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
+            LogRel((DEVICE_NAME ": failed to disable autounloading!\n"));
 
-        rc = ddi_soft_state_init(&g_pVBoxGuestSolarisState, sizeof(vboxguest_state_t), 1);
+        rc = ddi_soft_state_init(&g_pvgdrvSolarisState, sizeof(vboxguest_state_t), 1);
         if (!rc)
         {
-            rc = mod_install(&g_VBoxGuestSolarisModLinkage);
+            rc = mod_install(&g_vgdrvSolarisModLinkage);
             if (rc)
-                ddi_soft_state_fini(&g_pVBoxGuestSolarisState);
+                ddi_soft_state_fini(&g_pvgdrvSolarisState);
         }
     }
     else
@@ -245,9 +245,9 @@ int _init(void)
 int _fini(void)
 {
     LogFlow((DEVICE_NAME ":_fini\n"));
-    int rc = mod_remove(&g_VBoxGuestSolarisModLinkage);
+    int rc = mod_remove(&g_vgdrvSolarisModLinkage);
     if (!rc)
-        ddi_soft_state_fini(&g_pVBoxGuestSolarisState);
+        ddi_soft_state_fini(&g_pvgdrvSolarisState);
 
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
     RTLogDestroy(RTLogSetDefaultInstance(NULL));
@@ -264,7 +264,7 @@ int _fini(void)
 int _info(struct modinfo *pModInfo)
 {
     LogFlow((DEVICE_NAME ":_info\n"));
-    return mod_info(&g_VBoxGuestSolarisModLinkage, pModInfo);
+    return mod_info(&g_vgdrvSolarisModLinkage, pModInfo);
 }
 
 
@@ -276,16 +276,16 @@ int _info(struct modinfo *pModInfo)
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
+static int vgdrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
-    LogFlow((DEVICE_NAME "::Attach\n"));
+    LogFlow(("vgdrvSolarisAttach:\n"));
     switch (enmCmd)
     {
         case DDI_ATTACH:
         {
             if (g_pDip)
             {
-                LogRel((DEVICE_NAME "::Attach: Only one instance supported.\n"));
+                LogRel(("vgdrvSolarisAttach: Only one instance supported.\n"));
                 return DDI_FAILURE;
             }
 
@@ -324,7 +324,7 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                             /*
                              * Add IRQ of VMMDev.
                              */
-                            rc = VBoxGuestSolarisAddIRQ(pDip);
+                            rc = vgdrvSolarisAddIRQ(pDip);
                             if (rc == DDI_SUCCESS)
                             {
                                 /*
@@ -351,11 +351,11 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                     VGDrvCommonDeleteDevExt(&g_DevExt);
                                 }
                                 else
-                                    LogRel((DEVICE_NAME "::Attach: VbgdCommonInitDevExt failed.\n"));
-                                VBoxGuestSolarisRemoveIRQ(pDip);
+                                    LogRel((DEVICE_NAME "::Attach: VGDrvCommonInitDevExt failed.\n"));
+                                vgdrvSolarisRemoveIRQ(pDip);
                             }
                             else
-                                LogRel((DEVICE_NAME "::Attach: VBoxGuestSolarisAddIRQ failed.\n"));
+                                LogRel((DEVICE_NAME "::Attach: vgdrvSolarisAddIRQ failed.\n"));
                             ddi_regs_map_free(&g_PciMMIOHandle);
                         }
                         else
@@ -394,14 +394,14 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
+static int vgdrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
-    LogFlow((DEVICE_NAME "::Detach\n"));
+    LogFlow(("vgdrvSolarisDetach:\n"));
     switch (enmCmd)
     {
         case DDI_DETACH:
         {
-            VBoxGuestSolarisRemoveIRQ(pDip);
+            vgdrvSolarisRemoveIRQ(pDip);
             ddi_regs_map_free(&g_PciIOHandle);
             ddi_regs_map_free(&g_PciMMIOHandle);
             ddi_remove_minor_node(pDip, NULL);
@@ -430,7 +430,7 @@ static int VBoxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxGuestSolarisQuiesce(dev_info_t *pDip)
+static int vgdrvSolarisQuiesce(dev_info_t *pDip)
 {
     for (int i = 0; i < g_cIntrAllocated; i++)
     {
@@ -455,9 +455,9 @@ static int VBoxGuestSolarisQuiesce(dev_info_t *pDip)
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxGuestSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, void **ppvResult)
+static int vgdrvSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, void **ppvResult)
 {
-    LogFlow((DEVICE_NAME "::GetInfo\n"));
+    LogFlow(("vgdrvSolarisGetInfo:\n"));
 
     int rc = DDI_SUCCESS;
     switch (enmCmd)
@@ -483,12 +483,12 @@ static int VBoxGuestSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void
 /**
  * User context entry points
  */
-static int VBoxGuestSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
+static int vgdrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 {
     int                 rc;
     PVBOXGUESTSESSION   pSession = NULL;
 
-    LogFlow((DEVICE_NAME "::Open\n"));
+    LogFlow(("vgdrvSolarisOpen:\n"));
 
     /*
      * Verify we are being opened as a character device.
@@ -500,16 +500,16 @@ static int VBoxGuestSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred
     unsigned iOpenInstance;
     for (iOpenInstance = 0; iOpenInstance < 4096; iOpenInstance++)
     {
-        if (    !ddi_get_soft_state(g_pVBoxGuestSolarisState, iOpenInstance) /* faster */
-            &&  ddi_soft_state_zalloc(g_pVBoxGuestSolarisState, iOpenInstance) == DDI_SUCCESS)
+        if (    !ddi_get_soft_state(g_pvgdrvSolarisState, iOpenInstance) /* faster */
+            &&  ddi_soft_state_zalloc(g_pvgdrvSolarisState, iOpenInstance) == DDI_SUCCESS)
         {
-            pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, iOpenInstance);
+            pState = ddi_get_soft_state(g_pvgdrvSolarisState, iOpenInstance);
             break;
         }
     }
     if (!pState)
     {
-        Log((DEVICE_NAME "::Open: too many open instances."));
+        Log(("vgdrvSolarisOpen: too many open instances."));
         return ENXIO;
     }
 
@@ -522,38 +522,38 @@ static int VBoxGuestSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred
         pState->pvProcRef = proc_ref();
         pState->pSession = pSession;
         *pDev = makedevice(getmajor(*pDev), iOpenInstance);
-        Log((DEVICE_NAME "::Open: pSession=%p pState=%p pid=%d\n", pSession, pState, (int)RTProcSelf()));
+        Log(("vgdrvSolarisOpen: pSession=%p pState=%p pid=%d\n", pSession, pState, (int)RTProcSelf()));
         return 0;
     }
 
     /* Failed, clean up. */
-    ddi_soft_state_free(g_pVBoxGuestSolarisState, iOpenInstance);
+    ddi_soft_state_free(g_pvgdrvSolarisState, iOpenInstance);
 
-    LogRel((DEVICE_NAME "::Open: VbgdCommonCreateUserSession failed. rc=%d\n", rc));
+    LogRel((DEVICE_NAME "::Open: VGDrvCommonCreateUserSession failed. rc=%d\n", rc));
     return EFAULT;
 }
 
 
-static int VBoxGuestSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
+static int vgdrvSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 {
-    LogFlow((DEVICE_NAME "::Close pid=%d\n", (int)RTProcSelf()));
+    LogFlow(("vgdrvSolarisClose: pid=%d\n", (int)RTProcSelf()));
 
     PVBOXGUESTSESSION pSession = NULL;
-    vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
+    vboxguest_state_t *pState = ddi_get_soft_state(g_pvgdrvSolarisState, getminor(Dev));
     if (!pState)
     {
-        Log((DEVICE_NAME "::Close: failed to get pState.\n"));
+        Log(("vgdrvSolarisClose: failed to get pState.\n"));
         return EFAULT;
     }
 
     proc_unref(pState->pvProcRef);
     pSession = pState->pSession;
     pState->pSession = NULL;
-    Log((DEVICE_NAME "::Close: pSession=%p pState=%p\n", pSession, pState));
-    ddi_soft_state_free(g_pVBoxGuestSolarisState, getminor(Dev));
+    Log(("vgdrvSolarisClose: pSession=%p pState=%p\n", pSession, pState));
+    ddi_soft_state_free(g_pvgdrvSolarisState, getminor(Dev));
     if (!pSession)
     {
-        Log((DEVICE_NAME "::Close: failed to get pSession.\n"));
+        Log(("vgdrvSolarisClose: failed to get pSession.\n"));
         return EFAULT;
     }
 
@@ -565,11 +565,11 @@ static int VBoxGuestSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 }
 
 
-static int VBoxGuestSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
+static int vgdrvSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
     LogFlow((DEVICE_NAME "::Read\n"));
 
-    vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
+    vboxguest_state_t *pState = ddi_get_soft_state(g_pvgdrvSolarisState, getminor(Dev));
     if (!pState)
     {
         Log((DEVICE_NAME "::Close: failed to get pState.\n"));
@@ -585,9 +585,9 @@ static int VBoxGuestSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 }
 
 
-static int VBoxGuestSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
+static int vgdrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
-    LogFlow((DEVICE_NAME "::Write\n"));
+    LogFlow(("vgdrvSolarisWrite:\n"));
     return 0;
 }
 
@@ -613,14 +613,14 @@ static int VBoxGuestSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCred, int *pVal)
+static int vgdrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCred, int *pVal)
 {
-    LogFlow((DEVICE_NAME ":VBoxGuestSolarisIOCtl\n"));
+    LogFlow(("vgdrvSolarisIOCtl: iCmd=%#x\n", Cmd));
 
     /*
      * Get the session from the soft state item.
      */
-    vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
+    vboxguest_state_t *pState = ddi_get_soft_state(g_pvgdrvSolarisState, getminor(Dev));
     if (!pState)
     {
         LogRel((DEVICE_NAME "::IOCtl: no state data for %d\n", getminor(Dev)));
@@ -689,7 +689,7 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
             return EINVAL;
         }
     }
-    Log((DEVICE_NAME "::IOCtl: pSession=%p pid=%d.\n", pSession, (int)RTProcSelf()));
+    Log(("vgdrvSolarisIOCtl: pSession=%p pid=%d.\n", pSession, (int)RTProcSelf()));
 
     /*
      * Process the IOCtl.
@@ -722,7 +722,7 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
          * VBOXGUEST_IOCTL_CANCEL_ALL_EVENTS can return VERR_INTERRUPTED and possibly more in the future;
          * which are not really failures that require logging.
          */
-        Log((DEVICE_NAME "::IOCtl: VbgdCommonIoCtl failed. Cmd=%#x rc=%d\n", Cmd, rc));
+        Log(("vgdrvSolarisIOCtl: VGDrvCommonIoCtl failed. Cmd=%#x rc=%d\n", Cmd, rc));
         if (rc == VERR_PERMISSION_DENIED)   /* RTErrConvertToErrno() below will ring-0 debug assert if we don't do this. */
             rc = VERR_ACCESS_DENIED;
         rc = RTErrConvertToErrno(rc);
@@ -734,11 +734,11 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
 }
 
 
-static int VBoxGuestSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEvents, struct pollhead **ppPollHead)
+static int vgdrvSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEvents, struct pollhead **ppPollHead)
 {
-    LogFlow((DEVICE_NAME "::Poll: fEvents=%d fAnyYet=%d\n", fEvents, fAnyYet));
+    LogFlow(("vgdrvSolarisPoll: fEvents=%d fAnyYet=%d\n", fEvents, fAnyYet));
 
-    vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
+    vboxguest_state_t *pState = ddi_get_soft_state(g_pvgdrvSolarisState, getminor(Dev));
     if (RT_LIKELY(pState))
     {
         PVBOXGUESTSESSION pSession  = (PVBOXGUESTSESSION)pState->pSession;
@@ -759,7 +759,7 @@ static int VBoxGuestSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pR
     }
     else
     {
-        Log((DEVICE_NAME "::Poll: no state data for %d\n", getminor(Dev)));
+        Log(("vgdrvSolarisPoll: no state data for %d\n", getminor(Dev)));
         return EINVAL;
     }
 }
@@ -771,9 +771,9 @@ static int VBoxGuestSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pR
  * @returns Solaris error code.
  * @param   pDip     Pointer to the device info structure.
  */
-static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip)
+static int vgdrvSolarisAddIRQ(dev_info_t *pDip)
 {
-    LogFlow((DEVICE_NAME "::AddIRQ: pDip=%p\n", pDip));
+    LogFlow(("vgdrvSolarisAddIRQ: pDip=%p\n", pDip));
 
     int IntrType = 0;
     int rc = ddi_intr_get_supported_types(pDip, &IntrType);
@@ -812,7 +812,7 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip)
                                 /* Assign interrupt handler functions and enable interrupts. */
                                 for (int i = 0; i < IntrAllocated; i++)
                                 {
-                                    rc = ddi_intr_add_handler(g_pIntr[i], (ddi_intr_handler_t *)VBoxGuestSolarisISR,
+                                    rc = ddi_intr_add_handler(g_pIntr[i], (ddi_intr_handler_t *)vgdrvSolarisISR,
                                                               NULL /* pvArg1 */, NULL /* pvArg2 */);
                                     if (rc == DDI_SUCCESS)
                                         rc = ddi_intr_enable(g_pIntr[i]);
@@ -866,9 +866,9 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip)
  *
  * @param   pDip     Pointer to the device info structure.
  */
-static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip)
+static void vgdrvSolarisRemoveIRQ(dev_info_t *pDip)
 {
-    LogFlow((DEVICE_NAME "::RemoveIRQ:\n"));
+    LogFlow(("vgdrvSolarisRemoveIRQ:\n"));
 
     for (int i = 0; i < g_cIntrAllocated; i++)
     {
@@ -892,9 +892,9 @@ static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip)
  * @param   Arg     Private data (unused, will be NULL).
  * @returns DDI_INTR_CLAIMED if it's our interrupt, DDI_INTR_UNCLAIMED if it isn't.
  */
-static uint_t VBoxGuestSolarisISR(caddr_t Arg)
+static uint_t vgdrvSolarisISR(caddr_t Arg)
 {
-    LogFlow((DEVICE_NAME "::ISR:\n"));
+    LogFlow(("vgdrvSolarisISR:\n"));
 
     mutex_enter(&g_IrqMtx);
     bool fOurIRQ = VGDrvCommonISR(&g_DevExt);
@@ -906,7 +906,7 @@ static uint_t VBoxGuestSolarisISR(caddr_t Arg)
 
 void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
-    LogFlow((DEVICE_NAME "::VGDrvNativeISRMousePollEvent:\n"));
+    LogFlow(("VGDrvNativeISRMousePollEvent:\n"));
 
     /*
      * Wake up poll waiters.

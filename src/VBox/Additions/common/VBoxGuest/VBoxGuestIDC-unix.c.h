@@ -88,7 +88,7 @@ DECLEXPORT(void *) VBOXCALL VBoxGuestIDCOpen(uint32_t *pu32Version)
     mutex_exit(&g_LdiMtx);
 #endif
 
-    LogRel(("VBoxGuestIDCOpen: VbgdCommonCreateKernelSession failed. rc=%d\n", rc));
+    LogRel(("VBoxGuestIDCOpen: VGDrvCommonCreateKernelSession failed. rc=%d\n", rc));
     return NULL;
 }
 
@@ -102,7 +102,7 @@ DECLEXPORT(void *) VBOXCALL VBoxGuestIDCOpen(uint32_t *pu32Version)
 DECLEXPORT(int) VBOXCALL VBoxGuestIDCClose(void *pvSession)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
-    LogFlow(("VBoxGuestIDCClose:\n"));
+    LogFlow(("VBoxGuestIDCClose: pvSession=%p\n", pvSession));
 
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     VGDrvCommonCloseSession(&g_DevExt, pSession);
@@ -140,8 +140,7 @@ DECLEXPORT(int) VBOXCALL VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *
     LogFlow(("VBoxGuestIDCCall: %pvSession=%p Cmd=%u pvData=%p cbData=%d\n", pvSession, iCmd, pvData, cbData));
 
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    AssertMsgReturn(pSession->pDevExt == &g_DevExt,
-                    ("SC: %p != %p\n", pSession->pDevExt, &g_DevExt), VERR_INVALID_HANDLE);
+    AssertMsgReturn(pSession->pDevExt == &g_DevExt, ("SC: %p != %p\n", pSession->pDevExt, &g_DevExt), VERR_INVALID_HANDLE);
 
     return VGDrvCommonIoCtl(iCmd, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
 }

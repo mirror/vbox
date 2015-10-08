@@ -220,14 +220,14 @@ segment TEXT32
 extern KernThunkStackTo32
 extern KernThunkStackTo16
 
-extern NAME(VBoxGuestOS2Init)
-extern NAME(VBoxGuestOS2Open)
-extern NAME(VBoxGuestOS2Close)
-extern NAME(VBoxGuestOS2IOCtl)
-extern NAME(VBoxGuestOS2IOCtlFast)
-extern NAME(VBoxGuestOS2IDCConnect)
-extern NAME(VBoxGuestOS2IDCService)
-extern NAME(VBoxGuestOS2ISR)
+extern NAME(vgdrvOS2Init)
+extern NAME(vgdrvOS2Open)
+extern NAME(vgdrvOS2Close)
+extern NAME(vgdrvOS2IOCtl)
+extern NAME(vgdrvOS2IOCtlFast)
+extern NAME(vgdrvOS2IDCConnect)
+extern NAME(VGDrvOS2IDCService)
+extern NAME(vgdrvOS2ISR)
 
 
 segment DATA16
@@ -239,8 +239,8 @@ GLOBALNAME g_VBoxGuestHdr1
     dw  NAME(g_VBoxGuestHdr2) wrt DATA16            ; NextHeader.off
     dw  DATA16                                      ; NextHeader.sel
     dw  DEVLEV_3 | DEV_30 | DEV_CHAR_DEV | DEV_IOCTL; SDevAtt
-    dw  NAME(VBoxGuestOS2EP) wrt CODE16             ; StrategyEP
-    dw  NAME(VBoxGuestOS2IDC) wrt CODE16            ; IDCEP
+    dw  NAME(VGDrvOS2Entrypoint) wrt CODE16         ; StrategyEP
+    dw  NAME(VGDrvOS2IDC) wrt CODE16                ; IDCEP
     db  'vboxgst$'                                  ; DevName
     dw  0                                           ; SDevProtCS
     dw  0                                           ; SDevProtDS
@@ -252,7 +252,7 @@ align 4
 GLOBALNAME g_VBoxGuestHdr2
     dd  0ffffffffh                                  ; NextHeader (NIL)
     dw  DEVLEV_3 | DEV_30 | DEV_CHAR_DEV            ; SDevAtt
-    dw  NAME(VBoxGuestOS2InitEP) wrt CODE16         ; StrategyEP
+    dw  NAME(vgdrvOS2InitEntrypoint) wrt CODE16     ; StrategyEP
     dw  0                                           ; IDCEP
     db  'vboxgs1$'                                  ; DevName
     dw  0                                           ; SDevProtCS
@@ -275,7 +275,7 @@ GLOBALNAME g_fpfnDevHlp
     dd 0
 
 
-;; VBoxGuestFindAdapter Output
+;; vgdrvFindAdapter Output
 ; @{
 
 ;; The MMIO base of the VMMDev.
@@ -380,7 +380,7 @@ segment CODE16
 ;
 ; Can clobber any registers it likes except SP.
 ;
-BEGINPROC VBoxGuestOS2EP
+BEGINPROC VGDrvOS2Entrypoint
     push    ebp
     mov     ebp, esp
     push    es                                      ; bp - 2
@@ -391,23 +391,23 @@ BEGINPROC VBoxGuestOS2EP
     ; Check for the most frequent first.
     ;
     cmp     byte [es:bx + PKTHDR.cmd], 10h          ; Generic IOCtl
-    jne near VBoxGuestOS2EP_NotGenIOCtl
+    jne near vgdrvOS2EP_NotGenIOCtl
 
 
     ;
     ; Generic I/O Control Request.
     ;
-VBoxGuestOS2EP_GenIOCtl:
+vgdrvOS2EP_GenIOCtl:
 
     ; Fast IOCtl?
     cmp     byte [es:bx + PKTIOCTL.cat], VBOXGUEST_IOCTL_CATEGORY_FAST
-    jne     VBoxGuestOS2EP_GenIOCtl_Other
+    jne     vgdrvOS2EP_GenIOCtl_Other
 
     ;
     ; Fast IOCtl.
-    ;   DECLASM(int) VBoxGuestOS2IOCtlFast(uint16_t sfn, uint8_t iFunction, uint16_t *pcbParm)
+    ;   DECLASM(int) vgdrvOS2IOCtlFast(uint16_t sfn, uint8_t iFunction, uint16_t *pcbParm)
     ;
-VBoxGuestOS2EP_GenIOCtl_Fast:
+vgdrvOS2EP_GenIOCtl_Fast:
     mov     ax, [es:bx + PKTIOCTL.pData + 2]        ; LDT selector to flat address.
     shr     ax, 3
     shl     eax, 16
@@ -422,9 +422,9 @@ VBoxGuestOS2EP_GenIOCtl_Fast:
     movzx   eax, word [es:bx + PKTIOCTL.sfn]
     push    eax                                     ; 00h
 
-    JMP16TO32 VBoxGuestOS2EP_GenIOCtl_Fast_32
+    JMP16TO32 vgdrvOS2EP_GenIOCtl_Fast_32
 segment TEXT32
-GLOBALNAME VBoxGuestOS2EP_GenIOCtl_Fast_32
+GLOBALNAME vgdrvOS2EP_GenIOCtl_Fast_32
 
     ; switch stack to 32-bit.
     mov     ax, DATA32 wrt FLAT
@@ -433,20 +433,20 @@ GLOBALNAME VBoxGuestOS2EP_GenIOCtl_Fast_32
     call    KernThunkStackTo32
 
     ; call the C code (don't cleanup the stack).
-    call    NAME(VBoxGuestOS2IOCtlFast)
+    call    NAME(vgdrvOS2IOCtlFast)
 
     ; switch back the stack.
     push    eax
     call    KernThunkStackTo16
     pop     eax
 
-    JMP32TO16 VBoxGuestOS2EP_GenIOCtl_Fast_32
+    JMP32TO16 vgdrvOS2EP_GenIOCtl_Fast_32
 segment CODE16
-GLOBALNAME VBoxGuestOS2EP_GenIOCtl_Fast_16
+GLOBALNAME vgdrvOS2EP_GenIOCtl_Fast_16
 
     les     bx, [bp - 4]                            ; Reload the packet pointer.
     or      eax, eax
-    jnz near VBoxGuestOS2EP_GeneralFailure
+    jnz near vgdrvOS2EP_GeneralFailure
 
     ; setup output stuff.
     mov     edx, esp
@@ -461,7 +461,7 @@ GLOBALNAME VBoxGuestOS2EP_GenIOCtl_Fast_16
     ;
     ; Other IOCtl (slow)
     ;
-VBoxGuestOS2EP_GenIOCtl_Other:
+vgdrvOS2EP_GenIOCtl_Other:
     mov     eax, [es:bx +  PKTIOCTL.cbParm]         ; Load cbParm and cbData
     push    eax                                     ; 1eh - in/out data size.
                                                     ; 1ch - in/out parameter size.
@@ -475,7 +475,7 @@ VBoxGuestOS2EP_GenIOCtl_Other:
     movzx   esi, word [es:bx + PKTIOCTL.pData]      ; offset
     mov     dl, DevHlp_VirtToLin
     call far [NAME(g_fpfnDevHlp)]
-    jc near VBoxGuestOS2EP_GeneralFailure
+    jc near vgdrvOS2EP_GeneralFailure
     jmp     .finish_data
 .no_data:
     xor     eax, eax
@@ -489,7 +489,7 @@ VBoxGuestOS2EP_GenIOCtl_Other:
     movzx   esi, word [es:bx + PKTIOCTL.pParm]      ; offset
     mov     dl, DevHlp_VirtToLin
     call far [NAME(g_fpfnDevHlp)]
-    jc near VBoxGuestOS2EP_GeneralFailure
+    jc near vgdrvOS2EP_GeneralFailure
     jmp     .finish_parm
 .no_parm:
     xor     eax, eax
@@ -508,9 +508,9 @@ VBoxGuestOS2EP_GenIOCtl_Other:
     movzx   eax, word [es:bx + PKTIOCTL.sfn]
     push    eax                                     ; 00h
 
-    JMP16TO32 VBoxGuestOS2EP_GenIOCtl_Other_32
+    JMP16TO32 vgdrvOS2EP_GenIOCtl_Other_32
 segment TEXT32
-GLOBALNAME VBoxGuestOS2EP_GenIOCtl_Other_32
+GLOBALNAME vgdrvOS2EP_GenIOCtl_Other_32
 
     ; switch stack to 32-bit.
     mov     ax, DATA32 wrt FLAT
@@ -525,20 +525,20 @@ GLOBALNAME VBoxGuestOS2EP_GenIOCtl_Other_32
     mov     [esp + 18h], edx
 
     ; call the C code (don't cleanup the stack).
-    call    NAME(VBoxGuestOS2IOCtl)
+    call    NAME(vgdrvOS2IOCtl)
 
     ; switch back the stack.
     push    eax
     call    KernThunkStackTo16
     pop     eax
 
-    JMP32TO16 VBoxGuestOS2EP_GenIOCtl_Other_16
+    JMP32TO16 vgdrvOS2EP_GenIOCtl_Other_16
 segment CODE16
-GLOBALNAME VBoxGuestOS2EP_GenIOCtl_Other_16
+GLOBALNAME vgdrvOS2EP_GenIOCtl_Other_16
 
     les     bx, [bp - 4]                            ; Reload the packet pointer.
     or      eax, eax
-    jnz near VBoxGuestOS2EP_GeneralFailure
+    jnz near vgdrvOS2EP_GeneralFailure
 
     ; setup output stuff.
     mov     edx, esp
@@ -554,34 +554,34 @@ GLOBALNAME VBoxGuestOS2EP_GenIOCtl_Other_16
     ;
     ; Less Performance Critical Requests.
     ;
-VBoxGuestOS2EP_NotGenIOCtl:
+vgdrvOS2EP_NotGenIOCtl:
     cmp     byte [es:bx + PKTHDR.cmd], 0dh          ; Open
-    je      VBoxGuestOS2EP_Open
+    je      vgdrvOS2EP_Open
     cmp     byte [es:bx + PKTHDR.cmd], 0eh          ; Close
-    je      VBoxGuestOS2EP_Close
+    je      vgdrvOS2EP_Close
     cmp     byte [es:bx + PKTHDR.cmd], 00h          ; Init
-    je      VBoxGuestOS2EP_Init
+    je      vgdrvOS2EP_Init
 %ifdef DEBUG_READ
     cmp     byte [es:bx + PKTHDR.cmd], 04h          ; Read
-    je near VBoxGuestOS2EP_Read
+    je near vgdrvOS2EP_Read
 %endif
-    jmp near VBoxGuestOS2EP_NotSupported
+    jmp near vgdrvOS2EP_NotSupported
 
 
     ;
     ; Open Request. w/ ring-0 init.
     ;
-VBoxGuestOS2EP_Open:
+vgdrvOS2EP_Open:
     cmp     byte [NAME(g_fInitialized)], 1
-    jne     VBoxGuestOS2EP_OpenOther
+    jne     vgdrvOS2EP_OpenOther
 
     ; First argument, the system file number.
     movzx   eax, word [es:bx + PKTOPEN.sfn]
     push    eax
 
-    JMP16TO32 VBoxGuestOS2EP_Open_32
+    JMP16TO32 vgdrvOS2EP_Open_32
 segment TEXT32
-GLOBALNAME VBoxGuestOS2EP_Open_32
+GLOBALNAME vgdrvOS2EP_Open_32
 
     ; switch stack to 32-bit.
     mov     ax, DATA32 wrt FLAT
@@ -590,49 +590,49 @@ GLOBALNAME VBoxGuestOS2EP_Open_32
     call    KernThunkStackTo32
 
     ; call the C code.
-    call    NAME(VBoxGuestOS2Open)
+    call    NAME(vgdrvOS2Open)
 
     ; switch back the stack.
     push    eax
     call    KernThunkStackTo16
     pop     eax
 
-    JMP32TO16 VBoxGuestOS2EP_Open_16
+    JMP32TO16 vgdrvOS2EP_Open_16
 segment CODE16
-GLOBALNAME VBoxGuestOS2EP_Open_16
+GLOBALNAME vgdrvOS2EP_Open_16
 
     les     bx, [bp - 4]                            ; Reload the packet pointer.
     or      eax, eax
-    jnz near VBoxGuestOS2EP_GeneralFailure
+    jnz near vgdrvOS2EP_GeneralFailure
     mov     word [es:bx + PKTHDR.status], 00100h    ; done, ok.
-    jmp near VBoxGuestOS2EP_Done
+    jmp near vgdrvOS2EP_Done
 
     ; Initializing or failed init?
-VBoxGuestOS2EP_OpenOther:
+vgdrvOS2EP_OpenOther:
     cmp     byte [NAME(g_fInitialized)], 0
-    jne     VBoxGuestOS2EP_OpenFailed
+    jne     vgdrvOS2EP_OpenFailed
 
     mov     byte [NAME(g_fInitialized)], -1
-    call    NAME(VBoxGuestRing0Init)
+    call    NAME(vgdrvRing0Init)
     cmp     byte [NAME(g_fInitialized)], 1
-    je      VBoxGuestOS2EP_Open
+    je      vgdrvOS2EP_Open
 
-VBoxGuestOS2EP_OpenFailed:
+vgdrvOS2EP_OpenFailed:
     mov     word [es:bx + PKTHDR.status], 0810fh    ; error, done, init failed.
-    jmp near VBoxGuestOS2EP_Done
+    jmp near vgdrvOS2EP_Done
 
 
     ;
     ; Close Request.
     ;
-VBoxGuestOS2EP_Close:
+vgdrvOS2EP_Close:
     ; First argument, the system file number.
     movzx   eax, word [es:bx + PKTOPEN.sfn]
     push    eax
 
-    JMP16TO32 VBoxGuestOS2EP_Close_32
+    JMP16TO32 vgdrvOS2EP_Close_32
 segment TEXT32
-GLOBALNAME VBoxGuestOS2EP_Close_32
+GLOBALNAME vgdrvOS2EP_Close_32
 
     ; switch stack to 32-bit.
     mov     ax, DATA32 wrt FLAT
@@ -641,34 +641,34 @@ GLOBALNAME VBoxGuestOS2EP_Close_32
     call    KernThunkStackTo32
 
     ; call the C code.
-    call    NAME(VBoxGuestOS2Close)
+    call    NAME(vgdrvOS2Close)
 
     ; switch back the stack.
     push    eax
     call    KernThunkStackTo16
     pop     eax
 
-    JMP32TO16 VBoxGuestOS2EP_Close_16
+    JMP32TO16 vgdrvOS2EP_Close_16
 segment CODE16
-GLOBALNAME VBoxGuestOS2EP_Close_16
+GLOBALNAME vgdrvOS2EP_Close_16
 
     les     bx, [bp - 4]                            ; Reload the packet pointer.
     or      eax, eax
-    jnz near VBoxGuestOS2EP_GeneralFailure
+    jnz near vgdrvOS2EP_GeneralFailure
     mov     word [es:bx + PKTHDR.status], 00100h    ; done, ok.
-    jmp near VBoxGuestOS2EP_Done
+    jmp near vgdrvOS2EP_Done
 
 
     ;
     ; Init Request.
     ; Find the VMMDev adapter so we can unload the driver (and avoid trouble) if not found.
     ;
-VBoxGuestOS2EP_Init:
-    call    NAME(VBoxGuestFindAdapter)
+vgdrvOS2EP_Init:
+    call    NAME(vgdrvFindAdapter)
     test    ax, ax
     jz      .ok
     mov     word [es:bx + PKTHDR.status], 0810fh    ; error, done, init failed.
-    call    NAME(VBoxGuestOS2InitFlushText)
+    call    NAME(vgdrvOS2InitFlushText)
     jmp     .next
 .ok:
     mov     word [es:bx + PKTHDR.status], 00100h    ; done, ok.
@@ -677,7 +677,7 @@ VBoxGuestOS2EP_Init:
     mov     word [es:bx + PKTINITOUT.cbCode16], NAME(g_InitCodeStart) wrt CODE16
     mov     word [es:bx + PKTINITOUT.cbData16], NAME(g_InitDataStart) wrt DATA16
     mov     dword [es:bx + PKTINITOUT.fpaBPBs], 0
-    jmp near VBoxGuestOS2EP_Done
+    jmp near vgdrvOS2EP_Done
 
 
 %ifdef DEBUG_READ
@@ -685,7 +685,7 @@ VBoxGuestOS2EP_Init:
     ; Read Request.
     ; Return log data.
     ;
-VBoxGuestOS2EP_Read:
+vgdrvOS2EP_Read:
     ; Any log data available?
     xor     dx, dx
     mov     ax, [NAME(g_offLogTail)]
@@ -734,36 +734,36 @@ VBoxGuestOS2EP_Read:
     les     bx, [bp - 4]                            ; Reload the packet pointer.
     mov     word [es:bx + PKTRW.cbTrans], dx
     mov     word [es:bx + PKTHDR.status], 00100h    ; done, ok.
-    jmp near VBoxGuestOS2EP_Done
+    jmp near vgdrvOS2EP_Done
 
 .log_phystovirt_failed:
     les     bx, [bp - 4]                            ; Reload the packet pointer.
-    jmp     VBoxGuestOS2EP_GeneralFailure
+    jmp     vgdrvOS2EP_GeneralFailure
 %endif ; DEBUG_READ
 
 
     ;
     ; Return 'unknown command' error.
     ;
-VBoxGuestOS2EP_NotSupported:
+vgdrvOS2EP_NotSupported:
     mov     word [es:bx + PKTHDR.status], 08103h    ; error, done, unknown command.
-    jmp     VBoxGuestOS2EP_Done
+    jmp     vgdrvOS2EP_Done
 
     ;
     ; Return 'general failure' error.
     ;
-VBoxGuestOS2EP_GeneralFailure:
+vgdrvOS2EP_GeneralFailure:
     mov     word [es:bx + PKTHDR.status], 0810ch    ; error, done, general failure.
-    jmp     VBoxGuestOS2EP_Done
+    jmp     vgdrvOS2EP_Done
 
     ;
     ; Non-optimized return path.
     ;
-VBoxGuestOS2EP_Done:
+vgdrvOS2EP_Done:
     mov     sp, bp
     pop     ebp
     retf
-ENDPROC VBoxGuestOS2EP
+ENDPROC VGDrvOS2Entrypoint
 
 
 ;;
@@ -772,10 +772,10 @@ ENDPROC VBoxGuestOS2EP
 ; This is only used to do the DosOpen on the main driver so we can
 ; do ring-3 init and report failures.
 ;
-GLOBALNAME VBoxGuestOS2InitEP
+GLOBALNAME vgdrvOS2InitEntryPoint
     ; The only request we're servicing is the 'init' one.
     cmp     word [es:bx + PKTHDR.cmd], 0
-    je near NAME(VBoxGuestOS2InitEPServiceInitReq)
+    je near NAME(vgdrvOS2InitEntryPointServiceInitReq)
 
     ; Ok, it's not the init request, just fail it.
     mov     word [es:bx + PKTHDR.status], 08103h    ; error, done, unknown command.
@@ -788,11 +788,11 @@ GLOBALNAME VBoxGuestOS2InitEP
 ; This is only used to setup connection, the returned structure 
 ; will provide the entry points that we'll be using.
 ;
-; @cproto  void far __cdecl VBoxGuestOS2IDC(VBOXGUESTOS2IDCCONNECT far *fpConnectInfo);
+; @cproto  void far __cdecl VGDrvOS2IDC(VBOXGUESTOS2IDCCONNECT far *fpConnectInfo);
 ;
 ; @param   fpConnectInfo   [bp + 8]     Pointer to an VBOXGUESTOS2IDCCONNECT structure.
 ;
-GLOBALNAME VBoxGuestOS2IDC
+GLOBALNAME VGDrvOS2IDC
     push    ebp                         ; bp -  0h
     mov     ebp, esp                    
     ; save everything we might touch.
@@ -804,9 +804,9 @@ GLOBALNAME VBoxGuestOS2IDC
     push    edx                         ; bp - 14h
     and     sp, 0fffch
 
-    JMP16TO32 VBoxGuestOS2IDC_32
+    JMP16TO32 VGDrvOS2IDC_32
 segment TEXT32
-GLOBALNAME VBoxGuestOS2IDC_32
+GLOBALNAME VGDrvOS2IDC_32
 
     ; switch stack to 32-bit.
     mov     ax, DATA32 wrt FLAT
@@ -815,7 +815,7 @@ GLOBALNAME VBoxGuestOS2IDC_32
     call    KernThunkStackTo32
 
     ; call the C code.
-    call    NAME(VBoxGuestOS2IDCConnect)
+    call    NAME(vgdrvOS2IDCConnect)
 
     ;
     ; Load the return buffer address into ds:ebx and setup the buffer.
@@ -827,10 +827,10 @@ GLOBALNAME VBoxGuestOS2IDC_32
 
     mov     dword [ebx + VBGOS2IDC.u32Version       ], VMMDEV_VERSION
     mov     dword [ebx + VBGOS2IDC.u32Session       ], eax
-    mov     dword [ebx + VBGOS2IDC.pfnServiceEP     ], NAME(VBoxGuestOS2IDCService)
-    mov     word  [ebx + VBGOS2IDC.fpfnServiceEP    ], NAME(VBoxGuestOs2IDCService16) wrt CODE16
+    mov     dword [ebx + VBGOS2IDC.pfnServiceEP     ], NAME(VGDrvOS2IDCService)
+    mov     word  [ebx + VBGOS2IDC.fpfnServiceEP    ], NAME(VGDrvOS2IDCService16) wrt CODE16
     mov     word  [ebx + VBGOS2IDC.fpfnServiceEP + 2], CODE16
-    mov     word  [ebx + VBGOS2IDC.fpfnServiceAsmEP ], NAME(VBoxGuestOs2IDCService16Asm) wrt CODE16
+    mov     word  [ebx + VBGOS2IDC.fpfnServiceAsmEP ], NAME(VGDrvOS2IDCService16Asm) wrt CODE16
     mov     word  [ebx + VBGOS2IDC.fpfnServiceAsmEP+2],CODE16
 
     mov     ax, DATA32 wrt FLAT
@@ -839,9 +839,9 @@ GLOBALNAME VBoxGuestOS2IDC_32
     ; switch back the stack.
     call    KernThunkStackTo16
 
-    JMP32TO16 VBoxGuestOS2IDC_16
+    JMP32TO16 VGDrvOS2IDC_16
 segment CODE16
-GLOBALNAME VBoxGuestOS2IDC_16
+GLOBALNAME VGDrvOS2IDC_16
 
     ; restore.
     lea     sp, [bp - 14h]
@@ -853,7 +853,7 @@ GLOBALNAME VBoxGuestOS2IDC_16
     pop     es
     pop     ebp
     retf
-ENDPROC VBoxGuestOS2IDC
+ENDPROC VGDrvOS2IDC
 
 
 ;;
@@ -874,9 +874,9 @@ ENDPROC VBoxGuestOS2IDC
 ; @param   pcbDataReturned     bp + 14h - Where to store the amount of data that's returned.
 ;                                         This can be NULL if pvData is NULL.
 ;
-; @cproto long far __cdecl VBoxGuestOs2IDCService16(uint32_t u32Session, uint16_t iFunction, void far *fpvData, uint16_t cbData, uint16_t far *pcbDataReturned);
+; @cproto long far __cdecl VGDrvOS2IDCService16(uint32_t u32Session, uint16_t iFunction, void far *fpvData, uint16_t cbData, uint16_t far *pcbDataReturned);
 ;
-GLOBALNAME VBoxGuestOs2IDCService16
+GLOBALNAME VGDrvOS2IDCService16
     push    ebp                         ; bp -  0h
     mov     ebp, esp                    
     push    es                          ; bp -  2h
@@ -907,7 +907,7 @@ GLOBALNAME VBoxGuestOs2IDCService16
     movzx   esi, word [bp + 0eh]        ; offset
     mov     dl, DevHlp_VirtToLin
     call far [NAME(g_fpfnDevHlp)]
-    jc near VBoxGuestOs2IDCService16_InvalidPointer
+    jc near VGDrvOS2IDCService16_InvalidPointer
     jmp     .finish_data
 .no_data:
     xor     eax, eax
@@ -918,9 +918,9 @@ GLOBALNAME VBoxGuestOs2IDCService16
     mov     ecx, [bp + 08h]               
     push    ecx                         ; esp + 00h:    u32Session
 
-    JMP16TO32 VBoxGuestOs2IDCService16_32
+    JMP16TO32 VGDrvOS2IDCService16_32
 segment TEXT32
-GLOBALNAME VBoxGuestOs2IDCService16_32
+GLOBALNAME VGDrvOS2IDCService16_32
 
     ; switch stack to 32-bit.
     mov     ax, DATA32 wrt FLAT
@@ -933,16 +933,16 @@ GLOBALNAME VBoxGuestOs2IDCService16_32
     mov     [esp + 14h], eax
 
     ; call the C code (don't cleanup the stack).
-    call    NAME(VBoxGuestOS2IDCService)
+    call    NAME(VGDrvOS2IDCService)
 
     ; switch back the stack.
     push    eax
     call    KernThunkStackTo16
     pop     eax
 
-    JMP32TO16 VBoxGuestOs2IDCService16_16
+    JMP32TO16 VGDrvOS2IDCService16_16
 segment CODE16
-GLOBALNAME VBoxGuestOs2IDCService16_16
+GLOBALNAME VGDrvOS2IDCService16_16
 
     ; Set *pcbDataReturned.
     cmp     word [bp + 14h + 2], 3
@@ -954,7 +954,7 @@ GLOBALNAME VBoxGuestOs2IDCService16_16
     xchg    dx, bx
 .no_pcbDataReturned:
 
-VBoxGuestOs2IDCService16_Done:
+VGDrvOS2IDCService16_Done:
     lea     sp, [bp - 10h]
     pop     esi
     pop     edx
@@ -964,16 +964,16 @@ VBoxGuestOs2IDCService16_Done:
     pop     ebp
     retf
 
-VBoxGuestOs2IDCService16_InvalidPointer:
+VGDrvOS2IDCService16_InvalidPointer:
     mov     ax, VERR_INVALID_POINTER
-    jmp     VBoxGuestOs2IDCService16_Done
-ENDPROC VBoxGuestOs2IDCService16
+    jmp     VGDrvOS2IDCService16_Done
+ENDPROC VGDrvOS2IDCService16
 
 
 ;;
 ; The 16-bit IDC entry point, register based.
 ;
-; This is just a wrapper around VBoxGuestOs2IDCService16 to simplify
+; This is just a wrapper around VGDrvOS2IDCService16 to simplify
 ; calls from 16-bit assembly code.
 ;
 ; @returns ax: VBox status code; cx: The amount of data returned.
@@ -983,7 +983,7 @@ ENDPROC VBoxGuestOs2IDCService16
 ; @param   pvData              es:bx - The input/output data buffer.
 ; @param   cbData              cx    - The size of the data buffer.
 ;
-GLOBALNAME VBoxGuestOs2IDCService16Asm
+GLOBALNAME VGDrvOS2IDCService16Asm
     push    ebp                         ; bp - 0h
     mov     ebp, esp
     push    edx                         ; bp - 4h
@@ -1004,7 +1004,7 @@ GLOBALNAME VBoxGuestOs2IDCService16Asm
     mov     [bp - 13h], byte 0
     mov     [bp - 18h], eax             ; bp - 18h (dd): u32Session
 
-    call    NAME(VBoxGuestOs2IDCService16)
+    call    NAME(VGDrvOS2IDCService16)
 
     mov     cx, [bp - 08h]              ; cbDataReturned.
 
@@ -1012,7 +1012,7 @@ GLOBALNAME VBoxGuestOs2IDCService16Asm
     mov     esp, ebp
     pop     ebp
     retf
-ENDPROC VBoxGuestOs2IDCService16Asm
+ENDPROC VGDrvOS2IDCService16Asm
 
 
 
@@ -1026,7 +1026,7 @@ ENDPROC VBoxGuestOs2IDCService16Asm
 ; @returns  CF=0 if it's our interrupt, CF=1 it it isn't.
 ;
 ;
-GLOBALNAME VBoxGuestOS2ISR16
+GLOBALNAME vgdrvOS2ISR16
     push    ebp
     mov     ebp, esp
     pushf                               ; bp - 02h
@@ -1042,9 +1042,9 @@ GLOBALNAME VBoxGuestOS2ISR16
 
     and     sp, 0fff0h                  ; align the stack (16-bytes make GCC extremely happy).
 
-    JMP16TO32 VBoxGuestOS2ISR16_32
+    JMP16TO32 vgdrvOS2ISR16_32
 segment TEXT32
-GLOBALNAME VBoxGuestOS2ISR16_32
+GLOBALNAME vgdrvOS2ISR16_32
 
     mov     ax, DATA32 wrt FLAT
     mov     ds, ax
@@ -1052,14 +1052,14 @@ GLOBALNAME VBoxGuestOS2ISR16_32
 
     call    KernThunkStackTo32
 
-    call    NAME(VBoxGuestOS2ISR)
+    call    NAME(vgdrvOS2ISR)
     mov     ebx, eax
 
     call    KernThunkStackTo16
 
-    JMP32TO16 VBoxGuestOS2ISR16_16
+    JMP32TO16 vgdrvOS2ISR16_16
 segment CODE16
-GLOBALNAME VBoxGuestOS2ISR16_16
+GLOBALNAME vgdrvOS2ISR16_16
 
     lea     sp, [bp - 1eh]
     pop     edi
@@ -1092,7 +1092,7 @@ GLOBALNAME VBoxGuestOS2ISR16_16
     pop     ebp
     clc
     retf
-ENDPROC VBoxGuestOS2ISR16
+ENDPROC vgdrvOS2ISR16
 
 
 
@@ -1109,7 +1109,7 @@ segment TEXT32
 ; @returns  0 on success, some non-zero OS/2 error code on failure.
 ; @param    bIrq        [ebp + 8]       The IRQ number. (uint8_t)
 ;
-GLOBALNAME VBoxGuestOS2SetIRQ
+GLOBALNAME vgdrvOS2DevHlpSetIRQ
     push    ebp
     mov     ebp, esp
     push    ebx
@@ -1119,13 +1119,13 @@ GLOBALNAME VBoxGuestOS2SetIRQ
 
     movzx   ebx, byte [ebp + 8]         ; load bIrq into BX.
 
-    JMP32TO16 VBoxGuestOS2SetIRQ_16
+    JMP32TO16 vgdrvOS2DevHlpSetIRQ_16
 segment CODE16
-GLOBALNAME VBoxGuestOS2SetIRQ_16
+GLOBALNAME vgdrvOS2DevHlpSetIRQ_16
 
     mov     ax, DATA16                  ; for g_fpfnDevHlp.
     mov     ds, ax
-    mov     ax, NAME(VBoxGuestOS2ISR16) ; The devhlp assume it's relative to DS.
+    mov     ax, NAME(vgdrvOS2ISR16)     ; The devhlp assume it's relative to DS.
     mov     dh, 1                       ; 1 = shared
     mov     dl, DevHlp_SetIRQ
     call far [NAME(g_fpfnDevHlp)]
@@ -1139,9 +1139,9 @@ GLOBALNAME VBoxGuestOS2SetIRQ_16
     xor     eax, eax
 
 .go_back:
-    JMP16TO32 VBoxGuestOS2SetIRQ_32
+    JMP16TO32 vgdrvOS2DevHlpSetIRQ_32
 segment TEXT32
-GLOBALNAME VBoxGuestOS2SetIRQ_32
+GLOBALNAME vgdrvOS2DevHlpSetIRQ_32
 
     pop     ds                          ; KernThunkStackTo32 ASSUMES flat DS and ES.
 
@@ -1152,7 +1152,7 @@ GLOBALNAME VBoxGuestOS2SetIRQ_32
     pop     ebx
     pop     ebp
     ret
-ENDPROC VBoxGuestOS2SetIRQ
+ENDPROC vgdrvOS2DevHlpSetIRQ
 
 
 
@@ -1178,7 +1178,7 @@ int3
 ;;
 ; The Ring-3 init code.
 ;
-BEGINPROC VBoxGuestOS2InitEPServiceInitReq
+BEGINPROC vgdrvOS2InitEntryPointServiceInitReq
     push    ebp
     mov     ebp, esp
     push    es                                      ; bp - 2
@@ -1226,7 +1226,7 @@ BEGINPROC VBoxGuestOS2InitEPServiceInitReq
     call far DOS16OPEN
 
     push    ax                                      ; Quickly flush any text.
-    call    NAME(VBoxGuestOS2InitFlushText)
+    call    NAME(vgdrvOS2InitFlushText)
     pop     ax
 
     or      ax, ax
@@ -1274,13 +1274,13 @@ BEGINPROC VBoxGuestOS2InitEPServiceInitReq
     mov     sp, bp
     pop     ebp
     retf
-ENDPROC VBoxGuestOS2InitEPServiceInitReq
+ENDPROC vgdrvOS2InitEntryPointServiceInitReq
 
 
 ;;
 ; The Ring-0 init code.
 ;
-BEGINPROC VBoxGuestRing0Init
+BEGINPROC vgdrvRing0Init
     push    es
     push    esi
     push    ebp
@@ -1294,8 +1294,8 @@ BEGINPROC VBoxGuestRing0Init
     mov     ax, [g_fpszArgs + 2]                    ; selector
     mov     dl, DevHlp_VirtToLin
     call far [NAME(g_fpfnDevHlp)]
-    jc near VBoxGuestRing0Init_done                 ; eax is non-zero on failure (can't happen)
-    push    eax                                     ; 00h - pszArgs (for VBoxGuestOS2Init).
+    jc near vgdrvRing0Init_done                     ; eax is non-zero on failure (can't happen)
+    push    eax                                     ; 00h - pszArgs (for vgdrvOS2Init).
 
     ;
     ; Do 16-bit init?
@@ -1305,9 +1305,9 @@ BEGINPROC VBoxGuestRing0Init
     ;
     ; Do 32-bit init
     ;
-    JMP16TO32 VBoxGuestRing0Init_32
+    JMP16TO32 vgdrvRing0Init_32
 segment TEXT32
-GLOBALNAME VBoxGuestRing0Init_32
+GLOBALNAME vgdrvRing0Init_32
 
     ; switch stack to 32-bit.
     mov     ax, DATA32 wrt FLAT
@@ -1316,7 +1316,7 @@ GLOBALNAME VBoxGuestRing0Init_32
     call    KernThunkStackTo32
 
     ; call the C code.
-    call    NAME(VBoxGuestOS2Init)
+    call    NAME(vgdrvOS2Init)
 
     ; switch back the stack and reload ds.
     push    eax
@@ -1326,28 +1326,28 @@ GLOBALNAME VBoxGuestRing0Init_32
     mov     dx, seg NAME(g_fInitialized)
     mov     ds, dx
 
-    JMP32TO16 VBoxGuestRing0Init_16
+    JMP32TO16 vgdrvRing0Init_16
 segment CODE16_INIT
-GLOBALNAME VBoxGuestRing0Init_16
+GLOBALNAME vgdrvRing0Init_16
 
     ; check the result and set g_fInitialized on success.
     or      eax, eax
-    jnz     VBoxGuestRing0Init_done
+    jnz     vgdrvRing0Init_done
     mov     byte [NAME(g_fInitialized)], 1
 
-VBoxGuestRing0Init_done:
+vgdrvRing0Init_done:
     mov     sp, bp
     pop     ebp
     pop     esi
     pop     es
     ret
-ENDPROC VBoxGuestRing0Init
+ENDPROC vgdrvRing0Init
 
 
 ;;
 ; Flush any text in the text buffer.
 ;
-BEGINPROC VBoxGuestOS2InitFlushText
+BEGINPROC vgdrvOS2InitFlushText
     push    bp
     mov     bp, sp
 
@@ -1406,7 +1406,7 @@ BEGINPROC VBoxGuestOS2InitFlushText
     mov     sp, bp
     pop     bp
     ret
-ENDPROC VBoxGuestOS2InitFlushText
+ENDPROC vgdrvOS2InitFlushText
 
 
 ;; The device name for DosOpen.
@@ -1426,7 +1426,7 @@ g_szOemHlpDevName:
 ; @remark   ASSUMES DS:DATA16.
 ; @uses     nothing.
 ;
-BEGINPROC VBoxGuestFindAdapter
+BEGINPROC vgdrvFindAdapter
     push    ebx
     push    ecx
     push    edx
@@ -1600,7 +1600,7 @@ BEGINPROC VBoxGuestFindAdapter
     jnz     .bitch
 
     ;
-    ; Return to VBoxGuestOS2EP_Init.
+    ; Return to vgdrvOS2EP_Init.
     ;
 .done:
     mov     esp, ebp
@@ -1646,7 +1646,7 @@ BEGINPROC VBoxGuestFindAdapter
 
     ;
     ; Nested function which reads a PCI config register.
-    ; (This operates on the VBoxGuestFindAdapter stack frame.)
+    ; (This operates on the vgdrvFindAdapter stack frame.)
     ;
     ; Input:
     ;   al - register to read
@@ -1678,7 +1678,7 @@ BEGINPROC VBoxGuestFindAdapter
 
     ret
 
-ENDPROC VBoxGuestFindAdapter
+ENDPROC vgdrvFindAdapter
 
 
 

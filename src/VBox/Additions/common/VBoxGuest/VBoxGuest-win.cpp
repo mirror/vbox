@@ -44,19 +44,24 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
-static NTSTATUS vbgdNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
-static void     vbgdNtUnload(PDRIVER_OBJECT pDrvObj);
-static NTSTATUS vbgdNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vbgdNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vbgdNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vbgdNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vbgdNtRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName, PULONG puValue);
-static NTSTATUS vbgdNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vbgdNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vbgdNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-#ifdef DEBUG
-static void     vbgdNtDoTests(void);
+static NTSTATUS vgdrvNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
+static void     vgdrvNtUnload(PDRIVER_OBJECT pDrvObj);
+static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vgdrvNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vgdrvNtRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName, PULONG puValue);
+static NTSTATUS vgdrvNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+#ifdef VBOX_STRICT
+static void     vgdrvNtDoTests(void);
 #endif
+static VOID     vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext);
+static BOOLEAN  vgdrvNtIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
+static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTWIN pDevExt);
+static NTSTATUS vgdrvNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS PhysAddr, ULONG cbToMap,
+                                       void **ppvMMIOBase, uint32_t *pcbMMIO);
 RT_C_DECLS_END
 
 
@@ -69,13 +74,13 @@ RT_C_DECLS_END
 
 #ifdef ALLOC_PRAGMA
 # pragma alloc_text(INIT, DriverEntry)
-# pragma alloc_text(PAGE, vbgdNtAddDevice)
-# pragma alloc_text(PAGE, vbgdNtUnload)
-# pragma alloc_text(PAGE, vbgdNtCreate)
-# pragma alloc_text(PAGE, vbgdNtClose)
-# pragma alloc_text(PAGE, vbgdNtShutdown)
-# pragma alloc_text(PAGE, vbgdNtNotSupportedStub)
-# pragma alloc_text(PAGE, vbgdNtScanPCIResourceList)
+# pragma alloc_text(PAGE, vgdrvNtAddDevice)
+# pragma alloc_text(PAGE, vgdrvNtUnload)
+# pragma alloc_text(PAGE, vgdrvNtCreate)
+# pragma alloc_text(PAGE, vgdrvNtClose)
+# pragma alloc_text(PAGE, vgdrvNtShutdown)
+# pragma alloc_text(PAGE, vgdrvNtNotSupportedStub)
+# pragma alloc_text(PAGE, vgdrvNtScanPCIResourceList)
 #endif
 
 
@@ -83,7 +88,7 @@ RT_C_DECLS_END
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** The detected NT (windows) version. */
-VBGDNTVER g_enmVbgdNtVer = VBGDNTVER_INVALID;
+VGDRVNTVER g_enmVGDrvNtVer = VGDRVNTVER_INVALID;
 
 
 
@@ -102,7 +107,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 
     /*
      * Check if the the NT version is supported and initializing
-     * g_enmVbgdNtVer in the process.
+     * g_enmVGDrvNtVer in the process.
      */
     ULONG ulMajorVer;
     ULONG ulMinorVer;
@@ -114,8 +119,8 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     if (fCheckedBuild)
         RTLogBackdoorPrintf("VBoxGuest: Windows checked build\n");
 
-#ifdef DEBUG
-    vbgdNtDoTests();
+#ifdef VBOX_STRICT
+    vgdrvNtDoTests();
 #endif
     switch (ulMajorVer)
     {
@@ -126,7 +131,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                     /* Windows 10 Preview builds starting with 9926. */
                 default:
                     /* Also everything newer. */
-                    g_enmVbgdNtVer = VBGDNTVER_WIN10;
+                    g_enmVGDrvNtVer = VGDRVNTVER_WIN10;
                     break;
             }
             break;
@@ -134,22 +139,22 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
             switch (ulMinorVer)
             {
                 case 0: /* Note: Also could be Windows 2008 Server! */
-                    g_enmVbgdNtVer = VBGDNTVER_WINVISTA;
+                    g_enmVGDrvNtVer = VGDRVNTVER_WINVISTA;
                     break;
                 case 1: /* Note: Also could be Windows 2008 Server R2! */
-                    g_enmVbgdNtVer = VBGDNTVER_WIN7;
+                    g_enmVGDrvNtVer = VGDRVNTVER_WIN7;
                     break;
                 case 2:
-                    g_enmVbgdNtVer = VBGDNTVER_WIN8;
+                    g_enmVGDrvNtVer = VGDRVNTVER_WIN8;
                     break;
                 case 3:
-                    g_enmVbgdNtVer = VBGDNTVER_WIN81;
+                    g_enmVGDrvNtVer = VGDRVNTVER_WIN81;
                     break;
                 case 4:
                     /* Windows 10 Preview builds. */
                 default:
                     /* Also everything newer. */
-                    g_enmVbgdNtVer = VBGDNTVER_WIN10;
+                    g_enmVGDrvNtVer = VGDRVNTVER_WIN10;
                     break;
             }
             break;
@@ -158,24 +163,24 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
             {
                 default:
                 case 2:
-                    g_enmVbgdNtVer = VBGDNTVER_WIN2K3;
+                    g_enmVGDrvNtVer = VGDRVNTVER_WIN2K3;
                     break;
                 case 1:
-                    g_enmVbgdNtVer = VBGDNTVER_WINXP;
+                    g_enmVGDrvNtVer = VGDRVNTVER_WINXP;
                     break;
                 case 0:
-                    g_enmVbgdNtVer = VBGDNTVER_WIN2K;
+                    g_enmVGDrvNtVer = VGDRVNTVER_WIN2K;
                     break;
             }
             break;
         case 4:
-            g_enmVbgdNtVer = VBGDNTVER_WINNT4;
+            g_enmVGDrvNtVer = VGDRVNTVER_WINNT4;
             break;
         default:
             if (ulMajorVer > 6)
             {
                 /* "Windows 10 mode" for Windows 8.1+. */
-                g_enmVbgdNtVer = VBGDNTVER_WIN10;
+                g_enmVGDrvNtVer = VGDRVNTVER_WIN10;
             }
             else
             {
@@ -193,21 +198,21 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         /*
          * Setup the driver entry points in pDrvObj.
          */
-        pDrvObj->DriverUnload                                  = vbgdNtUnload;
-        pDrvObj->MajorFunction[IRP_MJ_CREATE]                  = vbgdNtCreate;
-        pDrvObj->MajorFunction[IRP_MJ_CLOSE]                   = vbgdNtClose;
-        pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]          = vbgdNtIOCtl;
-        pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = vbgdNtInternalIOCtl;
-        pDrvObj->MajorFunction[IRP_MJ_SHUTDOWN]                = vbgdNtShutdown;
-        pDrvObj->MajorFunction[IRP_MJ_READ]                    = vbgdNtNotSupportedStub;
-        pDrvObj->MajorFunction[IRP_MJ_WRITE]                   = vbgdNtNotSupportedStub;
+        pDrvObj->DriverUnload                                  = vgdrvNtUnload;
+        pDrvObj->MajorFunction[IRP_MJ_CREATE]                  = vgdrvNtCreate;
+        pDrvObj->MajorFunction[IRP_MJ_CLOSE]                   = vgdrvNtClose;
+        pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]          = vgdrvNtIOCtl;
+        pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = vgdrvNtInternalIOCtl;
+        pDrvObj->MajorFunction[IRP_MJ_SHUTDOWN]                = vgdrvNtShutdown;
+        pDrvObj->MajorFunction[IRP_MJ_READ]                    = vgdrvNtNotSupportedStub;
+        pDrvObj->MajorFunction[IRP_MJ_WRITE]                   = vgdrvNtNotSupportedStub;
 #ifdef TARGET_NT4
-        rc = vbgdNt4CreateDevice(pDrvObj, NULL /* pDevObj */, pRegPath);
+        rc = vgdrvNt4CreateDevice(pDrvObj, NULL /* pDevObj */, pRegPath);
 #else
-        pDrvObj->MajorFunction[IRP_MJ_PNP]                     = vbgdNtPnP;
-        pDrvObj->MajorFunction[IRP_MJ_POWER]                   = vbgdNtPower;
-        pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]          = vbgdNtSystemControl;
-        pDrvObj->DriverExtension->AddDevice                    = (PDRIVER_ADD_DEVICE)vbgdNtAddDevice;
+        pDrvObj->MajorFunction[IRP_MJ_PNP]                     = vgdrvNtPnP;
+        pDrvObj->MajorFunction[IRP_MJ_POWER]                   = vgdrvNtPower;
+        pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]          = vgdrvNtSystemControl;
+        pDrvObj->DriverExtension->AddDevice                    = (PDRIVER_ADD_DEVICE)vgdrvNtAddDevice;
 #endif
     }
 
@@ -221,10 +226,12 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
  * Handle request from the Plug & Play subsystem.
  *
  * @returns NT status code
- * @param  pDrvObj   Driver object
- * @param  pDevObj   Device object
+ * @param   pDrvObj   Driver object
+ * @param   pDevObj   Device object
+ *
+ * @remarks Parts of this is duplicated in VBoxGuest-win-legacy.cpp.
  */
-static NTSTATUS vbgdNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
+static NTSTATUS vgdrvNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
 {
     NTSTATUS rc;
     LogFlowFuncEnter();
@@ -254,9 +261,9 @@ static NTSTATUS vbgdNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
 
             KeInitializeSpinLock(&pDevExt->MouseEventAccessLock);
 
-            pDevExt->pDeviceObject = pDeviceObject;
-            pDevExt->prevDevState = STOPPED;
-            pDevExt->devState = STOPPED;
+            pDevExt->pDeviceObject   = pDeviceObject;
+            pDevExt->enmPrevDevState = VGDRVNTDEVSTATE_STOPPED;
+            pDevExt->enmDevState     = VGDRVNTDEVSTATE_STOPPED;
 
             pDevExt->pNextLowerDriver = IoAttachDeviceToDeviceStack(pDeviceObject, pDevObj);
             if (pDevExt->pNextLowerDriver != NULL)
@@ -266,7 +273,7 @@ static NTSTATUS vbgdNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
                  * so continue to init our own things.
                  */
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-                vbgdNtBugCheckCallback(pDevExt); /* Ignore failure! */
+                vgdrvNtBugCheckCallback(pDevExt); /* Ignore failure! */
 #endif
                 if (NT_SUCCESS(rc))
                 {
@@ -275,7 +282,7 @@ static NTSTATUS vbgdNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
 
                     /* Driver is ready now. */
                     pDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
-                    LogFlowFunc(("Returning with rc=0x%x (success)\n", rc));
+                    LogFlowFunc(("Returning with rc=%#x (success)\n", rc));
                     return rc;
                 }
 
@@ -297,20 +304,20 @@ static NTSTATUS vbgdNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
     else
         LogFunc(("IoCreateDevice failed with rc=%#x!\n", rc));
 
-    LogFunc(("Returning with rc=0x%x\n", rc));
+    LogFunc(("Returning with rc=%#x\n", rc));
     return rc;
 }
-#endif
+#endif /* TARGET_NT4 */
 
 
+#ifdef LOG_ENABLED
 /**
  * Debug helper to dump a device resource list.
  *
  * @param pResourceList  list of device resources.
  */
-static void vbgdNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
+static void vgdrvNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
 {
-#ifdef LOG_ENABLED
     PCM_PARTIAL_RESOURCE_DESCRIPTOR pResource = pResourceList->PartialDescriptors;
     ULONG cResources = pResourceList->Count;
 
@@ -338,19 +345,16 @@ static void vbgdNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
             case CmResourceTypePort:
             case CmResourceTypeMemory:
                 LogFunc(("Start %8X%8.8lX, length=%X\n",
-                         pResource->u.Port.Start.HighPart, pResource->u.Port.Start.LowPart,
-                         pResource->u.Port.Length));
+                         pResource->u.Port.Start.HighPart, pResource->u.Port.Start.LowPart, pResource->u.Port.Length));
                 break;
 
             case CmResourceTypeInterrupt:
                 LogFunc(("Level=%X, vector=%X, affinity=%X\n",
-                         pResource->u.Interrupt.Level, pResource->u.Interrupt.Vector,
-                         pResource->u.Interrupt.Affinity));
+                         pResource->u.Interrupt.Level, pResource->u.Interrupt.Vector, pResource->u.Interrupt.Affinity));
                 break;
 
             case CmResourceTypeDma:
-                LogFunc(("Channel %d, Port %X\n",
-                         pResource->u.Dma.Channel, pResource->u.Dma.Port));
+                LogFunc(("Channel %d, Port %X\n", pResource->u.Dma.Channel, pResource->u.Dma.Port));
                 break;
 
             default:
@@ -358,8 +362,8 @@ static void vbgdNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
                 break;
         }
     }
-#endif
 }
+#endif /* LOG_ENABLED */
 
 
 /**
@@ -369,9 +373,9 @@ static void vbgdNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
  * @param  pIrp       Request packet.
  */
 #ifndef TARGET_NT4
-NTSTATUS vbgdNtInit(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+NTSTATUS vgdrvNtInit(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #else
-NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath)
+NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath)
 #endif
 {
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
@@ -381,7 +385,7 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
 
     LogFlowFuncEnter();
 
-    int rc = STATUS_SUCCESS; /** @todo r=bird: s/rc/rcNt/ and s/int/NTSTATUS/. gee. */
+    NTSTATUS rcNt;
 #ifdef TARGET_NT4
     /*
      * Let's have a look at what our PCI adapter offers.
@@ -392,21 +396,22 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
     PCM_RESOURCE_LIST pResourceList = NULL;
     UNICODE_STRING classNameString;
     RtlInitUnicodeString(&classNameString, L"VBoxGuestAdapter");
-    rc = HalAssignSlotResources(pRegPath, &classNameString,
-                                pDrvObj, pDevObj,
-                                PCIBus, pDevExt->busNumber, pDevExt->slotNumber,
-                                &pResourceList);
+    rcNt = HalAssignSlotResources(pRegPath, &classNameString, pDrvObj, pDevObj,
+                                  PCIBus, pDevExt->busNumber, pDevExt->slotNumber, &pResourceList);
+# ifdef LOG_ENABLED
     if (pResourceList && pResourceList->Count > 0)
-        vbgdNtShowDeviceResources(&pResourceList->List[0].PartialResourceList);
-    if (NT_SUCCESS(rc))
-        rc = vbgdNtScanPCIResourceList(pResourceList, pDevExt);
+        vgdrvNtShowDeviceResources(&pResourceList->List[0].PartialResourceList);
+# endif
+    if (NT_SUCCESS(rcNt))
+        rcNt = vgdrvNtScanPCIResourceList(pResourceList, pDevExt);
 #else
+# ifdef LOG_ENABLED
     if (pStack->Parameters.StartDevice.AllocatedResources->Count > 0)
-        vbgdNtShowDeviceResources(&pStack->Parameters.StartDevice.AllocatedResources->List[0].PartialResourceList);
-    if (NT_SUCCESS(rc))
-        rc = vbgdNtScanPCIResourceList(pStack->Parameters.StartDevice.AllocatedResourcesTranslated, pDevExt);
+        vgdrvNtShowDeviceResources(&pStack->Parameters.StartDevice.AllocatedResources->List[0].PartialResourceList);
+# endif
+    rcNt = vgdrvNtScanPCIResourceList(pStack->Parameters.StartDevice.AllocatedResourcesTranslated, pDevExt);
 #endif
-    if (NT_SUCCESS(rc))
+    if (NT_SUCCESS(rcNt))
     {
         /*
          * Map physical address of VMMDev memory into MMIO region
@@ -414,12 +419,12 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
          */
         void *pvMMIOBase = NULL;
         uint32_t cbMMIO = 0;
-        rc = vbgdNtMapVMMDevMemory(pDevExt,
-                                   pDevExt->vmmDevPhysMemoryAddress,
-                                   pDevExt->vmmDevPhysMemoryLength,
-                                   &pvMMIOBase,
-                                   &cbMMIO);
-        if (NT_SUCCESS(rc))
+        rcNt = vgdrvNtMapVMMDevMemory(pDevExt,
+                                      pDevExt->vmmDevPhysMemoryAddress,
+                                      pDevExt->vmmDevPhysMemoryLength,
+                                      &pvMMIOBase,
+                                      &cbMMIO);
+        if (NT_SUCCESS(rcNt))
         {
             pDevExt->Core.pVMMDevMemory = (VMMDevMemory *)pvMMIOBase;
 
@@ -429,37 +434,37 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
             int vrc = VGDrvCommonInitDevExt(&pDevExt->Core,
                                             pDevExt->Core.IOPortBase,
                                             pvMMIOBase, cbMMIO,
-                                            vbgdNtVersionToOSType(g_enmVbgdNtVer),
+                                            vgdrvNtVersionToOSType(g_enmVGDrvNtVer),
                                             VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
             if (RT_FAILURE(vrc))
             {
-                LogFunc(("Could not init device extension, rc=%Rrc\n", vrc));
-                rc = STATUS_DEVICE_CONFIGURATION_ERROR;
+                LogFunc(("Could not init device extension, vrc=%Rrc\n", vrc));
+                rcNt = STATUS_DEVICE_CONFIGURATION_ERROR;
             }
         }
         else
-            LogFunc(("Could not map physical address of VMMDev, rc=0x%x\n", rc));
+            LogFunc(("Could not map physical address of VMMDev, rcNt=%#x\n", rcNt));
     }
 
-    if (NT_SUCCESS(rc))
+    if (NT_SUCCESS(rcNt))
     {
         int vrc = VbglGRAlloc((VMMDevRequestHeader **)&pDevExt->pPowerStateRequest,
                               sizeof(VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
         if (RT_FAILURE(vrc))
         {
-            LogFunc(("Alloc for pPowerStateRequest failed, rc=%Rrc\n", vrc));
-            rc = STATUS_UNSUCCESSFUL;
+            LogFunc(("Alloc for pPowerStateRequest failed, vrc=%Rrc\n", vrc));
+            rcNt = STATUS_UNSUCCESSFUL;
         }
     }
 
-    if (NT_SUCCESS(rc))
+    if (NT_SUCCESS(rcNt))
     {
         /*
          * Register DPC and ISR.
          */
         LogFlowFunc(("Initializing DPC/ISR ...\n"));
 
-        IoInitializeDpcRequest(pDevExt->pDeviceObject, vbgdNtDpcHandler);
+        IoInitializeDpcRequest(pDevExt->pDeviceObject, vgdrvNtDpcHandler);
 #ifdef TARGET_NT4
         ULONG uInterruptVector;
         KIRQL irqLevel;
@@ -488,25 +493,25 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
         {
             LogFlowFunc(("Connecting interrupt ...\n"));
 
-            rc = IoConnectInterrupt(&pDevExt->pInterruptObject,                 /* Out: interrupt object. */
-                                    (PKSERVICE_ROUTINE)vbgdNtIsrHandler,        /* Our ISR handler. */
-                                    pDevExt,                                    /* Device context. */
-                                    NULL,                                       /* Optional spinlock. */
+            rcNt = IoConnectInterrupt(&pDevExt->pInterruptObject,                 /* Out: interrupt object. */
+                                      (PKSERVICE_ROUTINE)vgdrvNtIsrHandler,        /* Our ISR handler. */
+                                      pDevExt,                                    /* Device context. */
+                                      NULL,                                       /* Optional spinlock. */
 #ifdef TARGET_NT4
-                                    uInterruptVector,                           /* Interrupt vector. */
-                                    irqLevel,                                   /* Interrupt level. */
-                                    irqLevel,                                   /* Interrupt level. */
+                                      uInterruptVector,                           /* Interrupt vector. */
+                                      irqLevel,                                   /* Interrupt level. */
+                                      irqLevel,                                   /* Interrupt level. */
 #else
-                                    pDevExt->interruptVector,                   /* Interrupt vector. */
-                                    (KIRQL)pDevExt->interruptLevel,             /* Interrupt level. */
-                                    (KIRQL)pDevExt->interruptLevel,             /* Interrupt level. */
+                                      pDevExt->interruptVector,                   /* Interrupt vector. */
+                                      (KIRQL)pDevExt->interruptLevel,             /* Interrupt level. */
+                                      (KIRQL)pDevExt->interruptLevel,             /* Interrupt level. */
 #endif
-                                    pDevExt->interruptMode,                     /* LevelSensitive or Latched. */
-                                    TRUE,                                       /* Shareable interrupt. */
-                                    pDevExt->interruptAffinity,                 /* CPU affinity. */
-                                    FALSE);                                     /* Don't save FPU stack. */
-            if (NT_ERROR(rc))
-                LogFunc(("Could not connect interrupt, rc=0x%x\n", rc));
+                                      pDevExt->interruptMode,                     /* LevelSensitive or Latched. */
+                                      TRUE,                                       /* Shareable interrupt. */
+                                      pDevExt->interruptAffinity,                 /* CPU affinity. */
+                                      FALSE);                                     /* Don't save FPU stack. */
+            if (NT_ERROR(rcNt))
+                LogFunc(("Could not connect interrupt, rcNt=%#x\n", rcNt));
         }
         else
             LogFunc(("No interrupt vector found!\n"));
@@ -518,26 +523,25 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
     int vrc = VGDrvCommonCreateKernelSession(&pDevExt->Core, &pDevExt->pKernelSession);
     if (RT_FAILURE(vrc))
     {
-        LogFunc(("Failed to allocated kernel session data, rc=%Rrc\n", rc));
-        rc = STATUS_UNSUCCESSFUL;
+        LogFunc(("Failed to allocated kernel session data, vrc=%Rrc\n", vrc));
+        rcNt = STATUS_UNSUCCESSFUL;
     }
 #endif
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rcNt))
     {
-        ULONG ulValue = 0;
-        NTSTATUS rcNt = vbgdNtRegistryReadDWORD(RTL_REGISTRY_SERVICES,
-                                                L"VBoxGuest", L"LoggingEnabled", &ulValue);
-        if (NT_SUCCESS(rcNt))
+        ULONG uValue = 0;
+        NTSTATUS rcNt2 = vgdrvNtRegistryReadDWORD(RTL_REGISTRY_SERVICES, L"VBoxGuest", L"LoggingEnabled", &uValue);
+        if (NT_SUCCESS(rcNt2))
         {
-            pDevExt->Core.fLoggingEnabled = ulValue >= 0xFF;
+            pDevExt->Core.fLoggingEnabled = uValue >= 0xFF;
             if (pDevExt->Core.fLoggingEnabled)
-                LogRelFunc(("Logging to host log enabled (0x%x)", ulValue));
+                LogRelFunc(("Logging to host log enabled (%#x)", uValue));
         }
 
         /* Ready to rumble! */
         LogRelFunc(("Device is ready!\n"));
-        VBOXGUEST_UPDATE_DEVSTATE(pDevExt, WORKING);
+        VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_WORKING);
     }
     else
         pDevExt->pInterruptObject = NULL;
@@ -545,8 +549,8 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
     /** @todo r=bird: The error cleanup here is completely missing. We'll leak a
      *        whole bunch of things... */
 
-    LogFunc(("Returned with rc=0x%x\n", rc));
-    return rc;
+    LogFunc(("Returned with rcNt=%#x\n", rcNt));
+    return rcNt;
 }
 
 
@@ -556,7 +560,7 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
  *
  * @param   pDevObj     Device object.
  */
-NTSTATUS vbgdNtCleanup(PDEVICE_OBJECT pDevObj)
+NTSTATUS vgdrvNtCleanup(PDEVICE_OBJECT pDevObj)
 {
     LogFlowFuncEnter();
 
@@ -564,11 +568,11 @@ NTSTATUS vbgdNtCleanup(PDEVICE_OBJECT pDevObj)
     if (pDevExt)
     {
 
-#if 0 /* @todo: test & enable cleaning global session data */
+#if 0 /** @todo  test & enable cleaning global session data */
 #ifdef VBOX_WITH_HGCM
         if (pDevExt->pKernelSession)
         {
-            VbgdCommonCloseSession(pDevExt, pDevExt->pKernelSession);
+            VGDrvCommonCloseSession(pDevExt, pDevExt->pKernelSession);
             pDevExt->pKernelSession = NULL;
         }
 #endif
@@ -580,14 +584,14 @@ NTSTATUS vbgdNtCleanup(PDEVICE_OBJECT pDevObj)
             pDevExt->pInterruptObject = NULL;
         }
 
-        /** @todo: cleanup the rest stuff */
+        /** @todo cleanup the rest stuff */
 
 
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
         hlpDeregisterBugCheckCallback(pDevExt); /* ignore failure! */
 #endif
         /* According to MSDN we have to unmap previously mapped memory. */
-        vbgdNtUnmapVMMDevMemory(pDevExt);
+        vgdrvNtUnmapVMMDevMemory(pDevExt);
     }
 
     return STATUS_SUCCESS;
@@ -599,12 +603,12 @@ NTSTATUS vbgdNtCleanup(PDEVICE_OBJECT pDevObj)
  *
  * @param   pDrvObj     Driver object.
  */
-static void vbgdNtUnload(PDRIVER_OBJECT pDrvObj)
+static void vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
 {
     LogFlowFuncEnter();
 
 #ifdef TARGET_NT4
-    vbgdNtCleanup(pDrvObj->DeviceObject);
+    vgdrvNtCleanup(pDrvObj->DeviceObject);
 
     /* Destroy device extension and clean up everything else. */
     if (pDrvObj->DeviceObject && pDrvObj->DeviceObject->DeviceExtension)
@@ -635,7 +639,7 @@ static void vbgdNtUnload(PDRIVER_OBJECT pDrvObj)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-static NTSTATUS vbgdNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     /** @todo AssertPtrReturn(pIrp); */
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
@@ -644,9 +648,9 @@ static NTSTATUS vbgdNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PVBOXGUESTDEVEXTWIN pDevExt  = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
     NTSTATUS            rc       = STATUS_SUCCESS;
 
-    if (pDevExt->devState != WORKING)
+    if (pDevExt->enmDevState != VGDRVNTDEVSTATE_WORKING)
     {
-        LogFunc(("Device is not working currently, state=%d\n", pDevExt->devState));
+        LogFunc(("Device is not working currently, state=%d\n", pDevExt->enmDevState));
         rc = STATUS_UNSUCCESSFUL;
     }
     else if (pStack->Parameters.Create.Options & FILE_DIRECTORY_FILE)
@@ -691,7 +695,7 @@ static NTSTATUS vbgdNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     pIrp->IoStatus.Status = rc;
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
-    LogFlowFunc(("Returning rc=0x%x\n", rc));
+    LogFlowFunc(("Returning rc=%#x\n", rc));
     return rc;
 }
 
@@ -702,14 +706,13 @@ static NTSTATUS vbgdNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-static NTSTATUS vbgdNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXTWIN pDevExt  = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT        pFileObj = pStack->FileObject;
 
-    LogFlowFunc(("pDevExt=0x%p, pFileObj=0x%p, FsContext=0x%p\n",
-                 pDevExt, pFileObj, pFileObj->FsContext));
+    LogFlowFunc(("pDevExt=0x%p, pFileObj=0x%p, FsContext=0x%p\n", pDevExt, pFileObj, pFileObj->FsContext));
 
 #ifdef VBOX_WITH_HGCM
     /* Close both, R0 and R3 sessions. */
@@ -733,7 +736,7 @@ static NTSTATUS vbgdNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-static NTSTATUS vbgdNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vgdrvNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     NTSTATUS            Status   = STATUS_SUCCESS;
     PVBOXGUESTDEVEXTWIN pDevExt  = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
@@ -750,8 +753,7 @@ static NTSTATUS vbgdNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     if (pFileObj) /* ... then we might have a session object as well! */
         pSession = (PVBOXGUESTSESSION)pFileObj->FsContext;
 
-    LogFlowFunc(("uCmd=%u, pDevExt=0x%p, pSession=0x%p\n",
-                 uCmd, pDevExt, pSession));
+    LogFlowFunc(("uCmd=%u, pDevExt=0x%p, pSession=0x%p\n", uCmd, pDevExt, pSession));
 
     /* We don't have a session associated with the file object? So this seems
      * to be a kernel call then. */
@@ -822,7 +824,7 @@ static NTSTATUS vbgdNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-static NTSTATUS vbgdNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     NTSTATUS            Status      = STATUS_SUCCESS;
     PVBOXGUESTDEVEXTWIN pDevExt     = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
@@ -876,7 +878,7 @@ static NTSTATUS vbgdNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     /*
      * No override, go to common code.
      */
-    return vbgdNtIOCtl(pDevObj, pIrp);
+    return vgdrvNtIOCtl(pDevObj, pIrp);
 }
 
 
@@ -887,7 +889,7 @@ static NTSTATUS vbgdNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        IRP.
  */
-NTSTATUS vbgdNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vgdrvNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
 
@@ -907,7 +909,7 @@ NTSTATUS vbgdNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param pDevObj    Device object.
  * @param pIrp       IRP.
  */
-NTSTATUS vbgdNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
 
@@ -935,7 +937,7 @@ NTSTATUS vbgdNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        IRP.
  */
-NTSTATUS vbgdNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     LogFlowFuncEnter();
 
@@ -955,7 +957,7 @@ NTSTATUS vbgdNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pIrp        Interrupt request packet.
  * @param   pContext    Context specific pointer.
  */
-void vbgdNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext)
+static void vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext)
 {
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
     Log3Func(("pDevExt=0x%p\n", pDevExt));
@@ -975,7 +977,7 @@ void vbgdNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pCont
     }
 
     /* Process the wake-up list we were asked by the scheduling a DPC
-     * in vbgdNtIsrHandler(). */
+     * in vgdrvNtIsrHandler(). */
     VGDrvCommonWaitDoWakeUps(&pDevExt->Core);
 }
 
@@ -987,7 +989,7 @@ void vbgdNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pCont
  * @param   pInterrupt      Interrupt that was triggered.
  * @param   pServiceContext Context specific pointer.
  */
-BOOLEAN vbgdNtIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
+static BOOLEAN vgdrvNtIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
 {
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pServiceContext;
     if (pDevExt == NULL)
@@ -1039,7 +1041,7 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
  *                      not specified in ulRoot), on output this will retrieve the looked up
  *                      registry value if found.
  */
-NTSTATUS vbgdNtRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName, PULONG puValue)
+static NTSTATUS vgdrvNtRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName, PULONG puValue)
 {
     if (!pwszPath || !pwszName || !puValue)
         return STATUS_INVALID_PARAMETER;
@@ -1070,7 +1072,7 @@ NTSTATUS vbgdNtRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName, 
  * @param pResList  Resource list
  * @param pDevExt   Device extension
  */
-NTSTATUS vbgdNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTWIN pDevExt)
+static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTWIN pDevExt)
 {
     /* Enumerate the resource list. */
     LogFlowFunc(("Found %d resources\n",
@@ -1202,8 +1204,8 @@ NTSTATUS vbgdNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTW
  * @param ppvMMIOBase       Pointer of mapped I/O base.
  * @param pcbMMIO           Length of mapped I/O base.
  */
-NTSTATUS vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS PhysAddr, ULONG cbToMap,
-                               void **ppvMMIOBase, uint32_t *pcbMMIO)
+static NTSTATUS vgdrvNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS PhysAddr, ULONG cbToMap,
+                                       void **ppvMMIOBase, uint32_t *pcbMMIO)
 {
     AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
     AssertPtrReturn(ppvMMIOBase, VERR_INVALID_POINTER);
@@ -1213,10 +1215,10 @@ NTSTATUS vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS Phy
     if (PhysAddr.LowPart > 0) /* We're mapping below 4GB. */
     {
          VMMDevMemory *pVMMDevMemory = (VMMDevMemory *)MmMapIoSpace(PhysAddr, cbToMap, MmNonCached);
-         LogFlowFunc(("pVMMDevMemory = 0x%x\n", pVMMDevMemory));
+         LogFlowFunc(("pVMMDevMemory = %#x\n", pVMMDevMemory));
          if (pVMMDevMemory)
          {
-             LogFunc(("VMMDevMemory: Version = 0x%x, Size = %d\n", pVMMDevMemory->u32Version, pVMMDevMemory->u32Size));
+             LogFunc(("VMMDevMemory: Version = %#x, Size = %d\n", pVMMDevMemory->u32Version, pVMMDevMemory->u32Size));
 
              /* Check version of the structure; do we have the right memory version? */
              if (pVMMDevMemory->u32Version == VMMDEV_MEMORY_VERSION)
@@ -1233,7 +1235,7 @@ NTSTATUS vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS Phy
                  /* Not our version, refuse operation and unmap the memory. */
                  LogFunc(("Wrong version (%u), refusing operation!\n", pVMMDevMemory->u32Version));
 
-                 vbgdNtUnmapVMMDevMemory(pDevExt);
+                 vgdrvNtUnmapVMMDevMemory(pDevExt);
                  rc = STATUS_UNSUCCESSFUL;
              }
          }
@@ -1249,9 +1251,9 @@ NTSTATUS vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS Phy
  *
  * @param   pDevExt     The device extension.
  */
-void vbgdNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt)
+void vgdrvNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt)
 {
-    LogFlowFunc(("pVMMDevMemory = 0x%x\n", pDevExt->Core.pVMMDevMemory));
+    LogFlowFunc(("pVMMDevMemory = %#x\n", pDevExt->Core.pVMMDevMemory));
     if (pDevExt->Core.pVMMDevMemory)
     {
         MmUnmapIoSpace((void*)pDevExt->Core.pVMMDevMemory, pDevExt->vmmDevPhysMemoryLength);
@@ -1263,20 +1265,26 @@ void vbgdNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt)
 }
 
 
-VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
+/**
+ * Translates NT version to VBox OS.
+ *
+ * @returns VBox OS type.
+ * @param   enmNtVer            The NT version.
+ */
+VBOXOSTYPE vgdrvNtVersionToOSType(VGDRVNTVER enmNtVer)
 {
     VBOXOSTYPE enmOsType;
     switch (enmNtVer)
     {
-        case VBGDNTVER_WINNT4:
+        case VGDRVNTVER_WINNT4:
             enmOsType = VBOXOSTYPE_WinNT4;
             break;
 
-        case VBGDNTVER_WIN2K:
+        case VGDRVNTVER_WIN2K:
             enmOsType = VBOXOSTYPE_Win2k;
             break;
 
-        case VBGDNTVER_WINXP:
+        case VGDRVNTVER_WINXP:
 #if ARCH_BITS == 64
             enmOsType = VBOXOSTYPE_WinXP_x64;
 #else
@@ -1284,7 +1292,7 @@ VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
 #endif
             break;
 
-        case VBGDNTVER_WIN2K3:
+        case VGDRVNTVER_WIN2K3:
 #if ARCH_BITS == 64
             enmOsType = VBOXOSTYPE_Win2k3_x64;
 #else
@@ -1292,7 +1300,7 @@ VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
 #endif
             break;
 
-        case VBGDNTVER_WINVISTA:
+        case VGDRVNTVER_WINVISTA:
 #if ARCH_BITS == 64
             enmOsType = VBOXOSTYPE_WinVista_x64;
 #else
@@ -1300,7 +1308,7 @@ VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
 #endif
             break;
 
-        case VBGDNTVER_WIN7:
+        case VGDRVNTVER_WIN7:
 #if ARCH_BITS == 64
             enmOsType = VBOXOSTYPE_Win7_x64;
 #else
@@ -1308,7 +1316,7 @@ VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
 #endif
             break;
 
-        case VBGDNTVER_WIN8:
+        case VGDRVNTVER_WIN8:
 #if ARCH_BITS == 64
             enmOsType = VBOXOSTYPE_Win8_x64;
 #else
@@ -1316,7 +1324,7 @@ VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
 #endif
             break;
 
-        case VBGDNTVER_WIN81:
+        case VGDRVNTVER_WIN81:
 #if ARCH_BITS == 64
             enmOsType = VBOXOSTYPE_Win81_x64;
 #else
@@ -1324,7 +1332,7 @@ VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
 #endif
             break;
 
-        case VBGDNTVER_WIN10:
+        case VGDRVNTVER_WIN10:
 #if ARCH_BITS == 64
             enmOsType = VBOXOSTYPE_Win10_x64;
 #else
@@ -1340,15 +1348,15 @@ VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
     return enmOsType;
 }
 
-#ifdef DEBUG
+#ifdef VBOX_STRICT
 
 /**
  * A quick implementation of AtomicTestAndClear for uint32_t and multiple bits.
  */
-static uint32_t vboxugestwinAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32Mask)
+static uint32_t vgdrvNtAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32Mask)
 {
     AssertPtrReturn(pu32Bits, 0);
-    LogFlowFunc(("*pu32Bits=0x%x, u32Mask=0x%x\n", *(uint32_t *)pu32Bits, u32Mask));
+    LogFlowFunc(("*pu32Bits=%#x, u32Mask=%#x\n", *(uint32_t *)pu32Bits, u32Mask));
     uint32_t u32Result = 0;
     uint32_t u32WorkingMask = u32Mask;
     int iBitOffset = ASMBitFirstSetU32 (u32WorkingMask);
@@ -1361,37 +1369,36 @@ static uint32_t vboxugestwinAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32M
         u32WorkingMask &= ~(1 << (iBitOffset - 1));
         iBitOffset = ASMBitFirstSetU32 (u32WorkingMask);
     }
-    LogFlowFunc(("Returning 0x%x\n", u32Result));
+    LogFlowFunc(("Returning %#x\n", u32Result));
     return u32Result;
 }
 
 
-static void vbgdNtTestAtomicTestAndClearBitsU32(uint32_t u32Mask, uint32_t u32Bits, uint32_t u32Exp)
+static void vgdrvNtTestAtomicTestAndClearBitsU32(uint32_t u32Mask, uint32_t u32Bits, uint32_t u32Exp)
 {
     ULONG u32Bits2 = u32Bits;
-    uint32_t u32Result = vboxugestwinAtomicBitsTestAndClear(&u32Bits2, u32Mask);
+    uint32_t u32Result = vgdrvNtAtomicBitsTestAndClear(&u32Bits2, u32Mask);
     if (   u32Result != u32Exp
         || (u32Bits2 & u32Mask)
         || (u32Bits2 & u32Result)
         || ((u32Bits2 | u32Result) != u32Bits)
        )
-        AssertLogRelMsgFailed(("%s: TEST FAILED: u32Mask=0x%x, u32Bits (before)=0x%x, u32Bits (after)=0x%x, u32Result=0x%x, u32Exp=ox%x\n",
-                               __PRETTY_FUNCTION__, u32Mask, u32Bits, u32Bits2,
-                               u32Result));
+        AssertLogRelMsgFailed(("TEST FAILED: u32Mask=%#x, u32Bits (before)=%#x, u32Bits (after)=%#x, u32Result=%#x, u32Exp=%#x\n",
+                               u32Mask, u32Bits, u32Bits2, u32Result));
 }
 
 
-static void vbgdNtDoTests(void)
+static void vgdrvNtDoTests(void)
 {
-    vbgdNtTestAtomicTestAndClearBitsU32(0x00, 0x23, 0);
-    vbgdNtTestAtomicTestAndClearBitsU32(0x11, 0, 0);
-    vbgdNtTestAtomicTestAndClearBitsU32(0x11, 0x22, 0);
-    vbgdNtTestAtomicTestAndClearBitsU32(0x11, 0x23, 0x1);
-    vbgdNtTestAtomicTestAndClearBitsU32(0x11, 0x32, 0x10);
-    vbgdNtTestAtomicTestAndClearBitsU32(0x22, 0x23, 0x22);
+    vgdrvNtTestAtomicTestAndClearBitsU32(0x00, 0x23, 0);
+    vgdrvNtTestAtomicTestAndClearBitsU32(0x11, 0, 0);
+    vgdrvNtTestAtomicTestAndClearBitsU32(0x11, 0x22, 0);
+    vgdrvNtTestAtomicTestAndClearBitsU32(0x11, 0x23, 0x1);
+    vgdrvNtTestAtomicTestAndClearBitsU32(0x11, 0x32, 0x10);
+    vgdrvNtTestAtomicTestAndClearBitsU32(0x22, 0x23, 0x22);
 }
 
-#endif /* DEBUG */
+#endif /* VBOX_STRICT */
 
 #ifdef VBOX_WITH_DPC_LATENCY_CHECKER
 
@@ -1450,7 +1457,7 @@ AssertCompileMemberAlignment(DPCDATA, aSamples, 64);
  * @param   SystemArgument1     System use, ignored.
  * @param   SystemArgument2     System use, ignored.
  */
-static VOID vbgdNtDpcLatencyCallback(PKDPC pDpc, PVOID pvDeferredContext, PVOID SystemArgument1, PVOID SystemArgument2)
+static VOID vgdrvNtDpcLatencyCallback(PKDPC pDpc, PVOID pvDeferredContext, PVOID SystemArgument1, PVOID SystemArgument2)
 {
     DPCDATA *pData = (DPCDATA *)pvDeferredContext;
 
@@ -1495,7 +1502,7 @@ int VGDrvNtIOCtl_DpcLatencyChecker(void)
     /*
      * Initialize the data.
      */
-    KeInitializeDpc(&pData->Dpc, vbgdNtDpcLatencyCallback, pData);
+    KeInitializeDpc(&pData->Dpc, vgdrvNtDpcLatencyCallback, pData);
     KeInitializeTimer(&pData->Timer);
     KeInitializeSpinLock(&pData->SpinLock);
 

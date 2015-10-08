@@ -41,15 +41,15 @@ RT_C_DECLS_END
 
 
 /** Possible device states for our state machine. */
-enum DEVSTATE
+typedef enum VGDRVNTDEVSTATE
 {
-    STOPPED,
-    WORKING,
-    PENDINGSTOP,
-    PENDINGREMOVE,
-    SURPRISEREMOVED,
-    REMOVED
-};
+    VGDRVNTDEVSTATE_STOPPED,
+    VGDRVNTDEVSTATE_WORKING,
+    VGDRVNTDEVSTATE_PENDINGSTOP,
+    VGDRVNTDEVSTATE_PENDINGREMOVE,
+    VGDRVNTDEVSTATE_SURPRISEREMOVED,
+    VGDRVNTDEVSTATE_REMOVED
+} VGDRVNTDEVSTATE;
 
 typedef struct VBOXGUESTWINBASEADDRESS
 {
@@ -104,8 +104,9 @@ typedef struct VBOXGUESTDEVEXTWIN
     ULONG vmmDevPhysMemoryLength;
 
     /** Device state. */
-    DEVSTATE devState;
-    DEVSTATE prevDevState;
+    VGDRVNTDEVSTATE enmDevState;
+    /** The previous device state.   */
+    VGDRVNTDEVSTATE enmPrevDevState;
 
     /** Last system power action set (see VBoxGuestPower). */
     POWER_ACTION LastSystemPowerAction;
@@ -125,26 +126,26 @@ typedef struct VBOXGUESTDEVEXTWIN
 
 
 /** NT (windows) version identifier. */
-typedef enum VBGDNTVER
+typedef enum VGDRVNTVER
 {
-    VBGDNTVER_INVALID = 0,
-    VBGDNTVER_WINNT4,
-    VBGDNTVER_WIN2K,
-    VBGDNTVER_WINXP,
-    VBGDNTVER_WIN2K3,
-    VBGDNTVER_WINVISTA,
-    VBGDNTVER_WIN7,
-    VBGDNTVER_WIN8,
-    VBGDNTVER_WIN81,
-    VBGDNTVER_WIN10
-} VBGDNTVER;
-extern VBGDNTVER g_enmVbgdNtVer;
+    VGDRVNTVER_INVALID = 0,
+    VGDRVNTVER_WINNT4,
+    VGDRVNTVER_WIN2K,
+    VGDRVNTVER_WINXP,
+    VGDRVNTVER_WIN2K3,
+    VGDRVNTVER_WINVISTA,
+    VGDRVNTVER_WIN7,
+    VGDRVNTVER_WIN8,
+    VGDRVNTVER_WIN81,
+    VGDRVNTVER_WIN10
+} VGDRVNTVER;
+extern VGDRVNTVER g_enmVGDrvNtVer;
 
 
-#define VBOXGUEST_UPDATE_DEVSTATE(a_pDevExt, a_newDevState) \
+#define VBOXGUEST_UPDATE_DEVSTATE(a_pDevExt, a_enmNewDevState) \
     do { \
-        (a_pDevExt)->prevDevState = (a_pDevExt)->devState; \
-        (a_pDevExt)->devState     = (a_newDevState); \
+        (a_pDevExt)->enmPrevDevState = (a_pDevExt)->enmDevState; \
+        (a_pDevExt)->enmDevState     = (a_enmNewDevState); \
     } while (0)
 
 /** CM_RESOURCE_MEMORY_* flags which were used on XP or earlier. */
@@ -154,29 +155,23 @@ extern VBGDNTVER g_enmVbgdNtVer;
 RT_C_DECLS_BEGIN
 
 #ifdef TARGET_NT4
-NTSTATUS   vbgdNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
+NTSTATUS   vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
 #else
-NTSTATUS   vbgdNtInit(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-NTSTATUS   vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-NTSTATUS   vbgdNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+NTSTATUS   vgdrvNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+NTSTATUS   vgdrvNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 #endif
 
 /** @name Common routines used in both (PnP and legacy) driver versions.
  * @{
  */
 #ifdef TARGET_NT4
-NTSTATUS   vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
+NTSTATUS   vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
 #else
-NTSTATUS   vbgdNtInit(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+NTSTATUS   vgdrvNtInit(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 #endif
-NTSTATUS   vbgdNtCleanup(PDEVICE_OBJECT pDevObj);
-VOID       vbgdNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext);
-BOOLEAN    vbgdNtIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
-NTSTATUS   vbgdNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTWIN pDevExt);
-NTSTATUS   vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS PhysAddr, ULONG cbToMap,
-                                 void **ppvMMIOBase, uint32_t *pcbMMIO);
-void       vbgdNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt);
-VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer);
+NTSTATUS   vgdrvNtCleanup(PDEVICE_OBJECT pDevObj);
+void       vgdrvNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt); /**< @todo make static once buggy vgdrvNtInit is fixed. */
+VBOXOSTYPE vgdrvNtVersionToOSType(VGDRVNTVER enmNtVer);
 /** @}  */
 
 RT_C_DECLS_END
