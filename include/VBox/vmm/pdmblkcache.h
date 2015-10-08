@@ -222,7 +222,7 @@ typedef FNPDMBLKCACHEXFERENQUEUEDISCARDUSB *PFNPDMBLKCACHEXFERENQUEUEDISCARDUSB;
  * Create a block cache user for a driver instance.
  *
  * @returns VBox status code.
- * @param   pVCpu                      The cross context VM structure.
+ * @param   pVM                      The cross context VM structure.
  * @param   pDrvIns                  The driver instance.
  * @param   ppBlkCache               Where to store the handle to the block cache.
  * @param   pfnXferComplete          The I/O transfer complete callback.
@@ -240,7 +240,7 @@ VMMR3DECL(int) PDMR3BlkCacheRetainDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMBLKCA
  * Create a block cache user for a device instance.
  *
  * @returns VBox status code.
- * @param   pVCpu                      The cross context VM structure.
+ * @param   pVM                      The cross context VM structure.
  * @param   pDevIns                  The device instance.
  * @param   ppBlkCache               Where to store the handle to the block cache.
  * @param   pfnXferComplete          The I/O transfer complete callback.
@@ -258,7 +258,7 @@ VMMR3DECL(int) PDMR3BlkCacheRetainDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMBLKCA
  * Create a block cache user for a USB instance.
  *
  * @returns VBox status code.
- * @param   pVCpu                      The cross context VM structure.
+ * @param   pVM                      The cross context VM structure.
  * @param   pUsbIns                  The USB device instance.
  * @param   ppBlkCache               Where to store the handle to the block cache.
  * @param   pfnXferComplete          The I/O transfer complete callback.
@@ -276,7 +276,7 @@ VMMR3DECL(int) PDMR3BlkCacheRetainUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMBLKCACHE
  * Create a block cache user for internal use by VMM.
  *
  * @returns VBox status code.
- * @param   pVCpu                      The cross context VM structure.
+ * @param   pVM                      The cross context VM structure.
  * @param   pvUser                   Opaque user data.
  * @param   ppBlkCache               Where to store the handle to the block cache.
  * @param   pfnXferComplete          The I/O transfer complete callback.
@@ -302,7 +302,7 @@ VMMR3DECL(void) PDMR3BlkCacheRelease(PPDMBLKCACHE pBlkCache);
  * Releases all block cache handles for a device instance.
  *
  * @returns nothing.
- * @param   pVCpu             The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance.
  */
 VMMR3DECL(void) PDMR3BlkCacheReleaseDevice(PVM pVM, PPDMDEVINS pDevIns);
@@ -311,7 +311,7 @@ VMMR3DECL(void) PDMR3BlkCacheReleaseDevice(PVM pVM, PPDMDEVINS pDevIns);
  * Releases all block cache handles for a driver instance.
  *
  * @returns nothing.
- * @param   pVCpu             The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         The driver instance.
  */
 VMMR3DECL(void) PDMR3BlkCacheReleaseDriver(PVM pVM, PPDMDRVINS pDrvIns);
@@ -320,7 +320,7 @@ VMMR3DECL(void) PDMR3BlkCacheReleaseDriver(PVM pVM, PPDMDRVINS pDrvIns);
  * Releases all block cache handles for a USB device instance.
  *
  * @returns nothing.
- * @param   pVCpu             The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   pUsbIns         The USB device instance.
  */
 VMMR3DECL(void) PDMR3BlkCacheReleaseUsb(PVM pVM, PPDMUSBINS pUsbIns);

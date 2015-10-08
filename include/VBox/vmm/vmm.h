@@ -144,7 +144,7 @@ typedef FNVMMR0CALLRING3NOTIFICATION *PFNVMMR0CALLRING3NOTIFICATION;
  *          informational status code other than the ones used by EM for
  *          scheduling.
  *
- * @param   pVCpu     The cross context VM structure.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser  The user argument.
  */

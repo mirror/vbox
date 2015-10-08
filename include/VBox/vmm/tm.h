@@ -194,7 +194,7 @@ typedef FNTMTIMERSRV *PFNTMTIMERSRV;
 /**
  * Internal timer callback function.
  *
- * @param   pVCpu             The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   pTimer          The timer handle.
  * @param   pvUser          User argument specified upon timer creation.
  */

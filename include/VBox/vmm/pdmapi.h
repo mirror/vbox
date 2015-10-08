@@ -100,7 +100,7 @@ typedef enum  PDMLDRCTX
  * @returns VBox status.
  *          Failure will stop the search and return the return code.
  *          Warnings will be ignored and not returned.
- * @param   pVCpu             The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   pszFilename     Module filename.
  * @param   pszName         Module name. (short and unique)
  * @param   ImageBase       Address where to executable image is loaded.

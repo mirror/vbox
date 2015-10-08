@@ -273,7 +273,7 @@ typedef const DBGFEVENT *PCDBGFEVENT;
  * Stops the debugger raising a DBGFEVENT_DEVELOPER_STOP event.
  *
  * @returns VBox status code which must be propagated up to EM if not VINF_SUCCESS.
- * @param   pVCpu     The cross context VM structure.
+ * @param   pVM     The cross context VM structure.
  */
 # ifdef VBOX_STRICT
 #  define DBGFSTOP(pVM)  DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, __FILE__, __LINE__, __PRETTY_FUNCTION__, NULL)
@@ -494,7 +494,7 @@ typedef FNDBGFHANDLERDRV  *PFNDBGFHANDLERDRV;
 /**
  * Info handler, internal version.
  *
- * @param   pVCpu         The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */

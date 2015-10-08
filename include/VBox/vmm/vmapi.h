@@ -43,7 +43,7 @@ RT_C_DECLS_BEGIN
  * raw-mode address.
  *
  * @returns raw-mode virtual address.
- * @param   pVCpu     The cross context VM structure.
+ * @param   pVM     The cross context VM structure.
  * @param   pvInVM  CC Pointer within the VM.
  */
 #ifdef IN_RING3
@@ -59,7 +59,7 @@ RT_C_DECLS_BEGIN
  * ring-3 host address.
  *
  * @returns host virtual address.
- * @param   pVCpu     The cross context VM structure.
+ * @param   pVM     The cross context VM structure.
  * @param   pvInVM  CC pointer within the VM.
  */
 #ifdef IN_RC
@@ -76,7 +76,7 @@ RT_C_DECLS_BEGIN
  * ring-0 host address.
  *
  * @returns host virtual address.
- * @param   pVCpu     The cross context VM structure.
+ * @param   pVM     The cross context VM structure.
  * @param   pvInVM  CC pointer within the VM.
  */
 #ifdef IN_RC
@@ -115,7 +115,7 @@ VMMDECL(int)    VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFor
  *    @code
  *    return VM_SET_ERROR(pVM, VERR_OF_YOUR_CHOICE, "descriptive message");
  *    @endcode
- * @param   pVCpu             The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   rc              VBox status code.
  * @param   pszMessage      Error message string.
  * @thread  Any
@@ -130,7 +130,7 @@ VMMDECL(int)    VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFor
  *    @code
  *    return VM_SET_ERROR(pVM, VERR_OF_YOUR_CHOICE, "descriptive message");
  *    @endcode
- * @param   pVCpu             The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   rc              VBox status code.
  * @param   pszMessage      Error message string.
  * @thread  Any

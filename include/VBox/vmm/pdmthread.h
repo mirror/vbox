@@ -120,7 +120,7 @@ typedef FNPDMTHREADDRV *PFNPDMTHREADDRV;
  * PDM thread, driver variation.
  *
  * @returns VBox status code.
- * @param   pVCpu         The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pThread     The PDM thread data.
  */
 typedef DECLCALLBACK(int) FNPDMTHREADINT(PVM pVM, PPDMTHREAD pThread);
@@ -176,7 +176,7 @@ typedef FNPDMTHREADWAKEUPDRV *PFNPDMTHREADWAKEUPDRV;
  * PDM thread wakeup call, internal variation.
  *
  * @returns VBox status code.
- * @param   pVCpu         The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pThread     The PDM thread data.
  */
 typedef DECLCALLBACK(int) FNPDMTHREADWAKEUPINT(PVM pVM, PPDMTHREAD pThread);
