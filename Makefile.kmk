@@ -664,8 +664,8 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/src/VBox/VMM/Docs-CodingGuidelines.cpp \
 	$(PATH_ROOT)/src/VBox/VMM/Docs-RawMode.cpp \
 	$(PATH_ROOT)/include/VBox/cdefs.h \
-	$(PATH_ROOT)/include/VBox/vmm/vmapi.h \
 	$(PATH_ROOT)/include/VBox/vmm/vmm.h \
+	$(PATH_ROOT)/include/VBox/vmm/vmapi.h \
 	$(PATH_ROOT)/include/VBox/vmm/cpum.h \
 	$(PATH_ROOT)/include/VBox/vmm/mm.h \
 	$(PATH_ROOT)/include/VBox/vmm/pgm.h \
@@ -727,7 +727,9 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	\
 	$(PATH_ROOT)/include/VBox/log.h \
 	$(PATH_ROOT)/include/VBox/param.h \
-	$(PATH_ROOT)/include/VBox/version.h
+	$(PATH_ROOT)/include/VBox/version.h \
+       \
+	$(PATH_ROOT)/include/VBox/com/com.h
 
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(VBOX_CORE_DOXYFILE_INPUT_DIRS)))) ) \
@@ -752,7 +754,7 @@ $(PATH_TARGET)/Doxyfile.Core: Doxyfile.Core \
 		$(comp-vars VBOX_CORE_DOXYFILE_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
 		$(comp-vars VBOX_CORE_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
 		| $$(dir $$@)
-	$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.Core.dep
+	$(QUIET)$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.Core.dep
 	$(CP) -f Doxyfile.Core $@.tmp
 	$(APPEND) $@.tmp
 	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(VBOX_CORE_DOXYFILE_OUTPUT)"
