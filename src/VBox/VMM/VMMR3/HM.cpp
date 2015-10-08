@@ -1101,7 +1101,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     uint64_t    zap;
     RTGCPHYS    GCPhys = 0;
 
-    LogRel(("HM: Using VT-x implementation 2.0!\n"));
+    LogRel(("HM: Using VT-x implementation 2.0\n"));
     LogRel(("HM: Host CR4                        = %#RX64\n", pVM->hm.s.vmx.u64HostCr4));
     LogRel(("HM: Host EFER                       = %#RX64\n", pVM->hm.s.vmx.u64HostEfer));
     LogRel(("HM: MSR_IA32_FEATURE_CONTROL        = %#RX64\n", pVM->hm.s.vmx.Msrs.u64FeatureCtrl));
@@ -1370,7 +1370,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     }
 
     LogRel(("HM: Supports VMCS EFER fields       = %RTbool\n", pVM->hm.s.vmx.fSupportsVmcsEfer));
-    LogRel(("HM: Enabled VMX!\n"));
+    LogRel(("HM: Enabled VMX\n"));
     pVM->hm.s.vmx.fEnabled = true;
 
     hmR3DisableRawMode(pVM); /** @todo make this go away! */
@@ -1403,7 +1403,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
      */
     if (pVM->hm.s.fNestedPaging)
     {
-        LogRel(("HM: Enabled Nested paging\n"));
+        LogRel(("HM: Enabled nested paging\n"));
         if (pVM->hm.s.vmx.enmFlushEpt == VMXFLUSHEPT_SINGLE_CONTEXT)
             LogRel(("HM:   EPT flush type                = VMXFLUSHEPT_SINGLE_CONTEXT\n"));
         else if (pVM->hm.s.vmx.enmFlushEpt == VMXFLUSHEPT_ALL_CONTEXTS)
@@ -1414,14 +1414,14 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
             LogRel(("HM:   EPT flush type                = %d\n", pVM->hm.s.vmx.enmFlushEpt));
 
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
-            LogRel(("HM: Enabled Unrestricted guest execution\n"));
+            LogRel(("HM: Enabled unrestricted guest execution\n"));
 
 #if HC_ARCH_BITS == 64
         if (pVM->hm.s.fLargePages)
         {
             /* Use large (2 MB) pages for our EPT PDEs where possible. */
             PGMSetLargePageUsage(pVM, true);
-            LogRel(("HM: Enabled Large page support\n"));
+            LogRel(("HM: Enabled large page support\n"));
         }
 #endif
     }
@@ -1464,7 +1464,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
 {
     Log(("pVM->hm.s.svm.fSupported = %d\n", pVM->hm.s.svm.fSupported));
 
-    LogRel(("HM: Using AMD-V implementation 2.0!\n"));
+    LogRel(("HM: Using AMD-V implementation 2.0\n"));
 
     uint32_t u32Family;
     uint32_t u32Model;
@@ -1529,12 +1529,12 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
         return VMSetError(pVM, rc, RT_SRC_POS, "AMD-V setup failed: %Rrc", rc);
     }
 
-    LogRel(("HM: Enabled AMD-V\n"));
+    LogRel(("HM: Enabled SVM\n"));
     pVM->hm.s.svm.fEnabled = true;
 
     if (pVM->hm.s.fNestedPaging)
     {
-        LogRel(("HM:   Enabled Nested paging\n"));
+        LogRel(("HM:   Enabled nested paging\n"));
 
         /*
          * Enable large pages (2 MB) if applicable.
@@ -1543,7 +1543,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
         if (pVM->hm.s.fLargePages)
         {
             PGMSetLargePageUsage(pVM, true);
-            LogRel(("HM:   Enabled Large page support\n"));
+            LogRel(("HM:   Enabled large page support\n"));
         }
 #endif
     }
