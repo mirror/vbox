@@ -111,7 +111,6 @@ static int gimHvReadSlowHypercallParams(PVM pVM, PCPUMCTX pCtx, bool fIs64BitMod
  * @param   pCtx            Pointer to the guest-CPU context.
  *
  * @thread  EMT.
- * @remarks Guest RIP may or may not have been incremented at this point.
  */
 VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {

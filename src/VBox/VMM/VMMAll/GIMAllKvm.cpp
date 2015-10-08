@@ -45,7 +45,7 @@
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Pointer to the guest-CPU context.
  *
- * @remarks Guest RIP may or may not have been incremented at this point.
+ * @thread  EMT.
  */
 VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
