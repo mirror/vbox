@@ -1177,6 +1177,9 @@ int main()
     GEN_CHECK_OFF(XHCI, pNotifierQueueR3);
     GEN_CHECK_OFF(XHCI, pNotifierQueueR0);
     GEN_CHECK_OFF(XHCI, pNotifierQueueRC);
+    GEN_CHECK_OFF(XHCI, pWrapTimerR3);
+    GEN_CHECK_OFF(XHCI, pWrapTimerR0);
+    GEN_CHECK_OFF(XHCI, pWrapTimerRC);
     GEN_CHECK_OFF(XHCI, pWorkerThread);
     GEN_CHECK_OFF(XHCI, pSupDrvSession);
     GEN_CHECK_OFF(XHCI, hEvtProcess);
