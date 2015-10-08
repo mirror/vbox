@@ -1288,7 +1288,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         && CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
     {
         CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP);
-        LogRel(("HM: RDTSCP disabled\n"));
+        LogRel(("HM: Disabled RDTSCP\n"));
     }
 
     if (!pVM->hm.s.vmx.fUnrestrictedGuest)
@@ -1370,7 +1370,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     }
 
     LogRel(("HM: Supports VMCS EFER fields       = %RTbool\n", pVM->hm.s.vmx.fSupportsVmcsEfer));
-    LogRel(("HM: VMX enabled!\n"));
+    LogRel(("HM: Enabled VMX!\n"));
     pVM->hm.s.vmx.fEnabled = true;
 
     hmR3DisableRawMode(pVM); /** @todo make this go away! */
@@ -1403,7 +1403,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
      */
     if (pVM->hm.s.fNestedPaging)
     {
-        LogRel(("HM: Nested paging enabled!\n"));
+        LogRel(("HM: Enabled Nested paging\n"));
         if (pVM->hm.s.vmx.enmFlushEpt == VMXFLUSHEPT_SINGLE_CONTEXT)
             LogRel(("HM:   EPT flush type                = VMXFLUSHEPT_SINGLE_CONTEXT\n"));
         else if (pVM->hm.s.vmx.enmFlushEpt == VMXFLUSHEPT_ALL_CONTEXTS)
@@ -1414,14 +1414,14 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
             LogRel(("HM:   EPT flush type                = %d\n", pVM->hm.s.vmx.enmFlushEpt));
 
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
-            LogRel(("HM: Unrestricted guest execution enabled!\n"));
+            LogRel(("HM: Enabled Unrestricted guest execution\n"));
 
 #if HC_ARCH_BITS == 64
         if (pVM->hm.s.fLargePages)
         {
             /* Use large (2 MB) pages for our EPT PDEs where possible. */
             PGMSetLargePageUsage(pVM, true);
-            LogRel(("HM: Large page support enabled\n"));
+            LogRel(("HM: Enabled Large page support\n"));
         }
 #endif
     }
@@ -1430,7 +1430,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
 
     if (pVM->hm.s.vmx.fVpid)
     {
-        LogRel(("HM: VPID enabled!\n"));
+        LogRel(("HM: Enabled VPID\n"));
         if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_INDIV_ADDR)
             LogRel(("HM:   VPID flush type               = VMXFLUSHVPID_INDIV_ADDR\n"));
         else if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_SINGLE_CONTEXT)
@@ -1446,9 +1446,9 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         LogRel(("HM: Ignoring VPID capabilities of CPU\n"));
 
     if (pVM->hm.s.vmx.fUsePreemptTimer)
-        LogRel(("HM: VMX-preemption timer enabled (cPreemptTimerShift=%u)\n", pVM->hm.s.vmx.cPreemptTimerShift));
+        LogRel(("HM: Enabled VMX-preemption timer (cPreemptTimerShift=%u)\n", pVM->hm.s.vmx.cPreemptTimerShift));
     else
-        LogRel(("HM: VMX-preemption timer disabled\n"));
+        LogRel(("HM: Disabled VMX-preemption timer\n"));
 
     return VINF_SUCCESS;
 }
@@ -1529,12 +1529,12 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
         return VMSetError(pVM, rc, RT_SRC_POS, "AMD-V setup failed: %Rrc", rc);
     }
 
-    LogRel(("HM: AMD-V enabled!\n"));
+    LogRel(("HM: Enabled AMD-V\n"));
     pVM->hm.s.svm.fEnabled = true;
 
     if (pVM->hm.s.fNestedPaging)
     {
-        LogRel(("HM:   Nested paging enabled!\n"));
+        LogRel(("HM:   Enabled Nested paging\n"));
 
         /*
          * Enable large pages (2 MB) if applicable.
@@ -1543,7 +1543,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
         if (pVM->hm.s.fLargePages)
         {
             PGMSetLargePageUsage(pVM, true);
-            LogRel(("HM:   Large page support enabled!\n"));
+            LogRel(("HM:   Enabled Large page support\n"));
         }
 #endif
     }
@@ -1566,7 +1566,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     else if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
-    LogRel(("HM: TPR patching %s\n", (pVM->hm.s.fTprPatchingAllowed) ? "enabled" : "disabled"));
+    LogRel(("HM: %s TPR patching\n", (pVM->hm.s.fTprPatchingAllowed) ? "Enabled" : "Disabled"));
 
     LogRel((pVM->hm.s.fAllow64BitGuests
             ? "HM: Guest support: 32-bit and 64-bit\n"
