@@ -92,7 +92,6 @@ static void   gimR3HvTermDebugSupport(PVM pVM);
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   uVersion    The interface version this VM should use.
  */
 VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
 {

@@ -18,6 +18,8 @@
 
 /** @page   pg_pdm      PDM - The Pluggable Device & Driver Manager
  *
+ * The PDM handles devices and their drivers in a flexible and dynamic manner.
+ *
  * VirtualBox is designed to be very configurable, i.e. the ability to select
  * virtual devices and configure them uniquely for a VM.  For this reason
  * virtual devices are not statically linked with the VMM but loaded, linked and
@@ -2472,7 +2474,7 @@ VMMR3_INT_DECL(int) PDMR3VmmDevHeapUnregister(PVM pVM, RTGCPHYS GCPhys)
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   cbSize          Allocation size.
- * @param   pv              Ring-3 pointer. (out)
+ * @param   ppv             Ring-3 pointer. (out)
  */
 VMMR3_INT_DECL(int) PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, RTR3PTR *ppv)
 {

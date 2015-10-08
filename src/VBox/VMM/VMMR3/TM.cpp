@@ -2856,7 +2856,7 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
  * Sets the warp drive percent of the virtual time.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
+ * @param   pUVM        The user mode VM structure.
  * @param   u32Percent  The new percentage. 100 means normal operation.
  */
 VMMDECL(int) TMR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
@@ -2915,7 +2915,7 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
  * Gets the current warp drive percent.
  *
  * @returns The warp drive percent.
- * @param   pVM         The cross context VM structure.
+ * @param   pUVM        The user mode VM structure.
  */
 VMMR3DECL(uint32_t) TMR3GetWarpDrive(PUVM pUVM)
 {
@@ -3002,15 +3002,12 @@ VMMR3DECL(int) TMR3GetCpuLoadTimes(PVM pVM, VMCPUID idCpu, uint64_t *pcNsTotal, 
 /**
  * Helper for tmR3CpuLoadTimer.
  * @returns
- * @param   pState              The state to update.
- * @param   cNsTotalDelta       Total time.
- * @param   cNsExecutingDelta   Time executing.
- * @param   cNsHaltedDelta      Time halted.
+ * @param   pState          The state to update.
+ * @param   cNsTotal        Total time.
+ * @param   cNsExecuting    Time executing.
+ * @param   cNsHalted       Time halted.
  */
-DECLINLINE(void) tmR3CpuLoadTimerMakeUpdate(PTMCPULOADSTATE pState,
-                                            uint64_t cNsTotal,
-                                            uint64_t cNsExecuting,
-                                            uint64_t cNsHalted)
+DECLINLINE(void) tmR3CpuLoadTimerMakeUpdate(PTMCPULOADSTATE pState, uint64_t cNsTotal, uint64_t cNsExecuting, uint64_t cNsHalted)
 {
     /* Calc deltas */
     uint64_t cNsTotalDelta      = cNsTotal     - pState->cNsPrevTotal;
@@ -3441,7 +3438,7 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
  * Gets the descriptive TM TSC mode name given the enum value.
  *
  * @returns The name.
- * @param   pVM      The cross context VM structure.
+ * @param   enmMode             The mode to name.
  */
 static const char *tmR3GetTSCModeNameEx(TMTSCMODE enmMode)
 {

@@ -38,6 +38,7 @@ RT_C_DECLS_END
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
+ * @param   pModeData       The pointer table to initialize (our members only).
  * @param   fResolveGCAndR0 Indicate whether or not GC and Ring-0 symbols can be resolved now.
  *                          This is used early in the init process to avoid trouble with PDM
  *                          not being initialized yet.

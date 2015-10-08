@@ -268,7 +268,7 @@ VMMR3DECL(PCFGMNODE) CFGMR3GetRoot(PVM pVM)
  * Gets the root node for the VM.
  *
  * @returns Pointer to root node.
- * @param   pVM             The cross context VM structure.
+ * @param   pUVM        The user mode VM structure.
  */
 VMMR3DECL(PCFGMNODE) CFGMR3GetRootU(PUVM pUVM)
 {
@@ -2555,7 +2555,7 @@ VMMR3DECL(int) CFGMR3QueryU16(PCFGMNODE pNode, const char *pszName, uint16_t *pu
  * @param   pNode           Which node to search for pszName in.
  * @param   pszName         Name of an integer value.
  * @param   pu16            Where to store the value. Set to default on failure.
- * @param   i16Def          The default value.
+ * @param   u16Def          The default value.
  */
 VMMR3DECL(int) CFGMR3QueryU16Def(PCFGMNODE pNode, const char *pszName, uint16_t *pu16, uint16_t u16Def)
 {

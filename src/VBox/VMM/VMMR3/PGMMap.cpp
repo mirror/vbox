@@ -1409,6 +1409,7 @@ VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 /**
  * Info callback for 'pgmhandlers'.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        The output helpers.
  * @param   pszArgs     The arguments. phys or virt.
  */

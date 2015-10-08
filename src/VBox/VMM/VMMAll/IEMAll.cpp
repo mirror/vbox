@@ -1723,7 +1723,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PIEMCPU pIemCpu, uint32_t *pu32)
  *
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM state.
- * @param   pu32                Where to return the opcode dword.
+ * @param   pu64                Where to return the opcode dword.
  */
 DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemOpcodeGetNextU32ZxU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
 {
@@ -2364,15 +2364,17 @@ IEM_STATIC void iemHlpLoadNullDataSelectorProt(PIEMCPU pIemCpu, PCPUMSELREG pSRe
 
 
 /**
- * Loads a segment selector during a task switch in protected mode. In this task
- * switch scenario, we would throw #TS exceptions rather than #GPs.
+ * Loads a segment selector during a task switch in protected mode.
+ *
+ * In this task switch scenario, we would throw \#TS exceptions rather than
+ * \#GPs.
  *
  * @returns VBox strict status code.
  * @param   pIemCpu         The IEM per CPU instance data.
  * @param   pSReg           Pointer to the segment register.
  * @param   uSel            The new selector value.
  *
- * @remarks This does -NOT- handle CS or SS.
+ * @remarks This does _not_ handle CS or SS.
  * @remarks This expects pIemCpu->uCpl to be up to date.
  */
 IEM_STATIC VBOXSTRICTRC iemHlpTaskSwitchLoadDataSelectorInProtMode(PIEMCPU pIemCpu, PCPUMSELREG pSReg, uint16_t uSel)
@@ -3158,7 +3160,7 @@ iemTaskSwitch(PIEMCPU         pIemCpu,
             if (   pCtx->esp - 1 > cbLimitSS
                 || pCtx->esp < cbStackFrame)
             {
-                /** @todo Intel says #SS(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
+                /** @todo Intel says \#SS(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
                 Log(("iemTaskSwitch: SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #SS\n", pCtx->ss.Sel, pCtx->esp,
                      cbStackFrame));
                 return iemRaiseStackSelectorNotPresentWithErr(pIemCpu, uExt);
@@ -3193,7 +3195,7 @@ iemTaskSwitch(PIEMCPU         pIemCpu,
     {
         Log(("iemHlpTaskSwitchLoadDataSelectorInProtMode: New EIP exceeds CS limit. uNewEIP=%#RGv CS limit=%u -> #GP(0)\n",
              pCtx->eip, pCtx->cs.u32Limit));
-        /** @todo Intel says #GP(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
+        /** @todo Intel says \#GP(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
         return iemRaiseGeneralProtectionFault(pIemCpu, uExt);
     }
 
@@ -5086,9 +5088,9 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPop(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, uint8_t
  *
  * @returns Effective stack addressf for the push.
  * @param   pIemCpu             The per CPU data.
+ * @param   pCtx                Where to get the current stack mode.
  * @param   pTmpRsp             The temporary stack pointer.  This is updated.
  * @param   cbItem              The size of the stack item to pop.
- * @param   puNewRsp            Where to return the new RSP value.
  */
 DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUINT64U pTmpRsp, uint8_t cbItem)
 {
@@ -5110,8 +5112,8 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTU
  *
  * @returns Current stack pointer.
  * @param   pIemCpu             The per CPU data.
- * @param   pTmpRsp             The temporary stack pointer.  This is updated.
  * @param   pCtx                Where to get the current stack mode.
+ * @param   pTmpRsp             The temporary stack pointer.  This is updated.
  * @param   cbItem              The size of the stack item to pop.
  */
 DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUINT64U pTmpRsp, uint8_t cbItem)
@@ -5499,7 +5501,6 @@ IEM_STATIC void iemFpuPushResultTwo(PIEMCPU pIemCpu, PIEMFPURESULTTWO pResult)
  * @param   pIemCpu             The IEM per CPU data.
  * @param   pResult             The result to store.
  * @param   iStReg              Which FPU register to store it in.
- * @param   pCtx                The CPU context.
  */
 IEM_STATIC void iemFpuStoreResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg)
 {
@@ -5517,7 +5518,6 @@ IEM_STATIC void iemFpuStoreResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_
  * @param   pIemCpu             The IEM per CPU data.
  * @param   pResult             The result to store.
  * @param   iStReg              Which FPU register to store it in.
- * @param   pCtx                The CPU context.
  */
 IEM_STATIC void iemFpuStoreResultThenPop(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg)
 {
@@ -5536,11 +5536,11 @@ IEM_STATIC void iemFpuStoreResultThenPop(PIEMCPU pIemCpu, PIEMFPURESULT pResult,
  * @param   pIemCpu             The IEM per CPU data.
  * @param   pResult             The result to store.
  * @param   iStReg              Which FPU register to store it in.
- * @param   pCtx                The CPU context.
  * @param   iEffSeg             The effective memory operand selector register.
  * @param   GCPtrEff            The effective memory operand offset.
  */
-IEM_STATIC void iemFpuStoreResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+IEM_STATIC void iemFpuStoreResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg,
+                                           uint8_t iEffSeg, RTGCPTR GCPtrEff)
 {
     PCPUMCTX    pCtx    = pIemCpu->CTX_SUFF(pCtx);
     PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
@@ -5557,7 +5557,6 @@ IEM_STATIC void iemFpuStoreResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResul
  * @param   pIemCpu             The IEM per CPU data.
  * @param   pResult             The result to store.
  * @param   iStReg              Which FPU register to store it in.
- * @param   pCtx                The CPU context.
  * @param   iEffSeg             The effective memory operand selector register.
  * @param   GCPtrEff            The effective memory operand offset.
  */
@@ -6157,6 +6156,7 @@ iemMemSegCheckReadAccessEx(PIEMCPU pIemCpu, PCCPUMSELREGHID pHid, uint8_t iSegRe
  * @param   iSegReg             The index of the segment register to apply.
  *                              This is UINT8_MAX if none (for IDT, GDT, LDT,
  *                              TSS, ++).
+ * @param   cbMem               The access size.
  * @param   pGCPtrMem           Pointer to the guest memory address to apply
  *                              segmentation to.  Input and output parameter.
  */
@@ -6951,7 +6951,7 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMem
  *                              Use UINT8_MAX to indicate that no segmentation
  *                              is required (for IDT, GDT and LDT accesses).
  * @param   GCPtrMem            The address of the guest memory.
- * @param   a_fAccess           How the memory is being accessed.  The
+ * @param   fAccess             How the memory is being accessed.  The
  *                              IEM_ACCESS_TYPE_XXX bit is used to figure out
  *                              how to map the memory, while the
  *                              IEM_ACCESS_WHAT_XXX bit is used when raising
@@ -7314,7 +7314,7 @@ IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PIEMCPU pIemCpu, uint128_t
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM per CPU data.
  * @param   pcbLimit            Where to return the limit.
- * @param   pGCPTrBase          Where to return the base.
+ * @param   pGCPtrBase          Where to return the base.
  * @param   iSegReg             The index of the segment register to use for
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
@@ -7463,7 +7463,7 @@ IEM_STATIC VBOXSTRICTRC iemMemStoreDataU64(PIEMCPU pIemCpu, uint8_t iSegReg, RTG
  * @param   iSegReg             The index of the segment register to use for
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
- * @param   u64Value            The value to store.
+ * @param   u128Value            The value to store.
  */
 IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
 {
@@ -7487,7 +7487,7 @@ IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128(PIEMCPU pIemCpu, uint8_t iSegReg, RT
  * @param   iSegReg             The index of the segment register to use for
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
- * @param   u64Value            The value to store.
+ * @param   u128Value           The value to store.
  */
 IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
 {
@@ -7513,7 +7513,7 @@ IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PIEMCPU pIemCpu, uint8_t i
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM per CPU data.
  * @param   cbLimit             The limit.
- * @param   GCPTrBase           The base address.
+ * @param   GCPtrBase           The base address.
  * @param   iSegReg             The index of the segment register to use for
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
@@ -7626,7 +7626,7 @@ IEM_STATIC VBOXSTRICTRC iemMemStackPushU32(PIEMCPU pIemCpu, uint32_t u32Value)
  *
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM per CPU data.
- * @param   u16Value            The value to push.
+ * @param   u32Value            The value to push.
  */
 IEM_STATIC VBOXSTRICTRC iemMemStackPushU32SReg(PIEMCPU pIemCpu, uint32_t u32Value)
 {
@@ -7992,7 +7992,7 @@ IEM_STATIC VBOXSTRICTRC iemMemStackPopU64Ex(PIEMCPU pIemCpu, uint64_t *pu64Value
 /**
  * Begin a special stack push (used by interrupt, exceptions and such).
  *
- * This will raise #SS or #PF if appropriate.
+ * This will raise \#SS or \#PF if appropriate.
  *
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM per CPU data.
@@ -11554,7 +11554,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, uin
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   cbInstr     The instruction length in bytes.
  * @remarks In ring-0 not all of the state needs to be synced in.
- * @threads EMT(pVCpu)
+ * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
 {

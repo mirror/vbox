@@ -377,6 +377,7 @@ static void *mmR3UkHeapAlloc(PMMUKHEAP pHeap, MMTAG enmTag, size_t cb, bool fZer
  *
  * @param   pVM         The cross context VM structure.
  * @param   pv          Pointer to the memory block to free.
+ * @param   enmTag      The allocation accounting tag.
  */
 VMMR3DECL(void) MMR3UkHeapFree(PVM pVM, void *pv, MMTAG enmTag)
 {

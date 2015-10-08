@@ -128,10 +128,12 @@ VMM_INT_DECL(EMSTATE) EMGetState(PVMCPU pVCpu)
     return pVCpu->em.s.enmState;
 }
 
+
 /**
  * Sets the current execution manager status. (use only when you know what you're doing!)
  *
- * @param   pVCpu         The cross context virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   enmNewState The new state, EMSTATE_WAIT_SIPI or EMSTATE_HALTED.
  */
 VMM_INT_DECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
 {
@@ -699,7 +701,6 @@ static void emCompareWithIem(PVMCPU pVCpu, PCCPUMCTX pEmCtx, PCCPUMCTX pIemCtx,
  * @param   pRegFrame   The register frame.
  *                      Updates the EIP if an instruction was executed successfully.
  * @param   pvFault     The fault address (CR2).
- * @param   pcbSize     Size of the write (if applicable).
  *
  * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
@@ -823,8 +824,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRe
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pRegFrame   The register frame.
  *                      Updates the EIP if an instruction was executed successfully.
  * @param   pvFault     The fault address (CR2).
@@ -960,13 +960,11 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE p
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pDis        The disassembler cpu state for the instruction to be
  *                      interpreted.
  * @param   pRegFrame   The register frame. IP/EIP/RIP *IS* changed!
  * @param   pvFault     The fault address (CR2).
- * @param   pcbSize     Size of the write (if applicable).
  * @param   enmCodeType Code type (user/supervisor)
  *
  * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
@@ -1324,8 +1322,8 @@ VMM_INT_DECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
     /* Just return zero here; rather tricky to properly emulate this, especially as the specs are a mess. */
     pRegFrame->rax = 0;
     pRegFrame->rdx = 0;
-    /** @todo We should trigger a #GP here if the CPU doesn't support the index in ecx
-     *        but see @bugref{3472}! */
+    /** @todo We should trigger a \#GP here if the CPU doesn't support the index in
+     *        ecx but see @bugref{3472}! */
 
     NOREF(pVM);
     return VINF_SUCCESS;
@@ -1440,7 +1438,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   The register frame.
- * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
+ * @param   DestRegCrx  CRx register index (DISUSE_REG_CR*)
  * @param   val         New CRx value
  *
  */
@@ -1606,7 +1604,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   The register frame.
- * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
+ * @param   DestRegCrx  CRx register index (DISUSE_REG_CR*)
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
@@ -1761,7 +1759,7 @@ VMM_INT_DECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
- * @param   SrcRegCRx   CRx register index (DISUSE_REG_CR*)
+ * @param   SrcRegCrx   CRx register index (DISUSE_REG_CR*)
  *
  */
 static int emInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
@@ -1793,7 +1791,7 @@ static int emInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uin
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   The register frame.
- * @param   DestRegDRx  DRx register index (USE_REG_DR*)
+ * @param   DestRegDrx  DRx register index (USE_REG_DR*)
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
@@ -1844,8 +1842,7 @@ VMM_INT_DECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFr
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
- * @param   SrcRegDRx   DRx register index (USE_REG_DR*)
- *
+ * @param   SrcRegDrx   DRx register index (USE_REG_DR*)
  */
 VMM_INT_DECL(int) EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx)
 {
@@ -3643,6 +3640,7 @@ static int emInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
 /**
  * Internal worker.
  * @copydoc emInterpretInstructionCPUOuter
+ * @param   pVM     The cross context VM structure.
  */
 DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                    RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize)

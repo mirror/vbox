@@ -1797,7 +1797,7 @@ VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
  * Deregister an external data unit.
  *
  * @returns VBox status.
- * @param   pVM             The cross context VM structure.
+ * @param   pUVM            The user mode VM structure.
  * @param   pszName         Data unit name.
  * @remark  Only for dynamic data units.
  */
@@ -2186,7 +2186,8 @@ static PSSMSTRMBUF ssmR3StrmGetFreeBuf(PSSMSTRM pStrm)
 /**
  * Puts a buffer onto the queue.
  *
- * @param   pBuf        The buffer.
+ * @param   pStrm           The stream handle.
+ * @param   pBuf            The stream buffer to put.
  *
  * @thread  The producer.
  */
@@ -2231,7 +2232,7 @@ static PSSMSTRMBUF ssmR3StrmReverseList(PSSMSTRMBUF pHead)
  * necessary.
  *
  * @returns Pointer to the buffer on success. NULL if we're terminating.
- * @param   pBuf        The buffer.
+ * @param   pStrm           The stream handle.
  *
  * @thread  The consumer.
  */
@@ -5726,6 +5727,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
  * @param   enmAfter        What is planned after a successful save operation.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvProgressUser  User argument for the progress callback.
+ * @param   ppSSM           Where to return the saved state handle on success.
  *
  * @thread  EMT0
  */
@@ -5987,7 +5989,7 @@ static int ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
  * @returns VBox status code. Does NOT set pSSM->rc.
  * @param   pSSM            The saved state handle.
  * @param   pvBuf           Where to put the bits
- * @param   cbBuf           How many bytes to read.
+ * @param   cbToRead        How many bytes to read.
  */
 DECLINLINE(int) ssmR3DataReadV2Raw(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead)
 {
@@ -6045,7 +6047,7 @@ DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, uint32_t *pcbDecompr)
  * buffer.
  *
  * @returns VBox status code. Sets pSSM->rc on error.
- * @param   SSM             The saved state handle.
+ * @param   pSSM            The saved state handle.
  * @param   pvDst           Pointer to the output buffer.
  * @param   cbDecompr       The size of the decompressed data.
  */
@@ -6095,7 +6097,7 @@ static int ssmR3DataReadV2RawLzf(PSSMHANDLE pSSM, void *pvDst, size_t cbDecompr)
  *
  * @returns VBox status code. Sets pSSM->rc on error.
  * @param   pSSM            The saved state handle..
- * @param   pcbDecompr      Where to store the size of the zero data.
+ * @param   pcbZero         Where to store the size of the zero data.
  */
 DECLINLINE(int) ssmR3DataReadV2RawZeroHdr(PSSMHANDLE pSSM, uint32_t *pcbZero)
 {
@@ -7732,7 +7734,6 @@ static int ssmR3ValidateHeaderInfo(PSSMHANDLE pSSM, bool fHaveHostBits, bool fHa
  * @param   fChecksumOnRead     Whether to validate the checksum while reading
  *                              the stream instead of up front. If not possible,
  *                              verify the checksum up front.
- * @param   pHdr                Where to store the file header.
  */
 static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOnRead)
 {
@@ -9059,7 +9060,7 @@ VMMR3DECL(int) SSMR3SetLoadErrorV(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, cons
  * @param   pSSM                The saved state handle.
  * @param   SRC_POS             The error location, use RT_SRC_POS.
  * @param   pszFormat           The message format string.
- * @param   va                  Variable argument list.
+ * @param   ...                 Variable argument list.
  */
 VMMR3DECL(int) SSMR3SetCfgError(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *pszFormat, ...)
 {

@@ -404,7 +404,7 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
  * Initialize the configuration of halt method 1 & 2.
  *
  * @return VBox status code. Failure on invalid CFGM data.
- * @param   pVM     The cross context VM structure.
+ * @param   pUVM        The user mode VM structure.
  */
 static int vmR3HaltMethod12ReadConfigU(PUVM pUVM)
 {
@@ -837,7 +837,7 @@ static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fF
  * Bootstrap VMR3Wait() worker.
  *
  * @returns VBox status code.
- * @param   pUVMCPU            Pointer to the user mode VMCPU structure.
+ * @param   pUVCpu      Pointer to the user mode VMCPU structure.
  */
 static DECLCALLBACK(int) vmR3BootstrapWait(PUVMCPU pUVCpu)
 {
@@ -905,7 +905,7 @@ static DECLCALLBACK(void) vmR3BootstrapNotifyCpuFF(PUVMCPU pUVCpu, uint32_t fFla
  * Default VMR3Wait() worker.
  *
  * @returns VBox status code.
- * @param   pUVMCPU            Pointer to the user mode VMCPU structure.
+ * @param   pUVCpu          Pointer to the user mode VMCPU structure.
  */
 static DECLCALLBACK(int) vmR3DefaultWait(PUVMCPU pUVCpu)
 {

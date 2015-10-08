@@ -461,6 +461,7 @@ PREDEFINED             =  \
     RT_SRC_POS=1 \
     RT_SRC_POS_ARGS=SRC_POS \
     "RT_SRC_POS_DECL=int SRC_POS" \
+    "RTLOG_COMMA_SRC_POS_DECL=, int SRC_POS" \
     \
     RT_IPRT_FORMAT_ATTR(a,b)= \
     RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)= \
@@ -484,10 +485,17 @@ PREDEFINED += \
     DECLVBGL(type)=type \
     DECLR0VBGL(type)=type \
     USBLIB_DECL(type)=type \
+    VMMDECL(type)=type \
+    VMMR0DECL(type)=type \
+    VMMR3DECL(type)=type \
+    VMMRCDECL(type)=type \
+    VMMRZDECL(type)=type \
     VMMR0_INT_DECL(type)=type \
     VMMR3_INT_DECL(type)=type \
     VMMRC_INT_DECL(type)=type \
-    VMMRZ_INT_DECL(type)=type
+    VMMRZ_INT_DECL(type)=type \
+    GMMR0DECL(type)=type \
+    GMMR3DECL(type)=type 
 
 # templated fun.
 PREDEFINED += \
@@ -499,6 +507,9 @@ PREDEFINED += \
     "PGM_GST_NAME(name)=pgmGst##name" \
     PGM_ALL_CB_DECL(type)=type \
     PGM_ALL_CB2_DECL(type)=type \
+    PGMPHYS_DATATYPE=uintXX_t \
+    "PGMPHYSFN_READNAME(a,b,c)=PGMR3PhysReadUxx(a,b,c)" \
+    "PGMPHYSFN_WRITENAME(a,b,c,d)=PGMR3PhysWriteUxx(a,b,c,d)" \
 
 # context hacks.
 PREDEFINED            += RCPTRTYPE(RCType)=RCType

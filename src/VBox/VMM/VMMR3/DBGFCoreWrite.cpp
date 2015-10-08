@@ -206,9 +206,9 @@ static uint64_t Elf64NoteSectionSize(const char *pszName, uint64_t cbData)
  *
  * @returns IPRT status code.
  */
-static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, const void *pcvData, uint64_t cbData)
+static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, const void *pvData, uint64_t cbData)
 {
-    AssertReturn(pcvData, VERR_INVALID_POINTER);
+    AssertReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData > 0, VERR_NO_DATA);
 
     char szNoteName[g_cbNoteName];
@@ -270,7 +270,7 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
                 /*
                  * Write note data.
                  */
-                rc = RTFileWrite(hFile, pcvData, cbData, NULL /* all */);
+                rc = RTFileWrite(hFile, pvData, cbData, NULL /* all */);
                 if (RT_SUCCESS(rc))
                 {
                     /*

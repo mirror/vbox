@@ -1952,7 +1952,8 @@ VMM_INT_DECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void con
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   GCPhys      The guest physical address of the page that should be mapped.
+ * @param   GCPtr       The guest physical address of the page that should be
+ *                      mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
  * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
  *
@@ -4385,13 +4386,15 @@ VMM_INT_DECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys)
  *          accesses or is odd in any way.
  * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
  *
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   GCPhys      The GC physical address to convert.  This API mask the
- *                      A20 line when necessary.
- * @param   fWritable   Whether write access is required.
- * @param   ppv         Where to store the pointer corresponding to GCPhys on
- *                      success.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   GCPhys          The GC physical address to convert.  This API mask
+ *                          the A20 line when necessary.
+ * @param   fWritable       Whether write access is required.
+ * @param   fByPassHandlers Whether to bypass access handlers.
+ * @param   ppv             Where to store the pointer corresponding to GCPhys
+ *                          on success.
  * @param   pLock
  *
  * @remarks This is more or a less a copy of PGMR3PhysTlbGCPhys2Ptr.
@@ -4502,11 +4505,12 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, b
  *          accesses or is odd in any way.
  * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
  *
- * @param   pVM         The cross context VM structure.
- * @param   GCPhys      The GC physical address to convert.  Since this is only
- *                      used for filling the REM TLB, the A20 mask must be
- *                      applied before calling this API.
- * @param   fWritable   Whether write access is required.
+ * @param   pVM             The cross context VM structure.
+ * @param   GCPhys          The GC physical address to convert.  Since this is
+ *                          only used for filling the REM TLB, the A20 mask must
+ *                          be applied before calling this API.
+ * @param   fWritable       Whether write access is required.
+ * @param   fByPassHandlers Whether to bypass access handlers.
  *
  * @remarks This is a watered down version PGMPhysIemGCPhys2Ptr and really just
  *          a stop gap thing that should be removed once there is a better TLB

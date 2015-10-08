@@ -551,9 +551,9 @@
  *
  * The ring-0 will be tied to the page allocator since it will operate on the
  * memory objects it contains. It will therefore require the first ring-0 mutex
- * discussed in @ref subsec_pgmPhys_Serializing. We
- * some double house keeping wrt to who has mapped what I think, since both
- * VMMR0.r0 and RTR0MemObj will keep track of mapping relations
+ * discussed in @ref sec_pgmPhys_Serializing.  We some double house keeping wrt
+ * to who has mapped what I think, since both VMMR0.r0 and RTR0MemObj will keep
+ * track of mapping relations
  *
  * The ring-3 part will be protected by the pgm critsect. For simplicity, we'll
  * require anyone that desires to do changes to the mapping cache to do that

@@ -36,7 +36,7 @@
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @thread  EMT.
  * @remarks Can be called with preemption disabled!
  */

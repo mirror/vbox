@@ -617,7 +617,6 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
  * @returns true if bits were flushed.
  * @returns false if bits weren't flushed.
  * @param   pVM     The cross context VM structure.
- * @param   pPDSrc  The page directory.
  * @param   cr4     The cr4 register value.
  */
 PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)

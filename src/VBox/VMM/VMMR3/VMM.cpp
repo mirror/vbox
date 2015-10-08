@@ -45,7 +45,7 @@
  * To be written.
  *
  *
- * @sections sec_vmm_limits     VMM Limits
+ * @section sec_vmm_limits     VMM Limits
  *
  * There are various resource limits imposed by the VMM and it's
  * sub-components.  We'll list some of them here.

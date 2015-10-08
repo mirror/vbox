@@ -323,12 +323,12 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
 
 
 /**
- * @copydoc FNDISGETSYMBOL
+ * @callback_method_impl{FNDISGETSYMBOL}
  */
-static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINTPTR uAddress,
+static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pDis, uint32_t u32Sel, RTUINTPTR uAddress,
                                               char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser)
 {
-    PDBGFDISASSTATE pState   = (PDBGFDISASSTATE)pCpu;
+    PDBGFDISASSTATE pState   = (PDBGFDISASSTATE)pDis;
     PCDBGFSELINFO   pSelInfo = (PCDBGFSELINFO)pvUser;
 
     /*

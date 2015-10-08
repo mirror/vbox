@@ -91,8 +91,7 @@ VMMR3_INT_DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
  * Context VMM modules.
  *
  * @returns VBox status code.
- * @param   pUVM        Pointer to the user mode VM structure.
- * @param   pvVMMR0Mod  The opaque returned by PDMR3LdrLoadVMMR0.
+ * @param   pUVM        The user mode VM structure.
  */
 int pdmR3LdrInitU(PUVM pUVM)
 {
@@ -117,7 +116,7 @@ int pdmR3LdrInitU(PUVM pUVM)
  *
  * This will unload and free all modules.
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pUVM        The user mode VM structure.
  *
  * @remarks This is normally called twice during termination.
  */

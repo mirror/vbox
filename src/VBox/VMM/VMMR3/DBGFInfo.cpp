@@ -830,7 +830,7 @@ VMMR3DECL(int) DBGFR3InfoStdErr(PUVM pUVM, const char *pszName, const char *pszA
  *
  * This is intended used by the fatal error dump only.
  *
- * @returns
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pszIncludePat   Simple string pattern of info items to include.
  * @param   pszExcludePat   Simple string pattern of info items to exclude.
@@ -839,7 +839,7 @@ VMMR3DECL(int) DBGFR3InfoStdErr(PUVM pUVM, const char *pszName, const char *pszA
  * @param   pHlp            The output helper functions.  If NULL the logger
  *                          will be used.
  *
- * @threads EMT
+ * @thread  EMT
  */
 VMMR3_INT_DECL(int) DBGFR3InfoMulti(PVM pVM, const char *pszIncludePat, const char *pszExcludePat, const char *pszSepFmt,
                                     PCDBGFINFOHLP pHlp)

@@ -156,10 +156,10 @@ VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTag
  * Sets the pending I/O APIC interrupt.
  *
  * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   u8Irq           The IRQ line.
- * @param   u8Level         The new level.
- * @param   uTagSrc         The IRQ tag and source tracer ID.
+ * @param   pVM         The cross context VM structure.
+ * @param   u8Irq       The IRQ line.
+ * @param   u8Level     The new level.
+ * @param   uTagSrc     The IRQ tag and source tracer ID.
  */
 VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
 {
@@ -178,10 +178,10 @@ VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint3
  * Send a MSI to an I/O APIC.
  *
  * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   GCAddr          Request address.
- * @param   u8Value         Request value.
- * @param   uTagSrc         The IRQ tag and source tracer ID.
+ * @param   pVM         The cross context VM structure.
+ * @param   GCAddr      Request address.
+ * @param   uValue      Request value.
+ * @param   uTagSrc     The IRQ tag and source tracer ID.
  */
 VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc)
 {
@@ -202,7 +202,7 @@ VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, ui
  * Returns the presence of an IO-APIC.
  *
  * @returns VBox true if an IO-APIC is present.
- * @param   pVM             The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(bool) PDMHasIoApic(PVM pVM)
 {
@@ -214,7 +214,7 @@ VMM_INT_DECL(bool) PDMHasIoApic(PVM pVM)
  * Returns the presence of a Local APIC.
  *
  * @returns VBox true if a Local APIC is present.
- * @param   pVM             The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
 {
@@ -226,8 +226,8 @@ VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
  * Set the APIC base.
  *
  * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   u64Base         The new base.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   u64Base     The new base.
  */
 VMMDECL(int) PDMApicSetBase(PVMCPU pVCpu, uint64_t u64Base)
 {
@@ -257,8 +257,8 @@ VMMDECL(int) PDMApicSetBase(PVMCPU pVCpu, uint64_t u64Base)
  * PDMApicGetBase() and not this function.
  *
  * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pu64Base        Where to store the APIC base.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pu64Base    Where to store the APIC base.
  */
 VMMDECL(int) PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base)
 {
@@ -280,8 +280,8 @@ VMMDECL(int) PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base)
  * Check if the APIC has a pending interrupt/if a TPR change would active one.
  *
  * @returns VINF_SUCCESS or VERR_PDM_NO_APIC_INSTANCE.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pfPending       Pending state (out).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pfPending   Pending state (out).
  */
 VMM_INT_DECL(int) PDMApicHasPendingIrq(PVMCPU pVCpu, bool *pfPending)
 {

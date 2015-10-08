@@ -42,7 +42,7 @@ static volatile uint32_t g_cFormatTypeUsers = 0;
  *
  * @returns The length of the formatted number.
  * @param   pszBuf              Output buffer with sufficient space.
- * @param   uNum                The number to format.
+ * @param   uNumber             The number to format.
  */
 static unsigned vmmFormatTypeShortNumber(char *pszBuf, uint32_t uNumber)
 {

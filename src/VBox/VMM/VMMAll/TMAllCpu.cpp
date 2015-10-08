@@ -36,6 +36,9 @@
 
 /**
  * Gets the raw cpu tick from current virtual time.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   fCheckTimers    Whether to check timers.
  */
 DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers)
 {
@@ -53,6 +56,8 @@ DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers)
 #ifdef IN_RING3
 /**
  * Used by tmR3CpuTickParavirtEnable and tmR3CpuTickParavirtDisable.
+ *
+ * @param   pVM     The cross context VM structure.
  */
 uint64_t tmR3CpuTickGetRawVirtualNoCheck(PVM pVM)
 {
@@ -397,7 +402,8 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVM pVM, PVMCPU pVCpu, u
  * Read the current CPU timestamp counter.
  *
  * @returns Gets the CPU tsc.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   fCheckTimers    Whether to check timers.
  */
 DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
 {

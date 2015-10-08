@@ -141,10 +141,14 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
  * @param   pfnHandlerR3    Pointer to the ring-3 handler callback.
  * @param   pszModR0        The name of the ring-0 module, NULL is an alias for
  *                          the main ring-0 module.
+ * @param   pszHandlerR0    The name of the ring-0 handler, NULL if the ring-3
+ *                          handler should be called.
  * @param   pszPfHandlerR0  The name of the ring-0 \#PF handler, NULL if the
  *                          ring-3 handler should be called.
  * @param   pszModRC        The name of the raw-mode context module, NULL is an
  *                          alias for the main RC module.
+ * @param   pszHandlerRC    The name of the raw-mode context handler, NULL if
+ *                          the ring-3 handler should be called.
  * @param   pszPfHandlerRC  The name of the raw-mode context \#PF handler, NULL
  *                          if the ring-3 handler should be called.
  * @param   pszDesc         The type description.
@@ -695,6 +699,7 @@ typedef struct PGMHANDLERINFOARG
 /**
  * Info callback for 'pgmhandlers'.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        The output helpers.
  * @param   pszArgs     The arguments. phys or virt.
  */

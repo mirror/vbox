@@ -91,7 +91,7 @@ VMMR3_INT_DECL(int) VMR3ReqCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction
  *          its status code is return.  Otherwise, the status of pfnFunction is
  *          returned.
  *
- * @param   pVM             The cross context VM structure.
+ * @param   pUVM            The user mode VM structure.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
@@ -1186,7 +1186,7 @@ VMMR3_INT_DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu, bool fPriorityO
  *
  * @returns VBox status code.
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pUVM        The user mode VM structure.
  * @param   pReq        Request packet to process.
  */
 static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)

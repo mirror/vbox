@@ -1347,6 +1347,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * @param   pfnWriteCallback    Pointer to function which is gonna handle Write operations.
  * @param   pfnReadCallback     Pointer to function which is gonna handle Read operations.
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
+ * @param   fFlags              Flags, see IOMMMIO_FLAGS_XXX.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
 VMMR3_INT_DECL(int)

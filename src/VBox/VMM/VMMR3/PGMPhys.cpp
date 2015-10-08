@@ -620,8 +620,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
  * Recursive tree builder.
  *
  * @param   ppRam           Pointer to the iterator variable.
- * @param   iHeight         The hight about normal leaf nodes.  Inserts a leaf
- *                          node if 0.
+ * @param   iDepth          The current depth.  Inserts a leaf node if 0.
  */
 static PPGMRAMRANGE pgmR3PhysRebuildRamRangeSearchTreesRecursively(PPGMRAMRANGE *ppRam, int iDepth)
 {
@@ -1327,6 +1326,7 @@ VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM)
  * @param   pGCPhysStart    Where to return the start of the range. Optional.
  * @param   pGCPhysLast     Where to return the address of the last byte in the
  *                          range. Optional.
+ * @param   ppszDesc        Where to return the range description. Optional.
  * @param   pfIsMmio        Where to indicate that this is a pure MMIO range.
  *                          Optional.
  */
@@ -1500,9 +1500,10 @@ static void pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GC
 /**
  * Relocate a floating RAM range.
  *
- * @copydoc FNPGMRELOCATE.
+ * @copydoc FNPGMRELOCATE
  */
-static DECLCALLBACK(bool) pgmR3PhysRamRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew, PGMRELOCATECALL enmMode, void *pvUser)
+static DECLCALLBACK(bool) pgmR3PhysRamRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew,
+                                                    PGMRELOCATECALL enmMode, void *pvUser)
 {
     PPGMRAMRANGE pRam = (PPGMRAMRANGE)pvUser;
     Assert(pRam->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING);

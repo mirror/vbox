@@ -111,9 +111,9 @@
  * @subsection sub_gmm_locking  Serializing
  *
  * One simple fast mutex will be employed in the initial implementation, not
- * two as mentioned in @ref subsec_pgmPhys_Serializing.
+ * two as mentioned in @ref sec_pgmPhys_Serializing.
  *
- * @see @ref subsec_pgmPhys_Serializing
+ * @see @ref sec_pgmPhys_Serializing
  *
  *
  * @section sec_gmm_overcommit  Memory Over-Commitment Management
@@ -1131,7 +1131,7 @@ static int gmmR0ChunkMutexAcquire(PGMMR0CHUNKMTXSTATE pMtxState, PGMM pGMM, PGMM
  * Releases the GMM giant lock.
  *
  * @returns Assert status code from RTSemFastMutexRequest.
- * @param   pGMM        Pointer to the GMM instance.
+ * @param   pMtxState   Pointer to the chunk mutex state.
  * @param   pChunk      Pointer to the chunk if it's still
  *                      alive, NULL if it isn't.  This is used to deassociate
  *                      the chunk from the mutex on the way out so a new one
@@ -1950,6 +1950,8 @@ DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet)
  *
  * If no free entries, it's not linked into any list.
  *
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   pGVM        Pointer to the kernel-only VM instace data.
  * @param   pChunk      The allocation chunk.
  */
 DECLINLINE(void) gmmR0SelectSetAndLinkChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
@@ -2078,9 +2080,9 @@ static void gmmR0AllocatePage(PGMMCHUNK pChunk, uint32_t hGVM, PGMMPAGEDESC pPag
  * Picks the free pages from a chunk.
  *
  * @returns The new page descriptor table index.
- * @param   pGMM        Pointer to the GMM instance data.
- * @param   hGVM        The global VM handle.
  * @param   pChunk      The chunk.
+ * @param   hGVM        The affinity of the chunk. NIL_GVM_HANDLE for no
+ *                      affinity.
  * @param   iPage       The current page descriptor table index.
  * @param   cPages      The total number of pages to allocate.
  * @param   paPages     The page descriptor table (input + ouput).
@@ -3014,9 +3016,12 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, VMCPUID idCpu, PGMMALLOCATEPAGESRE
  * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
  *          that is we're trying to allocate more than we've reserved.
  * @returns see GMMR0AllocatePages.
+ *
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   cbPage      Large page size.
+ * @param   pIdPage     Where to return the GMM page ID of the page.
+ * @param   pHCPhys     Where to return the host physical address of the page.
  */
 GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pIdPage, RTHCPHYS *pHCPhys)
 {
@@ -3922,6 +3927,8 @@ static int gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
  * @param   pGMM        Pointer to the GMM instance data.
  * @param   pGVM        Pointer to the Global VM structure.
  * @param   pChunk      Pointer to the chunk to be unmapped.
+ * @param   fRelaxedSem Whether we can release the semaphore while doing the
+ *                      mapping (@c true) or not.
  */
 static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSem)
 {
@@ -4281,8 +4288,9 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
  * The purpose is making sure that a page doesn't change.
  *
  * @returns Checksum, 0 on failure.
- * @param   GMM                 The GMM instance data.
- * @param   idPage              The page ID.
+ * @param   pGMM        The GMM instance data.
+ * @param   pGVM        Pointer to the kernel-only VM instace data.
+ * @param   idPage      The page ID.
  */
 static uint32_t gmmR0StrictPageChecksum(PGMM pGMM, PGVM pGVM, uint32_t idPage)
 {
@@ -4320,8 +4328,10 @@ static uint32_t gmmR0ShModCalcHash(const char *pszModuleName, const char *pszVer
  * @param   uHash           The hash as calculated by gmmR0ShModCalcHash.
  * @param   cbModule        The module size.
  * @param   enmGuestOS      The guest OS type.
+ * @param   cRegions        The number of regions.
  * @param   pszModuleName   The module name.
  * @param   pszVersion      The module version.
+ * @param   paRegions       The region descriptions.
  */
 static PGMMSHAREDMODULE gmmR0ShModFindGlobal(PGMM pGMM, uint32_t uHash, uint32_t cbModule, VBOXOSFAMILY enmGuestOS,
                                              uint32_t cRegions, const char *pszModuleName, const char *pszVersion,
@@ -4796,6 +4806,7 @@ DECLINLINE(void) gmmR0UseSharedPage(PGMM pGMM, PGVM pGVM, PGMMPAGE pPage)
  * @param   HCPhys      Host physical address
  * @param   idPage      The Page ID
  * @param   pPage       The page structure.
+ * @param   pPageDesc   Shared page descriptor
  */
 DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, RTHCPHYS HCPhys, uint32_t idPage, PGMMPAGE pPage,
                                           PGMMSHAREDPAGEDESC pPageDesc)
@@ -4863,12 +4874,11 @@ static int gmmR0SharedModuleCheckPageFirstTime(PGMM pGMM, PGVM pGVM, PGMMSHAREDM
  * @remarks ASSUMES the caller has acquired the GMM semaphore!!
  *
  * @returns VBox status code.
- * @param   pGMM        Pointer to the GMM instance data.
  * @param   pGVM        Pointer to the GVM instance data.
  * @param   pModule     Module description
  * @param   idxRegion   Region index
  * @param   idxPage     Page index
- * @param   paPageDesc  Page descriptor
+ * @param   pPageDesc   Page descriptor
  */
 GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, uint32_t idxRegion, uint32_t idxPage,
                                           PGMMSHAREDPAGEDESC pPageDesc)

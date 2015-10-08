@@ -398,9 +398,9 @@ VMM_INT_DECL(int) PATMReadPatchCode(PVM pVM, RTGCPTR GCPtrPatchCode, void *pvDst
  * Set parameters for pending MMIO patch operation
  *
  * @returns VBox status code.
- * @param   pDevIns         Device instance.
- * @param   GCPhys          MMIO physical address
- * @param   pCachedData     GC pointer to cached data
+ * @param   pVM         The cross context VM structure.
+ * @param   GCPhys      MMIO physical address.
+ * @param   pCachedData RC pointer to cached data.
  */
 VMM_INT_DECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
 {

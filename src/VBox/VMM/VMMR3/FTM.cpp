@@ -231,7 +231,7 @@ static int ftmR3TcpWriteNACK(PVM pVM, int32_t rc2, const char *pszMsgText = NULL
  *
  * @returns VBox status code.
  *
- * @param   pState      The teleporter state structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pszBuf      The output buffer.
  * @param   cchBuf      The size of the output buffer.
  *
@@ -343,7 +343,7 @@ static int ftmR3TcpSubmitCommand(PVM pVM, const char *pszCommand, bool fWaitForA
 }
 
 /**
- * @copydoc SSMSTRMOPS::pfnWrite
+ * @interface_method_impl{SSMSTRMOPS,pfnWrite}
  */
 static DECLCALLBACK(int) ftmR3TcpOpWrite(void *pvUser, uint64_t offStream, const void *pvBuf, size_t cbToWrite)
 {
@@ -387,7 +387,7 @@ static DECLCALLBACK(int) ftmR3TcpOpWrite(void *pvUser, uint64_t offStream, const
  *
  * @returns VBox status code.
  *
- * @param   pState          The teleporter state data.
+ * @param   pVM         The cross context VM structure.
  */
 static int ftmR3TcpReadSelect(PVM pVM)
 {
@@ -412,7 +412,7 @@ static int ftmR3TcpReadSelect(PVM pVM)
 
 
 /**
- * @copydoc SSMSTRMOPS::pfnRead
+ * @interface_method_impl{SSMSTRMOPS,pfnRead}
  */
 static DECLCALLBACK(int) ftmR3TcpOpRead(void *pvUser, uint64_t offStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
@@ -513,7 +513,7 @@ static DECLCALLBACK(int) ftmR3TcpOpRead(void *pvUser, uint64_t offStream, void *
 
 
 /**
- * @copydoc SSMSTRMOPS::pfnSeek
+ * @interface_method_impl{SSMSTRMOPS,pfnSeek}
  */
 static DECLCALLBACK(int) ftmR3TcpOpSeek(void *pvUser, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
 {
@@ -523,7 +523,7 @@ static DECLCALLBACK(int) ftmR3TcpOpSeek(void *pvUser, int64_t offSeek, unsigned 
 
 
 /**
- * @copydoc SSMSTRMOPS::pfnTell
+ * @interface_method_impl{SSMSTRMOPS,pfnTell}
  */
 static DECLCALLBACK(uint64_t) ftmR3TcpOpTell(void *pvUser)
 {
@@ -533,7 +533,7 @@ static DECLCALLBACK(uint64_t) ftmR3TcpOpTell(void *pvUser)
 
 
 /**
- * @copydoc SSMSTRMOPS::pfnSize
+ * @interface_method_impl{SSMSTRMOPS,pfnSize}
  */
 static DECLCALLBACK(int) ftmR3TcpOpSize(void *pvUser, uint64_t *pcb)
 {
@@ -543,7 +543,7 @@ static DECLCALLBACK(int) ftmR3TcpOpSize(void *pvUser, uint64_t *pcb)
 
 
 /**
- * @copydoc SSMSTRMOPS::pfnIsOk
+ * @interface_method_impl{SSMSTRMOPS,pfnIsOk}
  */
 static DECLCALLBACK(int) ftmR3TcpOpIsOk(void *pvUser)
 {
@@ -571,9 +571,9 @@ static DECLCALLBACK(int) ftmR3TcpOpIsOk(void *pvUser)
 
 
 /**
- * @copydoc SSMSTRMOPS::pfnClose
+ * @interface_method_impl{SSMSTRMOPS,pfnClose}
  */
-static DECLCALLBACK(int) ftmR3TcpOpClose(void *pvUser, bool fCanceled)
+static DECLCALLBACK(int) ftmR3TcpOpClose(void *pvUser, bool fCancelled)
 {
     PVM pVM = (PVM)pvUser;
 
@@ -581,7 +581,7 @@ static DECLCALLBACK(int) ftmR3TcpOpClose(void *pvUser, bool fCanceled)
     {
         FTMTCPHDR EofHdr;
         EofHdr.u32Magic = FTMTCPHDR_MAGIC;
-        EofHdr.cb       = fCanceled ? UINT32_MAX : 0;
+        EofHdr.cb       = fCancelled ? UINT32_MAX : 0;
         int rc = RTTcpWrite(pVM->ftm.s.hSocket, &EofHdr, sizeof(EofHdr));
         if (RT_FAILURE(rc))
         {
@@ -980,20 +980,20 @@ static DECLCALLBACK(int) ftmR3StandbyThread(RTTHREAD hThread, void *pvUser)
  *
  * @returns VINF_SUCCESS or VERR_TCP_SERVER_STOP.
  */
-static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser)
+static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET hSocket, void *pvUser)
 {
     PVM pVM = (PVM)pvUser;
 
-    pVM->ftm.s.hSocket = Sock;
+    pVM->ftm.s.hSocket = hSocket;
 
     /*
      * Disable Nagle.
      */
-    int rc = RTTcpSetSendCoalescing(Sock, false /*fEnable*/);
+    int rc = RTTcpSetSendCoalescing(hSocket, false /*fEnable*/);
     AssertRC(rc);
 
     /* Send the welcome message to the master node. */
-    rc = RTTcpWrite(Sock, g_szWelcome, sizeof(g_szWelcome) - 1);
+    rc = RTTcpWrite(hSocket, g_szWelcome, sizeof(g_szWelcome) - 1);
     if (RT_FAILURE(rc))
     {
         LogRel(("Teleporter: Failed to write welcome message: %Rrc\n", rc));
@@ -1010,7 +1010,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
         while (pszPassword[off])
         {
             char ch;
-            rc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
+            rc = RTTcpRead(hSocket, &ch, sizeof(ch), NULL);
             if (    RT_FAILURE(rc)
                 ||  pszPassword[off] != ch)
             {

@@ -269,7 +269,7 @@ static const STAMR0SAMPLE g_aGMMStats[] =
  * Initializes the STAM.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
+ * @param   pUVM        The user mode VM structure.
  */
 VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
 {
@@ -480,7 +480,7 @@ VMMR3DECL(int)  STAMR3RegisterF(PVM pVM, void *pvSample, STAMTYPE enmType, STAMV
  * RTStrPrintfV like fashion.
  *
  * @returns VBox status.
- * @param   pVM         The cross context VM structure.
+ * @param   pUVM        The user mode VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
@@ -1247,14 +1247,14 @@ static void stamR3LookupDestroyTree(PSTAMLOOKUP pRoot)
  * @param   pfnPrint    Print the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
+ * @param   pszName     The sample name format string.
  * @param   enmUnit     Sample unit.
  * @param   pszDesc     Sample description.
- * @param   pszName     The sample name format string.
- * @param   args        Arguments to the format string.
  * @remark  There is currently no device or driver variant of this API. Add one if it should become necessary!
  */
 static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
-                           STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+                           STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                           const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
     AssertReturn(pszName[0] == '/', VERR_INVALID_NAME);
     AssertReturn(pszName[1] != '/' && pszName[1], VERR_INVALID_NAME);
@@ -2425,7 +2425,7 @@ static bool stamR3MultiMatch(const char * const *papszExpressions, unsigned cExp
  * @returns Pointer to an array of single patterns. Free it with RTMemTmpFree.
  * @param   pszPat          The pattern to split.
  * @param   pcExpressions   The number of array elements.
- * @param   pszCopy         The pattern copy to free using RTStrFree.
+ * @param   ppszCopy        The pattern copy to free using RTStrFree.
  */
 static char **stamR3SplitPattern(const char *pszPat, unsigned *pcExpressions, char **ppszCopy)
 {
@@ -2643,8 +2643,9 @@ static void stamR3Ring0StatsUpdateU(PUVM pUVM, const char *pszPat)
  * The ring-0 statistics aren't directly addressable from ring-3 and must be
  * copied when needed.
  *
- * @param   pUVM        Pointer to the user mode VM structure.
- * @param   pszPat      The pattern (for knowing when to skip).
+ * @param   pUVM                Pointer to the user mode VM structure.
+ * @param   papszExpressions    The patterns (for knowing when to skip).
+ * @param   cExpressions        Number of patterns.
  */
 static void stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExpressions, unsigned cExpressions)
 {

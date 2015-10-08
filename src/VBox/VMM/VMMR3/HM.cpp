@@ -461,7 +461,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 
     /** @cfgm{/HM/SvmPauseFilterCount, uint16_t, 0}
      * A counter that is decrement each time a PAUSE instruction is executed by the
-     * guest. When the counter is 0, a #VMEXIT is triggered.
+     * guest. When the counter is 0, a \#VMEXIT is triggered.
      */
     rc = CFGMR3QueryU16Def(pCfgHm, "SvmPauseFilter", &pVM->hm.s.svm.cPauseFilter, 0);
     AssertRCReturn(rc, rc);
@@ -2348,7 +2348,7 @@ VMMR3_INT_DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns true if selector is suitable for VMX, otherwise
  *        false.
  * @param   pSel        Pointer to the selector to check (CS).
- *          uStackDpl   The CPL, aka the DPL of the stack segment.
+ * @param   uStackDpl   The CPL, aka the DPL of the stack segment.
  */
 static bool hmR3IsCodeSelectorOkForVmx(PCPUMSELREG pSel, unsigned uStackDpl)
 {
@@ -2870,7 +2870,7 @@ VMMR3DECL(bool) HMR3IsUXActive(PUVM pUVM)
  * Checks if internal events are pending. In that case we are not allowed to dispatch interrupts.
  *
  * @returns true if an internal event is pending, otherwise false.
- * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3_INT_DECL(bool) HMR3IsEventPending(PVMCPU pVCpu)
 {

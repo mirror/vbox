@@ -69,7 +69,9 @@ static const struct
  * Initializes the tracing.
  *
  * @returns VBox status code
- * @param   pVM                 The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
+ * @param   cbEntry     The trace entry size.
+ * @param   cEntries    The number of entries.
  */
 static int dbgfR3TraceEnable(PVM pVM, uint32_t cbEntry, uint32_t cEntries)
 {

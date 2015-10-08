@@ -294,10 +294,10 @@ static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
  * Attach network filter driver from bandwidth group.
  *
  * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pDrvIns         The driver instance.
- * @param   pszBwGroup     Name of the bandwidth group to attach to.
- * @param   pFilter         Pointer to the filter we attach.
+ * @param   pUVM        The user mode VM structure.
+ * @param   pDrvIns     The driver instance.
+ * @param   pszBwGroup  Name of the bandwidth group to attach to.
+ * @param   pFilter     Pointer to the filter we attach.
  */
 VMMR3_INT_DECL(int) PDMR3NsAttach(PUVM pUVM, PPDMDRVINS pDrvIns, const char *pszBwGroup, PPDMNSFILTER pFilter)
 {

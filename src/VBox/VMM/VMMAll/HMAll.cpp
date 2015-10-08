@@ -40,8 +40,8 @@
 /**
  * Checks whether HM (VT-x/AMD-V) is being used by this VM.
  *
- * @retval  @c true if used.
- * @retval  @c false if software virtualization (raw-mode) is used.
+ * @retval  true if used.
+ * @retval  false if software virtualization (raw-mode) is used.
  * @param   pVM        The cross context VM structure.
  * @sa      HMIsEnabled, HMR3IsEnabled
  * @internal
@@ -311,7 +311,7 @@ VMM_INT_DECL(bool) HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM)
  * Checks if this VM is long-mode capable.
  *
  * @returns true if long mode is allowed, false otherwise.
- * @param   pUVM        The user mode VM handle.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(bool) HMIsLongModeAllowed(PVM pVM)
 {

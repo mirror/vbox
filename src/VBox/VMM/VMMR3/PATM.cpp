@@ -2606,6 +2606,7 @@ end:
  * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pCacheRec   Guest translation lookup cache record
+ * @param   fAddFixup   Whether to add a fixup record.
  */
 static int patmGenJumpToPatch(PVM pVM, PPATCHINFO pPatch, PPATMP2GLOOKUPREC pCacheRec, bool fAddFixup = true)
 {
@@ -2748,8 +2749,10 @@ static int patmRemoveJumpToPatch(PVM pVM, PPATCHINFO pPatch)
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
- * @param   pInstrHC    HC address where to insert the jump
+ * @param   pTargetGC   The target of the fixup (i.e. the patch code we're
+ *                      calling into).
  * @param   pCacheRec   Guest translation cache record
+ * @param   fAddFixup   Whether to add a fixup record.
  */
 static int patmGenCallToPatch(PVM pVM, PPATCHINFO pPatch, RTRCPTR pTargetGC, PPATMP2GLOOKUPREC pCacheRec, bool fAddFixup = true)
 {
@@ -4079,7 +4082,7 @@ failure:
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pInstr      Guest context point to privileged instruction
+ * @param   pInstrGC    Guest context point to privileged instruction
  * @param   flags       Patch flags
  */
 VMMR3_INT_DECL(int) PATMR3AddHint(PVM pVM, RTRCPTR pInstrGC, uint32_t flags)
@@ -4096,7 +4099,8 @@ VMMR3_INT_DECL(int) PATMR3AddHint(PVM pVM, RTRCPTR pInstrGC, uint32_t flags)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pInstr      Guest context point to privileged instruction (0:32 flat address)
+ * @param   pInstrGC    Guest context point to privileged instruction (0:32 flat
+ *                      address)
  * @param   flags       Patch flags
  *
  * @note    returns failure if patching is not allowed or possible
@@ -5208,7 +5212,7 @@ VMMR3_INT_DECL(int) PATMR3ReadOrgInstr(PVM pVM, RTGCPTR32 GCPtrInstr, uint8_t *p
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pInstr      Guest context point to privileged instruction
+ * @param   pInstrGC    Guest context point to privileged instruction
  *
  * @note    returns failure if patching is not allowed or possible
  *
@@ -5356,7 +5360,7 @@ VMMR3_INT_DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pInstr      Guest context instruction pointer
+ * @param   pInstrGC    Guest context instruction pointer
  * @param   pConflictAddr  Guest context pointer which conflicts with specified patch
  * @param   pConflictPatch Conflicting patch
  *
@@ -5455,7 +5459,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pInstr      Guest context point to privileged instruction
+ * @param   pInstrGC    Guest context point to privileged instruction
  *
  * @note    returns failure if patching is not allowed or possible
  *
@@ -5835,9 +5839,9 @@ failure:
  *
  * @returns Patch structure pointer if found; else NULL
  * @param   pVM           The cross context VM structure.
- * @param   pInstr        Guest context point to instruction that might lie within 5 bytes of an existing patch jump
+ * @param   pInstrGC      Guest context point to instruction that might lie
+ *                        within 5 bytes of an existing patch jump
  * @param   fIncludeHints Include hinted patches or not
- *
  */
 PPATCHINFO patmFindActivePatchByEntrypoint(PVM pVM, RTRCPTR pInstrGC, bool fIncludeHints)
 {
@@ -5901,7 +5905,7 @@ VMMR3_INT_DECL(bool) PATMR3IsInsidePatchJump(PVM pVM, RTRCPTR pAddr, PRTGCPTR32 
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pInstr      Guest context point to privileged instruction
+ * @param   pInstrGC    Guest context point to privileged instruction
  *
  * @note    returns failure if patching is not allowed or possible
  *

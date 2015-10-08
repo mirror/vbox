@@ -1264,8 +1264,9 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
  * Validates a session or VM session argument.
  *
  * @returns true / false accordingly.
- * @param   pVM         The cross context VM structure.
- * @param   pSession    The session argument.
+ * @param   pVM             The cross context VM structure.
+ * @param   pClaimedSession The session claim to validate.
+ * @param   pSession        The session argument.
  */
 DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PSUPDRVSESSION pSession)
 {

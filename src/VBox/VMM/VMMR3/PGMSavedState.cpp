@@ -1825,12 +1825,7 @@ static void pgmR3DoneRamPages(PVM pVM)
 
 
 /**
- * Execute a live save pass.
- *
- * @returns VBox status code.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pSSM        The SSM handle.
+ * @callback_method_impl{FNSSMINTLIVEEXEC}
  */
 static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
@@ -1889,13 +1884,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 
 
 /**
- * Votes on whether the live save phase is done or not.
- *
- * @returns VBox status code.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pSSM        The SSM handle.
- * @param   uPass       The data pass.
+ * @callback_method_impl{FNSSMINTLIVEVOTE}
  */
 static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
@@ -1998,16 +1987,11 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
 
 
 /**
- * Prepare for a live save operation.
+ * @callback_method_impl{FNSSMINTLIVEPREP}
  *
  * This will attempt to allocate and initialize the tracking structures.  It
  * will also prepare for write monitoring of pages and initialize PGM::LiveSave.
  * pgmR3SaveDone will do the cleanups.
- *
- * @returns VBox status code.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pSSM        The SSM handle.
  */
 static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
 {
@@ -2057,11 +2041,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Execute state save operation.
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pSSM            SSM operation handle.
+ * @callback_method_impl{FNSSMINTSAVEEXEC}
  */
 static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 {
@@ -2127,11 +2107,7 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Cleans up after an save state operation.
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pSSM            SSM operation handle.
+ * @callback_method_impl{FNSSMINTSAVEDONE}
  */
 static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
 {
@@ -2161,11 +2137,7 @@ static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Prepare state load operation.
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pSSM            SSM operation handle.
+ * @callback_method_impl{FNSSMINTLOADPREP}
  */
 static DECLCALLBACK(int) pgmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
 {
@@ -3144,13 +3116,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
 
 
 /**
- * Execute state load operation.
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pSSM            SSM operation handle.
- * @param   uVersion        Data layout version.
- * @param   uPass           The data pass.
+ * @callback_method_impl{FNSSMINTLOADEXEC}
  */
 static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {

@@ -643,7 +643,7 @@ GVMMR0DECL(int) GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, ui
  *
  * @param   pSession    The session handle. Used for authentication.
  * @param   pszName     The variable name.
- * @param   u64Value    The new value.
+ * @param   pu64Value   Where to return the value.
  */
 GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, uint64_t *pu64Value)
 {
@@ -1211,23 +1211,23 @@ static void gvmmR0CleanupVM(PGVM pGVM)
 
 
 /**
- * Handle destructor.
+ * @callback_method_impl{FNSUPDRVDESTRUCTOR,VM handle destructor}
  *
- * @param   pvGVMM      The GVM instance pointer.
- * @param   pvHandle    The handle pointer.
+ * pvUser1 is the GVM instance pointer.
+ * pvUser2 is the handle pointer.
  */
-static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, void *pvHandle)
+static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, void *pvUser2)
 {
-    LogFlow(("gvmmR0HandleObjDestructor: %p %p %p\n", pvObj, pvGVMM, pvHandle));
+    LogFlow(("gvmmR0HandleObjDestructor: %p %p %p\n", pvObj, pvUser1, pvUser2));
 
     NOREF(pvObj);
 
     /*
      * Some quick, paranoid, input validation.
      */
-    PGVMHANDLE pHandle = (PGVMHANDLE)pvHandle;
+    PGVMHANDLE pHandle = (PGVMHANDLE)pvUser2;
     AssertPtr(pHandle);
-    PGVMM pGVMM = (PGVMM)pvGVMM;
+    PGVMM pGVMM = (PGVMM)pvUser1;
     Assert(pGVMM == g_pGVMM);
     const uint16_t iHandle = pHandle - &pGVMM->aHandles[0];
     if (    !iHandle
@@ -2202,11 +2202,10 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpusReq(PVM pVM, PGVMMSCHEDWAKEUPANDPOKE
  *
  * @returns VINF_SUCCESS if not yielded.
  *          VINF_GVM_YIELDED if an attempt to switch to a different VM task was made.
- * @param   pVM                 The cross context VM structure.
- * @param   idCpu               The Virtual CPU ID of the calling EMT.
- * @param   u64ExpireGipTime    The time for the sleep to expire expressed as GIP time.
- * @param   fYield              Whether to yield or not.
- *                              This is for when we're spinning in the halt loop.
+ * @param   pVM             The cross context VM structure.
+ * @param   idCpu           The Virtual CPU ID of the calling EMT.
+ * @param   fYield          Whether to yield or not.
+ *                          This is for when we're spinning in the halt loop.
  * @thread  EMT(idCpu).
  */
 GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, VMCPUID idCpu, bool fYield)

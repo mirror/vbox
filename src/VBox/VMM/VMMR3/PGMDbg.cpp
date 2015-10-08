@@ -216,7 +216,7 @@ VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PUVM pUVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPh
  *
  * @param   pVM         The cross context VM structure.
  * @param   pvDst       Where to store what's read.
- * @param   GCPhysDst   Where to start reading from.
+ * @param   GCPhysSrc   Where to start reading from.
  * @param   cb          The number of bytes to attempt reading.
  * @param   fFlags      Flags, MBZ.
  * @param   pcbRead     For store the actual number of bytes read, pass NULL if
@@ -318,7 +318,7 @@ VMMR3_INT_DECL(int) PGMR3DbgWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void 
  *
  * @param   pVM         The cross context VM structure.
  * @param   pvDst       Where to store what's read.
- * @param   GCPtrDst    Where to start reading from.
+ * @param   GCPtrSrc    Where to start reading from.
  * @param   cb          The number of bytes to attempt reading.
  * @param   fFlags      Flags, MBZ.
  * @param   pcbRead     For store the actual number of bytes read, pass NULL if
@@ -488,6 +488,8 @@ static const uint8_t *pgmR3DbgAlignedMemChr(const uint8_t *pb, uint8_t b, size_t
  * @param   uAlign          The needle alignment. This is of course less than a page.
  * @param   pabNeedle       The byte string to search for.
  * @param   cbNeedle        The length of the byte string.
+ * @param   pfnFixedMemScan Pointer to assembly scan function, if available for
+ *                          the given needle and alignment combination.
  * @param   pabPrev         The buffer that keeps track of a partial match that we
  *                          bring over from the previous page. This buffer must be
  *                          at least cbNeedle - 1 big.
@@ -1470,7 +1472,7 @@ static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
  * Dumps a 32-bit shadow page table.
  *
  * @returns VBox status code (VINF_SUCCESS).
- * @param   pVM         The cross context VM structure.
+ * @param   pState      The dumper state.
  * @param   HCPhys      The physical address of the table.
  * @param   cMaxDepth   The maximum depth.
  */
@@ -1547,8 +1549,8 @@ static int pgmR3DumpHierarchyShwPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
  * Dumps a 32-bit shadow page table.
  *
  * @returns VBox status code (VINF_SUCCESS).
- * @param   pVM         The cross context VM structure.
- * @param   pPT         Pointer to the page table.
+ * @param   pState      The dumper state.
+ * @param   HCPhys      The physical address of the table.
  * @param   fMapping    Set if it's a guest mapping.
  */
 static int pgmR3DumpHierarchyShw32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fMapping)
@@ -2143,7 +2145,7 @@ static int  pgmR3DumpHierarchyGstPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPH
  * Dumps a 32-bit shadow page table.
  *
  * @returns VBox status code (VINF_SUCCESS).
- * @param   pVM         The cross context VM structure.
+ * @param   pState      The dumper state.
  * @param   GCPhys      The physical address of the table.
  * @param   cMaxDepth   The maximum depth.
  */

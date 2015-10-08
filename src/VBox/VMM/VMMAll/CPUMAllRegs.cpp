@@ -168,7 +168,7 @@ VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG 
  * We don't support nested hypervisor context interrupts or traps.  Life is much
  * simpler when we don't.  It's also slightly faster at times.
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVMCPU pVCpu)
 {
@@ -2572,10 +2572,11 @@ VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu)
  * Sets the specified changed flags (CPUM_CHANGED_*).
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   fChangedAdd The changed flags to add.
  */
-VMMDECL(void) CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags)
+VMMDECL(void) CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedAdd)
 {
-    pVCpu->cpum.s.fChanged |= fChangedFlags;
+    pVCpu->cpum.s.fChanged |= fChangedAdd;
 }
 
 
@@ -2646,7 +2647,7 @@ VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
  * Checks if the guest debug state is active.
  *
  * @returns boolean
- * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
 {
@@ -2659,7 +2660,7 @@ VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
  * (currently only used for the 32->64 switcher case).
  *
  * @returns boolean
- * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(bool) CPUMIsGuestDebugStateActivePending(PVMCPU pVCpu)
 {
@@ -2671,7 +2672,7 @@ VMMDECL(bool) CPUMIsGuestDebugStateActivePending(PVMCPU pVCpu)
  * Checks if the hyper debug state is active.
  *
  * @returns boolean
- * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
 {
@@ -2684,7 +2685,7 @@ VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
  * (currently only used for the 32->64 switcher case).
  *
  * @returns boolean
- * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(bool) CPUMIsHyperDebugStateActivePending(PVMCPU pVCpu)
 {
@@ -2696,7 +2697,7 @@ VMMDECL(bool) CPUMIsHyperDebugStateActivePending(PVMCPU pVCpu)
  * Mark the guest's debug state as inactive.
  *
  * @returns boolean
- * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @todo    This API doesn't make sense any more.
  */
 VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)

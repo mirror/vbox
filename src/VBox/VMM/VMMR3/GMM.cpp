@@ -94,6 +94,7 @@ GMMR3DECL(int) GMMR3AllocatePagesPrepare(PVM pVM, PGMMALLOCATEPAGESREQ *ppReq, u
 
 /**
  * Performs a GMMR0AllocatePages request.
+ *
  * This will call VMSetError on failure.
  *
  * @returns VBox status code.

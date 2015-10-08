@@ -436,7 +436,7 @@ VMMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
  *
  * @returns ring-3 host context address.
  * @param   pVM         The cross context VM structure.
- * @param   GCPtr       The raw-mode context address.
+ * @param   RCPtr       The raw-mode context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */

@@ -94,7 +94,7 @@ void pdmR3CritSectBothRelocate(PVM pVM)
  *
  * @returns VBox status.
  *          First error code, rest is lost.
- * @param   pVMU        The user mode VM handle.
+ * @param   pVM             The cross context VM structure.
  * @remark  Don't confuse this with PDMR3CritSectDelete.
  */
 VMMR3_INT_DECL(int) PDMR3CritSectBothTerm(PVM pVM)
@@ -132,7 +132,6 @@ VMMR3_INT_DECL(int) PDMR3CritSectBothTerm(PVM pVM)
  * @param   pCritSect       The critical section.
  * @param   pvKey           The owner key.
  * @param   SRC_POS         The source position.
- * @param   pszName         The name of the critical section (for statistics).
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   va              Arguments for the format string.
@@ -219,7 +218,6 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
  * @param   pCritSect       The read/write critical section.
  * @param   pvKey           The owner key.
  * @param   SRC_POS         The source position.
- * @param   pszName         The name of the critical section (for statistics).
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   va              Arguments for the format string.
@@ -322,7 +320,6 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
- * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
  * @param   SRC_POS         Use RT_SRC_POS.
  * @param   pszNameFmt      Format string for naming the critical section.  For
@@ -352,7 +349,6 @@ VMMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, RT_SRC_POS_DEC
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
- * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the read/write critical section.
  * @param   SRC_POS         Use RT_SRC_POS.
  * @param   pszNameFmt      Format string for naming the critical section.  For
@@ -420,6 +416,9 @@ int pdmR3CritSectRwInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritS
  * @param   pDevIns         Device instance.
  * @param   SRC_POS         The source position.  Optional.
  * @param   pCritSect       Pointer to the critical section.
+ * @param   pszNameFmt      Format string for naming the critical section.  For
+ *                          statistics and lock validation.
+ * @param   ...             Arguments for the format string.
  */
 int pdmR3CritSectInitDeviceAuto(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
                                 const char *pszNameFmt, ...)
@@ -486,6 +485,7 @@ int pdmR3CritSectRwInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECTRW pCritS
  * @returns Return code from RTCritSectDelete.
  *
  * @param   pVM         The cross context VM structure.
+ * @param   pUVM        The user mode VM handle.
  * @param   pCritSect   The critical section.
  * @param   pPrev       The previous critical section in the list.
  * @param   fFinal      Set if this is the final call and statistics shouldn't be deregistered.
@@ -543,6 +543,7 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect,
  * @returns VBox status code.
  *
  * @param   pVM         The cross context VM structure.
+ * @param   pUVM        The user mode VM handle.
  * @param   pCritSect   The read/write critical section.
  * @param   pPrev       The previous critical section in the list.
  * @param   fFinal      Set if this is the final call and statistics shouldn't be deregistered.

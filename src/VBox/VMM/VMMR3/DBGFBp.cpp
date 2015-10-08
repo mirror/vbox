@@ -561,7 +561,9 @@ VMMR3DECL(int) DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
 }
 
 
-/** @callback_method_impl{FNVMMEMTRENDEZVOUS}  */
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
 DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     NOREF(pVM); NOREF(pvUser);

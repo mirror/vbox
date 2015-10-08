@@ -487,6 +487,7 @@ static VUSBSPEED pdmR3UsbVer2Spd(uint32_t iUsbVersion)
  *
  * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
+ * @param   pHub                The USB hub it'll be attached to.
  * @param   pUsbDev             The USB device emulation.
  * @param   iInstance           -1 if not called by pdmR3UsbInstantiateDevices().
  * @param   pUuid               The UUID for this device.
@@ -1291,7 +1292,7 @@ static int pdmR3UsbFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, u
  * @returns VBox status code.
  * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
- * @param   iInstance       Device instance.
+ * @param   iDevIns         Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
  * @param   fFlags          Flags, combination of the PDM_TACH_FLAGS_* \#defines.
  * @param   ppBase          Where to store the base interface pointer. Optional.
@@ -1590,12 +1591,13 @@ static DECLCALLBACK(bool) pdmR3UsbHlp_AssertOther(PPDMUSBINS pUsbIns, const char
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnDBGFStopV} */
-static DECLCALLBACK(int) pdmR3UsbHlp_DBGFStopV(PPDMUSBINS pUsbIns, const char *pszFile, unsigned iLine, const char *pszFunction, const char *pszFormat, va_list args)
+static DECLCALLBACK(int) pdmR3UsbHlp_DBGFStopV(PPDMUSBINS pUsbIns, const char *pszFile, unsigned iLine, const char *pszFunction,
+                                               const char *pszFormat, va_list va)
 {
     PDMUSB_ASSERT_USBINS(pUsbIns);
 #ifdef LOG_ENABLED
     va_list va2;
-    va_copy(va2, args);
+    va_copy(va2, va);
     LogFlow(("pdmR3UsbHlp_DBGFStopV: caller='%s'/%d: pszFile=%p:{%s} iLine=%d pszFunction=%p:{%s} pszFormat=%p:{%s} (%N)\n",
              pUsbIns->pReg->szName, pUsbIns->iInstance, pszFile, pszFile, iLine, pszFunction, pszFunction, pszFormat, pszFormat, pszFormat, &va2));
     va_end(va2);
@@ -1603,7 +1605,7 @@ static DECLCALLBACK(int) pdmR3UsbHlp_DBGFStopV(PPDMUSBINS pUsbIns, const char *p
 
     PVM pVM = pUsbIns->Internal.s.pVM;
     VM_ASSERT_EMT(pVM);
-    int rc = DBGFR3EventSrcV(pVM, DBGFEVENT_DEV_STOP, pszFile, iLine, pszFunction, pszFormat, args);
+    int rc = DBGFR3EventSrcV(pVM, DBGFEVENT_DEV_STOP, pszFile, iLine, pszFunction, pszFormat, va);
     if (rc == VERR_DBGF_NOT_ATTACHED)
         rc = VINF_SUCCESS;
 
@@ -1708,13 +1710,13 @@ static DECLCALLBACK(int) pdmR3UsbHlp_SSMRegister(PPDMUSBINS pUsbIns, uint32_t uV
 
 /** @interface_method_impl{PDMUSBHLP,pfnSTAMRegisterV} */
 static DECLCALLBACK(void) pdmR3UsbHlp_STAMRegisterV(PPDMUSBINS pUsbIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
-                                                    STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args)
+                                                    STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list va)
 {
     PDMUSB_ASSERT_USBINS(pUsbIns);
     PVM pVM = pUsbIns->Internal.s.pVM;
     VM_ASSERT_EMT(pVM);
 
-    int rc = STAMR3RegisterV(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
+    int rc = STAMR3RegisterV(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
     AssertRC(rc);
 
     NOREF(pVM);

@@ -53,7 +53,7 @@
 
 
 /**
- * @callback_method_impl{FNPGMVIRTPFHANDLER,
+ * @callback_method_impl{FNPGMVIRTHANDLER,
  * Access handler callback for virtual access handler ranges.}
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC)

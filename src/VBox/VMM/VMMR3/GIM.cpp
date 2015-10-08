@@ -69,8 +69,8 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion, uint32_t uPass);
+static FNSSMINTSAVEEXEC  gimR3Save;
+static FNSSMINTLOADEXEC  gimR3Load;
 static FNPGMPHYSHANDLER  gimR3Mmio2WriteHandler;
 
 
@@ -163,7 +163,6 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
- * @param   enmWhat             What has been completed.
  * @thread  EMT(0)
  */
 VMMR3_INT_DECL(int) GIMR3InitCompleted(PVM pVM)
@@ -237,13 +236,9 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
 
 /**
- * Executes state-save operation.
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pSSM            SSM operation handle.
+ * @callback_method_impl{FNSSMINTSAVEEXEC}
  */
-DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
     AssertReturn(pVM,  VERR_INVALID_PARAMETER);
     AssertReturn(pSSM, VERR_SSM_INVALID_STATE);
@@ -288,19 +283,13 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Execute state load operation.
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pSSM            SSM operation handle.
- * @param   uVersion        Data layout version.
- * @param   uPass           The data pass.
+ * @callback_method_impl{FNSSMINTLOADEXEC}
  */
-DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion, uint32_t uPass)
+static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
-    if (uSSMVersion != GIM_SAVED_STATE_VERSION)
+    if (uVersion != GIM_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /** @todo Load per-CPU data. */
@@ -338,12 +327,12 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion, uint
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            rc = gimR3HvLoad(pVM, pSSM, uSSMVersion);
+            rc = gimR3HvLoad(pVM, pSSM, uVersion);
             AssertRCReturn(rc, rc);
             break;
 
         case GIMPROVIDERID_KVM:
-            rc = gimR3KvmLoad(pVM, pSSM, uSSMVersion);
+            rc = gimR3KvmLoad(pVM, pSSM, uVersion);
             AssertRCReturn(rc, rc);
             break;
 
@@ -410,14 +399,14 @@ VMMR3_INT_DECL(void) GIMR3Reset(PVM pVM)
  * Registers the GIM device with VMM.
  *
  * @param   pVM             The cross context VM structure.
- * @param   pDevInsR3       Pointer to the GIM device instance.
+ * @param   pDevIns         Pointer to the GIM device instance.
  * @param   pDebugStream    Pointer to the GIM device debug connection, can be
  *                          NULL.
  */
-VMMR3DECL(void) GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevInsR3, PPDMISTREAM pDebugStreamR3)
+VMMR3DECL(void) GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevIns, PPDMISTREAM pDebugStream)
 {
-    pVM->gim.s.pDevInsR3 = pDevInsR3;
-    pVM->gim.s.pDebugStreamR3 = pDebugStreamR3;
+    pVM->gim.s.pDevInsR3 = pDevIns;
+    pVM->gim.s.pDebugStreamR3 = pDebugStream;
 }
 
 

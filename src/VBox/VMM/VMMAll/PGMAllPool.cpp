@@ -2790,7 +2790,7 @@ static void pgmPoolMonitorModifiedClearAll(PVM pVM)
  * @retval  VINF_PGM_SYNC_CR3 is it needs to be deferred to ring 3 (GC only)
  * @param   pVCpu     The cross context virtual CPU structure.
  * @remark  Should only be used when monitoring is available, thus placed in
- *          the PGMPOOL_WITH_MONITORING #ifdef.
+ *          the PGMPOOL_WITH_MONITORING \#ifdef.
  */
 int pgmPoolSyncCR3(PVMCPU pVCpu)
 {
@@ -3030,7 +3030,7 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
  * user record to the chain of free records.
  *
  * @param   pPool       The pool.
- * @param   HCPhys      The HC physical address of the shadow page.
+ * @param   pPage       The shadow page.
  * @param   iUser       The shadow page pool index of the user table.
  * @param   iUserTable  The index into the user table (shadowed).
  *
@@ -4506,7 +4506,8 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaeBig(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
  *
  * @param   pPool       The pool.
  * @param   pPage       The page.
- * @param   pShwPML4    The shadow page directory pointer table (mapping of the page).
+ * @param   pShwPT      The shadow page directory pointer table (mapping of the
+ *                      page).
  */
 DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPT pShwPT)
 {
@@ -4865,7 +4866,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
  * @param   pPool       The pool.
- * @param   HCPhys      The HC physical address of the shadow page.
+ * @param   pPage       The shadow page.
  * @param   fFlush      Flush the TLBS when required (should only be false in very specific use cases!!)
  */
 int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
@@ -4987,7 +4988,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
  * references the shadow page.
  *
  * @param   pPool       The pool.
- * @param   HCPhys      The HC physical address of the shadow page.
+ * @param   pPage       The shadow page.
  * @param   iUser       The shadow page pool index of the user table.
  *                      NIL_PGMPOOL_IDX for root pages.
  * @param   iUserTable  The index into the user table (shadowed). Ignored if
@@ -5369,7 +5370,7 @@ void pgmR3PoolResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu)
  * It will assert a global CR3 flush (FF) and assumes the caller is aware of
  * this and execute this CR3 flush.
  *
- * @param   pPool       The pool.
+ * @param   pVM         The cross context VM structure.
  */
 void pgmR3PoolReset(PVM pVM)
 {

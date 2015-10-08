@@ -87,7 +87,7 @@ static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GC
 }
 
 
-/** @interface_method_impl{PDMDEVHLPRC,pfnPCIPhysRead} */
+/** @interface_method_impl{PDMDEVHLPRC,pfnPCIPhysWrite} */
 static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -281,7 +281,7 @@ static DECLCALLBACK(int) pdmRCDevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, uint3
 }
 
 
-/** @interface_method_impl{PDMDEVHLPRC,pfnVMSetErrorV} */
+/** @interface_method_impl{PDMDEVHLPRC,pfnVMSetRuntimeErrorV} */
 static DECLCALLBACK(int) pdmRCDevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -856,7 +856,7 @@ static DECLCALLBACK(int) pdmRCDrvHlp_VMSetRuntimeError(PPDMDRVINS pDrvIns, uint3
 }
 
 
-/** @interface_method_impl{PDMDRVHLPRC,pfnVMSetErrorV} */
+/** @interface_method_impl{PDMDRVHLPRC,pfnVMSetRuntimeErrorV} */
 static DECLCALLBACK(int) pdmRCDrvHlp_VMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);

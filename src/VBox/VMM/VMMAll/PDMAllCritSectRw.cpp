@@ -416,7 +416,6 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
  * @param   rcBusy      The status code to return when we're in RC or R0 and the
  *                      section is busy.   Pass VINF_SUCCESS to acquired the
  *                      critical section thru a ring-3 call if necessary.
- * @param   uId         Where we're entering the section.
  * @sa      PDMCritSectRwEnterSharedDebug, PDMCritSectRwTryEnterShared,
  *          PDMCritSectRwTryEnterSharedDebug, PDMCritSectRwLeaveShared,
  *          RTCritSectRwEnterShared.
@@ -437,7 +436,7 @@ VMMDECL(int) PDMCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
- * @retval  @a rcBusy if in ring-0 or raw-mode context and it is busy.
+ * @retval  rcBusy if in ring-0 or raw-mode context and it is busy.
  * @retval  VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
@@ -475,8 +474,6 @@ VMMDECL(int) PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pThis, int rcBusy, RTH
  *          during the operation.
  *
  * @param   pThis       Pointer to the read/write critical section.
- * @param   uId         Where we're entering the section.
- * @param   SRC_POS     The source position.
  * @sa      PDMCritSectRwTryEnterSharedDebug, PDMCritSectRwEnterShared,
  *          PDMCritSectRwEnterSharedDebug, PDMCritSectRwLeaveShared,
  *          RTCritSectRwTryEnterShared.

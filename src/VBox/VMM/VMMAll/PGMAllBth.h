@@ -154,7 +154,7 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPU pVCpu, PGSTPTWALK pGs
  */
 static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                                                 RTGCPTR pvFault, PPGMPAGE pPage, bool *pfLockTaken
-# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) || defined(DOXYGEN_RUNNING)
                                                                 , PGSTPTWALK pGstWalk
 # endif
                                                                 )
@@ -1672,11 +1672,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint64_t
  *
  * @remark  Not used for 2/4MB pages!
  */
-#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) || defined(DOXYGEN_RUNNING)
 static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc,
                                          PPGMPOOLPAGE pShwPage, unsigned iPTDst)
 #else
-static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage, unsigned iPTDst)
+static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS GCPhysPage,
+                                         PPGMPOOLPAGE pShwPage, unsigned iPTDst)
 #endif
 {
     PVM      pVM = pVCpu->CTX_SUFF(pVM);
@@ -2625,7 +2626,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   iPD         Page directory index.
+ * @param   iPDSrc      Page directory index.
  * @param   pPDSrc      Source page directory (i.e. Guest OS page directory).
  *                      Assume this is a temporary mapping.
  * @param   GCPtrPage   GC Pointer of the page that caused the fault
@@ -3759,7 +3760,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
  * Checks that the shadow page table is in sync with the guest one.
  *
  * @returns The number of errors.
- * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cr3         Guest context CR3 register.
  * @param   cr4         Guest context CR4 register.

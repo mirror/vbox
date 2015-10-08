@@ -78,7 +78,7 @@ static int      emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu);
 /**
  * Just a braindead function to keep track of cli addresses.
  * @param   pVM         The cross context VM structure.
- * @param   pVMCPU      Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtrInstr  The EIP of the cli instruction.
  */
 static void emR3RecordCli(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrInstr)
@@ -265,7 +265,7 @@ int emR3SingleStepExecRaw(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
  */
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) || defined(DOXYGEN_RUNNING)
 static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC, const char *pszPrefix)
 #else
 static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)

@@ -890,7 +890,6 @@ static DECLCALLBACK(void) hmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, vo
  *
  * @returns VBox status code.
  * @param   pvUser          Pointer to the VM.
- * @param   pvUserIgnore    NULL, ignored.
  */
 static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
 {
@@ -1620,7 +1619,8 @@ VMMR0_INT_DECL(void) HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, R
  * Save a pending IO write.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   GCPtrRIP        Address of IO instruction.
+ * @param   GCPtrRip        Address of IO instruction.
+ * @param   GCPtrRipNext    Address of the next instruction.
  * @param   uPort           Port address.
  * @param   uAndVal         AND mask for fetching the result from eax.
  * @param   cbSize          Read size.

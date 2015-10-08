@@ -648,7 +648,6 @@ DECLINLINE(int) hmR0VmxReadExitIntErrorCodeVmcs(PVMXTRANSIENT pVmxTransient)
  * transient structure.
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
 DECLINLINE(int) hmR0VmxReadExitInstrLenVmcs(PVMXTRANSIENT pVmxTransient)
@@ -828,7 +827,7 @@ static int hmR0VmxLeaveRootMode(void)
  * @param   pMemObj         Pointer to the ring-0 memory object.
  * @param   ppVirt          Where to store the virtual address of the
  *                          allocation.
- * @param   pPhys           Where to store the physical address of the
+ * @param   pHCPhys         Where to store the physical address of the
  *                          allocation.
  */
 DECLINLINE(int) hmR0VmxPageAllocZ(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS pHCPhys)
@@ -1127,7 +1126,7 @@ VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS 
  * Sets the permission bits for the specified MSR in the MSR bitmap.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   uMSR        The MSR value.
+ * @param   uMsr        The MSR value.
  * @param   enmRead     Whether reading this MSR causes a VM-exit.
  * @param   enmWrite    Whether writing this MSR causes a VM-exit.
  */
@@ -1256,7 +1255,7 @@ DECLINLINE(int) hmR0VmxSetAutoLoadStoreMsrCount(PVMCPU pVCpu, uint32_t cMsrs)
  * @returns VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   uMsr                The MSR.
- * @param   uGuestMsr           Value of the guest MSR.
+ * @param   uGuestMsrValue      Value of the guest MSR.
  * @param   fUpdateHostMsr      Whether to update the value of the host MSR if
  *                              necessary.
  * @param   pfAddedAndUpdated   Where to store whether the MSR was added -and-
@@ -3977,7 +3976,8 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 /**
  * Loads the guest debug registers into the guest-state area in the VMCS.
- * This also sets up whether #DB and MOV DRx accesses cause VM-exits.
+ *
+ * This also sets up whether \#DB and MOV DRx accesses cause VM-exits.
  *
  * The guest debug bits are partially shared with the host (e.g. DR6, DR0-3).
  *
@@ -9024,6 +9024,8 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
  *                          fields before using them.
  * @param   pVmxTransient   Pointer to the VMX-transient structure.
  * @param   uExitReason     The VM-exit reason.
+ * @param   uCsStart        The CS we started executing (stepping) on.
+ * @param   uRipStart       The RIP we started executing (stepping) on.
  */
 DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitStep(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient,
                                                uint32_t uExitReason, uint16_t uCsStart, uint64_t uRipStart)

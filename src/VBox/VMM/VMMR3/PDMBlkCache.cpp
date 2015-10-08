@@ -310,11 +310,13 @@ static void pdmBlkCacheDestroyList(PPDMBLKLRULIST pList)
  * @param    pCache           Pointer to the global cache data.
  * @param    cbData           The amount of the data to free.
  * @param    pListSrc         The source list to evict data from.
- * @param    pGhostListSrc    The ghost list removed entries should be moved to
- *                            NULL if the entry should be freed.
- * @param    fReuseBuffer     Flag whether a buffer should be reused if it has the same size
- * @param    ppbBuf           Where to store the address of the buffer if an entry with the
- *                            same size was found and fReuseBuffer is true.
+ * @param    pGhostListDst    Where the ghost list removed entries should be
+ *                            moved to, NULL if the entry should be freed.
+ * @param    fReuseBuffer     Flag whether a buffer should be reused if it has
+ *                            the same size
+ * @param    ppbBuffer        Where to store the address of the buffer if an
+ *                            entry with the same size was found and
+ *                            fReuseBuffer is true.
  *
  * @note    This function may return fewer bytes than requested because entries
  *          may be marked as non evictable if they are used for I/O at the
@@ -592,16 +594,16 @@ static int pdmBlkCacheEntryWriteToMedium(PPDMBLKCACHEENTRY pEntry)
 }
 
 /**
- * Passthrough a part of a request directly to the I/O manager
- * handling the endpoint.
+ * Passthrough a part of a request directly to the I/O manager handling the
+ * endpoint.
  *
  * @returns VBox status code.
- * @param   pEndpoint          The endpoint.
- * @param   pTask              The task.
- * @param   pIoMemCtx          The I/O memory context to use.
- * @param   offStart           Offset to start transfer from.
- * @param   cbData             Amount of data to transfer.
- * @param   enmTransferType    The transfer type (read/write)
+ * @param   pBlkCache       The endpoint cache.
+ * @param   pReq            The request.
+ * @param   pSgBuf          The scatter/gather buffer.
+ * @param   offStart        Offset to start transfer from.
+ * @param   cbData          Amount of data to transfer.
+ * @param   enmXferDir      The transfer type (read/write)
  */
 static int pdmBlkCacheRequestPassthrough(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ pReq,
                                          PRTSGBUF pSgBuf, uint64_t offStart, size_t cbData,
@@ -1416,7 +1418,7 @@ static DECLCALLBACK(int) pdmBlkCacheEntryDestroy(PAVLRU64NODECORE pNode, void *p
  * Destroys all cache resources used by the given endpoint.
  *
  * @returns nothing.
- * @param    pEndpoint    The endpoint to the destroy.
+ * @param   pBlkCache       Block cache handle.
  */
 VMMR3DECL(void) PDMR3BlkCacheRelease(PPDMBLKCACHE pBlkCache)
 {
@@ -1563,12 +1565,11 @@ static PPDMBLKCACHEENTRY pdmBlkCacheGetCacheEntryByOffset(PPDMBLKCACHE pBlkCache
  *
  * @returns nothing.
  * @param   pBlkCache    The endpoint cache.
- * @param   off               The offset.
- * @param   pEntryAbove       Where to store the pointer to the best fit entry above the
- *                            the given offset. NULL if not required.
+ * @param   off          The offset.
+ * @param   ppEntryAbove Where to store the pointer to the best fit entry above
+ *                       the the given offset. NULL if not required.
  */
-static void pdmBlkCacheGetCacheBestFitEntryByOffset(PPDMBLKCACHE pBlkCache, uint64_t off,
-                                                    PPDMBLKCACHEENTRY *ppEntryAbove)
+static void pdmBlkCacheGetCacheBestFitEntryByOffset(PPDMBLKCACHE pBlkCache, uint64_t off, PPDMBLKCACHEENTRY *ppEntryAbove)
 {
     STAM_PROFILE_ADV_START(&pBlkCache->pCache->StatTreeGet, Cache);
 
@@ -1607,8 +1608,7 @@ static void pdmBlkCacheInsertEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY pEn
  *                    NULL if a new buffer should be allocated.
  *                    The buffer needs to have the same size of the entry.
  */
-static PPDMBLKCACHEENTRY pdmBlkCacheEntryAlloc(PPDMBLKCACHE pBlkCache,
-                                               uint64_t off, size_t cbData, uint8_t *pbBuffer)
+static PPDMBLKCACHEENTRY pdmBlkCacheEntryAlloc(PPDMBLKCACHE pBlkCache, uint64_t off, size_t cbData, uint8_t *pbBuffer)
 {
     AssertReturn(cbData <= UINT32_MAX, NULL);
     PPDMBLKCACHEENTRY pEntryNew = (PPDMBLKCACHEENTRY)RTMemAllocZ(sizeof(PDMBLKCACHEENTRY));
@@ -1680,8 +1680,8 @@ DECLINLINE(bool) pdmBlkCacheEntryFlagIsSetClearAcquireLock(PPDMBLKCACHE pBlkCach
  * which is currently in progress.
  *
  * @returns nothing.
- * @param   pEntry    The cache entry to add the segment to.
- * @param   pSeg      The segment to add.
+ * @param   pEntry      The cache entry to add the segment to.
+ * @param   pWaiter     The waiter entry to add.
  */
 DECLINLINE(void) pdmBlkCacheEntryAddWaiter(PPDMBLKCACHEENTRY pEntry,
                                            PPDMBLKCACHEWAITER pWaiter)
@@ -1709,19 +1709,16 @@ DECLINLINE(void) pdmBlkCacheEntryAddWaiter(PPDMBLKCACHEENTRY pEntry,
  * to the entry waiting for completion.
  *
  * @returns VBox status code.
- * @param   pEntry    The entry to add the buffer to.
- * @param   pTask     Task associated with the buffer.
- * @param   pIoMemCtx The memory context to use.
- * @param   offDiff   Offset from the start of the buffer
- *                    in the entry.
- * @param   cbData    Amount of data to wait for onthis entry.
- * @param   fWrite    Flag whether the task waits because it wants to write
- *                    to the cache entry.
+ * @param   pEntry      The entry to add the buffer to.
+ * @param   pReq        The request.
+ * @param   pSgBuf      The scatter/gather buffer. Will be advanced by cbData.
+ * @param   offDiff     Offset from the start of the buffer in the entry.
+ * @param   cbData      Amount of data to wait for onthis entry.
+ * @param   fWrite      Flag whether the task waits because it wants to write to
+ *                      the cache entry.
  */
-static int pdmBlkCacheEntryWaitersAdd(PPDMBLKCACHEENTRY pEntry,
-                                      PPDMBLKCACHEREQ pReq,
-                                      PRTSGBUF pSgBuf, uint64_t offDiff,
-                                      size_t cbData, bool fWrite)
+static int pdmBlkCacheEntryWaitersAdd(PPDMBLKCACHEENTRY pEntry, PPDMBLKCACHEREQ pReq,
+                                      PRTSGBUF pSgBuf, uint64_t offDiff, size_t cbData, bool fWrite)
 {
     PPDMBLKCACHEWAITER pWaiter  = (PPDMBLKCACHEWAITER)RTMemAllocZ(sizeof(PDMBLKCACHEWAITER));
     if (!pWaiter)
@@ -1746,7 +1743,6 @@ static int pdmBlkCacheEntryWaitersAdd(PPDMBLKCACHEENTRY pEntry,
  *
  * @returns The number of bytes the entry can hold of the requested amount
  *          of bytes.
- * @param   pEndpoint       The endpoint.
  * @param   pBlkCache       The endpoint cache.
  * @param   off             The start offset.
  * @param   cb              The number of bytes the entry needs to hold at
@@ -1804,17 +1800,15 @@ static uint32_t pdmBlkCacheEntryBoundariesCalc(PPDMBLKCACHE pBlkCache,
  *
  * @returns Pointer to the new cache entry or NULL
  *          if not enough bytes could be evicted from the cache.
- * @param   pEndpoint         The endpoint.
- * @param   pBlkCache    The endpoint cache.
- * @param   off               The offset.
- * @param   cb                Number of bytes the cache entry should have.
- * @param   pcbData           Where to store the number of bytes the new
- *                            entry can hold. May be lower than actually requested
- *                            due to another entry intersecting the access range.
+ * @param   pBlkCache       The endpoint cache.
+ * @param   off             The offset.
+ * @param   cb              Number of bytes the cache entry should have.
+ * @param   pcbData         Where to store the number of bytes the new
+ *                          entry can hold. May be lower than actually
+ *                          requested due to another entry intersecting the
+ *                          access range.
  */
-static PPDMBLKCACHEENTRY pdmBlkCacheEntryCreate(PPDMBLKCACHE pBlkCache,
-                                                uint64_t off, size_t cb,
-                                                size_t *pcbData)
+static PPDMBLKCACHEENTRY pdmBlkCacheEntryCreate(PPDMBLKCACHE pBlkCache, uint64_t off, size_t cb, size_t *pcbData)
 {
     uint32_t cbEntry  = 0;
 
@@ -2558,12 +2552,11 @@ VMMR3DECL(int) PDMR3BlkCacheDiscard(PPDMBLKCACHE pBlkCache, PCRTRANGE paRanges,
  * if everything was transferred.
  *
  * @returns Next task segment handle.
- * @param   pTaskSeg          Task segment to complete.
+ * @param   pBlkCache         The endpoint block cache.
+ * @param   pWaiter           Task segment to complete.
  * @param   rc                Status code to set.
  */
-static PPDMBLKCACHEWAITER pdmBlkCacheWaiterComplete(PPDMBLKCACHE pBlkCache,
-                                                    PPDMBLKCACHEWAITER pWaiter,
-                                                    int rc)
+static PPDMBLKCACHEWAITER pdmBlkCacheWaiterComplete(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEWAITER pWaiter, int rc)
 {
     PPDMBLKCACHEWAITER pNext = pWaiter->pNext;
     PPDMBLKCACHEREQ pReq = pWaiter->pReq;

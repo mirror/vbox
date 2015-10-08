@@ -1909,7 +1909,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryAll(PUVM pUVM, PDBGFREGENTRYNM paRegs, size_t cRe
  * @param   pLookupRec          The register lookup record. Maybe be modified,
  *                              so please pass a copy of the user's one.
  * @param   pValue              The new register value.
- * @param   enmType             The register value type.
+ * @param   pMask               Indicate which bits to modify.
  */
 static DECLCALLBACK(int) dbgfR3RegNmSetWorkerOnCpu(PUVM pUVM, PDBGFREGLOOKUP pLookupRec,
                                                    PCDBGFREGVAL pValue, PCDBGFREGVAL pMask)
@@ -2122,34 +2122,34 @@ VMMR3DECL(int) DBGFR3RegNmSet(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, P
 
 
 /**
- * Internal worker for DBGFR3RegFormatValue, cbTmp is sufficent.
+ * Internal worker for DBGFR3RegFormatValue, cbBuf is sufficent.
  *
- * @copydoc DBGFR3RegFormatValue
+ * @copydoc DBGFR3RegFormatValueEx
  */
-DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszTmp, size_t cbTmp, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType,
+DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType,
                                             unsigned uBase, signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
 {
     switch (enmType)
     {
         case DBGFREGVALTYPE_U8:
-            return RTStrFormatU8(pszTmp, cbTmp, pValue->u8, uBase, cchWidth, cchPrecision, fFlags);
+            return RTStrFormatU8(pszBuf, cbBuf, pValue->u8, uBase, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_U16:
-            return RTStrFormatU16(pszTmp, cbTmp, pValue->u16, uBase, cchWidth, cchPrecision, fFlags);
+            return RTStrFormatU16(pszBuf, cbBuf, pValue->u16, uBase, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_U32:
-            return RTStrFormatU32(pszTmp, cbTmp, pValue->u32, uBase, cchWidth, cchPrecision, fFlags);
+            return RTStrFormatU32(pszBuf, cbBuf, pValue->u32, uBase, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_U64:
-            return RTStrFormatU64(pszTmp, cbTmp, pValue->u64, uBase, cchWidth, cchPrecision, fFlags);
+            return RTStrFormatU64(pszBuf, cbBuf, pValue->u64, uBase, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_U128:
-            return RTStrFormatU128(pszTmp, cbTmp, &pValue->u128, uBase, cchWidth, cchPrecision, fFlags);
+            return RTStrFormatU128(pszBuf, cbBuf, &pValue->u128, uBase, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_R80:
-            return RTStrFormatR80u2(pszTmp, cbTmp, &pValue->r80Ex, cchWidth, cchPrecision, fFlags);
+            return RTStrFormatR80u2(pszBuf, cbBuf, &pValue->r80Ex, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_DTR:
         {
-            ssize_t cch = RTStrFormatU64(pszTmp, cbTmp, pValue->dtr.u64Base,
+            ssize_t cch = RTStrFormatU64(pszBuf, cbBuf, pValue->dtr.u64Base,
                                          16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD);
             AssertReturn(cch > 0, VERR_DBGF_REG_IPE_1);
-            pszTmp[cch++] = ':';
-            cch += RTStrFormatU64(&pszTmp[cch], cbTmp - cch, pValue->dtr.u32Limit,
+            pszBuf[cch++] = ':';
+            cch += RTStrFormatU64(&pszBuf[cch], cbBuf - cch, pValue->dtr.u32Limit,
                                   16, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
             return cch;
         }
@@ -2161,7 +2161,7 @@ DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszTmp, size_t cbTmp, PCDBGFRE
         /* no default, want gcc warnings */
     }
 
-    RTStrPrintf(pszTmp, cbTmp, "!enmType=%d!", enmType);
+    RTStrPrintf(pszBuf, cbBuf, "!enmType=%d!", enmType);
     return VERR_DBGF_REG_IPE_2;
 }
 

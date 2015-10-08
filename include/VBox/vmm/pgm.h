@@ -64,6 +64,7 @@ typedef enum PGMRELOCATECALL
  *
  * @returns true if the location is ok.
  * @returns false if another location should be found.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtrOld    The old virtual address.
  * @param   GCPtrNew    The new virtual address.
  * @param   enmMode     Used to indicate the callback mode.

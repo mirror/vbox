@@ -32,8 +32,8 @@
 /**
  * Checks whether GIM is being used by this VM.
  *
- * @retval  @c true if used.
- * @retval  @c false if no GIM provider ("none") is used.
+ * @retval  true if used.
+ * @retval  false if no GIM provider ("none") is used.
  *
  * @param   pVM       The cross context VM structure.
  */

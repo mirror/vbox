@@ -894,7 +894,6 @@ VMMDECL(int) PGMShwMakePageReadonly(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFla
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       Virtual address of the first page in the range.
- * @param   fMmio2      Set if it is an MMIO2 page.
  * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
  */
 VMMDECL(int) PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
@@ -1348,7 +1347,7 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
  * @param   enmShwPagingMode    The shadow paging mode (PGMMODE_EPT for VT-x,
  *                              host paging mode for AMD-V).
  */
-int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhysFault, uint32_t cPages, PGMMODE enmShwPagingMode)
+int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t cPages, PGMMODE enmShwPagingMode)
 {
     PGM_LOCK_ASSERT_OWNER(pVCpu->CTX_SUFF(pVM));
 
@@ -1358,7 +1357,7 @@ int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhysFault, uint32_t cPag
         case PGMMODE_32_BIT:
         {
             X86PDE PdeDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A };
-            rc = PGM_BTH_NAME_32BIT_PROT(SyncPage)(pVCpu, PdeDummy, GCPhysFault, cPages, ~0U /*uErr*/);
+            rc = PGM_BTH_NAME_32BIT_PROT(SyncPage)(pVCpu, PdeDummy, GCPhys, cPages, ~0U /*uErr*/);
             break;
         }
 
@@ -1366,7 +1365,7 @@ int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhysFault, uint32_t cPag
         case PGMMODE_PAE_NX:
         {
             X86PDEPAE PdeDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A };
-            rc = PGM_BTH_NAME_PAE_PROT(SyncPage)(pVCpu, PdeDummy, GCPhysFault, cPages, ~0U /*uErr*/);
+            rc = PGM_BTH_NAME_PAE_PROT(SyncPage)(pVCpu, PdeDummy, GCPhys, cPages, ~0U /*uErr*/);
             break;
         }
 
@@ -1374,14 +1373,14 @@ int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhysFault, uint32_t cPag
         case PGMMODE_AMD64_NX:
         {
             X86PDEPAE PdeDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A };
-            rc = PGM_BTH_NAME_AMD64_PROT(SyncPage)(pVCpu, PdeDummy, GCPhysFault, cPages, ~0U /*uErr*/);
+            rc = PGM_BTH_NAME_AMD64_PROT(SyncPage)(pVCpu, PdeDummy, GCPhys, cPages, ~0U /*uErr*/);
             break;
         }
 
         case PGMMODE_EPT:
         {
             X86PDEPAE PdeDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A };
-            rc = PGM_BTH_NAME_EPT_PROT(SyncPage)(pVCpu, PdeDummy, GCPhysFault, cPages, ~0U /*uErr*/);
+            rc = PGM_BTH_NAME_EPT_PROT(SyncPage)(pVCpu, PdeDummy, GCPhys, cPages, ~0U /*uErr*/);
             break;
         }
 
@@ -1814,7 +1813,8 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
 /**
  * Gets the current CR3 register value for the nested memory context.
  * @returns CR3 value.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   enmShadowMode   The shadow paging mode.
  */
 VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVMCPU pVCpu, PGMMODE enmShadowMode)
 {
@@ -2514,8 +2514,9 @@ VMMDECL(int) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
  *
  * @returns VBox status code
  * @param   pVM         The cross context VM structure.
+ * @param   SRC_POS     The source position of the caller (RT_SRC_POS).
  */
-#if defined(VBOX_STRICT) && defined(IN_RING3)
+#if (defined(VBOX_STRICT) && defined(IN_RING3)) || defined(DOXYGEN_RUNNING)
 int pgmLockDebug(PVM pVM, RT_SRC_POS_DECL)
 #else
 int pgmLock(PVM pVM)
@@ -2561,6 +2562,7 @@ void pgmUnlock(PVM pVM)
  * @param   GCPhys      The guest physical address of the page to map.  The
  *                      offset bits are not ignored.
  * @param   ppv         Where to return the address corresponding to @a GCPhys.
+ * @param   SRC_POS     The source position of the caller (RT_SRC_POS).
  */
 int pgmRZDynMapGCPageCommon(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
 {

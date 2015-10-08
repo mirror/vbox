@@ -145,7 +145,6 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddr
  *
  * @returns VBox status code.
  * @param   pUVM            The user mode VM handle.
- * @param   idCpu           The CPU ID.
  * @param   pAddress        Where to store the mixed address.
  * @param   pSelInfo        The selector info.
  * @param   off             The offset part.

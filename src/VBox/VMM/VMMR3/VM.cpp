@@ -1916,8 +1916,6 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
  *
  * @param   pUVM                The VM which state should be saved.
  * @param   pszFilename         The name of the save state file.
- * @param   pStreamOps          The stream methods.
- * @param   pvStreamOpsUser     The user argument to the stream methods.
  * @param   fContinueAfterwards Whether continue execution afterwards or not.
  *                              When in doubt, set this to true.
  * @param   pfnProgress         Progress callback. Optional.
@@ -1929,7 +1927,8 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
  * @vmstateto   Saving+Suspended or
  *              RunningLS+SuspendingLS+SuspendedLS+Saving+Suspended.
  */
-VMMR3DECL(int) VMR3Save(PUVM pUVM, const char *pszFilename, bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser, bool *pfSuspended)
+VMMR3DECL(int) VMR3Save(PUVM pUVM, const char *pszFilename, bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser,
+                        bool *pfSuspended)
 {
     LogFlow(("VMR3Save: pUVM=%p pszFilename=%p:{%s} fContinueAfterwards=%RTbool pfnProgress=%p pvUser=%p pfSuspended=%p\n",
              pUVM, pszFilename, pszFilename, fContinueAfterwards, pfnProgress, pvUser, pfSuspended));
@@ -2062,7 +2061,7 @@ VMMR3DECL(int) VMR3Teleport(PUVM pUVM, uint32_t cMsMaxDowntime, PCSSMSTRMOPS pSt
  * @param   pStreamOps          The stream methods.  NULL if pszFilename is used.
  * @param   pvStreamOpsUser     The user argument to the stream methods.
  * @param   pfnProgress         Progress callback. Optional.
- * @param   pvUser              User argument for the progress callback.
+ * @param   pvProgressUser      User argument for the progress callback.
  * @param   fTeleporting        Indicates whether we're teleporting or not.
  * @param   fSkipStateChanges   Set if we're supposed to skip state changes (FTM delta case)
  *
@@ -2137,7 +2136,7 @@ static DECLCALLBACK(int) vmR3Load(PUVM pUVM, const char *pszFilename, PCSSMSTRMO
  *
  * @returns VBox status code.
  *
- * @param   pVM             The cross context VM structure.
+ * @param   pUVM            The user mode VM structure.
  * @param   pszFilename     The name of the save state file.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
@@ -2216,8 +2215,6 @@ VMMR3DECL(int) VMR3LoadFromStream(PUVM pUVM, PCSSMSTRMOPS pStreamOps, void *pvSt
  * @param   pUVM            The VM handle.
  * @param   pStreamOps      The stream methods.
  * @param   pvStreamOpsUser The user argument to the stream methods.
- * @param   pfnProgress     Progress callback. Optional.
- * @param   pvProgressUser  User argument for the progress callback.
  *
  * @thread      Any thread.
  * @vmstate     Created, Suspended
@@ -2567,7 +2564,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
  * This is called as the final step in the VM destruction or as the cleanup
  * in case of a creation failure.
  *
- * @param   pVM             The cross context VM structure.
+ * @param   pUVM            The user mode VM structure.
  * @param   cMilliesEMTWait The number of milliseconds to wait for the emulation
  *                          threads.
  */
@@ -3961,7 +3958,7 @@ VMMR3DECL(int) VMR3SetErrorV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *psz
  * Registers a VM runtime error callback.
  *
  * @returns VBox status code.
- * @param   pVM                 The cross context VM structure.
+ * @param   pUVM                The user mode VM structure.
  * @param   pfnAtRuntimeError   Pointer to callback.
  * @param   pvUser              User argument.
  * @thread  Any.
@@ -4334,7 +4331,7 @@ VMMR3DECL(RTNATIVETHREAD) VMR3GetVMCPUNativeThread(PVM pVM)
  * Returns the native handle of the current EMT VMCPU thread.
  *
  * @returns Handle if this is an EMT thread; NIL_RTNATIVETHREAD otherwise
- * @param   pVM             The cross context VM structure.
+ * @param   pUVM        The user mode VM structure.
  * @thread  EMT
  */
 VMMR3DECL(RTNATIVETHREAD) VMR3GetVMCPUNativeThreadU(PUVM pUVM)
@@ -4479,7 +4476,7 @@ VMMR3DECL(int) VMR3HotPlugCpu(PUVM pUVM, VMCPUID idCpu)
  * Changes the VMM execution cap.
  *
  * @returns VBox status code.
- * @param   pVM                 The cross context VM structure.
+ * @param   pUVM                The user mode VM structure.
  * @param   uCpuExecutionCap    New CPU execution cap in precent, 1-100. Where
  *                              100 is max performance (default).
  */

@@ -551,7 +551,8 @@ void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
 /**
  * Checks that the timer queues are sane.
  *
- * @param   pVM     The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
+ * @param   pszWhere    Caller location clue.
  *
  * @remarks Called while owning the lock.
  */
@@ -675,7 +676,6 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
  * @param   u64Delta            The delta to the next even in ticks of the
  *                              virtual clock.
  * @param   pu64Delta           Where to return the delta.
- * @param   pCounter            The statistics counter to update.
  */
 DECLINLINE(uint64_t) tmTimerPollReturnMiss(PVM pVM, uint64_t u64Now, uint64_t u64Delta, uint64_t *pu64Delta)
 {
@@ -1453,6 +1453,7 @@ static int tmTimerSetRelativeOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t c
  *
  * @returns VBox status code
  * @param   pVM                 The cross context VM structure.
+ * @param   pTimer              The timer to (re-)arm.
  * @param   cTicksToNext        Clock ticks until the next time expiration.
  * @param   pu64Now             Where to return the current time stamp used.
  *                              Optional.

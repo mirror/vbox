@@ -206,7 +206,6 @@ int PATMPatchOpenBSDHandlerPrefix(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC
  * @param   pCpu        Disassembly state of instruction.
  * @param   pInstrGC    GC Instruction pointer for instruction
  * @param   pInstrHC    GC Instruction pointer for instruction
- * @param   pCallerGC   GC address of caller; CODE32_UNKNOWN_CALLER if unknown
  * @param   pPatchRec   Patch structure
  *
  */

@@ -1568,9 +1568,9 @@ int patmPatchGenCpuid(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC)
  * Generate the jump from guest to patch code
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pPatch      Patch record
- * @param   pTargetGC   Guest target jump
+ * @param   pVM                 The cross context VM structure.
+ * @param   pPatch              Patch record
+ * @param   pReturnAddrGC       Guest code target of the jump.
  * @param   fClearInhibitIRQs   Clear inhibit irq flag
  */
 int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pReturnAddrGC, bool fClearInhibitIRQs)
