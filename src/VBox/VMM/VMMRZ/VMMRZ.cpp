@@ -39,7 +39,7 @@
  *
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU of the calling EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   enmOperation    The operation.
  * @param   uArg            The argument to the operation.
  */
@@ -122,7 +122,7 @@ VMMRZDECL(int) VMMRZCallRing3NoCpu(PVM pVM, VMMCALLRING3 enmOperation, uint64_t 
 /**
  * Disables all host calls, except certain fatal ones.
  *
- * @param   pVCpu               The CPU struct for the calling EMT.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT.
  */
 VMMRZDECL(void) VMMRZCallRing3Disable(PVMCPU pVCpu)
@@ -156,7 +156,7 @@ VMMRZDECL(void) VMMRZCallRing3Disable(PVMCPU pVCpu)
 /**
  * Counters VMMRZCallRing3Disable() and re-enables host calls.
  *
- * @param   pVCpu               The CPU struct for the calling EMT.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT.
  */
 VMMRZDECL(void) VMMRZCallRing3Enable(PVMCPU pVCpu)
@@ -189,7 +189,7 @@ VMMRZDECL(void) VMMRZCallRing3Enable(PVMCPU pVCpu)
  * Checks whether its possible to call host context or not.
  *
  * @returns true if it's safe, false if it isn't.
- * @param   pVCpu               The CPU struct for the calling EMT.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  */
 VMMRZDECL(bool) VMMRZCallRing3IsEnabled(PVMCPU pVCpu)
 {
@@ -202,7 +202,7 @@ VMMRZDECL(bool) VMMRZCallRing3IsEnabled(PVMCPU pVCpu)
 /**
  * Sets the ring-0 callback before doing the ring-3 call.
  *
- * @param   pVCpu         Pointer to the VMCPU.
+ * @param   pVCpu         The cross context virtual CPU structure.
  * @param   pfnCallback   Pointer to the callback.
  * @param   pvUser        The user argument.
  *
@@ -225,7 +225,7 @@ VMMRZDECL(int) VMMRZCallRing3SetNotification(PVMCPU pVCpu, R0PTRTYPE(PFNVMMR0CAL
 /**
  * Removes the ring-0 callback.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMMRZDECL(void) VMMRZCallRing3RemoveNotification(PVMCPU pVCpu)
 {
@@ -236,7 +236,7 @@ VMMRZDECL(void) VMMRZCallRing3RemoveNotification(PVMCPU pVCpu)
 /**
  * Checks whether there is a ring-0 callback notification active.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @returns true if there the notification is active, false otherwise.
  */
 VMMRZDECL(bool) VMMRZCallRing3IsNotificationSet(PVMCPU pVCpu)

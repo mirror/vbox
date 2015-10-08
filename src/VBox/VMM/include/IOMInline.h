@@ -62,7 +62,7 @@ DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PVM pVM, RTIOPORT Port)
  * @returns NULL if address not in a MMIO range.
  *
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the virtual CPU structure of the caller.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys  Physical address to lookup.
  */
 DECLINLINE(PIOMMMIORANGE) iomMmioGetRange(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
@@ -98,7 +98,7 @@ DECLINLINE(void) iomMmioRetainRange(PIOMMMIORANGE pRange)
  * @returns NULL if address not in a MMIO range.
  *
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the virtual CPU structure of the caller.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys  Physical address to lookup.
  */
 DECLINLINE(PIOMMMIORANGE) iomMmioGetRangeWithRef(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
@@ -141,7 +141,7 @@ DECLINLINE(void) iomMmioReleaseRange(PVM pVM, PIOMMMIORANGE pRange)
  * @returns NULL if address not in a MMIO range.
  *
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the virtual CPU structure of the caller.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys  Physical address to lookup.
  */
 DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
@@ -167,7 +167,7 @@ DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, PVMCPU pVCpu, RTGCPHYS 
  * @returns NULL if not found (R0/GC), or out of memory (R3).
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys      Physical address to lookup.
  * @param   pRange      The MMIO range.
  *

@@ -828,7 +828,7 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               The current virtual CPU.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  */
 static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
 {
@@ -1087,7 +1087,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               The current virtual CPU.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  */
 static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
 {
@@ -1323,7 +1323,7 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
  * @retval  VINF_EM_RESCHEDULE_REM if a stale register was found.
  *
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               The current virtual CPU.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  */
 static VBOXSTRICTRC selmR3UpdateSegmentRegisters(PVM pVM, PVMCPU pVCpu)
 {
@@ -1426,7 +1426,7 @@ static VBOXSTRICTRC selmR3UpdateSegmentRegisters(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
 {
@@ -1487,7 +1487,7 @@ VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
 {
@@ -2049,7 +2049,7 @@ VMMR3DECL(bool) SELMR3CheckShadowTR(PVM pVM)
  *
  * @returns VBox status code, see SELMR3GetSelectorInfo for details.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
@@ -2210,7 +2210,7 @@ DECLINLINE(void) selmR3SelInfoFromDesc32(PDBGFSELINFO pSelInfo, PCX86DESC pDesc)
  * @returns VBox status code, see SELMR3GetSelectorInfo for details.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
@@ -2317,7 +2317,7 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINF
  * @returns Other VBox status code on other errors.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */

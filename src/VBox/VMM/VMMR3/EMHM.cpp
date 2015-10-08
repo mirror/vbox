@@ -82,10 +82,9 @@ static int      emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  * @retval  VERR_EM_CANNOT_EXEC_GUEST if we cannot execute guest instructions in
  *          HM right now.
  *
- * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               Pointer to the cross context CPU structure for
- *                              the calling EMT.
- * @param   fFlags              Combinations of EM_ONE_INS_FLAGS_XXX.
+ * @param   pVM     The cross context VM structure.
+ * @param   pVCpu   The cross context virtual CPU structure for the calling EMT.
+ * @param   fFlags  Combinations of EM_ONE_INS_FLAGS_XXX.
  * @thread  EMT.
  */
 VMMR3_INT_DECL(VBOXSTRICTRC) EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
@@ -161,7 +160,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu, uint
  * @returns VBox status code suitable for EM.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   rcRC        Return code from RC.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
@@ -231,7 +230,7 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
  * @param   rcGC        GC return code
@@ -250,7 +249,7 @@ DECLINLINE(int) emR3HmExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszP
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 static int emR3HmExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
@@ -290,7 +289,7 @@ static int emR3HmExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
  *          EM statuses.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -365,7 +364,7 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  */

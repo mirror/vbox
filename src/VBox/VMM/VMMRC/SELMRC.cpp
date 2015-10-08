@@ -59,7 +59,7 @@ static char const g_aszSRegNms[X86_SREG_COUNT][4] = { "ES", "CS", "SS", "DS", "F
  * @retval  VINF_SELM_SYNC_GDT
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        CPU context for the current CPU.
  * @param   iGDTEntry   The GDT entry to sync.
  *
@@ -180,7 +180,7 @@ static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uns
  * register content.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        The CPU context.
  * @param   iGDTEntry   The GDT entry to sync.
  */
@@ -229,7 +229,7 @@ void selmRCSyncGdtSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, unsigned iGDTEnt
  * selmGuestGDTWriteHandler.
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   offGuestTss     The offset into the TSS of the write that was made.
  * @param   cbWrite         The number of bytes written.
  * @param   pCtx            The current CPU context.
@@ -258,7 +258,7 @@ void selmRCGuestGdtPreWriteCheck(PVM pVM, PVMCPU pVCpu, uint32_t offGuestGdt, ui
  * @retval  VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   offGuestTss     The offset into the TSS of the write that was made.
  * @param   cbWrite         The number of bytes written.
  * @param   pCtx            The current CPU context.
@@ -392,7 +392,7 @@ DECLINLINE(int) selmRCReadTssBits(PVM pVM, PVMCPU pVCpu, void *pvDst, void const
  *
  * @returns Strict VBox status code appropriate for raw-mode returns.
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   offGuestTss     The offset into the TSS of the write that was made.
  * @param   cbWrite         The number of bytes written.
  */
@@ -545,19 +545,8 @@ DECLEXPORT(VBOXSTRICTRC) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTG
 
 #ifdef SELM_TRACK_SHADOW_GDT_CHANGES
 /**
- * \#PF Virtual Handler callback for Guest write access to the VBox shadow GDT.
- *
- * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   uErrorCode   CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   pvRange     The base address of the handled virtual range.
- * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
- * @param   pvUser      Unused.
+ * @callback_method_impl{FNPGMRCVIRTPFHANDLER,
+ * \#PF Virtual Handler callback for Guest write access to the VBox shadow GDT.}
  */
 DECLEXPORT(VBOXSTRICTRC) selmRCShadowGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                                        RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
@@ -571,19 +560,8 @@ DECLEXPORT(VBOXSTRICTRC) selmRCShadowGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RT
 
 #ifdef SELM_TRACK_SHADOW_LDT_CHANGES
 /**
- * \#PF Virtual Handler callback for Guest write access to the VBox shadow LDT.
- *
- * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   uErrorCode   CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   pvRange     The base address of the handled virtual range.
- * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
- * @param   pvUser      Unused.
+ * @callback_method_impl{FNPGMRCVIRTPFHANDLER,
+ * \#PF Virtual Handler callback for Guest write access to the VBox shadow LDT.}
  */
 DECLEXPORT(VBOXSTRICTRC) selmRCShadowLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                                        RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
@@ -598,19 +576,8 @@ DECLEXPORT(VBOXSTRICTRC) selmRCShadowLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RT
 
 #ifdef SELM_TRACK_SHADOW_TSS_CHANGES
 /**
- * \#PF Virtual Handler callback for Guest write access to the VBox shadow TSS.
- *
- * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   uErrorCode   CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   pvRange     The base address of the handled virtual range.
- * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
- * @param   pvUser      Unused.
+ * @callback_method_impl{FNPGMRCVIRTPFHANDLER,
+ * \#PF Virtual Handler callback for Guest write access to the VBox shadow TSS.}
  */
 DECLEXPORT(VBOXSTRICTRC) selmRCShadowTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                                        RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)

@@ -937,7 +937,7 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
  *
  * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT. Unused.
  * @param   pvUser      User parameter
  */
 static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1134,7 +1134,7 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
  *
  * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT. Unused.
  * @param   pvUser      User parameter, unused.
  */
 static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -3738,7 +3738,7 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
 /**
  * Sets the Address Gate 20 state.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   fEnable     True if the gate should be enabled.
  *                      False if the gate should be disabled.
  */
@@ -3885,7 +3885,7 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
  *
  * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT. Unused.
  * @param   pvUser      User pointer. Unused
  *
  */

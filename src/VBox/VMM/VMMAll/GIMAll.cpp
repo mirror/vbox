@@ -59,7 +59,7 @@ VMMDECL(GIMPROVIDERID) GIMGetProvider(PVM pVM)
  * Returns whether the guest has configured and enabled calls to the hypervisor.
  *
  * @returns true if hypercalls are enabled and usable, false otherwise.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  */
 VMM_INT_DECL(bool) GIMAreHypercallsEnabled(PVMCPU pVCpu)
 {
@@ -85,7 +85,7 @@ VMM_INT_DECL(bool) GIMAreHypercallsEnabled(PVMCPU pVCpu)
  * Implements a GIM hypercall with the provider configured for the VM.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @thread  EMT.
@@ -150,7 +150,7 @@ VMM_INT_DECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
  * really required.
  *
  * @returns true if needed, false otherwise.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(bool) GIMShouldTrapXcptUD(PVMCPU pVCpu)
 {
@@ -175,7 +175,7 @@ VMM_INT_DECL(bool) GIMShouldTrapXcptUD(PVMCPU pVCpu)
 /**
  * Exception handler for \#UD when requested by the GIM provider.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pDis        Pointer to the disassembled instruction state at RIP.
  *                      Optional, can be NULL.
@@ -206,7 +206,7 @@ VMM_INT_DECL(int) GIMXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
  * @retval  VINF_CPUM_R3_MSR_READ
  * @retval  VERR_CPUM_RAISE_GP_0
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   idMsr       The MSR to read.
  * @param   pRange      The range this MSR belongs to.
  * @param   puValue     Where to store the MSR value read.
@@ -240,7 +240,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRAN
  * @retval  VINF_CPUM_R3_MSR_WRITE
  * @retval  VERR_CPUM_RAISE_GP_0
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   idMsr       The MSR to write.
  * @param   pRange      The range this MSR belongs to.
  * @param   uValue      The value to set, ignored bits masked.

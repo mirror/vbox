@@ -64,7 +64,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
  * @param   pVMCBPhys       Physical address of the VMCB.
  * @param   pCtx            Pointer to the guest CPU context.
  * @param   pVM             The cross context VM structure. (Not used.)
- * @param   pVCpu           Pointer to the VMCPU. (Not used.)
+ * @param   pVCpu           The cross context virtual CPU structure. (Not used.)
  */
 DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
 
@@ -77,7 +77,7 @@ DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCt
  * @param   pVMCBPhys       Physical address of the VMCB.
  * @param   pCtx            Pointer to the guest CPU context.
  * @param   pVM             The cross context VM structure. (Not used.)
- * @param   pVCpu           Pointer to the VMCPU. (Not used.)
+ * @param   pVCpu           The cross context virtual CPU structure. (Not used.)
  */
 DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
 

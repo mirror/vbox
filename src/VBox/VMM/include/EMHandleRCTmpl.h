@@ -33,7 +33,7 @@
  * @returns VBox status code to return to the EM main loop.
  *
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   rc      The return code.
  * @param   pCtx    Pointer to the guest CPU context.
  */

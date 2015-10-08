@@ -249,7 +249,7 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RT
  * Some basic checking is done, but not all kinds yet.
  *
  * @returns VBox status
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   SelReg      Selector register.
  * @param   pCtxCore    CPU context.
  * @param   Addr        Address part.
@@ -402,7 +402,7 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore,
  * Some basic checking is done, but not all kinds yet.
  *
  * @returns VBox status
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   eflags      Current eflags
  * @param   Sel         Selector part.
  * @param   Addr        Address part.
@@ -625,7 +625,7 @@ static void selLoadHiddenSelectorRegFromGuestTable(PVMCPU pVCpu, PCCPUMCTX pCtx,
  *
  * @remarks This is only used when in legacy protected mode!
  *
- * @param   pVCpu       Pointer to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        The guest CPU context.
  * @param   pSReg       The selector register.
  *
@@ -698,7 +698,7 @@ VMM_INT_DECL(void) SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUM
  * address when in real or v8086 mode.
  *
  * @returns VINF_SUCCESS.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   SelCS   Selector part.
  * @param   pHidCS  The hidden CS register part. Optional.
  * @param   Addr    Address part.
@@ -725,7 +725,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVMCPU pVCpu, RTSEL SelCS, 
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   SelCPL      Current privilege level. Get this from SS - CS might be
  *                      conforming! A full selector can be passed, we'll only
  *                      use the RPL part.
@@ -801,7 +801,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRawMode(PVM pVM, PVMCPU pVCpu, RTSEL
  * when in protected/long mode using the standard hidden selector registers
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   SelCPL      Current privilege level.  Get this from SS - CS might be
  *                      conforming!  A full selector can be passed, we'll only
  *                      use the RPL part.
@@ -858,7 +858,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, R
  * Validates and converts a GC selector based code address to a flat address.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   Efl         Current EFLAGS.
  * @param   SelCPL      Current privilege level.  Get this from SS - CS might be
  *                      conforming!  A full selector can be passed, we'll only
@@ -1129,7 +1129,7 @@ VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM)
  * @retval  VERR_SELM_NO_TSS if we haven't got a TSS (rather unlikely).
  *
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pGCPtrTss           Where to store the TSS address.
  * @param   pcbTss              Where to store the TSS size limit.
  * @param   pfCanHaveIOBitmap   Where to store the can-have-I/O-bitmap indicator. (optional)
@@ -1162,7 +1162,7 @@ VMMDECL(int) SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGC
  * This is called by PGM.
  *
  * @param   pVM       The cross context VM structure.
- * @param   pVCpu     Pointer to the VMCPU.
+ * @param   pVCpu     The cross context virtual CPU structure.
  */
 VMMDECL(void) SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu)
 {

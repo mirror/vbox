@@ -55,9 +55,9 @@ typedef struct
 {
     /** The core structure. */
     DISCPUSTATE     Cpu;
-    /** Pointer to the VM. */
+    /** The cross context VM structure. */
     PVM             pVM;
-    /** Pointer to the VMCPU. */
+    /** The cross context virtual CPU structure. */
     PVMCPU          pVCpu;
     /** The address space for resolving symbol. */
     RTDBGAS         hDbgAs;
@@ -100,7 +100,7 @@ static FNDISREADBYTES dbgfR3DisasInstrRead;
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pSelInfo    The selector info.
  * @param   enmMode     The guest paging mode.
  * @param   fFlags      DBGF_DISAS_FLAGS_XXX.
@@ -402,7 +402,7 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
  *
  * @returns VBox status code.
  * @param       pVM             The cross context VM structure.
- * @param       pVCpu           Pointer to the VMCPU.
+ * @param       pVCpu           The cross context virtual CPU structure.
  * @param       Sel             The code selector. This used to determine the 32/16 bit ness and
  *                              calculation of the actual instruction address.
  * @param       pGCPtr          Pointer to the variable holding the code address
@@ -726,7 +726,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PUVM pUVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR G
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pszOutput       Output buffer.  This will always be properly
  *                          terminated if @a cbOutput is greater than zero.
  * @param   cbOutput        Size of the output buffer.
@@ -751,7 +751,7 @@ VMMR3_INT_DECL(int) DBGFR3DisasInstrCurrent(PVMCPU pVCpu, char *pszOutput, uint3
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pszPrefix       Short prefix string to the disassembly string. (optional)
  * @thread  EMT(pVCpu)
  */
@@ -781,11 +781,14 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszP
  * Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU, defaults to CPU 0 if NULL.
- * @param   Sel             The code selector. This used to determine the 32/16 bit-ness and
- *                          calculation of the actual instruction address.
- * @param   GCPtr           The code address relative to the base of Sel.
- * @param   pszPrefix       Short prefix string to the disassembly string. (optional)
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      EMT.
+ * @param   Sel         The code selector. This used to determine the 32/16
+ *                      bit-ness and calculation of the actual instruction
+ *                      address.
+ * @param   GCPtr       The code address relative to the base of Sel.
+ * @param   pszPrefix   Short prefix string to the disassembly string.
+ *                      (optional)
  * @thread  EMT(pVCpu)
  */
 VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, const char *pszPrefix)

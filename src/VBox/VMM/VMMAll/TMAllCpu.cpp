@@ -66,7 +66,7 @@ uint64_t tmR3CpuTickGetRawVirtualNoCheck(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @internal
  */
 int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
@@ -94,7 +94,7 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VINF_SUCCESS or VERR_TM_VIRTUAL_TICKING_IPE (asserted).
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 int tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu)
 {
@@ -135,7 +135,7 @@ int tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu)
  * Pauses the CPU timestamp counter ticking.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @internal
  */
 int tmCpuTickPause(PVMCPU pVCpu)
@@ -156,7 +156,7 @@ int tmCpuTickPause(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @internal
  */
 int tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu)
@@ -187,7 +187,7 @@ int tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu)
  * Used by TMCpuTickCanUseRealTSC() and TMCpuTickGetDeadlineAndTscOffset().
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The current CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
 {
@@ -222,7 +222,7 @@ DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
  *
  * @returns true/false accordingly.
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   poffRealTsc     The offset against the TSC of the current host CPU,
  *                          if pfOffsettedTsc is set to true.
  * @param   pfParavirtTsc   Where to return whether paravirt TSC is enabled.
@@ -303,7 +303,7 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, PVMCPU pVCpu, uint64_t *poffR
  *          tick count for deadlines that are more than a second ahead.
  *
  * @returns The number of host cpu ticks to the next deadline.  Max one second.
- * @param   pVCpu           The current CPU.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   cNsToDeadline   The number of nano seconds to the next virtual
  *                          sync deadline.
  */
@@ -332,7 +332,7 @@ DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(PVMCPU pVCpu, uint64_t cNsToDeadli
  *
  * @returns The number of host CPU clock ticks to the next timer deadline.
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           The current CPU.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   poffRealTsc     The offset against the TSC of the current host CPU,
  *                          if pfOffsettedTsc is set to true.
  * @param   pfOffsettedTsc  Where to return whether TSC offsetting can be used.
@@ -397,7 +397,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVM pVM, PVMCPU pVCpu, u
  * Read the current CPU timestamp counter.
  *
  * @returns Gets the CPU tsc.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
 {
@@ -432,7 +432,7 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
  * Read the current CPU timestamp counter.
  *
  * @returns Gets the CPU tsc.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu)
 {
@@ -444,7 +444,7 @@ VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu)
  * Read the current CPU timestamp counter, don't check for expired timers.
  *
  * @returns Gets the CPU tsc.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
 {
@@ -457,7 +457,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   u64Tick     The new timestamp value.
  *
  * @thread  EMT which TSC is to be set.
@@ -487,7 +487,7 @@ VMM_INT_DECL(int) TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick)
  * Sets the last seen CPU timestamp counter.
  *
  * @returns VBox status code.
- * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pVCpu               The cross context virtual CPU structure.
  * @param   u64LastSeenTick     The last seen timestamp value.
  *
  * @thread  EMT which TSC is to be set.
@@ -506,7 +506,7 @@ VMM_INT_DECL(int) TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick)
  * Gets the last seen CPU timestamp counter of the guest.
  *
  * @returns the last seen TSC.
- * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pVCpu               The cross context virtual CPU structure.
  *
  * @thread  EMT(pVCpu).
  */
@@ -547,7 +547,7 @@ VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM)
  * Whether the TSC is ticking for the VCPU.
  *
  * @returns true if ticking, false otherwise.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  */
 VMM_INT_DECL(bool) TMCpuTickIsTicking(PVMCPU pVCpu)
 {

@@ -1042,7 +1042,7 @@ VMMR3_INT_DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, uint32_t fFlags)
  * @returns VINF_SUCCESS unless a fatal error occurred. In the latter
  *          case an appropriate status code is returned.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
  * @thread  The emulation thread.
  * @remarks Made visible for implementing vmsvga sync register.
@@ -1194,7 +1194,7 @@ VMMR3_INT_DECL(void) VMR3AsyncPdmNotificationWakeupU(PUVM pUVM)
  *
  * @returns VBox strict status code.
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               Pointer to the VMCPU of the calling EMT.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser              The new g_aHaltMethods index.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3SetHaltMethodCallback(PVM pVM, PVMCPU pVCpu, void *pvUser)

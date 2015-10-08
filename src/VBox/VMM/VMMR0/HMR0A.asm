@@ -802,7 +802,7 @@ ENDPROC SVMR0InvlpgA
 ; @param        pCtx            msc:rdx
 ; @param        pVMCSCache      msc:r8
 ; @param        pVM             msc:r9
-; @param        pVCpu           msc:[rbp+30h]
+; @param        pVCpu           msc:[rbp+30h]   The cross context virtual CPU structure of the calling EMT.
 ; @param        pfnStartVM      msc:[rbp+38h]
 ;
 ; @remarks      This is essentially the same code as HMR0SVMRunWrapXMM, only the parameters differ a little bit.
@@ -970,7 +970,7 @@ ENDPROC   HMR0VMXStartVMWrapXMM
 ; @param        pVMCBPhys       msc:rdx
 ; @param        pCtx            msc:r8
 ; @param        pVM             msc:r9
-; @param        pVCpu           msc:[rbp+30h]
+; @param        pVCpu           msc:[rbp+30h]   The cross context virtual CPU structure of the calling EMT.
 ; @param        pfnVMRun        msc:[rbp+38h]
 ;
 ; @remarks      This is essentially the same code as HMR0VMXStartVMWrapXMM, only the parameters differ a little bit.
@@ -1237,7 +1237,7 @@ ALIGN(16)
 ; @param    pCtx       x86:[ebp+c], msc:rdx,gcc:rsi     Pointer to the guest-CPU context.
 ; @param    pCache     x86:[ebp+10],msc:r8, gcc:rdx     Pointer to the VMCS cache.
 ; @param    pVM        x86:[ebp+14],msc:r9, gcc:rcx     The cross context VM structure.
-; @param    pVCpu      x86:[ebp+18],msc:[ebp+30],gcc:r8 Pointer to the cross context VMCPU structure.
+; @param    pVCpu      x86:[ebp+18],msc:[ebp+30],gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
 ALIGNCODE(16)
 BEGINPROC VMXR0StartVM32
@@ -1543,7 +1543,7 @@ ALIGN(16)
 ; @param    pCtx       msc:rdx, gcc:rsi     Pointer to the guest-CPU context.
 ; @param    pCache     msc:r8,  gcc:rdx     Pointer to the VMCS cache.
 ; @param    pVM        msc:r9,  gcc:rcx     The cross context VM structure.
-; @param    pVCpu      msc:[ebp+30], gcc:r8 Pointer to the cross context VMCPU structure.
+; @param    pVCpu      msc:[ebp+30], gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
 ALIGNCODE(16)
 BEGINPROC VMXR0StartVM64
@@ -1736,7 +1736,7 @@ ENDPROC VMXR0StartVM64
 ; @param    HCPhysVMCB      Physical address of guest VMCB.
 ; @param    pCtx            Pointer to the guest CPU-context.
 ; @param    pVM             msc:r9, gcc:rcx     The cross context VM structure.
-; @param    pVCpu           msc:[rsp+28],gcc:r8 Pointer to the cross context VMCPU structure.
+; @param    pVCpu           msc:[rsp+28],gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
 ALIGNCODE(16)
 BEGINPROC SVMR0VMRun
@@ -1888,7 +1888,7 @@ ENDPROC SVMR0VMRun
 ; @param    HCPhysVMCB      Physical address of guest VMCB.
 ; @param    pCtx            Pointer to the guest-CPU context.
 ; @param    pVM             msc:r9, gcc:rcx     The cross context VM structure.
-; @param    pVCpu           msc:[rsp+28],gcc:r8 Pointer to the cross context VMCPU structure.
+; @param    pVCpu           msc:[rsp+28],gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
 ALIGNCODE(16)
 BEGINPROC SVMR0VMRun64

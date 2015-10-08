@@ -57,7 +57,7 @@ VMMDECL(bool) HMIsEnabledNotMacro(PVM pVM)
  * Queues a guest page for invalidation.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCVirt      Page to invalidate.
  */
 static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
@@ -74,7 +74,7 @@ static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * Invalidates a guest page.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCVirt      Page to invalidate.
  */
 VMM_INT_DECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
@@ -99,7 +99,7 @@ VMM_INT_DECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * Flushes the guest TLB.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(int) HMFlushTLB(PVMCPU pVCpu)
 {
@@ -110,8 +110,8 @@ VMM_INT_DECL(int) HMFlushTLB(PVMCPU pVCpu)
     return VINF_SUCCESS;
 }
 
-
 #ifdef IN_RING0
+
 /**
  * Dummy RTMpOnSpecific handler since RTMpPokeCpu couldn't be used.
  *
@@ -166,14 +166,15 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
             STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatSpinPokeFailed, z);
     }
 }
+
 #endif /* IN_RING0 */
-
-
 #ifndef IN_RC
+
 /**
  * Poke an EMT so it can perform the appropriate TLB shootdowns.
  *
- * @param   pVCpu               The handle of the virtual CPU to poke.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              EMT poke.
  * @param   fAccountFlushStat   Whether to account the call to
  *                              StatTlbShootdownFlush or StatTlbShootdown.
  */
@@ -270,6 +271,7 @@ VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
 
     return VINF_SUCCESS;
 }
+
 #endif /* !IN_RC */
 
 /**
@@ -425,7 +427,7 @@ VMM_INT_DECL(bool) HMHasPendingIrq(PVM pVM)
  * Return the PAE PDPE entries.
  *
  * @returns Pointer to the PAE PDPE array.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(PX86PDPE) HMGetPaePdpes(PVMCPU pVCpu)
 {
@@ -495,9 +497,8 @@ VMM_INT_DECL(int) HMAmdIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu3
  * EMR3HmSingleInstruction.
  *
  * @returns The old flag state.
- * @param   pVCpu               Pointer to the cross context CPU structure of
- *                              the calling EMT.
- * @param   fEnable             The new flag state.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   fEnable The new flag state.
  */
 VMM_INT_DECL(bool) HMSetSingleInstruction(PVMCPU pVCpu, bool fEnable)
 {
@@ -511,7 +512,7 @@ VMM_INT_DECL(bool) HMSetSingleInstruction(PVMCPU pVCpu, bool fEnable)
 /**
  * Notifies HM that paravirtualized hypercalls are now enabled.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) HMHypercallsEnable(PVMCPU pVCpu)
 {
@@ -522,7 +523,7 @@ VMM_INT_DECL(void) HMHypercallsEnable(PVMCPU pVCpu)
 /**
  * Notifies HM that paravirtualized hypercalls are now disabled.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) HMHypercallsDisable(PVMCPU pVCpu)
 {
@@ -533,7 +534,7 @@ VMM_INT_DECL(void) HMHypercallsDisable(PVMCPU pVCpu)
 /**
  * Notifies HM that GIM provider wants to trap \#UD.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) HMTrapXcptUDForGIMEnable(PVMCPU pVCpu)
 {
@@ -545,7 +546,7 @@ VMM_INT_DECL(void) HMTrapXcptUDForGIMEnable(PVMCPU pVCpu)
 /**
  * Notifies HM that GIM provider no longer wants to trap \#UD.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) HMTrapXcptUDForGIMDisable(PVMCPU pVCpu)
 {

@@ -1627,7 +1627,7 @@ VMMR3_INT_DECL(void) HMR3Relocate(PVM pVM)
  * This is called by PGM.
  *
  * @param   pVM            The cross context VM structure.
- * @param   pVCpu          Pointer to the VMCPU.
+ * @param   pVCpu          The cross context virtual CPU structure.
  * @param   enmShadowMode  New shadow paging mode.
  * @param   enmGuestMode   New guest paging mode.
  */
@@ -1714,7 +1714,7 @@ static int hmR3TermCPU(PVM pVM)
  *
  * Used by HMR3Reset and CPU hot plugging.
  *
- * @param   pVCpu   The CPU to reset.
+ * @param   pVCpu   The cross context virtual CPU structure to reset.
  */
 VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
 {
@@ -1780,7 +1780,7 @@ VMMR3_INT_DECL(void) HMR3Reset(PVM pVM)
  *
  * @returns VBox strict status code.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   The VMCPU for the EMT we're being called on.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser  Unused.
  */
 static DECLCALLBACK(VBOXSTRICTRC) hmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1918,7 +1918,7 @@ VMMR3_INT_DECL(int)  HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cb
  *
  * @returns VBox strict status code.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   The VMCPU for the EMT we're being called on.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser  User specified CPU context.
  *
  */
@@ -2094,7 +2094,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
  *
  * @returns VBox strict status code.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   The VMCPU for the EMT we're being called on.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser  User specified CPU context.
  *
  */
@@ -2327,7 +2327,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR3_INT_DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -2737,7 +2737,7 @@ VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
  * Notification from EM about a rescheduling into hardware assisted execution
  * mode.
  *
- * @param   pVCpu       Pointer to the current VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
 {
@@ -2748,7 +2748,7 @@ VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
 /**
  * Notification from EM about returning from instruction emulation (REM / EM).
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3_INT_DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
 {
@@ -2760,7 +2760,7 @@ VMMR3_INT_DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
  * Checks if we are currently using hardware acceleration.
  *
  * @returns true if hardware acceleration is being used, otherwise false.
- * @param   pVCpu        Pointer to the VMCPU.
+ * @param   pVCpu        The cross context virtual CPU structure.
  */
 VMMR3_INT_DECL(bool) HMR3IsActive(PVMCPU pVCpu)
 {
@@ -2903,7 +2903,7 @@ VMMR3_INT_DECL(bool) HMR3IsVmxPreemptionTimerUsed(PVM pVM)
  * @retval  VERR_NOT_FOUND if no pending I/O instruction.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR3_INT_DECL(VBOXSTRICTRC) HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)

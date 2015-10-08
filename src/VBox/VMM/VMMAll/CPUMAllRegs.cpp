@@ -86,7 +86,7 @@ AssertCompile2MemberOffsets(VM, cpum.s.GuestFeatures, cpum.ro.GuestFeatures);
 /**
  * Does the lazy hidden selector register loading.
  *
- * @param   pVCpu       The current Virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pSReg       The selector register to lazily load hidden parts of.
  */
 static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
@@ -140,7 +140,7 @@ static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
  * Makes sure the hidden CS and SS selector registers are valid, loading them if
  * necessary.
  *
- * @param   pVCpu               The current virtual CPU.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  */
 VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu)
 {
@@ -152,7 +152,7 @@ VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu)
 /**
  * Loads a the hidden parts of a selector register.
  *
- * @param   pVCpu               The current virtual CPU.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  */
 VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
 {
@@ -179,7 +179,7 @@ VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVMCPU pVCpu)
 /**
  * Gets the pointer to the hypervisor CPU context structure of a virtual CPU.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(PCPUMCTX) CPUMGetHyperCtxPtr(PVMCPU pVCpu)
 {
@@ -286,7 +286,7 @@ VMMDECL(void) CPUMSetHyperEIP(PVMCPU pVCpu, uint32_t u32EIP)
  * register will be set to sane values for C/C++ code execution with interrupts
  * disabled and IOPL 0.
  *
- * @param   pVCpu               The current virtual CPU.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  * @param   u32EIP              The EIP value.
  * @param   u32ESP              The ESP value.
  * @param   u32EAX              The EAX value.
@@ -556,7 +556,7 @@ VMMDECL(RTGCUINTREG) CPUMGetHyperDR7(PVMCPU pVCpu)
  * Gets the pointer to the internal CPUMCTXCORE structure.
  * This is only for reading in order to save a few calls.
  *
- * @param   pVCpu       Handle to the virtual cpu.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVMCPU pVCpu)
 {
@@ -568,7 +568,7 @@ VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVMCPU pVCpu)
  * Queries the pointer to the internal CPUMCTX structure.
  *
  * @returns The CPUMCTX pointer.
- * @param   pVCpu       Handle to the virtual cpu.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVMCPU pVCpu)
 {
@@ -643,7 +643,7 @@ VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
  * WP, PG or PE changes.
  *
  * @returns VINF_SUCCESS (consider it void).
- * @param   pVCpu   Handle to the virtual cpu.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   cr0     The new CR0 value.
  */
 VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
@@ -1265,7 +1265,7 @@ PCPUMCPUIDLEAF cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bo
 /**
  * Gets a CPUID leaf.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   uLeaf       The CPUID leaf to get.
  * @param   uSubLeaf    The CPUID sub-leaf to get, if applicable.
  * @param   pEax        Where to store the EAX value.
@@ -1893,7 +1893,7 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
  * all the time.
  *
  * @returns VINF_SUCCESS.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   iGstReg     The guest debug register number that was modified.
  *                      UINT8_MAX if not guest register.
  * @param   fForceHyper Used in HM to force hyper registers because of single
@@ -2139,8 +2139,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
  *
  * @returns VINF_SUCCESS on success, VERR_CPUM_RAISE_GP_0 on invalid input
  *          value.
- * @param   pVCpu       Pointer to the cross context VMCPU structure for the
- *                      calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   uNewValue   The new value.
  * @thread  EMT(pVCpu)
  */
@@ -2192,7 +2191,7 @@ VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue)
  * Tests if the guest has No-Execute Page Protection Enabled (NXE).
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
 {
@@ -2204,7 +2203,7 @@ VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
  * Tests if the guest has the Page Size Extension enabled (PSE).
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
 {
@@ -2217,7 +2216,7 @@ VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
  * Tests if the guest has the paging enabled (PG).
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestPagingEnabled(PVMCPU pVCpu)
 {
@@ -2229,7 +2228,7 @@ VMMDECL(bool) CPUMIsGuestPagingEnabled(PVMCPU pVCpu)
  * Tests if the guest has the paging enabled (PG).
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
 {
@@ -2241,7 +2240,7 @@ VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
  * Tests if the guest is running in real mode or not.
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
 {
@@ -2253,7 +2252,7 @@ VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
  * Tests if the guest is running in real or virtual 8086 mode.
  *
  * @returns @c true if it is, @c false if not.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu)
 {
@@ -2266,7 +2265,7 @@ VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu)
  * Tests if the guest is running in protected or not.
  *
  * @returns true if in protected mode, otherwise false.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
 {
@@ -2278,7 +2277,7 @@ VMMDECL(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
  * Tests if the guest is running in paged protected or not.
  *
  * @returns true if in paged protected mode, otherwise false.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
 {
@@ -2290,7 +2289,7 @@ VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
  * Tests if the guest is running in long mode or not.
  *
  * @returns true if in long mode, otherwise false.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
 {
@@ -2302,7 +2301,7 @@ VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
  * Tests if the guest is running in PAE mode or not.
  *
  * @returns true if in PAE mode, otherwise false.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
 {
@@ -2318,7 +2317,7 @@ VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
  * Tests if the guest is running in 64 bits mode or not.
  *
  * @returns true if in 64 bits protected mode, otherwise false.
- * @param   pVCpu       The current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
 {
@@ -2347,7 +2346,7 @@ VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx)
  *
  * @returns @c true if we've entered raw-mode and selectors with RPL=1 are
  *          really RPL=0, @c false if we've not (RPL=1 really is RPL=1).
- * @param   pVCpu       The current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMM_INT_DECL(bool) CPUMIsGuestInRawMode(PVMCPU pVCpu)
 {
@@ -2360,7 +2359,7 @@ VMM_INT_DECL(bool) CPUMIsGuestInRawMode(PVMCPU pVCpu)
  * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
  *
  * @returns VBox status. (recompiler failure)
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @see     @ref pg_raw
  */
 VMM_INT_DECL(int) CPUMRawEnter(PVMCPU pVCpu)
@@ -2434,7 +2433,7 @@ VMM_INT_DECL(int) CPUMRawEnter(PVMCPU pVCpu)
  * This function will change any selector registers with DPL=1 to DPL=0.
  *
  * @returns Adjusted rc.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   rc          Raw mode return code
  * @see     @ref pg_raw
  */
@@ -2539,7 +2538,7 @@ VMM_INT_DECL(int) CPUMRawLeave(PVMCPU pVCpu, int rc)
 /**
  * Updates the EFLAGS while we're in raw-mode.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   fEfl        The new EFLAGS value.
  */
 VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl)
@@ -2557,7 +2556,7 @@ VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl)
  * Gets the EFLAGS while we're in raw-mode.
  *
  * @returns The eflags.
- * @param   pVCpu       Pointer to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu)
 {
@@ -2572,7 +2571,7 @@ VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu)
 /**
  * Sets the specified changed flags (CPUM_CHANGED_*).
  *
- * @param   pVCpu       Pointer to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(void) CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags)
 {
@@ -2622,7 +2621,7 @@ VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
  * Lazily sync in the FPU/XMM state.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
 {
@@ -2635,7 +2634,7 @@ VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
  * Checks if we activated the FPU/XMM state of the guest OS.
  * @returns true if we did.
  * @returns false if not.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
 {
@@ -2711,7 +2710,7 @@ VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)
  * Get the current privilege level of the guest.
  *
  * @returns CPL
- * @param   pVCpu       Pointer to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
 {
@@ -2787,7 +2786,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
  * If paging mode is what you need, check out PGMGetGuestMode().
  *
  * @returns The CPU mode.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
 {
@@ -2807,7 +2806,7 @@ VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
  * Figure whether the CPU is currently executing 16, 32 or 64 bit code.
  *
  * @returns 16, 32 or 64.
- * @param   pVCpu               The current virtual CPU.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu)
 {

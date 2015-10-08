@@ -2346,11 +2346,10 @@ static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTRCPTR GCPtr, size_t
 /**
  * \#PF Handler callback for invalidation of virtual access handler ranges.
  *
- * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
- * @param   GCPtr           The virtual address the guest has changed.
- * @param   pvUser          Ignored.
+ * @param   pVM     The cross context VM structure.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPtr   The virtual address the guest has changed.
+ * @param   pvUser  Ignored.
  *
  * @remarks Not currently called by PGM. It was actually only called for a month
  *          back in 2006...
@@ -2637,7 +2636,7 @@ static int csamR3FlushCodePages(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3_INT_DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
 {

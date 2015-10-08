@@ -238,7 +238,7 @@
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The current CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   HCPhys      The HC physical address to map to a virtual one.
  * @param   ppv         Where to store the virtual address. No need to cast
  *                      this.
@@ -260,7 +260,7 @@
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   The current CPU.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys  The GC physical address to map to a virtual one.
  * @param   ppv     Where to store the virtual address. No need to cast this.
  *
@@ -294,7 +294,7 @@
  * Maps a GC physical page address to a virtual address.
  *
  * @returns VBox status code.
- * @param   pVCpu   The current CPU.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys  The GC physical address to map to a virtual one.
  * @param   ppv     Where to store the virtual address. No need to cast this.
  *
@@ -330,7 +330,7 @@
  *
  * For best effect only apply this to the page that was mapped most recently.
  *
- * @param   pVCpu   The current CPU.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pvPage  The pool page.
  */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
@@ -358,7 +358,7 @@
 /** @def PGM_INVL_PG
  * Invalidates a page.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
 #ifdef IN_RC
@@ -386,7 +386,7 @@
 /** @def PGM_INVL_BIG_PG
  * Invalidates a 4MB page directory entry.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCVirt      The virtual address within the page directory to invalidate.
  */
 #ifdef IN_RC
@@ -400,7 +400,7 @@
 /** @def PGM_INVL_VCPU_TLBS()
  * Invalidates the TLBs of the specified VCPU
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 #ifdef IN_RC
 # define PGM_INVL_VCPU_TLBS(pVCpu)             ASMReloadCR3()

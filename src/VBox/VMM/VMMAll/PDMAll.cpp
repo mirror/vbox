@@ -39,7 +39,7 @@
  * Gets the pending interrupt.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pu8Interrupt    Where to store the interrupt on success.
  */
 VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
@@ -280,7 +280,7 @@ VMMDECL(int) PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base)
  * Check if the APIC has a pending interrupt/if a TPR change would active one.
  *
  * @returns VINF_SUCCESS or VERR_PDM_NO_APIC_INSTANCE.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pfPending       Pending state (out).
  */
 VMM_INT_DECL(int) PDMApicHasPendingIrq(PVMCPU pVCpu, bool *pfPending)
@@ -303,7 +303,7 @@ VMM_INT_DECL(int) PDMApicHasPendingIrq(PVMCPU pVCpu, bool *pfPending)
  * Set the TPR (task priority register?).
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   u8TPR           The new TPR.
  */
 VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
@@ -325,7 +325,7 @@ VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
  * Get the TPR (task priority register).
  *
  * @returns VINF_SUCCESS or VERR_PDM_NO_APIC_INSTANCE.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pu8TPR          Where to store the TRP.
  * @param   pfPending       Pending interrupt state (out, optional).
  * @param   pu8PendingIrq   Where to store the highest-priority pending IRQ

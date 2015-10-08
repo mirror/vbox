@@ -1340,12 +1340,13 @@ static void pgmRZDynMapReleasePage(PPGMRZDYNMAP pThis, uint32_t iPage, uint32_t 
  * pgmR0DynMapPage worker that deals with the tedious bits.
  *
  * @returns The page index on success, UINT32_MAX on failure.
- * @param   pThis       The dynamic mapping cache instance.
- * @param   HCPhys      The address of the page to be mapped.
- * @param   iPage       The page index pgmR0DynMapPage hashed HCPhys to.
- * @param   pVCpu       The current CPU, for statistics.
- * @param   pfNew       Set to @c true if a new entry was made and @c false if
- *                      an old entry was found and reused.
+ * @param   pThis   The dynamic mapping cache instance.
+ * @param   HCPhys  The address of the page to be mapped.
+ * @param   iPage   The page index pgmR0DynMapPage hashed HCPhys to.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ *                  For statistics.
+ * @param   pfNew   Set to @c true if a new entry was made and @c false if
+ *                  an old entry was found and reused.
  */
 static uint32_t pgmR0DynMapPageSlow(PPGMRZDYNMAP pThis, RTHCPHYS HCPhys, uint32_t iPage, PVMCPU pVCpu, bool *pfNew)
 {
@@ -1450,7 +1451,8 @@ static uint32_t pgmR0DynMapPageSlow(PPGMRZDYNMAP pThis, RTHCPHYS HCPhys, uint32_
  * @param   pThis       The dynamic mapping cache instance.
  * @param   HCPhys      The address of the page to be mapped.
  * @param   iRealCpu    The real cpu set index. (optimization)
- * @param   pVCpu       The current CPU (for statistics).
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      EMT.  For statistics.
  * @param   ppvPage     Where to the page address.
  */
 DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMRZDYNMAP pThis, RTHCPHYS HCPhys, int32_t iRealCpu, PVMCPU pVCpu, void **ppvPage)
@@ -1826,7 +1828,7 @@ static void pgmDynMapOptimizeAutoSet(PPGMMAPSET pSet)
  * Mostly for strictness. PGMDynMapHCPage won't work unless this
  * API is called.
  *
- * @param   pVCpu       The shared data for the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(void) PGMRZDynMapStartAutoSet(PVMCPU pVCpu)
 {
@@ -1848,7 +1850,7 @@ VMMDECL(void) PGMRZDynMapStartAutoSet(PVMCPU pVCpu)
  * guest memory.
  *
  * @returns @c true if started, @c false if migrated.
- * @param   pVCpu       The shared data for the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT
  */
 VMMR0DECL(bool) PGMR0DynMapStartOrMigrateAutoSet(PVMCPU pVCpu)
@@ -1925,7 +1927,7 @@ DECLINLINE(void) pgmDynMapFlushAutoSetWorker(PPGMMAPSET pSet, uint32_t cEntries)
  * Releases the dynamic memory mappings made by PGMDynMapHCPage and associates
  * since the PGMDynMapStartAutoSet call.
  *
- * @param   pVCpu       The shared data for the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(void) PGMRZDynMapReleaseAutoSet(PVMCPU pVCpu)
 {
@@ -1958,7 +1960,7 @@ VMMDECL(void) PGMRZDynMapReleaseAutoSet(PVMCPU pVCpu)
 /**
  * Flushes the set if it's above a certain threshold.
  *
- * @param   pVCpu       The shared data for the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(void) PGMRZDynMapFlushAutoSet(PVMCPU pVCpu)
 {
@@ -2000,7 +2002,7 @@ VMMDECL(void) PGMRZDynMapFlushAutoSet(PVMCPU pVCpu)
  * be valid on the new CPU.  If the cpu didn't change nothing will happen as all
  * the entries will have been flagged as invalidated.
  *
- * @param   pVCpu       The shared data for the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT
  */
 VMMR0DECL(void) PGMR0DynMapMigrateAutoSet(PVMCPU pVCpu)
@@ -2097,7 +2099,7 @@ static void pgmDynMapFlushSubset(PPGMMAPSET pSet)
  *
  * @returns The index of the previous subset. Pass this to
  *          PGMDynMapPopAutoSubset when popping it.
- * @param   pVCpu           Pointer to the virtual cpu data.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(uint32_t) PGMRZDynMapPushAutoSubset(PVMCPU pVCpu)
 {
@@ -2128,7 +2130,7 @@ VMMDECL(uint32_t) PGMRZDynMapPushAutoSubset(PVMCPU pVCpu)
 /**
  * Pops a subset created by a previous call to PGMDynMapPushAutoSubset.
  *
- * @param   pVCpu           Pointer to the virtual cpu data.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   iPrevSubset     What PGMDynMapPushAutoSubset returned.
  */
 VMMDECL(void) PGMRZDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
@@ -2157,7 +2159,7 @@ VMMDECL(void) PGMRZDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
 /**
  * Indicates that the given page is unused and its mapping can be re-used.
  *
- * @param   pVCpu           The current CPU.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pvHint          The page that is now unused.  This does not have to
  *                          point at the start of the page.  NULL is ignored.
  */

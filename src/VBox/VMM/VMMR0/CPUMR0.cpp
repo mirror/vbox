@@ -328,7 +328,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
  * @retval VINF_EM_RAW_GUEST_TRAP if it is a guest trap.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
 VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -388,7 +388,7 @@ VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns VBox status code.
  *
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   pCtx    Pointer to the guest-CPU context.
  */
 VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -448,7 +448,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0_INT_DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -518,7 +518,7 @@ VMMR0_INT_DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * DR7 with safe values.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 static int cpumR0SaveHostDebugState(PVMCPU pVCpu)
 {
@@ -557,7 +557,7 @@ static int cpumR0SaveHostDebugState(PVMCPU pVCpu)
  * (CPUMR0LoadHyperDebugState).
  *
  * @returns true if either guest or hypervisor debug registers were loaded.
- * @param   pVCpu       The cross context CPU structure for the calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
@@ -628,7 +628,7 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, 
  * in the CPU context structure is up to date.
  *
  * @returns true if the host registers contains guest values, false if not.
- * @param   pVCpu       The cross context CPU structure for the calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
@@ -667,7 +667,7 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6)
 /**
  * Lazily sync in the debug state.
  *
- * @param   pVCpu       The cross context CPU structure for the calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
@@ -705,7 +705,7 @@ VMMR0_INT_DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDr6)
  * Lazily sync in the hypervisor debug state
  *
  * @returns VBox status code.
- * @param   pVCpu       The cross context CPU structure for the calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
@@ -975,8 +975,7 @@ static void cpumR0UnmapLocalApics(void)
  * disabling and re-enabling the NMIs.  Must be called with disabled preemption
  * or disabled interrupts!
  *
- * @param   pVCpu       Pointer to the cross context CPU structure of the
- *                      calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   iHostCpuSet The CPU set index of the current host CPU.
  */
 VMMR0_INT_DECL(void) CPUMR0SetLApic(PVMCPU pVCpu, uint32_t iHostCpuSet)

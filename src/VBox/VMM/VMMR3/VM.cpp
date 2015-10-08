@@ -1269,7 +1269,7 @@ VMMR3_INT_DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  *          code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU of the EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOn(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1360,7 +1360,7 @@ static void vmR3SuspendDoWork(PVM pVM)
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU of the EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3Suspend(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1459,7 +1459,7 @@ VMMR3DECL(VMSUSPENDREASON) VMR3GetSuspendReason(PUVM pUVM)
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU of the EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser          Reason.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3Resume(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1560,7 +1560,7 @@ VMMR3DECL(VMRESUMEREASON) VMR3GetResumeReason(PUVM pUVM)
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU of the EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser          The pfSuspended argument of vmR3SaveTeleport.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1660,7 +1660,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void 
  *          status code. (This is a strict return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU of the EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser          The pfSuspended argument of vmR3SaveTeleport.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoStep1Cleanup(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -2251,7 +2251,7 @@ VMMR3_INT_DECL(int) VMR3LoadFromStreamFT(PUVM pUVM, PCSSMSTRMOPS pStreamOps, voi
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU of the EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -2744,7 +2744,7 @@ static void vmR3CheckIntegrity(PVM pVM)
  *          is a strict return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU of the EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -4075,7 +4075,7 @@ VMMR3DECL(int) VMR3AtRuntimeErrorDeregister(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAt
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU of the EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3SetRuntimeErrorChangeState(PVM pVM, PVMCPU pVCpu, void *pvUser)

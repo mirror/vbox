@@ -61,7 +61,7 @@
  * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is set in this case.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
@@ -177,7 +177,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu)
  * @retval  VINF_SUCCESS on success. FF cleared.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks Must be called from within the PGM critical section.
  */
@@ -208,7 +208,7 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PVM pVM, PVMCPU pVCpu)
  * @retval  VINF_EM_NO_MEMORY if we're out of memory.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
@@ -412,7 +412,7 @@ VMMR0_INT_DECL(int) PGMR0PhysSetupIommu(PVM pVM)
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pVCpu               The cross context virtual CPU structure.
  * @param   enmShwPagingMode    Paging mode for the nested page tables.
  * @param   uErr                The trap error code.
  * @param   pRegFrame           Trap register frame.
@@ -539,7 +539,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pVCpu               The cross context virtual CPU structure.
  * @param   enmShwPagingMode    Paging mode for the nested page tables.
  * @param   pRegFrame           Trap register frame.
  * @param   GCPhysFault         The fault address.

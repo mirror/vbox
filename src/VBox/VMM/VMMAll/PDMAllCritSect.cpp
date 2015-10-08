@@ -728,7 +728,7 @@ VMMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
  * @returns true if owner.
  * @returns false if not owner.
  * @param   pCritSect   The critical section.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(bool) PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, PVMCPU pVCpu)
 {

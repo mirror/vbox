@@ -764,7 +764,7 @@ VMMR3DECL(int) TRPMR3Term(PVM pVM)
  *
  * Used by TRPMR3Reset and CPU hot plugging.
  *
- * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pVCpu               The cross context virtual CPU structure.
  */
 VMMR3DECL(void) TRPMR3ResetCpu(PVMCPU pVCpu)
 {
@@ -1059,7 +1059,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
 {
@@ -1481,7 +1481,7 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   enmEvent    Trpm event type
  */
 VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)

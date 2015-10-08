@@ -395,7 +395,7 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
  *
  * @returns VBox status code.
  * @param   pVM                The cross context VM structure.
- * @param   pVCpu              Pointer to the VMCPU.
+ * @param   pVCpu              The cross context virtual CPU structure.
  *
  * @remarks Don't do any release assertions here, these can be triggered by
  *          guest R0 code.

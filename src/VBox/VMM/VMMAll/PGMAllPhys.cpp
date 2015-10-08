@@ -514,7 +514,7 @@ int pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPG
  *
  * @returns true if enabled.
  * @returns false if disabled.
- * @param   pVCpu    Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMMDECL(bool) PGMPhysIsA20Enabled(PVMCPU pVCpu)
 {
@@ -1951,7 +1951,7 @@ VMM_INT_DECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void con
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
  * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
@@ -1985,7 +1985,7 @@ VMM_INT_DECL(int) PGMPhysGCPtr2CCPtr(PVMCPU pVCpu, RTGCPTR GCPtr, void **ppv, PP
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       The guest physical address of the page that should be
  *                      mapped.
  * @param   ppv         Where to store the address corresponding to GCPtr.
@@ -2189,7 +2189,7 @@ int pgmPhysCr3ToHCPtr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
  * This uses the current CR3/CR0/CR4 of the guest.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       The guest pointer to convert.
  * @param   pGCPhys     Where to store the GC physical address.
  */
@@ -2208,7 +2208,7 @@ VMMDECL(int) PGMPhysGCPtr2GCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
  * This uses the current CR3/CR0/CR4 of the guest.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       The guest pointer to convert.
  * @param   pHCPhys     Where to store the HC physical address.
  */
@@ -3339,7 +3339,7 @@ VMMDECL(int) PGMPhysSimpleWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *p
  * bypass access handlers and not set any accessed bits.
  *
  * @returns VBox status.
- * @param   pVCpu       Handle to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pvDst       The destination address.
  * @param   GCPtrSrc    The source address (GC pointer).
  * @param   cb          The number of bytes to read.
@@ -3430,7 +3430,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc,
  * bypass access handlers and not set dirty or accessed bits.
  *
  * @returns VBox status.
- * @param   pVCpu       Handle to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtrDst    The destination address (GC pointer).
  * @param   pvSrc       The source address.
  * @param   cb          The number of bytes to write.
@@ -3510,7 +3510,7 @@ VMMDECL(int) PGMPhysSimpleWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void 
  * If you don't want to set the dirty bit, use PGMPhysSimpleWriteGCPtr().
  *
  * @returns VBox status.
- * @param   pVCpu       Handle to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtrDst    The destination address (GC pointer).
  * @param   pvSrc       The source address.
  * @param   cb          The number of bytes to write.
@@ -3593,7 +3593,7 @@ VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const 
  * @retval  VERR_PAGE_TABLE_NOT_PRESENT if there is no page mapped at the
  *          specified virtual address.
  *
- * @param   pVCpu       Handle to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pvDst       The destination address.
  * @param   GCPtrSrc    The source address (GC pointer).
  * @param   cb          The number of bytes to read.
@@ -3685,7 +3685,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrS
  * @retval  VERR_PAGE_TABLE_NOT_PRESENT if there is no page mapped at the
  *          specified virtual address.
  *
- * @param   pVCpu       Handle to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtrDst    The destination address (GC pointer).
  * @param   pvSrc       The source address.
  * @param   cb          The number of bytes to write.
@@ -3788,7 +3788,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const vo
  * @retval  VINF_EM_RAW_GUEST_TRAP if an exception was raised but not dispatched yet.
  * @retval  VINF_TRPM_XCPT_DISPATCHED if an exception was raised and dispatched.
  *
- * @param   pVCpu       Handle to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtxCore    The context core.
  * @param   pvDst       Where to put the bytes we've read.
  * @param   GCPtrSrc    The source address.
@@ -3962,7 +3962,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
  * @retval  VINF_EM_RAW_GUEST_TRAP if an exception was raised but not dispatched yet.
  * @retval  VINF_TRPM_XCPT_DISPATCHED if an exception was raised and dispatched.
  *
- * @param   pVCpu       Handle to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtxCore    The context core.
  * @param   pvDst       Where to put the bytes we've read.
  * @param   GCPtrSrc    The source address.
@@ -4156,7 +4156,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
  * @retval  VINF_EM_RAW_GUEST_TRAP if an exception was raised but not dispatched yet.
  * @retval  VINF_TRPM_XCPT_DISPATCHED if an exception was raised and dispatched.
  *
- * @param   pVCpu       Handle to the current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtxCore    The context core.
  * @param   GCPtrDst    The destination address.
  * @param   pvSrc       What to write.
@@ -4386,8 +4386,7 @@ VMM_INT_DECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys)
  * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the cross context virtual CPU structure of
- *                      the calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys      The GC physical address to convert.  This API mask the
  *                      A20 line when necessary.
  * @param   fWritable   Whether write access is required.

@@ -470,7 +470,7 @@ VMMR3_INT_DECL(void) EMR3Relocate(PVM pVM)
  *
  * Called by EMR3Reset and hot plugging.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMMR3_INT_DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 {
@@ -744,7 +744,7 @@ VMMR3DECL(int) EMR3QueryExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool 
  * Safely terminate the VM with full state report and stuff. This function
  * will naturally never return.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   rc          VBox status code.
  */
 VMMR3DECL(void) EMR3FatalError(PVMCPU pVCpu, int rc)
@@ -793,7 +793,7 @@ static const char *emR3GetStateName(EMSTATE enmState)
  *
  * @returns VBox status code for EM.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   rc      Current EM VBox status code.
  */
 static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
@@ -989,7 +989,7 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
  *          VINF_EM_RESCHEDULE, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
 {
@@ -1024,7 +1024,7 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
  *
  * @returns false - new fInREMState value.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
 {
@@ -1049,7 +1049,7 @@ DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  *
@@ -1259,7 +1259,7 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  *
  * @returns Strict VBox status code from IEMExecLots.
  * @param   pVM        The cross context VM structure.
- * @param   pVCpu       The cross context CPU structure for the calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pfFFDone    Force flags done indicator.
  *
  * @thread  EMT(pVCpu)
@@ -1320,7 +1320,7 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
  *
  * @returns new EM state
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   pCtx    Pointer to the guest CPU context.
  */
 EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -1541,7 +1541,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns rc or a fatal status code.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   rc          The current rc.
  */
 int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
@@ -1610,7 +1610,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   rc          The current rc.
  *
  */
@@ -2061,7 +2061,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  *
  * @returns true if allowed, false otherwise
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
 {
@@ -2103,7 +2103,7 @@ bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code, informational status codes may indicate failure.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 {

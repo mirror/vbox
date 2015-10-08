@@ -592,7 +592,7 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
  * EMT Rendezvous worker function for DBGFR3CoreWrite().
  *
  * @param   pVM              The cross context VM structure.
- * @param   pVCpu            The handle of the calling VCPU.
+ * @param   pVCpu            The cross context virtual CPU structure of the calling EMT.
  * @param   pvData           Opaque data.
  *
  * @return VBox status code.

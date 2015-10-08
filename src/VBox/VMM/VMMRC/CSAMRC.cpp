@@ -48,23 +48,12 @@
 
 
 /**
+ * @callback_method_impl{FNPGMRCVIRTPFHANDLER,
  * \#PF Handler callback for virtual access handler ranges. (CSAM self-modifying
- * code monitor)
+ * code monitor)}
  *
  * Important to realize that a physical page in a range can have aliases, and
  * for ALL and WRITE handlers these will also trigger.
- *
- * @returns VBox status code (appropriate for GC return).
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the cross context CPU context for the calling
- *                      EMT.
- * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   pvRange     The base address of the handled virtual range.
- * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
- * @param   pvUser      Ignored (NIL).
  */
 DECLEXPORT(VBOXSTRICTRC) csamRCCodePageWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                                       RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)

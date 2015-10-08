@@ -809,7 +809,7 @@ ENDPROC vmmR0ToRawModeAsm
 ; * @param   HCPhysVmcs     VMCS physical address               [rsp+16]
 ; * @param   pCache         VMCS cache                          [rsp+24]
 ; * @param   pVM            The cross context VM structure.     [rbp+28h]
-; * @param   pVCpu          The cross context VMCPU structure.  [rbp+30h]
+; * @param   pVCpu          The cross context virtual CPU structure.  [rbp+30h]
 ; * @param   pCtx           Guest context (rsi)
 ; */
 BEGINPROC VMXRCStartVM64
@@ -1220,7 +1220,7 @@ ENDPROC VMXRCStartVM64
 ; @param    HCPhysVMCB      Physical address of host VMCB       [rbp+10h]
 ; @param    HCPhysVMCB      Physical address of guest VMCB      [rbp+18h]
 ; @param    pVM             The cross context VM structure.     [rbp+20h]
-; @param    pVCpu           The cross context VMCPU structure.  [rbp+28h]
+; @param    pVCpu           The cross context virtual CPU structure.  [rbp+28h]
 ; @param    pCtx            Guest context                       [rsi]
 ;
 BEGINPROC SVMRCVMRun64

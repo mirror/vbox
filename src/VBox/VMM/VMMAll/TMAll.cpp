@@ -115,7 +115,7 @@
  * The function may, depending on the configuration, resume the TSC and future
  * clocks that only ticks when we're executing guest code.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(void) TMNotifyStartOfExecution(PVMCPU pVCpu)
 {
@@ -137,7 +137,7 @@ VMMDECL(void) TMNotifyStartOfExecution(PVMCPU pVCpu)
  * The function may, depending on the configuration, suspend the TSC and future
  * clocks that only ticks when we're executing guest code.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
 {
@@ -185,7 +185,7 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
  * The function may, depending on the configuration, resume the TSC and future
  * clocks that only ticks when we're halted.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
 {
@@ -209,7 +209,7 @@ VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
  * The function may, depending on the configuration, suspend the TSC and future
  * clocks that only ticks when we're halted.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
 {
@@ -733,14 +733,13 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnOtherCpu(PVM pVM, uint64_t u64Now, 
  * Worker for tmTimerPollInternal.
  *
  * @returns See tmTimerPollInternal.
- * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               Pointer to the shared VMCPU structure of the
- *                              caller.
- * @param   pVCpuDst            Pointer to the shared VMCPU structure of the
- *                              dedicated timer EMT.
- * @param   u64Now              Current virtual clock timestamp.
- * @param   pu64Delta           Where to return the delta.
- * @param   pCounter            The statistics counter to update.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pVCpuDst    The cross context virtual CPU structure of the dedicated
+ *                      timer EMT.
+ * @param   u64Now      Current virtual clock timestamp.
+ * @param   pu64Delta   Where to return the delta.
+ * @param   pCounter    The statistics counter to update.
  */
 DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU pVCpuDst, uint64_t u64Now,
                                                  uint64_t *pu64Delta, PSTAMCOUNTER pCounter)
@@ -761,7 +760,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU p
  *          0 if the next event has already expired.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pu64Delta   Where to store the delta.
  *
  * @thread  The emulation thread.
@@ -976,7 +975,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t 
  * @returns true if timers are pending, false if not.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @thread  The emulation thread.
  */
 VMMDECL(bool) TMTimerPollBool(PVM pVM, PVMCPU pVCpu)
@@ -994,7 +993,7 @@ VMMDECL(bool) TMTimerPollBool(PVM pVM, PVMCPU pVCpu)
  * This function is called before FFs are checked in the inner execution EM loops.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @thread  The emulation thread.
  */
 VMM_INT_DECL(void) TMTimerPollVoid(PVM pVM, PVMCPU pVCpu)
@@ -1012,7 +1011,7 @@ VMM_INT_DECL(void) TMTimerPollVoid(PVM pVM, PVMCPU pVCpu)
  * @returns The GIP timestamp of the next event.
  *          0 if the next event has already expired.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pu64Delta   Where to store the delta.
  * @thread  The emulation thread.
  */
@@ -2526,7 +2525,7 @@ static uint32_t tmGetFrequencyHint(PVM pVM)
  *
  * @returns The highest frequency.  0 if no important timers around.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The current CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMM_INT_DECL(uint32_t) TMCalcHostTimerFrequency(PVM pVM, PVMCPU pVCpu)
 {

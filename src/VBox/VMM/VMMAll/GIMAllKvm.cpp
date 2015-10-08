@@ -42,7 +42,7 @@
  * Handles the KVM hypercall.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            Pointer to the guest-CPU context.
  *
  * @thread  EMT.
@@ -132,7 +132,7 @@ VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
  * hypercall interface.
  *
  * @returns true if hypercalls are enabled, false otherwise.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(bool) gimKvmAreHypercallsEnabled(PVMCPU pVCpu)
 {
@@ -171,7 +171,7 @@ VMM_INT_DECL(bool) gimKvmIsParavirtTscEnabled(PVM pVM)
  * @retval  VINF_CPUM_R3_MSR_READ
  * @retval  VERR_CPUM_RAISE_GP_0
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   idMsr       The MSR being read.
  * @param   pRange      The range this MSR belongs to.
  * @param   puValue     Where to store the MSR value read.
@@ -218,7 +218,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
  * @retval  VINF_CPUM_R3_MSR_WRITE
  * @retval  VERR_CPUM_RAISE_GP_0
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   idMsr       The MSR being written.
  * @param   pRange      The range this MSR belongs to.
  * @param   uRawValue   The raw value with the ignored bits not masked.
@@ -338,7 +338,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
  *
  * For raw-mode VMs, this function will always return true. See gimR3KvmInit().
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(bool) gimKvmShouldTrapXcptUD(PVMCPU pVCpu)
 {
@@ -350,7 +350,7 @@ VMM_INT_DECL(bool) gimKvmShouldTrapXcptUD(PVMCPU pVCpu)
 /**
  * Exception handler for \#UD.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pDis        Pointer to the disassembled instruction state at RIP.
  *                      Optional, can be NULL.

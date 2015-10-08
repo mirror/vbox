@@ -1260,7 +1260,7 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
  * Executes guest code in the raw-mode context.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 {
@@ -1337,7 +1337,7 @@ VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
  * Executes guest code (Intel VT-x and AMD-V).
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
 {
@@ -1542,7 +1542,7 @@ DECL_FORCE_INLINE(int) vmmR3EmtRendezvousNonCallerReturn(PVM pVM)
  *          fIsCaller is set, VINF_SUCCESS is always returned.
  *
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               The VMCPU structure for the calling EMT.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  * @param   fIsCaller           Whether we're the VMMR3EmtRendezvous caller or
  *                              not.
  * @param   fFlags              The flags.
@@ -1714,7 +1714,7 @@ static int vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
  *          here, nor will any non-EM scheduling status codes be returned.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The handle of the calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  *
  * @thread  EMT
  */
@@ -1881,7 +1881,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
  * processing a priority request.
  *
  * @returns Old rendezvous-disabled state.
- * @param   pVCpu           The handle of the calling EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   fDisabled       True if disabled, false if enabled.
  */
 VMMR3_INT_DECL(bool) VMMR3EmtRendezvousSetDisabled(PVMCPU pVCpu, bool fDisabled)
@@ -2082,7 +2082,7 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
 {
@@ -2141,7 +2141,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @remarks Careful with critsects.
  */
 static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)

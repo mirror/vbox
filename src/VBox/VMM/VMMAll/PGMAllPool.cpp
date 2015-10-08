@@ -164,7 +164,7 @@ DECLINLINE(int) pgmPoolPhysSimpleReadGCPhys(PVM pVM, void *pvDst, void const *pv
  * For PT entries we will clear them. For PD entries, we'll simply check
  * for mapping conflicts and set the SyncCR3 FF if found.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pPool       The pool.
  * @param   pPage       The head page.
  * @param   GCPhysFault The guest physical fault address.
@@ -727,7 +727,7 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, unsi
  * @returns true if we consider the page as being reused for a different purpose.
  * @returns false if we consider it to still be a paging page.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   Trap register frame.
  * @param   pDis        The disassembly info for the faulting instruction.
  * @param   pvFault     The fault address.
@@ -809,7 +809,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
  *
  * @returns VBox status code suitable for scheduling.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pPool       The pool.
  * @param   pPage       The pool page (head).
  * @param   pDis        The disassembly of the write instruction.
@@ -948,7 +948,7 @@ DECLINLINE(int) pgmPoolAccessPfHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAG
  *
  * @returns VBox status code suitable for scheduling.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pPool       The pool.
  * @param   pPage       The pool page (head).
  * @param   pDis        The disassembly of the write instruction.
@@ -2788,7 +2788,7 @@ static void pgmPoolMonitorModifiedClearAll(PVM pVM)
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if successfully added.
  * @retval  VINF_PGM_SYNC_CR3 is it needs to be deferred to ring 3 (GC only)
- * @param   pVCpu     Pointer to the VMCPU.
+ * @param   pVCpu     The cross context virtual CPU structure.
  * @remark  Should only be used when monitoring is available, thus placed in
  *          the PGMPOOL_WITH_MONITORING #ifdef.
  */
@@ -5351,7 +5351,7 @@ void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
  * Reset CPU on hot plugging.
  *
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               The virtual CPU.
+ * @param   pVCpu              The cross context virtual CPU structure.
  */
 void pgmR3PoolResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu)
 {

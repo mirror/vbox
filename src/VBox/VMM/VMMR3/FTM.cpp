@@ -1240,7 +1240,7 @@ VMMR3DECL(int) FTMR3CancelStandby(PUVM pUVM)
  *
  * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT. Unused.
  * @param   pvUser      Not used.
  */
 static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)

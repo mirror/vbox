@@ -1328,7 +1328,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
  * required for entering HM context.
  *
  * @returns VBox status code.
- * @param   pvCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks No-long-jump zone!!!
  */
@@ -1359,7 +1359,7 @@ VMMR0_INT_DECL(int) HMR0EnterCpu(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM        The cross context VM structure.
- * @param   pVCpu      Pointer to the VMCPU.
+ * @param   pVCpu      The cross context virtual CPU structure.
  *
  * @remarks This is called with preemption disabled.
  */
@@ -1408,7 +1408,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
  * disable HM on the CPU.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks No-long-jump zone!!!
  */
@@ -1460,7 +1460,7 @@ VMMR0_INT_DECL(void) HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUs
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks Can be called with preemption enabled if thread-context hooks are
  *          used!!!
@@ -1499,7 +1499,7 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0_INT_DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -1516,7 +1516,7 @@ VMMR0_INT_DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0_INT_DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -1596,7 +1596,7 @@ VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpuEx(RTCPUID idCpu)
 /**
  * Save a pending IO read.
  *
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   GCPtrRip        Address of IO instruction.
  * @param   GCPtrRipNext    Address of the next instruction.
  * @param   uPort           Port address.
@@ -1619,7 +1619,7 @@ VMMR0_INT_DECL(void) HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, R
 /**
  * Save a pending IO write.
  *
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   GCPtrRIP        Address of IO instruction.
  * @param   uPort           Port address.
  * @param   uAndVal         AND mask for fetching the result from eax.
@@ -1868,7 +1868,7 @@ VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *psz
  * Formats a full register dump.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the CPU context.
  */
 VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)

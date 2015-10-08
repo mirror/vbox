@@ -10640,7 +10640,7 @@ IEM_STATIC VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT P
 #ifdef LOG_ENABLED
 /**
  * Logs the current instruction.
- * @param   pVCpu       The cross context virtual CPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        The current CPU context.
  * @param   fSameCtx    Set if we have the same context information as the VMM,
  *                      clear if we may have already executed an instruction in
@@ -10780,7 +10780,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PIEMCPU pIemCpu, VBOXS
  * IEMExecOneWithPrefetchedByPC.
  *
  * @return  Strict VBox status code.
- * @param   pVCpu       The current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pIemCpu     The IEM per CPU data.
  * @param   fExecuteInhibit     If set, execute the instruction following CLI,
  *                      POP SS and MOV SS,GR.
@@ -10843,7 +10843,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
  *
  * @returns rcStrict, maybe modified.
  * @param   pIemCpu     The IEM CPU structure.
- * @param   pVCpu       The cross context virtual CPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        The current CPU context.
  * @param   rcStrict    The status code returne by the interpreter.
  */
@@ -10860,7 +10860,7 @@ DECLINLINE(VBOXSTRICTRC) iemRCRawMaybeReenter(PIEMCPU pIemCpu, PVMCPU pVCpu, PCP
  * Execute one instruction.
  *
  * @return  Strict VBox status code.
- * @param   pVCpu       The current virtual CPU.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
 {
@@ -11070,7 +11070,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
  * The parameter list matches TRPMQueryTrapAll pretty closely.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu               The current virtual CPU.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  * @param   u8TrapNo            The trap number.
  * @param   enmType             What type is it (trap/fault/abort), software
  *                              interrupt or hardware interrupt.
@@ -11136,7 +11136,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVE
  * Injects the active TRPM event.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pVCpu               The cross context virtual CPU structure.
  */
 VMMDECL(VBOXSTRICTRC) IEMInjectTrpmEvent(PVMCPU pVCpu)
 {
@@ -11185,7 +11185,7 @@ VMM_INT_DECL(int) IEMBreakpointClear(PVM pVM, RTGCPTR GCPtrBp)
  * This is for PATM.
  *
  * @returns VBox status code.
- * @param   pVCpu               The current virtual CPU.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  * @param   pCtxCore            The register frame.
  */
 VMM_INT_DECL(int) IEMExecInstr_iret(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
@@ -11227,7 +11227,7 @@ VMM_INT_DECL(int) IEMExecInstr_iret(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
  * guest state.)
  *
  * @returns Strict VBox status code.
- * @param   pVCpu               The cross context per virtual CPU structure.
+ * @param   pVCpu               The cross context virtual CPU structure.
  * @param   cbValue             The size of the I/O port access (1, 2, or 4).
  * @param   enmAddrMode         The addressing mode.
  * @param   fRepPrefix          Indicates whether a repeat prefix is used
@@ -11346,7 +11346,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
  * guest state.)
  *
  * @returns Strict VBox status code.
- * @param   pVCpu               The cross context per virtual CPU structure.
+ * @param   pVCpu               The cross context virtual CPU structure.
  * @param   cbValue             The size of the I/O port access (1, 2, or 4).
  * @param   enmAddrMode         The addressing mode.
  * @param   fRepPrefix          Indicates whether a repeat prefix is used
@@ -11460,7 +11460,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
  * Interface for HM and EM to write to a CRx register.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu       The cross context per virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cbInstr     The instruction length in bytes.
  * @param   iCrReg      The control register number (destination).
  * @param   iGReg       The general purpose register number (source).
@@ -11484,7 +11484,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxWrite(PVMCPU pVCpu, uint8_t cbIns
  * Interface for HM and EM to read from a CRx register.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu       The cross context per virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cbInstr     The instruction length in bytes.
  * @param   iGReg       The general purpose register number (destination).
  * @param   iCrReg      The control register number (source).
@@ -11508,7 +11508,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxRead(PVMCPU pVCpu, uint8_t cbInst
  * Interface for HM and EM to clear the CR0[TS] bit.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu       The cross context per virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cbInstr     The instruction length in bytes.
  *
  * @remarks In ring-0 not all of the state needs to be synced in.
@@ -11528,7 +11528,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClts(PVMCPU pVCpu, uint8_t cbInstr)
  * Interface for HM and EM to emulate the LMSW instruction (loads CR0).
  *
  * @returns Strict VBox status code.
- * @param   pVCpu       The cross context per virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cbInstr     The instruction length in bytes.
  * @param   uValue      The value to load into CR0.
  *
@@ -11551,8 +11551,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, uin
  * Takes input values in ecx and edx:eax of the CPU context of the calling EMT.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu       The cross context per virtual CPU structure of the
- *                      calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   cbInstr     The instruction length in bytes.
  * @remarks In ring-0 not all of the state needs to be synced in.
  * @threads EMT(pVCpu)
@@ -11573,9 +11572,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
  * Called by force-flag handling code when VMCPU_FF_IEM is set.
  *
  * @returns Merge between @a rcStrict and what the commit operation returned.
- * @param   pVCpu           Pointer to the cross context CPU structure for the
- *                          calling EMT.
- * @param   rcStrict        The status code returned by ring-0 or raw-mode.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   rcStrict    The status code returned by ring-0 or raw-mode.
  */
 VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3DoPendingAction(PVMCPU pVCpu, VBOXSTRICTRC rcStrict)
 {

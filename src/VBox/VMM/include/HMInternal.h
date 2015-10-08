@@ -64,7 +64,7 @@ RT_C_DECLS_BEGIN
 /** @def HMCPU_CF_CLEAR
  * Clears a HM-context flag.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to clear.
  */
 #define HMCPU_CF_CLEAR(pVCpu, fFlag)              (ASMAtomicUoAndU32(&(pVCpu)->hm.s.fContextUseFlags, ~(fFlag)))
@@ -72,7 +72,7 @@ RT_C_DECLS_BEGIN
 /** @def HMCPU_CF_SET
  * Sets a HM-context flag.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to set.
  */
 #define HMCPU_CF_SET(pVCpu, fFlag)                (ASMAtomicUoOrU32(&(pVCpu)->hm.s.fContextUseFlags, (fFlag)))
@@ -80,7 +80,7 @@ RT_C_DECLS_BEGIN
 /** @def HMCPU_CF_IS_SET
  * Checks if all the flags in the specified HM-context set is pending.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to check.
  */
 #define HMCPU_CF_IS_SET(pVCpu, fFlag)             ((ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags) & (fFlag)) == (fFlag))
@@ -89,7 +89,7 @@ RT_C_DECLS_BEGIN
  * Checks if one or more of the flags in the specified HM-context set is
  * pending.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlags  The flags to check for.
  */
 #define HMCPU_CF_IS_PENDING(pVCpu, fFlags)        RT_BOOL(ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags) & (fFlags))
@@ -97,7 +97,7 @@ RT_C_DECLS_BEGIN
 /** @def HMCPU_CF_IS_PENDING_ONLY
  * Checks if -only- one or more of the specified HM-context flags is pending.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlags  The flags to check for.
  */
 #define HMCPU_CF_IS_PENDING_ONLY(pVCpu, fFlags)   !RT_BOOL(ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags) & ~(fFlags))
@@ -105,7 +105,7 @@ RT_C_DECLS_BEGIN
 /** @def HMCPU_CF_IS_SET_ONLY
  * Checks if -only- all the flags in the specified HM-context set is pending.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlags  The flags to check for.
  */
 #define HMCPU_CF_IS_SET_ONLY(pVCpu, fFlags)       (ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags) == (fFlags))
@@ -113,7 +113,7 @@ RT_C_DECLS_BEGIN
 /** @def HMCPU_CF_RESET_TO
  * Resets the HM-context flags to the specified value.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlags  The new value.
  */
 #define HMCPU_CF_RESET_TO(pVCpu, fFlags)          (ASMAtomicUoWriteU32(&(pVCpu)->hm.s.fContextUseFlags, (fFlags)))
@@ -121,7 +121,7 @@ RT_C_DECLS_BEGIN
 /** @def HMCPU_CF_VALUE
  * Returns the current HM-context flags value.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 #define HMCPU_CF_VALUE(pVCpu)                     (ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags))
 

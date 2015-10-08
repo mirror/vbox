@@ -557,8 +557,8 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta);
  * It will call VMMRCEntry().
  *
  * @returns return code from VMMRCEntry().
- * @param   pVM     The cross context VM structure.
- * @param   uArg    See VMMRCEntry().
+ * @param   pVM         The cross context VM structure.
+ * @param   uArg        See VMMRCEntry().
  * @internal
  */
 DECLASM(int)    vmmR0WorldSwitch(PVM pVM, unsigned uArg);
@@ -567,7 +567,7 @@ DECLASM(int)    vmmR0WorldSwitch(PVM pVM, unsigned uArg);
  * Callback function for vmmR0CallRing3SetJmp.
  *
  * @returns VBox status code.
- * @param   pVM     The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  */
 typedef DECLCALLBACK(int) FNVMMR0SETJMP(PVM pVM, PVMCPU pVCpu);
 /** Pointer to FNVMMR0SETJMP(). */
@@ -584,7 +584,7 @@ typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
  * @param   pJmpBuf     The jmp_buf to set.
  * @param   pfn         The function to be called when not resuming.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The VCPU of the calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
 DECLASM(int)    vmmR0CallRing3SetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM, PVMCPU pVCpu);
 

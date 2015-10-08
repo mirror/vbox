@@ -2044,7 +2044,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM, VMCPUID idCpu)
  * @retval  VINF_GVM_NOT_BUSY_IN_GC if the EMT wasn't busy in GC.
  *
  * @param   pGVM                The global (ring-0) VM structure.
- * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pVCpu               The cross context virtual CPU structure.
  */
 DECLINLINE(int) gvmmR0SchedPokeOne(PGVM pGVM, PVMCPU pVCpu)
 {

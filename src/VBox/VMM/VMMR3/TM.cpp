@@ -2499,8 +2499,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
  * will block on the VirtualSyncLock until the pending timers has been executed
  * and the clock restarted.
  *
- * @param   pVM             The cross context VM structure.
- * @param   pVCpu           The virtual CPU we're running at.
+ * @param   pVM     The cross context VM structure.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  *
  * @thread  EMTs
  */
@@ -2763,7 +2763,7 @@ VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
  *
  * @returns VBox status code, all errors are asserted.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @thread  EMT corresponding to Pointer to the VMCPU.
  */
 VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
@@ -2811,7 +2811,7 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code, all errors are asserted.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @thread  EMT corresponding to Pointer to the VMCPU.
  */
 VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)

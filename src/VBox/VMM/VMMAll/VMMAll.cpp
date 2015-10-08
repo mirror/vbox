@@ -174,7 +174,7 @@ void vmmTermFormatTypes(void)
  * by a push/ret/whatever does it become writable.)
  *
  * @returns bottom of the stack.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(RTRCPTR) VMMGetStackRC(PVMCPU pVCpu)
 {
@@ -361,7 +361,7 @@ VMM_INT_DECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
  * Checks whether we're in a ring-3 call or not.
  *
  * @returns true / false.
- * @param   pVCpu               The caller's cross context VM structure.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT
  */
 VMM_INT_DECL(bool) VMMIsInRing3Call(PVMCPU pVCpu)
@@ -440,7 +440,7 @@ VMM_INT_DECL(int) VMMPatchHypercall(PVM pVM, void *pvBuf, size_t cbBuf, size_t *
 /**
  * Notifies VMM that paravirtualized hypercalls are now enabled.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) VMMHypercallsEnable(PVMCPU pVCpu)
 {
@@ -455,7 +455,7 @@ VMM_INT_DECL(void) VMMHypercallsEnable(PVMCPU pVCpu)
 /**
  * Notifies VMM that paravirtualized hypercalls are now disabled.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) VMMHypercallsDisable(PVMCPU pVCpu)
 {

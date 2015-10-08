@@ -71,7 +71,7 @@ VMMDECL(bool) IOMIsLockWriteOwner(PVM pVM)
  * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/RC only)
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   Port        The port to read.
  * @param   pu32Value   Where to store the value read.
  * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
@@ -238,7 +238,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint32
  * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/RC only)
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   Port        The port to read.
  * @param   pvDst       Pointer to the destination buffer.
  * @param   pcTransfers Pointer to the number of transfer units to read, on return remaining transfer units.
@@ -433,7 +433,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT u
  * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/RC only)
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   Port        The port to write to.
  * @param   u32Value    The value to write.
  * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
@@ -575,7 +575,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint3
  * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/RC only)
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   uPort       The port to write to.
  * @param   pvSrc       The guest page to read from.
  * @param   pcTransfers Pointer to the number of transfer units to write, on

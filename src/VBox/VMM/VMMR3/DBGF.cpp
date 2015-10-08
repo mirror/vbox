@@ -1225,7 +1225,7 @@ VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
  *
  * @returns VINF_EM_DBG_STEP
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @thread  VCpu EMT
  * @internal

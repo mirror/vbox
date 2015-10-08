@@ -2532,7 +2532,7 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
  * Resets a virtual CPU when unplugged.
  *
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pVCpu               The cross context virtual CPU structure.
  */
 VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
 {
@@ -3147,7 +3147,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
  * Switch to different (or relocated in the relocate case) mode data.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   enmShw      The shadow paging mode.
  * @param   enmGst      The guest paging mode.
  */
@@ -3422,7 +3422,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
  *          will trigger using FFs and not status codes.
  *
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   enmGuestMode    The new guest mode. This is assumed to be different from
  *                          the current mode.
  */
@@ -3717,7 +3717,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
  * Called by pgmPoolFlushAllInt prior to flushing the pool.
  *
  * @returns VBox status code, fully asserted.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 int pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu)
 {
@@ -3738,7 +3738,7 @@ int pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu)
  *
  * @returns VBox status code, fully asserted.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
 {
@@ -3759,7 +3759,7 @@ int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
 /**
  * Called by PGMR3PhysSetA20 after changing the A20 state.
  *
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 void pgmR3RefreshShadowModeAfterA20Change(PVMCPU pVCpu)
 {

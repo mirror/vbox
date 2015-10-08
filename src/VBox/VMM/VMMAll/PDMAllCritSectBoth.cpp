@@ -35,7 +35,7 @@
 /**
  * Process the critical sections (both types) queued for ring-3 'leave'.
  *
- * @param   pVCpu         Pointer to the VMCPU.
+ * @param   pVCpu         The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) PDMCritSectBothFF(PVMCPU pVCpu)
 {

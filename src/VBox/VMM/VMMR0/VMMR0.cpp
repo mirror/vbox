@@ -615,7 +615,7 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
  * member set to NIL_RTTHREADCTXHOOK.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the cross context CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @thread  EMT(pVCpu)
  */
 VMMR0_INT_DECL(int) VMMR0ThreadCtxHookCreateForEmt(PVMCPU pVCpu)
@@ -639,7 +639,7 @@ VMMR0_INT_DECL(int) VMMR0ThreadCtxHookCreateForEmt(PVMCPU pVCpu)
 /**
  * Destroys the thread switching hook for the specified VCPU.
  *
- * @param   pVCpu       Pointer to the cross context CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @remarks Can be called from any thread.
  */
 VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPU pVCpu)
@@ -652,7 +652,7 @@ VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPU pVCpu)
 /**
  * Disables the thread switching hook for this VCPU (if we got one).
  *
- * @param   pVCpu       Pointer to the cross context CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @thread  EMT(pVCpu)
  *
  * @remarks This also clears VMCPU::idHostCpu, so the mapping is invalid after
@@ -693,7 +693,7 @@ VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPU pVCpu)
  * Internal version of VMMR0ThreadCtxHooksAreRegistered.
  *
  * @returns true if registered, false otherwise.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 DECLINLINE(bool) vmmR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
 {
@@ -705,7 +705,7 @@ DECLINLINE(bool) vmmR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
  * Whether thread-context hooks are registered for this VCPU.
  *
  * @returns true if registered, false otherwise.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
 {
@@ -717,7 +717,7 @@ VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
 /**
  * Record return code statistics
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   rc          The status code.
  */
 static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
@@ -1986,7 +1986,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
  * Checks whether we've armed the ring-0 long jump machinery.
  *
  * @returns @c true / @c false
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @thread  EMT
  * @sa      VMMIsLongJumpArmed
  */
@@ -2006,7 +2006,7 @@ VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu)
  * Checks whether we've done a ring-3 long jump.
  *
  * @returns @c true / @c false
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @thread  EMT
  */
 VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPU pVCpu)
@@ -2119,7 +2119,7 @@ VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchB
 /**
  * Disables flushing of the ring-0 debug log.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
 {
@@ -2131,7 +2131,7 @@ VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
 /**
  * Enables flushing of the ring-0 debug log.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
 {
@@ -2143,7 +2143,7 @@ VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
 /**
  * Checks if log flushing is disabled or not.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPU pVCpu)
 {

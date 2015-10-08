@@ -107,7 +107,7 @@ static int gimHvReadSlowHypercallParams(PVM pVM, PCPUMCTX pCtx, bool fIs64BitMod
  * Handles all Hyper-V hypercalls.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            Pointer to the guest-CPU context.
  *
  * @thread  EMT.
@@ -273,7 +273,7 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
  * hypercall interface.
  *
  * @returns true if hypercalls are enabled, false otherwise.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(bool) gimHvAreHypercallsEnabled(PVMCPU pVCpu)
 {
@@ -332,7 +332,7 @@ static const char *gimHvGetGuestOsIdVariantName(uint64_t uGuestOsIdMsr)
  * @retval  VINF_CPUM_R3_MSR_READ
  * @retval  VERR_CPUM_RAISE_GP_0
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   idMsr       The MSR being read.
  * @param   pRange      The range this MSR belongs to.
  * @param   puValue     Where to store the MSR value read.
@@ -451,7 +451,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
  * @retval  VINF_CPUM_R3_MSR_WRITE
  * @retval  VERR_CPUM_RAISE_GP_0
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   idMsr       The MSR being written.
  * @param   pRange      The range this MSR belongs to.
  * @param   uRawValue   The raw value with the ignored bits not masked.
@@ -692,7 +692,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
  * enabled. For HM VMs, the hypercall would be handled via the
  * VMCALL/VMMCALL VM-exit.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(bool) gimHvShouldTrapXcptUD(PVMCPU pVCpu)
 {
@@ -707,7 +707,7 @@ VMM_INT_DECL(bool) gimHvShouldTrapXcptUD(PVMCPU pVCpu)
 /**
  * Exception handler for \#UD.
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pDis        Pointer to the disassembled instruction state at RIP.
  *                      Optional, can be NULL.

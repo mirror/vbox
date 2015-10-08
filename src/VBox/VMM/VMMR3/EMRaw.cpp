@@ -117,7 +117,7 @@ static void emR3RecordCli(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrInstr)
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
 {
@@ -151,7 +151,7 @@ int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 int emR3RawStep(PVM pVM, PVMCPU pVCpu)
 {
@@ -260,7 +260,7 @@ int emR3SingleStepExecRaw(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  * @returns VBox status code suitable for EM.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   rcGC        GC return code
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
@@ -414,7 +414,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
  * @param   rcGC        GC return code
@@ -433,7 +433,7 @@ DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *psz
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 static int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
@@ -453,7 +453,7 @@ static int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
 {
@@ -614,7 +614,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
 {
@@ -673,7 +673,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   pCtx    Pointer to the guest CPU context.
  * @param   gcret   GC return code.
  */
@@ -857,7 +857,7 @@ static int emR3RawPatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 {
@@ -1109,7 +1109,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
  * @returns Updated rc.
  *
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   pCtx    Pointer to the guest CPU context.
  * @param   rc      The result code.
  */
@@ -1140,7 +1140,7 @@ int emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
  * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
  *          EM statuses.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMMR3_INT_DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
 {
@@ -1158,7 +1158,7 @@ VMMR3_INT_DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
  *          EM statuses.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -1278,7 +1278,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  */

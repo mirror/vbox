@@ -498,7 +498,7 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
  *
  * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM     The cross context VM structure.
- * @param   pVCpu   The VMCPU for the EMT we're being called on. Unused.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT. Unused.
  * @param   fpvFlushRemTlb  When not NULL, we'll flush the REM TLB as well.
  *                          (This is the pvUser, so it has to be void *.)
  *
