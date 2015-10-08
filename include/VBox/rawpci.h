@@ -77,13 +77,15 @@ struct RAWPCIPERVM;
  *
  * @returns VBox status code.
  *
- * @param   pVM           VM pointer.
- * @param   HostStart     Physical address of region start on the host.
- * @param   GuestStart    Physical address of region start on the guest.
- * @param   cMemSize      Region size in bytes.
- * @param   Action        Action performed (i.e. if page was mapped or unmapped).
+ * @param   pVM             The cross context VM structure.
+ * @param   HCPhysStart     Physical address of region start on the host.
+ * @param   GCPhysStart     Physical address of region start on the guest.
+ * @param   cbMem           Region size in bytes.
+ * @param   enmAction       Action performed (i.e. if page was mapped
+ *                          or unmapped).
  */
-typedef DECLCALLBACK(int) FNRAWPCICONTIGPHYSMEMINFO(struct RAWPCIPERVM* pVmData, RTHCPHYS HostStart, RTGCPHYS GuestStart, uint64_t cMemSize, PCIRAWMEMINFOACTION Action);
+typedef DECLCALLBACK(int) FNRAWPCICONTIGPHYSMEMINFO(struct RAWPCIPERVM *pVmData, RTHCPHYS HCPhysStart,
+                                                    RTGCPHYS GCPhysStart, uint64_t cbMem, PCIRAWMEMINFOACTION enmAction);
 typedef FNRAWPCICONTIGPHYSMEMINFO *PFNRAWPCICONTIGPHYSMEMINFO;
 
 /** Data being part of the VM structure. */
@@ -525,9 +527,9 @@ typedef struct RAWPCIFACTORY
      *
      * @returns VBox status code.
      *
-     * @param   pIfFactory          Pointer to this structure.
-     * @param   pVM                 Pointer to VM structure to initialize.
-     * @param   pPciData            Pointer to PCI data.
+     * @param   pIfFactory  Pointer to this structure.
+     * @param   pVM         The cross context VM structure.
+     * @param   pPciData    Pointer to PCI data.
      */
     DECLR0CALLBACKMEMBER(int, pfnInitVm,(PRAWPCIFACTORY       pFactory,
                                          PVM                  pVM,
@@ -538,9 +540,9 @@ typedef struct RAWPCIFACTORY
      *
      * @returns VBox status code.
      *
-     * @param   pIfFactory          Pointer to this structure.
-     * @param   pVM                 Pointer to VM structure to deinitialize.
-     * @param   pPciData            Pointer to PCI data.
+     * @param   pIfFactory  Pointer to this structure.
+     * @param   pVM         The cross context VM structure.
+     * @param   pPciData    Pointer to PCI data.
      */
     DECLR0CALLBACKMEMBER(void, pfnDeinitVm,(PRAWPCIFACTORY       pFactory,
                                             PVM                  pVM,

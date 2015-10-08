@@ -106,7 +106,7 @@ typedef FNPDMQUEUEDRV *PFNPDMQUEUEDRV;
  *
  * @returns Success indicator.
  *          If false the item will not be removed and the flushing will stop.
- * @param   pVM         The VM handle.
+ * @param   pVCpu         The cross context VM structure.
  * @param   pItem       The item to consume. Upon return this item will be freed.
  * @remarks No locks will be held, but for now it's safe to assume that only one
  *          EMT will do queue callbacks at any one time.

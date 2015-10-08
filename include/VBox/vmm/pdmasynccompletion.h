@@ -95,7 +95,7 @@ typedef FNPDMASYNCCOMPLETEUSB *PFNPDMASYNCCOMPLETEUSB;
 /**
  * Completion callback for internal.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVCpu         The cross context VM structure.
  * @param   pvUser      User argument for the task.
  * @param   pvUser2     User argument for the template.
  * @param   rc          The status code of the completed request.

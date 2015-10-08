@@ -853,7 +853,8 @@ typedef struct VUSBIDEVICE
      * @param   pfnDone         Pointer to the completion routine. If NULL a synchronous
      *                          reset  is preformed not respecting the 10ms.
      * @param   pvUser          User argument to the completion routine.
-     * @param   pVM             Pointer to the VM handle if callback in EMT is required. (optional)
+     * @param   pVM             The cross context VM structure.  Required if pfnDone
+     *                          is not NULL.
      */
     DECLR3CALLBACKMEMBER(int, pfnReset,(PVUSBIDEVICE pInterface, bool fResetOnLinux,
                                         PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM));
@@ -925,10 +926,15 @@ typedef struct VUSBIDEVICE
  * @param   pInterface      Pointer to the device interface structure.
  * @param   fResetOnLinux   Set if we can permit a real reset and a potential logical
  *                          device reconnect on linux hosts.
- * @param   pfnDone         Pointer to the completion routine. If NULL a synchronous
- *                          reset  is preformed not respecting the 10ms.
+ * @param   pfnDone         Pointer to the completion routine.  If NULL a
+ *                          synchronous reset is preformed not respecting the
+ *                          10ms.
  * @param   pvUser          User argument to the completion routine.
- * @param   pVM             Pointer to the VM handle if callback in EMT is required. (optional)
+ * @param   pVM             The cross context VM structure.  Required if pfnDone
+ *                          is not NULL.
+ *
+ * NULL is acceptable Required if callback in EMT is desired, NULL is otherwise
+ *                          acceptable.
  */
 DECLINLINE(int) VUSBIDevReset(PVUSBIDEVICE pInterface, bool fResetOnLinux, PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM)
 {

@@ -129,7 +129,7 @@ typedef enum VMMCALLRING3
  * VMMRZCallRing3 notification callback.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   enmOperation    The operation causing the ring-3 jump.
  * @param   pvUser          The user argument.
  */
@@ -144,9 +144,9 @@ typedef FNVMMR0CALLRING3NOTIFICATION *PFNVMMR0CALLRING3NOTIFICATION;
  *          informational status code other than the ones used by EM for
  *          scheduling.
  *
- * @param   pVM         The VM handle.
- * @param   pVCpu       The handle of the calling virtual CPU.
- * @param   pvUser      The user argument.
+ * @param   pVCpu     The cross context VM structure.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pvUser  The user argument.
  */
 typedef DECLCALLBACK(VBOXSTRICTRC) FNVMMEMTRENDEZVOUS(PVM pVM, PVMCPU pVCpu, void *pvUser);
 /** Pointer to a rendezvous callback function. */

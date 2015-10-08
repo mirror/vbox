@@ -207,7 +207,7 @@ typedef struct PDMSRVHLP
      * Creates a timer.
      *
      * @returns VBox status.
-     * @param   pVM             The VM to create the timer in.
+     * @param   pVCpu             The cross context VM structure.
      * @param   pSrvIns         Service instance.
      * @param   enmClock        The clock to use on this timer.
      * @param   pfnCallback     Callback function.

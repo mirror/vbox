@@ -167,9 +167,8 @@ typedef enum PGMACCESSTYPE
  * \#PF Handler callback for physical access handler ranges in RC and R0.
  *
  * @returns Strict VBox status code (appropriate for ring-0 and raw-mode).
- * @param   pVM         VM Handle.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
+ * @param   pVCpu         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  *                      NULL on DMA and other non CPU access.
@@ -198,9 +197,8 @@ typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
  *          access operation.
  * @retval  VINF_EM_XXX in ring-0 and raw-mode context.
  *
- * @param   pVM             VM Handle.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
+ * @param   pVCpu             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
@@ -238,9 +236,8 @@ typedef enum PGMVIRTHANDLERKIND
  * for ALL and WRITE handlers these will also trigger.
  *
  * @returns Strict VBox status code (appropriate for raw-mode).
- * @param   pVM             VM Handle.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
+ * @param   pVCpu             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   uErrorCode      CPU Error code (X86_TRAP_PF_XXX).
  * @param   pRegFrame       Trap register frame.
  * @param   pvFault         The fault address (cr2).
@@ -263,9 +260,8 @@ typedef FNPGMRCVIRTPFHANDLER *PFNPGMRCVIRTPFHANDLER;
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
+ * @param   pVCpu             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtr           The virtual address the guest is writing to.  This
  *                          is the registered address corresponding to the
  *                          access, so no aliasing trouble here.
@@ -285,9 +281,8 @@ typedef FNPGMVIRTHANDLER *PFNPGMVIRTHANDLER;
 /**
  * \#PF Handler callback for invalidation of virtual access handler ranges.
  *
- * @param   pVM             VM Handle.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
+ * @param   pVCpu             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtr           The virtual address the guest has changed.
  * @param   pvUser          User argument.
  * @thread  EMT(pVCpu)
@@ -304,7 +299,7 @@ typedef FNPGMR3VIRTINVALIDATE *PFNPGMR3VIRTINVALIDATE;
 /**
  * PGMR3PhysEnumDirtyFTPages callback for syncing dirty physical pages
  *
- * @param   pVM             VM Handle.
+ * @param   pVCpu             The cross context VM structure.
  * @param   GCPhys          GC physical address
  * @param   pRange          HC virtual address of the page(s)
  * @param   cbRange         Size of the dirty range in bytes.
@@ -635,7 +630,7 @@ VMMDECL(int)        PGMSetLargePageUsage(PVM pVM, bool fUseLargePages);
  * Query large page usage state
  *
  * @returns 0 - disabled, 1 - enabled
- * @param   pVM         The VM to operate on.
+ * @param   pVCpu         The cross context VM structure.
  */
 #define PGMIsUsingLargePages(pVM)   ((pVM)->fUseLargePages)
 

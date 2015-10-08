@@ -307,7 +307,7 @@ typedef struct VBOXEXTPACKREG
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
      * @param   pConsole    The console interface.
-     * @param   pVM         The VM handle.
+     * @param   pVM         The cross context VM structure.
      */
     DECLCALLBACKMEMBER(int, pfnVMConfigureVMM)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
 
@@ -319,7 +319,7 @@ typedef struct VBOXEXTPACKREG
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
      * @param   pConsole    The console interface.
-     * @param   pVM         The VM handle.
+     * @param   pVM         The cross context VM structure.
      */
     DECLCALLBACKMEMBER(int, pfnVMPowerOn)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
 
@@ -330,7 +330,7 @@ typedef struct VBOXEXTPACKREG
      *
      * @param   pThis       Pointer to this structure.
      * @param   pConsole    The console interface.
-     * @param   pVM         The VM handle.  Can be NULL.
+     * @param   pVM         The cross context VM structure. Can be NULL.
      */
     DECLCALLBACKMEMBER(void, pfnVMPowerOff)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
 

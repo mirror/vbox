@@ -1112,7 +1112,7 @@ VMMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVI
 /** @def STAM_REL_REG
  * Registers a statistics sample.
  *
- * @param   pVM         VM Handle.
+ * @param   pVCpu         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   pszName     Sample name. The name is on this form "/<component>/<sample>".
@@ -1126,7 +1126,7 @@ VMMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVI
 /** @def STAM_REG
  * Registers a statistics sample if statistics are enabled.
  *
- * @param   pVM         VM Handle.
+ * @param   pVCpu         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   pszName     Sample name. The name is on this form "/<component>/<sample>".
@@ -1140,7 +1140,7 @@ VMMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVI
 /** @def STAM_REL_REG_USED
  * Registers a statistics sample which only shows when used.
  *
- * @param   pVM         VM Handle.
+ * @param   pVCpu         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   pszName     Sample name. The name is on this form "/<component>/<sample>".
@@ -1154,7 +1154,7 @@ VMMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVI
 /** @def STAM_REG_USED
  * Registers a statistics sample which only shows when used, if statistics are enabled.
  *
- * @param   pVM         VM Handle.
+ * @param   pVCpu         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   pszName     Sample name. The name is on this form "/<component>/<sample>".
@@ -1176,7 +1176,7 @@ VMMR3DECL(int)  STAMR3RegisterV(PVM pVM, void *pvSample, STAMTYPE enmType, STAMV
 
 /**
  * Resets the sample.
- * @param   pVM         The VM handle.
+ * @param   pVCpu         The cross context VM structure.
  * @param   pvSample    The sample registered using STAMR3RegisterCallback.
  */
 typedef void FNSTAMR3CALLBACKRESET(PVM pVM, void *pvSample);
@@ -1186,7 +1186,7 @@ typedef FNSTAMR3CALLBACKRESET *PFNSTAMR3CALLBACKRESET;
 /**
  * Prints the sample into the buffer.
  *
- * @param   pVM         The VM handle.
+ * @param   pVCpu         The cross context VM structure.
  * @param   pvSample    The sample registered using STAMR3RegisterCallback.
  * @param   pszBuf      The buffer to print into.
  * @param   cchBuf      The size of the buffer.

@@ -103,8 +103,8 @@ AssertCompileMemberAlignment(GIMMMIO2REGION, pvPageR0, 8);
 /**
  * A GIM Hypercall handler.
  *
- * @param   pVM             Pointer to the VMCPU.
- * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the guest-CPU context.
  */
 typedef DECLCALLBACK(int) FNGIMHYPERCALL(PVMCPU pVCpu, PCPUMCTX pCtx);
 /** Pointer to a GIM hypercall handler. */
@@ -114,10 +114,10 @@ typedef FNGIMHYPERCALL *PFNGIMHYPERCALL;
  * A GIM MSR-read handler.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VMCPU.
- * @param   idMsr           The MSR being read.
- * @param   pRange          The range that the MSR belongs to.
- * @param   puValue         Where to store the value of the MSR.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   idMsr   The MSR being read.
+ * @param   pRange  The range that the MSR belongs to.
+ * @param   puValue Where to store the value of the MSR.
  */
 typedef DECLCALLBACK(int) FNGIMRDMSR(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 /** Pointer to a GIM MSR-read handler. */
@@ -127,11 +127,11 @@ typedef FNGIMRDMSR *PFNGIMRDMSR;
  * A GIM MSR-write handler.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VMCPU.
- * @param   idMsr           The MSR being written.
- * @param   pRange          The range that the MSR belongs to.
- * @param   uValue          The value to set, ignored bits masked.
- * @param   uRawValue       The raw value with the ignored bits not masked.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   idMsr       The MSR being written.
+ * @param   pRange      The range that the MSR belongs to.
+ * @param   uValue      The value to set, ignored bits masked.
+ * @param   uRawValue   The raw value with the ignored bits not masked.
  */
 typedef DECLCALLBACK(int) FNGIMWRMSR(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
 /** Pointer to a GIM MSR-write handler. */
