@@ -44,7 +44,7 @@
  * Check if this VCPU currently owns the IOM lock exclusively.
  *
  * @returns bool owner/not owner
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(bool) IOMIsLockWriteOwner(PVM pVM)
 {
@@ -70,7 +70,7 @@ VMMDECL(bool) IOMIsLockWriteOwner(PVM pVM)
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/RC only)
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   Port        The port to read.
  * @param   pu32Value   Where to store the value read.
@@ -237,7 +237,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint32
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/RC only)
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   Port        The port to read.
  * @param   pvDst       Pointer to the destination buffer.
@@ -432,7 +432,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT u
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/RC only)
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   Port        The port to write to.
  * @param   u32Value    The value to write.
@@ -574,7 +574,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint3
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/RC only)
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   uPort       The port to write to.
  * @param   pvSrc       The guest page to read from.
@@ -766,7 +766,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT 
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtxCore    Pointer to register frame.
  * @param   Port        The I/O port number.
  * @param   cb          The access size.
@@ -857,7 +857,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCo
 /**
  * Fress an MMIO range after the reference counter has become zero.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pRange              The range to free.
  */
 void iomMmioFreeRange(PVM pVM, PIOMMMIORANGE pRange)

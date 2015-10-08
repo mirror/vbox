@@ -134,7 +134,7 @@ static int vmmR3ReportMsrRange(PVM pVM, uint32_t uMsr, uint64_t cMsrs, PRTSTREAM
  * Produces a quick report of MSRs.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   pReportStrm     Pointer to the report output stream. Optional.
  * @param   fWithCpuId      Whether CPUID should be included.
  */
@@ -188,7 +188,7 @@ static int vmmR3DoMsrQuickReport(PVM pVM, PRTSTREAM pReportStrm, bool fWithCpuId
  * Performs a testcase.
  *
  * @returns return value from the test.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmTestcase The testcase operation to perform.
  * @param   uVariation  The testcase variation id.
  */
@@ -238,7 +238,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMRCOPERATION enmTestcase, unsigned uVariatio
  * Performs a trap test.
  *
  * @returns Return value from the trap test.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   u8Trap      The trap number to test.
  * @param   uVariation  The testcase variation.
  * @param   rcExpect    The expected result.
@@ -791,7 +791,7 @@ static DECLCALLBACK(void) vmmDoPrintfToStream(PCDBGFINFOHLP pHlp, const char *ps
  * writing the values and process to stdout.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(int) VMMDoBruteForceMsrs(PVM pVM)
 {
@@ -831,7 +831,7 @@ VMMR3DECL(int) VMMDoBruteForceMsrs(PVM pVM)
  * well as writing the values and process to stdout.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(int) VMMDoKnownMsrs(PVM pVM)
 {
@@ -854,7 +854,7 @@ VMMR3DECL(int) VMMDoKnownMsrs(PVM pVM)
  * MSR experimentation.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(int) VMMDoMsrExperiments(PVM pVM)
 {

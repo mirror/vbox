@@ -47,7 +47,7 @@
  * general-purpose registers.
  *
  * @returns VBox status code.
- * @param   pVM               Pointer to the VM.
+ * @param   pVM               The cross context VM structure.
  * @param   pCtx              Pointer to the guest-CPU context.
  * @param   fIs64BitMode      Whether the guest is currently in 64-bit mode or not.
  * @param   pGCPhysIn         Where to store the guest-physical address of the
@@ -286,7 +286,7 @@ VMM_INT_DECL(bool) gimHvAreHypercallsEnabled(PVMCPU pVCpu)
  * paravirtualized TSC.
  *
  * @returns true if paravirt. TSC is enabled, false otherwise.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMM_INT_DECL(bool) gimHvIsParavirtTscEnabled(PVM pVM)
 {

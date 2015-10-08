@@ -42,7 +42,7 @@
  *
  * @retval  @c true if used.
  * @retval  @c false if software virtualization (raw-mode) is used.
- * @param   pVM         The cross context VM structure.
+ * @param   pVM        The cross context VM structure.
  * @sa      HMIsEnabled, HMR3IsEnabled
  * @internal
  */
@@ -202,7 +202,7 @@ static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
  * Invalidates a guest page on all VCPUs.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCVirt      Page to invalidate.
  */
 VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt)
@@ -243,7 +243,7 @@ VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt)
  * Flush the TLBs of all VCPUs.
  *
  * @returns VBox status code.
- * @param   pVM       Pointer to the VM.
+ * @param   pVM       The cross context VM structure.
  */
 VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
 {
@@ -276,7 +276,7 @@ VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
  * Checks if nested paging is enabled.
  *
  * @returns true if nested paging is active, false otherwise.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  *
  * @remarks Works before hmR3InitFinalizeR0.
  */
@@ -292,7 +292,7 @@ VMM_INT_DECL(bool) HMIsNestedPagingActive(PVM pVM)
  * The almost complete guest execution in hardware is only applicable to VT-x.
  *
  * @returns true if we have both enabled, otherwise false.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  *
  * @remarks Works before hmR3InitFinalizeR0.
  */
@@ -322,7 +322,7 @@ VMM_INT_DECL(bool) HMIsLongModeAllowed(PVM pVM)
  * it will be used as well.
  *
  * @returns true if MSR bitmaps are available, false otherwise.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(bool) HMAreMsrBitmapsAvailable(PVM pVM)
 {
@@ -345,7 +345,7 @@ VMM_INT_DECL(bool) HMAreMsrBitmapsAvailable(PVM pVM)
  * Return the shadow paging mode for nested paging/ept
  *
  * @returns shadow paging mode
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(PGMMODE) HMGetShwPagingMode(PVM pVM)
 {
@@ -362,7 +362,7 @@ VMM_INT_DECL(PGMMODE) HMGetShwPagingMode(PVM pVM)
  * Invalidates a guest page by physical address.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      Page to invalidate.
  *
  * @remarks Assumes the current instruction references this physical page
@@ -412,7 +412,7 @@ VMM_INT_DECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
  * Checks if an interrupt event is currently pending.
  *
  * @returns Interrupt event pending state.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(bool) HMHasPendingIrq(PVM pVM)
 {

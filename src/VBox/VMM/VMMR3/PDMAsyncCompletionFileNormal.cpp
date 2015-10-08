@@ -1604,8 +1604,8 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
  * The normal I/O manager using the RTFileAio* API
  *
  * @returns VBox status code.
- * @param hThreadSelf   Handle of the thread.
- * @param pvUser        Opaque user data.
+ * @param   hThreadSelf Handle of the thread.
+ * @param   pvUser      Opaque user data.
  */
 DECLCALLBACK(int) pdmacFileAioMgrNormal(RTTHREAD hThreadSelf, void *pvUser)
 {

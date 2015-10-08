@@ -264,7 +264,7 @@ DECLEXPORT(FNPGMRCVIRTPFHANDLER)    trpmRCShadowIDTWritePfHandler;
  * Clear guest trap/interrupt gate handler
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   iTrap       Interrupt/trap number.
  */
 VMMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap);

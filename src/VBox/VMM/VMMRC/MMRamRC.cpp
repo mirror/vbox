@@ -51,7 +51,7 @@ DECLASM(void) MMGCRamWrite_Error(void);
  * This handler will be automatically removed at page fault.
  * In other case it must be removed by MMGCRamDeregisterTrapHandler call.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMRCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM)
 {
@@ -63,7 +63,7 @@ VMMRCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM)
  * Remove MMGCRam Hypervisor page fault handler.
  * See description of MMGCRamRegisterTrapHandler call.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMRCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM)
 {
@@ -75,7 +75,7 @@ VMMRCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM)
  * Read data in guest context with \#PF control.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pDst        Where to store the read data.
  * @param   pSrc        Pointer to the data to read.
  * @param   cb          Size of data to read.
@@ -132,7 +132,7 @@ VMMRCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
  * Write data in guest context with \#PF control.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pDst        Where to write the data.
  * @param   pSrc        Pointer to the data to write.
  * @param   cb          Size of data to write, only 1/2/4 is valid.

@@ -91,7 +91,7 @@ static void   gimR3HvTermDebugSupport(PVM pVM);
  * Initializes the Hyper-V GIM provider.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   uVersion    The interface version this VM should use.
  */
 VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
@@ -308,7 +308,7 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
  * This is called after initializing HM and almost all other VMM components.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) gimR3HvInitCompleted(PVM pVM)
 {
@@ -358,7 +358,7 @@ VMMR3_INT_DECL(int) gimR3HvInitFinalize(PVM pVM)
  * Terminates the Hyper-V GIM provider.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
 {
@@ -377,7 +377,7 @@ VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
  * This function will be called at init and whenever the VMM need to relocate
  * itself inside the GC.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMMR3_INT_DECL(void) gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
@@ -395,7 +395,7 @@ VMMR3_INT_DECL(void) gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
  *
  * This is called when the VM is being reset.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  *
  * @thread  EMT(0).
  */
@@ -437,7 +437,7 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
  * Returns a pointer to the MMIO2 regions supported by Hyper-V.
  *
  * @returns Pointer to an array of MMIO2 regions.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pcRegions   Where to store the number of regions in the array.
  */
 VMMR3_INT_DECL(PGIMMMIO2REGION) gimR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions)
@@ -455,7 +455,7 @@ VMMR3_INT_DECL(PGIMMMIO2REGION) gimR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegi
  * Hyper-V state-save operation.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pSSM    Pointer to the SSM handle.
  */
 VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
@@ -520,7 +520,7 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
  * Hyper-V state-load operation, final pass.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            Pointer to the SSM handle.
  * @param   uSSMVersion     The GIM saved-state version.
  */
@@ -628,7 +628,7 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
  * Enables the Hyper-V TSC page.
  *
  * @returns VBox status code.
- * @param   pVM                Pointer to the VM.
+ * @param   pVM                The cross context VM structure.
  * @param   GCPhysTscPage      Where to map the TSC page.
  * @param   fUseThisTscSeq     Whether to set the TSC sequence number to the one
  *                             specified in @a uTscSeq.
@@ -744,7 +744,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
  * Disables the Hyper-V TSC page.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) gimR3HvDisableTscPage(PVM pVM)
 {
@@ -795,7 +795,7 @@ VMMR3_INT_DECL(int) gimR3HvDisableHypercallPage(PVM pVM)
  * Enables the Hyper-V Hypercall page.
  *
  * @returns VBox status code.
- * @param   pVM                     Pointer to the VM.
+ * @param   pVM                     The cross context VM structure.
  * @param   GCPhysHypercallPage     Where to map the hypercall page.
  */
 VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage)
@@ -912,7 +912,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
  * Initializes Hyper-V guest debugging support.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static int gimR3HvInitDebugSupport(PVM pVM)
 {
@@ -933,7 +933,7 @@ static int gimR3HvInitDebugSupport(PVM pVM)
 /**
  * Terminates Hyper-V guest debugging support.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static void gimR3HvTermDebugSupport(PVM pVM)
 {
@@ -950,7 +950,7 @@ static void gimR3HvTermDebugSupport(PVM pVM)
  * Reads data from a debugger connection, asynchronous.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvBuf       Where to read the data.
  * @param   cbBuf       Size of the read buffer @a pvBuf.
  * @param   pcbRead     Where to store how many bytes were really read.
@@ -974,7 +974,7 @@ static int gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint32_t *pcbR
  * Writes data to the debugger connection, asynchronous.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvBuf       Pointer to the data to be written.
  * @param   cbBuf       Size of the write buffer @a pvBuf.
  * @param   pcbWritten  Where to store how many bytes were really written.
@@ -996,7 +996,7 @@ static int gimR3HvDebugWrite(PVM pVM, void *pvBuf, uint32_t cbBuf, uint32_t *pcb
  * Performs the HvPostDebugData hypercall.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhysOut   Where to write the hypercall output parameters after
  *                      performing the hypercall.
  * @param   prcHv       Where to store the result of the hypercall operation.
@@ -1169,7 +1169,7 @@ VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, i
  * Performs the HvRetrieveDebugData hypercall.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhysOut   Where to write the hypercall output parameters after
  *                      performing the hypercall.
  * @param   prcHv       Where to store the result of the hypercall operation.

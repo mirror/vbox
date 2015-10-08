@@ -151,7 +151,7 @@ selmGuestTSSWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
  * for that.
  *
  * @returns Flat address.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   Sel     Selector part.
  * @param   Addr    Address part.
  * @remarks Don't use when in long mode.
@@ -184,7 +184,7 @@ VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
  * for that.
  *
  * @returns Flat address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   SelReg      Selector register
  * @param   pCtxCore    CPU context
  * @param   Addr        Address part.
@@ -724,7 +724,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVMCPU pVCpu, RTSEL SelCS, 
  * when in protected/long mode using the raw-mode algorithm.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   SelCPL      Current privilege level. Get this from SS - CS might be
  *                      conforming! A full selector can be passed, we'll only
@@ -902,7 +902,7 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS Efl, RTSEL Sel
  * Returns Hypervisor's Trap 08 (\#DF) selector.
  *
  * @returns Hypervisor's Trap 08 (\#DF) selector.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM)
 {
@@ -913,7 +913,7 @@ VMMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM)
 /**
  * Sets EIP of Hypervisor's Trap 08 (\#DF) TSS.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   u32EIP  EIP of Trap 08 handler.
  */
 VMMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
@@ -925,7 +925,7 @@ VMMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
 /**
  * Sets ss:esp for ring1 in main Hypervisor's TSS.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   ss      Ring1 SS register value. Pass 0 if invalid.
  * @param   esp     Ring1 ESP register value.
  */
@@ -942,7 +942,7 @@ void selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
 /**
  * Sets ss:esp for ring1 in main Hypervisor's TSS.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   ss      Ring2 SS register value. Pass 0 if invalid.
  * @param   esp     Ring2 ESP register value.
  */
@@ -963,7 +963,7 @@ void selmSetRing2Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
  * Returns SS=0 if the ring-1 stack isn't valid.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
  */
@@ -1050,7 +1050,7 @@ l_tryagain:
 /**
  * Gets the hypervisor code selector (CS).
  * @returns CS selector.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(RTSEL) SELMGetHyperCS(PVM pVM)
 {
@@ -1061,7 +1061,7 @@ VMMDECL(RTSEL) SELMGetHyperCS(PVM pVM)
 /**
  * Gets the 64-mode hypervisor code selector (CS64).
  * @returns CS selector.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(RTSEL) SELMGetHyperCS64(PVM pVM)
 {
@@ -1072,7 +1072,7 @@ VMMDECL(RTSEL) SELMGetHyperCS64(PVM pVM)
 /**
  * Gets the hypervisor data selector (DS).
  * @returns DS selector.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(RTSEL) SELMGetHyperDS(PVM pVM)
 {
@@ -1083,7 +1083,7 @@ VMMDECL(RTSEL) SELMGetHyperDS(PVM pVM)
 /**
  * Gets the hypervisor TSS selector.
  * @returns TSS selector.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(RTSEL) SELMGetHyperTSS(PVM pVM)
 {
@@ -1094,7 +1094,7 @@ VMMDECL(RTSEL) SELMGetHyperTSS(PVM pVM)
 /**
  * Gets the hypervisor TSS Trap 8 selector.
  * @returns TSS Trap 8 selector.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
 {
@@ -1105,7 +1105,7 @@ VMMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
  * Gets the address for the hypervisor GDT.
  *
  * @returns The GDT address.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @remark  This is intended only for very special use, like in the world
  *          switchers. Don't exploit this API!
  */
@@ -1128,7 +1128,7 @@ VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM)
  * @retval  VINF_SUCCESS if we've got a TSS loaded.
  * @retval  VERR_SELM_NO_TSS if we haven't got a TSS (rather unlikely).
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pVCpu               Pointer to the VMCPU.
  * @param   pGCPtrTss           Where to store the TSS address.
  * @param   pcbTss              Where to store the TSS size limit.
@@ -1161,7 +1161,7 @@ VMMDECL(int) SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGC
  * value might have changed.
  * This is called by PGM.
  *
- * @param   pVM       Pointer to the VM.
+ * @param   pVM       The cross context VM structure.
  * @param   pVCpu     Pointer to the VMCPU.
  */
 VMMDECL(void) SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu)

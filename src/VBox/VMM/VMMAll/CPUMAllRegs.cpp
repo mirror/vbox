@@ -168,7 +168,7 @@ VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG 
  * We don't support nested hypervisor context interrupts or traps.  Life is much
  * simpler when we don't.  It's also slightly faster at times.
  *
- * @param   pVM         Handle to the virtual machine.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVMCPU pVCpu)
 {
@@ -1148,7 +1148,7 @@ VMMDECL(uint64_t) CPUMGetGuestEFER(PVMCPU pVCpu)
  *
  * @returns Pointer to the leaf if found, NULL if not.
  *
- * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   pVM                 The cross context VM structure.
  * @param   uLeaf               The leaf to get.
  */
 PCPUMCPUIDLEAF cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf)
@@ -1202,7 +1202,7 @@ PCPUMCPUIDLEAF cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf)
  *
  * @returns Pointer to the leaf if found, NULL if not.
  *
- * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   pVM                 The cross context VM structure.
  * @param   uLeaf               The leaf to get.
  * @param   uSubLeaf            The subleaf, if applicable.  Just pass 0 if it
  *                              isn't.
@@ -1367,7 +1367,7 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
 /**
  * Sets a CPUID feature bit.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmFeature      The feature to set.
  */
 VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
@@ -1635,7 +1635,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
  * Queries a CPUID feature bit.
  *
  * @returns boolean for feature presence
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmFeature      The feature to query.
  */
 VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
@@ -1668,7 +1668,7 @@ VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
 /**
  * Clears a CPUID feature bit.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmFeature      The feature to clear.
  */
 VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
@@ -1796,7 +1796,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
  * Gets the host CPU vendor.
  *
  * @returns CPU vendor.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(CPUMCPUVENDOR) CPUMGetHostCpuVendor(PVM pVM)
 {
@@ -1808,7 +1808,7 @@ VMMDECL(CPUMCPUVENDOR) CPUMGetHostCpuVendor(PVM pVM)
  * Gets the CPU vendor.
  *
  * @returns CPU vendor.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(CPUMCPUVENDOR) CPUMGetGuestCpuVendor(PVM pVM)
 {
@@ -2585,7 +2585,7 @@ VMMDECL(void) CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags)
  *
  * @returns true if supported.
  * @returns false if not supported.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(bool) CPUMSupportsXSave(PVM pVM)
 {
@@ -2597,7 +2597,7 @@ VMMDECL(bool) CPUMSupportsXSave(PVM pVM)
  * Checks if the host OS uses the SYSENTER / SYSEXIT instructions.
  * @returns true if used.
  * @returns false if not used.
- * @param   pVM       Pointer to the VM.
+ * @param   pVM       The cross context VM structure.
  */
 VMMDECL(bool) CPUMIsHostUsingSysEnter(PVM pVM)
 {
@@ -2609,7 +2609,7 @@ VMMDECL(bool) CPUMIsHostUsingSysEnter(PVM pVM)
  * Checks if the host OS uses the SYSCALL / SYSRET instructions.
  * @returns true if used.
  * @returns false if not used.
- * @param   pVM       Pointer to the VM.
+ * @param   pVM       The cross context VM structure.
  */
 VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
 {
@@ -2647,7 +2647,7 @@ VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
  * Checks if the guest debug state is active.
  *
  * @returns boolean
- * @param   pVM         Pointer to the VMCPU.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
 {
@@ -2660,7 +2660,7 @@ VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
  * (currently only used for the 32->64 switcher case).
  *
  * @returns boolean
- * @param   pVM         Pointer to the VMCPU.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(bool) CPUMIsGuestDebugStateActivePending(PVMCPU pVCpu)
 {
@@ -2672,7 +2672,7 @@ VMMDECL(bool) CPUMIsGuestDebugStateActivePending(PVMCPU pVCpu)
  * Checks if the hyper debug state is active.
  *
  * @returns boolean
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
 {
@@ -2685,7 +2685,7 @@ VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
  * (currently only used for the 32->64 switcher case).
  *
  * @returns boolean
- * @param   pVM         Pointer to the VMCPU.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(bool) CPUMIsHyperDebugStateActivePending(PVMCPU pVCpu)
 {
@@ -2697,7 +2697,7 @@ VMMDECL(bool) CPUMIsHyperDebugStateActivePending(PVMCPU pVCpu)
  * Mark the guest's debug state as inactive.
  *
  * @returns boolean
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @todo    This API doesn't make sense any more.
  */
 VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)

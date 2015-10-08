@@ -170,7 +170,7 @@ DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVM pVM)
  * Get the time when we're not running at 100%
  *
  * @returns The timestamp.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
 {
@@ -198,7 +198,7 @@ static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
  * Get the raw virtual time.
  *
  * @returns The current time stamp.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 DECLINLINE(uint64_t) tmVirtualGetRaw(PVM pVM)
 {
@@ -257,7 +257,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
  * Gets the current TMCLOCK_VIRTUAL time
  *
  * @returns The timestamp.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  *
  * @remark  While the flow of time will never go backwards, the speed of the
  *          progress varies due to inaccurate RTTimeNanoTS and TSC. The latter can be
@@ -277,7 +277,7 @@ VMM_INT_DECL(uint64_t) TMVirtualGet(PVM pVM)
  * Meaning, this has no side effect on FFs like TMVirtualGet may have.
  *
  * @returns The timestamp.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  *
  * @remarks See TMVirtualGet.
  */
@@ -291,7 +291,7 @@ VMM_INT_DECL(uint64_t) TMVirtualGetNoCheck(PVM pVM)
  * Converts the dead line interval from TMCLOCK_VIRTUAL to host nano seconds.
  *
  * @returns Host nano second count.
- * @param   pVM                     Pointer to the VM.
+ * @param   pVM                     The cross context VM structure.
  * @param   cVirtTicksToDeadline    The TMCLOCK_VIRTUAL interval.
  */
 DECLINLINE(uint64_t) tmVirtualVirtToNsDeadline(PVM pVM, uint64_t cVirtTicksToDeadline)
@@ -306,7 +306,7 @@ DECLINLINE(uint64_t) tmVirtualVirtToNsDeadline(PVM pVM, uint64_t cVirtTicksToDea
  * tmVirtualSyncGetLocked worker for handling catch-up when owning the lock.
  *
  * @returns The timestamp.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   u64                 raw virtual time.
  * @param   off                 offVirtualSync.
  * @param   pcNsToDeadline      Where to return the number of nano seconds to
@@ -420,7 +420,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
  * tmVirtualSyncGetEx worker for when we get the lock.
  *
  * @returns timesamp.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   u64                 The virtual clock timestamp.
  * @param   pcNsToDeadline      Where to return the number of nano seconds to
  *                              the next virtual sync timer deadline.  Can be
@@ -507,7 +507,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   fCheckTimers        Check timers or not
  * @param   pcNsToDeadline      Where to return the number of nano seconds to
  *                              the next virtual sync timer deadline.  Can be
@@ -745,7 +745,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
@@ -760,7 +760,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGet(PVM pVM)
  * TMCLOCK_VIRTUAL.
  *
  * @returns The timestamp.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
@@ -774,7 +774,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM)
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   fCheckTimers    Check timers on the virtual clock or not.
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
@@ -790,7 +790,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
  * without checking timers running on TMCLOCK_VIRTUAL.
  *
  * @returns The timestamp.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pcNsToDeadline      Where to return the number of nano seconds to
  *                              the next virtual sync timer deadline.
  * @thread  EMT.
@@ -809,7 +809,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetWithDeadlineNoCheck(PVM pVM, uint64_t *pc
  * Gets the number of nano seconds to the next virtual sync deadline.
  *
  * @returns The number of TMCLOCK_VIRTUAL ticks.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
@@ -825,7 +825,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetNsToDeadline(PVM pVM)
  * Gets the current lag of the synchronous virtual clock (relative to the virtual clock).
  *
  * @return  The current lag.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMM_INT_DECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
 {
@@ -837,7 +837,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
  * Get the current catch-up percent.
  *
  * @return  The current catch0up percent. 0 means running at the same speed as the virtual clock.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMM_INT_DECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
 {
@@ -851,7 +851,7 @@ VMM_INT_DECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
  * Gets the current TMCLOCK_VIRTUAL frequency.
  *
  * @returns The frequency.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMM_INT_DECL(uint64_t) TMVirtualGetFreq(PVM pVM)
 {
@@ -864,7 +864,7 @@ VMM_INT_DECL(uint64_t) TMVirtualGetFreq(PVM pVM)
  * Worker for TMR3PauseClocks.
  *
  * @returns VINF_SUCCESS or VERR_TM_VIRTUAL_TICKING_IPE (asserted).
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 int tmVirtualPauseLocked(PVM pVM)
 {
@@ -884,7 +884,7 @@ int tmVirtualPauseLocked(PVM pVM)
  * Worker for TMR3ResumeClocks.
  *
  * @returns VINF_SUCCESS or VERR_TM_VIRTUAL_TICKING_IPE (asserted).
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 int tmVirtualResumeLocked(PVM pVM)
 {
@@ -906,7 +906,7 @@ int tmVirtualResumeLocked(PVM pVM)
  * Converts from virtual ticks to nanoseconds.
  *
  * @returns nanoseconds.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   u64VirtualTicks The virtual ticks to convert.
  * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
@@ -923,7 +923,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks)
  * Converts from virtual ticks to microseconds.
  *
  * @returns microseconds.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   u64VirtualTicks The virtual ticks to convert.
  * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
@@ -940,7 +940,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
  * Converts from virtual ticks to milliseconds.
  *
  * @returns milliseconds.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   u64VirtualTicks The virtual ticks to convert.
  * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
@@ -957,7 +957,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks)
  * Converts from nanoseconds to virtual ticks.
  *
  * @returns virtual ticks.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   u64NanoTS       The nanosecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
@@ -973,7 +973,7 @@ VMM_INT_DECL(uint64_t) TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS)
  * Converts from microseconds to virtual ticks.
  *
  * @returns virtual ticks.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   u64MicroTS      The microsecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
@@ -989,7 +989,7 @@ VMM_INT_DECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS)
  * Converts from milliseconds to virtual ticks.
  *
  * @returns virtual ticks.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   u64MilliTS      The millisecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */

@@ -592,9 +592,8 @@ static bool cpumR3CpuIdGetLeafLegacy(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, 
  *
  * @returns Pointer to the CPUID leaf array (*ppaLeaves) on success.  NULL on
  *          failure.
- * @param   pVM         Pointer to the VM, used as the heap selector. Passing
- *                      NULL uses the host-context heap, otherwise the VM's
- *                      hyper heap is used.
+ * @param   pVM         The cross context VM structure.  If NULL, use
+ *                      the process heap, otherwise the VM's hyper heap.
  * @param   ppaLeaves   Pointer to the variable holding the array pointer
  *                      (input/output).
  * @param   cLeaves     The current array size.
@@ -746,16 +745,15 @@ static void cpumR3CpuIdAssertOrder(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves)
  * cpumR3CpuIdEnsureSpace function.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM, used as the heap selector.
- *                          Passing NULL uses the host-context heap, otherwise
- *                          the VM's hyper heap is used.
- * @param   ppaLeaves       Pointer to the the pointer to the array of sorted
- *                          CPUID leaves and sub-leaves. Must be NULL if using
- *                          the hyper heap.
- * @param   pcLeaves        Where we keep the leaf count for *ppaLeaves. Must be
- *                          NULL if using the hyper heap.
- * @param   pNewLeaf        Pointer to the data of the new leaf we're about to
- *                          insert.
+ * @param   pVM         The cross context VM structure.  If NULL, use
+ *                      the process heap, otherwise the VM's hyper heap.
+ * @param   ppaLeaves   Pointer to the the pointer to the array of sorted
+ *                      CPUID leaves and sub-leaves. Must be NULL if using
+ *                      the hyper heap.
+ * @param   pcLeaves    Where we keep the leaf count for *ppaLeaves. Must
+ *                      be NULL if using the hyper heap.
+ * @param   pNewLeaf    Pointer to the data of the new leaf we're about to
+ *                      insert.
  */
 static int cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves, PCPUMCPUIDLEAF pNewLeaf)
 {
@@ -1058,7 +1056,7 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
  * Gets a CPU ID leaf.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pLeaf       Where to store the found leaf.
  * @param   uLeaf       The leaf to locate.
  * @param   uSubLeaf    The subleaf to locate.  Pass 0 if no sub-leaves.
@@ -1081,7 +1079,7 @@ VMMR3DECL(int) CPUMR3CpuIdGetLeaf(PVM pVM, PCPUMCPUIDLEAF pLeaf, uint32_t uLeaf,
  * Inserts a CPU ID leaf, replacing any existing ones.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pNewLeaf    Pointer to the leaf being inserted.
  */
 VMMR3DECL(int) CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf)
@@ -1775,7 +1773,7 @@ static PCPUMCPUIDLEAF cpumR3CpuIdGetExactLeaf(PCPUM pCpum, uint32_t uLeaf, uint3
  * the hyper heap!
  *
  * @returns VBox status code (VMSetError called).
- * @param   pVM                 Pointer to the cross context VM structure
+ * @param   pVM                 The cross context VM structure.
  * @param   pMsrNode            The CFGM node with the MSR overrides.
  */
 static int cpumR3LoadMsrOverrides(PVM pVM, PCFGMNODE pMsrNode)
@@ -1853,7 +1851,7 @@ static int cpumR3LoadMsrOverrides(PVM pVM, PCFGMNODE pMsrNode)
  * heap to the hyper heap!
  *
  * @returns VBox status code (VMSetError called).
- * @param   pVM             Pointer to the cross context VM structure
+ * @param   pVM             The cross context VM structure.
  * @param   pParentNode     The CFGM node with the CPUID leaves.
  * @param   pszLabel        How to label the overrides we're loading.
  */
@@ -2033,7 +2031,7 @@ static int cpumR3CpuIdInitHostSet(uint32_t uStart, PCPUMCPUID paLeaves, uint32_t
  * GuestFeatures and CPUMCTX::aoffXState.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM handle.
+ * @param   pVM         The cross context VM structure.
  * @param   pCpum       The CPUM part of @a VM.
  * @param   paLeaves    The leaves.  These will be copied (but not freed).
  * @param   cLeaves     The number of leaves.
@@ -2487,7 +2485,7 @@ static PCPUMCPUIDLEAF cpumR3CpuIdMakeSingleLeaf(PCPUM pCpum, PCPUMCPUIDLEAF pLea
  * what means.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the cross context VM structure (for cCpus).
+ * @param   pVM         The cross context VM structure (for cCpus).
  * @param   pCpum       The CPUM instance data.
  * @param   pConfig     The CPUID configuration we've read from CFGM.
  */
@@ -3529,7 +3527,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
  * Reads a value in /CPUM/IsaExts/ node.
  *
  * @returns VBox status code (error message raised).
- * @param   pVM             The VM handle (for errors).
+ * @param   pVM             The cross context VM structure. (For errors.)
  * @param   pIsaExts        The /CPUM/IsaExts node (can be NULL).
  * @param   pszValueName    The value / extension name.
  * @param   penmValue       Where to return the choice.
@@ -3602,7 +3600,7 @@ static int cpumR3CpuIdReadIsaExtCfg(PVM pVM, PCFGMNODE pIsaExts, const char *psz
  * Reads a value in /CPUM/IsaExts/ node, forcing it to DISABLED if wanted.
  *
  * @returns VBox status code (error message raised).
- * @param   pVM             The VM handle (for errors).
+ * @param   pVM             The cross context VM structure. (For errors.)
  * @param   pIsaExts        The /CPUM/IsaExts node (can be NULL).
  * @param   pszValueName    The value / extension name.
  * @param   penmValue       Where to return the choice.
@@ -3631,7 +3629,7 @@ static int cpumR3CpuIdReadIsaExtCfgEx(PVM pVM, PCFGMNODE pIsaExts, const char *p
  * Reads a value in /CPUM/IsaExts/ node that used to be located in /CPUM/.
  *
  * @returns VBox status code (error message raised).
- * @param   pVM             The VM handle (for errors).
+ * @param   pVM             The cross context VM structure. (For errors.)
  * @param   pIsaExts        The /CPUM/IsaExts node (can be NULL).
  * @param   pCpumCfg        The /CPUM node (can be NULL).
  * @param   pszValueName    The value / extension name.
@@ -3943,7 +3941,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
  * Initializes the emulated CPU's CPUID & MSR information.
  *
  * @returns VBox status code.
- * @param   pVM          Pointer to the VM.
+ * @param   pVM          The cross context VM structure.
  */
 int cpumR3InitCpuIdAndMsrs(PVM pVM)
 {
@@ -4108,7 +4106,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM)
 /**
  * Called both in pass 0 and the final pass.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The saved state handle.
  */
 void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
@@ -4301,7 +4299,7 @@ static int cpumR3LoadGuestCpuIdArray(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion
  * Loads the CPU ID leaves saved by pass 0, inner worker.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The saved state handle.
  * @param   uVersion            The format version.
  * @param   paLeaves            Guest CPUID leaves loaded from the state.
@@ -5060,7 +5058,7 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
  * Loads the CPU ID leaves saved by pass 0.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The saved state handle.
  * @param   uVersion            The format version.
  */
@@ -5090,7 +5088,7 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  * Loads the CPU ID leaves saved by pass 0 in an pre 3.2 saved state.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The saved state handle.
  * @param   uVersion            The format version.
  */
@@ -5824,7 +5822,7 @@ static PCCPUMCPUIDLEAF cpumR3CpuIdInfoRawRange(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLE
 /**
  * Display the guest CpuId leaves.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     "terse", "default" or "verbose".
  */
@@ -6309,7 +6307,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
  * Gets a pointer to the default CPUID leaf.
  *
  * @returns Raw-mode pointer to the default CPUID leaf (read-only).
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @remark  Intended for PATM only.
  */
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM)
@@ -6322,7 +6320,7 @@ VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM)
  * Gets a number of standard CPUID leaves (PATM only).
  *
  * @returns Number of leaves.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM)
@@ -6335,7 +6333,7 @@ VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM)
  * Gets a number of extended CPUID leaves (PATM only).
  *
  * @returns Number of leaves.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM)
@@ -6348,7 +6346,7 @@ VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM)
  * Gets a number of centaur CPUID leaves.
  *
  * @returns Number of leaves.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM)
@@ -6363,7 +6361,7 @@ VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM)
  * CPUMR3GetGuestCpuIdStdMax() give the size of the array.
  *
  * @returns Raw-mode pointer to the standard CPUID leaves (read-only).
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmStdRCPtr(PVM pVM)
@@ -6378,7 +6376,7 @@ VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmStdRCPtr(PVM pVM)
  * CPUMGetGuestCpuIdExtMax() give the size of the array.
  *
  * @returns Raw-mode pointer to the extended CPUID leaves (read-only).
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmExtRCPtr(PVM pVM)
@@ -6393,7 +6391,7 @@ VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmExtRCPtr(PVM pVM)
  * CPUMGetGuestCpuIdCentaurMax() give the size of the array.
  *
  * @returns Raw-mode pointer to the centaur CPUID leaves (read-only).
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmCentaurRCPtr(PVM pVM)

@@ -38,7 +38,7 @@
  *          needs to change it into an assertion.
  *
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU of the calling EMT.
  * @param   enmOperation    The operation.
  * @param   uArg            The argument to the operation.
@@ -109,7 +109,7 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, 
  *          be passed up the stack, or if that isn't possible then VMMRZCallRing3
  *          needs to change it into an assertion.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmOperation    The operation.
  * @param   uArg            The argument to the operation.
  */

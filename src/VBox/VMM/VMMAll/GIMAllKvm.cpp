@@ -148,7 +148,7 @@ VMM_INT_DECL(bool) gimKvmAreHypercallsEnabled(PVMCPU pVCpu)
  * paravirtualized TSC.
  *
  * @returns true if paravirt. TSC is enabled, false otherwise.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMM_INT_DECL(bool) gimKvmIsParavirtTscEnabled(PVM pVM)
 {

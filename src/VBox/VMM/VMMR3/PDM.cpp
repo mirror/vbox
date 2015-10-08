@@ -356,7 +356,7 @@ VMMR3_INT_DECL(int) PDMR3InitUVM(PUVM pUVM)
  * Initializes the PDM.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) PDMR3Init(PVM pVM)
 {
@@ -445,7 +445,7 @@ VMMR3_INT_DECL(int) PDMR3Init(PVM pVM)
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  * @remark  The loader subcomponent is relocated by PDMR3LdrRelocate() very
  *          early in the relocation phase.
@@ -583,7 +583,7 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 /**
  * Worker for pdmR3Term that terminates a LUN chain.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pLun        The head of the chain.
  * @param   pszDevice   The name of the device (for logging).
  * @param   iInstance   The device instance number (for logging).
@@ -639,7 +639,7 @@ static void pdmR3TermLuns(PVM pVM, PPDMLUN pLun, const char *pszDevice, unsigned
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
 {
@@ -779,7 +779,7 @@ VMMR3_INT_DECL(void) PDMR3TermUVM(PUVM pUVM)
 /**
  * Bits that are saved in pass 0 and in the final pass.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            The saved state handle.
  */
 static void pdmR3SaveBoth(PVM pVM, PSSMHANDLE pSSM)
@@ -803,7 +803,7 @@ static void pdmR3SaveBoth(PVM pVM, PSSMHANDLE pSSM)
  * Live save.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            The saved state handle.
  * @param   uPass           The pass.
  */
@@ -820,7 +820,7 @@ static DECLCALLBACK(int) pdmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            The saved state handle.
  */
 static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
@@ -851,7 +851,7 @@ static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
  * This will dispatch pending operations and clear the FFs governed by PDM and its devices.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pSSM        The SSM handle.
  */
 static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
@@ -896,7 +896,7 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -1159,7 +1159,7 @@ DECLINLINE(int) pdmR3PowerOnDev(PPDMDEVINS pDevIns)
  * This function will notify all the devices and their
  * attached drivers about the VM now being powered on.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3DECL(void) PDMR3PowerOn(PVM pVM)
 {
@@ -1318,7 +1318,7 @@ static void pdmR3NotifyAsyncLog(PPDMNOTIFYASYNCSTATS pThis)
  * Wait for events and process pending requests.
  *
  * @param   pThis               The asynchronous notifification stats.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 static void pdmR3NotifyAsyncWaitAndProcessRequests(PPDMNOTIFYASYNCSTATS pThis, PVM pVM)
 {
@@ -1480,7 +1480,7 @@ VMMR3_INT_DECL(void) PDMR3ResetCpu(PVMCPU pVCpu)
  * This function will notify all the devices and their attached drivers about
  * the VM now being reset.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(void) PDMR3Reset(PVM pVM)
 {
@@ -1572,7 +1572,7 @@ VMMR3_INT_DECL(void) PDMR3Reset(PVM pVM)
  * This function will tell all the devices to setup up their memory structures
  * after VM construction and after VM reset.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   fAtReset    Indicates the context, after reset if @c true or after
  *                      construction if @c false.
  */
@@ -1741,7 +1741,7 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync
  * This function will notify all the devices and their attached drivers about
  * the VM now being suspended.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @thread  EMT(0)
  */
 VMMR3_INT_DECL(void) PDMR3Suspend(PVM pVM)
@@ -1903,7 +1903,7 @@ DECLINLINE(int) pdmR3ResumeDev(PPDMDEVINS pDevIns)
  * This function will notify all the devices and their
  * attached drivers about the VM now being resumed.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(void) PDMR3Resume(PVM pVM)
 {
@@ -2104,7 +2104,7 @@ DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsyn
  * This function will notify all the devices and their
  * attached drivers about the VM being powered off.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
 {
@@ -2392,7 +2392,7 @@ VMMR3DECL(int) PDMR3QueryDriverOnLun(PUVM pUVM, const char *pszDevice, unsigned 
  * Executes pending DMA transfers.
  * Forced Action handler.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
 {
@@ -2416,7 +2416,7 @@ VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
  * Service a VMMCALLRING3_PDM_LOCK call.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) PDMR3LockCall(PVM pVM)
 {
@@ -2428,7 +2428,7 @@ VMMR3_INT_DECL(int) PDMR3LockCall(PVM pVM)
  * Registers the VMM device heap
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          The physical address.
  * @param   pvHeap          Ring-3 pointer.
  * @param   cbSize          Size of the heap.
@@ -2450,7 +2450,7 @@ VMMR3_INT_DECL(int) PDMR3VmmDevHeapRegister(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pv
  * Unregisters the VMM device heap
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          The physical address.
  */
 VMMR3_INT_DECL(int) PDMR3VmmDevHeapUnregister(PVM pVM, RTGCPHYS GCPhys)
@@ -2470,7 +2470,7 @@ VMMR3_INT_DECL(int) PDMR3VmmDevHeapUnregister(PVM pVM, RTGCPHYS GCPhys)
  * Allocates memory from the VMM device heap
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   cbSize          Allocation size.
  * @param   pv              Ring-3 pointer. (out)
  */
@@ -2496,7 +2496,7 @@ VMMR3_INT_DECL(int) PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, RTR3PTR *ppv)
  * Frees memory from the VMM device heap
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pv              Ring-3 pointer.
  */
 VMMR3_INT_DECL(int) PDMR3VmmDevHeapFree(PVM pVM, RTR3PTR pv)
@@ -2514,7 +2514,7 @@ VMMR3_INT_DECL(int) PDMR3VmmDevHeapFree(PVM pVM, RTR3PTR pv)
  * matches a device or driver name and applies the tracing config change.
  *
  * @returns VINF_SUCCESS or VERR_NOT_FOUND.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pszName             The tracing config group name.  This is NULL if
  *                              the operation applies to every device and
  *                              driver.
@@ -2650,7 +2650,7 @@ VMMR3_INT_DECL(int) PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchN
  * and USB device have the same tracing settings.
  *
  * @returns true / false.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   fEnabled            The tracing setting to check for.
  */
 VMMR3_INT_DECL(bool) PDMR3TracingAreAll(PVM pVM, bool fEnabled)
@@ -2726,7 +2726,7 @@ static int pdmR3TracingAdd(char **ppszDst, size_t *pcbDst, bool fSpace, const ch
  * or disabled.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pszConfig           Where to store the config spec.
  * @param   cbConfig            The size of the output buffer.
  */
@@ -2803,7 +2803,7 @@ bool pdmR3IsValidName(const char *pszName)
 /**
  * Info handler for 'pdmtracingids'.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        The output helpers.
  * @param   pszArgs     The optional user arguments.
  *

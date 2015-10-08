@@ -136,7 +136,7 @@ static PVMMSWITCHERDEF g_apHmSwitchers[VMMSWITCHER_MAX] =
  * This is only used as a debugging aid when we cannot find out why something
  * goes haywire in the intermediate context.
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pVM        The cross context VM structure.
  * @param   pSwitcher   The switcher descriptor.
  * @param   pbDst       Where the switcher code was just copied.
  * @param   HCPhysDst   The host physical address corresponding to @a pbDst.
@@ -176,7 +176,7 @@ static void vmmR3Switcher32On64IdtInit(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8
 /**
  * Relocates the 64-bit IDT for 64-bit guest on 32-bit host switchers.
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pVM        The cross context VM structure.
  * @param   pSwitcher   The switcher descriptor.
  * @param   pbDst       Where the switcher code was just copied.
  * @param   HCPhysDst   The host physical address corresponding to @a pbDst.
@@ -208,7 +208,7 @@ static void vmmR3Switcher32On64IdtRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, u
  * put on linear contiguous backing.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 int vmmR3SwitcherInit(PVM pVM)
 {
@@ -352,7 +352,7 @@ int vmmR3SwitcherInit(PVM pVM)
 /**
  * Relocate the switchers, called by VMMR#Relocate.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   offDelta    The relocation delta.
  */
 void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
@@ -411,7 +411,7 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
 /**
  * Generic switcher code relocator.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pSwitcher   The switcher definition.
  * @param   pu8CodeR3   Pointer to the core code block for the switcher, ring-3 mapping.
  * @param   R0PtrCode   Pointer to the core code block for the switcher, ring-0 mapping.
@@ -1001,7 +1001,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
  * is not initialized.
  *
  * @returns Raw-mode contet GDT address. Null pointer if not applicable.
- * @param   pVM         The cross context VM structure.
+ * @param   pVM        The cross context VM structure.
  */
 static RTRCPTR vmmR3SwitcherGetHyperGDT(PVM pVM)
 {
@@ -1096,7 +1096,7 @@ DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSw
  * Selects the switcher to be used for switching to raw-mode context.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmSwitcher     The new switcher.
  * @remark  This function may be called before the VMM is initialized.
  */
@@ -1149,7 +1149,7 @@ VMMR3_INT_DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
  * Gets the switcher to be used for switching to GC.
  *
  * @returns host to guest ring 0 switcher entrypoint
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmSwitcher     The new switcher.
  */
 VMMR3_INT_DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)

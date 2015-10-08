@@ -78,7 +78,7 @@ static FNPGMPHYSHANDLER  gimR3Mmio2WriteHandler;
  * Initializes the GIM.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
 {
@@ -162,7 +162,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
  * This is called after initializing HM and most other VMM components.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   enmWhat             What has been completed.
  * @thread  EMT(0)
  */
@@ -196,7 +196,7 @@ VMMR3_INT_DECL(int) GIMR3InitCompleted(PVM pVM)
  * This function will be called at init and whenever the VMM need to relocate
  * itself inside the GC.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
@@ -240,7 +240,7 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * Executes state-save operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  */
 DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -291,7 +291,7 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -362,7 +362,7 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion, uint
  * the VM itself is, at this point, powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) GIMR3Term(PVM pVM)
 {
@@ -388,7 +388,7 @@ VMMR3_INT_DECL(int) GIMR3Term(PVM pVM)
  * and other provider-specific resets.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(void) GIMR3Reset(PVM pVM)
 {
@@ -409,7 +409,7 @@ VMMR3_INT_DECL(void) GIMR3Reset(PVM pVM)
 /**
  * Registers the GIM device with VMM.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevInsR3       Pointer to the GIM device instance.
  * @param   pDebugStream    Pointer to the GIM device debug connection, can be
  *                          NULL.
@@ -426,7 +426,7 @@ VMMR3DECL(void) GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevInsR3, PPDMISTREA
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvRead      The read buffer.
  * @param   pcbRead     The size of the read buffer as well as where to store
  *                      the number of bytes read.
@@ -446,7 +446,7 @@ VMMR3_INT_DECL(int) GIMR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead)
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvWrite     The write buffer.
  * @param   pcbWrite    The size of the write buffer as well as where to store
  *                      the number of bytes written.
@@ -467,7 +467,7 @@ VMMR3_INT_DECL(int) GIMR3DebugWrite(PVM pVM, void *pvWrite, size_t *pcbWrite)
  * configured for the VM.
  *
  * @returns Pointer to an array of GIM MMIO2 regions, may return NULL.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pcRegions   Where to store the number of items in the array.
  *
  * @remarks The caller does not own and therefore must -NOT- try to free the
@@ -497,7 +497,7 @@ VMMR3DECL(PGIMMMIO2REGION) GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions)
  * access handlers for it.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegion     Pointer to the GIM MMIO2 region.
  */
 VMMR3_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
@@ -548,7 +548,7 @@ gimR3Mmio2WriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, voi
  * The region will be made read-only and writes from the guest will be ignored.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pRegion         Pointer to the GIM MMIO2 region.
  * @param   GCPhysRegion    Where in the guest address space to map the region.
  */
@@ -621,7 +621,7 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCP
  * Registers the physical handler for the registered and mapped MMIO2 region.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegion     Pointer to the GIM MMIO2 region.
  */
 VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION pRegion)
@@ -644,7 +644,7 @@ VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION p
  * Deregisters the physical handler for the MMIO2 region.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegion     Pointer to the GIM MMIO2 region.
  */
 VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION pRegion)

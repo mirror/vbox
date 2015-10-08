@@ -226,7 +226,7 @@ VMMR3DECL(int) MMR3InitUVM(PUVM pUVM)
  * it will choose a default starting location, currently 0xa0000000.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(int) MMR3Init(PVM pVM)
 {
@@ -290,7 +290,7 @@ VMMR3DECL(int) MMR3Init(PVM pVM)
  * Initializes the MM parts which depends on PGM being initialized.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @remark  No cleanup necessary since MMR3Term() will be called on failure.
  */
 VMMR3DECL(int) MMR3InitPaging(PVM pVM)
@@ -445,7 +445,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(int) MMR3Term(PVM pVM)
 {
@@ -505,7 +505,7 @@ VMMR3DECL(void) MMR3TermUVM(PUVM pUVM)
  * Checks if the both VM and UVM parts of MM have been initialized.
  *
  * @returns true if initialized, false if not.
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(bool) MMR3IsInitialized(PVM pVM)
 {
@@ -517,7 +517,7 @@ VMMR3_INT_DECL(bool) MMR3IsInitialized(PVM pVM)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -534,7 +534,7 @@ static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion       Data layout version.
  * @param   uPass           The data pass.
@@ -598,7 +598,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
  * Called when MM::cbRamRegistered, MM::cShadowPages or MM::cFixedPages changes.
  *
  * @returns VBox status code - see GMMR0UpdateReservation.
- * @param   pVM             The shared VM structure.
+ * @param   pVM             The cross context VM structure.
  */
 int mmR3UpdateReservation(PVM pVM)
 {
@@ -618,7 +618,7 @@ int mmR3UpdateReservation(PVM pVM)
  * This can be called before MMR3InitPaging.
  *
  * @returns VBox status code. Will set VM error on failure.
- * @param   pVM             The shared VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   cAddBasePages   The number of pages to add.
  */
 VMMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
@@ -644,7 +644,7 @@ VMMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
  * This can be called before MMR3InitPaging.
  *
  * @returns VBox status code. Will set VM error on failure.
- * @param   pVM             The shared VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   cHandyPages     The number of handy pages.
  */
 VMMR3DECL(int) MMR3ReserveHandyPages(PVM pVM, uint32_t cHandyPages)
@@ -670,7 +670,7 @@ VMMR3DECL(int) MMR3ReserveHandyPages(PVM pVM, uint32_t cHandyPages)
  * This can be called before MMR3InitPaging.
  *
  * @returns VBox status code. Will set VM error on failure.
- * @param   pVM                 The shared VM structure.
+ * @param   pVM                 The cross context VM structure.
  * @param   cDeltaFixedPages    The number of pages to add (positive) or subtract (negative).
  * @param   pszDesc             Some description associated with the reservation.
  */
@@ -696,7 +696,7 @@ VMMR3DECL(int) MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, con
  * This can be called before MMR3InitPaging.
  *
  * @returns VBox status code. Will set VM error on failure.
- * @param   pVM             The shared VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   cShadowPages    The new page count.
  */
 VMMR3DECL(int) MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages)
@@ -718,7 +718,7 @@ VMMR3DECL(int) MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages)
  * Convert HC Physical address to HC Virtual address.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   HCPhys      The host context virtual address.
  * @param   ppv         Where to store the resulting address.
  * @thread  The Emulation Thread.
@@ -793,7 +793,7 @@ VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
  * This usually means the size of the first contiguous block of physical memory.
  *
  * @returns The guest base RAM size.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @thread  Any.
  *
  * @deprecated

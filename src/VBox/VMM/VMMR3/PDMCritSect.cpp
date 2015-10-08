@@ -49,7 +49,7 @@ static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritS
  * Register statistics related to the critical sections.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 int pdmR3CritSectBothInitStats(PVM pVM)
 {
@@ -62,7 +62,7 @@ int pdmR3CritSectBothInitStats(PVM pVM)
 /**
  * Relocates all the critical sections.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 void pdmR3CritSectBothRelocate(PVM pVM)
 {
@@ -128,7 +128,7 @@ VMMR3_INT_DECL(int) PDMR3CritSectBothTerm(PVM pVM)
  * Initializes a critical section and inserts it into the list.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pCritSect       The critical section.
  * @param   pvKey           The owner key.
  * @param   SRC_POS         The source position.
@@ -215,7 +215,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
  * Initializes a read/write critical section and inserts it into the list.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pCritSect       The read/write critical section.
  * @param   pvKey           The owner key.
  * @param   SRC_POS         The source position.
@@ -321,7 +321,7 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
  * works in ring-0 and raw-mode context as well.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
  * @param   SRC_POS         Use RT_SRC_POS.
@@ -351,7 +351,7 @@ VMMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, RT_SRC_POS_DEC
  * critical sections, but works in ring-0 and raw-mode context as well.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the read/write critical section.
  * @param   SRC_POS         Use RT_SRC_POS.
@@ -378,7 +378,7 @@ VMMR3DECL(int) PDMR3CritSectRwInit(PVM pVM, PPDMCRITSECTRW pCritSect, RT_SRC_POS
  * Initializes a PDM critical section for a device.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
  * @param   SRC_POS         The source position.  Optional.
@@ -397,7 +397,7 @@ int pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect,
  * Initializes a PDM read/write critical section for a device.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the read/write critical section.
  * @param   SRC_POS         The source position.  Optional.
@@ -416,7 +416,7 @@ int pdmR3CritSectRwInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritS
  * Initializes the automatic default PDM critical section for a device.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Device instance.
  * @param   SRC_POS         The source position.  Optional.
  * @param   pCritSect       Pointer to the critical section.
@@ -438,7 +438,7 @@ int pdmR3CritSectInitDeviceAuto(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritS
  * Initializes a PDM critical section for a driver.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         Driver instance.
  * @param   pCritSect       Pointer to the critical section.
  * @param   SRC_POS         The source position.  Optional.
@@ -461,7 +461,7 @@ int pdmR3CritSectInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
  * Initializes a PDM read/write critical section for a driver.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         Driver instance.
  * @param   pCritSect       Pointer to the read/write critical section.
  * @param   SRC_POS         The source position.  Optional.
@@ -485,7 +485,7 @@ int pdmR3CritSectRwInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECTRW pCritS
  *
  * @returns Return code from RTCritSectDelete.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCritSect   The critical section.
  * @param   pPrev       The previous critical section in the list.
  * @param   fFinal      Set if this is the final call and statistics shouldn't be deregistered.
@@ -542,7 +542,7 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect,
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCritSect   The read/write critical section.
  * @param   pPrev       The previous critical section in the list.
  * @param   fFinal      Set if this is the final call and statistics shouldn't be deregistered.
@@ -615,7 +615,7 @@ static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritS
  *          The entire list is processed on failure, so we'll only
  *          return the first error code. This shouldn't be a problem
  *          since errors really shouldn't happen here.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pvKey   The initializer key.
  */
 static int pdmR3CritSectDeleteByKey(PVM pVM, void *pvKey)
@@ -654,7 +654,7 @@ static int pdmR3CritSectDeleteByKey(PVM pVM, void *pvKey)
  *          The entire list is processed on failure, so we'll only
  *          return the first error code. This shouldn't be a problem
  *          since errors really shouldn't happen here.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pvKey   The initializer key.
  */
 static int pdmR3CritSectRwDeleteByKey(PVM pVM, void *pvKey)
@@ -691,7 +691,7 @@ static int pdmR3CritSectRwDeleteByKey(PVM pVM, void *pvKey)
  * device.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pDevIns     The device handle.
  */
 int pdmR3CritSectBothDeleteDevice(PVM pVM, PPDMDEVINS pDevIns)
@@ -707,7 +707,7 @@ int pdmR3CritSectBothDeleteDevice(PVM pVM, PPDMDEVINS pDevIns)
  * driver.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pDrvIns     The driver handle.
  */
 int pdmR3CritSectBothDeleteDriver(PVM pVM, PPDMDRVINS pDrvIns)
@@ -954,7 +954,7 @@ static void pdmR3CritSectAppendNameToList(char const *pszName, char **ppszNames,
  *
  * @returns Lock count.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pszNames        Where to return the critical section names.
  * @param   cbNames         The size of the buffer.
  */
@@ -1011,7 +1011,7 @@ VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNa
  * This is only used when entering guru meditation in order to prevent other
  * EMTs and I/O threads from deadlocking.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(void) PDMR3CritSectLeaveAll(PVM pVM)
 {
@@ -1038,7 +1038,7 @@ VMMR3_INT_DECL(void) PDMR3CritSectLeaveAll(PVM pVM)
  * all enter immediately and concurrently.
  *
  * @returns The address of the NOP critical section.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 VMMR3DECL(PPDMCRITSECT)             PDMR3CritSectGetNop(PVM pVM)
 {
@@ -1051,7 +1051,7 @@ VMMR3DECL(PPDMCRITSECT)             PDMR3CritSectGetNop(PVM pVM)
  * Gets the ring-0 address of the NOP critical section.
  *
  * @returns The ring-0 address of the NOP critical section.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 VMMR3DECL(R0PTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopR0(PVM pVM)
 {
@@ -1064,7 +1064,7 @@ VMMR3DECL(R0PTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopR0(PVM pVM)
  * Gets the raw-mode context address of the NOP critical section.
  *
  * @returns The raw-mode context address of the NOP critical section.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM)
 {

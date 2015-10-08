@@ -85,13 +85,16 @@ static void cfgmR3RemoveLeaf(PCFGMNODE pNode, PCFGMLEAF pLeaf);
 static void cfgmR3FreeValue(PVM pVM, PCFGMLEAF pLeaf);
 
 
+/** @todo replace pVM for pUVM !*/
+
 /**
  * Allocator wrapper.
  *
  * @returns Pointer to the allocated memory, NULL on failure.
- * @param   pVM                 The VM handle, if tree associated with one.
- * @param   enmTag              The allocation tag.
- * @param   cb                  The size of the allocation.
+ * @param   pVM         The cross context VM structure, if the tree
+ *                      is associated with one.
+ * @param   enmTag      The allocation tag.
+ * @param   cb          The size of the allocation.
  */
 static void *cfgmR3MemAlloc(PVM pVM, MMTAG enmTag, size_t cb)
 {
@@ -105,8 +108,9 @@ static void *cfgmR3MemAlloc(PVM pVM, MMTAG enmTag, size_t cb)
  * Free wrapper.
  *
  * @returns Pointer to the allocated memory, NULL on failure.
- * @param   pVM                 The VM handle, if tree associated with one.
- * @param   pv                  The memory block to free.
+ * @param   pVM         The cross context VM structure, if the tree
+ *                      is associated with one.
+ * @param   pv          The memory block to free.
  */
 static void cfgmR3MemFree(PVM pVM, void *pv)
 {
@@ -121,9 +125,10 @@ static void cfgmR3MemFree(PVM pVM, void *pv)
  * String allocator wrapper.
  *
  * @returns Pointer to the allocated memory, NULL on failure.
- * @param   pVM                 The VM handle, if tree associated with one.
- * @param   enmTag              The allocation tag.
- * @param   cbString            The size of the allocation, terminator included.
+ * @param   pVM         The cross context VM structure, if the tree
+ *                      is associated with one.
+ * @param   enmTag      The allocation tag.
+ * @param   cbString    The size of the allocation, terminator included.
  */
 static char *cfgmR3StrAlloc(PVM pVM, MMTAG enmTag,  size_t cbString)
 {
@@ -137,8 +142,9 @@ static char *cfgmR3StrAlloc(PVM pVM, MMTAG enmTag,  size_t cbString)
  * String free wrapper.
  *
  * @returns Pointer to the allocated memory, NULL on failure.
- * @param   pVM                 The VM handle, if tree associated with one.
- * @param   pszString           The memory block to free.
+ * @param   pVM         The cross context VM structure, if the tree
+ *                      is associated with one.
+ * @param   pszString   The memory block to free.
  */
 static void cfgmR3StrFree(PVM pVM, char *pszString)
 {
@@ -175,10 +181,13 @@ static void cfgmR3FreeNodeOnly(PCFGMNODE pNode)
 /**
  * Constructs the configuration for the VM.
  *
+ * This should only be called used once.
+ *
  * @returns VBox status code.
- * @param   pVM                 Pointer to VM which configuration has not yet been loaded.
- * @param   pfnCFGMConstructor  Pointer to callback function for constructing the VM configuration tree.
- *                              This is called in the EM.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pfnCFGMConstructor  Pointer to callback function for constructing
+ *                              the VM configuration tree.  This is called on
+ *                              the EMT.
  * @param   pvUser              The user argument passed to pfnCFGMConstructor.
  * @thread  EMT.
  * @internal
@@ -232,7 +241,7 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
  * Terminates the configuration manager.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @internal
  */
 VMMR3DECL(int) CFGMR3Term(PVM pVM)
@@ -247,7 +256,7 @@ VMMR3DECL(int) CFGMR3Term(PVM pVM)
  * Gets the root node for the VM.
  *
  * @returns Pointer to root node.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMMR3DECL(PCFGMNODE) CFGMR3GetRoot(PVM pVM)
 {
@@ -259,7 +268,7 @@ VMMR3DECL(PCFGMNODE) CFGMR3GetRoot(PVM pVM)
  * Gets the root node for the VM.
  *
  * @returns Pointer to root node.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMMR3DECL(PCFGMNODE) CFGMR3GetRootU(PUVM pUVM)
 {
@@ -293,7 +302,8 @@ VMMR3DECL(PCFGMNODE) CFGMR3GetParent(PCFGMNODE pNode)
  * @returns Pointer to the parent node.
  * @returns NULL if pNode is Root or pVM is not correct.
  *
- * @param   pVM             The VM handle, used as token that the caller is trusted.
+ * @param   pVM             The cross context VM structure.  Used as token that
+ *                          the caller is trusted.
  * @param   pNode           The node which parent we query.
  */
 VMMR3DECL(PCFGMNODE) CFGMR3GetParentEx(PVM pVM, PCFGMNODE pNode)
@@ -941,7 +951,7 @@ VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
  * need to do very small adjustments to the config.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @internal
  */
 VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
@@ -2019,7 +2029,8 @@ static void cfgmR3RemoveLeaf(PCFGMNODE pNode, PCFGMLEAF pLeaf)
  * Use this before assigning a new value to a leaf.
  * The caller must either free the leaf or assign a new value to it.
  *
- * @param   pVM         Used to select the heap.
+ * @param   pVM         The cross context VM structure, if the tree
+ *                      is associated with one.
  * @param   pLeaf       Pointer to the leaf which value should be free.
  */
 static void cfgmR3FreeValue(PVM pVM, PCFGMLEAF pLeaf)
@@ -3160,7 +3171,7 @@ VMMR3DECL(void) CFGMR3Dump(PCFGMNODE pRoot)
 /**
  * Info handler, internal version.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */

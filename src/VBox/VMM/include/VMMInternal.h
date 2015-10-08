@@ -73,7 +73,7 @@
 /**
  * Switcher function, HC to RC.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @returns Return code indicating the action to take.
  */
 typedef DECLASMTYPE(int) FNVMMSWITCHERHC(PVM pVM);
@@ -557,7 +557,7 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta);
  * It will call VMMRCEntry().
  *
  * @returns return code from VMMRCEntry().
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   uArg    See VMMRCEntry().
  * @internal
  */
@@ -567,7 +567,7 @@ DECLASM(int)    vmmR0WorldSwitch(PVM pVM, unsigned uArg);
  * Callback function for vmmR0CallRing3SetJmp.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 typedef DECLCALLBACK(int) FNVMMR0SETJMP(PVM pVM, PVMCPU pVCpu);
 /** Pointer to FNVMMR0SETJMP(). */
@@ -582,8 +582,8 @@ typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
  *
  * @returns VINF_SUCCESS on success or whatever is passed to vmmR0CallRing3LongJmp.
  * @param   pJmpBuf     The jmp_buf to set.
- * @param   pfn         The function to be called when not resuming..
- * @param   pVM         The argument of that function.
+ * @param   pfn         The function to be called when not resuming.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The VCPU of the calling EMT.
  */
 DECLASM(int)    vmmR0CallRing3SetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM, PVMCPU pVCpu);
@@ -603,7 +603,7 @@ typedef FNVMMR0SETJMPEX *PFNVMMR0SETJMPEX;
  *
  * @returns VINF_SUCCESS on success or whatever is passed to vmmR0CallRing3LongJmp.
  * @param   pJmpBuf     The jmp_buf to set.
- * @param   pfn         The function to be called when not resuming..
+ * @param   pfn         The function to be called when not resuming.
  * @param   pvUser      The argument of that function.
  */
 DECLASM(int)    vmmR0CallRing3SetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pfn, void *pvUser);
@@ -614,8 +614,8 @@ DECLASM(int)    vmmR0CallRing3SetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pf
  * This will save the stack and registers.
  *
  * @returns rc.
- * @param   pJmpBuf         Pointer to the jump buffer.
- * @param   rc              The return code.
+ * @param   pJmpBuf     Pointer to the jump buffer.
+ * @param   rc          The return code.
  */
 DECLASM(int)    vmmR0CallRing3LongJmp(PVMMR0JMPBUF pJmpBuf, int rc);
 

@@ -173,7 +173,7 @@ DECLINLINE(bool) selmIsGstDescGoodForSReg(PVMCPU pVCpu, PCCPUMSELREG pSReg, PCX8
 /**
  * Converts a guest GDT or LDT entry to a shadow table entry.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDesc       Guest entry on input, shadow entry on return.
  */
 DECL_FORCE_INLINE(void) selmGuestToShadowDesc(PVM pVM, PX86DESC pDesc)

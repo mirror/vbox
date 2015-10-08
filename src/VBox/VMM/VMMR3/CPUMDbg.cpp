@@ -1379,7 +1379,7 @@ static DBGFREGDESC const g_aCpumRegHyperDescs[] =
  * Called by CPUMR3Init.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 int cpumR3DbgInit(PVM pVM)
 {

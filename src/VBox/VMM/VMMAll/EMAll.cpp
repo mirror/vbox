@@ -263,7 +263,7 @@ VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
 /**
  * Locks REM execution to a single VCPU.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(void) EMRemLock(PVM pVM)
 {
@@ -282,7 +282,7 @@ VMMDECL(void) EMRemLock(PVM pVM)
 /**
  * Unlocks REM execution
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(void) EMRemUnlock(PVM pVM)
 {
@@ -299,7 +299,7 @@ VMMDECL(void) EMRemUnlock(PVM pVM)
  * Check if this VCPU currently owns the REM lock.
  *
  * @returns bool owner/not owner
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
 {
@@ -318,7 +318,7 @@ VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
  * Try to acquire the REM lock.
  *
  * @returns VBox status code
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(int) EMRemTryLock(PVM pVM)
 {
@@ -431,7 +431,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
  * @returns VBox status code, see SELMToFlatEx and EMInterpretDisasOneEx for
  *          details.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pDis            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
@@ -464,7 +464,7 @@ VMM_INT_DECL(int) EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
  *
  * @returns VBox status code.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   GCPtrInstr      The flat address of the instruction.
  * @param   pCtxCore        The context core (used to determine the cpu mode).
@@ -823,7 +823,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRe
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *                      Updates the EIP if an instruction was executed successfully.
@@ -960,7 +960,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE p
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pDis        The disassembler cpu state for the instruction to be
  *                      interpreted.
@@ -1069,7 +1069,7 @@ DECLINLINE(int) emRCStackRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void
  * Interpret IRET (currently only to V86 code) - PATM only.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *
@@ -1206,7 +1206,7 @@ static int emInterpretIret(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
  * Interpret CPUID given the parameters in the CPU context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *
@@ -1235,7 +1235,7 @@ VMM_INT_DECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
  * Interpret RDTSC.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *
@@ -1265,7 +1265,7 @@ VMM_INT_DECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
  * Interpret RDTSCP.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        The CPU context.
  *
@@ -1303,7 +1303,7 @@ VMM_INT_DECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Interpret RDPMC.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *
@@ -1406,7 +1406,7 @@ VMM_INT_DECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
  * Interpret INVLPG.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   pAddrGC     Operand address.
@@ -1437,7 +1437,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE
  * Update CRx.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
@@ -1603,7 +1603,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
  * Interpret CRx write.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
@@ -1690,7 +1690,7 @@ static const char *emMSRtoString(uint32_t uMsr)
  * Interpret RDMSR
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  */
@@ -1724,7 +1724,7 @@ VMM_INT_DECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
  * Interpret WRMSR
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  */
@@ -1757,7 +1757,7 @@ VMM_INT_DECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
  * Interpret CRx read.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
@@ -1790,7 +1790,7 @@ static int emInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uin
  * Interpret DRx write.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegDRx  DRx register index (USE_REG_DR*)
@@ -1840,7 +1840,7 @@ VMM_INT_DECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFr
  * Interpret DRx read.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))

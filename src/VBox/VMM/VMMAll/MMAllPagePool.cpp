@@ -81,7 +81,7 @@ void *mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys)
  * and MMR3PageAllocLow().
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   HCPhysPage  The physical address of a page.
  * @param   ppvPage     Where to store the address corresponding to HCPhysPage.
  * @thread  The Emulation Thread.
@@ -112,7 +112,7 @@ VMMDECL(int) MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
  * and MMR3PageAllocLow().
  *
  * @returns Pointer to the page at that physical address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   HCPhysPage  The physical address of a page.
  * @thread  The Emulation Thread.
  */
@@ -138,7 +138,7 @@ VMMDECL(void *) MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage)
  * and MMR3PageAllocLow().
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   HCPhysPage  The physical address of a page.
  * @param   ppvPage     Where to store the address corresponding to HCPhysPage.
  * @thread  The Emulation Thread.
@@ -203,7 +203,7 @@ RTHCPHYS mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv)
  * and MMR3PageAllocLow().
  *
  * @returns Physical address for the specified page table.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvPage      Page which physical address we query.
  * @thread  The Emulation Thread.
  */

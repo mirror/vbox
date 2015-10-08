@@ -324,7 +324,8 @@ R0PTRTYPE(void *)           g_pvIOBitmap      = NULL;
  *
  * @returns VBox status code.
  * @param   pCpu            Pointer to the CPU info struct.
- * @param   pVM             Pointer to the VM (can be NULL after a resume!).
+ * @param   pVM             The cross context VM structure. Can be
+ *                          NULL after a resume!
  * @param   pvCpuPage       Pointer to the global CPU page.
  * @param   HCPhysCpuPage   Physical address of the global CPU page.
  * @param   fEnabledByHost  Whether the host OS has already initialized AMD-V.
@@ -467,7 +468,7 @@ VMMR0DECL(void) SVMR0GlobalTerm(void)
 /**
  * Frees any allocated per-VCPU structures for a VM.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 DECLINLINE(void) hmR0SvmFreeStructs(PVM pVM)
 {
@@ -507,7 +508,7 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVM pVM)
  * Does per-VM AMD-V initialization.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR0DECL(int) SVMR0InitVM(PVM pVM)
 {
@@ -591,7 +592,7 @@ failure_cleanup:
  * Does per-VM AMD-V termination.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 {
@@ -667,7 +668,7 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
  * This function is only called once per-VM during initalization.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 {
@@ -831,7 +832,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
  * Invalidates a guest page by guest virtual address.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCVirt      Guest virtual address of the page to invalidate.
  */
@@ -1019,7 +1020,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
  * @param   HCPhysVmcbHost  Physical address of host VMCB.
  * @param   HCPhysVmcb      Physical address of the VMCB.
  * @param   pCtx            Pointer to the guest-CPU context.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  */
 DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVmcbHost, RTHCPHYS HCPhysVmcb, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
@@ -1042,7 +1043,7 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVmcbHost, RTHCPHYS HCPhysVmcb, 
  * Executes the specified VMRUN handler in 64-bit mode.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   enmOp       The operation to perform.
@@ -1126,7 +1127,7 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
  * the FPU state itself which is shared between the host and the guest.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VMCPU.
+ * @param   pVM         The cross context VM structure.
  * @param   pVmcb       Pointer to the VM control block.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
@@ -1707,7 +1708,7 @@ static int hmR0SvmSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pCtx)
  * Enters the AMD-V session.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCpu        Pointer to the CPU info struct.
  */
@@ -1803,7 +1804,7 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
  * Saves the host state.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
@@ -1826,7 +1827,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  * the guest CPU mode.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
@@ -2068,7 +2069,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Does the necessary state syncing before returning to ring-3 for any reason
  * (longjmp, preemption, voluntary exits to ring-3) from AMD-V.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context.
  *
@@ -2124,7 +2125,7 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Leaves the AMD-V session.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
@@ -2163,7 +2164,7 @@ static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Does the necessary state syncing before doing a longjmp to ring-3.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
@@ -2240,7 +2241,7 @@ static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
  * steps before we can safely return to ring-3. This is not the same as longjmps
  * to ring-3, this is voluntary.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   rcExit      The reason for exiting to ring-3. Can be
@@ -2302,7 +2303,7 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
  * Updates the use of TSC offsetting mode for the CPU and adjusts the necessary
  * intercepts.
  *
- * @param   pVM         The shared VM handle.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
@@ -2562,7 +2563,7 @@ DECLINLINE(uint32_t) hmR0SvmGetGuestIntrShadow(PVMCPU pVCpu, PCPUMCTX pCtx)
  * instructs AMD-V to cause a \#VMEXIT as soon as the guest is in a state to
  * receive interrupts.
  *
- * @param pVmcb         Pointer to the VM control block.
+ * @param   pVmcb       Pointer to the VM control block.
  */
 DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 {
@@ -2583,7 +2584,7 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
  * \#VMEXIT as soon as a guest starts executing an IRET. This is used to unblock
  * virtual NMIs.
  *
- * @param pVmcb         Pointer to the VM control block.
+ * @param   pVmcb       Pointer to the VM control block.
  */
 DECLINLINE(void) hmR0SvmSetIretIntercept(PSVMVMCB pVmcb)
 {
@@ -2600,7 +2601,7 @@ DECLINLINE(void) hmR0SvmSetIretIntercept(PSVMVMCB pVmcb)
 /**
  * Clears the IRET intercept control in the VMCB.
  *
- * @param pVmcb         Pointer to the VM control block.
+ * @param   pVmcb       Pointer to the VM control block.
  */
 DECLINLINE(void) hmR0SvmClearIretIntercept(PSVMVMCB pVmcb)
 {
@@ -2740,7 +2741,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 /**
  * Reports world-switch error and dumps some useful debug info.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   rcVMRun         The return code from VMRUN (or
  *                          VERR_SVM_INVALID_GUEST_STATE for invalid
@@ -2896,7 +2897,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
  * @retval VINF_EM_NO_MEMORY PGM is out of memory, we need to return
  *         to the EM loop.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
@@ -2978,7 +2979,7 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @retval VINF_SUCCESS if we can proceed with running the guest.
  * @retval VINF_* scheduling changes, we have to go back to ring-3.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Pointer to the guest-CPU context.
  * @param   pSvmTransient   Pointer to the SVM transient structure.
@@ -3085,7 +3086,7 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
  * means there is no backing out to ring-3 or anywhere else at this
  * point.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Pointer to the guest-CPU context.
  * @param   pSvmTransient   Pointer to the SVM transient structure.
@@ -3188,7 +3189,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
  * Wrapper for running the guest code in AMD-V.
  *
  * @returns VBox strict status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
@@ -3214,7 +3215,7 @@ DECLINLINE(int) hmR0SvmRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Performs some essential restoration of state after running guest code in
  * AMD-V.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data maybe
  *                          out-of-sync. Make sure to update the required fields
@@ -3296,7 +3297,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
  * Runs the guest code using AMD-V.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -3365,7 +3366,7 @@ static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Runs the guest code using AMD-V in single step mode.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
@@ -3464,7 +3465,7 @@ static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Runs the guest code using AMD-V.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
@@ -3805,7 +3806,7 @@ static int hmR0SvmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTX pC
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        The guest CPU context.
  *
@@ -3960,7 +3961,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
  * @retval VERR_NOT_FOUND if no patch record for this RIP could be found.
  * @retval VERR_SVM_UNEXPECTED_PATCH_TYPE if the found patch type is invalid.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */

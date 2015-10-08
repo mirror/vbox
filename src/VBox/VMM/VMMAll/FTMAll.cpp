@@ -35,7 +35,7 @@
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmType     Checkpoint type
  */
 VMM_INT_DECL(int) FTMSetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType)
@@ -56,7 +56,7 @@ VMM_INT_DECL(int) FTMSetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType)
  *
  * @returns true/false
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(bool) FTMIsDeltaLoadSaveActive(PVM pVM)
 {

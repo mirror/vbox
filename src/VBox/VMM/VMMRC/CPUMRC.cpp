@@ -45,7 +45,7 @@ RT_C_DECLS_END
  * context execution.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegFrame   The register frame.
  * @param   uUser       User argument. In this case a combination of the
  *                      CPUM_HANDLER_* \#defines.
@@ -82,7 +82,7 @@ DECLCALLBACK(int) cpumRCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
  * Called by TRPM and CPUM assembly code to make sure the guest state is
  * ready for execution.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 The cross context VM structure.
  */
 DECLASM(void) CPUMRCAssertPreExecutionSanity(PVM pVM)
 {

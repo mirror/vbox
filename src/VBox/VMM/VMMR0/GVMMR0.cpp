@@ -1017,7 +1017,7 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
  * Does the VM initialization.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 GVMMR0DECL(int) GVMMR0InitVM(PVM pVM)
 {
@@ -1057,7 +1057,7 @@ GVMMR0DECL(int) GVMMR0InitVM(PVM pVM)
  * Indicates that we're done with the ring-0 initialization
  * of the VM.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @thread  EMT(0)
  */
 GVMMR0DECL(void) GVMMR0DoneInitVM(PVM pVM)
@@ -1077,7 +1077,7 @@ GVMMR0DECL(void) GVMMR0DoneInitVM(PVM pVM)
  * Indicates that we're doing the ring-0 termination of the VM.
  *
  * @returns true if termination hasn't been done already, false if it has.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pGVM        Pointer to the global VM structure. Optional.
  * @thread  EMT(0)
  */
@@ -1110,7 +1110,7 @@ GVMMR0DECL(bool) GVMMR0DoingTermVM(PVM pVM, PGVM pGVM)
  * could've associated the calling thread with the VM up front.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  *
  * @thread  EMT(0) if it's associated with the VM, otherwise any thread.
  */
@@ -1376,7 +1376,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
  * Note that VCPU 0 is automatically registered during VM creation.
  *
  * @returns VBox status code
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   idCpu           VCPU id.
  */
 GVMMR0DECL(int) GVMMR0RegisterVCpu(PVM pVM, VMCPUID idCpu)
@@ -1441,7 +1441,7 @@ GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM)
  * are by threads inside the same process, so this will not be an issue.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   ppGVM           Where to store the GVM pointer.
  * @param   ppGVMM          Where to store the pointer to the GVMM instance data.
  * @param   fTakeUsedLock   Whether to take the used lock or not.
@@ -1518,7 +1518,7 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
  * Lookup a GVM structure by the shared VM structure.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   ppGVM       Where to store the GVM pointer.
  *
  * @remark  This will not take the 'used'-lock because it doesn't do
@@ -1536,7 +1536,7 @@ GVMMR0DECL(int) GVMMR0ByVM(PVM pVM, PGVM *ppGVM)
  * caller is an EMT thread.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   idCpu       The Virtual CPU ID of the calling EMT.
  * @param   ppGVM       Where to store the GVM pointer.
  * @param   ppGVMM      Where to store the pointer to the GVMM instance data.
@@ -1586,7 +1586,7 @@ static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM)
  * and ensuring that the caller is the EMT thread.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   idCpu       The Virtual CPU ID of the calling EMT.
  * @param   ppGVM       Where to store the GVM pointer.
  * @thread  EMT
@@ -1817,7 +1817,7 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
  *
  * @returns VINF_SUCCESS normal wakeup (timeout or kicked by other thread).
  *          VERR_INTERRUPTED if a signal was scheduled for the thread.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The Virtual CPU ID of the calling EMT.
  * @param   u64ExpireGipTime    The time for the sleep to expire expressed as GIP time.
  * @thread  EMT(idCpu).
@@ -1965,7 +1965,7 @@ DECLINLINE(int) gvmmR0SchedWakeUpOne(PGVM pGVM, PGVMCPU pGVCpu)
  * @retval  VINF_SUCCESS if successfully woken up.
  * @retval  VINF_GVM_NOT_BLOCKED if the EMT wasn't blocked.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The Virtual CPU ID of the EMT to wake up.
  * @param   fTakeUsedLock       Take the used lock or not
  * @thread  Any but EMT.
@@ -2026,7 +2026,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
  * @retval  VINF_SUCCESS if successfully woken up.
  * @retval  VINF_GVM_NOT_BLOCKED if the EMT wasn't blocked.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The Virtual CPU ID of the EMT to wake up.
  * @thread  Any but EMT.
  */
@@ -2070,7 +2070,7 @@ DECLINLINE(int) gvmmR0SchedPokeOne(PGVM pGVM, PVMCPU pVCpu)
  * @retval  VINF_SUCCESS if poked successfully.
  * @retval  VINF_GVM_NOT_BUSY_IN_GC if the EMT wasn't busy in GC.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The ID of the virtual CPU to poke.
  * @param   fTakeUsedLock       Take the used lock or not
  */
@@ -2108,7 +2108,7 @@ GVMMR0DECL(int) GVMMR0SchedPokeEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
  * @retval  VINF_SUCCESS if poked successfully.
  * @retval  VINF_GVM_NOT_BUSY_IN_GC if the EMT wasn't busy in GC.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The ID of the virtual CPU to poke.
  */
 GVMMR0DECL(int) GVMMR0SchedPoke(PVM pVM, VMCPUID idCpu)
@@ -2122,7 +2122,7 @@ GVMMR0DECL(int) GVMMR0SchedPoke(PVM pVM, VMCPUID idCpu)
  *
  * @returns VBox status code, no informational stuff.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSleepSet           The set of sleepers to wake up.
  * @param   pPokeSet            The set of CPUs to poke.
  */
@@ -2178,7 +2178,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PVM pVM, PCVMCPUSET pSleepSet, PCVM
  * VMMR0 request wrapper for GVMMR0SchedWakeUpAndPokeCpus.
  *
  * @returns see GVMMR0SchedWakeUpAndPokeCpus.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pReq            Pointer to the request packet.
  */
 GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpusReq(PVM pVM, PGVMMSCHEDWAKEUPANDPOKECPUSREQ pReq)
@@ -2202,7 +2202,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpusReq(PVM pVM, PGVMMSCHEDWAKEUPANDPOKE
  *
  * @returns VINF_SUCCESS if not yielded.
  *          VINF_GVM_YIELDED if an attempt to switch to a different VM task was made.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The Virtual CPU ID of the calling EMT.
  * @param   u64ExpireGipTime    The time for the sleep to expire expressed as GIP time.
  * @param   fYield              Whether to yield or not.
@@ -2332,7 +2332,7 @@ static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pT
  * The caller must have disabled preemption!
  * The caller must check that the host can do high resolution timers.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   idHostCpu   The current host CPU id.
  * @param   uHz         The desired frequency.
  */
@@ -2529,7 +2529,7 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
  * VMMR0 request wrapper for GVMMR0QueryStatistics.
  *
  * @returns see GVMMR0QueryStatistics.
- * @param   pVM             Pointer to the VM. Optional.
+ * @param   pVM             The cross context VM structure. Optional.
  * @param   pReq            Pointer to the request packet.
  */
 GVMMR0DECL(int) GVMMR0QueryStatisticsReq(PVM pVM, PGVMMQUERYSTATISTICSSREQ pReq)
@@ -2644,7 +2644,7 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
  * VMMR0 request wrapper for GVMMR0ResetStatistics.
  *
  * @returns see GVMMR0ResetStatistics.
- * @param   pVM             Pointer to the VM. Optional.
+ * @param   pVM             The cross context VM structure. Optional.
  * @param   pReq            Pointer to the request packet.
  */
 GVMMR0DECL(int) GVMMR0ResetStatisticsReq(PVM pVM, PGVMMRESETSTATISTICSSREQ pReq)

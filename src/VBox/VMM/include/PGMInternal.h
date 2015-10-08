@@ -213,8 +213,8 @@
 /** @} */
 
 /** Macro for checking if the guest is using paging.
- * @param uGstType     PGM_TYPE_*
- * @param uShwType     PGM_TYPE_*
+ * @param   uGstType   PGM_TYPE_*
+ * @param   uShwType   PGM_TYPE_*
  * @remark  ASSUMES certain order of the PGM_TYPE_* values.
  */
 #define PGM_WITH_PAGING(uGstType, uShwType)  \
@@ -223,8 +223,8 @@
      && (uShwType) != PGM_TYPE_EPT)
 
 /** Macro for checking if the guest supports the NX bit.
- * @param uGstType     PGM_TYPE_*
- * @param uShwType     PGM_TYPE_*
+ * @param   uGstType   PGM_TYPE_*
+ * @param   uShwType   PGM_TYPE_*
  * @remark  ASSUMES certain order of the PGM_TYPE_* values.
  */
 #define PGM_WITH_NX(uGstType, uShwType)  \
@@ -237,7 +237,7 @@
  * Maps a HC physical page pool address to a virtual address.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The current CPU.
  * @param   HCPhys      The HC physical address to map to a virtual one.
  * @param   ppv         Where to store the virtual address. No need to cast
@@ -259,7 +259,7 @@
  * Maps a GC physical page address to a virtual address.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The current CPU.
  * @param   GCPhys  The GC physical address to map to a virtual one.
  * @param   ppv     Where to store the virtual address. No need to cast this.
@@ -280,7 +280,7 @@
  * Maps a GC physical page address to a virtual address.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   GCPhys  The GC physical address to map to a virtual one.
  * @param   ppv     Where to store the virtual address. No need to cast this.
  *
@@ -308,7 +308,7 @@
  * Maps a unaligned GC physical page address to a virtual address.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   GCPhys  The GC physical address to map to a virtual one.
  * @param   ppv     Where to store the virtual address. No need to cast this.
  *
@@ -349,7 +349,7 @@
  *
  * For best effect only apply this to the page that was mapped most recently.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pvPage  The pool page.
  */
 #define PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvPage)  PGM_DYNMAP_UNUSED_HINT(VMMGetCpu(pVM), pvPage)
@@ -372,7 +372,7 @@
 /** @def PGM_INVL_PG_ALL_VCPU
  * Invalidates a page on all VCPUs
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
 #ifdef IN_RC
@@ -413,7 +413,7 @@
 /** @def PGM_INVL_ALL_VCPU_TLBS()
  * Invalidates the TLBs of all VCPUs
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 #ifdef IN_RC
 # define PGM_INVL_ALL_VCPU_TLBS(pVM)            ASMReloadCR3()
@@ -610,7 +610,7 @@ typedef PGMPHYSHANDLERTYPEINT *PPGMPHYSHANDLERTYPEINT;
 /**
  * Converts a handle to a pointer.
  * @returns PPGMPHYSHANDLERTYPEINT
- * @param   a_pVM           Pointer to the cross context VM structure.
+ * @param   a_pVM           The cross context VM structure.
  * @param   a_hType         Physical access handler type handle.
  */
 #define PGMPHYSHANDLERTYPEINT_FROM_HANDLE(a_pVM, a_hType) ((PPGMPHYSHANDLERTYPEINT)MMHyperHeapOffsetToPtr(a_pVM, a_hType))
@@ -655,7 +655,7 @@ typedef PGMPHYSHANDLER *PPGMPHYSHANDLER;
 /**
  * Gets the type record for a physical handler (no reference added).
  * @returns PPGMPHYSHANDLERTYPEINT
- * @param   a_pVM           Pointer to the cross context VM structure.
+ * @param   a_pVM           The cross context VM structure.
  * @param   a_pPhysHandler  Pointer to the physical handler structure
  *                          (PGMPHYSHANDLER).
  */
@@ -732,7 +732,7 @@ typedef PGMVIRTHANDLERTYPEINT *PPGMVIRTHANDLERTYPEINT;
 /**
  * Converts a handle to a pointer.
  * @returns PPGMVIRTHANDLERTYPEINT
- * @param   a_pVM           Pointer to the cross context VM structure.
+ * @param   a_pVM           The cross context VM structure.
  * @param   a_hType         Vitual access handler type handle.
  */
 # define PGMVIRTHANDLERTYPEINT_FROM_HANDLE(a_pVM, a_hType) ((PPGMVIRTHANDLERTYPEINT)MMHyperHeapOffsetToPtr(a_pVM, a_hType))
@@ -773,7 +773,7 @@ typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
 /**
  * Gets the type record for a virtual handler (no reference added).
  * @returns PPGMVIRTHANDLERTYPEINT
- * @param   a_pVM           Pointer to the cross context VM structure.
+ * @param   a_pVM           The cross context VM structure.
  * @param   a_pVirtHandler  Pointer to the virtual handler structure
  *                          (PGMVIRTHANDLER).
  */

@@ -35,7 +35,7 @@
  * @retval  @c true if used.
  * @retval  @c false if no GIM provider ("none") is used.
  *
- * @param   pVM       Pointer to the VM.
+ * @param   pVM       The cross context VM structure.
  */
 VMMDECL(bool) GIMIsEnabled(PVM pVM)
 {
@@ -47,7 +47,7 @@ VMMDECL(bool) GIMIsEnabled(PVM pVM)
  * Gets the GIM provider configured for this VM.
  *
  * @returns The GIM provider Id.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(GIMPROVIDERID) GIMGetProvider(PVM pVM)
 {
@@ -121,7 +121,7 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
  * relies on that.
  *
  * @returns true if enabled and usable, false otherwise.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
 {

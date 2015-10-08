@@ -811,7 +811,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
  * Generate indirect jump to unknown destination
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pCpu        Disassembly state
  * @param   pCurInstrGC Current instruction address
@@ -882,7 +882,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
  * Generate return instruction
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch structure
  * @param   pCpu        Disassembly struct
  * @param   pCurInstrGC Current instruction pointer
@@ -942,7 +942,7 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
  * Generate all global patm functions
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch structure
  *
  */
@@ -989,7 +989,7 @@ int patmPatchGenGlobalFunctions(PVM pVM, PPATCHINFO pPatch)
  * Generate illegal instruction (int 3)
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch structure
  *
  */
@@ -1007,7 +1007,7 @@ int patmPatchGenIllegalInstr(PVM pVM, PPATCHINFO pPatch)
  * Check virtual IF flag and jump back to original guest code if set
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch structure
  * @param   pCurInstrGC Guest context pointer to the current instruction
  *
@@ -1032,7 +1032,7 @@ int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC)
  * Set PATM interrupt flag
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch structure
  * @param   pInstrGC    Corresponding guest instruction
  *
@@ -1053,7 +1053,7 @@ int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
  * Clear PATM interrupt flag
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch structure
  * @param   pInstrGC    Corresponding guest instruction
  *
@@ -1075,7 +1075,7 @@ int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
  * Clear PATM inhibit irq flag
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pPatch          Patch structure
  * @param   pNextInstrGC    Next guest instruction
  */
@@ -1103,7 +1103,7 @@ int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTRCPTR pNextInstrGC
  * Generate an interrupt handler entrypoint
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pIntHandlerGC IDT handler address
  *
@@ -1142,7 +1142,7 @@ int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pIntHandlerGC)
  * Generate a trap handler entrypoint
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pTrapHandlerGC  IDT handler address
  */
@@ -1352,7 +1352,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
  * Generate an sldt or str patch instruction
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pCpu        Disassembly state
  * @param   pCurInstrGC Guest instruction address
@@ -1453,7 +1453,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
  * Generate an sgdt or sidt patch instruction
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pCpu        Disassembly state
  * @param   pCurInstrGC Guest instruction address
@@ -1548,7 +1548,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
  * Generate a cpuid patch instruction
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pCurInstrGC Guest instruction address
  */
@@ -1568,7 +1568,7 @@ int patmPatchGenCpuid(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC)
  * Generate the jump from guest to patch code
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pTargetGC   Guest target jump
  * @param   fClearInhibitIRQs   Clear inhibit irq flag

@@ -34,8 +34,8 @@
  * PDMDrvHlpCallR0 helper.
  *
  * @returns See PFNPDMDRVREQHANDLERR0.
- * @param   pVM                 Pointer to the VM (for validation).
- * @param   pReq                Pointer to the request buffer.
+ * @param   pVM     The cross context VM structure. (For validation.)
+ * @param   pReq    Pointer to the request buffer.
  */
 VMMR0_INT_DECL(int) PDMR0DriverCallReqHandler(PVM pVM, PPDMDRIVERCALLREQHANDLERREQ pReq)
 {

@@ -104,7 +104,7 @@ static int                  pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const 
  * are called.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 int pdmR3DevInit(PVM pVM)
 {
@@ -473,7 +473,7 @@ PPDMDEV pdmR3DevLookup(PVM pVM, const char *pszName)
  * Loads the device modules.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static int pdmR3DevLoadModules(PVM pVM)
 {
@@ -587,7 +587,7 @@ static int pdmR3DevLoadModules(PVM pVM)
  * Loads one device module and call the registration entry point.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pRegCB          The registration callback stuff.
  * @param   pszFilename     Module filename.
  * @param   pszName         Module name.
@@ -728,7 +728,7 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
  * Locates a LUN.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
@@ -860,7 +860,7 @@ VMMR3DECL(int) PDMR3DeviceDetach(PUVM pUVM, const char *pszDevice, unsigned iIns
  * timer or similar created by the device.
  *
  * @returns Pointer to the critical section.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance in question.
  *
  * @internal

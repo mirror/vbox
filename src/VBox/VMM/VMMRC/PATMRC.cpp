@@ -75,7 +75,7 @@ DECLEXPORT(VBOXSTRICTRC) patmRCVirtPagePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT
  * @retval  VINF_EM_RAW_EMULATE_INSTR on needing to go to ring-3 to do this.
  * @retval  VERR_PATCH_NOT_FOUND if no patch was found.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegFrame   CPU context if \#PF, NULL if other write..
  * @param   GCPtr       GC pointer to write address.
  * @param   cbWrite     Number of bytes to write.
@@ -152,7 +152,7 @@ VMMRC_INT_DECL(VBOXSTRICTRC) PATMRCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE 
  *
  * @returns VBox status
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtxCore    The relevant core context.
  */
 VMMRC_INT_DECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
@@ -455,7 +455,7 @@ VMMRC_INT_DECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame
  * @retval  VINF_PATM_PATCH_INT3
  * @retval  VINF_EM_RAW_EMULATE_INSTR
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtxCore    The relevant core context.
  */
 VMMRC_INT_DECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)

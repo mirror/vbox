@@ -181,7 +181,7 @@ static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *p
  * with VBox.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
 {
@@ -327,7 +327,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
  * @retval VINF_SUCCESS           if the guest FPU state is loaded.
  * @retval VINF_EM_RAW_GUEST_TRAP if it is a guest trap.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
@@ -387,9 +387,9 @@ VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  *
- * @param pVM       Pointer to the VM.
- * @param pVCpu     Pointer to the VMCPU.
- * @param pCtx      Pointer to the guest-CPU context.
+ * @param   pVM     The cross context VM structure.
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pCtx    Pointer to the guest-CPU context.
  */
 VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -447,7 +447,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Save guest FPU/XMM state
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */

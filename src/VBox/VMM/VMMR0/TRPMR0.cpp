@@ -38,7 +38,7 @@
 /**
  * Dispatches an interrupt that arrived while we were in the guest context.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @remark  Must be called with interrupts disabled.
  */
 VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)

@@ -245,7 +245,7 @@ bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegF
  *          VINF_IOM_R3_MMIO_WRITE, VINF_IOM_R3_MMIO_READ_WRITE or
  *          VINF_IOM_R3_MMIO_READ may be returned.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pRange              The range to write to.
  * @param   GCPhys              The physical address to start writing.
  * @param   pvValue             Where to store the value.
@@ -485,7 +485,7 @@ static VBOXSTRICTRC iomMMIODoWrite(PVM pVM, PVMCPU pVCpu, PIOMMMIORANGE pRange, 
  *          VINF_IOM_R3_MMIO_READ, VINF_IOM_R3_MMIO_READ_WRITE or
  *          VINF_IOM_R3_MMIO_WRITE may be returned.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pRange              The range to read from.
  * @param   GCPhys              The physical address to start reading.
  * @param   pvValue             Where to store the value.
@@ -745,7 +745,7 @@ DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
@@ -806,7 +806,7 @@ static int iomInterpretMOVxXRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
@@ -881,7 +881,7 @@ DECLINLINE(int) iomRamWrite(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDs
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
@@ -1142,7 +1142,7 @@ static uint64_t iomDisModeToMask(DISCPUMODE enmCpuMode)
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
@@ -1276,7 +1276,7 @@ static int iomInterpretSTOS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
@@ -1330,7 +1330,7 @@ static int iomInterpretLODS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
@@ -1389,7 +1389,7 @@ static int iomInterpretCMP(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPH
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
@@ -1490,7 +1490,7 @@ static int iomInterpretOrXorAnd(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, R
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
@@ -1550,7 +1550,7 @@ static int iomInterpretTEST(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
@@ -1595,7 +1595,7 @@ static int iomInterpretBT(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPHY
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
@@ -1669,7 +1669,7 @@ static int iomInterpretXCHG(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
  * Common worker for the \#PF handler and IOMMMIOPhysHandler (APIC+VT-x).
  *
  * @returns VBox status code (appropriate for GC return).
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   uErrorCode  CPU Error code.  This is UINT32_MAX when we don't have
  *                      any error code (the EPT misconfig hack).
@@ -1945,7 +1945,7 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uError
  * Physical access handler for MMIO ranges.
  *
  * @returns VBox status code (appropriate for GC return).
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   uErrorCode  CPU Error code.
  * @param   pCtxCore    Trap register frame.
@@ -2054,7 +2054,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   GCPhys      The physical address to read.
  * @param   pu32Value   Where to store the value read.
@@ -2186,7 +2186,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint32
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   GCPhys      The physical address to write to.
  * @param   u32Value    The value to write.
@@ -2307,7 +2307,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint3
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM             The virtual machine.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
  * @param   uPort           IO Port
@@ -2470,7 +2470,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM             The virtual machine.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
  * @param   uPort           IO Port
@@ -2629,7 +2629,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
  * @returns VBox status code.  This API may return VINF_SUCCESS even if no
  *          remapping is made,.
  *
- * @param   pVM             The virtual machine.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          The address of the MMIO page to be changed.
  * @param   GCPhysRemapped  The address of the MMIO2 page.
  * @param   fPageFlags      Page flags to set. Must be (X86_PTE_RW | X86_PTE_P)
@@ -2703,7 +2703,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
  *
  * @returns VBox status code.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   GCPhys          The address of the MMIO page to be changed.
  * @param   HCPhys          The address of the host physical page.
@@ -2757,7 +2757,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTHCPH
  *
  * @returns VBox status code.
  *
- * @param   pVM             The virtual machine.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Physical address that's part of the MMIO region to be reset.
  */
 VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)

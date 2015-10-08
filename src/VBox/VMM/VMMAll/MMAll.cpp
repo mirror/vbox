@@ -36,7 +36,7 @@
  *
  * @returns Pointer to the corresponding lookup record.
  * @returns NULL on failure.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   R3Ptr   The host context ring-3 address to lookup.
  * @param   poff    Where to store the offset into the HMA memory chunk.
  */
@@ -96,7 +96,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
  *
  * @returns Pointer to the corresponding lookup record.
  * @returns NULL on failure.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   R0Ptr   The host context ring-0 address to lookup.
  * @param   poff    Where to store the offset into the HMA memory chunk.
  */
@@ -158,7 +158,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
  *
  * @returns Pointer to the corresponding lookup record.
  * @returns NULL on failure.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   RCPtr   The raw-mode context address to lookup.
  * @param   poff    Where to store the offset into the HMA memory chunk.
  */
@@ -203,7 +203,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *pof
  *
  * @returns Pointer to the corresponding lookup record.
  * @returns NULL on failure.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pv      The current context address to lookup.
  * @param   poff    Where to store the offset into the HMA memory chunk.
  */
@@ -245,7 +245,7 @@ DECLINLINE(RTR3PTR) mmHyperLookupCalcR3(PMMLOOKUPHYPER pLookup, uint32_t off)
  * Calculate the host context ring-0 address of an offset into the HMA memory chunk.
  *
  * @returns the host context ring-0 address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pLookup     The HMA lookup record.
  * @param   off         The offset into the HMA memory chunk.
  */
@@ -280,7 +280,7 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
  * Calculate the raw-mode context address of an offset into the HMA memory chunk.
  *
  * @returns the raw-mode context base address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pLookup     The HMA lookup record.
  * @param   off         The offset into the HMA memory chunk.
  */
@@ -294,7 +294,7 @@ DECLINLINE(RTRCPTR) mmHyperLookupCalcRC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
  * Calculate the guest context address of an offset into the HMA memory chunk.
  *
  * @returns the guest context base address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pLookup     The HMA lookup record.
  * @param   off         The offset into the HMA memory chunk.
  */
@@ -315,7 +315,7 @@ DECLINLINE(void *) mmHyperLookupCalcCC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t
  * Converts a ring-0 host context address in the Hypervisor memory region to a ring-3 host context address.
  *
  * @returns ring-3 host context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   R0Ptr       The ring-0 host context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -334,7 +334,7 @@ VMMDECL(RTR3PTR) MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr)
  * Converts a ring-0 host context address in the Hypervisor memory region to a raw-mode context address.
  *
  * @returns raw-mode context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   R0Ptr       The ring-0 host context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -354,7 +354,7 @@ VMMDECL(RTRCPTR) MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr)
  * Converts a ring-0 host context address in the Hypervisor memory region to a current context address.
  *
  * @returns current context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   R0Ptr       The ring-0 host context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -374,7 +374,7 @@ VMMDECL(void *) MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr)
  * Converts a ring-3 host context address in the Hypervisor memory region to a ring-0 host context address.
  *
  * @returns ring-0 host context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   R3Ptr       The ring-3 host context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -394,7 +394,7 @@ VMMDECL(RTR0PTR) MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr)
  * Converts a ring-3 host context address in the Hypervisor memory region to a guest context address.
  *
  * @returns guest context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   R3Ptr       The ring-3 host context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -415,7 +415,7 @@ VMMDECL(RTRCPTR) MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr)
  * Converts a ring-3 host context address in the Hypervisor memory region to a current context address.
  *
  * @returns current context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   R3Ptr       The ring-3 host context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -435,7 +435,7 @@ VMMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
  * Converts a raw-mode context address in the Hypervisor memory region to a ring-3 context address.
  *
  * @returns ring-3 host context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtr       The raw-mode context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -454,7 +454,7 @@ VMMDECL(RTR3PTR) MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr)
  * Converts a raw-mode context address in the Hypervisor memory region to a ring-0 host context address.
  *
  * @returns ring-0 host context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   RCPtr       The raw-mode context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -473,7 +473,7 @@ VMMDECL(RTR0PTR) MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr)
  * Converts a raw-mode context address in the Hypervisor memory region to a current context address.
  *
  * @returns current context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   RCPtr       The raw-mode host context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -493,7 +493,7 @@ VMMDECL(void *) MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
  * Converts a current context address in the Hypervisor memory region to a ring-3 host context address.
  *
  * @returns ring-3 host context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pv          The current context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -513,7 +513,7 @@ VMMDECL(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
  * Converts a current context address in the Hypervisor memory region to a ring-0 host context address.
  *
  * @returns ring-0 host context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pv          The current context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
@@ -534,7 +534,7 @@ VMMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
  * Converts a current context address in the Hypervisor memory region to a raw-mode context address.
  *
  * @returns guest context address.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pv          The current context address.
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.

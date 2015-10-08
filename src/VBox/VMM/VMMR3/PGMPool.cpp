@@ -130,7 +130,7 @@ static const DBGCCMD    g_aCmds[] =
  * Initializes the pool
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 int pgmR3PoolInit(PVM pVM)
 {
@@ -409,7 +409,7 @@ int pgmR3PoolInit(PVM pVM)
 /**
  * Relocate the page pool data.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 void pgmR3PoolRelocate(PVM pVM)
 {
@@ -426,7 +426,7 @@ void pgmR3PoolRelocate(PVM pVM)
  * I.e. adds more pages to it, assuming that hasn't reached cMaxPages yet.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
 {
@@ -497,7 +497,7 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
  * it to complete this function.
  *
  * @returns VINF_SUCCESS (VBox strict status code).
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The VMCPU for the EMT we're being called on. Unused.
  * @param   fpvFlushRemTlb  When not NULL, we'll flush the REM TLB as well.
  *                          (This is the pvUser, so it has to be void *.)
@@ -743,7 +743,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 /**
  * Clears the shadow page pool.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   fFlushRemTlb    When set, the REM TLB is scheduled for flushing as
  *                          well.
  */
@@ -757,7 +757,7 @@ void pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb)
 /**
  * Protect all pgm pool page table entries to monitor writes
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  *
  * @remarks ASSUMES the caller will flush all TLBs!!
  */

@@ -37,7 +37,7 @@
  * The GC virtual address range must be within an existing mapping.
  *
  * @returns VBox status code.
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtr       Where to map the page(s). Must be page aligned.
  * @param   HCPhys      Start of the range of physical pages. Must be page aligned.
  * @param   cbPages     Number of bytes to map. Must be page aligned.
@@ -117,7 +117,7 @@ VMMDECL(int) PGMMap(PVM pVM, RTGCUINTPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPage
  * Sets (replaces) the page flags for a range of pages in a mapping.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   cb          Size (in bytes) of the range to apply the modification to.
  * @param   fFlags      Page flags X86_PTE_*, excluding the page mask of course.
@@ -134,7 +134,7 @@ VMMDECL(int) PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t fFlags)
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   cb          Size (in bytes) of the range to apply the modification to.
  * @param   fFlags      The OR  mask - page flags X86_PTE_*, excluding the page mask of course.
@@ -217,7 +217,7 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
  * the page table to calculate the flags.
  *
  * @returns VINF_SUCCESS, VERR_PAGE_NOT_PRESENT or VERR_NOT_FOUND.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   GCPtr               The page address.
  * @param   pfFlags             Where to return the flags.  Optional.
  * @param   pHCPhys             Where to return the address.  Optional.
@@ -266,7 +266,7 @@ VMMDECL(int) PGMMapGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS 
  *
  * Ignored if mappings are disabled (i.e. if HM is enabled).
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pMap        Pointer to the mapping in question.
  * @param   iNewPDE     The index of the 32-bit PDE corresponding to the base of the mapping.
  */
@@ -419,7 +419,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
  *
  * Ignored if mappings are disabled (i.e. if HM is enabled).
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pShwPageCR3     CR3 root page
  * @param   pMap            Pointer to the mapping in question.
  * @param   iOldPDE         The index of the 32-bit PDE corresponding to the base of the mapping.
@@ -549,7 +549,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 /**
  * Clears all PDEs involved with the mapping in the shadow page table.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pShwPageCR3 CR3 root page
  * @param   pMap        Pointer to the mapping in question.
@@ -628,7 +628,7 @@ static void pgmMapCheckShadowPDEs(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pShwPageCR
  *
  * Ignored if mappings are disabled (i.e. if HM is enabled).
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(void) PGMMapCheck(PVM pVM)
 {
@@ -664,7 +664,7 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
  * Ignored if mappings are disabled (i.e. if HM is enabled).
  *
  * @returns VBox status.
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pShwPageCR3 CR3 root page
  */
 int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
@@ -702,7 +702,7 @@ int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
  * Ignored if mappings are disabled (i.e. if HM is enabled).
  *
  * @returns VBox status.
- * @param   pVM         The virtual machine.
+ * @param   pVM         The cross context VM structure.
  * @param   pShwPageCR3 CR3 root page
  */
 int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
@@ -733,7 +733,7 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
  *
  * @returns true if conflict detected.
  * @returns false if not.
- * @param   pVM                 The virtual machine.
+ * @param   pVM                 The cross context VM structure.
  */
 VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
 {
@@ -828,7 +828,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
  * Checks and resolves (ring 3 only) guest conflicts with the guest mappings.
  *
  * @returns VBox status.
- * @param   pVM                 The virtual machine.
+ * @param   pVM                 The cross context VM structure.
  */
 int pgmMapResolveConflicts(PVM pVM)
 {

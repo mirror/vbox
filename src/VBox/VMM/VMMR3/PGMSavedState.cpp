@@ -208,7 +208,7 @@ static const SSMFIELD s_aPGMFields_Old[] =
  *
  * @returns Pointer to the ROM page structure. NULL if the caller didn't check
  *          that it's a ROM page.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The address of the ROM page.
  */
 static PPGMROMPAGE pgmR3GetRomPage(PVM pVM, RTGCPHYS GCPhys) /** @todo change this to take a hint. */
@@ -229,7 +229,7 @@ static PPGMROMPAGE pgmR3GetRomPage(PVM pVM, RTGCPHYS GCPhys) /** @todo change th
  * Prepares the ROM pages for a live save.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 static int pgmR3PrepRomPages(PVM pVM)
 {
@@ -280,7 +280,7 @@ static int pgmR3PrepRomPages(PVM pVM)
  * Assigns IDs to the ROM ranges and saves them.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                Saved state handle.
  */
 static int pgmR3SaveRomRanges(PVM pVM, PSSMHANDLE pSSM)
@@ -310,7 +310,7 @@ static int pgmR3SaveRomRanges(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The saved state handle.
  */
 static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
@@ -388,7 +388,7 @@ static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
 /**
  * Scan ROM pages.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 static void pgmR3ScanRomPages(PVM pVM)
 {
@@ -431,7 +431,7 @@ static void pgmR3ScanRomPages(PVM pVM)
  * This ASSUMES that no new ROM ranges will be added and that they won't be
  * relinked in any way.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The SSM handle.
  * @param   fLiveSave           Whether we're in a live save or not.
  */
@@ -508,7 +508,7 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
  * Used by pgmR3LiveExecPart2 and pgmR3SaveExecMemory.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The SSM handle.
  * @param   fLiveSave           Whether it's a live save or not.
  * @param   fFinalPass          Whether this is the final pass or not.
@@ -620,7 +620,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
 /**
  * Cleans up ROM pages after a live save.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 static void pgmR3DoneRomPages(PVM pVM)
 {
@@ -632,7 +632,7 @@ static void pgmR3DoneRomPages(PVM pVM)
  * Prepares the MMIO2 pages for a live save.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 static int pgmR3PrepMmio2Pages(PVM pVM)
 {
@@ -672,7 +672,7 @@ static int pgmR3PrepMmio2Pages(PVM pVM)
  * Assigns IDs to the MMIO2 ranges and saves them.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                Saved state handle.
  */
 static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
@@ -701,7 +701,7 @@ static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The saved state handle.
  */
 static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
@@ -785,7 +785,7 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns True if changed, false if unchanged.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pbPage              The page bits.
  * @param   pLSPage             The live save tracking structure for the page.
  *
@@ -858,7 +858,7 @@ DECLINLINE(bool) pgmR3ScanMmio2Page(PVM pVM, uint8_t const *pbPage, PPGMLIVESAVE
 /**
  * Scan for MMIO2 page modifications.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   uPass               The pass number.
  */
 static void pgmR3ScanMmio2Pages(PVM pVM, uint32_t uPass)
@@ -895,7 +895,7 @@ static void pgmR3ScanMmio2Pages(PVM pVM, uint32_t uPass)
  * Save quiescent MMIO2 pages.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The SSM handle.
  * @param   fLiveSave           Whether it's a live save or not.
  * @param   uPass               The pass number.
@@ -1034,7 +1034,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
 /**
  * Cleans up MMIO2 pages after a live save.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 static void pgmR3DoneMmio2Pages(PVM pVM)
 {
@@ -1062,7 +1062,7 @@ static void pgmR3DoneMmio2Pages(PVM pVM)
  * Prepares the RAM pages for a live save.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 static int pgmR3PrepRamPages(PVM pVM)
 {
@@ -1201,7 +1201,7 @@ static int pgmR3PrepRamPages(PVM pVM)
  * Saves the RAM configuration.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The saved state handle.
  */
 static int pgmR3SaveRamConfig(PVM pVM, PSSMHANDLE pSSM)
@@ -1223,7 +1223,7 @@ static int pgmR3SaveRamConfig(PVM pVM, PSSMHANDLE pSSM)
  * Loads and verifies the RAM configuration.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The saved state handle.
  */
 static int pgmR3LoadRamConfig(PVM pVM, PSSMHANDLE pSSM)
@@ -1256,7 +1256,7 @@ static int pgmR3LoadRamConfig(PVM pVM, PSSMHANDLE pSSM)
  * Calculates the CRC-32 for a RAM page and updates the live save page tracking
  * info with it.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pCur                The current RAM range.
  * @param   paLSPages           The current array of live save page tracking
  *                              structures.
@@ -1305,7 +1305,7 @@ static void pgmR3StateVerifyCrc32ForPage(void const *pvPage, PPGMRAMRANGE pCur, 
 /**
  * Verifies the CRC-32 for a RAM page.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pCur                The current RAM range.
  * @param   paLSPages           The current array of live save page tracking
  *                              structures.
@@ -1332,7 +1332,7 @@ static void pgmR3StateVerifyCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVE
 /**
  * Scan for RAM page modifications and reprotect them.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   fFinalPass          Whether this is the final pass or not.
  */
 static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
@@ -1540,7 +1540,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
  * Save quiescent RAM pages.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The SSM handle.
  * @param   fLiveSave           Whether it's a live save or not.
  * @param   uPass               The pass number.
@@ -1760,7 +1760,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
 /**
  * Cleans up RAM pages after a live save.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 static void pgmR3DoneRamPages(PVM pVM)
 {
@@ -1829,7 +1829,7 @@ static void pgmR3DoneRamPages(PVM pVM)
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pSSM        The SSM handle.
  */
 static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
@@ -1893,7 +1893,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pSSM        The SSM handle.
  * @param   uPass       The data pass.
  */
@@ -2006,7 +2006,7 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pSSM        The SSM handle.
  */
 static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
@@ -2060,7 +2060,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
@@ -2130,7 +2130,7 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
  * Cleans up after an save state operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
@@ -2164,7 +2164,7 @@ static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
  * Prepare state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) pgmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
@@ -2226,7 +2226,7 @@ DECLINLINE(bool) pgmR3CompareNewAndOldPageTypes(PPGMPAGE pPage, uint8_t uOldType
  * really zero.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   uOldType        The page type or PGMPAGETYPE_OLD_INVALID (old saved
  *                          state).
  * @param   pPage           The guest page tracking structure.
@@ -2255,7 +2255,7 @@ static int pgmR3LoadPageZeroOld(PVM pVM, uint8_t uOldType, PPGMPAGE pPage, RTGCP
  * Loads a page from the saved state.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            The SSM handle.
  * @param   uOldType        The page type or PGMPAGETYPE_OLD_INVALID (old saved
  *                          state).
@@ -2299,7 +2299,7 @@ static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uOldType, PPGM
  * Loads a page (counter part to pgmR3SavePage).
  *
  * @returns VBox status code, fully bitched errors.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            The SSM handle.
  * @param   uOldType        The page type.
  * @param   pPage           The page.
@@ -2328,7 +2328,7 @@ static int pgmR3LoadPageOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uOldType, PPGMPAGE
  * Loads a shadowed ROM page.
  *
  * @returns VBox status code, errors are fully bitched.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            The saved state handle.
  * @param   pPage           The page.
  * @param   GCPhys          The page address.
@@ -2382,7 +2382,7 @@ static int pgmR3LoadShadowedRomPageOld(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage,
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pSSM        The SSM handle.
  * @param   uVersion    The saved state version.
  */
@@ -2625,7 +2625,7 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The SSM handle.
  * @param   uVersion            The PGM saved state unit version.
  * @param   uPass               The pass number.
@@ -2990,7 +2990,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pSSM                The SSM handle.
  * @param   uVersion            The saved state version.
  */
@@ -3147,7 +3147,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -3333,7 +3333,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
  * Registers the saved state callbacks with SSM.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to VM.
+ * @param   pVM     The cross context VM structure.
  * @param   cbRam   The RAM size.
  */
 int pgmR3InitSavedState(PVM pVM, uint64_t cbRam)

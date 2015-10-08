@@ -52,7 +52,7 @@ static void     mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv);
  * Initializes the page pool
  *
  * @return  VBox status.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @thread  The Emulation Thread.
  */
 int mmR3PagePoolInit(PVM pVM)
@@ -104,7 +104,7 @@ int mmR3PagePoolInit(PVM pVM)
 /**
  * Release all locks and free the allocated memory.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @thread  The Emulation Thread.
  */
 void mmR3PagePoolTerm(PVM pVM)
@@ -389,7 +389,7 @@ DECLINLINE(void) mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
  *
  * @returns Pointer to the allocated page page.
  * @returns NULL on failure.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @thread  The Emulation Thread.
  */
 VMMR3DECL(void *) MMR3PageAlloc(PVM pVM)
@@ -408,7 +408,7 @@ VMMR3DECL(void *) MMR3PageAlloc(PVM pVM)
  *
  * @returns Pointer to the allocated page page.
  * @returns NIL_RTHCPHYS on failure.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @thread  The Emulation Thread.
  */
 VMMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
@@ -426,7 +426,7 @@ VMMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
  * Frees a page allocated from the page pool by MMR3PageAlloc() or
  * MMR3PageAllocPhys().
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvPage      Pointer to the page.
  * @thread  The Emulation Thread.
  */
@@ -441,7 +441,7 @@ VMMR3DECL(void) MMR3PageFree(PVM pVM, void *pvPage)
  *
  * @returns Pointer to the allocated page.
  * @returns NULL on failure.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @thread  The Emulation Thread.
  */
 VMMR3DECL(void *) MMR3PageAllocLow(PVM pVM)
@@ -453,7 +453,7 @@ VMMR3DECL(void *) MMR3PageAllocLow(PVM pVM)
 /**
  * Frees a page allocated from the page pool by MMR3PageAllocLow().
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvPage      Pointer to the page.
  * @thread  The Emulation Thread.
  */
@@ -468,7 +468,7 @@ VMMR3DECL(void) MMR3PageFreeLow(PVM pVM, void *pvPage)
  * This works for pages allocated by MMR3PageAlloc(), MMR3PageAllocPhys()
  * and MMR3PageAllocLow().
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   HCPhysPage  The physical address of the page to be freed.
  * @thread  The Emulation Thread.
  */
@@ -491,7 +491,7 @@ VMMR3DECL(void) MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage)
  * from doing really bad things to the system.
  *
  * @returns Pointer to the dummy page.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @thread  The Emulation Thread.
  */
 VMMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM)
@@ -515,7 +515,7 @@ VMMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM)
  * from doing really bad things to the system.
  *
  * @returns Pointer to the dummy page.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @thread  The Emulation Thread.
  */
 VMMR3DECL(RTHCPHYS) MMR3PageDummyHCPhys(PVM pVM)

@@ -187,7 +187,7 @@ VMM_INT_DECL(RTRCPTR) VMMGetStackRC(PVMCPU pVCpu)
  *
  * @returns The CPU ID. NIL_VMCPUID if the thread isn't an EMT.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @internal
  */
 VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
@@ -244,7 +244,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
  *
  * @returns The VMCPU pointer. NULL if not an EMT.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @internal
  */
 VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
@@ -305,7 +305,7 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
  * Returns the VMCPU of the first EMT thread.
  *
  * @returns The VMCPU pointer.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @internal
  */
 VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
@@ -320,7 +320,7 @@ VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
  *
  * @returns The VMCPU pointer. NULL if idCpu is invalid.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   idCpu       The ID of the virtual CPU.
  * @internal
  */
@@ -349,7 +349,7 @@ VMM_INT_DECL(uint32_t) VMMGetSvnRev(void)
  * Queries the current switcher
  *
  * @returns active switcher
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMM_INT_DECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
 {
@@ -397,7 +397,7 @@ uint32_t vmmGetBuildType(void)
  * Used by GIM.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvBuf       The buffer in the hypercall page(s) to be patched.
  * @param   cbBuf       The size of the buffer.
  * @param   pcbWritten  Where to store the number of bytes patched. This

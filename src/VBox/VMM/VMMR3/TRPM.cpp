@@ -440,7 +440,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
  * Initializes the Trap Manager
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(int) TRPMR3Init(PVM pVM)
 {
@@ -620,7 +620,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
  * This function will be called at init and whenever the VMM need
  * to relocate itself inside the GC.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
@@ -750,7 +750,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * Terminates the Trap Manager
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(int) TRPMR3Term(PVM pVM)
 {
@@ -778,7 +778,7 @@ VMMR3DECL(void) TRPMR3ResetCpu(PVMCPU pVCpu)
  * For the TRPM component this means that any IDT write monitors
  * needs to be removed, any pending trap cleared, and the IDT reset.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3DECL(void) TRPMR3Reset(PVM pVM)
 {
@@ -827,7 +827,7 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
  * Called by PDM when loading or relocating RC modules.
  *
  * @returns VBox status
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pszSymbol       Symbol to resolv
  * @param   pRCPtrValue     Where to store the symbol value.
  *
@@ -870,7 +870,7 @@ VMMR3_INT_DECL(int) TRPMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR p
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -921,7 +921,7 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -1058,7 +1058,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
  * (callback for the VMCPU_FF_TRPM_SYNC_IDT forced action).
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
@@ -1165,7 +1165,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
  * Clear passthrough interrupt gate handler (reset to default handler)
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   iTrap       Trap/interrupt gate number.
  */
 int trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
@@ -1228,7 +1228,7 @@ int trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
  *
  * @returns gate nr or ~0 is not found
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtr       GC address to check.
  */
 VMMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
@@ -1258,7 +1258,7 @@ VMMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
  * Get guest trap/interrupt gate handler
  *
  * @returns Guest trap handler address or TRPM_INVALID_HANDLER if none installed
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   iTrap       Interrupt/trap number.
  */
 VMMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
@@ -1275,7 +1275,7 @@ VMMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
  * Used for setting up trap gates used for kernel calls.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   iTrap       Interrupt/trap number.
  * @param   pHandler    GC handler pointer
  */
@@ -1401,7 +1401,7 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
  *
  * @returns True is gate handler, false if not.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtr       GC address to check.
  */
 VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
@@ -1480,7 +1480,7 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
  * Inject event (such as external irq or trap)
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   enmEvent    Trpm event type
  */

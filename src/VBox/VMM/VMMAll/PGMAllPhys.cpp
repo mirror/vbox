@@ -333,7 +333,7 @@ pgmPhysRomWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, voi
 /**
  * Invalidates the RAM range TLBs.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 void pgmPhysInvalidRamRangeTlbs(PVM pVM)
 {
@@ -528,7 +528,7 @@ VMMDECL(bool) PGMPhysIsA20Enabled(PVMCPU pVCpu)
  *
  * @returns true if valid.
  * @returns false if invalid.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   GCPhys  The physical address to validate.
  */
 VMMDECL(bool) PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys)
@@ -544,7 +544,7 @@ VMMDECL(bool) PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys)
  *
  * @returns true if normal.
  * @returns false if invalid, ROM, MMIO or reserved page.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   GCPhys  The physical address to check.
  */
 VMMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
@@ -564,7 +564,7 @@ VMMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
  * @returns VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid
  *          GC physical address.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   GCPhys  The GC physical address to convert.
  * @param   pHCPhys Where to store the HC physical address on success.
  */
@@ -583,7 +583,7 @@ VMM_INT_DECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPh
 /**
  * Invalidates all page mapping TLBs.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 void pgmPhysInvalidatePageMapTLB(PVM pVM)
 {
@@ -608,7 +608,7 @@ void pgmPhysInvalidatePageMapTLB(PVM pVM)
 /**
  * Invalidates a page mapping TLB entry
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   GCPhys  GCPhys entry to flush
  */
 void pgmPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys)
@@ -644,7 +644,7 @@ void pgmPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys)
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_EM_NO_MEMORY if we're really out of memory.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  *
  * @remarks Must be called from within the PGM critical section. It may
  *          nip back to ring-3/0 in some cases.
@@ -731,7 +731,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
  *
  * @todo    Propagate VERR_EM_NO_MEMORY up the call tree.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       The physical page tracking structure. This will
  *                      be modified on success.
  * @param   GCPhys      The address of the page.
@@ -887,7 +887,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  *
  * @todo    Propagate VERR_EM_NO_MEMORY up the call tree.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The address of the page.
  *
  * @remarks Must be called from within the PGM critical section. It may
@@ -976,7 +976,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
  * @retval  VINF_SUCCESS on success, the large page can be used again
  * @retval  VERR_PGM_INVALID_LARGE_PAGE_RANGE if it can't be reused
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The address of the page.
  * @param   pLargePage  Page structure of the base page
  */
@@ -1037,7 +1037,7 @@ int pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
  *
  * @returns VBox strict status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       The physical page tracking structure.
  *
  * @remarks Called from within the PGM critical section.
@@ -1061,7 +1061,7 @@ void pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage)
  * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
  *
@@ -1105,7 +1105,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   idPage      The Page ID.
  * @param   HCPhys      The physical address (for RC).
  * @param   ppv         Where to store the mapping address.
@@ -1184,7 +1184,7 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
  * @param   ppMap       Where to store the address of the mapping tracking structure.
@@ -1325,7 +1325,7 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
  * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
  * @param   ppv         Where to store the mapping address of the page. The page
@@ -1360,7 +1360,7 @@ int pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       The physical page tracking structure. Must be in the
  *                      allocated state.
  * @param   GCPhys      The address of the page.
@@ -1389,7 +1389,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
  * @param   ppv         Where to store the mapping address of the page. The page
@@ -1441,7 +1441,7 @@ int pgmPhysPageLoadIntoTlb(PVM pVM, RTGCPHYS GCPhys)
  * @retval  VINF_SUCCESS on success
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       Pointer to the PGMPAGE structure corresponding to
  *                      GCPhys.
  * @param   GCPhys      The guest physical address in question.
@@ -1498,7 +1498,7 @@ int pgmPhysPageLoadIntoTlbWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   pPage       Pointer to the PGMPAGE structure for the page.
  * @param   ppv         Where to store the address corresponding to GCPhys.
@@ -1552,7 +1552,7 @@ int pgmPhysGCPhys2CCPtrInternalDepr(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, vo
 /**
  * Locks a page mapping for writing.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pPage               The page.
  * @param   pTlbe               The mapping TLB entry for the page.
  * @param   pLock               The lock structure (output).
@@ -1585,7 +1585,7 @@ DECLINLINE(void) pgmPhysPageMapLockForWriting(PVM pVM, PPGMPAGE pPage, PPGMPAGEM
 /**
  * Locks a page mapping for reading.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pPage               The page.
  * @param   pTlbe               The mapping TLB entry for the page.
  * @param   pLock               The lock structure (output).
@@ -1627,7 +1627,7 @@ DECLINLINE(void) pgmPhysPageMapLockForReading(PVM pVM, PPGMPAGE pPage, PPGMPAGEM
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   pPage       Pointer to the PGMPAGE structure for the page.
  * @param   ppv         Where to store the address corresponding to GCPhys.
@@ -1691,7 +1691,7 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   pPage       Pointer to the PGMPAGE structure for the page.
  * @param   ppv         Where to store the address corresponding to GCPhys.
@@ -1750,7 +1750,7 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The guest physical address of the page that should be
  *                      mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
@@ -1854,7 +1854,7 @@ VMM_INT_DECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGM
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The guest physical address of the page that should be
  *                      mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
@@ -2012,7 +2012,7 @@ VMM_INT_DECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVMCPU pVCpu, RTGCPTR GCPtr, void c
  * This is the counter part of PGMPhysGCPhys2CCPtr, PGMPhysGCPhys2CCPtrReadOnly
  * PGMPhysGCPtr2CCPtr and PGMPhysGCPtr2CCPtrReadOnly.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pLock       The lock structure initialized by the mapping function.
  */
 VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
@@ -2087,7 +2087,7 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
  * This is the counter part of pgmPhysGCPhys2CCPtrInternalEx and
  * pgmPhysGCPhys2CCPtrInternalReadOnly.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pLock       The lock structure initialized by the mapping function.
  *
  * @remarks Caller must hold the PGM lock.
@@ -2110,7 +2110,7 @@ void pgmPhysReleaseInternalPageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
  * @returns VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY if the range crosses
  *          a dynamic ram chunk boundary
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The GC physical address to convert.
  * @param   pR3Ptr      Where to store the R3 pointer on success.
  *
@@ -2155,7 +2155,7 @@ int pgmPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
  * @returns VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY if the range crosses
  *          a dynamic ram chunk boundary
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The GC physical address to convert.
  * @param   pR3Ptr      Where to store the R3 pointer on success.  This may or
  *                      may not be valid in ring-0 depending on the
@@ -2232,7 +2232,7 @@ VMM_INT_DECL(int) PGMPhysGCPtr2HCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHC
 /**
  * Cache PGMPhys memory access
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pCache          Cache structure pointer
  * @param   GCPhys          GC physical address
  * @param   pbHC            HC pointer corresponding to physical page
@@ -2265,7 +2265,7 @@ static void pgmPhysCacheAdd(PVM pVM, PGMPHYSCACHE *pCache, RTGCPHYS GCPhys, uint
  *          See PGM_HANDLER_PHYS_IS_VALID_STATUS and
  *          PGM_HANDLER_VIRT_IS_VALID_STATUS for details.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       The page descriptor.
  * @param   GCPhys      The physical address to start reading at.
  * @param   pvBuf       Where to put the bits we read.
@@ -2447,7 +2447,7 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys,
  * @retval  VERR_PGM_PHYS_WR_HIT_HANDLER in RC and R0 for access origins that
  *          haven't been cleared for strict status codes yet.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Physical address start reading from.
  * @param   pvBuf           Where to put the read bits.
  * @param   cbRead          How many bytes to read.
@@ -2574,7 +2574,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t 
  *          See PGM_HANDLER_PHYS_IS_VALID_STATUS and
  *          PGM_HANDLER_VIRT_IS_VALID_STATUS for details.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       The page descriptor.
  * @param   GCPhys      The physical address to start writing at.
  * @param   pvBuf       What to write.
@@ -3075,7 +3075,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  *          haven't been cleared for strict status codes yet.
  *
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Physical address to write to.
  * @param   pvBuf           What to write.
  * @param   cbWrite         How many bytes to write.
@@ -3193,7 +3193,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, 
  * MMIO and access handlers.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvDst       The destination address.
  * @param   GCPhysSrc   The source address (GC physical address).
  * @param   cb          The number of bytes to read.
@@ -3265,7 +3265,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, s
  * This will bypass MMIO and access handlers.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhysDst   The GC physical address of the destination.
  * @param   pvSrc       The source buffer.
  * @param   cb          The number of bytes to write.
@@ -4357,7 +4357,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
  * Return the page type of the specified physical address.
  *
  * @returns The page type.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Guest physical address
  */
 VMM_INT_DECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys)
@@ -4385,7 +4385,7 @@ VMM_INT_DECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys)
  *          accesses or is odd in any way.
  * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
  *
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the cross context virtual CPU structure of
  *                      the calling EMT.
  * @param   GCPhys      The GC physical address to convert.  This API mask the
@@ -4503,7 +4503,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, b
  *          accesses or is odd in any way.
  * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The GC physical address to convert.  Since this is only
  *                      used for filling the REM TLB, the A20 mask must be
  *                      applied before calling this API.

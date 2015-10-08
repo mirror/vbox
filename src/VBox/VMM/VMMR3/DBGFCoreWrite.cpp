@@ -110,9 +110,9 @@ typedef DBGFCOREDATA *PDBGFCOREDATA;
 /**
  * ELF function to write 64-bit ELF header.
  *
- * @param hFile             The file to write to.
- * @param cProgHdrs         Number of program headers.
- * @param cSecHdrs          Number of section headers.
+ * @param   hFile           The file to write to.
+ * @param   cProgHdrs       Number of program headers.
+ * @param   cSecHdrs        Number of section headers.
  *
  * @return IPRT status code.
  */
@@ -148,13 +148,13 @@ static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs)
 /**
  * ELF function to write 64-bit program header.
  *
- * @param hFile             The file to write to.
- * @param Type              Type of program header (PT_*).
- * @param fFlags            Flags (access permissions, PF_*).
- * @param offFileData       File offset of contents.
- * @param cbFileData        Size of contents in the file.
- * @param cbMemData         Size of contents in memory.
- * @param Phys              Physical address, pass zero if not applicable.
+ * @param   hFile           The file to write to.
+ * @param   Type            Type of program header (PT_*).
+ * @param   fFlags          Flags (access permissions, PF_*).
+ * @param   offFileData     File offset of contents.
+ * @param   cbFileData      Size of contents in the file.
+ * @param   cbMemData       Size of contents in memory.
+ * @param   Phys            Physical address, pass zero if not applicable.
  *
  * @return IPRT status code.
  */
@@ -177,8 +177,8 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint6
 /**
  * Returns the size of the NOTE section given the name and size of the data.
  *
- * @param pszName           Name of the note section.
- * @param cb                Size of the data portion of the note section.
+ * @param   pszName         Name of the note section.
+ * @param   cbData          Size of the data portion of the note section.
  *
  * @return The size of the NOTE section as rounded to the file alignment.
  */
@@ -198,13 +198,13 @@ static uint64_t Elf64NoteSectionSize(const char *pszName, uint64_t cbData)
 /**
  * Elf function to write 64-bit note header.
  *
- * @param hFile             The file to write to.
- * @param Type              Type of this section.
- * @param pszName           Name of this section.
- * @param pcv               Opaque pointer to the data, if NULL only computes size.
- * @param cbData            Size of the data.
+ * @param   hFile       The file to write to.
+ * @param   Type        Type of this section.
+ * @param   pszName     Name of this section.
+ * @param   pvData      Opaque pointer to the data, if NULL only computes size.
+ * @param   cbData      Size of the data.
  *
- * @return IPRT status code.
+ * @returns IPRT status code.
  */
 static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, const void *pcvData, uint64_t cbData)
 {
@@ -300,7 +300,7 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
  * offset. Instead we dump the memory in ranges. A memory range is a contiguous
  * memory area suitable for dumping to a core file.
  *
- * @param pVM               Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  *
  * @return Number of memory ranges
  */
@@ -313,7 +313,7 @@ static uint32_t dbgfR3GetRamRangeCount(PVM pVM)
 /**
  * Gets the guest-CPU context suitable for dumping into the core file.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pDbgfCpu    Where to dump the guest-CPU data.
  */
@@ -389,7 +389,7 @@ static void dbgfR3GetCoreCpu(PVM pVM, PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
  * Worker function for dbgfR3CoreWrite() which does the writing.
  *
  * @returns VBox status code
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   hFile               The file to write to.  Caller closes this.
  */
 static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
@@ -591,7 +591,7 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
 /**
  * EMT Rendezvous worker function for DBGFR3CoreWrite().
  *
- * @param   pVM              Pointer to the VM.
+ * @param   pVM              The cross context VM structure.
  * @param   pVCpu            The handle of the calling VCPU.
  * @param   pvData           Opaque data.
  *

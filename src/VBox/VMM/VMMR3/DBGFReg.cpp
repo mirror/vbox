@@ -499,7 +499,7 @@ static int dbgfR3RegRegisterCommon(PUVM pUVM, PCDBGFREGDESC paRegisters, DBGFREG
  * Registers a set of registers for a CPU.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   paRegisters     The register descriptors.
  * @param   fGuestRegs      Set if it's the guest registers, clear if
@@ -524,7 +524,7 @@ VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC pa
  * Registers a set of registers for a device.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   paRegisters     The register descriptors.
  * @param   pDevIns         The device instance. This will be the callback user
  *                          argument.

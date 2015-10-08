@@ -99,7 +99,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
  * Sets the pending interrupt coming from ISA source or HPET.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   u8Irq           The IRQ line.
  * @param   u8Level         The new level.
  * @param   uTagSrc         The IRQ tag and source tracer ID.
@@ -156,7 +156,7 @@ VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTag
  * Sets the pending I/O APIC interrupt.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   u8Irq           The IRQ line.
  * @param   u8Level         The new level.
  * @param   uTagSrc         The IRQ tag and source tracer ID.
@@ -178,7 +178,7 @@ VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint3
  * Send a MSI to an I/O APIC.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCAddr          Request address.
  * @param   u8Value         Request value.
  * @param   uTagSrc         The IRQ tag and source tracer ID.
@@ -202,7 +202,7 @@ VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, ui
  * Returns the presence of an IO-APIC.
  *
  * @returns VBox true if an IO-APIC is present.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMM_INT_DECL(bool) PDMHasIoApic(PVM pVM)
 {
@@ -214,7 +214,7 @@ VMM_INT_DECL(bool) PDMHasIoApic(PVM pVM)
  * Returns the presence of a Local APIC.
  *
  * @returns VBox true if a Local APIC is present.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
 {
@@ -226,7 +226,7 @@ VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
  * Set the APIC base.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VMCPU.
+ * @param   pVM             The cross context VM structure.
  * @param   u64Base         The new base.
  */
 VMMDECL(int) PDMApicSetBase(PVMCPU pVCpu, uint64_t u64Base)
@@ -257,7 +257,7 @@ VMMDECL(int) PDMApicSetBase(PVMCPU pVCpu, uint64_t u64Base)
  * PDMApicGetBase() and not this function.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VMCPU.
+ * @param   pVM             The cross context VM structure.
  * @param   pu64Base        Where to store the APIC base.
  */
 VMMDECL(int) PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base)
@@ -359,7 +359,7 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8
  * Write a MSR in APIC range.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   iCpu            Target CPU.
  * @param   u32Reg          MSR to write.
  * @param   u64Value        Value to write.
@@ -379,7 +379,7 @@ VMM_INT_DECL(int) PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64
  * Read a MSR in APIC range.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   iCpu            Target CPU.
  * @param   u32Reg          MSR to read.
  * @param   pu64Value       Value read.
@@ -400,7 +400,7 @@ VMM_INT_DECL(int) PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_
  * Gets the frequency of the APIC timer.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pu64Value       Where to store the frequency.
  */
 VMM_INT_DECL(int) PDMApicGetTimerFreq(PVM pVM, uint64_t *pu64Value)
@@ -419,7 +419,7 @@ VMM_INT_DECL(int) PDMApicGetTimerFreq(PVM pVM, uint64_t *pu64Value)
  * Locks PDM.
  * This might call back to Ring-3 in order to deal with lock contention in GC and R3.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 void pdmLock(PVM pVM)
 {
@@ -439,7 +439,7 @@ void pdmLock(PVM pVM)
  *
  * @returns VINF_SUCCESS on success.
  * @returns rc if we're in GC or R0 and can't get the lock.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   rc      The RC to return in GC or R0 when we can't get the lock.
  */
 int pdmLockEx(PVM pVM, int rc)
@@ -451,7 +451,7 @@ int pdmLockEx(PVM pVM, int rc)
 /**
  * Unlocks PDM.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 void pdmUnlock(PVM pVM)
 {
@@ -463,7 +463,7 @@ void pdmUnlock(PVM pVM)
  * Converts ring 3 VMM heap pointer to a guest physical address
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pv              Ring-3 pointer.
  * @param   pGCPhys         GC phys address (out).
  */
@@ -485,7 +485,7 @@ VMM_INT_DECL(int) PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys
  * Checks if the vmm device heap is enabled (== vmm device's pci region mapped)
  *
  * @returns dev heap enabled status (true/false)
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMM_INT_DECL(bool) PDMVmmDevHeapIsEnabled(PVM pVM)
 {

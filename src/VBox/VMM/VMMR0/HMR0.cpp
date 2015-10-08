@@ -830,8 +830,8 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
  * Enable VT-x or AMD-V on the current CPU
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM (can be NULL).
- * @param   idCpu       The identifier for the CPU the function is called on.
+ * @param   pVM     The cross context VM structure. Can be NULL.
+ * @param   idCpu   The identifier for the CPU the function is called on.
  *
  * @remarks Maybe called with interrupts disabled!
  */
@@ -979,7 +979,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
  * Sets up HM on all cpus.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  */
 VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVM pVM)
 {
@@ -1179,7 +1179,7 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
  * init routine which will allocate resources for each virtual CPU and such.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  *
  * @remarks This is called after HMR3Init(), see vmR3CreateU() and
  *          vmR3InitRing3().
@@ -1249,7 +1249,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
  * Does ring-0 per VM HM termination.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR0_INT_DECL(int) HMR0TermVM(PVM pVM)
 {
@@ -1272,7 +1272,7 @@ VMMR0_INT_DECL(int) HMR0TermVM(PVM pVM)
  * This is mostly about setting up the hardware VM state.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
 {
@@ -1358,7 +1358,7 @@ VMMR0_INT_DECL(int) HMR0EnterCpu(PVMCPU pVCpu)
  * Enters the VT-x or AMD-V session.
  *
  * @returns VBox status code.
- * @param   pVM        Pointer to the VM.
+ * @param   pVM        The cross context VM structure.
  * @param   pVCpu      Pointer to the VMCPU.
  *
  * @remarks This is called with preemption disabled.
@@ -1459,7 +1459,7 @@ VMMR0_INT_DECL(void) HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUs
  * Runs guest code in a hardware accelerated VM.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks Can be called with preemption enabled if thread-context hooks are
@@ -1498,7 +1498,7 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
  * Save guest FPU/XMM state (64 bits guest mode & 32 bits host only)
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
@@ -1515,7 +1515,7 @@ VMMR0_INT_DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Save guest debug state (64 bits guest mode & 32 bits host only)
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
@@ -1532,7 +1532,7 @@ VMMR0_INT_DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Test the 32->64 bits switcher.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR0_INT_DECL(int)   HMR0TestSwitcher3264(PVM pVM)
 {
@@ -1644,7 +1644,7 @@ VMMR0_INT_DECL(void) HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, 
  * switcher turns off paging.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmSwitcher     The switcher we're about to use.
  * @param   pfVTxDisabled   Where to store whether VT-x was disabled or not.
  */
@@ -1711,7 +1711,7 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
  * Raw-mode switcher hook - re-enable VT-x if was active *and* the current
  * switcher turned off paging.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   fVTxDisabled    Whether VT-x was disabled or not.
  */
 VMMR0_INT_DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
@@ -1867,7 +1867,7 @@ VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *psz
 /**
  * Formats a full register dump.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the CPU context.
  */

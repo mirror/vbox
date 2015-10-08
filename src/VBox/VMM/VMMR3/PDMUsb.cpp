@@ -101,7 +101,7 @@ AssertCompile(sizeof(PDMUSBINSINT) <= RT_SIZEOFMEMB(PDMUSBINS, Internal.padding)
  * Registers a USB hub driver.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         The driver instance of the hub.
  * @param   fVersions       Indicates the kinds of USB devices that can be attached to this HUB.
  * @param   cPorts          The number of ports.
@@ -168,7 +168,7 @@ int pdmR3UsbRegisterHub(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_
  * Loads one device module and call the registration entry point.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pRegCB          The registration callback stuff.
  * @param   pszFilename     Module filename.
  * @param   pszName         Module name.
@@ -277,7 +277,7 @@ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSB
  * This is called by pdmR3DevInit() after it has loaded it's device modules.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 int pdmR3UsbLoadModules(PVM pVM)
 {
@@ -387,7 +387,7 @@ int pdmR3UsbLoadModules(PVM pVM)
  * This is called from pdmR3DevInit() after it has do its notification round.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 int pdmR3UsbVMInitComplete(PVM pVM)
 {
@@ -428,7 +428,7 @@ PPDMUSB pdmR3UsbLookup(PVM pVM, const char *pszName)
  *
  * @returns VINF_SUCCESS and *ppHub on success.
  *          VERR_PDM_NO_USB_HUBS or VERR_PDM_NO_USB_PORTS on failure.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   iUsbVersion     The USB device version.
  * @param   ppHub           Where to store the pointer to the USB hub.
  */
@@ -486,7 +486,7 @@ static VUSBSPEED pdmR3UsbVer2Spd(uint32_t iUsbVersion)
  * Creates the device.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pUsbDev             The USB device emulation.
  * @param   iInstance           -1 if not called by pdmR3UsbInstantiateDevices().
  * @param   pUuid               The UUID for this device.
@@ -698,7 +698,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
  * around, we'll silently skip the USB devices.
  *
  * @returns VBox status code.
- * @param   pVM
+ * @param   pVM        The cross context VM structure.
  */
 int pdmR3UsbInstantiateDevices(PVM pVM)
 {
@@ -1068,7 +1068,7 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
  *
  * The device must be detached from the HUB at this point.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pUsbIns         The USB device instance to destroy.
  * @thread  EMT
  */
@@ -1235,7 +1235,7 @@ VMMR3DECL(bool) PDMR3UsbHasHub(PUVM pUVM)
  * Locates a LUN.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.

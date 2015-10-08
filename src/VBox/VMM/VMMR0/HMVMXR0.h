@@ -78,5 +78,5 @@ DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 
 RT_C_DECLS_END
 
-#endif /* ___HMVMXR0_h */
+#endif /* !___HMVMXR0_h */
 

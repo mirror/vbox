@@ -49,7 +49,7 @@ static DECLCALLBACK(void)   pdmR3QueueTimer(PVM pVM, PTMTIMER pTimer, void *pvUs
  * Internal worker for the queue creation apis.
  *
  * @returns VBox status.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   cbItem              Item size.
  * @param   cItems              Number of items.
  * @param   cMilliesInterval    Number of milliseconds between polling the queue.
@@ -192,7 +192,7 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
  * Create a queue with a device owner.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             Device instance.
  * @param   cbItem              Size a queue item.
  * @param   cItems              Number of items in the queue.
@@ -243,7 +243,7 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, size_t c
  * Create a queue with a driver owner.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDrvIns             Driver instance.
  * @param   cbItem              Size a queue item.
  * @param   cItems              Number of items in the queue.
@@ -289,7 +289,7 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, size_t c
  * Create a queue with an internal owner.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   cbItem              Size a queue item.
  * @param   cItems              Number of items in the queue.
  * @param   cMilliesInterval    Number of milliseconds between polling the queue.
@@ -334,7 +334,7 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateInternal(PVM pVM, size_t cbItem, uint32_t cI
  * Create a queue with an external owner.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   cbItem              Size a queue item.
  * @param   cItems              Number of items in the queue.
  * @param   cMilliesInterval    Number of milliseconds between polling the queue.
@@ -472,7 +472,7 @@ VMMR3_INT_DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
  * Destroy a all queues owned by the specified device.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pDevIns     Device instance.
  * @thread  Emulation thread only.
  */
@@ -524,7 +524,7 @@ VMMR3_INT_DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
  * Destroy a all queues owned by the specified driver.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pDrvIns     Driver instance.
  * @thread  Emulation thread only.
  */
@@ -575,7 +575,7 @@ VMMR3_INT_DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
 /**
  * Relocate the queues.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   offDelta        The relocation delta.
  */
 void pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta)
@@ -630,7 +630,7 @@ void pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta)
  * Flush pending queues.
  * This is a forced action callback.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @thread  Emulation thread only.
  */
 VMMR3_INT_DECL(void) PDMR3QueueFlushAll(PVM pVM)
@@ -861,7 +861,7 @@ DECLINLINE(void) pdmR3QueueFreeItem(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
  * Timer handler for PDM queues.
  * This is called by for a single queue.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pTimer  Pointer to timer.
  * @param   pvUser  Pointer to the queue.
  */

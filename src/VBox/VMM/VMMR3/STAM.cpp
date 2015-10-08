@@ -269,7 +269,7 @@ static const STAMR0SAMPLE g_aGMMStats[] =
  * Initializes the STAM.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
 {
@@ -409,7 +409,7 @@ VMMR3DECL(int)  STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STA
  * It is not possible to register the same sample twice.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
@@ -455,7 +455,7 @@ VMMR3DECL(int)  STAMR3RegisterFU(PUVM pUVM, void *pvSample, STAMTYPE enmType, ST
  * RTStrPrintf like fashion.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
@@ -480,7 +480,7 @@ VMMR3DECL(int)  STAMR3RegisterF(PVM pVM, void *pvSample, STAMTYPE enmType, STAMV
  * RTStrPrintfV like fashion.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
@@ -507,7 +507,7 @@ VMMR3DECL(int)  STAMR3RegisterVU(PUVM pUVM, void *pvSample, STAMTYPE enmType, ST
  * RTStrPrintfV like fashion.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
@@ -528,7 +528,7 @@ VMMR3DECL(int)  STAMR3RegisterV(PVM pVM, void *pvSample, STAMTYPE enmType, STAMV
  * and name given in an RTStrPrintf like fashion.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
  * @param   enmUnit     Sample unit.
@@ -555,7 +555,7 @@ VMMR3DECL(int)  STAMR3RegisterCallback(PVM pVM, void *pvSample, STAMVISIBILITY e
  * Same as STAMR3RegisterCallback() except for the ellipsis which is a va_list here.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvSample    Pointer to the sample.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
  * @param   enmUnit     Sample unit.

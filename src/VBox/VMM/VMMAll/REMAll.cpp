@@ -39,7 +39,7 @@
 /**
  * Records a invlpg instruction for replaying upon REM entry.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtrPage   The
  */
 VMMDECL(void) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
@@ -79,7 +79,7 @@ VMMDECL(void) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 /**
  * Insert pending notification
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pRec            Notification record to insert
  */
 static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
@@ -131,7 +131,7 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
 /**
  * Notification about a successful PGMR3HandlerPhysicalRegister() call.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmKind         Kind of access handler.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
@@ -152,7 +152,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKi
 /**
  * Notification about a successful PGMR3HandlerPhysicalDeregister() operation.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmKind         Kind of access handler.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
@@ -175,7 +175,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enm
 /**
  * Notification about a successful PGMR3HandlerPhysicalModify() call.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmKind         Kind of access handler.
  * @param   GCPhysOld       Old handler range address.
  * @param   GCPhysNew       New handler range address.
@@ -204,7 +204,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind
  *
  * This is for avoiding trouble in RC when changing CR3.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU of the calling EMT.
  */
 VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)
@@ -238,7 +238,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)
 /**
  * Make REM flush all translation block upon the next call to REMR3State().
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMMDECL(void) REMFlushTBs(PVM pVM)
 {

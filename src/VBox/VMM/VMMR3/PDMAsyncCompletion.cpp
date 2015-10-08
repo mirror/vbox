@@ -158,7 +158,7 @@ static void pdmR3AsyncCompletionPutTask(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, P
  * Internal worker for the creation apis
  *
  * @returns VBox status.
- * @param   pVM           Pointer to the VM.
+ * @param   pVM           The cross context VM structure.
  * @param   ppTemplate    Where to store the template handle.
  */
 static int pdmR3AsyncCompletionTemplateCreate(PVM pVM, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
@@ -202,7 +202,7 @@ static int pdmR3AsyncCompletionTemplateCreate(PVM pVM, PPPDMASYNCCOMPLETIONTEMPL
  * The template is used when creating new completion tasks.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
@@ -247,7 +247,7 @@ int pdmR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMA
  * The template is used when creating new completion tasks.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         The driver instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
@@ -293,7 +293,7 @@ int pdmR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMA
  * The template is used when creating new completion tasks.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pUsbIns         The USB device instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
@@ -337,7 +337,7 @@ int pdmR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMASYN
  * The template is used when creating new completion tasks.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
  * @param   pvUser2         The 2nd user argument for the callback.
@@ -438,7 +438,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroy(PPDMASYNCCOMPLETIONTEMPLATE p
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PDM_ASYNC_TEMPLATE_BUSY if one or more of the templates are still in use.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance.
  */
 int pdmR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
@@ -488,7 +488,7 @@ int pdmR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PDM_ASYNC_TEMPLATE_BUSY if one or more of the templates are still in use.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         The driver instance.
  */
 int pdmR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
@@ -538,7 +538,7 @@ int pdmR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PDM_ASYNC_TEMPLATE_BUSY if one or more of the templates are still in use.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pUsbIns         The USB device instance.
  */
 int pdmR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
@@ -815,7 +815,7 @@ void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, int rc, boo
  * Worker initializing a endpoint class.
  *
  * @returns VBox status code.
- * @param   pVM        Pointer to the shared VM instance data.
+ * @param   pVM        The cross context VM structure.
  * @param   pEpClass   Pointer to the endpoint class structure.
  * @param   pCfgHandle Pointer to the CFGM tree.
  */
@@ -1230,7 +1230,7 @@ static void pdmR3AsyncCompletionStatisticsDeregister(PPDMASYNCCOMPLETIONENDPOINT
  * Initialize the async completion manager.
  *
  * @returns VBox status code
- * @param   pVM Pointer to the VM.
+ * @param   pVM The cross context VM structure.
  */
 int pdmR3AsyncCompletionInit(PVM pVM)
 {
@@ -1251,7 +1251,7 @@ int pdmR3AsyncCompletionInit(PVM pVM)
  * Terminates the async completion manager.
  *
  * @returns VBox status code
- * @param   pVM Pointer to the VM.
+ * @param   pVM The cross context VM structure.
  */
 int pdmR3AsyncCompletionTerm(PVM pVM)
 {
@@ -1270,7 +1270,7 @@ int pdmR3AsyncCompletionTerm(PVM pVM)
  * Resume worker for the async completion manager.
  *
  * @returns nothing.
- * @param   pVM Pointer to the VM.
+ * @param   pVM The cross context VM structure.
  */
 void pdmR3AsyncCompletionResume(PVM pVM)
 {

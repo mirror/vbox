@@ -77,7 +77,7 @@ static int      emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu);
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Just a braindead function to keep track of cli addresses.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVMCPU      Pointer to the VMCPU.
  * @param   GCPtrInstr  The EIP of the cli instruction.
  */
@@ -116,7 +116,7 @@ static void emR3RecordCli(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrInstr)
  * potentially out of sync.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  */
 int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
@@ -150,7 +150,7 @@ int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
  * Steps rawmode.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  */
 int emR3RawStep(PVM pVM, PVMCPU pVCpu)
@@ -259,7 +259,7 @@ int emR3SingleStepExecRaw(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  *
  * @returns VBox status code suitable for EM.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   rcGC        GC return code
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
@@ -413,7 +413,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
  * This is just a wrapper for discarding pszPrefix in non-logging builds.
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
@@ -432,7 +432,7 @@ DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *psz
  * Executes one (or perhaps a few more) IO instruction(s).
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 static int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
@@ -452,7 +452,7 @@ static int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
  * Handle a guest context trap.
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
@@ -613,7 +613,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
  * Need to do statistics and to install patches. The result is going to REM.
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  */
 static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
@@ -672,7 +672,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
  * Handle a trap (\#PF or \#GP) in patch code
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   pCtx    Pointer to the guest CPU context.
  * @param   gcret   GC return code.
@@ -856,7 +856,7 @@ static int emR3RawPatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
  * Handle a privileged instruction.
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  */
 static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
@@ -1108,7 +1108,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
  *
  * @returns Updated rc.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   pCtx    Pointer to the guest CPU context.
  * @param   rc      The result code.
@@ -1139,7 +1139,7 @@ int emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
  *
  * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
  *          EM statuses.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR3_INT_DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
@@ -1157,7 +1157,7 @@ VMMR3_INT_DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
  *          EM statuses.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
@@ -1277,7 +1277,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns VBox status code. The most important ones are: VINF_EM_RESCHEDULE,
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.

@@ -63,8 +63,8 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
  * @param   pVMCBHostPhys   Physical address of host VMCB.
  * @param   pVMCBPhys       Physical address of the VMCB.
  * @param   pCtx            Pointer to the guest CPU context.
- * @param   pVM             Pointer to the VM. (not used)
- * @param   pVCpu           Pointer to the VMCPU. (not used)
+ * @param   pVM             The cross context VM structure. (Not used.)
+ * @param   pVCpu           Pointer to the VMCPU. (Not used.)
  */
 DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
 
@@ -76,8 +76,8 @@ DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCt
  * @param   pVMCBHostPhys   Physical address of host VMCB.
  * @param   pVMCBPhys       Physical address of the VMCB.
  * @param   pCtx            Pointer to the guest CPU context.
- * @param   pVM             Pointer to the VM. (not used)
- * @param   pVCpu           Pointer to the VMCPU. (not used)
+ * @param   pVM             The cross context VM structure. (Not used.)
+ * @param   pVCpu           Pointer to the VMCPU. (Not used.)
  */
 DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
 
@@ -95,5 +95,5 @@ DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
 RT_C_DECLS_END
 
-#endif /* ___HMSVMR0_h */
+#endif /* !___HMSVMR0_h */
 

@@ -283,7 +283,7 @@ static int dbgfR3InfoRegister(PUVM pUVM, const char *pszName, const char *pszDes
  * Register a info handler owned by a device.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   pfnHandler  The handler function to be called to display the info.
@@ -322,7 +322,7 @@ VMMR3_INT_DECL(int) DBGFR3InfoRegisterDevice(PVM pVM, const char *pszName, const
  * Register a info handler owned by a driver.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   pfnHandler  The handler function to be called to display the info.
@@ -360,7 +360,7 @@ VMMR3_INT_DECL(int) DBGFR3InfoRegisterDriver(PVM pVM, const char *pszName, const
  * Register a info handler owned by an internal component.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   pfnHandler  The handler function to be called to display the info.
@@ -375,7 +375,7 @@ VMMR3_INT_DECL(int) DBGFR3InfoRegisterInternal(PVM pVM, const char *pszName, con
  * Register a info handler owned by an internal component.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   pfnHandler  The handler function to be called to display the info.
@@ -451,7 +451,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterExternal(PUVM pUVM, const char *pszName, const 
  * Deregister one(/all) info handler(s) owned by a device.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pDevIns     Device instance.
  * @param   pszName     The identifier of the info. If NULL all owned by the device.
  */
@@ -523,7 +523,7 @@ VMMR3_INT_DECL(int) DBGFR3InfoDeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, cons
  * Deregister one(/all) info handler(s) owned by a driver.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pDrvIns     Driver instance.
  * @param   pszName     The identifier of the info. If NULL all owned by the driver.
  */
@@ -641,7 +641,7 @@ static int dbgfR3InfoDeregister(PUVM pUVM, const char *pszName, DBGFINFOTYPE enm
  * Deregister a info handler owned by an internal component.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pszName     The identifier of the info. If NULL all owned by the device.
  */
 VMMR3_INT_DECL(int) DBGFR3InfoDeregisterInternal(PVM pVM, const char *pszName)
@@ -831,7 +831,7 @@ VMMR3DECL(int) DBGFR3InfoStdErr(PUVM pUVM, const char *pszName, const char *pszA
  * This is intended used by the fatal error dump only.
  *
  * @returns
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pszIncludePat   Simple string pattern of info items to include.
  * @param   pszExcludePat   Simple string pattern of info items to exclude.
  * @param   pszSepFmt       Item separator format string.  The item name will be
@@ -968,7 +968,7 @@ VMMR3DECL(int) DBGFR3InfoEnum(PUVM pUVM, PFNDBGFINFOENUM pfnCallback, void *pvUs
 /**
  * Info handler, internal version.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */

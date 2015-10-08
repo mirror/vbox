@@ -59,7 +59,7 @@
 /**
  * Called by PATMR3Init.
  *
- * @param   pVM                 The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  */
 void patmR3DbgInit(PVM pVM)
 {
@@ -70,7 +70,7 @@ void patmR3DbgInit(PVM pVM)
 /**
  * Called by PATMR3Term.
  *
- * @param   pVM                 The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  */
 void patmR3DbgTerm(PVM pVM)
 {
@@ -85,7 +85,7 @@ void patmR3DbgTerm(PVM pVM)
 /**
  * Called by when the patch memory is reinitialized.
  *
- * @param   pVM                 The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  */
 void patmR3DbgReset(PVM pVM)
 {
@@ -172,7 +172,7 @@ static size_t patmR3DbgDescribePatchAsSymbol(PPATMPATCHREC pPatchRec, char *pszN
 /**
  * Called when a new patch is added or when first populating the address space.
  *
- * @param   pVM                 The cross context VM structure.
+ * @param   pVM                The cross context VM structure.
  * @param   pPatchRec           The patch record.
  */
 void patmR3DbgAddPatch(PVM pVM, PPATMPATCHREC pPatchRec)
@@ -220,8 +220,8 @@ void patmR3DbgAddPatch(PVM pVM, PPATMPATCHREC pPatchRec)
  * Enumeration callback used by patmR3DbgAddPatches
  *
  * @returns 0 (continue enum)
- * @param   pNode               The patch record node.
- * @param   pvUser              The cross context VM structure.
+ * @param   pNode       The patch record node.
+ * @param   pvUser      The cross context VM structure.
  */
 static DECLCALLBACK(int) patmR3DbgAddPatchCallback(PAVLOU32NODECORE pNode, void *pvUser)
 {
@@ -233,8 +233,8 @@ static DECLCALLBACK(int) patmR3DbgAddPatchCallback(PAVLOU32NODECORE pNode, void 
 /**
  * Populates an empty "patches" (hDbgModPatchMem) module with patch symbols.
  *
- * @param   pVM                 The cross context VM structure.
- * @param   hDbgMod             The debug module handle.
+ * @param   pVM         The cross context VM structure.
+ * @param   hDbgMod     The debug module handle.
  */
 static void patmR3DbgAddPatches(PVM pVM, RTDBGMOD hDbgMod)
 {
@@ -262,8 +262,8 @@ static void patmR3DbgAddPatches(PVM pVM, RTDBGMOD hDbgMod)
  * Called by dbgfR3AsLazyPopulate when DBGF_AS_RC or DBGF_AS_RC_AND_GC_GLOBAL is
  * accessed for the first time.
  *
- * @param   pVM                 The cross context VM structure.
- * @param   hDbgAs              The DBGF_AS_RC address space handle.
+ * @param   pVM         The cross context VM structure.
+ * @param   hDbgAs      The DBGF_AS_RC address space handle.
  */
 VMMR3_INT_DECL(void) PATMR3DbgPopulateAddrSpace(PVM pVM, RTDBGAS hDbgAs)
 {
@@ -331,14 +331,13 @@ VMMR3_INT_DECL(void) PATMR3DbgPopulateAddrSpace(PVM pVM, RTDBGAS hDbgAs)
 /**
  * Annotates an instruction if patched.
  *
- * @param   pVM                 The VM handle.
- * @param   RCPtr               The instruction address.
- * @param   cbInstr             The instruction length.
- * @param   pszBuf              The output buffer.  This will be an empty string
- *                              if the instruction wasn't patched.  If it's
- *                              patched, it will hold a symbol-like string
- *                              describing the patch.
- * @param   cbBuf               The size of the output buffer.
+ * @param   pVM         The cross context VM structure.
+ * @param   RCPtr       The instruction address.
+ * @param   cbInstr     The instruction length.
+ * @param   pszBuf      The output buffer.  This will be an empty string if the
+ *                      instruction wasn't patched.  If it's patched, it will
+ *                      hold a symbol-like string describing the patch.
+ * @param   cbBuf       The size of the output buffer.
  */
 VMMR3_INT_DECL(void) PATMR3DbgAnnotatePatchedInstruction(PVM pVM, RTRCPTR RCPtr, uint8_t cbInstr, char *pszBuf, size_t cbBuf)
 {

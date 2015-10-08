@@ -534,7 +534,7 @@ static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
  * reads the error data from the VMCS and updates VCPU's last error record as
  * well.
  *
- * @param    pVM        Pointer to the VM.
+ * @param    pVM        The cross context VM structure.
  * @param    pVCpu      Pointer to the VMCPU (can be NULL if @a rc is not
  *                      VERR_VMX_UNABLE_TO_START_VM or
  *                      VERR_VMX_INVALID_VMCS_FIELD).
@@ -746,10 +746,10 @@ DECLINLINE(int) hmR0VmxReadIdtVectoringErrorCodeVmcs(PVMXTRANSIENT pVmxTransient
  * Enters VMX root mode operation on the current CPU.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM (optional, can be NULL, after
- *                              a resume).
- * @param   HCPhysCpuPage       Physical address of the VMXON region.
- * @param   pvCpuPage           Pointer to the VMXON region.
+ * @param   pVM             The cross context VM structure. Can be
+ *                          NULL, after a resume.
+ * @param   HCPhysCpuPage   Physical address of the VMXON region.
+ * @param   pvCpuPage       Pointer to the VMXON region.
  */
 static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage)
 {
@@ -875,7 +875,7 @@ DECLINLINE(void) hmR0VmxPageFree(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS
  * Worker function to free VT-x related structures.
  *
  * @returns IPRT status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 static void hmR0VmxStructsFree(PVM pVM)
 {
@@ -905,7 +905,7 @@ static void hmR0VmxStructsFree(PVM pVM)
  * Worker function to allocate VT-x related VM structures.
  *
  * @returns IPRT status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 static int hmR0VmxStructsAlloc(PVM pVM)
 {
@@ -1055,12 +1055,12 @@ VMMR0DECL(void) VMXR0GlobalTerm()
  *
  * @returns VBox status code.
  * @param   pCpu            Pointer to the global CPU info struct.
- * @param   pVM             Pointer to the VM (can be NULL after a host resume
- *                          operation).
+ * @param   pVM             The cross context VM structure.  Can be
+ *                          NULL after a host resume operation.
  * @param   pvCpuPage       Pointer to the VMXON region (can be NULL if @a
- *                          fEnabledByHost is true).
+ *                          fEnabledByHost is @c true).
  * @param   HCPhysCpuPage   Physical address of the VMXON region (can be 0 if
- *                          @a fEnabledByHost is true).
+ *                          @a fEnabledByHost is @c true).
  * @param   fEnabledByHost  Set if SUPR0EnableVTx() or similar was used to
  *                          enable VT-x on the host.
  * @param   pvMsrs          Opaque pointer to VMXMSRS struct.
@@ -1589,7 +1589,7 @@ static void hmR0VmxLazyRestoreHostMsrs(PVMCPU pVCpu)
  * consistent with what's actually present in the VMCS.
  *
  * @returns VBox status code.
- * @param pVCpu     Pointer to the VMCPU.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
 static int hmR0VmxCheckVmcsCtls(PVMCPU pVCpu)
 {
@@ -1632,7 +1632,7 @@ static int hmR0VmxCheckVmcsCtls(PVMCPU pVCpu)
  * Verifies that our cached host EFER value has not changed
  * since we cached it.
  *
- * @param pVCpu         Pointer to the VMCPU.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 static void hmR0VmxCheckHostEferMsr(PVMCPU pVCpu)
 {
@@ -1748,7 +1748,7 @@ static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush)
  * Flushes the TLB using VPID.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU (can be NULL depending on @a
  *                      enmFlush).
  * @param   enmFlush    Type of flush.
@@ -1794,7 +1794,7 @@ static void hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMXFLUSHVPID enmFlush, RTGCP
  * EPT/VPID, otherwise there is nothing really to invalidate.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCVirt      Guest virtual address of the page to invalidate.
  */
@@ -1837,7 +1837,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
  * otherwise there is nothing really to invalidate.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPhys      Guest physical address of the page to invalidate.
  */
@@ -1861,7 +1861,7 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
  * Dummy placeholder for tagged-TLB flush handling before VM-entry. Used in the
  * case where neither EPT nor VPID is supported by the CPU.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCpu            Pointer to the global HM struct.
  *
@@ -1886,7 +1886,7 @@ static void hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
 /**
  * Flushes the tagged-TLB entries for EPT+VPID CPUs as necessary.
  *
- * @param    pVM            Pointer to the VM.
+ * @param    pVM            The cross context VM structure.
  * @param    pVCpu          Pointer to the VMCPU.
  * @param    pCpu           Pointer to the global HM CPU struct.
  * @remarks All references to "ASID" in this function pertains to "VPID" in
@@ -1988,7 +1988,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
  * Flushes the tagged-TLB entries for EPT CPUs as necessary.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCpu        Pointer to the global HM CPU struct.
  *
@@ -2036,7 +2036,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCp
  * Flushes the tagged-TLB entries for VPID CPUs as necessary.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCpu        Pointer to the global HM CPU struct.
  *
@@ -2151,7 +2151,7 @@ DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
  * TLB entries from the host TLB before VM-entry.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 static int hmR0VmxSetupTaggedTlb(PVM pVM)
 {
@@ -2251,7 +2251,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
  * Sets up pin-based VM-execution controls in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
@@ -2295,7 +2295,7 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
  * Sets up processor-based VM-execution controls in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
@@ -2499,7 +2499,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
  * VM-execution) control fields in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
@@ -2569,7 +2569,7 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
  * Sets up the initial exception bitmap in the VMCS based on static conditions.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 static int hmR0VmxInitXcptBitmap(PVM pVM, PVMCPU pVCpu)
@@ -2611,7 +2611,7 @@ static int hmR0VmxInitUpdatedGuestStateMask(PVMCPU pVCpu)
  * Does per-VM VT-x initialization.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 {
@@ -2632,7 +2632,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
  * Does per-VM VT-x termination.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR0DECL(int) VMXR0TermVM(PVM pVM)
 {
@@ -2652,7 +2652,7 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
  * This function is only called once per-VM during initialization.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 {
@@ -2767,7 +2767,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
  * the VMCS.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
@@ -2818,7 +2818,7 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
  * the host-state area in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
@@ -3018,7 +3018,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
  * the host after every successful VM-exit.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
@@ -3396,8 +3396,8 @@ DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * VMCS.
  *
  * @returns VBox status code.
- * @param pVCpu         Pointer to the VMCPU.
- * @param uIntrState    The interruptibility-state to set.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   uIntrState  The interruptibility-state to set.
  */
 static int hmR0VmxLoadGuestIntrState(PVMCPU pVCpu, uint32_t uIntrState)
 {
@@ -4782,7 +4782,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Wrapper for running the guest code in VT-x.
  *
  * @returns VBox strict status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
@@ -4808,7 +4808,7 @@ DECLINLINE(int) hmR0VmxRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 /**
  * Reports world-switch error and dumps some useful debug info.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   rcVMRun         The return code from VMLAUNCH/VMRESUME.
  * @param   pCtx            Pointer to the guest-CPU context.
@@ -5061,7 +5061,7 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
  * Executes the specified handler in 64-bit mode.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  * @param   enmOp       The operation to perform.
@@ -5146,7 +5146,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
  * @param   fResume     Whether to VMLAUNCH or VMRESUME.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pCache      Pointer to the VMCS cache.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu)
@@ -5225,7 +5225,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
  * (those that have a 32-bit FULL & HIGH part).
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 static int hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu)
@@ -5452,7 +5452,7 @@ VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
  * VMX preemption timer.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
@@ -6655,7 +6655,7 @@ VMMR0_INT_DECL(int) HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixed
  * @retval VINF_EM_NO_MEMORY PGM is out of memory, we need to return
  *         to the EM loop.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
@@ -6884,7 +6884,7 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
  * (longjmp, preemption, voluntary exits to ring-3) from VT-x.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pVCpu               Pointer to the VMCPU.
  * @param   pMixedCtx           Pointer to the guest-CPU context. The data may
  *                              be out-of-sync. Make sure to update the required
@@ -7005,7 +7005,7 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
  * Leaves the VT-x session.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -7053,7 +7053,7 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Does the necessary state syncing before doing a longjmp to ring-3.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -7076,7 +7076,7 @@ DECLINLINE(int) hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * executing outside HM (recompiler/IEM).
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -7237,7 +7237,7 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
  * Sets the interrupt-window exiting control in the VMCS which instructs VT-x to
  * cause a VM-exit as soon as the guest is in a state to receive interrupts.
  *
- * @param pVCpu         Pointer to the VMCPU.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
 {
@@ -7257,7 +7257,7 @@ DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
 /**
  * Clears the interrupt-window exiting control in the VMCS.
  *
- * @param pVCpu             Pointer to the VMCPU.
+ * @param   pVCpu           Pointer to the VMCPU.
  */
 DECLINLINE(void) hmR0VmxClearIntWindowExitVmcs(PVMCPU pVCpu)
 {
@@ -7273,7 +7273,7 @@ DECLINLINE(void) hmR0VmxClearIntWindowExitVmcs(PVMCPU pVCpu)
  * Sets the NMI-window exiting control in the VMCS which instructs VT-x to
  * cause a VM-exit as soon as the guest is in a state to receive NMIs.
  *
- * @param pVCpu         Pointer to the VMCPU.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLINLINE(void) hmR0VmxSetNmiWindowExitVmcs(PVMCPU pVCpu)
 {
@@ -7293,7 +7293,7 @@ DECLINLINE(void) hmR0VmxSetNmiWindowExitVmcs(PVMCPU pVCpu)
 /**
  * Clears the NMI-window exiting control in the VMCS.
  *
- * @param pVCpu             Pointer to the VMCPU.
+ * @param   pVCpu           Pointer to the VMCPU.
  */
 DECLINLINE(void) hmR0VmxClearNmiWindowExitVmcs(PVMCPU pVCpu)
 {
@@ -7676,7 +7676,7 @@ DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint16_
  *
  * @returns VBox status code (information status code included).
  * @retval VINF_EM_RESET if pushing a value to the stack caused a triple-fault.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pMixedCtx   Pointer to the guest-CPU context.
  * @param   uValue      The value to push to the guest stack.
  */
@@ -7930,7 +7930,7 @@ static void hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu)
  * Enters the VT-x session.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCpu        Pointer to the CPU info struct.
  */
@@ -8063,7 +8063,7 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
  * The CPU state will be loaded from these fields on every successful VM-exit.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
@@ -8093,7 +8093,7 @@ static int hmR0VmxSaveHostState(PVM pVM, PVMCPU pVCpu)
  * Saves the host state in the VMCS host-state.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
@@ -8124,7 +8124,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  * the guest CPU mode.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -8211,7 +8211,7 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 /**
  * Loads the state shared between the host and guest into the VMCS.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
@@ -8268,7 +8268,7 @@ static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 /**
  * Worker for loading the guest-state bits in the inner VT-x execution loop.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
@@ -8325,7 +8325,7 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  *          dispatched directly.
  * @retval  VINF_* scheduling changes, we have to go back to ring-3.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
@@ -8445,7 +8445,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
  * means there is no backing out to ring-3 or anywhere else at this
  * point.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
@@ -8593,7 +8593,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
  * Performs some essential restoration of state after running guest code in
  * VT-x.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data maybe
  *                          out-of-sync. Make sure to update the required fields
@@ -8702,7 +8702,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
  * Runs the guest code using VT-x the normal way.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
@@ -8784,7 +8784,7 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Single steps guest code using VT-x.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
@@ -8893,7 +8893,7 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Runs the guest code using VT-x.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
@@ -9191,7 +9191,7 @@ DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
  * @retval VMX_IGS_REASON_NOT_FOUND if this function could not find anything
  *         wrong with the guest state.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   pCtx    Pointer to the guest-CPU state.
  *

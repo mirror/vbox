@@ -86,7 +86,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Kvm[] =
  * Initializes the KVM GIM provider.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   uVersion    The interface version this VM should use.
  */
 VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
@@ -186,7 +186,7 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
  * This is called after initializing HM and almost all other VMM components.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) gimR3KvmInitCompleted(PVM pVM)
 {
@@ -219,7 +219,7 @@ VMMR3_INT_DECL(int) gimR3KvmInitCompleted(PVM pVM)
  * Terminates the KVM GIM provider.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) gimR3KvmTerm(PVM pVM)
 {
@@ -234,7 +234,7 @@ VMMR3_INT_DECL(int) gimR3KvmTerm(PVM pVM)
  * This function will be called at init and whenever the VMM need to relocate
  * itself inside the GC.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMMR3_INT_DECL(void) gimR3KvmRelocate(PVM pVM, RTGCINTPTR offDelta)
@@ -249,7 +249,7 @@ VMMR3_INT_DECL(void) gimR3KvmRelocate(PVM pVM, RTGCINTPTR offDelta)
  *
  * This is called when the VM is being reset.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @thread EMT(0).
  */
 VMMR3_INT_DECL(void) gimR3KvmReset(PVM pVM)
@@ -279,7 +279,7 @@ VMMR3_INT_DECL(void) gimR3KvmReset(PVM pVM)
  * KVM state-save operation.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pSSM    Pointer to the SSM handle.
  */
 VMMR3_INT_DECL(int) gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM)
@@ -327,7 +327,7 @@ VMMR3_INT_DECL(int) gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM)
  * KVM state-load operation, final pass.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            Pointer to the SSM handle.
  * @param   uSSMVersion     The GIM saved-state version.
  */
@@ -394,7 +394,7 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
  * Enables the KVM VCPU system-time structure.
  *
  * @returns VBox status code.
- * @param   pVM                Pointer to the VM.
+ * @param   pVM                The cross context VM structure.
  * @param   pVCpu              Pointer to the VMCPU.
  *
  * @remarks Don't do any release assertions here, these can be triggered by
@@ -474,7 +474,7 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu)
  * Disables the KVM system-time struct.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) gimR3KvmDisableSystemTime(PVM pVM)
 {
@@ -557,7 +557,7 @@ static DECLCALLBACK(VBOXSTRICTRC) gimR3KvmEnableWallClockCallback(PVM pVM, PVMCP
  * sure there is only 1 writer as well.
  *
  * @returns VBox status code.
- * @param   pVM                Pointer to the VM.
+ * @param   pVM                The cross context VM structure.
  * @param   GCPhysWallClock    Where the guest wall-clock structure is located.
  * @param   uVersion           The version (sequence number) value to use.
  *

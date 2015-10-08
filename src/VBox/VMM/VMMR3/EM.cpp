@@ -97,7 +97,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
  * Initializes the EM.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
 {
@@ -451,7 +451,7 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(void) EMR3Relocate(PVM pVM)
 {
@@ -490,7 +490,7 @@ VMMR3_INT_DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 /**
  * Reset notification.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(void) EMR3Reset(PVM pVM)
 {
@@ -507,7 +507,7 @@ VMMR3_INT_DECL(void) EMR3Reset(PVM pVM)
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) EMR3Term(PVM pVM)
 {
@@ -524,7 +524,7 @@ VMMR3_INT_DECL(int) EMR3Term(PVM pVM)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -563,7 +563,7 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -792,7 +792,7 @@ static const char *emR3GetStateName(EMSTATE enmState)
  * Debug loop.
  *
  * @returns VBox status code for EM.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   rc      Current EM VBox status code.
  */
@@ -988,7 +988,7 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
  * @returns VBox status code. The most important ones are: VINF_EM_STEP_EVENT,
  *          VINF_EM_RESCHEDULE, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
@@ -1023,7 +1023,7 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
  * critical section.
  *
  * @returns false - new fInREMState value.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
@@ -1048,7 +1048,7 @@ DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code. The most important ones are: VINF_EM_RESCHEDULE,
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
@@ -1258,7 +1258,7 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  * is too much of it or if IEM doesn't implement something.
  *
  * @returns Strict VBox status code from IEMExecLots.
- * @param   pVM         The cross context VM structure.
+ * @param   pVM        The cross context VM structure.
  * @param   pVCpu       The cross context CPU structure for the calling EMT.
  * @param   pfFFDone    Force flags done indicator.
  *
@@ -1319,7 +1319,7 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
  * Decides whether to execute RAW, HWACC or REM.
  *
  * @returns new EM state
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   pCtx    Pointer to the guest CPU context.
  */
@@ -1540,7 +1540,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns rc or a fatal status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          The current rc.
  */
@@ -1609,7 +1609,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  *          The most important ones are: VINF_EM_RESCHEDULE,
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          The current rc.
  *
@@ -2060,7 +2060,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  * Check if the preset execution time cap restricts guest execution scheduling.
  *
  * @returns true if allowed, false otherwise
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
@@ -2102,7 +2102,7 @@ bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
  * and signaling of the wait object.
  *
  * @returns VBox status code, informational status codes may indicate failure.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
@@ -2676,7 +2676,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 /**
  * Notify EM of a state change (used by FTM)
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMMR3_INT_DECL(int) EMR3NotifySuspend(PVM pVM)
 {
@@ -2691,7 +2691,7 @@ VMMR3_INT_DECL(int) EMR3NotifySuspend(PVM pVM)
 /**
  * Notify EM of a state change (used by FTM)
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMMR3_INT_DECL(int) EMR3NotifyResume(PVM pVM)
 {

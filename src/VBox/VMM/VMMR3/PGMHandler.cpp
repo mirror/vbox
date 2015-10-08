@@ -71,7 +71,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
  * Register a physical page access handler type, extended version.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   enmKind         The kind of access handler.
  * @param   pfnHandlerR3    Pointer to the ring-3 handler callback.
  * @param   pfnHandlerR0    Pointer to the ring-0 handler callback.
@@ -136,7 +136,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
  * Register a physical page access handler type.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   enmKind         The kind of access handler.
  * @param   pfnHandlerR3    Pointer to the ring-3 handler callback.
  * @param   pszModR0        The name of the ring-0 module, NULL is an alias for
@@ -226,7 +226,7 @@ VMMR3DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmK
 /**
  * Updates the physical page access handlers.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @remark  Only used when restoring a saved state.
  */
 void pgmR3HandlerPhysicalUpdateAll(PVM pVM)
@@ -311,7 +311,7 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
  * Register a virtual page access handler type, extended version.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   enmKind         The kind of access handler.
  * @param   fRelocUserRC    Whether the pvUserRC argument should be
  *                          automatically relocated or not.
@@ -387,7 +387,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIN
  * Register a physical page access handler type.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pVM             The cross context VM structure.
  * @param   enmKind         The kind of access handler.
  * @param   fRelocUserRC    Whether the pvUserRC argument should be
  *                          automatically relocated or not.
@@ -447,7 +447,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND 
  * Register a access handler for a virtual range.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   hType           The handler type.
  * @param   GCPtr           Start address.
  * @param   GCPtrLast       Last address (inclusive).
@@ -580,7 +580,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PVMCPU pVCpu, PGMVIRTHA
  * The new and old type must have the same access kind.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPtr           Start address of the virtual handler.
  * @param   hNewType        The new handler type.
  */
@@ -615,7 +615,7 @@ VMMR3_INT_DECL(int) PGMHandlerVirtualChangeType(PVM pVM, RTGCPTR GCPtr, PGMVIRTH
  * Deregister an access handler for a virtual range.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the cross context CPU structure for the
  *                      calling EMT.
  * @param   GCPtr       Start address.

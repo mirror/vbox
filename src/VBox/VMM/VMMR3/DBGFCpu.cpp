@@ -35,7 +35,7 @@
  * Wrapper around CPUMGetGuestMode.
  *
  * @returns VINF_SUCCESS.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   idCpu       The current CPU ID.
  * @param   penmMode    Where to return the mode.
  */
@@ -73,7 +73,7 @@ VMMR3DECL(CPUMMODE) DBGFR3CpuGetMode(PUVM pUVM, VMCPUID idCpu)
  * Wrapper around CPUMIsGuestIn64BitCode.
  *
  * @returns VINF_SUCCESS.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   idCpu           The current CPU ID.
  * @param   pfIn64BitCode   Where to return the result.
  */

@@ -32,7 +32,7 @@
  * @returns VINF_SUCCESS if it's ok to continue raw mode.
  * @returns VBox status code to return to the EM main loop.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   rc      The return code.
  * @param   pCtx    Pointer to the guest CPU context.

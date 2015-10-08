@@ -104,7 +104,7 @@ static DECLCALLBACK(int) dbgfR3Attach(PVM pVM);
  * Sets the VMM Debug Command variable.
  *
  * @returns Previous command.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   enmCmd  The command.
  */
 DECLINLINE(DBGFCMD) dbgfR3SetCmd(PVM pVM, DBGFCMD enmCmd)
@@ -132,7 +132,7 @@ DECLINLINE(DBGFCMD) dbgfR3SetCmd(PVM pVM, DBGFCMD enmCmd)
  * Initializes the DBGF.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
 {
@@ -185,7 +185,7 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
  * Terminates and cleans up resources allocated by the DBGF.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
 {
@@ -205,7 +205,7 @@ VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
 /**
  * Called when the VM is powered off to detach debuggers.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(void) DBGFR3PowerOff(PVM pVM)
 {
@@ -304,7 +304,7 @@ VMMR3_INT_DECL(void) DBGFR3PowerOff(PVM pVM)
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMMR3_INT_DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
@@ -318,7 +318,7 @@ VMMR3_INT_DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * Waits a little while for a debuggger to attach.
  *
  * @returns True is a debugger have attached.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmEvent    Event.
  */
 bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
@@ -375,7 +375,7 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
  *
  * @returns VINF_SUCCESS normally.
  * @returns VERR_DBGF_RAISE_FATAL_ERROR to pretend a fatal error happened.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) DBGFR3VMMForcedAction(PVM pVM)
 {
@@ -406,7 +406,7 @@ VMMR3_INT_DECL(int) DBGFR3VMMForcedAction(PVM pVM)
  * Flag whether the event implies that we're stopped in the hypervisor code
  * and have to block certain operations.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event.
  */
 static void dbgfR3EventSetStoppedInHyperFlag(PVM pVM, DBGFEVENTTYPE enmEvent)
@@ -429,7 +429,7 @@ static void dbgfR3EventSetStoppedInHyperFlag(PVM pVM, DBGFEVENTTYPE enmEvent)
  * Try to determine the event context.
  *
  * @returns debug event context.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
 {
@@ -461,7 +461,7 @@ static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
  * and perhaps process any high priority pending actions (none yet).
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to be sent.
  */
 static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
@@ -501,7 +501,7 @@ static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
  * Sends the event in the event buffer.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static int dbgfR3SendEvent(PVM pVM)
 {
@@ -519,7 +519,7 @@ static int dbgfR3SendEvent(PVM pVM)
  * Send a generic debugger event which takes no data.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to send.
  * @internal
  */
@@ -542,7 +542,7 @@ VMMR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
  * Send a debugger event which takes the full source file location.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to send.
  * @param   pszFile     Source file.
  * @param   uLine       Line number in source file.
@@ -565,7 +565,7 @@ VMMR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFi
  * Send a debugger event which takes the full source file location.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to send.
  * @param   pszFile     Source file.
  * @param   uLine       Line number in source file.
@@ -608,7 +608,7 @@ VMMR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszF
  * Send a debugger event which takes the two assertion messages.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to send.
  * @param   pszMsg1     First assertion message.
  * @param   pszMsg2     Second assertion message.
@@ -635,7 +635,7 @@ VMMR3_INT_DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const 
  * Figure out which breakpoint it is and notify the debugger.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   enmEvent    DBGFEVENT_BREAKPOINT_HYPER or DBGFEVENT_BREAKPOINT.
  */
 VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
@@ -683,7 +683,7 @@ VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
  * Waits for the debugger to respond.
  *
  * @returns VBox status. (clearify)
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static int dbgfR3VMMWait(PVM pVM)
 {
@@ -806,7 +806,7 @@ static int dbgfR3VMMWait(PVM pVM)
  * value returned in the *pfResumeExecution indicator.
  *
  * @returns VBox status. (clearify!)
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   enmCmd              The command in question.
  * @param   pCmdData            Pointer to the command data.
  * @param   pfResumeExecution   Where to store the resume execution / continue waiting indicator.
@@ -951,7 +951,7 @@ VMMR3DECL(int) DBGFR3Attach(PUVM pUVM)
  * EMT worker for DBGFR3Attach.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static DECLCALLBACK(int) dbgfR3Attach(PVM pVM)
 {
@@ -1243,7 +1243,7 @@ VMMR3_INT_DECL(int) DBGFR3PrgStep(PVMCPU pVCpu)
  * Inject an NMI into a running VM (only VCPU 0!)
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(int) DBGFR3InjectNMI(PUVM pUVM, VMCPUID idCpu)
 {

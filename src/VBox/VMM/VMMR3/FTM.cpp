@@ -101,7 +101,7 @@ static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNo
  * Initializes the FTM.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) FTMR3Init(PVM pVM)
 {
@@ -157,7 +157,7 @@ VMMR3_INT_DECL(int) FTMR3Init(PVM pVM)
  * the VM itself is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) FTMR3Term(PVM pVM)
 {
@@ -272,7 +272,7 @@ static int ftmR3TcpReadLine(PVM pVM, char *pszBuf, size_t cchBuf)
  * Reads an ACK or NACK.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pszWhich            Which ACK is this this?
  * @param   pszNAckMsg          Optional NACK message.
  */
@@ -328,7 +328,7 @@ static int ftmR3TcpReadACK(PVM pVM, const char *pszWhich, const char *pszNAckMsg
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pszCommand          The command.
  * @param   fWaitForAck         Whether to wait for the ACK.
  */
@@ -618,7 +618,7 @@ static SSMSTRMOPS const g_ftmR3TcpOps =
 /**
  * VMR3ReqCallWait callback
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  *
  */
 static DECLCALLBACK(void) ftmR3WriteProtectMemory(PVM pVM)
@@ -632,7 +632,7 @@ static DECLCALLBACK(void) ftmR3WriteProtectMemory(PVM pVM)
  * Sync the VM state
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 static int ftmR3PerformFullSync(PVM pVM)
 {
@@ -678,7 +678,7 @@ static int ftmR3PerformFullSync(PVM pVM)
 /**
  * PGMR3PhysEnumDirtyFTPages callback for syncing dirty physical pages
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          GC physical address
  * @param   pRange          HC virtual address of the page(s)
  * @param   cbRange         Size of the dirty range in bytes.
@@ -851,7 +851,7 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD hThread, void *pvUser)
  * Syncs memory from the master VM
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 static int ftmR3SyncMem(PVM pVM)
 {
@@ -1239,7 +1239,7 @@ VMMR3DECL(int) FTMR3CancelStandby(PUVM pUVM)
  * it to complete this function.
  *
  * @returns VINF_SUCCESS (VBox strict status code).
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
  * @param   pvUser      Not used.
  */
@@ -1307,7 +1307,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
  *
  * @returns VBox status code.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   enmCheckpoint   Checkpoint type
  */
 VMMR3_INT_DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)

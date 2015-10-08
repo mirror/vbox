@@ -404,7 +404,7 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
  * Initialize the configuration of halt method 1 & 2.
  *
  * @return VBox status code. Failure on invalid CFGM data.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static int vmR3HaltMethod12ReadConfigU(PUVM pUVM)
 {
@@ -1041,7 +1041,7 @@ VMMR3_INT_DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, uint32_t fFlags)
  *
  * @returns VINF_SUCCESS unless a fatal error occurred. In the latter
  *          case an appropriate status code is returned.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
  * @thread  The emulation thread.
@@ -1193,7 +1193,7 @@ VMMR3_INT_DECL(void) VMR3AsyncPdmNotificationWakeupU(PUVM pUVM)
  * Rendezvous callback that will be called once.
  *
  * @returns VBox strict status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pVCpu               Pointer to the VMCPU of the calling EMT.
  * @param   pvUser              The new g_aHaltMethods index.
  */
@@ -1307,7 +1307,7 @@ int vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod)
  * of the actual EFLAGS.IF state.
  *
  * @returns VBox error status (never informational statuses).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The id of the calling EMT.
  */
 VMMR3DECL(int) VMR3WaitForDeviceReady(PVM pVM, VMCPUID idCpu)
@@ -1334,7 +1334,7 @@ VMMR3DECL(int) VMR3WaitForDeviceReady(PVM pVM, VMCPUID idCpu)
  * Wakes up a CPU that has called VMR3WaitForDeviceReady.
  *
  * @returns VBox error status (never informational statuses).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The id of the calling EMT.
  */
 VMMR3DECL(int) VMR3NotifyCpuDeviceReady(PVM pVM, VMCPUID idCpu)

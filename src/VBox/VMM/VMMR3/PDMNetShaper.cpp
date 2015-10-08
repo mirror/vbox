@@ -294,7 +294,7 @@ static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
  * Attach network filter driver from bandwidth group.
  *
  * @returns VBox status code.
- * @param   pVM             Handle of VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         The driver instance.
  * @param   pszBwGroup     Name of the bandwidth group to attach to.
  * @param   pFilter         Pointer to the filter we attach.
@@ -406,7 +406,7 @@ VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszBwGroup, uint64_
  * I/O thread for pending TX.
  *
  * @returns VINF_SUCCESS (ignored).
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pThread     The PDM thread data.
  */
 static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
@@ -447,7 +447,7 @@ static DECLCALLBACK(int) pdmR3NsTxWakeUp(PVM pVM, PPDMTHREAD pThread)
  * Terminate the network shaper.
  *
  * @returns VBox error code.
- * @param   pVM  Pointer to VM.
+ * @param   pVM  The cross context VM structure.
  *
  * @remarks This method destroys all bandwidth group objects.
  */
@@ -478,7 +478,7 @@ int pdmR3NetShaperTerm(PVM pVM)
  * Initialize the network shaper.
  *
  * @returns VBox status code
- * @param   pVM Pointer to the VM.
+ * @param   pVM The cross context VM structure.
  */
 int pdmR3NetShaperInit(PVM pVM)
 {

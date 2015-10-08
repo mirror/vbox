@@ -56,7 +56,7 @@ DECLASM(bool)   vmmRCSafeMsrWrite(uint32_t uMsr, uint64_t u64Value);
  * The GC entry point.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   uOperation  Which operation to execute (VMMRCOPERATION).
  * @param   uArg        Argument to that operation.
  */
@@ -192,7 +192,7 @@ VMMRCDECL(int) vmmGCLoggerFlush(PRTLOGGERRC pLogger)
 /**
  * Flush logger if almost full.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 VMMRCDECL(void) VMMRCLogFlushIfFull(PVM pVM)
 {
@@ -209,7 +209,7 @@ VMMRCDECL(void) VMMRCLogFlushIfFull(PVM pVM)
 /**
  * Switches from guest context to host context.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   rc          The status code.
  */
 VMMRCDECL(void) VMMRCGuestToHost(PVM pVM, int rc)
@@ -221,7 +221,7 @@ VMMRCDECL(void) VMMRCGuestToHost(PVM pVM, int rc)
 /**
  * Calls the ring-0 host code.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  */
 DECLASM(void) vmmRCProbeFireHelper(PVM pVM)
 {
@@ -241,7 +241,7 @@ DECLASM(void) vmmRCProbeFireHelper(PVM pVM)
  * @returns VERR_NOT_IMPLEMENTED if the testcase wasn't implemented.
  * @returns VERR_GENERAL_FAILURE if the testcase continued when it shouldn't.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   uOperation  The testcase.
  * @param   uArg        The variation. See function description for odd / even details.
  *
@@ -355,7 +355,7 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
  * This is called directly via VMMR3CallRC.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             The cross context VM structure.
  * @param   uMsr            The MSR to start at.
  * @param   cMsrs           The number of MSRs to read.
  * @param   paResults       Where to store the results.  This must be large
@@ -388,7 +388,7 @@ VMMRCTestReadMsrs(PVM pVM, uint32_t uMsr, uint32_t cMsrs, PVMMTESTMSRENTRY paRes
  * This is called directly via VMMR3CallRC.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             The cross context VM structure.
  * @param   uMsr            The MSR to start at.
  * @param   u32ValueLow     The low part of the value to write.
  * @param   u32ValueHi      The high part of the value to write.
@@ -429,7 +429,7 @@ VMMRCTestTestWriteMsr(PVM pVM, uint32_t uMsr, uint32_t u32ValueLow, uint32_t u32
  *
  * @returns VBox status code (appropriate for GC return).
  *          In this context RT_SUCCESS means to restart the instruction.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegFrame   Trap register frame.
  */
 static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
@@ -450,7 +450,7 @@ static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
  *
  * @returns VBox status code (appropriate for GC return).
  *          In this context RT_SUCCESS means to restart the instruction.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegFrame   Trap register frame.
  */
 static DECLCALLBACK(int) vmmGCTestTmpPFHandlerCorruptFS(PVM pVM, PCPUMCTXCORE pRegFrame)

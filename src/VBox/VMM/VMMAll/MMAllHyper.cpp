@@ -153,7 +153,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap);
  * Locks the hypervisor heap.
  * This might call back to Ring-3 in order to deal with lock contention in GC and R3.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static int mmHyperLock(PVM pVM)
 {
@@ -178,7 +178,7 @@ static int mmHyperLock(PVM pVM)
 /**
  * Unlocks the hypervisor heap.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 static void mmHyperUnlock(PVM pVM)
 {
@@ -197,7 +197,7 @@ static void mmHyperUnlock(PVM pVM)
  * The returned memory is of course zeroed.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   cb          Number of bytes to allocate.
  * @param   uAlignment  Required memory alignment in bytes.
  *                      Values are 0,8,16,32,64 and PAGE_SIZE.
@@ -345,7 +345,7 @@ VMMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag,
  * Duplicates a block of memory.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvSrc       The source memory block to copy from.
  * @param   cb          Size of the source memory block.
  * @param   uAlignment  Required memory alignment in bytes.
@@ -781,7 +781,7 @@ static void mmR3HyperStatRegisterOne(PVM pVM, PMMHYPERSTAT pStat)
  * The caller validates the parameters of this request.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pv          The memory to free.
  * @remark  Try avoid free hyper memory.
  */
@@ -1212,7 +1212,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
  * Performs consistency checks on the heap if MMHYPER_HEAP_STRICT was
  * defined at build time.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMDECL(void) MMHyperHeapCheck(PVM pVM)
 {
@@ -1232,7 +1232,7 @@ VMMDECL(void) MMHyperHeapCheck(PVM pVM)
 #ifdef DEBUG
 /**
  * Dumps the hypervisor heap to Log.
- * @param pVM       Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(void) MMHyperHeapDump(PVM pVM)
 {
@@ -1279,7 +1279,7 @@ VMMDECL(size_t) MMHyperHeapGetSize(PVM pVM)
  * Converts a context neutral heap offset into a pointer.
  *
  * @returns Pointer to hyper heap data.
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   offHeap     The hyper heap offset.
  */
 VMMDECL(void *) MMHyperHeapOffsetToPtr(PVM pVM, uint32_t offHeap)
@@ -1293,7 +1293,7 @@ VMMDECL(void *) MMHyperHeapOffsetToPtr(PVM pVM, uint32_t offHeap)
  * Converts a context specific heap pointer into a neutral heap offset.
  *
  * @returns Heap offset.
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pv          Pointer to the heap data.
  */
 VMMDECL(uint32_t) MMHyperHeapPtrToOffset(PVM pVM, void *pv)
@@ -1308,7 +1308,7 @@ VMMDECL(uint32_t) MMHyperHeapPtrToOffset(PVM pVM, void *pv)
  * Query the address and size the hypervisor memory area.
  *
  * @returns Base address of the hypervisor area.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pcb         Where to store the size of the hypervisor area. (out)
  */
 VMMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb)
@@ -1324,7 +1324,7 @@ VMMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb)
  *
  * @returns true if inside.
  * @returns false if outside.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtr       The pointer to check.
  */
 VMMDECL(bool) MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr)

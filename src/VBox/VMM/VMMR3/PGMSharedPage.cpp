@@ -54,7 +54,7 @@ static unsigned                     g_cSharedModules = 0;
  * Registers a new shared module for the VM
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   enmGuestOS          Guest OS type.
  * @param   pszModuleName       Module name.
  * @param   pszVersion          Module version.
@@ -139,7 +139,7 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char 
  * Unregisters a shared module for the VM
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pszModuleName       Module name.
  * @param   pszVersion          Module version.
  * @param   GCBaseAddr          Module base address.
@@ -204,7 +204,7 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
  * Rendezvous callback that will be called once.
  *
  * @returns VBox strict status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pVCpu               Pointer to the VMCPU of the calling EMT.
  * @param   pvUser              Pointer to a VMCPUID with the requester's ID.
  */
@@ -243,7 +243,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU
 /**
  * Shared module check helper (called on the way out).
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   VMCPUID     VCPU id
  */
 static DECLCALLBACK(void) pgmR3CheckSharedModulesHelper(PVM pVM, VMCPUID idCpu)
@@ -260,7 +260,7 @@ static DECLCALLBACK(void) pgmR3CheckSharedModulesHelper(PVM pVM, VMCPUID idCpu)
  * Check all registered modules for changes.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM
+ * @param   pVM                 The cross context VM structure.
  */
 VMMR3DECL(int) PGMR3SharedModuleCheckAll(PVM pVM)
 {
@@ -277,7 +277,7 @@ VMMR3DECL(int) PGMR3SharedModuleCheckAll(PVM pVM)
  * Query the state of a page in a shared module
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   GCPtrPage           Page address.
  * @param   pfShared            Shared status (out).
  * @param   pfPageFlags         Page flags (out).

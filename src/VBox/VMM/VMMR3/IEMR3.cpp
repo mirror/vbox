@@ -38,7 +38,7 @@
  * the guest and host CPUs.
  *
  * @returns VBox status code.
- * @param   pVM                 The cross context VM structure.
+ * @param   pVM                The cross context VM structure.
  */
 VMMR3DECL(int)      IEMR3Init(PVM pVM)
 {

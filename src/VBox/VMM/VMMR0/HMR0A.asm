@@ -1236,7 +1236,7 @@ ALIGN(16)
 ; @param    fResume    x86:[ebp+8], msc:rcx,gcc:rdi     Whether to use vmlauch/vmresume.
 ; @param    pCtx       x86:[ebp+c], msc:rdx,gcc:rsi     Pointer to the guest-CPU context.
 ; @param    pCache     x86:[ebp+10],msc:r8, gcc:rdx     Pointer to the VMCS cache.
-; @param    pVM        x86:[ebp+14],msc:r9, gcc:rcx     Pointer to the cross context VM structure.
+; @param    pVM        x86:[ebp+14],msc:r9, gcc:rcx     The cross context VM structure.
 ; @param    pVCpu      x86:[ebp+18],msc:[ebp+30],gcc:r8 Pointer to the cross context VMCPU structure.
 ;
 ALIGNCODE(16)
@@ -1542,7 +1542,7 @@ ALIGN(16)
 ; @param    fResume    msc:rcx, gcc:rdi     Whether to use vmlauch/vmresume.
 ; @param    pCtx       msc:rdx, gcc:rsi     Pointer to the guest-CPU context.
 ; @param    pCache     msc:r8,  gcc:rdx     Pointer to the VMCS cache.
-; @param    pVM        msc:r9,  gcc:rcx     Pointer to the cross context VM structure.
+; @param    pVM        msc:r9,  gcc:rcx     The cross context VM structure.
 ; @param    pVCpu      msc:[ebp+30], gcc:r8 Pointer to the cross context VMCPU structure.
 ;
 ALIGNCODE(16)
@@ -1735,7 +1735,7 @@ ENDPROC VMXR0StartVM64
 ; @param    HCPhysVMCB      Physical address of host VMCB.
 ; @param    HCPhysVMCB      Physical address of guest VMCB.
 ; @param    pCtx            Pointer to the guest CPU-context.
-; @param    pVM             msc:r9, gcc:rcx     Pointer to the cross context VM structure.
+; @param    pVM             msc:r9, gcc:rcx     The cross context VM structure.
 ; @param    pVCpu           msc:[rsp+28],gcc:r8 Pointer to the cross context VMCPU structure.
 ;
 ALIGNCODE(16)
@@ -1887,7 +1887,7 @@ ENDPROC SVMR0VMRun
 ; @param    HCPhysVMCB      Physical address of host VMCB.
 ; @param    HCPhysVMCB      Physical address of guest VMCB.
 ; @param    pCtx            Pointer to the guest-CPU context.
-; @param    pVM             msc:r9, gcc:rcx     Pointer to the cross context VM structure.
+; @param    pVM             msc:r9, gcc:rcx     The cross context VM structure.
 ; @param    pVCpu           msc:[rsp+28],gcc:r8 Pointer to the cross context VMCPU structure.
 ;
 ALIGNCODE(16)

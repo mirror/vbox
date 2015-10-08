@@ -39,7 +39,7 @@
  *
  * @returns The following VBox status codes.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pGVM                Pointer to the GVM instance data.
  * @param   idCpu               The ID of the calling virtual CPU.
  * @param   pModule             Global module description.

@@ -76,7 +76,7 @@ static int pdmR3DrvLoad(PVM pVM, PPDMDRVREGCBINT pRegCB, const char *pszFilename
  * Register drivers in a statically linked environment.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pfnCallback Driver registration callback
  */
 VMMR3DECL(int) PDMR3DrvStaticRegistration(PVM pVM, FNPDMVBOXDRIVERSREGISTER pfnCallback)
@@ -106,7 +106,7 @@ VMMR3DECL(int) PDMR3DrvStaticRegistration(PVM pVM, FNPDMVBOXDRIVERSREGISTER pfnC
  * loaded and called for registration.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 int pdmR3DrvInit(PVM pVM)
 {
@@ -218,7 +218,7 @@ int pdmR3DrvInit(PVM pVM)
  * Loads one driver module and call the registration entry point.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pRegCB          The registration callback stuff.
  * @param   pszFilename     Module filename.
  * @param   pszName         Module name.
@@ -377,7 +377,7 @@ PPDMDRV pdmR3DrvLookup(PVM pVM, const char *pszName)
  * Worker for pdmR3DrvInstantiate.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDrvAbove           The driver above, NULL if top.
  * @param   pLun                The LUN.
  * @param   ppNode              The AttachedDriver node, replaced if any
@@ -618,7 +618,7 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
  *
  * @returns VBox status code, including informational statuses.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pNode               The CFGM node for the driver.
  * @param   pBaseInterface      The base interface.
  * @param   pDrvAbove           The driver above it.  NULL if it's the top-most

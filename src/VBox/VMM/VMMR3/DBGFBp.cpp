@@ -52,7 +52,7 @@ RT_C_DECLS_END
  * Initialize the breakpoint stuff.
  *
  * @returns VINF_SUCCESS
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 int dbgfR3BpInit(PVM pVM)
 {
@@ -94,7 +94,7 @@ int dbgfR3BpInit(PVM pVM)
  *
  * @returns Pointer to the allocated breakpoint.
  * @returns NULL if we're out of breakpoints.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   enmType The type to allocate.
  */
 static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
@@ -147,7 +147,7 @@ static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
  *
  * @returns Pointer to the allocated breakpoint.
  * @returns NULL if the breakpoint is invalid.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   iBp     The breakpoint id.
  */
 static PDBGFBP dbgfR3BpGet(PVM pVM, uint32_t iBp)
@@ -189,7 +189,7 @@ static PDBGFBP dbgfR3BpGet(PVM pVM, uint32_t iBp)
  *
  * @returns Pointer to the allocated breakpoint.
  * @returns NULL if the breakpoint is invalid.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   enmType The breakpoint type.
  * @param   GCPtr   The breakpoint address.
  */
@@ -235,7 +235,7 @@ static PDBGFBP dbgfR3BpGetByAddr(PVM pVM, DBGFBPTYPE enmType, RTGCUINTPTR GCPtr)
 /**
  * Frees a breakpoint.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pBp     The breakpoint to free.
  */
 static void dbgfR3BpFree(PVM pVM, PDBGFBP pBp)
@@ -574,7 +574,7 @@ DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, void *p
  * This is used to implement both DBGFR3BpSetReg() and DBGFR3BpEnable().
  *
  * @returns VBox status code.
- * @param   pUVM        The user mode VM handle.
+ * @param   pVM         The cross context VM structure.
  * @param   pBp         The breakpoint.
  */
 static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
@@ -589,7 +589,7 @@ static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
  * This is used to implement both DBGFR3BpClear() and DBGFR3BpDisable().
  *
  * @returns VBox status code.
- * @param   pUVM        The user mode VM handle.
+ * @param   pVM         The cross context VM structure.
  * @param   pBp         The breakpoint.
  */
 static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)

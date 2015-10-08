@@ -346,7 +346,7 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   uSvnRev     The SVN revision of the ring-3 part.
  * @param   uBuildType  Build type indicator.
  * @thread  EMT.
@@ -500,7 +500,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pGVM        Pointer to the global VM structure. Optional.
  * @thread  EMT or session clean up thread.
  */
@@ -716,7 +716,7 @@ VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Record return code statistics
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          The status code.
  */
@@ -912,7 +912,7 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
 /**
  * The Ring 0 entry point, called by the fast-ioctl path.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  *                          The return code is stored in pVM->vmm.s.iLastGZRc.
  * @param   idCpu           The Virtual CPU ID of the calling EMT.
  * @param   enmOperation    Which operation to execute.
@@ -1264,7 +1264,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
  * Validates a session or VM session argument.
  *
  * @returns true / false accordingly.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pSession    The session argument.
  */
 DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PSUPDRVSESSION pSession)
@@ -1287,7 +1287,7 @@ DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PS
  * called thru a longjmp so we can exit safely on failure.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   idCpu           Virtual CPU ID argument. Must be NIL_VMCPUID if pVM
  *                          is NIL_RTR0PTR, and may be NIL_VMCPUID if it isn't
  * @param   enmOperation    Which operation to execute.
@@ -1927,7 +1927,7 @@ static DECLCALLBACK(int) vmmR0EntryExWrapper(void *pvArgs)
  * The Ring 0 entry point, called by the support library (SUP).
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   idCpu           Virtual CPU ID argument. Must be NIL_VMCPUID if pVM
  *                          is NIL_RTR0PTR, and may be NIL_VMCPUID if it isn't
  * @param   enmOperation    Which operation to execute.

@@ -4906,7 +4906,7 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
  * Looks up the range for the given MSR.
  *
  * @returns Pointer to the range if found, NULL if not.
- * @param   pVM                 The cross context VM structure.
+ * @param   pVM                The cross context VM structure.
  * @param   idMsr               The MSR to look up.
  */
 # ifndef IN_RING3
@@ -5609,7 +5609,7 @@ int cpumR3MsrStrictInitChecks(void)
  * other frequency ratios.
  *
  * @returns Scalable bus frequency in Hz. Will not return CPUM_SBUSFREQ_UNKNOWN.
- * @param   pVM                 Pointer to the shared VM structure.
+ * @param   pVM                 The cross context VM structure.
  */
 VMMDECL(uint64_t) CPUMGetGuestScalableBusFrequency(PVM pVM)
 {

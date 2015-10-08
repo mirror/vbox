@@ -298,9 +298,8 @@ static uint32_t cpumR3MsrRangesBinSearch(PCCPUMMSRRANGE paMsrRanges, uint32_t cM
  *
  * @returns Pointer to the MSR ranges on success, NULL on failure.  On failure
  *          @a *ppaMsrRanges is freed and set to NULL.
- * @param   pVM             Pointer to the VM, used as the heap selector.
- *                          Passing NULL uses the host-context heap, otherwise
- *                          the VM's hyper heap is used.
+ * @param   pVM             The cross context VM structure.  If NULL,
+ *                          use the process heap, otherwise the VM's hyper heap.
  * @param   ppaMsrRanges    The variable pointing to the ranges (input/output).
  * @param   cMsrRanges      The current number of ranges.
  * @param   cNewRanges      The number of ranges to be added.
@@ -376,9 +375,8 @@ static PCPUMMSRRANGE cpumR3MsrRangesEnsureSpace(PVM pVM, PCPUMMSRRANGE *ppaMsrRa
  * @retval  VINF_SUCCESS
  * @retval  VERR_NO_MEMORY
  *
- * @param   pVM             Pointer to the VM, used as the heap selector.
- *                          Passing NULL uses the host-context heap, otherwise
- *                          the hyper heap.
+ * @param   pVM             The cross context VM structure.  If NULL,
+ *                          use the process heap, otherwise the VM's hyper heap.
  * @param   ppaMsrRanges    The variable pointing to the ranges (input/output).
  *                          Must be NULL if using the hyper heap.
  * @param   pcMsrRanges     The variable holding number of ranges. Must be NULL
@@ -528,7 +526,7 @@ int cpumR3MsrRangesInsert(PVM pVM, PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrR
  * Worker for cpumR3MsrApplyFudge that applies one table.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   pVM                 The cross context VM structure.
  * @param   paRanges            Array of MSRs to fudge.
  * @param   cRanges             Number of MSRs in the array.
  */
@@ -554,7 +552,7 @@ static int cpumR3MsrApplyFudgeTable(PVM pVM, PCCPUMMSRRANGE paRanges, size_t cRa
  * for instance the cpu vendor differs.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   pVM                 The cross context VM structure.
  */
 int cpumR3MsrApplyFudge(PVM pVM)
 {
@@ -781,7 +779,7 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
  * adjusted/removed to fit in the new one.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   pVM                 The cross context VM structure.
  * @param   pNewRange           Pointer to the MSR range being inserted.
  */
 VMMR3DECL(int) CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange)
@@ -800,7 +798,7 @@ VMMR3DECL(int) CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange)
  * hyper heap.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   pVM                 The cross context VM structure.
  */
 int cpumR3MsrRegStats(PVM pVM)
 {

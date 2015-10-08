@@ -107,7 +107,7 @@ typedef struct TRPMGCHYPER
      * @returns VBox status code
      *          VINF_SUCCESS means we've handled the trap.
      *          Any other error code means returning to the host context.
-     * @param   pVM             Pointer to the VM.
+     * @param   pVM             The cross context VM structure.
      * @param   pRegFrame       The register frame.
      * @param   uUser           The user argument.
      */
@@ -150,7 +150,7 @@ RT_C_DECLS_END
  *
  * @returns rc, can be adjusted if its VINF_SUCCESS or something really bad
  *          happened.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          The VBox status code to return.
  * @param   pRegFrame   Pointer to the register frame for the trap.
@@ -788,7 +788,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  *          VINF_SUCCESS means we completely handled this trap,
  *          other codes are passed execution to host context.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   pCpu        The opcode info.
@@ -896,7 +896,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  *          VINF_SUCCESS means we completely handled this trap,
  *          other codes are passed execution to host context.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   pCpu        The opcode info.
@@ -1002,7 +1002,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  *
  * @returns VINF_SUCCESS or VINF_EM_RAW_EMULATE_INSTR.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  *                      This will be updated on successful return.
@@ -1034,7 +1034,7 @@ DECLINLINE(int) trpmGCTrap0dHandlerRdTsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
  *          VINF_SUCCESS means we completely handled this trap,
  *          other codes are passed execution to host context.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pTrpmCpu    Pointer to TRPMCPU data (within VM).
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
@@ -1325,7 +1325,7 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   paHandlers  The array of trap handler records.
  * @param   pEndRecord  The end record (exclusive).
@@ -1428,7 +1428,7 @@ DECLASM(int) TRPMGCHyperTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  * So, do NOT use this for handling RC traps!
  *
  * @returns VBox status code.  (Anything but VINF_SUCCESS will cause guru.)
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegFrame   Register frame.
  * @param   uUser       User arg.
  */
@@ -1473,7 +1473,7 @@ DECLCALLBACK(int) trpmRCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
  * Generic hyper trap handler that sets the EIP to @a uUser.
  *
  * @returns VBox status code.  (Anything but VINF_SUCCESS will cause guru.)
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegFrame   Pointer to the register frame (within VM)
  * @param   uUser       The user arg, which should be the new EIP address.
  */

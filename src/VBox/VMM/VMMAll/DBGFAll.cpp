@@ -31,7 +31,7 @@
  * Gets the hardware breakpoint configuration as DR7.
  *
  * @returns DR7 from the DBGF point of view.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
 {
@@ -62,7 +62,7 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
  * Gets the address of the hardware breakpoint number 0.
  *
  * @returns DR0 from the DBGF point of view.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM)
 {
@@ -76,7 +76,7 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM)
  * Gets the address of the hardware breakpoint number 1.
  *
  * @returns DR1 from the DBGF point of view.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM)
 {
@@ -90,7 +90,7 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM)
  * Gets the address of the hardware breakpoint number 2.
  *
  * @returns DR2 from the DBGF point of view.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM)
 {
@@ -104,7 +104,7 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM)
  * Gets the address of the hardware breakpoint number 3.
  *
  * @returns DR3 from the DBGF point of view.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
 {
@@ -118,7 +118,7 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
  * Checks if any of the hardware breakpoints are armed.
  *
  * @returns true if armed, false if not.
- * @param   pVM         The cross context VM structure.
+ * @param   pVM        The cross context VM structure.
  */
 VMM_INT_DECL(bool) DBGFBpIsHwArmed(PVM pVM)
 {
@@ -134,7 +134,7 @@ VMM_INT_DECL(bool) DBGFBpIsHwArmed(PVM pVM)
  * Checks if any of the hardware I/O breakpoints are armed.
  *
  * @returns true if armed, false if not.
- * @param   pVM         The cross context VM structure.
+ * @param   pVM        The cross context VM structure.
  */
 VMM_INT_DECL(bool) DBGFBpIsHwIoArmed(PVM pVM)
 {
@@ -168,7 +168,7 @@ VMM_INT_DECL(bool) DBGFBpIsHwIoArmed(PVM pVM)
  * @retval  VINF_EM_RAW_GUEST_TRAP guest breakpoint triggered, DR6 and DR7 have
  *          been updated appropriately.
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pVM        The cross context VM structure.
  * @param   pVCpu       The cross context CPU structure for the calling EMT.
  * @param   pCtx        The CPU context for the calling EMT.
  * @param   uIoPort     The I/O port being accessed.

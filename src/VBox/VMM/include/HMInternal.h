@@ -334,7 +334,7 @@ typedef HMTPRPATCH *PHMTPRPATCH;
 /**
  * Switcher function, HC to the special 64-bit RC.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   offCpumVCpu     Offset from pVM->cpum to pVM->aCpus[idCpu].cpum.
  * @returns Return code indicating the action to take.
  */

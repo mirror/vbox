@@ -41,7 +41,7 @@
  * Initializes the Minimal provider.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) gimR3MinimalInit(PVM pVM)
 {
@@ -62,7 +62,7 @@ VMMR3_INT_DECL(int) gimR3MinimalInit(PVM pVM)
  * This is called after initializing HM and almost all other VMM components.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) gimR3MinimalInitCompleted(PVM pVM)
 {
@@ -129,7 +129,7 @@ VMMR3_INT_DECL(int) gimR3MinimalInitCompleted(PVM pVM)
  * This function will be called at init and whenever the VMM need to relocate
  * itself inside the GC.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMMR3_INT_DECL(void) gimR3MinimalRelocate(PVM pVM, RTGCINTPTR offDelta)

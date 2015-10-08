@@ -3331,7 +3331,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
  * EMT request to avoid deadlocks.
  *
  * @returns VBox status code fit for scheduling.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             The device that triggered this action.
  */
 static DECLCALLBACK(int) pdmR3DevHlp_VMSuspendSaveAndPowerOffWorker(PVM pVM, PPDMDEVINS pDevIns)
@@ -3839,7 +3839,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
  *
  * @returns Success indicator.
  *          If false the item will not be removed and the flushing will stop.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pItem       The item to consume. Upon return this item will be freed.
  */
 DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)

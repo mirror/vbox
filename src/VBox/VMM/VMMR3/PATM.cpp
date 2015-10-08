@@ -134,7 +134,7 @@ static unsigned int cIDTHandlersDisabled = 0;
  * Initializes the PATM.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
 {
@@ -334,7 +334,7 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
  * Finalizes HMA page attributes.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) PATMR3InitFinalize(PVM pVM)
 {
@@ -384,7 +384,7 @@ VMMR3_INT_DECL(int) PATMR3InitFinalize(PVM pVM)
 /**
  * (Re)initializes PATM
  *
- * @param   pVM     The VM.
+ * @param   pVM     The cross context VM structure.
  */
 static int patmReinit(PVM pVM)
 {
@@ -494,7 +494,7 @@ static int patmReinit(PVM pVM)
  *
  * The PATM will update the addresses used by the switcher.
  *
- * @param   pVM         The VM.
+ * @param   pVM         The cross context VM structure.
  * @param   offDelta    The relocation delta.
  */
 VMMR3_INT_DECL(void) PATMR3Relocate(PVM pVM, RTRCINTPTR offDelta)
@@ -550,7 +550,7 @@ VMMR3_INT_DECL(void) PATMR3Relocate(PVM pVM, RTRCINTPTR offDelta)
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) PATMR3Term(PVM pVM)
 {
@@ -568,7 +568,7 @@ VMMR3_INT_DECL(int) PATMR3Term(PVM pVM)
  * PATM reset callback.
  *
  * @returns VBox status code.
- * @param   pVM     The VM which is reset.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(int) PATMR3Reset(PVM pVM)
 {
@@ -982,7 +982,7 @@ static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pPa
  *
  * @returns 0 (continue enumeration).
  * @param   pNode       Current node
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 static DECLCALLBACK(int) EnableAllPatches(PAVLOU32NODECORE pNode, void *pVM)
 {
@@ -1000,7 +1000,7 @@ static DECLCALLBACK(int) EnableAllPatches(PAVLOU32NODECORE pNode, void *pVM)
  *
  * @returns 0 (continue enumeration).
  * @param   pNode       Current node
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 static DECLCALLBACK(int) DisableAllPatches(PAVLOU32NODECORE pNode, void *pVM)
 {
@@ -1016,7 +1016,7 @@ static DECLCALLBACK(int) DisableAllPatches(PAVLOU32NODECORE pNode, void *pVM)
  * Returns the host context pointer of the GC context structure
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(PPATMGCSTATE) PATMR3QueryGCStateHC(PVM pVM)
 {
@@ -1065,7 +1065,7 @@ VMMR3DECL(bool) PATMR3IsEnabled(PUVM pUVM)
  * Convert a GC patch block pointer to a HC patch pointer
  *
  * @returns HC pointer or NULL if it's not a GC patch pointer
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pAddrGC     GC pointer
  */
 VMMR3_INT_DECL(void *) PATMR3GCPtrToHCPtr(PVM pVM, RTRCPTR pAddrGC)
@@ -1087,7 +1087,7 @@ VMMR3_INT_DECL(void *) PATMR3GCPtrToHCPtr(PVM pVM, RTRCPTR pAddrGC)
  * Convert guest context address to host context pointer
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCacheRec   Address conversion cache record
  * @param   pGCPtr      Guest context pointer
  *
@@ -1138,7 +1138,7 @@ R3PTRTYPE(uint8_t *) patmR3GCVirtToHCVirt(PVM pVM, PPATMP2GLOOKUPREC pCacheRec, 
  * Calculates and fills in all branch targets
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Current patch block pointer
  *
  */
@@ -1234,7 +1234,7 @@ static int patmr3SetBranchTargets(PVM pVM, PPATCHINFO pPatch)
 /**
  * Add an illegal instruction record
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pPatch          Patch structure ptr
  * @param   pInstrGC        Guest context pointer to privileged instruction
  *
@@ -1266,7 +1266,7 @@ static bool patmIsIllegalInstr(PPATCHINFO pPatch, RTRCPTR pInstrGC)
 /**
  * Add a patch to guest lookup record
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pPatch          Patch structure ptr
  * @param   pPatchInstrHC   Guest context pointer to patch block
  * @param   pInstrGC        Guest context pointer to privileged instruction
@@ -1334,7 +1334,7 @@ void patmR3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC
 /**
  * Removes a patch to guest lookup record
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pPatch          Patch structure ptr
  * @param   pPatchInstrGC   Guest context pointer to patch block
  */
@@ -1378,7 +1378,7 @@ static DECLCALLBACK(int) patmEmptyTreePVCallback(PAVLPVNODECORE pNode, void *)
 /**
  * Empty the specified tree (PV tree, MMR3 heap)
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   ppTree          Tree to empty
  */
 static void patmEmptyTree(PVM pVM, PAVLPVNODECORE *ppTree)
@@ -1400,7 +1400,7 @@ static DECLCALLBACK(int) patmEmptyTreeU32Callback(PAVLU32NODECORE pNode, void *)
 /**
  * Empty the specified tree (U32 tree, MMR3 heap)
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   ppTree          Tree to empty
  */
 static void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree)
@@ -1414,7 +1414,7 @@ static void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree)
  * Analyses the instructions following the cli for compliance with our heuristics for cli & pushf
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCpu        CPU disassembly state
  * @param   pInstrGC    Guest context pointer to privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
@@ -1582,7 +1582,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
  * Analyses the instructions inside a function for compliance
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCpu        CPU disassembly state
  * @param   pInstrGC    Guest context pointer to privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
@@ -1693,7 +1693,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
  * Recompiles the instructions in a code block
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCpu        CPU disassembly state
  * @param   pInstrGC    Guest context pointer to privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
@@ -2139,7 +2139,7 @@ end:
 /**
  * Add a disasm jump record (temporary for prevent duplicate analysis)
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pPatch          Patch structure ptr
  * @param   pInstrGC        Guest context pointer to privileged instruction
  *
@@ -2178,7 +2178,7 @@ static bool patmIsKnownDisasmJump(PPATCHINFO pPatch, RTRCPTR pInstrGC)
  * For proper disassembly of the final patch block
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCpu        CPU disassembly state
  * @param   pInstrGC    Guest context pointer to privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
@@ -2237,7 +2237,7 @@ DECLCALLBACK(int) patmR3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
  * Disassembles the code stream until the callback function detects a failure or decides everything is acceptable
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context pointer to the initial privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
  * @param   pfnPATMR3Disasm Callback for testing the disassembled instruction
@@ -2363,7 +2363,7 @@ end:
  * Disassembles the code stream until the callback function detects a failure or decides everything is acceptable
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context pointer to the initial privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
  * @param   pfnPATMR3Disasm Callback for testing the disassembled instruction
@@ -2386,7 +2386,7 @@ int patmr3DisasmCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uin
  * Detects it the specified address falls within a 5 byte jump generated for an active patch.
  * If so, this patch is permanently disabled.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context pointer to instruction
  * @param   pConflictGC Guest context pointer to check
  *
@@ -2406,7 +2406,7 @@ VMMR3_INT_DECL(int) PATMR3DetectConflict(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pCon
  * Recompile the code stream until the callback function detects a failure or decides everything is acceptable
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context pointer to privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
  * @param   pfnPATMR3Recompile Callback for testing the disassembled instruction
@@ -2603,7 +2603,7 @@ end:
  * Generate the jump from guest to patch code
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pCacheRec   Guest translation lookup cache record
  */
@@ -2695,7 +2695,7 @@ static int patmGenJumpToPatch(PVM pVM, PPATCHINFO pPatch, PPATMP2GLOOKUPREC pCac
  * Remove the jump from guest to patch code
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  */
 static int patmRemoveJumpToPatch(PVM pVM, PPATCHINFO pPatch)
@@ -2746,7 +2746,7 @@ static int patmRemoveJumpToPatch(PVM pVM, PPATCHINFO pPatch)
  * Generate the call from guest to patch code
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pInstrHC    HC address where to insert the jump
  * @param   pCacheRec   Guest translation cache record
@@ -2790,7 +2790,7 @@ static int patmGenCallToPatch(PVM pVM, PPATCHINFO pPatch, RTRCPTR pTargetGC, PPA
  * Patch cli/sti pushf/popf instruction block at specified location
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pInstrHC    Host context point to privileged instruction
  * @param   uOpcode     Instruction opcode
@@ -3024,7 +3024,7 @@ failure:
  * Patch IDT handler
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   uOpSize     Size of starting instruction
  * @param   pPatchRec   Patch record
@@ -3155,7 +3155,7 @@ failure:
  * Install a trampoline to call a guest trap handler directly
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pPatchRec   Patch record
  * @param   pCacheRec   Cache record ptr
@@ -3236,7 +3236,7 @@ failure:
  * Check if the instruction is patched as a common idt handler
  *
  * @returns true or false
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to the instruction
  *
  */
@@ -3256,7 +3256,7 @@ static bool patmIsCommonIDTHandlerPatch(PVM pVM, RTRCPTR pInstrGC)
  * Duplicates a complete function
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pPatchRec   Patch record
  * @param   pCacheRec   Cache record ptr
@@ -3388,7 +3388,7 @@ failure:
  * Creates trampoline code to jump inside an existing patch
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pPatchRec   Patch record
  *
@@ -3552,7 +3552,7 @@ failure:
  * (in responds to a VINF_PATM_DUPLICATE_FUNCTION GC exit reason)
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtx        Pointer to the guest CPU context.
  *
  */
@@ -3634,7 +3634,7 @@ VMMR3_INT_DECL(int) PATMR3DuplicateFunctionRequest(PVM pVM, PCPUMCTX pCtx)
  * Replaces a function call by a call to an existing function duplicate (or jmp -> jmp)
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCpu        Disassembly CPU structure ptr
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pCacheRec   Cache record ptr
@@ -3736,7 +3736,7 @@ failure:
  * Replace the address in an MMIO instruction with the cached version.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pCpu        Disassembly CPU structure ptr
  * @param   pCacheRec   Cache record ptr
@@ -3803,7 +3803,7 @@ failure:
  * Replace the address in an MMIO instruction with the cached version. (instruction is part of an existing patch)
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pPatch      Patch record
  *
@@ -3861,7 +3861,7 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
  * Activates an int3 patch
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  */
 static int patmActivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
@@ -3885,7 +3885,7 @@ static int patmActivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
  * Deactivates an int3 patch
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  */
 static int patmDeactivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
@@ -3907,7 +3907,7 @@ static int patmDeactivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
  * in the raw-mode context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pInstrHC    Host context point to privileged instruction
  * @param   pCpu        Disassembly CPU structure ptr
@@ -3953,7 +3953,7 @@ failure:
  * Patch a jump instruction at specified location
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pInstrHC    Host context point to privileged instruction
  * @param   pCpu        Disassembly CPU structure ptr
@@ -4078,7 +4078,7 @@ failure:
  * Gives hint to PATM about supervisor guest instructions
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstr      Guest context point to privileged instruction
  * @param   flags       Patch flags
  */
@@ -4095,7 +4095,7 @@ VMMR3_INT_DECL(int) PATMR3AddHint(PVM pVM, RTRCPTR pInstrGC, uint32_t flags)
  * Patch privileged instruction at specified location
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstr      Guest context point to privileged instruction (0:32 flat address)
  * @param   flags       Patch flags
  *
@@ -4594,7 +4594,7 @@ VMMR3_INT_DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags
  * Query instruction size
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  * @param   pInstrGC    Instruction address
  */
@@ -4622,7 +4622,7 @@ static uint32_t patmGetInstrSize(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
  * Add patch to page record
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       Page address
  * @param   pPatch      Patch record
  */
@@ -4748,7 +4748,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
  * Remove patch from page record
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPage       Page address
  * @param   pPatch      Patch record
  */
@@ -4809,7 +4809,7 @@ int patmRemovePatchFromPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
  * Insert page records for all guest pages that contain instructions that were recompiled for this patch
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  */
 int patmInsertPatchPages(PVM pVM, PPATCHINFO pPatch)
@@ -4843,7 +4843,7 @@ int patmInsertPatchPages(PVM pVM, PPATCHINFO pPatch)
  * Remove page records for all guest pages that contain instructions that were recompiled for this patch
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  */
 static int patmRemovePatchPages(PVM pVM, PPATCHINFO pPatch)
@@ -4876,7 +4876,7 @@ static int patmRemovePatchPages(PVM pVM, PPATCHINFO pPatch)
  * Notifies PATM about a (potential) write to code that has been patched.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtr       GC pointer to write address
  * @param   cbWrite     Nr of bytes to write
  *
@@ -5051,7 +5051,7 @@ invalid_write_loop_start:
  * Disable all patches in a flushed page
  *
  * @returns VBox status code
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   addr        GC address of the page to flush
  * @note    Currently only called by CSAMR3FlushPage; optimization to avoid
  *          having to double check if the physical address has changed
@@ -5087,7 +5087,7 @@ VMMR3_INT_DECL(int) PATMR3FlushPage(PVM pVM, RTRCPTR addr)
  * Checks if the instructions at the specified address has been patched already.
  *
  * @returns boolean, patched or not
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context pointer to instruction
  */
 VMMR3_INT_DECL(bool) PATMR3HasBeenPatched(PVM pVM, RTRCPTR pInstrGC)
@@ -5104,7 +5104,7 @@ VMMR3_INT_DECL(bool) PATMR3HasBeenPatched(PVM pVM, RTRCPTR pInstrGC)
  * Query the opcode of the original code that was overwritten by the 5 bytes patch jump
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    GC address of instr
  * @param   pByte       opcode byte pointer (OUT)
  *
@@ -5148,7 +5148,7 @@ VMMR3DECL(int) PATMR3QueryOpcode(PVM pVM, RTRCPTR pInstrGC, uint8_t *pByte)
  * bytes patch jump.
  *
  * @returns VINF_SUCCESS or VERR_PATCH_NOT_FOUND.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPtrInstr  GC address of instr
  * @param   pbDst       The output buffer.
  * @param   cbToRead    The maximum number bytes to read.
@@ -5207,7 +5207,7 @@ VMMR3_INT_DECL(int) PATMR3ReadOrgInstr(PVM pVM, RTGCPTR32 GCPtrInstr, uint8_t *p
  * Disable patch for privileged instruction at specified location
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstr      Guest context point to privileged instruction
  *
  * @note    returns failure if patching is not allowed or possible
@@ -5355,7 +5355,7 @@ VMMR3_INT_DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
  * Permanently disable patch for privileged instruction at specified location
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstr      Guest context instruction pointer
  * @param   pConflictAddr  Guest context pointer which conflicts with specified patch
  * @param   pConflictPatch Conflicting patch
@@ -5454,7 +5454,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
  * Enable patch for privileged instruction at specified location
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstr      Guest context point to privileged instruction
  *
  * @note    returns failure if patching is not allowed or possible
@@ -5576,7 +5576,7 @@ VMMR3_INT_DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
  * Remove patch for privileged instruction at specified location
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pPatchRec       Patch record
  * @param   fForceRemove    Remove *all* patches
  */
@@ -5683,7 +5683,7 @@ static DECLCALLBACK(int) patmR3PatchRefreshFindTrampolinePatch(PAVLU32NODECORE p
  * Attempt to refresh the patch by recompiling its entire code block
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pPatchRec       Patch record
  */
 int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
@@ -5834,7 +5834,7 @@ failure:
  * Find patch for privileged instruction at specified location
  *
  * @returns Patch structure pointer if found; else NULL
- * @param   pVM           Pointer to the VM.
+ * @param   pVM           The cross context VM structure.
  * @param   pInstr        Guest context point to instruction that might lie within 5 bytes of an existing patch jump
  * @param   fIncludeHints Include hinted patches or not
  *
@@ -5871,7 +5871,7 @@ PPATCHINFO patmFindActivePatchByEntrypoint(PVM pVM, RTRCPTR pInstrGC, bool fIncl
  * Checks whether the GC address is inside a generated patch jump
  *
  * @returns true -> yes, false -> no
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pAddr       Guest context address.
  * @param   pPatchAddr  Guest context patch address (if true).
  */
@@ -5900,7 +5900,7 @@ VMMR3_INT_DECL(bool) PATMR3IsInsidePatchJump(PVM pVM, RTRCPTR pAddr, PRTGCPTR32 
  * Remove patch for privileged instruction at specified location
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstr      Guest context point to privileged instruction
  *
  * @note    returns failure if patching is not allowed or possible
@@ -5928,7 +5928,7 @@ VMMR3_INT_DECL(int) PATMR3RemovePatch(PVM pVM, RTRCPTR pInstrGC)
  * Mark patch as dirty
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch record
  *
  * @note    returns failure if patching is not allowed or possible
@@ -5970,7 +5970,7 @@ static int patmR3MarkDirtyPatch(PVM pVM, PPATCHINFO pPatch)
  * Query the corresponding GC instruction pointer from a pointer inside the patch block itself
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch block structure pointer
  * @param   pPatchGC    GC address in patch block
  */
@@ -5989,7 +5989,7 @@ RTRCPTR patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t 
  * Converts Guest code GC ptr to Patch code GC ptr (if found)
  *
  * @returns corresponding GC pointer in patch block
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Current patch block pointer
  * @param   pInstrGC    Guest context pointer to privileged instruction
  *
@@ -6010,7 +6010,7 @@ RTRCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t
  * Converts Guest code GC ptr to Patch code GC ptr (if found)
  *
  * @returns corresponding GC pointer in patch block
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context pointer to privileged instruction
  */
 static RTRCPTR patmR3GuestGCPtrToPatchGCPtrSimple(PVM pVM, RCPTRTYPE(uint8_t*) pInstrGC)
@@ -6026,7 +6026,7 @@ static RTRCPTR patmR3GuestGCPtrToPatchGCPtrSimple(PVM pVM, RCPTRTYPE(uint8_t*) p
  * identical match)
  *
  * @returns corresponding GC pointer in patch block
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Current patch block pointer
  * @param   pInstrGC    Guest context pointer to privileged instruction
  *
@@ -6043,7 +6043,7 @@ RTRCPTR patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(
  * Query the corresponding GC instruction pointer from a pointer inside the patch block itself
  *
  * @returns original GC instruction pointer or 0 if not found
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatchGC    GC address in patch block
  * @param   pEnmState   State of the translated address (out)
  *
@@ -6112,7 +6112,7 @@ VMMR3_INT_DECL(RTRCPTR) PATMR3PatchToGCPtr(PVM pVM, RTRCPTR pPatchGC, PATMTRANSS
  * Returns the GC pointer of the patch for the specified GC address
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pAddrGC     Guest context address
  */
 VMMR3_INT_DECL(RTRCPTR) PATMR3QueryPatchGCPtr(PVM pVM, RTRCPTR pAddrGC)
@@ -6133,7 +6133,7 @@ VMMR3_INT_DECL(RTRCPTR) PATMR3QueryPatchGCPtr(PVM pVM, RTRCPTR pAddrGC)
  * Attempt to recover dirty instructions
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pCtx                Pointer to the guest CPU context.
  * @param   pPatch              Patch record.
  * @param   pPatchToGuestRec    Patch to guest address record.
@@ -6360,7 +6360,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
  * Handle trap inside patch code
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtx        Pointer to the guest CPU context.
  * @param   pEip        GC pointer of trapping instruction.
  * @param   ppNewEip    GC pointer to new instruction.
@@ -6658,7 +6658,7 @@ VMMR3_INT_DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCP
  * Handle page-fault in monitored page
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) PATMR3HandleMonitoredPage(PVM pVM)
 {
@@ -6767,7 +6767,7 @@ static const char *PATMPatchState(PVM pVM, PPATCHINFO pPatch)
 
 /**
  * Resets the sample.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvSample    The sample registered using STAMR3RegisterCallback.
  */
 static void patmResetStat(PVM pVM, void *pvSample)
@@ -6782,7 +6782,7 @@ static void patmResetStat(PVM pVM, void *pvSample)
 /**
  * Prints the sample into the buffer.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pvSample    The sample registered using STAMR3RegisterCallback.
  * @param   pszBuf      The buffer to print into.
  * @param   cchBuf      The size of the buffer.
@@ -6804,7 +6804,7 @@ static void patmPrintStat(PVM pVM, void *pvSample, char *pszBuf, size_t cchBuf)
  * Returns the GC address of the corresponding patch statistics counter
  *
  * @returns Stat address
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pPatch      Patch structure
  */
 RTRCPTR patmPatchQueryStatAddress(PVM pVM, PPATCHINFO pPatch)
@@ -6817,14 +6817,7 @@ RTRCPTR patmPatchQueryStatAddress(PVM pVM, PPATCHINFO pPatch)
 #ifdef VBOX_WITH_DEBUGGER
 
 /**
- * The '.patmoff' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.patmoff' command.}
  */
 static DECLCALLBACK(int) patmr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -6845,14 +6838,7 @@ static DECLCALLBACK(int) patmr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
 }
 
 /**
- * The '.patmon' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.patmon' command.}
  */
 static DECLCALLBACK(int) patmr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -6873,3 +6859,4 @@ static DECLCALLBACK(int) patmr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
 }
 
 #endif /* VBOX_WITH_DEBUGGER */
+

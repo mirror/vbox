@@ -58,7 +58,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur);
  * Internal worker for releasing a physical handler type registration reference.
  *
  * @returns New reference count. UINT32_MAX if invalid input (asserted).
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pType       Pointer to the type registration.
  */
 DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRelease(PVM pVM, PPGMPHYSHANDLERTYPEINT pType)
@@ -81,7 +81,7 @@ DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRelease(PVM pVM, PPGMPHYSHANDLERTYPEI
  * Internal worker for retaining a physical handler type registration reference.
  *
  * @returns New reference count. UINT32_MAX if invalid input (asserted).
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pType       Pointer to the type registration.
  */
 DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRetain(PVM pVM, PPGMPHYSHANDLERTYPEINT pType)
@@ -98,7 +98,7 @@ DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRetain(PVM pVM, PPGMPHYSHANDLERTYPEIN
  * Releases a reference to a physical handler type registration.
  *
  * @returns New reference count. UINT32_MAX if invalid input (asserted).
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   hType       The type regiration handle.
  */
 VMMDECL(uint32_t) PGMHandlerPhysicalTypeRelease(PVM pVM, PGMPHYSHANDLERTYPE hType)
@@ -113,7 +113,7 @@ VMMDECL(uint32_t) PGMHandlerPhysicalTypeRelease(PVM pVM, PGMPHYSHANDLERTYPE hTyp
  * Retains a reference to a physical handler type registration.
  *
  * @returns New reference count. UINT32_MAX if invalid input (asserted).
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   hType       The type regiration handle.
  */
 VMMDECL(uint32_t) PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType)
@@ -134,7 +134,7 @@ VMMDECL(uint32_t) PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType
  * @retval  VERR_PGM_HANDLER_PHYSICAL_CONFLICT if the range conflicts with an existing
  *          one. A debug assertion is raised.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Start physical address.
  * @param   GCPhysLast      Last physical address. (inclusive)
  * @param   hType           The handler type registration handle.
@@ -260,7 +260,7 @@ VMMDECL(int) PGMHandlerPhysicalRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhy
  * @retval  VINF_SUCCESS when shadow PTs was successfully updated.
  * @retval  VINF_PGM_SYNC_CR3 when the shadow PTs could be updated because
  *          the guest page aliased or/and mapped by multiple PTs. FFs set.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pCur    The physical handler.
  * @param   pRam    The RAM range.
  */
@@ -315,7 +315,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
  * Register a physical page access handler.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      Start physical address.
  */
 VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
@@ -480,7 +480,7 @@ DECLINLINE(void) pgmHandlerPhysicalRecalcPageState(PVM pVM, RTGCPHYS GCPhys, boo
 /**
  * Resets an aliased page.
  *
- * @param   pVM             The VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pPage           The page.
  * @param   GCPhysPage      The page address in case it comes in handy.
  * @param   fDoAccounting   Whether to perform accounting.  (Only set during
@@ -540,7 +540,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS when shadow PTs was successfully updated.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  * @param   pCur    The physical handler.
  *
  * @remark  We don't start messing with the shadow page tables, as we've
@@ -606,7 +606,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
  * @returns VBox status code.
  *          For all return codes other than VERR_PGM_HANDLER_NOT_FOUND and VINF_SUCCESS the range is deregistered
  *          and a new registration must be performed!
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhysCurrent   Current location.
  * @param   GCPhys          New location.
  * @param   GCPhysLast      New last location.
@@ -716,7 +716,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
  * handler.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Start physical address of the handler.
  * @param   pvUserR3        User argument to the R3 handler.
  * @param   pvUserR0        User argument to the R0 handler.
@@ -755,7 +755,7 @@ VMMDECL(int) PGMHandlerPhysicalChangeUserArgs(PVM pVM, RTGCPHYS GCPhys, RTR3PTR 
  * Splits a physical access handler in two.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Start physical address of the handler.
  * @param   GCPhysSplit     The split address.
  */
@@ -821,7 +821,7 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSp
  * Joins up two adjacent physical access handlers which has the same callbacks.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPhys1         Start physical address of the first handler.
  * @param   GCPhys2         Start physical address of the second handler.
  */
@@ -902,7 +902,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
  * PGMHandlerPhysicalPageAlias() or PGMHandlerPhysicalPageAliasHC().
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The start address of the handler regions, i.e. what you
  *                      passed to PGMR3HandlerPhysicalRegister(),
  *                      PGMHandlerPhysicalRegisterEx() or
@@ -1013,7 +1013,7 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
  * The caller must do required page table modifications.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM
+ * @param   pVM                 The cross context VM structure.
  * @param   GCPhys              The start address of the access handler. This
  *                              must be a fully page aligned range or we risk
  *                              messing up other handlers installed for the
@@ -1090,7 +1090,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
  * save the change).
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   GCPhys              The start address of the access handler. This
  *                              must be a fully page aligned range or we risk
  *                              messing up other handlers installed for the
@@ -1215,7 +1215,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
  *
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   GCPhys              The start address of the access handler. This
  *                              must be a fully page aligned range or we risk
  *                              messing up other handlers installed for the
@@ -1302,7 +1302,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
  * Checks if a physical range is handled
  *
  * @returns boolean
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      Start physical address earlier passed to PGMR3HandlerPhysicalRegister().
  * @remarks Caller must take the PGM lock...
  * @thread  EMT.
@@ -1337,7 +1337,7 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
  *
  * @returns true if it's an all access handler, false if it's a write access
  *          handler.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The address of the page with a disabled handler.
  *
  * @remarks The caller, PGMR3PhysTlbGCPhys2Ptr, must hold the PGM lock.
@@ -1372,7 +1372,7 @@ bool pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys)
  * Internal worker for releasing a virtual handler type registration reference.
  *
  * @returns New reference count. UINT32_MAX if invalid input (asserted).
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pType       Pointer to the type registration.
  */
 DECLINLINE(uint32_t) pgmHandlerVirtualTypeRelease(PVM pVM, PPGMVIRTHANDLERTYPEINT pType)
@@ -1395,7 +1395,7 @@ DECLINLINE(uint32_t) pgmHandlerVirtualTypeRelease(PVM pVM, PPGMVIRTHANDLERTYPEIN
  * Internal worker for retaining a virtual handler type registration reference.
  *
  * @returns New reference count. UINT32_MAX if invalid input (asserted).
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pType       Pointer to the type registration.
  */
 DECLINLINE(uint32_t) pgmHandlerVirtualTypeRetain(PVM pVM, PPGMVIRTHANDLERTYPEINT pType)
@@ -1412,7 +1412,7 @@ DECLINLINE(uint32_t) pgmHandlerVirtualTypeRetain(PVM pVM, PPGMVIRTHANDLERTYPEINT
  * Releases a reference to a virtual handler type registration.
  *
  * @returns New reference count. UINT32_MAX if invalid input (asserted).
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   hType       The type regiration handle.
  */
 VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRelease(PVM pVM, PGMVIRTHANDLERTYPE hType)
@@ -1427,7 +1427,7 @@ VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRelease(PVM pVM, PGMVIRTHANDLERTYPE 
  * Retains a reference to a virtual handler type registration.
  *
  * @returns New reference count. UINT32_MAX if invalid input (asserted).
- * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   hType       The type regiration handle.
  */
 VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRetain(PVM pVM, PGMVIRTHANDLERTYPE hType)
@@ -1440,7 +1440,7 @@ VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRetain(PVM pVM, PGMVIRTHANDLERTYPE h
  * Check if particular guest's VA is being monitored.
  *
  * @returns true or false
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   GCPtr           Virtual address.
  * @remarks Will acquire the PGM lock.
  * @thread  Any.
@@ -1459,7 +1459,7 @@ VMM_INT_DECL(bool) PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr)
  * Search for virtual handler with matching physical address
  *
  * @returns Pointer to the virtual handler structure if found, otherwise NULL.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      GC physical address to search for.
  * @param   piPage      Where to store the pointer to the index of the cached physical page.
  */
@@ -1497,7 +1497,7 @@ PPGMVIRTHANDLER pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, unsign
  * As pointed out by the various todos, this currently only deals with
  * aliases where the two ranges match 100%.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pPhys2Virt      The node we failed insert.
  */
 static void pgmHandlerVirtualInsertAliased(PVM pVM, PPGMPHYS2VIRTHANDLER pPhys2Virt)
@@ -1638,7 +1638,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualDumpPhysPagesCallback(PAVLROGCPHYSNODE
  * Assertion / logging helper for dumping all the
  * virtual handlers to the log.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 void pgmHandlerVirtualDumpPhysPages(PVM pVM)
 {
@@ -1816,7 +1816,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
  * that the physical addresses associated with virtual handlers are correct.
  *
  * @returns Number of mismatches.
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
 {

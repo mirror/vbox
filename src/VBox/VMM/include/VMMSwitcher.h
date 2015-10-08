@@ -67,7 +67,7 @@ typedef struct VMMSWITCHERDEF *PVMMSWITCHERDEF;
 /**
  * Callback function for relocating the core code belonging to a switcher.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pSwitcher   Pointer to the switcher structure.
  * @param   R0PtrCode   Pointer to the first code byte in the ring-0 mapping.
  * @param   pu8CodeR3   Pointer to the first code byte in the ring-3 mapping.

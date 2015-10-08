@@ -51,7 +51,7 @@ BITS 64
 ;;
 ; The C interface.
 ;
-; @param    pVM  gcc: rdi  msc:rcx  The VM handle.
+; @param    pVM  gcc: rdi  msc:rcx  The cross context VM structure.
 ;
 BEGINPROC vmmR0ToRawMode
 %ifdef DEBUG_STUFF

@@ -51,7 +51,7 @@
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             The cross context VM structure.
  * @param   pVCpu           Pointer to the cross context CPU context for the
  *                          calling EMT.
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
@@ -432,7 +432,7 @@ VMMDECL(int) TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmT
  * Any function which uses temporary trap handlers should
  * probably also use this facility to save the original trap.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(void) TRPMSaveTrap(PVMCPU pVCpu)
 {
@@ -449,7 +449,7 @@ VMMDECL(void) TRPMSaveTrap(PVMCPU pVCpu)
  *
  * Multiple restores of a saved trap is possible.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMDECL(void) TRPMRestoreTrap(PVMCPU pVCpu)
 {
@@ -469,7 +469,7 @@ VMMDECL(void) TRPMRestoreTrap(PVMCPU pVCpu)
  * @returns VBox status code.
  *  or does not return at all (when the trap is actually forwarded)
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   iGate       Trap or interrupt gate number
  * @param   cbInstr     Instruction size (only relevant for software interrupts)
@@ -896,7 +896,7 @@ failure:
  * @retval  VINF_TRPM_XCPT_DISPATCHED if the exception was raised and dispatched for raw-mode execution.
  * @retval  VINF_EM_RESCHEDULE_REM if the exception was dispatched and cannot be executed in raw-mode.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtxCore    The CPU context core.
  * @param   enmXcpt     The exception.
  */
@@ -924,7 +924,7 @@ VMMDECL(int) TRPMRaiseXcpt(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt)
  * @retval  VINF_TRPM_XCPT_DISPATCHED if the exception was raised and dispatched for raw-mode execution.
  * @retval  VINF_EM_RESCHEDULE_REM if the exception was dispatched and cannot be executed in raw-mode.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtxCore    The CPU context core.
  * @param   enmXcpt     The exception.
  * @param   uErr        The error code.
@@ -953,7 +953,7 @@ VMMDECL(int) TRPMRaiseXcptErr(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXc
  * @retval  VINF_TRPM_XCPT_DISPATCHED if the exception was raised and dispatched for raw-mode execution.
  * @retval  VINF_EM_RESCHEDULE_REM if the exception was dispatched and cannot be executed in raw-mode.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtxCore    The CPU context core.
  * @param   enmXcpt     The exception.
  * @param   uErr        The error code.
@@ -978,7 +978,7 @@ VMMDECL(int) TRPMRaiseXcptErrCR2(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT en
  * Clear guest trap/interrupt gate handler
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   iTrap       Interrupt/trap number.
  */
 VMMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap)

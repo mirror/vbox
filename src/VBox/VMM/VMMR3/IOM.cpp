@@ -145,7 +145,7 @@ static const char *iomR3IOPortGetStandardName(RTIOPORT Port);
  * Initializes the IOM.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
 {
@@ -245,7 +245,7 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
 /**
  * Flushes the IOM port & statistics lookup cache
  *
- * @param   pVM     The VM.
+ * @param   pVM     The cross context VM structure.
  */
 static void iomR3FlushCache(PVM pVM)
 {
@@ -290,7 +290,7 @@ static void iomR3FlushCache(PVM pVM)
 /**
  * The VM is being reset.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(void) IOMR3Reset(PVM pVM)
 {
@@ -305,7 +305,7 @@ VMMR3_INT_DECL(void) IOMR3Reset(PVM pVM)
  *
  * The IOM will update the addresses used by the switcher.
  *
- * @param   pVM     The VM.
+ * @param   pVM     The cross context VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
@@ -400,7 +400,7 @@ static DECLCALLBACK(int) iomR3RelocateMMIOCallback(PAVLROGCPHYSNODECORE pNode, v
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) IOMR3Term(PVM pVM)
 {
@@ -419,7 +419,7 @@ VMMR3_INT_DECL(int) IOMR3Term(PVM pVM)
  *
  * @returns Pointer to new stats node.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   Port        Port.
  * @param   pszDesc     Description.
  */
@@ -480,7 +480,7 @@ static PIOMIOPORTSTATS iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char
  *
  * @returns Pointer to new stats node.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The address.
  * @param   pszDesc     Description.
  */
@@ -536,7 +536,7 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             PDM device instance owning the port range.
  * @param   PortStart           First port number in the range.
  * @param   cPorts              Number of ports to register.
@@ -634,7 +634,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             PDM device instance owning the port range.
  * @param   PortStart           First port number in the range.
  * @param   cPorts              Number of ports to register.
@@ -749,7 +749,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             PDM device instance owning the port range.
  * @param   PortStart           First port number in the range.
  * @param   cPorts              Number of ports to register.
@@ -866,7 +866,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 The virtual machine.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             The device instance associated with the range.
  * @param   PortStart           First port number in the range.
  * @param   cPorts              Number of ports to remove starting at PortStart.
@@ -1292,7 +1292,7 @@ static DECLCALLBACK(int) iomR3IOPortInfoOneRC(PAVLROIOPORTNODECORE pNode, void *
 /**
  * Display all registered I/O port ranges.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -1339,7 +1339,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             PDM device instance owning the MMIO range.
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
@@ -1442,7 +1442,7 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             PDM device instance owning the MMIO range.
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
@@ -1501,7 +1501,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             PDM device instance owning the MMIO range.
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
@@ -1558,7 +1558,7 @@ IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 The virtual machine.
+ * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             Device instance which the MMIO region is registered.
  * @param   GCPhysStart         First physical address (GC) in the range.
  * @param   cbRange             Number of bytes to deregister.
@@ -1687,7 +1687,7 @@ static DECLCALLBACK(int) iomR3MMIOInfoOne(PAVLROGCPHYSNODECORE pNode, void *pvUs
 /**
  * Display registered MMIO ranges to the log.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */

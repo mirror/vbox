@@ -975,7 +975,7 @@ extern DECLEXPORT(const PDMDRVHLPR0) g_pdmR0DrvHlp =
  * Sets an irq on the PIC and I/O APIC.
  *
  * @returns true if delivered, false if postponed.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   iIrq        The irq.
  * @param   iLevel      The new level.
  * @param   uTagSrc     The IRQ tag and source.
@@ -1015,8 +1015,8 @@ static bool pdmR0IsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc)
  * PDMDevHlpCallR0 helper.
  *
  * @returns See PFNPDMDEVREQHANDLERR0.
- * @param   pVM                 Pointer to the VM (for validation).
- * @param   pReq                Pointer to the request buffer.
+ * @param   pVM     The cross context VM structure. (For validation.)
+ * @param   pReq    Pointer to the request buffer.
  */
 VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PVM pVM, PPDMDEVICECALLREQHANDLERREQ pReq)
 {

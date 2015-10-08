@@ -73,7 +73,7 @@ patmVirtPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvB
  * This function is called from CPUMRawEnter(). It doesn't have to update the
  * IF and IOPL eflags bits, the caller will enforce those to set and 0 respectively.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtx        The cpu context.
  * @see     pg_raw
  */
@@ -148,7 +148,7 @@ VMM_INT_DECL(void) PATMRawEnter(PVM pVM, PCPUMCTX pCtx)
  *
  ** @note Only here we are allowed to switch back to guest code (without a special reason such as a trap in patch code)!!
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtx        The cpu context.
  * @param   rawRC       Raw mode return code
  * @see     @ref pg_raw
@@ -247,7 +247,7 @@ VMM_INT_DECL(void) PATMRawLeave(PVM pVM, PCPUMCTX pCtx, int rawRC)
  * This is a worker for CPUMRawGetEFlags().
  *
  * @returns The eflags.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtx        The guest cpu context.
  */
 VMM_INT_DECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTX pCtx)
@@ -263,7 +263,7 @@ VMM_INT_DECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTX pCtx)
  * Updates the EFLAGS.
  * This is a worker for CPUMRawSetEFlags().
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtx        The guest cpu context.
  * @param   efl         The new EFLAGS value.
  */
@@ -279,7 +279,7 @@ VMM_INT_DECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTX pCtx, uint32_t efl)
 /**
  * Check if we must use raw mode (patch code being executed)
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pAddrGC     Guest context address
  */
 VMM_INT_DECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
@@ -293,7 +293,7 @@ VMM_INT_DECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
  * Returns the guest context pointer and size of the GC context structure
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  */
 VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMGetGCState(PVM pVM)
 {
@@ -305,7 +305,7 @@ VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMGetGCState(PVM pVM)
  * Checks whether the GC address is part of our patch or helper regions.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   uGCAddr     Guest context address.
  * @internal
  */
@@ -320,7 +320,7 @@ VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR uGCAddr)
  * Checks whether the GC address is part of our patch region.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   uGCAddr     Guest context address.
  * @internal
  */
@@ -337,7 +337,7 @@ VMMDECL(bool) PATMIsPatchGCAddrExclHelpers(PVM pVM, RTRCUINTPTR uGCAddr)
  * @retval  VERR_PATCH_NOT_FOUND if the request is entirely outside the patch
  *          code.
  *
- * @param   pVM             The cross context VM structure.
+ * @param   pVM            The cross context VM structure.
  * @param   GCPtrPatchCode  The patch address to start reading at.
  * @param   pvDst           Where to return the patch code.
  * @param   cbToRead        Number of bytes to read.
@@ -419,7 +419,7 @@ VMM_INT_DECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCached
  * @returns true if it's enabled.
  * @returns false if it's disabled.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @todo CPUM should wrap this, EM.cpp shouldn't call us.
  */
 VMM_INT_DECL(bool) PATMAreInterruptsEnabled(PVM pVM)
@@ -435,7 +435,7 @@ VMM_INT_DECL(bool) PATMAreInterruptsEnabled(PVM pVM)
  * @returns true if it's enabled.
  * @returns false if it's disabled.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtx        The guest CPU context.
  * @todo CPUM should wrap this, EM.cpp shouldn't call us.
  */
@@ -454,7 +454,7 @@ VMM_INT_DECL(bool) PATMAreInterruptsEnabledByCtx(PVM pVM, PCPUMCTX pCtx)
  * Check if the instruction is patched as a duplicated function
  *
  * @returns patch record
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Guest context point to the instruction
  *
  */
@@ -477,7 +477,7 @@ PPATMPATCHREC patmQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC)
  *
  * @returns VBox status
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pInstrGC    Instruction pointer
  * @param   pOpcode     Original instruction opcode (out, optional)
  * @param   pSize       Original instruction size (out, optional)
@@ -505,7 +505,7 @@ VMM_INT_DECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode,
  *
  * @returns VBox status
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         The cross context VM structure.
  * @param   pCtx        The relevant guest cpu context.
  * @param   pCpu        Disassembly state.
  */
@@ -578,7 +578,7 @@ end:
  * Adds branch pair to the lookup cache of the particular branch instruction
  *
  * @returns VBox status
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM                 The cross context VM structure.
  * @param   pJumpTableGC        Pointer to branch instruction lookup cache
  * @param   pBranchTarget       Original branch target
  * @param   pRelBranchPatch     Relative duplicated function address
