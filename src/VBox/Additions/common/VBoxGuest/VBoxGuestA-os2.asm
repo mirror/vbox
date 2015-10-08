@@ -772,10 +772,10 @@ ENDPROC VGDrvOS2Entrypoint
 ; This is only used to do the DosOpen on the main driver so we can
 ; do ring-3 init and report failures.
 ;
-GLOBALNAME vgdrvOS2InitEntryPoint
+GLOBALNAME vgdrvOS2InitEntrypoint
     ; The only request we're servicing is the 'init' one.
     cmp     word [es:bx + PKTHDR.cmd], 0
-    je near NAME(vgdrvOS2InitEntryPointServiceInitReq)
+    je near NAME(vgdrvOS2InitEntrypointServiceInitReq)
 
     ; Ok, it's not the init request, just fail it.
     mov     word [es:bx + PKTHDR.status], 08103h    ; error, done, unknown command.
@@ -1178,7 +1178,7 @@ int3
 ;;
 ; The Ring-3 init code.
 ;
-BEGINPROC vgdrvOS2InitEntryPointServiceInitReq
+BEGINPROC vgdrvOS2InitEntrypointServiceInitReq
     push    ebp
     mov     ebp, esp
     push    es                                      ; bp - 2
@@ -1274,7 +1274,7 @@ BEGINPROC vgdrvOS2InitEntryPointServiceInitReq
     mov     sp, bp
     pop     ebp
     retf
-ENDPROC vgdrvOS2InitEntryPointServiceInitReq
+ENDPROC vgdrvOS2InitEntrypointServiceInitReq
 
 
 ;;
