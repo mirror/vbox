@@ -1672,12 +1672,12 @@ int main()
     GEN_CHECK_OFF(VMMDEV, TestingData.Value.u64Value);
     GEN_CHECK_OFF(VMMDEV, TestingData.Value.u32Unit);
     GEN_CHECK_OFF(VMMDEV, TestingData.Value.szName);
-    GEN_CHECK_OFF(VMMDEV, uLastHBTime);
-    GEN_CHECK_OFF(VMMDEV, fHasMissedHB);
-    GEN_CHECK_OFF(VMMDEV, fHBCheckEnabled);
-    GEN_CHECK_OFF(VMMDEV, u64HeartbeatInterval);
-    GEN_CHECK_OFF(VMMDEV, u64HeartbeatTimeout);
-    GEN_CHECK_OFF(VMMDEV, pHBCheckTimer);
+    GEN_CHECK_OFF(VMMDEV, nsLastHeartbeatTS);
+    GEN_CHECK_OFF(VMMDEV, fFlatlined);
+    GEN_CHECK_OFF(VMMDEV, fHeartbeatActive);
+    GEN_CHECK_OFF(VMMDEV, cNsHeartbeatInterval);
+    GEN_CHECK_OFF(VMMDEV, cNsHeartbeatTimeout);
+    GEN_CHECK_OFF(VMMDEV, pFlatlinedTimer);
 
 #ifdef VBOX_WITH_BUSLOGIC
     GEN_CHECK_SIZE(BUSLOGICDEVICE);

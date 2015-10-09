@@ -359,12 +359,14 @@ typedef struct VMMDevState
     RTTEST                  hTestingTest;
 #endif /* !VBOX_WITHOUT_TESTING_FEATURES */
 
+    /** @name Heartbeat
+     * @{ */
     /** Timestamp of the last heartbeat from guest in nanosec. */
     uint64_t volatile   nsLastHeartbeatTS;
     /** Indicates whether we missed HB from guest on last check. */
-    bool volatile       fHasMissedHB;
+    bool volatile       fFlatlined;
     /** Indicates whether heartbeat check is active. */
-    bool volatile       fHBCheckEnabled;
+    bool volatile       fHeartbeatActive;
     /** Alignment padding. */
     bool                afAlignment8[6];
     /** Guest heartbeat interval in nanoseconds.
@@ -374,7 +376,8 @@ typedef struct VMMDevState
      * conclude the guest is doing a Dixie Flatline (Neuromancer) impression. */
     uint64_t            cNsHeartbeatTimeout;
     /** Timer for signalling a flatlined guest. */
-    PTMTIMERR3          pHearbeatFlatlinedTimer;
+    PTMTIMERR3          pFlatlinedTimer;
+    /** @} */
 } VMMDevState;
 typedef VMMDevState VMMDEV;
 /** Pointer to the VMM device state. */

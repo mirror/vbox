@@ -437,20 +437,20 @@ static int vmmdevReqHandler_ReportGuestInfo(PVMMDEV pThis, VMMDevRequestHeader *
 static int vmmDevReqHandler_GuestHeartbeat(PVMMDEV pThis)
 {
     int rc;
-    if (pThis->fHBCheckEnabled)
+    if (pThis->fHeartbeatActive)
     {
-        uint64_t const nsNowTS = TMTimerGetNano(pThis->pHearbeatFlatlinedTimer);
-        if (!pThis->fHasMissedHB)
+        uint64_t const nsNowTS = TMTimerGetNano(pThis->pFlatlinedTimer);
+        if (!pThis->fFlatlined)
         { /* likely */ }
         else
         {
             LogRel(("VMMDev: GuestHeartBeat: Guest is alive (gone %'llu ns)\n", nsNowTS - pThis->nsLastHeartbeatTS));
-            ASMAtomicWriteBool(&pThis->fHasMissedHB, false);
+            ASMAtomicWriteBool(&pThis->fFlatlined, false);
         }
         ASMAtomicWriteU64(&pThis->nsLastHeartbeatTS, nsNowTS);
 
         /* Postpone (or restart if we missed a beat) the timeout timer. */
-        rc = TMTimerSetNano(pThis->pHearbeatFlatlinedTimer, pThis->cNsHeartbeatTimeout);
+        rc = TMTimerSetNano(pThis->pFlatlinedTimer, pThis->cNsHeartbeatTimeout);
     }
     else
         rc = VINF_SUCCESS;
@@ -466,15 +466,15 @@ static int vmmDevReqHandler_GuestHeartbeat(PVMMDEV pThis)
 static DECLCALLBACK(void) vmmDevHeartbeatFlatlinedTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PVMMDEV pThis = (PVMMDEV)pvUser;
-    if (pThis->fHBCheckEnabled)
+    if (pThis->fHeartbeatActive)
     {
         uint64_t cNsElapsed = TMTimerGetNano(pTimer) - pThis->nsLastHeartbeatTS;
-        if (   !pThis->fHasMissedHB
+        if (   !pThis->fFlatlined
             && cNsElapsed >= pThis->cNsHeartbeatInterval)
         {
             LogRel(("VMMDev: vmmDevHeartbeatFlatlinedTimer: Guest seems to be unresponsive. Last heartbeat received %RU64 seconds ago\n",
                     cNsElapsed / RT_NS_1SEC));
-            ASMAtomicWriteBool(&pThis->fHasMissedHB, true);
+            ASMAtomicWriteBool(&pThis->fFlatlined, true);
         }
     }
 }
@@ -495,13 +495,13 @@ static int vmmDevReqHandler_HeartbeatConfigure(PVMMDEV pThis, VMMDevRequestHeade
 
     pReq->cNsInterval = pThis->cNsHeartbeatInterval;
 
-    if (pReq->fEnabled != pThis->fHBCheckEnabled)
+    if (pReq->fEnabled != pThis->fHeartbeatActive)
     {
-        ASMAtomicWriteBool(&pThis->fHBCheckEnabled, pReq->fEnabled);
+        ASMAtomicWriteBool(&pThis->fHeartbeatActive, pReq->fEnabled);
         if (pReq->fEnabled)
         {
             /* Start the countdown. */
-            rc = TMTimerSetNano(pThis->pHearbeatFlatlinedTimer, pThis->cNsHeartbeatTimeout);
+            rc = TMTimerSetNano(pThis->pFlatlinedTimer, pThis->cNsHeartbeatTimeout);
             if (RT_SUCCESS(rc))
                 LogRel(("VMMDev: Heartbeat checking timer set to trigger every %RU64 milliseconds\n",
                         pThis->cNsHeartbeatTimeout / RT_NS_1MS));
@@ -510,13 +510,13 @@ static int vmmDevReqHandler_HeartbeatConfigure(PVMMDEV pThis, VMMDevRequestHeade
         }
         else
         {
-            rc = TMTimerStop(pThis->pHearbeatFlatlinedTimer);
+            rc = TMTimerStop(pThis->pFlatlinedTimer);
             LogRel(("VMMDev: Heartbeat checking timer has been stopped, rc=%Rrc\n", rc));
         }
     }
     else
     {
-        LogRel(("VMMDev: vmmDevReqHandler_HeartbeatConfigure: fHBCheckEnabled=%RTbool\n", pThis->fHBCheckEnabled));
+        LogRel(("VMMDev: vmmDevReqHandler_HeartbeatConfigure: fHBCheckEnabled=%RTbool\n", pThis->fHeartbeatActive));
         rc = VINF_SUCCESS;
     }
 
@@ -4175,7 +4175,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Create heartbeat checking timer.
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vmmDevHeartbeatFlatlinedTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "Heartbeat flatlined", &pThis->pHearbeatFlatlinedTimer);
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "Heartbeat flatlined", &pThis->pFlatlinedTimer);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_HGCM
