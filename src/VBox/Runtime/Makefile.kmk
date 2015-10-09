@@ -2730,7 +2730,11 @@ $(IPRT_OUT_DIR)/Doxyfile.iprt: \
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(IPRT_DOXYFILE_OUTPUT)"
 	$(QUIET)$(APPEND) $@.tmp "WARN_LOGFILE = $(IPRT_DOXYFILE_OUTPUT)/errors"
-	$(QUIET)$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include include . common/table"
+	$(QUIET)$(APPEND) $@.tmp 'INCLUDE_PATH = ' \
+		'$(PATH_ROOT)/include' \
+		'$(VBOX_PATH_RUNTIME_SRC)/include' \
+		'$(VBOX_PATH_RUNTIME_SRC)/' \
+		'$(VBOX_PATH_RUNTIME_SRC)/common/table'
 	$(QUIET)$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
 	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
 	$(QUIET)$(APPEND) $@.tmp 'EXCLUDE = '\
@@ -2739,7 +2743,7 @@ $(IPRT_OUT_DIR)/Doxyfile.iprt: \
        	'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-upper.cpp' \
        	'$(VBOX_PATH_RUNTIME_SRC)/common/ldr/ldrkStuff.cpp'
 	$(QUIET)$(APPEND) $@.tmp
-	$(QUIET)$(APPEND) $@.tmp "INPUT = $(IPRT_DOXYFILE_INPUT)"
+	$(QUIET)$(APPEND) $@.tmp 'INPUT = $(foreach x,$(IPRT_DOXYFILE_INPUT),\$(NLTAB)$(x))'
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
 	$(QUIET)$(APPEND) $@.dep "DOXYGEN_OUTPUT_PREV = $(IPRT_DOXYFILE_OUTPUT)"
@@ -2749,6 +2753,13 @@ $(IPRT_OUT_DIR)/Doxyfile.iprt: \
 $(IPRT_OUT_DIR)/docs.iprt: $(IPRT_OUT_DIR)/Doxyfile.iprt $$(IPRT_DOXYFILE_INPUT) | $(IPRT_DOXYFILE_OUTPUT)/
 	$(QUIET)$(RM) -f $(wildcard $(IPRT_DOXYFILE_OUTPUT)/html/*) $(IPRT_OUT_DIR)/docs.iprt
 	doxygen $(DOXYGEN_OPTS) $(IPRT_OUT_DIR)/Doxyfile.iprt
+	$(SED)	-e "/warning: Unexpected \<dd\> found/d" \
+		-e "/warning: Unsupported xml\/html tag \<globalScope\> found/d" \
+               --output $(IPRT_DOXYFILE_OUTPUT)/errors2 \
+		 $(IPRT_DOXYFILE_OUTPUT)/errors
+	$(MV) -f $(IPRT_DOXYFILE_OUTPUT)/errors2 $(IPRT_DOXYFILE_OUTPUT)/errors
+	$(CAT) $(IPRT_DOXYFILE_OUTPUT)/errors
+	$(SED) -e "/[^ ]/q 1" $(IPRT_DOXYFILE_OUTPUT)/errors
 	$(APPEND) $(IPRT_OUT_DIR)/docs.iprt
 
 # aliases
