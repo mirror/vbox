@@ -83,11 +83,6 @@ void darwinSetHideTitleButton(QWidget *pWidget, CocoaWindowButtonType buttonType
     ::darwinSetHideTitleButtonImpl(::darwinToNativeWindow(pWidget), buttonType);
 }
 
-void darwinDisableZoomButtonFullscreenCheck(QWidget *pWidget)
-{
-    ::darwinDisableZoomButtonFullscreenCheckImpl(::darwinToNativeWindow(pWidget));
-}
-
 void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled)
 {
     ::darwinSetShowsWindowTransparentImpl(::darwinToNativeWindow(pWidget), fEnabled);
