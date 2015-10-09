@@ -325,8 +325,8 @@ public:
      *  Returns the IID of the interface that returned the error.
      *
      *  This method returns a non-null IID only if the instance was created
-     *  using template <class I> ErrorInfo(I *i) or
-     *  template <class I> ErrorInfo(const ComPtr<I> &i) constructor.
+     *  using template \<class I\> ErrorInfo(I *i) or
+     *  template \<class I\> ErrorInfo(const ComPtr<I> &i) constructor.
      *
      *  @todo broken ErrorInfo documentation links, possibly misleading.
      */
@@ -339,8 +339,8 @@ public:
      *  Returns the name of the interface that returned the error
      *
      *  This method returns a non-null name only if the instance was created
-     *  using template <class I> ErrorInfo(I *i) or
-     *  template <class I> ErrorInfo(const ComPtr<I> &i) constructor.
+     *  using template \<class I\> ErrorInfo(I *i) or
+     *  template \<class I\> ErrorInfo(const ComPtr<I> &i) constructor.
      *
      *  @todo broken ErrorInfo documentation links, possibly misleading.
      */
