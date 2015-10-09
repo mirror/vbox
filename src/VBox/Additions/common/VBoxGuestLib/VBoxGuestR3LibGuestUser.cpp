@@ -48,30 +48,25 @@
  * @param   cbDetails       Size (in bytes) of state details. Pass 0
  *                          if puDetails is NULL.
  */
-VBGLR3DECL(int) VbglR3GuestUserReportState(const char *pszUser,
-                                           const char *pszDomain,
-                                           VBoxGuestUserState enmState,
-                                           uint8_t *puDetails,
-                                           uint32_t cbDetails)
+VBGLR3DECL(int) VbglR3GuestUserReportState(const char *pszUser, const char *pszDomain, VBoxGuestUserState enmState,
+                                           uint8_t *puDetails, uint32_t cbDetails)
 {
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
     /* pszDomain is optional. */
     /* puDetails is optional. */
+    AssertReturn(cbDetails == 0 || puDetails != NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(cbDetails < 16U*_1M, VERR_OUT_OF_RANGE);
 
-    uint32_t cbBase = sizeof(VMMDevReportGuestUserState);
-    uint32_t cbUser = strlen(pszUser) + 1; /* Include terminating zero */
-    uint32_t cbDomain = pszDomain ? strlen(pszDomain) + 1 /* Dito */ : 0;
+    uint32_t cbBase   = sizeof(VMMDevReportGuestUserState);
+    uint32_t cbUser   = (uint32_t)strlen(pszUser) + 1; /* Include terminating zero */
+    uint32_t cbDomain = pszDomain ? strlen(pszDomain) + 1 /* Ditto */ : 0;
 
     /* Allocate enough space for all fields. */
-    unsigned long cbSize =
-          cbBase
-        + cbUser
-        + cbDomain
-        + cbDetails;
-
-    AssertReturn(cbSize, VERR_BUFFER_UNDERFLOW);
-    VMMDevReportGuestUserState *pReport =
-        (VMMDevReportGuestUserState *)RTMemAllocZ(cbSize);
+    uint32_t cbSize = cbBase
+                    + cbUser
+                    + cbDomain
+                    + cbDetails;
+    VMMDevReportGuestUserState *pReport = (VMMDevReportGuestUserState *)RTMemAllocZ(cbSize);
     if (!pReport)
         return VERR_NO_MEMORY;
 
@@ -91,8 +86,7 @@ VBGLR3DECL(int) VbglR3GuestUserReportState(const char *pszUser,
          *       Therefore it's vital to *not* change the order of the struct members
          *       without altering this code. Don't try this at home.
          */
-        uint32_t cbOffDynamic =
-            RT_OFFSETOF(VBoxGuestUserStatus, szUser);
+        uint32_t cbOffDynamic = RT_OFFSETOF(VBoxGuestUserStatus, szUser);
 
         /* pDynamic marks the beginning for the dynamically allocated areas. */
         uint8_t *pDynamic = (uint8_t *)&pReport->status;
