@@ -51,6 +51,29 @@
  * This seems to be fast method. It requires only one context switch for an
  * event processing.
  *
+ *
+ * @section sec_vmmdev_heartbeat    Heartbeat
+ *
+ * The heartbeat is a feature to monitor whether the guest OS is hung or not.
+ *
+ * The main kernel component of the guest additions, VBoxGuest, sets up a timer
+ * at a frequency returned by VMMDevReq_HeartbeatConfigure
+ * (VMMDevReqHeartbeat::cNsInterval, VMMDEV::cNsHeartbeatInterval) and performs
+ * a VMMDevReq_GuestHeartbeat request every time the timer ticks.
+ *
+ * The host side (VMMDev) arms a timer with a more distant deadline
+ * (VMMDEV::cNsHeartbeatTimeout), twice cNsHeartbeatInterval by default.  Each
+ * time a VMMDevReq_GuestHeartbeat request comes in, the timer is rearmed with
+ * the same relative deadline.  So, as long as VMMDevReq_GuestHeartbeat comes
+ * when they should, the host timer will never fire.
+ *
+ * When the timer fires, we consider the guest as hung / flatlined / dead.
+ * Currently we only LogRel that, but it's easy to extend this with an event in
+ * Main API.
+ *
+ * Should the guest reawaken at some later point, we LogRel that event and
+ * continue as normal.  Again something which would merit an API event.
+ *
  */
 
 
@@ -119,7 +142,11 @@
            && RT_LOWORD(additionsVersion) >  RT_LOWORD(VMMDEV_VERSION) ) )
 
 /** The saved state version. */
-#define VMMDEV_SAVED_STATE_VERSION                              15
+#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_HEARTBEAT
+/** The saved state version with heartbeat state. */
+#define VMMDEV_SAVED_STATE_VERSION_HEARTBEAT                    16
+/** The saved state version without heartbeat state. */
+#define VMMDEV_SAVED_STATE_VERSION_NO_HEARTBEAT                 15
 /** The saved state version which is missing the guest facility statuses. */
 #define VMMDEV_SAVED_STATE_VERSION_MISSING_FACILITY_STATUSES    14
 /** The saved state version which is missing the guestInfo2 bits. */
@@ -500,23 +527,28 @@ static int vmmDevReqHandler_HeartbeatConfigure(PVMMDEV pThis, VMMDevRequestHeade
         ASMAtomicWriteBool(&pThis->fHeartbeatActive, pReq->fEnabled);
         if (pReq->fEnabled)
         {
-            /* Start the countdown. */
+            /*
+             * Activate the heartbeat monitor.
+             */
+            pThis->nsLastHeartbeatTS = TMTimerGetNano(pThis->pFlatlinedTimer);
             rc = TMTimerSetNano(pThis->pFlatlinedTimer, pThis->cNsHeartbeatTimeout);
             if (RT_SUCCESS(rc))
-                LogRel(("VMMDev: Heartbeat checking timer set to trigger every %RU64 milliseconds\n",
-                        pThis->cNsHeartbeatTimeout / RT_NS_1MS));
+                LogRel(("VMMDev: Heartbeat flatline timer set to trigger after %'RU64 ns\n", pThis->cNsHeartbeatTimeout));
             else
-                LogRel(("VMMDev: Cannot create heartbeat check timer, rc=%Rrc\n", rc));
+                LogRel(("VMMDev: Error starting flatline timer (heartbeat): %Rrc\n", rc));
         }
         else
         {
+            /*
+             * Deactivate the heartbeat monitor.
+             */
             rc = TMTimerStop(pThis->pFlatlinedTimer);
-            LogRel(("VMMDev: Heartbeat checking timer has been stopped, rc=%Rrc\n", rc));
+            LogRel(("VMMDev: Heartbeat checking timer has been stopped (rc=%Rrc)\n", rc));
         }
     }
     else
     {
-        LogRel(("VMMDev: vmmDevReqHandler_HeartbeatConfigure: fHBCheckEnabled=%RTbool\n", pThis->fHeartbeatActive));
+        LogRel(("VMMDev: vmmDevReqHandler_HeartbeatConfigure: No change (fHeartbeatActive=%RTbool).\n", pThis->fHeartbeatActive));
         rc = VINF_SUCCESS;
     }
 
@@ -3491,6 +3523,12 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         SSMR3PutS64(pSSM, RTTimeSpecGetNano(&pThis->aFacilityStatuses[i].TimeSpecTS));
     }
 
+    /* Heartbeat: */
+    SSMR3PutBool(pSSM, pThis->fHeartbeatActive);
+    SSMR3PutBool(pSSM, pThis->fFlatlined);
+    SSMR3PutU64(pSSM, pThis->nsLastHeartbeatTS);
+    TMR3TimerSave(pThis->pFlatlinedTimer, pSSM);
+
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -3612,6 +3650,20 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         }
     }
 
+    /*
+     * Heartbeat.
+     */
+    if (uVersion >= VMMDEV_SAVED_STATE_VERSION_HEARTBEAT)
+    {
+        SSMR3GetBool(pSSM, (bool *)&pThis->fHeartbeatActive);
+        SSMR3GetBool(pSSM, (bool *)&pThis->fFlatlined);
+        SSMR3GetU64(pSSM, (uint64_t *)&pThis->nsLastHeartbeatTS);
+        rc = TMR3TimerLoad(pThis->pFlatlinedTimer, pSSM);
+        AssertRCReturn(rc, rc);
+        if (pThis->fFlatlined)
+            LogRel(("vmmdevLoadState: Guest has flatlined. Last heartbeat %'RU64 ns before state was saved.\n",
+                    TMTimerGetNano(pThis->pFlatlinedTimer) - pThis->nsLastHeartbeatTS));
+    }
 
     /*
      * On a resume, we send the capabilities changed message so
@@ -3789,6 +3841,16 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 #endif
 
     /*
+     * Deactive heartbeat.
+     */
+    if (pThis->fHeartbeatActive)
+    {
+        TMTimerStop(pThis->pFlatlinedTimer);
+        pThis->fFlatlined       = false;
+        pThis->fHeartbeatActive = true;
+    }
+
+    /*
      * Clear the event variables.
      *
      * XXX By design we should NOT clear pThis->u32HostEventFlags because it is designed
@@ -3809,7 +3871,8 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     if (fCapsChanged && pThis->pDrv && pThis->pDrv->pfnUpdateGuestCapabilities)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
 
-    /* Generate a unique session id for this VM; it will be changed for each start, reset or restore.
+    /*
+     * Generate a unique session id for this VM; it will be changed for each start, reset or restore.
      * This can be used for restore detection inside the guest.
      */
     pThis->idSession = ASMReadTSC();
