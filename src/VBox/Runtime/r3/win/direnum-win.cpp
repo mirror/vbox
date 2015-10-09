@@ -310,7 +310,7 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
         PCRTUTF16 pwszSrc = (PCRTUTF16)pDir->Data.cAlternateFileName;
         PRTUTF16  pwszDst = pDirEntry->wszShortName;
         uint32_t  off = 0;
-        while (pwszSrc[off] && off < RT_ELEMENTS(pDirEntry->wszShortName) - 1U)
+        while (off < RT_ELEMENTS(pDirEntry->wszShortName) - 1U && pwszSrc[off])
         {
             pwszDst[off] = pwszSrc[off];
             off++;
