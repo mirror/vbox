@@ -785,7 +785,7 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
 	doxygen $(PATH_TARGET)/Doxyfile.Core
 	$(SED) -n \
 		-e ':nextwarning' \
-               -e '/^ *$/d' \
+               -e '/^ *$(DOLLAR)/d' \
 		-e '/warning. Unexpected tag .dd. found/d' \
 		-e '/warning. Unsupported xml.html tag .globalScope. found/d' \
                -e '/\/src\/VBox\/Devices\/.* warning/b ignore' \
