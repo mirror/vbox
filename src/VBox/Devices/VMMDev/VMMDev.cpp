@@ -607,7 +607,7 @@ static int vmmdevReqHandler_ReportGuestInfo2(PVMMDEV pThis, VMMDevRequestHeader 
      * Be less strict towards older additions (< v4.1.50).
      */
     AssertCompile(sizeof(pThis->guestInfo2.szName) == sizeof(pInfo2->szName));
-    AssertReturn(memchr(pInfo2->szName, '\0', sizeof(pInfo2->szName)) != NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(RTStrEnd(pInfo2->szName, sizeof(pInfo2->szName)) != NULL, VERR_INVALID_PARAMETER);
     const char *pszName = pInfo2->szName;
 
     /* The version number which shouldn't be there. */
@@ -669,7 +669,7 @@ static int vmmdevReqHandler_ReportGuestInfo2(PVMMDEV pThis, VMMDevRequestHeader 
         pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, uFullVersion, pszName, pInfo2->additionsRevision, pInfo2->additionsFeatures);
 
     /* Clear our IRQ in case it was high for whatever reason. */
-    PDMDevHlpPCISetIrqNoWait (pThis->pDevIns, 0, 0);
+    PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, 0);
 
     return VINF_SUCCESS;
 }
@@ -1049,9 +1049,9 @@ static int vmmdevReqHandler_SetPointerShape(PVMMDEV pThis, VMMDevRequestHeader *
         return VERR_INVALID_PARAMETER;
     }
 
-    bool fVisible = (pReq->fFlags & VBOX_MOUSE_POINTER_VISIBLE) != 0;
-    bool fAlpha = (pReq->fFlags & VBOX_MOUSE_POINTER_ALPHA) != 0;
-    bool fShape = (pReq->fFlags & VBOX_MOUSE_POINTER_SHAPE) != 0;
+    bool fVisible = RT_BOOL(pReq->fFlags & VBOX_MOUSE_POINTER_VISIBLE);
+    bool fAlpha   = RT_BOOL(pReq->fFlags & VBOX_MOUSE_POINTER_ALPHA);
+    bool fShape   = RT_BOOL(pReq->fFlags & VBOX_MOUSE_POINTER_SHAPE);
 
     Log(("VMMDevReq_SetPointerShape: visible: %d, alpha: %d, shape = %d, width: %d, height: %d\n",
          fVisible, fAlpha, fShape, pReq->width, pReq->height));
@@ -1103,12 +1103,13 @@ static int vmmdevReqHandler_GetHostTime(PVMMDEV pThis, VMMDevRequestHeader *pReq
     VMMDevReqHostTime *pReq = (VMMDevReqHostTime *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    if (RT_UNLIKELY(pThis->fGetHostTimeDisabled))
-        return VERR_NOT_SUPPORTED;
-
-    RTTIMESPEC now;
-    pReq->time = RTTimeSpecGetMilli(PDMDevHlpTMUtcNow(pThis->pDevIns, &now));
-    return VINF_SUCCESS;
+    if (RT_LIKELY(!pThis->fGetHostTimeDisabled))
+    {
+        RTTIMESPEC now;
+        pReq->time = RTTimeSpecGetMilli(PDMDevHlpTMUtcNow(pThis->pDevIns, &now));
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -1153,8 +1154,8 @@ static int vmmdevReqHandler_SetHypervisorInfo(PVMMDEV pThis, VMMDevRequestHeader
         {
             /* new reservation */
             rc = PGMR3MappingsFix(pVM, pReq->hypervisorStart, pReq->hypervisorSize);
-            LogRel(("VMMDev: Guest reported fixed hypervisor window at 0%010x (size = %#x, rc = %Rrc)\n", pReq->hypervisorStart,
-                    pReq->hypervisorSize, rc));
+            LogRel(("VMMDev: Guest reported fixed hypervisor window at 0%010x LB %#x (rc=%Rrc)\n",
+                    pReq->hypervisorStart, pReq->hypervisorSize, rc));
         }
         else if (RT_FAILURE(rc))
             rc = VERR_TRY_AGAIN;
@@ -1254,11 +1255,10 @@ static int vmmdevReqHandler_GetDisplayChangeRequest(PVMMDEV pThis, VMMDevRequest
 
 /**
  * @todo It looks like a multi-monitor guest which only uses
- *        @a VMMDevReq_GetDisplayChangeRequest (not the *2 version)
- *        will get into a @a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST event
- *        loop if it tries to acknowlege host requests for additional
- *        monitors.  Should the loop which checks for those requests
- *        be removed?
+ *        @c VMMDevReq_GetDisplayChangeRequest (not the *2 version) will get
+ *        into a @c VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST event loop if it tries
+ *        to acknowlege host requests for additional monitors.  Should the loop
+ *        which checks for those requests be removed?
  */
 
     DISPLAYCHANGEREQUEST *pDispRequest = &pThis->displayChangeData.aRequests[0];
@@ -1571,11 +1571,7 @@ static int vmmdevReqHandler_AcknowledgeEvents(PVMMDEV pThis, VMMDevRequestHeader
     VMMDevEvents *pReq = (VMMDevEvents *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    if (VMMDEV_INTERFACE_VERSION_IS_1_03(pThis))
-    {
-        vmmdevSetIRQ_Legacy(pThis);
-    }
-    else
+    if (!VMMDEV_INTERFACE_VERSION_IS_1_03(pThis))
     {
         if (pThis->fNewGuestFilterMask)
         {
@@ -1589,6 +1585,8 @@ static int vmmdevReqHandler_AcknowledgeEvents(PVMMDEV pThis, VMMDevRequestHeader
         pThis->pVMMDevRAMR3->V.V1_04.fHaveEvents = false;
         PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, 0);
     }
+    else
+        vmmdevSetIRQ_Legacy(pThis);
     return VINF_SUCCESS;
 }
 
@@ -1629,14 +1627,14 @@ static int vmmdevReqHandler_HGCMConnect(PVMMDEV pThis, VMMDevRequestHeader *pReq
     VMMDevHGCMConnect *pReq = (VMMDevHGCMConnect *)pReqHdr;
     AssertMsgReturn(pReq->header.header.size >= sizeof(*pReq), ("%u\n", pReq->header.header.size), VERR_INVALID_PARAMETER); /** @todo Not sure why this is >= ... */
 
-    if (!pThis->pHGCMDrv)
+    if (pThis->pHGCMDrv)
     {
-        Log(("VMMDevReq_HGCMConnect: HGCM Connector is NULL!\n"));
-        return VERR_NOT_SUPPORTED;
+        Log(("VMMDevReq_HGCMConnect\n"));
+        return vmmdevHGCMConnect(pThis, pReq, GCPhysReqHdr);
     }
 
-    Log(("VMMDevReq_HGCMConnect\n"));
-    return vmmdevHGCMConnect(pThis, pReq, GCPhysReqHdr);
+    Log(("VMMDevReq_HGCMConnect: HGCM Connector is NULL!\n"));
+    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -1653,14 +1651,14 @@ static int vmmdevReqHandler_HGCMDisconnect(PVMMDEV pThis, VMMDevRequestHeader *p
     VMMDevHGCMDisconnect *pReq = (VMMDevHGCMDisconnect *)pReqHdr;
     AssertMsgReturn(pReq->header.header.size >= sizeof(*pReq), ("%u\n", pReq->header.header.size), VERR_INVALID_PARAMETER);  /** @todo Not sure why this >= ... */
 
-    if (!pThis->pHGCMDrv)
+    if (pThis->pHGCMDrv)
     {
-        Log(("VMMDevReq_VMMDevHGCMDisconnect: HGCM Connector is NULL!\n"));
-        return VERR_NOT_SUPPORTED;
+        Log(("VMMDevReq_VMMDevHGCMDisconnect\n"));
+        return vmmdevHGCMDisconnect(pThis, pReq, GCPhysReqHdr);
     }
 
-    Log(("VMMDevReq_VMMDevHGCMDisconnect\n"));
-    return vmmdevHGCMDisconnect(pThis, pReq, GCPhysReqHdr);
+    Log(("VMMDevReq_VMMDevHGCMDisconnect: HGCM Connector is NULL!\n"));
+    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -1677,22 +1675,22 @@ static int vmmdevReqHandler_HGCMCall(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr
     VMMDevHGCMCall *pReq = (VMMDevHGCMCall *)pReqHdr;
     AssertMsgReturn(pReq->header.header.size >= sizeof(*pReq), ("%u\n", pReq->header.header.size), VERR_INVALID_PARAMETER);
 
-    if (!pThis->pHGCMDrv)
+    if (pThis->pHGCMDrv)
     {
-        Log(("VMMDevReq_HGCMCall: HGCM Connector is NULL!\n"));
-        return VERR_NOT_SUPPORTED;
-    }
-
-    Log2(("VMMDevReq_HGCMCall: sizeof(VMMDevHGCMRequest) = %04X\n", sizeof(VMMDevHGCMCall)));
-    Log2(("%.*Rhxd\n", pReq->header.header.size, pReq));
+        Log2(("VMMDevReq_HGCMCall: sizeof(VMMDevHGCMRequest) = %04X\n", sizeof(VMMDevHGCMCall)));
+        Log2(("%.*Rhxd\n", pReq->header.header.size, pReq));
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
-    bool f64Bits = (pReq->header.header.requestType == VMMDevReq_HGCMCall64);
+        bool f64Bits = (pReq->header.header.requestType == VMMDevReq_HGCMCall64);
 #else
-    bool f64Bits = false;
+        bool f64Bits = false;
 #endif /* VBOX_WITH_64_BITS_GUESTS */
 
-    return vmmdevHGCMCall(pThis, pReq, pReq->header.header.size, GCPhysReqHdr, f64Bits);
+        return vmmdevHGCMCall(pThis, pReq, pReq->header.header.size, GCPhysReqHdr, f64Bits);
+    }
+
+    Log(("VMMDevReq_HGCMCall: HGCM Connector is NULL!\n"));
+    return VERR_NOT_SUPPORTED;
 }
 
 /**
@@ -1708,14 +1706,14 @@ static int vmmdevReqHandler_HGCMCancel(PVMMDEV pThis, VMMDevRequestHeader *pReqH
     VMMDevHGCMCancel *pReq = (VMMDevHGCMCancel *)pReqHdr;
     AssertMsgReturn(pReq->header.header.size >= sizeof(*pReq), ("%u\n", pReq->header.header.size), VERR_INVALID_PARAMETER);  /** @todo Not sure why this >= ... */
 
-    if (!pThis->pHGCMDrv)
+    if (pThis->pHGCMDrv)
     {
-        Log(("VMMDevReq_VMMDevHGCMCancel: HGCM Connector is NULL!\n"));
-        return VERR_NOT_SUPPORTED;
+        Log(("VMMDevReq_VMMDevHGCMCancel\n"));
+        return vmmdevHGCMCancel(pThis, pReq, GCPhysReqHdr);
     }
 
-    Log(("VMMDevReq_VMMDevHGCMCancel\n"));
-    return vmmdevHGCMCancel(pThis, pReq, GCPhysReqHdr);
+    Log(("VMMDevReq_VMMDevHGCMCancel: HGCM Connector is NULL!\n"));
+    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -1731,14 +1729,14 @@ static int vmmdevReqHandler_HGCMCancel2(PVMMDEV pThis, VMMDevRequestHeader *pReq
     VMMDevHGCMCancel2 *pReq = (VMMDevHGCMCancel2 *)pReqHdr;
     AssertMsgReturn(pReq->header.size >= sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);  /** @todo Not sure why this >= ... */
 
-    if (!pThis->pHGCMDrv)
+    if (pThis->pHGCMDrv)
     {
-        Log(("VMMDevReq_HGCMConnect2: HGCM Connector is NULL!\n"));
-        return VERR_NOT_SUPPORTED;
+        Log(("VMMDevReq_HGCMCancel2\n"));
+        return vmmdevHGCMCancel2(pThis, pReq->physReqToCancel);
     }
 
-    Log(("VMMDevReq_VMMDevHGCMCancel\n"));
-    return vmmdevHGCMCancel2(pThis, pReq->physReqToCancel);
+    Log(("VMMDevReq_HGCMConnect2: HGCM Connector is NULL!\n"));
+    return VERR_NOT_SUPPORTED;
 }
 
 #endif /* VBOX_WITH_HGCM */
@@ -1758,14 +1756,14 @@ static int vmmdevReqHandler_VideoAccelEnable(PVMMDEV pThis, VMMDevRequestHeader 
 
     if (!pThis->pDrv)
     {
-        Log(("VMMDevReq_VideoAccelEnable Connector is NULL!!!\n"));
+        Log(("VMMDevReq_VideoAccelEnable Connector is NULL!!\n"));
         return VERR_NOT_SUPPORTED;
     }
 
     if (pReq->cbRingBuffer != VBVA_RING_BUFFER_SIZE)
     {
-        /* The guest driver seems compiled with another headers. */
-        Log(("VMMDevReq_VideoAccelEnable guest ring buffer size %d, should be %d!!!\n", pReq->cbRingBuffer, VBVA_RING_BUFFER_SIZE));
+        /* The guest driver seems compiled with different headers. */
+        LogRelMax(16,("VMMDevReq_VideoAccelEnable guest ring buffer size %#x, should be %#x!!\n", pReq->cbRingBuffer, VBVA_RING_BUFFER_SIZE));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -2296,8 +2294,12 @@ static int vmmdevReqHandler_RegisterSharedModule(PVMMDEV pThis, VMMDevRequestHea
     AssertMsgReturn(pReq->header.size == RT_UOFFSETOF(VMMDevSharedModuleRegistrationRequest, aRegions[pReq->cRegions]),
                     ("%u cRegions=%u\n", pReq->header.size, pReq->cRegions), VERR_INVALID_PARAMETER);
 
-    AssertReturn(memchr(pReq->szName, '\0', sizeof(pReq->szName)), VERR_INVALID_PARAMETER);
-    AssertReturn(memchr(pReq->szVersion, '\0', sizeof(pReq->szVersion)), VERR_INVALID_PARAMETER);
+    AssertReturn(RTStrEnd(pReq->szName, sizeof(pReq->szName)), VERR_INVALID_PARAMETER);
+    AssertReturn(RTStrEnd(pReq->szVersion, sizeof(pReq->szVersion)), VERR_INVALID_PARAMETER);
+    int rc = RTStrValidateEncoding(pReq->szName);
+    AssertRCReturn(rc, rc);
+    rc = RTStrValidateEncoding(pReq->szVersion);
+    AssertRCReturn(rc, rc);
 
     /*
      * Forward the request to the VMM.
@@ -2322,8 +2324,12 @@ static int vmmdevReqHandler_UnregisterSharedModule(PVMMDEV pThis, VMMDevRequestH
     AssertMsgReturn(pReq->header.size == sizeof(VMMDevSharedModuleUnregistrationRequest),
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    AssertReturn(memchr(pReq->szName, '\0', sizeof(pReq->szName)), VERR_INVALID_PARAMETER);
-    AssertReturn(memchr(pReq->szVersion, '\0', sizeof(pReq->szVersion)), VERR_INVALID_PARAMETER);
+    AssertReturn(RTStrEnd(pReq->szName, sizeof(pReq->szName)), VERR_INVALID_PARAMETER);
+    AssertReturn(RTStrEnd(pReq->szVersion, sizeof(pReq->szVersion)), VERR_INVALID_PARAMETER);
+    int rc = RTStrValidateEncoding(pReq->szName);
+    AssertRCReturn(rc, rc);
+    rc = RTStrValidateEncoding(pReq->szVersion);
+    AssertRCReturn(rc, rc);
 
     /*
      * Forward the request to the VMM.
