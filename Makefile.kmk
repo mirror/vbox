@@ -635,7 +635,6 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/Additions/os2/VBoxSF \
 	src/VBox/Additions/solaris \
 	src/VBox/Additions/solaris/DRM \
-	src/VBox/Additions/solaris/DRM/include \
 	src/VBox/Additions/solaris/Installer \
 	src/VBox/Additions/solaris/SharedFolders \
 	src/VBox/Additions/solaris/SharedFolders/solaris10 \
@@ -763,8 +762,14 @@ $(PATH_TARGET)/Doxyfile.Core: Doxyfile.Core \
 	$(QUIET)$(APPEND) $@.tmp "WARN_LOGFILE = $(VBOX_CORE_DOXYFILE_OUTPUT)/errors"
 	$(QUIET)$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include $(PATH_ROOT)/src/VBox/VMM $(PATH_ROOT)/src/VBox/Main/include "
 	$(QUIET)$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
+	$(QUIET)$(APPEND) $@.tmp "EXCLUDE = " \
+		"$(PATH_ROOT)/src/VBox/Additions/common/crOpenGL/utils.c" \
+		"$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserver/main.c" \
+		"$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/server_main.c" \
+		"$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/unpacker/unpack_arrays.c" \
+		"$(PATH_ROOT)/src/VBox/Additions/common/crOpenGL/context.c"
 	$(QUIET)$(APPEND) $@.tmp
-	$(QUIET)$(APPEND) $@.tmp "INPUT = $(VBOX_CORE_DOXYFILE_INPUT)"
+	$(QUIET)$(APPEND) $@.tmp 'INPUT = $(foreach x,$(VBOX_CORE_DOXYFILE_INPUT),\$(NLTAB)$(x))'
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += $(DEFS) $(DEFS.$(KBUILD_TARGET)) $(DEFS.$(KBUILD_TARGET_ARCH)) $(ARCH_BITS_DEFS)"
 	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += ARCH_BITS=HC_ARCH_BITS R3_ARCH_BITS=HC_ARCH_BITS R0_ARCH_BITS=HC_ARCH_BITS "
@@ -778,6 +783,55 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
 	$(RM) -f $(PATH_TARGET)/docs.Core
 	$(RM) -Rf $(VBOX_CORE_DOXYFILE_OUTPUT)/html/
 	doxygen $(PATH_TARGET)/Doxyfile.Core
+	$(SED) -n \
+		-e ':nextwarning' \
+               -e '/^ *$/d' \
+		-e '/warning. Unexpected tag .dd. found/d' \
+		-e '/warning. Unsupported xml.html tag .globalScope. found/d' \
+               -e '/\/src\/VBox\/Devices\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/Main\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/HostDrivers\/.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/WINNT\/Installer\/VBoxDrvInst\.cpp.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/WINNT\/VBoxCredProv\/.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/WINNT\/VBoxGINA\/Helper\.cpp.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDispIf\.h.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDnD\.cpp.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/common\/VBoxGuestLib\/.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/common\/VBoxVideo\/HGSMIBase\.cpp.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/common\/VBoxVideo\/Modesetting\.cpp.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/common\/crOpenGL\/.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/common\/pam\/pam_vbox\.cpp.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/os2\/VBoxMouse\/cmdline\.c.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/solaris\/SharedFolders\/vboxfs_prov\.c.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/solaris\/Virtio\/Virtio-solaris\.c.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/solaris\/Virtio\/VirtioNet-solaris\.c.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/x11\/VBoxClient\/draganddrop\.cpp.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.cpp.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.h.* warning/b ignore' \
+               -e '/src\/VBox\/Additions\/x11\/vboxvideo\/vbva\.c.* warning/b ignore' \
+               -e '/src\/VBox\/Debugger\/.* warning/b ignore' \
+               -e '/src\/VBox\/HostServices\/GuestControl\/.* warning/b ignore' \
+               -e '/src\/VBox\/HostServices\/GuestProperties\/.* warning/b ignore' \
+               -e '/src\/VBox\/HostServices\/SharedClipboard\/.* warning/b ignore' \
+               -e '/src\/VBox\/HostServices\/SharedFolders\/.* warning/b ignore' \
+               -e '/src\/VBox\/HostServices\/SharedOpenGL\/.* warning/b ignore' \
+               -e '/src\/VBox\/NetworkServices\/DHCP\/Config\.cpp.* warning/b ignore' \
+               -e '/src\/VBox\/NetworkServices\/DHCP\/Config\.h.* warning/b ignore' \
+               -e '/src\/VBox\/Storage\/.* warning/b ignore' \
+               -e 'b end' \
+               -e ':ignore' \
+               -e 'z' \
+               -e 'n' \
+               -e '/^[[:space:]]/b ignore' \
+               -e '/^Possible candidates/b ignore' \
+               -e 'b nextwarning' \
+               -e ':end' \
+               -e 'p' \
+               --output $(VBOX_CORE_DOXYFILE_OUTPUT)/errors2 \
+		$(VBOX_CORE_DOXYFILE_OUTPUT)/errors
+##	$(MV) -f $(VBOX_CORE_DOXYFILE_OUTPUT)/errors2 $(VBOX_CORE_DOXYFILE_OUTPUT)/errors
+#	$(CAT) $(VBOX_CORE_DOXYFILE_OUTPUT)/errors2
+#	$(SED) -e "/[^ ]/q 1" $(VBOX_CORE_DOXYFILE_OUTPUT)/errors2
 	$(APPEND) $(PATH_TARGET)/docs.Core
 
 

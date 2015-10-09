@@ -1,12 +1,10 @@
 /* $Id$ */
-
 /** @file
- *
- * VirtualBox COM: logging macros and function definitions
+ * VirtualBox COM - logging macros and function definitions
  */
 
 /*
- * Copyright (C) 2004-2012 Oracle Corporation
+ * Copyright (C) 2004-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +23,10 @@
  *  the |Logging.h| header if you want to use a group other than LOG_GROUP_MAIN
  *  for logging from within Main source files.
  *
- *  @example #define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_HGCM
+ *  Example:
+ *  @code
+ *  #define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_HGCM
+ *  @endcode
  */
 
 /*
@@ -46,5 +47,5 @@
 
 #include <VBox/log.h>
 
-#endif // ____H_LOGGING
+#endif // !____H_LOGGING
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

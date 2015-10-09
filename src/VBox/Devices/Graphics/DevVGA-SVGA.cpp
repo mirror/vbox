@@ -2544,7 +2544,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             offCurrentCmd = ~UINT32_C(3);
         }
 
-/**
+/** @def VMSVGAFIFO_GET_CMD_BUFFER_BREAK
  * Macro for shortening calls to vmsvgaFIFOGetCmdPayload.
  *
  * Will break out of the switch on failure.
@@ -2559,7 +2559,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                                                                pbBounceBuf, &cbPayload, pThread, pThis, pSVGAState); \
                 if (RT_UNLIKELY((uintptr_t)(a_PtrVar) < 2)) { if ((uintptr_t)(a_PtrVar) == 1) continue; break; } \
             } else do {} while (0)
-/**
+/** @def VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK
  * Macro for shortening calls to vmsvgaFIFOGetCmdPayload for refetching the
  * buffer after figuring out the actual command size.
  * Will break out of the switch on failure.

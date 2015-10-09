@@ -53,22 +53,26 @@ char const *g_pszProgName = "";
 int g_cVerbosity = 0;
 
 
-/**
- * Displays the program usage message.
- *
- * @param u64Which
- *
+/** @name Displays the program usage message.
  * @{
  */
 
-/** Helper function */
-static void doUsage(char const *line, char const *name = "", char const *command = "")
+/**
+ * Helper function that does indentation.
+ *
+ * @param   pszLine     Text.
+ * @param   pszName     Program name.
+ * @param   pszCommand  Command/option syntax.
+ */
+static void doUsage(char const *pszLine, char const *pszName = "", char const *pszCommand = "")
 {
     /* Allow for up to 15 characters command name length (VBoxControl.exe) with
      * perfect column alignment. Beyond that there's at least one space between
      * the command if there are command line parameters. */
-    RTPrintf("%s %-*s%s%s\n", name, strlen(line) ? 35 - strlen(name) : 1,
-                              command, strlen(line) ? " " : "", line);
+    RTPrintf("%s %-*s%s%s\n",
+             pszName,
+             *pszLine ? 35 - strlen(name) : 1, pszCommand,
+             *pszLine ? " " : "", pszLine);
 }
 
 /** Enumerate the different parts of the usage we might want to print out */
