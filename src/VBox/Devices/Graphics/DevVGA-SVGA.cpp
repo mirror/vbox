@@ -2550,8 +2550,10 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
  * Will break out of the switch on failure.
  * Will restart and quit the loop if the thread was requested to stop.
  *
+ * @param   a_PtrVar        Request variable pointer.
+ * @param   a_Type          Request typedef (not pointer) for casting.
  * @param   a_cbPayloadReq  How much payload to fetch.
- * @remarks Access a bunch of variables in the current scope!
+ * @remarks Accesses a bunch of variables in the current scope!
  */
 # define VMSVGAFIFO_GET_CMD_BUFFER_BREAK(a_PtrVar, a_Type, a_cbPayloadReq) \
             if (1) { \
@@ -2562,9 +2564,13 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 /** @def VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK
  * Macro for shortening calls to vmsvgaFIFOGetCmdPayload for refetching the
  * buffer after figuring out the actual command size.
+ *
  * Will break out of the switch on failure.
+ *
+ * @param   a_PtrVar        Request variable pointer.
+ * @param   a_Type          Request typedef (not pointer) for casting.
  * @param   a_cbPayloadReq  How much payload to fetch.
- * @remarks Access a bunch of variables in the current scope!
+ * @remarks Accesses a bunch of variables in the current scope!
  */
 # define VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(a_PtrVar, a_Type, a_cbPayloadReq) \
             if (1) { \
