@@ -92,21 +92,18 @@ typedef struct VMMDEVCREDS
  */
 typedef struct VMMDEVFACILITYSTATUSENTRY
 {
-    /** The facility, see VBoxGuestFacilityType. */
-    uint32_t    uFacility;
-    /** The status, see VBoxGuestFacilityStatus. */
-    /** @todo r=andy uint16_t vs. uint32_t (VBoxGuestFacilityStatus enum). */
-    uint16_t    uStatus;
+    /** The facility (may contain values other than the defined ones). */
+    VBoxGuestFacilityType       enmFacility;
+    /** The status (may contain values other than the defined ones). */
+    VBoxGuestFacilityStatus     enmStatus;
     /** Whether this entry is fixed and cannot be reused when inactive. */
-    bool        fFixed;
+    bool                        fFixed;
     /** Explicit alignment padding / reserved for future use. MBZ. */
-    bool        fPadding;
+    bool                        afPadding[3];
     /** The facility flags (yet to be defined). */
-    uint32_t    fFlags;
-    /** Explicit alignment padding / reserved for future use. MBZ. */
-    uint32_t    uPadding;
+    uint32_t                    fFlags;
     /** Last update timestamp. */
-    RTTIMESPEC  TimeSpecTS;
+    RTTIMESPEC                  TimeSpecTS;
 } VMMDEVFACILITYSTATUSENTRY;
 /** Pointer to a facility status entry. */
 typedef VMMDEVFACILITYSTATUSENTRY *PVMMDEVFACILITYSTATUSENTRY;

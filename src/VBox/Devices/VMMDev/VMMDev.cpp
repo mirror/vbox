@@ -713,13 +713,13 @@ static int vmmdevReqHandler_ReportGuestInfo2(PVMMDEV pThis, VMMDevRequestHeader 
  * @returns Pointer to a facility status entry on success, NULL on failure
  *          (table full).
  * @param   pThis           The VMMDev instance data.
- * @param   uFacility       The facility type code - VBoxGuestFacilityType.
+ * @param   enmFacility     The facility type code.
  * @param   fFixed          This is set when allocating the standard entries
  *                          from the constructor.
  * @param   pTimeSpecNow    Optionally giving the entry timestamp to use (ctor).
  */
 static PVMMDEVFACILITYSTATUSENTRY
-vmmdevAllocFacilityStatusEntry(PVMMDEV pThis, uint32_t uFacility, bool fFixed, PCRTTIMESPEC pTimeSpecNow)
+vmmdevAllocFacilityStatusEntry(PVMMDEV pThis, VBoxGuestFacilityType enmFacility, bool fFixed, PCRTTIMESPEC pTimeSpecNow)
 {
     /* If full, expunge one inactive entry. */
     if (pThis->cFacilityStatuses == RT_ELEMENTS(pThis->aFacilityStatuses))
@@ -727,7 +727,7 @@ vmmdevAllocFacilityStatusEntry(PVMMDEV pThis, uint32_t uFacility, bool fFixed, P
         uint32_t i = pThis->cFacilityStatuses;
         while (i-- > 0)
         {
-            if (   pThis->aFacilityStatuses[i].uStatus == VBoxGuestFacilityStatus_Inactive
+            if (   pThis->aFacilityStatuses[i].enmStatus == VBoxGuestFacilityStatus_Inactive
                 && !pThis->aFacilityStatuses[i].fFixed)
             {
                 pThis->cFacilityStatuses--;
@@ -747,7 +747,7 @@ vmmdevAllocFacilityStatusEntry(PVMMDEV pThis, uint32_t uFacility, bool fFixed, P
     /* Find location in array (it's sorted). */
     uint32_t i = pThis->cFacilityStatuses;
     while (i-- > 0)
-        if (pThis->aFacilityStatuses[i].uFacility < uFacility)
+        if ((uint32_t)pThis->aFacilityStatuses[i].enmFacility < (uint32_t)enmFacility)
             break;
     i++;
 
@@ -759,12 +759,13 @@ vmmdevAllocFacilityStatusEntry(PVMMDEV pThis, uint32_t uFacility, bool fFixed, P
     pThis->cFacilityStatuses++;
 
     /* Initialize. */
-    pThis->aFacilityStatuses[i].uFacility   = uFacility;
-    pThis->aFacilityStatuses[i].uStatus     = VBoxGuestFacilityStatus_Inactive;
-    pThis->aFacilityStatuses[i].fFixed      = fFixed;
-    pThis->aFacilityStatuses[i].fPadding    = 0;
-    pThis->aFacilityStatuses[i].fFlags      = 0;
-    pThis->aFacilityStatuses[i].uPadding    = 0;
+    pThis->aFacilityStatuses[i].enmFacility  = enmFacility;
+    pThis->aFacilityStatuses[i].enmStatus    = VBoxGuestFacilityStatus_Inactive;
+    pThis->aFacilityStatuses[i].fFixed       = fFixed;
+    pThis->aFacilityStatuses[i].afPadding[0] = 0;
+    pThis->aFacilityStatuses[i].afPadding[1] = 0;
+    pThis->aFacilityStatuses[i].afPadding[2] = 0;
+    pThis->aFacilityStatuses[i].fFlags       = 0;
     if (pTimeSpecNow)
         pThis->aFacilityStatuses[i].TimeSpecTS = *pTimeSpecNow;
     else
@@ -780,20 +781,20 @@ vmmdevAllocFacilityStatusEntry(PVMMDEV pThis, uint32_t uFacility, bool fFixed, P
  * @returns Pointer to a facility status entry on success, NULL on failure
  *          (table full).
  * @param   pThis           The VMMDev instance data.
- * @param   uFacility       The facility type code - VBoxGuestFacilityType.
+ * @param   enmFacility     The facility type code.
  */
-static PVMMDEVFACILITYSTATUSENTRY vmmdevGetFacilityStatusEntry(PVMMDEV pThis, uint32_t uFacility)
+static PVMMDEVFACILITYSTATUSENTRY vmmdevGetFacilityStatusEntry(PVMMDEV pThis, VBoxGuestFacilityType enmFacility)
 {
     /** @todo change to binary search. */
     uint32_t i = pThis->cFacilityStatuses;
     while (i-- > 0)
     {
-        if (pThis->aFacilityStatuses[i].uFacility == uFacility)
+        if (pThis->aFacilityStatuses[i].enmFacility == enmFacility)
             return &pThis->aFacilityStatuses[i];
-        if (pThis->aFacilityStatuses[i].uFacility < uFacility)
+        if ((uint32_t)pThis->aFacilityStatuses[i].enmFacility < (uint32_t)enmFacility)
             break;
     }
-    return vmmdevAllocFacilityStatusEntry(pThis, uFacility, false /*fFixed*/, NULL);
+    return vmmdevAllocFacilityStatusEntry(pThis, enmFacility, false /*fFixed*/, NULL);
 }
 
 
@@ -830,7 +831,7 @@ static int vmmdevReqHandler_ReportGuestStatus(PVMMDEV pThis, VMMDevRequestHeader
         while (i-- > 0)
         {
             pThis->aFacilityStatuses[i].TimeSpecTS = Now;
-            pThis->aFacilityStatuses[i].uStatus    = (uint16_t)pStatus->status;
+            pThis->aFacilityStatuses[i].enmStatus  = pStatus->status;
             pThis->aFacilityStatuses[i].fFlags     = pStatus->flags;
         }
     }
@@ -844,7 +845,7 @@ static int vmmdevReqHandler_ReportGuestStatus(PVMMDEV pThis, VMMDevRequestHeader
         }
 
         pEntry->TimeSpecTS = Now;
-        pEntry->uStatus    = (uint16_t)pStatus->status; /** @todo r=andy uint16_t vs. 32-bit enum. */
+        pEntry->enmStatus  = pStatus->status;
         pEntry->fFlags     = pStatus->flags;
     }
 
@@ -3517,9 +3518,9 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, pThis->cFacilityStatuses);
     for (uint32_t i = 0; i < pThis->cFacilityStatuses; i++)
     {
-        SSMR3PutU32(pSSM, pThis->aFacilityStatuses[i].uFacility);
+        SSMR3PutU32(pSSM, pThis->aFacilityStatuses[i].enmFacility);
         SSMR3PutU32(pSSM, pThis->aFacilityStatuses[i].fFlags);
-        SSMR3PutU16(pSSM, pThis->aFacilityStatuses[i].uStatus);
+        SSMR3PutU16(pSSM, (uint16_t)pThis->aFacilityStatuses[i].enmStatus);
         SSMR3PutS64(pSSM, RTTimeSpecGetNano(&pThis->aFacilityStatuses[i].TimeSpecTS));
     }
 
@@ -3640,12 +3641,12 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             rc = SSMR3GetS64(pSSM, &iTimeStampNano);
             AssertRCReturn(rc, rc);
 
-            PVMMDEVFACILITYSTATUSENTRY pEntry = vmmdevGetFacilityStatusEntry(pThis, uFacility);
+            PVMMDEVFACILITYSTATUSENTRY pEntry = vmmdevGetFacilityStatusEntry(pThis, (VBoxGuestFacilityType)uFacility);
             AssertLogRelMsgReturn(pEntry,
                                   ("VMMDev: Ran out of entries restoring the guest facility statuses. Saved state has %u.\n", cFacilityStatuses),
                                   VERR_OUT_OF_RESOURCES);
-            pEntry->uStatus = uStatus;
-            pEntry->fFlags  = fFlags;
+            pEntry->enmStatus = (VBoxGuestFacilityStatus)uStatus;
+            pEntry->fFlags    = fFlags;
             RTTimeSpecSetNano(&pEntry->TimeSpecTS, iTimeStampNano);
         }
     }
@@ -3696,11 +3697,11 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             if (pThis->pDrv->pfnUpdateGuestStatus)
             {
                 for (uint32_t i = 0; i < pThis->cFacilityStatuses; i++) /* ascending order! */
-                    if (   pThis->aFacilityStatuses[i].uStatus != VBoxGuestFacilityStatus_Inactive
+                    if (   pThis->aFacilityStatuses[i].enmStatus != VBoxGuestFacilityStatus_Inactive
                         || !pThis->aFacilityStatuses[i].fFixed)
                         pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv,
-                                                          pThis->aFacilityStatuses[i].uFacility,
-                                                          pThis->aFacilityStatuses[i].uStatus,
+                                                          pThis->aFacilityStatuses[i].enmFacility,
+                                                          (uint16_t)pThis->aFacilityStatuses[i].enmStatus,
                                                           pThis->aFacilityStatuses[i].fFlags,
                                                           &pThis->aFacilityStatuses[i].TimeSpecTS);
             }
@@ -3813,7 +3814,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     uint32_t iFacility = pThis->cFacilityStatuses;
     while (iFacility-- > 0)
     {
-        pThis->aFacilityStatuses[iFacility].uStatus    = VBoxGuestFacilityStatus_Inactive;
+        pThis->aFacilityStatuses[iFacility].enmStatus  = VBoxGuestFacilityStatus_Inactive;
         pThis->aFacilityStatuses[iFacility].TimeSpecTS = TimeStampNow;
     }
 
