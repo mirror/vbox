@@ -375,7 +375,7 @@ devid2proxy (uint32_t devid)
 {
 	PUSBPROXYDEV proxy = g_proxies;
 
-	while (proxy && proxy->devid != devid)
+	while (proxy && proxy->idVrdp != devid)
 	{
 		proxy = proxy->pNext;
 	}
@@ -408,7 +408,7 @@ rdpusb_reap_urbs (void)
 			}
 
 			s = rdpusb_init_packet(14 + datalen, RDPUSB_REQ_REAP_URB);
-			out_uint32_le(s, proxy->devid);
+			out_uint32_le(s, proxy->idVrdp);
 			out_uint8(s, VRDP_USB_REAP_FLAG_LAST);
 			out_uint8(s, pUrb->enmStatus);
 			out_uint32_le(s, pUrb->handle);
@@ -508,7 +508,7 @@ rdpusb_process(STREAM s)
 			}
 
 			proxy->Dev.pszName = "Remote device";
-			proxy->devid = devid;
+			proxy->idVrdp = devid;
 
 			for (pDevice = g_pUsbDevices; pDevice; pDevice = pDevice->pNext)
 				if ((pDevice->bPort << 8) + pDevice->bBus == devid)
