@@ -820,7 +820,6 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e '/src\/VBox\/Storage\/.* warning/b ignore' \
                -e 'b end' \
                -e ':ignore' \
-               -e 'z' \
                -e 'n' \
                -e '/^[[:space:]]/b ignore' \
                -e '/^Possible candidates/b ignore' \
