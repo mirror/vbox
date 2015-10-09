@@ -2753,11 +2753,10 @@ $(IPRT_OUT_DIR)/Doxyfile.iprt: \
 $(IPRT_OUT_DIR)/docs.iprt: $(IPRT_OUT_DIR)/Doxyfile.iprt $$(IPRT_DOXYFILE_INPUT) | $(IPRT_DOXYFILE_OUTPUT)/
 	$(QUIET)$(RM) -f $(wildcard $(IPRT_DOXYFILE_OUTPUT)/html/*) $(IPRT_OUT_DIR)/docs.iprt
 	doxygen $(DOXYGEN_OPTS) $(IPRT_OUT_DIR)/Doxyfile.iprt
-	$(SED)	-e '/warning. Unexpected .dd. found/d' \
+	$(SED)	-e '/warning. Unexpected tag .dd. found/d' \
 		-e '/warning. Unsupported xml.html tag .globalScope. found/d' \
                --output $(IPRT_DOXYFILE_OUTPUT)/errors2 \
 		$(IPRT_DOXYFILE_OUTPUT)/errors
-#	$(MV) -f $(IPRT_DOXYFILE_OUTPUT)/errors2 $(IPRT_DOXYFILE_OUTPUT)/errors
 	$(CAT) $(IPRT_DOXYFILE_OUTPUT)/errors2
 	$(SED) -e "/[^ ]/q 1" $(IPRT_DOXYFILE_OUTPUT)/errors2
 	$(APPEND) $(IPRT_OUT_DIR)/docs.iprt
