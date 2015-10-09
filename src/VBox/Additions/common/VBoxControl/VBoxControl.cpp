@@ -71,7 +71,7 @@ static void doUsage(char const *pszLine, char const *pszName = "", char const *p
      * the command if there are command line parameters. */
     RTPrintf("%s %-*s%s%s\n",
              pszName,
-             *pszLine ? 35 - strlen(name) : 1, pszCommand,
+             *pszLine ? 35 - strlen(pszName) : 1, pszCommand,
              *pszLine ? " " : "", pszLine);
 }
 
