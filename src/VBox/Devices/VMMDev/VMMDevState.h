@@ -360,19 +360,21 @@ typedef struct VMMDevState
 #endif /* !VBOX_WITHOUT_TESTING_FEATURES */
 
     /** Timestamp of the last heartbeat from guest in nanosec. */
-    uint64_t volatile   uLastHBTime;
+    uint64_t volatile   nsLastHeartbeatTS;
     /** Indicates whether we missed HB from guest on last check. */
     bool volatile       fHasMissedHB;
     /** Indicates whether heartbeat check is active. */
     bool volatile       fHBCheckEnabled;
     /** Alignment padding. */
     bool                afAlignment8[6];
-    /** Guest heartbeat interval in nanoseconds. */
-    uint64_t            u64HeartbeatInterval;
-    /** Guest heartbeat timeout in nanoseconds. */
-    uint64_t            u64HeartbeatTimeout;
-    /** Timer for checking guest heart beat. */
-    PTMTIMERR3          pHBCheckTimer;
+    /** Guest heartbeat interval in nanoseconds.
+     * This is the interval the guest is told to produce heartbeats at. */
+    uint64_t            cNsHeartbeatInterval;
+    /** The amount of time without a heartbeat (nanoseconds) before we
+     * conclude the guest is doing a Dixie Flatline (Neuromancer) impression. */
+    uint64_t            cNsHeartbeatTimeout;
+    /** Timer for signalling a flatlined guest. */
+    PTMTIMERR3          pHearbeatFlatlinedTimer;
 } VMMDevState;
 typedef VMMDevState VMMDEV;
 /** Pointer to the VMM device state. */
