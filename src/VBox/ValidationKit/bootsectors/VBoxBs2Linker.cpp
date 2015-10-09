@@ -61,6 +61,7 @@ int main(int argc, char **argv)
                 else
                 {
                     fprintf(stderr, "syntax errro: Unknown options '%s'\n", pszOpt);
+                    free(papszInputs);
                     return 2;
                 }
             }
@@ -205,6 +206,7 @@ int main(int argc, char **argv)
         rcExit = 1;
     }
 
+    fclose(pOutput);
     return rcExit;
 }
 

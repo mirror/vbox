@@ -71,12 +71,12 @@ int main()
            )
         {
 #ifdef USE_CLOCK_MONOTONIC
-            printf("tv_nsec in the past: %ld.%09d < %ld.%09d - %u nsec\n",
+            printf("tv_nsec in the past: %ld.%09u < %ld.%09u - %d nsec\n",
                    (long)pCur->tv_sec,  (unsigned)pCur->tv_nsec,
                    (long)pPrev->tv_sec, (unsigned)pPrev->tv_nsec,
                    (unsigned)pPrev->tv_nsec - (unsigned)pCur->tv_nsec);
 #else
-            printf("tv_usec in the past: %ld.%06d < %ld.%06d - %u usec\n",
+            printf("tv_usec in the past: %ld.%06u < %ld.%06u - %d usec\n",
                    (long)pCur->tv_sec,  (unsigned)pCur->tv_usec,
                    (long)pPrev->tv_sec, (unsigned)pPrev->tv_usec,
                    (unsigned)pPrev->tv_usec - (unsigned)pCur->tv_usec);
@@ -88,11 +88,11 @@ int main()
         else if (pCur->tv_sec < pPrev->tv_sec)
         {
 #ifdef USE_CLOCK_MONOTONIC
-            printf("tv_sec  in the past: %ld.%09d < %ld.%09d\n",
+            printf("tv_sec  in the past: %ld.%09u < %ld.%09u\n",
                    (long)pCur->tv_sec,  (unsigned)pCur->tv_nsec,
                    (long)pPrev->tv_sec, (unsigned)pPrev->tv_nsec);
 #else
-            printf("tv_sec  in the past: %ld.%06d < %ld.%06d\n",
+            printf("tv_sec  in the past: %ld.%06u < %ld.%06u\n",
                    (long)pCur->tv_sec,  (unsigned)pCur->tv_usec,
                    (long)pPrev->tv_sec, (unsigned)pPrev->tv_usec);
 #endif
