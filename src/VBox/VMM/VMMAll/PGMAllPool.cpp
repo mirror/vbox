@@ -1150,7 +1150,7 @@ DECLEXPORT(VBOXSTRICTRC) pgmPoolAccessPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT 
      */
     bool fReused = false;
     bool fNotReusedNotForking = false;
-    if (    (   pPage->cModifications < cMaxModifications   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
+    if (    (   pPage->cModifications < cMaxModifications   /** @todo \#define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
              || pgmPoolIsPageLocked(pPage)
             )
         &&  !(fReused = pgmPoolMonitorIsReused(pVM, pVCpu, pRegFrame, pDis, pvFault))

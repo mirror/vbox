@@ -815,7 +815,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
                 {
                     this->lstFmtActive.append(lstFormats.at(i));
 
-                    /** @todo Put this into a #define / struct. */
+                    /** @todo Put this into a \#define / struct. */
                     if (!RTStrICmp(pszFormat, "text/uri-list"))
                     {
                         pFormatEtc[cFormatsActive].cfFormat = CF_HDROP;

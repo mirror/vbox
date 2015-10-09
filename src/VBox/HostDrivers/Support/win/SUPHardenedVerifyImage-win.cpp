@@ -1130,7 +1130,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
      * In one report by 'thor' the WinSxS resident comctl32.dll was owned by
      * SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS (with 4.3.16).
      */
-    /** @todo Since we're now allowing Builtin\Administrators after all, perhaps we
+    /** @todo Since we're now allowing Builtin\\Administrators after all, perhaps we
      *        could drop these system32 + winsxs hacks?? */
     if (   (pNtViRdr->fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
         && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(pNtViRdr->hFile, pwszName))

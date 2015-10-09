@@ -197,7 +197,7 @@ static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, s
        /* If its audio general setting, need to traverse to one child node.
         * /Devices/ichac97/0/LUN#0/Config/Audio
         */
-       if(!strncmp(pszPrefix, "AUDIO", 5)) /** @todo Use a #define */
+       if(!strncmp(pszPrefix, "AUDIO", 5)) /** @todo Use a \#define */
        {
             pCfgChildHandle = CFGMR3GetFirstChild(pCfgHandle);
             if(pCfgChildHandle)
