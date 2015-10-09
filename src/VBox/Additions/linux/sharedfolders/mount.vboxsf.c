@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- * vboxsf -- VirtualBox Guest Additions for Linux: mount(8) helper
+ * VirtualBox Guest Additions for Linux - mount(8) helper.
  *
  * Parses options provided by mount (or user directly)
  * Packs them into struct vbsfmount and passes to mount(2)
@@ -7,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,11 +21,10 @@
 
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+# define _GNU_SOURCE
 #endif
 
 /* #define DEBUG */
-#define DBG if (0)
 #include <errno.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -45,12 +45,8 @@
 
 #include "vbsfmount.h"
 
-/* Compile-time assertion.  If a == 0, we get two identical switch cases, which is not
-   allowed. */
-#define CT_ASSERT(a) \
-    do { \
-        switch(0) { case 0: case (a): ; } \
-    } while (0)
+#include <iprt/assert.h>
+
 
 #define PANIC_ATTR __attribute ((noreturn, __format__ (__printf__, 1, 2)))
 
@@ -128,8 +124,7 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
         handler_opt opt;
         int has_arg;
         const char *desc;
-    } handlers[]
-    =
+    } handlers[] =
     {
         {"rw",        HORW,        0, "mount read write (default)"},
         {"ro",        HORO,        0, "mount read only"},
@@ -336,9 +331,10 @@ convertcp(char *in_codeset, char *host_name, struct vbsf_mount_info_new *info)
 /**
   * Print out a usage message and exit.
   *
-  * @param name The name of the application
+  * @returns 1
+  * @param   argv0      The name of the application
   */
-static void __attribute ((noreturn)) usage(char *name)
+static int usage(char *argv0)
 {
     printf("Usage: %s [OPTIONS] NAME MOUNTPOINT\n"
            "Mount the VirtualBox shared folder NAME from the host system to MOUNTPOINT.\n"
@@ -348,7 +344,7 @@ static void __attribute ((noreturn)) usage(char *name)
            "  -n                    do not create an mtab entry\n"
            "  -s                    sloppy parsing, ignore unrecognized mount options\n"
            "  -o OPTION[,OPTION...] use the mount options specified\n"
-           "\n", name);
+           "\n", argv0);
     printf("Available mount options are:\n"
            "     rw                 mount writable (the default)\n"
            "     ro                 mount read only\n"
@@ -366,11 +362,11 @@ static void __attribute ((noreturn)) usage(char *name)
            "\n");
     printf("Less common used options:\n"
            "     noexec,exec,nodev,dev,nosuid,suid\n");
-    exit(1);
+    return EXIT_FAILURE;
 }
 
 int
-main (int argc, char **argv)
+main(int argc, char **argv)
 {
     int c;
     int err;
@@ -397,6 +393,8 @@ main (int argc, char **argv)
         "\0",  /* nls_name */
         NULL,  /* convertcp */
     };
+    AssertCompile(sizeof(uid_t) == sizeof(int));
+    AssertCompile(sizeof(gid_t) == sizeof(int));
 
     mntinf.nullchar = '\0';
     mntinf.signature[0] = VBSF_MOUNT_SIGNATURE_BYTE_0;
@@ -410,10 +408,6 @@ main (int argc, char **argv)
     if (!argv[0])
         argv[0] = "mount.vboxsf";
 
-    /* Compile-time assertions */
-    CT_ASSERT(sizeof(uid_t) == sizeof(int));
-    CT_ASSERT(sizeof(gid_t) == sizeof(int));
-
     while ((c = getopt(argc, argv, "rwsno:h")) != -1)
     {
         switch (c)
@@ -422,7 +416,7 @@ main (int argc, char **argv)
                 fprintf(stderr, "unknown option `%c:%#x'\n", c, c);
             case '?':
             case 'h':
-                usage(argv[0]);
+                return usage(argv[0]);
 
             case 'r':
                 opts.ronly = 1;
@@ -446,7 +440,7 @@ main (int argc, char **argv)
     }
 
     if (argc - optind < 2)
-        usage(argv[0]);
+        return usage(argv[0]);
 
     host_name = argv[optind];
     mount_point = argv[optind + 1];
@@ -550,3 +544,4 @@ main (int argc, char **argv)
 
     exit(EXIT_SUCCESS);
 }
+

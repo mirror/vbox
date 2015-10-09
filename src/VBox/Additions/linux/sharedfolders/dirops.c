@@ -627,9 +627,10 @@ fail0:
  * @param parent        inode of the directory
  * @param dentry        directory cache entry
  * @param mode          file mode
+ * @param excl          Possible O_EXCL...
  * @returns 0 on success, Linux error code otherwise
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0) || defined(DOXYGEN_RUNNING)
 static int sf_create(struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
 static int sf_create(struct inode *parent, struct dentry *dentry, umode_t mode, struct nameidata *nd)
