@@ -487,16 +487,6 @@ void renderspuPerformMakeCurrent(WindowInfo *window, GLint nativeWindow, Context
         render_spu.currentContext = context;
 #endif
         context->currentWindow = window;
-        if (!window)
-        {
-            crDebug("Render SPU: MakeCurrent invalid window id: %d", window->BltInfo.Base.id);
-            return;
-        }
-        if (!context)
-        {
-            crDebug("Render SPU: MakeCurrent invalid context id: %d", context->BltInfo.Base.id);
-            return;
-        }
 
         renderspu_SystemMakeCurrent( window, nativeWindow, context );
         if (!context->everCurrent) {
