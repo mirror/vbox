@@ -19645,11 +19645,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="LsiLogicSas"   value="8">
       <desc>A variant of the LsiLogic controller using SAS.</desc>
     </const>
-    <const name="NVMe"          value="9">
+    <const name="USB"           value="9">
+      <desc>Special USB based storage controller.</desc>
+    </const>
+    <const name="NVMe"          value="10">
       <desc>An NVMe storage controller.</desc>
     </const>
-    <const name="USB"           value="10">
-      <desc>Special USB based storage controller.</desc>
+    <const name="Last"          value="10">
+      <desc>Last valid value.</desc>
     </const>
   </enum>
 
