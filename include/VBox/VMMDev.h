@@ -743,6 +743,11 @@ AssertCompileSize(VBoxGuestFacilityType, 4);
 /**
  * The current guest status of a facility.
  * This needs to be kept in sync with AdditionsFacilityStatus of the Main API!
+ *
+ * @remarks r=bird: Pretty please, for future types like this, simply do a
+ *          linear allocation without any gaps.  This stuff is impossible work
+ *          efficiently with, let alone validate.  Applies to the other facility
+ *          enums too.
  */
 typedef enum
 {
