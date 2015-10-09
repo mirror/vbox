@@ -3347,7 +3347,7 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, void *pvUser, RTGCPHYS GCPhysAdd
 
 /**
  * @callback_method_impl{FNIOMMMIOFILL,
- * Legacy VGA memory (0xa0000 - 0xbffff) write hook, to be called from IOM and
+ * Legacy VGA memory (0xa0000 - 0xbffff) write hook\, to be called from IOM and
  * from the inside of VGADeviceGC.cpp. This is the advanced version of
  * vga_mem_writeb function.}
  */
@@ -3363,7 +3363,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
 /**
  * @callback_method_impl{FNIOMMMIOREAD, Legacy VGA memory (0xa0000 - 0xbffff)
- *                      read hook, to be called from IOM.}
+ *                      read hook\, to be called from IOM.}
  */
 PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
@@ -3418,7 +3418,7 @@ PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
 /**
  * @callback_method_impl{FNIOMMMIOWRITE, Legacy VGA memory (0xa0000 - 0xbffff)
- *                      write hook, to be called from IOM.}
+ *                      write hook\, to be called from IOM.}
  */
 PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
@@ -4286,8 +4286,8 @@ static void vgaInfoTextWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp,
 
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV,
- *      Dumps VGA memory formatted as ASCII text, no attributes. Only looks at the
- *      first page.}
+ *      Dumps VGA memory formatted as ASCII text\, no attributes. Only looks at
+ *      the first page.}
  */
 static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {

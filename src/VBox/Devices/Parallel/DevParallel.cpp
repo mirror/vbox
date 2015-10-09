@@ -300,7 +300,7 @@ static uint32_t parallel_ioport_read_ecp(void *opaque, uint32_t addr, int *pRC)
 
 #ifdef IN_RING3
 /**
- * @interface_methods_impl{PDMIHOSTPARALLELPORT,pfnNotifyInterrupt}
+ * @interface_method_impl{PDMIHOSTPARALLELPORT,pfnNotifyInterrupt}
  */
 static DECLCALLBACK(int) parallelR3NotifyInterrupt(PPDMIHOSTPARALLELPORT pInterface)
 {

@@ -597,7 +597,7 @@ typedef struct HDADRIVER
     HDAINPUTSTREAM                     MicIn;
     /** Stream for output. */
     HDAOUTPUTSTREAM                    Out;
-} HDADRIVER, *PHDADRIVER;
+} HDADRIVER;
 
 /**
  * ICH Intel HD Audio Controller state.

@@ -2550,11 +2550,11 @@ const VBOXHDDBACKEND g_QCowBackend =
     qcowSetParentModificationUuid,
     /* pfnDump */
     qcowDump,
-    /* pfnGetTimeStamp */
+    /* pfnGetTimestamp */
     NULL,
-    /* pfnGetParentTimeStamp */
+    /* pfnGetParentTimestamp */
     NULL,
-    /* pfnSetParentTimeStamp */
+    /* pfnSetParentTimestamp */
     NULL,
     /* pfnGetParentFilename */
     qcowGetParentFilename,

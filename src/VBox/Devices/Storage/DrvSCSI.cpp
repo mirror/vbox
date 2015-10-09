@@ -618,7 +618,7 @@ static void drvscsiDumpScsiRequest(PPDMSCSIREQUEST pRequest)
 }
 #endif
 
-/** @copydoc PDMISCSICONNECTOR::pfnSCSIRequestSend. */
+/** @interface_method_impl{PDMISCSICONNECTOR,pfnSCSIRequestSend} */
 static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest)
 {
     int rc;
@@ -648,7 +648,7 @@ static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMS
     return rc;
 }
 
-/** @copydoc PDMISCSICONNECTOR::pfnQueryLUNType. */
+/** @interface_method_impl{PDMISCSICONNECTOR,pfnQueryLUNType} */
 static DECLCALLBACK(int) drvscsiQueryLUNType(PPDMISCSICONNECTOR pInterface, uint32_t iLun, PPDMSCSILUNTYPE pLunType)
 {
     int rc;

@@ -312,7 +312,7 @@ static PVERIFIERCACHEENTRY  volatile g_pVerifierCacheTodoWvt = NULL;
 static PVERIFIERCACHEIMPORT volatile g_pVerifierCacheTodoImports = NULL;
 
 /** The windows path to dir \\SystemRoot\\System32 directory (technically
- *  this whatever \KnownDlls\KnownDllPath points to). */
+ *  this whatever \\KnownDlls\\KnownDllPath points to). */
 SUPSYSROOTDIRBUF            g_System32WinPath;
 /** @ */
 

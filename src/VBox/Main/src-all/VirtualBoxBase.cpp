@@ -556,7 +556,7 @@ HRESULT VirtualBoxBase::setErrorVrc(int vrc, const char *pcszMsgFmt, ...)
  *
  * @param   hrc             The COM status code to return.
  * @param   vrc             The VBox status code.
- * @return  Most likely @hrc, see setErrorInternal.
+ * @return  Most likely @a hrc, see setErrorInternal.
  *
  * @sa      VirtualBoxBase::setError(HRESULT)
  */
@@ -581,7 +581,7 @@ HRESULT VirtualBoxBase::setErrorBoth(HRESULT hrc, int vrc)
  * @param   vrc             The VBox status code.
  * @param   pcszMsgFmt      Error message format string.
  * @param   ...             Argument specified in the @a pcszMsgFmt
- * @return  Most likely @hrc, see setErrorInternal.
+ * @return  Most likely @a hrc, see setErrorInternal.
  *
  * @sa      VirtualBoxBase::setError(HRESULT, const char *, ...)
  */

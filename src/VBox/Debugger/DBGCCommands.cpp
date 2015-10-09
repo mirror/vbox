@@ -725,7 +725,7 @@ static void dbgcCmdHelpSummary(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, uint32_t *pcHit
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'help' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'help' command.}
  */
 static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -839,7 +839,7 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'quit', 'exit' and 'bye' commands. }
+ * @callback_method_impl{FNDBGCCMD, The 'quit'\, 'exit' and 'bye' commands. }
  */
 static DECLCALLBACK(int) dbgcCmdQuit(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -853,7 +853,7 @@ static DECLCALLBACK(int) dbgcCmdQuit(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'stop' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'stop' command.}
  */
 static DECLCALLBACK(int) dbgcCmdStop(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -878,7 +878,7 @@ static DECLCALLBACK(int) dbgcCmdStop(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'echo' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'echo' command.}
  */
 static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -899,7 +899,7 @@ static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'runscript' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'runscript' command.}
  */
 static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -980,7 +980,7 @@ static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'detect' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'detect' command.}
  */
 static DECLCALLBACK(int) dbgcCmdDetect(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1011,7 +1011,7 @@ static DECLCALLBACK(int) dbgcCmdDetect(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'dmesg' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'dmesg' command.}
  */
 static DECLCALLBACK(int) dbgcCmdDmesg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1071,7 +1071,7 @@ static DECLCALLBACK(int) dbgcCmdDmesg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'cpu' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'cpu' command.}
  */
 static DECLCALLBACK(int) dbgcCmdCpu(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1105,7 +1105,7 @@ static DECLCALLBACK(int) dbgcCmdCpu(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'info' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'info' command.}
  */
 static DECLCALLBACK(int) dbgcCmdInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1137,7 +1137,7 @@ static DECLCALLBACK(int) dbgcCmdInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'log' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'log' command.}
  */
 static DECLCALLBACK(int) dbgcCmdLog(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1162,7 +1162,7 @@ static DECLCALLBACK(int) dbgcCmdLog(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'logdest' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'logdest' command.}
  */
 static DECLCALLBACK(int) dbgcCmdLogDest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1187,7 +1187,7 @@ static DECLCALLBACK(int) dbgcCmdLogDest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'logflags' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'logflags' command.}
  */
 static DECLCALLBACK(int) dbgcCmdLogFlags(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1213,7 +1213,7 @@ static DECLCALLBACK(int) dbgcCmdLogFlags(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'logflush' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'logflush' command.}
  */
 static DECLCALLBACK(int) dbgcCmdLogFlush(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1228,7 +1228,7 @@ static DECLCALLBACK(int) dbgcCmdLogFlush(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'format' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'format' command.}
  */
 static DECLCALLBACK(int) dbgcCmdFormat(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1355,7 +1355,7 @@ static DECLCALLBACK(int) dbgcCmdFormat(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'loadimage' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'loadimage' command.}
  */
 static DECLCALLBACK(int) dbgcCmdLoadImage(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1406,7 +1406,7 @@ static DECLCALLBACK(int) dbgcCmdLoadImage(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'loadmap' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'loadmap' command.}
  */
 static DECLCALLBACK(int) dbgcCmdLoadMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1466,7 +1466,7 @@ static DECLCALLBACK(int) dbgcCmdLoadMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'loadseg' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'loadseg' command.}
  */
 static DECLCALLBACK(int) dbgcCmdLoadSeg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1515,7 +1515,7 @@ static DECLCALLBACK(int) dbgcCmdLoadSeg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'unload' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'unload' command.}
  */
 static DECLCALLBACK(int) dbgcCmdUnload(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1543,7 +1543,7 @@ static DECLCALLBACK(int) dbgcCmdUnload(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'set' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'set' command.}
  */
 static DECLCALLBACK(int) dbgcCmdSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1632,7 +1632,7 @@ static DECLCALLBACK(int) dbgcCmdSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'unset' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'unset' command.}
  */
 static DECLCALLBACK(int) dbgcCmdUnset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1675,7 +1675,7 @@ static DECLCALLBACK(int) dbgcCmdUnset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'loadvars' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'loadvars' command.}
  */
 static DECLCALLBACK(int) dbgcCmdLoadVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1725,7 +1725,7 @@ static DECLCALLBACK(int) dbgcCmdLoadVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'showvars' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'showvars' command.}
  */
 static DECLCALLBACK(int) dbgcCmdShowVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1746,7 +1746,7 @@ static DECLCALLBACK(int) dbgcCmdShowVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'loadplugin' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'loadplugin' command.}
  */
 static DECLCALLBACK(int) dbgcCmdLoadPlugIn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1778,7 +1778,7 @@ static DECLCALLBACK(int) dbgcCmdLoadPlugIn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'unload' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'unload' command.}
  */
 static DECLCALLBACK(int) dbgcCmdUnloadPlugIn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1803,7 +1803,7 @@ static DECLCALLBACK(int) dbgcCmdUnloadPlugIn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'harakiri' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'harakiri' command.}
  */
 static DECLCALLBACK(int) dbgcCmdHarakiri(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1815,7 +1815,7 @@ static DECLCALLBACK(int) dbgcCmdHarakiri(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'writecore' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'writecore' command.}
  */
 static DECLCALLBACK(int) dbgcCmdWriteCore(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1845,7 +1845,7 @@ static DECLCALLBACK(int) dbgcCmdWriteCore(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * @callback_method_impl{The randu32() function implementation.}
+ * @callback_method_impl{FNDBGCFUNC, The randu32() function implementation.}
  */
 static DECLCALLBACK(int) dbgcFuncRandU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)

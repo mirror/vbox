@@ -460,27 +460,27 @@ typedef struct VBOXHDDBACKEND
      *
      * @returns VBox status code.
      * @param   pBackendData    Opaque state data for this image.
-     * @param   pTimeStamp      Where to store the time stamp.
+     * @param   pTimestamp      Where to store the time stamp.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetTimeStamp, (void *pBackendData, PRTTIMESPEC pTimeStamp));
+    DECLR3CALLBACKMEMBER(int, pfnGetTimestamp, (void *pBackendData, PRTTIMESPEC pTimestamp));
 
     /**
      * Get the parent time stamp of a disk image. May be NULL.
      *
      * @returns VBox status code.
      * @param   pBackendData    Opaque state data for this image.
-     * @param   pTimeStamp      Where to store the time stamp.
+     * @param   pTimestamp      Where to store the time stamp.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetParentTimeStamp, (void *pBackendData, PRTTIMESPEC pTimeStamp));
+    DECLR3CALLBACKMEMBER(int, pfnGetParentTimestamp, (void *pBackendData, PRTTIMESPEC pTimestamp));
 
     /**
      * Set the parent time stamp of a disk image. May be NULL.
      *
      * @returns VBox status code.
      * @param   pBackendData    Opaque state data for this image.
-     * @param   pTimeStamp      Where to get the time stamp from.
+     * @param   pTimestamp      Where to get the time stamp from.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetParentTimeStamp, (void *pBackendData, PCRTTIMESPEC pTimeStamp));
+    DECLR3CALLBACKMEMBER(int, pfnSetParentTimestamp, (void *pBackendData, PCRTTIMESPEC pTimestamp));
 
     /**
      * Get the relative path to parent image. May be NULL.

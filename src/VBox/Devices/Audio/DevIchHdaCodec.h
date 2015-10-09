@@ -21,9 +21,9 @@
 /** The ICH HDA (Intel) controller. */
 typedef struct HDASTATE *PHDASTATE;
 /** The ICH HDA (Intel) codec state. */
-typedef struct HDACODEC HDACODEC, *PHDACODEC;
+typedef struct HDACODEC *PHDACODEC;
 /** The HDA host driver backend. */
-typedef struct HDADRIVER HDADRIVER, *PHDADRIVER;
+typedef struct HDADRIVER *PHDADRIVER;
 typedef struct PDMIAUDIOCONNECTOR *PPDMIAUDIOCONNECTOR;
 typedef struct PDMAUDIOGSTSTRMOUT *PPDMAUDIOGSTSTRMOUT;
 typedef struct PDMAUDIOGSTSTRMIN  *PPDMAUDIOGSTSTRMIN;
@@ -43,7 +43,7 @@ typedef FNHDACODECVERBPROCESSOR **PPFNHDACODECVERBPROCESSOR;
 typedef struct CODECVERB
 {
     uint32_t verb;
-    /* operation bitness mask */
+    /** operation bitness mask */
     uint32_t mask;
     PFNHDACODECVERBPROCESSOR pfn;
 } CODECVERB;
@@ -62,9 +62,9 @@ typedef TYPE CODECNODE *PCODECNODE;
 
 typedef enum
 {
-    PI_INDEX = 0,    /* PCM in */
-    PO_INDEX,        /* PCM out */
-    MC_INDEX,        /* Mic in */
+    PI_INDEX = 0,    /**< PCM in */
+    PO_INDEX,        /**< PCM out */
+    MC_INDEX,        /**< Mic in */
     LAST_INDEX
 } ENMSOUNDSOURCE;
 
@@ -75,7 +75,7 @@ typedef struct HDACODEC
     uint16_t                u16DeviceId;
     uint8_t                 u8BSKU;
     uint8_t                 u8AssemblyId;
-    /* List of assigned HDA drivers to this codec.
+    /** List of assigned HDA drivers to this codec.
      * A driver only can be assigned to one codec
      * at a time. */
     RTLISTANCHOR            lstDrv;
@@ -122,7 +122,7 @@ typedef struct HDACODEC
     /** These callbacks are set by codec implementation to answer debugger requests. */
     DECLR3CALLBACKMEMBER(void, pfnDbgListNodes, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));
     DECLR3CALLBACKMEMBER(void, pfnDbgSelector, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));
-} CODECState;
+} HDACODEC;
 
 int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, uint16_t uLUN, PCFGMNODE pCfg);
 int hdaCodecDestruct(PHDACODEC pThis);

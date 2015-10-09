@@ -10844,7 +10844,7 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
 
 /**
  * Deletes implicit differencing hard disks created either by
- * #createImplicitDiffs() or by #AttachDevice() and rolls back mMediaData.
+ * #i_createImplicitDiffs() or by #AttachDevice() and rolls back mMediaData.
  *
  * Note that to delete hard disks created by #AttachDevice() this method is
  * called from #fixupMedia() when the changes are rolled back.

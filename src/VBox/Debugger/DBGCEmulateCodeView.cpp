@@ -377,7 +377,7 @@ const uint32_t g_cCmdsCodeView = RT_ELEMENTS(g_aCmdsCodeView);
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'go' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'go' command.}
  */
 static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -399,7 +399,7 @@ static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUV
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'ba' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'ba' command.}
  */
 static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -496,7 +496,7 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'bc' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'bc' command.}
  */
 static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -548,7 +548,7 @@ static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'bd' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'bd' command.}
  */
 static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -590,7 +590,7 @@ static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'be' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'be' command.}
  */
 static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -720,7 +720,7 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PC
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'bl' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'bl' command.}
  */
 static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -740,7 +740,7 @@ static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'bp' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'bp' command.}
  */
 static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -800,7 +800,7 @@ static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'br' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'br' command.}
  */
 static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -901,7 +901,7 @@ static void dbgcCmdUnassambleHelpListNear(PUVM pUVM, PDBGCCMDHLP pCmdHlp, RTDBGA
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'u' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'u' command.}
  */
 static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1124,7 +1124,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'ls' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'ls' command.}
  */
 static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1313,7 +1313,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'r' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'r' command.}
  */
 static DECLCALLBACK(int) dbgcCmdReg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1325,7 +1325,7 @@ static DECLCALLBACK(int) dbgcCmdReg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, Common worker for the dbgcCmdReg*()
+ * @callback_method_impl{FNDBGCCMD, Common worker for the dbgcCmdReg*()
  *                       commands.}
  */
 static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs,
@@ -1433,8 +1433,8 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * @interface_method_impl{FNDBCCMD,
- * The 'rg', 'rg64' and 'rg32' commands, worker for 'r'.}
+ * @callback_method_impl{FNDBGCCMD,
+ *      The 'rg'\, 'rg64' and 'rg32' commands\, worker for 'r'.}
  */
 static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1534,7 +1534,7 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'rh' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'rh' command.}
  */
 static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1584,7 +1584,7 @@ static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'rt' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'rt' command.}
  */
 static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1597,7 +1597,7 @@ static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 't' command.}
+ * @callback_method_impl{FNDBGCCMD, The 't' command.}
  */
 static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1615,7 +1615,7 @@ static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'k', 'kg' and 'kh' commands.}
+ * @callback_method_impl{FNDBGCCMD, The 'k'\, 'kg' and 'kh' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -2010,7 +2010,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'dg', 'dga', 'dl' and 'dla' commands.}
+ * @callback_method_impl{FNDBGCCMD, The 'dg'\, 'dga'\, 'dl' and 'dla' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -2123,7 +2123,7 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'di' and 'dia' commands.}
+ * @callback_method_impl{FNDBGCCMD, The 'di' and 'dia' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -2237,8 +2237,8 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'da', 'dq', 'dd', 'dw' and 'db'
- *                       commands.}
+ * @callback_method_impl{FNDBGCCMD,
+ *      The 'da'\, 'dq'\, 'dd'\, 'dw' and 'db' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -2498,8 +2498,8 @@ static RTHCPHYS dbgcGetShadowPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, boo
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'dpd', 'dpda', 'dpdb', 'dpdg' and 'dpdh'
- *                       commands.}
+ * @callback_method_impl{FNDBGCCMD,
+ *      The 'dpd'\, 'dpda'\, 'dpdb'\, 'dpdg' and 'dpdh' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -2752,7 +2752,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'dpdb' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'dpdb' command.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -2767,7 +2767,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'dph*' commands and main part of 'm'.}
+ * @callback_method_impl{FNDBGCCMD, The 'dph*' commands and main part of 'm'.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -2883,7 +2883,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pC
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'dpg*' commands.}
+ * @callback_method_impl{FNDBGCCMD, The 'dpg*' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -3104,7 +3104,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'dptb' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'dptb' command.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -3119,7 +3119,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pC
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'dt' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'dt' command.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -3445,7 +3445,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'm' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'm' command.}
  */
 static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -3593,7 +3593,7 @@ int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t c
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'eb', 'ew', 'ed' and 'eq' commands.}
+ * @callback_method_impl{FNDBGCCMD, The 'eb'\, 'ew'\, 'ed' and 'eq' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -3856,7 +3856,7 @@ static int dbgcCmdWorkerSearchMem(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pAdd
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 's' command.}
+ * @callback_method_impl{FNDBGCCMD, The 's' command.}
  */
 static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -3880,7 +3880,7 @@ static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 's?' command.}
+ * @callback_method_impl{FNDBGCCMD, The 's?' command.}
  */
 static DECLCALLBACK(int) dbgcCmdSearchMemType(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -3949,7 +3949,7 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'ln' (listnear) command.}
+ * @callback_method_impl{FNDBGCCMD, The 'ln' (listnear) command.}
  */
 static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -4001,7 +4001,7 @@ static bool dbgcCmdListModuleMatch(const char *pszName, PCDBGCVAR paArgs, unsign
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'ln' (list near) command.}
+ * @callback_method_impl{FNDBGCCMD, The 'ln' (list near) command.}
  */
 static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -4137,7 +4137,7 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
 
 /**
- * @callback_method_impl{Reads a unsigned 8-bit value.}
+ * @callback_method_impl{FNDBGCFUNC, Reads a unsigned 8-bit value.}
  */
 static DECLCALLBACK(int) dbgcFuncReadU8(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                         PDBGCVAR pResult)
@@ -4158,7 +4158,7 @@ static DECLCALLBACK(int) dbgcFuncReadU8(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * @callback_method_impl{Reads a unsigned 16-bit value.}
+ * @callback_method_impl{FNDBGCFUNC, Reads a unsigned 16-bit value.}
  */
 static DECLCALLBACK(int) dbgcFuncReadU16(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
@@ -4179,7 +4179,7 @@ static DECLCALLBACK(int) dbgcFuncReadU16(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * @callback_method_impl{Reads a unsigned 32-bit value.}
+ * @callback_method_impl{FNDBGCFUNC, Reads a unsigned 32-bit value.}
  */
 static DECLCALLBACK(int) dbgcFuncReadU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
@@ -4200,7 +4200,7 @@ static DECLCALLBACK(int) dbgcFuncReadU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * @callback_method_impl{Reads a unsigned 64-bit value.}
+ * @callback_method_impl{FNDBGCFUNC, Reads a unsigned 64-bit value.}
  */
 static DECLCALLBACK(int) dbgcFuncReadU64(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
@@ -4221,7 +4221,7 @@ static DECLCALLBACK(int) dbgcFuncReadU64(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * @callback_method_impl{Reads a unsigned pointer-sized value.}
+ * @callback_method_impl{FNDBGCFUNC, Reads a unsigned pointer-sized value.}
  */
 static DECLCALLBACK(int) dbgcFuncReadPtr(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
@@ -4238,7 +4238,7 @@ static DECLCALLBACK(int) dbgcFuncReadPtr(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * @callback_method_impl{The hi(value) function implementation.}
+ * @callback_method_impl{FNDBGCFUNC, The hi(value) function implementation.}
  */
 static DECLCALLBACK(int) dbgcFuncHi(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                     PDBGCVAR pResult)
@@ -4266,7 +4266,7 @@ static DECLCALLBACK(int) dbgcFuncHi(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM 
 
 
 /**
- * @callback_method_impl{The low(value) function implementation.}
+ * @callback_method_impl{FNDBGCFUNC, The low(value) function implementation.}
  */
 static DECLCALLBACK(int) dbgcFuncLow(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                      PDBGCVAR pResult)
@@ -4294,7 +4294,7 @@ static DECLCALLBACK(int) dbgcFuncLow(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM
 
 
 /**
- * @callback_method_impl{The low(value) function implementation.}
+ * @callback_method_impl{FNDBGCFUNC,The low(value) function implementation.}
  */
 static DECLCALLBACK(int) dbgcFuncNot(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                      PDBGCVAR pResult)

@@ -3284,11 +3284,11 @@ const VBOXHDDBACKEND g_VDIBackend =
     vdiSetParentModificationUuid,
     /* pfnDump */
     vdiDump,
-    /* pfnGetTimeStamp */
+    /* pfnGetTimestamp */
     NULL,
-    /* pfnGetParentTimeStamp */
+    /* pfnGetParentTimestamp */
     NULL,
-    /* pfnSetParentTimeStamp */
+    /* pfnSetParentTimestamp */
     NULL,
     /* pfnGetParentFilename */
     NULL,

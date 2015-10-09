@@ -536,7 +536,7 @@ static const char *vmsvgaFIFOCmdToString(uint32_t u32Cmd)
 
 #ifdef IN_RING3
 /**
- * @interface_method_impl{PDMIDISPLAYPORT::pfnSetViewport}
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnSetViewport}
  */
 DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
 {

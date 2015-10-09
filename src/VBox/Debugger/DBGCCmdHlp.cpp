@@ -621,7 +621,7 @@ static DECLCALLBACK(int) dbgcHlpMemWrite(PDBGCCMDHLP pCmdHlp, const void *pvBuff
 
 
 /**
- * @interface_method_impl{DBGCCMDHLP,pfnHlpExec}
+ * @interface_method_impl{DBGCCMDHLP,pfnExec}
  */
 static DECLCALLBACK(int) dbgcHlpExec(PDBGCCMDHLP pCmdHlp, const char *pszExpr, ...)
 {
@@ -657,7 +657,7 @@ static DECLCALLBACK(int) dbgcHlpExec(PDBGCCMDHLP pCmdHlp, const char *pszExpr, .
 
 
 /**
- * @copydoc DBGCCMDHLP::pfnEvalV
+ * @interface_method_impl{DBGCCMDHLP,pfnEvalV}
  */
 static DECLCALLBACK(int) dbgcHlpEvalV(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, const char *pszExpr, va_list va)
 {
@@ -675,7 +675,7 @@ static DECLCALLBACK(int) dbgcHlpEvalV(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, con
 
 
 /**
- * @copydoc DBGCCMDHLP::pfnFailV
+ * @interface_method_impl{DBGCCMDHLP,pfnFailV}
  */
 static DECLCALLBACK(int) dbgcHlpFailV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *pszFormat, va_list va)
 {
@@ -698,7 +698,7 @@ static DECLCALLBACK(int) dbgcHlpFailV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const
 
 
 /**
- * @copydoc DBGCCMDHLP::pfnFailV
+ * @interface_method_impl{DBGCCMDHLP,pfnFailV}
  */
 static DECLCALLBACK(int) dbgcHlpFailRcV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int rc, const char *pszFormat, va_list va)
 {
@@ -723,7 +723,7 @@ static DECLCALLBACK(int) dbgcHlpFailRcV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int
 
 
 /**
- * @copydoc DBGCCMDHLP::pfnParserError
+ * @interface_method_impl{DBGCCMDHLP,pfnParserError}
  */
 static DECLCALLBACK(int) dbgcHlpParserError(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int iArg, const char *pszExpr, unsigned iLine)
 {

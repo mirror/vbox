@@ -1221,7 +1221,7 @@ static void usbMsdSuspendOrPowerOff(PPDMUSBINS pUsbIns)
 /* -=-=-=-=- Saved State -=-=-=-=- */
 
 /**
- * @copydoc FNUSBSSMSAVEPREP
+ * @callback_method_impl{FNSSMUSBSAVEPREP}
  */
 static DECLCALLBACK(int) usbMsdSavePrep(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM)
 {
@@ -1234,7 +1234,7 @@ static DECLCALLBACK(int) usbMsdSavePrep(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM)
 }
 
 /**
- * @copydoc FNUSBSSMLOADPREP
+ * @callback_method_impl{FNSSMUSBLOADPREP}
  */
 static DECLCALLBACK(int) usbMsdLoadPrep(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM)
 {
@@ -1247,7 +1247,7 @@ static DECLCALLBACK(int) usbMsdLoadPrep(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM)
 }
 
 /**
- * @copydoc FNUSBSSMLIVEEXEC
+ * @callback_method_impl{FNSSMUSBLIVEEXEC}
  */
 static DECLCALLBACK(int) usbMsdLiveExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
@@ -1259,7 +1259,7 @@ static DECLCALLBACK(int) usbMsdLiveExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uin
 }
 
 /**
- * @copydoc FNUSBSSMSAVEEXEC
+ * @callback_method_impl{FNSSMUSBSAVEEXEC}
  */
 static DECLCALLBACK(int) usbMsdSaveExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM)
 {
@@ -1302,7 +1302,7 @@ static DECLCALLBACK(int) usbMsdSaveExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM)
 }
 
 /**
- * @copydoc FNUSBSSMLOADEXEC
+ * @callback_method_impl{FNSSMUSBLOADEXEC}
  */
 static DECLCALLBACK(int) usbMsdLoadExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
@@ -1399,7 +1399,7 @@ static DECLCALLBACK(int) usbMsdLoadExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uin
 
 
 /**
- * @copydoc PDMUSBREG::pfnUrbReap
+ * @interface_method_impl{PDMUSBREG,pfnUrbReap}
  */
 static DECLCALLBACK(PVUSBURB) usbMsdUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMillies)
 {
@@ -1432,7 +1432,7 @@ static DECLCALLBACK(PVUSBURB) usbMsdUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMi
 
 
 /**
- * @copydoc PDMUSBREG::pfnWakeup
+ * @interface_method_impl{PDMUSBREG,pfnWakeup}
  */
 static DECLCALLBACK(int) usbMsdWakeup(PPDMUSBINS pUsbIns)
 {
@@ -1444,7 +1444,7 @@ static DECLCALLBACK(int) usbMsdWakeup(PPDMUSBINS pUsbIns)
 
 
 /**
- * @copydoc PDMUSBREG::pfnUrbCancel
+ * @interface_method_impl{PDMUSBREG,pfnUrbCancel}
  */
 static DECLCALLBACK(int) usbMsdUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
@@ -1992,7 +1992,7 @@ static int usbMsdHandleDefaultPipe(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb)
 
 
 /**
- * @copydoc PDMUSBREG::pfnQueue
+ * @interface_method_impl{PDMUSBREG,pfnQueue}
  */
 static DECLCALLBACK(int) usbMsdQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
@@ -2032,7 +2032,7 @@ static DECLCALLBACK(int) usbMsdQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbClearHaltedEndpoint
+ * @interface_method_impl{PDMUSBREG,pfnUsbClearHaltedEndpoint}
  */
 static DECLCALLBACK(int) usbMsdUsbClearHaltedEndpoint(PPDMUSBINS pUsbIns, unsigned uEndpoint)
 {
@@ -2051,7 +2051,7 @@ static DECLCALLBACK(int) usbMsdUsbClearHaltedEndpoint(PPDMUSBINS pUsbIns, unsign
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbSetInterface
+ * @interface_method_impl{PDMUSBREG,pfnUsbSetInterface}
  */
 static DECLCALLBACK(int) usbMsdUsbSetInterface(PPDMUSBINS pUsbIns, uint8_t bInterfaceNumber, uint8_t bAlternateSetting)
 {
@@ -2062,7 +2062,7 @@ static DECLCALLBACK(int) usbMsdUsbSetInterface(PPDMUSBINS pUsbIns, uint8_t bInte
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbSetConfiguration
+ * @interface_method_impl{PDMUSBREG,pfnUsbSetConfiguration}
  */
 static DECLCALLBACK(int) usbMsdUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t bConfigurationValue,
                                                    const void *pvOldCfgDesc, const void *pvOldIfState, const void *pvNewCfgDesc)
@@ -2085,7 +2085,7 @@ static DECLCALLBACK(int) usbMsdUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbGetDescriptorCache
+ * @interface_method_impl{PDMUSBREG,pfnUsbGetDescriptorCache}
  */
 static DECLCALLBACK(PCPDMUSBDESCCACHE) usbMsdUsbGetDescriptorCache(PPDMUSBINS pUsbIns)
 {
@@ -2101,7 +2101,7 @@ static DECLCALLBACK(PCPDMUSBDESCCACHE) usbMsdUsbGetDescriptorCache(PPDMUSBINS pU
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbReset
+ * @interface_method_impl{PDMUSBREG,pfnUsbReset}
  */
 static DECLCALLBACK(int) usbMsdUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 {
@@ -2117,7 +2117,7 @@ static DECLCALLBACK(int) usbMsdUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 
 
 /**
- * @copydoc PDMUSBREG::pfnVMSuspend
+ * @interface_method_impl{PDMUSBREG,pfnVMSuspend}
  */
 static DECLCALLBACK(void) usbMsdVMSuspend(PPDMUSBINS pUsbIns)
 {
@@ -2127,7 +2127,7 @@ static DECLCALLBACK(void) usbMsdVMSuspend(PPDMUSBINS pUsbIns)
 
 
 /**
- * @copydoc PDMUSBREG::pfnVMSuspend
+ * @interface_method_impl{PDMUSBREG,pfnVMSuspend}
  */
 static DECLCALLBACK(void) usbMsdVMPowerOff(PPDMUSBINS pUsbIns)
 {
@@ -2137,7 +2137,7 @@ static DECLCALLBACK(void) usbMsdVMPowerOff(PPDMUSBINS pUsbIns)
 
 
 /**
- * @copydoc PDMUSBREG::pfnDriverAttach
+ * @interface_method_impl{PDMUSBREG,pfnDriverAttach}
  */
 static DECLCALLBACK(int) usbMsdDriverAttach(PPDMUSBINS pUsbIns, unsigned iLUN, uint32_t fFlags)
 {
@@ -2192,7 +2192,7 @@ static DECLCALLBACK(int) usbMsdDriverAttach(PPDMUSBINS pUsbIns, unsigned iLUN, u
 
 
 /**
- * @copydoc PDMUSBREG::pfnDriverDetach
+ * @interface_method_impl{PDMUSBREG,pfnDriverDetach}
  */
 static DECLCALLBACK(void) usbMsdDriverDetach(PPDMUSBINS pUsbIns, unsigned iLUN, uint32_t fFlags)
 {
@@ -2249,7 +2249,7 @@ static DECLCALLBACK(void) usbMsdVMReset(PPDMUSBINS pUsbIns)
 
 
 /**
- * @copydoc PDMUSBREG::pfnDestruct
+ * @interface_method_impl{PDMUSBREG,pfnDestruct}
  */
 static DECLCALLBACK(void) usbMsdDestruct(PPDMUSBINS pUsbIns)
 {
@@ -2284,7 +2284,7 @@ static DECLCALLBACK(void) usbMsdDestruct(PPDMUSBINS pUsbIns)
 
 
 /**
- * @copydoc PDMUSBREG::pfnConstruct
+ * @interface_method_impl{PDMUSBREG,pfnConstruct}
  */
 static DECLCALLBACK(int) usbMsdConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFGMNODE pCfg, PCFGMNODE pCfgGlobal)
 {

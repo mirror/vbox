@@ -2413,7 +2413,7 @@ typedef struct PDMIVMMDEVPORT
      *
      * @returns VBox status code
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   xabs            New absolute X position
+     * @param   xAbs            New absolute X position
      * @param   yAbs            New absolute Y position
      */
     DECLR3CALLBACKMEMBER(int, pfnSetAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, int32_t xAbs, int32_t yAbs));

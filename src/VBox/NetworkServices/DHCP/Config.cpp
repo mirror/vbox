@@ -176,16 +176,18 @@ const std::string tagXMLTimeAttributeExpiration = "expiration";
 const std::string tagXMLLeaseOptions = "Options";
 
 /**
- * <Leases version="1.0">
- *   <Lease mac="" network=""/>
- *    <Address value=""/>
- *    <Time issued="" expiration=""/>
- *    <options>
- *      <option name="" type=""/>
- *      </option>
- *    </options>
- *   </Lease>
- * </Leases>
+ * @verbatim
+   <Leases version="1.0">
+     <Lease mac="" network=""/>
+      <Address value=""/>
+      <Time issued="" expiration=""/>
+      <options>
+        <option name="" type=""/>
+        </option>
+      </options>
+     </Lease>
+   </Leases>
+   @endverbatim
  */
 int ConfigurationManager::loadFromFile(const com::Utf8Str& leaseStorageFileName)
 {

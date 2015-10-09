@@ -588,7 +588,9 @@ static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, 
 
 /* -=-=-=-=- IHostDeviceConnector -=-=-=-=- */
 
-/** @copydoc PDMICHARCONNECTOR::pfnWrite */
+/**
+ * @interface_method_impl{PDMIHOSTPARALLELCONNECTOR,pfnWrite}
+ */
 static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t cbWrite, PDMPARALLELPORTMODE enmMode)
 {
     PPDMDRVINS          pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
@@ -631,7 +633,7 @@ static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterf
 }
 
 /**
- * @interface_method_impl{PDMIBASE,pfnRead}
+ * @interface_method_impl{PDMIHOSTPARALLELCONNECTOR,pfnRead}
  */
 static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf, size_t cbRead, PDMPARALLELPORTMODE enmMode)
 {
@@ -674,6 +676,9 @@ static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterfa
     return rc;
 }
 
+/**
+ * @interface_method_impl{PDMIHOSTPARALLELCONNECTOR,pfnSetPortDirection}
+ */
 static DECLCALLBACK(int) drvHostParallelSetPortDirection(PPDMIHOSTPARALLELCONNECTOR pInterface, bool fForward)
 {
     PDRVHOSTPARALLEL    pThis   = RT_FROM_MEMBER(pInterface, DRVHOSTPARALLEL, CTX_SUFF(IHostParallelConnector));
@@ -700,7 +705,7 @@ static DECLCALLBACK(int) drvHostParallelSetPortDirection(PPDMIHOSTPARALLELCONNEC
 }
 
 /**
- * @interface_method_impl{PDMIBASE,pfnWriteControl}
+ * @interface_method_impl{PDMIHOSTPARALLELCONNECTOR,pfnWriteControl}
  */
 static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t fReg)
 {
@@ -728,7 +733,7 @@ static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR 
 
 
 /**
- * @interface_method_impl{PDMIBASE,pfnReadControl}
+ * @interface_method_impl{PDMIHOSTPARALLELCONNECTOR,pfnReadControl}
  */
 static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {
@@ -760,7 +765,7 @@ static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR p
 }
 
 /**
- * @interface_method_impl{PDMIBASE,pfnReadStatus}
+ * @interface_method_impl{PDMIHOSTPARALLELCONNECTOR,pfnReadStatus}
  */
 static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {

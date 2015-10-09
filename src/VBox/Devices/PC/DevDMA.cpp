@@ -826,52 +826,52 @@ static void dmaIORegister(PPDMDEVINS pDevIns, bool fHighPage)
     }
 }
 
-static void dmaSaveController(PSSMHANDLE pSSMHandle, DMAControl *dc)
+static void dmaSaveController(PSSMHANDLE pSSM, DMAControl *dc)
 {
     int         chidx;
 
     /* Save controller state... */
-    SSMR3PutU8(pSSMHandle, dc->u8Command);
-    SSMR3PutU8(pSSMHandle, dc->u8Mask);
-    SSMR3PutU8(pSSMHandle, dc->fHiByte);
-    SSMR3PutU32(pSSMHandle, dc->is16bit);
-    SSMR3PutU8(pSSMHandle, dc->u8Status);
-    SSMR3PutU8(pSSMHandle, dc->u8Temp);
-    SSMR3PutU8(pSSMHandle, dc->u8ModeCtr);
-    SSMR3PutMem(pSSMHandle, &dc->au8Page, sizeof(dc->au8Page));
-    SSMR3PutMem(pSSMHandle, &dc->au8PageHi, sizeof(dc->au8PageHi));
+    SSMR3PutU8(pSSM, dc->u8Command);
+    SSMR3PutU8(pSSM, dc->u8Mask);
+    SSMR3PutU8(pSSM, dc->fHiByte);
+    SSMR3PutU32(pSSM, dc->is16bit);
+    SSMR3PutU8(pSSM, dc->u8Status);
+    SSMR3PutU8(pSSM, dc->u8Temp);
+    SSMR3PutU8(pSSM, dc->u8ModeCtr);
+    SSMR3PutMem(pSSM, &dc->au8Page, sizeof(dc->au8Page));
+    SSMR3PutMem(pSSM, &dc->au8PageHi, sizeof(dc->au8PageHi));
 
     /* ...and all four of its channels. */
     for (chidx = 0; chidx < 4; ++chidx)
     {
         DMAChannel  *ch = &dc->ChState[chidx];
 
-        SSMR3PutU16(pSSMHandle, ch->u16CurAddr);
-        SSMR3PutU16(pSSMHandle, ch->u16CurCount);
-        SSMR3PutU16(pSSMHandle, ch->u16BaseAddr);
-        SSMR3PutU16(pSSMHandle, ch->u16BaseCount);
-        SSMR3PutU8(pSSMHandle, ch->u8Mode);
+        SSMR3PutU16(pSSM, ch->u16CurAddr);
+        SSMR3PutU16(pSSM, ch->u16CurCount);
+        SSMR3PutU16(pSSM, ch->u16BaseAddr);
+        SSMR3PutU16(pSSM, ch->u16BaseCount);
+        SSMR3PutU8(pSSM, ch->u8Mode);
     }
 }
 
-static int dmaLoadController(PSSMHANDLE pSSMHandle, DMAControl *dc, int version)
+static int dmaLoadController(PSSMHANDLE pSSM, DMAControl *dc, int version)
 {
     uint8_t     u8val;
     uint32_t    u32val;
     int         chidx;
 
-    SSMR3GetU8(pSSMHandle, &dc->u8Command);
-    SSMR3GetU8(pSSMHandle, &dc->u8Mask);
-    SSMR3GetU8(pSSMHandle, &u8val);
+    SSMR3GetU8(pSSM, &dc->u8Command);
+    SSMR3GetU8(pSSM, &dc->u8Mask);
+    SSMR3GetU8(pSSM, &u8val);
     dc->fHiByte = !!u8val;
-    SSMR3GetU32(pSSMHandle, &dc->is16bit);
+    SSMR3GetU32(pSSM, &dc->is16bit);
     if (version > DMA_SAVESTATE_OLD)
     {
-        SSMR3GetU8(pSSMHandle, &dc->u8Status);
-        SSMR3GetU8(pSSMHandle, &dc->u8Temp);
-        SSMR3GetU8(pSSMHandle, &dc->u8ModeCtr);
-        SSMR3GetMem(pSSMHandle, &dc->au8Page, sizeof(dc->au8Page));
-        SSMR3GetMem(pSSMHandle, &dc->au8PageHi, sizeof(dc->au8PageHi));
+        SSMR3GetU8(pSSM, &dc->u8Status);
+        SSMR3GetU8(pSSM, &dc->u8Temp);
+        SSMR3GetU8(pSSM, &dc->u8ModeCtr);
+        SSMR3GetMem(pSSM, &dc->au8Page, sizeof(dc->au8Page));
+        SSMR3GetMem(pSSM, &dc->au8PageHi, sizeof(dc->au8PageHi));
     }
 
     for (chidx = 0; chidx < 4; ++chidx)
@@ -881,55 +881,55 @@ static int dmaLoadController(PSSMHANDLE pSSMHandle, DMAControl *dc, int version)
         if (version == DMA_SAVESTATE_OLD)
         {
             /* Convert from 17-bit to 16-bit format. */
-            SSMR3GetU32(pSSMHandle, &u32val);
+            SSMR3GetU32(pSSM, &u32val);
             ch->u16CurAddr = u32val >> dc->is16bit;
-            SSMR3GetU32(pSSMHandle, &u32val);
+            SSMR3GetU32(pSSM, &u32val);
             ch->u16CurCount = u32val >> dc->is16bit;
         }
         else
         {
-            SSMR3GetU16(pSSMHandle, &ch->u16CurAddr);
-            SSMR3GetU16(pSSMHandle, &ch->u16CurCount);
+            SSMR3GetU16(pSSM, &ch->u16CurAddr);
+            SSMR3GetU16(pSSM, &ch->u16CurCount);
         }
-        SSMR3GetU16(pSSMHandle, &ch->u16BaseAddr);
-        SSMR3GetU16(pSSMHandle, &ch->u16BaseCount);
-        SSMR3GetU8(pSSMHandle, &ch->u8Mode);
+        SSMR3GetU16(pSSM, &ch->u16BaseAddr);
+        SSMR3GetU16(pSSM, &ch->u16BaseCount);
+        SSMR3GetU8(pSSM, &ch->u8Mode);
         /* Convert from old save state. */
         if (version == DMA_SAVESTATE_OLD)
         {
             /* Remap page register contents. */
-            SSMR3GetU8(pSSMHandle, &u8val);
+            SSMR3GetU8(pSSM, &u8val);
             dc->au8Page[DMACX2PG(chidx)] = u8val;
-            SSMR3GetU8(pSSMHandle, &u8val);
+            SSMR3GetU8(pSSM, &u8val);
             dc->au8PageHi[DMACX2PG(chidx)] = u8val;
             /* Throw away dack, eop. */
-            SSMR3GetU8(pSSMHandle, &u8val);
-            SSMR3GetU8(pSSMHandle, &u8val);
+            SSMR3GetU8(pSSM, &u8val);
+            SSMR3GetU8(pSSM, &u8val);
         }
     }
     return 0;
 }
 
 /** @callback_method_impl{FNSSMDEVSAVEEXEC}  */
-static DECLCALLBACK(int) dmaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) dmaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     DMAState *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
 
-    dmaSaveController(pSSMHandle, &pThis->DMAC[0]);
-    dmaSaveController(pSSMHandle, &pThis->DMAC[1]);
+    dmaSaveController(pSSM, &pThis->DMAC[0]);
+    dmaSaveController(pSSM, &pThis->DMAC[1]);
     return VINF_SUCCESS;
 }
 
 /** @callback_method_impl{FNSSMDEVLOADEXEC}  */
-static DECLCALLBACK(int) dmaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) dmaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     DMAState *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
 
     AssertMsgReturn(uVersion <= DMA_SAVESTATE_CURRENT, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    dmaLoadController(pSSMHandle, &pThis->DMAC[0], uVersion);
-    return dmaLoadController(pSSMHandle, &pThis->DMAC[1], uVersion);
+    dmaLoadController(pSSM, &pThis->DMAC[0], uVersion);
+    return dmaLoadController(pSSM, &pThis->DMAC[1], uVersion);
 }
 
 /**

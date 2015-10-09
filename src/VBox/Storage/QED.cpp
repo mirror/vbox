@@ -2695,11 +2695,11 @@ const VBOXHDDBACKEND g_QedBackend =
     qedSetParentModificationUuid,
     /* pfnDump */
     qedDump,
-    /* pfnGetTimeStamp */
+    /* pfnGetTimestamp */
     NULL,
-    /* pfnGetParentTimeStamp */
+    /* pfnGetParentTimestamp */
     NULL,
-    /* pfnSetParentTimeStamp */
+    /* pfnSetParentTimestamp */
     NULL,
     /* pfnGetParentFilename */
     qedGetParentFilename,

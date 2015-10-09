@@ -1222,11 +1222,11 @@ const VBOXHDDBACKEND g_RawBackend =
     rawSetParentModificationUuid,
     /* pfnDump */
     rawDump,
-    /* pfnGetTimeStamp */
+    /* pfnGetTimestamp */
     NULL,
-    /* pfnGetParentTimeStamp */
+    /* pfnGetParentTimestamp */
     NULL,
-    /* pfnSetParentTimeStamp */
+    /* pfnSetParentTimestamp */
     NULL,
     /* pfnGetParentFilename */
     NULL,

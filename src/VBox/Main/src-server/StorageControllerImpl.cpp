@@ -705,11 +705,13 @@ bool StorageController::i_getBootable() const
 }
 
 /**
- * Returns S_OK if the given port and device numbers are within the range supported
- * by this controller. If not, it sets an error and returns E_INVALIDARG.
- * @param ulPort
- * @param ulDevice
- * @return
+ * Checks the validity of a port and device number.
+ *
+ * @retval S_OK If the given port and device numbers are within the range
+ *         supported by this controller.
+ * @retval E_INVALIDARG If not. Sets an error.
+ * @param aControllerPort   Controller port number.
+ * @param aDevice           Device number.
  */
 HRESULT StorageController::i_checkPortAndDeviceValid(LONG aControllerPort,
                                                      LONG aDevice)

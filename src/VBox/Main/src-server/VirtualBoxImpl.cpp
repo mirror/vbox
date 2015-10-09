@@ -3328,17 +3328,17 @@ HRESULT VirtualBox::i_convertMachineGroups(const std::vector<com::Utf8Str> aMach
  *
  * @note Locks the media tree for reading.
  */
-HRESULT VirtualBox::i_findHardDiskById(const Guid &id,
+HRESULT VirtualBox::i_findHardDiskById(const Guid &aId,
                                        bool aSetError,
                                        ComObjPtr<Medium> *aHardDisk /*= NULL*/)
 {
-    AssertReturn(!id.isZero(), E_INVALIDARG);
+    AssertReturn(!aId.isZero(), E_INVALIDARG);
 
     // we use the hard disks map, but it is protected by the
     // hard disk _list_ lock handle
     AutoReadLock alock(m->allHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    HardDiskMap::const_iterator it = m->mapHardDisks.find(id);
+    HardDiskMap::const_iterator it = m->mapHardDisks.find(aId);
     if (it != m->mapHardDisks.end())
     {
         if (aHardDisk)
@@ -3349,7 +3349,7 @@ HRESULT VirtualBox::i_findHardDiskById(const Guid &id,
     if (aSetError)
         return setError(VBOX_E_OBJECT_NOT_FOUND,
                         tr("Could not find an open hard disk with UUID {%RTuuid}"),
-                        id.raw());
+                        aId.raw());
 
     return VBOX_E_OBJECT_NOT_FOUND;
 }

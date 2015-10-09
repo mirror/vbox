@@ -821,7 +821,7 @@ static DECLCALLBACK(int) serialNotifyBreak(PPDMICHARPORT pInterface)
 /* -=-=-=-=-=-=-=-=- Timer callbacks -=-=-=-=-=-=-=-=- */
 
 /**
- * @callback_method_tmpl{FNTMTIMERDEV, Fifo timer function.}
+ * @callback_method_impl{FNTMTIMERDEV, Fifo timer function.}
  */
 static DECLCALLBACK(void) serialFifoTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
@@ -835,7 +835,7 @@ static DECLCALLBACK(void) serialFifoTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
 }
 
 /**
- * @callback_method_tmpl{FNTMTIMERDEV, Transmit timer function.}
+ * @callback_method_impl{FNTMTIMERDEV, Transmit timer function.}
  *
  * Just retry to transmit a character.
  */
@@ -899,7 +899,7 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
 /* -=-=-=-=-=-=-=-=- Saved State -=-=-=-=-=-=-=-=- */
 
 /**
- * @callback_method_tmpl{FNSSMDEVLIVEEXEC}
+ * @callback_method_impl{FNSSMDEVLIVEEXEC}
  */
 static DECLCALLBACK(int) serialLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
@@ -911,7 +911,7 @@ static DECLCALLBACK(int) serialLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 
 
 /**
- * @callback_method_tmpl{FNSSMDEVSAVEEXEC}
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
 static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -953,7 +953,7 @@ static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 
 /**
- * @callback_method_tmpl{FNSSMDEVLOADEXEC}
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
 static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
@@ -1074,7 +1074,7 @@ static DECLCALLBACK(int) serialIOPortRegionMap(PPCIDEVICE pPciDev, int iRegion, 
 /* -=-=-=-=-=-=-=-=- PDMIBASE on LUN#1 -=-=-=-=-=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMIBASE, pfnQueryInterface}
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) serialQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
@@ -1088,7 +1088,7 @@ static DECLCALLBACK(void *) serialQueryInterface(PPDMIBASE pInterface, const cha
 /* -=-=-=-=-=-=-=-=- PDMDEVREG -=-=-=-=-=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMDEVREG, pfnRelocate}
+ * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
 static DECLCALLBACK(void) serialRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
@@ -1099,7 +1099,7 @@ static DECLCALLBACK(void) serialRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 
 
 /**
- * @interface_method_impl{PDMDEVREG, pfnReset}
+ * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) serialReset(PPDMDEVINS pDevIns)
 {
@@ -1134,7 +1134,7 @@ static DECLCALLBACK(void) serialReset(PPDMDEVINS pDevIns)
 
 
 /**
- * @interface_method_impl{PDMDEVREG, pfnDestruct}
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) serialDestruct(PPDMDEVINS pDevIns)
 {
@@ -1150,7 +1150,7 @@ static DECLCALLBACK(int) serialDestruct(PPDMDEVINS pDevIns)
 
 
 /**
- * @interface_method_impl{PDMDEVREG, pfnConstruct}
+ * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {

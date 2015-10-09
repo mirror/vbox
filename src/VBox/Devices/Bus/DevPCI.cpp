@@ -749,7 +749,7 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE p
 
 
 /**
- * @interface_method_impl{PDMPCIBUSREG,pfnSetIrq}
+ * @interface_method_impl{PDMPCIBUSREG,pfnSetIrqR3}
  */
 PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
@@ -1773,7 +1773,7 @@ static int pciR3RegisterDeviceInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDe
 
 
 /**
- * @interface_method_impl{PDMPCIBUSREG,pfnRegister}
+ * @interface_method_impl{PDMPCIBUSREG,pfnRegisterR3}
  */
 static DECLCALLBACK(int) pciR3Register(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
 {
@@ -2334,7 +2334,7 @@ const PDMDEVREG g_DevicePCI =
 /* -=-=-=-=-=- The PCI bridge specific bits -=-=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMPCIBUSREG,pfnSetIrq}
+ * @interface_method_impl{PDMPCIBUSREG,pfnSetIrqR3}
  */
 PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
@@ -2457,7 +2457,7 @@ static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
 
 
 /**
- * @interface_method_impl{PDMPCIBUSREG,pfnRegister}
+ * @interface_method_impl{PDMPCIBUSREG,pfnRegisterR3}
  */
 static DECLCALLBACK(int) pcibridgeR3RegisterDevice(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
 {
@@ -2482,7 +2482,7 @@ static DECLCALLBACK(int) pcibridgeR3RegisterDevice(PPDMDEVINS pDevIns, PPCIDEVIC
 
 
 /**
- * @interface_method_impl{PDMDEVREG, pfnReset}
+ * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) pcibridgeR3Reset(PPDMDEVINS pDevIns)
 {
@@ -2496,7 +2496,7 @@ static DECLCALLBACK(void) pcibridgeR3Reset(PPDMDEVINS pDevIns)
 
 
 /**
- * @interface_method_impl{PDMDEVREG, pfnRelocate}
+ * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
 static DECLCALLBACK(void) pcibridgeR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {

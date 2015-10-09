@@ -755,7 +755,7 @@ typedef struct INIPSOCKET
 
 static DECLCALLBACK(int) drvvdINIPFlush(VDSOCKET Sock);
 
-/** @copydoc VDINTERFACETCPNET::pfnSocketCreate */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSocketCreate} */
 static DECLCALLBACK(int) drvvdINIPSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
 {
     PINIPSOCKET pSocketInt = NULL;
@@ -778,7 +778,7 @@ static DECLCALLBACK(int) drvvdINIPSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
     return VERR_NO_MEMORY;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSocketCreate */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSocketCreate} */
 static DECLCALLBACK(int) drvvdINIPSocketDestroy(VDSOCKET Sock)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -787,7 +787,7 @@ static DECLCALLBACK(int) drvvdINIPSocketDestroy(VDSOCKET Sock)
     return VINF_SUCCESS;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnClientConnect */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnClientConnect} */
 static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
                                                 RTMSINTERVAL cMillies)
 {
@@ -860,7 +860,7 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
     return rc;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnClientClose */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnClientClose} */
 static DECLCALLBACK(int) drvvdINIPClientClose(VDSOCKET Sock)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -870,7 +870,7 @@ static DECLCALLBACK(int) drvvdINIPClientClose(VDSOCKET Sock)
     return VINF_SUCCESS; /** @todo real solution needed */
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnIsClientConnected */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnIsClientConnected} */
 static DECLCALLBACK(bool) drvvdINIPIsClientConnected(VDSOCKET Sock)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -878,7 +878,7 @@ static DECLCALLBACK(bool) drvvdINIPIsClientConnected(VDSOCKET Sock)
     return pSocketInt->hSock != INT32_MAX;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSelectOne */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSelectOne} */
 static DECLCALLBACK(int) drvvdINIPSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -904,7 +904,7 @@ static DECLCALLBACK(int) drvvdINIPSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies
     return VERR_NET_CONNECTION_REFUSED; /** @todo real solution needed */
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnRead */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnRead} */
 static DECLCALLBACK(int) drvvdINIPRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -952,7 +952,7 @@ static DECLCALLBACK(int) drvvdINIPRead(VDSOCKET Sock, void *pvBuffer, size_t cbB
     return VINF_SUCCESS;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnWrite */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnWrite} */
 static DECLCALLBACK(int) drvvdINIPWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -976,7 +976,7 @@ static DECLCALLBACK(int) drvvdINIPWrite(VDSOCKET Sock, const void *pvBuffer, siz
     return VINF_SUCCESS;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSgWrite */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSgWrite} */
 static DECLCALLBACK(int) drvvdINIPSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
 {
     int rc = VINF_SUCCESS;
@@ -996,7 +996,7 @@ static DECLCALLBACK(int) drvvdINIPSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
     return rc;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnFlush */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnFlush} */
 static DECLCALLBACK(int) drvvdINIPFlush(VDSOCKET Sock)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -1010,7 +1010,7 @@ static DECLCALLBACK(int) drvvdINIPFlush(VDSOCKET Sock)
     return VINF_SUCCESS;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSetSendCoalescing */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSetSendCoalescing} */
 static DECLCALLBACK(int) drvvdINIPSetSendCoalescing(VDSOCKET Sock, bool fEnable)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -1021,7 +1021,7 @@ static DECLCALLBACK(int) drvvdINIPSetSendCoalescing(VDSOCKET Sock, bool fEnable)
     return VINF_SUCCESS;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnGetLocalAddress */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnGetLocalAddress} */
 static DECLCALLBACK(int) drvvdINIPGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -1058,7 +1058,7 @@ static DECLCALLBACK(int) drvvdINIPGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAdd
     return VERR_NET_OPERATION_NOT_SUPPORTED;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnGetPeerAddress */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnGetPeerAddress} */
 static DECLCALLBACK(int) drvvdINIPGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
 {
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -1095,14 +1095,14 @@ static DECLCALLBACK(int) drvvdINIPGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr
     return VERR_NET_OPERATION_NOT_SUPPORTED;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSelectOneEx */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSelectOneEx} */
 static DECLCALLBACK(int) drvvdINIPSelectOneEx(VDSOCKET Sock, uint32_t fEvents, uint32_t *pfEvents, RTMSINTERVAL cMillies)
 {
     AssertMsgFailed(("Not supported!\n"));
     return VERR_NOT_SUPPORTED;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnPoke */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnPoke} */
 static DECLCALLBACK(int) drvvdINIPPoke(VDSOCKET Sock)
 {
     AssertMsgFailed(("Not supported!\n"));
@@ -1142,7 +1142,7 @@ typedef struct VDSOCKETINT
 /** Pollset id of the pipe. */
 #define VDSOCKET_POLL_ID_PIPE   1
 
-/** @copydoc VDINTERFACETCPNET::pfnSocketCreate */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSocketCreate} */
 static DECLCALLBACK(int) drvvdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
 {
     int rc = VINF_SUCCESS;
@@ -1199,7 +1199,7 @@ static DECLCALLBACK(int) drvvdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
     return rc;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSocketDestroy */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSocketDestroy} */
 static DECLCALLBACK(int) drvvdTcpSocketDestroy(VDSOCKET Sock)
 {
     int rc = VINF_SUCCESS;
@@ -1231,7 +1231,7 @@ static DECLCALLBACK(int) drvvdTcpSocketDestroy(VDSOCKET Sock)
     return rc;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnClientConnect */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnClientConnect} */
 static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
                                                RTMSINTERVAL cMillies)
 {
@@ -1259,7 +1259,7 @@ static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAdd
     return rc;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnClientClose */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnClientClose} */
 static DECLCALLBACK(int) drvvdTcpClientClose(VDSOCKET Sock)
 {
     int rc = VINF_SUCCESS;
@@ -1277,7 +1277,7 @@ static DECLCALLBACK(int) drvvdTcpClientClose(VDSOCKET Sock)
     return rc;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnIsClientConnected */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnIsClientConnected} */
 static DECLCALLBACK(bool) drvvdTcpIsClientConnected(VDSOCKET Sock)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1285,7 +1285,7 @@ static DECLCALLBACK(bool) drvvdTcpIsClientConnected(VDSOCKET Sock)
     return pSockInt->hSocket != NIL_RTSOCKET;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSelectOne */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSelectOne} */
 static DECLCALLBACK(int) drvvdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1293,7 +1293,7 @@ static DECLCALLBACK(int) drvvdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies)
     return RTTcpSelectOne(pSockInt->hSocket, cMillies);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnRead */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnRead} */
 static DECLCALLBACK(int) drvvdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1301,7 +1301,7 @@ static DECLCALLBACK(int) drvvdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBu
     return RTTcpRead(pSockInt->hSocket, pvBuffer, cbBuffer, pcbRead);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnWrite */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnWrite} */
 static DECLCALLBACK(int) drvvdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1309,7 +1309,7 @@ static DECLCALLBACK(int) drvvdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size
     return RTTcpWrite(pSockInt->hSocket, pvBuffer, cbBuffer);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSgWrite */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSgWrite} */
 static DECLCALLBACK(int) drvvdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1317,7 +1317,7 @@ static DECLCALLBACK(int) drvvdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
     return RTTcpSgWrite(pSockInt->hSocket, pSgBuf);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnReadNB */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnReadNB} */
 static DECLCALLBACK(int) drvvdTcpReadNB(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1325,7 +1325,7 @@ static DECLCALLBACK(int) drvvdTcpReadNB(VDSOCKET Sock, void *pvBuffer, size_t cb
     return RTTcpReadNB(pSockInt->hSocket, pvBuffer, cbBuffer, pcbRead);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnWriteNB */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnWriteNB} */
 static DECLCALLBACK(int) drvvdTcpWriteNB(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1333,7 +1333,7 @@ static DECLCALLBACK(int) drvvdTcpWriteNB(VDSOCKET Sock, const void *pvBuffer, si
     return RTTcpWriteNB(pSockInt->hSocket, pvBuffer, cbBuffer, pcbWritten);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSgWriteNB */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSgWriteNB} */
 static DECLCALLBACK(int) drvvdTcpSgWriteNB(VDSOCKET Sock, PRTSGBUF pSgBuf, size_t *pcbWritten)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1341,7 +1341,7 @@ static DECLCALLBACK(int) drvvdTcpSgWriteNB(VDSOCKET Sock, PRTSGBUF pSgBuf, size_
     return RTTcpSgWriteNB(pSockInt->hSocket, pSgBuf, pcbWritten);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnFlush */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnFlush} */
 static DECLCALLBACK(int) drvvdTcpFlush(VDSOCKET Sock)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1349,7 +1349,7 @@ static DECLCALLBACK(int) drvvdTcpFlush(VDSOCKET Sock)
     return RTTcpFlush(pSockInt->hSocket);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSetSendCoalescing */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSetSendCoalescing} */
 static DECLCALLBACK(int) drvvdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1357,7 +1357,7 @@ static DECLCALLBACK(int) drvvdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable)
     return RTTcpSetSendCoalescing(pSockInt->hSocket, fEnable);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnGetLocalAddress */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnGetLocalAddress} */
 static DECLCALLBACK(int) drvvdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1365,7 +1365,7 @@ static DECLCALLBACK(int) drvvdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr
     return RTTcpGetLocalAddress(pSockInt->hSocket, pAddr);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnGetPeerAddress */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnGetPeerAddress} */
 static DECLCALLBACK(int) drvvdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
 {
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
@@ -1447,7 +1447,7 @@ static DECLCALLBACK(int) drvvdTcpSelectOneExPoll(VDSOCKET Sock, uint32_t fEvents
     return rc;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSelectOneEx */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnSelectOneEx} */
 static DECLCALLBACK(int) drvvdTcpSelectOneExNoPoll(VDSOCKET Sock, uint32_t fEvents,
                                                    uint32_t *pfEvents, RTMSINTERVAL cMillies)
 {
@@ -1587,7 +1587,7 @@ static DECLCALLBACK(int) drvvdTcpSelectOneExNoPoll(VDSOCKET Sock, uint32_t fEven
     return rc;
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnPoke */
+/** @interface_method_impl{VDINTERFACETCPNET,pfnPoke} */
 static DECLCALLBACK(int) drvvdTcpPoke(VDSOCKET Sock)
 {
     int rc = VINF_SUCCESS;
@@ -1633,7 +1633,7 @@ static int drvvdKeyCheckPrereqs(PVBOXDISK pThis)
 *   Media interface methods                                                                                                      *
 *********************************************************************************************************************************/
 
-/** @copydoc PDMIMEDIA::pfnRead */
+/** @interface_method_impl{PDMIMEDIA,pfnRead} */
 static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
                                    uint64_t off, void *pvBuf, size_t cbRead)
 {
@@ -1687,7 +1687,7 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnRead */
+/** @interface_method_impl{PDMIMEDIA,pfnRead} */
 static DECLCALLBACK(int) drvvdReadPcBios(PPDMIMEDIA pInterface,
                                          uint64_t off, void *pvBuf, size_t cbRead)
 {
@@ -1742,7 +1742,7 @@ static DECLCALLBACK(int) drvvdReadPcBios(PPDMIMEDIA pInterface,
 }
 
 
-/** @copydoc PDMIMEDIA::pfnWrite */
+/** @interface_method_impl{PDMIMEDIA,pfnWrite} */
 static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
                                     uint64_t off, const void *pvBuf,
                                     size_t cbWrite)
@@ -1768,7 +1768,7 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnFlush */
+/** @interface_method_impl{PDMIMEDIA,pfnFlush} */
 static DECLCALLBACK(int) drvvdFlush(PPDMIMEDIA pInterface)
 {
     LogFlowFunc(("\n"));
@@ -1778,7 +1778,7 @@ static DECLCALLBACK(int) drvvdFlush(PPDMIMEDIA pInterface)
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnMerge */
+/** @interface_method_impl{PDMIMEDIA,pfnMerge} */
 static DECLCALLBACK(int) drvvdMerge(PPDMIMEDIA pInterface,
                                     PFNSIMPLEPROGRESS pfnProgress,
                                     void *pvUser)
@@ -1813,7 +1813,7 @@ static DECLCALLBACK(int) drvvdMerge(PPDMIMEDIA pInterface,
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnSetKey */
+/** @interface_method_impl{PDMIMEDIA,pfnSetSecKeyIf} */
 static DECLCALLBACK(int) drvvdSetSecKeyIf(PPDMIMEDIA pInterface, PPDMISECKEY pIfSecKey, PPDMISECKEYHLP pIfSecKeyHlp)
 {
     LogFlowFunc(("\n"));
@@ -1862,7 +1862,7 @@ static DECLCALLBACK(int) drvvdSetSecKeyIf(PPDMIMEDIA pInterface, PPDMISECKEY pIf
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnGetSize */
+/** @interface_method_impl{PDMIMEDIA,pfnGetSize} */
 static DECLCALLBACK(uint64_t) drvvdGetSize(PPDMIMEDIA pInterface)
 {
     LogFlowFunc(("\n"));
@@ -1872,7 +1872,7 @@ static DECLCALLBACK(uint64_t) drvvdGetSize(PPDMIMEDIA pInterface)
     return cb;
 }
 
-/** @copydoc PDMIMEDIA::pfnGetSectorSize */
+/** @interface_method_impl{PDMIMEDIA,pfnGetSectorSize} */
 static DECLCALLBACK(uint32_t) drvvdGetSectorSize(PPDMIMEDIA pInterface)
 {
     LogFlowFunc(("\n"));
@@ -1882,7 +1882,7 @@ static DECLCALLBACK(uint32_t) drvvdGetSectorSize(PPDMIMEDIA pInterface)
     return cb;
 }
 
-/** @copydoc PDMIMEDIA::pfnIsReadOnly */
+/** @interface_method_impl{PDMIMEDIA,pfnIsReadOnly} */
 static DECLCALLBACK(bool) drvvdIsReadOnly(PPDMIMEDIA pInterface)
 {
     LogFlowFunc(("\n"));
@@ -1892,7 +1892,7 @@ static DECLCALLBACK(bool) drvvdIsReadOnly(PPDMIMEDIA pInterface)
     return f;
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosGetPCHSGeometry */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosGetPCHSGeometry} */
 static DECLCALLBACK(int) drvvdBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
                                                   PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
@@ -1916,7 +1916,7 @@ static DECLCALLBACK(int) drvvdBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosSetPCHSGeometry */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosSetPCHSGeometry} */
 static DECLCALLBACK(int) drvvdBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
                                                   PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
@@ -1934,7 +1934,7 @@ static DECLCALLBACK(int) drvvdBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosGetLCHSGeometry */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosGetLCHSGeometry} */
 static DECLCALLBACK(int) drvvdBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
                                                   PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
@@ -1958,7 +1958,7 @@ static DECLCALLBACK(int) drvvdBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosSetLCHSGeometry */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosSetLCHSGeometry} */
 static DECLCALLBACK(int) drvvdBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
                                                   PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
@@ -1976,7 +1976,7 @@ static DECLCALLBACK(int) drvvdBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnGetUuid */
+/** @interface_method_impl{PDMIMEDIA,pfnGetUuid} */
 static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     LogFlowFunc(("\n"));
@@ -1996,7 +1996,7 @@ static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges,
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnIoBufAlloc */
+/** @interface_method_impl{PDMIMEDIA,pfnIoBufAlloc} */
 static DECLCALLBACK(int) drvvdIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
 {
     LogFlowFunc(("\n"));
@@ -2023,7 +2023,7 @@ static DECLCALLBACK(int) drvvdIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void 
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnIoBufFree */
+/** @interface_method_impl{PDMIMEDIA,pfnIoBufFree} */
 static DECLCALLBACK(int) drvvdIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
 {
     LogFlowFunc(("\n"));

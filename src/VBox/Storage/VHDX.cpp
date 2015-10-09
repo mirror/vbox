@@ -2529,11 +2529,11 @@ const VBOXHDDBACKEND g_VhdxBackend =
     vhdxSetParentModificationUuid,
     /* pfnDump */
     vhdxDump,
-    /* pfnGetTimeStamp */
+    /* pfnGetTimestamp */
     NULL,
-    /* pfnGetParentTimeStamp */
+    /* pfnGetParentTimestamp */
     NULL,
-    /* pfnSetParentTimeStamp */
+    /* pfnSetParentTimestamp */
     NULL,
     /* pfnGetParentFilename */
     NULL,

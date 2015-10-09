@@ -6668,11 +6668,11 @@ const VBOXHDDBACKEND g_VmdkBackend =
     vmdkSetParentModificationUuid,
     /* pfnDump */
     vmdkDump,
-    /* pfnGetTimeStamp */
+    /* pfnGetTimestamp */
     NULL,
-    /* pfnGetParentTimeStamp */
+    /* pfnGetParentTimestamp */
     NULL,
-    /* pfnSetParentTimeStamp */
+    /* pfnSetParentTimestamp */
     NULL,
     /* pfnGetParentFilename */
     NULL,

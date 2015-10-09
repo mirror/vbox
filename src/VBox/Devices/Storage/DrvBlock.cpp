@@ -817,7 +817,9 @@ static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, const 
 
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
-/** @copydoc FNPDMDRVDETACH. */
+/**
+ * @callback_method_impl{FNPDMDRVDETACH}
+ */
 static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
     PDRVBLOCK pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);

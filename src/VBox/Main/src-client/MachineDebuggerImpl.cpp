@@ -405,7 +405,7 @@ HRESULT MachineDebugger::setCSAMEnabled(BOOL aCSAMEnabled)
  * Returns the log enabled / disabled status.
  *
  * @returns COM status code
- * @param   aEnabled     address of result variable
+ * @param   aLogEnabled     address of result variable
  */
 HRESULT MachineDebugger::getLogEnabled(BOOL *aLogEnabled)
 {
@@ -425,7 +425,7 @@ HRESULT MachineDebugger::getLogEnabled(BOOL *aLogEnabled)
  * Enables or disables logging.
  *
  * @returns COM status code
- * @param   aEnabled    The new code log state.
+ * @param   aLogEnabled    The new code log state.
  */
 HRESULT MachineDebugger::setLogEnabled(BOOL aLogEnabled)
 {
@@ -867,7 +867,7 @@ static DECLCALLBACK(size_t) MachineDebuggerInfoOutput(void *pvArg, const char *p
 }
 
 /**
- * @interface_method_impl{DBGFINFOHLP, pfnPrintfV}
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintfV}
  */
 static DECLCALLBACK(void) MachineDebuggerInfoPrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list va)
 {
@@ -875,7 +875,7 @@ static DECLCALLBACK(void) MachineDebuggerInfoPrintfV(PCDBGFINFOHLP pHlp, const c
 }
 
 /**
- * @interface_method_impl{DBGFINFOHLP, pfnPrintf}
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintf}
  */
 static DECLCALLBACK(void) MachineDebuggerInfoPrintf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
 {

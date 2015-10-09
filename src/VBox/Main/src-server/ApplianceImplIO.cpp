@@ -617,7 +617,7 @@ static DECLCALLBACK(int) fssRdOnly_GetSize(void *pvUser, void *pvStorage, uint64
     return rc;
 }
 
-/** @interface_method_impl{VDINTERFACEIO,pfnRead}  */
+/** @interface_method_impl{VDINTERFACEIO,pfnReadSync}  */
 static DECLCALLBACK(int) fssRdOnly_ReadSync(void *pvUser, void *pvStorage, uint64_t off, void *pvBuf,
                                             size_t cbToRead, size_t *pcbRead)
 {

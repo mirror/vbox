@@ -1531,7 +1531,7 @@ static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, const 
 /* -=-=-=-=-=- Mouse: IMousePort  -=-=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMIMOUSEPORT, pfnPutEvent}
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEvent}
  */
 static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t dx,
                                           int32_t dy, int32_t dz, int32_t dw,
@@ -1548,7 +1548,7 @@ static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t dx,
 }
 
 /**
- * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventAbs}
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventAbs}
  */
 static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface,
                                              uint32_t x, uint32_t y, int32_t dz,
@@ -1559,7 +1559,7 @@ static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface,
 }
 
 /**
- * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventMultiTouch}
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventMultiTouch}
  */
 static DECLCALLBACK(int) kbdMousePutEventMultiTouch(PPDMIMOUSEPORT pInterface,
                                                     uint8_t cContacts,

@@ -1289,11 +1289,11 @@ const VBOXHDDBACKEND g_ParallelsBackend =
     parallelsSetParentModificationUuid,
     /* pfnDump */
     parallelsDump,
-    /* pfnGetTimeStamp */
+    /* pfnGetTimestamp */
     NULL,
-    /* pfnGetParentTimeStamp */
+    /* pfnGetParentTimestamp */
     NULL,
-    /* pfnSetParentTimeStamp */
+    /* pfnSetParentTimestamp */
     NULL,
     /* pfnGetParentFilename */
     NULL,

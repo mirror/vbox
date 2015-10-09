@@ -695,7 +695,7 @@ DECLHIDDEN(void) suplibHardenedPrintF(const char *pszFormat, ...)
 
 
 /**
- * @copydoc RTPathStripFilename.
+ * @copydoc RTPathStripFilename
  */
 static void suplibHardenedPathStripFilename(char *pszPath)
 {

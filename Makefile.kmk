@@ -466,6 +466,7 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/Devices/Bus \
 	src/VBox/Devices/Graphics \
 	src/VBox/Devices/Graphics/BIOS \
+	src/VBox/Devices/Graphics/shaderlib \
 	src/VBox/Devices/Input \
 	src/VBox/Devices/Networking \
 	src/VBox/Devices/PC \
@@ -578,10 +579,6 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/Additions/WINNT/Graphics/Wine_new/libWine \
 	src/VBox/Additions/WINNT/Graphics/Wine_new/switcher \
 	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox \
-	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox/libWineStub \
-	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox/libWineStub/include \
-	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox/libWineStub/include/backup \
-	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox/libWineStub/include/wine \
 	src/VBox/Additions/WINNT/Graphics/Wine_new/wined3d \
 	src/VBox/Additions/WINNT/Installer \
 	src/VBox/Additions/WINNT/Installer/ISO \

@@ -7132,7 +7132,7 @@ static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
 /* -=-=-=-=- Saved State -=-=-=-=- */
 
 /**
- * @copydoc FNDEVSSMSAVEPREP
+ * @callback_method_impl{FNSSMDEVSAVEPREP}
  */
 static DECLCALLBACK(int) ahciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -7141,7 +7141,7 @@ static DECLCALLBACK(int) ahciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
- * @copydoc FNDEVSSMLOADPREP
+ * @callback_method_impl{FNSSMDEVLOADPREP}
  */
 static DECLCALLBACK(int) ahciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -7150,7 +7150,7 @@ static DECLCALLBACK(int) ahciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
- * @copydoc FNDEVSSMLIVEEXEC
+ * @callback_method_impl{FNSSMDEVLIVEEXEC}
  */
 static DECLCALLBACK(int) ahciR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
@@ -7180,7 +7180,7 @@ static DECLCALLBACK(int) ahciR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 }
 
 /**
- * @copydoc FNDEVSSMSAVEEXEC
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
 static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -7318,13 +7318,7 @@ static int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
 }
 
 /**
- * Loads a saved AHCI device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSM  The handle to the saved state.
- * @param   uVersion  The data unit version number.
- * @param   uPass           The data pass.
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
 static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {

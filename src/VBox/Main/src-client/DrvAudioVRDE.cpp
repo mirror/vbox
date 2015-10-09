@@ -139,7 +139,7 @@ static DECLCALLBACK(bool) drvAudioVRDEIsEnabled(PPDMIHOSTAUDIO pInterface, PDMAU
 }
 
 /**
- * <Missing brief description>
+ * {FIXME - Missing brief description - FIXME}
  *
  * Transfers audio input formerly sent by a connected RDP client / VRDE backend
  * (using the onVRDEInputXXX methods) over to the VRDE host (VM). The audio device

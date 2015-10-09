@@ -3825,7 +3825,7 @@ static void ataR3MediumInserted(ATADevState *s)
 
 
 /**
- * @interface_method_impl{PDMIMOUNTNOTIFY, pfnMountNotify}
+ * @interface_method_impl{PDMIMOUNTNOTIFY,pfnMountNotify}
  */
 static DECLCALLBACK(void) ataR3MountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
@@ -3851,7 +3851,7 @@ static DECLCALLBACK(void) ataR3MountNotify(PPDMIMOUNTNOTIFY pInterface)
 }
 
 /**
- * @interface_method_impl{PDMIMOUNTNOTIFY, pfnUnmountNotify}
+ * @interface_method_impl{PDMIMOUNTNOTIFY,pfnUnmountNotify}
  */
 static DECLCALLBACK(void) ataR3UnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 {

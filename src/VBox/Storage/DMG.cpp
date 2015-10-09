@@ -2553,11 +2553,11 @@ const VBOXHDDBACKEND g_DmgBackend =
     dmgSetParentModificationUuid,
     /* pfnDump */
     dmgDump,
-    /* pfnGetTimeStamp */
+    /* pfnGetTimestamp */
     NULL,
-    /* pfnGetParentTimeStamp */
+    /* pfnGetParentTimestamp */
     NULL,
-    /* pfnSetParentTimeStamp */
+    /* pfnSetParentTimestamp */
     NULL,
     /* pfnGetParentFilename */
     NULL,

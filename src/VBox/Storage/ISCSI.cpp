@@ -5538,11 +5538,11 @@ const VBOXHDDBACKEND g_ISCSIBackend =
     iscsiSetParentModificationUuid,
     /* pfnDump */
     iscsiDump,
-    /* pfnGetTimeStamp */
+    /* pfnGetTimestamp */
     NULL,
-    /* pfnGetParentTimeStamp */
+    /* pfnGetParentTimestamp */
     NULL,
-    /* pfnSetParentTimeStamp */
+    /* pfnSetParentTimestamp */
     NULL,
     /* pfnGetParentFilename */
     NULL,

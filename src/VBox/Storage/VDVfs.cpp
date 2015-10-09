@@ -370,7 +370,7 @@ static DECLCALLBACK(int) vdVfsFile_Tell(void *pvThis, PRTFOFF poffActual)
 
 
 /**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetMode}
  */
 static DECLCALLBACK(int) vdVfsFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
 {

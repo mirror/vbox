@@ -2010,16 +2010,16 @@ static const SSMFIELD g_AcpiSavedStateFields7[] =
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
-static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
-    return SSMR3PutStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields7[0]);
+    return SSMR3PutStruct(pSSM, pThis, &g_AcpiSavedStateFields7[0]);
 }
 
 /**
  * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
-static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
@@ -2035,16 +2035,16 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     switch (uVersion)
     {
         case 4:
-            rc = SSMR3GetStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields4[0]);
+            rc = SSMR3GetStruct(pSSM, pThis, &g_AcpiSavedStateFields4[0]);
             break;
         case 5:
-            rc = SSMR3GetStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields5[0]);
+            rc = SSMR3GetStruct(pSSM, pThis, &g_AcpiSavedStateFields5[0]);
             break;
         case 6:
-            rc = SSMR3GetStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields6[0]);
+            rc = SSMR3GetStruct(pSSM, pThis, &g_AcpiSavedStateFields6[0]);
             break;
         case 7:
-            rc = SSMR3GetStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields7[0]);
+            rc = SSMR3GetStruct(pSSM, pThis, &g_AcpiSavedStateFields7[0]);
             break;
         default:
             rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -2997,7 +2997,7 @@ static DECLCALLBACK(void) acpiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 }
 
 /**
- * @interface_methid_impl{PDMDEVREG,pfnDestruct}
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
 {

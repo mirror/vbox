@@ -296,7 +296,7 @@ public:
     { }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnUnload
+     * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnUnload}
      * Simply deletes the service object
      */
     static DECLCALLBACK(int) svcUnload(void *pvService)
@@ -311,7 +311,7 @@ public:
     }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnConnect
+     * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnConnect}
      * Stub implementation of pfnConnect and pfnDisconnect.
      */
     static DECLCALLBACK(int) svcConnectDisconnect(void * /* pvService */,
@@ -322,7 +322,7 @@ public:
     }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnCall
+     * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnCall}
      * Wraps to the call member function
      */
     static DECLCALLBACK(void) svcCall(void * pvService,
@@ -341,7 +341,7 @@ public:
     }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnHostCall
+     * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnHostCall}
      * Wraps to the hostCall member function
      */
     static DECLCALLBACK(int) svcHostCall(void *pvService,
@@ -358,7 +358,7 @@ public:
     }
 
     /**
-     * @copydoc VBOXHGCMSVCHELPERS::pfnRegisterExtension
+     * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnRegisterExtension}
      * Installs a host callback for notifications of property changes.
      */
     static DECLCALLBACK(int) svcRegisterExtension(void *pvService,
@@ -1314,7 +1314,7 @@ int Service::notifyHost(const char *pszName, const char *pszValue,
 
 /**
  * Handle an HGCM service call.
- * @copydoc VBOXHGCMSVCFNTABLE::pfnCall
+ * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnCall}
  * @note    All functions which do not involve an unreasonable delay will be
  *          handled synchronously.  If needed, we will add a request handler
  *          thread in future for those which do.
@@ -1432,7 +1432,7 @@ void Service::dbgInfo(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
 
 /**
  * Service call handler for the host.
- * @copydoc VBOXHGCMSVCFNTABLE::pfnHostCall
+ * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnHostCall}
  * @thread  hgcm
  */
 int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])

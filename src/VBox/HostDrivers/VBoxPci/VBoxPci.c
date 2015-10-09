@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id$ */
 /** @file
  * VBoxPci - PCI card passthrough support (Host), Common Code.
  */
@@ -173,7 +173,7 @@ DECLHIDDEN(void) vboxPciDevCleanup(PVBOXRAWPCIINS pThis)
 
 
 /**
- * @copydoc RAWPCIDEVPORT:: pfnInit
+ * @interface_method_impl{RAWPCIDEVPORT,pfnInit}
  */
 static DECLCALLBACK(int) vboxPciDevInit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 {
@@ -190,7 +190,7 @@ static DECLCALLBACK(int) vboxPciDevInit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 }
 
 /**
- * @copydoc RAWPCIDEVPORT:: pfnDeinit
+ * @interface_method_impl{RAWPCIDEVPORT,pfnDeinit}
  */
 static DECLCALLBACK(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 {
@@ -215,7 +215,7 @@ static DECLCALLBACK(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 
 
 /**
- * @copydoc RAWPCIDEVPORT:: pfnDestroy
+ * @interface_method_impl{RAWPCIDEVPORT,pfnDestroy}
  */
 static DECLCALLBACK(int) vboxPciDevDestroy(PRAWPCIDEVPORT pPort)
 {
@@ -247,7 +247,7 @@ static DECLCALLBACK(int) vboxPciDevDestroy(PRAWPCIDEVPORT pPort)
     return rc;
 }
 /**
- * @copydoc RAWPCIDEVPORT:: pfnGetRegionInfo
+ * @interface_method_impl{RAWPCIDEVPORT,pfnGetRegionInfo}
  */
 static DECLCALLBACK(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
                                                  int32_t        iRegion,
@@ -270,7 +270,7 @@ static DECLCALLBACK(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
 }
 
 /**
- * @copydoc RAWPCIDEVPORT:: pfnMapRegion
+ * @interface_method_impl{RAWPCIDEVPORT,pfnMapRegion}
  */
 static DECLCALLBACK(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
                                              int32_t        iRegion,
@@ -292,7 +292,7 @@ static DECLCALLBACK(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
 }
 
 /**
- * @copydoc RAWPCIDEVPORT:: pfnUnapRegion
+ * @interface_method_impl{RAWPCIDEVPORT,pfnUnapRegion}
  */
 static DECLCALLBACK(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
                                                int32_t        iRegion,
@@ -313,7 +313,7 @@ static DECLCALLBACK(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
 }
 
 /**
- * @copydoc RAWPCIDEVPORT:: pfnPciCfgRead
+ * @interface_method_impl{RAWPCIDEVPORT,pfnPciCfgRead}
  */
 static DECLCALLBACK(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort,
                                               uint32_t       Register,
@@ -332,7 +332,7 @@ static DECLCALLBACK(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort,
 }
 
 /**
- * @copydoc RAWPCIDEVPORT:: pfnPciCfgWrite
+ * @interface_method_impl{RAWPCIDEVPORT,pfnPciCfgWrite}
  */
 static DECLCALLBACK(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort,
                                                uint32_t       Register,
@@ -509,7 +509,7 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
 }
 
 /**
- * @copydoc RAWPCIFACTORY::pfnCreateAndConnect
+ * @interface_method_impl{RAWPCIFACTORY,pfnCreateAndConnect}
  */
 static DECLCALLBACK(int) vboxPciFactoryCreateAndConnect(PRAWPCIFACTORY       pFactory,
                                                         uint32_t             u32HostAddress,
@@ -544,7 +544,7 @@ unlock:
 }
 
 /**
- * @copydoc RAWPCIFACTORY::pfnRelease
+ * @interface_method_impl{RAWPCIFACTORY,pfnRelease}
  */
 static DECLCALLBACK(void) vboxPciFactoryRelease(PRAWPCIFACTORY pFactory)
 {
@@ -556,7 +556,7 @@ static DECLCALLBACK(void) vboxPciFactoryRelease(PRAWPCIFACTORY pFactory)
 }
 
 /**
- * @copydoc RAWPCIFACTORY::pfnInitVm
+ * @interface_method_impl{RAWPCIFACTORY,pfnInitVm}
  */
 static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
                                                PVM                  pVM,
@@ -595,7 +595,7 @@ static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
 }
 
 /**
- * @copydoc RAWPCIFACTORY::pfnDeinitVm
+ * @interface_method_impl{RAWPCIFACTORY,pfnDeinitVm}
  */
 static DECLCALLBACK(void)  vboxPciFactoryDeinitVm(PRAWPCIFACTORY       pFactory,
                                                   PVM                  pVM,
@@ -774,3 +774,4 @@ void vboxPciShutdown(PVBOXRAWPCIGLOBALS pGlobals)
     if (RT_SUCCESS(rc))
         vboxPciDeleteGlobals(pGlobals);
 }
+

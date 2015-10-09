@@ -2829,7 +2829,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
 
 /**
- * @interface_method_impl{FNPCIIOREGIONMAP, MMIO/MMIO2 regions}
+ * @callback_method_impl{FNPCIIOREGIONMAP,MMIO/MMIO2 regions}
  */
 static DECLCALLBACK(int)
 vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
@@ -2896,7 +2896,7 @@ vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, ui
 
 
 /**
- * @interface_method_impl{FNPCIIOREGIONMAP, I/O Port Region}
+ * @callback_method_impl{FNPCIIOREGIONMAP,I/O Port Region}
  */
 static DECLCALLBACK(int)
 vmmdevIOPortRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
@@ -3067,7 +3067,7 @@ static DECLCALLBACK(int) vmmdevQueryStatusLed(PPDMILEDPORTS pInterface, unsigned
 /* -=-=-=-=-=- PDMIVMMDEVPORT (VMMDEV::IPort) -=-=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnQueryAbsoluteMouse}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnQueryAbsoluteMouse}
  */
 static DECLCALLBACK(int) vmmdevIPort_QueryAbsoluteMouse(PPDMIVMMDEVPORT pInterface, int32_t *pxAbs, int32_t *pyAbs)
 {
@@ -3086,7 +3086,7 @@ static DECLCALLBACK(int) vmmdevIPort_QueryAbsoluteMouse(PPDMIVMMDEVPORT pInterfa
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnSetAbsoluteMouse}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnSetAbsoluteMouse}
  */
 static DECLCALLBACK(int) vmmdevIPort_SetAbsoluteMouse(PPDMIVMMDEVPORT pInterface, int32_t xAbs, int32_t yAbs)
 {
@@ -3107,7 +3107,7 @@ static DECLCALLBACK(int) vmmdevIPort_SetAbsoluteMouse(PPDMIVMMDEVPORT pInterface
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnQueryMouseCapabilities}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnQueryMouseCapabilities}
  */
 static DECLCALLBACK(int) vmmdevIPort_QueryMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t *pfCapabilities)
 {
@@ -3119,7 +3119,7 @@ static DECLCALLBACK(int) vmmdevIPort_QueryMouseCapabilities(PPDMIVMMDEVPORT pInt
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnUpdateMouseCapabilities}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnUpdateMouseCapabilities}
  */
 static DECLCALLBACK(int)
 vmmdevIPort_UpdateMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAdded, uint32_t fCapsRemoved)
@@ -3144,7 +3144,7 @@ vmmdevIPort_UpdateMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAd
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnRequestDisplayChange}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnRequestDisplayChange}
  */
 static DECLCALLBACK(int)
 vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32_t cy, uint32_t cBits, uint32_t idxDisplay,
@@ -3208,7 +3208,7 @@ vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnRequestSeamlessChange}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnRequestSeamlessChange}
  */
 static DECLCALLBACK(int) vmmdevIPort_RequestSeamlessChange(PPDMIVMMDEVPORT pInterface, bool fEnabled)
 {
@@ -3234,7 +3234,7 @@ static DECLCALLBACK(int) vmmdevIPort_RequestSeamlessChange(PPDMIVMMDEVPORT pInte
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnSetMemoryBalloon}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnSetMemoryBalloon}
  */
 static DECLCALLBACK(int) vmmdevIPort_SetMemoryBalloon(PPDMIVMMDEVPORT pInterface, uint32_t cMbBalloon)
 {
@@ -3257,7 +3257,7 @@ static DECLCALLBACK(int) vmmdevIPort_SetMemoryBalloon(PPDMIVMMDEVPORT pInterface
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnVRDPChange}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnVRDPChange}
  */
 static DECLCALLBACK(int) vmmdevIPort_VRDPChange(PPDMIVMMDEVPORT pInterface, bool fVRDPEnabled, uint32_t uVRDPExperienceLevel)
 {
@@ -3281,7 +3281,7 @@ static DECLCALLBACK(int) vmmdevIPort_VRDPChange(PPDMIVMMDEVPORT pInterface, bool
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnSetStatisticsInterval}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnSetStatisticsInterval}
  */
 static DECLCALLBACK(int) vmmdevIPort_SetStatisticsInterval(PPDMIVMMDEVPORT pInterface, uint32_t cSecsStatInterval)
 {
@@ -3307,7 +3307,7 @@ static DECLCALLBACK(int) vmmdevIPort_SetStatisticsInterval(PPDMIVMMDEVPORT pInte
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnSetCredentials}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnSetCredentials}
  */
 static DECLCALLBACK(int) vmmdevIPort_SetCredentials(PPDMIVMMDEVPORT pInterface, const char *pszUsername,
                                                     const char *pszPassword, const char *pszDomain, uint32_t fFlags)
@@ -3346,7 +3346,7 @@ static DECLCALLBACK(int) vmmdevIPort_SetCredentials(PPDMIVMMDEVPORT pInterface, 
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnVBVAChange}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnVBVAChange}
  *
  * Notification from the Display.  Especially useful when acceleration is
  * disabled after a video mode change.
@@ -3361,7 +3361,7 @@ static DECLCALLBACK(void) vmmdevIPort_VBVAChange(PPDMIVMMDEVPORT pInterface, boo
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnCpuHotUnplug}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnCpuHotUnplug}
  */
 static DECLCALLBACK(int) vmmdevIPort_CpuHotUnplug(PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage)
 {
@@ -3387,7 +3387,7 @@ static DECLCALLBACK(int) vmmdevIPort_CpuHotUnplug(PPDMIVMMDEVPORT pInterface, ui
 }
 
 /**
- * @interface_method_impl{PDMIVMMDEVPORT, pfnCpuHotPlug}
+ * @interface_method_impl{PDMIVMMDEVPORT,pfnCpuHotPlug}
  */
 static DECLCALLBACK(int) vmmdevIPort_CpuHotPlug(PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage)
 {
@@ -3416,7 +3416,7 @@ static DECLCALLBACK(int) vmmdevIPort_CpuHotPlug(PPDMIVMMDEVPORT pInterface, uint
 /* -=-=-=-=-=- Saved State -=-=-=-=-=- */
 
 /**
- * @callback_method_impl{NSSMDEVLIVEEXEC}
+ * @callback_method_impl{FNSSMDEVLIVEEXEC}
  */
 static DECLCALLBACK(int) vmmdevLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {

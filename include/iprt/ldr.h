@@ -587,10 +587,10 @@ RTDECL(size_t) RTLdrSize(RTLDRMOD hLdrMod);
  * @param   pValue          Where to store the symbol value (address).
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACK(int) RTLDRIMPORT(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol,
-                                      PRTLDRADDR pValue, void *pvUser);
+typedef DECLCALLBACK(int) FNRTLDRIMPORT(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol,
+                                        PRTLDRADDR pValue, void *pvUser);
 /** Pointer to a FNRTLDRIMPORT() callback function. */
-typedef RTLDRIMPORT *PFNRTLDRIMPORT;
+typedef FNRTLDRIMPORT *PFNRTLDRIMPORT;
 
 /**
  * Loads the image into a buffer provided by the user and applies fixups

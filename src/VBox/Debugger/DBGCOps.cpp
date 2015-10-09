@@ -236,14 +236,7 @@ static int dbgcOpHelperGetNumber(PDBGC pDbgc, PCDBGCVAR pArg, uint64_t *pu64Ret)
 
 
 /**
- * Minus (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Negate (unary).}
  */
 static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -281,14 +274,7 @@ static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
 
 
 /**
- * Plus (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Plus (unary).}
  */
 static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -315,14 +301,7 @@ static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
 
 
 /**
- * Boolean not (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Boolean not (unary).}
  */
 static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -364,14 +343,7 @@ static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCA
 
 
 /**
- * Bitwise not (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Bitwise not (unary).}
  */
 static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -409,14 +381,7 @@ static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCA
 
 
 /**
- * Reference variable (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Reference variable (unary).}
  */
 static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -441,14 +406,7 @@ static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCa
 
 
 /**
- * Reference register (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Reference register (unary).}
  */
 DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -530,14 +488,7 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
 
 
 /**
- * Flat address (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Flat address (unary).}
  */
 DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -548,14 +499,7 @@ DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
 
 
 /**
- * Physical address (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Physical address (unary).}
  */
 DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -566,14 +510,7 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
 
 
 /**
- * Physical host address (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Physical host address (unary).}
  */
 DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -583,14 +520,7 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
 
 
 /**
- * Host address (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Host address (unary).}
  */
 DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
@@ -600,14 +530,7 @@ DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
 
 
 /**
- * Bitwise not (unary).
- *
- * @returns VINF_SUCCESS on success.
- * @returns VBox evaluation / parsing error code on failure.
- *          The caller does the bitching.
- * @param   pDbgc       Debugger console instance data.
- * @param   pArg        The argument.
- * @param   pResult     Where to store the result.
+ * @callback_method_impl{FNDBGCOPUNARY, Far address (unary).}
  */
 static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {

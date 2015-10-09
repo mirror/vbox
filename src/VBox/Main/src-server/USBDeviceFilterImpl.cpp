@@ -204,6 +204,7 @@ void USBDeviceFilter::FinalRelease()
  *  Initializes the USB device filter object.
  *
  *  @param aParent  Handle of the parent object.
+ *  @param data     Reference filter settings.
  */
 HRESULT USBDeviceFilter::init(USBDeviceFilters *aParent,
                               const settings::USBDeviceFilter &data)
