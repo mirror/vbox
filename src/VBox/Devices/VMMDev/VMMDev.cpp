@@ -839,48 +839,58 @@ static int vmmdevReqHandler_ReportGuestUserState(PVMMDEV pThis, VMMDevRequestHea
     /*
      * Validate input.
      */
-    AssertMsgReturn(pReqHdr->size >= sizeof(VMMDevReportGuestUserState), ("%u\n", pReqHdr->size), VERR_INVALID_PARAMETER);
-    VBoxGuestUserStatus *pStatus = &((VMMDevReportGuestUserState *)pReqHdr)->status;
+    VMMDevReportGuestUserState *pReq = (VMMDevReportGuestUserState *)pReqHdr;
+    AssertMsgReturn(pReq->header.size >= sizeof(*pReq), ("%u\n", pReqHdr->size), VERR_INVALID_PARAMETER);
 
     if (   pThis->pDrv
         && pThis->pDrv->pfnUpdateGuestUserState)
     {
-        AssertPtr(pStatus);
+        /* Play safe. */
+        AssertReturn(pReq->header.size      <= _2K, VERR_TOO_MUCH_DATA);
+        AssertReturn(pReq->status.cbUser    <= 256, VERR_TOO_MUCH_DATA);
+        AssertReturn(pReq->status.cbDomain  <= 256, VERR_TOO_MUCH_DATA);
+        AssertReturn(pReq->status.cbDetails <= _1K, VERR_TOO_MUCH_DATA);
 
-        if (   pReqHdr->size      > _2K
-            || pStatus->cbUser    > 256
-            || pStatus->cbDomain  > 256
-            || pStatus->cbDetails > _1K) /* Play safe. */
+        /* pbDynamic marks the beginning of the struct's dynamically
+         * allocated data area. */
+        uint8_t *pbDynamic = (uint8_t *)&pReq->status.szUser;
+        uint32_t cbLeft    = pReqHdr->size - RT_OFFSETOF(VMMDevReportGuestUserState, status.szUser);
+
+        /* The user. */
+        AssertReturn(pReq->status.cbUser > 0, VERR_INVALID_PARAMETER); /* User name is required. */
+        AssertReturn(pReq->status.cbUser <= cbLeft, VERR_INVALID_PARAMETER);
+        const char *pszUser = (const char *)pbDynamic;
+        AssertReturn(RTStrEnd(pszUser, pReq->status.cbUser), VERR_INVALID_PARAMETER);
+        int rc = RTStrValidateEncoding(pszUser);
+        AssertRCReturn(rc, rc);
+
+        /* Advance to the next field. */
+        pbDynamic += pReq->status.cbUser;
+        cbLeft    -= pReq->status.cbUser;
+
+        /* pszDomain can be NULL. */
+        AssertReturn(pReq->status.cbDomain <= cbLeft, VERR_INVALID_PARAMETER);
+        const char *pszDomain = NULL;
+        if (pReq->status.cbDomain)
         {
-            return VERR_INVALID_PARAMETER;
+            pszDomain = (const char *)pbDynamic;
+            AssertReturn(RTStrEnd(pszDomain, pReq->status.cbDomain), VERR_INVALID_PARAMETER);
+            rc = RTStrValidateEncoding(pszDomain);
+            AssertRCReturn(rc, rc);
+
+            /* Advance to the next field. */
+            pbDynamic += pReq->status.cbDomain;
+            cbLeft    -= pReq->status.cbDomain;
         }
 
-        /* pyDynamic marks the beginning of the struct's dynamically
-         * allocated data area. */
-        uint8_t *pvDynamic = (uint8_t *)pStatus + RT_OFFSETOF(VBoxGuestUserStatus, szUser);
-        AssertPtr(pvDynamic);
+        /* pbDetails can be NULL. */
+        const uint8_t *pbDetails = NULL;
+        AssertReturn(pReq->status.cbDetails <= cbLeft, VERR_INVALID_PARAMETER);
+        if (pReq->status.cbDetails > 0)
+            pbDetails = pbDynamic;
 
-        if (!pStatus->cbUser) /* User name is required. */
-            return VERR_INVALID_PARAMETER;
-        const char *pszUser = (const char *)pvDynamic;
-        AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
-
-        pvDynamic += pStatus->cbUser; /* Advance to next field. */
-        const char *pszDomain = pStatus->cbDomain
-                              ? (const char *)pvDynamic : NULL;
-        /* Note: pszDomain can be NULL. */
-
-        pvDynamic += pStatus->cbDomain; /* Advance to next field. */
-        const uint8_t *puDetails = pStatus->cbDetails
-                                 ? pvDynamic : NULL;
-        /* Note: puDetails can be NULL. */
-
-        pThis->pDrv->pfnUpdateGuestUserState(pThis->pDrv, pszUser, pszDomain,
-                                             /* State */
-                                             (uint32_t)pStatus->state,
-                                             /* State details */
-                                             puDetails,
-                                             pStatus->cbDetails);
+        pThis->pDrv->pfnUpdateGuestUserState(pThis->pDrv, pszUser, pszDomain, (uint32_t)pReq->status.state,
+                                             pbDetails, pReq->status.cbDetails);
     }
 
     return VINF_SUCCESS;
