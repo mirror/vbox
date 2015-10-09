@@ -582,17 +582,64 @@ Qt::Alignment UIMachineWindow::viewAlignment(UIVisualStateType visualStateType)
 }
 
 #ifdef Q_WS_MAC
+void UIMachineWindow::handleStandardWindowButtonCallback(StandardWindowButtonType enmButtonType, bool fWithOptionKey)
+{
+    switch (enmButtonType)
+    {
+        case StandardWindowButtonType_Zoom:
+        {
+            /* Handle 'Zoom' button for 'Normal' and 'Scaled' modes: */
+            if (   machineLogic()->visualStateType() == UIVisualStateType_Normal
+                || machineLogic()->visualStateType() == UIVisualStateType_Scale)
+            {
+                if (fWithOptionKey)
+                {
+                    /* Toggle window zoom: */
+                    darwinToggleWindowZoom(this);
+                }
+                else
+                {
+                    /* Enter 'full-screen' mode: */
+                    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
+                    uisession()->changeVisualState(UIVisualStateType_Fullscreen);
+                }
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+/* static */
 void UIMachineWindow::handleNativeNotification(const QString &strNativeNotificationName, QWidget *pWidget)
 {
     /* Handle arrived notification: */
     LogRel(("GUI: UIMachineWindow::handleNativeNotification: Notification '%s' received\n",
             strNativeNotificationName.toAscii().constData()));
+    AssertPtrReturnVoid(pWidget);
     if (UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(pWidget))
     {
         /* Redirect arrived notification: */
         LogRel(("UIMachineWindow::handleNativeNotification: Redirecting '%s' notification to corresponding machine-window...\n",
                 strNativeNotificationName.toAscii().constData()));
         pMachineWindow->handleNativeNotification(strNativeNotificationName);
+    }
+}
+
+/* static */
+void UIMachineWindow::handleStandardWindowButtonCallback(StandardWindowButtonType enmButtonType, bool fWithOptionKey, QWidget *pWidget)
+{
+    /* Handle arrived callback: */
+    LogRel(("GUI: UIMachineWindow::handleStandardWindowButtonCallback: Callback for standard window button '%d' with option key '%d' received\n",
+            (int)enmButtonType, (int)fWithOptionKey));
+    AssertPtrReturnVoid(pWidget);
+    if (UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(pWidget))
+    {
+        /* Redirect arrived callback: */
+        LogRel(("UIMachineWindow::handleStandardWindowButtonCallback: Redirecting callback for standard window button '%d' with option key '%d' to corresponding machine-window...\n",
+                (int)enmButtonType, (int)fWithOptionKey));
+        pMachineWindow->handleStandardWindowButtonCallback(enmButtonType, fWithOptionKey);
     }
 }
 #endif /* Q_WS_MAC */

@@ -44,6 +44,7 @@
 # else  /* Q_WS_MAC */
 #  include "VBoxUtils.h"
 #  include "UIImageTools.h"
+#  include "UICocoaApplication.h"
 # endif /* Q_WS_MAC */
 
 /* COM includes: */
@@ -303,6 +304,17 @@ void UIMachineWindowNormal::prepareVisualState()
         QPixmap betaLabel = ::betaLabel(QSize(100, 16));
         ::darwinLabelWindow(this, &betaLabel, true);
     }
+
+    /* For 'Yosemite' and above: */
+    if (vboxGlobal().osRelease() >= MacOSXRelease_Yosemite)
+    {
+        /* Enable fullscreen support for every screen which requires it: */
+        if (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
+            darwinEnableFullscreenSupport(this);
+        /* Register 'Zoom' button to use our full-screen: */
+        UICocoaApplication::instance()->registerCallbackForStandardWindowButton(this, StandardWindowButtonType_Zoom,
+                                                                                UIMachineWindow::handleStandardWindowButtonCallback);
+    }
 #endif /* Q_WS_MAC */
 }
 
@@ -388,6 +400,15 @@ void UIMachineWindowNormal::saveSettings()
 
     /* Call to base-class: */
     UIMachineWindow::saveSettings();
+}
+
+void UIMachineWindowNormal::cleanupVisualState()
+{
+#ifdef Q_WS_MAC
+    /* Unregister 'Zoom' button from using our full-screen since Yosemite: */
+    if (vboxGlobal().osRelease() >= MacOSXRelease_Yosemite)
+        UICocoaApplication::instance()->unregisterCallbackForStandardWindowButton(this, StandardWindowButtonType_Zoom);
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineWindowNormal::cleanupSessionConnections()

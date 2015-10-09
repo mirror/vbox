@@ -24,6 +24,9 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif /* Q_WS_MAC */
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -127,6 +130,11 @@ protected:
     /** Mac OS X: Handles native notifications.
       * @param  strNativeNotificationName  Native notification name. */
     virtual void handleNativeNotification(const QString & /* strNativeNotificationName */) {}
+
+    /** Mac OS X: Handles standard window button callbacks.
+      * @param  enmButtonType   Brings standard window button type.
+      * @param  fWithOptionKey  Brings whether the Option key was held. */
+    virtual void handleStandardWindowButtonCallback(StandardWindowButtonType enmButtonType, bool fWithOptionKey);
 #endif /* Q_WS_MAC */
 
     /* Prepare helpers: */
@@ -164,6 +172,12 @@ protected:
       * @param  strNativeNotificationName  Native notification name.
       * @param  pWidget                    Widget, notification related to. */
     static void handleNativeNotification(const QString &strNativeNotificationName, QWidget *pWidget);
+
+    /** Mac OS X: Handles standard window button callbacks.
+      * @param  enmButtonType   Brings standard window button type.
+      * @param  fWithOptionKey  Brings whether the Option key was held.
+      * @param  pWidget         Brings widget, callback related to. */
+    static void handleStandardWindowButtonCallback(StandardWindowButtonType enmButtonType, bool fWithOptionKey, QWidget *pWidget);
 #endif /* Q_WS_MAC */
 
     /* Variables: */

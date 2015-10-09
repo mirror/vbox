@@ -23,11 +23,13 @@
 
 /* GUI includes: */
 #include "VBoxCocoaHelper.h"
+#include "VBoxUtils-darwin.h"
 
 ADD_COCOA_NATIVE_REF(UICocoaApplicationPrivate);
 ADD_COCOA_NATIVE_REF(NSAutoreleasePool);
 ADD_COCOA_NATIVE_REF(NSString);
 ADD_COCOA_NATIVE_REF(NSWindow);
+ADD_COCOA_NATIVE_REF(NSButton);
 
 /* Forward declarations: */
 class QObject;
@@ -45,6 +47,8 @@ typedef bool (*PFNVBOXCACALLBACK)(const void *pvCocoaEvent, const void *pvCarbon
 typedef void (*PfnNativeNotificationCallbackForQObject)(QObject *pObject, const QMap<QString, QString> &userInfo);
 /** Native notification callback type for QWidget. */
 typedef void (*PfnNativeNotificationCallbackForQWidget)(const QString &strNativeNotificationName, QWidget *pWidget);
+/** Standard window button callback type for QWidget. */
+typedef void (*PfnStandardWindowButtonCallbackForQWidget)(StandardWindowButtonType emnButtonType, bool fWithOptionKey, QWidget *pWidget);
 
 /* C++ singleton for our private NSApplication object. */
 class UICocoaApplication
@@ -83,6 +87,13 @@ public:
     /** Redirects native notification @a pstrNativeNotificationName for window @a pWindow to registered listener. */
     void nativeNotificationProxyForWidget(NativeNSStringRef pstrNativeNotificationName, NativeNSWindowRef pWindow);
 
+    /** Register callback for standard window @a buttonType of passed @a pWidget as @a pCallback. */
+    void registerCallbackForStandardWindowButton(QWidget *pWidget, StandardWindowButtonType enmButtonType, PfnStandardWindowButtonCallbackForQWidget pCallback);
+    /** Unregister callback for standard window @a buttonType of passed @a pWidget. */
+    void unregisterCallbackForStandardWindowButton(QWidget *pWidget, StandardWindowButtonType enmButtonType);
+    /** Redirects standard window button selector to registered callback. */
+    void nativeCallbackProxyForStandardWindowButton(NativeNSButtonRef pButton, bool fWithOptionKey);
+
 private:
 
     /** Constructor. */
@@ -100,6 +111,9 @@ private:
     QMap<QObject*, QMap<QString, PfnNativeNotificationCallbackForQObject> > m_objectCallbacks;
     /** Map of notification callbacks registered for corresponding QWidget(s). */
     QMap<QWidget*, QMap<QString, PfnNativeNotificationCallbackForQWidget> > m_widgetCallbacks;
+
+    /** Map of callbacks registered for standard window button(s) of corresponding QWidget(s). */
+    QMap<QWidget*, QMap<StandardWindowButtonType, PfnStandardWindowButtonCallbackForQWidget> > m_stdWindowButtonCallbacks;
 };
 
 #endif /* ___darwin_VBoxCocoaApplication_h */

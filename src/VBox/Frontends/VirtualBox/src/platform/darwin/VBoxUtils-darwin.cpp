@@ -56,6 +56,11 @@ NativeNSViewRef darwinToNativeView(NativeNSWindowRef aWindow)
     return ::darwinToNativeViewImpl(aWindow);
 }
 
+NativeNSWindowRef darwinNativeButtonOfWindow(QWidget *pWidget, StandardWindowButtonType enmButtonType)
+{
+    return ::darwinNativeButtonOfWindowImpl(::darwinToNativeWindow(pWidget), enmButtonType);
+}
+
 void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool fEnabled)
 {
     QWidget *parent = aToolBar->parentWidget();
@@ -156,6 +161,11 @@ void darwinEnableTransienceSupport(QWidget *pWidget)
 void darwinToggleFullscreenMode(QWidget *pWidget)
 {
     return ::darwinToggleFullscreenMode(::darwinToNativeWindow(pWidget));
+}
+
+void darwinToggleWindowZoom(QWidget *pWidget)
+{
+    return ::darwinToggleWindowZoom(::darwinToNativeWindow(pWidget));
 }
 
 bool darwinIsInFullscreenMode(QWidget *pWidget)

@@ -45,6 +45,10 @@ private:
 
     /** Save settings routine. */
     void saveSettings();
+#ifdef Q_WS_MAC
+    /** Cleanup visual-state routine. */
+    void cleanupVisualState();
+#endif /* Q_WS_MAC */
 
     /** Updates visibility according to visual-state. */
     void showInNecessaryMode();

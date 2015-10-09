@@ -96,6 +96,8 @@ private:
 
     /** Save settings routine. */
     void saveSettings();
+    /** Cleanup visual-state routine. */
+    void cleanupVisualState();
     /** Cleanup session connections routine. */
     void cleanupSessionConnections();
 

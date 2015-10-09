@@ -17,13 +17,13 @@
 
 /* GUI includes: */
 #include "UICocoaApplication.h"
-#include "VBoxUtils-darwin.h"
 
 /* Global includes */
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSApplication.h>
 #import <Foundation/NSArray.h>
 #import <AppKit/NSWindow.h>
+#import <AppKit/NSButton.h>
 
 #include <iprt/assert.h>
 
@@ -76,6 +76,9 @@
 
 - (void)notificationCallbackOfObject :(NSNotification*)notification;
 - (void)notificationCallbackOfWindow :(NSNotification*)notification;
+
+- (void)registerSelectorForStandardWindowButton :(NSWindow*)pWindow :(StandardWindowButtonType)enmButtonType;
+- (void)selectorForStandardWindowButton :(NSButton*)pButton;
 @end /* @interface UICocoaApplicationPrivate */
 
 @implementation UICocoaApplicationPrivate
@@ -241,6 +244,40 @@
     /* Redirect known notifications to widgets: */
     UICocoaApplication::instance()->nativeNotificationProxyForWidget(pstrName, [notification object]);
 }
+
+/** Registers selector for standard window @a enmButtonType of the passed @a pWindow. */
+- (void)registerSelectorForStandardWindowButton :(NSWindow*)pWindow :(StandardWindowButtonType)enmButtonType
+{
+    /* Retrieve corresponding button: */
+    NSButton *pButton = Nil;
+    switch (enmButtonType)
+    {
+        case StandardWindowButtonType_Close:            pButton = [pWindow standardWindowButton:NSWindowCloseButton]; break;
+        case StandardWindowButtonType_Miniaturize:      pButton = [pWindow standardWindowButton:NSWindowMiniaturizeButton]; break;
+        case StandardWindowButtonType_Zoom:             pButton = [pWindow standardWindowButton:NSWindowZoomButton]; break;
+        case StandardWindowButtonType_Toolbar:          pButton = [pWindow standardWindowButton:NSWindowToolbarButton]; break;
+        case StandardWindowButtonType_DocumentIcon:     pButton = [pWindow standardWindowButton:NSWindowDocumentIconButton]; break;
+        case StandardWindowButtonType_DocumentVersions: /*pButton = [pWindow standardWindowButton:NSWindowDocumentVersionsButton];*/ break;
+        case StandardWindowButtonType_FullScreen:       /*pButton = [pWindow standardWindowButton:NSWindowFullScreenButton];*/ break;
+    }
+
+    /* Register selector if button exists: */
+    if (pButton != Nil)
+    {
+        [pButton setTarget :self];
+        [pButton setAction :@selector(selectorForStandardWindowButton:)];
+    }
+}
+
+/** Redirects selector of the standard window @a pButton to UICocoaApplication instance callback. */
+- (void)selectorForStandardWindowButton :(NSButton*)pButton
+{
+    /* Check if Option key is currently held: */
+    const bool fWithOptionKey = [NSEvent modifierFlags] & NSAlternateKeyMask;
+
+    /* Redirect selector to callback: */
+    UICocoaApplication::instance()->nativeCallbackProxyForStandardWindowButton(pButton, fWithOptionKey);
+}
 @end /* @implementation UICocoaApplicationPrivate */
 
 /* C++ singleton for our private NSApplication object */
@@ -379,6 +416,53 @@ void UICocoaApplication::nativeNotificationProxyForWidget(NativeNSStringRef pstr
             const QMap<QString, PfnNativeNotificationCallbackForQWidget> &callbacks = m_widgetCallbacks[pWidget];
             if (callbacks.contains(strNotificationName))
                 callbacks[strNotificationName](strNotificationName, pWidget);
+        }
+    }
+}
+
+void UICocoaApplication::registerCallbackForStandardWindowButton(QWidget *pWidget, StandardWindowButtonType enmButtonType,
+                                                                 PfnStandardWindowButtonCallbackForQWidget pCallback)
+{
+    /* Make sure it is not registered yet: */
+    AssertReturnVoid(!m_stdWindowButtonCallbacks.contains(pWidget) || !m_stdWindowButtonCallbacks.value(pWidget).contains(enmButtonType));
+
+    /* Remember callback: */
+    m_stdWindowButtonCallbacks[pWidget][enmButtonType] = pCallback;
+
+    /* Register selector: */
+    NativeNSWindowRef pWindow = darwinToNativeWindow(pWidget);
+    [m_pNative registerSelectorForStandardWindowButton :pWindow :enmButtonType];
+}
+
+void UICocoaApplication::unregisterCallbackForStandardWindowButton(QWidget *pWidget, StandardWindowButtonType enmButtonType)
+{
+    /* Make sure it is registered yet: */
+    AssertReturnVoid(m_stdWindowButtonCallbacks.contains(pWidget) && m_stdWindowButtonCallbacks.value(pWidget).contains(enmButtonType));
+
+    /* Forget callback: */
+    m_stdWindowButtonCallbacks[pWidget].remove(enmButtonType);
+    if (m_stdWindowButtonCallbacks.value(pWidget).isEmpty())
+        m_stdWindowButtonCallbacks.remove(pWidget);
+}
+
+void UICocoaApplication::nativeCallbackProxyForStandardWindowButton(NativeNSButtonRef pButton, bool fWithOptionKey)
+{
+    // Why not using nested foreach, will you ask?
+    // It's because Qt 4.x has shadowing issue in Q_FOREACH macro.
+    // Bug record QTBUG-33585 opened for Qt 4.8.4 and closed as _won't fix_ by one of Qt devs.
+
+    /* Check if passed button is one of the buttons of the registered widget(s): */
+    const QList<QWidget*> widgets = m_stdWindowButtonCallbacks.keys();
+    for (int iWidgetIndex = 0; iWidgetIndex < widgets.size(); ++iWidgetIndex)
+    {
+        QWidget *pWidget = widgets.at(iWidgetIndex);
+        const QMap<StandardWindowButtonType, PfnStandardWindowButtonCallbackForQWidget> callbacks = m_stdWindowButtonCallbacks.value(pWidget);
+        const QList<StandardWindowButtonType> buttonTypes = callbacks.keys();
+        for (int iButtonTypeIndex = 0; iButtonTypeIndex < buttonTypes.size(); ++iButtonTypeIndex)
+        {
+            StandardWindowButtonType enmButtonType = buttonTypes.at(iButtonTypeIndex);
+            if (darwinNativeButtonOfWindow(pWidget, enmButtonType) == pButton)
+                return callbacks.value(enmButtonType)(enmButtonType, fWithOptionKey, pWidget);
         }
     }
 }

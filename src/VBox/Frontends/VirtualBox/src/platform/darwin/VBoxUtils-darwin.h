@@ -28,6 +28,7 @@ ADD_COCOA_NATIVE_REF(NSEvent);
 ADD_COCOA_NATIVE_REF(NSImage);
 ADD_COCOA_NATIVE_REF(NSView);
 ADD_COCOA_NATIVE_REF(NSWindow);
+ADD_COCOA_NATIVE_REF(NSButton);
 ADD_COCOA_NATIVE_REF(NSString);
 
 class QImage;
@@ -36,6 +37,18 @@ class QMenu;
 class QPixmap;
 class QToolBar;
 class QWidget;
+
+/** Mac OS X: Standard window button types. */
+enum StandardWindowButtonType
+{
+    StandardWindowButtonType_Close,            // Since OS X 10.2
+    StandardWindowButtonType_Miniaturize,      // Since OS X 10.2
+    StandardWindowButtonType_Zoom,             // Since OS X 10.2
+    StandardWindowButtonType_Toolbar,          // Since OS X 10.2
+    StandardWindowButtonType_DocumentIcon,     // Since OS X 10.2
+    StandardWindowButtonType_DocumentVersions, // Since OS X 10.7
+    StandardWindowButtonType_FullScreen        // Since OS X 10.7
+};
 
 RT_C_DECLS_BEGIN
 
@@ -46,6 +59,7 @@ RT_C_DECLS_BEGIN
  ********************************************************************************/
 NativeNSWindowRef darwinToNativeWindowImpl(NativeNSViewRef pView);
 NativeNSViewRef darwinToNativeViewImpl(NativeNSWindowRef pWindow);
+NativeNSButtonRef darwinNativeButtonOfWindowImpl(NativeNSWindowRef pWindow, StandardWindowButtonType enmButtonType);
 NativeNSStringRef darwinToNativeString(const char* pcszString);
 QString darwinFromNativeString(NativeNSStringRef pString);
 
@@ -80,6 +94,7 @@ void darwinMinaturizeWindow(NativeNSWindowRef pWindow);
 void darwinEnableFullscreenSupport(NativeNSWindowRef pWindow);
 void darwinEnableTransienceSupport(NativeNSWindowRef pWindow);
 void darwinToggleFullscreenMode(NativeNSWindowRef pWindow);
+void darwinToggleWindowZoom(NativeNSWindowRef pWindow);
 bool darwinIsInFullscreenMode(NativeNSWindowRef pWindow);
 bool darwinIsOnActiveSpace(NativeNSWindowRef pWindow);
 bool darwinScreensHaveSeparateSpaces();
@@ -159,6 +174,15 @@ NativeNSWindowRef darwinToNativeWindow(NativeNSViewRef pView);
  * @param   pWidget   Pointer to the native Window
  */
 NativeNSViewRef darwinToNativeView(NativeNSWindowRef pWindow);
+
+/**
+ * Returns a reference to the native button of QWidget.
+ *
+ * @returns corresponding NSButton* of the QWidget.
+ * @param   pWidget       Brings the pointer to the QWidget.
+ * @param   enmButtonType Brings the type of the native button required.
+ */
+NativeNSButtonRef darwinNativeButtonOfWindow(QWidget *pWidget, StandardWindowButtonType enmButtonType);
 
 /********************************************************************************
  *
@@ -250,6 +274,7 @@ void darwinMinaturizeWindow(QWidget *pWidget);
 void darwinEnableFullscreenSupport(QWidget *pWidget);
 void darwinEnableTransienceSupport(QWidget *pWidget);
 void darwinToggleFullscreenMode(QWidget *pWidget);
+void darwinToggleWindowZoom(QWidget *pWidget);
 bool darwinIsInFullscreenMode(QWidget *pWidget);
 bool darwinIsOnActiveSpace(QWidget *pWidget);
 bool darwinOpenFile(const QString &strFile);
