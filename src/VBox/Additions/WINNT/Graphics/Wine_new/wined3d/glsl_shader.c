@@ -1198,7 +1198,11 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
     /* Declare texture coordinate temporaries and initialize them */
     for (i = 0, map = reg_maps->texcoord; map; map >>= 1, ++i)
     {
+#ifdef VBOX_WITH_WINE_FIX_SHADER_DECL
+        if (map & 1) shader_addline(buffer, "vec4 T%u;\n", i);
+#else
         if (map & 1) shader_addline(buffer, "vec4 T%u = gl_TexCoord[%u];\n", i, i);
+#endif
     }
 
     if (version->type == WINED3D_SHADER_TYPE_VERTEX)
@@ -1326,6 +1330,14 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
 
     /* Start the main program. */
     shader_addline(buffer, "void main()\n{\n");
+
+#ifdef VBOX_WITH_WINE_FIX_SHADER_DECL
+    /* Initialize texture coordinate temporaries. */
+    for (i = 0, map = reg_maps->texcoord; map; map >>= 1, ++i)
+    {
+        if (map & 1) shader_addline(buffer, "T%u = gl_TexCoord[%u];\n", i, i);
+    }
+#endif
 
     /* Direct3D applications expect integer vPos values, while OpenGL drivers
      * add approximately 0.5. This causes off-by-one problems as spotted by
