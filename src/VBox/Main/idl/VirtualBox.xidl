@@ -19651,9 +19651,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="NVMe"          value="10">
       <desc>An NVMe storage controller.</desc>
     </const>
-    <const name="Last"          value="10">
-      <desc>Last valid value.</desc>
-    </const>
   </enum>
 
   <enum
