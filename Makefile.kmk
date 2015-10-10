@@ -651,7 +651,41 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/NetworkServices/DHCP \
 	src/VBox/NetworkServices/NAT \
 	src/VBox/NetworkServices/NetLib \
-	src/VBox/Storage
+	src/VBox/Storage \
+	src/VBox/ValidationKit/ \
+	src/VBox/ValidationKit/docs/ \
+	src/VBox/ValidationKit/testdriver/ \
+	src/VBox/ValidationKit/bootsectors/ \
+	src/VBox/ValidationKit/tests/ \
+	src/VBox/ValidationKit/tests/additions/ \
+	src/VBox/ValidationKit/tests/api/ \
+	src/VBox/ValidationKit/tests/autostart/ \
+	src/VBox/ValidationKit/tests/benchmarks/ \
+	src/VBox/ValidationKit/tests/cpu/ \
+	src/VBox/ValidationKit/tests/installation/ \
+	src/VBox/ValidationKit/tests/network/ \
+	src/VBox/ValidationKit/tests/selftests/ \
+	src/VBox/ValidationKit/tests/smoketests/ \
+	src/VBox/ValidationKit/tests/storage/ \
+	src/VBox/ValidationKit/tests/teleportation/ \
+	src/VBox/ValidationKit/tests/unittests/ \
+	src/VBox/ValidationKit/tests/usb/ \
+	src/VBox/ValidationKit/common/ \
+	src/VBox/ValidationKit/utils/ \
+	src/VBox/ValidationKit/utils/TestExecServ/ \
+	src/VBox/ValidationKit/utils/cpu/ \
+	src/VBox/ValidationKit/utils/misc/ \
+	src/VBox/ValidationKit/utils/network/ \
+	src/VBox/ValidationKit/utils/nt/ \
+	src/VBox/ValidationKit/utils/usb/ \
+	src/VBox/ValidationKit/vms/ \
+	src/VBox/ValidationKit/testmanager/ \
+	src/VBox/ValidationKit/testmanager/core/ \
+	src/VBox/ValidationKit/testmanager/db/ \
+	src/VBox/ValidationKit/testmanager/debug/ \
+	src/VBox/ValidationKit/testmanager/cgi/ \
+	src/VBox/ValidationKit/testmanager/webui/ \
+	src/VBox/ValidationKit/testboxscript/ \
 
 # These must come first in order to make things look nice.
 VBOX_CORE_DOXYFILE_INPUT_FIRST =\
@@ -734,7 +768,8 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(VBOX_CORE_DOXYFILE_INPUT_DIRS)))) ) \
-	$(foreach dir, $(VBOX_CORE_DOXYFILE_INPUT_DIRS), $(wildcard $(dir)/*.cpp $(dir)/*.c $(dir)/*.m $(dir)/*.mm $(dir)/.asm))
+	$(foreach dir, $(VBOX_CORE_DOXYFILE_INPUT_DIRS) \
+		, $(wildcard $(dir)/*.cpp $(dir)/*.c $(dir)/*.m $(dir)/*.mm $(dir)/*.py $(dir)/.asm))
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(VBOX_CORE_DOXYFILE_INPUT_FIRST) \
 	$(filter-out $(VBOX_CORE_DOXYFILE_INPUT_FIRST), $(VBOX_CORE_DOXYFILE_INPUT))
@@ -788,36 +823,48 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e '/^ *$(DOLLAR)/d' \
 		-e '/warning. Unexpected tag .dd. found/d' \
 		-e '/warning. Unsupported xml.html tag .globalScope. found/d' \
+               -e '/\/include\/VBox\/VBoxGuestLib\.h.* warning/b ignore' \
+               -e '/\/include\/VBox\/VBoxVideoGuest\.h.* warning/b ignore' \
+               -e '/\/include\/VBox\/sup\.h.* warning/b ignore' \
+               -e '/\/include\/VBox\/settings\.h.* warning/b ignore' \
+               -e '/\/include\/VBox\/com\/EventQueue\.h.* warning/b ignore' \
+               -e '/\/include\/VBox\/com\/NativeEventQueue\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Devices\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Main\/.* warning/b ignore' \
                -e '/\/src\/VBox\/HostDrivers\/.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/WINNT\/Installer\/VBoxDrvInst\.cpp.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/WINNT\/VBoxCredProv\/.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/WINNT\/VBoxGINA\/Helper\.cpp.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDispIf\.h.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDnD\.cpp.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/common\/VBoxGuestLib\/.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/common\/VBoxVideo\/HGSMIBase\.cpp.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/common\/VBoxVideo\/Modesetting\.cpp.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/common\/crOpenGL\/.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/common\/pam\/pam_vbox\.cpp.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/os2\/VBoxMouse\/cmdline\.c.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/solaris\/SharedFolders\/vboxfs_prov\.c.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/solaris\/Virtio\/Virtio-solaris\.c.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/solaris\/Virtio\/VirtioNet-solaris\.c.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/x11\/VBoxClient\/draganddrop\.cpp.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.cpp.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.h.* warning/b ignore' \
-               -e '/src\/VBox\/Additions\/x11\/vboxvideo\/vbva\.c.* warning/b ignore' \
-               -e '/src\/VBox\/Debugger\/.* warning/b ignore' \
-               -e '/src\/VBox\/HostServices\/GuestControl\/.* warning/b ignore' \
-               -e '/src\/VBox\/HostServices\/GuestProperties\/.* warning/b ignore' \
-               -e '/src\/VBox\/HostServices\/SharedClipboard\/.* warning/b ignore' \
-               -e '/src\/VBox\/HostServices\/SharedFolders\/.* warning/b ignore' \
-               -e '/src\/VBox\/HostServices\/SharedOpenGL\/.* warning/b ignore' \
-               -e '/src\/VBox\/NetworkServices\/DHCP\/Config\.cpp.* warning/b ignore' \
-               -e '/src\/VBox\/NetworkServices\/DHCP\/Config\.h.* warning/b ignore' \
-               -e '/src\/VBox\/Storage\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/WINNT\/Installer\/VBoxDrvInst\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxCredProv\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxGINA\/Helper\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxGINA\/Helper\.h.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDispIf\.h.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDnD\.h.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDnD\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/common\/VBoxGuestLib\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/common\/VBoxVideo\/HGSMIBase\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/common\/VBoxVideo\/Modesetting\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/common\/crOpenGL\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/common\/pam\/pam_vbox\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/os2\/VBoxMouse\/cmdline\.c.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/solaris\/SharedFolders\/vboxfs_prov\.c.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/solaris\/Virtio\/Virtio-solaris\.c.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/solaris\/Virtio\/Virtio-solaris\.h.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/solaris\/Virtio\/VirtioNet-solaris\.c.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/clipboard\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/draganddrop\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.h.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/x11\/vboxvideo\/vbva\.c.* warning/b ignore' \
+               -e '/\/src\/VBox\/Additions\/x11\/vboxvideo\/vboxvideo\.h.* warning/b ignore' \
+               -e '/\/src\/VBox\/Debugger\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/HostServices\/GuestControl\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/HostServices\/GuestProperties\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/HostServices\/SharedClipboard\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/HostServices\/SharedFolders\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/HostServices\/SharedOpenGL\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/NetworkServices\/DHCP\/Config\.cpp.* warning/b ignore' \
+               -e '/\/src\/VBox\/NetworkServices\/DHCP\/Config\.h.* warning/b ignore' \
+               -e '/\/src\/VBox\/Storage\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/ValidationKit\/.* warning/b ignore' \
                -e 'b end' \
                -e ':ignore' \
                -e 'n' \
