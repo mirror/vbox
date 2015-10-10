@@ -121,9 +121,16 @@
  *  - Guest Additions.
  *      - VBoxGuest.
  *          - @ref pg_guest_lib
- *      - VBoxService.
- *          - @ref pg_vboxervice_timesync
- *          - ...
+ *      - @ref pg_vgsvc
+ *          - @ref pg_vgsvc_timesync
+ *          - @ref pg_vgsvc_vminfo
+ *          - @ref pg_vgsvc_vmstats
+ *          - @ref pg_vgsvc_gstctrl
+ *          - @ref pg_vgsvc_pagesharing
+ *          - @ref pg_vgsvc_memballoon
+ *          - @ref pg_vgsvc_cpuhotplug
+ *          - @ref pg_vgsvc_automount
+ *          - @ref pg_vgsvc_clipboard
  *      - VBoxControl.
  *      - VBoxVideo.
  *      - crOpenGL.
@@ -132,7 +139,7 @@
  *      - ...
  *  - Network Services:
  *      - @ref pg_net_dhcp
- *      - @ref pg_net_nat
+ *      - NAT
  *  - @ref pg_main
  *      - @ref pg_main_events
  *      - @ref pg_vrdb_usb
