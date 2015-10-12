@@ -29,14 +29,147 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include "VBGLR3Internal.h"
 
 
+
+#ifdef RT_OS_WINDOWS
+
+# define WIDE_STR_2(a) L##a
+# define WIDE_STR(a) WIDE_STR_2(a)
+
+/**
+ * Opens the "VirtualBox Guest Additions" registry key.
+ *
+ * @returns IPRT status code
+ * @param   phKey       Receives key handle on success. The returned handle must
+ *                      be closed by calling vbglR3WinCloseRegKey.
+ */
+static int vbglR3WinOpenAdditionRegisterKey(PHKEY phKey)
+{
+    /*
+     * Current vendor first.  We keep the older ones just for the case that
+     * the caller isn't actually installed yet (no real use case AFAIK).
+     */
+    static PCRTUTF16 s_apwszKeys[] =
+    {
+        L"SOFTWARE\\" WIDE_STR(VBOX_VENDOR_SHORT) L"\\VirtualBox Guest Additions",
+#ifdef RT_ARCH_AMD64
+        L"SOFTWARE\\Wow6432Node\\" WIDE_STR(VBOX_VENDOR_SHORT) L"\\VirtualBox Guest Additions",
+#endif
+        L"SOFTWARE\\Sun\\VirtualBox Guest Additions",
+#ifdef RT_ARCH_AMD64
+        L"SOFTWARE\\Wow6432Node\\Sun\\VirtualBox Guest Additions",
+#endif
+        L"SOFTWARE\\Sun\\xVM VirtualBox Guest Additions",
+#ifdef RT_ARCH_AMD64
+        L"SOFTWARE\\Wow6432Node\\Sun\\xVM VirtualBox Guest Additions",
+#endif
+    };
+    int rc = VERR_NOT_FOUND;
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_apwszKeys); i++)
+    {
+        LSTATUS lrc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, s_apwszKeys[i], 0 /* ulOptions*/, KEY_READ, phKey);
+        if (lrc == ERROR_SUCCESS)
+            return VINF_SUCCESS;
+        if (i == 0)
+            rc = RTErrConvertFromWin32(lrc);
+    }
+    return rc;
+}
+
+
+/**
+ * Closes the registry handle returned by vbglR3WinOpenAdditionRegisterKey().
+ *
+ * @returns @a rc or IPRT failure status.
+ * @param   hKey        Handle to close.
+ * @param   rc          The current IPRT status of the operation.  Error
+ *                      condition takes precedence over errors from this call.
+ */
+static int vbglR3WinCloseRegKey(HKEY hKey, int rc)
+{
+    LSTATUS lrc = RegCloseKey(hKey);
+    if (   lrc == ERROR_SUCCESS
+        || RT_FAILURE(rc))
+        return rc;
+    return RTErrConvertFromWin32(lrc);
+}
+
+
+/**
+ * Queries a string value from a specified registry key.
+ *
+ * @return  IPRT status code.
+ * @param   hKey                Handle of registry key to use.
+ * @param   pwszValueName       The the name of the value to query.
+ * @param   cbHint              Size hint.
+ * @param   ppszValue           Where to return value string on success. Free
+ *                              with RTStrFree.
+ */
+static int vbglR3QueryRegistryString(HKEY hKey, PCRTUTF16 pwszValueName, uint32_t cbHint, char **ppszValue)
+{
+    AssertPtr(pwszValueName);
+    AssertPtrReturn(ppszValue, VERR_INVALID_POINTER);
+
+    /*
+     * First try.
+     */
+    int rc;
+    DWORD dwType;
+    DWORD cbTmp = cbHint;
+    PRTUTF16 pwszTmp = (PRTUTF16)RTMemTmpAllocZ(cbTmp + sizeof(RTUTF16));
+    if (pwszTmp)
+    {
+        LSTATUS lrc = RegQueryValueExW(hKey, pwszValueName, NULL, &dwType, (BYTE *)pwszTmp, &cbTmp);
+        if (lrc == ERROR_MORE_DATA)
+        {
+            /*
+             * Allocate larger buffer and try again.
+             */
+            RTMemTmpFree(pwszTmp);
+            cbTmp += 16;
+            pwszTmp = (PRTUTF16)RTMemTmpAllocZ(cbTmp + sizeof(RTUTF16));
+            if (!pwszTmp)
+            {
+                *ppszValue = NULL;
+                return VERR_NO_TMP_MEMORY;
+            }
+            lrc = RegQueryValueExW(hKey, pwszValueName, NULL, &dwType, (BYTE *)pwszTmp, &cbTmp);
+        }
+        if (lrc == ERROR_SUCCESS)
+        {
+            /*
+             * Check the type and convert to UTF-8.
+             */
+            if (dwType == REG_SZ)
+                rc = RTUtf16ToUtf8(pwszTmp, ppszValue);
+            else
+                rc = VERR_WRONG_TYPE;
+        }
+        else
+            rc = RTErrConvertFromWin32(lrc);
+        RTMemTmpFree(pwszTmp);
+    }
+    else
+        rc = VERR_NO_TMP_MEMORY;
+    if (RT_SUCCESS(rc))
+        return rc;
+    *ppszValue = NULL;
+    return rc;
+}
+
+#endif /* RT_OS_WINDOWS */
+
+
 /**
  * Fallback for VbglR3GetAdditionsVersion.
+ *
+ * @copydoc VbglR3GetAdditionsVersion
  */
 static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszVerEx, char **ppszRev)
 {
@@ -50,15 +183,7 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszVerEx
         if (RT_SUCCESS(rc))
         {
             if (ppszRev)
-            {
-#if 0
-                char szRev[64];
-                RTStrPrintf(szRev, sizeof(szRev), "%d", VBOX_SVN_REV);
-                rc = RTStrDupEx(ppszRev, szRev);
-#else
                 rc = RTStrDupEx(ppszRev, RT_XSTR(VBOX_SVN_REV));
-#endif
-            }
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
 
@@ -78,141 +203,14 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszVerEx
     return rc;
 }
 
-#ifdef RT_OS_WINDOWS
-
-/**
- * Looks up the storage path handle (registry).
- *
- * @returns IPRT status value
- * @param   hKey        Receives storage path handle on success.
- *                      The returned handle must be closed by vbglR3CloseAdditionsWinStoragePath().
- */
-static int vbglR3QueryAdditionsWinStoragePath(PHKEY phKey)
-{
-    /*
-     * Try get the *installed* version first.
-     */
-    LONG r;
-
-    /* Check the built in vendor path first. */
-    char szPath[255];
-    RTStrPrintf(szPath, sizeof(szPath), "SOFTWARE\\%s\\VirtualBox Guest Additions", VBOX_VENDOR_SHORT);
-    r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, szPath, 0, KEY_READ, phKey);
-# ifdef RT_ARCH_AMD64
-    if (r != ERROR_SUCCESS)
-    {
-        /* Check Wow6432Node. */
-        RTStrPrintf(szPath, sizeof(szPath), "SOFTWARE\\Wow6432Node\\%s\\VirtualBox Guest Additions", VBOX_VENDOR_SHORT);
-        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, szPath, 0, KEY_READ, phKey);
-    }
-# endif
-
-    /* Check the "Sun" path first. */
-    if (r != ERROR_SUCCESS)
-    {
-        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, phKey);
-# ifdef RT_ARCH_AMD64
-        if (r != ERROR_SUCCESS)
-        {
-            /* Check Wow6432Node (for new entries). */
-            r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, phKey);
-        }
-# endif
-    }
-
-    /* Still no luck? Then try the old "Sun xVM" paths ... */
-    if (r != ERROR_SUCCESS)
-    {
-        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, phKey);
-# ifdef RT_ARCH_AMD64
-        if (r != ERROR_SUCCESS)
-        {
-            /* Check Wow6432Node (for new entries). */
-            r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, phKey);
-        }
-# endif
-    }
-    return RTErrConvertFromWin32(r);
-}
-
-
-/**
- * Closes the storage path handle (registry).
- *
- * @returns IPRT status value
- * @param   hKey        Handle to close, retrieved by
- *                      vbglR3QueryAdditionsWinStoragePath().
- */
-static int vbglR3CloseAdditionsWinStoragePath(HKEY hKey)
-{
-    return RTErrConvertFromWin32(RegCloseKey(hKey));
-}
-
-#endif /* RT_OS_WINDOWS */
-
-/**
- * Reports the Guest Additions status of a certain facility to the host.
- *
- * @returns IPRT status value
- * @param   enmFacility     The facility to report the status on.
- * @param   enmStatus       The new status of the facility.
- * @param   fReserved       Reserved for future use (what?).
- */
-VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
-                                            VBoxGuestFacilityStatus enmStatusCurrent,
-                                            uint32_t fReserved)
-{
-    VMMDevReportGuestStatus Report;
-    RT_ZERO(Report);
-    int rc = vmmdevInitRequest((VMMDevRequestHeader*)&Report, VMMDevReq_ReportGuestStatus);
-    if (RT_SUCCESS(rc))
-    {
-        Report.guestStatus.facility = enmFacility;
-        Report.guestStatus.status   = enmStatusCurrent;
-        Report.guestStatus.flags    = fReserved;
-
-        rc = vbglR3GRPerform(&Report.header);
-    }
-    return rc;
-}
-
-#ifdef RT_OS_WINDOWS
-
-/**
- * Queries a string value from a specified registry key.
- *
- * @return  IPRT status code.
- * @param   hKey                    Handle of registry key to use.
- * @param   pszValName              Value name to query value from.
- * @param   pszBuffer               Pointer to buffer which the queried string value gets stored into.
- * @param   cchBuffer               Size (in bytes) of buffer.
- */
-static int vbglR3QueryRegistryString(HKEY hKey, const char *pszValName, char *pszBuffer, size_t cchBuffer)
-{
-    AssertReturn(pszValName, VERR_INVALID_PARAMETER);
-    AssertReturn(pszBuffer, VERR_INVALID_POINTER);
-    AssertReturn(cchBuffer, VERR_INVALID_PARAMETER);
-
-    int rc;
-    DWORD dwType;
-    DWORD dwSize = (DWORD)cchBuffer;
-    LONG lRet = RegQueryValueEx(hKey, pszValName, NULL, &dwType, (BYTE *)pszBuffer, &dwSize);
-    if (lRet == ERROR_SUCCESS)
-        rc = dwType == REG_SZ ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
-    else
-        rc = RTErrConvertFromWin32(lRet);
-    return rc;
-}
-
-#endif /* RT_OS_WINDOWS */
 
 /**
  * Retrieves the installed Guest Additions version and/or revision.
  *
- * @returns IPRT status value
+ * @returns IPRT status code
  * @param   ppszVer     Receives pointer of allocated raw version string
  *                      (major.minor.build). NULL is accepted. The returned
- *                      pointer must be freed using RTStrFree().*
+ *                      pointer must be freed using RTStrFree().
  * @param   ppszVerExt  Receives pointer of allocated full version string
  *                      (raw version + vendor suffix(es)). NULL is
  *                      accepted. The returned pointer must be freed using
@@ -235,62 +233,53 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerExt, cha
 
 #ifdef RT_OS_WINDOWS
     HKEY hKey;
-    int rc = vbglR3QueryAdditionsWinStoragePath(&hKey);
+    int rc = vbglR3WinOpenAdditionRegisterKey(&hKey);
     if (RT_SUCCESS(rc))
     {
         /*
          * Version.
          */
-        char szTemp[32];
         if (ppszVer)
-        {
-            rc = vbglR3QueryRegistryString(hKey, "Version", szTemp, sizeof(szTemp));
-            if (RT_SUCCESS(rc))
-                rc = RTStrDupEx(ppszVer, szTemp);
-        }
+            rc = vbglR3QueryRegistryString(hKey, L"Version", 64, ppszVer);
 
         if (   RT_SUCCESS(rc)
             && ppszVerExt)
-        {
-            rc = vbglR3QueryRegistryString(hKey, "VersionExt", szTemp, sizeof(szTemp));
-            if (RT_SUCCESS(rc))
-                rc = RTStrDupEx(ppszVerExt, szTemp);
-        }
+            rc = vbglR3QueryRegistryString(hKey, L"VersionExt", 128, ppszVerExt);
 
         /*
          * Revision.
          */
         if (   RT_SUCCESS(rc)
             && ppszRev)
-        {
-            rc = vbglR3QueryRegistryString(hKey, "Revision", szTemp, sizeof(szTemp));
-            if (RT_SUCCESS(rc))
-                rc = RTStrDupEx(ppszRev, szTemp);
-        }
+            rc = vbglR3QueryRegistryString(hKey, L"Revision", 64, ppszRev);
 
-        int rc2 = vbglR3CloseAdditionsWinStoragePath(hKey);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        rc = vbglR3WinCloseRegKey(hKey, rc);
 
         /* Clean up allocated strings on error. */
         if (RT_FAILURE(rc))
         {
             if (ppszVer)
+            {
                 RTStrFree(*ppszVer);
+                *ppszVer = NULL;
+            }
             if (ppszVerExt)
+            {
                 RTStrFree(*ppszVerExt);
+                *ppszVerExt = NULL;
+            }
             if (ppszRev)
+            {
                 RTStrFree(*ppszRev);
+                *ppszRev = NULL;
+            }
         }
     }
+    /*
+     * No registry entries found, return the version string compiled into this binary.
+     */
     else
-    {
-        /*
-         * No registry entries found, return the version string compiled
-         * into this binary.
-         */
         rc = vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszVerExt, ppszRev);
-    }
     return rc;
 
 #else  /* !RT_OS_WINDOWS */
@@ -305,7 +294,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerExt, cha
 /**
  * Retrieves the installation path of Guest Additions.
  *
- * @returns IPRT status value
+ * @returns IPRT status code
  * @param   ppszPath    Receives pointer of allocated installation path string.
  *                      The returned pointer must be freed using
  *                      RTStrFree().
@@ -313,46 +302,51 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerExt, cha
 VBGLR3DECL(int) VbglR3GetAdditionsInstallationPath(char **ppszPath)
 {
     int rc;
+
 #ifdef RT_OS_WINDOWS
+    /*
+     * Get it from the registry.
+     */
     HKEY hKey;
-    rc = vbglR3QueryAdditionsWinStoragePath(&hKey);
+    rc = vbglR3WinOpenAdditionRegisterKey(&hKey);
     if (RT_SUCCESS(rc))
     {
-        /* Installation directory. */
-        DWORD dwType;
-        DWORD dwSize = _MAX_PATH * sizeof(char);
-        char *pszTmp = (char*)RTMemAlloc(dwSize + 1);
-        if (pszTmp)
-        {
-            LONG l = RegQueryValueEx(hKey, "InstallDir", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
-            if ((l != ERROR_SUCCESS) && (l != ERROR_FILE_NOT_FOUND))
-            {
-                rc = RTErrConvertFromNtStatus(l);
-            }
-            else
-            {
-                if (dwType == REG_SZ)
-                    rc = RTStrDupEx(ppszPath, pszTmp);
-                else
-                    rc = VERR_INVALID_PARAMETER;
-                if (RT_SUCCESS(rc))
-                {
-                    /* Flip slashes. */
-                    for (char *pszTmp2 = ppszPath[0]; *pszTmp2; ++pszTmp2)
-                        if (*pszTmp2 == '\\')
-                            *pszTmp2 = '/';
-                }
-            }
-            RTMemFree(pszTmp);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-        rc = vbglR3CloseAdditionsWinStoragePath(hKey);
+        rc = vbglR3QueryRegistryString(hKey, L"InstallDir", _MAX_PATH * sizeof(RTUTF16), ppszPath);
+        if (RT_SUCCESS(rc))
+            RTPathChangeToUnixSlashes(*ppszPath, true /*fForce*/);
+        rc = vbglR3WinCloseRegKey(hKey, rc);
     }
 #else
     /** @todo implement me */
     rc = VERR_NOT_IMPLEMENTED;
 #endif
+    return rc;
+}
+
+
+/**
+ * Reports the Guest Additions status of a certain facility to the host.
+ *
+ * @returns IPRT status code
+ * @param   enmFacility     The facility to report the status on.
+ * @param   enmStatus       The new status of the facility.
+ * @param   fReserved       Flags reserved for future hacks.
+ */
+VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
+                                            VBoxGuestFacilityStatus enmStatusCurrent,
+                                            uint32_t fReserved)
+{
+    VMMDevReportGuestStatus Report;
+    RT_ZERO(Report);
+    int rc = vmmdevInitRequest(&Report.header, VMMDevReq_ReportGuestStatus);
+    if (RT_SUCCESS(rc))
+    {
+        Report.guestStatus.facility = enmFacility;
+        Report.guestStatus.status   = enmStatusCurrent;
+        Report.guestStatus.flags    = fReserved;
+
+        rc = vbglR3GRPerform(&Report.header);
+    }
     return rc;
 }
 
