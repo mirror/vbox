@@ -139,6 +139,7 @@ VBOX_EFI_MODULES = \
 	MdeModulePkg/Core/DxeIplPeim/DxeIpl/$(VBOX_EFI_DEBUG_DIR)/DxeIpl \
 	MdeModulePkg/Core/Pei/PeiMain/$(VBOX_EFI_DEBUG_DIR)/PeiCore \
 	MdeModulePkg/Core/RuntimeDxe/RuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/RuntimeDxe \
+	MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatformDxe/$(VBOX_EFI_DEBUG_DIR)/AcpiPlatform \
 	MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe/$(VBOX_EFI_DEBUG_DIR)/AcpiTableDxe \
 	MdeModulePkg/Universal/CapsuleRuntimeDxe/CapsuleRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/CapsuleRuntimeDxe \
 	MdeModulePkg/Universal/Console/ConPlatformDxe/ConPlatformDxe/$(VBOX_EFI_DEBUG_DIR)/ConPlatformDxe \
@@ -177,7 +178,6 @@ VBOX_EFI_MODULES = \
 	ShellPkg/Application/Shell/Shell/$(VBOX_EFI_DEBUG_DIR)/Shell \
 	UefiCpuPkg/CpuDxe/CpuDxe/$(VBOX_EFI_DEBUG_DIR)/CpuDxe \
 	UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe/$(VBOX_EFI_DEBUG_DIR)/CpuIo2Dxe \
-	VBoxPkg/AcpiPlatformDxe/AcpiPlatformDxe/$(VBOX_EFI_DEBUG_DIR)/AcpiPlatform \
 	VBoxPkg/PartitionDxe/PartitionDxe/$(VBOX_EFI_DEBUG_DIR)/PartitionDxe \
 	OvmfPkg/PlatformPei/PlatformPei/$(VBOX_EFI_DEBUG_DIR)/PlatformPei \
 	VBoxPkg/VBoxAppleSim/VBoxAppleSim/$(VBOX_EFI_DEBUG_DIR)/VBoxAppleSim \

@@ -470,11 +470,9 @@
   # ACPI Support
   #
   MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
-!ifndef $(VBOX)
   MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatformDxe.inf
+!ifndef $(VBOX)
   OvmfPkg/AcpiTables/AcpiTables.inf
-!else
-  VBoxPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf
 !endif
 
   #
