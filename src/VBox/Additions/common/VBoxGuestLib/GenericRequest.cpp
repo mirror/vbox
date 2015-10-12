@@ -104,18 +104,20 @@ DECLVBGL(int) VbglGRVerify(const VMMDevRequestHeader *pReq, size_t cbReq)
     return VINF_SUCCESS;
 }
 
-DECLVBGL(int) VbglGRAlloc(VMMDevRequestHeader **ppReq, uint32_t cbReq, VMMDevRequestType enmReqType)
+DECLVBGL(int) VbglGRAlloc(VMMDevRequestHeader **ppReq, size_t cbReq, VMMDevRequestType enmReqType)
 {
     int rc = vbglR0Enter();
     if (RT_SUCCESS(rc))
     {
-        if (ppReq && cbReq >= sizeof(VMMDevRequestHeader))
+        if (   ppReq
+            && cbReq >= sizeof(VMMDevRequestHeader)
+            && cbReq == (uint32_t)cbReq)
         {
-            VMMDevRequestHeader *pReq = (VMMDevRequestHeader *)VbglPhysHeapAlloc(cbReq);
+            VMMDevRequestHeader *pReq = (VMMDevRequestHeader *)VbglPhysHeapAlloc((uint32_t)cbReq);
             AssertMsgReturn(pReq, ("VbglGRAlloc: no memory (cbReq=%u)\n", cbReq), VERR_NO_MEMORY);
             memset(pReq, 0xAA, cbReq);
 
-            pReq->size        = cbReq;
+            pReq->size        = (uint32_t)cbReq;
             pReq->version     = VMMDEV_REQUEST_HEADER_VERSION;
             pReq->requestType = enmReqType;
             pReq->rc          = VERR_GENERAL_FAILURE;

@@ -313,17 +313,16 @@ VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
     using namespace guestProp;
 
     int rc, rc2 = VERR_UNRESOLVED_ERROR;
-    uint32_t u32ClientId = 0;
+    HGCMCLIENTID idClient = 0;
     const char *pszPattern = VIDEO_PROP_PREFIX"*";
     PVBGLR3GUESTPROPENUM pHandle = NULL;
     const char *pszName;
     unsigned cHighestScreen = 0;
 
     AssertPtrReturn(pcScreen, VERR_INVALID_POINTER);
-    rc = VbglR3GuestPropConnect(&u32ClientId);
+    rc = VbglR3GuestPropConnect(&idClient);
     if (RT_SUCCESS(rc))
-        rc = VbglR3GuestPropEnum(u32ClientId, &pszPattern, 1, &pHandle,
-                                 &pszName, NULL, NULL, NULL);
+        rc = VbglR3GuestPropEnum(idClient, &pszPattern, 1, &pHandle, &pszName, NULL, NULL, NULL);
     if (u32ClientId != 0)
         rc2 = VbglR3GuestPropDisconnect(u32ClientId);
     if (RT_SUCCESS(rc))
@@ -332,8 +331,7 @@ VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
     {
         uint32_t cScreen;
 
-        rc = RTStrToUInt32Full(pszName + sizeof(VIDEO_PROP_PREFIX) - 1, 10,
-                               &cScreen);
+        rc = RTStrToUInt32Full(pszName + sizeof(VIDEO_PROP_PREFIX) - 1, 10, &cScreen);
         if (RT_SUCCESS(rc))  /* There may be similar properties with text. */
             cHighestScreen = RT_MAX(cHighestScreen, cScreen);
         rc = VbglR3GuestPropEnumNext(pHandle, &pszName, NULL, NULL, NULL);
@@ -365,7 +363,7 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned idScreen, unsigned cx, unsigned cy,
 #if defined(VBOX_WITH_GUEST_PROPS)
     using namespace guestProp;
 
-    uint32_t u32ClientId = 0;
+    HGCMCLIENTID idClient = 0;
     unsigned cx2, cy2, cBits2, x2, y2, cHighestScreen, cHighestScreen2;
     bool fEnabled2;
     int rc;
@@ -373,7 +371,7 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned idScreen, unsigned cx, unsigned cy,
 
     rc = VbglR3VideoModeGetHighestSavedScreen(&cHighestScreen);
     if (RT_SUCCESS(rc))
-        rc = VbglR3GuestPropConnect(&u32ClientId);
+        rc = VbglR3GuestPropConnect(&idClient);
     if (RT_SUCCESS(rc))
     {
         char szModeName[MAX_NAME_LEN];
@@ -381,17 +379,17 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned idScreen, unsigned cx, unsigned cy,
         RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX "%u", idScreen);
         RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u,%ux%u,%u", cx, cy, cBits, x, y, (unsigned) fEnabled);
 
-        rc = VbglR3GuestPropWriteValue(u32ClientId, szModeName, szModeParms);
+        rc = VbglR3GuestPropWriteValue(idClient, szModeName, szModeParms);
         /* Write out the mode using the legacy name too, in case the user
          * re-installs older Additions. */
         if (idScreen == 0)
         {
             RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u", cx, cy, cBits);
-            VbglR3GuestPropWriteValue(u32ClientId, VIDEO_PROP_PREFIX "SavedMode", szModeParms);
+            VbglR3GuestPropWriteValue(idClient, VIDEO_PROP_PREFIX "SavedMode", szModeParms);
         }
     }
-    if (u32ClientId != 0)
-        rc2 = VbglR3GuestPropDisconnect(u32ClientId);
+    if (idClient != 0)
+        rc2 = VbglR3GuestPropDisconnect(idClient);
     if (rc == VINF_PERMISSION_DENIED)
         return rc;
     if (RT_SUCCESS(rc))
@@ -439,14 +437,14 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned idScreen,
 #if defined(VBOX_WITH_GUEST_PROPS)
     using namespace guestProp;
 
-/*
- * First we retrieve the video mode which is saved as a string in the
- * guest property store.
- */
+    /*
+     * First we retrieve the video mode which is saved as a string in the
+     * guest property store.
+     */
     /* The buffer for VbglR3GuestPropReadValue.  If this is too small then
      * something is wrong with the data stored in the property. */
     char szModeParms[1024];
-    uint32_t u32ClientId = 0;
+    HGCMCLIENTID idClient = 0;
     int cMatches;
     unsigned cx, cy, cBits;
     unsigned x = 0;
@@ -455,34 +453,32 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned idScreen,
     int rc;
     int rc2 = VERR_UNRESOLVED_ERROR;
 
-    rc = VbglR3GuestPropConnect(&u32ClientId);
+    rc = VbglR3GuestPropConnect(&idClient);
     if (RT_SUCCESS(rc))
     {
         /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
         char szModeName[MAX_NAME_LEN];
         RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX "%u", idScreen);
-        rc = VbglR3GuestPropReadValue(u32ClientId, szModeName, szModeParms,
-                                      sizeof(szModeParms), NULL);
+        rc = VbglR3GuestPropReadValue(idClient, szModeName, szModeParms, sizeof(szModeParms), NULL);
         /* Try legacy single screen name. */
         if (rc == VERR_NOT_FOUND && idScreen == 0)
-            rc = VbglR3GuestPropReadValue(u32ClientId,
+            rc = VbglR3GuestPropReadValue(idClient,
                                           VIDEO_PROP_PREFIX"SavedMode",
                                           szModeParms, sizeof(szModeParms),
                                           NULL);
     }
-    if (u32ClientId != 0)
-        rc2 = VbglR3GuestPropDisconnect(u32ClientId);
+    if (idClient != 0)
+        rc2 = VbglR3GuestPropDisconnect(idClient);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
-/*
- * Now we convert the string returned to numeric values.
- */
+    /*
+     * Now we convert the string returned to numeric values.
+     */
     if (RT_SUCCESS(rc))
     {
         char c1, c2;
-        cMatches = sscanf(szModeParms, "%5ux%5ux%2u%c%5ux%5u,%1u%c", &cx, &cy, &cBits,
-                          &c1, &x, &y, &fEnabled, &c2);
+        cMatches = sscanf(szModeParms, "%5ux%5ux%2u%c%5ux%5u,%1u%c", &cx, &cy, &cBits, &c1, &x, &y, &fEnabled, &c2);
         if ((cMatches == 7 && c1 == ',') || cMatches == 3)
             rc = VINF_SUCCESS;
         else if (cMatches < 0)
@@ -490,9 +486,10 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned idScreen,
         else
             rc = VERR_PARSE_ERROR;
     }
-/*
- * And clean up and return the values if we successfully obtained them.
- */
+
+    /*
+     * And clean up and return the values if we successfully obtained them.
+     */
     if (RT_SUCCESS(rc))
     {
         if (pcx)

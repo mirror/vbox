@@ -43,10 +43,10 @@
  * Connects to the shared folder service.
  *
  * @returns VBox status code
- * @param   pu32ClientId    Where to put the client id on success. The client id
+ * @param   pidClient       Where to put the client id on success. The client id
  *                          must be passed to all the other calls to the service.
  */
-VBGLR3DECL(int) VbglR3SharedFolderConnect(uint32_t *pu32ClientId)
+VBGLR3DECL(int) VbglR3SharedFolderConnect(HGCMCLIENTID *pidClient)
 {
     VBoxGuestHGCMConnectInfo Info;
     Info.result = VERR_WRONG_ORDER;
@@ -60,7 +60,7 @@ VBGLR3DECL(int) VbglR3SharedFolderConnect(uint32_t *pu32ClientId)
     {
         rc = Info.result;
         if (RT_SUCCESS(rc))
-            *pu32ClientId = Info.u32ClientID;
+            *pidClient = Info.u32ClientID;
     }
     return rc;
 }
@@ -70,13 +70,13 @@ VBGLR3DECL(int) VbglR3SharedFolderConnect(uint32_t *pu32ClientId)
  * Disconnect from the shared folder service.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InfoSvcConnect().
  */
-VBGLR3DECL(int) VbglR3SharedFolderDisconnect(uint32_t u32ClientId)
+VBGLR3DECL(int) VbglR3SharedFolderDisconnect(HGCMCLIENTID idClient)
 {
     VBoxGuestHGCMDisconnectInfo Info;
     Info.result = VERR_WRONG_ORDER;
-    Info.u32ClientID = u32ClientId;
+    Info.u32ClientID = idClient;
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
     if (RT_SUCCESS(rc))
@@ -89,10 +89,10 @@ VBGLR3DECL(int) VbglR3SharedFolderDisconnect(uint32_t u32ClientId)
  * Checks whether a shared folder share exists or not.
  *
  * @returns True if shared folder exists, false if not.
- * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InfoSvcConnect().
  * @param   pszShareName    Shared folder name to check.
  */
-VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, const char *pszShareName)
+VBGLR3DECL(bool) VbglR3SharedFolderExists(HGCMCLIENTID idClient, const char *pszShareName)
 {
     AssertPtr(pszShareName);
 
@@ -101,14 +101,13 @@ VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, const char *pszS
 
     /** @todo Use some caching here? */
     bool fFound = false;
-    int rc = VbglR3SharedFolderGetMappings(u32ClientId, true /* Only process auto-mounted folders */,
-                                           &paMappings, &cMappings);
+    int rc = VbglR3SharedFolderGetMappings(idClient, true /* Only process auto-mounted folders */, &paMappings, &cMappings);
     if (RT_SUCCESS(rc))
     {
         for (uint32_t i = 0; i < cMappings && !fFound; i++)
         {
             char *pszName = NULL;
-            rc = VbglR3SharedFolderGetName(u32ClientId, paMappings[i].u32Root, &pszName);
+            rc = VbglR3SharedFolderGetName(idClient, paMappings[i].u32Root, &pszName);
             if (   RT_SUCCESS(rc)
                 && *pszName)
             {
@@ -127,14 +126,14 @@ VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, const char *pszS
  * Get the list of available shared folders.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3SharedFolderConnect().
+ * @param   idClient        The client id returned by VbglR3SharedFolderConnect().
  * @param   fAutoMountOnly  Flag whether only auto-mounted shared folders
  *                          should be reported.
  * @param   ppaMappings     Allocated array which will retrieve the mapping info.  Needs
  *                          to be freed with VbglR3SharedFolderFreeMappings() later.
  * @param   pcMappings      The number of mappings returned in @a ppaMappings.
  */
-VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMountOnly,
+VBGLR3DECL(int) VbglR3SharedFolderGetMappings(HGCMCLIENTID idClient, bool fAutoMountOnly,
                                               PVBGLR3SHAREDFOLDERMAPPING *ppaMappings, uint32_t *pcMappings)
 {
     AssertPtrReturn(pcMappings, VERR_INVALID_PARAMETER);
@@ -146,7 +145,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMo
     VBoxSFQueryMappings Msg;
 
     Msg.callInfo.result = VERR_WRONG_ORDER;
-    Msg.callInfo.u32ClientID = u32ClientId;
+    Msg.callInfo.u32ClientID = idClient;
     Msg.callInfo.u32Function = SHFL_FN_QUERY_MAPPINGS;
     Msg.callInfo.cParms = 3;
 
@@ -227,19 +226,19 @@ VBGLR3DECL(void) VbglR3SharedFolderFreeMappings(PVBGLR3SHAREDFOLDERMAPPING paMap
  * Get the real name of a shared folder.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InvsSvcConnect().
  * @param   u32Root         Root ID of shared folder to get the name for.
  * @param   ppszName        Where to return the name string.  This shall be
  *                          freed by calling RTStrFree.
  */
-VBGLR3DECL(int) VbglR3SharedFolderGetName(uint32_t u32ClientId, uint32_t u32Root, char **ppszName)
+VBGLR3DECL(int) VbglR3SharedFolderGetName(HGCMCLIENTID idClient, uint32_t u32Root, char **ppszName)
 {
     AssertPtr(ppszName);
 
     VBoxSFQueryMapName Msg;
 
     Msg.callInfo.result = VERR_WRONG_ORDER;
-    Msg.callInfo.u32ClientID = u32ClientId;
+    Msg.callInfo.u32ClientID = idClient;
     Msg.callInfo.u32Function = SHFL_FN_QUERY_MAP_NAME;
     Msg.callInfo.cParms = 2;
 
@@ -287,18 +286,18 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMountPrefix(char **ppszPrefix)
     AssertPtrReturn(ppszPrefix, VERR_INVALID_POINTER);
     int rc;
 #ifdef VBOX_WITH_GUEST_PROPS
-    uint32_t u32ClientIdGuestProp;
-    rc = VbglR3GuestPropConnect(&u32ClientIdGuestProp);
+    HGCMCLIENTID idClientGuestProp;
+    rc = VbglR3GuestPropConnect(&idClientGuestProp);
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR3GuestPropReadValueAlloc(u32ClientIdGuestProp, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", ppszPrefix);
+        rc = VbglR3GuestPropReadValueAlloc(idClientGuestProp, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", ppszPrefix);
         if (rc == VERR_NOT_FOUND) /* No prefix set? Then set the default. */
         {
 #endif
             rc = RTStrDupEx(ppszPrefix, "sf_");
 #ifdef VBOX_WITH_GUEST_PROPS
         }
-        VbglR3GuestPropDisconnect(u32ClientIdGuestProp);
+        VbglR3GuestPropDisconnect(idClientGuestProp);
     }
 #endif
     return rc;
@@ -319,12 +318,12 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMountDir(char **ppszDir)
     AssertPtrReturn(ppszDir, VERR_INVALID_POINTER);
     int rc;
 #ifdef VBOX_WITH_GUEST_PROPS
-    uint32_t u32ClientIdGuestProp;
-    rc = VbglR3GuestPropConnect(&u32ClientIdGuestProp);
+    HGCMCLIENTID idClientGuestProp;
+    rc = VbglR3GuestPropConnect(&idClientGuestProp);
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR3GuestPropReadValueAlloc(u32ClientIdGuestProp, "/VirtualBox/GuestAdd/SharedFolders/MountDir", ppszDir);
-        VbglR3GuestPropDisconnect(u32ClientIdGuestProp);
+        rc = VbglR3GuestPropReadValueAlloc(idClientGuestProp, "/VirtualBox/GuestAdd/SharedFolders/MountDir", ppszDir);
+        VbglR3GuestPropDisconnect(idClientGuestProp);
     }
 #endif
     return rc;

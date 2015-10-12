@@ -40,8 +40,7 @@
  * @param   pfnNotify  the function to call back.  NULL to disable call backs.
  * @param   pvUser     user supplied data/cookie to be passed to the function.
  */
-DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify,
-                                         void *pvUser)
+DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void *pvUser)
 {
     VBoxGuestMouseSetNotifyCallback NotifyCallback;
     VBGLDRIVER *pDriver;
@@ -50,8 +49,7 @@ DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify,
         return rc;
     NotifyCallback.pfnNotify = pfnNotify;
     NotifyCallback.pvUser    = pvUser;
-    return vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK,
-                           &NotifyCallback, sizeof(NotifyCallback));
+    return vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK, &NotifyCallback, sizeof(NotifyCallback));
 }
 
 /**
@@ -64,8 +62,7 @@ DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify,
  * @param   px          Where to store the X co-ordinate.
  * @param   py          Where to store the Y co-ordinate.
  */
-DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px,
-                                 uint32_t *py)
+DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py)
 {
     VMMDevReqMouseStatus Req;
     VBGLDRIVER *pDriver;
@@ -78,8 +75,7 @@ DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px,
     Req.mouseFeatures = 0;
     Req.pointerXPos = 0;
     Req.pointerYPos = 0;
-    rc = vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(Req)),
-                         &Req.header, sizeof(Req));
+    rc = vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(Req)), &Req.header, sizeof(Req));
     if (RT_FAILURE(rc))
         return rc;
     if (RT_FAILURE(Req.header.rc))
@@ -111,6 +107,6 @@ DECLVBGL(int) VbglSetMouseStatus(uint32_t fFeatures)
     rc = vbglGetDriver(&pDriver);
     if (RT_FAILURE(rc))
         return rc;
-    return vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_SET_MOUSE_STATUS,
-                           &fFeatures, sizeof(fFeatures));
+    return vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &fFeatures, sizeof(fFeatures));
 }
+

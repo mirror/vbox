@@ -72,7 +72,6 @@ VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_
  */
 VBGLR3DECL(int) VbglR3SetMouseStatus(uint32_t fFeatures)
 {
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &fFeatures,
-                         sizeof(fFeatures));
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &fFeatures, sizeof(fFeatures));
 }
 

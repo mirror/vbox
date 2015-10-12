@@ -79,6 +79,11 @@
 
 RT_C_DECLS_BEGIN
 
+/** HGCM client ID.
+ * @todo Promote to VBox/types.h  */
+typedef uint32_t HGCMCLIENTID;
+
+
 /** @defgroup grp_vboxguest_lib_r0     Ring-0 interface.
  * @{
  */
@@ -134,7 +139,7 @@ DECLVBGL(void) VbglTerminate(void);
  * @param   cbReq       Size of memory block required for the request.
  * @param   enmReqType  the generic request type.
  */
-DECLVBGL(int) VbglGRAlloc(VMMDevRequestHeader **ppReq, uint32_t cbReq, VMMDevRequestType enmReqType);
+DECLVBGL(int) VbglGRAlloc(VMMDevRequestHeader **ppReq, size_t cbReq, VMMDevRequestType enmReqType);
 
 /**
  * Perform the generic request.
@@ -343,8 +348,8 @@ DECLVBGL(int) VbglHGCMCallTimed(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfoTime
 typedef VBGLHGCMHANDLE HVBOXCRCTL;
 DECLVBGL(int) VbglR0CrCtlCreate(HVBOXCRCTL *phCtl);
 DECLVBGL(int) VbglR0CrCtlDestroy(HVBOXCRCTL hCtl);
-DECLVBGL(int) VbglR0CrCtlConConnect(HVBOXCRCTL hCtl, uint32_t *pu32ClientID);
-DECLVBGL(int) VbglR0CrCtlConDisconnect(HVBOXCRCTL hCtl, uint32_t u32ClientID);
+DECLVBGL(int) VbglR0CrCtlConConnect(HVBOXCRCTL hCtl, HGCMCLIENTID *pidClient);
+DECLVBGL(int) VbglR0CrCtlConDisconnect(HVBOXCRCTL hCtl, HGCMCLIENTID idClient);
 DECLVBGL(int) VbglR0CrCtlConCall(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
 DECLVBGL(int) VbglR0CrCtlConCallUserData(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
 /** @} */
@@ -450,12 +455,12 @@ VBGLR3DECL(int)     VbglR3GetSessionId(uint64_t *pu64IdSession);
 
 /** @name Shared clipboard
  * @{ */
-VBGLR3DECL(int)     VbglR3ClipboardConnect(uint32_t *pidClient);
-VBGLR3DECL(int)     VbglR3ClipboardDisconnect(uint32_t idClient);
-VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(uint32_t idClient, uint32_t *pMsg, uint32_t *pfFormats);
-VBGLR3DECL(int)     VbglR3ClipboardReadData(uint32_t idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
-VBGLR3DECL(int)     VbglR3ClipboardReportFormats(uint32_t idClient, uint32_t fFormats);
-VBGLR3DECL(int)     VbglR3ClipboardWriteData(uint32_t idClient, uint32_t fFormat, void *pv, uint32_t cb);
+VBGLR3DECL(int)     VbglR3ClipboardConnect(HGCMCLIENTID *pidClient);
+VBGLR3DECL(int)     VbglR3ClipboardDisconnect(HGCMCLIENTID idClient);
+VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats);
+VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
+VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
+VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
 /** @} */
 
 /** @name Seamless mode
@@ -531,30 +536,30 @@ typedef struct VBGLR3GUESTPROPENUM VBGLR3GUESTPROPENUM;
 /** @todo Docs. */
 typedef VBGLR3GUESTPROPENUM *PVBGLR3GUESTPROPENUM;
 VBGLR3DECL(int)     VbglR3GuestPropConnect(uint32_t *pidClient);
-VBGLR3DECL(int)     VbglR3GuestPropDisconnect(uint32_t idClient);
-VBGLR3DECL(int)     VbglR3GuestPropWrite(uint32_t idClient, const char *pszName, const char *pszValue, const char *pszFlags);
-VBGLR3DECL(int)     VbglR3GuestPropWriteValue(uint32_t idClient, const char *pszName, const char *pszValue);
-VBGLR3DECL(int)     VbglR3GuestPropWriteValueV(uint32_t idClient, const char *pszName,
+VBGLR3DECL(int)     VbglR3GuestPropDisconnect(HGCMCLIENTID idClient);
+VBGLR3DECL(int)     VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName, const char *pszValue, const char *pszFlags);
+VBGLR3DECL(int)     VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *pszName, const char *pszValue);
+VBGLR3DECL(int)     VbglR3GuestPropWriteValueV(HGCMCLIENTID idClient, const char *pszName,
                                                const char *pszValueFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
-VBGLR3DECL(int)     VbglR3GuestPropWriteValueF(uint32_t idClient, const char *pszName,
+VBGLR3DECL(int)     VbglR3GuestPropWriteValueF(HGCMCLIENTID idClient, const char *pszName,
                                                const char *pszValueFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
-VBGLR3DECL(int)     VbglR3GuestPropRead(uint32_t idClient, const char *pszName, void *pvBuf, uint32_t cbBuf, char **ppszValue,
+VBGLR3DECL(int)     VbglR3GuestPropRead(HGCMCLIENTID idClient, const char *pszName, void *pvBuf, uint32_t cbBuf, char **ppszValue,
                                         uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
 VBGLR3DECL(int)     VbglR3GuestPropReadValue(uint32_t ClientId, const char *pszName, char *pszValue, uint32_t cchValue,
                                              uint32_t *pcchValueActual);
-VBGLR3DECL(int)     VbglR3GuestPropReadValueAlloc(uint32_t idClient, const char *pszName, char **ppszValue);
+VBGLR3DECL(int)     VbglR3GuestPropReadValueAlloc(HGCMCLIENTID idClient, const char *pszName, char **ppszValue);
 VBGLR3DECL(void)    VbglR3GuestPropReadValueFree(char *pszValue);
-VBGLR3DECL(int)     VbglR3GuestPropEnumRaw(uint32_t idClient, const char *paszPatterns, char *pcBuf, uint32_t cbBuf,
+VBGLR3DECL(int)     VbglR3GuestPropEnumRaw(HGCMCLIENTID idClient, const char *paszPatterns, char *pcBuf, uint32_t cbBuf,
                                            uint32_t *pcbBufActual);
-VBGLR3DECL(int)     VbglR3GuestPropEnum(uint32_t idClient, char const * const *ppaszPatterns, uint32_t cPatterns,
+VBGLR3DECL(int)     VbglR3GuestPropEnum(HGCMCLIENTID idClient, char const * const *ppaszPatterns, uint32_t cPatterns,
                                         PVBGLR3GUESTPROPENUM *ppHandle, char const **ppszName, char const **ppszValue,
                                         uint64_t *pu64Timestamp, char const **ppszFlags);
 VBGLR3DECL(int)     VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle, char const **ppszName, char const **ppszValue,
                                             uint64_t *pu64Timestamp, char const **ppszFlags);
 VBGLR3DECL(void)    VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle);
-VBGLR3DECL(int)     VbglR3GuestPropDelete(uint32_t idClient, const char *pszName);
-VBGLR3DECL(int)     VbglR3GuestPropDelSet(uint32_t idClient, char const * const *papszPatterns, uint32_t cPatterns);
-VBGLR3DECL(int)     VbglR3GuestPropWait(uint32_t idClient, const char *pszPatterns, void *pvBuf, uint32_t cbBuf,
+VBGLR3DECL(int)     VbglR3GuestPropDelete(HGCMCLIENTID idClient, const char *pszName);
+VBGLR3DECL(int)     VbglR3GuestPropDelSet(HGCMCLIENTID idClient, char const * const *papszPatterns, uint32_t cPatterns);
+VBGLR3DECL(int)     VbglR3GuestPropWait(HGCMCLIENTID idClient, const char *pszPatterns, void *pvBuf, uint32_t cbBuf,
                                         uint64_t u64Timestamp, uint32_t cMillies, char ** ppszName, char **ppszValue,
                                         uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
 /** @}  */
@@ -567,10 +572,10 @@ VBGLR3DECL(int)     VbglR3GuestUserReportState(const char *pszUser, const char *
 
 /** @name Host version handling
  * @{ */
-VBGLR3DECL(int)     VbglR3HostVersionCheckForUpdate(uint32_t idClient, bool *pfUpdate, char **ppszHostVersion,
+VBGLR3DECL(int)     VbglR3HostVersionCheckForUpdate(HGCMCLIENTID idClient, bool *pfUpdate, char **ppszHostVersion,
                                                     char **ppszGuestVersion);
-VBGLR3DECL(int)     VbglR3HostVersionLastCheckedLoad(uint32_t idClient, char **ppszVer);
-VBGLR3DECL(int)     VbglR3HostVersionLastCheckedStore(uint32_t idClient, const char *pszVer);
+VBGLR3DECL(int)     VbglR3HostVersionLastCheckedLoad(HGCMCLIENTID idClient, char **ppszVer);
+VBGLR3DECL(int)     VbglR3HostVersionLastCheckedStore(HGCMCLIENTID idClient, const char *pszVer);
 /** @}  */
 # endif /* VBOX_WITH_GUEST_PROPS defined */
 
@@ -593,12 +598,12 @@ typedef VBGLR3SHAREDFOLDERMAPPING *PVBGLR3SHAREDFOLDERMAPPING;
 typedef VBGLR3SHAREDFOLDERMAPPING const *PCVBGLR3SHAREDFOLDERMAPPING;
 
 VBGLR3DECL(int)     VbglR3SharedFolderConnect(uint32_t *pidClient);
-VBGLR3DECL(int)     VbglR3SharedFolderDisconnect(uint32_t idClient);
-VBGLR3DECL(bool)    VbglR3SharedFolderExists(uint32_t idClient, const char *pszShareName);
-VBGLR3DECL(int)     VbglR3SharedFolderGetMappings(uint32_t idClient, bool fAutoMountOnly,
+VBGLR3DECL(int)     VbglR3SharedFolderDisconnect(HGCMCLIENTID idClient);
+VBGLR3DECL(bool)    VbglR3SharedFolderExists(HGCMCLIENTID idClient, const char *pszShareName);
+VBGLR3DECL(int)     VbglR3SharedFolderGetMappings(HGCMCLIENTID idClient, bool fAutoMountOnly,
                                                   PVBGLR3SHAREDFOLDERMAPPING *ppaMappings, uint32_t *pcMappings);
 VBGLR3DECL(void)    VbglR3SharedFolderFreeMappings(PVBGLR3SHAREDFOLDERMAPPING paMappings);
-VBGLR3DECL(int)     VbglR3SharedFolderGetName(uint32_t  idClient,uint32_t u32Root, char **ppszName);
+VBGLR3DECL(int)     VbglR3SharedFolderGetName(HGCMCLIENTID  idClient,uint32_t u32Root, char **ppszName);
 VBGLR3DECL(int)     VbglR3SharedFolderGetMountPrefix(char **ppszPrefix);
 VBGLR3DECL(int)     VbglR3SharedFolderGetMountDir(char **ppszDir);
 /** @}  */
@@ -644,7 +649,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx, int rc, u
                                           void *pvPayload, uint32_t cbPayload);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, uint32_t *puNumParms);
-VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t idClient);
+VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(HGCMCLIENTID idClient);
 /* Guest session handling. */
 VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t fFlags);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uType, uint32_t uResult);

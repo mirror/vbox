@@ -45,7 +45,7 @@
  *
  * @returns VBox status code
  *
- * @param   u32ClientId         The client id returned by
+ * @param   idClient            The client id returned by
  *                              VbglR3InfoSvcConnect().
  * @param   pfUpdate            Receives pointer to boolean flag indicating
  *                              whether an update was found or not.
@@ -58,9 +58,9 @@
  *                              VbglR3GuestPropReadValueFree().  Always set to
  *                              NULL.
  */
-VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUpdate, char **ppszHostVersion, char **ppszGuestVersion)
+VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(HGCMCLIENTID idClient, bool *pfUpdate, char **ppszHostVersion, char **ppszGuestVersion)
 {
-    Assert(u32ClientId > 0);
+    Assert(idClient > 0);
     AssertPtr(pfUpdate);
     AssertPtr(ppszHostVersion);
     AssertPtr(ppszGuestVersion);
@@ -74,7 +74,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
 
     /* Do we need to do all this stuff? */
     char *pszCheckHostVersion;
-    int rc = VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/GuestAdd/CheckHostVersion", &pszCheckHostVersion);
+    int rc = VbglR3GuestPropReadValueAlloc(idClient, "/VirtualBox/GuestAdd/CheckHostVersion", &pszCheckHostVersion);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_NOT_FOUND)
@@ -99,7 +99,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
     if (RT_SUCCESS(rc) && *pfUpdate)
     {
         /* Look up host version */
-        rc = VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/HostInfo/VBoxVer", ppszHostVersion);
+        rc = VbglR3GuestPropReadValueAlloc(idClient, "/VirtualBox/HostInfo/VBoxVer", ppszHostVersion);
         if (RT_FAILURE(rc))
         {
             LogFlow(("Could not read VBox host version! rc = %Rrc\n", rc));
@@ -110,7 +110,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
 
             /* Get last checked host version */
             char *pszLastCheckedHostVersion;
-            rc = VbglR3HostVersionLastCheckedLoad(u32ClientId, &pszLastCheckedHostVersion);
+            rc = VbglR3HostVersionLastCheckedLoad(idClient, &pszLastCheckedHostVersion);
             if (RT_SUCCESS(rc))
             {
                 LogFlow(("Last checked host version: %s\n", pszLastCheckedHostVersion));
@@ -172,15 +172,15 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
  *
  * @returns VBox status code.
  *
- * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InfoSvcConnect().
  * @param   ppszVer         Receives pointer of allocated version string.
  *                          The returned pointer must be freed using RTStrFree() on VINF_SUCCESS.
  */
-VBGLR3DECL(int) VbglR3HostVersionLastCheckedLoad(uint32_t u32ClientId, char **ppszVer)
+VBGLR3DECL(int) VbglR3HostVersionLastCheckedLoad(HGCMCLIENTID idClient, char **ppszVer)
 {
-    Assert(u32ClientId > 0);
+    Assert(idClient > 0);
     AssertPtr(ppszVer);
-    return VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/GuestAdd/HostVerLastChecked", ppszVer);
+    return VbglR3GuestPropReadValueAlloc(idClient, "/VirtualBox/GuestAdd/HostVerLastChecked", ppszVer);
 }
 
 
@@ -189,12 +189,13 @@ VBGLR3DECL(int) VbglR3HostVersionLastCheckedLoad(uint32_t u32ClientId, char **pp
  *
  * @returns VBox status code.
  *
- * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InfoSvcConnect().
  * @param   pszVer          Pointer to version string to store.
  */
-VBGLR3DECL(int) VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, const char *pszVer)
+VBGLR3DECL(int) VbglR3HostVersionLastCheckedStore(HGCMCLIENTID idClient, const char *pszVer)
 {
-    Assert(u32ClientId > 0);
+    Assert(idClient > 0);
     AssertPtr(pszVer);
-    return VbglR3GuestPropWriteValue(u32ClientId, "/VirtualBox/GuestAdd/HostVerLastChecked", pszVer);
+    return VbglR3GuestPropWriteValue(idClient, "/VirtualBox/GuestAdd/HostVerLastChecked", pszVer);
 }
+

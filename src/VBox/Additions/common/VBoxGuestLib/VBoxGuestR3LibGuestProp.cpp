@@ -123,10 +123,10 @@ using namespace guestProp;
  *
  * @returns VBox status code
  * @returns VERR_NOT_SUPPORTED if guest properties are not available on the host.
- * @param   pu32ClientId    Where to put the client id on success. The client id
+ * @param   pidClient       Where to put the client ID on success. The client ID
  *                          must be passed to all the other calls to the service.
  */
-VBGLR3DECL(int) VbglR3GuestPropConnect(uint32_t *pu32ClientId)
+VBGLR3DECL(int) VbglR3GuestPropConnect(HGCMCLIENTID *pidClient)
 {
     VBoxGuestHGCMConnectInfo Info;
     Info.result = VERR_WRONG_ORDER;
@@ -140,7 +140,7 @@ VBGLR3DECL(int) VbglR3GuestPropConnect(uint32_t *pu32ClientId)
     {
         rc = Info.result;
         if (RT_SUCCESS(rc))
-            *pu32ClientId = Info.u32ClientID;
+            *pidClient = Info.u32ClientID;
         if (rc == VERR_NOT_IMPLEMENTED || rc == VERR_HGCM_SERVICE_NOT_FOUND)
             rc = VERR_NOT_SUPPORTED;
     }
@@ -152,13 +152,13 @@ VBGLR3DECL(int) VbglR3GuestPropConnect(uint32_t *pu32ClientId)
  * Disconnect from the guest property service.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InfoSvcConnect().
  */
-VBGLR3DECL(int) VbglR3GuestPropDisconnect(uint32_t u32ClientId)
+VBGLR3DECL(int) VbglR3GuestPropDisconnect(HGCMCLIENTID idClient)
 {
     VBoxGuestHGCMDisconnectInfo Info;
     Info.result = VERR_WRONG_ORDER;
-    Info.u32ClientID = u32ClientId;
+    Info.u32ClientID = idClient;
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
     if (RT_SUCCESS(rc))
@@ -171,13 +171,13 @@ VBGLR3DECL(int) VbglR3GuestPropDisconnect(uint32_t u32ClientId)
  * Write a property value.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InvsSvcConnect().
  * @param   pszName         The property to save to.  Utf8
  * @param   pszValue        The value to store.  Utf8.  If this is NULL then
  *                          the property will be removed.
  * @param   pszFlags        The flags for the property
  */
-VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, const char *pszValue, const char *pszFlags)
+VBGLR3DECL(int) VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName, const char *pszValue, const char *pszFlags)
 {
     int rc;
 
@@ -186,7 +186,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, 
         SetProperty Msg;
 
         Msg.hdr.result = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = u32ClientId;
+        Msg.hdr.u32ClientID = idClient;
         Msg.hdr.u32Function = SET_PROP_VALUE;
         Msg.hdr.cParms = 3;
         VbglHGCMParmPtrSetString(&Msg.name,  pszName);
@@ -201,7 +201,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, 
         DelProperty Msg;
 
         Msg.hdr.result = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = u32ClientId;
+        Msg.hdr.u32ClientID = idClient;
         Msg.hdr.u32Function = DEL_PROP;
         Msg.hdr.cParms = 1;
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
@@ -218,7 +218,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, 
  *
  * @returns VBox status code.
  *
- * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InvsSvcConnect().
  * @param   pszName         The property to save to.  Must be valid UTF-8.
  * @param   pszValue        The value to store.  Must be valid UTF-8.
  *                          If this is NULL then the property will be removed.
@@ -226,7 +226,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, 
  * @note  if the property already exists and pszValue is not NULL then the
  *        property's flags field will be left unchanged
  */
-VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszName, const char *pszValue)
+VBGLR3DECL(int) VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *pszName, const char *pszValue)
 {
     int rc;
 
@@ -235,7 +235,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
         SetPropertyValue Msg;
 
         Msg.hdr.result = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = u32ClientId;
+        Msg.hdr.u32ClientID = idClient;
         Msg.hdr.u32Function = SET_PROP_VALUE;
         Msg.hdr.cParms = 2;
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
@@ -249,7 +249,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
         DelProperty Msg;
 
         Msg.hdr.result = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = u32ClientId;
+        Msg.hdr.u32ClientID = idClient;
         Msg.hdr.u32Function = DEL_PROP;
         Msg.hdr.cParms = 1;
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
@@ -266,12 +266,12 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
  *
  * @returns The same as VbglR3GuestPropWriteValue with the addition of VERR_NO_STR_MEMORY.
  *
- * @param   u32ClientId     The client ID returned by VbglR3InvsSvcConnect().
+ * @param   idClient        The client ID returned by VbglR3InvsSvcConnect().
  * @param   pszName         The property to save to.  Must be valid UTF-8.
  * @param   pszValueFormat  The value format. This must be valid UTF-8 when fully formatted.
  * @param   va              The format arguments.
  */
-VBGLR3DECL(int) VbglR3GuestPropWriteValueV(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, va_list va)
+VBGLR3DECL(int) VbglR3GuestPropWriteValueV(HGCMCLIENTID idClient, const char *pszName, const char *pszValueFormat, va_list va)
 {
     /*
      * Format the value and pass it on to the setter.
@@ -280,7 +280,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValueV(uint32_t u32ClientId, const char *psz
     char *pszValue;
     if (RTStrAPrintfV(&pszValue, pszValueFormat, va) >= 0)
     {
-        rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue);
+        rc = VbglR3GuestPropWriteValue(idClient, pszName, pszValue);
         RTStrFree(pszValue);
     }
     return rc;
@@ -292,16 +292,16 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValueV(uint32_t u32ClientId, const char *psz
  *
  * @returns The same as VbglR3GuestPropWriteValue with the addition of VERR_NO_STR_MEMORY.
  *
- * @param   u32ClientId     The client ID returned by VbglR3InvsSvcConnect().
+ * @param   idClient        The client ID returned by VbglR3InvsSvcConnect().
  * @param   pszName         The property to save to.  Must be valid UTF-8.
  * @param   pszValueFormat  The value format. This must be valid UTF-8 when fully formatted.
  * @param   ...             The format arguments.
  */
-VBGLR3DECL(int) VbglR3GuestPropWriteValueF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...)
+VBGLR3DECL(int) VbglR3GuestPropWriteValueF(HGCMCLIENTID idClient, const char *pszName, const char *pszValueFormat, ...)
 {
     va_list va;
     va_start(va, pszValueFormat);
-    int rc = VbglR3GuestPropWriteValueV(u32ClientId, pszName, pszValueFormat, va);
+    int rc = VbglR3GuestPropWriteValueV(idClient, pszName, pszValueFormat, va);
     va_end(va);
     return rc;
 }
@@ -318,7 +318,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValueF(uint32_t u32ClientId, const char *psz
  *          @a pcbBufActual if it is not NULL.
  * @retval  VERR_NOT_FOUND if the key wasn't found.
  *
- * @param   u32ClientId     The client id returned by VbglR3GuestPropConnect().
+ * @param   idClient        The client id returned by VbglR3GuestPropConnect().
  * @param   pszName         The value to read.  Utf8
  * @param   pvBuf           A scratch buffer to store the data retrieved into.
  *                          The returned data is only valid for it's lifetime.
@@ -331,7 +331,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValueF(uint32_t u32ClientId, const char *psz
  * @param   pcbBufActual    If @a pcBuf is not large enough, the size needed.
  *                          Optional.
  */
-VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
+VBGLR3DECL(int) VbglR3GuestPropRead(HGCMCLIENTID idClient, const char *pszName,
                                     void *pvBuf, uint32_t cbBuf,
                                     char **ppszValue, uint64_t *pu64Timestamp,
                                     char **ppszFlags,
@@ -343,7 +343,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
     GetProperty Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32ClientID = idClient;
     Msg.hdr.u32Function = GET_PROP;
     Msg.hdr.cParms = 4;
     VbglHGCMParmPtrSetString(&Msg.name, pszName);
@@ -414,15 +414,13 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
  *          race between our allocating space and the host changing the
  *          property value.
  *
- * @param   u32ClientId     The client id returned by VbglR3GuestPropConnect().
+ * @param   idClient        The client id returned by VbglR3GuestPropConnect().
  * @param   pszName         The value to read. Must be valid UTF-8.
  * @param   ppszValue       Where to store the pointer to the value returned.
  *                          This is always set to NULL or to the result, even
  *                          on failure.
  */
-VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId,
-                                              const char *pszName,
-                                              char **ppszValue)
+VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(HGCMCLIENTID idClient, const char *pszName, char **ppszValue)
 {
     /*
      * Quick input validation.
@@ -448,7 +446,7 @@ VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId,
         if (pvTmpBuf)
         {
             pvBuf = pvTmpBuf;
-            rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cchBuf,
+            rc = VbglR3GuestPropRead(idClient, pszName, pvBuf, cchBuf,
                                      &pszValue, NULL, NULL, &cchBuf);
         }
         else
@@ -496,21 +494,20 @@ VBGLR3DECL(void) VbglR3GuestPropReadValueFree(char *pszValue)
  * @note    There is a race here between obtaining the size of the buffer
  *          needed to hold the value and the value being updated.
  *
- * @param   u32ClientId     The client id returned by VbglR3GuestPropConnect().
+ * @param   idClient        The client id returned by VbglR3GuestPropConnect().
  * @param   pszName         The value to read.  Utf8
  * @param   pszValue        Where to store the value retrieved.
  * @param   cchValue        The size of the buffer pointed to by @a pszValue
  * @param   pcchValueActual Where to store the size of the buffer needed if
  *                          the buffer supplied is too small.  Optional.
  */
-VBGLR3DECL(int) VbglR3GuestPropReadValue(uint32_t u32ClientId, const char *pszName,
+VBGLR3DECL(int) VbglR3GuestPropReadValue(HGCMCLIENTID idClient, const char *pszName,
                                          char *pszValue, uint32_t cchValue,
                                          uint32_t *pcchValueActual)
 {
     void *pvBuf = pszValue;
     uint32_t cchValueActual;
-    int rc = VbglR3GuestPropRead(u32ClientId, pszName, pvBuf, cchValue,
-                                 &pszValue, NULL, NULL, &cchValueActual);
+    int rc = VbglR3GuestPropRead(idClient, pszName, pvBuf, cchValue, &pszValue, NULL, NULL, &cchValueActual);
     if (pcchValueActual != NULL)
         *pcchValueActual = cchValueActual;
     return rc;
@@ -530,7 +527,7 @@ VBGLR3DECL(int) VbglR3GuestPropReadValue(uint32_t u32ClientId, const char *pszNa
  *          this case pcbBufActual will contain the size of the buffer needed.
  * @returns IPRT error code in other cases, and pchBufActual is undefined.
  *
- * @param   u32ClientId   The client ID returned by VbglR3GuestPropConnect
+ * @param   idClient      The client ID returned by VbglR3GuestPropConnect
  * @param   paszPatterns  A packed array of zero terminated strings, terminated
  *                        by an empty string.
  * @param   pcBuf         The buffer to store the results to.
@@ -539,7 +536,7 @@ VBGLR3DECL(int) VbglR3GuestPropReadValue(uint32_t u32ClientId, const char *pszNa
  *                        success or the buffer size needed if @a pcBuf is too
  *                        small.
  */
-VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
+VBGLR3DECL(int) VbglR3GuestPropEnumRaw(HGCMCLIENTID idClient,
                                        const char *pszzPatterns,
                                        char *pcBuf,
                                        uint32_t cbBuf,
@@ -548,7 +545,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
     EnumProperties Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32ClientID = idClient;
     Msg.hdr.u32Function = ENUM_PROPS;
     Msg.hdr.cParms = 3;
     /* Get the length of the patterns array... */
@@ -592,7 +589,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
  *          data, so retrying may help here.  Other parameters are left
  *          uninitialised
  *
- * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InfoSvcConnect().
  * @param   papszPatterns   The patterns against which the properties are
  *                          matched.  Pass NULL if everything should be matched.
  * @param   cPatterns       The number of patterns in @a papszPatterns.  0 means
@@ -616,7 +613,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
  * @remarks While all output parameters are optional, you need at least one to
  *          figure out when to stop.
  */
-VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
+VBGLR3DECL(int) VbglR3GuestPropEnum(HGCMCLIENTID idClient,
                                     char const * const *papszPatterns,
                                     uint32_t cPatterns,
                                     PVBGLR3GUESTPROPENUM *ppHandle,
@@ -663,7 +660,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
             rc = VERR_NO_MEMORY;
             break;
         }
-        rc = VbglR3GuestPropEnumRaw(u32ClientId, pszzPatterns, pchBuf, cbBuf, &cbBuf);
+        rc = VbglR3GuestPropEnumRaw(idClient, pszzPatterns, pchBuf, cbBuf, &cbBuf);
         if (rc != VERR_BUFFER_OVERFLOW)
             break;
         cbBuf += 4096;  /* Just to increase our chances */
@@ -808,17 +805,17 @@ VBGLR3DECL(void) VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle)
  * Deletes a guest property.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InvsSvcConnect().
  * @param   pszName         The property to delete.  Utf8
  */
-VBGLR3DECL(int) VbglR3GuestPropDelete(uint32_t u32ClientId, const char *pszName)
+VBGLR3DECL(int) VbglR3GuestPropDelete(HGCMCLIENTID idClient, const char *pszName)
 {
     AssertPtrReturn(pszName,  VERR_INVALID_POINTER);
 
     DelProperty Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32ClientID = idClient;
     Msg.hdr.u32Function = DEL_PROP;
     Msg.hdr.cParms = 1;
     VbglHGCMParmPtrSetString(&Msg.name, pszName);
@@ -838,20 +835,20 @@ VBGLR3DECL(int) VbglR3GuestPropDelete(uint32_t u32ClientId, const char *pszName)
  * @returns VBox status code. Stops on first failure.
  *          See also VbglR3GuestPropEnum.
  *
- * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   idClient        The client id returned by VbglR3InfoSvcConnect().
  * @param   papszPatterns   The patterns against which the properties are
  *                          matched.  Pass NULL if everything should be matched.
  * @param   cPatterns       The number of patterns in @a papszPatterns.  0 means
  *                          match everything.
  */
-VBGLR3DECL(int) VbglR3GuestPropDelSet(uint32_t u32ClientId,
+VBGLR3DECL(int) VbglR3GuestPropDelSet(HGCMCLIENTID idClient,
                                       const char * const *papszPatterns,
                                       uint32_t cPatterns)
 {
     PVBGLR3GUESTPROPENUM pHandle;
     char const *pszName, *pszValue, *pszFlags;
     uint64_t pu64Timestamp;
-    int rc = VbglR3GuestPropEnum(u32ClientId,
+    int rc = VbglR3GuestPropEnum(idClient,
                                  (char **)papszPatterns, /** @todo fix this cast. */
                                  cPatterns,
                                  &pHandle,
@@ -862,7 +859,7 @@ VBGLR3DECL(int) VbglR3GuestPropDelSet(uint32_t u32ClientId,
 
     while (RT_SUCCESS(rc) && pszName)
     {
-        rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, NULL);
+        rc = VbglR3GuestPropWriteValue(idClient, pszName, NULL);
         if (RT_FAILURE(rc))
             break;
 
@@ -894,7 +891,7 @@ VBGLR3DECL(int) VbglR3GuestPropDelSet(uint32_t u32ClientId,
  *          @a pcbBufActual if it is not NULL.
  * @retval  VERR_TIMEOUT if a timeout occurred before a notification was seen.
  *
- * @param   u32ClientId     The client id returned by VbglR3GuestPropConnect().
+ * @param   idClient        The client id returned by VbglR3GuestPropConnect().
  * @param   pszPatterns     The patterns that the property names must matchfor
  *                          the change to be reported.
  * @param   pvBuf           A scratch buffer to store the data retrieved into.
@@ -914,7 +911,7 @@ VBGLR3DECL(int) VbglR3GuestPropDelSet(uint32_t u32ClientId,
  * @param   pcbBufActual    If @a pcBuf is not large enough, the size needed.
  *                          Optional.
  */
-VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
+VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
                                     const char *pszPatterns,
                                     void *pvBuf, uint32_t cbBuf,
                                     uint64_t u64Timestamp, uint32_t cMillies,
@@ -930,7 +927,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
     Msg.hdr.u32Timeout = cMillies;
     Msg.hdr.fInterruptible = true;
     Msg.hdr.info.result = VERR_WRONG_ORDER;
-    Msg.hdr.info.u32ClientID = u32ClientId;
+    Msg.hdr.info.u32ClientID = idClient;
     Msg.hdr.info.u32Function = GET_NOTIFICATION;
     Msg.hdr.info.cParms = 4;
     VbglHGCMParmPtrSetString(&Msg.patterns, pszPatterns);

@@ -38,10 +38,10 @@
  * Connects to the clipboard service.
  *
  * @returns VBox status code
- * @param   pu32ClientId    Where to put the client id on success. The client id
+ * @param   pidClient       Where to put the client id on success. The client id
  *                          must be passed to all the other clipboard calls.
  */
-VBGLR3DECL(int) VbglR3ClipboardConnect(uint32_t *pu32ClientId)
+VBGLR3DECL(int) VbglR3ClipboardConnect(HGCMCLIENTID *pidClient )
 {
     VBoxGuestHGCMConnectInfo Info;
     Info.result = VERR_WRONG_ORDER;
@@ -55,7 +55,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(uint32_t *pu32ClientId)
     {
         rc = Info.result;
         if (RT_SUCCESS(rc))
-            *pu32ClientId = Info.u32ClientID;
+            *pidClient = Info.u32ClientID;
     }
     if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
         rc = VINF_PERMISSION_DENIED;
@@ -67,13 +67,13 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(uint32_t *pu32ClientId)
  * Disconnect from the clipboard service.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
+ * @param   idClientId      The client id returned by VbglR3ClipboardConnect().
  */
-VBGLR3DECL(int) VbglR3ClipboardDisconnect(uint32_t u32ClientId)
+VBGLR3DECL(int) VbglR3ClipboardDisconnect(HGCMCLIENTID idClient)
 {
     VBoxGuestHGCMDisconnectInfo Info;
     Info.result = VERR_WRONG_ORDER;
-    Info.u32ClientID = u32ClientId;
+    Info.u32ClientID = idClient;
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
     if (RT_SUCCESS(rc))
@@ -88,16 +88,16 @@ VBGLR3DECL(int) VbglR3ClipboardDisconnect(uint32_t u32ClientId)
  * This will block until a message becomes available.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
+ * @param   idClient        The client id returned by VbglR3ClipboardConnect().
  * @param   pMsg            Where to store the message id.
  * @param   pfFormats       Where to store the format(s) the message applies to.
  */
-VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, uint32_t *pfFormats)
+VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats)
 {
     VBoxClipboardGetHostMsg Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32ClientID = idClient;
     Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG;
     Msg.hdr.cParms = 2;
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
@@ -135,18 +135,18 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, 
  * @returns VBox status code.
  * @retval  VINF_BUFFER_OVERFLOW    If there is more data available than the caller provided buffer space for.
  *
- * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
+ * @param   idClient        The client id returned by VbglR3ClipboardConnect().
  * @param   fFormat         The format we're requesting the data in.
  * @param   pv              Where to store the data.
  * @param   cb              The size of the buffer pointed to by pv.
  * @param   pcb             The actual size of the host clipboard data. May be larger than cb.
  */
-VBGLR3DECL(int) VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb)
+VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb)
 {
     VBoxClipboardReadData Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32ClientID = idClient;
     Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_READ_DATA;
     Msg.hdr.cParms = 3;
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
@@ -178,15 +178,15 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, 
  * Advertises guest clipboard formats to the host.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
+ * @param   idClient        The client id returned by VbglR3ClipboardConnect().
  * @param   fFormats        The formats to advertise.
  */
-VBGLR3DECL(int) VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFormats)
+VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats)
 {
     VBoxClipboardFormats Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32ClientID = idClient;
     Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_FORMATS;
     Msg.hdr.cParms = 1;
     VbglHGCMParmUInt32Set(&Msg.formats, fFormats);
@@ -205,16 +205,16 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFor
  * from the host.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
+ * @param   idClient        The client id returned by VbglR3ClipboardConnect().
  * @param   fFormat         The format of the data.
  * @param   pv              The data.
  * @param   cb              The size of the data.
  */
-VBGLR3DECL(int) VbglR3ClipboardWriteData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb)
+VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb)
 {
     VBoxClipboardWriteData Msg;
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32ClientID = idClient;
     Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA;
     Msg.hdr.cParms = 2;
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);

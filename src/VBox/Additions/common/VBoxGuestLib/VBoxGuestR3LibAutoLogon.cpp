@@ -52,8 +52,7 @@ VBGLR3DECL(int) VbglR3AutoLogonReportStatus(VBoxGuestFacilityStatus enmStatus)
     static VBoxGuestFacilityStatus s_enmLastStatus = VBoxGuestFacilityStatus_Inactive;
     if (s_enmLastStatus != VBoxGuestFacilityStatus_Failed)
     {
-        int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_AutoLogon,
-                                             enmStatus, 0 /* Flags */);
+        int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_AutoLogon, enmStatus, 0 /* Flags */);
         if (rc == VERR_NOT_SUPPORTED)
         {
             /*
@@ -62,8 +61,8 @@ VBGLR3DECL(int) VbglR3AutoLogonReportStatus(VBoxGuestFacilityStatus enmStatus)
              * guest property to have at least something.
              */
 #ifdef VBOX_WITH_GUEST_PROPS
-            uint32_t u32ClientId = 0;
-            rc = VbglR3GuestPropConnect(&u32ClientId);
+            HGCMCLIENTID idClient = 0;
+            rc = VbglR3GuestPropConnect(&idClient);
             if (RT_SUCCESS(rc))
             {
                 const char *pszStatus;
@@ -86,14 +85,14 @@ VBGLR3DECL(int) VbglR3AutoLogonReportStatus(VBoxGuestFacilityStatus enmStatus)
                      * (generally sufficient unless the guest misbehaves).
                      */
                     static const char s_szPath[] = "/VirtualBox/GuestInfo/OS/AutoLogonStatus";
-                    rc = VbglR3GuestPropWrite(u32ClientId, s_szPath, pszStatus, "TRANSRESET");
+                    rc = VbglR3GuestPropWrite(idClient, s_szPath, pszStatus, "TRANSRESET");
                     if (rc == VERR_PARSE_ERROR)
-                        rc = VbglR3GuestPropWrite(u32ClientId, s_szPath, pszStatus, "TRANSIENT");
+                        rc = VbglR3GuestPropWrite(idClient, s_szPath, pszStatus, "TRANSIENT");
                 }
                 else
                     rc = VERR_INVALID_PARAMETER;
 
-                VbglR3GuestPropDisconnect(u32ClientId);
+                VbglR3GuestPropDisconnect(idClient);
             }
 #endif
         }
