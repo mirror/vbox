@@ -28,41 +28,10 @@
 #define ___VBoxGuestLib_VBoxGuestR0LibSharedFolders_h
 
 #include <VBox/VBoxGuestLib.h>
-#if 0 /* aparently no longer needed (see below) */
-#ifndef _NTIFS_
-# ifdef RT_OS_WINDOWS
-#  undef PAGE_SIZE
-#  undef PAGE_SHIFT
-#  if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
-#   include <iprt/asm.h>
-#   define _InterlockedExchange           _InterlockedExchange_StupidDDKvsCompilerCrap
-#   define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKvsCompilerCrap
-#   define _InterlockedCompareExchange    _InterlockedCompareExchange_StupidDDKvsCompilerCrap
-#   define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKvsCompilerCrap
-#   pragma warning(disable : 4163)
-    RT_C_DECLS_BEGIN
-#   include <ntddk.h>
-    RT_C_DECLS_END
-#   pragma warning(default : 4163)
-#   undef  _InterlockedExchange
-#   undef  _InterlockedExchangeAdd
-#   undef  _InterlockedCompareExchange
-#   undef  _InterlockedAddLargeStatistic
-#  else
-    RT_C_DECLS_BEGIN
-#   include <ntddk.h>
-    RT_C_DECLS_END
-#  endif
-# endif
-#endif
-#endif
-
 #if defined(RT_OS_WINDOWS)
 # include <VBox/log.h>
 #endif
-
 #include <iprt/assert.h>
-
 #include <VBox/shflsvc.h>
 
 typedef struct VBGLSFCLIENT
@@ -76,56 +45,6 @@ typedef struct VBGLSFMAP
 {
     SHFLROOT root;
 } VBGLSFMAP, *PVBGLSFMAP;
-
-
-#if 0 /* Apparently unused cruft from old windows shared folder driver? */
-#define VBSF_DRIVE_LETTER_FIRST   L'A'
-#define VBSF_DRIVE_LETTER_LAST    L'Z'
-
-#define VBSF_MAX_DRIVES           (VBSF_DRIVE_LETTER_LAST - VBSF_DRIVE_LETTER_FIRST)
-
-/* Poller thread flags. */
-#define VBSF_TF_NONE             (0x0000)
-#define VBSF_TF_STARTED          (0x0001)
-#define VBSF_TF_TERMINATE        (0x0002)
-#define VBSF_TF_START_PROCESSING (0x0004)
-
-#define DRIVE_FLAG_WORKING         (0x1)
-#define DRIVE_FLAG_LOCKED          (0x2)
-#define DRIVE_FLAG_WRITE_PROTECTED (0x4)
-
-#ifdef RT_OS_WINDOWS
-/** Device extension structure for each drive letter we created. */
-typedef struct _VBSFDRIVE
-{
-    /*  A pointer to the Driver object we created for the drive. */
-    PDEVICE_OBJECT pDeviceObject;
-
-    /** Root handle to access the drive. */
-    SHFLROOT root;
-
-    /** Informational string - the resource name on host. */
-    WCHAR awcNameHost[256];
-
-    /** Guest drive letter. */
-    WCHAR wcDriveLetter;
-
-    /** DRIVE_FLAG_* */
-    uint32_t u32DriveFlags;
-
-    /** Head of FCB list. */
-    LIST_ENTRY FCBHead;
-
-    /* Synchronise requests directed to the drive. */
-    ERESOURCE DriveResource;
-} VBSFDRIVE;
-typedef VBSFDRIVE *PVBSFDRIVE;
-#endif /* RT_OS_WINDOWS */
-
-/* forward decl */
-struct _MRX_VBOX_DEVICE_EXTENSION;
-typedef struct _MRX_VBOX_DEVICE_EXTENSION *PMRX_VBOX_DEVICE_EXTENSION;
-#endif
 
 DECLVBGL(int)  VbglR0SfInit(void);
 DECLVBGL(void) VbglR0SfTerm(void);
