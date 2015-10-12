@@ -2330,7 +2330,7 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, bool fNoBody, uint8_
         if (!CURL_FAILURE(rcCurl))
             rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEDATA, (void *)pThis);
         if (!CURL_FAILURE(rcCurl))
-            rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, fNoBody : 1L : 0L);
+            rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, fNoBody ? 1L : 0L);
         if (!CURL_FAILURE(rcCurl))
         {
             /*
