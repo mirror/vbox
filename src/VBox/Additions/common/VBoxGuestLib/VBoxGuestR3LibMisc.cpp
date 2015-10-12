@@ -37,7 +37,7 @@
  *
  * @returns IPRT status code.
  * @param   fOr     The OR mask.
- * @param   fNo     The NOT mask.
+ * @param   fNot    The NOT mask.
  */
 VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
 {

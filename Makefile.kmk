@@ -823,7 +823,6 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e '/^ *$(DOLLAR)/d' \
 		-e '/warning. Unexpected tag .dd. found/d' \
 		-e '/warning. Unsupported xml.html tag .globalScope. found/d' \
-               -e '/\/include\/VBox\/VBoxGuestLib\.h.* warning/b ignore' \
                -e '/\/include\/VBox\/VBoxVideoGuest\.h.* warning/b ignore' \
                -e '/\/include\/VBox\/sup\.h.* warning/b ignore' \
                -e '/\/include\/VBox\/settings\.h.* warning/b ignore' \
@@ -839,7 +838,6 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDispIf\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDnD\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDnD\.cpp.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/common\/VBoxGuestLib\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/common\/VBoxVideo\/HGSMIBase\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/common\/VBoxVideo\/Modesetting\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/common\/crOpenGL\/.* warning/b ignore' \

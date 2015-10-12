@@ -168,15 +168,15 @@ static int vbglR3QueryRegistryString(HKEY hKey, PCRTUTF16 pwszValueName, uint32_
  *
  * @copydoc VbglR3GetAdditionsVersion
  */
-static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszVerEx, char **ppszRev)
+static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszVerExt, char **ppszRev)
 {
     int rc = VINF_SUCCESS;
     if (ppszVer)
         rc = RTStrDupEx(ppszVer, VBOX_VERSION_STRING_RAW);
     if (RT_SUCCESS(rc))
     {
-        if (ppszVerEx)
-            rc = RTStrDupEx(ppszVerEx, VBOX_VERSION_STRING);
+        if (ppszVerExt)
+            rc = RTStrDupEx(ppszVerExt, VBOX_VERSION_STRING);
         if (RT_SUCCESS(rc))
         {
             if (ppszRev)
@@ -186,10 +186,10 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszVerEx
 
             /* bail out: */
         }
-        if (ppszVerEx)
+        if (ppszVerExt)
         {
-            RTStrFree(*ppszVerEx);
-            *ppszVerEx = NULL;
+            RTStrFree(*ppszVerExt);
+            *ppszVerExt = NULL;
         }
     }
     if (ppszVer)
@@ -329,8 +329,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsInstallationPath(char **ppszPath)
  * @param   enmStatus       The new status of the facility.
  * @param   fReserved       Flags reserved for future hacks.
  */
-VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
-                                            VBoxGuestFacilityStatus enmStatusCurrent,
+VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus,
                                             uint32_t fReserved)
 {
     VMMDevReportGuestStatus Report;
@@ -339,7 +338,7 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
     if (RT_SUCCESS(rc))
     {
         Report.guestStatus.facility = enmFacility;
-        Report.guestStatus.status   = enmStatusCurrent;
+        Report.guestStatus.status   = enmStatus;
         Report.guestStatus.flags    = fReserved;
 
         rc = vbglR3GRPerform(&Report.header);

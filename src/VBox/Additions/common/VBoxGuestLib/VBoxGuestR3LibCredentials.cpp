@@ -111,7 +111,7 @@ VBGLR3DECL(int) VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, 
  * @returns IPRT status value
  * @param   ppwszUser       Receives pointer of allocated user name string.
  *                          The returned pointer must be freed using VbglR3CredentialsDestroyUtf16().
- * @param   ppswzPassword   Receives pointer of allocated user password string.
+ * @param   ppwszPassword   Receives pointer of allocated user password string.
  *                          The returned pointer must be freed using VbglR3CredentialsDestroyUtf16().
  * @param   ppwszDomain     Receives pointer of allocated domain name string.
  *                          The returned pointer must be freed using VbglR3CredentialsDestroyUtf16().

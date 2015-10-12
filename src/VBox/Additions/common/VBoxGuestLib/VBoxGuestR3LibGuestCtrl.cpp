@@ -279,10 +279,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t uClientId)
  *
  * @return  IPRT status code.
  * @param   pCtx                    Host context.
- * @param   uFlags
+ * @param   fFlags                  Some kind of flag. Figure it out yourself.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uFlags)
+VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t fFlags)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
@@ -295,7 +295,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
-    VbglHGCMParmUInt32Set(&Msg.flags, uFlags);
+    VbglHGCMParmUInt32Set(&Msg.flags, fFlags);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -339,7 +339,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
  * Retrieves the request to create a new guest session.
  *
  * @return  IPRT status code.
- * @param   pCtx                    Host context.
  ** @todo Docs!
  */
 VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
@@ -347,7 +346,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                               char     *pszUser,     uint32_t  cbUser,
                                               char     *pszPassword, uint32_t  cbPassword,
                                               char     *pszDomain,   uint32_t  cbDomain,
-                                              uint32_t *puFlags,     uint32_t *puSessionID)
+                                              uint32_t *pfFlags,     uint32_t *pidSession)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 6, VERR_INVALID_PARAMETER);
@@ -356,7 +355,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pszPassword, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDomain, VERR_INVALID_POINTER);
-    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgSessionOpen Msg;
 
@@ -384,10 +383,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.protocol.GetUInt32(puProtocol);
-            Msg.flags.GetUInt32(puFlags);
+            Msg.flags.GetUInt32(pfFlags);
 
-            if (puSessionID)
-                *puSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
+            if (pidSession)
+                *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
         }
     }
 
@@ -399,15 +398,14 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
  * Retrieves the request to terminate an existing guest session.
  *
  * @return  IPRT status code.
- * @param   pCtx                    Host context.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puFlags, uint32_t *puSessionID)
+VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *pfFlags, uint32_t *pidSession)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
 
-    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgSessionClose Msg;
 
@@ -430,10 +428,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
         else
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(puFlags);
+            Msg.flags.GetUInt32(pfFlags);
 
-            if (puSessionID)
-                *puSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
+            if (pidSession)
+                *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
         }
     }
 
@@ -444,7 +442,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
                                              char     *pszSource,       uint32_t cbSource,
                                              char     *pszDest,         uint32_t cbDest,
-                                             uint32_t *puFlags)
+                                             uint32_t *pfFlags)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
@@ -453,7 +451,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
     AssertReturn(cbSource, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDest, VERR_INVALID_POINTER);
     AssertReturn(cbDest, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgPathRename Msg;
 
@@ -478,7 +476,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
         else
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(puFlags);
+            Msg.flags.GetUInt32(pfFlags);
         }
     }
     return rc;
@@ -496,7 +494,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
                                             char     *pszCmd,         uint32_t  cbCmd,
-                                            uint32_t *puFlags,
+                                            uint32_t *pfFlags,
                                             char     *pszArgs,        uint32_t  cbArgs,     uint32_t *pcArgs,
                                             char     *pszEnv,         uint32_t *pcbEnv,     uint32_t *pcEnvVars,
                                             char     *pszUser,        uint32_t  cbUser,
@@ -508,7 +506,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     AssertPtrReturn(pszCmd, VERR_INVALID_POINTER);
-    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
     AssertPtrReturn(pszArgs, VERR_INVALID_POINTER);
     AssertPtrReturn(pcArgs, VERR_INVALID_POINTER);
     AssertPtrReturn(pszEnv, VERR_INVALID_POINTER);
@@ -564,7 +562,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
         else
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(puFlags);
+            Msg.flags.GetUInt32(pfFlags);
             Msg.num_args.GetUInt32(pcArgs);
             Msg.num_env.GetUInt32(pcEnvVars);
             Msg.cb_env.GetUInt32(pcbEnv);
@@ -593,14 +591,14 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
  ** @todo Docs!
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
-                                             uint32_t *puPID, uint32_t *puHandle, uint32_t *puFlags)
+                                             uint32_t *puPID, uint32_t *puHandle, uint32_t *pfFlags)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
-    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgProcOutput Msg;
 
@@ -627,7 +625,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.pid.GetUInt32(puPID);
             Msg.handle.GetUInt32(puHandle);
-            Msg.flags.GetUInt32(puFlags);
+            Msg.flags.GetUInt32(pfFlags);
         }
     }
     return rc;
@@ -644,7 +642,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
  ** @todo Docs!
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
-                                            uint32_t  *puPID,       uint32_t *puFlags,
+                                            uint32_t  *puPID,       uint32_t *pfFlags,
                                             void      *pvData,      uint32_t  cbData,
                                             uint32_t  *pcbSize)
 {
@@ -652,7 +650,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
     AssertReturn(pCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
-    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
 
@@ -681,7 +679,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.pid.GetUInt32(puPID);
-            Msg.flags.GetUInt32(puFlags);
+            Msg.flags.GetUInt32(pfFlags);
             Msg.size.GetUInt32(pcbSize);
         }
     }
@@ -691,14 +689,14 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
 
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetRemove(PVBGLR3GUESTCTRLCMDCTX     pCtx,
                                             char     *pszPath,         uint32_t cbPath,
-                                            uint32_t *puFlags)
+                                            uint32_t *pfFlags)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 3, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cbPath, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgDirRemove Msg;
 
@@ -722,7 +720,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRemove(PVBGLR3GUESTCTRLCMDCTX     pCtx,
         else
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(puFlags);
+            Msg.flags.GetUInt32(pfFlags);
         }
     }
     return rc;
@@ -1343,7 +1341,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbTell(PVBGLR3GUESTCTRLCMDCTX pCtx,
  ** @todo Docs!
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatus(PVBGLR3GUESTCTRLCMDCTX pCtx,
-                                            uint32_t uPID, uint32_t uStatus, uint32_t uFlags,
+                                            uint32_t uPID, uint32_t uStatus, uint32_t fFlags,
                                             void  *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1358,7 +1356,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatus(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.pid, uPID);
     VbglHGCMParmUInt32Set(&Msg.status, uStatus);
-    VbglHGCMParmUInt32Set(&Msg.flags, uFlags);
+    VbglHGCMParmUInt32Set(&Msg.flags, fFlags);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -1379,7 +1377,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatus(PVBGLR3GUESTCTRLCMDCTX pCtx,
  ** @todo Docs!
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcCbOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
-                                            uint32_t uPID,uint32_t uHandle, uint32_t uFlags,
+                                            uint32_t uPID,uint32_t uHandle, uint32_t fFlags,
                                             void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1394,7 +1392,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.pid, uPID);
     VbglHGCMParmUInt32Set(&Msg.handle, uHandle);
-    VbglHGCMParmUInt32Set(&Msg.flags, uFlags);
+    VbglHGCMParmUInt32Set(&Msg.flags, fFlags);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -1416,7 +1414,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatusInput(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                                  uint32_t uPID, uint32_t uStatus,
-                                                 uint32_t uFlags, uint32_t cbWritten)
+                                                 uint32_t fFlags, uint32_t cbWritten)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1430,7 +1428,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatusInput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.pid, uPID);
     VbglHGCMParmUInt32Set(&Msg.status, uStatus);
-    VbglHGCMParmUInt32Set(&Msg.flags, uFlags);
+    VbglHGCMParmUInt32Set(&Msg.flags, fFlags);
     VbglHGCMParmUInt32Set(&Msg.written, cbWritten);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));

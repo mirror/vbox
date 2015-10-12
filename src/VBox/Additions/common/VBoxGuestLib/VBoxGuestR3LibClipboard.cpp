@@ -67,7 +67,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(HGCMCLIENTID *pidClient )
  * Disconnect from the clipboard service.
  *
  * @returns VBox status code.
- * @param   idClientId      The client id returned by VbglR3ClipboardConnect().
+ * @param   idClient        The client id returned by VbglR3ClipboardConnect().
  */
 VBGLR3DECL(int) VbglR3ClipboardDisconnect(HGCMCLIENTID idClient)
 {

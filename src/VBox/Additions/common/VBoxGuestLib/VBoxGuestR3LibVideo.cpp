@@ -153,7 +153,7 @@ VBGLR3DECL(int) VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq)
  *                      requested (a value of zero means do not change).
  * @param   pcBits      Where to store the bits per pixel requested (a value
  *                      of zero means do not change).
- * @param   iDisplay    Where to store the display number the request was for
+ * @param   piDisplay   Where to store the display number the request was for
  *                      - 0 for the primary display, 1 for the first
  *                      secondary display, etc.
  * @param   fAck        whether or not to acknowledge the newest request sent by
@@ -212,11 +212,10 @@ static int getDisplayChangeRequest2(uint32_t *pcx, uint32_t *pcy,
  *                      Optional.
  * @param   pdy         New vertical position of the secondary monitor.
  *                      Optional.
- * param    pfEnabled   Secondary monitor is enabled or not.
- *                      Optional.
- * param    pfChangeOrigin  Whether the mode hint retrieved included information
- *                      about origin/display offset inside the frame-buffer.
- *                      Optional.
+ * @param   pfEnabled   Secondary monitor is enabled or not. Optional.
+ * @param   pfChangeOrigin  Whether the mode hint retrieved included
+ *                      information about origin/display offset inside the
+ *                      frame-buffer. Optional.
  *
  */
 VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy,
