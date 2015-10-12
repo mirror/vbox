@@ -51,9 +51,9 @@
 #define SHFL_CPARMS_SET_SYMLINKS 0
 
 #define VBOX_INIT_CALL(a, b, c) \
-    LogFunc(("%s, u32ClientID=%d\n", "SHFL_FN_" # b, (c)->ulClientID)); \
+    LogFunc(("%s, idClient=%d\n", "SHFL_FN_" # b, (c)->idClient)); \
     (a)->result      = VINF_SUCCESS; \
-    (a)->u32ClientID = (c)->ulClientID; \
+    (a)->u32ClientID = (c)->idClient; \
     (a)->u32Function = SHFL_FN_##b; \
     (a)->cParms      = SHFL_CPARMS_##b
 
@@ -87,8 +87,8 @@ DECLVBGL(int) VbglR0SfConnect(PVBGLSFCLIENT pClient)
         rc = data.result;
     if (RT_SUCCESS(rc))
     {
-        pClient->ulClientID = data.u32ClientID;
-        LogFunc(("u32ClientID=%d\n", pClient->ulClientID));
+        pClient->idClient = data.u32ClientID;
+        LogFunc(("idClient=%d\n", pClient->idClient));
     }
     return rc;
 }
@@ -98,13 +98,13 @@ DECLVBGL(void) VbglR0SfDisconnect(PVBGLSFCLIENT pClient)
     int rc;
     VBoxGuestHGCMDisconnectInfo data;
 
-    LogFunc(("u32ClientID=%d\n", pClient->ulClientID));
+    LogFunc(("u32ClientID=%d\n", pClient->idClient));
     if (pClient->handle == NULL)
         return;                 /* not connected */
 
     RT_ZERO(data);
     data.result      = VINF_SUCCESS;
-    data.u32ClientID = pClient->ulClientID;
+    data.u32ClientID = pClient->idClient;
 
     rc = VbglHGCMDisconnect(pClient->handle, &data);
     NOREF(rc);

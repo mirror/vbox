@@ -36,7 +36,7 @@
 
 typedef struct VBGLSFCLIENT
 {
-    uint32_t ulClientID;
+    HGCMCLIENTID idClient;
     VBGLHGCMHANDLE handle;
 } VBGLSFCLIENT;
 typedef VBGLSFCLIENT *PVBGLSFCLIENT;
