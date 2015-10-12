@@ -28,10 +28,6 @@
 #define ___VBoxGuestLib_VBoxGuestR0LibSharedFolders_h
 
 #include <VBox/VBoxGuestLib.h>
-#if defined(RT_OS_WINDOWS)
-# include <VBox/log.h>
-#endif
-#include <iprt/assert.h>
 #include <VBox/shflsvc.h>
 
 typedef struct VBGLSFCLIENT

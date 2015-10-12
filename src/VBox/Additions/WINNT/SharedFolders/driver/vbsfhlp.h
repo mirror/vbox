@@ -23,6 +23,7 @@
 #include <ntifs.h>
 #include <ntverp.h>
 
+#include <VBox/log.h>
 #include "VBoxGuestR0LibSharedFolders.h"
 
 void vbsfHlpSleep (ULONG ulMillies);
