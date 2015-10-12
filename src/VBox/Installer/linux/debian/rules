@@ -191,8 +191,6 @@ clean:
 	dh_testroot
 	rm -f debian/changelog
 	rm -f debian/preinst debian/prerm
-	rm -f debian/$(package).init debian/vboxdrv.init
-	rm -f debian/vboxballoonctrl-service.init debian/vboxautostart-service.init debian/vboxweb-service.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -f debian/virtualbox-*.substvars debian/virtualbox*.debhelper
