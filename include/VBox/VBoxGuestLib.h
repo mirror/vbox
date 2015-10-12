@@ -338,6 +338,17 @@ DECLVBGL(int) VbglHGCMCallUserData(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo 
 DECLVBGL(int) VbglHGCMCallTimed(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfoTimed *pData, uint32_t cbData);
 /** @} */
 
+/** @name Undocumented helpers for talking to the Chromium OpenGL Host Service
+ * @{ */
+typedef VBGLHGCMHANDLE HVBOXCRCTL;
+DECLVBGL(int) VbglR0CrCtlCreate(HVBOXCRCTL *phCtl);
+DECLVBGL(int) VbglR0CrCtlDestroy(HVBOXCRCTL hCtl);
+DECLVBGL(int) VbglR0CrCtlConConnect(HVBOXCRCTL hCtl, uint32_t *pu32ClientID);
+DECLVBGL(int) VbglR0CrCtlConDisconnect(HVBOXCRCTL hCtl, uint32_t u32ClientID);
+DECLVBGL(int) VbglR0CrCtlConCall(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
+DECLVBGL(int) VbglR0CrCtlConCallUserData(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
+/** @} */
+
 #  endif /* !VBGL_VBOXGUEST */
 
 # endif /* VBOX_WITH_HGCM */
@@ -397,6 +408,7 @@ DECLVBGL(int)       VbglSetMouseStatus(uint32_t fFeatures);
 # endif /* VBOX_GUEST */
 
 #endif /* IN_RING0 && !IN_RING0_AGNOSTIC */
+
 /** @} */
 
 

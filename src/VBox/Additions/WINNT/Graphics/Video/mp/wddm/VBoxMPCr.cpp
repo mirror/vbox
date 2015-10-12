@@ -750,7 +750,7 @@ static int vboxMpCrCtlAddRef(PVBOXMP_CRCTLCON pCrCtlCon)
     if (pCrCtlCon->cCrCtlRefs++)
         return VINF_ALREADY_INITIALIZED;
 
-    int rc = vboxCrCtlCreate(&pCrCtlCon->hCrCtl);
+    int rc = VbglR0CrCtlCreate(&pCrCtlCon->hCrCtl);
     if (RT_SUCCESS(rc))
     {
         Assert(pCrCtlCon->hCrCtl);
@@ -771,7 +771,7 @@ static int vboxMpCrCtlRelease(PVBOXMP_CRCTLCON pCrCtlCon)
         return VINF_SUCCESS;
     }
 
-    int rc = vboxCrCtlDestroy(pCrCtlCon->hCrCtl);
+    int rc = VbglR0CrCtlDestroy(pCrCtlCon->hCrCtl);
     if (RT_SUCCESS(rc))
     {
         pCrCtlCon->hCrCtl = NULL;
@@ -799,7 +799,7 @@ static int vboxMpCrCtlConSetVersion(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32Clie
     parms.vMinor.type      = VMMDevHGCMParmType_32bit;
     parms.vMinor.u.value32 = vMinor;
 
-    rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
+    rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
     {
         WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
@@ -829,7 +829,7 @@ static int vboxMpCrCtlConGetCapsLegacy(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32C
 
     *pu32Caps = 0;
 
-    rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
+    rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
     {
         WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
@@ -868,7 +868,7 @@ static int vboxMpCrCtlConGetCapsNew(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32Clie
     parms.Caps.u.Pointer.u.linearAddr = (uintptr_t)pCapsInfo;
     parms.Caps.u.Pointer.size = sizeof (*pCapsInfo);
 
-    rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
+    rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
     {
         WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
@@ -907,7 +907,7 @@ static int vboxMpCrCtlConSetPID(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID
 
     Assert(parms.u64PID.u.value64);
 
-    rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
+    rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
     {
         WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
@@ -930,7 +930,7 @@ int VBoxMpCrCtlConConnectHgcm(PVBOXMP_CRCTLCON pCrCtlCon,
     int rc = vboxMpCrCtlAddRef(pCrCtlCon);
     if (RT_SUCCESS(rc))
     {
-        rc = vboxCrCtlConConnect(pCrCtlCon->hCrCtl, &u32ClientID);
+        rc = VbglR0CrCtlConConnect(pCrCtlCon->hCrCtl, &u32ClientID);
         if (RT_SUCCESS(rc))
         {
             rc = vboxMpCrCtlConSetVersion(pCrCtlCon, u32ClientID, crVersionMajor, crVersionMinor);
@@ -951,7 +951,7 @@ int VBoxMpCrCtlConConnectHgcm(PVBOXMP_CRCTLCON pCrCtlCon,
             {
                 WARN(("vboxMpCrCtlConSetVersion failed, rc (%d)", rc));
             }
-            vboxCrCtlConDisconnect(pCrCtlCon->hCrCtl, u32ClientID);
+            VbglR0CrCtlConDisconnect(pCrCtlCon->hCrCtl, u32ClientID);
         }
         else
         {
@@ -1002,16 +1002,13 @@ int VBoxMpCrCtlConConnect(PVBOXMP_DEVEXT pDevExt, PVBOXMP_CRCTLCON pCrCtlCon,
 
 int VBoxMpCrCtlConDisconnectHgcm(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID)
 {
-    int rc = vboxCrCtlConDisconnect(pCrCtlCon->hCrCtl, u32ClientID);
+    int rc = VbglR0CrCtlConDisconnect(pCrCtlCon->hCrCtl, u32ClientID);
     if (RT_SUCCESS(rc))
     {
         vboxMpCrCtlRelease(pCrCtlCon);
         return VINF_SUCCESS;
     }
-    else
-    {
-        WARN(("vboxCrCtlConDisconnect failed, rc (%d)", rc));
-    }
+    WARN(("vboxCrCtlConDisconnect failed, rc (%d)", rc));
     return rc;
 }
 
@@ -1031,7 +1028,7 @@ int VBoxMpCrCtlConDisconnect(PVBOXMP_DEVEXT pDevExt, PVBOXMP_CRCTLCON pCrCtlCon,
 
 int VBoxMpCrCtlConCall(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
 {
-    int rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, pData, cbData);
+    int rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, pData, cbData);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
@@ -1041,7 +1038,7 @@ int VBoxMpCrCtlConCall(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo *pData,
 
 int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
 {
-    int rc = vboxCrCtlConCallUserData(pCrCtlCon->hCrCtl, pData, cbData);
+    int rc = VbglR0CrCtlConCallUserData(pCrCtlCon->hCrCtl, pData, cbData);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 

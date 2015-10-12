@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxGuestLib - Central calls header.
+ * VBoxGuestLib - Ring-3 Support Library for VirtualBox guest additions, Chromium OpenGL Service.
  */
 
 /*
@@ -28,49 +28,44 @@
 #ifdef VBGL_VBOXGUEST
 # error "VBGL_VBOXGUEST should not be defined"
 #else
-#include "VBoxGuestR0LibCrOgl.h"
 
 #include <iprt/string.h>
 
 #include "VBGLInternal.h"
 
-struct VBGLHGCMHANDLEDATA *vbglHGCMHandleAlloc (void);
-void vbglHGCMHandleFree (struct VBGLHGCMHANDLEDATA *pHandle);
 
-DECLVBGL(int) vboxCrCtlCreate(HVBOXCRCTL *phCtl)
+DECLVBGL(int) VbglR0CrCtlCreate(HVBOXCRCTL *phCtl)
 {
     int rc;
-    struct VBGLHGCMHANDLEDATA *pHandleData;
 
-    if (!phCtl)
-        return VERR_INVALID_PARAMETER;
-
-    pHandleData = vbglHGCMHandleAlloc ();
-
-    rc = VINF_SUCCESS;
-
-    if (!pHandleData)
+    if (phCtl)
     {
-        rc = VERR_NO_MEMORY;
+        struct VBGLHGCMHANDLEDATA *pHandleData = vbglHGCMHandleAlloc();
+
+        if (pHandleData)
+        {
+            rc = vbglDriverOpen(&pHandleData->driver);
+
+            if (RT_SUCCESS(rc))
+            {
+                *phCtl = pHandleData;
+                return VINF_SUCCESS;
+            }
+
+            vbglHGCMHandleFree(pHandleData);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        *phCtl = NULL;
     }
     else
-    {
-        rc = vbglDriverOpen (&pHandleData->driver);
+        rc = VERR_INVALID_PARAMETER;
 
-        if (RT_SUCCESS(rc))
-        {
-            *phCtl = pHandleData;
-            return VINF_SUCCESS;
-        }
-
-        vbglHGCMHandleFree (pHandleData);
-    }
-
-    *phCtl = NULL;
     return rc;
 }
 
-DECLVBGL(int) vboxCrCtlDestroy(HVBOXCRCTL hCtl)
+DECLVBGL(int) VbglR0CrCtlDestroy(HVBOXCRCTL hCtl)
 {
     vbglDriverClose(&hCtl->driver);
 
@@ -79,7 +74,7 @@ DECLVBGL(int) vboxCrCtlDestroy(HVBOXCRCTL hCtl)
     return VINF_SUCCESS;
 }
 
-DECLVBGL(int) vboxCrCtlConConnect(HVBOXCRCTL hCtl, uint32_t *pu32ClientID)
+DECLVBGL(int) VbglR0CrCtlConConnect(HVBOXCRCTL hCtl, uint32_t *pu32ClientID)
 {
     VBoxGuestHGCMConnectInfo info;
     int rc;
@@ -87,10 +82,10 @@ DECLVBGL(int) vboxCrCtlConConnect(HVBOXCRCTL hCtl, uint32_t *pu32ClientID)
     if (!hCtl || !pu32ClientID)
         return VERR_INVALID_PARAMETER;
 
-    memset(&info, 0, sizeof (info));
+    RT_ZERO(info);
     info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    RTStrCopy(info.Loc.u.host.achName, sizeof (info.Loc.u.host.achName), "VBoxSharedCrOpenGL");
-    rc = vbglDriverIOCtl (&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CONNECT, &info, sizeof (info));
+    RTStrCopy(info.Loc.u.host.achName, sizeof(info.Loc.u.host.achName), "VBoxSharedCrOpenGL");
+    rc = vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CONNECT, &info, sizeof(info));
     if (RT_SUCCESS(rc))
     {
         rc = info.result;
@@ -102,27 +97,27 @@ DECLVBGL(int) vboxCrCtlConConnect(HVBOXCRCTL hCtl, uint32_t *pu32ClientID)
         }
     }
 
-    Assert(RT_FAILURE(rc));
+    AssertRC(rc);
     *pu32ClientID = 0;
     return rc;
 }
 
-DECLVBGL(int) vboxCrCtlConDisconnect(HVBOXCRCTL hCtl, uint32_t u32ClientID)
+DECLVBGL(int) VbglR0CrCtlConDisconnect(HVBOXCRCTL hCtl, uint32_t u32ClientID)
 {
     VBoxGuestHGCMDisconnectInfo info;
-    memset (&info, 0, sizeof (info));
+    RT_ZERO(info);
     info.u32ClientID = u32ClientID;
-    return vbglDriverIOCtl (&hCtl->driver, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info, sizeof (info));
+    return vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info, sizeof(info));
 }
 
-DECLVBGL(int) vboxCrCtlConCall(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
+DECLVBGL(int) VbglR0CrCtlConCall(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
 {
-    return vbglDriverIOCtl (&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CALL(cbCallInfo), pCallInfo, cbCallInfo);
+    return vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CALL(cbCallInfo), pCallInfo, cbCallInfo);
 }
 
-DECLVBGL(int) vboxCrCtlConCallUserData(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
+DECLVBGL(int) VbglR0CrCtlConCallUserData(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
 {
-    return vbglDriverIOCtl (&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CALL_USERDATA(cbCallInfo), pCallInfo, cbCallInfo);
+    return vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CALL_USERDATA(cbCallInfo), pCallInfo, cbCallInfo);
 }
 
 #endif /* #ifndef VBGL_VBOXGUEST */

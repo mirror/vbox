@@ -96,7 +96,6 @@ ifdef VBOX_WITH_WDDM
  	../../../include \
  	.. \
  	. \
- 	../../../../common/VBoxGuestLib \
  	$(VBOX_PATH_CROGL_INCLUDE) \
  	$(VBOX_PATH_CROGL_GENFILES) \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer
