@@ -228,6 +228,7 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy,
 {
     VMMDevDisplayChangeRequestEx Req;
     int rc = VINF_SUCCESS;
+
     AssertPtrReturn(pcx, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcy, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcBits, VERR_INVALID_PARAMETER);
@@ -236,6 +237,7 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy,
     AssertPtrReturn(piDisplay, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfEnabled, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfChangeOrigin, VERR_INVALID_PARAMETER);
+
     RT_ZERO(Req);
     rc = vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequestEx);
     AssertRCReturn(rc, rc);
@@ -258,7 +260,9 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy,
             *pfEnabled = Req.fEnabled;
         if (pfChangeOrigin)
             *pfChangeOrigin = Req.fChangeOrigin;
+        return VINF_SUCCESS;
     }
+
     /* NEEDS TESTING: test below with current Additions on VBox 4.1 or older. */
     /** @todo Can we find some standard grep-able string for "NEEDS TESTING"? */
     if (rc == VERR_NOT_IMPLEMENTED)  /* Fall back to the old API. */
@@ -312,22 +316,28 @@ VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
 #if defined(VBOX_WITH_GUEST_PROPS)
     using namespace guestProp;
 
-    int rc, rc2 = VERR_UNRESOLVED_ERROR;
+    int rc;
     HGCMCLIENTID idClient = 0;
-    const char *pszPattern = VIDEO_PROP_PREFIX"*";
     PVBGLR3GUESTPROPENUM pHandle = NULL;
-    const char *pszName;
+    const char *pszName = NULL;
     unsigned cHighestScreen = 0;
 
+    /* Validate input. */
     AssertPtrReturn(pcScreen, VERR_INVALID_POINTER);
+
+    /* Query the data. */
     rc = VbglR3GuestPropConnect(&idClient);
     if (RT_SUCCESS(rc))
+    {
+        const char *pszPattern = VIDEO_PROP_PREFIX"*";
         rc = VbglR3GuestPropEnum(idClient, &pszPattern, 1, &pHandle, &pszName, NULL, NULL, NULL);
-    if (idClientId != 0)
-        rc2 = VbglR3GuestPropDisconnect(idClientId);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-    while (pszName != NULL && RT_SUCCESS(rc))
+        int rc2 = VbglR3GuestPropDisconnect(idClientId);
+        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    /* Process the data. */
+    while (RT_SUCCESS(rc) && pszName != NULL)
     {
         uint32_t cScreen;
 
@@ -336,7 +346,10 @@ VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
             cHighestScreen = RT_MAX(cHighestScreen, cScreen);
         rc = VbglR3GuestPropEnumNext(pHandle, &pszName, NULL, NULL, NULL);
     }
+
     VbglR3GuestPropEnumFree(pHandle);
+
+    /* Return result. */
     if (RT_SUCCESS(rc))
         *pcScreen = cHighestScreen;
     return rc;
