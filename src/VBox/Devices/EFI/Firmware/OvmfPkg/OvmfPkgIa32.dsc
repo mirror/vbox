@@ -402,7 +402,7 @@
 !ifndef $(VBOX)
   MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 !else
-  VBoxPkg/VBoxVariable/VBoxVariableRuntimeDxe.inf
+  MdeModulePkg/Universal/Variable/EmuRuntimeDxe/EmuVariableRuntimeDxe.inf
 !endif
   MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
   MdeModulePkg/Universal/MonotonicCounterRuntimeDxe/MonotonicCounterRuntimeDxe.inf

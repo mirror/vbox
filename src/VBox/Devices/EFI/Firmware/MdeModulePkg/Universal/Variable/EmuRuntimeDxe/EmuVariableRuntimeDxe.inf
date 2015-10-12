@@ -37,6 +37,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  VBoxPkg/VBoxPkg.dec                           # VBox specific so the code can find some necessary headers
 
 
 [LibraryClasses]

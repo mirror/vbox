@@ -172,7 +172,7 @@ INF  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe.inf
 !ifndef $(VBOX)
 INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 !else
-INF VBoxPkg/VBoxVariable/VBoxVariableRuntimeDxe.inf
+INF  MdeModulePkg/Universal/Variable/EmuRuntimeDxe/EmuVariableRuntimeDxe.inf
 !endif
 INF  MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
 INF  MdeModulePkg/Universal/MonotonicCounterRuntimeDxe/MonotonicCounterRuntimeDxe.inf
