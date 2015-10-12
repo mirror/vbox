@@ -382,7 +382,9 @@ InitializePlatform (
   IN CONST EFI_PEI_SERVICES     **PeiServices
   )
 {
+#ifndef VBOX
   EFI_STATUS            Status;
+#endif
   EFI_PHYSICAL_ADDRESS  TopOfMemory;
   BOOLEAN               Xen;
 
