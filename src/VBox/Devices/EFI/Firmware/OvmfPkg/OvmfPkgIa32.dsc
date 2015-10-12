@@ -433,8 +433,6 @@
  MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru.inf
  MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe.inf
  VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
- # see fdf file
- #VBoxPkg/VBoxConsoleDxe/VBoxConsoleDxe.inf
  VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
  VBoxPkg/VBoxFsDxe/VBoxIso9660.inf
  VBoxPkg/VBoxFsDxe/VBoxHfs.inf
