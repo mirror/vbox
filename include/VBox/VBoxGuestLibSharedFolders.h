@@ -24,11 +24,13 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBoxGuestLib_VBoxGuestR0LibSharedFolders_h
-#define ___VBoxGuestLib_VBoxGuestR0LibSharedFolders_h
+#ifndef ___VBox_VBoxGuestLibSharedFolders_h_
+#define ___VBox_VBoxGuestLibSharedFolders_h_
 
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/shflsvc.h>
+
+RT_C_DECLS_BEGIN
 
 typedef struct VBGLSFCLIENT
 {
@@ -105,5 +107,7 @@ DECLVBGL(int)  VbglR0SfReadLink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTR
 DECLVBGL(int)  VbglR0SfSymlink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath, PSHFLFSOBJINFO pBuffer);
 DECLVBGL(int)  VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient);
 
-#endif /* !___VBoxGuestLib_VBoxGuestR0LibSharedFolders_h */
+RT_C_DECLS_END
+
+#endif
 

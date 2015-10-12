@@ -28,11 +28,11 @@
 #ifndef	___VBoxFS_prov_Solaris_h
 #define	___VBoxFS_prov_Solaris_h
 
+#include <VBox/VBoxGuestLibSharedFolders.h>
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
-
-#include "../../common/VBoxGuestLib/VBoxGuestR0LibSharedFolders.h"
 
 
 /*

@@ -24,7 +24,8 @@
 #include <ntverp.h>
 
 #include <VBox/log.h>
-#include "VBoxGuestR0LibSharedFolders.h"
+#include <VBox/VBoxGuestLibSharedFolders.h>
+
 
 void vbsfHlpSleep (ULONG ulMillies);
 NTSTATUS vbsfHlpCreateDriveLetter (WCHAR Letter, UNICODE_STRING *pDeviceName);

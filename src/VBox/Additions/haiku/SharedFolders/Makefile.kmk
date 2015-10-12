@@ -66,7 +66,6 @@ vboxsf_DEFS            = \
 	KBUILD_MODNAME=KBUILD_STR\(vboxsf\) \
         KBUILD_BASENAME=KBUILD_STR\(vboxsf\)
 vboxsf_INCS            = \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/haiku
 vboxsf_SOURCES         = \

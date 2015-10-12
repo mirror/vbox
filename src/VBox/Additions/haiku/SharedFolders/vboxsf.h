@@ -53,7 +53,7 @@
 #include <fs_interface.h>
 #include <KernelExport.h>
 #include <VBoxGuest-haiku.h>
-#include <VBoxGuestR0LibSharedFolders.h>
+#include <VBox/VBoxGuestLibSharedFolders.h>
 #include "lock.h"
 
 typedef struct vboxsf_volume

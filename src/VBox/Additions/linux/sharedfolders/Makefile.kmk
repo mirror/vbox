@@ -58,7 +58,6 @@ ifdef VBOX_WITH_ADDITION_DRIVERS
  		               then echo yes; fi),KERNEL_FC6,),))
 
  vboxsf_INCS            = \
- 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
  	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
  vboxsf_SOURCES         = \
  	vfsmod.c \

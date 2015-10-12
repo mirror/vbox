@@ -34,7 +34,7 @@ struct vboxvfs_mount_info {
 
 #ifdef _KERNEL
 
-#include "../../common/VBoxGuestLib/VBoxGuestR0LibSharedFolders.h"
+#include <VBox/VBoxGuestLibSharedFolders.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
 

@@ -45,17 +45,10 @@
 
 #include <iprt/types.h>
 #undef PVM
-RT_C_DECLS_BEGIN
-#if defined(__cplusplus)
-# undef __cplusplus
-# include "../../common/VBoxGuestLib/VBoxGuestR0LibSharedFolders.h"
-# define __cplusplus
-#else
-# include "../../common/VBoxGuestLib/VBoxGuestR0LibSharedFolders.h"
-#endif
-RT_C_DECLS_END
-
 #include <sys/vnode.h>
+
+#include <VBox/VBoxGuestLibSharedFolders.h>
+
 
 /** Global refernce to host service connection */
 extern VBGLSFCLIENT g_vboxSFClient;

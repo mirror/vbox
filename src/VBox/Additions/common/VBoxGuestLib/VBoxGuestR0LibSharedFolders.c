@@ -32,11 +32,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
-#ifdef RT_OS_LINUX
-# include "VBoxGuestR0LibSharedFolders.h"
-#else
-# include "VBoxGuestR0LibSharedFolders.h"
-#endif
+#include <VBox/VBoxGuestLibSharedFolders.h>
 #include <VBox/log.h>
 #include <iprt/time.h>
 #include <iprt/mem.h>

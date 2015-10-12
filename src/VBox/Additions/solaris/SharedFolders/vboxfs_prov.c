@@ -45,7 +45,6 @@
 #ifdef u
 #undef u
 #endif
-#include "../../common/VBoxGuestLib/VBoxGuestR0LibSharedFolders.h"
 
 #define	SFPROV_VERSION	1
 
