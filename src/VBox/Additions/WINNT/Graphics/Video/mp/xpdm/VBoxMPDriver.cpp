@@ -129,7 +129,7 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
     }
 
     /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
-    rc = VbglInit();
+    rc = VbglInitClient();
     VBOXMP_WARN_VPS(rc);
 
     /* Preinitialize the primary extension. */

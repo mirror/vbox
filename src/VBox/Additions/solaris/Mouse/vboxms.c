@@ -470,7 +470,7 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
          * Initialize IPRT R0 driver, which internally calls OS-specific r0
          * init, and create a new session.
          */
-        rc = VbglInit();
+        rc = VbglInitClient();
         if (RT_SUCCESS(rc))
         {
             rc = VbglGRAlloc((VMMDevRequestHeader **)

@@ -332,7 +332,7 @@ VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
     {
         if (!vboxIsVBGLInited() && !vboxIsVBGLInitFailed())
         {
-            int rc = VbglInit();
+            int rc = VbglInitClient();
 
             if (RT_SUCCESS(rc))
             {

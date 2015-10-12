@@ -112,7 +112,7 @@ static void vbglQueryDriverInfo (void)
         {
             dprintf (("port = 0x%04X, mem = %p\n", port.portAddress, port.pVMMDevMemory));
 
-            g_vbgldata.portVMMDev = port.portAddress;
+            g_vbgldata.portVMMDev = (RTIOPORT)port.portAddress;
             g_vbgldata.pVMMDevMemory = port.pVMMDevMemory;
 
             g_vbgldata.status = VbglStatusReady;
@@ -186,14 +186,14 @@ DECLVBGL(void) vbglTerminateCommon (void)
 
 #ifdef VBGL_VBOXGUEST
 
-DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
+DECLVBGL(int) VbglInitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
 {
     int rc = VINF_SUCCESS;
 
 # ifdef RT_OS_WINDOWS /** @todo r=bird: this doesn't make sense. Is there something special going on on windows? */
     dprintf(("vbglInit: starts g_vbgldata.status %d\n", g_vbgldata.status));
 
-    if (g_vbgldata.status == VbglStatusInitializing
+    if (   g_vbgldata.status == VbglStatusInitializing
         || g_vbgldata.status == VbglStatusReady)
     {
         /* Initialization is already in process. */
@@ -232,11 +232,11 @@ DECLVBGL(void) VbglTerminate (void)
 
 #else /* !VBGL_VBOXGUEST */
 
-DECLVBGL(int) VbglInit (void)
+DECLVBGL(int) VbglInitClient(void)
 {
     int rc = VINF_SUCCESS;
 
-    if (g_vbgldata.status == VbglStatusInitializing
+    if (   g_vbgldata.status == VbglStatusInitializing
         || g_vbgldata.status == VbglStatusReady)
     {
         /* Initialization is already in process. */

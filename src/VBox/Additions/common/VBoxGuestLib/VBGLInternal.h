@@ -72,11 +72,11 @@ enum VbglLibStatus
  * Global VBGL ring-0 data.
  * Lives in VbglR0Init.cpp.
  */
-typedef struct _VBGLDATA
+typedef struct VBGLDATA
 {
     enum VbglLibStatus status;
 
-    VBGLIOPORT portVMMDev;
+    RTIOPORT portVMMDev;
 
     VMMDevMemory *pVMMDevMemory;
 

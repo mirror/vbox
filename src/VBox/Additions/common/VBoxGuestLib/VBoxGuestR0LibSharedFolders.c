@@ -64,7 +64,7 @@ DECLVBGL(int) vboxInit (void)
 {
     int rc = VINF_SUCCESS;
 
-    rc = VbglInit ();
+    rc = VbglInitClient();
     return rc;
 }
 

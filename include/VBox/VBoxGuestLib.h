@@ -93,8 +93,6 @@ RT_C_DECLS_BEGIN
 # endif
 # define DECLVBGL(type) DECLR0VBGL(type)
 
-typedef uint32_t VBGLIOPORT; /**< @todo r=bird: We have RTIOPORT (uint16_t) for this. */
-
 
 # ifdef VBGL_VBOXGUEST
 
@@ -104,7 +102,7 @@ typedef uint32_t VBGLIOPORT; /**< @todo r=bird: We have RTIOPORT (uint16_t) for 
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, struct VMMDevMemory *pVMMDevMemory);
+DECLVBGL(int) VbglInitPrimary(RTIOPORT portVMMDev, struct VMMDevMemory *pVMMDevMemory);
 
 # else
 
@@ -114,14 +112,14 @@ DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, struct VMMDevMemory *pVMMDevMemor
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglInit (void);
+DECLVBGL(int) VbglInitClient(void);
 
 # endif
 
 /**
  * The library termination function.
  */
-DECLVBGL(void) VbglTerminate (void);
+DECLVBGL(void) VbglTerminate(void);
 
 
 /** @name Generic request functions.
@@ -131,13 +129,12 @@ DECLVBGL(void) VbglTerminate (void);
 /**
  * Allocate memory for generic request and initialize the request header.
  *
- * @param ppReq    pointer to resulting memory address.
- * @param cbSize   size of memory block required for the request.
- * @param reqType  the generic request type.
- *
- * @return VBox status code.
+ * @returns VBox status code.
+ * @param   ppReq       Where to return the pointer to the allocated memory.
+ * @param   cbReq       Size of memory block required for the request.
+ * @param   enmReqType  the generic request type.
  */
-DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevRequestType reqType);
+DECLVBGL(int) VbglGRAlloc(VMMDevRequestHeader **ppReq, uint32_t cbReq, VMMDevRequestType enmReqType);
 
 /**
  * Perform the generic request.
@@ -146,7 +143,7 @@ DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevR
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq);
+DECLVBGL(int) VbglGRPerform(VMMDevRequestHeader *pReq);
 
 /**
  * Free the generic request memory.
@@ -155,7 +152,7 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq);
  *
  * @return VBox status code.
  */
-DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq);
+DECLVBGL(void) VbglGRFree(VMMDevRequestHeader *pReq);
 
 /**
  * Verify the generic request header.
@@ -167,7 +164,7 @@ DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq);
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq);
+DECLVBGL(int) VbglGRVerify(const VMMDevRequestHeader *pReq, size_t cbReq);
 /** @} */
 
 # ifdef VBOX_WITH_HGCM

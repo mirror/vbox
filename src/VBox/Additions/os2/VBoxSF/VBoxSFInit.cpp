@@ -63,12 +63,11 @@ RT_C_DECLS_END
  *
  * The caller will do the necessary AttachDD and calling of the 16 bit
  * IDC to initialize the g_VBoxGuestIDC global. Perhaps we should move
- * this bit to VbglInit? It's just that it's so much simpler to do it
+ * this bit to VbglInitClient? It's just that it's so much simpler to do it
  * while we're on the way here...
  *
  */
-DECLASM(void)
-VBoxSFR0Init(void)
+DECLASM(void) VBoxSFR0Init(void)
 {
     Log(("VBoxSFR0Init: g_fpfnDevHlp=%lx u32Version=%RX32 u32Session=%RX32 pfnServiceEP=%p g_u32Info=%u (%#x)\n",
          g_fpfnDevHlp, g_VBoxGuestIDC.u32Version, g_VBoxGuestIDC.u32Session, g_VBoxGuestIDC.pfnServiceEP, g_u32Info, g_u32Info));
@@ -83,7 +82,7 @@ VBoxSFR0Init(void)
         int rc = RTR0Init(0);
         if (RT_SUCCESS(rc))
         {
-            rc = VbglInit();
+            rc = VbglInitClient();
             if (RT_SUCCESS(rc))
             {
 #ifndef DONT_LOCK_SEGMENTS

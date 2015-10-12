@@ -2136,7 +2136,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
 
     ASSERT(status == STATUS_SUCCESS);
 
-    int rcVBox = VbglInit();
+    int rcVBox = VbglInitClient();
     if (RT_FAILURE(rcVBox))
     {
         Log(("VBoxMouseNT::DriverEntry: could not initialize guest library, rc = %Rrc\n", rcVBox));
