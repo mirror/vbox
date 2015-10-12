@@ -331,7 +331,7 @@ VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
     {
         const char *pszPattern = VIDEO_PROP_PREFIX"*";
         rc = VbglR3GuestPropEnum(idClient, &pszPattern, 1, &pHandle, &pszName, NULL, NULL, NULL);
-        int rc2 = VbglR3GuestPropDisconnect(idClientId);
+        int rc2 = VbglR3GuestPropDisconnect(idClient);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
     }
