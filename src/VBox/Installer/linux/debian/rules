@@ -190,7 +190,7 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -f debian/changelog
-	rm -f debian/preinst debian/postinst debian/prerm
+	rm -f debian/preinst debian/prerm
 	rm -f debian/$(package).init debian/vboxdrv.init
 	rm -f debian/vboxballoonctrl-service.init debian/vboxautostart-service.init debian/vboxweb-service.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
@@ -264,12 +264,6 @@ endif
 	    debian/preinst.in > debian/preinst
 	sed -e 's|%VER%|$(ver)|g' \
 	    debian/prerm.in > debian/prerm
-	sed -e 's|%VER%|$(ver)|g' \
-	    -e '/#include installer-common.sh/ {' \
-	    -e "r $(vboxroot)/src/VBox/Installer/linux/installer-common.sh" \
-	    -e 'd' \
-	    -e '}' \
-	    debian/postinst.in > debian/postinst
 	dh_installdebconf
 	dh_installchangelogs
 	dh_installmenu

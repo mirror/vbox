@@ -236,7 +236,6 @@ test -z "${OSE}" && test -z "${HEADLESS}" &&
 if test -z "${NO_SHARE_PACKAGE}"; then
     install -d -g 0 -o 0 "${PREFIX}/share/${PACKAGE}"
     mv "${INSTALL_SOURCE}/VBoxSysInfo.sh" "${PREFIX}/share/${PACKAGE}"
-    mv "${INSTALL_SOURCE}/VBoxCreateUSBNode.sh" "${PREFIX}/share/${PACKAGE}"
     mv "${INSTALL_SOURCE}/src" "${PREFIX}/share/${PACKAGE}"
     test -z "${NO_QT}" &&
         mv "${INSTALL_SOURCE}/nls" "${PREFIX}/share/${PACKAGE}"

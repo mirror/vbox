@@ -19,7 +19,6 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 
 # Include routines and utilities needed by the installer
 . ./routines.sh
-#include installer-common.sh
 
 LOG="/var/log/vbox-install.log"
 VERSION="_VERSION_"
@@ -360,8 +359,6 @@ if [ "$ACTION" = "install" ]; then
     if [ -n "$PYTHON" ]; then
       maybe_run_python_bindings_installer $INSTALLATION_DIR
     fi
-
-    install_device_node_setup "$VBOXDRV_GRP" "$VBOXDRV_MODE" "$INSTALLATION_DIR"
 
     # Do post-installation common to all installer types, currently service
     # script set-up.

@@ -100,7 +100,7 @@ mv nls $RPM_BUILD_ROOT/usr/share/virtualbox
 cp -a src $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBox.sh $RPM_BUILD_ROOT/usr/bin/VBox
 mv VBoxSysInfo.sh $RPM_BUILD_ROOT/usr/share/virtualbox
-mv VBoxCreateUSBNode.sh $RPM_BUILD_ROOT/usr/share/virtualbox
+mv VBoxCreateUSBNode.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
 cp icons/128x128/virtualbox.png $RPM_BUILD_ROOT/usr/share/pixmaps/virtualbox.png
 cd icons
   for i in *; do
@@ -245,8 +245,6 @@ fi
 
 
 %post
-#include installer-common.sh
-
 LOG="/var/log/vbox-install.log"
 
 # defaults
@@ -276,9 +274,6 @@ if [ "$INSTALL_NO_GROUP" != "1" ]; then
   groupadd -r -f vboxusers 2> /dev/null
 fi
 
-# install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox)
-# and /dev/vboxdrv and /dev/vboxusb/*/* device nodes
-install_device_node_setup root 0600 /usr/share/virtualbox "${usb_group}"
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
 /sbin/ldconfig
 %update_menus
