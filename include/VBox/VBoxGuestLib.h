@@ -345,13 +345,13 @@ DECLVBGL(int) VbglHGCMCallTimed(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfoTime
 
 /** @name Undocumented helpers for talking to the Chromium OpenGL Host Service
  * @{ */
-typedef VBGLHGCMHANDLE HVBOXCRCTL;
-DECLVBGL(int) VbglR0CrCtlCreate(HVBOXCRCTL *phCtl);
-DECLVBGL(int) VbglR0CrCtlDestroy(HVBOXCRCTL hCtl);
-DECLVBGL(int) VbglR0CrCtlConConnect(HVBOXCRCTL hCtl, HGCMCLIENTID *pidClient);
-DECLVBGL(int) VbglR0CrCtlConDisconnect(HVBOXCRCTL hCtl, HGCMCLIENTID idClient);
-DECLVBGL(int) VbglR0CrCtlConCall(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
-DECLVBGL(int) VbglR0CrCtlConCallUserData(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
+typedef VBGLHGCMHANDLE VBGLCRCTLHANDLE;
+DECLVBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl);
+DECLVBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl);
+DECLVBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClient);
+DECLVBGL(int) VbglR0CrCtlConDisconnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID idClient);
+DECLVBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
+DECLVBGL(int) VbglR0CrCtlConCallUserData(VBGLCRCTLHANDLE hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
 /** @} */
 
 #  endif /* !VBGL_VBOXGUEST */

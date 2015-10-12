@@ -34,7 +34,7 @@
 #include "VBGLInternal.h"
 
 
-DECLVBGL(int) VbglR0CrCtlCreate(HVBOXCRCTL *phCtl)
+DECLVBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl)
 {
     int rc;
 
@@ -65,7 +65,7 @@ DECLVBGL(int) VbglR0CrCtlCreate(HVBOXCRCTL *phCtl)
     return rc;
 }
 
-DECLVBGL(int) VbglR0CrCtlDestroy(HVBOXCRCTL hCtl)
+DECLVBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl)
 {
     vbglDriverClose(&hCtl->driver);
 
@@ -74,7 +74,7 @@ DECLVBGL(int) VbglR0CrCtlDestroy(HVBOXCRCTL hCtl)
     return VINF_SUCCESS;
 }
 
-DECLVBGL(int) VbglR0CrCtlConConnect(HVBOXCRCTL hCtl, HGCMCLIENTID *pidClient)
+DECLVBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClient)
 {
     VBoxGuestHGCMConnectInfo info;
     int rc;
@@ -102,7 +102,7 @@ DECLVBGL(int) VbglR0CrCtlConConnect(HVBOXCRCTL hCtl, HGCMCLIENTID *pidClient)
     return rc;
 }
 
-DECLVBGL(int) VbglR0CrCtlConDisconnect(HVBOXCRCTL hCtl, HGCMCLIENTID idClient)
+DECLVBGL(int) VbglR0CrCtlConDisconnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID idClient)
 {
     VBoxGuestHGCMDisconnectInfo info;
     RT_ZERO(info);
@@ -110,12 +110,12 @@ DECLVBGL(int) VbglR0CrCtlConDisconnect(HVBOXCRCTL hCtl, HGCMCLIENTID idClient)
     return vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info, sizeof(info));
 }
 
-DECLVBGL(int) VbglR0CrCtlConCall(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
+DECLVBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
 {
     return vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CALL(cbCallInfo), pCallInfo, cbCallInfo);
 }
 
-DECLVBGL(int) VbglR0CrCtlConCallUserData(HVBOXCRCTL hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
+DECLVBGL(int) VbglR0CrCtlConCallUserData(VBGLCRCTLHANDLE hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
 {
     return vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CALL_USERDATA(cbCallInfo), pCallInfo, cbCallInfo);
 }

@@ -23,7 +23,7 @@
 
 typedef struct VBOXMP_CRCTLCON
 {
-    HVBOXCRCTL hCrCtl;
+    VBGLCRCTLHANDLE hCrCtl;
     uint32_t cCrCtlRefs;
 } VBOXMP_CRCTLCON, *PVBOXMP_CRCTLCON;
 
