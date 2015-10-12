@@ -78,9 +78,16 @@ EOF
         db_go || true
         db_get virtualbox/delete-old-modules || true
         if [ "$RET" = "true" ]; then
-          find /lib/modules -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
-          find /lib/modules -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2>/dev/null
-          find /lib/modules -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+          for i in /lib/modules/*; do
+            if test -e "${i}/misc/vboxdrv.ko"; then
+              rm -f "${i}/misc/vboxdrv.ko" "${i}/misc/vboxnetadp.ko" \
+                    "${i}/misc/vboxnetflt.ko" "${i}/misc/vboxpci.ko"
+              # Remove the kernel version folder if it was empty except for us.
+              test "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" = \
+                   "${i}/misc/* ${i}/misc/.. ${i}/misc ${i}/.." &&
+                  rmdir "${i}/misc" "${i}"  # We used to leave empty folders.
+            fi
+          done
         fi
       fi
     fi
