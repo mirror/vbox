@@ -323,8 +323,8 @@ VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
     rc = VbglR3GuestPropConnect(&idClient);
     if (RT_SUCCESS(rc))
         rc = VbglR3GuestPropEnum(idClient, &pszPattern, 1, &pHandle, &pszName, NULL, NULL, NULL);
-    if (u32ClientId != 0)
-        rc2 = VbglR3GuestPropDisconnect(u32ClientId);
+    if (idClientId != 0)
+        rc2 = VbglR3GuestPropDisconnect(idClientId);
     if (RT_SUCCESS(rc))
         rc = rc2;
     while (pszName != NULL && RT_SUCCESS(rc))
