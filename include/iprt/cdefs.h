@@ -1416,8 +1416,21 @@
 #define RT_STR(str)             #str
 /** @def RT_XSTR
  * Returns the expanded argument as a string.
- * @param   str     Argument to expand and stringy. */
+ * @param   str     Argument to expand and stringify. */
 #define RT_XSTR(str)            RT_STR(str)
+
+/** @def RT_LSTR_2
+ * Helper for RT_WSTR that gets the expanded @a str.
+ * @param   str     String litteral to prefix with 'L'.  */
+#define RT_LSTR_2(str)          L##str
+/** @def RT_LSTR
+ * Returns the expanded argument with a L string prefix.
+ *
+ * Intended for converting ASCII string \#defines into wide char string
+ * litterals on Windows.
+ *
+ * @param   str     String litteral to . */
+#define RT_LSTR(str)            RT_LSTR_2(str)
 
 /** @def RT_CONCAT
  * Concatenate the expanded arguments without any extra spaces in between.
