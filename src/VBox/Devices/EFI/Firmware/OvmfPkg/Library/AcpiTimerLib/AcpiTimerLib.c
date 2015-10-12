@@ -24,7 +24,11 @@
 //
 // PIIX4 Power Management Base Address
 //
+#ifndef VBOX
 UINT32 mPmba = 0x400;
+#else
+UINT32 mPmba = 0x4000;
+#endif
 
 #define PCI_BAR_IO             0x1
 #define ACPI_TIMER_FREQUENCY   3579545
@@ -40,6 +44,7 @@ UINT32 mPmba = 0x400;
   @retval EFI_SUCCESS   The constructor always returns RETURN_SUCCESS.
 
 **/
+#ifndef VBOX
 RETURN_STATUS
 EFIAPI
 AcpiTimerLibConstructor (
@@ -67,6 +72,42 @@ AcpiTimerLibConstructor (
   PciOr8         (PCI_LIB_ADDRESS (0,Device,3,0x80), 0x01);
   return RETURN_SUCCESS;
 }
+#else
+RETURN_STATUS
+EFIAPI
+AcpiTimerLibConstructor (
+  VOID
+  )
+{
+  UINT8     u8Device = 7;
+  UINT16    u16VendorID = 0;
+  UINT16    u16DeviceID = 0;
+  u16VendorID = PciRead16(PCI_LIB_ADDRESS(0, u8Device, 0, 0));
+  u16DeviceID = PciRead16(PCI_LIB_ADDRESS(0, u8Device, 0, 2));
+  if (   u16VendorID != 0x8086
+      || u16DeviceID != 0x7113)
+    return RETURN_ABORTED;
+
+  if (PciRead8 (PCI_LIB_ADDRESS (0,u8Device,0,0x80)) & 1) {
+    mPmba = PciRead32 (PCI_LIB_ADDRESS (0, u8Device, 0, 0x40));
+    ASSERT (mPmba & PCI_BAR_IO);
+    DEBUG((DEBUG_INFO, "%a:%d mPmba:%x\n", __FUNCTION__, __LINE__, mPmba));
+    mPmba &= ~PCI_BAR_IO;
+    DEBUG((DEBUG_INFO, "%a:%d mPmba:%x\n", __FUNCTION__, __LINE__, mPmba));
+  } else {
+    PciAndThenOr32 (PCI_LIB_ADDRESS (0,u8Device,0,0x40),
+                    (UINT32) ~0xfc0, mPmba);
+    PciOr8         (PCI_LIB_ADDRESS (0,u8Device,0,0x04), 0x01);
+    DEBUG((DEBUG_INFO, "%a:%d mPmba:%x\n", __FUNCTION__, __LINE__, mPmba));
+  }
+
+  //
+  // ACPI Timer enable is in Bus 0, Device ?, Function 3
+  //
+  PciOr8         (PCI_LIB_ADDRESS (0,u8Device,0,0x80), 0x01);
+  return RETURN_SUCCESS;
+}
+#endif
 
 /**
   Internal function to read the current tick counter of ACPI.

@@ -65,11 +65,7 @@
 ################################################################################
 [LibraryClasses]
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
-!ifndef $(VBOX)
   TimerLib|OvmfPkg/Library/AcpiTimerLib/AcpiTimerLib.inf
-!else
-  TimerLib|VBoxPkg/Library/AcpiTimerLib/AcpiTimerLib.inf
-!endif
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLibRepStr/BaseMemoryLibRepStr.inf
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
@@ -388,29 +384,17 @@
   PcAtChipsetPkg/KbcResetDxe/Reset.inf
   MdeModulePkg/Universal/Metronome/Metronome.inf {
     <LibraryClasses>
-!ifndef $(VBOX)
       TimerLib|OvmfPkg/Library/AcpiTimerLib/AcpiTimerLib.inf
-!else
-      TimerLib|VBoxPkg/Library/AcpiTimerLib/AcpiTimerLib.inf
-!endif
   }
 
   PcAtChipsetPkg/PcatRealTimeClockRuntimeDxe/PcatRealTimeClockRuntimeDxe.inf {
     <LibraryClasses>
-!ifndef $(VBOX)
       TimerLib|OvmfPkg/Library/AcpiTimerLib/AcpiTimerLib.inf
-!else
-      TimerLib|VBoxPkg/Library/AcpiTimerLib/AcpiTimerLib.inf
-!endif
   }
 
   IntelFrameworkModulePkg/Universal/BdsDxe/BdsDxe.inf {
     <LibraryClasses>
-!ifndef $(VBOX)
       TimerLib|OvmfPkg/Library/AcpiTimerLib/AcpiTimerLib.inf
-!else
-      TimerLib|VBoxPkg/Library/AcpiTimerLib/AcpiTimerLib.inf
-!endif
 !ifdef $(CSM_ENABLE)
       NULL|OvmfPkg/Csm/CsmSupportLib/CsmSupportLib.inf
 !endif
