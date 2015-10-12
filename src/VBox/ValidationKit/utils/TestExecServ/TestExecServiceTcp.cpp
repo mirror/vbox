@@ -169,7 +169,7 @@ static DECLCALLBACK(int) txsTcpServerConnectThread(RTTHREAD hSelf, void *pvUser)
  * Checks if it's a fatal RTTcpClientConnect return code.
  *
  * @returns true / false.
- * @param   rc              The iprt status.
+ * @param   rc              The IPRT status code.
  */
 static bool txsTcpIsFatalClientConnectStatus(int rc)
 {

@@ -157,7 +157,7 @@ RTDATADECL(PRTSTREAM)   g_pStdOut = &g_StdOut;
 /**
  * Allocates and acquires the lock for the stream.
  *
- * @returns IPRT status.
+ * @returns IPRT status code.
  * @param   pStream     The stream (valid).
  */
 static int rtStrmAllocLock(PRTSTREAM pStream)

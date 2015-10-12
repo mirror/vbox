@@ -54,7 +54,7 @@ static DECLCALLBACK(void) callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc
  * Initialise the HGCM service table as much as we need to start the
  * service.
  *
- * @return IPRT status.
+ * @return IPRT status code.
  * @param  pTable the table to initialise
  */
 int initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)

@@ -496,7 +496,7 @@ RT_EXPORT_SYMBOL(RTDbgAsModuleCount);
 /**
  * Common worker for RTDbgAsModuleLink and RTDbgAsModuleLinkSeg.
  *
- * @returns IPRT status.
+ * @returns IPRT status code.
  * @param   pDbgAs          Pointer to the address space instance data.
  * @param   hDbgMod         The module to link.
  * @param   iSeg            The segment to link or NIL if all.

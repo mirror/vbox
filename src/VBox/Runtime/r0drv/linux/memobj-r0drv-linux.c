@@ -755,7 +755,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 /**
  * Worker for rtR0MemObjLinuxAllocPhysSub that tries one allocation strategy.
  *
- * @returns IPRT status.
+ * @returns IPRT status code.
  * @param   ppMemLnx    Where to
  * @param   enmType     The object type.
  * @param   cb          The size of the allocation.
@@ -807,7 +807,7 @@ static int rtR0MemObjLinuxAllocPhysSub2(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTY
 /**
  * Worker for rtR0MemObjNativeAllocPhys and rtR0MemObjNativeAllocPhysNC.
  *
- * @returns IPRT status.
+ * @returns IPRT status code.
  * @param   ppMem       Where to store the memory object pointer on success.
  * @param   enmType     The object type.
  * @param   cb          The size of the allocation.
