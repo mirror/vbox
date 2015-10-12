@@ -72,7 +72,7 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp);
 RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation);
 
 /**
- * Perform a simple blocking HTTP request.
+ * Perform a simple blocking HTTP GET request.
  *
  * This is a just a convenient wrapper around RTHttpGetBinary that returns a
  * different type and sheds a parameter.
@@ -81,7 +81,7 @@ RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation);
  *
  * @param   hHttp           The HTTP client instance.
  * @param   pszUrl          URL.
- * @param   ppszNotUtf8     Where to return the poitner to the HTTP response.
+ * @param   ppszNotUtf8     Where to return the pointer to the HTTP response.
  *                          The string is of course zero terminated.  Use
  *                          RTHttpFreeReponseText to free.
  *
@@ -101,6 +101,35 @@ RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation);
 RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pszUrl, char **ppszNotUtf8);
 
 /**
+ * Perform a simple blocking HTTP HEAD request.
+ *
+ * This is a just a convenient wrapper around RTHttpGetBinary that returns a
+ * different type and sheds a parameter.
+ *
+ * @returns iprt status code.
+ *
+ * @param   hHttp           The HTTP client instance.
+ * @param   pszUrl          URL.
+ * @param   ppszNotUtf8     Where to return the pointer to the HTTP response.
+ *                          The string is of course zero terminated.  Use
+ *                          RTHttpFreeReponseText to free.
+ *
+ * @remarks BIG FAT WARNING!
+ *
+ *          This function does not guarantee the that returned string is valid UTF-8 or
+ *          any other kind of text encoding!
+ *
+ *          The caller must determine and validate the string encoding _before_
+ *          passing it along to functions that expect UTF-8!
+ *
+ *          Also, this function does not guarantee that the returned string
+ *          doesn't have embedded zeros and provides the caller no way of
+ *          finding out!  If you are worried about the response from the HTTPD
+ *          containing embedded zero's, use RTHttpGetHeaderBinary instead.
+ */
+RTR3DECL(int) RTHttpGetHeaderText(RTHTTP hHttp, const char *pszUrl, char **ppszNotUtf8);
+
+/**
  * Frees memory returned by RTHttpGetText.
  *
  * @param   pszNotUtf8      What RTHttpGetText returned.
@@ -108,7 +137,7 @@ RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pszUrl, char **ppszNotUtf8
 RTR3DECL(void) RTHttpFreeResponseText(char *pszNotUtf8);
 
 /**
- * Perform a simple blocking HTTP request.
+ * Perform a simple blocking HTTP GET request.
  *
  * @returns iprt status code.
  *
@@ -119,6 +148,19 @@ RTR3DECL(void) RTHttpFreeResponseText(char *pszNotUtf8);
  * @param   pcb             Size of the returned buffer.
  */
 RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pszUrl, void **ppvResponse, size_t *pcb);
+
+/**
+ * Perform a simple blocking HTTP HEAD request.
+ *
+ * @returns iprt status code.
+ *
+ * @param   hHttp           The HTTP client instance.
+ * @param   pszUrl          The URL.
+ * @param   ppvResponse     Where to store the HTTP response data.  Use
+ *                          RTHttpFreeResponse to free.
+ * @param   pcb             Size of the returned buffer.
+ */
+RTR3DECL(int) RTHttpGetHeaderBinary(RTHTTP hHttp, const char *pszUrl, void **ppvResponse, size_t *pcb);
 
 /**
  * Frees memory returned by RTHttpGetBinary.

@@ -2209,6 +2209,13 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
         pThis->fHaveSetUserAgent = true;
     }
 
+    /*
+     * Use GET by default.
+     */
+    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, 0L);
+    if (CURL_FAILURE(rcCurl))
+        return VERR_HTTP_CURL_ERROR;
+
     return VINF_SUCCESS;
 }
 
@@ -2280,6 +2287,7 @@ static size_t rtHttpWriteData(void *pvBuf, size_t cbUnit, size_t cUnits, void *p
  * @returns IPRT status code.
  * @param   hHttp               The HTTP/HTTPS client instance.
  * @param   pszUrl              The URL.
+ * @param   fNoBody             Set to suppress the body.
  * @param   ppvResponse         Where to return the pointer to the allocated
  *                              response data (RTMemFree).  There will always be
  *                              an zero terminator char after the response, that
@@ -2289,7 +2297,7 @@ static size_t rtHttpWriteData(void *pvBuf, size_t cbUnit, size_t cUnits, void *p
  * @remarks We ASSUME the API user doesn't do concurrent GETs in different
  *          threads, because that will probably blow up!
  */
-static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, uint8_t **ppvResponse, size_t *pcb)
+static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, bool fNoBody, uint8_t **ppvResponse, size_t *pcb)
 {
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
@@ -2321,6 +2329,9 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, uint8_t **ppvRespons
         int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEFUNCTION, &rtHttpWriteData);
         if (!CURL_FAILURE(rcCurl))
             rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEDATA, (void *)pThis);
+        if (   fNoBody
+            && !CURL_FAILURE(rcCurl))
+            rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, 1L);
         if (!CURL_FAILURE(rcCurl))
         {
             /*
@@ -2354,7 +2365,7 @@ RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pszUrl, char **ppszNotUtf8
     Log(("RTHttpGetText: hHttp=%p pszUrl=%s\n", hHttp, pszUrl));
     uint8_t *pv;
     size_t   cb;
-    int rc = rtHttpGetToMem(hHttp, pszUrl, &pv, &cb);
+    int rc = rtHttpGetToMem(hHttp, pszUrl, false /*fNoBody*/, &pv, &cb);
     if (RT_SUCCESS(rc))
     {
         if (pv) /* paranoia */
@@ -2368,6 +2379,26 @@ RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pszUrl, char **ppszNotUtf8
 }
 
 
+RTR3DECL(int) RTHttpGetHeaderText(RTHTTP hHttp, const char *pszUrl, char **ppszNotUtf8)
+{
+    Log(("RTHttpGetText: hHttp=%p pszUrl=%s\n", hHttp, pszUrl));
+    uint8_t *pv;
+    size_t   cb;
+    int rc = rtHttpGetToMem(hHttp, pszUrl, true /*fNoBody*/, &pv, &cb);
+    if (RT_SUCCESS(rc))
+    {
+        if (pv) /* paranoia */
+            *ppszNotUtf8 = (char *)pv;
+        else
+            *ppszNotUtf8 = (char *)RTMemDup("", 1);
+    }
+    else
+        *ppszNotUtf8 = NULL;
+    return rc;
+
+}
+
+
 RTR3DECL(void) RTHttpFreeResponseText(char *pszNotUtf8)
 {
     RTMemFree(pszNotUtf8);
@@ -2377,7 +2408,14 @@ RTR3DECL(void) RTHttpFreeResponseText(char *pszNotUtf8)
 RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pszUrl, void **ppvResponse, size_t *pcb)
 {
     Log(("RTHttpGetBinary: hHttp=%p pszUrl=%s\n", hHttp, pszUrl));
-    return rtHttpGetToMem(hHttp, pszUrl, (uint8_t **)ppvResponse, pcb);
+    return rtHttpGetToMem(hHttp, pszUrl, false /*fNoBody*/, (uint8_t **)ppvResponse, pcb);
+}
+
+
+RTR3DECL(int) RTHttpGetHeaderBinary(RTHTTP hHttp, const char *pszUrl, void **ppvResponse, size_t *pcb)
+{
+    Log(("RTHttpGetBinary: hHttp=%p pszUrl=%s\n", hHttp, pszUrl));
+    return rtHttpGetToMem(hHttp, pszUrl, true /*fNoBody*/, (uint8_t **)ppvResponse, pcb);
 }
 
 
