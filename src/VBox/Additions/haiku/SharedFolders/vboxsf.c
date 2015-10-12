@@ -60,34 +60,34 @@ status_t init_module(void)
     int rc = get_module(VBOXGUEST_MODULE_NAME, (module_info **)&g_VBoxGuest);
     if (RT_LIKELY(rc == B_OK)
     {
-        rc = vboxInit();
+        rc = VbglR0SfInit();
         if (RT_SUCCESS(rc))
         {
-            rc = vboxConnect(&g_clientHandle);
+            rc = VbglR0SfConnect(&g_clientHandle);
             if (RT_SUCCESS(rc))
             {
-                rc = vboxCallSetUtf8(&g_clientHandle);
+                rc = VbglR0SfSetUtf8(&g_clientHandle);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = vboxCallSetSymlinks(&g_clientHandle);
+                    rc = VbglR0SfSetSymlinks(&g_clientHandle);
                     if (RT_FAILURE(rc))
-                        LogRel((FS_NAME ":Warning! vboxCallSetSymlinks failed (rc=%d) - symlink will appear as copies.\n", rc));
+                        LogRel((FS_NAME ": Warning! VbglR0SfSetSymlinks failed (rc=%d) - symlink will appear as copies.\n", rc));
 
                     mutex_init(&g_vnodeCacheLock, "vboxsf vnode cache lock");
-                    Log((FS_NAME ":init_module succeeded.\n");
+                    Log((FS_NAME ": init_module succeeded.\n");
                     return B_OK;
                 }
                 else
-                    LogRel((FS_NAME ":vboxCallSetUtf8 failed. rc=%d\n", rc));
+                    LogRel((FS_NAME ": VbglR0SfSetUtf8 failed. rc=%d\n", rc));
             }
             else
-                LogRel((FS_NAME ":vboxConnect failed. rc=%d\n", rc));
+                LogRel((FS_NAME ": VbglR0SfConnect failed. rc=%d\n", rc));
         }
         else
-            LogRel((FS_NAME ":vboxInit failed. rc=%d\n", rc));
+            LogRel((FS_NAME ": VbglR0SfInit failed. rc=%d\n", rc));
     }
     else
-        LogRel((FS_NAME ":get_module failed for '%s'. rc=%d\n", VBOXGUEST_MODULE_NAME, rc));
+        LogRel((FS_NAME ": get_module failed for '%s'. rc=%d\n", VBOXGUEST_MODULE_NAME, rc));
 
     return B_ERROR;
 #endif
@@ -98,27 +98,27 @@ status_t init_module(void)
         return B_ERROR;
     }
 
-    if (RT_FAILURE(vboxInit()))
+    if (RT_FAILURE(VbglR0SfInit()))
     {
-        dprintf("vboxInit failed\n");
+        dprintf("VbglR0SfInit failed\n");
         return B_ERROR;
     }
 
-    if (RT_FAILURE(vboxConnect(&g_clientHandle)))
+    if (RT_FAILURE(VbglR0SfConnect(&g_clientHandle)))
     {
-        dprintf("vboxConnect failed\n");
+        dprintf("VbglR0SfConnect failed\n");
         return B_ERROR;
     }
 
-    if (RT_FAILURE(vboxCallSetUtf8(&g_clientHandle)))
+    if (RT_FAILURE(VbglR0SfSetUtf8(&g_clientHandle)))
     {
-        dprintf("vboxCallSetUtf8 failed\n");
+        dprintf("VbglR0SfSetUtf8 failed\n");
         return B_ERROR;
     }
 
-    if (RT_FAILURE(vboxCallSetSymlinks(&g_clientHandle)))
+    if (RT_FAILURE(VbglR0SfSetSymlinks(&g_clientHandle)))
     {
-        dprintf("warning: vboxCallSetSymlinks failed (old vbox?) - symlinks will appear as copies\n");
+        dprintf("warning: VbglR0SfSetSymlinks failed (old vbox?) - symlinks will appear as copies\n");
     }
 
     mutex_init(&g_vnodeCacheLock, "vboxsf vnode cache lock");
@@ -226,7 +226,7 @@ status_t mount(fs_volume *volume, const char *device, uint32 flags, const char *
 
     vboxsf_volume* vbsfvolume = malloc(sizeof(vboxsf_volume));
     volume->private_volume = vbsfvolume;
-    int rv = vboxCallMapFolder(&g_clientHandle, sharename, &(vbsfvolume->map));
+    int rv = VbglR0SfMapFolder(&g_clientHandle, sharename, &(vbsfvolume->map));
     free(sharename);
 
     if (rv == 0)
@@ -257,7 +257,7 @@ status_t mount(fs_volume *volume, const char *device, uint32 flags, const char *
     }
     else
     {
-        dprintf(FS_NAME ": vboxCallMapFolder failed (%d)\n", rv);
+        dprintf(FS_NAME ": VbglR0SfMapFolder failed (%d)\n", rv);
         free(volume->private_volume);
         return vbox_err_to_haiku_err(rv);
     }
@@ -267,7 +267,7 @@ status_t mount(fs_volume *volume, const char *device, uint32 flags, const char *
 status_t unmount(fs_volume *volume)
 {
     dprintf(FS_NAME ": unmount\n");
-    vboxCallUnmapFolder(&g_clientHandle, volume->private_volume);
+    VbglR0SfUnmapFolder(&g_clientHandle, volume->private_volume);
     return B_OK;
 }
 
@@ -283,8 +283,8 @@ status_t vboxsf_read_stat(fs_volume* _volume, fs_vnode* _vnode, struct stat* st)
 
     params.Handle = SHFL_HANDLE_NIL;
     params.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
-    dprintf("sf_stat: calling vboxCallCreate, file %s, flags %x\n", vnode->path->String.utf8, params.CreateFlags);
-    rc = vboxCallCreate(&g_clientHandle, &volume->map, vnode->path, &params);
+    dprintf("sf_stat: calling VbglR0SfCreate, file %s, flags %x\n", vnode->path->String.utf8, params.CreateFlags);
+    rc = VbglR0SfCreate(&g_clientHandle, &volume->map, vnode->path, &params);
     if (rc == VERR_INVALID_NAME)
     {
         /* this can happen for names like 'foo*' on a Windows host */
@@ -292,12 +292,12 @@ status_t vboxsf_read_stat(fs_volume* _volume, fs_vnode* _vnode, struct stat* st)
     }
     if (RT_FAILURE(rc))
     {
-        dprintf("vboxCallCreate: %d\n", params.Result);
+        dprintf("VbglR0SfCreate: %d\n", params.Result);
         return vbox_err_to_haiku_err(params.Result);
     }
     if (params.Result != SHFL_FILE_EXISTS)
     {
-        dprintf("vboxCallCreate: %d\n", params.Result);
+        dprintf("VbglR0SfCreate: %d\n", params.Result);
         return B_ENTRY_NOT_FOUND;
     }
 
@@ -328,7 +328,7 @@ status_t vboxsf_open_dir(fs_volume* _volume, fs_vnode* _vnode, void** _cookie)
     params.Handle = SHFL_HANDLE_NIL;
     params.CreateFlags = SHFL_CF_DIRECTORY | SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_READ;
 
-    int rc = vboxCallCreate(&g_clientHandle, &volume->map, vnode->path, &params);
+    int rc = VbglR0SfCreate(&g_clientHandle, &volume->map, vnode->path, &params);
     if (RT_SUCCESS(rc))
     {
         if (params.Result == SHFL_FILE_EXISTS && params.Handle != SHFL_HANDLE_NIL)
@@ -348,7 +348,7 @@ status_t vboxsf_open_dir(fs_volume* _volume, fs_vnode* _vnode, void** _cookie)
     }
     else
     {
-        dprintf(FS_NAME ": vboxCallCreate: %d\n", rc);
+        dprintf(FS_NAME ": VbglR0SfCreate: %d\n", rc);
         return vbox_err_to_haiku_err(rc);
     }
 }
@@ -367,12 +367,12 @@ status_t vboxsf_read_dir_1(vboxsf_volume* volume, vboxsf_vnode* vnode, vboxsf_di
         cookie->buffer_length = 16384;
         cookie->buffer_start = cookie->buffer = malloc(cookie->buffer_length);
 
-        int rc = vboxCallDirInfo(&g_clientHandle, &volume->map, cookie->handle, cookie->path, 0, cookie->index,
+        int rc = VbglR0SfDirInfo(&g_clientHandle, &volume->map, cookie->handle, cookie->path, 0, cookie->index,
                                  &cookie->buffer_length, cookie->buffer, &cookie->num_files);
 
         if (rc != 0 && rc != VERR_NO_MORE_FILES)
         {
-            dprintf(FS_NAME ": vboxCallDirInfo failed: %d\n", rc);
+            dprintf(FS_NAME ": VbglR0SfDirInfo failed: %d\n", rc);
             free(cookie->buffer_start);
             cookie->buffer_start = NULL;
             return vbox_err_to_haiku_err(rc);
@@ -461,7 +461,7 @@ status_t vboxsf_free_dir_cookie(fs_volume* _volume, fs_vnode* vnode, void* _cook
     vboxsf_volume* volume = _volume->private_volume;
     vboxsf_dir_cookie* cookie = _cookie;
 
-    vboxCallClose(&g_clientHandle, &volume->map, cookie->handle);
+    VbglR0SfClose(&g_clientHandle, &volume->map, cookie->handle);
     free(cookie->path);
     free(cookie);
 
@@ -476,12 +476,11 @@ status_t vboxsf_read_fs_info(fs_volume* _volume, struct fs_info* info)
     SHFLVOLINFO volume_info;
     uint32_t bytes = sizeof(SHFLVOLINFO);
 
-    int rc = vboxCallFSInfo(&g_clientHandle, &volume->map, 0,
-        (SHFL_INFO_GET | SHFL_INFO_VOLUME), &bytes, (PSHFLDIRINFO)&volume_info);
-
+    int rc = VbglR0SfFsInfo(&g_clientHandle, &volume->map, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME,
+                            &bytes, (PSHFLDIRINFO)&volume_info);
     if (RT_FAILURE(rc))
     {
-        dprintf(FS_NAME ": vboxCallFSInfo failed (%d)\n", rc);
+        dprintf(FS_NAME ": VbglR0SfFsInfo failed (%d)\n", rc);
         return vbox_err_to_haiku_err(rc);
     }
 
@@ -519,7 +518,7 @@ status_t vboxsf_lookup(fs_volume* _volume, fs_vnode* dir, const char* name, ino_
         return B_NO_MEMORY;
     }
 
-    int rc = vboxCallCreate(&g_clientHandle, &volume->map, path, &params);
+    int rc = VbglR0SfCreate(&g_clientHandle, &volume->map, path, &params);
     if (RT_SUCCESS(rc))
     {
         if (params.Result == SHFL_FILE_EXISTS)
@@ -542,7 +541,7 @@ status_t vboxsf_lookup(fs_volume* _volume, fs_vnode* dir, const char* name, ino_
     else
     {
         free(path);
-        dprintf(FS_NAME ": vboxCallCreate: %d\n", rc);
+        dprintf(FS_NAME ": VbglR0SfCreate: %d\n", rc);
         return vbox_err_to_haiku_err(rc);
     }
 }
@@ -637,10 +636,10 @@ status_t vboxsf_open(fs_volume* _volume, fs_vnode* _vnode, int openMode, void** 
             params.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
     }
 
-    int rc = vboxCallCreate(&g_clientHandle, &volume->map, vnode->path, &params);
+    int rc = VbglR0SfCreate(&g_clientHandle, &volume->map, vnode->path, &params);
     if (!RT_SUCCESS(rc))
     {
-        dprintf("vboxCallCreate returned %d\n", rc);
+        dprintf("VbglR0SfCreate returned %d\n", rc);
         return vbox_err_to_haiku_err(rc);
     }
 
@@ -699,11 +698,11 @@ status_t vboxsf_create(fs_volume* _volume, fs_vnode* _dir, const char *name, int
     }
 
     PSHFLSTRING path = build_path(_dir->private_node, name);
-    int rc = vboxCallCreate(&g_clientHandle, &volume->map, path, &params);
+    int rc = VbglR0SfCreate(&g_clientHandle, &volume->map, path, &params);
 
     if (!RT_SUCCESS(rc))
     {
-        dprintf("vboxCallCreate returned %d\n", rc);
+        dprintf("VbglR0SfCreate returned %d\n", rc);
         free(path);
         return vbox_err_to_haiku_err(rc);
     }
@@ -729,8 +728,8 @@ status_t vboxsf_close(fs_volume* _volume, fs_vnode* _vnode, void* _cookie)
     vboxsf_volume* volume = _volume->private_volume;
     vboxsf_file_cookie* cookie = _cookie;
 
-    int rc = vboxCallClose(&g_clientHandle, &volume->map, cookie->handle);
-    dprintf("vboxCallClose returned %d\n", rc);
+    int rc = VbglR0SfClose(&g_clientHandle, &volume->map, cookie->handle);
+    dprintf("VbglR0SfClose returned %d\n", rc);
     return vbox_err_to_haiku_err(rc);
 }
 
@@ -767,11 +766,11 @@ status_t vboxsf_read(fs_volume* _volume, fs_vnode* _vnode, void* _cookie, off_t 
 
     uint32_t l = *length;
     void* other_buffer = malloc(l);  /* @todo map the user memory into kernel space here for efficiency */
-    int rc = vboxCallRead(&g_clientHandle, &volume->map, cookie->handle, pos, &l, other_buffer, false);
+    int rc = VbglR0SfRead(&g_clientHandle, &volume->map, cookie->handle, pos, &l, other_buffer, false /*fLocked*/);
     memcpy(buffer, other_buffer, l);
     free(other_buffer);
 
-    dprintf("vboxCallRead returned %d\n", rc);
+    dprintf("VbglR0SfRead returned %d\n", rc);
     *length = l;
     return vbox_err_to_haiku_err(rc);
 }
@@ -789,7 +788,7 @@ status_t vboxsf_write(fs_volume* _volume, fs_vnode* _vnode, void* _cookie, off_t
     uint32_t l = *length;
     void* other_buffer = malloc(l);  /* @todo map the user memory into kernel space here for efficiency */
     memcpy(other_buffer, buffer, l);
-    int rc = vboxCallWrite(&g_clientHandle, &volume->map, cookie->handle, pos, &l, other_buffer, false);
+    int rc = VbglR0SfWrite(&g_clientHandle, &volume->map, cookie->handle, pos, &l, other_buffer, false /*fLocked*/);
     free(other_buffer);
 
     *length = l;
@@ -815,17 +814,14 @@ status_t vboxsf_create_dir(fs_volume *_volume, fs_vnode *parent, const char *nam
         SHFL_CF_ACT_FAIL_IF_EXISTS | SHFL_CF_ACCESS_READ;
 
     PSHFLSTRING path = build_path(parent->private_node, name);
-    int rc = vboxCallCreate(&g_clientHandle, &volume->map, path, &params);
+    int rc = VbglR0SfCreate(&g_clientHandle, &volume->map, path, &params);
     free(path);
     /** @todo r=ramshankar: we should perhaps also check rc here and change
      *        Handle initialization from 0 to SHFL_HANDLE_NIL. */
     if (params.Handle == SHFL_HANDLE_NIL)
         return vbox_err_to_haiku_err(rc);
-    else
-    {
-        vboxCallClose(&g_clientHandle, &volume->map, params.Handle);
-        return B_OK;
-    }
+    VbglR0SfClose(&g_clientHandle, &volume->map, params.Handle);
+    return B_OK;
 }
 
 
@@ -834,7 +830,7 @@ status_t vboxsf_remove_dir(fs_volume *_volume, fs_vnode *parent, const char *nam
     vboxsf_volume* volume = _volume->private_volume;
 
     PSHFLSTRING path = build_path(parent->private_node, name);
-    int rc = vboxCallRemove(&g_clientHandle, &volume->map, path, SHFL_REMOVE_DIR);
+    int rc = VbglR0SfRemove(&g_clientHandle, &volume->map, path, SHFL_REMOVE_DIR);
     free(path);
 
     return vbox_err_to_haiku_err(rc);
@@ -846,7 +842,7 @@ status_t vboxsf_unlink(fs_volume *_volume, fs_vnode *parent, const char *name)
     vboxsf_volume* volume = _volume->private_volume;
 
     PSHFLSTRING path = build_path(parent->private_node, name);
-    int rc = vboxCallRemove(&g_clientHandle, &volume->map, path, SHFL_REMOVE_FILE);
+    int rc = VbglR0SfRemove(&g_clientHandle, &volume->map, path, SHFL_REMOVE_FILE);
     free(path);
 
     return vbox_err_to_haiku_err(rc);
@@ -864,7 +860,7 @@ status_t vboxsf_rename(fs_volume* _volume, fs_vnode* fromDir, const char* fromNa
 
     PSHFLSTRING oldpath = build_path(fromDir->private_node, fromName);
     PSHFLSTRING newpath = build_path(toDir->private_node, toName);
-    int rc = vboxCallRename(&g_clientHandle, &volume->map, oldpath, newpath, SHFL_RENAME_FILE | SHFL_RENAME_REPLACE_IF_EXISTS);
+    int rc = VbglR0SfRename(&g_clientHandle, &volume->map, oldpath, newpath, SHFL_RENAME_FILE | SHFL_RENAME_REPLACE_IF_EXISTS);
     free(oldpath);
     free(newpath);
 
@@ -881,7 +877,7 @@ status_t vboxsf_create_symlink(fs_volume* _volume, fs_vnode* dir, const char* na
     SHFLFSOBJINFO stuff;
     RT_ZERO(stuff);
 
-    int rc = vboxCallSymlink(&g_clientHandle, &volume->map, linkpath, target, &stuff);
+    int rc = VbglR0SfSymlink(&g_clientHandle, &volume->map, linkpath, target, &stuff);
 
     free(target);
     free(linkpath);
@@ -895,7 +891,7 @@ status_t vboxsf_read_symlink(fs_volume* _volume, fs_vnode* link, char* buffer, s
     vboxsf_volume* volume = _volume->private_volume;
     vboxsf_vnode* vnode = link->private_node;
 
-    int rc = vboxReadLink(&g_clientHandle, &volume->map, vnode->path, *_bufferSize, buffer);
+    int rc = VbglR0SfReadLink(&g_clientHandle, &volume->map, vnode->path, *_bufferSize, buffer);
     *_bufferSize = strlen(buffer);
 
     return vbox_err_to_haiku_err(rc);

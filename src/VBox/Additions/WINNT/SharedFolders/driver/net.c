@@ -205,11 +205,11 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
                 goto l_Exit;
             }
 
-            vboxRC = vboxCallMapFolder(&pDeviceExtension->hgcmClient, ParsedPath, &pNetRootExtension->map);
+            vboxRC = VbglR0SfMapFolder(&pDeviceExtension->hgcmClient, ParsedPath, &pNetRootExtension->map);
             vbsfFreeNonPagedMem(ParsedPath);
             if (vboxRC != VINF_SUCCESS)
             {
-                Log(("VBOXSF: MRxCreateVNetRoot: vboxCallMapFolder failed with %d\n", vboxRC));
+                Log(("VBOXSF: MRxCreateVNetRoot: VbglR0SfMapFolder failed with %d\n", vboxRC));
                 Status = STATUS_BAD_NETWORK_NAME;
             }
             else
@@ -263,9 +263,9 @@ NTSTATUS VBoxMRxFinalizeNetRoot(IN PMRX_NET_ROOT pNetRoot,
 
     if (pNetRootExtension->phgcmClient)
     {
-        int vboxRC = vboxCallUnmapFolder(pNetRootExtension->phgcmClient, &pNetRootExtension->map);
+        int vboxRC = VbglR0SfUnmapFolder(pNetRootExtension->phgcmClient, &pNetRootExtension->map);
         if (vboxRC != VINF_SUCCESS)
-            Log(("VBOXSF: MRxFinalizeVNetRoot: vboxCallUnmapFolder failed with %d\n",
+            Log(("VBOXSF: MRxFinalizeVNetRoot: VbglR0SfUnmapFolder failed with %d\n",
                  vboxRC));
         pNetRootExtension->phgcmClient = NULL;
     }

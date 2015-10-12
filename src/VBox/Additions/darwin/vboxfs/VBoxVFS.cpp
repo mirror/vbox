@@ -104,7 +104,7 @@ static kern_return_t VBoxVFSModuleLoad(struct kmod_info *pKModInfo, void *pvData
 
     /* Initialize the R0 guest library. */
 #if 0
-    rc = vboxInit();
+    rc = VbglR0SfInit();
     if (RT_FAILURE(rc))
         return KERN_FAILURE;
 #endif
@@ -124,11 +124,10 @@ static kern_return_t VBoxVFSModuleUnLoad(struct kmod_info *pKModInfo, void *pvDa
     int rc;
 
 #if 0
-    vboxUninit();
+   VbglR0SfTerminate();
 #endif
 
-    PINFO("VirtualBox " VBOX_VERSION_STRING " shared folders "
-          "driver is unloaded");
+    PINFO("VirtualBox " VBOX_VERSION_STRING " shared folders driver is unloaded");
 
     return KERN_SUCCESS;
 }
@@ -219,15 +218,15 @@ bool org_virtualbox_VBoxVFS::start(IOService *pProvider)
     coreService = waitForCoreService();
     if (coreService)
     {
-        rc = vboxInit();
+        rc = VbglR0SfInit();
         if (RT_SUCCESS(rc))
         {
             /* Connect to the host service. */
-            rc = vboxConnect(&g_vboxSFClient);
+            rc = VbglR0SfConnect(&g_vboxSFClient);
             if (RT_SUCCESS(rc))
             {
                 PINFO("VBox client connected");
-                rc = vboxCallSetUtf8(&g_vboxSFClient);
+                rc = VbglR0SfSetUtf8(&g_vboxSFClient);
                 if (RT_SUCCESS(rc))
                 {
                     rc = VBoxVFSRegisterFilesystem();
@@ -241,15 +240,15 @@ bool org_virtualbox_VBoxVFS::start(IOService *pProvider)
                 }
                 else
                 {
-                    PERROR("vboxCallSetUtf8 failed: rc=%d", rc);
+                    PERROR("VbglR0SfSetUtf8 failed: rc=%d", rc);
                 }
-                vboxDisconnect(&g_vboxSFClient);
+                VbglR0SfDisconnect(&g_vboxSFClient);
             }
             else
             {
                 PERROR("Failed to get connection to host: rc=%d", rc);
             }
-            vboxUninit();
+            VbglR0SfUninit();
         }
         else
         {
@@ -285,10 +284,10 @@ void org_virtualbox_VBoxVFS::stop(IOService *pProvider)
                "shares are unmounted (%d)", rc);
     }
 
-    vboxDisconnect(&g_vboxSFClient);
+    VbglR0SfDisconnect(&g_vboxSFClient);
     PINFO("VBox client disconnected");
 
-    vboxUninit();
+    VbglR0SfTerminate();
     PINFO("Low level uninit done");
 
     coreService->release();

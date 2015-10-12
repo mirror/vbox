@@ -138,13 +138,13 @@ static int vboxvfs_mount(struct mount *mp, struct thread *td)
     pShFlShareName->u16Size   = cbShare + 1;
     memcpy (pShFlShareName->String.utf8, pszShare, cbShare + 1);
 
-    rc = vboxCallMapFolder (&g_vboxSFClient, pShFlShareName, &pShFlGlobalInfo->map);
+    rc = VbglR0SfMapFolder (&g_vboxSFClient, pShFlShareName, &pShFlGlobalInfo->map);
     RTMemFree(pShFlShareName);
 
     if (RT_FAILURE (rc))
     {
         RTMemFree(pShFlGlobalInfo);
-        printf("vboxCallMapFolder failed rc=%d\n", rc);
+        printf("VbglR0SfMapFolder failed rc=%d\n", rc);
         return EPROTO;
     }
 
@@ -169,7 +169,7 @@ static int vboxvfs_unmount(struct mount *mp, int mntflags, struct thread *td)
     int rc;
     int flags = 0;
 
-    rc = vboxCallUnmapFolder(&g_vboxSFClient, &pShFlGlobalInfo->map);
+    rc = VbglR0SfUnmapFolder(&g_vboxSFClient, &pShFlGlobalInfo->map);
     if (RT_FAILURE(rc))
         printf("Failed to unmap shared folder\n");
 
@@ -217,25 +217,25 @@ int vboxvfs_init(struct vfsconf *vfsp)
     int rc;
 
     /* Initialize the R0 guest library. */
-    rc = vboxInit();
+    rc = VbglR0SfInit();
     if (RT_FAILURE(rc))
         return ENXIO;
 
     /* Connect to the host service. */
-    rc = vboxConnect(&g_vboxSFClient);
+    rc = VbglR0SfConnect(&g_vboxSFClient);
     if (RT_FAILURE(rc))
     {
         printf("Failed to get connection to host! rc=%d\n", rc);
-        vboxUninit();
+        VbglR0SfTerm();
         return ENXIO;
     }
 
-    rc = vboxCallSetUtf8 (&g_vboxSFClient);
+    rc = VbglR0SfSetUtf8(&g_vboxSFClient);
     if (RT_FAILURE (rc))
     {
-        printf("vboxCallSetUtf8 failed, rc=%d\n", rc);
-        vboxDisconnect(&g_vboxSFClient);
-        vboxUninit();
+        printf("VbglR0SfSetUtf8 failed, rc=%d\n", rc);
+        VbglR0SfDisconnect(&g_vboxSFClient);
+        VbglR0SfTerm();
         return EPROTO;
     }
 
@@ -246,8 +246,8 @@ int vboxvfs_init(struct vfsconf *vfsp)
 
 int vboxvfs_uninit(struct vfsconf *vfsp)
 {
-    vboxDisconnect(&g_vboxSFClient);
-    vboxUninit();
+    VbglR0SfDisconnect(&g_vboxSFClient);
+    VbglR0SfTerm();
 
     return 0;
 }

@@ -399,7 +399,7 @@ vboxvfs_open_internal(vboxvfs_mount_t *pMount, PSHFLSTRING pPath, uint32_t fFlag
     parms.Info.cbObject = 0;
     parms.CreateFlags   = fFlags;
 
-    rc = vboxCallCreate(&g_vboxSFClient, &pMount->pMap, pPath, &parms);
+    rc = VbglR0SfCreate(&g_vboxSFClient, &pMount->pMap, pPath, &parms);
     if (RT_SUCCESS(rc))
     {
         *pHandle = parms.Handle;
@@ -424,7 +424,7 @@ int
 vboxvfs_close_internal(vboxvfs_mount_t *pMount, SHFLHANDLE pHandle)
 {
     AssertReturn(pMount, EINVAL);
-    return vboxCallClose(&g_vboxSFClient, &pMount->pMap, pHandle);
+    return VbglR0SfClose(&g_vboxSFClient, &pMount->pMap, pHandle);
 }
 
 /**
@@ -454,11 +454,9 @@ vboxvfs_get_info_internal(mount_t mp, PSHFLSTRING pSHFLDPath, PSHFLFSOBJINFO Inf
     parms.Info.cbObject = 0;
     parms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
 
-    rc = vboxCallCreate(&g_vboxSFClient, &pMount->pMap, pSHFLDPath, &parms);
+    rc = VbglR0SfCreate(&g_vboxSFClient, &pMount->pMap, pSHFLDPath, &parms);
     if (rc == 0)
-    {
         *Info = parms.Info;
-    }
 
     return rc;
 }

@@ -285,7 +285,7 @@ vboxvfs_mount(struct mount *mp, vnode_t pDev, user_addr_t pUserData, vfs_context
     pMount = vboxvfs_alloc_internal_data(mp, pUserData);
     if (pMount)
     {
-        rc = vboxCallMapFolder(&g_vboxSFClient, pMount->pShareName, &pMount->pMap);
+        rc = VbglR0SfMapFolder(&g_vboxSFClient, pMount->pShareName, &pMount->pMap);
         if (RT_SUCCESS(rc))
         {
             /* Private data should be set before vboxvfs_create_vnode_internal() call
@@ -301,9 +301,8 @@ vboxvfs_mount(struct mount *mp, vnode_t pDev, user_addr_t pUserData, vfs_context
 
             return 0;
         }
-        else
-            PDEBUG("Unable to map shared folder");
 
+        PDEBUG("Unable to map shared folder");
         vboxvfs_destroy_internal_data(&pMount);
     }
     else
@@ -353,18 +352,16 @@ vboxvfs_unmount(struct mount *mp, int fFlags, vfs_context_t pContext)
             {
                 vfs_setfsprivate(mp, NULL);
 
-                rc = vboxCallUnmapFolder(&g_vboxSFClient, &pMount->pMap);
+                rc = VbglR0SfUnmapFolder(&g_vboxSFClient, &pMount->pMap);
                 if (RT_SUCCESS(rc))
                 {
                     vboxvfs_destroy_internal_data(&pMount);
                     PDEBUG("A shared folder has been successfully unmounted");
                     return 0;
                 }
-                else
-                {
-                     PDEBUG("Unable to unmount shared folder");
-                     rc = EPROTO;
-                }
+
+                PDEBUG("Unable to unmount shared folder");
+                rc = EPROTO;
             }
             else
                 PDEBUG("Unable to flush filesystem before unmount, some data might be lost");
@@ -517,8 +514,8 @@ vboxvfs_getattr(struct mount *mp, struct vfs_attr *pAttr, vfs_context_t pContext
     AssertReturn(pMount, EINVAL);
     AssertReturn(pMount->pShareName, EINVAL);
 
-    rc = vboxCallFSInfo(&g_vboxSFClient, &pMount->pMap, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME,
-                            &cbBuffer, (PSHFLDIRINFO)&SHFLVolumeInfo);
+    rc = VbglR0SfFsInfo(&g_vboxSFClient, &pMount->pMap, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME,
+                        &cbBuffer, (PSHFLDIRINFO)&SHFLVolumeInfo);
     AssertReturn(rc == 0, EPROTO);
 
     u32bsize  = (uint32_t)SHFLVolumeInfo.ulBytesPerAllocationUnit;

@@ -555,7 +555,7 @@ vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
 
     PDEBUG("Exploring VBoxVFS directory (%s), handle (0x%.8X), offset (0x%X), count (%d)", (char *)pVnodeData->pPath->String.utf8, (int)pVnodeData->pHandle, index, uio_iovcnt(uio));
 
-    /* Currently, there is a problem when vboxCallDirInfo() is not able to
+    /* Currently, there is a problem when VbglR0SfDirInfo() is not able to
      * continue retrieve directory content if the same VBoxVFS handle is used.
      * This macro forces to use a new handle in readdir() callback. If enabled,
      * the original handle (obtained in open() callback is ignored). */
@@ -574,18 +574,19 @@ vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
     }
 
 #if 0
-    rc = vboxCallDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, 0, 0, index, &cbInfo, (PSHFLDIRINFO)Info, &cFiles);
+    rc = VbglR0SfDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, 0, 0, index, &cbInfo, (PSHFLDIRINFO)Info, &cFiles);
 #else
     SHFLSTRING *pMask = vboxvfs_construct_shflstring("*", strlen("*"));
     if (pMask)
     {
         for (uint32_t cSkip = 0; (cSkip < index + 1) && (rc == VINF_SUCCESS); cSkip++)
         {
-            //rc = vboxCallDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, 0 /* pMask */, 0 /* SHFL_LIST_RETURN_ONE */, 0, &cbInfo, (PSHFLDIRINFO)Info, &cFiles);
+            //rc = VbglR0SfDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, 0 /* pMask */, 0 /* SHFL_LIST_RETURN_ONE */, 0, &cbInfo, (PSHFLDIRINFO)Info, &cFiles);
 
             uint32_t cbReturned = cbInfo;
-            //rc = vboxCallDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, pMask, SHFL_LIST_RETURN_ONE, 0, &cbReturned, (PSHFLDIRINFO)Info, &cFiles);
-            rc = vboxCallDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, 0, SHFL_LIST_RETURN_ONE, 0, &cbReturned, (PSHFLDIRINFO)Info, &cFiles);
+            //rc = VbglR0SfDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, pMask, SHFL_LIST_RETURN_ONE, 0, &cbReturned, (PSHFLDIRINFO)Info, &cFiles);
+            rc = VbglR0SfDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, 0, SHFL_LIST_RETURN_ONE, 0,
+                                 &cbReturned, (PSHFLDIRINFO)Info, &cFiles);
 
         }
 
@@ -623,7 +624,7 @@ vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
 
         default:
         {
-            PDEBUG("vboxCallDirInfo() for item #%d has failed: %d", (int)index, (int)rc);
+            PDEBUG("VbglR0SfDirInfo() for item #%d has failed: %d", (int)index, (int)rc);
             rc = EINVAL;
             break;
         }

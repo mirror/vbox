@@ -36,10 +36,10 @@ static void *sf_follow_link(struct dentry *dentry, struct nameidata *nd)
     if (path)
     {
         error = 0;
-        rc = vboxReadLink(&client_handle, &sf_g->map, sf_i->path, PATH_MAX, path);
+        rc = VbglR0SfReadLink(&client_handle, &sf_g->map, sf_i->path, PATH_MAX, path);
         if (RT_FAILURE(rc))
         {
-            LogFunc(("vboxReadLink failed, caller=%s, rc=%Rrc\n", __func__, rc));
+            LogFunc(("VbglR0SfReadLink failed, caller=%s, rc=%Rrc\n", __func__, rc));
             free_page((unsigned long)path);
             error = -EPROTO;
         }

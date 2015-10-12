@@ -260,13 +260,13 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
              ParsedPath->u16Length / sizeof(WCHAR), ParsedPath->String.ucs2));
 
         /* Call host. */
-        Log(("VBOXSF: vbsfProcessCreate: vboxCallCreate called.\n"));
-        vboxRC = vboxCallCreate(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, ParsedPath, pCreateParms);
+        Log(("VBOXSF: vbsfProcessCreate: VbglR0SfCreate called.\n"));
+        vboxRC = VbglR0SfCreate(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, ParsedPath, pCreateParms);
 
         vbsfFreeNonPagedMem(ParsedPath);
     }
 
-    Log(("VBOXSF: vbsfProcessCreate: vboxCallCreate returns vboxRC = %Rrc, Result = 0x%x\n",
+    Log(("VBOXSF: vbsfProcessCreate: VbglR0SfCreate returns vboxRC = %Rrc, Result = 0x%x\n",
          vboxRC, pCreateParms->Result));
 
     if (RT_FAILURE(vboxRC))
@@ -446,7 +446,7 @@ failure:
 
     if (pCreateParms && pCreateParms->Handle != SHFL_HANDLE_NIL)
     {
-        vboxCallClose(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pCreateParms->Handle);
+        VbglR0SfClose(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pCreateParms->Handle);
         *pHandle = SHFL_HANDLE_NIL;
     }
 
@@ -698,7 +698,7 @@ NTSTATUS vbsfSetFileInfo(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
     if (pInfo->FileAttributes && (SetAttrFlags & VBOX_FOBX_F_INFO_ATTRIBUTES) != 0)
         pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pInfo->FileAttributes);
 
-    vboxRC = vboxCallFSInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+    vboxRC = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                             SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
 
     if (vboxRC != VINF_SUCCESS)
@@ -744,7 +744,7 @@ NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
                                  pVBoxFobx->SetFileInfoOnCloseFlags);
     }
 
-    vboxRC = vboxCallClose(&pDeviceExtension->hgcmClient,
+    vboxRC = VbglR0SfClose(&pDeviceExtension->hgcmClient,
                            &pNetRootExtension->map,
                            pVBoxFobx->hFile);
 
@@ -838,7 +838,7 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
         return Status;
 
     /* Call host. */
-    vboxRC = vboxCallRemove(&pDeviceExtension->hgcmClient, &pNetRootExtension->map,
+    vboxRC = VbglR0SfRemove(&pDeviceExtension->hgcmClient, &pNetRootExtension->map,
                             ParsedPath,
                             (pVBoxFobx->FileStandardInfo.Directory) ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
 
@@ -850,7 +850,7 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
 
     Status = VBoxErrorToNTStatus(vboxRC);
     if (vboxRC != VINF_SUCCESS)
-        Log(("VBOXSF: vbsfRemove: vboxCallRemove failed with %Rrc\n", vboxRC));
+        Log(("VBOXSF: vbsfRemove: VbglR0SfRemove failed with %Rrc\n", vboxRC));
 
     Log(("VBOXSF: vbsfRemove: Returned 0x%08X\n", Status));
     return Status;
@@ -914,15 +914,15 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
     if (RenameInformation->ReplaceIfExists)
         flags |= SHFL_RENAME_REPLACE_IF_EXISTS;
 
-    Log(("VBOXSF: vbsfRename: Calling vboxCallRename\n"));
-    vboxRC = vboxCallRename(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, SrcPath, DestPath, flags);
+    Log(("VBOXSF: vbsfRename: Calling VbglR0SfRename\n"));
+    vboxRC = VbglR0SfRename(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, SrcPath, DestPath, flags);
 
     vbsfFreeNonPagedMem(SrcPath);
     vbsfFreeNonPagedMem(DestPath);
 
     Status = VBoxErrorToNTStatus(vboxRC);
     if (vboxRC != VINF_SUCCESS)
-        Log(("VBOXSF: vbsfRename: vboxCallRename failed with %Rrc\n", vboxRC));
+        Log(("VBOXSF: vbsfRename: VbglR0SfRename failed with %Rrc\n", vboxRC));
 
     Log(("VBOXSF: vbsfRename: Returned 0x%08X\n", Status));
     return Status;
