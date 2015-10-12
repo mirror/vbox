@@ -346,17 +346,10 @@
   IntelFrameworkModulePkg/Universal/StatusCode/Pei/StatusCodePei.inf
   MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
 
-!ifndef $(VBOX)
   OvmfPkg/PlatformPei/PlatformPei.inf {
     <LibraryClasses>
       PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
   }
-!else
-  VBoxPkg/PlatformPei/PlatformPei.inf {
-    <LibraryClasses>
-      PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
-  }
-!endif
 
   #
   # DXE Phase modules

@@ -92,6 +92,53 @@ AddReservedMemoryBaseSizeHob (
     );
 }
 
+#ifdef VBOX
+VOID
+AddRomMemoryBaseSizeHob (
+  EFI_PHYSICAL_ADDRESS        MemoryBase,
+  UINT64                      MemorySize
+  )
+{
+  STATIC EFI_RESOURCE_ATTRIBUTE_TYPE Attributes =
+    (
+      EFI_RESOURCE_ATTRIBUTE_PRESENT     |
+      EFI_RESOURCE_ATTRIBUTE_WRITE_PROTECTED |
+      EFI_RESOURCE_ATTRIBUTE_WRITE_PROTECTABLE |
+      EFI_RESOURCE_ATTRIBUTE_INITIALIZED |
+      EFI_RESOURCE_ATTRIBUTE_UNCACHEABLE
+    );
+
+  BuildResourceDescriptorHob (
+    EFI_RESOURCE_FIRMWARE_DEVICE,
+    Attributes,
+    MemoryBase,
+    MemorySize
+    );
+
+  DEBUG ((DEBUG_INFO, "ROM HOB: at 0x%llx size 0x%llx\n", MemoryBase, MemorySize));
+}
+
+static VOID *
+FindAcpiRsdPtr (
+  VOID
+  )
+{
+#define ACPI_RSD_PTR      SIGNATURE_64('R', 'S', 'D', ' ', 'P', 'T', 'R', ' ')
+  UINTN                           Address;
+
+  //
+  // First Search 0x0e0000 - 0x0fffff for RSD Ptr
+  //
+  for (Address = 0xe0000; Address < 0xfffff; Address += 0x10) {
+    if (*(UINT64 *)(Address) == ACPI_RSD_PTR) {
+      return (VOID *)Address;
+    }
+  }
+  return NULL;
+}
+#undef ACPI_RSD_PTR
+#endif
+
 VOID
 AddIoMemoryRangeHob (
   EFI_PHYSICAL_ADDRESS        MemoryBase,
@@ -168,6 +215,10 @@ MemMapInitialization (
   EFI_PHYSICAL_ADDRESS  TopOfMemory
   )
 {
+#ifdef VBOX
+  EFI_PHYSICAL_ADDRESS RsdPtr;
+  EFI_PHYSICAL_ADDRESS AcpiTables;
+#endif
   //
   // Create Memory Type Information HOB
   //
@@ -209,8 +260,24 @@ MemMapInitialization (
 
   //
   // Video memory + Legacy BIOS region
+#ifdef VBOX
+  // This includes ACPI floating pointer region.
+#endif
   //
   AddIoMemoryRangeHob (0x0A0000, BASE_1MB);
+
+#ifdef VBOX
+  //
+  // Add ACPI memory, provided by VBox
+  //
+  RsdPtr = (EFI_PHYSICAL_ADDRESS)(UINTN)FindAcpiRsdPtr();
+  ASSERT(RsdPtr != 0);
+  AcpiTables = (EFI_PHYSICAL_ADDRESS)*(UINT32*)((UINTN)RsdPtr + 16) & ~0xfff;
+  ASSERT(AcpiTables != 0);
+
+  // ACPI tables 64 K
+  AddRomMemoryBaseSizeHob(AcpiTables, 0x10000);
+#endif
 }
 
 
@@ -325,8 +392,12 @@ InitializePlatform (
 
   TopOfMemory = MemDetect ();
 
+#ifndef VBOX
   Status = InitializeXen ();
   Xen = EFI_ERROR (Status) ? FALSE : TRUE;
+#else
+  Xen = FALSE;
+#endif
 
   ReserveEmuVariableNvStore ();
 

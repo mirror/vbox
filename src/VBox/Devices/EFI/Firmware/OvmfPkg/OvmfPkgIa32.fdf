@@ -111,11 +111,7 @@ APRIORI PEI {
 INF  MdeModulePkg/Core/Pei/PeiMain.inf
 INF  MdeModulePkg/Universal/PCD/Pei/Pcd.inf
 INF  IntelFrameworkModulePkg/Universal/StatusCode/Pei/StatusCodePei.inf
-!ifndef $(VBOX)
 INF  OvmfPkg/PlatformPei/PlatformPei.inf
-!else
-INF  VBoxPkg/PlatformPei/PlatformPei.inf
-!endif
 INF  MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
 
 FILE FV_IMAGE = A4EF5A93-3F1B-4232-A1C4-F0910E6D1D9C {

@@ -179,7 +179,7 @@ VBOX_EFI_MODULES = \
 	UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe/$(VBOX_EFI_DEBUG_DIR)/CpuIo2Dxe \
 	VBoxPkg/AcpiPlatformDxe/AcpiPlatformDxe/$(VBOX_EFI_DEBUG_DIR)/AcpiPlatform \
 	VBoxPkg/PartitionDxe/PartitionDxe/$(VBOX_EFI_DEBUG_DIR)/PartitionDxe \
-	VBoxPkg/PlatformPei/PlatformPei/$(VBOX_EFI_DEBUG_DIR)/PlatformPei \
+	OvmfPkg/PlatformPei/PlatformPei/$(VBOX_EFI_DEBUG_DIR)/PlatformPei \
 	VBoxPkg/VBoxAppleSim/VBoxAppleSim/$(VBOX_EFI_DEBUG_DIR)/VBoxAppleSim \
 	VBoxPkg/VBoxFsDxe/VBoxHfs/$(VBOX_EFI_DEBUG_DIR)/VBoxHfs \
 	VBoxPkg/VBoxFsDxe/VBoxIso9660/$(VBOX_EFI_DEBUG_DIR)/VBoxIso9600 \
