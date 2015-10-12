@@ -413,6 +413,33 @@ PartitionInstallMbrChildHandles (
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
   );
 
+#ifdef VBOX
+/**
+  Install child handles if the Handle supports Apple format.
+
+  @param  This              Calling context.
+  @param  Handle            Parent Handle.
+  @param  DiskIo            Parent DiskIo interface.
+  @param  BlockIo           Parent BlockIo interface.
+  @param[in]  BlockIo2          Parent BlockIo2 interface.
+  @param  DevicePath        Parent Device Path.
+
+  @retval EFI_SUCCESS       A child handle was added.
+  @retval EFI_MEDIA_CHANGED Media change was detected.
+  @retval Others            Apple partition was not found.
+
+**/
+EFI_STATUS
+PartitionInstallAppleChildHandles (
+  IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN  EFI_HANDLE                   Handle,
+  IN  EFI_DISK_IO_PROTOCOL         *DiskIo,
+  IN  EFI_BLOCK_IO_PROTOCOL        *BlockIo,
+  IN  EFI_BLOCK_IO2_PROTOCOL       *BlockIo2,
+  IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  );
+#endif
+
 typedef
 EFI_STATUS
 (*PARTITION_DETECT_ROUTINE) (

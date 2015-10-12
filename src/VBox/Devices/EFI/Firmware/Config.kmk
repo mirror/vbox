@@ -148,6 +148,7 @@ VBOX_EFI_MODULES = \
 	MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe/$(VBOX_EFI_DEBUG_DIR)/TerminalDxe \
 	MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe/$(VBOX_EFI_DEBUG_DIR)/DevicePathDxe \
 	MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe/$(VBOX_EFI_DEBUG_DIR)/DiskIoDxe \
+	MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe/$(VBOX_EFI_DEBUG_DIR)/PartitionDxe \
 	MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe/$(VBOX_EFI_DEBUG_DIR)/EnglishDxe \
 	MdeModulePkg/Universal/EbcDxe/EbcDxe/$(VBOX_EFI_DEBUG_DIR)/EbcDxe \
 	MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe/$(VBOX_EFI_DEBUG_DIR)/FaultTolerantWriteDxe \
@@ -178,7 +179,6 @@ VBOX_EFI_MODULES = \
 	ShellPkg/Application/Shell/Shell/$(VBOX_EFI_DEBUG_DIR)/Shell \
 	UefiCpuPkg/CpuDxe/CpuDxe/$(VBOX_EFI_DEBUG_DIR)/CpuDxe \
 	UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe/$(VBOX_EFI_DEBUG_DIR)/CpuIo2Dxe \
-	VBoxPkg/PartitionDxe/PartitionDxe/$(VBOX_EFI_DEBUG_DIR)/PartitionDxe \
 	OvmfPkg/PlatformPei/PlatformPei/$(VBOX_EFI_DEBUG_DIR)/PlatformPei \
 	VBoxPkg/VBoxAppleSim/VBoxAppleSim/$(VBOX_EFI_DEBUG_DIR)/VBoxAppleSim \
 	VBoxPkg/VBoxFsDxe/VBoxHfs/$(VBOX_EFI_DEBUG_DIR)/VBoxHfs \

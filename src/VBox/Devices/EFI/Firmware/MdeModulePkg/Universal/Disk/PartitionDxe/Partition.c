@@ -42,6 +42,9 @@ EFI_DRIVER_BINDING_PROTOCOL gPartitionDriverBinding = {
 // Prioritized function list to detect partition table. 
 //
 PARTITION_DETECT_ROUTINE mPartitionDetectRoutineTable[] = {
+#ifdef VBOX
+  PartitionInstallAppleChildHandles,
+#endif
   PartitionInstallGptChildHandles,
   PartitionInstallElToritoChildHandles,
   PartitionInstallMbrChildHandles,
@@ -75,6 +78,9 @@ PartitionDriverBindingSupported (
   EFI_DEVICE_PATH_PROTOCOL  *ParentDevicePath;
   EFI_DISK_IO_PROTOCOL      *DiskIo;
   EFI_DEV_PATH              *Node;
+#ifdef VBOX
+  VBoxLogFlowFuncEnter();
+#endif
 
   //
   // Check RemainingDevicePath validation
@@ -84,17 +90,31 @@ PartitionDriverBindingSupported (
     // Check if RemainingDevicePath is the End of Device Path Node, 
     // if yes, go on checking other conditions
     //
+#ifdef VBOX
+    VBoxLogFlowFuncMarkDP(RemainingDevicePath);
+#endif
     if (!IsDevicePathEnd (RemainingDevicePath)) {
       //
       // If RemainingDevicePath isn't the End of Device Path Node,
       // check its validation
       //
       Node = (EFI_DEV_PATH *) RemainingDevicePath;
+#ifndef VBOX
       if (Node->DevPath.Type != MEDIA_DEVICE_PATH ||
         Node->DevPath.SubType != MEDIA_HARDDRIVE_DP ||
         DevicePathNodeLength (&Node->DevPath) != sizeof (HARDDRIVE_DEVICE_PATH)) {
         return EFI_UNSUPPORTED;
       }
+#else
+      if (   Node->DevPath.Type != MEDIA_DEVICE_PATH
+          || Node->DevPath.SubType != MEDIA_HARDDRIVE_DP
+          || DevicePathNodeLength (&Node->DevPath) != sizeof (HARDDRIVE_DEVICE_PATH)
+          || Node->DevPath.Type != MESSAGING_DEVICE_PATH
+          || Node->DevPath.SubType != MSG_SATA_DP) {
+        VBoxLogFlowFuncLeaveRC(EFI_UNSUPPORTED);
+         return EFI_UNSUPPORTED;
+      }
+#endif
     }
   }
 
@@ -110,9 +130,15 @@ PartitionDriverBindingSupported (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (Status == EFI_ALREADY_STARTED) {
+#ifdef VBOX
+    VBoxLogFlowFuncLeaveRC(EFI_SUCCESS);
+#endif
     return EFI_SUCCESS;
   }
   if (EFI_ERROR (Status)) {
+#ifdef VBOX
+    VBoxLogFlowFuncLeaveRC(Status);
+#endif
     return Status;
   }
   //
@@ -137,10 +163,16 @@ PartitionDriverBindingSupported (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (Status == EFI_ALREADY_STARTED) {
+#ifdef VBOX
+    VBoxLogFlowFuncMarkDP(ParentDevicePath);
+#endif
     return EFI_SUCCESS;
   }
 
   if (EFI_ERROR (Status)) {
+#ifdef VBOX
+    VBoxLogFlowFuncLeaveRC(Status);
+#endif
     return Status;
   }
 
@@ -166,9 +198,15 @@ PartitionDriverBindingSupported (
                   EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
+#ifdef VBOX
+    VBoxLogFlowFuncLeaveRC(Status);
+#endif
     return Status;
   }
 
+#ifdef VBOX
+  VBoxLogFlowFuncLeaveRC(EFI_SUCCESS);
+#endif
   return EFI_SUCCESS;  
 }
 
@@ -204,6 +242,11 @@ PartitionDriverBindingStart (
   PARTITION_DETECT_ROUTINE  *Routine;
   BOOLEAN                   MediaPresent;
   EFI_TPL                   OldTpl;
+#ifdef VBOX
+  int                       idxRoutine = 0;
+
+  VBoxLogFlowFuncEnter();
+#endif
 
   BlockIo2 = NULL;
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK); 
@@ -234,6 +277,9 @@ PartitionDriverBindingStart (
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
+#ifdef VBOX
+    VBoxLogFlowFuncMarkRC(Status);
+#endif
     goto Exit;
   }
 
@@ -258,6 +304,9 @@ PartitionDriverBindingStart (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status) && Status != EFI_ALREADY_STARTED) {
+#ifdef VBOX
+    VBoxLogFlowFuncMarkRC(Status);
+#endif
     goto Exit;
   }
 
@@ -276,6 +325,9 @@ PartitionDriverBindingStart (
           This->DriverBindingHandle,
           ControllerHandle
           );
+#ifdef VBOX
+    VBoxLogFlowFuncMarkRC(Status);
+#endif
     goto Exit;
   }
 
@@ -303,10 +355,19 @@ PartitionDriverBindingStart (
                    BlockIo2,
                    ParentDevicePath
                    );
+#ifdef VBOX
+      VBoxLogFlowFuncMarkRC(Status);
+#endif
       if (!EFI_ERROR (Status) || Status == EFI_MEDIA_CHANGED || Status == EFI_NO_MEDIA) {
+#ifdef VBOX
+        VBoxLogFlowFuncMarkVar(idxRoutine, "%d");
+#endif
         break;
       }
       Routine++;
+#ifdef VBOX
+      idxRoutine++;
+#endif
     }
   }
   //
@@ -351,6 +412,9 @@ PartitionDriverBindingStart (
 
 Exit:
   gBS->RestoreTPL (OldTpl);
+#ifdef VBOX
+  VBoxLogFlowFuncLeaveRC(Status);
+#endif
   return Status;
 }
 

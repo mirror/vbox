@@ -143,6 +143,9 @@ PartitionInstallMbrChildHandles (
   MediaId   = BlockIo->Media->MediaId;
   LastBlock = BlockIo->Media->LastBlock;
 
+#ifdef VBOX
+  VBoxLogFlowFuncMarkDP(DevicePath);
+#endif
   Mbr = AllocatePool (BlockSize);
   if (Mbr == NULL) {
     return Found;

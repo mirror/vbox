@@ -41,6 +41,7 @@
   Mbr.c
   Gpt.c
   ElTorito.c
+  Apple.c                                       # VBox specific
   Partition.c
   Partition.h
 
