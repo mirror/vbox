@@ -460,7 +460,7 @@ static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
  * It will set the 'stopped-in-hyper' flag, make sure someone is attached,
  * and perhaps process any high priority pending actions (none yet).
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to be sent.
  */
@@ -518,7 +518,7 @@ static int dbgfR3SendEvent(PVM pVM)
 /**
  * Send a generic debugger event which takes no data.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to send.
  * @internal
@@ -541,7 +541,7 @@ VMMR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
 /**
  * Send a debugger event which takes the full source file location.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to send.
  * @param   pszFile     Source file.
@@ -564,7 +564,7 @@ VMMR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFi
 /**
  * Send a debugger event which takes the full source file location.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to send.
  * @param   pszFile     Source file.
@@ -607,7 +607,7 @@ VMMR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszF
 /**
  * Send a debugger event which takes the two assertion messages.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   enmEvent    The event to send.
  * @param   pszMsg1     First assertion message.
@@ -634,7 +634,7 @@ VMMR3_INT_DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const 
  * Breakpoint was hit somewhere.
  * Figure out which breakpoint it is and notify the debugger.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   enmEvent    DBGFEVENT_BREAKPOINT_HYPER or DBGFEVENT_BREAKPOINT.
  */
@@ -682,7 +682,7 @@ VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
 /**
  * Waits for the debugger to respond.
  *
- * @returns VBox status. (clearify)
+ * @returns VBox status code. (clearify)
  * @param   pVM     The cross context VM structure.
  */
 static int dbgfR3VMMWait(PVM pVM)
@@ -805,7 +805,7 @@ static int dbgfR3VMMWait(PVM pVM)
  * The caller is responsible for waiting or resuming execution based on the
  * value returned in the *pfResumeExecution indicator.
  *
- * @returns VBox status. (clearify!)
+ * @returns VBox status code. (clearify!)
  * @param   pVM                 The cross context VM structure.
  * @param   enmCmd              The command in question.
  * @param   pCmdData            Pointer to the command data.
@@ -1036,7 +1036,7 @@ VMMR3DECL(int) DBGFR3Detach(PUVM pUVM)
 /**
  * Wait for a debug event.
  *
- * @returns VBox status. Will not return VBOX_INTERRUPTED.
+ * @returns VBox status code. Will not return VBOX_INTERRUPTED.
  * @param   pUVM        The user mode VM handle.
  * @param   cMillies    Number of millis to wait.
  * @param   ppEvent     Where to store the event pointer.
@@ -1073,7 +1073,7 @@ VMMR3DECL(int) DBGFR3EventWait(PUVM pUVM, RTMSINTERVAL cMillies, PCDBGFEVENT *pp
  * After calling this the VM isn't actually halted till an DBGFEVENT_HALT_DONE
  * arrives. Until that time it's not possible to issue any new commands.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pUVM        The user mode VM handle.
  */
 VMMR3DECL(int) DBGFR3Halt(PUVM pUVM)
@@ -1158,7 +1158,7 @@ VMMR3DECL(int) DBGFR3QueryWaitable(PUVM pUVM)
  *
  * There is no receipt event on this command.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pUVM        The user mode VM handle.
  */
 VMMR3DECL(int) DBGFR3Resume(PUVM pUVM)
@@ -1189,7 +1189,7 @@ VMMR3DECL(int) DBGFR3Resume(PUVM pUVM)
  * A single step event is generated from this command.
  * The current implementation is not reliable, so don't rely on the event coming.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pUVM    The user mode VM handle.
  * @param   idCpu   The ID of the CPU to single step on.
  */

@@ -1462,7 +1462,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
 /**
  * Creates a device timer.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Device instance.
  * @param   enmClock        The clock to use on this timer.
@@ -1503,7 +1503,7 @@ VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enm
 /**
  * Creates a USB device timer.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pUsbIns         The USB device instance.
  * @param   enmClock        The clock to use on this timer.
@@ -1547,7 +1547,7 @@ VMM_INT_DECL(int) TMR3TimerCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, TMCLOCK enmClo
 /**
  * Creates a driver timer.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         Driver instance.
  * @param   enmClock        The clock to use on this timer.
@@ -1583,7 +1583,7 @@ VMM_INT_DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enm
 /**
  * Creates an internal timer.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   enmClock        The clock to use on this timer.
  * @param   pfnCallback     Callback function.
@@ -1646,7 +1646,7 @@ VMMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTI
 /**
  * Destroy a timer
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
 VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
@@ -1810,7 +1810,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
 /**
  * Destroy all timers owned by a device.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Device which timers should be destroyed.
  */
@@ -1843,7 +1843,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
 /**
  * Destroy all timers owned by a USB device.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pUsbIns         USB device which timers should be destroyed.
  */
@@ -1876,7 +1876,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
 /**
  * Destroy all timers owned by a driver.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         Driver which timers should be destroyed.
  */
@@ -2571,7 +2571,7 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
 /**
  * Saves the state of a timer to a saved state.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pTimer          Timer to save.
  * @param   pSSM            Save State Manager handle.
  */
@@ -2613,7 +2613,7 @@ VMMR3DECL(int) TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
 /**
  * Loads the state of a timer from a saved state.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pTimer          Timer to restore.
  * @param   pSSM            Save State Manager handle.
  */

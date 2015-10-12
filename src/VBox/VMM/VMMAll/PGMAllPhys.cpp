@@ -3193,7 +3193,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, 
  * Read from guest physical memory by GC physical address, bypassing
  * MMIO and access handlers.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pvDst       The destination address.
  * @param   GCPhysSrc   The source address (GC physical address).
@@ -3265,7 +3265,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, s
  *
  * This will bypass MMIO and access handlers.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   GCPhysDst   The GC physical address of the destination.
  * @param   pvSrc       The source buffer.
@@ -3339,7 +3339,7 @@ VMMDECL(int) PGMPhysSimpleWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *p
  * This function uses the current CR3/CR0/CR4 of the guest and will
  * bypass access handlers and not set any accessed bits.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pvDst       The destination address.
  * @param   GCPtrSrc    The source address (GC pointer).
@@ -3430,7 +3430,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc,
  * This function uses the current CR3/CR0/CR4 of the guest and will
  * bypass access handlers and not set dirty or accessed bits.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtrDst    The destination address (GC pointer).
  * @param   pvSrc       The source address.
@@ -3510,7 +3510,7 @@ VMMDECL(int) PGMPhysSimpleWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void 
  *
  * If you don't want to set the dirty bit, use PGMPhysSimpleWriteGCPtr().
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtrDst    The destination address (GC pointer).
  * @param   pvSrc       The source address.

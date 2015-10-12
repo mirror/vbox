@@ -47,7 +47,7 @@ static void *mmR3UkHeapAlloc(PMMUKHEAP pHeap, MMTAG enmTag, size_t cb, bool fZer
  * This does not require SUPLib to be initialized as we'll lazily allocate the
  * kernel accessible memory on the first alloc call.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pUVM    Pointer to the user mode VM structure.
  * @param   ppHeap  Where to store the heap pointer.
  */

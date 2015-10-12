@@ -882,7 +882,7 @@ int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
  *
  * We need to free non-VM resources only.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pState      The device state structure.
  */
 int vpciDestruct(VPCISTATE* pState)

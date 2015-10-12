@@ -574,7 +574,7 @@ static DECLCALLBACK(void *) devINIPQueryInterface(PPDMIBASE pInterface,
  * Most VM resources are freed by the VM. This callback is provided so that any non-VM
  * resources can be freed correctly.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)

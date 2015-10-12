@@ -717,7 +717,7 @@ VMMR3DECL(int) MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages)
 /**
  * Convert HC Physical address to HC Virtual address.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   HCPhys      The host context virtual address.
  * @param   ppv         Where to store the resulting address.

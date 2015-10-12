@@ -232,7 +232,7 @@ typedef struct AHCIREQ *PAHCIREQ;
 /**
  * Data processing callback
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pAhciReq    The task state.
  * @param   ppvProc     Where to store the pointer to the buffer holding the processed data on success.
  *                      Must be freed with RTMemFree().

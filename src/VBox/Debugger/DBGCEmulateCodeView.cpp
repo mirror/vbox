@@ -3780,7 +3780,7 @@ static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PDBGCVAR
 /**
  * Search memory, worker for the 's' and 's?' functions.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pCmdHlp     Pointer to the command helper functions.
  * @param   pUVM        The user mode VM handle.
  * @param   pAddress    Where to start searching. If no range, search till end of address space.

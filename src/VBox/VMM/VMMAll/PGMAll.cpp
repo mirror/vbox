@@ -822,7 +822,7 @@ VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCOR
 /**
  * Gets effective page information (from the VMM page directory).
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       Guest Context virtual address of the page.
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*.
@@ -1103,7 +1103,7 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE
  * The caller is responsible for making sure the guest has a valid PD before
  * calling this function.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       The address.
  * @param   uGstPml4e   Guest PML4 entry (valid).
@@ -1206,7 +1206,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
 /**
  * Gets the SHADOW page directory pointer for the specified address (long mode).
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       The address.
  * @param   ppPdpt      Receives address of pdpt
@@ -1251,7 +1251,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
  * Syncs the SHADOW EPT page directory pointer for the specified address. Allocates
  * backing pages in case the PDPT or PML4 entry is missing.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       The address.
  * @param   ppPdpt      Receives address of pdpt
@@ -1400,7 +1400,7 @@ int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t cPages, P
  * necessary at a later point, a PGMGstGetPage() will be created for that
  * purpose.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtr       Guest Context virtual address of the page.
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*, even for big pages.
@@ -1490,7 +1490,7 @@ VMMDECL(bool) PGMGstIsPagePresent(PVMCPU pVCpu, RTGCPTR GCPtr)
 /**
  * Sets (replaces) the page flags for a range of pages in the guest's tables.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       The address of the first page.
  * @param   cb          The size of the range in bytes.

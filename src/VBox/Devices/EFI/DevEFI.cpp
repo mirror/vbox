@@ -1898,7 +1898,7 @@ efiFwVolFindFileByType(EFI_FFS_FILE_HEADER const *pFfsFile, uint8_t const *pbEnd
 /**
  * Parse EFI ROM headers and find entry points.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pThis    The device instance data.
  */
 static int efiParseFirmware(PDEVEFI pThis)
@@ -1934,7 +1934,7 @@ static int efiParseFirmware(PDEVEFI pThis)
 /**
  * Load EFI ROM file into the memory.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pThis       The device instance data.
  * @param   pCfg        Configuration node handle for the device.
  */

@@ -1221,7 +1221,7 @@ static int tmTimerVirtualSyncSet(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire)
 /**
  * Arm a timer with a (new) expire time.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   u64Expire       New expire time.
  */
@@ -1525,7 +1525,7 @@ static int tmTimerVirtualSyncSetRelative(PVM pVM, PTMTIMER pTimer, uint64_t cTic
 /**
  * Arm a timer with a expire time relative to the current time.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   cTicksToNext    Clock ticks until the next time expiration.
  * @param   pu64Now         Where to return the current time stamp used.
@@ -1850,7 +1850,7 @@ static int tmTimerVirtualSyncStop(PVM pVM, PTMTIMER pTimer)
  * Stop the timer.
  * Use TMR3TimerArm() to "un-stop" the timer.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
 VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
@@ -2123,7 +2123,7 @@ VMMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
 /**
  * Arm a timer with a (new) expire time relative to current time.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   cMilliesToNext  Number of milliseconds to the next tick.
  */
@@ -2153,7 +2153,7 @@ VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
 /**
  * Arm a timer with a (new) expire time relative to current time.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   cMicrosToNext   Number of microseconds to the next tick.
  */
@@ -2183,7 +2183,7 @@ VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
 /**
  * Arm a timer with a (new) expire time relative to current time.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   cNanosToNext    Number of nanoseconds to the next tick.
  */

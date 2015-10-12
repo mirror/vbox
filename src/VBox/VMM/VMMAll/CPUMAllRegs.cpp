@@ -2358,7 +2358,7 @@ VMM_INT_DECL(bool) CPUMIsGuestInRawMode(PVMCPU pVCpu)
  *
  * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
  *
- * @returns VBox status. (recompiler failure)
+ * @returns VBox status code. (recompiler failure)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @see     @ref pg_raw
  */

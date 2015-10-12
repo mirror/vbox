@@ -1459,7 +1459,7 @@ VMMR3_INT_DECL(int) PDMR3LdrQueryR0ModFromPC(PVM pVM, RTR0PTR uPC,
 /**
  * Enumerate all PDM modules.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pfnCallback     Function to call back for each of the modules.
  * @param   pvArg           User argument.

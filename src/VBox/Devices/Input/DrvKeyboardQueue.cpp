@@ -330,7 +330,7 @@ static DECLCALLBACK(bool) drvKbdQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
 /**
  * Power On notification.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDrvIns     The drive instance data.
  */
 static DECLCALLBACK(void) drvKbdQueuePowerOn(PPDMDRVINS pDrvIns)
@@ -343,7 +343,7 @@ static DECLCALLBACK(void) drvKbdQueuePowerOn(PPDMDRVINS pDrvIns)
 /**
  * Reset notification.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDrvIns     The drive instance data.
  */
 static DECLCALLBACK(void)  drvKbdQueueReset(PPDMDRVINS pDrvIns)
@@ -356,7 +356,7 @@ static DECLCALLBACK(void)  drvKbdQueueReset(PPDMDRVINS pDrvIns)
 /**
  * Suspend notification.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDrvIns     The drive instance data.
  */
 static DECLCALLBACK(void)  drvKbdQueueSuspend(PPDMDRVINS pDrvIns)
@@ -369,7 +369,7 @@ static DECLCALLBACK(void)  drvKbdQueueSuspend(PPDMDRVINS pDrvIns)
 /**
  * Resume notification.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDrvIns     The drive instance data.
  */
 static DECLCALLBACK(void)  drvKbdQueueResume(PPDMDRVINS pDrvIns)

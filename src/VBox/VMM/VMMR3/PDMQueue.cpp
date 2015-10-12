@@ -48,7 +48,7 @@ static DECLCALLBACK(void)   pdmR3QueueTimer(PVM pVM, PTMTIMER pTimer, void *pvUs
 /**
  * Internal worker for the queue creation apis.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
  * @param   cbItem              Item size.
  * @param   cItems              Number of items.

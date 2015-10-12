@@ -180,7 +180,7 @@ RT_C_DECLS_END
 /**
  * Gets effective page information (from the VMM page directory).
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       Guest Context virtual address of the page.
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*.

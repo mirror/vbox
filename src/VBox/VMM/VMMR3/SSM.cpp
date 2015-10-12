@@ -1209,7 +1209,7 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t uInstance,
 /**
  * Register a PDM Devices data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Device instance.
@@ -1265,7 +1265,7 @@ SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName,
 /**
  * Register a PDM driver data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         Driver instance.
@@ -1317,7 +1317,7 @@ SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u
 /**
  * Register a PDM USB device data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pUsbIns         USB instance.
@@ -1369,7 +1369,7 @@ SSMR3RegisterUsb(PVM pVM, PPDMUSBINS pUsbIns, const char *pszName, uint32_t uIns
 /**
  * Register a internal data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pszName         Data unit name.
@@ -1418,7 +1418,7 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t uIns
 /**
  * Register an external data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pUVM            The user mode VM handle.
  * @param   pszName         Data unit name.
@@ -1504,7 +1504,7 @@ VMMR3DECL(int) SSMR3RegisterStub(PVM pVM, const char *pszName, uint32_t uInstanc
 /**
  * Deregister one or more PDM Device data units.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Device instance.
@@ -1581,7 +1581,7 @@ VMMR3_INT_DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const cha
 /**
  * Deregister one ore more PDM Driver data units.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         Driver instance.
  * @param   pszName         Data unit name.
@@ -1655,7 +1655,7 @@ VMMR3_INT_DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const cha
 /**
  * Deregister one or more PDM USB device data units.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pUsbIns         USB device instance.
  * @param   pszName         Data unit name.
@@ -1725,7 +1725,7 @@ VMMR3_INT_DECL(int) SSMR3DeregisterUsb(PVM pVM, PPDMUSBINS pUsbIns, const char *
 /**
  * Deregister a data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   enmType         Unit type
  * @param   pszName         Data unit name.
@@ -1782,7 +1782,7 @@ static int ssmR3DeregisterByNameAndType(PVM pVM, const char *pszName, SSMUNITTYP
 /**
  * Deregister an internal data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pszName         Data unit name.
  * @remark  Only for dynamic data units.
@@ -1796,7 +1796,7 @@ VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
 /**
  * Deregister an external data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pUVM            The user mode VM structure.
  * @param   pszName         Data unit name.
  * @remark  Only for dynamic data units.
@@ -3271,7 +3271,7 @@ DECLINLINE(bool) ssmR3IsHostMsc32(PSSMHANDLE pSSM)
  * Finishes a data unit.
  * All buffers and compressor instances are flushed and destroyed.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  */
 static int ssmR3DataWriteFinish(PSSMHANDLE pSSM)
@@ -3992,7 +3992,7 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
 /**
  * Saves a boolean item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   fBool           Item to save.
  */
@@ -4008,7 +4008,7 @@ VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
 /**
  * Saves a 8-bit unsigned integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   u8              Item to save.
  */
@@ -4023,7 +4023,7 @@ VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
 /**
  * Saves a 8-bit signed integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   i8              Item to save.
  */
@@ -4038,7 +4038,7 @@ VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
 /**
  * Saves a 16-bit unsigned integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   u16             Item to save.
  */
@@ -4053,7 +4053,7 @@ VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
 /**
  * Saves a 16-bit signed integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   i16             Item to save.
  */
@@ -4068,7 +4068,7 @@ VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
 /**
  * Saves a 32-bit unsigned integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   u32             Item to save.
  */
@@ -4083,7 +4083,7 @@ VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
 /**
  * Saves a 32-bit signed integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   i32             Item to save.
  */
@@ -4098,7 +4098,7 @@ VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
 /**
  * Saves a 64-bit unsigned integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   u64             Item to save.
  */
@@ -4113,7 +4113,7 @@ VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
 /**
  * Saves a 64-bit signed integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   i64             Item to save.
  */
@@ -4128,7 +4128,7 @@ VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
 /**
  * Saves a 128-bit unsigned integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   u128            Item to save.
  */
@@ -4143,7 +4143,7 @@ VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
 /**
  * Saves a 128-bit signed integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   i128            Item to save.
  */
@@ -4158,7 +4158,7 @@ VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
 /**
  * Saves a VBox unsigned integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   u               Item to save.
  */
@@ -4173,7 +4173,7 @@ VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
 /**
  * Saves a VBox signed integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   i               Item to save.
  */
@@ -4188,7 +4188,7 @@ VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
 /**
  * Saves a GC natural unsigned integer item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   u               Item to save.
  *
@@ -4205,7 +4205,7 @@ VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
 /**
  * Saves a GC unsigned integer register item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   u               Item to save.
  */
@@ -4220,7 +4220,7 @@ VMMR3DECL(int) SSMR3PutGCUIntReg(PSSMHANDLE pSSM, RTGCUINTREG u)
 /**
  * Saves a 32 bits GC physical address item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   GCPhys          The item to save
  */
@@ -4235,7 +4235,7 @@ VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
 /**
  * Saves a 64 bits GC physical address item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   GCPhys          The item to save
  */
@@ -4250,7 +4250,7 @@ VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
 /**
  * Saves a GC physical address item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   GCPhys          The item to save
  */
@@ -4265,7 +4265,7 @@ VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
 /**
  * Saves a GC virtual address item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   GCPtr           The item to save.
  */
@@ -4280,7 +4280,7 @@ VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
 /**
  * Saves an RC virtual address item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   RCPtr           The item to save.
  */
@@ -4295,7 +4295,7 @@ VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
 /**
  * Saves a GC virtual address (represented as an unsigned integer) item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   GCPtr           The item to save.
  */
@@ -4310,7 +4310,7 @@ VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
 /**
  * Saves a I/O port address item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   IOPort          The item to save.
  */
@@ -4325,7 +4325,7 @@ VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
 /**
  * Saves a selector item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   Sel             The item to save.
  */
@@ -4340,7 +4340,7 @@ VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
 /**
  * Saves a memory item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pv              Item to save.
  * @param   cb              Size of the item.
@@ -4356,7 +4356,7 @@ VMMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
 /**
  * Saves a zero terminated string item to the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   psz             Item to save.
  */
@@ -4628,7 +4628,7 @@ static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
  *
  * This must always be called on a handled returned by SSMR3LiveSave.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
  *
@@ -5053,7 +5053,7 @@ static int ssmR3SaveDoCommon(PVM pVM, PSSMHANDLE pSSM)
 /**
  * Saves the rest of the state on EMT0.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
  *
@@ -5199,7 +5199,7 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS 
 /**
  * Start VM save operation.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pszFilename     Name of the file to save the state in. NULL if pStreamOps is used.
@@ -5672,7 +5672,7 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
 /**
  * Continue a live state saving operation on the worker thread.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
  *
@@ -5714,7 +5714,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
  * SSMR3LiveDone should be called even if SSMR3LiveDoStep1 or SSMR3LiveDoStep2
  * fails.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pVM             The cross context VM structure.
  * @param   cMsMaxDowntime  The maximum downtime given as milliseconds.
@@ -6971,7 +6971,7 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
 /**
  * Loads a boolean item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pfBool          Where to store the item.
  */
@@ -6993,7 +6993,7 @@ VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
 /**
  * Loads a 8-bit unsigned integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pu8             Where to store the item.
  */
@@ -7008,7 +7008,7 @@ VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
 /**
  * Loads a 8-bit signed integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pi8             Where to store the item.
  */
@@ -7023,7 +7023,7 @@ VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
 /**
  * Loads a 16-bit unsigned integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pu16            Where to store the item.
  */
@@ -7038,7 +7038,7 @@ VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
 /**
  * Loads a 16-bit signed integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pi16            Where to store the item.
  */
@@ -7053,7 +7053,7 @@ VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
 /**
  * Loads a 32-bit unsigned integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pu32            Where to store the item.
  */
@@ -7068,7 +7068,7 @@ VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
 /**
  * Loads a 32-bit signed integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pi32            Where to store the item.
  */
@@ -7083,7 +7083,7 @@ VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
 /**
  * Loads a 64-bit unsigned integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pu64            Where to store the item.
  */
@@ -7098,7 +7098,7 @@ VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
 /**
  * Loads a 64-bit signed integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pi64            Where to store the item.
  */
@@ -7113,7 +7113,7 @@ VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
 /**
  * Loads a 128-bit unsigned integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pu128           Where to store the item.
  */
@@ -7128,7 +7128,7 @@ VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
 /**
  * Loads a 128-bit signed integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pi128           Where to store the item.
  */
@@ -7143,7 +7143,7 @@ VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
 /**
  * Loads a VBox unsigned integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pu              Where to store the integer.
  */
@@ -7158,7 +7158,7 @@ VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
 /**
  * Loads a VBox signed integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pi              Where to store the integer.
  */
@@ -7173,7 +7173,7 @@ VMMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
 /**
  * Loads a GC natural unsigned integer item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pu              Where to store the integer.
  *
@@ -7189,7 +7189,7 @@ VMMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
 /**
  * Loads a GC unsigned integer register item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pu              Where to store the integer.
  */
@@ -7203,7 +7203,7 @@ VMMR3DECL(int) SSMR3GetGCUIntReg(PSSMHANDLE pSSM, PRTGCUINTREG pu)
 /**
  * Loads a 32 bits GC physical address item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pGCPhys         Where to store the GC physical address.
  */
@@ -7218,7 +7218,7 @@ VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
 /**
  * Loads a 64 bits GC physical address item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pGCPhys         Where to store the GC physical address.
  */
@@ -7233,7 +7233,7 @@ VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
 /**
  * Loads a GC physical address item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pGCPhys         Where to store the GC physical address.
  */
@@ -7283,7 +7283,7 @@ VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
  *
  * Put functions are not affected.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   cbGCPtr         Size of RTGCPTR
  *
@@ -7311,7 +7311,7 @@ VMMR3_INT_DECL(int) SSMR3HandleSetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
 /**
  * Loads a GC virtual address item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pGCPtr          Where to store the GC virtual address.
  */
@@ -7353,7 +7353,7 @@ VMMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
 /**
  * Loads a GC virtual address (represented as unsigned integer) item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pGCPtr          Where to store the GC virtual address.
  */
@@ -7367,7 +7367,7 @@ VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
 /**
  * Loads an RC virtual address item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pRCPtr          Where to store the RC virtual address.
  */
@@ -7382,7 +7382,7 @@ VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
 /**
  * Loads a I/O port address item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pIOPort         Where to store the I/O port address.
  */
@@ -7397,7 +7397,7 @@ VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
 /**
  * Loads a selector item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pSel            Where to store the selector.
  */
@@ -7412,7 +7412,7 @@ VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
 /**
  * Loads a memory item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   pv              Where to store the item.
  * @param   cb              Size of the item.
@@ -7428,7 +7428,7 @@ VMMR3DECL(int) SSMR3GetMem(PSSMHANDLE pSSM, void *pv, size_t cb)
 /**
  * Loads a string item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   psz             Where to store the item.
  * @param   cbMax           Max size of the item (including '\\0').
@@ -7442,7 +7442,7 @@ VMMR3DECL(int) SSMR3GetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax)
 /**
  * Loads a string item from the current data unit.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM            The saved state handle.
  * @param   psz             Where to store the item.
  * @param   cbMax           Max size of the item (including '\\0').
@@ -7549,7 +7549,7 @@ VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM)
 /**
  * Calculate the checksum of a file portion.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pStrm       The stream handle
  * @param   off         Where to start checksumming.
  * @param   cb          How much to checksum.
@@ -7725,7 +7725,7 @@ static int ssmR3ValidateHeaderInfo(PSSMHANDLE pSSM, bool fHaveHostBits, bool fHa
  * Reads the header, detects the format version and performs integrity
  * validations.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pSSM                The saved state handle.  A number of field will
  *                              be updated, mostly header related information.
  *                              fLiveSave is also set if appropriate.
@@ -8742,7 +8742,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
 /**
  * Load VM save operation.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pszFilename     The name of the saved state file. NULL if pStreamOps

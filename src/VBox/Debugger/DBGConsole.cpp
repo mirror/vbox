@@ -385,7 +385,7 @@ static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
  *
  * Will read any available input looking for a '\n' to reset the buffer on.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDbgc   Debugger console instance data.
  */
 static int dbgcInputOverflow(PDBGC pDbgc)
@@ -429,7 +429,7 @@ static int dbgcInputOverflow(PDBGC pDbgc)
 /**
  * Read input and do some preprocessing.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *          In addition to the iWrite and achInput, cInputLines is maintained.
  *          In case of an input overflow the fInputOverflow flag will be set.
  * @param   pDbgc   Debugger console instance data.
@@ -530,7 +530,7 @@ static int dbgcInputRead(PDBGC pDbgc)
 /**
  * Reads input, parses it and executes commands on '\n'.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDbgc       Debugger console instance data.
  * @param   fNoExecute  Indicates that no commands should actually be executed.
  */
@@ -603,7 +603,7 @@ static const char *dbgcGetEventCtx(DBGFEVENTCTX enmCtx)
 /**
  * Processes debugger events.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDbgc   DBGC Instance data.
  * @param   pEvent  Pointer to event data.
  */
@@ -783,7 +783,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
  *
  * The caller must not call function this unless pDbgc->fLog is set.
  *
- * @returns VBox status. (output related)
+ * @returns VBox status code. (output related)
  * @param   pDbgc   Debugger console instance data.
  */
 static int dbgcProcessLog(PDBGC pDbgc)
@@ -806,7 +806,7 @@ static DECLCALLBACK(void) dbgcDbgCfgLogCallback(RTDBGCFG hDbgCfg, uint32_t iLeve
 /**
  * Run the debugger console.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDbgc   Pointer to the debugger console instance data.
  */
 int dbgcRun(PDBGC pDbgc)

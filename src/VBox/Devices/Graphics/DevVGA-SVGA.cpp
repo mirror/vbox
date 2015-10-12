@@ -4444,7 +4444,7 @@ static const char * const g_apszVmSvgaDevCapNames[] =
 /**
  * Power On notification.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDevIns     The device instance data.
  *
  * @remarks Caller enters the device critical section.

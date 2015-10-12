@@ -5624,7 +5624,7 @@ static DECLCALLBACK(void) ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, PTMTIMER
 /**
  * Reset notification.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(void) ohciR3Reset(PPDMDEVINS pDevIns)
@@ -5647,7 +5647,7 @@ static DECLCALLBACK(void) ohciR3Reset(PPDMDEVINS pDevIns)
 /**
  * Resume notification.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(void) ohciR3Resume(PPDMDEVINS pDevIns)
@@ -5727,7 +5727,7 @@ static DECLCALLBACK(void) ohciR3InfoRegs(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
 /**
  * Relocate device instance data.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDevIns     The device instance data.
  * @param   offDelta    The relocation delta.
  */
@@ -5745,7 +5745,7 @@ static DECLCALLBACK(void) ohciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
  * Most VM resources are freed by the VM. This callback is provided so that any non-VM
  * resources can be freed correctly.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(int) ohciR3Destruct(PPDMDEVINS pDevIns)

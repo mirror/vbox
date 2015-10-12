@@ -103,7 +103,7 @@ static uint32_t mmR3HyperComputeHeapSize(PVM pVM)
  * PGM is not initialized at this  point, PGM relies on
  * the heap to initialize.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  */
 int mmR3HyperInit(PVM pVM)
 {
@@ -189,7 +189,7 @@ int mmR3HyperInit(PVM pVM)
 /**
  * Cleans up the hypervisor heap.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  */
 int mmR3HyperTerm(PVM pVM)
 {
@@ -206,7 +206,7 @@ int mmR3HyperTerm(PVM pVM)
  * This is called later during init, most (all) HMA allocations should be done
  * by the time this function is called.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  */
 VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
 {
@@ -1331,7 +1331,7 @@ VMMR3DECL(void *) MMR3HyperHCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys)
 /**
  * Convert hypervisor HC physical address to HC virtual address.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   HCPhys      Host context physical address.
  * @param   ppv         Where to store the HC virtual address.
@@ -1350,7 +1350,7 @@ VMMR3DECL(int)   MMR3HyperHCPhys2HCVirtEx(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 /**
  * Read hypervisor memory from GC virtual address.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pvDst       Destination address (HC of course).
  * @param   GCPtr       GC virtual address.

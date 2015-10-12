@@ -106,7 +106,7 @@
 /**
  * Callback function for setting up the input and expected output CPU contexts.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @retval  VINF_EOF when static test data wraps (first entry is returned).
  * @retval  VERR_NO_DATA if @a fInvalid is set and there are no invalid operand
  *          values for this instruction.

@@ -1090,7 +1090,7 @@ static int USBSysfsEnumerateHostDevices(const char *pcszDevicesRoot,
  *   usb<hub number>
  * and usbfs always returns port number zero.
  *
- * @returns VBox status. pu8Port is set on success.
+ * @returns VBox status code. pu8Port is set on success.
  * @param   pszPath     The sysfs path to parse.
  * @param   pu8Port     Where to store the port number.
  */

@@ -3115,7 +3115,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
  * locking and we can simply return without needing to remember to unlock
  * anything first.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             The device instance owning the ROM.
  * @param   GCPhys              First physical address in the range.
@@ -3468,7 +3468,7 @@ static int pgmR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RT
  * will allocate RAM pages for the changes on demand (unless all memory
  * is configured to be preallocated).
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
  * @param   pDevIns             The device instance owning the ROM.
  * @param   GCPhys              First physical address in the range.

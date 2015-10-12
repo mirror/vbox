@@ -730,7 +730,7 @@ static int usbProxyUsbIpParseAddress(PUSBPROXYDEVUSBIP pProxyDevUsbIp, const cha
 /**
  * Connects to the USB/IP host and claims the device given in the proxy device data.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pProxyDevUsbIp    The USB/IP proxy device data.
  */
 static int usbProxyUsbIpConnect(PUSBPROXYDEVUSBIP pProxyDevUsbIp)

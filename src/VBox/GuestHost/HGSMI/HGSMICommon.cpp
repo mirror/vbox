@@ -352,7 +352,7 @@ HGSMICHANNEL *HGSMIChannelFindById(HGSMICHANNELINFO *pChannelInfo,
 
 /** Process a guest buffer.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param pArea        Area which supposed to contain the buffer.
  * @param pChannelInfo The channel pool.
  * @param offBuffer    The buffer location in the area.
@@ -397,7 +397,7 @@ int HGSMIBufferProcess(const HGSMIAREA *pArea,
 
 /** Register a new HGSMI channel by index.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param pChannelInfo      The channel pool managed by the caller.
  * @param u8Channel         Index of the channel.
  * @param pszName           Name of the channel (optional, allocated by the caller).

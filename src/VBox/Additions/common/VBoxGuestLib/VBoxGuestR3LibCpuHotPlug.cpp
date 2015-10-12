@@ -60,7 +60,7 @@ VBGLR3DECL(int) VbglR3CpuHotPlugInit(void)
  *
  * This will disable the CPU hot plugging events.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  */
 VBGLR3DECL(int) VbglR3CpuHotPlugTerm(void)
 {

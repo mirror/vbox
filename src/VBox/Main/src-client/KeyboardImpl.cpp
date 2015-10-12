@@ -336,7 +336,7 @@ DECLCALLBACK(void *) Keyboard::i_drvQueryInterface(PPDMIBASE pInterface, const c
 /**
  * Destruct a keyboard driver instance.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDrvIns     The driver instance data.
  */
 DECLCALLBACK(void) Keyboard::i_drvDestruct(PPDMDRVINS pDrvIns)

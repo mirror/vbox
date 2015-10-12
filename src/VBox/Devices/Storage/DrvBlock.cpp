@@ -832,7 +832,7 @@ static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 /**
  * Reset notification.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDevIns     The driver instance data.
  */
 static DECLCALLBACK(void)  drvblockReset(PPDMDRVINS pDrvIns)

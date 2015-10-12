@@ -92,7 +92,7 @@ void pdmR3CritSectBothRelocate(PVM pVM)
  * latter call because other components expect the critical sections to be
  * automatically deleted.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  *          First error code, rest is lost.
  * @param   pVM             The cross context VM structure.
  * @remark  Don't confuse this with PDMR3CritSectDelete.

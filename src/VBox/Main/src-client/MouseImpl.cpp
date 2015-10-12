@@ -1184,7 +1184,7 @@ DECLCALLBACK(void *)  Mouse::i_drvQueryInterface(PPDMIBASE pInterface, const cha
 /**
  * Destruct a mouse driver instance.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pDrvIns     The driver instance data.
  */
 DECLCALLBACK(void) Mouse::i_drvDestruct(PPDMDRVINS pDrvIns)

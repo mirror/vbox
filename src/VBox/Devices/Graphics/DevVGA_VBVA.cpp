@@ -2424,7 +2424,7 @@ static DECLCALLBACK(void) vbvaNotifyGuest (void *pvCallback)
 
 /** The guest submitted a command buffer. Verify the buffer size and invoke corresponding handler.
  *
- * @return VBox status.
+ * @return VBox status code.
  * @param pvHandler      The VBVA channel context.
  * @param u16ChannelInfo Command code.
  * @param pvBuffer       HGSMI buffer with command data.

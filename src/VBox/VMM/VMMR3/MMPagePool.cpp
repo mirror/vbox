@@ -51,7 +51,7 @@ static void     mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv);
 /**
  * Initializes the page pool
  *
- * @return  VBox status.
+ * @return  VBox status code.
  * @param   pVM     The cross context VM structure.
  * @thread  The Emulation Thread.
  */

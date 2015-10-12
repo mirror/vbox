@@ -45,7 +45,7 @@ static void *mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZer
 /**
  * Allocate and initialize a heap structure and it's associated substructures.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pUVM    Pointer to the user mode VM structure.
  * @param   ppHeap  Where to store the heap pointer.
  */

@@ -179,7 +179,7 @@ static DECLCALLBACK(void) dbgcTcpBackSetReady(PDBGCBACK pBack, bool fBusy)
 /**
  * Serve a TCP Server connection.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @returns VERR_TCP_SERVER_STOP to terminate the server loop forcing
  *          the RTTcpCreateServer() call to return.
  * @param   Sock        The socket which the client is connected to.
@@ -209,7 +209,7 @@ static DECLCALLBACK(int) dbgcTcpConnection(RTSOCKET Sock, void *pvUser)
 /**
  * Spawns a new thread with a TCP based debugging console service.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pUVM        The user mode VM handle.
  * @param   ppvData     Where to store a pointer to the instance data.
  */
@@ -272,7 +272,7 @@ DBGDECL(int)    DBGCTcpCreate(PUVM pUVM, void **ppvData)
 /**
  * Terminates any running TCP base debugger console service.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pUVM            The user mode VM handle.
  * @param   pvData          The data returned by DBGCTcpCreate.
  */

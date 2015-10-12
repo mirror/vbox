@@ -337,7 +337,7 @@ PCDBGCCMD dbgcCommandLookup(PDBGC pDbgc, const char *pachName, size_t cchName, b
 /**
  * Register one or more external commands.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   paCommands      Pointer to an array of command descriptors.
  *                          The commands must be unique. It's not possible
  *                          to register the same commands more than once.
@@ -385,7 +385,7 @@ DBGDECL(int)    DBGCRegisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
  * Deregister one or more external commands previously registered by
  * DBGCRegisterCommands().
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   paCommands      Pointer to an array of command descriptors
  *                          as given to DBGCRegisterCommands().
  * @param   cCommands       Number of commands.

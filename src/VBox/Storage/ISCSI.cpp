@@ -1204,7 +1204,7 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
  * Attach to an iSCSI target. Performs all operations necessary to enter
  * Full Feature Phase.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pImage      The iSCSI connection state to be used.
  */
 static DECLCALLBACK(int) iscsiAttach(void *pvUser)
@@ -1719,7 +1719,7 @@ out:
 /**
  * Detach from an iSCSI target.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pImage      The iSCSI connection state to be used.
  */
 static DECLCALLBACK(int) iscsiDetach(void *pvUser)
@@ -1809,7 +1809,7 @@ static DECLCALLBACK(int) iscsiDetach(void *pvUser)
  * Perform a command on an iSCSI target. Target must be already in
  * Full Feature Phase.
  *
- * @returns VBOX status.
+ * @returns VBox status code.
  * @param   pImage      The iSCSI connection state to be used.
  * @param   pRequest    Command descriptor. Contains all information about
  *                      the command, its transfer directions and pointers
@@ -2975,7 +2975,7 @@ static int iscsiTextAddKeyValue(uint8_t *pbBuf, size_t cbBuf, size_t *pcbBufCurr
 /**
  * Retrieve the value for a given key from the key=value buffer.
  *
- * @returns VBOX status.
+ * @returns VBox status code.
  * @param   pbBuf       Buffer containing key=value pairs.
  * @param   cbBuf       Length of buffer with key=value pairs.
  * @param   pszKey      Pointer to key for which to retrieve the value.
@@ -3107,7 +3107,7 @@ static int iscsiStrToBinary(const char *pcszValue, uint8_t *pbValue, size_t *pcb
 /**
  * Retrieve the relevant parameter values and update the initiator state.
  *
- * @returns VBOX status.
+ * @returns VBox status code.
  * @param   pImage      Current iSCSI initiator state.
  * @param   pbBuf       Buffer containing key=value pairs.
  * @param   cbBuf       Length of buffer with key=value pairs.

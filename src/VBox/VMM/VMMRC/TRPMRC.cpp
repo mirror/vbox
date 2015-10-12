@@ -45,7 +45,7 @@
  *
  * To uninstall the temporary handler, call this function with pfnHandler set to NULL.
  *
- * @returns VBox status.
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   iTrap       Trap number to install handler [0..255].
  * @param   pfnHandler  Pointer to the handler. Use NULL for uninstalling the handler.
