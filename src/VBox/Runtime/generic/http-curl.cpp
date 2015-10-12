@@ -2215,6 +2215,9 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, 0L);
     if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
+    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HEADER, 0L);
+    if (CURL_FAILURE(rcCurl))
+        return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
 }
@@ -2329,8 +2332,13 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, bool fNoBody, uint8_
         int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEFUNCTION, &rtHttpWriteData);
         if (!CURL_FAILURE(rcCurl))
             rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEDATA, (void *)pThis);
-        if (!CURL_FAILURE(rcCurl))
-            rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, fNoBody ? 1L : 0L);
+        if (fNoBody)
+        {
+            if (!CURL_FAILURE(rcCurl))
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, 1L);
+            if (!CURL_FAILURE(rcCurl))
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HEADER, 1L);
+        }
         if (!CURL_FAILURE(rcCurl))
         {
             /*
