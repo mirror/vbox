@@ -393,9 +393,6 @@ static DECLCALLBACK(int) vgsvcBalloonWorker(bool volatile *pfShutdown)
     if (RT_FAILURE(rc))
         VGSvcVerbose(3, "vgsvcBalloonInit: VbglR3CtlFilterMask failed with %Rrc\n", rc);
 
-    RTSemEventMultiDestroy(g_MemBalloonEvent);
-    g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
-
     VGSvcVerbose(3, "vgsvcBalloonInit: finished mem balloon change request thread\n");
     return VINF_SUCCESS;
 }
@@ -407,6 +404,19 @@ static DECLCALLBACK(int) vgsvcBalloonWorker(bool volatile *pfShutdown)
 static DECLCALLBACK(void) vgsvcBalloonStop(void)
 {
     RTSemEventMultiSignal(g_MemBalloonEvent);
+}
+
+
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnTerm}
+ */
+static DECLCALLBACK(void) vgsvcBalloonTerm(void)
+{
+    if (g_MemBalloonEvent != NIL_RTSEMEVENTMULTI)
+    {
+        RTSemEventMultiDestroy(g_MemBalloonEvent);
+        g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
+    }
 }
 
 
@@ -429,5 +439,5 @@ VBOXSERVICE g_MemBalloon =
     vgsvcBalloonInit,
     vgsvcBalloonWorker,
     vgsvcBalloonStop,
-    VGSvcDefaultTerm
+    vgsvcBalloonTerm
 };

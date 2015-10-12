@@ -684,9 +684,6 @@ DECLCALLBACK(int) vgsvcVMStatsWorker(bool volatile *pfShutdown)
     if (RT_FAILURE(rc))
         VGSvcVerbose(3, "vgsvcVMStatsWorker: VbglR3CtlFilterMask failed with %d\n", rc);
 
-    RTSemEventMultiDestroy(g_VMStatEvent);
-    g_VMStatEvent = NIL_RTSEMEVENTMULTI;
-
     VGSvcVerbose(3, "VBoxStatsThread: finished statistics change request thread\n");
     return 0;
 }
@@ -698,6 +695,19 @@ DECLCALLBACK(int) vgsvcVMStatsWorker(bool volatile *pfShutdown)
 static DECLCALLBACK(void) vgsvcVMStatsStop(void)
 {
     RTSemEventMultiSignal(g_VMStatEvent);
+}
+
+
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnTerm}
+ */
+static DECLCALLBACK(void) vgsvcVMStatsTerm(void)
+{
+    if (g_VMStatEvent != NIL_RTSEMEVENTMULTI)
+    {
+        RTSemEventMultiDestroy(g_VMStatEvent);
+        g_VMStatEvent = NIL_RTSEMEVENTMULTI;
+    }
 }
 
 
@@ -720,6 +730,6 @@ VBOXSERVICE g_VMStatistics =
     vgsvcVMStatsInit,
     vgsvcVMStatsWorker,
     vgsvcVMStatsStop,
-    VGSvcDefaultTerm
+    vgsvcVMStatsTerm
 };
 
