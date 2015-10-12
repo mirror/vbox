@@ -35,7 +35,7 @@
 /* per-shared folder information */
 struct sf_glob_info
 {
-    VBSFMAP map;
+    VBGLSFMAP map;
     struct nls_table *nls;
     int ttl;
     int uid;
@@ -85,7 +85,7 @@ struct sf_reg_info
 };
 
 /* globals */
-extern VBSFCLIENT client_handle;
+extern VBGLSFCLIENT client_handle;
 
 /* forward declarations */
 extern struct inode_operations         sf_dir_iops;

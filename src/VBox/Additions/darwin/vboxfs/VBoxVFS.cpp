@@ -90,7 +90,7 @@ RT_C_DECLS_END
 /** The number of IOService class instances. */
 static bool volatile        g_fInstantiated = 0;
 /* Global connection to the host service */
-VBSFCLIENT                  g_vboxSFClient;
+VBGLSFCLIENT                  g_vboxSFClient;
 /* VBoxVFS filesystem handle. Needed for FS unregistering. */
 static vfstable_t           g_oVBoxVFSHandle;
 

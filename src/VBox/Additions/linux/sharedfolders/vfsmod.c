@@ -38,7 +38,7 @@ MODULE_VERSION(VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")");
 #endif
 
 /* globals */
-VBSFCLIENT client_handle;
+VBGLSFCLIENT client_handle;
 
 /* forward declarations */
 static struct super_operations sf_super_ops;

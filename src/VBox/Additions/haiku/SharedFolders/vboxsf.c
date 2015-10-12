@@ -49,7 +49,7 @@
 #define FS_NAME         "vboxsf"
 #define FS_PRETTY_NAME  "VirtualBox Shared Folders"
 
-VBSFCLIENT g_clientHandle;
+VBGLSFCLIENT g_clientHandle;
 static fs_volume_ops vboxsf_volume_ops;
 static fs_vnode_ops vboxsf_vnode_ops;
 

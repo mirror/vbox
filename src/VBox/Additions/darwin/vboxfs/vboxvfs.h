@@ -58,7 +58,7 @@ RT_C_DECLS_END
 #include <sys/vnode.h>
 
 /** Global refernce to host service connection */
-extern VBSFCLIENT g_vboxSFClient;
+extern VBGLSFCLIENT g_vboxSFClient;
 
 /** Private data assigned to each mounted shared folder. Assigned to mp structure. */
 typedef struct vboxvfs_mount_data

@@ -27,39 +27,39 @@
 #define VBSF_MAX_READ_WRITE_PAGES 256
 
 
-typedef int FNVBSFTRANSFERBUFFER(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+typedef int FNVBSFTRANSFERBUFFER(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                                  uint64_t offset, uint32_t *pcbBuffer,
                                  uint8_t *pBuffer, bool fLocked);
 typedef FNVBSFTRANSFERBUFFER *PFNVBSFTRANSFERBUFFER;
 
-typedef int FNVBSFTRANSFERPAGES(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+typedef int FNVBSFTRANSFERPAGES(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                                 uint64_t offset, uint32_t *pcbBuffer,
                                 uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages);
 typedef FNVBSFTRANSFERPAGES *PFNVBSFTRANSFERPAGES;
 
 
-static int vbsfTransferBufferRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+static int vbsfTransferBufferRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                                   uint64_t offset, uint32_t *pcbBuffer,
                                   uint8_t *pBuffer, bool fLocked)
 {
     return VbglR0SfRead(pClient, pMap, hFile, offset, pcbBuffer, pBuffer, fLocked);
 }
 
-static int vbsfTransferBufferWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+static int vbsfTransferBufferWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                                    uint64_t offset, uint32_t *pcbBuffer,
                                    uint8_t *pBuffer, bool fLocked)
 {
     return VbglR0SfWrite(pClient, pMap, hFile, offset, pcbBuffer, pBuffer, fLocked);
 }
 
-static int vbsfTransferPagesRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+static int vbsfTransferPagesRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                                  uint64_t offset, uint32_t *pcbBuffer,
                                  uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages)
 {
     return VbglR0SfReadPageList(pClient, pMap, hFile, offset, pcbBuffer, offFirstPage, cPages, paPages);
 }
 
-static int vbsfTransferPagesWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+static int vbsfTransferPagesWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                                   uint64_t offset, uint32_t *pcbBuffer,
                                   uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages)
 {
@@ -69,8 +69,8 @@ static int vbsfTransferPagesWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE
 
 typedef struct VBSFTRANSFERCTX
 {
-    PVBSFCLIENT pClient;
-    PVBSFMAP pMap;
+    PVBGLSFCLIENT pClient;
+    PVBGLSFMAP pMap;
     SHFLHANDLE hFile;
     uint64_t offset;
     uint32_t cbData;

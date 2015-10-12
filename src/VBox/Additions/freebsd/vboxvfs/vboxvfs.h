@@ -53,7 +53,7 @@ struct vboxvfsmount {
 
 /* structs - stolen from the linux shared module code */
 struct sf_glob_info {
-    VBSFMAP map;
+    VBGLSFMAP map;
 /*    struct nls_table *nls;*/
     int ttl;
     int uid;

@@ -58,13 +58,13 @@
 
 typedef struct vboxsf_volume
 {
-    VBSFMAP map;
+    VBGLSFMAP map;
     ino_t rootid;
 } vboxsf_volume;
 
 typedef struct vboxsf_vnode
 {
-    PVBSFMAP map;
+    PVBGLSFMAP map;
     PSHFLSTRING name;
     PSHFLSTRING path;
     ino_t vnode;
@@ -91,7 +91,7 @@ typedef struct vboxsf_file_cookie
 extern "C" {
 #endif
 
-status_t vboxsf_new_vnode(PVBSFMAP map, PSHFLSTRING path, PSHFLSTRING name, vboxsf_vnode** p);
+status_t vboxsf_new_vnode(PVBGLSFMAP map, PSHFLSTRING path, PSHFLSTRING name, vboxsf_vnode** p);
 status_t vboxsf_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32* _flags, bool reenter);
 status_t vboxsf_put_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter);
 PSHFLSTRING make_shflstring(const char* const s);

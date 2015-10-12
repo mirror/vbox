@@ -410,7 +410,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension;
     ULONG i;
     int vboxRC;
-    VBSFCLIENT hgcmClient;
+    VBGLSFCLIENT hgcmClient;
 
     Log(("VBOXSF: DriverEntry: Driver object %p\n", DriverObject));
 

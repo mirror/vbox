@@ -49,7 +49,7 @@
 
 #define	SFPROV_VERSION	1
 
-static VBSFCLIENT vbox_client;
+static VBGLSFCLIENT vbox_client;
 
 static int sfprov_vbox2errno(int rc)
 {
@@ -311,7 +311,7 @@ sfprov_stat_from_info(sfp_mount_t *mnt, sffs_stat_t *stat, SHFLFSOBJINFO *info)
  */
 struct sfp_file {
 	SHFLHANDLE handle;
-	VBSFMAP map;	/* need this again for the close operation */
+	VBGLSFMAP map;	/**< need this again for the close operation */
 };
 
 int

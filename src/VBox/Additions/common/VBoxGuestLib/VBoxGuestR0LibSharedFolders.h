@@ -62,21 +62,20 @@
 #endif
 
 #include <iprt/assert.h>
-#define ASSERTVBSF AssertRelease
 
 #include <VBox/shflsvc.h>
 
-typedef struct _VBSFCLIENT
+typedef struct VBGLSFCLIENT
 {
     uint32_t ulClientID;
     VBGLHGCMHANDLE handle;
-} VBSFCLIENT;
-typedef VBSFCLIENT *PVBSFCLIENT;
+} VBGLSFCLIENT;
+typedef VBGLSFCLIENT *PVBGLSFCLIENT;
 
-typedef struct _VBSFMAP
+typedef struct VBGLSFMAP
 {
     SHFLROOT root;
-} VBSFMAP, *PVBSFMAP;
+} VBGLSFMAP, *PVBGLSFMAP;
 
 
 #if 0 /* Apparently unused cruft from old windows shared folder driver? */
@@ -130,12 +129,12 @@ typedef struct _MRX_VBOX_DEVICE_EXTENSION *PMRX_VBOX_DEVICE_EXTENSION;
 
 DECLVBGL(int)  VbglR0SfInit(void);
 DECLVBGL(void) VbglR0SfTerm(void);
-DECLVBGL(int)  VbglR0SfConnect(PVBSFCLIENT pClient);
-DECLVBGL(void) VbglR0SfDisconnect(PVBSFCLIENT pClient);
+DECLVBGL(int)  VbglR0SfConnect(PVBGLSFCLIENT pClient);
+DECLVBGL(void) VbglR0SfDisconnect(PVBGLSFCLIENT pClient);
 
-DECLVBGL(int)  VbglR0SfQueryMappings(PVBSFCLIENT pClient, SHFLMAPPING paMappings[], uint32_t *pcMappings);
+DECLVBGL(int)  VbglR0SfQueryMappings(PVBGLSFCLIENT pClient, SHFLMAPPING paMappings[], uint32_t *pcMappings);
 
-DECLVBGL(int)  VbglR0SfQueryMapName(PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRING *pString, uint32_t size);
+DECLVBGL(int)  VbglR0SfQueryMapName(PVBGLSFCLIENT pClient, SHFLROOT root, SHFLSTRING *pString, uint32_t size);
 
 /**
  * Create a new file or folder or open an existing one in a shared folder.  Proxies
@@ -160,36 +159,36 @@ DECLVBGL(int)  VbglR0SfQueryMapName(PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRI
  *       SHFL_FILE_EXISTS).  pCreateParms->Result is also set on success
  *       as additional information.
  */
-DECLVBGL(int)  VbglR0SfCreate(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pParsedPath, PSHFLCREATEPARMS pCreateParms);
+DECLVBGL(int)  VbglR0SfCreate(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pParsedPath, PSHFLCREATEPARMS pCreateParms);
 
-DECLVBGL(int)  VbglR0SfClose(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE Handle);
-DECLVBGL(int)  VbglR0SfRemove(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pParsedPath, uint32_t flags);
-DECLVBGL(int)  VbglR0SfRename(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pSrcPath, PSHFLSTRING pDestPath, uint32_t flags);
-DECLVBGL(int)  VbglR0SfFlush(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile);
+DECLVBGL(int)  VbglR0SfClose(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE Handle);
+DECLVBGL(int)  VbglR0SfRemove(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pParsedPath, uint32_t flags);
+DECLVBGL(int)  VbglR0SfRename(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pSrcPath, PSHFLSTRING pDestPath, uint32_t flags);
+DECLVBGL(int)  VbglR0SfFlush(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile);
 
-DECLVBGL(int)  VbglR0SfRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked);
-DECLVBGL(int)  VbglR0SfReadPageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer,
+DECLVBGL(int)  VbglR0SfRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked);
+DECLVBGL(int)  VbglR0SfReadPageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer,
                                     uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages);
-DECLVBGL(int)  VbglR0SfWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset,
+DECLVBGL(int)  VbglR0SfWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset,
                              uint32_t *pcbBuffer,  uint8_t *pBuffer, bool fLocked);
-DECLVBGL(int)  VbglR0SfWritePhysCont(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset,
+DECLVBGL(int)  VbglR0SfWritePhysCont(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset,
                                      uint32_t *pcbBuffer, RTCCPHYS PhysBuffer);
-DECLVBGL(int)  VbglR0SfWritePageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer,
+DECLVBGL(int)  VbglR0SfWritePageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer,
                                      uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages);
 
-DECLVBGL(int)  VbglR0SfLock(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint64_t cbSize, uint32_t fLock);
+DECLVBGL(int)  VbglR0SfLock(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint64_t cbSize, uint32_t fLock);
 
-DECLVBGL(int)  VbglR0SfDirInfo(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,PSHFLSTRING ParsedPath, uint32_t flags,
+DECLVBGL(int)  VbglR0SfDirInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,PSHFLSTRING ParsedPath, uint32_t flags,
                                  uint32_t index, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer, uint32_t *pcFiles);
-DECLVBGL(int)  VbglR0SfFsInfo(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint32_t flags, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer);
+DECLVBGL(int)  VbglR0SfFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint32_t flags, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer);
 
-DECLVBGL(int)  VbglR0SfMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName, PVBSFMAP pMap);
-DECLVBGL(int)  VbglR0SfUnmapFolder(PVBSFCLIENT pClient, PVBSFMAP pMap);
-DECLVBGL(int)  VbglR0SfSetUtf8(PVBSFCLIENT pClient);
+DECLVBGL(int)  VbglR0SfMapFolder(PVBGLSFCLIENT pClient, PSHFLSTRING szFolderName, PVBGLSFMAP pMap);
+DECLVBGL(int)  VbglR0SfUnmapFolder(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap);
+DECLVBGL(int)  VbglR0SfSetUtf8(PVBGLSFCLIENT pClient);
 
-DECLVBGL(int)  VbglR0SfReadLink(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING ParsedPath, uint32_t pcbBuffer, uint8_t *pBuffer);
-DECLVBGL(int)  VbglR0SfSymlink(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath, PSHFLFSOBJINFO pBuffer);
-DECLVBGL(int)  VbglR0SfSetSymlinks(PVBSFCLIENT pClient);
+DECLVBGL(int)  VbglR0SfReadLink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING ParsedPath, uint32_t pcbBuffer, uint8_t *pBuffer);
+DECLVBGL(int)  VbglR0SfSymlink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath, PSHFLFSOBJINFO pBuffer);
+DECLVBGL(int)  VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient);
 
 #endif /* !___VBoxGuestLib_VBoxGuestR0LibSharedFolders_h */
 

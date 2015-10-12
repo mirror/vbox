@@ -69,7 +69,7 @@ DECLVBGL(void) VbglR0SfTerm(void)
     VbglTerminate();
 }
 
-DECLVBGL(int) VbglR0SfConnect(PVBSFCLIENT pClient)
+DECLVBGL(int) VbglR0SfConnect(PVBGLSFCLIENT pClient)
 {
     int rc;
     VBoxGuestHGCMConnectInfo data;
@@ -93,7 +93,7 @@ DECLVBGL(int) VbglR0SfConnect(PVBSFCLIENT pClient)
     return rc;
 }
 
-DECLVBGL(void) VbglR0SfDisconnect(PVBSFCLIENT pClient)
+DECLVBGL(void) VbglR0SfDisconnect(PVBGLSFCLIENT pClient)
 {
     int rc;
     VBoxGuestHGCMDisconnectInfo data;
@@ -112,7 +112,7 @@ DECLVBGL(void) VbglR0SfDisconnect(PVBSFCLIENT pClient)
     return;
 }
 
-DECLVBGL(int) VbglR0SfQueryMappings(PVBSFCLIENT pClient, SHFLMAPPING paMappings[], uint32_t *pcMappings)
+DECLVBGL(int) VbglR0SfQueryMappings(PVBGLSFCLIENT pClient, SHFLMAPPING paMappings[], uint32_t *pcMappings)
 {
     int rc;
     VBoxSFQueryMappings data;
@@ -140,7 +140,7 @@ DECLVBGL(int) VbglR0SfQueryMappings(PVBSFCLIENT pClient, SHFLMAPPING paMappings[
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfQueryMapName(PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRING *pString, uint32_t size)
+DECLVBGL(int) VbglR0SfQueryMapName(PVBGLSFCLIENT pClient, SHFLROOT root, SHFLSTRING *pString, uint32_t size)
 {
     int rc;
     VBoxSFQueryMapName data;
@@ -162,7 +162,7 @@ DECLVBGL(int) VbglR0SfQueryMapName(PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRIN
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName, PVBSFMAP pMap)
+DECLVBGL(int) VbglR0SfMapFolder(PVBGLSFCLIENT pClient, PSHFLSTRING szFolderName, PVBGLSFMAP pMap)
 {
     int rc;
     VBoxSFMapFolder data;
@@ -220,7 +220,7 @@ DECLVBGL(int) VbglR0SfMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName, P
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfUnmapFolder(PVBSFCLIENT pClient, PVBSFMAP pMap)
+DECLVBGL(int) VbglR0SfUnmapFolder(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap)
 {
     int rc;
     VBoxSFUnmapFolder data;
@@ -237,7 +237,7 @@ DECLVBGL(int) VbglR0SfUnmapFolder(PVBSFCLIENT pClient, PVBSFMAP pMap)
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfCreate(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pParsedPath, PSHFLCREATEPARMS pCreateParms)
+DECLVBGL(int) VbglR0SfCreate(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pParsedPath, PSHFLCREATEPARMS pCreateParms)
 {
     /** @todo copy buffers to physical or mapped memory. */
     int rc;
@@ -263,7 +263,7 @@ DECLVBGL(int) VbglR0SfCreate(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pPa
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfClose(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE Handle)
+DECLVBGL(int) VbglR0SfClose(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE Handle)
 {
     int rc;
     VBoxSFClose data;
@@ -283,7 +283,7 @@ DECLVBGL(int) VbglR0SfClose(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE Handl
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfRemove(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pParsedPath, uint32_t flags)
+DECLVBGL(int) VbglR0SfRemove(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pParsedPath, uint32_t flags)
 {
     int rc = VINF_SUCCESS;
 
@@ -308,7 +308,7 @@ DECLVBGL(int) VbglR0SfRemove(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pPa
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfRename(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pSrcPath, PSHFLSTRING pDestPath, uint32_t flags)
+DECLVBGL(int) VbglR0SfRename(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pSrcPath, PSHFLSTRING pDestPath, uint32_t flags)
 {
     int rc;
     VBoxSFRename data;
@@ -336,7 +336,7 @@ DECLVBGL(int) VbglR0SfRename(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pSr
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+DECLVBGL(int) VbglR0SfRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                            uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked)
 {
     int rc;
@@ -367,7 +367,7 @@ DECLVBGL(int) VbglR0SfRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfReadPageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer,
+DECLVBGL(int) VbglR0SfReadPageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer,
                                    uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages)
 {
     uint32_t            cbToRead  = *pcbBuffer;
@@ -413,7 +413,7 @@ DECLVBGL(int) VbglR0SfReadPageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDL
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+DECLVBGL(int) VbglR0SfWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                             uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked)
 {
     int rc;
@@ -444,7 +444,7 @@ DECLVBGL(int) VbglR0SfWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfWritePhysCont(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset,
+DECLVBGL(int) VbglR0SfWritePhysCont(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset,
                                     uint32_t *pcbBuffer, RTCCPHYS PhysBuffer)
 {
     uint32_t            cbToWrite = *pcbBuffer;
@@ -493,7 +493,7 @@ DECLVBGL(int) VbglR0SfWritePhysCont(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHAND
 
 }
 
-DECLVBGL(int) VbglR0SfWritePageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer,
+DECLVBGL(int) VbglR0SfWritePageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer,
                                     uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages)
 {
     uint32_t            cbToWrite = *pcbBuffer;
@@ -539,7 +539,7 @@ DECLVBGL(int) VbglR0SfWritePageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHAND
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfFlush(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile)
+DECLVBGL(int) VbglR0SfFlush(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile)
 {
     int rc;
     VBoxSFFlush data;
@@ -560,8 +560,8 @@ DECLVBGL(int) VbglR0SfFlush(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile
 }
 
 DECLVBGL(int) VbglR0SfDirInfo(
-    PVBSFCLIENT pClient,
-    PVBSFMAP pMap,
+    PVBGLSFCLIENT pClient,
+    PVBGLSFMAP pMap,
     SHFLHANDLE hFile,
     PSHFLSTRING ParsedPath,
     uint32_t flags,
@@ -606,7 +606,7 @@ DECLVBGL(int) VbglR0SfDirInfo(
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfFsInfo(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+DECLVBGL(int) VbglR0SfFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                              uint32_t flags, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer)
 {
     int rc;
@@ -637,7 +637,7 @@ DECLVBGL(int) VbglR0SfFsInfo(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFil
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfLock(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+DECLVBGL(int) VbglR0SfLock(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                            uint64_t offset, uint64_t cbSize, uint32_t fLock)
 {
     int rc;
@@ -665,7 +665,7 @@ DECLVBGL(int) VbglR0SfLock(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfSetUtf8(PVBSFCLIENT pClient)
+DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
 {
     int rc;
     VBoxGuestHGCMCallInfo callInfo;
@@ -678,7 +678,7 @@ DECLVBGL(int) VbglR0SfSetUtf8(PVBSFCLIENT pClient)
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfReadLink(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pParsedPath, uint32_t cbBuffer, uint8_t *pBuffer)
+DECLVBGL(int) VbglR0SfReadLink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pParsedPath, uint32_t cbBuffer, uint8_t *pBuffer)
 {
     int rc;
     VBoxSFReadLink data;
@@ -703,7 +703,7 @@ DECLVBGL(int) VbglR0SfReadLink(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING p
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfSymlink(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath,
+DECLVBGL(int) VbglR0SfSymlink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath,
                               PSHFLFSOBJINFO pBuffer)
 {
     int rc;
@@ -733,7 +733,7 @@ DECLVBGL(int) VbglR0SfSymlink(PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pN
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfSetSymlinks(PVBSFCLIENT pClient)
+DECLVBGL(int) VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient)
 {
     int rc;
     VBoxGuestHGCMCallInfo callInfo;
