@@ -1741,7 +1741,7 @@ void XmlMemParser::read(const void *pvBuf, size_t cbSize,
     doc.m->reset();
     const int options = XML_PARSE_NOBLANKS /* remove blank nodes */
                       | XML_PARSE_NONET    /* forbit any network access */
-#ifdef XML_PARSE_HUGE /* introduced in libxml2 2.7.0 */
+#if LIBXML_VERSION >= 20700
                       | XML_PARSE_HUGE     /* don't restrict the node depth
                                               to 256 (bad for snapshots!) */
 #endif
