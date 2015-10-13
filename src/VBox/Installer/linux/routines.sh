@@ -165,8 +165,11 @@ install_init_script()
     # Do not unconditionally silence the following "ln".
     test -L "/sbin/rc${name}" && rm "/sbin/rc${name}"
     ln -s "${script}" "/sbin/rc${name}"
-    test -x "`which systemctl 2>/dev/null`" &&
-        { systemd_wrap_init_script "$script" "$name"; return; }
+    if test -x "`which systemctl 2>/dev/null`"; then
+        if ! test -L /sbin/init || ls -l /sbin/init | grep -q systemd; then
+            { systemd_wrap_init_script "$script" "$name"; return; }
+        fi
+    fi
     if test -d /etc/rc.d/init.d; then
         cp "${script}" "/etc/rc.d/init.d/${name}" &&
             chmod 755 "/etc/rc.d/init.d/${name}"
@@ -193,6 +196,16 @@ remove_init_script()
     rm -f "/etc/init.d/$name"
 }
 
+## Did we install a systemd service?
+systemd_service_installed()
+{
+    ## Name of service to test.
+    name="${1}"
+
+    test -f /lib/systemd/system/"${name}".service ||
+        test -f /usr/lib/systemd/system/"${name}".service
+}
+
 ## Perform an action on a service
 do_sysvinit_action()
 {
@@ -204,7 +217,7 @@ do_sysvinit_action()
 
     test ! -z "${name}" && test ! -z "${action}" ||
         { echo "${self}: missing argument" >&2; return 1; }
-    if test -x "`which systemctl 2>/dev/null`"; then
+    if systemd_service_installed "${name}"; then
         systemctl -q ${action} "${name}"
     elif test -x "`which service 2>/dev/null`"; then
         service "${name}" ${action}
@@ -265,7 +278,7 @@ addrunlevel()
 
     test -n "${name}" || \
         { echo "${self}: missing argument" >&2; return 1; }
-    test -x "`which systemctl 2>/dev/null`" && \
+    systemd_service_installed "${name}" && \
         { systemctl -q enable "${name}"; return; }
     if test -x "/etc/rc.d/init.d/${name}"; then
         init_d_path=/etc/rc.d
