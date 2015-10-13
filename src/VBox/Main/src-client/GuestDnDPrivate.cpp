@@ -193,7 +193,7 @@ GuestDnDResponse::GuestDnDResponse(const ComObjPtr<Guest>& pGuest)
     : m_EventSem(NIL_RTSEMEVENT)
     , m_defAction(0)
     , m_allActions(0)
-    , m_parent(pGuest)
+    , m_pParent(pGuest)
 {
     int rc = RTSemEventCreate(&m_EventSem);
     if (RT_FAILURE(rc))
@@ -225,14 +225,14 @@ void GuestDnDResponse::reset(void)
 
 HRESULT GuestDnDResponse::resetProgress(const ComObjPtr<Guest>& pParent)
 {
-    m_progress.setNull();
+    m_pProgress.setNull();
 
-    HRESULT hr = m_progress.createObject();
+    HRESULT hr = m_pProgress.createObject();
     if (SUCCEEDED(hr))
     {
-        hr = m_progress->init(static_cast<IGuest *>(pParent),
-                              Bstr(pParent->tr("Dropping data")).raw(),
-                              TRUE /* aCancelable */);
+        hr = m_pProgress->init(static_cast<IGuest *>(pParent),
+                               Bstr(pParent->tr("Dropping data")).raw(),
+                               TRUE /* aCancelable */);
     }
 
     return hr;
@@ -241,9 +241,9 @@ HRESULT GuestDnDResponse::resetProgress(const ComObjPtr<Guest>& pParent)
 bool GuestDnDResponse::isProgressCanceled(void) const
 {
     BOOL fCanceled;
-    if (!m_progress.isNull())
+    if (!m_pProgress.isNull())
     {
-        HRESULT hr = m_progress->COMGETTER(Canceled)(&fCanceled);
+        HRESULT hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
         AssertComRC(hr);
     }
     else
@@ -284,14 +284,14 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
                  uStatus, uPercentage, rcOp, strMsg.c_str()));
 
     int rc = VINF_SUCCESS;
-    if (!m_progress.isNull())
+    if (!m_pProgress.isNull())
     {
         BOOL fCompleted;
-        HRESULT hr = m_progress->COMGETTER(Completed)(&fCompleted);
+        HRESULT hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
         AssertComRC(hr);
 
         BOOL fCanceled;
-        hr = m_progress->COMGETTER(Canceled)(&fCanceled);
+        hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
         AssertComRC(hr);
 
         LogFlowFunc(("Current: fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
@@ -302,16 +302,16 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
             {
                 case DragAndDropSvc::DND_PROGRESS_ERROR:
                 {
-                    hr = m_progress->i_notifyComplete(VBOX_E_IPRT_ERROR,
-                                                      COM_IIDOF(IGuest),
-                                                      m_parent->getComponentName(), strMsg.c_str());
+                    hr = m_pProgress->i_notifyComplete(VBOX_E_IPRT_ERROR,
+                                                       COM_IIDOF(IGuest),
+                                                       m_pParent->getComponentName(), strMsg.c_str());
                     reset();
                     break;
                 }
 
                 case DragAndDropSvc::DND_PROGRESS_CANCELLED:
                 {
-                    hr = m_progress->i_notifyComplete(S_OK);
+                    hr = m_pProgress->i_notifyComplete(S_OK);
                     AssertComRC(hr);
 
                     reset();
@@ -323,12 +323,12 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
                 {
                     if (!fCanceled)
                     {
-                        hr = m_progress->SetCurrentOperationProgress(uPercentage);
+                        hr = m_pProgress->SetCurrentOperationProgress(uPercentage);
                         AssertComRC(hr);
                         if (   uStatus     == DragAndDropSvc::DND_PROGRESS_COMPLETE
                             || uPercentage >= 100)
                         {
-                            hr = m_progress->i_notifyComplete(S_OK);
+                            hr = m_pProgress->i_notifyComplete(S_OK);
                             AssertComRC(hr);
                         }
                     }
@@ -340,9 +340,9 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
             }
         }
 
-        hr = m_progress->COMGETTER(Completed)(&fCompleted);
+        hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
         AssertComRC(hr);
-        hr = m_progress->COMGETTER(Canceled)(&fCanceled);
+        hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
         AssertComRC(hr);
 
         LogFlowFunc(("New: fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
@@ -381,7 +381,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_REQ_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             if (   pCBData->cbFormat == 0
-                || pCBData->cbFormat > _64K)
+                || pCBData->cbFormat > _64K) /** @todo Make this configurable? */
             {
                 rc = VERR_INVALID_PARAMETER;
             }
@@ -469,7 +469,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
 
 HRESULT GuestDnDResponse::queryProgressTo(IProgress **ppProgress)
 {
-    return m_progress.queryInterfaceTo(ppProgress);
+    return m_pProgress.queryInterfaceTo(ppProgress);
 }
 
 int GuestDnDResponse::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */) const
@@ -737,12 +737,11 @@ std::vector<DnDAction_T> GuestDnD::toMainActions(uint32_t uActions)
 
 GuestDnDBase::GuestDnDBase(void)
 {
-    mDataBase.mfTransferIsPending = false;
-
-    /*
-     * Initialize public attributes.
-     */
+    /* Initialize public attributes. */
     m_lstFmtSupported = GuestDnDInst()->defaultFormats();
+
+    /* Initialzie private stuff. */
+    mDataBase.m_cTransfersPending = 0;
 }
 
 HRESULT GuestDnDBase::i_isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported)
@@ -795,77 +794,87 @@ HRESULT GuestDnDBase::i_getProtocolVersion(ULONG *puVersion)
     return RT_SUCCESS(rc) ? S_OK : E_FAIL;
 }
 
-int GuestDnDBase::getProtocolVersion(uint32_t *puVersion)
+int GuestDnDBase::getProtocolVersion(uint32_t *puProto)
 {
-    AssertPtrReturn(puVersion, VERR_INVALID_POINTER);
+    AssertPtrReturn(puProto, VERR_INVALID_POINTER);
 
     int rc;
 
-    uint32_t uVer, uVerAdditions = 0;
+    uint32_t uProto        = 1; /* Use protocol v1 as a fallback. */
+    uint32_t uVerAdditions = 0;
     if (   m_pGuest
         && (uVerAdditions = m_pGuest->i_getAdditionsVersion()) > 0)
     {
-        uint32_t uVBoxMajor = VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions);
-        uint32_t uVBoxMinor = VBOX_FULL_VERSION_GET_MINOR(uVerAdditions);
-
-#if 0 /*def DEBUG_andy*/
+#if 1
         /* Hardcode the to-used protocol version; nice for testing side effects. */
-        uVer = 2;
+        uProto = 3;
 #else
-        uVer = (  uVBoxMajor  >= 5)
-             ? 2  /* VBox 5.0 and up: Protocol version 2. */
-             : 1; /* VBox <= 4.3:     Protocol version 1. */
-        /* Build revision is ignored. */
+        if (uVerAdditions >= VBOX_FULL_VERSION_MAKE(5, 0, 0))
+        {
+            if (uVerAdditions >= VBOX_FULL_VERSION_MAKE(5, 0, 8))
+            {
+                uProto = 3; /* Since VBox 5.0.8: Protocol v3. */
+            }
+            else
+                uProto = 2; /* VBox 5.0.0 - 5.0.6: Protocol v2. */
+        }
 #endif
-
-        LogFlowThisFunc(("uVerAdditions=%RU32 (%RU32.%RU32)\n", uVerAdditions, uVBoxMajor, uVBoxMinor));
+        LogRel3(("DnD: uVerAdditions=%RU32 (%RU32.%RU32.%RU32)\n",
+                 uVerAdditions, VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions),
+                                VBOX_FULL_VERSION_GET_BUILD(uVerAdditions)));
         rc = VINF_SUCCESS;
     }
     else
     {
-        uVer = 1; /* Fallback. */
+        uProto = 1; /* Fallback. */
         rc = VERR_NOT_FOUND;
     }
 
-    LogFlowThisFunc(("uVer=%RU32, uVerAdditions=%RU32, rc=%Rrc\n", uVer, uVerAdditions, rc));
+    LogRel3(("DnD: uProto=%RU32, rc=%Rrc\n", uProto, rc));
 
-    *puVersion = uVer;
+    *puProto = uProto;
     return rc;
 }
 
 int GuestDnDBase::msgQueueAdd(GuestDnDMsg *pMsg)
 {
-    mDataBase.mListOutgoing.push_back(pMsg);
+    mDataBase.m_lstMsgOut.push_back(pMsg);
     return VINF_SUCCESS;
 }
 
 GuestDnDMsg *GuestDnDBase::msgQueueGetNext(void)
 {
-    if (mDataBase.mListOutgoing.empty())
+    if (mDataBase.m_lstMsgOut.empty())
         return NULL;
-    return mDataBase.mListOutgoing.front();
+    return mDataBase.m_lstMsgOut.front();
 }
 
 void GuestDnDBase::msgQueueRemoveNext(void)
 {
-    if (!mDataBase.mListOutgoing.empty())
+    if (!mDataBase.m_lstMsgOut.empty())
     {
-        GuestDnDMsg *pMsg = mDataBase.mListOutgoing.front();
+        GuestDnDMsg *pMsg = mDataBase.m_lstMsgOut.front();
         if (pMsg)
             delete pMsg;
-        mDataBase.mListOutgoing.pop_front();
+        mDataBase.m_lstMsgOut.pop_front();
     }
 }
 
 void GuestDnDBase::msgQueueClear(void)
 {
-    GuestDnDMsgList::iterator itMsg = mDataBase.mListOutgoing.begin();
-    while (itMsg != mDataBase.mListOutgoing.end())
+    LogFlowFunc(("cMsg=%zu\n", mDataBase.m_lstMsgOut.size()));
+
+    GuestDnDMsgList::iterator itMsg = mDataBase.m_lstMsgOut.begin();
+    while (itMsg != mDataBase.m_lstMsgOut.end())
     {
-        delete *itMsg;
+        GuestDnDMsg *pMsg = *itMsg;
+        if (pMsg)
+            delete pMsg;
+
+        itMsg++;
     }
 
-    mDataBase.mListOutgoing.clear();
+    mDataBase.m_lstMsgOut.clear();
 }
 
 int GuestDnDBase::sendCancel(void)
@@ -887,9 +896,36 @@ int GuestDnDBase::sendCancel(void)
     return rc;
 }
 
-/** @todo GuestDnDResponse *pResp needs to go. */
-int GuestDnDBase::waitForEvent(RTMSINTERVAL msTimeout, GuestDnDCallbackEvent &Event, GuestDnDResponse *pResp)
+int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp,
+                                 uint32_t cbDataAdd /* = 0 */)
 {
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    AssertPtrReturn(pResp, VERR_INVALID_POINTER);
+    /* cbDataAdd is optional. */
+
+    LogFlowFunc(("cbTotal=%RU64, cbProcessed=%RU64, cbRemaining=%RU64, cbDataAdd=%RU32\n",
+                 pData->getProcessed(), pData->getProcessed(), pData->getRemaining(), cbDataAdd));
+
+    if (!pResp)
+        return VINF_SUCCESS;
+
+    if (cbDataAdd)
+        pData->addProcessed(cbDataAdd);
+
+    int rc = pResp->setProgress(pData->getPercentComplete(),
+                                  pData->isComplete()
+                                ? DND_PROGRESS_COMPLETE
+                                : DND_PROGRESS_RUNNING);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/** @todo GuestDnDResponse *pResp needs to go. */
+int GuestDnDBase::waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDResponse *pResp, RTMSINTERVAL msTimeout)
+{
+    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
+    AssertPtrReturn(pResp, VERR_INVALID_POINTER);
+
     int rc;
 
     uint64_t tsStart = RTTimeMilliTS();
@@ -900,10 +936,10 @@ int GuestDnDBase::waitForEvent(RTMSINTERVAL msTimeout, GuestDnDCallbackEvent &Ev
          * wait event. As we don't want to block if the guest does not
          * respond, do busy waiting here.
          */
-        rc = Event.Wait(500 /* ms */);
+        rc = pEvent->Wait(500 /* ms */);
         if (RT_SUCCESS(rc))
         {
-            rc = Event.Result();
+            rc = pEvent->Result();
             LogFlowFunc(("Callback done, result is %Rrc\n", rc));
             break;
         }

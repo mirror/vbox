@@ -23,6 +23,36 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+/**
+ * Protocol handling and notes:
+ *     All client/server components should be backwards compatible.
+ *
+ ******************************************************************************
+ *
+ * Protocol changelog:
+ *
+ *     Protocol v1 (VBox < 5.0):
+ *         - Initial implementation which only implemented host to guest transfers.
+ *         - For file transfers all file information such as the file name and file size were
+ *           transferred with every file data chunk being sent.
+ *
+ *     Protocol v2 (VBox 5.0):
+ *         - Added support for guest to host transfers.
+ *         - Added protocol version support through VBOXDNDCONNECTMSG. The host takes the installed
+ *           Guest Additions version as indicator which protocol to use for communicating with the guest.
+ *           The guest itself uses VBOXDNDCONNECTMSG to report its supported protocol version to the DnD service.
+ *
+ *     Protocol v3 (VBox 5.0+):
+ *         - Added VBOXDNDSNDDATAHDR and VBOXDNDCBSNDDATAHDRDATA to support (simple) accounting of objects
+ *           being transferred, along with supplying separate meta data size (which is part of the total size being sent).
+ *         - Added new HOST_DND_HG_SND_DATA_HDR + GUEST_DND_GH_SND_DATA_HDR commands which now allow specifying an optional
+ *           compression type and defining a checksum for the overall data transfer.
+ *         - Enhannced VBOXDNDGHSENDDATAMSG to support (rolling) checksums for the supplied data block.
+ *         - VBOXDNDHGSENDFILEDATAMSG and VBOXDNDGHSENDFILEDATAMSG are now sharing the same HGCM mesasge.
+ *         - VBOXDNDHGSENDDATAMSG and VBOXDNDGHSENDDATAMSG can now contain an optional checksum for the current data block.
+ *         - Removed unused HOST_DND_GH_RECV_DIR, HOST_DND_GH_RECV_FILE_DATA and HOST_DND_GH_RECV_FILE_HDR commands.
+ */
+
 #ifndef ___VBox_HostService_DragAndDropSvc_h
 #define ___VBox_HostService_DragAndDropSvc_h
 
@@ -105,13 +135,22 @@ enum eHostFn
     HOST_DND_HG_EVT_DROPPED            = 203,
     /** The host requested to cancel the current DnD operation. */
     HOST_DND_HG_EVT_CANCEL             = 204,
-    /** Gets the actual MIME data, based on
-     *  the format(s) specified by HOST_DND_HG_EVT_ENTER. If the guest
-     *  supplied buffer too small to send the actual data, the host
-     *  will send a HOST_DND_HG_SND_MORE_DATA message as follow-up. */
+    /** Sends the data header at the beginning of a (new)
+     *  data transfer. */
+    HOST_DND_HG_SND_DATA_HDR           = 210,
+    /**
+     * Sends the actual meta data, based on
+     * the format(s) specified by HOST_DND_HG_EVT_ENTER.
+     *
+     * Protocol v1/v2: If the guest supplied buffer too small to send
+     *                 the actual data, the host will send a HOST_DND_HG_SND_MORE_DATA
+     *                 message as follow-up.
+     * Protocol v3+:   The incoming meta data size is specified upfront in the
+     *                 HOST_DND_HG_SND_DATA_HDR message and must be handled accordingly.
+     */
     HOST_DND_HG_SND_DATA               = 205,
-    /** Sent when the actual buffer for HOST_DND_HG_SND_DATA
-     *  was too small, issued by the DnD host service. */
+    /** Sent when the actual buffer for HOST_DND_HG_SND_DATA was too small. */
+    /** @todo Deprecated function; do not use anymore. */
     HOST_DND_HG_SND_MORE_DATA          = 206,
     /** Directory entry to be sent to the guest. */
     HOST_DND_HG_SND_DIR                = 207,
@@ -132,13 +171,6 @@ enum eHostFn
      *  has been started and that the host wants the data in
      *  a specific MIME type. */
     HOST_DND_GH_EVT_DROPPED            = 601,
-    /** Creates a directory on the guest. */
-    HOST_DND_GH_RECV_DIR               = 650,
-    /** Retrieves file data from the guest. */
-    HOST_DND_GH_RECV_FILE_DATA         = 670,
-    /** Retrieves a file header from the guest.
-     *  Note: Only for protocol version 2 and up (>= VBox 5.0). */
-    HOST_DND_GH_RECV_FILE_HDR          = 671,
     /** Blow the type up to 32-bit. */
     HOST_DND_32BIT_HACK                = 0x7fffffff
 };
@@ -184,6 +216,9 @@ enum eGuestFn
      * dragged over to the host.
      */
     GUEST_DND_GH_ACK_PENDING           = 500,
+    /** Sends the data header at the beginning of a (new)
+     *  data transfer. */
+    GUEST_DND_GH_SND_DATA_HDR          = 503,
     /**
      * Sends data of the requested format to the host. There can
      * be more than one message if the actual data does not fit
@@ -226,18 +261,20 @@ typedef enum DNDPROGRESS
  * Host events
  */
 
+/**
+ * Action message for telling the guest about the currently ongoing
+ * drag and drop action when entering the guest's area, moving around in it
+ * and dropping content into it from the host.
+ *
+ * Used by:
+ * HOST_DND_HG_EVT_ENTER
+ * HOST_DND_HG_EVT_MOVE
+ * HOST_DND_HG_EVT_DROPPED
+ */
 typedef struct VBOXDNDHGACTIONMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /**
-     * HG Action event.
-     *
-     * Used by:
-     * HOST_DND_HG_EVT_ENTER
-     * HOST_DND_HG_EVT_MOVE
-     * HOST_DND_HG_EVT_DROPPED
-     */
     HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
     HGCMFunctionParameter uX;           /* OUT uint32_t */
     HGCMFunctionParameter uY;           /* OUT uint32_t */
@@ -247,82 +284,154 @@ typedef struct VBOXDNDHGACTIONMSG
     HGCMFunctionParameter cFormats;     /* OUT uint32_t */
 } VBOXDNDHGACTIONMSG;
 
+/**
+ * Tells the guest that the host has left its drag and drop area on the guest.
+ *
+ * Used by:
+ * HOST_DND_HG_EVT_LEAVE
+ */
 typedef struct VBOXDNDHGLEAVEMSG
 {
     VBoxGuestHGCMCallInfo hdr;
-    /**
-     * HG Leave event.
-     *
-     * Used by:
-     * HOST_DND_HG_EVT_LEAVE
-     */
 } VBOXDNDHGLEAVEMSG;
 
+
+/**
+ * Tells the guest that the host wants to cancel the current drag and drop operation.
+ *
+ * Used by:
+ * HOST_DND_HG_EVT_CANCEL
+ */
 typedef struct VBOXDNDHGCANCELMSG
 {
     VBoxGuestHGCMCallInfo hdr;
-
-    /**
-     * HG Cancel return event.
-     *
-     * Used by:
-     * HOST_DND_HG_EVT_CANCEL
-     */
 } VBOXDNDHGCANCELMSG;
 
+/**
+ * Sends the header of an incoming (meta) data block.
+ *
+ * Used by:
+ * HOST_DND_HG_SND_DATA_HDR
+ * GUEST_DND_GH_SND_DATA_HDR
+ *
+ * New since protocol v3.
+ */
+typedef struct VBOXDNDHGSENDDATAHDRMSG
+{
+    VBoxGuestHGCMCallInfo hdr;
+
+    /** Context ID. Unused at the moment. */
+    HGCMFunctionParameter uContext;        /* OUT uint32_t */
+    /** Data transfer flags. Not yet used and must be 0. */
+    HGCMFunctionParameter uFlags;          /* OUT uint32_t */
+    /** Screen ID where the data originates from. */
+    HGCMFunctionParameter uScreenId;       /* OUT uint32_t */
+    /** Total size (in bytes) to transfer. */
+    HGCMFunctionParameter cbTotal;         /* OUT uint64_t */
+    /**
+     * Total meta data size (in bytes) to transfer.
+     * This size also is part of cbTotal already, so:
+     *
+     * cbTotal = cbMeta + additional size for files etc.
+     */
+    HGCMFunctionParameter cbMeta;          /* OUT uint64_t */
+    /** Meta data format. */
+    HGCMFunctionParameter pvMetaFmt;       /* OUT ptr */
+    /** Size (in bytes) of meta data format. */
+    HGCMFunctionParameter cbMetaFmt;       /* OUT uint32_t */
+    /* Number of objects (files/directories) to transfer. */
+    HGCMFunctionParameter cObjects;        /* OUT uint64_t */
+    /** Compression type. */
+    HGCMFunctionParameter enmCompression;  /* OUT uint32_t */
+    /** Checksum type. */
+    HGCMFunctionParameter enmChecksumType; /* OUT uint32_t */
+    /** Checksum buffer for the entire data to be transferred. */
+    HGCMFunctionParameter pvChecksum;      /* OUT ptr */
+    /** Size (in bytes) of checksum. */
+    HGCMFunctionParameter cbChecksum;      /* OUT uint32_t */
+} VBOXDNDHGSENDDATAHDRMSG;
+
+/**
+ * Sends a (meta) data block to the guest.
+ *
+ * Used by:
+ * HOST_DND_HG_SND_DATA
+ */
 typedef struct VBOXDNDHGSENDDATAMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /**
-     * HG Send Data event.
-     *
-     * Used by:
-     * HOST_DND_HG_SND_DATA
-     */
-    HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
-    HGCMFunctionParameter pvFormat;     /* OUT ptr */
-    HGCMFunctionParameter cFormat;      /* OUT uint32_t */
-    HGCMFunctionParameter pvData;       /* OUT ptr */
-    HGCMFunctionParameter cbData;       /* OUT uint32_t */
+    union
+    {
+        struct
+        {
+            HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
+            HGCMFunctionParameter pvFormat;     /* OUT ptr */
+            HGCMFunctionParameter cbFormat;     /* OUT uint32_t */
+            HGCMFunctionParameter pvData;       /* OUT ptr */
+            HGCMFunctionParameter cbData;       /* OUT uint32_t */
+        } v1;
+        /* No changes in v2. */
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            /** Data block to send. */
+            HGCMFunctionParameter pvData;       /* OUT ptr */
+            /** Size (in bytes) of data block to send. */
+            HGCMFunctionParameter cbData;       /* OUT uint32_t */
+            /** Checksum of data block, based on the checksum
+             *  type in the data header. Optional. */
+            HGCMFunctionParameter pvChecksum;   /* OUT ptr */
+            /** Size (in bytes) of checksum to send. */
+            HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDHGSENDDATAMSG;
 
+/**
+ * Sends more (meta) data in case the data didn't fit
+ * into the current XXX_DND_HG_SND_DATA message.
+ *
+ ** @todo Deprecated since protocol v3. Don't use! Will be removed.
+ *
+ * Used by:
+ * HOST_DND_HG_SND_MORE_DATA
+ */
 typedef struct VBOXDNDHGSENDMOREDATAMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /**
-     * HG Send More Data event.
-     *
-     * Used by:
-     * HOST_DND_HG_SND_MORE_DATA
-     */
     HGCMFunctionParameter pvData;       /* OUT ptr */
     HGCMFunctionParameter cbData;       /* OUT uint32_t */
 } VBOXDNDHGSENDMOREDATAMSG;
 
+/**
+ * Directory entry event.
+ *
+ * Used by:
+ * HOST_DND_HG_SND_DIR
+ * GUEST_DND_GH_SND_DIR
+ */
 typedef struct VBOXDNDHGSENDDIRMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /**
-     * HG Directory event.
-     *
-     * Used by:
-     * HOST_DND_HG_SND_DIR
-     */
+    /** Directory name. */
     HGCMFunctionParameter pvName;       /* OUT ptr */
+    /** Size (in bytes) of directory name. */
     HGCMFunctionParameter cbName;       /* OUT uint32_t */
+    /** Directory mode. */
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
 } VBOXDNDHGSENDDIRMSG;
 
 /**
- * File header event.
+ * File header message, marking the start of transferring a new file.
  * Note: Only for protocol version 2 and up.
  *
  * Used by:
  * HOST_DND_HG_SND_FILE_HDR
- * HOST_DND_GH_SND_FILE_HDR
+ * GUEST_DND_GH_SND_FILE_HDR
  */
 typedef struct VBOXDNDHGSENDFILEHDRMSG
 {
@@ -340,7 +449,6 @@ typedef struct VBOXDNDHGSENDFILEHDRMSG
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
     /** Total size (in bytes). */
     HGCMFunctionParameter cbTotal;      /* OUT uint64_t */
-
 } VBOXDNDHGSENDFILEHDRMSG;
 
 /**
@@ -359,10 +467,15 @@ typedef struct VBOXDNDHGSENDFILEDATAMSG
          *       every time a file data chunk is being sent. */
         struct
         {
+            /** File name. */
             HGCMFunctionParameter pvName;       /* OUT ptr */
+            /** Size (in bytes) of file name. */
             HGCMFunctionParameter cbName;       /* OUT uint32_t */
+            /** Current data chunk. */
             HGCMFunctionParameter pvData;       /* OUT ptr */
+            /** Size (in bytes) of current data chunk. */
             HGCMFunctionParameter cbData;       /* OUT uint32_t */
+            /** File mode. */
             HGCMFunctionParameter fMode;        /* OUT uint32_t */
         } v1;
         struct
@@ -371,39 +484,59 @@ typedef struct VBOXDNDHGSENDFILEDATAMSG
             /** Note: cbName is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
             /** Context ID. Unused at the moment. */
             HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            /** Current data chunk. */
             HGCMFunctionParameter pvData;       /* OUT ptr */
+            /** Size (in bytes) of current data chunk. */
             HGCMFunctionParameter cbData;       /* OUT uint32_t */
             /** Note: fMode is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
         } v2;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            /** Current data chunk. */
+            HGCMFunctionParameter pvData;       /* OUT ptr */
+            /** Size (in bytes) of current data chunk. */
+            HGCMFunctionParameter cbData;       /* OUT uint32_t */
+            /** Checksum of data block, based on the checksum
+             *  type in the data header. Optional. */
+            HGCMFunctionParameter pvChecksum;   /* OUT ptr */
+            /** Size (in bytes) of curren data chunk checksum. */
+            HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
+        } v3;
     } u;
-
 } VBOXDNDHGSENDFILEDATAMSG;
 
+/**
+ * Asks the guest if a guest->host DnD operation is in progress.
+ *
+ * Used by:
+ * HOST_DND_GH_REQ_PENDING
+ */
 typedef struct VBOXDNDGHREQPENDINGMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /**
-     * GH Request Pending event.
-     *
-     * Used by:
-     * HOST_DND_GH_REQ_PENDING
-     */
+    /** Screen ID. */
     HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
 } VBOXDNDGHREQPENDINGMSG;
 
+/**
+ * Tells the guest that the host has dropped the ongoing guest->host
+ * DnD operation on a valid target on the host.
+ *
+ * Used by:
+ * HOST_DND_GH_EVT_DROPPED
+ */
 typedef struct VBOXDNDGHDROPPEDMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /**
-     * GH Dropped event.
-     *
-     * Used by:
-     * HOST_DND_GH_EVT_DROPPED
-     */
+    /** Requested format for sending the data. */
     HGCMFunctionParameter pvFormat;     /* OUT ptr */
-    HGCMFunctionParameter cFormat;      /* OUT uint32_t */
+    /** Size (in bytes) of requested format. */
+    HGCMFunctionParameter cbFormat;     /* OUT uint32_t */
+    /** Drop action peformed on the host. */
     HGCMFunctionParameter uAction;      /* OUT uint32_t */
 } VBOXDNDGHDROPPEDMSG;
 
@@ -422,17 +555,17 @@ typedef struct VBOXDNDNEXTMSGMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    HGCMFunctionParameter msg;          /* OUT uint32_t */
+    /** Message ID. */
+    HGCMFunctionParameter uMsg;      /* OUT uint32_t */
     /** Number of parameters the message needs. */
-    HGCMFunctionParameter num_parms;    /* OUT uint32_t */
+    HGCMFunctionParameter cParms;    /* OUT uint32_t */
     /** Whether or not to block (wait) for a
      *  new message to arrive. */
-    HGCMFunctionParameter block;        /* OUT uint32_t */
-
+    HGCMFunctionParameter fBlock;    /* OUT uint32_t */
 } VBOXDNDNEXTMSGMSG;
 
 /**
- * Connection request. Used to tell the DnD protocol
+ * Guest connection request. Used to tell the DnD protocol
  * version to the (host) service.
  *
  * Used by:
@@ -446,7 +579,6 @@ typedef struct VBOXDNDCONNECTMSG
     HGCMFunctionParameter uProtocol;     /* OUT uint32_t */
     /** Connection flags. Optional. */
     HGCMFunctionParameter uFlags;        /* OUT uint32_t */
-
 } VBOXDNDCONNECTMSG;
 
 /**
@@ -485,7 +617,8 @@ typedef struct VBOXDNDHGEVTPROGRESSMSG
 } VBOXDNDHGEVTPROGRESSMSG;
 
 /**
- * GH Acknowledge Pending event.
+ * Acknowledges a pending drag and drop event
+ * to the host.
  *
  * Used by:
  * GUEST_DND_GH_ACK_PENDING
@@ -500,7 +633,18 @@ typedef struct VBOXDNDGHACKPENDINGMSG
 } VBOXDNDGHACKPENDINGMSG;
 
 /**
- * GH Send Data event.
+ * Sends the header of an incoming data block
+ * to the host.
+ *
+ * Used by:
+ * GUEST_DND_GH_SND_DATA_HDR
+ *
+ * New since protocol v3.
+ */
+typedef struct VBOXDNDHGSENDDATAHDRMSG VBOXDNDGHSENDDATAHDRMSG;
+
+/**
+ * Sends a (meta) data block to the host.
  *
  * Used by:
  * GUEST_DND_GH_SND_DATA
@@ -509,75 +653,60 @@ typedef struct VBOXDNDGHSENDDATAMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    HGCMFunctionParameter pvData;       /* OUT ptr */
-    /** Total bytes to send. This can be more than
-     *  the data block specified in pvData above, e.g.
-     *  when sending over file objects afterwards. */
-    HGCMFunctionParameter cbTotalBytes; /* OUT uint32_t */
+    union
+    {
+        struct
+        {
+            HGCMFunctionParameter pvData;       /* OUT ptr */
+            /** Total bytes to send. This can be more than
+             * the data block specified in pvData above, e.g.
+             * when sending over file objects afterwards. */
+            HGCMFunctionParameter cbTotalBytes; /* OUT uint32_t */
+        } v1;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            /** Data block to send. */
+            HGCMFunctionParameter pvData;       /* OUT ptr */
+            /** Size (in bytes) of data block to send. */
+            HGCMFunctionParameter cbData;       /* OUT uint32_t */
+            /** (Rolling) Checksum, based on checksum type in data header. */
+            HGCMFunctionParameter pvChecksum;   /* OUT ptr */
+            /** Size (in bytes) of checksum. */
+            HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDGHSENDDATAMSG;
 
 /**
- * GH Directory event.
+ * Sends a directory entry to the host.
  *
  * Used by:
  * GUEST_DND_GH_SND_DIR
  */
-typedef struct VBOXDNDGHSENDDIRMSG
-{
-    VBoxGuestHGCMCallInfo hdr;
-
-    HGCMFunctionParameter pvName;       /* OUT ptr */
-    HGCMFunctionParameter cbName;       /* OUT uint32_t */
-    HGCMFunctionParameter fMode;        /* OUT uint32_t */
-} VBOXDNDGHSENDDIRMSG;
+typedef struct VBOXDNDHGSENDDIRMSG VBOXDNDGHSENDDIRMSG;
 
 /**
- * GH File header event.
- * Note: Only for protocol version 2 and up.
+ * Sends a file header to the host.
  *
  * Used by:
- * HOST_DND_GH_SND_FILE_HDR
+ * GUEST_DND_GH_SND_FILE_HDR
+ *
+ * New since protocol v2.
  */
 typedef struct VBOXDNDHGSENDFILEHDRMSG VBOXDNDGHSENDFILEHDRMSG;
 
 /**
- * GH File data event.
+ * Sends file data to the host.
  *
  * Used by:
- * GUEST_DND_HG_SND_FILE_DATA
+ * GUEST_DND_GH_SND_FILE_DATA
  */
-typedef struct VBOXDNDGHSENDFILEDATAMSG
-{
-    VBoxGuestHGCMCallInfo hdr;
-
-    union
-    {
-        /* Note: Protocol v1 sends the file name + file mode
-         *       every time a file data chunk is being sent. */
-        struct
-        {
-            HGCMFunctionParameter pvName;   /* OUT ptr */
-            HGCMFunctionParameter cbName;   /* OUT uint32_t */
-            HGCMFunctionParameter fMode;    /* OUT uint32_t */
-            HGCMFunctionParameter pvData;   /* OUT ptr */
-            HGCMFunctionParameter cbData;   /* OUT uint32_t */
-        } v1;
-        struct
-        {
-            /** Note: pvName is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
-            /** Note: cbName is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
-            /** Context ID. Unused at the moment. */
-            HGCMFunctionParameter uContext; /* OUT uint32_t */
-            HGCMFunctionParameter pvData;   /* OUT ptr */
-            HGCMFunctionParameter cbData;   /* OUT uint32_t */
-            /** Note: fMode is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
-        } v2;
-    } u;
-
-} VBOXDNDGHSENDFILEDATAMSG;
+typedef struct VBOXDNDHGSENDFILEDATAMSG VBOXDNDGHSENDFILEDATAMSG;
 
 /**
- * GH Error event.
+ * Sends a guest error event to the host.
  *
  * Used by:
  * GUEST_DND_GH_EVT_ERROR
@@ -603,6 +732,7 @@ enum
     CB_MAGIC_DND_HG_EVT_PROGRESS           = 0x8c8a6956,
     CB_MAGIC_DND_GH_ACK_PENDING            = 0xbe975a14,
     CB_MAGIC_DND_GH_SND_DATA               = 0x4eb61bff,
+    CB_MAGIC_DND_GH_SND_DATA_HDR           = 0x4631ee4f,
     CB_MAGIC_DND_GH_SND_DIR                = 0x411ca754,
     CB_MAGIC_DND_GH_SND_FILE_HDR           = 0x65e35eaf,
     CB_MAGIC_DND_GH_SND_FILE_DATA          = 0x19840804,
@@ -668,27 +798,99 @@ typedef struct VBOXDNDCBGHACKPENDINGDATA
     uint32_t                    cbFormat;
 } VBOXDNDCBGHACKPENDINGDATA, *PVBOXDNDCBGHACKPENDINGDATA;
 
+/**
+ * Data header.
+ * New since protocol v3.
+ */
+typedef struct VBOXDNDDATAHDR
+{
+    /** Data transfer flags. Not yet used and must be 0. */
+    uint32_t                    uFlags;
+    /** Screen ID where the data originates from. */
+    uint32_t                    uScreenId;
+    /** Total size (in bytes) to transfer. */
+    uint64_t                    cbTotal;
+    /** Meta data size (in bytes) to transfer.
+     *  This size also is part of cbTotal already. */
+    uint32_t                    cbMeta;
+    /** Meta format buffer. */
+    void                       *pvMetaFmt;
+    /** Size (in bytes) of meta format buffer. */
+    uint32_t                    cbMetaFmt;
+    /** Number of objects (files/directories) to transfer. */
+    uint64_t                    cObjects;
+    /** Compression type. Currently unused, so specify 0.
+     **@todo Add IPRT compression type enumeration as soon as it's available. */
+    uint32_t                    enmCompression;
+    /** Checksum type. Currently unused, so specify RTDIGESTTYPE_INVALID. */
+    RTDIGESTTYPE                enmChecksumType;
+    /** The actual checksum buffer for the entire data to be transferred,
+     *  based on enmChksumType. If RTDIGESTTYPE_INVALID is specified,
+     *  no checksum is being used and pvChecksum will be NULL. */
+    void                       *pvChecksum;
+    /** Size (in bytes) of checksum. */
+    uint32_t                    cbChecksum;
+} VBOXDNDDATAHDR, *PVBOXDNDSNDDATAHDR;
+
+/* New since protocol v3. */
+typedef struct VBOXDNDCBSNDDATAHDRDATA
+{
+    /** Callback data header. */
+    VBOXDNDCBHEADERDATA         hdr;
+    /** Actual header data. */
+    VBOXDNDDATAHDR              data;
+} VBOXDNDCBSNDDATAHDRDATA, *PVBOXDNDCBSNDDATAHDRDATA;
+
+typedef struct VBOXDNDSNDDATA
+{
+    union
+    {
+        struct
+        {
+            /** Data block buffer. */
+            void                       *pvData;
+            /** Size (in bytes) of data block. */
+            uint32_t                    cbData;
+            /** Total metadata size (in bytes). This is transmitted
+             *  with every message because the size can change. */
+            uint32_t                    cbTotalSize;
+        } v1;
+        /* Protocol v2: No changes. */
+        struct
+        {
+            /** Data block buffer. */
+            void                       *pvData;
+            /** Size (in bytes) of data block. */
+            uint32_t                    cbData;
+            /** (Rolling) Checksum. Not yet implemented. */
+            void                       *pvChecksum;
+            /** Size (in bytes) of checksum. Not yet implemented. */
+            uint32_t                    cbChecksum;
+        } v3;
+    } u;
+} VBOXDNDSNDDATA, *PVBOXDNDSNDDATA;
+
 typedef struct VBOXDNDCBSNDDATADATA
 {
     /** Callback data header. */
     VBOXDNDCBHEADERDATA         hdr;
-    void                       *pvData;
-    uint32_t                    cbData;
-    /** Total metadata size (in bytes). This is transmitted
-     *  with every message because the size can change. */
-    uint32_t                    cbTotalSize;
+    /** Actual data. */
+    VBOXDNDSNDDATA              data;
 } VBOXDNDCBSNDDATADATA, *PVBOXDNDCBSNDDATADATA;
 
 typedef struct VBOXDNDCBSNDDIRDATA
 {
     /** Callback data header. */
     VBOXDNDCBHEADERDATA         hdr;
+    /** Directory path. */
     char                       *pszPath;
+    /** Size (in bytes) of path. */
     uint32_t                    cbPath;
+    /** Directory creation mode. */
     uint32_t                    fMode;
 } VBOXDNDCBSNDDIRDATA, *PVBOXDNDCBSNDDIRDATA;
 
-/*  Note: Only for protocol version 2 and up (>= VBox 5.0). */
+/* Note: Only for protocol version 2 and up (>= VBox 5.0). */
 typedef struct VBOXDNDCBSNDFILEHDRDATA
 {
     /** Callback data header. */
@@ -724,8 +926,15 @@ typedef struct VBOXDNDCBSNDFILEDATADATA
             /** File (creation) mode. */
             uint32_t            fMode;
         } v1;
-        /* Note: Protocol version 2 has the file attributes (name, size,
-                 mode, ...) in the VBOXDNDCBSNDFILEHDRDATA structure. */
+        /* Protocol v2 + v3: Have the file attributes (name, size, mode, ...)
+                             in the VBOXDNDCBSNDFILEHDRDATA structure. */
+        struct
+        {
+            /** Checksum for current file data chunk. */
+            void               *pvChecksum;
+            /** Size (in bytes) of current data chunk. */
+            uint32_t            cbChecksum;
+        } v3;
     } u;
 } VBOXDNDCBSNDFILEDATADATA, *PVBOXDNDCBSNDFILEDATADATA;
 

@@ -36,13 +36,14 @@ class UIDnDDataObject : public IDataObject
 {
 public:
 
-    enum Status
+    enum DnDDataObjectStatus
     {
-        Uninitialized = 0,
-        Initialized,
-        Dropping,
-        Dropped,
-        Aborted
+        DnDDataObjectStatus_Uninitialized = 0,
+        DnDDataObjectStatus_Initialized,
+        DnDDataObjectStatus_Dropping,
+        DnDDataObjectStatus_Dropped,
+        DnDDataObjectStatus_Aborted,
+        DnDDataObjectStatus_32Bit_Hack = 0x7fffffff
     };
 
 public:
@@ -70,37 +71,42 @@ public: /* IDataObject methods. */
 
 public:
 
-    static const char* ClipboardFormatToString(CLIPFORMAT fmt);
+    static const char *ClipboardFormatToString(CLIPFORMAT fmt);
 
     int Abort(void);
-    void SetStatus(Status status);
+    void Signal(void);
     int Signal(const QString &strFormat, const void *pvData, uint32_t cbData);
 
 protected:
 
+    void SetStatus(DnDDataObjectStatus enmStatus);
+
     bool LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
-    static HGLOBAL MemDup(HGLOBAL hMemSource);
     void RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 
-    UIDnDHandler   *m_pDnDHandler;
-
-    Status          mStatus;
-    LONG            mRefCount;
+    /** Pointe rto drag and drop handler. */
+    UIDnDHandler           *m_pDnDHandler;
+    /** Current drag and drop status. */
+    DnDDataObjectStatus     m_enmStatus;
+    /** Internal reference count of this object. */
+    LONG                    m_cRefs;
     /** Number of native formats registered. This can be a different number than supplied with mlstFormats. */
-    ULONG           mcFormats;
-    FORMATETC      *mpFormatEtc;
-    STGMEDIUM      *mpStgMedium;
-    RTSEMEVENT      mSemEvent;
-    QStringList     mlstFormats;
-    QString         mstrFormat;
+    ULONG                   m_cFormats;
+    FORMATETC              *m_pFormatEtc;
+    STGMEDIUM              *m_pStgMedium;
+    RTSEMEVENT              m_SemEvent;
+    QStringList             m_lstFormats;
+    QString                 m_strFormat;
     /** The retrieved data as a QVariant. Needed for buffering in case a second format needs the same data,
      *  e.g. CF_TEXT and CF_UNICODETEXT. */
-    QVariant        mVaData;
+    QVariant                m_vaData;
+    /** Whether the data already was retrieved or not. */
+    bool                    m_fDataRetrieved;
     /** The retrieved data as a raw buffer. */
-    void           *mpvData;
+    void                   *m_pvData;
     /** Raw buffer size (in bytes). */
-    uint32_t        mcbData;
+    uint32_t                m_cbData;
 };
 
 #endif /* ___UIDnDDataObject_win_h___ */

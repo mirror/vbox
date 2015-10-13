@@ -27,20 +27,28 @@
 
 #include <VBox/GuestHost/DragAndDrop.h>
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
+
 DnDDroppedFiles::DnDDroppedFiles(void)
     : hDir(NULL)
-    , fOpen(false) { }
+    , fOpen(0) { }
 
-DnDDroppedFiles::DnDDroppedFiles(const char *pszPath, uint32_t fFlags)
+DnDDroppedFiles::DnDDroppedFiles(const char *pszPath, uint32_t fOpen)
     : hDir(NULL)
-    , fOpen(false)
+    , fOpen(0)
 {
-    OpenEx(pszPath, fFlags);
+    OpenEx(pszPath, fOpen);
 }
 
 DnDDroppedFiles::~DnDDroppedFiles(void)
 {
-    Reset(true /* fRemoveDropDir */);
+    /* Only make sure to not leak any handles and stuff, don't delete any
+     * directories / files here. */
+    closeInternal();
 }
 
 int DnDDroppedFiles::AddFile(const char *pszFile)
@@ -61,6 +69,27 @@ int DnDDroppedFiles::AddDir(const char *pszDir)
     return VINF_SUCCESS;
 }
 
+int DnDDroppedFiles::closeInternal(void)
+{
+    int rc;
+    if (this->hDir != NULL)
+    {
+        rc = RTDirClose(this->hDir);
+        if (RT_SUCCESS(rc))
+            this->hDir = NULL;
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int DnDDroppedFiles::Close(void)
+{
+    return closeInternal();
+}
+
 const char *DnDDroppedFiles::GetDirAbs(void) const
 {
     return this->strPathAbs.c_str();
@@ -68,7 +97,7 @@ const char *DnDDroppedFiles::GetDirAbs(void) const
 
 bool DnDDroppedFiles::IsOpen(void) const
 {
-    return this->fOpen;
+    return (this->hDir != NULL);
 }
 
 int DnDDroppedFiles::OpenEx(const char *pszPath, uint32_t fFlags)
@@ -128,12 +157,13 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, uint32_t fFlags)
             {
                 this->hDir       = phDir;
                 this->strPathAbs = pszDropDir;
-                this->fOpen      = true;
+                this->fOpen      = fFlags;
             }
         }
 
     } while (0);
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -156,32 +186,30 @@ int DnDDroppedFiles::OpenTemp(uint32_t fFlags)
 
 int DnDDroppedFiles::Reset(bool fRemoveDropDir)
 {
-    int rc = VINF_SUCCESS;
-    if (this->fOpen)
-    {
-        rc = RTDirClose(this->hDir);
-        if (RT_SUCCESS(rc))
-        {
-            this->fOpen = false;
-            this->hDir  = NULL;
-        }
-    }
+    int rc = closeInternal();
     if (RT_SUCCESS(rc))
     {
-        this->lstDirs.clear();
-        this->lstFiles.clear();
-
-        if (   fRemoveDropDir
-            && this->strPathAbs.isNotEmpty())
+        if (fRemoveDropDir)
         {
-            /* Try removing the (empty) drop directory in any case. */
-            rc = RTDirRemove(this->strPathAbs.c_str());
-            if (RT_SUCCESS(rc)) /* Only clear if successfully removed. */
-                this->strPathAbs = "";
+            rc = Rollback();
+        }
+        else
+        {
+            this->lstDirs.clear();
+            this->lstFiles.clear();
         }
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+int DnDDroppedFiles::Reopen(void)
+{
+    if (this->strPathAbs.isEmpty())
+        return VERR_NOT_FOUND;
+
+    return OpenEx(this->strPathAbs.c_str(), this->fOpen);
 }
 
 int DnDDroppedFiles::Rollback(void)
@@ -189,34 +217,52 @@ int DnDDroppedFiles::Rollback(void)
     if (this->strPathAbs.isEmpty())
         return VINF_SUCCESS;
 
-    Assert(this->fOpen);
-    Assert(this->hDir != NULL);
-
     int rc = VINF_SUCCESS;
-    int rc2;
 
     /* Rollback by removing any stuff created.
      * Note: Only remove empty directories, never ever delete
      *       anything recursive here! Steam (tm) knows best ... :-) */
+    int rc2;
     for (size_t i = 0; i < this->lstFiles.size(); i++)
     {
         rc2 = RTFileDelete(this->lstFiles.at(i).c_str());
+        if (RT_SUCCESS(rc2))
+            this->lstFiles.removeAt(i);
+
         if (RT_SUCCESS(rc))
-            rc = rc2;
+           rc = rc2;
+        /* Keep going. */
     }
 
     for (size_t i = 0; i < this->lstDirs.size(); i++)
     {
         rc2 = RTDirRemove(this->lstDirs.at(i).c_str());
+        if (RT_SUCCESS(rc2))
+            this->lstDirs.removeAt(i);
+
         if (RT_SUCCESS(rc))
             rc = rc2;
+        /* Keep going. */
     }
 
-    /* Try to remove the empty root dropped files directory as well. */
-    rc2 = RTDirRemove(this->strPathAbs.c_str());
+    if (RT_SUCCESS(rc))
+    {
+        Assert(this->lstFiles.isEmpty());
+        Assert(this->lstDirs.isEmpty());
+
+        rc2 = closeInternal();
+        if (RT_SUCCESS(rc2))
+        {
+            /* Try to remove the empty root dropped files directory as well.
+             * Might return VERR_DIR_NOT_EMPTY or similar. */
+            rc2 = RTDirRemove(this->strPathAbs.c_str());
+        }
+    }
+
     if (RT_SUCCESS(rc))
         rc = rc2;
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

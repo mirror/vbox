@@ -334,12 +334,11 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
 # endif
 
 # ifdef RT_OS_WINDOWS
-
-    UIDnDDropSource *pDropSource = new UIDnDDropSource(m_pParent);
-    if (!pDropSource)
-        return VERR_NO_MEMORY;
     UIDnDDataObject *pDataObject = new UIDnDDataObject(this, lstFormats);
     if (!pDataObject)
+        return VERR_NO_MEMORY;
+    UIDnDDropSource *pDropSource = new UIDnDDropSource(m_pParent, pDataObject);
+    if (!pDropSource)
         return VERR_NO_MEMORY;
 
     DWORD dwOKEffects = DROPEFFECT_NONE;

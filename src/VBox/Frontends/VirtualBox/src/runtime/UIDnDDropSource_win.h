@@ -21,16 +21,21 @@
 /* COM includes: */
 #include "COMEnums.h"
 
+class UIDnDDataObject;
+
+/**
+ * Implementation of IDropSource for drag and drop on the host.
+ */
 class UIDnDDropSource : public IDropSource
 {
 public:
 
-    UIDnDDropSource(QWidget *pParent);
+    UIDnDDropSource(QWidget *pParent, UIDnDDataObject *pDataObject);
     virtual ~UIDnDDropSource(void);
 
 public:
 
-    uint32_t GetCurrentAction(void) { return muCurAction; }
+    uint32_t GetCurrentAction(void) const { return m_uCurAction; }
 
 public: /* IUnknown methods. */
 
@@ -45,10 +50,15 @@ public: /* IDropSource methods. */
 
 protected:
 
-    LONG             mRefCount;
-    QWidget         *mpParent;
-    DWORD            mdwCurEffect;
-    Qt::DropActions  muCurAction;
+    /** Pointer to parent widget. */
+    QWidget         *m_pParent;
+    UIDnDDataObject *m_pDataObject;
+    /** The current reference count. */
+    LONG             m_cRefCount;
+    /** Current (last) drop effect issued. */
+    DWORD            m_dwCurEffect;
+    /** Current drop action to perform in case of a successful drop. */
+    Qt::DropActions  m_uCurAction;
 };
 
 #endif /* ___UIDnDDropSource_win_h___ */

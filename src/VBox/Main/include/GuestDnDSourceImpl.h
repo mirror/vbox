@@ -18,6 +18,11 @@
 #ifndef ____H_GUESTDNDSOURCEIMPL
 #define ____H_GUESTDNDSOURCEIMPL
 
+#include <VBox/GuestHost/DragAndDrop.h>
+#include <VBox/HostServices/DragAndDropSvc.h>
+
+using namespace DragAndDropSvc;
+
 #include "GuestDnDSourceWrap.h"
 #include "GuestDnDPrivate.h"
 
@@ -64,10 +69,11 @@ protected:
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     /** @name Dispatch handlers for the HGCM callbacks.
      * @{ */
-    int i_onReceiveData(PRECVDATACTX pCtx, const void *pvData, uint32_t cbData, uint64_t cbTotalSize);
+    int i_onReceiveDataHdr(PRECVDATACTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr);
+    int i_onReceiveData(PRECVDATACTX pCtx, PVBOXDNDSNDDATA pSndData);
     int i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath, uint32_t fMode);
-    int i_onReceiveFileHdr(PRECVDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, const char *pszPath, uint32_t cbPath, uint64_t cbSize, uint32_t fMode, uint32_t fFlags);
-    int i_onReceiveFileData(PRECVDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, const void *pvData, uint32_t cbData);
+    int i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath, uint64_t cbSize, uint32_t fMode, uint32_t fFlags);
+    int i_onReceiveFileData(PRECVDATACTX pCtx,const void *pvData, uint32_t cbData);
     /** @}  */
 #endif
 
@@ -92,7 +98,6 @@ protected:
     int i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
     int i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
     int i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
-    int i_updateProcess(PRECVDATACTX pCtx, uint64_t cbDataAdd);
 
 protected:
 
@@ -100,7 +105,8 @@ protected:
     {
         /** Maximum data block size (in bytes) the source can handle. */
         uint32_t    mcbBlockSize;
-        /** The context for receiving data from the guest. */
+        /** The context for receiving data from the guest.
+         *  At the moment only one transfer at a time is supported. */
         RECVDATACTX mRecvCtx;
     } mData;
 };

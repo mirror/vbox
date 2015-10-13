@@ -249,7 +249,7 @@ static RTEXITCODE handleDebugVM_LogXXXX(HandlerArg *pArgs, IMachineDebugger *pDe
     if (fRelease)
     {
         com::Utf8Str strTmp(strSettings);
-        strSettings = "release: ";
+        strSettings = "release:";
         strSettings.append(strTmp);
     }
 

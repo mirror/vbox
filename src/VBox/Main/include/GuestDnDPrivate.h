@@ -21,9 +21,17 @@
 
 #include <iprt/dir.h>
 #include <iprt/file.h>
+#include <iprt/path.h>
 
-#include "VBox/hgcmsvc.h" /* For PVBOXHGCMSVCPARM. */
-#include "VBox/GuestHost/DragAndDrop.h"
+#include <VBox/hgcmsvc.h> /* For PVBOXHGCMSVCPARM. */
+#include <VBox/GuestHost/DragAndDrop.h>
+#include <VBox/HostServices/DragAndDropSvc.h>
+
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
 
 /**
  * Forward prototype declarations.
@@ -34,6 +42,13 @@ class GuestDnDResponse;
 class GuestDnDSource;
 class GuestDnDTarget;
 class Progress;
+
+/**
+ * Type definitions.
+ */
+
+/** List (vector) of MIME types. */
+typedef std::vector<com::Utf8Str> GuestDnDMIMEList;
 
 class GuestDnDCallbackEvent
 {
@@ -64,114 +79,385 @@ protected:
 };
 
 /**
- * Structure for keeping the (URI) data to be sent/received.
+ * Class for handling the (raw) meta data.
  */
-typedef struct GuestDnDData
+class GuestDnDMetaData
 {
-    GuestDnDData(void)
-        : cbToProcess(0)
-        , cbProcessed(0) { }
+public:
 
-    void Reset(void)
+    GuestDnDMetaData(void)
+        : pvData(NULL)
+        , cbData(0)
+        , cbDataUsed(0) { }
+
+    virtual ~GuestDnDMetaData(void)
     {
-        vecData.clear();
-        cbToProcess = 0;
-        cbProcessed = 0;
-    }
-
-    /** Array (vector) of guest DnD data. This might be an URI list, according
-     *  to the format being set. */
-    std::vector<BYTE>         vecData;
-    /** Overall size (in bytes) of data to send. */
-    uint64_t                  cbToProcess;
-    /** Overall size (in bytes) of processed file data. */
-    uint64_t                  cbProcessed;
-
-} GuestDnDData;
-
-/**
- * Structure for keeping an URI object's context around.
- */
-typedef struct GuestDnDURIObjCtx
-{
-    GuestDnDURIObjCtx(void)
-        : pObjURI(NULL)
-        , fAllocated(false)
-        , fHeaderSent(false) { }
-
-    virtual ~GuestDnDURIObjCtx(void)
-    {
-        Reset();
+        reset();
     }
 
 public:
 
-    void Reset(void)
+    size_t add(const void *pvDataAdd, size_t cbDataAdd)
     {
-        if (   pObjURI
-            && fAllocated)
-        {
-            delete pObjURI;
-        }
+        if (!cbDataAdd)
+            return 0;
+        AssertPtrReturn(pvDataAdd, 0);
 
-        pObjURI     = NULL;
+        int rc = resize(cbData + cbDataAdd);
+        if (RT_FAILURE(rc))
+            return 0;
 
-        fAllocated  = false;
-        fHeaderSent = false;
+        Assert(cbData >= cbDataUsed + cbDataAdd);
+        memcpy((uint8_t *)pvData + cbDataUsed, pvDataAdd, cbDataAdd);
+
+        cbDataUsed += cbDataAdd;
+
+        return cbDataAdd;
     }
 
+    size_t add(const std::vector<BYTE> &vecAdd)
+    {
+        if (!vecAdd.size())
+            return 0;
+
+        return add(&vecAdd.front(), vecAdd.size());
+    }
+
+    void reset(void)
+    {
+        if (pvData)
+        {
+            Assert(cbData);
+            RTMemFree(pvData);
+            pvData = NULL;
+        }
+
+        cbData     = 0;
+        cbDataUsed = 0;
+    }
+
+    const void *getData(void) const { return pvData; }
+
+    void *getDataMutable(void) { return pvData; }
+
+    size_t getSize(void) const { return cbDataUsed; }
+
+public:
+
+    int fromString(const RTCString &strData)
+    {
+        int rc = VINF_SUCCESS;
+
+        if (strData.isNotEmpty())
+        {
+            const size_t cbData = strData.length() + 1; /* Include terminating zero. */
+            rc = resize(cbData);
+            if (RT_SUCCESS(rc))
+                memcpy(pvData, strData.c_str(), cbData);
+        }
+
+        return rc;
+    }
+
+    int fromURIList(const DnDURIList &lstURI)
+    {
+        return fromString(lstURI.RootToString());
+    }
+
+protected:
+
+    int resize(size_t cbSize)
+    {
+        if (!cbSize)
+        {
+            reset();
+            return VINF_SUCCESS;
+        }
+
+        if (cbSize == cbData)
+            return VINF_SUCCESS;
+
+        void *pvTmp = NULL;
+        if (!cbData)
+        {
+            Assert(cbDataUsed == 0);
+            pvTmp = RTMemAllocZ(cbSize);
+        }
+        else
+        {
+            AssertPtr(pvData);
+            pvTmp = RTMemRealloc(pvData, cbSize);
+            RT_BZERO(pvTmp, cbSize);
+        }
+
+        if (pvTmp)
+        {
+            pvData = pvTmp;
+            cbData = cbSize;
+            return VINF_SUCCESS;
+        }
+
+        return VERR_NO_MEMORY;
+    }
+
+protected:
+
+    void   *pvData;
+    size_t  cbData;
+    size_t  cbDataUsed;
+};
+
+/**
+ * Class for keeping drag and drop (meta) data
+ * to be sent/received.
+ */
+class GuestDnDData
+{
+public:
+
+    GuestDnDData(void)
+        : cbProcessed(0)
+        , cbAddData(0) { }
+
+    virtual ~GuestDnDData(void)
+    {
+        reset();
+    }
+
+public:
+
+    uint64_t addProcessed(uint32_t cbDataAdd)
+    {
+        const uint64_t cbTotal = getTotal();
+        Assert(cbProcessed + cbDataAdd <= cbTotal);
+        cbProcessed += cbDataAdd;
+        return cbProcessed;
+    }
+
+    bool isComplete(void) const
+    {
+        const uint64_t cbTotal = getTotal();
+        Assert(cbProcessed <= cbTotal);
+        return (cbProcessed == cbTotal);
+    }
+
+    void *getChkSumMutable(void) { return dataHdr.pvChecksum; }
+
+    uint32_t getChkSumSize(void) const { return dataHdr.cbChecksum; }
+
+    void *getFmtMutable(void) { return dataHdr.pvMetaFmt; }
+
+    uint32_t getFmtSize(void) const { return dataHdr.cbMetaFmt; }
+
+    GuestDnDMetaData &getMeta(void) { return dataMeta; }
+
+    uint8_t getPercentComplete(void) const
+    {
+        int64_t cbTotal  = RT_MAX(getTotal(), 1);
+        return (uint8_t)(cbProcessed * 100 / cbTotal);
+    }
+
+    uint64_t getProcessed(void) const { return cbProcessed; }
+
+    uint64_t getRemaining(void) const
+    {
+        const uint64_t cbTotal = getTotal();
+        Assert(cbProcessed <= cbTotal);
+        return cbTotal - cbProcessed;
+    }
+
+    uint64_t getTotal(void) const { return dataMeta.getSize() + cbAddData; }
+
+    void reset(void)
+    {
+        clearFmt();
+        clearChkSum();
+
+        RT_ZERO(dataHdr);
+
+        dataMeta.reset();
+        cbProcessed = 0;
+        cbAddData   = 0;
+    }
+
+    int setFmt(const void *pvFmt, uint32_t cbFmt)
+    {
+        if (cbFmt)
+        {
+            AssertPtrReturn(pvFmt, VERR_INVALID_POINTER);
+            void *pvFmtTmp = RTMemAlloc(cbFmt);
+            if (!pvFmtTmp)
+                return VERR_NO_MEMORY;
+
+            clearFmt();
+
+            memcpy(pvFmtTmp, pvFmt, cbFmt);
+
+            dataHdr.pvMetaFmt = pvFmtTmp;
+            dataHdr.cbMetaFmt = cbFmt;
+        }
+        else
+            clearFmt();
+
+        return VINF_SUCCESS;
+    }
+
+    void setAdditionalSize(uint64_t cbAdd)
+    {
+        LogFlowFunc(("cbAdd=%RU64\n", cbAdd));
+
+        cbAddData = cbAdd;
+
+        invalidate();
+    }
+
+    void setEstimatedSize(uint64_t cbTotal, uint32_t cbMeta)
+    {
+        Assert(cbMeta <= cbTotal);
+
+        LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU64\n", cbTotal, cbMeta));
+
+        dataMeta.reset();
+
+        dataHdr.cbMeta = cbMeta;
+        setAdditionalSize(cbTotal - cbMeta);
+    }
+
+protected:
+
+    void clearChkSum(void)
+    {
+        if (dataHdr.pvChecksum)
+        {
+            Assert(dataHdr.cbChecksum);
+            RTMemFree(dataHdr.pvChecksum);
+            dataHdr.pvChecksum = NULL;
+        }
+
+        dataHdr.cbChecksum = 0;
+    }
+
+    void clearFmt(void)
+    {
+        if (dataHdr.pvMetaFmt)
+        {
+            Assert(dataHdr.cbMetaFmt);
+            RTMemFree(dataHdr.pvMetaFmt);
+            dataHdr.pvMetaFmt = NULL;
+        }
+
+        dataHdr.cbMetaFmt = 0;
+    }
+
+    void invalidate(void)
+    {
+        /* Update data header. */
+        dataHdr.cbMeta  = dataMeta.getSize();
+        dataHdr.cbTotal = dataHdr.cbMeta + cbAddData;
+
+        LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32\n", dataHdr.cbTotal, dataHdr.cbMeta));
+    }
+
+protected:
+
+    /** The data header. */
+    VBOXDNDDATAHDR    dataHdr;
+    /** For storing the actual meta data.
+     *  This might be an URI list or just plain raw data,
+     *  according to the format being sent. */
+    GuestDnDMetaData  dataMeta;
+    /** Overall size (in bytes) of processed data. */
+    uint64_t          cbProcessed;
+    /** Additional data to process which does not count
+     *  as meta data. Just in here for accounting reasons. */
+    uint64_t          cbAddData;
+};
+
+/**
+ * Structure for keeping a DnDURIObject context around.
+ */
+class GuestDnDURIObjCtx
+{
+public:
+
+    GuestDnDURIObjCtx(void)
+        : pObjURI(NULL)
+        , fIntermediate(false)
+        , fHeaderSent(false) { }
+
+    virtual ~GuestDnDURIObjCtx(void)
+    {
+        destroy();
+    }
+
+public:
+
+    DnDURIObject *createIntermediate(void)
+    {
+        reset();
+
+        try
+        {
+            pObjURI       = new DnDURIObject();
+            fIntermediate = true;
+        }
+        catch (std::bad_alloc &)
+        {
+        }
+
+        return pObjURI;
+    }
+
+    void destroy(void)
+    {
+        if (   pObjURI
+            && fIntermediate)
+        {
+            delete pObjURI;
+            fIntermediate = false;
+        }
+
+        pObjURI = NULL;
+    }
+
+    bool isIntermediate(void) { return fIntermediate; }
+
+    bool isValid(void) const { return (pObjURI != NULL); }
+
+    void reset(void)
+    {
+        destroy();
+
+        fIntermediate = false;
+        fHeaderSent   = false;
+    }
 
     /** Pointer to current object being handled. */
     DnDURIObject             *pObjURI;
     /** Flag whether pObjURI needs deletion after use. */
-    bool                      fAllocated;
+    bool                      fIntermediate;
     /** Flag whether the object's file header has been sent already. */
     bool                      fHeaderSent;
     /** @todo Add more statistics / information here. */
-
-} GuestDnDURIObjCtx;
+};
 
 /**
- * Structure for keeping around URI (list) data.
+ * Structure for keeping around an URI (data) transfer.
  */
-typedef struct GuestDnDURIData
+class GuestDnDURIData
 {
+
+public:
+
     GuestDnDURIData(void)
-        : pvScratchBuf(NULL)
+        : cObjToProcess(0)
+        , cObjProcessed(0)
+        , pvScratchBuf(NULL)
         , cbScratchBuf(0) { }
 
     virtual ~GuestDnDURIData(void)
     {
-        Reset();
-    }
-
-    int Init(size_t cbBuf = _64K)
-    {
-        Reset();
-
-        pvScratchBuf = RTMemAlloc(cbBuf);
-        if (!pvScratchBuf)
-            return VERR_NO_MEMORY;
-
-        cbScratchBuf = cbBuf;
-        return VINF_SUCCESS;
-    }
-
-    const void *GetBuffer(void) const { return pvScratchBuf; }
-
-    void *GetBufferMutable(void) { return pvScratchBuf; }
-
-    size_t GetBufferSize(void) const { return cbScratchBuf; }
-
-    void Reset(void)
-    {
-        lstURI.Clear();
-        objCtx.Reset();
-
-        int rc2 = droppedFiles.Rollback();
-        AssertRC(rc2);
-        rc2 = droppedFiles.Reset(true /* fRemoveDropDir */);
-        AssertRC(rc2);
+        reset();
 
         if (pvScratchBuf)
         {
@@ -182,6 +468,198 @@ typedef struct GuestDnDURIData
         cbScratchBuf = 0;
     }
 
+    DnDDroppedFiles &getDroppedFiles(void) { return droppedFiles; }
+
+    DnDURIList &getURIList(void) { return lstURI; }
+
+    int init(size_t cbBuf = _64K)
+    {
+        reset();
+
+        pvScratchBuf = RTMemAlloc(cbBuf);
+        if (!pvScratchBuf)
+            return VERR_NO_MEMORY;
+
+        cbScratchBuf = cbBuf;
+        return VINF_SUCCESS;
+    }
+
+    bool isComplete(void) const
+    {
+        LogFlowFunc(("cObjToProcess=%RU64, cObjProcessed=%RU64\n", cObjToProcess, cObjProcessed));
+        Assert(cObjProcessed <= cObjToProcess);
+        return (cObjProcessed == cObjToProcess);
+    }
+
+    const void *getBuffer(void) const { return pvScratchBuf; }
+
+    void *getBufferMutable(void) { return pvScratchBuf; }
+
+    size_t getBufferSize(void) const { return cbScratchBuf; }
+
+    GuestDnDURIObjCtx &getObj(uint64_t uID = 0)
+    {
+        AssertMsg(uID == 0, ("Other objects than object 0 is not supported yet\n"));
+        return objCtx;
+    }
+
+    GuestDnDURIObjCtx &getObjCurrent(void)
+    {
+        DnDURIObject *pCurObj = lstURI.First();
+        if (   !lstURI.IsEmpty()
+            && pCurObj)
+        {
+            /* Point the context object to the current DnDURIObject to process. */
+            objCtx.pObjURI = pCurObj;
+        }
+        else
+            objCtx.reset();
+
+        return objCtx;
+    }
+
+    uint64_t getObjToProcess(void) const { return cObjToProcess; }
+
+    uint64_t getObjProcessed(void) const { return cObjProcessed; }
+
+    int processObject(const DnDURIObject &Obj)
+    {
+        int rc;
+
+        /** @todo Find objct in lstURI first! */
+        switch (Obj.GetType())
+        {
+            case DnDURIObject::Directory:
+                rc = processDirectory(Obj.GetDestPath().c_str(), Obj.GetMode());
+                break;
+
+            case DnDURIObject::File:
+                rc = VINF_SUCCESS;
+                break;
+
+            default:
+                rc = VERR_NOT_IMPLEMENTED;
+                break;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            if (cObjToProcess)
+            {
+                cObjProcessed++;
+                Assert(cObjProcessed <= cObjToProcess);
+            }
+        }
+
+        return rc;
+    }
+
+    void removeObjCurrent(void)
+    {
+        if (cObjToProcess)
+        {
+            cObjProcessed++;
+            Assert(cObjProcessed <= cObjToProcess);
+        }
+
+        lstURI.RemoveFirst();
+        objCtx.reset();
+    }
+
+    void reset(uint64_t cObjs = 0)
+    {
+        cObjToProcess = cObjs;
+        cObjProcessed = 0;
+
+        LogFlowFunc(("cObjToProcess=%RU64\n", cObjToProcess));
+
+        droppedFiles.Close();
+
+        lstURI.Clear();
+        objCtx.reset();
+    }
+
+public:
+
+    int fromMetaData(const GuestDnDMetaData &Data)
+    {
+        reset();
+
+        size_t      cbList  = Data.getSize();
+        const char *pszList = (const char *)Data.getData();
+        if (   !pszList
+            || !cbList)
+        {
+            return VINF_SUCCESS;
+        }
+
+        RTCList<RTCString> lstURIOrg = RTCString(pszList, cbList).split("\r\n");
+        if (lstURIOrg.isEmpty())
+            return VINF_SUCCESS;
+
+        /* Note: All files to be transferred will be kept open during the entire DnD
+         *       operation, also to keep the accounting right. */
+        return lstURI.AppendURIPathsFromList(lstURIOrg, DNDURILIST_FLAGS_KEEP_OPEN);
+    }
+
+    int toMetaData(std::vector<BYTE> &vecData)
+    {
+        const char *pszDroppedFilesDir = droppedFiles.GetDirAbs();
+
+        Utf8Str strURIs = lstURI.RootToString(RTCString(pszDroppedFilesDir));
+        size_t cbData = strURIs.length();
+
+        LogFlowFunc(("%zu root URIs (%zu bytes)\n", lstURI.RootCount(), cbData));
+
+        int rc;
+
+        try
+        {
+            vecData.resize(cbData + 1 /* Include termination */);
+            memcpy(&vecData.front(), strURIs.c_str(), cbData);
+
+            rc = VINF_SUCCESS;
+        }
+        catch (std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+
+        return rc;
+    }
+
+protected:
+
+    int processDirectory(const char *pszPath, uint32_t fMode)
+    {
+        /** @todo Find directory in lstURI first! */
+        int rc;
+
+        const char *pszDroppedFilesDir = droppedFiles.GetDirAbs();
+        char *pszDir = RTPathJoinA(pszDroppedFilesDir, pszPath);
+        if (pszDir)
+        {
+            rc = RTDirCreateFullPath(pszDir, fMode);
+            if (cObjToProcess)
+            {
+                cObjProcessed++;
+                Assert(cObjProcessed <= cObjToProcess);
+            }
+
+            RTStrFree(pszDir);
+        }
+        else
+             rc = VERR_NO_MEMORY;
+
+        return rc;
+    }
+
+protected:
+
+    /** Number of objects to process. */
+    uint64_t                        cObjToProcess;
+    /** Number of objects already processed. */
+    uint64_t                        cObjProcessed;
     /** Handles all drop files for this operation. */
     DnDDroppedFiles                 droppedFiles;
     /** (Non-recursive) List of URI objects to handle. */
@@ -190,19 +668,12 @@ typedef struct GuestDnDURIData
      *  As we currently do all transfers one after another we
      *  only have one context at a time. */
     GuestDnDURIObjCtx               objCtx;
-
-protected:
-
     /** Pointer to an optional scratch buffer to use for
      *  doing the actual chunk transfers. */
     void                           *pvScratchBuf;
     /** Size (in bytes) of scratch buffer. */
     size_t                          cbScratchBuf;
-
-} GuestDnDURIData;
-
-/** List (vector) of MIME types. */
-typedef std::vector<com::Utf8Str> GuestDnDMIMEList;
+};
 
 /**
  * Context structure for sending data to the guest.
@@ -226,7 +697,7 @@ typedef struct SENDDATACTX
     /** URI data structure. */
     GuestDnDURIData                     mURI;
     /** Callback event to use. */
-    GuestDnDCallbackEvent               mCallback;
+    GuestDnDCallbackEvent               mCBEvent;
 
 } SENDDATACTX, *PSENDDATACTX;
 
@@ -246,14 +717,14 @@ typedef struct RECVDATACTX
     GuestDnDMIMEList                    mFmtOffered;
     /** Original drop format requested to receive from the guest. */
     com::Utf8Str                        mFmtReq;
-    /** Intermediate drop format to be received from the host.
+    /** Intermediate drop format to be received from the guest.
      *  Some original drop formats require a different intermediate
      *  drop format:
      *
      *  Receiving a file link as "text/plain"  requires still to
      *  receive the file from the guest as "text/uri-list" first,
-     *  then pointing to the file path on the host in the "text/plain"
-     *  data returned. */
+     *  then pointing to the file path on the host with the data
+     *  in "text/plain" format returned. */
     com::Utf8Str                        mFmtRecv;
     /** Desired drop action to perform on the host.
      *  Needed to tell the guest if data has to be
@@ -265,7 +736,7 @@ typedef struct RECVDATACTX
     /** URI data structure. */
     GuestDnDURIData                     mURI;
     /** Callback event to use. */
-    GuestDnDCallbackEvent               mCallback;
+    GuestDnDCallbackEvent               mCBEvent;
 
 } RECVDATACTX, *PRECVDATACTX;
 
@@ -284,6 +755,34 @@ public:
 
     virtual ~GuestDnDMsg(void)
     {
+        reset();
+    }
+
+public:
+
+    PVBOXHGCMSVCPARM getNextParam(void)
+    {
+        if (cParms >= cParmsAlloc)
+        {
+            if (!paParms)
+                paParms = (PVBOXHGCMSVCPARM)RTMemAlloc(4 * sizeof(VBOXHGCMSVCPARM));
+            else
+                paParms = (PVBOXHGCMSVCPARM)RTMemRealloc(paParms, (cParmsAlloc + 4) * sizeof(VBOXHGCMSVCPARM));
+            if (!paParms)
+                throw VERR_NO_MEMORY;
+            RT_BZERO(&paParms[cParmsAlloc], 4 * sizeof(VBOXHGCMSVCPARM));
+            cParmsAlloc += 4;
+        }
+
+        return &paParms[cParms++];
+    }
+
+    uint32_t getCount(void) const { return cParms; }
+    PVBOXHGCMSVCPARM getParms(void) const { return paParms; }
+    uint32_t getType(void) const { return uMsg; }
+
+    void reset(void)
+    {
         if (paParms)
         {
             /* Remove deep copies. */
@@ -298,43 +797,25 @@ public:
             }
 
             RTMemFree(paParms);
-        }
-    }
-
-public:
-
-    PVBOXHGCMSVCPARM getNextParam(void)
-    {
-        if (cParms >= cParmsAlloc)
-        {
-            paParms = (PVBOXHGCMSVCPARM)RTMemRealloc(paParms, (cParmsAlloc + 4) * sizeof(VBOXHGCMSVCPARM));
-            if (!paParms)
-                throw VERR_NO_MEMORY;
-            RT_BZERO(&paParms[cParmsAlloc], 4 * sizeof(VBOXHGCMSVCPARM));
-            cParmsAlloc += 4;
+            paParms = NULL;
         }
 
-        return &paParms[cParms++];
+        uMsg = cParms = cParmsAlloc = 0;
     }
-
-    uint32_t getCount(void) const { return cParms; }
-    PVBOXHGCMSVCPARM getParms(void) const { return paParms; }
-    uint32_t getType(void) const { return uMsg; }
 
     int setNextPointer(void *pvBuf, uint32_t cbBuf)
     {
-        AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-        AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
-
         PVBOXHGCMSVCPARM pParm = getNextParam();
         if (!pParm)
             return VERR_NO_MEMORY;
 
-        void *pvTmp = RTMemDup(pvBuf, cbBuf);
-        if (!pvTmp)
+        void *pvTmp = NULL;
+        if (pvBuf)
         {
-            RTMemFree(pParm);
-            return VERR_NO_MEMORY;
+            Assert(cbBuf);
+            pvTmp = RTMemDup(pvBuf, cbBuf);
+            if (!pvTmp)
+                return VERR_NO_MEMORY;
         }
 
         pParm->setPointer(pvTmp, cbBuf);
@@ -349,10 +830,7 @@ public:
 
         char *pszTemp = RTStrDup(pszString);
         if (!pszTemp)
-        {
-            RTMemFree(pParm);
             return VERR_NO_MEMORY;
-        }
 
         pParm->setString(pszTemp);
         return VINF_SUCCESS;
@@ -476,9 +954,9 @@ protected:
     /** Format(s) requested/supported from the guest. */
     GuestDnDMIMEList      m_lstFormats;
     /** Pointer to IGuest parent object. */
-    ComObjPtr<Guest>      m_parent;
+    ComObjPtr<Guest>      m_pParent;
     /** Pointer to associated progress object. Optional. */
-    ComObjPtr<Progress>   m_progress;
+    ComObjPtr<Progress>   m_pProgress;
     /** Callback map. */
     GuestDnDCallbackMap   m_mapCallbacks;
 };
@@ -487,6 +965,8 @@ protected:
  * Private singleton class for the guest's DnD
  * implementation. Can't be instanciated directly, only via
  * the factory pattern.
+ *
+ ** @todo Move this into GuestDnDBase.
  */
 class GuestDnD
 {
@@ -523,10 +1003,10 @@ public:
 
     /** @name Public helper functions.
      * @{ */
-    HRESULT                    adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
-    int                        hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
-    GuestDnDResponse          *response(void) { return m_pResponse; }
-    std::vector<com::Utf8Str>  defaultFormats(void) const { return m_strDefaultFormats; }
+    HRESULT           adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
+    int               hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
+    GuestDnDResponse *response(void) { return m_pResponse; }
+    GuestDnDMIMEList  defaultFormats(void) const { return m_strDefaultFormats; }
     /** @}  */
 
 public:
@@ -554,7 +1034,7 @@ protected:
     /** @name Singleton properties.
      * @{ */
     /** List of supported default MIME/Content-type formats. */
-    std::vector<com::Utf8Str>  m_strDefaultFormats;
+    GuestDnDMIMEList           m_strDefaultFormats;
     /** Pointer to guest implementation. */
     const ComObjPtr<Guest>     m_pGuest;
     /** The current (last) response from the guest. At the
@@ -609,7 +1089,8 @@ protected:
     /** @}  */
 
     int sendCancel(void);
-    int waitForEvent(RTMSINTERVAL msTimeout, GuestDnDCallbackEvent &Event, GuestDnDResponse *pResp);
+    int updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp, uint32_t cbDataAdd = 0);
+    int waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDResponse *pResp, RTMSINTERVAL msTimeout);
 
 protected:
 
@@ -623,16 +1104,19 @@ protected:
     GuestDnDMIMEList                m_lstFmtOffered;
     /** @}  */
 
+    /**
+     * Internal stuff.
+     */
     struct
     {
-        /** Flag indicating whether a drop operation currently
-         *  is in progress or not. */
-        bool                        mfTransferIsPending;
+        /** Number of active transfers (guest->host or host->guest). */
+        uint32_t                    m_cTransfersPending;
         /** The DnD protocol version to use, depending on the
-         *  installed Guest Additions. */
-        uint32_t                    mProtocolVersion;
-        /** Outgoing message queue. */
-        GuestDnDMsgList             mListOutgoing;
+         *  installed Guest Additions. See DragAndDropSvc.h for
+         *  a protocol changelog. */
+        uint32_t                    m_uProtocolVersion;
+        /** Outgoing message queue (FIFO). */
+        GuestDnDMsgList             m_lstMsgOut;
     } mDataBase;
 };
 #endif /* ____H_GUESTDNDPRIVATE */

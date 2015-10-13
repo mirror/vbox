@@ -22,6 +22,8 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBox/HostServices/DragAndDropSvc.h"
 
+using namespace DragAndDropSvc;
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -519,7 +521,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             int rc;
             switch (pEvent->Event.uType)
             {
-                case DragAndDropSvc::HOST_DND_HG_EVT_ENTER:
+                case HOST_DND_HG_EVT_ENTER:
                 {
                     LogFlowThisFunc(("HOST_DND_HG_EVT_ENTER\n"));
 
@@ -539,7 +541,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                      *       event, so fall through is intentional here. */
                 }
 
-                case DragAndDropSvc::HOST_DND_HG_EVT_MOVE:
+                case HOST_DND_HG_EVT_MOVE:
                 {
                     LogFlowThisFunc(("HOST_DND_HG_EVT_MOVE: %d,%d\n",
                                      pEvent->Event.u.a.uXpos, pEvent->Event.u.a.uYpos));
@@ -549,7 +551,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     break;
                 }
 
-                case DragAndDropSvc::HOST_DND_HG_EVT_LEAVE:
+                case HOST_DND_HG_EVT_LEAVE:
                 {
                     LogFlowThisFunc(("HOST_DND_HG_EVT_LEAVE\n"));
 
@@ -557,7 +559,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     break;
                 }
 
-                case DragAndDropSvc::HOST_DND_HG_EVT_DROPPED:
+                case HOST_DND_HG_EVT_DROPPED:
                 {
                     LogFlowThisFunc(("HOST_DND_HG_EVT_DROPPED\n"));
 
@@ -565,7 +567,10 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     break;
                 }
 
-                case DragAndDropSvc::HOST_DND_HG_SND_DATA:
+                case HOST_DND_HG_SND_DATA:
+                    /* Protocol v1 + v2: Also contains the header data.
+                    /* Note: Fall through is intentional. */
+                case HOST_DND_HG_SND_DATA_HDR:
                 {
                     LogFlowThisFunc(("HOST_DND_HG_SND_DATA\n"));
 
@@ -574,7 +579,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     break;
                 }
 
-                case DragAndDropSvc::HOST_DND_HG_EVT_CANCEL:
+                case HOST_DND_HG_EVT_CANCEL:
                 {
                     LogFlowThisFunc(("HOST_DND_HG_EVT_CANCEL\n"));
 
@@ -582,7 +587,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     break;
                 }
 
-                case DragAndDropSvc::HOST_DND_GH_REQ_PENDING:
+                case HOST_DND_GH_REQ_PENDING:
                 {
                     LogFlowThisFunc(("HOST_DND_GH_REQ_PENDING\n"));
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -594,7 +599,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     break;
                 }
 
-                case DragAndDropSvc::HOST_DND_GH_EVT_DROPPED:
+                case HOST_DND_GH_EVT_DROPPED:
                 {
                     LogFlowThisFunc(("HOST_DND_GH_EVT_DROPPED\n"));
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -615,11 +620,11 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             /* Some messages require cleanup. */
             switch (pEvent->Event.uType)
             {
-                case DragAndDropSvc::HOST_DND_HG_EVT_ENTER:
-                case DragAndDropSvc::HOST_DND_HG_EVT_MOVE:
-                case DragAndDropSvc::HOST_DND_HG_EVT_DROPPED:
+                case HOST_DND_HG_EVT_ENTER:
+                case HOST_DND_HG_EVT_MOVE:
+                case HOST_DND_HG_EVT_DROPPED:
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-                case DragAndDropSvc::HOST_DND_GH_EVT_DROPPED:
+                case HOST_DND_GH_EVT_DROPPED:
 #endif
                 {
                     if (pEvent->Event.pszFormats)
@@ -627,7 +632,8 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     break;
                 }
 
-                case DragAndDropSvc::HOST_DND_HG_SND_DATA:
+                case HOST_DND_HG_SND_DATA:
+                case HOST_DND_HG_SND_DATA_HDR:
                 {
                     if (pEvent->Event.pszFormats)
                         RTMemFree(pEvent->Event.pszFormats);
@@ -944,7 +950,7 @@ int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
 
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR3DnDHGAcknowledgeOperation(&mDnDCtx, uActionNotify);
+        rc = VbglR3DnDHGSendAckOp(&mDnDCtx, uActionNotify);
         if (RT_FAILURE(rc))
             LogFlowThisFunc(("Acknowledging operation failed with rc=%Rrc\n", rc));
     }
@@ -1014,7 +1020,7 @@ int VBoxDnDWnd::OnHgDrop(void)
             if (RT_SUCCESS(rc))
             {
                 LogRel(("DnD: Requesting data as '%s' ...\n", mFormatRequested.c_str()));
-                rc = VbglR3DnDHGRequestData(&mDnDCtx, mFormatRequested.c_str());
+                rc = VbglR3DnDHGSendReqData(&mDnDCtx, mFormatRequested.c_str());
                 if (RT_FAILURE(rc))
                     LogFlowThisFunc(("Requesting data failed with rc=%Rrc\n", rc));
             }
@@ -1214,8 +1220,9 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
         /** @todo Support more than one action at a time. */
         uAllActions = uDefAction;
 
-        rc = VbglR3DnDGHAcknowledgePending(&mDnDCtx,
-                                           uDefAction, uAllActions, strFormats.c_str());
+        rc = VbglR3DnDGHSendAckPending(&mDnDCtx,
+                                       uDefAction, uAllActions,
+                                       strFormats.c_str(), strFormats.length() + 1 /* Include termination */);
         if (RT_FAILURE(rc))
         {
             char szMsg[256]; /* Sizes according to MSDN. */
@@ -1760,9 +1767,8 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
         }
         /* Note: pEvent will be free'd by the consumer later. */
 
-        rc = VbglR3DnDProcessNextMessage(&pCtx->cmdCtx, &pEvent->Event);
-        LogFlowFunc(("VbglR3DnDProcessNextMessage returned uType=%RU32, rc=%Rrc\n",
-                     pEvent->Event.uType, rc));
+        rc = VbglR3DnDRecvNextMsg(&pCtx->cmdCtx, &pEvent->Event);
+        LogFlowFunc(("VbglR3DnDRecvNextMsg: uType=%RU32, rc=%Rrc\n", pEvent->Event.uType, rc));
 
         if (   RT_SUCCESS(rc)
             /* Cancelled from host. */

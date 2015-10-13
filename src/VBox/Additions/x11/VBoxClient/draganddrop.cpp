@@ -938,7 +938,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                 if (fAcceptDrop)
                     uAction = toHGCMAction(static_cast<Atom>(e.xclient.data.l[XdndStatusAction]));
 
-                rc = VbglR3DnDHGAcknowledgeOperation(&m_dndCtx, uAction);
+                rc = VbglR3DnDHGSendAckOp(&m_dndCtx, uAction);
             }
             else if (e.xclient.message_type == xAtom(XA_XdndFinished))
             {
@@ -1820,7 +1820,7 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
     if (newVer == -1)
     {
         /* No window to process, so send a ignore ack event to the host. */
-        rc = VbglR3DnDHGAcknowledgeOperation(&m_dndCtx, DND_IGNORE_ACTION);
+        rc = VbglR3DnDHGSendAckOp(&m_dndCtx, DND_IGNORE_ACTION);
     }
     else
     {
@@ -1865,7 +1865,7 @@ int DragInstance::hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
      */
     char szFormat[] = { "text/uri-list" };
 
-    int rc = VbglR3DnDHGRequestData(&m_dndCtx, szFormat);
+    int rc = VbglR3DnDHGSendReqData(&m_dndCtx, szFormat);
     logInfo("Drop event from host resuled in: %Rrc\n", rc);
 
     LogFlowFuncLeaveRC(rc);
@@ -2073,7 +2073,8 @@ int DragInstance::ghIsDnDPending(void)
         RTCritSectLeave(&m_dataCS);
     }
 
-    rc2 = VbglR3DnDGHAcknowledgePending(&m_dndCtx, uDefAction, uAllActions, strFormats.c_str());
+    rc2 = VbglR3DnDGHSendAckPending(&m_dndCtx, uDefAction, uAllActions,
+                                    strFormats.c_str(), strFormats.length() + 1 /* Include termination */);
     LogFlowThisFunc(("uClientID=%RU32, uDefAction=0x%x, allActions=0x%x, strFormats=%s, rc=%Rrc\n",
                      m_dndCtx.uClientID, uDefAction, uAllActions, strFormats.c_str(), rc2));
     if (RT_FAILURE(rc2))
@@ -3195,7 +3196,7 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
         e.type = DnDEvent::HGCM_Type;
 
         /* Wait for new events. */
-        rc = VbglR3DnDProcessNextMessage(&dndCtx, &e.hgcm);
+        rc = VbglR3DnDRecvNextMsg(&dndCtx, &e.hgcm);
         if (   RT_SUCCESS(rc)
             || rc == VERR_CANCELLED)
         {

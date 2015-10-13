@@ -83,6 +83,12 @@ int DnDManager::addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPar
                 break;
             }
 
+            case DragAndDropSvc::HOST_DND_HG_SND_DATA_HDR:
+            {
+                LogFlowFunc(("HOST_DND_HG_SND_DATA_HDR\n"));
+                break;
+            }
+
             case DragAndDropSvc::HOST_DND_HG_SND_DATA:
             {
                 LogFlowFunc(("HOST_DND_HG_SND_DATA\n"));
@@ -115,28 +121,12 @@ int DnDManager::addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPar
             case DragAndDropSvc::HOST_DND_GH_REQ_PENDING:
             {
                 LogFlowFunc(("HOST_DND_GH_REQ_PENDING\n"));
-
-                /* Verify parameter count and types. */
-                if (   cParms != 1
-                    || paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* screen id */)
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                }
                 break;
             }
 
             case DragAndDropSvc::HOST_DND_GH_EVT_DROPPED:
             {
                 LogFlowFunc(("HOST_DND_GH_EVT_DROPPED\n"));
-
-                /* Verify parameter count and types. */
-                if (   cParms != 3
-                    || paParms[0].type != VBOX_HGCM_SVC_PARM_PTR   /* format */
-                    || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT /* format size */
-                    || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* action */)
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                }
                 break;
             }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
@@ -146,13 +136,16 @@ int DnDManager::addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPar
                 break;
         }
 
-        if (!pMessage) /* Generic message needed? */
-            pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
+        if (RT_SUCCESS(rc))
+        {
+            if (!pMessage) /* Generic message needed? */
+                pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
 
-        if (fAppend)
-            m_dndMessageQueue.append(pMessage);
-        else
-            m_dndMessageQueue.prepend(pMessage);
+            if (fAppend)
+                m_dndMessageQueue.append(pMessage);
+            else
+                m_dndMessageQueue.prepend(pMessage);
+        }
     }
     catch(std::bad_alloc &)
     {

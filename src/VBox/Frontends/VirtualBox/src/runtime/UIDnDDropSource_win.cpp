@@ -23,25 +23,30 @@
 #include <iprt/assert.h>
 #include <iprt/thread.h>
 
+/* Qt includes: */
+#include <QApplication>
+
+/* Windows includes: */
+#include <QApplication>
 #include <windows.h>
 #include <new> /* For bad_alloc. */
 
 #include "UIDnDDropSource_win.h"
+#include "UIDnDDataObject_win.h"
 
-
-
-UIDnDDropSource::UIDnDDropSource(QWidget *pParent)
-    : mRefCount(1),
-      mpParent(pParent),
-      mdwCurEffect(0),
-      muCurAction(Qt::IgnoreAction)
+UIDnDDropSource::UIDnDDropSource(QWidget *pParent, UIDnDDataObject *pDataObject)
+    : m_cRefCount(1)
+    , m_pParent(pParent)
+    , m_pDataObject(pDataObject)
+    , m_dwCurEffect(DROPEFFECT_NONE)
+    , m_uCurAction(Qt::IgnoreAction)
 {
-    LogFlowFunc(("pParent=0x%p\n", mpParent));
+    LogFlowFunc(("pParent=0x%p\n", m_pParent));
 }
 
 UIDnDDropSource::~UIDnDDropSource(void)
 {
-    LogFlowFunc(("mRefCount=%RI32\n", mRefCount));
+    LogFlowFunc(("mRefCount=%RU32\n", m_cRefCount));
 }
 
 /*
@@ -50,19 +55,22 @@ UIDnDDropSource::~UIDnDDropSource(void)
 
 STDMETHODIMP_(ULONG) UIDnDDropSource::AddRef(void)
 {
-    return InterlockedIncrement(&mRefCount);
+    LogFlowFunc(("mRefCount=%RU32\n", m_cRefCount + 1));
+    return (ULONG)InterlockedIncrement(&m_cRefCount);
 }
 
 STDMETHODIMP_(ULONG) UIDnDDropSource::Release(void)
 {
-    LONG lCount = InterlockedDecrement(&mRefCount);
-    if (lCount == 0)
+    Assert(m_cRefCount > 0);
+    LogFlowFunc(("mRefCount=%RU32\n", m_cRefCount - 1));
+    LONG lCount = InterlockedDecrement(&m_cRefCount);
+    if (lCount <= 0)
     {
         delete this;
         return 0;
     }
 
-    return lCount;
+    return (ULONG)lCount;
 }
 
 STDMETHODIMP UIDnDDropSource::QueryInterface(REFIID iid, void **ppvObject)
@@ -93,16 +101,14 @@ STDMETHODIMP UIDnDDropSource::QueryInterface(REFIID iid, void **ppvObject)
  */
 STDMETHODIMP UIDnDDropSource::QueryContinueDrag(BOOL fEscapePressed, DWORD dwKeyState)
 {
-#ifndef DEBUG_andy
-    LogFlowFunc(("fEscapePressed=%RTbool, dwKeyState=0x%x, mdwCurEffect=%RI32, muCurAction=%RU32\n",
-                 fEscapePressed, dwKeyState, mdwCurEffect, muCurAction));
-#endif
+    LogFlowFunc(("fEscapePressed=%RTbool, dwKeyState=0x%x, m_dwCurEffect=%RI32, m_uCurAction=%RU32\n",
+                 RT_BOOL(fEscapePressed), dwKeyState, m_dwCurEffect, m_uCurAction));
 
     /* ESC pressed? Bail out. */
     if (fEscapePressed)
     {
-        mdwCurEffect = 0;
-        muCurAction = Qt::IgnoreAction;
+        m_dwCurEffect = DROPEFFECT_NONE;
+        m_uCurAction  = Qt::IgnoreAction;
 
         LogRel2(("DnD: User cancelled dropping data to the host\n"));
         return DRAGDROP_S_CANCEL;
@@ -117,9 +123,14 @@ STDMETHODIMP UIDnDDropSource::QueryContinueDrag(BOOL fEscapePressed, DWORD dwKey
 
     if (fDropContent)
     {
+        if (m_pDataObject)
+            m_pDataObject->Signal();
+
         LogRel2(("DnD: User dropped data to the host\n"));
         return DRAGDROP_S_DROP;
     }
+
+    QApplication::processEvents();
 
     /* No change, just continue. */
     return S_OK;
@@ -133,11 +144,9 @@ STDMETHODIMP UIDnDDropSource::QueryContinueDrag(BOOL fEscapePressed, DWORD dwKey
  */
 STDMETHODIMP UIDnDDropSource::GiveFeedback(DWORD dwEffect)
 {
-     Qt::DropActions dropActions = Qt::IgnoreAction;
+    Qt::DropActions dropActions = Qt::IgnoreAction;
 
-#ifndef DEBUG_andy
     LogFlowFunc(("dwEffect=0x%x\n", dwEffect));
-#endif
     if (dwEffect)
     {
         if (dwEffect & DROPEFFECT_COPY)
@@ -146,10 +155,11 @@ STDMETHODIMP UIDnDDropSource::GiveFeedback(DWORD dwEffect)
             dropActions |= Qt::MoveAction;
         if (dwEffect & DROPEFFECT_LINK)
             dropActions |= Qt::LinkAction;
+
+        m_dwCurEffect = dwEffect;
     }
 
-    mdwCurEffect = dwEffect;
-    muCurAction = dropActions;
+    m_uCurAction  = dropActions;
 
     return DRAGDROP_S_USEDEFAULTCURSORS;
 }
