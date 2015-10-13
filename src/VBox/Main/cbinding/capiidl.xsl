@@ -815,7 +815,7 @@ typedef struct SAFEARRAY
     ULONG c;
 } SAFEARRAY;
 
-#define ComSafeArrayAsInParam(f) ((f)->c), ((f)->pv)
+#define ComSafeArrayAsInParam(f) ((f) ? (f)->c : 0), ((f) ? (f)->pv : NULL)
 #define ComSafeArrayAsOutParam(f) (&amp;((f)->c)), (&amp;((f)->pv))
 #define ComSafeArrayAsOutTypeParam(f,t) (&amp;((f)->c)), (t**)(&amp;((f)->pv))
 #define ComSafeArrayAsOutIfaceParam(f,t) (&amp;((f)->c)), (t**)(&amp;((f)->pv))
