@@ -293,6 +293,7 @@ RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, 
  * @param   hHttp           The HTTP client instance.
  * @param   pfnDownloadProgress Progress function to be called. Set it to
  *                          NULL to disable the callback.
+ * @param   pvUser          Convenience pointer for the callback function.
  */
 RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser);
 
