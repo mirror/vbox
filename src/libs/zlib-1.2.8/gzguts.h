@@ -42,6 +42,14 @@
 #  define close _close
 #endif
 
+#if 0
+#ifdef VBOX /* Solves missing seek, read, open, close, write functions. */
+#  ifdef _MSC_VER
+#    include <io.h>
+#  endif
+#endif
+#endif
+
 #ifdef NO_DEFLATE       /* for compatibility with old definition */
 #  define NO_GZCOMPRESS
 #endif

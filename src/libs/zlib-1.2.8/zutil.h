@@ -80,7 +80,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 
         /* target dependencies */
 
-#if defined(MSDOS) || (defined(WINDOWS) && !defined(WIN32))
+#if defined(MSDOS) || (defined(WINDOWS) && !defined(WIN32) && !defined(WIN64))
 #  define OS_CODE  0x00
 #  ifndef Z_SOLO
 #    if defined(__TURBOC__) || defined(__BORLANDC__)
@@ -135,7 +135,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  define OS_CODE  0x0a
 #endif
 
-#ifdef WIN32
+#if defined(WIN32) || defined(WIN64)
 #  ifndef __CYGWIN__  /* Cygwin is Unix, not Win32 */
 #    define OS_CODE  0x0b
 #  endif

@@ -14,7 +14,118 @@
  * Even better than compiling with -DZ_PREFIX would be to use configure to set
  * this permanently in zconf.h using "./configure --zprefix".
  */
-#ifdef Z_PREFIX     /* may be set to #if 1 by ./configure */
+#ifdef VBOX /* Map public symbols to make sure the build is sane. */
+#  define deflateInit_          vboxzlib_deflateInit_
+#  define deflate               vboxzlib_deflate
+#  define deflateEnd            vboxzlib_deflateEnd
+#  define deflatePending        vboxzlib_deflatePending
+#  define deflateResetKeep      vboxzlib_deflateResetKeep
+#  define deflateSetHeader      vboxzlib_deflateSetHeader
+#  define deflateTune           vboxzlib_deflateTune
+#  define inflateInit_          vboxzlib_inflateInit_
+#  define inflate               vboxzlib_inflate
+#  define inflateEnd            vboxzlib_inflateEnd
+#  define inflateGetDictionary  vboxzlib_inflateGetDictionary
+#  define inflateGetHeader      vboxzlib_inflateGetHeader
+#  define inflateMark           vboxzlib_inflateMark
+#  define inflatePrime          vboxzlib_inflatePrime
+#  define inflateUndermine      vboxzlib_inflateUndermine
+#  define deflateInit2_         vboxzlib_deflateInit2_
+#  define deflateSetDictionary  vboxzlib_deflateSetDictionary
+#  define deflateCopy           vboxzlib_deflateCopy
+#  define deflateReset          vboxzlib_deflateReset
+#  define deflatePrime          vboxzlib_deflatePrime
+#  define deflateParams         vboxzlib_deflateParams
+#  define deflateBound          vboxzlib_deflateBound
+#  define inflateInit2_         vboxzlib_inflateInit2_
+#  define inflateSetDictionary  vboxzlib_inflateSetDictionary
+#  define inflateSync           vboxzlib_inflateSync
+#  define inflateSyncPoint      vboxzlib_inflateSyncPoint
+#  define inflateCopy           vboxzlib_inflateCopy
+#  define inflateReset          vboxzlib_inflateReset
+#  define inflateReset2         vboxzlib_inflateReset2
+#  define inflateResetKeep      vboxzlib_inflateResetKeep
+#  define compress              vboxzlib_compress
+#  define compress2             vboxzlib_compress2
+#  define compressBound         vboxzlib_compressBound
+#  define uncompress            vboxzlib_uncompress
+#  define adler32               vboxzlib_adler32
+#  define adler32_combine       vboxzlib_adler32_combine
+#  define adler32               vboxzlib_adler32
+#  define adler32_combine64     vboxzlib_adler32_combine64
+#  define crc32                 vboxzlib_crc32
+#  define crc32_combine         vboxzlib_crc32_combine
+#  define crc32_combine64       vboxzlib_crc32_combine64
+#  define get_crc_table         vboxzlib_get_crc_table
+
+#  define inflateBackInit_      vboxzlib_inflateBackInit_
+#  define inflate_fast          vboxzlib_inflate_fast
+#  define inflate_table         vboxzlib_inflate_table
+#  define zlibVersion           vboxzlib_zlibVersion
+#  define zlibCompileFlags      vboxzlib_zlibCompileFlags
+#  define z_error               vboxzlib_z_error
+#  define zError                vboxzlib_zError
+#  define zcalloc               vboxzlib_zcalloc
+#  define zcfree                vboxzlib_zcfree
+#  define inflateBack           vboxzlib_inflateBack
+#  define _tr_init              vboxzlib__tr_init
+#  define gz_error              vboxzlib_gz_error
+#  define gzbuffer              vboxzlib_gzbuffer
+#  define gzdirect              vboxzlib_gzdirect
+#  define gzopen                vboxzlib_gzopen
+#  define gzopen64              vboxzlib_gzopen64
+#  define gzdopen               vboxzlib_gzdopen
+#  define gzsetparams           vboxzlib_gzsetparams
+#  define gzread                vboxzlib_gzread
+/*#  define gzgetc                vboxzlib_gzgetc*/
+#  define gzgetc_               vboxzlib_gzgetc_
+#  define gzungetc              vboxzlib_gzungetc
+#  define gzgets                vboxzlib_gzgets
+#  define gzoffset              vboxzlib_gzoffset
+#  define gzoffset64            vboxzlib_gzoffset64
+#  define gzwrite               vboxzlib_gzwrite
+#  define gzprintf              vboxzlib_gzprintf
+#  define gzputc                vboxzlib_gzputc
+#  define gzputs                vboxzlib_gzputs
+#  define gzvprintf             vboxzlib_gzvprintf
+#  define gzflush               vboxzlib_gzflush
+#  define _tr_stored_block      vboxzlib__tr_stored_block
+#  define gzseek                vboxzlib_gzseek
+#  define gzseek64              vboxzlib_gzseek64
+#  define _tr_align             vboxzlib__tr_align
+#  define inflateBackEnd        vboxzlib_inflateBackEnd
+#  define _tr_flush_bits        vboxzlib__tr_flush_bits
+#  define _tr_flush_block       vboxzlib__tr_flush_block
+#  define gzrewind              vboxzlib_gzrewind
+#  define gztell                vboxzlib_gztell
+#  define gztell64              vboxzlib_gztell64
+#  define gzeof                 vboxzlib_gzeof
+#  define _tr_tally             vboxzlib__tr_tally
+#  define gzclose               vboxzlib_gzclose
+#  define gzclose_r             vboxzlib_gzclose_r
+#  define gzclose_w             vboxzlib_gzclose_w
+#  define gzerror               vboxzlib_gzerror
+#  define gzflags               vboxzlib_gzflags
+#  define gzclearerr            vboxzlib_gzclearerr
+#  define z_verbose             vboxzlib_z_verbose
+#  define deflate_copyright     vboxzlib_deflate_copyright
+#  define inflate_copyright     vboxzlib_inflate_copyright
+#  define _dist_code            vboxzlib__dist_code
+#  define _length_code          vboxzlib__length_code
+#  define z_errmsg              vboxzlib_z_errmsg
+
+#  define Byte                  vboxzlib_Byte
+#  define uInt                  vboxzlib_uInt
+#  define uLong                 vboxzlib_uLong
+#  define Bytef                 vboxzlib_Bytef
+#  define charf                 vboxzlib_charf
+#  define intf                  vboxzlib_intf
+#  define uIntf                 vboxzlib_uIntf
+#  define uLongf                vboxzlib_uLongf
+#  define voidpf                vboxzlib_voidpf
+#  define voidp                 vboxzlib_voidp
+#else /* !VBOX */
+# ifdef Z_PREFIX     /* may be set to #if 1 by ./configure */
 #  define Z_PREFIX_SET
 
 /* all linked symbols */
@@ -150,7 +261,8 @@
 #  define gz_header_s           z_gz_header_s
 #  define internal_state        z_internal_state
 
-#endif
+# endif
+#endif /*!VBOX*/
 
 #if defined(__MSDOS__) && !defined(MSDOS)
 #  define MSDOS
@@ -165,6 +277,9 @@
 #  ifndef WIN32
 #    define WIN32
 #  endif
+#endif
+#if (defined(_WIN64) || defined(__WIN64__)) && !defined(WIN64)
+#  define WIN64
 #endif
 #if (defined(MSDOS) || defined(OS2) || defined(WINDOWS)) && !defined(WIN32)
 #  if !defined(__GNUC__) && !defined(__FLAT__) && !defined(__386__)
@@ -201,7 +316,7 @@
 #if !defined(STDC) && (defined(__GNUC__) || defined(__BORLANDC__))
 #  define STDC
 #endif
-#if !defined(STDC) && (defined(MSDOS) || defined(WINDOWS) || defined(WIN32))
+#if !defined(STDC) && (defined(MSDOS) || defined(WINDOWS) || defined(WIN32) || defined(WIN64))
 #  define STDC
 #endif
 #if !defined(STDC) && (defined(OS2) || defined(__HOS_AIX__))
@@ -305,12 +420,12 @@
 #  endif
 #endif
 
-#if defined(WINDOWS) || defined(WIN32)
+#if defined(WINDOWS) || defined(WIN32) || defined(WIN64)
    /* If building or using zlib as a DLL, define ZLIB_DLL.
     * This is not mandatory, but it offers a little performance increase.
     */
 #  ifdef ZLIB_DLL
-#    if defined(WIN32) && (!defined(__BORLANDC__) || (__BORLANDC__ >= 0x500))
+#    if (defined(WIN32) || defined(WIN64)) && (!defined(__BORLANDC__) || (__BORLANDC__ >= 0x500))
 #      ifdef ZLIB_INTERNAL
 #        define ZEXTERN extern __declspec(dllexport)
 #      else
@@ -330,7 +445,7 @@
      /* No need for _export, use ZLIB.DEF instead. */
      /* For complete Windows compatibility, use WINAPI, not __stdcall. */
 #    define ZEXPORT WINAPI
-#    ifdef WIN32
+#    if defined(WIN32) || defined(WIN64)
 #      define ZEXPORTVA WINAPIV
 #    else
 #      define ZEXPORTVA FAR CDECL
@@ -408,11 +523,11 @@ typedef uLong FAR uLongf;
    typedef unsigned long z_crc_t;
 #endif
 
-#ifdef HAVE_UNISTD_H    /* may be set to #if 1 by ./configure */
+#if !defined(WIN32) && !defined(WIN64)
 #  define Z_HAVE_UNISTD_H
 #endif
 
-#ifdef HAVE_STDARG_H    /* may be set to #if 1 by ./configure */
+#if 1 /* by ./configure */
 #  define Z_HAVE_STDARG_H
 #endif
 
