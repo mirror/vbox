@@ -22,6 +22,7 @@
 #include "the-linux-kernel.h"
 #include "version-generated.h"
 #include "product-generated.h"
+#include <linux/ethtool.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/miscdevice.h>
@@ -32,6 +33,7 @@
 #include <iprt/process.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
+#include <iprt/string.h>
 
 /*
 #include <iprt/assert.h>
@@ -70,6 +72,9 @@ static int VBoxNetAdpLinuxIOCtl(struct inode *pInode, struct file *pFilp,
 static long VBoxNetAdpLinuxIOCtlUnlocked(struct file *pFilp,
                                          unsigned int uCmd, unsigned long ulArg);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
+
+static void vboxNetAdpEthGetDrvinfo(struct net_device *dev, struct ethtool_drvinfo *info);
+static int vboxNetAdpEthGetSettings(struct net_device *dev, struct ethtool_cmd *cmd);
 
 
 /*********************************************************************************************************************************
@@ -111,6 +116,14 @@ static struct miscdevice g_CtlDev =
 # endif
 };
 
+static const struct ethtool_ops gEthToolOpsVBoxNetAdp =
+{
+    .get_drvinfo        = vboxNetAdpEthGetDrvinfo,
+    .get_settings       = vboxNetAdpEthGetSettings,
+    .get_link           = ethtool_op_get_link,
+};
+
+
 struct VBoxNetAdpPriv
 {
     struct net_device_stats Stats;
@@ -151,6 +164,47 @@ struct net_device_stats *vboxNetAdpLinuxGetStats(struct net_device *pNetDev)
     return &pPriv->Stats;
 }
 
+
+/* ethtool_ops::get_drvinfo */
+static void vboxNetAdpEthGetDrvinfo(struct net_device *pNetDev, struct ethtool_drvinfo *info)
+{
+    PVBOXNETADPPRIV pPriv = netdev_priv(pNetDev);
+
+    RTStrPrintf(info->driver, sizeof(info->driver),
+                "%s", VBOXNETADP_NAME);
+
+    /*
+     * Would be nice to include VBOX_SVN_REV, but it's not available
+     * here.  Use file's svn revision via svn keyword?
+     */
+    RTStrPrintf(info->version, sizeof(info->version),
+                "%s", VBOX_VERSION_STRING);
+
+    RTStrPrintf(info->fw_version, sizeof(info->fw_version),
+                "0x%08X", INTNETTRUNKIFPORT_VERSION);
+
+    RTStrPrintf(info->bus_info, sizeof(info->driver),
+                "N/A");
+}
+
+
+/* ethtool_ops::get_settings */
+static int vboxNetAdpEthGetSettings(struct net_device *pNetDev, struct ethtool_cmd *cmd)
+{
+    cmd->supported      = 0;
+    cmd->advertising    = 0;
+    ethtool_cmd_speed_set(cmd, SPEED_10);
+    cmd->duplex         = DUPLEX_FULL;
+    cmd->port           = PORT_TP;
+    cmd->phy_address    = 0;
+    cmd->transceiver    = XCVR_INTERNAL;
+    cmd->autoneg        = AUTONEG_DISABLE;
+    cmd->maxtxpkt       = 0;
+    cmd->maxrxpkt       = 0;
+    return 0;
+}
+
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
 static const struct net_device_ops vboxNetAdpNetdevOps = {
     .ndo_open               = vboxNetAdpLinuxOpen,
@@ -173,6 +227,8 @@ static void vboxNetAdpNetDevInit(struct net_device *pNetDev)
     pNetDev->hard_start_xmit = vboxNetAdpLinuxXmit;
     pNetDev->get_stats = vboxNetAdpLinuxGetStats;
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
+
+    pNetDev->ethtool_ops = &gEthToolOpsVBoxNetAdp;
 
     pPriv = netdev_priv(pNetDev);
     memset(pPriv, 0, sizeof(*pPriv));
