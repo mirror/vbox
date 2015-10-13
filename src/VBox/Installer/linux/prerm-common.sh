@@ -11,6 +11,7 @@
 # Foundation, in version 2 as it comes in the "COPYING" file of the
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 # Put bits of the pre-uninstallation here which should work the same for all of
 # the Linux installers.  We do not use special helpers (e.g. dh_* on Debian),
