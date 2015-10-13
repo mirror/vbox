@@ -149,6 +149,10 @@ typedef struct RTHTTPINTERNAL
     int                 rcOutput;
     /** Download size hint set by the progress callback. */
     uint64_t            cbDownloadHint;
+    /** Callback called during download. */
+    PRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress;
+    /** User pointer parameter for pfnDownloadProgress. */
+    void               *pvDownloadProgressUser;
 } RTHTTPINTERNAL;
 /** Pointer to an internal HTTP client instance. */
 typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
@@ -2120,6 +2124,9 @@ static int rtHttpProgress(void *pData, double rdTotalDownload, double rdDownload
 
     pThis->cbDownloadHint = (uint64_t)rdTotalDownload;
 
+    if (pThis->pfnDownloadProgress)
+        pThis->pfnDownloadProgress(pThis, pThis->pvDownloadProgressUser, (uint64_t)rdTotalDownload, (uint64_t)rdDownloaded);
+
     return pThis->fAbort ? 1 : 0;
 }
 
@@ -2504,3 +2511,13 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
     return rc;
 }
 
+
+RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN(pThis);
+
+    pThis->pfnDownloadProgress = pfnDownloadProgress;
+    pThis->pvDownloadProgressUser = pvUser;
+    return VINF_SUCCESS;
+}

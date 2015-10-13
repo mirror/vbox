@@ -43,6 +43,10 @@ typedef R3PTRTYPE(struct RTHTTPINTERNAL *)      RTHTTP;
 typedef RTHTTP                                 *PRTHTTP;
 /** Nil HTTP/HTTPS client handle. */
 #define NIL_RTHTTP                              ((RTHTTP)0)
+/** Callback function to be called during RTHttpGet*(). Register it using RTHttpSetDownloadProgressCallback(). */
+typedef DECLCALLBACK(void) RTHTTPDOWNLDPROGRCALLBACK(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded);
+typedef RTHTTPDOWNLDPROGRCALLBACK *PRTHTTPDOWNLDPROGRCALLBACK;
+
 
 
 /**
@@ -281,6 +285,17 @@ RTR3DECL(int) RTHttpGatherCaCertsInStore(RTCRSTORE hStore, uint32_t fFlags, PRTE
  *                          Optional.
  */
 RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, PRTERRINFO pErrInfo);
+
+/**
+ * Set a callback function which is called during RTHttpGet*()
+ *
+ * @returns IPRT status code.
+ * @param   hHttp           The HTTP client instance.
+ * @param   pfnDownloadProgress Progress function to be called. Set it to
+ *                          NULL to disable the callback.
+ */
+RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress);
+
 
 /** @} */
 
