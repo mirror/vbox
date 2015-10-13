@@ -1839,6 +1839,10 @@ class TestDriver(base.TestDriver):                                              
         reporter.log("  TeleporterAddress:  %s" % (oVM.teleporterAddress));
         reporter.log("  TeleporterPassword: %s" % (oVM.teleporterPassword));
         reporter.log("  Clipboard mode:     %s" % (oVM.clipboardMode));
+        if self.fpApiVer >= 5.0:
+            reporter.log("  Drag and drop mode: %s" % (oVM.dnDMode));
+        elif self.fpApiVer >= 4.3:
+            reporter.log("  Drag and drop mode: %s" % (oVM.dragAndDropMode));
         if self.fpApiVer >= 4.0:
             reporter.log("  VRDP server:        %s" % (oVM.VRDEServer.enabled));
             try:    sPorts = oVM.VRDEServer.getVRDEProperty("TCP/Ports");
