@@ -193,7 +193,11 @@ static int vboxNetAdpEthGetSettings(struct net_device *pNetDev, struct ethtool_c
 {
     cmd->supported      = 0;
     cmd->advertising    = 0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
     ethtool_cmd_speed_set(cmd, SPEED_10);
+#else
+    cmd->speed          = SPEED_10;
+#endif
     cmd->duplex         = DUPLEX_FULL;
     cmd->port           = PORT_TP;
     cmd->phy_address    = 0;
