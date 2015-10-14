@@ -92,6 +92,7 @@ static void   gimR3HvTermHypercallSupport(PVM pVM);
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
+ * @param   pGimCfg     The GIM CFGM node.
  */
 VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
 {
