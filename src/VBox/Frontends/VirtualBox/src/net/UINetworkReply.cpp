@@ -246,6 +246,10 @@ int UINetworkReplyPrivateThread::applyProxyRules()
 
 int UINetworkReplyPrivateThread::applyHttpsCertificates()
 {
+    /* Check if we really need SSL: */
+    if (!m_request.url().toString().startsWith("https:", Qt::CaseInsensitive))
+        return VINF_SUCCESS;
+
     /* Set thread context: */
     m_strContext = tr("During certificate downloading");
 
