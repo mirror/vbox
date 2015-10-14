@@ -678,7 +678,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     if (m_pfnHostCallback)
                     {
                         VBOXDNDCBHGGETNEXTHOSTMSGDATA data;
-                        data.hdr.u32Magic = CB_MAGIC_DND_HG_GET_NEXT_HOST_MSG_DATA;
+                        data.hdr.u32Magic = VBOX_DND_CB_MAGIC_MAKE(0 /* uFn */, 0 /* uVer */);
                         data.uMsg    = u32Function;
                         data.cParms  = cParms;
                         data.paParms = paParms;
