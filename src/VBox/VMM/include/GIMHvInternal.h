@@ -242,7 +242,7 @@
 #define MSR_GIM_HV_SVERSION                       UINT32_C(0x40000081)
 /** Base address of synthetic interrupt event flag (R/W) */
 #define MSR_GIM_HV_SIEFP                          UINT32_C(0x40000082)
-/** Base address of synthetic interrupt parameter page (R/W) */
+/** Base address of synthetic interrupt message page (R/W) */
 #define MSR_GIM_HV_SIMP                           UINT32_C(0x40000083)
 /** End-Of-Message in synthetic interrupt parameter page (W) */
 #define MSR_GIM_HV_EOM                            UINT32_C(0x40000084)
@@ -643,7 +643,31 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 /** @} */
 
 
-/** @name Hyper-V debug support.
+/** @name Hyper-V MSR - Debug control (MSR_GIM_HV_SYNTH_DEBUG_CONTROL).
+ * @{
+ */
+/** Perform debug write. */
+#define MSR_GIM_HV_SYNTH_DEBUG_CONTROL_IS_WRITE(a)     RT_BOOL((a) & RT_BIT_64(0))
+/** Perform debug read. */
+#define MSR_GIM_HV_SYNTH_DEBUG_CONTROL_IS_READ(a)      RT_BOOL((a) & RT_BIT_64(1))
+/** Returns length of the debug write buffer. */
+#define MSR_GIM_HV_SYNTH_DEBUG_CONTROL_W_LEN(a)        (((a) & UINT64_C(0xffff0000)) >> 16)
+/** @} */
+
+
+/** @name Hyper-V MSR - Debug status (MSR_GIM_HV_SYNTH_DEBUG_STATUS).
+ * @{
+ */
+/** Debug send buffer operation success. */
+#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_W_SUCCESS_BIT    RT_BIT_32(0)
+/** Debug receive buffer operation success. */
+#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_R_SUCCESS_BIT    RT_BIT_32(2)
+/** Debug connection was reset. */
+#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_CONN_RESET_BIT   RT_BIT_32(3)
+/** @} */
+
+
+/** @name Hyper-V hypercall debug support.
  * Options and constants for Hyper-V debug hypercalls.
  * @{
  */
@@ -836,12 +860,22 @@ typedef struct GIMHV
 
     /** @name Guest debugging.
      * @{ */
-    /** Whether we're posing as the official Microsoft vendor. */
+    /** Whether we're posing as the Microsoft vendor. */
     bool                        fIsVendorMsHv;
-    bool                        afAlignment0[7];
+    /** Whether we're posing as the Microsoft virtualization service. */
+    bool                        fIsInterfaceVs;
+    bool                        afAlignment0[6];
     /** The auto IP address last chosen by the guest after failed ARP queries. */
     RTNETADDRIPV4               DbgGuestAddr;
     uint32_t                    uAlignment1;
+    /** Debug send buffer MSR. */
+    uint64_t                    uDebugSendBufferMsr;
+    /** Debug receive buffer MSR. */
+    uint64_t                    uDebugRecvBufferMsr;
+    /** Debug pending buffer MSR. */
+    uint64_t                    uDebugPendingBufferMsr;
+    /** Debug status MSR. */
+    uint64_t                    uDebugStatusMsr;
     /** @} */
 
     /** Array of MMIO2 regions. */
@@ -863,7 +897,7 @@ VMMR0_INT_DECL(int)             gimR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Of
 #endif /* IN_RING0 */
 
 #ifdef IN_RING3
-VMMR3_INT_DECL(int)             gimR3HvInit(PVM pVM);
+VMMR3_INT_DECL(int)             gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg);
 VMMR3_INT_DECL(int)             gimR3HvInitCompleted(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3HvTerm(PVM pVM);
 VMMR3_INT_DECL(void)            gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta);
@@ -879,6 +913,9 @@ VMMR3_INT_DECL(int)             gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCP
 
 VMMR3_INT_DECL(int)             gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv);
 VMMR3_INT_DECL(int)             gimR3HvHypercallRetrieveDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv);
+VMMR3_INT_DECL(int)             gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, uint32_t *pcbWritten, bool fUdpPkt);
+VMMR3_INT_DECL(int)             gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint32_t cbRead, uint32_t *pcbRead,
+                                                 uint32_t cMsTimeout, bool fUdpPkt);
 #endif /* IN_RING3 */
 
 VMM_INT_DECL(bool)              gimHvIsParavirtTscEnabled(PVM pVM);

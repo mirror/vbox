@@ -109,6 +109,18 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
      */
     PCFGMNODE pCfgNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "GIM/");
 
+    /*
+     * Validate the GIM settings.
+     */
+    rc = CFGMR3ValidateConfig(pCfgNode, "/GIM/",
+                              "Provider"   /* pszValidValues */
+                              "|Version",
+                              "HyperV"     /* pszValidNodes */,
+                              "GIM"        /* pszWho */,
+                              0            /* uInstance */);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /** @cfgm{/GIM/Provider, string}
      * The name of the GIM provider. The default is "none". */
     char szProvider[64];
@@ -142,7 +154,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
         else if (!RTStrCmp(szProvider, "HyperV"))
         {
             pVM->gim.s.enmProviderId = GIMPROVIDERID_HYPERV;
-            rc = gimR3HvInit(pVM);
+            rc = gimR3HvInit(pVM, pCfgNode);
         }
         else if (!RTStrCmp(szProvider, "KVM"))
         {
