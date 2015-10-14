@@ -590,7 +590,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.t
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.xml \
 		$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
-		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/%/validatemanual.run,) \
+		$(if $(and $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_DOCBOOK_DTD)),$(VBOX_PATH_MANUAL_OUTBASE)/%/validatemanual.run,) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE_CURRENT)
 	$(call MSG_TOOL,xsltproc $(notdir $(filter %.xsl,$^)),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(RM) -f $(addprefix $(@D)/,$(VBOX_MANUAL_LATEX_FILES_TARGET))
