@@ -378,7 +378,12 @@ stop_vms()
 cleanup()
 {
     for i in /lib/modules/*; do
-        if test -e "${i}/misc/vboxdrv.ko"; then
+        # We could just do "rm -f", but we only want to try deleting folders if
+        # we are sure they were ours, i.e. they had our modules in beforehand.
+        if    test -e "${i}/misc/vboxdrv.ko" \
+           || test -e "${i}/misc/vboxnetadp.ko" \
+           || test -e "${i}/misc/vboxnetflt.ko" \
+           || test -e "${i}/misc/vboxpci.ko"; then
             rm -f "${i}/misc/vboxdrv.ko" "${i}/misc/vboxnetadp.ko" \
                   "${i}/misc/vboxnetflt.ko" "${i}/misc/vboxpci.ko"
             # Remove the kernel version folder if it was empty except for us.
