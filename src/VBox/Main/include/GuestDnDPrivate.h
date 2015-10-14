@@ -596,6 +596,9 @@ public:
             return VINF_SUCCESS;
         }
 
+        if (!RTStrIsValidEncoding(pszList))
+            return VERR_INVALID_PARAMETER;
+
         RTCList<RTCString> lstURIOrg = RTCString(pszList, cbList).split("\r\n");
         if (lstURIOrg.isEmpty())
             return VINF_SUCCESS;
