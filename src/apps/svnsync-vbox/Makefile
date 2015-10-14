@@ -2,7 +2,7 @@
 # Makefile
 #
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -18,9 +18,10 @@ CFLAGS = -O2 -g -Wall -pedantic -Wno-long-long -Wno-trigraphs \
   -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations
 DEFS = -DVBOX -D_FILE_OFFSET_BITS=64
 INCS = -I. -I/usr/include/subversion-1 -I/usr/include/apr-1.0
-LIBS = -lsvn_ra-1 -lsvn_ra_neon-1 -lsvn_ra_local-1 \
-  -lsvn_repos-1 -lsvn_fs-1 -lsvn_fs_base-1 -lsvn_fs_fs-1 -lsvn_delta-1 \
-  -lsvn_subr-1 -lneon -lapr-1 -laprutil-1
+LIBS = -lsvn_ra-1 -lsvn_ra_local-1 \
+  -lsvn_repos-1 -lsvn_fs-1 -lsvn_delta-1 \
+  -lsvn_subr-1 -lapr-1 -laprutil-1 \
+  -ldb
 
 all: svnsync-vbox
 

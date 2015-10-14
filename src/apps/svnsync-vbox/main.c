@@ -19,6 +19,7 @@
  */
 
 #ifdef VBOX
+#include <svn_version.h>
 #include <svn_cmdline.h>
 #include <svn_config.h>
 #include <svn_pools.h>
@@ -276,8 +277,13 @@ get_props_sync(svn_ra_session_t *session,
 {
   apr_hash_t *props;
   svn_string_t *value;
+  svn_node_kind_t nodekind;
 
-  SVN_ERR(svn_ra_get_file(session, path, revision, NULL, NULL, &props, pool));
+  SVN_ERR(svn_ra_check_path(session, path, revision, &nodekind, pool));
+  if (nodekind == svn_node_file)
+    SVN_ERR(svn_ra_get_file(session, path, revision, NULL, NULL, &props, pool));
+  else
+    SVN_ERR(svn_ra_get_dir2(session, NULL, NULL, &props, path, revision, 0, pool));
   value = apr_hash_get(props, SVNSYNC_PROP_PROCESS, APR_HASH_KEY_STRING);
   if (value)
     *proc = !strcmp(value->data, "export");
@@ -370,8 +376,13 @@ get_lock(svn_ra_session_t *session, apr_pool_t *pool)
         }
       else
         {
+#ifdef VBOX
+          SVN_ERR(svn_ra_change_rev_prop2(session, 0, SVNSYNC_PROP_LOCK,
+                                          NULL, mylocktoken, subpool));
+#else /* !VBOX */
           SVN_ERR(svn_ra_change_rev_prop(session, 0, SVNSYNC_PROP_LOCK,
                                          mylocktoken, subpool));
+#endif /* !VBOX */
         }
     }
 
@@ -402,7 +413,11 @@ with_locked(svn_ra_session_t *session,
 
   err = func(session, baton, pool);
 
+#ifdef VBOX
+  err2 = svn_ra_change_rev_prop2(session, 0, SVNSYNC_PROP_LOCK, NULL, NULL, pool);
+#else /* !VBOX */
   err2 = svn_ra_change_rev_prop(session, 0, SVNSYNC_PROP_LOCK, NULL, pool);
+#endif /* !VBOX */
   if (err2 && err)
     {
       svn_error_clear(err2); /* XXX what to do here? */
@@ -518,7 +533,7 @@ copy_revprops(svn_ra_session_t *from_session,
 #ifdef VBOX
         if (strncmp(key, SVN_PROP_REVISION_AUTHOR,
                     sizeof(SVN_PROP_REVISION_AUTHOR) - 1))
-          SVN_ERR(svn_ra_change_rev_prop(to_session, rev_to, key, val, subpool));
+          SVN_ERR(svn_ra_change_rev_prop2(to_session, rev_to, key, NULL, val, subpool));
 #else /* !VBOX */
         SVN_ERR(svn_ra_change_rev_prop(to_session, rev, key, val, subpool));
 #endif /* !VBOX */
@@ -540,8 +555,8 @@ copy_revprops(svn_ra_session_t *from_session,
           apr_hash_this(hi, &name, NULL, NULL);
 
 #ifdef VBOX
-          SVN_ERR(svn_ra_change_rev_prop(to_session, rev_to, name, NULL,
-                                         subpool));
+          SVN_ERR(svn_ra_change_rev_prop2(to_session, rev_to, name, NULL, NULL,
+                                          subpool));
 #else /* !VBOX */
           SVN_ERR(svn_ra_change_rev_prop(to_session, rev, name, NULL,
                                          subpool));
@@ -824,7 +839,7 @@ init_change_file_prop(void *file_baton,
 
   DX(fprintf(stderr, "init change_file_prop %s\n", name);)
   DX(fprintf(stderr, "  %s\n", fb->process ? "EXPORT" : "IGNORE");)
-  if (svn_property_kind(NULL, name) != svn_prop_regular_kind)
+  if (svn_property_kind2(name) != svn_prop_regular_kind)
     return SVN_NO_ERROR;
   if (!strcmp(name, "cvs2svn:cvs-rev"))
     return SVN_NO_ERROR;
@@ -859,7 +874,7 @@ init_change_dir_prop(void *dir_baton,
 
   DX(fprintf(stderr, "init change_dir_prop %s\n", name);)
   DX(fprintf(stderr, "  %s\n", db->process ? "EXPORT" : "IGNORE");)
-  if (svn_property_kind(NULL, name) != svn_prop_regular_kind)
+  if (svn_property_kind2(name) != svn_prop_regular_kind)
     return SVN_NO_ERROR;
   if (!strcmp(name, "cvs2svn:cvs-rev"))
     return SVN_NO_ERROR;
@@ -1022,7 +1037,7 @@ do_initialize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
   /* Now fill in our bookkeeping info in the dest repository. */
 
 #ifdef VBOX
-  SVN_ERR(svn_ra_open3(&from_session, baton->from_url, NULL, baton->callbacks,
+  SVN_ERR(svn_ra_open4(&from_session, NULL, baton->from_url, NULL, baton->callbacks,
                        baton, baton->config, pool));
 #else /* !VBOX */
   SVN_ERR(svn_ra_open2(&from_session, baton->from_url, baton->callbacks,
@@ -1032,9 +1047,15 @@ do_initialize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
   SVN_ERR(check_if_session_is_at_repos_root(from_session, baton->from_url,
                                             pool));
 
+#ifdef VBOX
+  SVN_ERR(svn_ra_change_rev_prop2(to_session, 0, SVNSYNC_PROP_FROM_URL, NULL,
+                                  svn_string_create(baton->from_url, pool),
+                                  pool));
+#else /* !VBOX */
   SVN_ERR(svn_ra_change_rev_prop(to_session, 0, SVNSYNC_PROP_FROM_URL,
                                  svn_string_create(baton->from_url, pool),
                                  pool));
+#endif /* !VBOX */
 
 #ifdef VBOX
   SVN_ERR(svn_ra_get_uuid2(from_session, &uuid, pool));
@@ -1042,30 +1063,36 @@ do_initialize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
   SVN_ERR(svn_ra_get_uuid(from_session, &uuid, pool));
 #endif /* !VBOX */
 
+#ifdef VBOX
+  SVN_ERR(svn_ra_change_rev_prop2(to_session, 0, SVNSYNC_PROP_FROM_UUID, NULL,
+                                 svn_string_create(uuid, pool), pool));
+#else /* !VBOX */
   SVN_ERR(svn_ra_change_rev_prop(to_session, 0, SVNSYNC_PROP_FROM_UUID,
                                  svn_string_create(uuid, pool), pool));
+#endif /* !VBOX */
 
 #ifdef VBOX
   start_rev_str = svn_string_create(apr_psprintf(pool, "%ld", baton->start_rev),
                                     pool);
-  SVN_ERR(svn_ra_change_rev_prop(to_session, 0, SVNSYNC_PROP_START_REV,
-                                 start_rev_str, pool));
-  SVN_ERR(svn_ra_change_rev_prop(to_session, 0, SVNSYNC_PROP_LAST_MERGED_REV,
-                                 start_rev_str, pool));
+  SVN_ERR(svn_ra_change_rev_prop2(to_session, 0, SVNSYNC_PROP_START_REV, NULL,
+                                  start_rev_str, pool));
+  SVN_ERR(svn_ra_change_rev_prop2(to_session, 0, SVNSYNC_PROP_LAST_MERGED_REV, NULL,
+                                  start_rev_str, pool));
   if (!baton->default_process)
     default_process = "export";
-  else default_process = baton->default_process;
-  SVN_ERR(svn_ra_change_rev_prop(to_session, 0, SVNSYNC_PROP_DEFAULT_PROCESS,
-                                 svn_string_create(default_process, pool),
-                                 pool));
+  else
+    default_process = baton->default_process;
+  SVN_ERR(svn_ra_change_rev_prop2(to_session, 0, SVNSYNC_PROP_DEFAULT_PROCESS, NULL,
+                                  svn_string_create(default_process, pool),
+                                  pool));
   if (baton->replace_externals)
-    SVN_ERR(svn_ra_change_rev_prop(to_session, 0,
-                                   SVNSYNC_PROP_REPLACE_EXTERNALS,
-                                   svn_string_create("", pool), pool));
+    SVN_ERR(svn_ra_change_rev_prop2(to_session, 0,
+                                    SVNSYNC_PROP_REPLACE_EXTERNALS, NULL,
+                                    svn_string_create("", pool), pool));
   if (baton->replace_license)
-    SVN_ERR(svn_ra_change_rev_prop(to_session, 0,
-                                   SVNSYNC_PROP_REPLACE_LICENSE,
-                                   svn_string_create("", pool), pool));
+    SVN_ERR(svn_ra_change_rev_prop2(to_session, 0,
+                                    SVNSYNC_PROP_REPLACE_LICENSE, NULL,
+                                    svn_string_create("", pool), pool));
 #else /* !VBOX */
   SVN_ERR(svn_ra_change_rev_prop(to_session, 0, SVNSYNC_PROP_LAST_MERGED_REV,
                                  svn_string_create("0", pool), pool));
@@ -1108,7 +1135,7 @@ do_initialize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
                                       init_commit_callback, baton,
                                       NULL, FALSE, pool));
 
-    SVN_ERR(svn_ra_open3(&from_session_prop, baton->from_url, NULL,
+    SVN_ERR(svn_ra_open4(&from_session_prop, NULL, baton->from_url, NULL,
                          baton->callbacks, baton, baton->config, pool));
 
     SVN_ERR(get_init_editor(commit_editor, commit_baton, baton->start_rev,
@@ -1122,9 +1149,9 @@ do_initialize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
                                               pool));
 
     /* Run it via an update reporter. */
-    SVN_ERR(svn_ra_do_update2(from_session, &reporter, &report_baton,
+    SVN_ERR(svn_ra_do_update3(from_session, &reporter, &report_baton,
                               baton->start_rev, "", svn_depth_infinity, FALSE,
-                              cancel_editor, cancel_baton, pool));
+                              FALSE, cancel_editor, cancel_baton, pool, pool));
     SVN_ERR(reporter->set_path(report_baton, "", baton->start_rev,
                                svn_depth_infinity, TRUE, NULL, pool));
     SVN_ERR(reporter->finish_report(report_baton, pool));
@@ -1148,8 +1175,8 @@ initialize_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
 
   SVN_ERR(svn_opt_parse_num_args(&args, os, 2, pool));
 
-  to_url = svn_path_canonicalize(APR_ARRAY_IDX(args, 0, const char *), pool);
-  from_url = svn_path_canonicalize(APR_ARRAY_IDX(args, 1, const char *), pool);
+  to_url = svn_uri_canonicalize(APR_ARRAY_IDX(args, 0, const char *), pool);
+  from_url = svn_uri_canonicalize(APR_ARRAY_IDX(args, 1, const char *), pool);
 
   if (! svn_path_is_url(to_url))
     return svn_error_createf(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
@@ -1158,8 +1185,8 @@ initialize_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
     return svn_error_createf(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
                              _("Path '%s' is not a URL"), from_url);
 
-  baton.to_url = svn_path_canonicalize(to_url, pool);
-  baton.from_url = svn_path_canonicalize(from_url, pool);
+  baton.to_url = to_url;
+  baton.from_url = from_url;
   baton.config = opt_baton->config;
 #ifdef VBOX
   baton.start_rev = opt_baton->start_rev;
@@ -1174,7 +1201,7 @@ initialize_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
   baton.callbacks = &callbacks;
 
 #ifdef VBOX
-  SVN_ERR(svn_ra_open3(&to_session, baton.to_url, NULL,
+  SVN_ERR(svn_ra_open4(&to_session, NULL, baton.to_url, NULL,
                        &callbacks, &baton, baton.config, pool));
 #else /* !VBOX */
   SVN_ERR(svn_ra_open2(&to_session,
@@ -1244,6 +1271,7 @@ typedef struct {
 } node_baton_t;
 
 
+#ifdef VBOX
 static svn_revnum_t
 lookup_revnum(svn_ra_session_t *to_session,
               svn_revnum_t revnum,
@@ -1303,18 +1331,13 @@ copy_file(const char *src_path,
   /* Copy over contents from src revision in source repository. */
   SVN_ERR(open_tmp_file(&tmpfile, NULL, subpool));
   filestream = svn_stream_from_aprfile2(tmpfile, FALSE, subpool);
-  /* svn_ra_get_file() insists on getting a file path without leading /,
-   * and there is a leading / in our input parameter when copying from a
-   * different branch. The assertion is annoying, as continuing would work. */
-  if (src_path[0] == '/')
-    src_path++;
-  SVN_ERR(svn_ra_get_file(from_session, src_path, src_rev, filestream, NULL,
-                          &fileprops, subpool));
+  SVN_ERR(svn_ra_get_file(from_session, STRIP_LEADING_SLASH(src_path), src_rev,
+                          filestream, NULL, &fileprops, subpool));
   SVN_ERR(svn_io_file_seek(tmpfile, APR_SET, &offset, subpool));
 
   SVN_ERR(apply_textdelta(file_baton, NULL, subpool, &window_handler,
                           &window_handler_baton));
-  svn_txdelta(&deltastream, emptystream, filestream, subpool);
+  svn_txdelta2(&deltastream, emptystream, filestream, FALSE, subpool);
   do
   {
     SVN_ERR(svn_txdelta_next_window(&window, deltastream, subpool));
@@ -1373,8 +1396,8 @@ copy_dir_rec(const char *src_path,
     apr_hash_this(hi, &key, NULL, &val);
     val_ent = (svn_dirent_t *)val;
     oppool = svn_pool_create(subpool);
-    from_path = svn_path_join(src_path, key, oppool);
-    to_path = svn_path_join(dst_path, key, oppool);
+    from_path = svn_relpath_join(src_path, key, oppool);
+    to_path = svn_relpath_join(dst_path, key, oppool);
     switch (val_ent->kind)
     {
       case svn_node_file:
@@ -1414,6 +1437,7 @@ copy_dir_rec(const char *src_path,
   svn_pool_clear(subpool);
   return SVN_NO_ERROR;
 }
+#endif /* VBOX */
 
 /*** Editor vtable functions ***/
 
@@ -2132,9 +2156,9 @@ change_file_prop(void *file_baton,
   DX(fprintf(stderr, "  %s (ignore_everything %d)\n", fb->process ? "EXPORT" : "IGNORE", fb->ignore_everything);)
 #endif /* VBOX */
   /* only regular properties can pass over libsvn_ra */
-  if (svn_property_kind(NULL, name) != svn_prop_regular_kind)
-    return SVN_NO_ERROR;
 #ifdef VBOX
+  if (svn_property_kind2(name) != svn_prop_regular_kind)
+    return SVN_NO_ERROR;
   if (!strcmp(name, "cvs2svn:cvs-rev"))
     return SVN_NO_ERROR;
   if (eb->replace_license)
@@ -2152,7 +2176,10 @@ change_file_prop(void *file_baton,
   if (!fb->process || fb->ignore_everything)
     return SVN_NO_ERROR;
   eb->changeset_live = TRUE;
-#endif /* VBOX */
+#else /* !VBOX */
+  if (svn_property_kind(NULL, name) != svn_prop_regular_kind)
+    return SVN_NO_ERROR;
+#endif /* !VBOX */
 
   return eb->wrapped_editor->change_file_prop(fb->wrapped_node_baton,
                                               name, value, pool);
@@ -2172,9 +2199,9 @@ change_dir_prop(void *dir_baton,
   DX(fprintf(stderr, "  %s (ignore_everything %d)\n", db->process ? "EXPORT" : "IGNORE", db->ignore_everything);)
 #endif /* VBOX */
   /* only regular properties can pass over libsvn_ra */
-  if (svn_property_kind(NULL, name) != svn_prop_regular_kind)
-    return SVN_NO_ERROR;
 #ifdef VBOX
+  if (svn_property_kind2(name) != svn_prop_regular_kind)
+    return SVN_NO_ERROR;
   if (!strcmp(name, "cvs2svn:cvs-rev"))
     return SVN_NO_ERROR;
   if (eb->replace_externals)
@@ -2192,7 +2219,10 @@ change_dir_prop(void *dir_baton,
   if (!db->process || db->ignore_everything)
     return SVN_NO_ERROR;
   eb->changeset_live = TRUE;
-#endif /* VBOX */
+#else /* !VBOX */
+  if (svn_property_kind(NULL, name) != svn_prop_regular_kind)
+    return SVN_NO_ERROR;
+#endif /* !VBOX */
 
   return eb->wrapped_editor->change_dir_prop(db->wrapped_node_baton,
                                              name, value, pool);
@@ -2406,7 +2436,7 @@ open_source_session(svn_ra_session_t **from_session,
 #endif /* VBOX */
 
 #ifdef VBOX
-  SVN_ERR(svn_ra_open3(from_session, from_url->data, NULL, callbacks, baton,
+  SVN_ERR(svn_ra_open4(from_session, NULL, from_url->data, NULL, callbacks, baton,
                        config, pool));
 #else /* !VBOX */
   SVN_ERR(svn_ra_open2(from_session, from_url->data, callbacks, baton,
@@ -2478,9 +2508,9 @@ do_synchronize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
   SVN_ERR(svn_ra_rev_prop(to_session, 0, SVNSYNC_PROP_REPLACE_LICENSE,
                           &replace_license_str, pool));
   replace_license = !!replace_license_str;
-  SVN_ERR(svn_ra_open3(&from_session_prop, from_url->data, NULL,
+  SVN_ERR(svn_ra_open4(&from_session_prop, NULL, from_url->data, NULL,
                        baton->callbacks, baton, baton->config, pool));
-  SVN_ERR(svn_ra_open3(&to_session_prop, baton->to_url, NULL,
+  SVN_ERR(svn_ra_open4(&to_session_prop, NULL, baton->to_url, NULL,
                        baton->callbacks, baton, baton->config, pool));
 #else /* !VBOX */
   SVN_ERR(open_source_session(&from_session, &last_merged_rev, to_session,
@@ -2564,12 +2594,21 @@ do_synchronize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
              end up not being able to tell if there have been bogus
              (i.e. non-svnsync) commits to the dest repository. */
 
+#ifdef VBOX
+          SVN_ERR(svn_ra_change_rev_prop2(to_session, 0,
+                                          SVNSYNC_PROP_LAST_MERGED_REV, NULL,
+                                          last_merged_rev, pool));
+          SVN_ERR(svn_ra_change_rev_prop2(to_session, 0,
+                                          SVNSYNC_PROP_CURRENTLY_COPYING, NULL,
+                                          NULL, pool));
+#else /* !VBOX */
           SVN_ERR(svn_ra_change_rev_prop(to_session, 0,
                                          SVNSYNC_PROP_LAST_MERGED_REV,
                                          last_merged_rev, pool));
           SVN_ERR(svn_ra_change_rev_prop(to_session, 0,
                                          SVNSYNC_PROP_CURRENTLY_COPYING,
                                          NULL, pool));
+#endif /* !VBOX */
         }
       /* If copying > to_latest, then we just fall through to
          attempting to copy the revision again. */
@@ -2623,11 +2662,19 @@ do_synchronize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
          NOTE: We have to set this before we start the commit editor,
          because ra_svn doesn't let you change rev props during a
          commit. */
+#ifdef VBOX
+      SVN_ERR(svn_ra_change_rev_prop2(to_session, 0,
+                                      SVNSYNC_PROP_CURRENTLY_COPYING, NULL,
+                                      svn_string_createf(subpool, "%ld",
+                                                         current),
+                                      subpool));
+#else /* !VBOX */
       SVN_ERR(svn_ra_change_rev_prop(to_session, 0,
                                      SVNSYNC_PROP_CURRENTLY_COPYING,
                                      svn_string_createf(subpool, "%ld",
                                                         current),
                                      subpool));
+#endif /* !VBOX */
 
       /* The actual copy is just a replay hooked up to a commit. */
 
@@ -2717,15 +2764,15 @@ do_synchronize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
                               baton->committed_rev, TRUE, subpool));
 
         /* Add a revision cross-reference revprop. */
-        SVN_ERR(svn_ra_change_rev_prop(to_session, 0,
-                                       apr_psprintf(subpool,
-                                                    SVNSYNC_PROP_REV__FMT,
-                                                    current),
-                                       svn_string_create(apr_psprintf(subpool,
-                                                                      "%ld",
-                                                                      baton->committed_rev),
-                                   subpool),
-                 subpool));
+        SVN_ERR(svn_ra_change_rev_prop2(to_session, 0,
+                                        apr_psprintf(subpool,
+                                                     SVNSYNC_PROP_REV__FMT,
+                                                     current), NULL,
+                                        svn_string_create(apr_psprintf(subpool,
+                                                                       "%ld",
+                                                                       baton->committed_rev),
+                                                          subpool),
+                                        subpool));
       }
       else
       {
@@ -2734,15 +2781,15 @@ do_synchronize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
          * operation just because a source file was not modified when it
          * appears in the destination repository. */
         SVN_ERR(svn_ra_get_latest_revnum(to_session, &to_latest, subpool));
-        SVN_ERR(svn_ra_change_rev_prop(to_session, 0,
-                                       apr_psprintf(subpool,
-                                                    SVNSYNC_PROP_REV__FMT,
-                                                    current),
-                                       svn_string_create(apr_psprintf(subpool,
-                                                                      "%ld",
-                                                                      to_latest),
-                                   subpool),
-                 subpool));
+        SVN_ERR(svn_ra_change_rev_prop2(to_session, 0,
+                                        apr_psprintf(subpool,
+                                                     SVNSYNC_PROP_REV__FMT,
+                                                     current), NULL,
+                                        svn_string_create(apr_psprintf(subpool,
+                                                                       "%ld",
+                                                                       to_latest),
+                                                          subpool),
+                                        subpool));
       }
 #else /* !VBOX */
       SVN_ERR(copy_revprops(from_session, to_session, current, TRUE, subpool));
@@ -2750,6 +2797,15 @@ do_synchronize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
 
       /* Ok, we're done, bring the last-merged-rev property up to date. */
 
+#ifdef VBOX
+      SVN_ERR(svn_ra_change_rev_prop2
+              (to_session,
+               0,
+               SVNSYNC_PROP_LAST_MERGED_REV, NULL,
+               svn_string_create(apr_psprintf(subpool, "%ld", current),
+                                 subpool),
+               subpool));
+#else /* !VBOX */
       SVN_ERR(svn_ra_change_rev_prop
               (to_session,
                0,
@@ -2757,13 +2813,20 @@ do_synchronize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
                svn_string_create(apr_psprintf(subpool, "%ld", current),
                                  subpool),
                subpool));
+#endif /* !VBOX */
 
       /* And finally drop the currently copying prop, since we're done
          with this revision. */
 
+#ifdef VBOX
+      SVN_ERR(svn_ra_change_rev_prop2(to_session, 0,
+                                      SVNSYNC_PROP_CURRENTLY_COPYING, NULL,
+                                      NULL, subpool));
+#else /* !VBOX */
       SVN_ERR(svn_ra_change_rev_prop(to_session, 0,
                                      SVNSYNC_PROP_CURRENTLY_COPYING,
                                      NULL, subpool));
+#endif /* !VBOX */
     }
 
   return SVN_NO_ERROR;
@@ -2783,7 +2846,7 @@ synchronize_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
 
   SVN_ERR(svn_opt_parse_num_args(&args, os, 1, pool));
 
-  to_url = svn_path_canonicalize(APR_ARRAY_IDX(args, 0, const char *), pool);
+  to_url = svn_uri_canonicalize(APR_ARRAY_IDX(args, 0, const char *), pool);
 
   if (! svn_path_is_url(to_url))
     return svn_error_createf(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
@@ -2797,7 +2860,7 @@ synchronize_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
   baton.to_url = to_url;
 
 #ifdef VBOX
-  SVN_ERR(svn_ra_open3(&to_session, to_url, NULL,
+  SVN_ERR(svn_ra_open4(&to_session, NULL, to_url, NULL,
                        baton.callbacks, &baton, baton.config, pool));
 #else /* !VBOX */
   SVN_ERR(svn_ra_open2(&to_session,
@@ -2888,7 +2951,7 @@ copy_revprops_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
 
   SVN_ERR(svn_opt_parse_num_args(&args, os, 2, pool));
 
-  to_url = svn_path_canonicalize(APR_ARRAY_IDX(args, 0, const char *), pool);
+  to_url = svn_uri_canonicalize(APR_ARRAY_IDX(args, 0, const char *), pool);
   revision = strtol(APR_ARRAY_IDX(args, 1, const char *), &digits_end, 10);
 
   if (! svn_path_is_url(to_url))
@@ -2907,7 +2970,7 @@ copy_revprops_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
   baton.rev = revision;
 
 #ifdef VBOX
-  SVN_ERR(svn_ra_open3(&to_session, to_url, NULL,
+  SVN_ERR(svn_ra_open4(&to_session, NULL, to_url, NULL,
                        baton.callbacks, &baton, baton.config, pool));
 #else /* !VBOX */
   SVN_ERR(svn_ra_open2(&to_session,
@@ -2952,9 +3015,9 @@ help_cmd(apr_getopt_t *os, void *baton, apr_pool_t *pool)
   SVN_ERR(svn_ra_print_modules(version_footer, pool));
 
 #ifdef VBOX
-  SVN_ERR(svn_opt_print_help3(os, "svnsync",
+  SVN_ERR(svn_opt_print_help4(os, "svnsync",
                               opt_baton ? opt_baton->version : FALSE,
-                              FALSE, version_footer->data, header,
+                              FALSE, FALSE, version_footer->data, header,
                               svnsync_cmd_table, svnsync_options, NULL,
                               NULL, pool));
 #else /* !VBOX */
@@ -3021,9 +3084,15 @@ main(int argc, const char *argv[])
       return EXIT_FAILURE;
     }
 
-  err = svn_cmdline__getopt_init(&os, argc, argv, pool);
-  if (err)
-    return svn_cmdline_handle_exit_error(err, pool, "svnsync: ");
+  {
+    apr_status_t apr_err;
+    apr_err = apr_getopt_init(&os, pool, argc, argv);
+    if (apr_err)
+    {
+      err = svn_error_wrap_apr(apr_err, "Error initializing command line parsing");
+      return svn_cmdline_handle_exit_error(err, pool, "svnsync: ");
+    }
+  }
 
   os->interleave = 1;
 
