@@ -60,6 +60,13 @@ class UINetworkReplyPrivateThread : public QThread
     Q_OBJECT;
 #endif
 
+signals:
+
+    /** Notifies listeners about download progress change.
+      * @param iCurrent holds the current amount of bytes downloaded.
+      * @param iTotal   holds the total amount of bytes to be downloaded. */
+    void sigDownloadProgress(qint64 iCurrent, qint64 iTotal);
+
 public:
 
     /** Constructs network reply thread for the passed @a request of the passed @a type. */
@@ -95,8 +102,10 @@ public:
     /** @} */
 
 private:
+
     /** @name Helpers - HTTP stuff
      * @{ */
+    int applyConfiguration();
     int applyProxyRules();
     int applyHttpsCertificates();
     int applyRawHeaders();
@@ -127,6 +136,14 @@ private:
                                             PRTERRINFOSTATIC pStaticErrInfo);
     static int convertVerifyAndAddPemCertificateToStore(RTCRSTORE hStore, void const *pvResponse,
                                                         size_t cbResponse, PCRTCRCERTWANTED pWantedCert);
+    /** @} */
+
+    /** @name HTTP download progress handling.
+     * @{ */
+    /** Redirects download progress callback to particular object which can handle it. */
+    static void handleProgressChange(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded);
+    /** Handles download progress callback. */
+    void handleProgressChange(uint64_t cbDownloadTotal, uint64_t cbDownloaded);
     /** @} */
 
     /** Holds short descriptive context of thread's current operation. */
@@ -233,6 +250,12 @@ void UINetworkReplyPrivateThread::abort()
     /* Call for abort: */
     if (m_hHttp != NIL_RTHTTP)
         RTHttpAbort(m_hHttp);
+}
+
+int UINetworkReplyPrivateThread::applyConfiguration()
+{
+    /* Install downloading progress callback: */
+    return RTHttpSetDownloadProgressCallback(m_hHttp, &UINetworkReplyPrivateThread::handleProgressChange, this);
 }
 
 int UINetworkReplyPrivateThread::applyProxyRules()
@@ -440,6 +463,10 @@ void UINetworkReplyPrivateThread::run()
     m_iError = RTHttpCreate(&m_hHttp);
     if (RT_SUCCESS(m_iError))
     {
+        /* Apply configuration: */
+        if (RT_SUCCESS(m_iError))
+            m_iError = applyConfiguration();
+
         /* Apply proxy-rules: */
         if (RT_SUCCESS(m_iError))
             m_iError = applyProxyRules();
@@ -789,6 +816,21 @@ UINetworkReplyPrivateThread::convertVerifyAndAddPemCertificateToStore(RTCRSTORE 
     return rc;
 }
 
+/* static */
+void UINetworkReplyPrivateThread::handleProgressChange(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded)
+{
+    /* Redirect callback to particular object: */
+    Q_UNUSED(hHttp);
+    AssertPtrReturnVoid(pvUser);
+    static_cast<UINetworkReplyPrivateThread*>(pvUser)->handleProgressChange(cbDownloadTotal, cbDownloaded);
+}
+
+void UINetworkReplyPrivateThread::handleProgressChange(uint64_t cbDownloadTotal, uint64_t cbDownloaded)
+{
+    /* Notify listeners about progress change: */
+    emit sigDownloadProgress(cbDownloaded, cbDownloadTotal);
+}
+
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
 
 /**
@@ -815,6 +857,8 @@ public:
         m_strErrorTemplate = tr("%1: %2", "Context description: Error description");
         /* Create and run network-reply thread: */
         m_pThread = new UINetworkReplyPrivateThread(request, type);
+        connect(m_pThread, SIGNAL(sigDownloadProgress(qint64, qint64)),
+                this, SIGNAL(downloadProgress(qint64, qint64)), Qt::QueuedConnection);
         connect(m_pThread, SIGNAL(finished()), this, SLOT(sltFinished()));
         m_pThread->start();
     }
