@@ -194,7 +194,7 @@ crStateTextureInitTextureObj(CRContext *ctx, CRTextureObj *tobj,
     tobj->minLod        = -1000.0;
     tobj->maxLod        = 1000.0;
     tobj->baseLevel     = 0;
-    tobj->maxLevel      = 1000;
+    tobj->maxLevel      = t->maxLevel;
 #endif
     tobj->target        = target;
     tobj->id            = name;
@@ -2836,7 +2836,7 @@ crStateGetTexLevelParameterfv(GLenum target, GLint level,
         return;
     }
 
-    if (level < 0 && level > t->maxLevel)
+    if (level < 0 || level > t->maxLevel)
     {
         crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
             "glGetTexLevelParameterfv: Invalid level: %d", level);
@@ -2922,7 +2922,7 @@ crStateGetTexLevelParameteriv(GLenum target, GLint level,
         return;
     }
 
-    if (level < 0 && level > t->maxLevel)
+    if (level < 0 || level > t->maxLevel)
     {
         crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
             "glGetTexLevelParameteriv: Invalid level: %d", level);
