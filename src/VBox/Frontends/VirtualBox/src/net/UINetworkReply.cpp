@@ -58,7 +58,6 @@ class UINetworkReplyPrivateThread : public QThread
 {
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
     Q_OBJECT;
-#endif
 
 signals:
 
@@ -66,6 +65,7 @@ signals:
       * @param iCurrent holds the current amount of bytes downloaded.
       * @param iTotal   holds the total amount of bytes to be downloaded. */
     void sigDownloadProgress(qint64 iCurrent, qint64 iTotal);
+#endif /* !VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS */
 
 public:
 
@@ -827,8 +827,10 @@ void UINetworkReplyPrivateThread::handleProgressChange(RTHTTP hHttp, void *pvUse
 
 void UINetworkReplyPrivateThread::handleProgressChange(uint64_t cbDownloadTotal, uint64_t cbDownloaded)
 {
+#ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
     /* Notify listeners about progress change: */
     emit sigDownloadProgress(cbDownloaded, cbDownloadTotal);
+#endif /* !VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS */
 }
 
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
@@ -857,8 +859,10 @@ public:
         m_strErrorTemplate = tr("%1: %2", "Context description: Error description");
         /* Create and run network-reply thread: */
         m_pThread = new UINetworkReplyPrivateThread(request, type);
+#ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
         connect(m_pThread, SIGNAL(sigDownloadProgress(qint64, qint64)),
                 this, SIGNAL(downloadProgress(qint64, qint64)), Qt::QueuedConnection);
+#endif /* !VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS */
         connect(m_pThread, SIGNAL(finished()), this, SLOT(sltFinished()));
         m_pThread->start();
     }
