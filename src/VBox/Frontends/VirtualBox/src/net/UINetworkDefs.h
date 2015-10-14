@@ -22,6 +22,7 @@
 enum UINetworkRequestType
 {
     UINetworkRequestType_HEAD,
+    UINetworkRequestType_HEAD_Our,
     UINetworkRequestType_GET,
     UINetworkRequestType_GET_Our
 };

@@ -62,8 +62,8 @@ class UINetworkReplyPrivateThread : public QThread
 
 public:
 
-    /* Constructor: */
-    UINetworkReplyPrivateThread(const QNetworkRequest &request);
+    /** Constructs network reply thread for the passed @a request of the passed @a type. */
+    UINetworkReplyPrivateThread(const QNetworkRequest &request, UINetworkRequestType type);
 
     /** Returns short descriptive context of thread's current operation. */
     const QString context() const { return m_strContext; }
@@ -76,6 +76,20 @@ public:
     int error() const { return m_iError; }
     /** Abort HTTP request. */
     void abort();
+    /** Returns value for the cached reply header of the passed @a type. */
+    QString header(QNetworkRequest::KnownHeaders type) const
+    {
+        /* Look for known header type: */
+        switch (type)
+        {
+            case QNetworkRequest::ContentTypeHeader:   return m_headers.value("Content-Type");
+            case QNetworkRequest::ContentLengthHeader: return m_headers.value("Content-Length");
+            case QNetworkRequest::LastModifiedHeader:  return m_headers.value("Last-Modified");
+            default: break;
+        }
+        /* Return null-string by default: */
+        return QString();
+    }
     /** @} */
 
 private:
@@ -118,10 +132,14 @@ private:
 
     /* Variables: */
     QNetworkRequest m_request;
+    /** Holds the request type. */
+    UINetworkRequestType m_type;
     int m_iError;
     /** IPRT HTTP client instance handle. */
     RTHTTP m_hHttp;
     QByteArray m_reply;
+    /* Holds the cached reply headers. */
+    QMap<QString, QString> m_headers;
 
     static const char * const s_apszRootsZipUrls[];
     static const CERTINFO s_CertInfoPcaCls3Gen5;
@@ -200,8 +218,9 @@ public:
 /* static */ const QString UINetworkReplyPrivateThread::s_strCertificateFileName = QString("vbox-ssl-cacertificate.crt");
 
 
-UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(const QNetworkRequest &request)
+UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(const QNetworkRequest &request, UINetworkRequestType type)
     : m_request(request)
+    , m_type(type)
     , m_iError(VINF_SUCCESS)
     , m_hHttp(NIL_RTHTTP)
 {
@@ -358,14 +377,52 @@ int UINetworkReplyPrivateThread::performMainRequest()
     /* Prepare result: */
     int rc = 0;
 
-    /* Perform blocking HTTP GET request: */
-    void   *pvResponse = 0;
-    size_t  cbResponse = 0;
-    rc = RTHttpGetBinary(m_hHttp, m_request.url().toString().toUtf8().constData(), &pvResponse, &cbResponse);
-    if (RT_SUCCESS(rc))
+    /* Depending on request type: */
+    switch (m_type)
     {
-        m_reply = QByteArray((char*)pvResponse, cbResponse);
-        RTHttpFreeResponse(pvResponse);
+        case UINetworkRequestType_HEAD_Our:
+        {
+            /* Perform blocking HTTP HEAD request: */
+            void   *pvResponse = 0;
+            size_t  cbResponse = 0;
+            rc = RTHttpGetHeaderBinary(m_hHttp, m_request.url().toString().toUtf8().constData(), &pvResponse, &cbResponse);
+            if (RT_SUCCESS(rc))
+            {
+                m_reply = QByteArray((char*)pvResponse, cbResponse);
+                RTHttpFreeResponse(pvResponse);
+            }
+
+            /* Paranoia: */
+            m_headers.clear();
+
+            /* Parse header contents: */
+            const QString strHeaders = QString(m_reply);
+            const QStringList headers = strHeaders.split("\n", QString::SkipEmptyParts);
+            foreach (const QString &strHeader, headers)
+            {
+                const QStringList values = strHeader.split(": ", QString::SkipEmptyParts);
+                if (values.size() > 1)
+                    m_headers[values.at(0)] = values.at(1);
+            }
+
+            break;
+        }
+        case UINetworkRequestType_GET_Our:
+        {
+            /* Perform blocking HTTP GET request: */
+            void   *pvResponse = 0;
+            size_t  cbResponse = 0;
+            rc = RTHttpGetBinary(m_hHttp, m_request.url().toString().toUtf8().constData(), &pvResponse, &cbResponse);
+            if (RT_SUCCESS(rc))
+            {
+                m_reply = QByteArray((char*)pvResponse, cbResponse);
+                RTHttpFreeResponse(pvResponse);
+            }
+
+            break;
+        }
+        default:
+            break;
     }
 
     /* Return result: */
@@ -748,14 +805,14 @@ signals:
 public:
 
     /* Constructor: */
-    UINetworkReplyPrivate(const QNetworkRequest &request)
+    UINetworkReplyPrivate(const QNetworkRequest &request, UINetworkRequestType type)
         : m_error(QNetworkReply::NoError)
         , m_pThread(0)
     {
         /* Prepare full error template: */
         m_strErrorTemplate = tr("%1: %2", "Context description: Error description");
         /* Create and run network-reply thread: */
-        m_pThread = new UINetworkReplyPrivateThread(request);
+        m_pThread = new UINetworkReplyPrivateThread(request, type);
         connect(m_pThread, SIGNAL(finished()), this, SLOT(sltFinished()));
         m_pThread->start();
     }
@@ -801,6 +858,9 @@ public:
 
     /* API: Reply getter: */
     QByteArray readAll() { return m_pThread->readAll(); }
+
+    /** Returns value for the cached reply header of the passed @a type. */
+    QString header(QNetworkRequest::KnownHeaders type) const { return m_pThread->header(type); }
 
 private slots:
 
@@ -853,6 +913,11 @@ UINetworkReply::UINetworkReply(const QNetworkRequest &request, UINetworkRequestT
             m_replyType = UINetworkReplyType_Qt;
             m_pReply = gNetworkManager->head(request);
             break;
+        /* Prepare our network-reply (HEAD): */
+        case UINetworkRequestType_HEAD_Our:
+            m_replyType = UINetworkReplyType_Our;
+            m_pReply = new UINetworkReplyPrivate(request, UINetworkRequestType_HEAD_Our);
+            break;
         /* Prepare Qt network-reply (GET): */
         case UINetworkRequestType_GET:
             m_replyType = UINetworkReplyType_Qt;
@@ -861,7 +926,7 @@ UINetworkReply::UINetworkReply(const QNetworkRequest &request, UINetworkRequestT
         /* Prepare our network-reply (GET): */
         case UINetworkRequestType_GET_Our:
             m_replyType = UINetworkReplyType_Our;
-            m_pReply = new UINetworkReplyPrivate(request);
+            m_pReply = new UINetworkReplyPrivate(request, UINetworkRequestType_GET_Our);
             break;
     }
 
@@ -886,7 +951,7 @@ QVariant UINetworkReply::header(QNetworkRequest::KnownHeaders header) const
     switch (m_replyType)
     {
         case UINetworkReplyType_Qt: result = qobject_cast<QNetworkReply*>(m_pReply)->header(header); break;
-        case UINetworkReplyType_Our: /* TODO: header() */ break;
+        case UINetworkReplyType_Our: result = qobject_cast<UINetworkReplyPrivate*>(m_pReply)->header(header); break;
     }
     return result;
 }
