@@ -141,7 +141,7 @@ private:
     /** @name HTTP download progress handling.
      * @{ */
     /** Redirects download progress callback to particular object which can handle it. */
-    static void handleProgressChange(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded);
+    static DECLCALLBACK(void) handleProgressChange(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded);
     /** Handles download progress callback. */
     void handleProgressChange(uint64_t cbDownloadTotal, uint64_t cbDownloaded);
     /** @} */
@@ -817,7 +817,7 @@ UINetworkReplyPrivateThread::convertVerifyAndAddPemCertificateToStore(RTCRSTORE 
 }
 
 /* static */
-void UINetworkReplyPrivateThread::handleProgressChange(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded)
+DECLCALLBACK(void) UINetworkReplyPrivateThread::handleProgressChange(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded)
 {
     /* Redirect callback to particular object: */
     Q_UNUSED(hHttp);
