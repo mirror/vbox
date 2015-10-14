@@ -728,7 +728,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             {
                 LogRelMax(1, ("GIM: HyperV: Guest initiated debug data transmission via MSR\n",
                               MSR_GIM_HV_SYNTH_DEBUG_CONTROL_W_LEN(uRawValue)));
-                size_t cbWrite = MSR_GIM_HV_SYNTH_DEBUG_CONTROL_W_LEN(uRawValue);
+                uint32_t cbWrite = MSR_GIM_HV_SYNTH_DEBUG_CONTROL_W_LEN(uRawValue);
                 if (   cbWrite > 0
                     && cbWrite < GIM_HV_PAGE_SIZE)
                 {
