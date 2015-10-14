@@ -261,14 +261,12 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
             Log2(("vboxNetAdpOsCreate: pNetDev->dev_addr = %.6Rhxd\n", pNetDev->dev_addr));
 
             /*
-             * To get proper operstate transition to IF_OPER_UP we
-             * need to call netif_carrier_on(), which triggers netlink
-             * notifications that do the work.  But first we need to
-             * turn it off here, otherwise that call will do nothing
-             * and we will be stuck in IF_OPER_UNKNOWN.
+             * We treat presence of VBoxNetFlt filter as our "carrier",
+             * see vboxNetFltSetLinkState().
              *
-             * Do this before registration so that only the state bit
-             * is set, but no state change notifications are generated.
+             * operstates.txt: "On device allocation, networking core
+             * sets the flags equivalent to netif_carrier_ok() and
+             * !netif_dormant()" - so turn carrier off here.
              */
             netif_carrier_off(pNetDev);
 
@@ -278,13 +276,6 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
                 strncpy(pThis->szName, pNetDev->name, sizeof(pThis->szName));
                 pThis->szName[sizeof(pThis->szName) - 1] = '\0';
                 pThis->u.s.pNetDev = pNetDev;
-
-                /*
-                 * TODO: We might want to set carrier only when
-                 * VBoxNetFlt attaches the intnet to us.
-                 */
-                netif_carrier_on(pNetDev);
-
                 Log2(("vboxNetAdpOsCreate: pThis=%p pThis->szName = %p\n", pThis, pThis->szName));
                 return VINF_SUCCESS;
             }

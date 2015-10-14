@@ -1553,11 +1553,11 @@ static bool vboxNetFltLinuxPromiscuous(PVBOXNETFLTINS pThis)
     return fRc;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
 /**
- * Helper for detecting TAP devices.
+ * Does this device needs link state change signaled?
+ * Currently we need it for our own VBoxNetAdp and TAP.
  */
-static bool vboxNetFltIsTapDevice(PVBOXNETFLTINS pThis, struct net_device *pDev)
+static bool vboxNetFltNeedsLinkState(PVBOXNETFLTINS pThis, struct net_device *pDev)
 {
     if (pDev->ethtool_ops && pDev->ethtool_ops->get_drvinfo)
     {
@@ -1566,26 +1566,34 @@ static bool vboxNetFltIsTapDevice(PVBOXNETFLTINS pThis, struct net_device *pDev)
         memset(&Info, 0, sizeof(Info));
         Info.cmd = ETHTOOL_GDRVINFO;
         pDev->ethtool_ops->get_drvinfo(pDev, &Info);
-        Log3(("vboxNetFltIsTapDevice: driver=%s version=%s bus_info=%s\n",
-              Info.driver, Info.version, Info.bus_info));
+        Log3(("%s: driver=%.*s version=%.*s bus_info=%.*s\n",
+              __FUNCTION__,
+              sizeof(Info.driver),   Info.driver,
+              sizeof(Info.version),  Info.version,
+              sizeof(Info.bus_info), Info.bus_info));
 
+        if (!strncmp(Info.driver, "vboxnet", sizeof(Info.driver)))
+            return true;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) /* TAP started doing carrier */
         return !strncmp(Info.driver,   "tun", 4)
             && !strncmp(Info.bus_info, "tap", 4);
+#endif
     }
 
     return false;
 }
 
 /**
- * Helper for updating the link state of TAP devices.
- * Only TAP devices are affected.
+ * Some devices need link state change when filter attaches/detaches
+ * since the filter is their link in a sense.
  */
-static void vboxNetFltSetTapLinkState(PVBOXNETFLTINS pThis, struct net_device *pDev, bool fLinkUp)
+static void vboxNetFltSetLinkState(PVBOXNETFLTINS pThis, struct net_device *pDev, bool fLinkUp)
 {
-    if (vboxNetFltIsTapDevice(pThis, pDev))
+    if (vboxNetFltNeedsLinkState(pThis, pDev))
     {
-        Log3(("vboxNetFltSetTapLinkState: bringing %s tap device link state\n",
-              fLinkUp ? "up" : "down"));
+        Log3(("%s: bringing device link %s\n",
+              __FUNCTION__, fLinkUp ? "up" : "down"));
         netif_tx_lock_bh(pDev);
         if (fLinkUp)
             netif_carrier_on(pDev);
@@ -1594,12 +1602,6 @@ static void vboxNetFltSetTapLinkState(PVBOXNETFLTINS pThis, struct net_device *p
         netif_tx_unlock_bh(pDev);
     }
 }
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36) */
-DECLINLINE(void) vboxNetFltSetTapLinkState(PVBOXNETFLTINS pThis, struct net_device *pDev, bool fLinkUp)
-{
-    /* Nothing to do for pre-2.6.36 kernels. */
-}
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36) */
 
 /**
  * Internal worker for vboxNetFltLinuxNotifierCallback.
@@ -1653,10 +1655,9 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
 #endif
 
     /*
-     * If attaching to TAP interface we need to bring the link state up
-     * starting from 2.6.36 kernel.
+     * Are we the "carrier" for this device (e.g. vboxnet or tap)?
      */
-    vboxNetFltSetTapLinkState(pThis, pDev, true);
+    vboxNetFltSetLinkState(pThis, pDev, true);
 
     /*
      * Set indicators that require the spinlock. Be abit paranoid about racing
@@ -2260,7 +2261,7 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 
     if (fRegistered)
     {
-        vboxNetFltSetTapLinkState(pThis, pDev, false);
+        vboxNetFltSetLinkState(pThis, pDev, false);
 
 #ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
         skb_queue_purge(&pThis->u.s.XmitQueue);
