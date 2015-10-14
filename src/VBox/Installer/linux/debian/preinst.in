@@ -60,39 +60,6 @@ if [ "$1" = "install" -o "$1" = "upgrade" ]; then
     fi
   fi
 
-  # check for old vboxdrv modules
-  if [ "$INSTALL_NO_VBOXDRV" != "1" ]; then
-    if find /lib/modules -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
-      # old modules found
-      db_get virtualbox/delete-old-modules || true
-      if [ "$RET" = "false" ]; then
-        cat << EOF
-Old vboxdrv kernel modules found in
-EOF
-        find /lib/modules -name "vboxdrv\.*" 2>/dev/null|sed "s+\(.*\)+  \1+g"
-        cat << EOF
-Removing of these modules denied by debconf setting
-EOF
-      else
-        db_input low virtualbox/delete-old-modules || true
-        db_go || true
-        db_get virtualbox/delete-old-modules || true
-        if [ "$RET" = "true" ]; then
-          for i in /lib/modules/*; do
-            if test -e "${i}/misc/vboxdrv.ko"; then
-              rm -f "${i}/misc/vboxdrv.ko" "${i}/misc/vboxnetadp.ko" \
-                    "${i}/misc/vboxnetflt.ko" "${i}/misc/vboxpci.ko"
-              # Remove the kernel version folder if it was empty except for us.
-              test "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" = \
-                   "${i}/misc/* ${i}/misc/.. ${i}/misc ${i}/.." &&
-                  rmdir "${i}/misc" "${i}"  # We used to leave empty folders.
-            fi
-          done
-        fi
-      fi
-    fi
-  fi
-
 fi # "$1" = "install" -o "$1" = "upgrade"
 
 #DEBHELPER#

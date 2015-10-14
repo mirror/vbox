@@ -363,20 +363,11 @@ if [ "$ACTION" = "install" ]; then
     # Do post-installation common to all installer types, currently service
     # script set-up.
     if test "${BUILD_MODULE}" = "true"; then
-      for i in /lib/modules/*; do
-        if test -e "${i}/misc/vboxdrv.ko"; then
-          rm -f "${i}/misc/vboxdrv.ko" "${i}/misc/vboxnetadp.ko" \
-                "${i}/misc/vboxnetflt.ko" "${i}/misc/vboxpci.ko"
-          # Remove the kernel version folder if it was empty except for us.
-          test "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" = \
-               "${i}/misc/* ${i}/misc/.. ${i}/misc ${i}/.." &&
-              rmdir "${i}/misc" "${i}"  # We used to leave empty folders.
-        fi
-      done
       START_SERVICES=
     else
       START_SERVICES="--nostart"
     fi
+    "${INSTALLATION_DIR}/prerm-common.sh" >> "${LOG}"
     "${INSTALLATION_DIR}/postinst-common.sh" ${START_SERVICES} >> "${LOG}"
 
     info ""

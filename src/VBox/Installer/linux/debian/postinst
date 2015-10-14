@@ -17,6 +17,9 @@
 #  abort-remove:      (our version): removing this package failed
 #  abort-deconfigure: (our version): error during resolving conflicts
 
+## @todo Do we really gain anything from not just executing everything
+##       unconditionally?
+
 LOG="/var/log/vbox-install.log"
 
 # defaults
@@ -77,35 +80,8 @@ fi # $1 = "configure"
 
 if test "${INSTALL_NO_VBOXDRV}" = 1; then
   POSTINST_START=--nostart
-  # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
-  if [ "$1" = "configure" ]; then
-    rm -f /lib/modules/*/misc/vboxdrv.ko
-    rm -f /lib/modules/*/misc/vboxnetflt.ko
-    rm -f /lib/modules/*/misc/vboxnetadp.ko
-    rm -f /lib/modules/*/misc/vboxpci.ko
-  fi
 else
   POSTINST_START=
-  # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
-  if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
-    if [ "$1" = "configure" ]; then
-      db_get virtualbox/module-compilation-allowed
-      if [ "$RET" = "false" ]; then
-        cat << EOF
-Unable to find a precompiled module for the current kernel
-though module compilation denied by debconf setting.
-EOF
-        POSTINST_START=--nostart
-      else
-        db_input low virtualbox/module-compilation-allowed || true
-        db_go || true
-        db_get virtualbox/module-compilation-allowed
-        if [ "$RET" = "false" ]; then
-          POSTINST_START=--nostart
-        fi
-      fi
-    fi # $1 = "configure"
-  fi
 fi
 
 # Install and start the new service scripts.

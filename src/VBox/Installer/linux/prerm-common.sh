@@ -54,6 +54,8 @@ remove_init_script vboxweb-service
 stop_init_script vboxdrv 2>/dev/null
 delrunlevel vboxdrv
 remove_init_script vboxdrv
+# And do final clean-up
+"${MY_PATH}/vboxdrv.sh" cleanup
 # Stop host networking and uninstall runlevel script (obsolete)
 stop_init_script vboxnet 2>/dev/null
 delrunlevel vboxnet 2>/dev/null

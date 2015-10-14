@@ -235,14 +235,6 @@ if [ -n "$VBOXSVC_PID" ]; then
   fi
 fi
 
-# XXX remove old modules from previous versions (disable with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox)
-if [ "$INSTALL_NO_VBOXDRV" != "1" ]; then
-  find /lib/modules -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2> /dev/null || true
-  find /lib/modules -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2> /dev/null || true
-  find /lib/modules -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2> /dev/null || true
-  find /lib/modules -name "vboxpci\.*" 2>/dev/null|xargs rm -f 2> /dev/null || true
-fi
-
 
 %post
 LOG="/var/log/vbox-install.log"
@@ -286,24 +278,8 @@ gtk-update-icon-cache -q /usr/share/icons/hicolor 2> /dev/null || :
 # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
 if test "${INSTALL_NO_VBOXDRV}" = 1; then
   POSTINST_START=--nostart
-  if lsmod | grep -q "vboxdrv[^_-]"; then
-    /usr/lib/virtualbox/vboxdrv.sh stop || true
-  fi
-  # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
-  rm -f /lib/modules/*/misc/vboxdrv.ko
-  rm -f /lib/modules/*/misc/vboxnetflt.ko
-  rm -f /lib/modules/*/misc/vboxnetadp.ko
-  rm -f /lib/modules/*/misc/vboxpci.ko
 else
   POSTINST_START=
-  if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
-    # compile problem
-    cat << EOF
-No precompiled module for this kernel found -- trying to build one.  If this
-fails, check the messages logged to $LOG during module compilation.
-
-EOF
-  fi
 fi
 # Install and start the new service scripts.
 /usr/lib/virtualbox/prerm-common.sh || true

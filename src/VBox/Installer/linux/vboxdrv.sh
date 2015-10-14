@@ -375,31 +375,25 @@ stop_vms()
     fi
 }
 
+cleanup()
+{
+    for i in /lib/modules/*; do
+        if test -e "${i}/misc/vboxdrv.ko"; then
+            rm -f "${i}/misc/vboxdrv.ko" "${i}/misc/vboxnetadp.ko" \
+                  "${i}/misc/vboxnetflt.ko" "${i}/misc/vboxpci.ko"
+            # Remove the kernel version folder if it was empty except for us.
+            test   "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" \
+                 = "${i}/misc/* ${i}/misc/.. ${i}/misc ${i}/.." &&
+                rmdir "${i}/misc" "${i}"  # We used to leave empty folders.
+        fi
+    done
+}
+
 # setup_script
 setup()
 {
     begin_msg "Building VirtualBox kernel modules" console
-    if find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|grep -q vboxpci; then
-        begin_msg "Removing old VirtualBox pci kernel module"
-        find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|xargs rm -f 2>/dev/null
-        succ_msg
-    fi  
-    if find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|grep -q vboxnetadp; then
-        begin_msg "Removing old VirtualBox netadp kernel module"
-        find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2>/dev/null
-        succ_msg
-    fi  
-    if find /lib/modules/`uname -r` -name "vboxnetflt\.*" 2>/dev/null|grep -q vboxnetflt; then
-        begin_msg "Removing old VirtualBox netflt kernel module"
-        find /lib/modules/`uname -r` -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2>/dev/null
-        succ_msg
-    fi  
-    if find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
-        begin_msg "Removing old VirtualBox kernel module"
-        find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
-        succ_msg
-    fi
-    begin_msg "Recompiling VirtualBox kernel modules"
+    cleanup
     if ! $BUILDINTMP \
         --save-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxdrv" \
@@ -473,6 +467,12 @@ stop_vms)
     ;;
 restart)
     stop && start
+    ;;
+setup)
+    stop && setup
+    ;;
+cleanup)
+    stop && cleanup
     ;;
 force-reload)
     stop
