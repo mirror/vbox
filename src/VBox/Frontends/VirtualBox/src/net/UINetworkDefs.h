@@ -21,8 +21,8 @@
 /** Network request types. */
 enum UINetworkRequestType
 {
-    UINetworkRequestType_HEAD_Our,
-    UINetworkRequestType_GET_Our
+    UINetworkRequestType_HEAD,
+    UINetworkRequestType_GET
 };
 
 #endif /* !___UINetworkDefs_h___ */

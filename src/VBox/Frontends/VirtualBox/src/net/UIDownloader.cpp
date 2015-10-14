@@ -47,7 +47,7 @@ void UIDownloader::sltStartAcknowledging()
         requests << QNetworkRequest(m_sources[i]);
 
     /* Create network request set: */
-    createNetworkRequest(requests, UINetworkRequestType_HEAD_Our, tr("Looking for %1...").arg(m_strDescription));
+    createNetworkRequest(requests, UINetworkRequestType_HEAD, tr("Looking for %1...").arg(m_strDescription));
 }
 
 /* Downloading start: */
@@ -60,7 +60,7 @@ void UIDownloader::sltStartDownloading()
     QNetworkRequest request(m_source);
 
     /* Create network request: */
-    createNetworkRequest(request, UINetworkRequestType_GET_Our, tr("Downloading %1...").arg(m_strDescription));
+    createNetworkRequest(request, UINetworkRequestType_GET, tr("Downloading %1...").arg(m_strDescription));
 }
 
 /* Constructor: */

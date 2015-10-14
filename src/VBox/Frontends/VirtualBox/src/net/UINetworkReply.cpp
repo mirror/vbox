@@ -405,7 +405,7 @@ int UINetworkReplyPrivateThread::performMainRequest()
     /* Depending on request type: */
     switch (m_type)
     {
-        case UINetworkRequestType_HEAD_Our:
+        case UINetworkRequestType_HEAD:
         {
             /* Perform blocking HTTP HEAD request: */
             void   *pvResponse = 0;
@@ -432,7 +432,7 @@ int UINetworkReplyPrivateThread::performMainRequest()
 
             break;
         }
-        case UINetworkRequestType_GET_Our:
+        case UINetworkRequestType_GET:
         {
             /* Perform blocking HTTP GET request: */
             void   *pvResponse = 0;
@@ -880,6 +880,9 @@ public:
     /* API: Abort reply: */
     void abort() { m_pThread->abort(); }
 
+    /** Returns URL of the reply. */
+    QUrl url() const { return m_pThread->url(); }
+
     /* API: Error-code getter: */
     QNetworkReply::NetworkError error() const { return m_error; }
 
@@ -908,9 +911,6 @@ public:
 
     /** Returns value for the cached reply header of the passed @a type. */
     QString header(QNetworkRequest::KnownHeaders type) const { return m_pThread->header(type); }
-
-    /** Returns URL of the reply. */
-    QUrl url() const { return m_pThread->url(); }
 
     /** Returns value for the cached reply attribute of the passed @a code. */
     QVariant attribute(QNetworkRequest::Attribute code) const { /** @todo r=dsen: Fix that. */ Q_UNUSED(code); return QVariant(); }
@@ -972,19 +972,14 @@ UINetworkReply::~UINetworkReply()
     }
 }
 
-QVariant UINetworkReply::header(QNetworkRequest::KnownHeaders header) const
-{
-    return m_pReply->header(header);
-}
-
-QVariant UINetworkReply::attribute(QNetworkRequest::Attribute code) const
-{
-    return m_pReply->attribute(code);
-}
-
 void UINetworkReply::abort()
 {
     return m_pReply->abort();
+}
+
+QUrl UINetworkReply::url() const
+{
+    return m_pReply->url();
 }
 
 QNetworkReply::NetworkError UINetworkReply::error() const
@@ -1002,9 +997,14 @@ QByteArray UINetworkReply::readAll() const
     return m_pReply->readAll();
 }
 
-QUrl UINetworkReply::url() const
+QVariant UINetworkReply::header(QNetworkRequest::KnownHeaders header) const
 {
-    return m_pReply->url();
+    return m_pReply->header(header);
+}
+
+QVariant UINetworkReply::attribute(QNetworkRequest::Attribute code) const
+{
+    return m_pReply->attribute(code);
 }
 
 #include "UINetworkReply.moc"

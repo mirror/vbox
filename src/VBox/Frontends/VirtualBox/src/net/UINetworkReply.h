@@ -46,13 +46,13 @@ public:
     ~UINetworkReply();
 
     /* API: */
-    QVariant header(QNetworkRequest::KnownHeaders header) const;
-    QVariant attribute(QNetworkRequest::Attribute code) const;
     void abort();
+    QUrl url() const;
     QNetworkReply::NetworkError error() const;
     QString errorString() const;
     QByteArray readAll() const;
-    QUrl url() const;
+    QVariant header(QNetworkRequest::KnownHeaders header) const;
+    QVariant attribute(QNetworkRequest::Attribute code) const;
 
 private:
 
