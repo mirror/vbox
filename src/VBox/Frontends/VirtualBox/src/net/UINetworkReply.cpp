@@ -878,10 +878,7 @@ public:
     }
 
     /* API: Abort reply: */
-    void abort()
-    {
-        m_pThread->abort();
-    }
+    void abort() { m_pThread->abort(); }
 
     /* API: Error-code getter: */
     QNetworkReply::NetworkError error() const { return m_error; }
@@ -907,13 +904,16 @@ public:
     }
 
     /* API: Reply getter: */
-    QByteArray readAll() { return m_pThread->readAll(); }
+    QByteArray readAll() const { return m_pThread->readAll(); }
 
     /** Returns value for the cached reply header of the passed @a type. */
     QString header(QNetworkRequest::KnownHeaders type) const { return m_pThread->header(type); }
 
     /** Returns URL of the reply. */
     QUrl url() const { return m_pThread->url(); }
+
+    /** Returns value for the cached reply attribute of the passed @a code. */
+    QVariant attribute(QNetworkRequest::Attribute code) const { /** @todo r=dsen: Fix that. */ Q_UNUSED(code); return QVariant(); }
 
 private slots:
 
@@ -955,34 +955,8 @@ private:
 *********************************************************************************************************************************/
 
 UINetworkReply::UINetworkReply(const QNetworkRequest &request, UINetworkRequestType requestType)
-    : m_replyType(UINetworkReplyType_Qt)
-    , m_pReply(0)
+    : m_pReply(new UINetworkReplyPrivate(request, requestType))
 {
-    /* Create network-reply object: */
-    switch (requestType)
-    {
-        /* Prepare Qt network-reply (HEAD): */
-        case UINetworkRequestType_HEAD:
-            m_replyType = UINetworkReplyType_Qt;
-            m_pReply = gNetworkManager->head(request);
-            break;
-        /* Prepare our network-reply (HEAD): */
-        case UINetworkRequestType_HEAD_Our:
-            m_replyType = UINetworkReplyType_Our;
-            m_pReply = new UINetworkReplyPrivate(request, UINetworkRequestType_HEAD_Our);
-            break;
-        /* Prepare Qt network-reply (GET): */
-        case UINetworkRequestType_GET:
-            m_replyType = UINetworkReplyType_Qt;
-            m_pReply = gNetworkManager->get(request);
-            break;
-        /* Prepare our network-reply (GET): */
-        case UINetworkRequestType_GET_Our:
-            m_replyType = UINetworkReplyType_Our;
-            m_pReply = new UINetworkReplyPrivate(request, UINetworkRequestType_GET_Our);
-            break;
-    }
-
     /* Prepare network-reply object connections: */
     connect(m_pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SIGNAL(downloadProgress(qint64, qint64)));
     connect(m_pReply, SIGNAL(finished()), this, SIGNAL(finished()));
@@ -1000,77 +974,37 @@ UINetworkReply::~UINetworkReply()
 
 QVariant UINetworkReply::header(QNetworkRequest::KnownHeaders header) const
 {
-    QVariant result;
-    switch (m_replyType)
-    {
-        case UINetworkReplyType_Qt: result = qobject_cast<QNetworkReply*>(m_pReply)->header(header); break;
-        case UINetworkReplyType_Our: result = qobject_cast<UINetworkReplyPrivate*>(m_pReply)->header(header); break;
-    }
-    return result;
+    return m_pReply->header(header);
 }
 
 QVariant UINetworkReply::attribute(QNetworkRequest::Attribute code) const
 {
-    QVariant result;
-    switch (m_replyType)
-    {
-        case UINetworkReplyType_Qt: result = qobject_cast<QNetworkReply*>(m_pReply)->attribute(code); break;
-        case UINetworkReplyType_Our: /* TODO: attribute() */ break;
-    }
-    return result;
+    return m_pReply->attribute(code);
 }
 
 void UINetworkReply::abort()
 {
-    switch (m_replyType)
-    {
-        case UINetworkReplyType_Qt: qobject_cast<QNetworkReply*>(m_pReply)->abort(); break;
-        case UINetworkReplyType_Our: qobject_cast<UINetworkReplyPrivate*>(m_pReply)->abort(); break;
-    }
+    return m_pReply->abort();
 }
 
 QNetworkReply::NetworkError UINetworkReply::error() const
 {
-    QNetworkReply::NetworkError result = QNetworkReply::NoError;
-    switch (m_replyType)
-    {
-        case UINetworkReplyType_Qt: result = qobject_cast<QNetworkReply*>(m_pReply)->error(); break;
-        case UINetworkReplyType_Our: result = qobject_cast<UINetworkReplyPrivate*>(m_pReply)->error(); break;
-    }
-    return result;
+    return m_pReply->error();
 }
 
 QString UINetworkReply::errorString() const
 {
-    QString strResult;
-    switch (m_replyType)
-    {
-        case UINetworkReplyType_Qt: strResult = qobject_cast<QNetworkReply*>(m_pReply)->errorString(); break;
-        case UINetworkReplyType_Our: strResult = qobject_cast<UINetworkReplyPrivate*>(m_pReply)->errorString(); break;
-    }
-    return strResult;
+    return m_pReply->errorString();
 }
 
-QByteArray UINetworkReply::readAll()
+QByteArray UINetworkReply::readAll() const
 {
-    QByteArray result;
-    switch (m_replyType)
-    {
-        case UINetworkReplyType_Qt: result = qobject_cast<QNetworkReply*>(m_pReply)->readAll(); break;
-        case UINetworkReplyType_Our: result = qobject_cast<UINetworkReplyPrivate*>(m_pReply)->readAll(); break;
-    }
-    return result;
+    return m_pReply->readAll();
 }
 
 QUrl UINetworkReply::url() const
 {
-    QUrl result;
-    switch (m_replyType)
-    {
-        case UINetworkReplyType_Qt: result = qobject_cast<QNetworkReply*>(m_pReply)->url(); break;
-        case UINetworkReplyType_Our: result = qobject_cast<UINetworkReplyPrivate*>(m_pReply)->url(); break;
-    }
-    return result;
+    return m_pReply->url();
 }
 
 #include "UINetworkReply.moc"

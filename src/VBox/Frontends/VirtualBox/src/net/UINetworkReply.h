@@ -25,6 +25,9 @@
 /* GUI includes: */
 #include "UINetworkDefs.h"
 
+/* Forward declarations: */
+class UINetworkReplyPrivate;
+
 /* Network-reply interface: */
 class UINetworkReply : public QObject
 {
@@ -48,14 +51,13 @@ public:
     void abort();
     QNetworkReply::NetworkError error() const;
     QString errorString() const;
-    QByteArray readAll();
+    QByteArray readAll() const;
     QUrl url() const;
 
 private:
 
-    /* Variables: */
-    UINetworkReplyType m_replyType;
-    QPointer<QObject> m_pReply;
+    /** Holds the network reply private instance. */
+    UINetworkReplyPrivate *m_pReply;
 };
 
 #endif // __UINetworkReply_h__
