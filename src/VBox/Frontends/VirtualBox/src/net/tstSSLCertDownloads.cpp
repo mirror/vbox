@@ -44,7 +44,7 @@
 /*static*/ void UINetworkReplyPrivateThread::testIt(RTTEST hTest)
 {
     QNetworkRequest Dummy;
-    UINetworkReplyPrivateThread TestObj(Dummy);
+    UINetworkReplyPrivateThread TestObj(Dummy, UINetworkRequestType_GET_Our);
 
     /*
      * Do the first setup things that UINetworkReplyPrivateThread::run.
