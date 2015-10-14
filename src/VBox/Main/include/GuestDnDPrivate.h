@@ -217,7 +217,10 @@ public:
 
     GuestDnDData(void)
         : cbProcessed(0)
-        , cbAddData(0) { }
+        , cbAddData(0)
+    {
+        RT_ZERO(dataHdr);
+    }
 
     virtual ~GuestDnDData(void)
     {
