@@ -691,14 +691,14 @@ $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts \
 # Copy the generated headers and stuff.  This was split into a separate rule
 # way back because we thought we could use $(wildcard ) and avoid the shell,
 # however we cannot as it is subject to caching.  Let the shell do the globbing.
+# GSOAP versions 2.8 and later do not generate the unneeded soapvbox*.h files
+# any more. Ignoring the exit code is the simple solution, accepting the error.
 $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts: $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts | $$(dir $$@)
 	$(RM) -f $@
 	$(MKDIR) -p $(PATH_TARGET_SOAPDEMOXML) $(PATH_TARGET_SOAPDEMOHEADERS) $(PATH_TARGET_SOAPDEMONSMAPS)
 ifdef VBOX_GSOAP_VERBOSE
 	$(MV_EXT) -f -- $(VBOXWEB_OUT_DIR)/*.req.xml $(VBOXWEB_OUT_DIR)/*.res.xml $(PATH_TARGET_SOAPDEMOXML)/
 endif
-	# GSOAP versions 2.8 and later do not generate these files any more.
-	# Ignoring the exit code is the simple solution, sometimes giving an error.
 	-$(MV_EXT) -f -- $(VBOXWEB_OUT_DIR)/soapvbox*.h $(PATH_TARGET_SOAPDEMOHEADERS)/
 	$(MV_EXT) -f -- $(VBOXWEB_OUT_DIR)/vboxBinding.nsmap $(PATH_TARGET_SOAPDEMONSMAPS)/
 	$(APPEND) $@ done
