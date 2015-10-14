@@ -803,9 +803,9 @@ int GuestDnDTarget::i_sendDataBody(PSENDDATACTX pCtx, GuestDnDData *pData)
         Msg.setNextPointer(pData->getFmtMutable(), pData->getFmtSize());                   /* pvFormat */
         Msg.setNextUInt32(pData->getFmtSize());                                            /* cbFormat */
         Msg.setNextPointer(pData->getMeta().getDataMutable(), pData->getMeta().getSize()); /* pvData */
-        /* Note1: Fill in the total data to send.
-         * Note2: Only supports uint32_t. */
-        Msg.setNextUInt32((uint32_t)pData->getTotal());                                    /* cbData */
+        /* Fill in the current data block size to send.
+         * Note: Only supports uint32_t. */
+        Msg.setNextUInt32((uint32_t)pData->getMeta().getSize());                           /* cbData */
     }
     else
     {

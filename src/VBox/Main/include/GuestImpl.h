@@ -99,6 +99,7 @@ public:
     {
         return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
     }
+    uint32_t    i_getAdditionsRevision(void) { return mData.mAdditionsRevision; }
     uint32_t    i_getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
     VBOXOSTYPE  i_getGuestOSType(void) { return mData.mOSType; }
 #ifdef VBOX_WITH_GUEST_CONTROL

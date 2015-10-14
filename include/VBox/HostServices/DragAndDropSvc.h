@@ -725,6 +725,7 @@ typedef struct VBOXDNDGHEVTERRORMSG
  */
 enum
 {
+    CB_MAGIC_DND_CONNECT                   = 0x25161155,
     CB_MAGIC_DND_HG_GET_NEXT_HOST_MSG      = 0x19820126,
     CB_MAGIC_DND_HG_GET_NEXT_HOST_MSG_DATA = 0x19850630,
     CB_MAGIC_DND_HG_ACK_OP                 = 0xe2100b93,
@@ -746,6 +747,14 @@ typedef struct VBOXDNDCBHEADERDATA
     /** Context ID to identify callback data. */
     uint32_t                    u32ContextID;
 } VBOXDNDCBHEADERDATA, *PVBOXDNDCBHEADERDATA;
+
+typedef struct VBOXDNDCBCONNECTMSGDATA
+{
+    /** Callback data header. */
+    VBOXDNDCBHEADERDATA         hdr;
+    uint32_t                    uProtocol;
+    uint32_t                    uFlags;
+} VBOXDNDCBCONNECTMSGDATA, *PVBOXDNDCBCONNECTMSGDATA;
 
 typedef struct VBOXDNDCBHGGETNEXTHOSTMSG
 {

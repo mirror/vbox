@@ -381,18 +381,18 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 LogFlowFunc(("GUEST_DND_CONNECT\n"));
                 if (cParms == 2)
                 {
-                    uint32_t uProtocol;
-                    rc = paParms[0].getUInt32(&uProtocol); /* Get protocol version. */
+                    VBOXDNDCBCONNECTMSGDATA data;
+                    data.hdr.u32Magic = CB_MAGIC_DND_CONNECT;
+                    rc = paParms[0].getUInt32(&data.uProtocol);
                     if (RT_SUCCESS(rc))
-                        rc = pClient->setProtocol(uProtocol);
+                        rc = paParms[1].getUInt32(&data.uFlags);
+                    if (RT_SUCCESS(rc))
+                        rc = pClient->setProtocol(data.uProtocol);
                     if (RT_SUCCESS(rc))
                     {
                         LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n", pClient->clientId(), pClient->protocol()));
-                        /** @todo Handle connection flags (paParms[1]). */
+                        DO_HOST_CALLBACK();
                     }
-
-                    /* Note: Does not reach the host; the client's protocol version
-                     *       is only kept in this service. */
                 }
                 break;
             }

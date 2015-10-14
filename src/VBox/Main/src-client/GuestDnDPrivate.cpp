@@ -361,6 +361,13 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
 
     switch (u32Function)
     {
+        case DragAndDropSvc::GUEST_DND_CONNECT:
+        {
+            /* Not used in here (yet). */
+            rc = VINF_SUCCESS;
+            break;
+        }
+
         case DragAndDropSvc::GUEST_DND_HG_ACK_OP:
         {
             DragAndDropSvc::PVBOXDNDCBHGACKOPDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBHGACKOPDATA>(pvParms);
@@ -742,6 +749,7 @@ GuestDnDBase::GuestDnDBase(void)
 
     /* Initialzie private stuff. */
     mDataBase.m_cTransfersPending = 0;
+    mDataBase.m_uProtocolVersion  = 0;
 }
 
 HRESULT GuestDnDBase::i_isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported)
@@ -794,35 +802,52 @@ HRESULT GuestDnDBase::i_getProtocolVersion(ULONG *puVersion)
     return RT_SUCCESS(rc) ? S_OK : E_FAIL;
 }
 
+/**
+ * Tries to guess the DnD protocol version to use on the guest, based on the
+ * installed Guest Additions version + revision.
+ *
+ * If unable to retrieve the protocol version, VERR_NOT_FOUND is returned along
+ * with protocol version 1.
+ *
+ * @return  IPRT status code.
+ * @param   puProto                 Where to store the protocol version.
+ */
 int GuestDnDBase::getProtocolVersion(uint32_t *puProto)
 {
     AssertPtrReturn(puProto, VERR_INVALID_POINTER);
 
     int rc;
 
-    uint32_t uProto        = 1; /* Use protocol v1 as a fallback. */
+    uint32_t uProto        = 0;
     uint32_t uVerAdditions = 0;
+    uint32_t uRevAdditions = 0;
     if (   m_pGuest
-        && (uVerAdditions = m_pGuest->i_getAdditionsVersion()) > 0)
+        && (uVerAdditions = m_pGuest->i_getAdditionsVersion())  > 0
+        && (uRevAdditions = m_pGuest->i_getAdditionsRevision()) > 0)
     {
-#if 1
+#ifdef _DEBUG
+# if 0
         /* Hardcode the to-used protocol version; nice for testing side effects. */
         uProto = 3;
-#else
-        if (uVerAdditions >= VBOX_FULL_VERSION_MAKE(5, 0, 0))
-        {
-            if (uVerAdditions >= VBOX_FULL_VERSION_MAKE(5, 0, 8))
-            {
-                uProto = 3; /* Since VBox 5.0.8: Protocol v3. */
-            }
-            else
-                uProto = 2; /* VBox 5.0.0 - 5.0.6: Protocol v2. */
-        }
+# endif
 #endif
-        LogRel3(("DnD: uVerAdditions=%RU32 (%RU32.%RU32.%RU32)\n",
-                 uVerAdditions, VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions),
-                                VBOX_FULL_VERSION_GET_BUILD(uVerAdditions)));
-        rc = VINF_SUCCESS;
+        if (!uProto) /* Protocol not set yet? */
+        {
+            if (uVerAdditions >= VBOX_FULL_VERSION_MAKE(5, 0, 0))
+            {
+                if (uRevAdditions >= 103344) /* Since r103344: Protocol v3. */
+                {
+                    uProto = 3;
+                }
+                else
+                    uProto = 2; /* VBox 5.0.0 - 5.0.6: Protocol v2. */
+            }
+
+            LogFlowFunc(("uVerAdditions=%RU32 (%RU32.%RU32.%RU32), r%RU32\n",
+                         uVerAdditions, VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions),
+                                        VBOX_FULL_VERSION_GET_BUILD(uVerAdditions), uRevAdditions));
+            rc = VINF_SUCCESS;
+        }
     }
     else
     {
@@ -830,7 +855,7 @@ int GuestDnDBase::getProtocolVersion(uint32_t *puProto)
         rc = VERR_NOT_FOUND;
     }
 
-    LogRel3(("DnD: uProto=%RU32, rc=%Rrc\n", uProto, rc));
+    LogRel2(("DnD: Guest is using protocol v%RU32, rc=%Rrc\n", uProto, rc));
 
     *puProto = uProto;
     return rc;

@@ -150,10 +150,10 @@ public:
 
         if (strData.isNotEmpty())
         {
-            const size_t cbData = strData.length() + 1; /* Include terminating zero. */
-            rc = resize(cbData);
+            const size_t cbStrData = strData.length() + 1; /* Include terminating zero. */
+            rc = resize(cbStrData);
             if (RT_SUCCESS(rc))
-                memcpy(pvData, strData.c_str(), cbData);
+                memcpy(pvData, strData.c_str(), cbStrData);
         }
 
         return rc;
