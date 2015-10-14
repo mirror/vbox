@@ -1573,6 +1573,9 @@ endif
 #
 # Select the CRT type we're using with Microsoft Visual C++.
 #
+if1of ($(KBUILD_TYPE), debug dbgopt strict)
+#not yet# VBOX_WITH_DEBUG_VCC_CRT = 1
+endif
 ifdef VBOX_WITH_DEBUG_VCC_CRT
  VBOX_VCC_CRT_TYPE   = d
  VBOX_VCC_CRT_TYPE_N =
@@ -5216,11 +5219,6 @@ ifdef VBOX_WITH_QTGUI
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
-  ifdef VBOX_WITH_DEBUG_VCC_CRT # VBoxCOM (static) is causing trouble of course.
-   TEMPLATE_VBOXQT4GUIEXE_LIBS += \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib
-  endif
   TEMPLATE_VBOXQT4GUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
  else # the gcc guys:
@@ -5310,7 +5308,7 @@ ifdef VBOX_WITH_QTGUI
 
  # Add COM/XPCOM stuff
  TEMPLATE_VBOXQT4GUIEXE_LIBS += \
-	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VBoxCOM$(if-expr defined(VBOX_WITH_DEBUG_VCC_CRT) && $(KBUILD_TARGET) == win,-GUI,)$(VBOX_SUFF_LIB)
  ifdef VBOX_WITH_XPCOM
   ## @todo may be worth creating the VBOX_XPCOM SDK def, or just a SDK_VBOXXPCOM.
   TEMPLATE_VBOXQT4GUIEXE_DEFS += VBOX_WITH_XPCOM

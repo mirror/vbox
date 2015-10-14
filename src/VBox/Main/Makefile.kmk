@@ -931,6 +931,14 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  VBoxCOM-x86_EXTENDS  = VBoxCOM
 endif
 
+# -MD version for the GUI in -MDd builds.
+ifeq ($(KBUILD_TARGET).$(VBOX_VCC_CRT_TYPE),win.d)
+ LIBRARIES += VBoxCOM-GUI
+ USES += qt4
+ VBoxCOM-GUI_TEMPLATE = VBOXQT4GUI$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
+ VBoxCOM-GUI_EXTENDS  = VBoxCOM
+endif
+
 
 
 #
