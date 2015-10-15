@@ -761,6 +761,14 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
  * Defines the electric fence new and delete operators for a class when
  * RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF is define.
  */
+/** @def RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT
+ * Defines the electric fence new and delete operators for an IOKit class when
+ * RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF is define.
+ *
+ * This differs from RTMEMEF_NEW_AND_DELETE_OPERATORS in that the memory we
+ * allocate is initialized to zero.  It is also assuming we don't have nothrow
+ * variants and exceptions, so fewer variations.
+ */
 #if defined(RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF) && !defined(RTMEM_NO_WRAP_SOME_NEW_AND_DELETE_TO_EF)
 # if defined(RT_EXCEPTIONS_ENABLED)
 #  define RTMEMEF_NEW_AND_DELETE_OPERATORS() \
@@ -851,8 +859,30 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
         \
         typedef int UsingElectricNewAndDeleteOperators
 # endif
+# define RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT() \
+    void *operator new(size_t cb) \
+    { \
+        return RTMemEfAllocZ(cb, RTMEM_TAG, RT_SRC_POS); \
+    } \
+    void *operator new[](size_t cb) \
+    { \
+        return RTMemEfAllocZ(cb, RTMEM_TAG, RT_SRC_POS); \
+    } \
+    \
+    void operator delete(void *pv) \
+    { \
+        RTMemEfFree(pv, RT_SRC_POS); \
+    } \
+    void operator delete[](void *pv) \
+    { \
+        RTMemEfFree(pv, RT_SRC_POS); \
+    } \
+    \
+    typedef int UsingElectricNewAndDeleteOperators
 #else
 # define RTMEMEF_NEW_AND_DELETE_OPERATORS() \
+        typedef int UsingDefaultNewAndDeleteOperators
+# define RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT() \
         typedef int UsingDefaultNewAndDeleteOperators
 #endif
 #ifdef DOXYGEN_RUNNING
@@ -862,7 +892,8 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
 /** @def RTMEM_WRAP_TO_EF_APIS
  * Define RTMEM_WRAP_TO_EF_APIS to wrap RTMem APIs to RTMemEf APIs.
  */
-#if defined(RTMEM_WRAP_TO_EF_APIS) && defined(IN_RING3) && !defined(RTMEM_NO_WRAP_TO_EF_APIS)
+#if defined(RTMEM_WRAP_TO_EF_APIS) && !defined(RTMEM_NO_WRAP_TO_EF_APIS) \
+ && ( defined(IN_RING3) || ( defined(IN_RING0) && !defined(IN_RING0_AGNOSTIC) && (defined(RT_OS_DARWIN) || 0) ) )
 # define RTMemTmpAllocTag(cb, pszTag)                   RTMemEfTmpAlloc((cb), (pszTag), RT_SRC_POS)
 # define RTMemTmpAllocZTag(cb, pszTag)                  RTMemEfTmpAllocZ((cb), (pszTag), RT_SRC_POS)
 # define RTMemTmpFree(pv)                               RTMemEfTmpFree((pv), RT_SRC_POS)
