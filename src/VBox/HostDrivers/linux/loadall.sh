@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ## @file
 # For development, builds and loads all the host drivers.
 #
@@ -22,7 +22,11 @@ if [ ! -d "${MY_DIR}" ]; then
     exit 1;
 fi
 
-set -e
-kmk -C "${MY_DIR}/src/" "$@"
-sudo make -C "${MY_DIR}/src/" load
-
+if test ${#} -eq 0; then
+    sudo "${MY_DIR}/vboxdrv.sh" setup
+elif test $* = 1 && test "${1}" = -u; then
+    sudo "${MY_DIR}/vboxdrv.sh" cleanup
+else
+    echo "Usage: loadall.sh [-u]"
+    exit 1
+fi
