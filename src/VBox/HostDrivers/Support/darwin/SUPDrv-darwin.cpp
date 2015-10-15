@@ -127,6 +127,8 @@ public:
     virtual void stop(IOService *pProvider);
     virtual IOService *probe(IOService *pProvider, SInt32 *pi32Score);
     virtual bool terminate(IOOptionBits fOptions);
+
+    RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT();
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_SupDrv, IOService);
@@ -155,6 +157,8 @@ public:
     virtual bool terminate(IOOptionBits fOptions = 0);
     virtual bool finalize(IOOptionBits fOptions);
     virtual void stop(IOService *pProvider);
+
+    RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT();
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_SupDrvClient, IOUserClient);
