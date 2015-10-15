@@ -112,6 +112,10 @@ public:
     virtual void stop(IOService *pProvider);
     virtual void free();
     /** @} */
+
+private:
+    /** Guard against the parent class growing and us using outdated headers. */
+    uint8_t m_abSafetyPadding[256];
 };
 OSDefineMetaClassAndStructors(org_virtualbox_VBoxUSB, IOService);
 
@@ -148,6 +152,8 @@ public:
     static bool isClientTask(task_t ClientTask);
 
 private:
+    /** Guard against the parent class growing and us using outdated headers. */
+    uint8_t m_abSafetyPadding[256];
     /** The service provider. */
     org_virtualbox_VBoxUSB *m_pProvider;
     /** The client task. */
@@ -200,7 +206,7 @@ public:
     static void  scheduleReleaseByOwner(RTPROCESS Owner);
 private:
     /** Padding to guard against parent class expanding (see class remarks). */
-    uint8_t m_abPadding[256];
+    uint8_t m_abSafetyPadding[256];
     /** The interface we're driving (aka. the provider). */
     IOUSBDevice *m_pDevice;
     /** The owner process, meaning the VBoxSVC process. */
@@ -262,6 +268,8 @@ public:
     /** @} */
 
 private:
+    /** Padding to guard against parent class expanding (see class remarks). */
+    uint8_t m_abSafetyPadding[256];
     /** The interface we're driving (aka. the provider). */
     IOUSBInterface *m_pInterface;
     /** Have we opened the device or not? */
