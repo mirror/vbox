@@ -28,7 +28,13 @@ if ! test   `echo /etc/udev/rules.d/*-vboxdrv.rules` \
     echo "You can not use this script while you have a version of VirtualBox installed."
     exit 1
 fi
-make -C "${MY_DIR}/src/vboxdrv" "$@"
+test ${#} -eq 0 ||
+    if ! test ${#} -eq 1 || ! test "x${1}" = x-u; then
+        echo "Usage: load.sh [-u]"
+        exit 1
+    fi
 sudo "${MY_DIR}/vboxdrv.sh" stop
+test ${#} -eq 0 || exit 0
+make -C "${MY_DIR}/src/vboxdrv" "$@"
 echo "Installing SUPDrv (aka VBoxDrv/vboxdrv)"
 sudo /sbin/insmod "${MY_DIR}/src/vboxdrv/vboxdrv.ko"

@@ -24,7 +24,7 @@ fi
 
 if test ${#} -eq 0; then
     sudo "${MY_DIR}/vboxdrv.sh" setup
-elif test $* = 1 && test "${1}" = -u; then
+elif test ${#} = 1 && test "x${1}" = x-u; then
     sudo "${MY_DIR}/vboxdrv.sh" cleanup
 else
     echo "Usage: loadall.sh [-u]"
