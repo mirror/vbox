@@ -31,6 +31,8 @@ DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
 MODPROBE=/sbin/modprobe
 SCRIPTNAME=vboxdrv
+# This is GNU-specific, sorry Solaris.  It fails on directories ending in '\n'.
+SCRIPT_DIR="$(dirname $(readlink -f -- "${0}"))"
 
 if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
@@ -41,15 +43,23 @@ export BUILD_TYPE
 export USERNAME
 export USER=$USERNAME
 
-if [ -n "$INSTALL_DIR" ]; then
-    MODULE_SRC="$INSTALL_DIR/src/vboxhost"
-else
+if test -n "${INSTALL_DIR}" && test -x "${INSTALL_DIR}/VirtualBox"; then
+    MODULE_SRC="${INSTALL_DIR}/src/vboxhost"
+elif test -x /usr/lib/virtualbox/VirtualBox; then
     INSTALL_DIR=/usr/lib/virtualbox
     MODULE_SRC="/usr/share/virtualbox/src/vboxhost"
+elif test -x "${SCRIPT_DIR}/VirtualBox"; then
+    # Executing from the build directory
+    INSTALL_DIR="${SCRIPT_DIR}"
+    MODULE_SRC="${INSTALL_DIR}/src"
+else
+    # Silently exit if the package was uninstalled but not purged.
+    # Applies to Debian packages only (but shouldn't hurt elsewhere)
+    exit 0
 fi
-    VIRTUALBOX="$INSTALL_DIR/VirtualBox"
-    VBOXMANAGE="$INSTALL_DIR/VBoxManage"
-BUILDINTMP="$MODULE_SRC/build_in_tmp"
+VIRTUALBOX="${INSTALL_DIR}/VirtualBox"
+VBOXMANAGE="${INSTALL_DIR}/VBoxManage"
+BUILDINTMP="${MODULE_SRC}/build_in_tmp"
 if test -u "${VIRTUALBOX}"; then
     GROUP=root
     DEVICE_MODE=0600
@@ -57,10 +67,6 @@ else
     GROUP=vboxusers
     DEVICE_MODE=0660
 fi
-
-# silently exit if the package was uninstalled but not purged,
-# applies to Debian packages only (but shouldn't hurt elsewhere)
-[ ! -f /etc/debian_release -o -x $VBOXMANAGE -a -x $BUILDINTMP ] || exit 0
 
 [ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
