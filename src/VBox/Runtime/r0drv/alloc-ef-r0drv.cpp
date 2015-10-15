@@ -450,7 +450,7 @@ static void rtR0MemFreeBlock(PRTR0MEMEFBLOCK pBlock, const char *pszOp)
 # endif
     size_t cbBlock = RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTR0MEM_EF_SIZE;
 
-    int rc = RTR0MemObjProtect(pBlock->hMemObj, 0 /*offSub*/, cbBlock, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    int rc = RTR0MemObjProtect(pBlock->hMemObj, 0 /*offSub*/, RT_ALIGN_Z(cbBlock, PAGE_SIZE), RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     if (RT_FAILURE(rc))
         rtR0MemComplain(pszOp, "RTR0MemObjProtect([%p], 0, %#x, RTMEM_PROT_READ | RTMEM_PROT_WRITE) -> %Rrc\n",
                         pvBlock, cbBlock, rc);
@@ -505,16 +505,21 @@ void rtR0MemEfTerm(void)
     for (;;)
     {
         PRTR0MEMEFBLOCK pBlock = g_pBlocksDelayTail;
-        g_pBlocksDelayTail = (PRTR0MEMEFBLOCK)pBlock->Core.pLeft;
-        if (pBlock->Core.pLeft)
-            pBlock->Core.pLeft->pRight = NULL;
+        if (pBlock)
+        {
+            g_pBlocksDelayTail = (PRTR0MEMEFBLOCK)pBlock->Core.pLeft;
+            if (pBlock->Core.pLeft)
+                pBlock->Core.pLeft->pRight = NULL;
+            else
+                g_pBlocksDelayHead = NULL;
+            rtR0MemBlockUnlock(fSavedIntFlags);
+
+            rtR0MemFreeBlock(pBlock, "rtR0MemEfTerm");
+
+            rtR0MemBlockLock();
+        }
         else
-            g_pBlocksDelayHead = NULL;
-        rtR0MemBlockUnlock(fSavedIntFlags);
-
-        rtR0MemFreeBlock(pBlock, "rtR0MemEfTerm");
-
-        rtR0MemBlockLock();
+            break;
     }
     g_cbBlocksDelay = 0;
     rtR0MemBlockUnlock(fSavedIntFlags);
@@ -695,11 +700,14 @@ static void rtR0MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pv
          * We're doing delayed freeing.
          * That means we'll expand the E-fence to cover the entire block.
          */
+        int rc = RTR0MemObjProtect(pBlock->hMemObj,
 # ifdef RTR0MEM_EF_IN_FRONT
-        int rc = RTR0MemObjProtect(pBlock->hMemObj, RTR0MEM_EF_SIZE /*offSub*/, pBlock->cbAligned, RTMEM_PROT_NONE);
+                                   RTR0MEM_EF_SIZE,
 # else
-        int rc = RTR0MemObjProtect(pBlock->hMemObj, 0 /*offSub*/,               pBlock->cbAligned, RTMEM_PROT_NONE);
+                                   0 /*offSub*/,
 # endif
+                                   RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE),
+                                   RTMEM_PROT_NONE);
         if (RT_SUCCESS(rc))
         {
             /*
