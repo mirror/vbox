@@ -396,7 +396,8 @@ cleanup()
             test   "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" \
                  = "${i}/misc/* ${i}/misc/.. ${i}/misc ${i}/.." &&
                 rmdir "${i}/misc" "${i}"  # We used to leave empty folders.
-            depmod -a -b "${i}"
+            version=`expr "${i}" : "/lib/modules/\(.*\)"`
+            depmod -a "${version}"
         fi
     done
 }
@@ -482,7 +483,7 @@ restart)
     stop && start
     ;;
 setup)
-    stop && setup
+    stop && setup && start
     ;;
 cleanup)
     stop && cleanup
