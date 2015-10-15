@@ -951,7 +951,7 @@ HRESULT SystemProperties::setDefaultAdditionsISO(const com::Utf8Str &aDefaultAdd
     ReturnComNotImplemented();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = setDefaultAdditionsISO(aDefaultAdditionsISO);
+    HRESULT rc = i_setDefaultAdditionsISO(aDefaultAdditionsISO);
     alock.release();
 
     if (SUCCEEDED(rc))
@@ -976,7 +976,7 @@ HRESULT SystemProperties::setDefaultFrontend(const com::Utf8Str &aDefaultFronten
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (m->strDefaultFrontend == Utf8Str(aDefaultFrontend))
         return S_OK;
-    HRESULT rc = setDefaultFrontend(aDefaultFrontend);
+    HRESULT rc = i_setDefaultFrontend(aDefaultFrontend);
     alock.release();
 
     if (SUCCEEDED(rc))
