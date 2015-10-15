@@ -100,6 +100,8 @@ class org_virtualbox_VBoxUSB : public IOService
     OSDeclareDefaultStructors(org_virtualbox_VBoxUSB);
 
 public:
+    RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT();
+
     /** @name IOService
      * @{ */
     virtual bool init(OSDictionary *pDictionary = 0);
@@ -122,6 +124,8 @@ class org_virtualbox_VBoxUSBClient : public IOUserClient
     OSDeclareDefaultStructors(org_virtualbox_VBoxUSBClient);
 
 public:
+    RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT();
+
     /** @name IOService & IOUserClient
      * @{ */
     virtual bool initWithTask(task_t OwningTask, void *pvSecurityId, UInt32 u32Type);
@@ -180,6 +184,8 @@ class org_virtualbox_VBoxUSBDevice : public IOUSBUserClientInit
     OSDeclareDefaultStructors(org_virtualbox_VBoxUSBDevice);
 
 public:
+    RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT();
+
     /** @name IOService
      * @{ */
     virtual bool init(OSDictionary *pDictionary = 0);
@@ -242,6 +248,8 @@ class org_virtualbox_VBoxUSBInterface : public IOUSBUserClientInit
     OSDeclareDefaultStructors(org_virtualbox_VBoxUSBInterface);
 
 public:
+    RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT();
+
     /** @name IOService
      * @{ */
     virtual bool init(OSDictionary *pDictionary = 0);
