@@ -396,6 +396,7 @@ cleanup()
             test   "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" \
                  = "${i}/misc/* ${i}/misc/.. ${i}/misc ${i}/.." &&
                 rmdir "${i}/misc" "${i}"  # We used to leave empty folders.
+            depmod -a -b "${i}"
         fi
     done
 }
@@ -430,6 +431,7 @@ setup()
         failure "Look at $LOG to find out what went wrong"
     fi
     rm -f /etc/vbox/module_not_compiled
+    depmod -a
     succ_msg
 }
 
