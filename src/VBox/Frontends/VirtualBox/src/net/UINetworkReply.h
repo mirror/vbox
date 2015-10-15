@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UINetworkReply_h__
-#define __UINetworkReply_h__
+#ifndef ___UINetworkReply_h___
+#define ___UINetworkReply_h___
 
 /* Qt includes: */
 #include <QPointer>
@@ -28,36 +28,52 @@
 /* Forward declarations: */
 class UINetworkReplyPrivate;
 
-/* Network-reply interface: */
+/** QObject extension
+  * used as network-reply interface. */
 class UINetworkReply : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifiers: */
+    /** Notifies listeners about reply progress change.
+      * @param  iBytesReceived  Holds the current amount of bytes received.
+      * @param  iBytesTotal     Holds the total amount of bytes to be received. */
     void downloadProgress(qint64 iBytesReceived, qint64 iBytesTotal);
+
+    /** Notifies listeners about reply has finished processing. */
     void finished();
 
 public:
 
-    /* Constructor/destructor: */
-    UINetworkReply(const QNetworkRequest &request, UINetworkRequestType requestType);
+    /** Constructs reply for the passed @a request of the passed @a type. */
+    UINetworkReply(const QNetworkRequest &request, UINetworkRequestType type);
+    /** Destructs reply. */
     ~UINetworkReply();
 
-    /* API: */
+    /** Aborts reply. */
     void abort();
+
+    /** Returns the URL of the reply. */
     QUrl url() const;
+
+    /** Returns the last cached error of the reply. */
     QNetworkReply::NetworkError error() const;
+    /** Returns the user-oriented string corresponding to the last cached error of the reply. */
     QString errorString() const;
+
+    /** Returns binary content of the reply. */
     QByteArray readAll() const;
+    /** Returns value for the cached reply header of the passed @a type. */
     QVariant header(QNetworkRequest::KnownHeaders header) const;
+    /** Returns value for the cached reply attribute of the passed @a code. */
     QVariant attribute(QNetworkRequest::Attribute code) const;
 
 private:
 
-    /** Holds the network reply private instance. */
+    /** Holds the reply private data instance. */
     UINetworkReplyPrivate *m_pReply;
 };
 
-#endif // __UINetworkReply_h__
+#endif /* !___UINetworkReply_h___ */
+
