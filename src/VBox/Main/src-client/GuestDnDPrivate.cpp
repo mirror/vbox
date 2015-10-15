@@ -373,7 +373,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             DragAndDropSvc::PVBOXDNDCBHGACKOPDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBHGACKOPDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGACKOPDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_ACK_OP == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_ACK_OP == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             setDefAction(pCBData->uAction);
             rc = notifyAboutGuestResponse();
@@ -385,7 +385,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             DragAndDropSvc::PVBOXDNDCBHGREQDATADATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBHGREQDATADATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGREQDATADATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_REQ_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_REQ_DATA == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             if (   pCBData->cbFormat  == 0
                 || pCBData->cbFormat  > _64K /** @todo Make this configurable? */
@@ -415,7 +415,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
                reinterpret_cast<DragAndDropSvc::PVBOXDNDCBHGEVTPROGRESSDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGEVTPROGRESSDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_EVT_PROGRESS == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_EVT_PROGRESS == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             rc = setProgress(pCBData->uPercentage, pCBData->uStatus, pCBData->rc);
             if (RT_SUCCESS(rc))
@@ -429,7 +429,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
                reinterpret_cast<DragAndDropSvc::PVBOXDNDCBGHACKPENDINGDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBGHACKPENDINGDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_ACK_PENDING == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_ACK_PENDING == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             if (   pCBData->cbFormat  == 0
                 || pCBData->cbFormat  > _64K /** @todo Make the maximum size configurable? */

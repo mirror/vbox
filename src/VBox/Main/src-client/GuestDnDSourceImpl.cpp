@@ -252,6 +252,8 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
 
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_GH_REQ_PENDING);
+    if (mDataBase.m_uProtocolVersion >= 3)
+        Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
     Msg.setNextUInt32(uScreenId);
 
     int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
@@ -1035,6 +1037,8 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
          */
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_GH_EVT_DROPPED);
+        if (mDataBase.m_uProtocolVersion >= 3)
+            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
         Msg.setNextPointer((void*)pCtx->mFmtRecv.c_str(), (uint32_t)pCtx->mFmtRecv.length() + 1);
         Msg.setNextUInt32((uint32_t)pCtx->mFmtRecv.length() + 1);
         Msg.setNextUInt32(pCtx->mAction);
@@ -1134,6 +1138,8 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
          */
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_GH_EVT_DROPPED);
+        if (mDataBase.m_uProtocolVersion >= 3)
+            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
         Msg.setNextPointer((void*)pCtx->mFmtRecv.c_str(), (uint32_t)pCtx->mFmtRecv.length() + 1);
         Msg.setNextUInt32((uint32_t)pCtx->mFmtRecv.length() + 1);
         Msg.setNextUInt32(pCtx->mAction);
@@ -1223,7 +1229,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
             PVBOXDNDCBSNDDATAHDRDATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDATAHDRDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBSNDDATAHDRDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_SND_DATA_HDR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_SND_DATA_HDR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             rc = pThis->i_onReceiveDataHdr(pCtx, &pCBData->data);
             break;
@@ -1233,7 +1239,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
             PVBOXDNDCBSNDDATADATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDATADATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBSNDDATADATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_SND_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_SND_DATA == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             rc = pThis->i_onReceiveData(pCtx, &pCBData->data);
             break;
@@ -1243,7 +1249,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
             PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<PVBOXDNDCBEVTERRORDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             pCtx->mpResp->reset();
 
@@ -1296,7 +1302,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             PVBOXDNDCBSNDDATAHDRDATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDATAHDRDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBSNDDATAHDRDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_SND_DATA_HDR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_SND_DATA_HDR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             rc = pThis->i_onReceiveDataHdr(pCtx, &pCBData->data);
             break;
@@ -1306,7 +1312,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             PVBOXDNDCBSNDDATADATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDATADATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBSNDDATADATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_SND_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_SND_DATA == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             rc = pThis->i_onReceiveData(pCtx, &pCBData->data);
             break;
@@ -1316,7 +1322,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             PVBOXDNDCBSNDDIRDATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDIRDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBSNDDIRDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_SND_DIR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_SND_DIR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             rc = pThis->i_onReceiveDir(pCtx, pCBData->pszPath, pCBData->cbPath, pCBData->fMode);
             break;
@@ -1326,7 +1332,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             PVBOXDNDCBSNDFILEHDRDATA pCBData = reinterpret_cast<PVBOXDNDCBSNDFILEHDRDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBSNDFILEHDRDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_SND_FILE_HDR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_SND_FILE_HDR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             rc = pThis->i_onReceiveFileHdr(pCtx, pCBData->pszFilePath, pCBData->cbFilePath,
                                            pCBData->cbSize, pCBData->fMode, pCBData->fFlags);
@@ -1337,7 +1343,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             PVBOXDNDCBSNDFILEDATADATA pCBData = reinterpret_cast<PVBOXDNDCBSNDFILEDATADATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBSNDFILEDATADATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_SND_FILE_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_SND_FILE_DATA == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             if (pThis->mDataBase.m_uProtocolVersion <= 1)
             {
@@ -1362,7 +1368,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<PVBOXDNDCBEVTERRORDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             pCtx->mpResp->reset();
 

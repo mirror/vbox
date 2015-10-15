@@ -119,15 +119,32 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = uMsg;
-    Msg.hdr.cParms      = 7;
 
-    Msg.uScreenId.SetUInt32(0);
-    Msg.uX.SetUInt32(0);
-    Msg.uY.SetUInt32(0);
-    Msg.uDefAction.SetUInt32(0);
-    Msg.uAllActions.SetUInt32(0);
-    Msg.pvFormats.SetPtr(pszFormats, cbFormats);
-    Msg.cFormats.SetUInt32(0);
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 7;
+
+        Msg.u.v1.uScreenId.SetUInt32(0);
+        Msg.u.v1.uX.SetUInt32(0);
+        Msg.u.v1.uY.SetUInt32(0);
+        Msg.u.v1.uDefAction.SetUInt32(0);
+        Msg.u.v1.uAllActions.SetUInt32(0);
+        Msg.u.v1.pvFormats.SetPtr(pszFormats, cbFormats);
+        Msg.u.v1.cFormats.SetUInt32(0);
+    }
+    else
+    {
+        Msg.hdr.cParms = 8;
+
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.uScreenId.SetUInt32(0);
+        Msg.u.v3.uX.SetUInt32(0);
+        Msg.u.v3.uY.SetUInt32(0);
+        Msg.u.v3.uDefAction.SetUInt32(0);
+        Msg.u.v3.uAllActions.SetUInt32(0);
+        Msg.u.v3.pvFormats.SetPtr(pszFormats, cbFormats);
+        Msg.u.v3.cFormats.SetUInt32(0);
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -135,12 +152,25 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
         rc = Msg.hdr.result;
         if (RT_SUCCESS(rc))
         {
-            rc = Msg.uScreenId.GetUInt32(puScreenId);     AssertRC(rc);
-            rc = Msg.uX.GetUInt32(puX);                   AssertRC(rc);
-            rc = Msg.uY.GetUInt32(puY);                   AssertRC(rc);
-            rc = Msg.uDefAction.GetUInt32(puDefAction);   AssertRC(rc);
-            rc = Msg.uAllActions.GetUInt32(puAllActions); AssertRC(rc);
-            rc = Msg.cFormats.GetUInt32(pcbFormatsRecv);  AssertRC(rc);
+            if (pCtx->uProtocol < 3)
+            {
+                rc = Msg.u.v1.uScreenId.GetUInt32(puScreenId);     AssertRC(rc);
+                rc = Msg.u.v1.uX.GetUInt32(puX);                   AssertRC(rc);
+                rc = Msg.u.v1.uY.GetUInt32(puY);                   AssertRC(rc);
+                rc = Msg.u.v1.uDefAction.GetUInt32(puDefAction);   AssertRC(rc);
+                rc = Msg.u.v1.uAllActions.GetUInt32(puAllActions); AssertRC(rc);
+                rc = Msg.u.v1.cFormats.GetUInt32(pcbFormatsRecv);  AssertRC(rc);
+            }
+            else
+            {
+                /** @todo Context ID not used yet. */
+                rc = Msg.u.v3.uScreenId.GetUInt32(puScreenId);     AssertRC(rc);
+                rc = Msg.u.v3.uX.GetUInt32(puX);                   AssertRC(rc);
+                rc = Msg.u.v3.uY.GetUInt32(puY);                   AssertRC(rc);
+                rc = Msg.u.v3.uDefAction.GetUInt32(puDefAction);   AssertRC(rc);
+                rc = Msg.u.v3.uAllActions.GetUInt32(puAllActions); AssertRC(rc);
+                rc = Msg.u.v3.cFormats.GetUInt32(pcbFormatsRecv);  AssertRC(rc);
+            }
 
             AssertReturn(cbFormats >= *pcbFormatsRecv, VERR_TOO_MUCH_DATA);
         }
@@ -157,7 +187,18 @@ static int vbglR3DnDHGRecvLeave(PVBGLR3GUESTDNDCMDCTX pCtx)
     RT_ZERO(Msg);
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = HOST_DND_HG_EVT_LEAVE;
-    Msg.hdr.cParms      = 0;
+
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 0;
+    }
+    else
+    {
+        Msg.hdr.cParms = 1;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -175,7 +216,18 @@ static int vbglR3DnDHGRecvCancel(PVBGLR3GUESTDNDCMDCTX pCtx)
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = HOST_DND_HG_EVT_CANCEL;
-    Msg.hdr.cParms      = 0;
+
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 0;
+    }
+    else
+    {
+        Msg.hdr.cParms = 1;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -201,11 +253,25 @@ static int vbglR3DnDHGRecvDir(PVBGLR3GUESTDNDCMDCTX pCtx,
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = HOST_DND_HG_SND_DIR;
-    Msg.hdr.cParms      = 3;
 
-    Msg.pvName.SetPtr(pszDirname, cbDirname);
-    Msg.cbName.SetUInt32(cbDirname);
-    Msg.fMode.SetUInt32(0);
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 3;
+
+        Msg.u.v1.pvName.SetPtr(pszDirname, cbDirname);
+        Msg.u.v1.cbName.SetUInt32(cbDirname);
+        Msg.u.v1.fMode.SetUInt32(0);
+    }
+    else
+    {
+        Msg.hdr.cParms = 4;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.pvName.SetPtr(pszDirname, cbDirname);
+        Msg.u.v3.cbName.SetUInt32(cbDirname);
+        Msg.u.v3.fMode.SetUInt32(0);
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -213,8 +279,17 @@ static int vbglR3DnDHGRecvDir(PVBGLR3GUESTDNDCMDCTX pCtx,
         rc = Msg.hdr.result;
         if (RT_SUCCESS(Msg.hdr.result))
         {
-            rc = Msg.cbName.GetUInt32(pcbDirnameRecv); AssertRC(rc);
-            rc = Msg.fMode.GetUInt32(pfMode);          AssertRC(rc);
+            if (pCtx->uProtocol < 3)
+            {
+                rc = Msg.u.v1.cbName.GetUInt32(pcbDirnameRecv); AssertRC(rc);
+                rc = Msg.u.v1.fMode.GetUInt32(pfMode);          AssertRC(rc);
+            }
+            else
+            {
+                /** @todo Context ID not used yet. */
+                rc = Msg.u.v3.cbName.GetUInt32(pcbDirnameRecv); AssertRC(rc);
+                rc = Msg.u.v3.fMode.GetUInt32(pfMode);          AssertRC(rc);
+            }
 
             AssertReturn(cbDirname >= *pcbDirnameRecv, VERR_TOO_MUCH_DATA);
         }
@@ -342,14 +417,14 @@ static int vbglR3DnDHGRecvFileHdr(PVBGLR3GUESTDNDCMDCTX  pCtx,
     }
     else
     {
+        Msg.hdr.cParms = 6;
+
         Msg.uContext.SetUInt32(0); /** @todo Not used yet. */
         Msg.pvName.SetPtr(pszFilename, cbFilename);
         Msg.cbName.SetUInt32(cbFilename);
         Msg.uFlags.SetUInt32(0);
         Msg.fMode.SetUInt32(0);
         Msg.cbTotal.SetUInt64(0);
-
-        Msg.hdr.cParms = 6;
 
         rc = VINF_SUCCESS;
     }
@@ -1083,9 +1158,21 @@ static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreen
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = HOST_DND_GH_REQ_PENDING;
-    Msg.hdr.cParms      = 1;
 
-    Msg.uScreenId.SetUInt32(0);
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 1;
+
+        Msg.u.v1.uScreenId.SetUInt32(0);
+    }
+    else
+    {
+        Msg.hdr.cParms = 2;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.uScreenId.SetUInt32(0);
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -1093,7 +1180,15 @@ static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreen
         rc = Msg.hdr.result;
         if (RT_SUCCESS(rc))
         {
-            rc = Msg.uScreenId.GetUInt32(puScreenId); AssertRC(rc);
+            if (pCtx->uProtocol < 3)
+            {
+                rc = Msg.u.v1.uScreenId.GetUInt32(puScreenId); AssertRC(rc);
+            }
+            else
+            {
+                /** @todo Context ID not used yet. */
+                rc = Msg.u.v3.uContext.GetUInt32(puScreenId); AssertRC(rc);
+            }
         }
     }
 
@@ -1117,11 +1212,24 @@ static int vbglR3DnDGHRecvDropped(PVBGLR3GUESTDNDCMDCTX pCtx,
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = HOST_DND_GH_EVT_DROPPED;
-    Msg.hdr.cParms      = 3;
 
-    Msg.pvFormat.SetPtr(pszFormat, cbFormat);
-    Msg.cbFormat.SetUInt32(0);
-    Msg.uAction.SetUInt32(0);
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 3;
+
+        Msg.u.v1.pvFormat.SetPtr(pszFormat, cbFormat);
+        Msg.u.v1.cbFormat.SetUInt32(0);
+        Msg.u.v1.uAction.SetUInt32(0);
+    }
+    else
+    {
+        Msg.hdr.cParms = 4;
+
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.pvFormat.SetPtr(pszFormat, cbFormat);
+        Msg.u.v3.cbFormat.SetUInt32(0);
+        Msg.u.v3.uAction.SetUInt32(0);
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -1129,8 +1237,17 @@ static int vbglR3DnDGHRecvDropped(PVBGLR3GUESTDNDCMDCTX pCtx,
         rc = Msg.hdr.result;
         if (RT_SUCCESS(rc))
         {
-            rc = Msg.cbFormat.GetUInt32(pcbFormatRecv); AssertRC(rc);
-            rc = Msg.uAction.GetUInt32(puAction);       AssertRC(rc);
+            if (pCtx->uProtocol < 3)
+            {
+                rc = Msg.u.v1.cbFormat.GetUInt32(pcbFormatRecv); AssertRC(rc);
+                rc = Msg.u.v1.uAction.GetUInt32(puAction);       AssertRC(rc);
+            }
+            else
+            {
+                /** @todo Context ID not used yet. */
+                rc = Msg.u.v3.cbFormat.GetUInt32(pcbFormatRecv); AssertRC(rc);
+                rc = Msg.u.v3.uAction.GetUInt32(puAction);       AssertRC(rc);
+            }
 
             AssertReturn(cbFormat >= *pcbFormatRecv, VERR_TOO_MUCH_DATA);
         }
@@ -1215,10 +1332,23 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
         Msg.hdr.result      = VERR_WRONG_ORDER;
         Msg.hdr.u32ClientID = pCtx->uClientID;
         Msg.hdr.u32Function = GUEST_DND_CONNECT;
-        Msg.hdr.cParms      = 2;
 
-        Msg.uProtocol.SetUInt32(pCtx->uProtocol);
-        Msg.uFlags.SetUInt32(0); /* Unused at the moment. */
+        if (pCtx->uProtocol < 3)
+        {
+            Msg.hdr.cParms = 2;
+
+            Msg.u.v2.uProtocol.SetUInt32(pCtx->uProtocol);
+            Msg.u.v2.uFlags.SetUInt32(0); /* Unused at the moment. */
+        }
+        else
+        {
+            Msg.hdr.cParms = 3;
+
+             /** @todo Context ID not used yet. */
+            Msg.u.v3.uContext.SetUInt32(0);
+            Msg.u.v3.uProtocol.SetUInt32(pCtx->uProtocol);
+            Msg.u.v3.uFlags.SetUInt32(0); /* Unused at the moment. */
+        }
 
         int rc2 = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc2))
@@ -1374,9 +1504,21 @@ VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uActio
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_DND_HG_ACK_OP;
-    Msg.hdr.cParms      = 1;
 
-    Msg.uAction.SetUInt32(uAction);
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 1;
+
+        Msg.u.v1.uAction.SetUInt32(uAction);
+    }
+    else
+    {
+        Msg.hdr.cParms = 2;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.uAction.SetUInt32(uAction);
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -1395,9 +1537,27 @@ VBGLR3DECL(int) VbglR3DnDHGSendReqData(PVBGLR3GUESTDNDCMDCTX pCtx, const char* p
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_DND_HG_REQ_DATA;
-    Msg.hdr.cParms      = 1;
 
-    Msg.pFormat.SetPtr((void*)pcszFormat, strlen(pcszFormat) + 1 /* Include termination */);
+    if (!RTStrIsValidEncoding(pcszFormat))
+        return VERR_INVALID_PARAMETER;
+
+    const uint32_t cbFormat = (uint32_t)strlen(pcszFormat) + 1; /* Include termination */
+
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 1;
+
+        Msg.u.v1.pvFormat.SetPtr((void*)pcszFormat, cbFormat);
+    }
+    else
+    {
+        Msg.hdr.cParms = 3;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.pvFormat.SetPtr((void*)pcszFormat, cbFormat);
+        Msg.u.v3.cbFormat.SetUInt32(cbFormat);
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -1416,11 +1576,25 @@ VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uSt
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = uStatus;
-    Msg.hdr.cParms      = 3;
 
-    Msg.uStatus.SetUInt32(uStatus);
-    Msg.uPercent.SetUInt32(uPercent);
-    Msg.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 3;
+
+        Msg.u.v1.uStatus.SetUInt32(uStatus);
+        Msg.u.v1.uPercent.SetUInt32(uPercent);
+        Msg.u.v1.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
+    }
+    else
+    {
+        Msg.hdr.cParms = 4;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.uStatus.SetUInt32(uStatus);
+        Msg.u.v3.uPercent.SetUInt32(uPercent);
+        Msg.u.v3.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -1437,16 +1611,34 @@ VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
     AssertPtrReturn(pcszFormats, VERR_INVALID_POINTER);
     AssertReturn(cbFormats,      VERR_INVALID_PARAMETER);
 
+    if (!RTStrIsValidEncoding(pcszFormats))
+        return VERR_INVALID_PARAMETER;
+
     VBOXDNDGHACKPENDINGMSG Msg;
     RT_ZERO(Msg);
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_DND_GH_ACK_PENDING;
-    Msg.hdr.cParms      = 3;
 
-    Msg.uDefAction.SetUInt32(uDefAction);
-    Msg.uAllActions.SetUInt32(uAllActions);
-    Msg.pFormat.SetPtr((void*)pcszFormats, cbFormats);
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 3;
+
+        Msg.u.v1.uDefAction.SetUInt32(uDefAction);
+        Msg.u.v1.uAllActions.SetUInt32(uAllActions);
+        Msg.u.v1.pvFormats.SetPtr((void*)pcszFormats, cbFormats);
+    }
+    else
+    {
+        Msg.hdr.cParms = 5;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.uDefAction.SetUInt32(uDefAction);
+        Msg.u.v3.uAllActions.SetUInt32(uAllActions);
+        Msg.u.v3.pvFormats.SetPtr((void*)pcszFormats, cbFormats);
+        Msg.u.v3.cbFormats.SetUInt32(cbFormats);
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -1562,20 +1754,36 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     AssertPtrReturn(pCtx,                                    VERR_INVALID_POINTER);
     AssertReturn(pObj->GetType() == DnDURIObject::Directory, VERR_INVALID_PARAMETER);
 
+    RTCString strPath = pObj->GetDestPath();
+    LogFlowFunc(("strDir=%s (%zu), fMode=0x%x\n",
+                 strPath.c_str(), strPath.length(), pObj->GetMode()));
+
+    const uint32_t cbPath = strPath.length() + 1; /* Include termination. */
+
     VBOXDNDGHSENDDIRMSG Msg;
     RT_ZERO(Msg);
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_DND_GH_SND_DIR;
-    Msg.hdr.cParms      = 3;
 
-    RTCString strPath = pObj->GetDestPath();
-    LogFlowFunc(("strDir=%s (%zu), fMode=0x%x\n",
-                 strPath.c_str(), strPath.length(), pObj->GetMode()));
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 3;
 
-    Msg.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
-    Msg.cbName.SetUInt32((uint32_t)(strPath.length() + 1));
-    Msg.fMode.SetUInt32(pObj->GetMode());
+        Msg.u.v1.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)cbPath);
+        Msg.u.v1.cbName.SetUInt32((uint32_t)cbPath);
+        Msg.u.v1.fMode.SetUInt32(pObj->GetMode());
+    }
+    else
+    {
+        Msg.hdr.cParms = 4;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)cbPath);
+        Msg.u.v3.cbName.SetUInt32((uint32_t)cbPath);
+        Msg.u.v3.fMode.SetUInt32(pObj->GetMode());
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -1868,9 +2076,21 @@ VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_DND_GH_EVT_ERROR;
-    Msg.hdr.cParms      = 1;
 
-    Msg.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
+    if (pCtx->uProtocol < 3)
+    {
+        Msg.hdr.cParms = 1;
+
+        Msg.u.v1.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
+    }
+    else
+    {
+        Msg.hdr.cParms = 2;
+
+        /** @todo Context ID not used yet. */
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
+    }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))

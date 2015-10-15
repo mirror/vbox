@@ -302,6 +302,8 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_ENTER);
+        if (mDataBase.m_uProtocolVersion >= 3)
+            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
         Msg.setNextUInt32(aScreenId);
         Msg.setNextUInt32(aX);
         Msg.setNextUInt32(aY);
@@ -376,6 +378,8 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_MOVE);
+        if (mDataBase.m_uProtocolVersion >= 3)
+            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
         Msg.setNextUInt32(aScreenId);
         Msg.setNextUInt32(aX);
         Msg.setNextUInt32(aY);
@@ -488,6 +492,8 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_DROPPED);
+        if (mDataBase.m_uProtocolVersion >= 3)
+            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
         Msg.setNextUInt32(aScreenId);
         Msg.setNextUInt32(aX);
         Msg.setNextUInt32(aY);
@@ -809,7 +815,7 @@ int GuestDnDTarget::i_sendDataBody(PSENDDATACTX pCtx, GuestDnDData *pData)
     }
     else
     {
-        Msg.setNextUInt32(0);                                                              /** @todo uContext; not used yet. */
+        Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
         Msg.setNextPointer(pData->getMeta().getDataMutable(), pData->getMeta().getSize()); /* pvData */
         Msg.setNextUInt32(pData->getMeta().getSize());                                     /* cbData */
         Msg.setNextPointer(pData->getChkSumMutable(), pData->getChkSumSize());             /** @todo pvChecksum; not used yet. */
@@ -871,6 +877,8 @@ int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCt
     LogRel2(("DnD: Transferring host directory to guest: %s\n", strPath.c_str()));
 
     pMsg->setType(HOST_DND_HG_SND_DIR);
+    if (mDataBase.m_uProtocolVersion >= 3)
+        pMsg->setNextUInt32(0); /** @todo ContextID not used yet. */
     pMsg->setNextString(strPath.c_str());                  /* path */
     pMsg->setNextUInt32((uint32_t)(strPath.length() + 1)); /* path length (maximum is RTPATH_MAX on guest side). */
     pMsg->setNextUInt32(pObj->GetMode());                  /* mode */
@@ -919,9 +927,8 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
                  * The just registered callback will be called by the guest afterwards.
                  */
                 pMsg->setType(HOST_DND_HG_SND_FILE_HDR);
-                pMsg->setNextUInt32(0);                                            /* uContextID */
-                rc = pMsg->setNextString(pObj->GetDestPath().c_str());             /* pvName */
-                AssertRC(rc);
+                pMsg->setNextUInt32(0); /** @todo ContextID not used yet. */
+                pMsg->setNextString(pObj->GetDestPath().c_str());                  /* pvName */
                 pMsg->setNextUInt32((uint32_t)(pObj->GetDestPath().length() + 1)); /* cbName */
                 pMsg->setNextUInt32(0);                                            /* uFlags */
                 pMsg->setNextUInt32(pObj->GetMode());                              /* fMode */
@@ -988,8 +995,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
     }
     else if (mDataBase.m_uProtocolVersion >= 2)
     {
-        /* Since protocol v2 we also send the context ID. Currently unused. */
-        pMsg->setNextUInt32(0);                                            /* uContext */
+        pMsg->setNextUInt32(0);                                            /** @todo ContextID not used yet. */
     }
 
     uint32_t cbRead = 0;
@@ -1056,7 +1062,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             PVBOXDNDCBHGGETNEXTHOSTMSG pCBData = reinterpret_cast<PVBOXDNDCBHGGETNEXTHOSTMSG>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBHGGETNEXTHOSTMSG) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_HG_GET_NEXT_HOST_MSG == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_HG_GET_NEXT_HOST_MSG == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             try
             {
@@ -1096,7 +1102,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<PVBOXDNDCBEVTERRORDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             pCtx->mpResp->reset();
 
@@ -1242,18 +1248,10 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtr(pCtx->mpResp);
 
-#define URI_DATA_IS_VALID_BREAK(x) \
-    if (!x) \
-    { \
-        LogFlowFunc(("Invalid URI data value for \"" #x "\"\n")); \
-        rc = VERR_INVALID_PARAMETER; \
-        break; \
-    }
-
 #define REGISTER_CALLBACK(x)                                        \
     rc = pCtx->mpResp->setCallback(x, i_sendURIDataCallback, pCtx); \
     if (RT_FAILURE(rc))                                             \
-        return rc;
+        break;
 
 #define UNREGISTER_CALLBACK(x)                        \
     {                                                 \
@@ -1268,18 +1266,6 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     rc = pCtx->mCBEvent.Reset();
     if (RT_FAILURE(rc))
         return rc;
-
-    /*
-     * Register callbacks.
-     */
-    /* Guest callbacks. */
-    REGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
-    REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
-    /* Host callbacks. */
-    REGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
-    if (mDataBase.m_uProtocolVersion >= 2)
-        REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
-    REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
 
     do
     {
@@ -1339,6 +1325,18 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 
         if (RT_SUCCESS(rc))
         {
+            /*
+             * Register callbacks.
+             */
+            /* Guest callbacks. */
+            REGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
+            REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
+            /* Host callbacks. */
+            REGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
+            if (mDataBase.m_uProtocolVersion >= 2)
+                REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
+            REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
+
             rc = waitForEvent(&pCtx->mCBEvent, pCtx->mpResp, msTimeout);
             if (RT_FAILURE(rc))
             {
@@ -1350,21 +1348,21 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
             }
             else
                 rc = pCtx->mpResp->setProgress(100, DND_PROGRESS_COMPLETE, VINF_SUCCESS);
+
+            /*
+             * Unregister callbacks.
+             */
+            /* Guest callbacks. */
+            UNREGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
+            UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
+            /* Host callbacks. */
+            UNREGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
+            if (mDataBase.m_uProtocolVersion >= 2)
+                UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
+            UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
         }
 
     } while (0);
-
-    /*
-     * Unregister callbacks.
-     */
-    /* Guest callbacks. */
-    UNREGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
-    /* Host callbacks. */
-    UNREGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
-    if (mDataBase.m_uProtocolVersion >= 2)
-        UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
-    UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
 
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
@@ -1379,8 +1377,6 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
         int rc2 = sendCancel();
         AssertRC(rc2);
     }
-
-#undef URI_DATA_IS_VALID_BREAK
 
     LogFlowFuncLeaveRC(rc);
     return rc;

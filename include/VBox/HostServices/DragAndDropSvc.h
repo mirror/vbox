@@ -43,6 +43,7 @@
  *           The guest itself uses VBOXDNDCONNECTMSG to report its supported protocol version to the DnD service.
  *
  *     Protocol v3 (VBox 5.0+):
+             Added context IDs for every HGCM message. Not used yet and must be 0.
  *         - Added VBOXDNDSNDDATAHDR and VBOXDNDCBSNDDATAHDRDATA to support (simple) accounting of objects
  *           being transferred, along with supplying separate meta data size (which is part of the total size being sent).
  *         - Added new HOST_DND_HG_SND_DATA_HDR + GUEST_DND_GH_SND_DATA_HDR commands which now allow specifying an optional
@@ -275,13 +276,31 @@ typedef struct VBOXDNDHGACTIONMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
-    HGCMFunctionParameter uX;           /* OUT uint32_t */
-    HGCMFunctionParameter uY;           /* OUT uint32_t */
-    HGCMFunctionParameter uDefAction;   /* OUT uint32_t */
-    HGCMFunctionParameter uAllActions;  /* OUT uint32_t */
-    HGCMFunctionParameter pvFormats;    /* OUT ptr */
-    HGCMFunctionParameter cFormats;     /* OUT uint32_t */
+    union
+    {
+        struct
+        {
+            HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
+            HGCMFunctionParameter uX;           /* OUT uint32_t */
+            HGCMFunctionParameter uY;           /* OUT uint32_t */
+            HGCMFunctionParameter uDefAction;   /* OUT uint32_t */
+            HGCMFunctionParameter uAllActions;  /* OUT uint32_t */
+            HGCMFunctionParameter pvFormats;    /* OUT ptr */
+            HGCMFunctionParameter cFormats;     /* OUT uint32_t */
+        } v1;
+        struct
+        {
+            /** Context ID. */
+            HGCMFunctionParameter uContext;
+            HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
+            HGCMFunctionParameter uX;           /* OUT uint32_t */
+            HGCMFunctionParameter uY;           /* OUT uint32_t */
+            HGCMFunctionParameter uDefAction;   /* OUT uint32_t */
+            HGCMFunctionParameter uAllActions;  /* OUT uint32_t */
+            HGCMFunctionParameter pvFormats;    /* OUT ptr */
+            HGCMFunctionParameter cFormats;     /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDHGACTIONMSG;
 
 /**
@@ -293,8 +312,15 @@ typedef struct VBOXDNDHGACTIONMSG
 typedef struct VBOXDNDHGLEAVEMSG
 {
     VBoxGuestHGCMCallInfo hdr;
+    union
+    {
+        struct
+        {
+            /** Context ID. */
+            HGCMFunctionParameter uContext;
+        } v3;
+    } u;
 } VBOXDNDHGLEAVEMSG;
-
 
 /**
  * Tells the guest that the host wants to cancel the current drag and drop operation.
@@ -305,6 +331,14 @@ typedef struct VBOXDNDHGLEAVEMSG
 typedef struct VBOXDNDHGCANCELMSG
 {
     VBoxGuestHGCMCallInfo hdr;
+    union
+    {
+        struct
+        {
+            /** Context ID. */
+            HGCMFunctionParameter uContext;
+        } v3;
+    } u;
 } VBOXDNDHGCANCELMSG;
 
 /**
@@ -417,12 +451,29 @@ typedef struct VBOXDNDHGSENDDIRMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /** Directory name. */
-    HGCMFunctionParameter pvName;       /* OUT ptr */
-    /** Size (in bytes) of directory name. */
-    HGCMFunctionParameter cbName;       /* OUT uint32_t */
-    /** Directory mode. */
-    HGCMFunctionParameter fMode;        /* OUT uint32_t */
+    union
+    {
+        struct
+        {
+            /** Directory name. */
+            HGCMFunctionParameter pvName;       /* OUT ptr */
+            /** Size (in bytes) of directory name. */
+            HGCMFunctionParameter cbName;       /* OUT uint32_t */
+            /** Directory mode. */
+            HGCMFunctionParameter fMode;        /* OUT uint32_t */
+        } v1;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            /** Directory name. */
+            HGCMFunctionParameter pvName;       /* OUT ptr */
+            /** Size (in bytes) of directory name. */
+            HGCMFunctionParameter cbName;       /* OUT uint32_t */
+            /** Directory mode. */
+            HGCMFunctionParameter fMode;        /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDHGSENDDIRMSG;
 
 /**
@@ -517,8 +568,21 @@ typedef struct VBOXDNDGHREQPENDINGMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /** Screen ID. */
-    HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
+    union
+    {
+        struct
+        {
+            /** Screen ID. */
+            HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
+        } v1;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            /** Screen ID. */
+            HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDGHREQPENDINGMSG;
 
 /**
@@ -532,12 +596,29 @@ typedef struct VBOXDNDGHDROPPEDMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /** Requested format for sending the data. */
-    HGCMFunctionParameter pvFormat;     /* OUT ptr */
-    /** Size (in bytes) of requested format. */
-    HGCMFunctionParameter cbFormat;     /* OUT uint32_t */
-    /** Drop action peformed on the host. */
-    HGCMFunctionParameter uAction;      /* OUT uint32_t */
+    union
+    {
+        struct
+        {
+            /** Requested format for sending the data. */
+            HGCMFunctionParameter pvFormat;     /* OUT ptr */
+            /** Size (in bytes) of requested format. */
+            HGCMFunctionParameter cbFormat;     /* OUT uint32_t */
+            /** Drop action peformed on the host. */
+            HGCMFunctionParameter uAction;      /* OUT uint32_t */
+        } v1;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            /** Requested format for sending the data. */
+            HGCMFunctionParameter pvFormat;     /* OUT ptr */
+            /** Size (in bytes) of requested format. */
+            HGCMFunctionParameter cbFormat;     /* OUT uint32_t */
+            /** Drop action peformed on the host. */
+            HGCMFunctionParameter uAction;      /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDGHDROPPEDMSG;
 
 /*
@@ -545,8 +626,9 @@ typedef struct VBOXDNDGHDROPPEDMSG
  */
 
 /**
- * The returned command the host wants to
- * run on the guest.
+ * Asks the host for the next command to process, along
+ * with the needed amount of parameters and an optional blocking
+ * flag.
  *
  * Used by:
  * GUEST_DND_GET_NEXT_HOST_MSG
@@ -575,10 +657,25 @@ typedef struct VBOXDNDCONNECTMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /** Protocol version to use. */
-    HGCMFunctionParameter uProtocol;     /* OUT uint32_t */
-    /** Connection flags. Optional. */
-    HGCMFunctionParameter uFlags;        /* OUT uint32_t */
+    union
+    {
+        struct
+        {
+            /** Protocol version to use. */
+            HGCMFunctionParameter uProtocol;     /* OUT uint32_t */
+            /** Connection flags. Optional. */
+            HGCMFunctionParameter uFlags;        /* OUT uint32_t */
+        } v2;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            /** Protocol version to use. */
+            HGCMFunctionParameter uProtocol;     /* OUT uint32_t */
+            /** Connection flags. Optional. */
+            HGCMFunctionParameter uFlags;        /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDCONNECTMSG;
 
 /**
@@ -591,7 +688,19 @@ typedef struct VBOXDNDHGACKOPMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    HGCMFunctionParameter uAction;      /* OUT uint32_t */
+    union
+    {
+        struct
+        {
+            HGCMFunctionParameter uAction;      /* OUT uint32_t */
+        } v1;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            HGCMFunctionParameter uAction;      /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDHGACKOPMSG;
 
 /**
@@ -604,16 +713,43 @@ typedef struct VBOXDNDHGREQDATAMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    HGCMFunctionParameter pFormat;      /* OUT ptr */
+    union
+    {
+        struct
+        {
+            HGCMFunctionParameter pvFormat;     /* OUT ptr */
+        } v1;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            HGCMFunctionParameter pvFormat;     /* OUT ptr */
+            HGCMFunctionParameter cbFormat;     /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDHGREQDATAMSG;
 
 typedef struct VBOXDNDHGEVTPROGRESSMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    HGCMFunctionParameter uStatus;
-    HGCMFunctionParameter uPercent;
-    HGCMFunctionParameter rc;
+    union
+    {
+        struct
+        {
+            HGCMFunctionParameter uStatus;      /* OUT uint32_t */
+            HGCMFunctionParameter uPercent;     /* OUT uint32_t */
+            HGCMFunctionParameter rc;           /* OUT uint32_t */
+        } v1;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            HGCMFunctionParameter uStatus;      /* OUT uint32_t */
+            HGCMFunctionParameter uPercent;     /* OUT uint32_t */
+            HGCMFunctionParameter rc;           /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDHGEVTPROGRESSMSG;
 
 /**
@@ -627,9 +763,24 @@ typedef struct VBOXDNDGHACKPENDINGMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    HGCMFunctionParameter uDefAction;   /* OUT uint32_t */
-    HGCMFunctionParameter uAllActions;  /* OUT uint32_t */
-    HGCMFunctionParameter pFormat;      /* OUT ptr */
+    union
+    {
+        struct
+        {
+            HGCMFunctionParameter uDefAction;   /* OUT uint32_t */
+            HGCMFunctionParameter uAllActions;  /* OUT uint32_t */
+            HGCMFunctionParameter pvFormats;    /* OUT ptr */
+        } v1;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            HGCMFunctionParameter uDefAction;   /* OUT uint32_t */
+            HGCMFunctionParameter uAllActions;  /* OUT uint32_t */
+            HGCMFunctionParameter pvFormats;    /* OUT ptr */
+            HGCMFunctionParameter cbFormats;    /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDGHACKPENDINGMSG;
 
 /**
@@ -715,7 +866,19 @@ typedef struct VBOXDNDGHEVTERRORMSG
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    HGCMFunctionParameter rc;               /* OUT uint32_t */
+    union
+    {
+        struct
+        {
+            HGCMFunctionParameter rc;           /* OUT uint32_t */
+        } v1;
+        struct
+        {
+            /** Context ID. Unused at the moment. */
+            HGCMFunctionParameter uContext;     /* OUT uint32_t */
+            HGCMFunctionParameter rc;           /* OUT uint32_t */
+        } v3;
+    } u;
 } VBOXDNDGHEVTERRORMSG;
 
 #pragma pack()
@@ -747,9 +910,9 @@ enum eDnDCallbackMagics
 typedef struct VBOXDNDCBHEADERDATA
 {
     /** Magic number to identify the structure. */
-    uint32_t                    u32Magic;
+    uint32_t                    uMagic;
     /** Context ID to identify callback data. */
-    uint32_t                    u32ContextID;
+    uint32_t                    uContextID;
 } VBOXDNDCBHEADERDATA, *PVBOXDNDCBHEADERDATA;
 
 typedef struct VBOXDNDCBCONNECTMSGDATA
