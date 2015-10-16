@@ -835,6 +835,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/fs2-posix.cpp \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
+	r3/posix/localipc-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \

@@ -80,6 +80,7 @@ PROGRAMS += \
 	tstIprtMiniString \
 	tstLdr \
 	tstLdrLoad \
+	tstRTLocalIpc \
 	tstRTLdrVerifyPeImage \
 	tstRTList \
 	tstRTLockValidator \
@@ -147,7 +148,6 @@ PROGRAMS += \
 
 PROGRAMS.win += \
 	tstRTCritSectW32 \
-	tstRTLocalIpc \
 	tstRTProcWait \
 	tstFileAppendWin-1 \
 	ntGetTimerResolution

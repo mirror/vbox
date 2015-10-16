@@ -211,7 +211,7 @@ DECLINLINE(void) rtSocketErrorReset(void)
  *
  * @returns iprt status code.
  */
-int rtSocketResolverError(void)
+DECLHIDDEN(int) rtSocketResolverError(void)
 {
 #ifdef RT_OS_WINDOWS
     return RTErrConvertFromWin32(WSAGetLastError());
@@ -399,7 +399,7 @@ DECLINLINE(int) rtSocketSwitchBlockingMode(RTSOCKETINT *pThis, bool fBlocking)
  * @param   ppSocket        Where to return the IPRT socket handle.
  * @param   hNative         The native handle.
  */
-int rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative)
+DECLHIDDEN(int) rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative)
 {
     RTSOCKETINT *pThis = (RTSOCKETINT *)RTMemPoolAlloc(RTMEMPOOL_DEFAULT, sizeof(*pThis));
     if (!pThis)
@@ -443,7 +443,7 @@ RTDECL(int) RTSocketFromNative(PRTSOCKET phSocket, RTHCINTPTR uNative)
  * @param   iType               The socket type (SOCK_XXX).
  * @param   iProtocol           Socket parameter, usually 0.
  */
-int rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol)
+DECLHIDDEN(int) rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol)
 {
     /*
      * Create the socket.
@@ -1424,8 +1424,7 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
 }
 
 
-RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pfEvents,
-                                RTMSINTERVAL cMillies)
+RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pfEvents, RTMSINTERVAL cMillies)
 {
     /*
      * Validate input.
@@ -1586,7 +1585,7 @@ RTDECL(int) RTSocketGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
  * @param   hSocket             The socket handle.
  * @param   pAddr               The address to bind to.
  */
-int rtSocketBind(RTSOCKET hSocket, PCRTNETADDR pAddr)
+DECLHIDDEN(int) rtSocketBind(RTSOCKET hSocket, PCRTNETADDR pAddr)
 {
     RTSOCKADDRUNION u;
     int             cbAddr;
@@ -1606,7 +1605,7 @@ int rtSocketBind(RTSOCKET hSocket, PCRTNETADDR pAddr)
  *                              friends).
  * @param   cbAddr              The size of the address.
  */
-int rtSocketBindRawAddr(RTSOCKET hSocket, void const *pvAddr, size_t cbAddr)
+DECLHIDDEN(int) rtSocketBindRawAddr(RTSOCKET hSocket, void const *pvAddr, size_t cbAddr)
 {
     /*
      * Validate input.
@@ -1636,7 +1635,7 @@ int rtSocketBindRawAddr(RTSOCKET hSocket, void const *pvAddr, size_t cbAddr)
  * @param   hSocket             The socket handle.
  * @param   cMaxPending         The max number of pending connections.
  */
-int rtSocketListen(RTSOCKET hSocket, int cMaxPending)
+DECLHIDDEN(int) rtSocketListen(RTSOCKET hSocket, int cMaxPending)
 {
     /*
      * Validate input.
@@ -1667,7 +1666,7 @@ int rtSocketListen(RTSOCKET hSocket, int cMaxPending)
  *                              @a pAddr point to.  On return this contains the
  *                              size of what's stored at @a pAddr.
  */
-int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr, size_t *pcbAddr)
+DECLHIDDEN(int) rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr, size_t *pcbAddr)
 {
     /*
      * Validate input.
@@ -1726,7 +1725,7 @@ int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr,
  *                              Use RT_TCPCLIENTCONNECT_DEFAULT_WAIT to wait for the default time
  *                              configured on the running system.
  */
-int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr, RTMSINTERVAL cMillies)
+DECLHIDDEN(int) rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr, RTMSINTERVAL cMillies)
 {
     /*
      * Validate input.
@@ -1816,6 +1815,35 @@ int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr, RTMSINTERVAL cMillies)
 
 
 /**
+ * Wrapper around connect, raw address, no timeout.
+ *
+ * @returns IPRT status code.
+ * @param   hSocket             The socket handle.
+ * @param   pvAddr              The raw socket address to connect to.
+ * @param   cbAddr              The size of the raw address.
+ */
+DECLHIDDEN(int) rtSocketConnectRaw(RTSOCKET hSocket, void const *pvAddr, size_t cbAddr)
+{
+    /*
+     * Validate input.
+     */
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+
+    int rc;
+    if (connect(pThis->hNative, (const struct sockaddr *)pvAddr, (int)cbAddr) == 0)
+        rc = VINF_SUCCESS;
+    else
+        rc = rtSocketError();
+
+    rtSocketUnlock(pThis);
+    return rc;
+}
+
+
+/**
  * Wrapper around setsockopt.
  *
  * @returns IPRT status code.
@@ -1825,7 +1853,7 @@ int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr, RTMSINTERVAL cMillies)
  * @param   pvValue             The value buffer.
  * @param   cbValue             The size of the value pointed to by pvValue.
  */
-int rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValue, int cbValue)
+DECLHIDDEN(int) rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValue, int cbValue)
 {
     /*
      * Validate input.
@@ -1853,7 +1881,7 @@ int rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValu
  * @param   fEvents             The events we're polling for.
  * @param   phNative            Where to put the primary handle.
  */
-int rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCINTPTR phNative)
+DECLHIDDEN(int) rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCINTPTR phNative)
 {
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -2052,7 +2080,7 @@ static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
  * @remarks There is a potential race wrt duplicate handles when @a fNoWait is
  *          @c true, we don't currently care about that oddity...
  */
-uint32_t rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait)
+DECLHIDDEN(uint32_t) rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait)
 {
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, UINT32_MAX);
@@ -2124,7 +2152,7 @@ uint32_t rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvent
  *                              set was processed).
  * @param   fHarvestEvents      Set if we should check for pending events.
  */
-uint32_t rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents)
+DECLHIDDEN(uint32_t) rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents)
 {
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, 0);

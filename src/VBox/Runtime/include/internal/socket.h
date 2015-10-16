@@ -51,20 +51,21 @@
 RT_C_DECLS_BEGIN
 
 #ifndef IPRT_INTERNAL_SOCKET_POLLING_ONLY
-int rtSocketResolverError(void);
-int rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative);
-int rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol);
-int rtSocketBind(RTSOCKET hSocket, PCRTNETADDR pAddr);
-int rtSocketBindRawAddr(RTSOCKET hSocket, void const *pvAddr, size_t cbAddr);
-int rtSocketListen(RTSOCKET hSocket, int cMaxPending);
-int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr, size_t *pcbAddr);
-int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr, RTMSINTERVAL cMillies);
-int rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValue, int cbValue);
+DECLHIDDEN(int) rtSocketResolverError(void);
+DECLHIDDEN(int) rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative);
+DECLHIDDEN(int) rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol);
+DECLHIDDEN(int) rtSocketBind(RTSOCKET hSocket, PCRTNETADDR pAddr);
+DECLHIDDEN(int) rtSocketBindRawAddr(RTSOCKET hSocket, void const *pvAddr, size_t cbAddr);
+DECLHIDDEN(int) rtSocketListen(RTSOCKET hSocket, int cMaxPending);
+DECLHIDDEN(int) rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr, size_t *pcbAddr);
+DECLHIDDEN(int) rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr, RTMSINTERVAL cMillies);
+DECLHIDDEN(int) rtSocketConnectRaw(RTSOCKET hSocket, void const *pvAddr, size_t cbAddr);
+DECLHIDDEN(int) rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValue, int cbValue);
 #endif /* IPRT_INTERNAL_SOCKET_POLLING_ONLY */
 
-int         rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCINTPTR phNative);
-uint32_t    rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait);
-uint32_t    rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents);
+DECLHIDDEN(int)         rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCINTPTR phNative);
+DECLHIDDEN(uint32_t)    rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait);
+DECLHIDDEN(uint32_t)    rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents);
 
 RT_C_DECLS_END
 
