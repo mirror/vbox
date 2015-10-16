@@ -1808,12 +1808,20 @@ void UISelectorWindow::updateActionsAppearance()
     UIVMItem *pFirstStartedAction = 0;
     foreach (UIVMItem *pSelectedItem, items)
         if (UIVMItem::isItemStarted(pSelectedItem))
+        {
             pFirstStartedAction = pSelectedItem;
-    /* Update the Pause/Resume action appearance: */
+            break;
+        }
+    /* Update the group Pause/Resume action appearance: */
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->blockSignals(true);
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->setChecked(pFirstStartedAction && UIVMItem::isItemPaused(pFirstStartedAction));
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->blockSignals(false);
+    /* Update the machine Pause/Resume action appearance: */
+    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(true);
+    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setChecked(pFirstStartedAction && UIVMItem::isItemPaused(pFirstStartedAction));
+    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
+    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
 
 #ifdef QT_MAC_USE_COCOA
     /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
