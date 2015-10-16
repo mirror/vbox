@@ -42,6 +42,17 @@ rm -Rfv \
 #
 # Install the launchd script.
 #
+# Make sure "/Library/LaunchDaemons/ exists first as some uninstallers/users
+# may be silly enough to remove it.  We assume that /Library exists and will
+# not try create it because it normally has extra ACLs.
+#
+if [ ! -e "/Library/LaunchDaemons/" ]; then
+    set -e
+    mkdir "/Library/LaunchDaemons"
+    chmod 755 "/Library/LaunchDaemons"
+    chown root:wheel "/Library/LaunchDaemons"
+    set +e
+fi
 rm -vf "/Library/LaunchDaemons/org.virtualbox.startup.plist"
 set -e
 ln -s  "../Application Support/VirtualBox/LaunchDaemons/org.virtualbox.startup.plist" \
