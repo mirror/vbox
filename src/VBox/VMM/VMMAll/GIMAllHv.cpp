@@ -40,64 +40,83 @@
 
 #ifdef IN_RING3
 /**
- * Helper for reading and validating slow hypercall input/output parameters.
- *
- * A 'slow' hypercall is one that passes parameters pointers through guest
- * memory as opposed to a 'fast' hypercall which passes parameters through guest
- * general-purpose registers.
+ * Read and validate slow hypercall parameters.
  *
  * @returns VBox status code.
  * @param   pVM               The cross context VM structure.
  * @param   pCtx              Pointer to the guest-CPU context.
  * @param   fIs64BitMode      Whether the guest is currently in 64-bit mode or not.
- * @param   pGCPhysIn         Where to store the guest-physical address of the
- *                            hypercall input page. Optional, can be NULL.
- * @param   pGCPhysOut        Where to store the guest-physical address of the
- *                            hypercall output page. Optional, can be NULL.
+ * @param   enmParam          The hypercall parameter type.
  * @param   prcHv             Where to store the Hyper-V status code. Only valid
  *                            to the caller when this function returns
  *                            VINF_SUCCESS.
  */
-static int gimHvReadSlowHypercallParams(PVM pVM, PCPUMCTX pCtx, bool fIs64BitMode, PRTGCPHYS pGCPhysIn, PRTGCPHYS pGCPhysOut,
-                                        int *prcHv)
+static int gimHvReadSlowHypercallParam(PVM pVM, PCPUMCTX pCtx, bool fIs64BitMode, GIMHVHYPERCALLPARAM enmParam, int *prcHv)
 {
-    int rc = VINF_SUCCESS;
-    RTGCPHYS GCPhysIn  = fIs64BitMode ? pCtx->rdx : (pCtx->rbx << 32) | pCtx->ecx;
-    RTGCPHYS GCPhysOut = fIs64BitMode ? pCtx->r8  : (pCtx->rdi << 32) | pCtx->esi;
-    if (pGCPhysIn)
-        *pGCPhysIn = GCPhysIn;
-    if (pGCPhysOut)
-        *pGCPhysOut = GCPhysOut;
-    if (   RT_ALIGN_64(GCPhysIn,  8) == GCPhysIn
-        && RT_ALIGN_64(GCPhysOut, 8) == GCPhysOut)
+    int       rc = VINF_SUCCESS;
+    PGIMHV    pHv = &pVM->gim.s.u.Hv;
+    RTGCPHYS  GCPhysParam;
+    void     *pvDst;
+    if (enmParam == GIMHVHYPERCALLPARAM_IN)
     {
-        if (   PGMPhysIsGCPhysNormal(pVM, GCPhysIn)
-            && PGMPhysIsGCPhysNormal(pVM, GCPhysOut))
-        {
-            PGIMHV pHv = &pVM->gim.s.u.Hv;
-            rc = PGMPhysSimpleReadGCPhys(pVM, pHv->pbHypercallIn, GCPhysIn, GIM_HV_PAGE_SIZE);
-            if (RT_SUCCESS(rc))
-            {
-                rc = PGMPhysSimpleReadGCPhys(pVM, pHv->pbHypercallOut, GCPhysOut, GIM_HV_PAGE_SIZE);
-                if (RT_SUCCESS(rc))
-                {
-                    *prcHv = GIM_HV_STATUS_SUCCESS;
-                    return VINF_SUCCESS;
-                }
-                Log(("GIM: HyperV: gimHvReadSlowHypercallParams reading GCPhysOut=%#RGp failed. rc=%Rrc\n", GCPhysOut, rc));
-                rc = VERR_GIM_HYPERCALL_MEMORY_READ_FAILED;
-            }
-            else
-            {
-                Log(("GIM: HyperV: gimHvReadSlowHypercallParams reading GCPhysIn=%#RGp failed. rc=%Rrc\n", GCPhysIn,rc));
-                rc = VERR_GIM_HYPERCALL_MEMORY_READ_FAILED;
-            }
-        }
-        else
-            *prcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+        GCPhysParam = fIs64BitMode ? pCtx->rdx : (pCtx->rbx << 32) | pCtx->ecx;
+        pvDst = pHv->pbHypercallIn;
+        pHv->GCPhysHypercallIn = GCPhysParam;
     }
     else
+    {
+        GCPhysParam = fIs64BitMode ? pCtx->r8 : (pCtx->rdi << 32) | pCtx->esi;
+        pvDst = pHv->pbHypercallOut;
+        pHv->GCPhysHypercallOut = GCPhysParam;
+        Assert(enmParam == GIMHVHYPERCALLPARAM_OUT);
+    }
+
+    const char *pcszParam = enmParam == GIMHVHYPERCALLPARAM_IN ? "input" : "output";  NOREF(pcszParam);
+    if (RT_ALIGN_64(GCPhysParam, 8) == GCPhysParam)
+    {
+        if (PGMPhysIsGCPhysNormal(pVM, GCPhysParam))
+        {
+            rc = PGMPhysSimpleReadGCPhys(pVM, pvDst, GCPhysParam, GIM_HV_PAGE_SIZE);
+            if (RT_SUCCESS(rc))
+            {
+                *prcHv = GIM_HV_STATUS_SUCCESS;
+                return VINF_SUCCESS;
+            }
+            LogRel(("GIM: HyperV: Failed reading %s param at %#RGp. rc=%Rrc\n", pcszParam, GCPhysParam, rc));
+            rc = VERR_GIM_HYPERCALL_MEMORY_READ_FAILED;
+        }
+        else
+        {
+            Log(("GIM: HyperV: Invalid %s param address %#RGp\n", pcszParam, GCPhysParam));
+            *prcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+        }
+    }
+    else
+    {
+        Log(("GIM: HyperV: Misaligned %s param address %#RGp\n", pcszParam, GCPhysParam));
         *prcHv = GIM_HV_STATUS_INVALID_ALIGNMENT;
+    }
+    return rc;
+}
+
+
+/**
+ * Helper for reading and validating slow hypercall input and output parameters.
+ *
+ * @returns VBox status code.
+ * @param   pVM               The cross context VM structure.
+ * @param   pCtx              Pointer to the guest-CPU context.
+ * @param   fIs64BitMode      Whether the guest is currently in 64-bit mode or not.
+ * @param   prcHv             Where to store the Hyper-V status code. Only valid
+ *                            to the caller when this function returns
+ *                            VINF_SUCCESS.
+ */
+static int gimHvReadSlowHypercallParamsInOut(PVM pVM, PCPUMCTX pCtx, bool fIs64BitMode, int *prcHv)
+{
+    int rc = gimHvReadSlowHypercallParam(pVM, pCtx, fIs64BitMode, GIMHVHYPERCALLPARAM_IN, prcHv);
+    if (   RT_SUCCESS(rc)
+        && *prcHv == GIM_HV_STATUS_SUCCESS)
+        rc = gimHvReadSlowHypercallParam(pVM, pCtx, fIs64BitMode, GIMHVHYPERCALLPARAM_OUT, prcHv);
     return rc;
 }
 #endif
@@ -167,12 +186,12 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                 if (pHv->uPartFlags & GIM_HV_PART_FLAGS_DEBUGGING)
                 {
                     RTGCPHYS GCPhysOut;
-                    rc = gimHvReadSlowHypercallParams(pVM, pCtx, fIs64BitMode, NULL /*pGCPhysIn*/, &GCPhysOut, &rcHv);
+                    rc  = gimHvReadSlowHypercallParamsInOut(pVM, pCtx, fIs64BitMode, &rcHv);
                     if (   RT_SUCCESS(rc)
                         && rcHv == GIM_HV_STATUS_SUCCESS)
                     {
-                        LogRelMax(1, ("GIM: HyperV: Guest initiated debug data reception via hypercall\n"));
-                        rc = gimR3HvHypercallRetrieveDebugData(pVM, GCPhysOut, &rcHv);
+                        LogRelMax(1, ("GIM: HyperV: Initiated debug data reception via hypercall\n"));
+                        rc = gimR3HvHypercallRetrieveDebugData(pVM, &rcHv);
                         if (RT_FAILURE(rc))
                             LogRelMax(10, ("GIM: HyperV: gimR3HvHypercallRetrieveDebugData failed. rc=%Rrc\n", rc));
                     }
@@ -186,13 +205,12 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
             {
                 if (pHv->uPartFlags & GIM_HV_PART_FLAGS_DEBUGGING)
                 {
-                    RTGCPHYS GCPhysOut;
-                    rc = gimHvReadSlowHypercallParams(pVM, pCtx, fIs64BitMode, NULL /*pGCPhysIn*/, &GCPhysOut, &rcHv);
+                    rc = gimHvReadSlowHypercallParamsInOut(pVM, pCtx, fIs64BitMode, &rcHv);
                     if (   RT_SUCCESS(rc)
                         && rcHv == GIM_HV_STATUS_SUCCESS)
                     {
-                        LogRelMax(1, ("GIM: HyperV: Guest initiated debug data transmission via hypercall\n"));
-                        rc = gimR3HvHypercallPostDebugData(pVM, GCPhysOut, &rcHv);
+                        LogRelMax(1, ("GIM: HyperV: Initiated debug data transmission via hypercall\n"));
+                        rc = gimR3HvHypercallPostDebugData(pVM, &rcHv);
                         if (RT_FAILURE(rc))
                             LogRelMax(10, ("GIM: HyperV: gimR3HvHypercallPostDebugData failed. rc=%Rrc\n", rc));
                     }
@@ -209,8 +227,7 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                     uint32_t fFlags = 0;
                     if (!fHyperFast)
                     {
-                        rc = gimHvReadSlowHypercallParams(pVM, pCtx, fIs64BitMode, NULL /*pGCPhysIn*/, NULL /*pGCPhysOut*/,
-                                                            &rcHv);
+                        rc = gimHvReadSlowHypercallParam(pVM, pCtx, fIs64BitMode, GIMHVHYPERCALLPARAM_IN, &rcHv);
                         if (   RT_SUCCESS(rc)
                             && rcHv == GIM_HV_STATUS_SUCCESS)
                         {
@@ -233,8 +250,63 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                         if (!fFlags)
                             rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
                         else
-                            LogRelMax(1, ("GIM: HyperV: Guest resetting debug session via hypercall\n"));
+                            LogRelMax(1, ("GIM: HyperV: Resetting debug session via hypercall\n"));
                     }
+                }
+                else
+                    rcHv = GIM_HV_STATUS_ACCESS_DENIED;
+                break;
+            }
+
+            case GIM_HV_HYPERCALL_OP_POST_MESSAGE:      /* Non-rep, memory IO. */
+            {
+                if (pHv->fIsInterfaceVs)
+                {
+                    rc = gimHvReadSlowHypercallParam(pVM, pCtx, fIs64BitMode, GIMHVHYPERCALLPARAM_IN, &rcHv);
+                    if (   RT_SUCCESS(rc)
+                        && rcHv == GIM_HV_STATUS_SUCCESS)
+                    {
+                        PGIMHVPOSTMESSAGEIN pMsgIn = (PGIMHVPOSTMESSAGEIN)pHv->pbHypercallIn;
+                        PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
+                        if (    pMsgIn->uConnectionId  == GIM_HV_VMBUS_MSG_CONNECTION_ID
+                            &&  pMsgIn->enmMessageType == GIMHVMSGTYPE_VMBUS
+                            && !MSR_GIM_HV_SINT_IS_MASKED(pHvCpu->uSint2Msr)
+                            &&  MSR_GIM_HV_SIMP_IS_ENABLED(pHvCpu->uSimpMsr))
+                        {
+                            RTGCPHYS GCPhysSimp = MSR_GIM_HV_SIMP_GPA(pHvCpu->uSimpMsr);
+                            if (PGMPhysIsGCPhysNormal(pVM, GCPhysSimp))
+                            {
+                                /*
+                                 * The VMBus client (guest) expects to see 0xf at offsets 4 and 16 and 1 at offset 0.
+                                 */
+                                GIMHVMSG HvMsg;
+                                RT_ZERO(HvMsg);
+                                HvMsg.MsgHdr.enmMessageType = GIMHVMSGTYPE_VMBUS;
+                                HvMsg.MsgHdr.cbPayload = 0xf;
+                                HvMsg.aPayload[0]      = 0xf;
+                                uint16_t const offMsg = GIM_HV_VMBUS_MSG_SINT * sizeof(GIMHVMSG);
+                                int rc2 = PGMPhysSimpleWriteGCPhys(pVM, GCPhysSimp + offMsg, &HvMsg, sizeof(HvMsg));
+                                if (RT_SUCCESS(rc2))
+                                    LogRel(("GIM: HyperV: SIMP hypercall faking message at %#RGp:%u\n", GCPhysSimp, offMsg));
+                                else
+                                {
+                                    LogRel(("GIM: HyperV: Failed to write SIMP message at %#RGp:%u, rc=%Rrc\n", GCPhysSimp,
+                                            offMsg, rc));
+                                }
+                            }
+                        }
+
+                        /*
+                         * Make the call fail after updating the SIMP, so the guest can go back to using
+                         * the Hyper-V debug MSR interface. Any error code below GIM_HV_STATUS_NOT_ACKNOWLEDGED
+                         * and the guest tries to proceed with initializing VMBus which is totally unnecessary
+                         * for what we're trying to accomplish, i.e. convince guest to use Hyper-V debugging. Also,
+                         * we don't implement other VMBus/SynIC functionality so the guest would #GP and die.
+                         */
+                        rcHv = GIM_HV_STATUS_NOT_ACKNOWLEDGED;
+                    }
+                    else
+                        rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
                 }
                 else
                     rcHv = GIM_HV_STATUS_ACCESS_DENIED;
@@ -403,24 +475,16 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
 
         case MSR_GIM_HV_SINT2:
         {
-#ifndef IN_RING3
-            return VINF_CPUM_R3_MSR_READ;
-#else
-            LogRelMax(10, ("GIM: HyperV: reading MSR_GIM_HV_SINT2 CS:RIP=%04x:%RX64\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu)));
-            *puValue = RT_BIT_64(16);
-            return VERR_CPUM_RAISE_GP_0;
-#endif
+            PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
+            *puValue = pHvCpu->uSint2Msr;
+            return VINF_SUCCESS;
         }
 
         case MSR_GIM_HV_SIMP:
         {
-#ifndef IN_RING3
-            return VINF_CPUM_R3_MSR_READ;
-#else
-            LogRelMax(10, ("GIM: HyperV: reading MSR_GIM_HV_SIMP CS:RIP=%04x:%RX64\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu)));
-            *puValue = 0;
+            PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
+            *puValue = pHvCpu->uSimpMsr;
             return VINF_SUCCESS;
-#endif
         }
 
         case MSR_GIM_HV_RESET:
@@ -444,7 +508,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
 #ifndef IN_RING3
                 return VINF_CPUM_R3_MSR_READ;
 #else
-                LogRelMax(1, ("GIM: HyperV: Guest querying debug options MSR, returning %#x\n", GIM_HV_DEBUG_OPTIONS_MSR_ENABLE));
+                LogRelMax(1, ("GIM: HyperV: Guest queried debug options MSR\n"));
                 *puValue = GIM_HV_DEBUG_OPTIONS_MSR_ENABLE;
                 return VINF_SUCCESS;
 #endif
@@ -563,15 +627,9 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
         {
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
-#else  /* IN_RING3 */
-# if 0
-            /*
-             * For now ignore writes to the hypercall MSR (i.e. keeps it disabled).
-             * This is required to boot FreeBSD 10.1 (with Hyper-V enabled ofc),
-             * see @bugref{7270#c116}.
-             */
-            return VINF_SUCCESS;
-# else
+#else
+            /** @todo There is/was a problem with hypercalls for FreeBSD 10.1 guests,
+             *  see @bugref{7270#c116}. */
             /* First, update all but the hypercall page enable bit. */
             pHv->u64HypercallMsr = (uRawValue & ~MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT);
 
@@ -601,8 +659,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             }
 
             return VERR_CPUM_RAISE_GP_0;
-# endif
-#endif /* IN_RING3 */
+#endif
         }
 
         case MSR_GIM_HV_REF_TSC:
@@ -673,9 +730,9 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             RTGCPHYS GCPhysBuffer    = (RTGCPHYS)uRawValue;
             pHv->uDebugSendBufferMsr = GCPhysBuffer;
             if (PGMPhysIsGCPhysNormal(pVM, GCPhysBuffer))
-                LogRel(("GIM: HyperV: Guest set up debug send buffer at %#RGp\n", GCPhysBuffer));
+                LogRel(("GIM: HyperV: Set up debug send buffer at %#RGp\n", GCPhysBuffer));
             else
-                LogRel(("GIM: HyperV: Guest destroyed debug send buffer\n"));
+                LogRel(("GIM: HyperV: Destroyed debug send buffer\n"));
             pHv->uDebugSendBufferMsr = uRawValue;
             return VINF_SUCCESS;
 #endif
@@ -689,9 +746,9 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             RTGCPHYS GCPhysBuffer    = (RTGCPHYS)uRawValue;
             pHv->uDebugRecvBufferMsr = GCPhysBuffer;
             if (PGMPhysIsGCPhysNormal(pVM, GCPhysBuffer))
-                LogRel(("GIM: HyperV: Guest set up debug receive buffer at %#RGp\n", GCPhysBuffer));
+                LogRel(("GIM: HyperV: Set up debug receive buffer at %#RGp\n", GCPhysBuffer));
             else
-                LogRel(("GIM: HyperV: Guest destroyed debug receive buffer\n"));
+                LogRel(("GIM: HyperV: Destroyed debug receive buffer\n"));
             return VINF_SUCCESS;
 #endif
         }
@@ -705,16 +762,19 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             pHv->uDebugPendingBufferMsr  = GCPhysBuffer;
             if (PGMPhysIsGCPhysNormal(pVM, GCPhysBuffer))
             {
-                LogRel(("GIM: HyperV: Guest set up debug pending buffer at %#RGp\n", uRawValue));
+                LogRel(("GIM: HyperV: Set up debug pending buffer at %#RGp\n", uRawValue));
 
                 /* Indicate that there is always debug data to be read (guest will poll). */
+                /** @todo Later implement this by doing the transport read in a separate
+                 *        thread and updating this page, saves lots of VM-exits as the guest
+                 *        won't poll and fail all the time. */
                 uint8_t uPendingData = 1;
                 int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysBuffer, (void *)&uPendingData, sizeof(uPendingData));
                 if (RT_FAILURE(rc))
                     LogRelMax(5, ("GIM: HyperV: Failed to update pending buffer at %#RGp, rc=%Rrc\n", GCPhysBuffer, rc));
             }
             else
-                LogRel(("GIM: HyperV: Guest destroyed debug pending buffer\n"));
+                LogRel(("GIM: HyperV: Destroyed debug pending buffer\n"));
             return VINF_SUCCESS;
 #endif
         }
@@ -726,7 +786,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #else
             if (MSR_GIM_HV_SYNTH_DEBUG_CONTROL_IS_WRITE(uRawValue))
             {
-                LogRelMax(1, ("GIM: HyperV: Guest initiated debug data transmission via MSR\n",
+                LogRelMax(1, ("GIM: HyperV: Initiated debug data transmission via MSR\n",
                               MSR_GIM_HV_SYNTH_DEBUG_CONTROL_W_LEN(uRawValue)));
                 uint32_t cbWrite = MSR_GIM_HV_SYNTH_DEBUG_CONTROL_W_LEN(uRawValue);
                 if (   cbWrite > 0
@@ -768,7 +828,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             }
             else if (MSR_GIM_HV_SYNTH_DEBUG_CONTROL_IS_READ(uRawValue))
             {
-                LogRelMax(1, ("GIM: HyperV: Guest initiated debug data reception via MSR\n"));
+                LogRelMax(1, ("GIM: HyperV: Initiated debug data reception via MSR\n"));
                 if (PGMPhysIsGCPhysNormal(pVM, (RTGCPHYS)pHv->uDebugRecvBufferMsr))
                 {
                     void *pvBuf = RTMemAlloc(PAGE_SIZE);        /** @todo perhaps we can do this alloc once during VM init. */
@@ -809,13 +869,60 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
         }
 
         case MSR_GIM_HV_SINT2:
+        {
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
-            LogRelMax(5, ("GIM: HyperV: Guest writing MSR_GIM_HV_SINT2 with %#RX64, ignoring CS:RIP=%04x:%RX64\n", uRawValue,
-                           CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu)));
-            return VERR_CPUM_RAISE_GP_0;
+            PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
+            uint8_t uVector = MSR_GIM_HV_SINT_VECTOR(uRawValue);
+            if (  !MSR_GIM_HV_SINT_IS_MASKED(uRawValue)
+                && uVector < 16)
+            {
+                LogRel(("GIM: HyperV: Programmed an invalid vector in SINT2, uVector=%u -> #GP(0)\n", uVector));
+                return VERR_CPUM_RAISE_GP_0;
+            }
+
+            pHvCpu->uSint2Msr = uRawValue;
+            if (MSR_GIM_HV_SINT_IS_MASKED(uRawValue))
+                LogRel(("GIM: HyperV: Masked SINT2\n"));
+            else
+                LogRel(("GIM: HyperV: Unmasked SINT2, uVector=%u\n", uVector));
+            return VINF_SUCCESS;
 #endif
+        }
+
+        case MSR_GIM_HV_SIMP:
+        {
+#ifndef IN_RING3
+            return VINF_CPUM_R3_MSR_WRITE;
+#else
+            PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
+            pHvCpu->uSimpMsr = uRawValue;
+            if (MSR_GIM_HV_SIMP_IS_ENABLED(uRawValue))
+            {
+                RTGCPHYS GCPhysSimp = MSR_GIM_HV_SIMP_GPA(uRawValue);
+                if (PGMPhysIsGCPhysNormal(pVM, GCPhysSimp))
+                {
+                    uint8_t abSimp[PAGE_SIZE];
+                    RT_ZERO(abSimp);
+                    int rc2 = PGMPhysSimpleWriteGCPhys(pVM, GCPhysSimp, &abSimp[0], sizeof(abSimp));
+                    if (RT_SUCCESS(rc2))
+                        LogRel(("GIM: HyperV: Enabled synthetic interrupt message page at %#RGp\n", GCPhysSimp));
+                    else
+                    {
+                        LogRel(("GIM: HyperV: WrMsr on MSR_GIM_HV_SIMP failed to update SIMP at %#RGp rc=%Rrc -> #GP(0)\n",
+                                GCPhysSimp, rc2));
+                        return VERR_CPUM_RAISE_GP_0;
+                    }
+                }
+                else
+                    LogRel(("GIM: HyperV: Enabled synthetic interrupt message page at invalid address %#RGp\n",GCPhysSimp));
+            }
+            else
+                LogRel(("GIM: HyperV: Disabled synthetic interrupt message page\n"));
+            return VINF_SUCCESS;
+#endif
+        }
 
         case MSR_GIM_HV_CRASH_P0:  pHv->uCrashP0 = uRawValue;  return VINF_SUCCESS;
         case MSR_GIM_HV_CRASH_P1:  pHv->uCrashP1 = uRawValue;  return VINF_SUCCESS;
@@ -837,7 +944,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #ifndef IN_RING3
                 return VINF_CPUM_R3_MSR_WRITE;
 #else
-                LogRelMax(5, ("GIM: HyperV: Guest setting debug options MSR to %#RX64, ignoring\n", uRawValue));
+                LogRelMax(5, ("GIM: HyperV: Write debug options MSR with %#RX64 ignored\n", uRawValue));
                 return VINF_SUCCESS;
 #endif
             }

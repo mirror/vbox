@@ -96,6 +96,7 @@ typedef struct GIMCPU
     union
     {
         GIMKVMCPU KvmCpu;
+        GIMHVCPU  HvCpu;
     } u;
 } GIMCPU;
 /** Pointer to GIM VMCPU instance data. */

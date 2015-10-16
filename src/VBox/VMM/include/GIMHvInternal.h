@@ -454,9 +454,22 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 #define MSR_GIM_HV_GUEST_OS_ID_BUILD(a)           ((a) & 0xffff)
 /** @} */
 
+
+/**
+ * Hypercall parameter type.
+ */
+typedef enum GIMHVHYPERCALLPARAM
+{
+    GIMHVHYPERCALLPARAM_IN = 0,
+    GIMHVHYPERCALLPARAM_OUT
+} GIMHVHYPERCALLPARAM;
+
+
 /** @name Hyper-V hypercall op codes.
  * @{
  */
+/** Post message to hypervisor or VMs. */
+#define GIM_HV_HYPERCALL_OP_POST_MESSAGE          0x5C
 /** Post debug data to hypervisor. */
 #define GIM_HV_HYPERCALL_OP_POST_DEBUG_DATA       0x69
 /** Retreive debug data from hypervisor. */
@@ -464,6 +477,7 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 /** Reset debug session. */
 #define GIM_HV_HYPERCALL_OP_RESET_DEBUG_SESSION   0x6B
 /** @} */
+
 
 /** @name Hyper-V hypercall inputs.
  * @{
@@ -659,18 +673,40 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
  * @{
  */
 /** Debug send buffer operation success. */
-#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_W_SUCCESS_BIT    RT_BIT_32(0)
+#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_W_SUCCESS_BIT    RT_BIT_64(0)
 /** Debug receive buffer operation success. */
-#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_R_SUCCESS_BIT    RT_BIT_32(2)
+#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_R_SUCCESS_BIT    RT_BIT_64(2)
 /** Debug connection was reset. */
-#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_CONN_RESET_BIT   RT_BIT_32(3)
+#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_CONN_RESET_BIT   RT_BIT_64(3)
 /** @} */
 
 
-/** @name Hyper-V hypercall debug support.
- * Options and constants for Hyper-V debug hypercalls.
+/** @name Hyper-V MSR - synthetic interrupt (MSR_GIM_HV_SINTx).
  * @{
  */
+/** The interrupt masked bit. */
+#define MSR_GIM_HV_SINT_MASKED_BIT                     RT_BIT_64(16)
+/** Whether the interrupt source is masked. */
+#define MSR_GIM_HV_SINT_IS_MASKED(a)                   RT_BOOL((a) & MSR_GIM_HV_SINT_MASKED_BIT)
+/** Interrupt vector. */
+#define MSR_GIM_HV_SINT_VECTOR(a)                      ((a) & UINT64_C(0xff))
+/** @} */
+
+
+/** @name Hyper-V MSR - synthetic interrupt message page (MSR_GIM_HV_SIMP).
+ * @{
+ */
+/** The SIMP enabled bit. */
+#define MSR_GIM_HV_SIMP_ENABLED_BIT                    RT_BIT_64(0)
+/** Whether the SIMP is enabled. */
+#define MSR_GIM_HV_SIMP_IS_ENABLED(a)                  RT_BOOL((a) & MSR_GIM_HV_SIMP_ENABLED_BIT)
+/** The SIMP guest-physical address. */
+#define MSR_GIM_HV_SIMP_GPA(a)                         ((a) & UINT64_C(0xfffffffffffff000))
+/** @} */
+
+
+/** @name Hyper-V hypercall debug options.
+ * @{ */
 /** Maximum debug data payload size in bytes. */
 #define GIM_HV_DEBUG_MAX_DATA_SIZE                4088
 
@@ -694,6 +730,121 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 #define GIM_HV_DEBUG_PURGE_INCOMING_DATA          RT_BIT_32(0)
 /** Guest requests purging of outgoing debug data. */
 #define GIM_HV_DEBUG_PURGE_OUTGOING_DATA          RT_BIT_32(1)
+/** @}*/
+
+
+/** @name VMBus.
+ *  These are just arbitrary definitions made up by Microsoft without
+ *  any publicly available specification behind it.
+ * @{ */
+/** VMBus connection ID. */
+#define GIM_HV_VMBUS_MSG_CONNECTION_ID            1
+/** VMBus synthetic interrupt source. */
+#define GIM_HV_VMBUS_MSG_SINT                     2
+/** @} */
+
+
+/** @name Hyper-V synthetic interrupt message type.
+ * @{
+ */
+typedef enum GIMHVMSGTYPE
+{
+    GIMHVMSGTYPE_NONE                 = 0,              /* Common messages */
+    GIMHVMSGTYPE_VMBUS                = 1,              /* Guest messages */
+    GIMHVMSGTYPE_UNMAPPEDGPA          = 0x80000000,     /* Hypervisor messages */
+    GIMHVMSGTYPE_GPAINTERCEPT         = 0x80000001,
+    GIMHVMSGTYPE_TIMEREXPIRED         = 0x80000010,
+    GIMHVMSGTYPE_INVALIDVPREGVAL      = 0x80000020,
+    GIMHVMSGTYPE_UNRECOVERABLEXCPT    = 0x80000021,
+    GIMHVMSGTYPE_UNSUPPORTEDFEAT      = 0x80000022,
+    GIMHVMSGTYPE_APICEOI              = 0x80000030,
+    GIMHVMSGTYPE_X64LEGACYFPERROR     = 0x80000031,
+    GIMHVMSGTYPE_EVENTLOGBUFSCOMPLETE = 0x80000040,
+    GIMHVMSGTYPE_X64IOPORTINTERCEPT   = 0x80010000,
+    GIMHVMSGTYPE_X64MSRINTERCEPT      = 0x80010001,
+    GIMHVMSGTYPE_X64CPUIDINTERCEPT    = 0x80010002,
+    GIMHVMSGTYPE_X64XCPTINTERCEPT     = 0x80010003
+} GIMHVMSGTYPE;
+AssertCompileSize(GIMHVMSGTYPE, 4);
+/** @} */
+
+
+/** @name Hyper-V synthetic interrupt message format.
+ * @{ */
+#define GIM_HV_MSG_SIZE                           256
+#define GIM_HV_MSG_MAX_PAYLOAD_SIZE               240
+#define GIM_HV_MSG_MAX_PAYLOAD_UNITS               30
+
+/**
+ * Synthetic interrupt message flags.
+ */
+typedef union GIMHVMSGFLAGS
+{
+    struct
+    {
+        uint8_t  u1Pending  : 1;
+        uint8_t  u7Reserved : 7;
+    } n;
+    uint8_t u;
+} GIMHVMSGFLAGS;
+AssertCompileSize(GIMHVMSGFLAGS, sizeof(uint8_t));
+
+/**
+ * Synthetic interrupt message header.
+ *
+ * @remarks The layout of this structure differs from
+ *          the Hyper-V spec. Aug 8, 2013 v4.0a. Layout
+ *          in accordance w/ VMBus client expectations.
+ */
+typedef struct GIMHVMSGHDR
+{
+    GIMHVMSGTYPE    enmMessageType;
+    uint8_t         cbPayload;
+    GIMHVMSGFLAGS   MessageFlags;
+    uint16_t        uRsvd;
+    union
+    {
+        uint64_t    uOriginatorId;
+        uint64_t    uPartitionId;
+        uint64_t    uPortId;
+    } msgid;
+} GIMHVMSGHDR;
+/** Pointer to a synthetic interrupt message header. */
+typedef GIMHVMSGHDR *PGIMHVMSGHDR;
+AssertCompileMemberOffset(GIMHVMSGHDR, cbPayload,    4);
+AssertCompileMemberOffset(GIMHVMSGHDR, MessageFlags, 5);
+AssertCompileMemberOffset(GIMHVMSGHDR, msgid,        8);
+AssertCompileSize(GIMHVMSGHDR, GIM_HV_MSG_SIZE - GIM_HV_MSG_MAX_PAYLOAD_SIZE);
+
+/**
+ * Synthetic interrupt message.
+ */
+typedef struct GIMHVMSG
+{
+    GIMHVMSGHDR     MsgHdr;
+    uint64_t        aPayload[GIM_HV_MSG_MAX_PAYLOAD_UNITS];
+} GIMHVMSG;
+/** Pointer to a synthetic interrupt message. */
+typedef GIMHVMSG *PGIMHVMSG;
+AssertCompileSize(GIMHVMSG, GIM_HV_MSG_SIZE);
+/** @} */
+
+
+/** @name Hyper-V hypercall parameters.
+ * @{ */
+/**
+ * HvPostMessage hypercall input.
+ */
+typedef struct GIMHVPOSTMESSAGEIN
+{
+    uint32_t      uConnectionId;
+    uint32_t      uPadding;
+    GIMHVMSGTYPE  enmMessageType;
+    uint32_t      cbPayload;
+} GIMHVPOSTMESSAGEIN;
+/** Pointer to a HvPostMessage input struct. */
+typedef GIMHVPOSTMESSAGEIN *PGIMHVPOSTMESSAGEIN;
+AssertCompileSize(GIMHVPOSTMESSAGEIN, 16);
 
 /**
  * HvResetDebugData hypercall input.
@@ -852,6 +1003,10 @@ typedef struct GIMHV
 
     /** @name Hypercalls. */
     /* @{ */
+    /** Guest address of the hypercall input parameter page. */
+    RTGCPHYS                    GCPhysHypercallIn;
+    /** Guest address of the hypercall output parameter page. */
+    RTGCPHYS                    GCPhysHypercallOut;
     /** Pointer to the hypercall input parameter page - R3. */
     R3PTRTYPE(uint8_t *)        pbHypercallIn;
     /** Pointer to the hypercall output parameter page - R3. */
@@ -888,6 +1043,26 @@ typedef GIMHV const *PCGIMHV;
 AssertCompileMemberAlignment(GIMHV, aMmio2Regions, 8);
 AssertCompileMemberAlignment(GIMHV, hSpinlockR0, sizeof(uintptr_t));
 
+/**
+ * GIM Hyper-V VCPU instance data.
+ * Changes to this must checked against the padding of the gim union in VMCPU!
+ */
+typedef struct GIMHVCPU
+{
+    /** @name Synthetic interrupt MSRs.
+     * @{ */
+    /** Synthetic interrupt message page MSR. */
+    uint64_t                    uSimpMsr;
+    /** Interrupt source 2 MSR. */
+    uint64_t                    uSint2Msr;
+    /** @} */
+} GIMHVCPU;
+/** Pointer to per-VCPU GIM Hyper-V instance data. */
+typedef GIMHVCPU *PGIMHVCPU;
+/** Pointer to const per-VCPU GIM Hyper-V instance data. */
+typedef GIMHVCPU const *PCGIMHVCPU;
+
+
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING0
@@ -911,8 +1086,8 @@ VMMR3_INT_DECL(int)             gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTsc
 VMMR3_INT_DECL(int)             gimR3HvDisableHypercallPage(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage);
 
-VMMR3_INT_DECL(int)             gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv);
-VMMR3_INT_DECL(int)             gimR3HvHypercallRetrieveDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv);
+VMMR3_INT_DECL(int)             gimR3HvHypercallPostDebugData(PVM pVM, int *prcHv);
+VMMR3_INT_DECL(int)             gimR3HvHypercallRetrieveDebugData(PVM pVM, int *prcHv);
 VMMR3_INT_DECL(int)             gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, uint32_t *pcbWritten, bool fUdpPkt);
 VMMR3_INT_DECL(int)             gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint32_t cbRead, uint32_t *pcbRead,
                                                  uint32_t cMsTimeout, bool fUdpPkt);

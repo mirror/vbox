@@ -112,7 +112,8 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
          * Validate the Hyper-V settings.
          */
         rc = CFGMR3ValidateConfig(pCfgHv, "/HyperV/",
-                                  "VendorID",
+                                  "VendorID"
+                                  "|VSInterface",
                                   "" /* pszValidNodes */, "GIM/HyperV" /* pszWho */, 0 /* uInstance */);
         if (RT_FAILURE(rc))
             return rc;
@@ -131,7 +132,15 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
         pHv->fIsVendorMsHv = true;
     }
 
-    pHv->fIsInterfaceVs = true;
+    if (pHv->fIsVendorMsHv)
+    {
+        /** @cfgm{/GIM/HyperV/VSInterface, bool, true}
+         * The Microsoft virtualization service interface (debugging). */
+        rc = CFGMR3QueryBoolDef(pCfgHv, "VSInterface", &pHv->fIsInterfaceVs, true);
+        AssertLogRelRCReturn(rc, rc);
+    }
+    else
+        Assert(pHv->fIsInterfaceVs == false);
 
     /*
      * Determine interface capabilities based on the version.
@@ -168,9 +177,9 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
         pHv->uHyperHints = GIM_HV_HINT_MSR_FOR_SYS_RESET
                          | GIM_HV_HINT_RELAX_TIME_CHECKS;
 
-        /* Expose more if we're posing as Microsoft. */
-        if (   pHv->fIsVendorMsHv
-            /*&& !pHv->fIsInterfaceVs*/)
+        /* Expose more if we're posing as Microsoft. We can, if needed, force MSR-based Hv
+           debugging by not exposing these bits while exposing the VS interface.*/
+        if (pHv->fIsVendorMsHv)
         {
             pHv->uMiscFeat  |= GIM_HV_MISC_FEAT_GUEST_DEBUGGING
                              | GIM_HV_MISC_FEAT_DEBUG_MSRS;
@@ -330,15 +339,14 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
      */
     if (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_CRASH_MSRS)
         pHv->uCrashCtl = MSR_GIM_HV_CRASH_CTL_NOTIFY_BIT;
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        pVM->aCpus[i].gim.s.u.HvCpu.uSint2Msr = MSR_GIM_HV_SINT_MASKED_BIT;
 
     /*
-     * Setup guest-host hypercall based debugging support.
+     * Setup hypercall support.
      */
-    if (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_DEBUGGING)
-    {
-        rc = gimR3HvInitHypercallSupport(pVM);
-        AssertLogRelRCReturn(rc, rc);
-    }
+    rc = gimR3HvInitHypercallSupport(pVM);
+    AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
@@ -405,10 +413,7 @@ VMMR3_INT_DECL(int) gimR3HvInitFinalize(PVM pVM)
 VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
 {
     gimR3HvReset(pVM);
-
-    PGIMHV pHv = &pVM->gim.s.u.Hv;
-    if (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_DEBUGGING)
-        gimR3HvTermHypercallSupport(pVM);
+    gimR3HvTermHypercallSupport(pVM);
     return VINF_SUCCESS;
 }
 
@@ -462,7 +467,7 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     }
 
     /*
-     * Reset MSRs (Careful! Don't reset non-zero MSRs).
+     * Reset MSRs.
      */
     pHv->u64GuestOsIdMsr        = 0;
     pHv->u64HypercallMsr        = 0;
@@ -476,6 +481,12 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     pHv->uDebugPendingBufferMsr = 0;
     pHv->uDebugSendBufferMsr    = 0;
     pHv->uDebugRecvBufferMsr    = 0;
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        pVCpu->gim.s.u.HvCpu.uSint2Msr = MSR_GIM_HV_SINT_MASKED_BIT;
+        pVCpu->gim.s.u.HvCpu.uSimpMsr  = 0;
+    }
 }
 
 
@@ -1208,13 +1219,11 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   GCPhysOut   Where to write the hypercall output parameters after
- *                      performing the hypercall.
  * @param   prcHv       Where to store the result of the hypercall operation.
  *
  * @thread  EMT.
  */
-VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv)
+VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, int *prcHv)
 {
     AssertPtr(pVM);
     AssertPtr(prcHv);
@@ -1264,7 +1273,7 @@ VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, i
     /*
      * Update the guest memory with result.
      */
-    int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysOut, pHv->pbHypercallOut, sizeof(GIMHVDEBUGPOSTOUT));
+    int rc = PGMPhysSimpleWriteGCPhys(pVM, pHv->GCPhysHypercallOut, pHv->pbHypercallOut, sizeof(GIMHVDEBUGPOSTOUT));
     if (RT_FAILURE(rc))
     {
         LogRelMax(10, ("GIM: HyperV: HvPostDebugData failed to update guest memory. rc=%Rrc\n", rc));
@@ -1281,13 +1290,11 @@ VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, RTGCPHYS GCPhysOut, i
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   GCPhysOut   Where to write the hypercall output parameters after
- *                      performing the hypercall.
  * @param   prcHv       Where to store the result of the hypercall operation.
  *
  * @thread  EMT.
  */
-VMMR3_INT_DECL(int) gimR3HvHypercallRetrieveDebugData(PVM pVM, RTGCPHYS GCPhysOut, int *prcHv)
+VMMR3_INT_DECL(int) gimR3HvHypercallRetrieveDebugData(PVM pVM, int *prcHv)
 {
     AssertPtr(pVM);
     AssertPtr(prcHv);
@@ -1344,7 +1351,8 @@ VMMR3_INT_DECL(int) gimR3HvHypercallRetrieveDebugData(PVM pVM, RTGCPHYS GCPhysOu
     /*
      * Update the guest memory with result.
      */
-    int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysOut, pHv->pbHypercallOut, sizeof(GIMHVDEBUGRETRIEVEOUT) + *pcbReallyRead);
+    int rc = PGMPhysSimpleWriteGCPhys(pVM, pHv->GCPhysHypercallOut, pHv->pbHypercallOut,
+                                      sizeof(GIMHVDEBUGRETRIEVEOUT) + *pcbReallyRead);
     if (RT_FAILURE(rc))
     {
         LogRelMax(10, ("GIM: HyperV: HvRetrieveDebugData failed to update guest memory. rc=%Rrc\n", rc));
