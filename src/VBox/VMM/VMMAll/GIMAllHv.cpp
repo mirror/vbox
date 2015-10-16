@@ -185,7 +185,6 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
             {
                 if (pHv->uPartFlags & GIM_HV_PART_FLAGS_DEBUGGING)
                 {
-                    RTGCPHYS GCPhysOut;
                     rc  = gimHvReadSlowHypercallParamsInOut(pVM, pCtx, fIs64BitMode, &rcHv);
                     if (   RT_SUCCESS(rc)
                         && rcHv == GIM_HV_STATUS_SUCCESS)
