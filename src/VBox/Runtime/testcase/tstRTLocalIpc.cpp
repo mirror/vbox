@@ -578,28 +578,9 @@ static RTEXITCODE mainChild(int argc, char **argv)
     return RTTestSummaryAndDestroy(hTest);
 }
 
-int main(int argc, char **argv)
+static int testBasics(void)
 {
-    if (   argc > 2
-        && !RTStrICmp(argv[1], "child"))
-        return mainChild(argc, argv);
-
-    RTTEST hTest;
-    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTLocalIpc", &hTest);
-    if (rcExit)
-        return rcExit;
-    RTTestBanner(hTest);
-
-    char szExecPath[RTPATH_MAX];
-    if (!RTProcGetExecutablePath(szExecPath, sizeof(szExecPath)))
-        RTStrCopy(szExecPath, sizeof(szExecPath), argv[0]);
-
     RTTestISub("Basics");
-
-    RTAssertSetMayPanic(false);
-#ifdef DEBUG_andy
-    RTAssertSetQuiet(false);
-#endif
 
     /* Server-side. */
     RTTESTI_CHECK_RC_RET(RTLocalIpcServerCreate(NULL, NULL, 0), VERR_INVALID_POINTER, 1);
@@ -628,13 +609,39 @@ int main(int argc, char **argv)
     RTTESTI_CHECK_RC_RET(RTLocalIpcServerCancel(ipcServer), VERR_INVALID_MAGIC, 1);
     RTTESTI_CHECK_RC_RET(RTLocalIpcServerDestroy(ipcServer), VERR_INVALID_MAGIC, 1);
 
+    return 0;
+}
+
+int main(int argc, char **argv)
+{
+    if (   argc > 2
+        && !RTStrICmp(argv[1], "child"))
+        return mainChild(argc, argv);
+
+    RTTEST hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTLocalIpc", &hTest);
+    if (rcExit)
+        return rcExit;
+    RTTestBanner(hTest);
+
+    char szExecPath[RTPATH_MAX];
+    if (!RTProcGetExecutablePath(szExecPath, sizeof(szExecPath)))
+        RTStrCopy(szExecPath, sizeof(szExecPath), argv[0]);
+
+    bool fMayPanic = RTAssertSetMayPanic(false);
+    bool fQuiet    = RTAssertSetQuiet(false);
+    testBasics();
+    RTAssertSetMayPanic(fMayPanic);
+    RTAssertSetQuiet(fQuiet);
+
     if (RTTestErrorCount(hTest) == 0)
-    {
-        RTTESTI_CHECK_RC_RET(testServerListenAndCancel(hTest, szExecPath), VINF_SUCCESS, 1);
-        RTTESTI_CHECK_RC_RET(testSessionConnection(hTest, szExecPath), VINF_SUCCESS, 1);
-        RTTESTI_CHECK_RC_RET(testSessionWait(hTest, szExecPath), VINF_SUCCESS, 1);
-        RTTESTI_CHECK_RC_RET(testSessionData(hTest, szExecPath), VINF_SUCCESS, 1);
-    }
+        testServerListenAndCancel(hTest, szExecPath);
+    if (RTTestErrorCount(hTest) == 0)
+        testSessionConnection(hTest, szExecPath);
+    if (RTTestErrorCount(hTest) == 0)
+        testSessionWait(hTest, szExecPath);
+    if (RTTestErrorCount(hTest) == 0)
+        testSessionData(hTest, szExecPath);
 
     /*
      * Summary.
