@@ -41,6 +41,7 @@
 #include <iprt/poll.h>
 #include <iprt/socket.h>
 #include <iprt/string.h>
+#include <iprt/time.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -834,6 +835,8 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
         if (pThis->hReadThread == NIL_RTTHREAD)
         {
             pThis->hReadThread = RTThreadSelf();
+            uint64_t const msStart = RTTimeMilliTS();
+            RTMSINTERVAL const cMsOriginalTimeout = cMillies;
 
             for (;;)
             {
@@ -881,7 +884,15 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
                     }
                     else if (   rc == VERR_INTERRUPTED
                              || rc == VERR_TRY_AGAIN)
+                    {
+                        /* Recalc cMillies. */
+                        if (cMsOriginalTimeout != RT_INDEFINITE_WAIT)
+                        {
+                            uint64_t cMsElapsed = RTTimeMilliTS() - msStart;
+                            cMillies = cMsElapsed >= cMsOriginalTimeout ? 0 : cMsOriginalTimeout - (RTMSINTERVAL)cMsElapsed;
+                        }
                         continue;
+                    }
                 }
                 else
                     rc = VERR_CANCELLED;
