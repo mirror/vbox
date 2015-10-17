@@ -639,7 +639,6 @@ RTDECL(int) RTLocalIpcSessionCancel(RTLOCALIPCSESSION hSession)
 }
 
 
-#if 0 /* maybe later */
 /**
  * Checks if the socket has has a HUP condition.
  *
@@ -648,7 +647,7 @@ RTDECL(int) RTLocalIpcSessionCancel(RTLOCALIPCSESSION hSession)
  */
 static bool rtLocalIpcPosixHasHup(PRTLOCALIPCSESSIONINT pThis)
 {
-# ifndef RT_OS_OS2
+#ifndef RT_OS_OS2
     struct pollfd PollFd;
     RT_ZERO(PollFd);
     PollFd.fd      = RTSocketToNative(pThis->hSocket);
@@ -656,11 +655,10 @@ static bool rtLocalIpcPosixHasHup(PRTLOCALIPCSESSIONINT pThis)
     return poll(&PollFd, 1, 0) >= 1
        && (PollFd.revents & POLLHUP);
 
-# else /* RT_OS_OS2: */
-    return false;
-# endif
-}
+#else /* RT_OS_OS2: */
+    return true;
 #endif
+}
 
 
 RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
@@ -692,6 +690,17 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
                     AssertRCBreak(rc);
 
                     rc = RTSocketRead(pThis->hSocket, pvBuffer, cbBuffer, pcbRead);
+
+                    /* Detect broken pipe. */
+                    if (rc == VINF_SUCCESS)
+                    {
+                        if (!pcbRead || *pcbRead)
+                        { /* likely */ }
+                        else if (rtLocalIpcPosixHasHup(pThis))
+                            rc = VERR_BROKEN_PIPE;
+                    }
+                    else if (rc == VERR_NET_CONNECTION_RESET_BY_PEER || rc == VERR_NET_SHUTDOWN)
+                        rc = VERR_BROKEN_PIPE;
 
                     int rc2 = RTCritSectEnter(&pThis->CritSect);
                     AssertRCBreakStmt(rc2, rc = RT_SUCCESS(rc) ? rc2 : rc);
