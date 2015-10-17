@@ -73,7 +73,7 @@ static void testBasics(void)
     /* Basic server creation / destruction. */
     RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "BasicTest", RTLOCALIPC_FLAGS_MULTI_SESSION), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTLocalIpcServerCancel(hIpcServer), VINF_SUCCESS);
-    RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_OBJECT_DESTROYED);
 
     /* Client-side (per session). */
     RTTESTI_CHECK_RC(RTLocalIpcSessionConnect(NULL, NULL, 0), VERR_INVALID_POINTER);
@@ -119,7 +119,7 @@ static DECLCALLBACK(int) testServerListenThread(RTTHREAD hSelf, void *pvUser)
         {
             RTThreadSleep(8); /* windows output fudge (purely esthetical) */
             RTTestIPrintf(RTTESTLVL_INFO, "testServerListenThread: Got new client connection.\n");
-            RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hIpcSession), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hIpcSession), VINF_OBJECT_DESTROYED);
         }
         else
         {
@@ -142,7 +142,7 @@ static DECLCALLBACK(int) tstRTLocalIpcSessionConnectionChild(RTTHREAD hSelf, voi
     RTTEST_CHECK_RC_RET(g_hTest, RTLocalIpcSessionConnect(&hClientSession, "tstRTLocalIpcSessionConnection",0 /* Flags */),
                         VINF_SUCCESS, rcCheck);
     RTTEST_CHECK_RC_RET(g_hTest, RTLocalIpcSessionClose(hClientSession),
-                        VINF_SUCCESS, rcCheck);
+                        VINF_OBJECT_DESTROYED, rcCheck);
 
     return VINF_SUCCESS;
 }
@@ -213,7 +213,7 @@ static void testSessionConnection(const char *pszExecPath)
             RTTESTI_CHECK_RC(rcThread, VERR_CANCELLED);
     }
 
-    RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_OBJECT_DESTROYED);
 }
 
 
@@ -241,7 +241,7 @@ static DECLCALLBACK(int) testSessionWaitThread(RTTHREAD hSelf, void *pvUser)
             /* Wait for the client to trigger a disconnect by writing us something. */
             RTTESTI_CHECK_RC(RTLocalIpcSessionWaitForData(hIpcSession, RT_MS_1MIN), VINF_SUCCESS);
 
-            RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hIpcSession), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hIpcSession), VINF_OBJECT_DESTROYED);
             RTTESTI_CHECK_RC_OK(RTThreadUserSignal(hSelf));
         }
         else
@@ -287,7 +287,7 @@ static DECLCALLBACK(int) tstRTLocalIpcSessionWaitChild(RTTHREAD hSelf, void *pvU
         RTTESTI_CHECK_RC(RTLocalIpcSessionWaitForData(hClientSession, RT_MS_1SEC), VERR_BROKEN_PIPE);
     }
 
-    RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hClientSession), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hClientSession), VINF_OBJECT_DESTROYED);
 
     return VINF_SUCCESS;
 }
@@ -346,7 +346,7 @@ static void testSessionWait(const char *pszExecPath)
         if (RT_SUCCESS(rc))
             RTTESTI_CHECK_RC(rcThread, VERR_CANCELLED);
 
-        RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_OBJECT_DESTROYED);
 
         /*
          * Check that client ran successfully.
@@ -520,7 +520,7 @@ static DECLCALLBACK(int) testSessionDataThread(RTTHREAD hSelf, void *pvUser)
                     rc = testSessionDataReadMessages(hIpcSession, cRounds);
             }
 
-            RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hIpcSession), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hIpcSession), VINF_OBJECT_DESTROYED);
             RTTESTI_CHECK_RC_OK(RTThreadUserSignal(hSelf));
         }
         else
@@ -566,7 +566,7 @@ static DECLCALLBACK(int) tstRTLocalIpcSessionDataChild(RTTHREAD hSelf, void *pvU
             RTTestIFailed("cRounds=%#x is out of range", cRounds);
     }
 
-    RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hClientSession), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hClientSession), VINF_OBJECT_DESTROYED);
 
     return rc;
 }
@@ -624,7 +624,7 @@ static void testSessionData(const char *pszExecPath)
         if (RT_SUCCESS(rc))
             RTTESTI_CHECK_RC(rcThread, VERR_CANCELLED);
 
-        RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_OBJECT_DESTROYED);
 
         /*
          * Check that client ran successfully.
@@ -701,7 +701,7 @@ static DECLCALLBACK(int) testSessionPerfThread(RTTHREAD hSelf, void *pvUser)
                     cNsElapsed = RTTimeNanoTS() - nsStart;
                     if (cNsElapsed > 2*RT_NS_1SEC_64)
                     {
-                        uint32_t uMsg = IPC_PERF_LAST_MSG;
+                        uMsg = IPC_PERF_LAST_MSG;
                         RTTESTI_CHECK_RC_BREAK(rc = RTLocalIpcSessionWrite(hIpcSession, &uMsg, sizeof(uMsg)), VINF_SUCCESS);
                         break;
                     }
@@ -714,7 +714,7 @@ static DECLCALLBACK(int) testSessionPerfThread(RTTHREAD hSelf, void *pvUser)
                 RTTestIValue("roundtrips", RT_NS_1SEC / (cNsElapsed / cMessages), RTTESTUNIT_OCCURRENCES_PER_SEC);
             }
 
-            RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hIpcSession), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hIpcSession), VINF_OBJECT_DESTROYED);
             RTTESTI_CHECK_RC_OK(RTThreadUserSignal(hSelf));
         }
         else
@@ -766,7 +766,7 @@ static DECLCALLBACK(int) tstRTLocalIpcSessionPerfChild(RTTHREAD hSelf, void *pvU
         }
     }
 
-    RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hClientSession), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hClientSession), VINF_OBJECT_DESTROYED);
     return rc;
 }
 
@@ -823,7 +823,7 @@ static void testSessionPerf(const char *pszExecPath)
         if (RT_SUCCESS(rc))
             RTTESTI_CHECK_RC(rcThread, VERR_CANCELLED);
 
-        RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_OBJECT_DESTROYED);
 
         /*
          * Check that client ran successfully.

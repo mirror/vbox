@@ -28,6 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP RTLOGGROUP_LOCALIPC
 #include "internal/iprt.h"
 #include <iprt/localipc.h>
 
@@ -36,6 +37,7 @@
 #include <iprt/ctype.h>
 #include <iprt/critsect.h>
 #include <iprt/mem.h>
+#include <iprt/log.h>
 #include <iprt/poll.h>
 #include <iprt/socket.h>
 #include <iprt/string.h>
@@ -43,6 +45,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#ifndef RT_OS_OS2
+# include <sys/poll.h>
+# include <errno.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -225,6 +231,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
                         }
                         if (RT_SUCCESS(rc))
                         {
+                            LogFlow(("RTLocalIpcServerCreate: Created %p (%s)\n", pThis, pThis->Name.sun_path));
                             *phServer = pThis;
                             return VINF_SUCCESS;
                         }
@@ -238,6 +245,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
         else
             rc = VERR_NO_MEMORY;
     }
+    Log(("RTLocalIpcServerCreate: failed, rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -257,29 +265,37 @@ DECLINLINE(void) rtLocalIpcServerRetain(PRTLOCALIPCSERVERINT pThis)
 
 /**
  * Server instance destructor.
+ *
+ * @returns VINF_OBJECT_DESTROYED
  * @param   pThis               The server instance.
  */
-static void rtLocalIpcServerDtor(PRTLOCALIPCSERVERINT pThis)
+static int rtLocalIpcServerDtor(PRTLOCALIPCSERVERINT pThis)
 {
     pThis->u32Magic = ~RTLOCALIPCSERVER_MAGIC;
-    RTSocketRelease(pThis->hSocket);
+    if (RTSocketRelease(pThis->hSocket) == 0)
+        Log(("rtLocalIpcServerDtor: Released socket\n"));
+    else
+        Log(("rtLocalIpcServerDtor: Socket still has references (impossible?)\n"));
     RTCritSectDelete(&pThis->CritSect);
     unlink(pThis->Name.sun_path);
     RTMemFree(pThis);
+    return VINF_OBJECT_DESTROYED;
 }
 
 
 /**
  * Releases a reference to the server instance.
  *
+ * @returns VINF_SUCCESS if only release, VINF_OBJECT_DESTROYED if destroyed.
  * @param   pThis               The server instance.
  */
-DECLINLINE(void) rtLocalIpcServerRelease(PRTLOCALIPCSERVERINT pThis)
+DECLINLINE(int) rtLocalIpcServerRelease(PRTLOCALIPCSERVERINT pThis)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     Assert(cRefs < UINT32_MAX / 2);
     if (!cRefs)
-        rtLocalIpcServerDtor(pThis);
+        return rtLocalIpcServerDtor(pThis);
+    return VINF_SUCCESS;
 }
 
 
@@ -293,6 +309,7 @@ static int rtLocalIpcServerCancel(PRTLOCALIPCSERVERINT pThis)
 {
     RTCritSectEnter(&pThis->CritSect);
     pThis->fCancelled = true;
+    Log(("rtLocalIpcServerCancel:\n"));
     if (pThis->hListenThread != NIL_RTTHREAD)
         RTThreadPoke(pThis->hListenThread);
     RTCritSectLeave(&pThis->CritSect);
@@ -319,9 +336,7 @@ RTDECL(int) RTLocalIpcServerDestroy(RTLOCALIPCSERVER hServer)
     AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, ~RTLOCALIPCSERVER_MAGIC, RTLOCALIPCSERVER_MAGIC), VERR_WRONG_ORDER);
 
     rtLocalIpcServerCancel(pThis);
-    rtLocalIpcServerRelease(pThis);
-
-    return VINF_SUCCESS;
+    return rtLocalIpcServerRelease(pThis);
 }
 
 
@@ -384,7 +399,9 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
                     struct sockaddr_un  Addr;
                     size_t              cbAddr = sizeof(Addr);
                     RTSOCKET            hClient;
+                    Log(("RTLocalIpcServerListen: Calling rtSocketAccept...\n"));
                     rc = rtSocketAccept(pThis->hSocket, &hClient, (struct sockaddr *)&Addr, &cbAddr);
+                    Log(("RTLocalIpcServerListen: rtSocketAccept returns %Rrc.\n", rc));
 
                     int rc2 = RTCritSectEnter(&pThis->CritSect);
                     AssertRCBreakStmt(rc2, rc = RT_SUCCESS(rc) ? rc2 : rc);
@@ -406,9 +423,13 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
                             pSession->hWriteThread  = NIL_RTTHREAD;
                             rc = RTCritSectInit(&pSession->CritSect);
                             if (RT_SUCCESS(rc))
+                            {
+                                Log(("RTLocalIpcServerListen: Returning new client session: %p\n", pSession));
                                 *phClientSession = pSession;
-                            else
-                                RTMemFree(pSession);
+                                break;
+                            }
+
+                            RTMemFree(pSession);
                         }
                         else
                             rc = VERR_NO_MEMORY;
@@ -439,6 +460,7 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
     }
     rtLocalIpcServerRelease(pThis);
 
+    Log(("RTLocalIpcServerListen: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -490,6 +512,7 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
                         if (RT_SUCCESS(rc))
                         {
                             *phSession = pThis;
+                            Log(("RTLocalIpcSessionConnect: Returns new session %p\n", pThis));
                             return VINF_SUCCESS;
                         }
                     }
@@ -501,6 +524,7 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
         else
             rc = VERR_NO_MEMORY;
     }
+    Log(("RTLocalIpcSessionConnect: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -519,29 +543,37 @@ DECLINLINE(void) rtLocalIpcSessionRetain(PRTLOCALIPCSESSIONINT pThis)
 
 /**
  * Session instance destructor.
+ *
+ * @returns VINF_OBJECT_DESTROYED
  * @param   pThis               The server instance.
  */
-static void rtLocalIpcSessionDtor(PRTLOCALIPCSESSIONINT pThis)
+static int rtLocalIpcSessionDtor(PRTLOCALIPCSESSIONINT pThis)
 {
     pThis->u32Magic = ~RTLOCALIPCSESSION_MAGIC;
     if (RTSocketRelease(pThis->hSocket) == 0)
-        pThis->hSocket = NIL_RTSOCKET;
+        Log(("rtLocalIpcSessionDtor: Released socket\n"));
+    else
+        Log(("rtLocalIpcSessionDtor: Socket still has references (impossible?)\n"));
     RTCritSectDelete(&pThis->CritSect);
     RTMemFree(pThis);
+    return VINF_OBJECT_DESTROYED;
 }
 
 
 /**
  * Releases a reference to the session instance.
  *
+ * @returns VINF_SUCCESS or VINF_OBJECT_DESTROYED as appropriate.
  * @param   pThis               The session instance.
  */
-DECLINLINE(void) rtLocalIpcSessionRelease(PRTLOCALIPCSESSIONINT pThis)
+DECLINLINE(int) rtLocalIpcSessionRelease(PRTLOCALIPCSESSIONINT pThis)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     Assert(cRefs < UINT32_MAX / 2);
     if (!cRefs)
-        rtLocalIpcSessionDtor(pThis);
+        return rtLocalIpcSessionDtor(pThis);
+    Log(("rtLocalIpcSessionRelease: %u refs left\n", cRefs));
+    return VINF_SUCCESS;
 }
 
 
@@ -555,6 +587,7 @@ static int rtLocalIpcSessionCancel(PRTLOCALIPCSESSIONINT pThis)
 {
     RTCritSectEnter(&pThis->CritSect);
     pThis->fCancelled = true;
+    Log(("rtLocalIpcSessionCancel:\n"));
     if (pThis->hReadThread != NIL_RTTHREAD)
         RTThreadPoke(pThis->hReadThread);
     if (pThis->hWriteThread != NIL_RTTHREAD)
@@ -580,11 +613,10 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession)
      * data and making sure any other thread in the listen API will wake up.
      */
     AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, ~RTLOCALIPCSESSION_MAGIC, RTLOCALIPCSESSION_MAGIC), VERR_WRONG_ORDER);
+    Log(("RTLocalIpcSessionClose:\n"));
 
     rtLocalIpcSessionCancel(pThis);
-    rtLocalIpcSessionRelease(pThis);
-
-    return VINF_SUCCESS;
+    return rtLocalIpcSessionRelease(pThis);
 }
 
 
@@ -605,6 +637,30 @@ RTDECL(int) RTLocalIpcSessionCancel(RTLOCALIPCSESSION hSession)
     rtLocalIpcSessionRelease(pThis);
     return VINF_SUCCESS;
 }
+
+
+#if 0 /* maybe later */
+/**
+ * Checks if the socket has has a HUP condition.
+ *
+ * @returns true if HUP, false if no.
+ * @param   pThis       The IPC session handle.
+ */
+static bool rtLocalIpcPosixHasHup(PRTLOCALIPCSESSIONINT pThis)
+{
+# ifndef RT_OS_OS2
+    struct pollfd PollFd;
+    RT_ZERO(PollFd);
+    PollFd.fd      = RTSocketToNative(pThis->hSocket);
+    PollFd.events  = POLLHUP;
+    return poll(&PollFd, 1, 0) >= 1
+       && (PollFd.revents & POLLHUP);
+
+# else /* RT_OS_OS2: */
+    return false;
+# endif
+}
+#endif
 
 
 RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
@@ -778,7 +834,31 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
                     AssertRCBreak(rc);
 
                     uint32_t fEvents = 0;
+#ifdef RT_OS_OS2
+                    /* This doesn't give us any error condition on hangup. */
+                    Log(("RTLocalIpcSessionWaitForData: Calling RTSocketSelectOneEx...\n"));
                     rc = RTSocketSelectOneEx(pThis->hSocket, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, &fEvents, cMillies);
+                    Log(("RTLocalIpcSessionWaitForData: RTSocketSelectOneEx returns %Rrc, fEvents=%#x\n", rc, fEvents));
+#else
+/** @todo RTSocketPoll */
+                    /* POLLHUP will be set on hangup. */
+                    struct pollfd PollFd;
+                    RT_ZERO(PollFd);
+                    PollFd.fd      = RTSocketToNative(pThis->hSocket);
+                    PollFd.events  = POLLHUP | POLLERR | POLLIN;
+                    Log(("RTLocalIpcSessionWaitForData: Calling poll...\n"));
+                    int cFds = poll(&PollFd, 1, cMillies == RT_INDEFINITE_WAIT ? -1 : cMillies);
+                    if (cFds >= 1)
+                    {
+                        fEvents = PollFd.revents & (POLLHUP | POLLERR) ? RTPOLL_EVT_ERROR : RTPOLL_EVT_READ;
+                        rc = VINF_SUCCESS;
+                    }
+                    else if (rc == 0)
+                        rc = VERR_TIMEOUT;
+                    else
+                        rc = RTErrConvertFromErrno(errno);
+                    Log(("RTLocalIpcSessionWaitForData: poll returns %u (rc=%%d), revents=%#x\n", cFds, rc, PollFd.revents));
+#endif
 
                     int rc2 = RTCritSectEnter(&pThis->CritSect);
                     AssertRCBreakStmt(rc2, rc = RT_SUCCESS(rc) ? rc2 : rc);

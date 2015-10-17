@@ -84,6 +84,8 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
  * Destroys a local IPC server.
  *
  * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if still other references or NIL.
+ * @retval  VINF_OBJECT_DESTROYED if actually destroyed.
  *
  * @param   hServer     The server handle. The nil value is quietly ignored (VINF_SUCCESS).
  */
@@ -133,6 +135,8 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
  * and RTLocalIpcServerListen.
  *
  * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if still other references or NIL.
+ * @retval  VINF_OBJECT_DESTROYED if session destroyed.
  *
  * @param   hSession            The session handle. The nil value is quietly ignored (VINF_SUCCESS).
  */

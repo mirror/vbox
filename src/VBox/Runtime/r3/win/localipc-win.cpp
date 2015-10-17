@@ -400,10 +400,13 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
 
 /**
  * Call when the reference count reaches 0.
+ *
  * Caller owns the critsect.
+ *
+ * @returns VINF_OBJECT_DESTROYED
  * @param   pThis       The instance to destroy.
  */
-static void rtLocalIpcServerWinDestroy(PRTLOCALIPCSERVERINT pThis)
+static int rtLocalIpcServerWinDestroy(PRTLOCALIPCSERVERINT pThis)
 {
     BOOL fRc = CloseHandle(pThis->hNmPipe);
     AssertMsg(fRc, ("%d\n", GetLastError())); NOREF(fRc);
@@ -417,6 +420,7 @@ static void rtLocalIpcServerWinDestroy(PRTLOCALIPCSERVERINT pThis)
     RTCritSectDelete(&pThis->CritSect);
 
     RTMemFree(pThis);
+    return VINF_OBJECT_DESTROYED;
 }
 
 
@@ -449,8 +453,7 @@ RTDECL(int) RTLocalIpcServerDestroy(RTLOCALIPCSERVER hServer)
         RTCritSectLeave(&pThis->CritSect);
     }
     else
-        rtLocalIpcServerWinDestroy(pThis);
-
+        return rtLocalIpcServerWinDestroy(pThis);
     return VINF_SUCCESS;
 }
 
@@ -734,10 +737,13 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
 
 /**
  * Call when the reference count reaches 0.
+ *
  * Caller owns the critsect.
+ *
+ * @returns VINF_OBJECT_DESTROYED
  * @param   pThis       The instance to destroy.
  */
-static void rtLocalIpcSessionWinDestroy(PRTLOCALIPCSESSIONINT pThis)
+static int rtLocalIpcSessionWinDestroy(PRTLOCALIPCSESSIONINT pThis)
 {
     BOOL fRc = CloseHandle(pThis->hNmPipe);
     AssertMsg(fRc, ("%d\n", GetLastError())); NOREF(fRc);
@@ -751,6 +757,7 @@ static void rtLocalIpcSessionWinDestroy(PRTLOCALIPCSESSIONINT pThis)
     RTCritSectDelete(&pThis->CritSect);
 
     RTMemFree(pThis);
+    return VINF_OBJECT_DESTROYED;
 }
 
 
@@ -782,8 +789,7 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession)
         RTCritSectLeave(&pThis->CritSect);
     }
     else
-        rtLocalIpcSessionWinDestroy(pThis);
-
+        return rtLocalIpcSessionWinDestroy(pThis);
     return VINF_SUCCESS;
 }
 
