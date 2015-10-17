@@ -285,6 +285,18 @@ static DECLCALLBACK(int) tstRTLocalIpcSessionWaitChild(RTTHREAD hSelf, void *pvU
         RTTESTI_CHECK_RC(rc = RTLocalIpcSessionWaitForData(hClientSession, RT_MS_1MIN), VERR_BROKEN_PIPE);
         RTTESTI_CHECK_RC(RTLocalIpcSessionWaitForData(hClientSession, 0), VERR_BROKEN_PIPE);
         RTTESTI_CHECK_RC(RTLocalIpcSessionWaitForData(hClientSession, RT_MS_1SEC), VERR_BROKEN_PIPE);
+
+        bool fMayPanic = RTAssertSetMayPanic(false);
+        bool fQuiet    = RTAssertSetQuiet(true);
+
+        RTTESTI_CHECK_RC(RTLocalIpcSessionWrite(hClientSession, RT_STR_TUPLE("broken")), VERR_BROKEN_PIPE);
+        uint8_t abBuf[4];
+        RTTESTI_CHECK_RC(RTLocalIpcSessionRead(hClientSession, abBuf, sizeof(abBuf), NULL), VERR_BROKEN_PIPE);
+        size_t cbRead = _4M-1;
+        RTTESTI_CHECK_RC(RTLocalIpcSessionRead(hClientSession, abBuf, sizeof(abBuf), &cbRead), VERR_BROKEN_PIPE);
+
+        RTAssertSetMayPanic(fMayPanic);
+        RTAssertSetQuiet(fQuiet);
     }
 
     RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hClientSession), VINF_OBJECT_DESTROYED);
