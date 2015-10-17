@@ -151,31 +151,29 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession);
  * @retval  VERR_CANCELLED if the operation was cancelled by RTLocalIpcSessionCancel.
  *
  * @param   hSession            The session handle.
- * @param   pvBuffer            Where to store the data.
- * @param   cbBuffer            If pcbRead is non-NULL this indicates the maximum number of
- *                              bytes to read. If pcbRead is NULL then this is the exact number
- *                              of bytes to read.
- * @param   pcbRead             Optional argument for indicating a partial read and returning
- *                              the number of bytes actually read.
- *                              This may return 0 on some implementations?
+ * @param   pvBuf               Where to store the data.
+ * @param   cbToRead            How much to read.  This is exact request if
+ *                              pcbRead is NULL, otherwise it's an upper limit.
+ * @param   pcbRead             Optional argument for indicating a partial read
+ *                              and returning the number of bytes actually read.
  */
-RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
+RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 
 /**
  * Send data to the other end of an local IPC session.
  *
  * This may or may not block until the data is received by the other party,
- * this is an implementation detail. If you want to make sure that the data
+ * this is an implementation detail.  If you want to make sure that the data
  * has been received you should always call RTLocalIpcSessionFlush().
  *
  * @returns IPRT status code.
  * @retval  VERR_CANCELLED if the operation was cancelled by RTLocalIpcSessionCancel.
  *
  * @param   hSession            The session handle.
- * @param   pvBuffer            The data to write.
- * @param   cbBuffer            The number of bytes to write.
+ * @param   pvBuf               The data to write.
+ * @param   cbToWrite           How much to write.
  */
-RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuffer, size_t cbBuffer);
+RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuf, size_t cbToWrite);
 
 /**
  * Flush any buffered data and (perhaps) wait for the other party to receive it.

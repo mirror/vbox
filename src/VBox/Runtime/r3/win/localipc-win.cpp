@@ -794,12 +794,12 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession)
 }
 
 
-RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
-    AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     /* pcbRead is optional. */
 
     int rc = RTCritSectEnter(&pThis->CritSect);
@@ -810,7 +810,6 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
         {
             pThis->cRefs++;
 
-            size_t cbToRead = cbBuffer;
             size_t cbTotalRead = 0;
             while (cbToRead > 0)
             {
@@ -824,7 +823,7 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
                 pThis->fIOPending = true;
                 RTCritSectLeave(&pThis->CritSect);
 
-                if (ReadFile(pThis->hNmPipe, pvBuffer,
+                if (ReadFile(pThis->hNmPipe, pvBuf,
                              cbToRead <= ~(DWORD)0 ? (DWORD)cbToRead : ~(DWORD)0,
                              &cbRead, &pThis->OverlappedIO))
                     rc = VINF_SUCCESS;
@@ -856,7 +855,7 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
                 /* Advance. */
                 cbToRead    -= cbRead;
                 cbTotalRead += cbRead;
-                pvBuffer     = (uint8_t *)pvBuffer + cbRead;
+                pvBuf     = (uint8_t *)pvBuf + cbRead;
             }
 
             if (pcbRead)
@@ -947,13 +946,13 @@ static int rtLocalIpcSessionWriteCheckCompletion(PRTLOCALIPCSESSIONINT pThis)
 }
 
 
-RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuffer, size_t cbBuffer)
+RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuf, size_t cbToWrite)
 {
     PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
-    AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
-    AssertReturn(cbBuffer, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbToWrite, VERR_INVALID_PARAMETER);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -987,15 +986,15 @@ RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuf
                  * No bounce buffering, cUsers protects us.
                  */
                 size_t cbTotalWritten = 0;
-                while (cbBuffer > 0)
+                while (cbToWrite > 0)
                 {
                     BOOL fRc = ResetEvent(pThis->OverlappedIO.hEvent); Assert(fRc == TRUE);
                     pThis->fIOPending = true;
                     RTCritSectLeave(&pThis->CritSect);
 
                     DWORD cbWritten = 0;
-                    fRc = WriteFile(pThis->hNmPipe, pvBuffer,
-                                    cbBuffer <= ~(DWORD)0 ? (DWORD)cbBuffer : ~(DWORD)0,
+                    fRc = WriteFile(pThis->hNmPipe, pvBuf,
+                                    cbToWrite <= ~(DWORD)0 ? (DWORD)cbToWrite : ~(DWORD)0,
                                     &cbWritten, &pThis->OverlappedIO);
                     if (fRc)
                     {
@@ -1033,9 +1032,9 @@ RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuf
                         break;
 
                     /* Advance. */
-                    pvBuffer        = (char const *)pvBuffer + cbWritten;
+                    pvBuf           = (char const *)pvBuf + cbWritten;
                     cbTotalWritten += cbWritten;
-                    cbBuffer       -= cbWritten;
+                    cbToWrite      -= cbWritten;
                 }
             }
 

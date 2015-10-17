@@ -661,7 +661,7 @@ static bool rtLocalIpcPosixHasHup(PRTLOCALIPCSESSIONINT pThis)
 }
 
 
-RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     /*
      * Validate input.
@@ -689,7 +689,7 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
                     rc = RTCritSectLeave(&pThis->CritSect);
                     AssertRCBreak(rc);
 
-                    rc = RTSocketRead(pThis->hSocket, pvBuffer, cbBuffer, pcbRead);
+                    rc = RTSocketRead(pThis->hSocket, pvBuf, cbToRead, pcbRead);
 
                     /* Detect broken pipe. */
                     if (rc == VINF_SUCCESS)
@@ -725,7 +725,7 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
 }
 
 
-RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuffer, size_t cbBuffer)
+RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuf, size_t cbToWrite)
 {
     /*
      * Validate input.
@@ -753,7 +753,7 @@ RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuf
                     rc = RTCritSectLeave(&pThis->CritSect);
                     AssertRCBreak(rc);
 
-                    rc = RTSocketWrite(pThis->hSocket, pvBuffer, cbBuffer);
+                    rc = RTSocketWrite(pThis->hSocket, pvBuf, cbToWrite);
 
                     int rc2 = RTCritSectEnter(&pThis->CritSect);
                     AssertRCBreakStmt(rc2, rc = RT_SUCCESS(rc) ? rc2 : rc);
