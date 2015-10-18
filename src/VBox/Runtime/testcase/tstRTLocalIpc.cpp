@@ -241,7 +241,6 @@ static DECLCALLBACK(int) testSessionWaitThread(RTTHREAD hSelf, void *pvUser)
             /* Wait for the client to trigger a disconnect by writing us something. */
             RTTESTI_CHECK_RC(RTLocalIpcSessionWaitForData(hIpcSession, RT_MS_1MIN), VINF_SUCCESS);
 
-#ifndef RT_OS_WINDOWS
             size_t cbRead;
             char szCmd[64];
             RT_ZERO(szCmd);
@@ -249,7 +248,6 @@ static DECLCALLBACK(int) testSessionWaitThread(RTTHREAD hSelf, void *pvUser)
             if (RT_SUCCESS(rc) && (cbRead != sizeof("disconnect") - 1 || strcmp(szCmd, "disconnect")) )
                 RTTestIFailed("cbRead=%zu, expected %zu; szCmd='%s', expected 'disconnect'\n",
                               cbRead, sizeof("disconnect") - 1, szCmd);
-#endif
 
             RTTESTI_CHECK_RC(RTLocalIpcSessionClose(hIpcSession), VINF_OBJECT_DESTROYED);
             RTTESTI_CHECK_RC_OK(RTThreadUserSignal(hSelf));
@@ -284,10 +282,8 @@ static DECLCALLBACK(int) tstRTLocalIpcSessionWaitChild(RTTHREAD hSelf, void *pvU
     RTTESTI_CHECK_RC(RTLocalIpcSessionWaitForData(hClientSession, 8 /*cMsTimeout*/), VERR_TIMEOUT);
     uint8_t abBuf[4];
     size_t cbRead = _4M-1;
-#ifndef RT_OS_WINDOWS
     RTTESTI_CHECK_RC(RTLocalIpcSessionReadNB(hClientSession, abBuf, sizeof(abBuf), &cbRead), VINF_TRY_AGAIN);
     RTTESTI_CHECK(cbRead == 0);
-#endif
 
     /* Trigger server disconnect. */
     int rc;
@@ -309,10 +305,8 @@ static DECLCALLBACK(int) tstRTLocalIpcSessionWaitChild(RTTHREAD hSelf, void *pvU
         RTTESTI_CHECK_RC(RTLocalIpcSessionRead(hClientSession, abBuf, sizeof(abBuf), NULL), VERR_BROKEN_PIPE);
         cbRead = _4M-1;
         RTTESTI_CHECK_RC(RTLocalIpcSessionRead(hClientSession, abBuf, sizeof(abBuf), &cbRead), VERR_BROKEN_PIPE);
-#ifndef RT_OS_WINDOWS
         cbRead = _1G/2;
         RTTESTI_CHECK_RC(RTLocalIpcSessionReadNB(hClientSession, abBuf, sizeof(abBuf), &cbRead), VERR_BROKEN_PIPE);
-#endif
 
         RTAssertSetMayPanic(fMayPanic);
         RTAssertSetQuiet(fQuiet);
