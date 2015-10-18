@@ -22,7 +22,6 @@
 #include <iprt/ldr.h>
 
 #include <VBoxDisplay.h>
-#include <VBoxGuestInternal.h>
 #include <VBoxHook.h>
 
 #ifdef DEBUG

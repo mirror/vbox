@@ -32,8 +32,6 @@
 #include <iprt/mem.h>
 #include <iprt/process.h>
 
-#include <VBoxGuestInternal.h>
-
 #include <VBox/VMMDev.h>
 #ifdef DEBUG
 # define LOG_ENABLED

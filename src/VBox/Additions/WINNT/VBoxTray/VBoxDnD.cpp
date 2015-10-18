@@ -36,7 +36,6 @@ using namespace DragAndDropSvc;
 
 #include <iprt/cpp/mtlist.h>
 
-#include <VBoxGuestInternal.h>
 #ifdef LOG_GROUP
 # undef LOG_GROUP
 #endif

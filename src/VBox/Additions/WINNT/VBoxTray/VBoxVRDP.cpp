@@ -29,7 +29,6 @@
 #endif
 #include <VBox/log.h>
 
-#include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
 

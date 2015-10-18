@@ -22,8 +22,6 @@
 #include <VBox/Log.h>
 #include <VBox/VBoxGuestLib.h>
 
-#include <VBoxGuestInternal.h>
-
 #include "VBoxHelpers.h"
 #include "resource.h"
 

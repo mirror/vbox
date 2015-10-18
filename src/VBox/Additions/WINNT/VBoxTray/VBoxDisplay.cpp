@@ -33,7 +33,6 @@
 #include <VBox/VMMDev.h>
 
 #include <VBoxDisplay.h>
-#include <VBoxGuestInternal.h>
 #include <VBoxHook.h>
 
 
