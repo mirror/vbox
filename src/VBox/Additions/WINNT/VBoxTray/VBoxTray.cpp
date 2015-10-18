@@ -38,7 +38,6 @@
 #include "VBoxLA.h"
 #include <VBoxHook.h>
 #include "resource.h"
-#include <malloc.h>
 
 #include <sddl.h>
 
