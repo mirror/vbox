@@ -74,12 +74,10 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
 
 /** @name RTLocalIpcServerCreate flags
  * @{ */
-/** The server can handle multiple sessions. */
-#define RTLOCALIPC_FLAGS_MULTI_SESSION      RT_BIT_32(0)
 /** Native name, as apposed to a portable one. */
-#define RTLOCALIPC_FLAGS_NATIVE_NAME        RT_BIT_32(1)
+#define RTLOCALIPC_FLAGS_NATIVE_NAME        RT_BIT_32(0)
 /** The mask of valid flags. */
-#define RTLOCALIPC_FLAGS_VALID_MASK         UINT32_C(0x00000003)
+#define RTLOCALIPC_FLAGS_VALID_MASK         UINT32_C(0x00000001)
 /** @} */
 
 /**

@@ -206,9 +206,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
      */
     AssertPtrReturn(phServer, VERR_INVALID_POINTER);
     *phServer = NIL_RTLOCALIPCSERVER;
-
     AssertReturn(!(fFlags & ~RTLOCALIPC_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
-
     int rc = rtLocalIpcPosixValidateName(pszName, RT_BOOL(fFlags & RTLOCALIPC_FLAGS_NATIVE_NAME));
     if (RT_SUCCESS(rc))
     {
@@ -247,7 +245,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
                         }
                         if (RT_SUCCESS(rc))
                         {
-                            rc = rtSocketListen(pThis->hSocket, pThis->fFlags & RTLOCALIPC_FLAGS_MULTI_SESSION ? 10 : 0);
+                            rc = rtSocketListen(pThis->hSocket, 16);
                             if (RT_SUCCESS(rc))
                             {
                                 LogFlow(("RTLocalIpcServerCreate: Created %p (%s)\n", pThis, pThis->Name.sun_path));

@@ -194,8 +194,7 @@ DECLCALLBACK(int) VBoxIPCInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
                 if (RTStrPrintf(szPipeName, sizeof(szPipeName), "%s%s",
                                 VBOXTRAY_IPC_PIPE_PREFIX, pszUserName))
                 {
-                    rc = RTLocalIpcServerCreate(&pCtx->hServer, szPipeName,
-                                                RTLOCALIPC_FLAGS_MULTI_SESSION);
+                    rc = RTLocalIpcServerCreate(&pCtx->hServer, szPipeName, 0 /*fFlags*/);
                     if (RT_SUCCESS(rc))
                     {
                         RTStrFree(pszUserName);

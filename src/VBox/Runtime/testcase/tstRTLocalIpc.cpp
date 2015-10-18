@@ -60,9 +60,9 @@ static void testBasics(void)
     RTTESTI_CHECK_RC(RTLocalIpcServerCreate(NULL, NULL, 0), VERR_INVALID_POINTER);
     RTLOCALIPCSERVER hIpcServer;
     int rc;
-    RTTESTI_CHECK_RC(rc = RTLocalIpcServerCreate(&hIpcServer, NULL, RTLOCALIPC_FLAGS_MULTI_SESSION), VERR_INVALID_POINTER);
+    RTTESTI_CHECK_RC(rc = RTLocalIpcServerCreate(&hIpcServer, NULL, 0), VERR_INVALID_POINTER);
     if (RT_SUCCESS(rc)) RTLocalIpcServerDestroy(hIpcServer);
-    RTTESTI_CHECK_RC(rc = RTLocalIpcServerCreate(&hIpcServer, "", RTLOCALIPC_FLAGS_MULTI_SESSION), VERR_INVALID_NAME);
+    RTTESTI_CHECK_RC(rc = RTLocalIpcServerCreate(&hIpcServer, "", 0), VERR_INVALID_NAME);
     if (RT_SUCCESS(rc)) RTLocalIpcServerDestroy(hIpcServer);
     RTTESTI_CHECK_RC(rc = RTLocalIpcServerCreate(&hIpcServer, "BasicTest", 1234 /* Invalid flags */), VERR_INVALID_FLAGS);
     if (RT_SUCCESS(rc)) RTLocalIpcServerDestroy(hIpcServer);
@@ -71,7 +71,7 @@ static void testBasics(void)
     RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(NULL), VINF_SUCCESS);
 
     /* Basic server creation / destruction. */
-    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "BasicTest", RTLOCALIPC_FLAGS_MULTI_SESSION), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "BasicTest", 0), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTLocalIpcServerCancel(hIpcServer), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VINF_OBJECT_DESTROYED);
 
@@ -156,8 +156,7 @@ static void testSessionConnection(const char *pszExecPath)
      * Create the test server.
      */
     RTLOCALIPCSERVER hIpcServer;
-    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "tstRTLocalIpcSessionConnection", RTLOCALIPC_FLAGS_MULTI_SESSION),
-                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "tstRTLocalIpcSessionConnection", 0), VINF_SUCCESS);
 
     /*
      * Create worker thread that listens and closes incoming connections until
@@ -330,8 +329,7 @@ static void testSessionWait(const char *pszExecPath)
      * Create the test server.
      */
     RTLOCALIPCSERVER hIpcServer;
-    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "tstRTLocalIpcSessionWait", RTLOCALIPC_FLAGS_MULTI_SESSION),
-                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "tstRTLocalIpcSessionWait", 0), VINF_SUCCESS);
 
     /*
      * Create worker thread that listens and processes incoming connections
@@ -609,8 +607,7 @@ static void testSessionData(const char *pszExecPath)
      * Create the test server.
      */
     RTLOCALIPCSERVER hIpcServer;
-    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "tstRTLocalIpcSessionData", RTLOCALIPC_FLAGS_MULTI_SESSION),
-                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "tstRTLocalIpcSessionData", 0), VINF_SUCCESS);
 
     /*
      * Create worker thread that listens and processes incoming connections
@@ -808,8 +805,7 @@ static void testSessionPerf(const char *pszExecPath)
      * Create the test server.
      */
     RTLOCALIPCSERVER hIpcServer;
-    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "tstRTLocalIpcSessionPerf", RTLOCALIPC_FLAGS_MULTI_SESSION),
-                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTLocalIpcServerCreate(&hIpcServer, "tstRTLocalIpcSessionPerf", 0), VINF_SUCCESS);
 
     /*
      * Create worker thread that listens and processes incoming connections

@@ -391,10 +391,8 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
      * Validate parameters.
      */
     AssertPtrReturn(phServer, VERR_INVALID_POINTER);
-
+    *phServer = NIL_RTLOCALIPCSERVER;
     AssertReturn(!(fFlags & ~RTLOCALIPC_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
-    AssertReturn(fFlags & RTLOCALIPC_FLAGS_MULTI_SESSION, VERR_NOT_IMPLEMENTED); /** @todo Implement !RTLOCALIPC_FLAGS_MULTI_SESSION */
-
     size_t cwcFullName;
     int rc = rtLocalIpcWinValidateName(pszName, &cwcFullName, RT_BOOL(fFlags & RTLOCALIPC_FLAGS_NATIVE_NAME));
     if (RT_SUCCESS(rc))
