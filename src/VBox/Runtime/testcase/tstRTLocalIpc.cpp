@@ -91,8 +91,8 @@ static void testBasics(void)
     /* Basic client creation / destruction. */
     RTTESTI_CHECK_RC_RETV(rc = RTLocalIpcSessionConnect(&hIpcSession, "BasicTest", 0), VERR_FILE_NOT_FOUND);
     if (RT_SUCCESS(rc)) RTLocalIpcSessionClose(hIpcSession);
-    RTTESTI_CHECK_RC(RTLocalIpcServerCancel(hIpcServer), VERR_INVALID_HANDLE);
-    RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VERR_INVALID_HANDLE);
+    //RTTESTI_CHECK_RC(RTLocalIpcServerCancel(hIpcServer), VERR_INVALID_HANDLE);  - accessing freed memory, bad idea.
+    //RTTESTI_CHECK_RC(RTLocalIpcServerDestroy(hIpcServer), VERR_INVALID_HANDLE); - accessing freed memory, bad idea.
 }
 
 
@@ -272,6 +272,12 @@ static DECLCALLBACK(int) tstRTLocalIpcSessionWaitChild(RTTHREAD hSelf, void *pvU
      */
     RTTESTI_CHECK_RC(RTLocalIpcSessionWaitForData(hClientSession, 0 /*cMsTimeout*/), VERR_TIMEOUT);
     RTTESTI_CHECK_RC(RTLocalIpcSessionWaitForData(hClientSession, 8 /*cMsTimeout*/), VERR_TIMEOUT);
+    uint8_t abBuf[4];
+    size_t cbRead = _4M-1;
+#ifndef RT_OS_WINDOWS
+    RTTESTI_CHECK_RC(RTLocalIpcSessionReadNB(hClientSession, abBuf, sizeof(abBuf), &cbRead), VINF_TRY_AGAIN);
+    RTTESTI_CHECK(cbRead == 0);
+#endif
 
     /* Trigger server disconnect. */
     int rc;
@@ -290,10 +296,13 @@ static DECLCALLBACK(int) tstRTLocalIpcSessionWaitChild(RTTHREAD hSelf, void *pvU
         bool fQuiet    = RTAssertSetQuiet(true);
 
         RTTESTI_CHECK_RC(RTLocalIpcSessionWrite(hClientSession, RT_STR_TUPLE("broken")), VERR_BROKEN_PIPE);
-        uint8_t abBuf[4];
         RTTESTI_CHECK_RC(RTLocalIpcSessionRead(hClientSession, abBuf, sizeof(abBuf), NULL), VERR_BROKEN_PIPE);
-        size_t cbRead = _4M-1;
+        cbRead = _4M-1;
         RTTESTI_CHECK_RC(RTLocalIpcSessionRead(hClientSession, abBuf, sizeof(abBuf), &cbRead), VERR_BROKEN_PIPE);
+#ifndef RT_OS_WINDOWS
+        cbRead = _1G/2;
+        RTTESTI_CHECK_RC(RTLocalIpcSessionReadNB(hClientSession, abBuf, sizeof(abBuf), &cbRead), VERR_BROKEN_PIPE);
+#endif
 
         RTAssertSetMayPanic(fMayPanic);
         RTAssertSetQuiet(fQuiet);

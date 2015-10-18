@@ -741,6 +741,7 @@
 # define RTLocalIpcSessionClose                         RT_MANGLER(RTLocalIpcSessionClose)
 # define RTLocalIpcSessionCancel                        RT_MANGLER(RTLocalIpcSessionCancel)
 # define RTLocalIpcSessionRead                          RT_MANGLER(RTLocalIpcSessionRead)
+# define RTLocalIpcSessionReadNB                        RT_MANGLER(RTLocalIpcSessionReadNB)
 # define RTLocalIpcSessionWrite                         RT_MANGLER(RTLocalIpcSessionWrite)
 # define RTLocalIpcSessionFlush                         RT_MANGLER(RTLocalIpcSessionFlush)
 # define RTLocalIpcSessionWaitForData                   RT_MANGLER(RTLocalIpcSessionWaitForData)
