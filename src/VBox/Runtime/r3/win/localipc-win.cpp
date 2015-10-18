@@ -908,6 +908,18 @@ DECLINLINE(void) rtLocalIpcSessionRetain(PRTLOCALIPCSESSIONINT pThis)
 }
 
 
+RTDECL(uint32_t) RTLocalIpcSessionRetain(RTLOCALIPCSESSION hSession)
+{
+    PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    Assert(cRefs < UINT32_MAX / 2 && cRefs);
+    return cRefs;
+}
+
+
 /**
  * Call when the reference count reaches 0.
  *
@@ -939,36 +951,6 @@ DECL_NO_INLINE(static, int) rtLocalIpcSessionWinDestroy(PRTLOCALIPCSESSIONINT pT
 
 
 /**
- * Session instance destructor.
- *
- * @returns VINF_OBJECT_DESTROYED
- * @param   pThis               The server instance.
- */
-DECL_NO_INLINE(static, int) rtLocalIpcSessionDtor(PRTLOCALIPCSESSIONINT pThis)
-{
-    RTCritSectEnter(&pThis->CritSect);
-    return rtLocalIpcSessionWinDestroy(pThis);
-}
-
-
-/**
- * Releases a reference to the session instance.
- *
- * @returns VINF_SUCCESS or VINF_OBJECT_DESTROYED as appropriate.
- * @param   pThis               The session instance.
- */
-DECLINLINE(int) rtLocalIpcSessionRelease(PRTLOCALIPCSESSIONINT pThis)
-{
-    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
-    Assert(cRefs < UINT32_MAX / 2);
-    if (!cRefs)
-        return rtLocalIpcSessionDtor(pThis);
-    Log(("rtLocalIpcSessionRelease: %u refs left\n", cRefs));
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Releases a reference to the session instance and unlock it.
  *
  * @returns VINF_SUCCESS or VINF_OBJECT_DESTROYED as appropriate.
@@ -982,8 +964,30 @@ DECLINLINE(int) rtLocalIpcSessionReleaseAndUnlock(PRTLOCALIPCSESSIONINT pThis)
         return rtLocalIpcSessionWinDestroy(pThis);
 
     int rc2 = RTCritSectLeave(&pThis->CritSect); AssertRC(rc2);
-    Log(("rtLocalIpcSessionRelease: %u refs left\n", cRefs));
+    Log(("rtLocalIpcSessionReleaseAndUnlock: %u refs left\n", cRefs));
     return VINF_SUCCESS;
+}
+
+
+RTDECL(uint32_t) RTLocalIpcSessionRelease(RTLOCALIPCSESSION hSession)
+{
+    if (hSession == NIL_RTLOCALIPCSESSION)
+        return 0;
+
+    PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    Assert(cRefs < UINT32_MAX / 2);
+    if (cRefs)
+        Log(("RTLocalIpcSessionRelease: %u refs left\n", cRefs));
+    else
+    {
+        RTCritSectEnter(&pThis->CritSect);
+        rtLocalIpcSessionWinDestroy(pThis);
+    }
+    return cRefs;
 }
 
 
@@ -1001,8 +1005,6 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession)
     /*
      * Invalidate the instance, cancel all outstanding I/O and drop our reference.
      */
-    AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, ~RTLOCALIPCSESSION_MAGIC, RTLOCALIPCSESSION_MAGIC), VERR_WRONG_ORDER);
-
     RTCritSectEnter(&pThis->CritSect);
     rtLocalIpcWinCancel(pThis);
     return rtLocalIpcSessionReleaseAndUnlock(pThis);

@@ -137,12 +137,12 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
 #define RTLOCALIPC_C_FLAGS_VALID_MASK       UINT32_C(0x00000001)
 /** @} */
 
-
 /**
  * Closes the local IPC session.
  *
  * This can be used with sessions created by both RTLocalIpcSessionConnect
- * and RTLocalIpcServerListen.
+ * and RTLocalIpcServerListen.  It will release one cancel pending I/O and
+ * relase one reference (typically the implict reference from the create API).
  *
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS if still other references or NIL.
@@ -151,6 +151,28 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
  * @param   hSession            The session handle. The nil value is quietly ignored (VINF_SUCCESS).
  */
 RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession);
+
+/**
+ * Retain a refence to the given session.
+ *
+ * @returns New reference count, UINT32_MAX if the handle is invalid.
+ * @param   hSession            The session handle.
+ */
+RTDECL(uint32_t) RTLocalIpcSessionRetain(RTLOCALIPCSESSION hSession);
+
+/**
+ * Releases a refence to the given session.
+ *
+ * This differs from RTLocalIpcSessionClose in that it won't cancel any pending
+ * I/O.  So, better call RTLocalIpcSessionClose if you want to terminate the
+ * session.
+ *
+ * @returns New reference count, 0 if NIL handle, UINT32_MAX if the handle is
+ *          invalid.
+ * @param   hSession            The session handle.
+ */
+RTDECL(uint32_t) RTLocalIpcSessionRelease(RTLOCALIPCSESSION hSession);
+
 
 /**
  * Receive data from the other end of an local IPC session.
