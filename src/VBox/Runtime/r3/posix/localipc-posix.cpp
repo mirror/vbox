@@ -54,6 +54,7 @@
 #include <unistd.h>
 
 #include "internal/magics.h"
+#include "internal/path.h"
 #include "internal/socket.h"
 
 
@@ -112,7 +113,7 @@ typedef struct RTLOCALIPCSESSIONINT
 typedef RTLOCALIPCSESSIONINT *PRTLOCALIPCSESSIONINT;
 
 
-/** Local IPC name prefix. */
+/** Local IPC name prefix for portable names. */
 #define RTLOCALIPC_POSIX_NAME_PREFIX    "/tmp/.iprt-localipc-"
 
 
@@ -121,29 +122,31 @@ typedef RTLOCALIPCSESSIONINT *PRTLOCALIPCSESSIONINT;
  *
  * @returns IPRT status code.
  * @param   pszName             The name to validate.
- * @param   pcchName            Where to return the length.
+ * @param   fNative             Whether it's a native name or a portable name.
  */
-static int rtLocalIpcPosixValidateName(const char *pszName, size_t *pcchName)
+static int rtLocalIpcPosixValidateName(const char *pszName, bool fNative)
 {
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(*pszName, VERR_INVALID_NAME);
 
-    uint32_t cchName = 0;
-    for (;;)
+    if (!fNative)
     {
-        char ch = pszName[cchName];
-        if (!ch)
-            break;
-        AssertReturn(!RT_C_IS_CNTRL(ch), VERR_INVALID_NAME);
-        AssertReturn((unsigned)ch < 0x80, VERR_INVALID_NAME);
-        AssertReturn(ch != '\\', VERR_INVALID_NAME);
-        AssertReturn(ch != '/', VERR_INVALID_NAME);
-        cchName++;
+        for (;;)
+        {
+            char ch = *pszName++;
+            if (!ch)
+                break;
+            AssertReturn(!RT_C_IS_CNTRL(ch), VERR_INVALID_NAME);
+            AssertReturn((unsigned)ch < 0x80, VERR_INVALID_NAME);
+            AssertReturn(ch != '\\', VERR_INVALID_NAME);
+            AssertReturn(ch != '/', VERR_INVALID_NAME);
+        }
     }
-
-    *pcchName = cchName;
-    AssertReturn(sizeof(RTLOCALIPC_POSIX_NAME_PREFIX) + cchName <= RT_SIZEOFMEMB(struct sockaddr_un, sun_path),
-                 VERR_FILENAME_TOO_LONG);
-    AssertReturn(cchName, VERR_INVALID_NAME);
+    else
+    {
+        int rc = RTStrValidateEncoding(pszName);
+        AssertRCReturn(rc, rc);
+    }
 
     return VINF_SUCCESS;
 }
@@ -156,30 +159,42 @@ static int rtLocalIpcPosixValidateName(const char *pszName, size_t *pcchName)
  * @param   pAddr               The address structure to construct the name in.
  * @param   pcbAddr             Where to return the address size.
  * @param   pszName             The user specified name (valid).
- * @param   cchName             The user specified name length.
+ * @param   fNative             Whether it's a native name or a portable name.
  */
-static int rtLocalIpcPosixConstructName(struct sockaddr_un *pAddr, uint8_t *pcbAddr, const char *pszName, size_t cchName)
+static int rtLocalIpcPosixConstructName(struct sockaddr_un *pAddr, uint8_t *pcbAddr, const char *pszName, bool fNative)
 {
-    AssertMsgReturn(cchName + sizeof(RTLOCALIPC_POSIX_NAME_PREFIX) <= sizeof(pAddr->sun_path),
-                    ("cchName=%zu sizeof(sun_path)=%zu\n", cchName, sizeof(pAddr->sun_path)),
-                    VERR_FILENAME_TOO_LONG);
-
-/** @todo Bother converting to local codeset/encoding??  */
-
-    RT_ZERO(*pAddr);
+    const char *pszNativeName;
+    int rc = rtPathToNative(&pszNativeName, pszName, NULL /*pszBasePath not support*/);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cchNativeName = strlen(pszNativeName);
+        size_t cbFull = !fNative ? cchNativeName + sizeof(RTLOCALIPC_POSIX_NAME_PREFIX) : cchNativeName + 1;
+        if (cbFull <= sizeof(pAddr->sun_path))
+        {
+            RT_ZERO(*pAddr);
 #ifdef RT_OS_OS2 /* Size must be exactly right on OS/2. */
-    *pcbAddr = sizeof(*pAddr);
+            *pcbAddr = sizeof(*pAddr);
 #else
-    *pcbAddr = RT_OFFSETOF(struct sockaddr_un, sun_path) + (uint8_t)cchName + sizeof(RTLOCALIPC_POSIX_NAME_PREFIX);
+            *pcbAddr = RT_OFFSETOF(struct sockaddr_un, sun_path) + (uint8_t)cbFull;
 #endif
 #ifdef HAVE_SUN_LEN_MEMBER
-    pAddr->sun_len     = *pcbAddr;
+            pAddr->sun_len     = *pcbAddr;
 #endif
-    pAddr->sun_family  = AF_LOCAL;
-    memcpy(pAddr->sun_path, RTLOCALIPC_POSIX_NAME_PREFIX, sizeof(RTLOCALIPC_POSIX_NAME_PREFIX) - 1);
-    memcpy(&pAddr->sun_path[sizeof(RTLOCALIPC_POSIX_NAME_PREFIX) - 1], pszName, cchName + 1);
+            pAddr->sun_family  = AF_LOCAL;
 
-    return VINF_SUCCESS;
+            if (!fNative)
+            {
+                memcpy(pAddr->sun_path, RTLOCALIPC_POSIX_NAME_PREFIX, sizeof(RTLOCALIPC_POSIX_NAME_PREFIX) - 1);
+                memcpy(&pAddr->sun_path[sizeof(RTLOCALIPC_POSIX_NAME_PREFIX) - 1], pszNativeName, cchNativeName + 1);
+            }
+            else
+                memcpy(pAddr->sun_path, pszNativeName, cchNativeName + 1);
+        }
+        else
+            rc = VERR_FILENAME_TOO_LONG;
+        rtPathFreeNative(pszNativeName, pszName);
+    }
+    return rc;
 }
 
 
@@ -194,8 +209,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
 
     AssertReturn(!(fFlags & ~RTLOCALIPC_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
-    size_t cchName;
-    int rc = rtLocalIpcPosixValidateName(pszName, &cchName);
+    int rc = rtLocalIpcPosixValidateName(pszName, RT_BOOL(fFlags & RTLOCALIPC_FLAGS_NATIVE_NAME));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -221,7 +235,8 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
                     RTSocketSetInheritance(pThis->hSocket, false /*fInheritable*/);
 
                     uint8_t cbAddr;
-                    rc = rtLocalIpcPosixConstructName(&pThis->Name, &cbAddr, pszName, cchName);
+                    rc = rtLocalIpcPosixConstructName(&pThis->Name, &cbAddr, pszName,
+                                                      RT_BOOL(fFlags & RTLOCALIPC_FLAGS_NATIVE_NAME));
                     if (RT_SUCCESS(rc))
                     {
                         rc = rtSocketBindRawAddr(pThis->hSocket, &pThis->Name, cbAddr);
@@ -474,10 +489,9 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
     AssertPtrReturn(phSession, VERR_INVALID_POINTER);
     *phSession = NIL_RTLOCALIPCSESSION;
 
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTLOCALIPC_C_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
-    size_t cchName;
-    int rc = rtLocalIpcPosixValidateName(pszName, &cchName);
+    int rc = rtLocalIpcPosixValidateName(pszName, RT_BOOL(fFlags & RTLOCALIPC_C_FLAGS_NATIVE_NAME));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -506,7 +520,7 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
 
                     struct sockaddr_un  Addr;
                     uint8_t             cbAddr;
-                    rc = rtLocalIpcPosixConstructName(&Addr, &cbAddr, pszName, cchName);
+                    rc = rtLocalIpcPosixConstructName(&Addr, &cbAddr, pszName, RT_BOOL(fFlags & RTLOCALIPC_C_FLAGS_NATIVE_NAME));
                     if (RT_SUCCESS(rc))
                     {
                         rc = rtSocketConnectRaw(pThis->hSocket, &Addr, cbAddr);

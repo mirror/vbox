@@ -76,8 +76,10 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
  * @{ */
 /** The server can handle multiple sessions. */
 #define RTLOCALIPC_FLAGS_MULTI_SESSION      RT_BIT_32(0)
+/** Native name, as apposed to a portable one. */
+#define RTLOCALIPC_FLAGS_NATIVE_NAME        RT_BIT_32(1)
 /** The mask of valid flags. */
-#define RTLOCALIPC_FLAGS_VALID_MASK         UINT32_C(0x00000001)
+#define RTLOCALIPC_FLAGS_VALID_MASK         UINT32_C(0x00000003)
 /** @} */
 
 /**
@@ -123,9 +125,17 @@ RTDECL(int) RTLocalIpcServerCancel(RTLOCALIPCSERVER hServer);
  *
  * @param   phSession           Where to store the sesson handle on success.
  * @param   pszName             The server name (see RTLocalIpcServerCreate for details).
- * @param   fFlags              Flags. Current undefined, pass 0.
+ * @param   fFlags              Flags, RTLOCALIPC_C_FLAGS_XXX.
  */
 RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *pszName, uint32_t fFlags);
+
+/** @name RTLOCALIPC_C_FLAGS_XXX - RTLocalIpcSessionConnect flags
+ * @{ */
+/** Native name, as apposed to a portable one. */
+#define RTLOCALIPC_C_FLAGS_NATIVE_NAME      RT_BIT_32(0)
+/** The mask of valid flags. */
+#define RTLOCALIPC_C_FLAGS_VALID_MASK       UINT32_C(0x00000001)
+/** @} */
 
 
 /**
