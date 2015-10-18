@@ -1658,6 +1658,7 @@
 # define RTTestBanner                                   RT_MANGLER(RTTestBanner)
 # define RTTestChangeName                               RT_MANGLER(RTTestChangeName)
 # define RTTestCreate                                   RT_MANGLER(RTTestCreate)
+# define RTTestCreateChild                              RT_MANGLER(RTTestCreateChild)
 # define RTTestCreateEx                                 RT_MANGLER(RTTestCreateEx)
 # define RTTestDestroy                                  RT_MANGLER(RTTestDestroy)
 # define RTTestErrorCount                               RT_MANGLER(RTTestErrorCount)

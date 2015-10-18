@@ -79,6 +79,18 @@ typedef enum RTTESTLVL
  */
 RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest);
 
+/**
+ * Creates a test instance for a child process.
+ *
+ * This differs from RTTestCreate in that it disabled result reporting to file
+ * and pipe in order to avoid producing invalid XML.
+ *
+ * @returns IPRT status code.
+ * @param   pszTest     The test name.
+ * @param   phTest      Where to store the test instance handle.
+ */
+RTR3DECL(int) RTTestCreateChild(const char *pszTest, PRTTEST phTest);
+
 /** @name RTTEST_C_XXX - Flags for RTTestCreateEx.
  * @{ */
 /** Whether to check the IPRT_TEST_XXX variables when constructing the
@@ -110,8 +122,16 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest);
 /** Whether to try install the test instance in the test TLS slot.  Setting
  * this flag is incompatible with using the RTTestIXxxx variant of the API. */
 #define RTTEST_C_NO_TLS                 RT_BIT(3)
+/** Don't report to the pipe (IPRT_TEST_PIPE or other).   */
+#define RTTEST_C_NO_XML_REPORTING_PIPE  RT_BIT(4)
+/** Don't report to the results file (IPRT_TEST_FILE or other).   */
+#define RTTEST_C_NO_XML_REPORTING_FILE  RT_BIT(4)
+/** No XML reporting to pipes, file or anything.
+ * Child processes may want to use this so they don't garble the output of
+ * the main test process. */
+#define RTTEST_C_NO_XML_REPORTING       (RTTEST_C_NO_XML_REPORTING_PIPE | RTTEST_C_NO_XML_REPORTING_FILE)
 /** Mask containing the valid bits. */
-#define RTTEST_C_VALID_MASK             UINT32_C(0x0000000f)
+#define RTTEST_C_VALID_MASK             UINT32_C(0x0000003f)
 /** @} */
 
 
