@@ -247,9 +247,14 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
                         }
                         if (RT_SUCCESS(rc))
                         {
-                            LogFlow(("RTLocalIpcServerCreate: Created %p (%s)\n", pThis, pThis->Name.sun_path));
-                            *phServer = pThis;
-                            return VINF_SUCCESS;
+                            rc = rtSocketListen(pThis->hSocket, pThis->fFlags & RTLOCALIPC_FLAGS_MULTI_SESSION ? 10 : 0);
+                            if (RT_SUCCESS(rc))
+                            {
+                                LogFlow(("RTLocalIpcServerCreate: Created %p (%s)\n", pThis, pThis->Name.sun_path));
+                                *phServer = pThis;
+                                return VINF_SUCCESS;
+                            }
+                            unlink(pThis->Name.sun_path);
                         }
                     }
                     RTSocketRelease(pThis->hSocket);
@@ -400,18 +405,11 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
              */
             for (;;)
             {
-                if (pThis->fCancelled)
+                if (!pThis->fCancelled)
                 {
-                    rc = VERR_CANCELLED;
-                    break;
-                }
+                    rc = RTCritSectLeave(&pThis->CritSect);
+                    AssertRCBreak(rc);
 
-                rc = RTCritSectLeave(&pThis->CritSect);
-                AssertRCBreak(rc);
-
-                rc = rtSocketListen(pThis->hSocket, pThis->fFlags & RTLOCALIPC_FLAGS_MULTI_SESSION ? 10 : 0);
-                if (RT_SUCCESS(rc))
-                {
                     struct sockaddr_un  Addr;
                     size_t              cbAddr = sizeof(Addr);
                     RTSOCKET            hClient;
@@ -456,11 +454,8 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
                 }
                 else
                 {
-                    int rc2 = RTCritSectEnter(&pThis->CritSect);
-                    AssertRCBreakStmt(rc2, rc = RT_SUCCESS(rc) ? rc2 : rc);
-                    if (   rc != VERR_INTERRUPTED
-                        && rc != VERR_TRY_AGAIN)
-                        break;
+                    rc = VERR_CANCELLED;
+                    break;
                 }
             }
 
