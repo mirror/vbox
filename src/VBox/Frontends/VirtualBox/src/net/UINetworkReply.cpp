@@ -382,27 +382,26 @@ int UINetworkReplyPrivateThread::applyProxyRules()
     m_strContext = tr("During proxy configuration");
 
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
-    /* Get the proxymanager: */
+    /* Get the proxy-manager: */
     UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
 
-    /* If the specific proxy settings aren't enabled, we'll use the
-       system default proxy.  Otherwise assume it's configured. */
-    if (proxyManager.proxyEnabled())
-        return RTHttpSetProxy(m_hHttp,
-                              proxyManager.proxyHost().toUtf8().constData(),
-                              proxyManager.proxyPort().toUInt(),
-                              NULL /* pszProxyUser */, NULL /* pszProxyPwd */);
+    /* If the specific proxy settings are enabled, we'll use them
+     * unless user disabled that functionality manually. */
+    switch (proxyManager.proxyState())
+    {
+        case UIProxyManager::ProxyState_Enabled:
+            return RTHttpSetProxy(m_hHttp,
+                                  proxyManager.proxyHost().toUtf8().constData(),
+                                  proxyManager.proxyPort().toUInt(),
+                                  NULL /* pszProxyUser */, NULL /* pszProxyPwd */);
+        case UIProxyManager::ProxyState_Disabled:
+            return VINF_SUCCESS;
+        default:
+            break;
+    }
+#endif /* VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS */
 
-    /** @todo This should be some kind of tristate:
-     *      - system configured proxy ("proxyDisabled" as well as default "")
-     *      - user configured proxy ("proxyEnabled").
-     *      - user configured "no proxy" (currently missing).
-     * In the two last cases, call RTHttpSetProxy.
-     *
-     * Alternatively, we could opt not to give the user a way of doing "no proxy",
-     * that would require no real changes to the visible GUI... Just a thought.
-     */
-#endif
+    /* By default, use system proxy: */
     return RTHttpUseSystemProxySettings(m_hHttp);
 }
 
@@ -531,7 +530,7 @@ int UINetworkReplyPrivateThread::performMainRequest()
             rc = RTHttpGetHeaderBinary(m_hHttp, m_request.url().toString().toUtf8().constData(), &pvResponse, &cbResponse);
             if (RT_SUCCESS(rc))
             {
-                m_reply = QByteArray((char*)pvResponse, cbResponse);
+                m_reply = QByteArray((char*)pvResponse, (int)cbResponse);
                 RTHttpFreeResponse(pvResponse);
             }
 
@@ -558,7 +557,7 @@ int UINetworkReplyPrivateThread::performMainRequest()
             rc = RTHttpGetBinary(m_hHttp, m_request.url().toString().toUtf8().constData(), &pvResponse, &cbResponse);
             if (RT_SUCCESS(rc))
             {
-                m_reply = QByteArray((char*)pvResponse, cbResponse);
+                m_reply = QByteArray((char*)pvResponse, (int)cbResponse);
                 RTHttpFreeResponse(pvResponse);
             }
 

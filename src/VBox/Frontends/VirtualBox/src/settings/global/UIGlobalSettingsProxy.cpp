@@ -37,12 +37,16 @@ UIGlobalSettingsProxy::UIGlobalSettingsProxy()
     Ui::UIGlobalSettingsProxy::setupUi(this);
 
     /* Setup widgets: */
+    QButtonGroup *pButtonGroup = new QButtonGroup(this);
+    pButtonGroup->addButton(m_pRadioProxyAuto);
+    pButtonGroup->addButton(m_pRadioProxyDisabled);
+    pButtonGroup->addButton(m_pRadioProxyEnabled);
     m_pPortEditor->setFixedWidthByText(QString().fill('0', 6));
     m_pHostEditor->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pHostEditor));
     m_pPortEditor->setValidator(new QRegExpValidator(QRegExp("\\d+"), m_pPortEditor));
 
     /* Setup connections: */
-    connect(m_pCheckboxProxy, SIGNAL(toggled(bool)), this, SLOT(sltProxyToggled()));
+    connect(pButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(sltProxyToggled()));
     connect(m_pHostEditor, SIGNAL(textEdited(const QString&)), this, SLOT(revalidate()));
     connect(m_pPortEditor, SIGNAL(textEdited(const QString&)), this, SLOT(revalidate()));
 
@@ -59,7 +63,7 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 
     /* Load to cache: */
     UIProxyManager proxyManager(m_settings.proxySettings());
-    m_cache.m_fProxyEnabled = proxyManager.proxyEnabled();
+    m_cache.m_enmProxyState = proxyManager.proxyState();
     m_cache.m_strProxyHost = proxyManager.proxyHost();
     m_cache.m_strProxyPort = proxyManager.proxyPort();
 
@@ -72,7 +76,12 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsProxy::getFromCache()
 {
     /* Fetch from cache: */
-    m_pCheckboxProxy->setChecked(m_cache.m_fProxyEnabled);
+    switch (m_cache.m_enmProxyState)
+    {
+        case UIProxyManager::ProxyState_Auto:     m_pRadioProxyAuto->setChecked(true); break;
+        case UIProxyManager::ProxyState_Disabled: m_pRadioProxyDisabled->setChecked(true); break;
+        case UIProxyManager::ProxyState_Enabled:  m_pRadioProxyEnabled->setChecked(true); break;
+    }
     m_pHostEditor->setText(m_cache.m_strProxyHost);
     m_pPortEditor->setText(m_cache.m_strProxyPort);
     sltProxyToggled();
@@ -86,7 +95,9 @@ void UIGlobalSettingsProxy::getFromCache()
 void UIGlobalSettingsProxy::putToCache()
 {
     /* Upload to cache: */
-    m_cache.m_fProxyEnabled = m_pCheckboxProxy->isChecked();
+    m_cache.m_enmProxyState = m_pRadioProxyEnabled->isChecked()  ? UIProxyManager::ProxyState_Enabled :
+                              m_pRadioProxyDisabled->isChecked() ? UIProxyManager::ProxyState_Disabled :
+                                                                   UIProxyManager::ProxyState_Auto;
     m_cache.m_strProxyHost = m_pHostEditor->text();
     m_cache.m_strProxyPort = m_pPortEditor->text();
 }
@@ -99,7 +110,7 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     UIProxyManager proxyManager;
-    proxyManager.setProxyEnabled(m_cache.m_fProxyEnabled);
+    proxyManager.setProxyState(m_cache.m_enmProxyState);
     proxyManager.setProxyHost(m_cache.m_strProxyHost);
     proxyManager.setProxyPort(m_cache.m_strProxyPort);
     m_settings.setProxySettings(proxyManager.toString());
@@ -111,7 +122,7 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
 bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
 {
     /* Pass if proxy is disabled: */
-    if (!m_pCheckboxProxy->isChecked())
+    if (!m_pRadioProxyEnabled->isChecked())
         return true;
 
     /* Pass by default: */
@@ -145,8 +156,10 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
 void UIGlobalSettingsProxy::setOrderAfter(QWidget *pWidget)
 {
     /* Configure navigation: */
-    setTabOrder(pWidget, m_pCheckboxProxy);
-    setTabOrder(m_pCheckboxProxy, m_pHostEditor);
+    setTabOrder(pWidget, m_pRadioProxyAuto);
+    setTabOrder(m_pRadioProxyAuto, m_pRadioProxyDisabled);
+    setTabOrder(m_pRadioProxyDisabled, m_pRadioProxyEnabled);
+    setTabOrder(m_pRadioProxyEnabled, m_pHostEditor);
     setTabOrder(m_pHostEditor, m_pPortEditor);
 }
 
@@ -159,7 +172,7 @@ void UIGlobalSettingsProxy::retranslateUi()
 void UIGlobalSettingsProxy::sltProxyToggled()
 {
     /* Update widgets availability: */
-    m_pContainerProxy->setEnabled(m_pCheckboxProxy->isChecked());
+    m_pContainerProxy->setEnabled(m_pRadioProxyEnabled->isChecked());
 
     /* Revalidate: */
     revalidate();

@@ -19,16 +19,36 @@
     <number>0</number>
    </property>
    <item row="0" column="0" colspan="2">
-    <widget class="QCheckBox" name="m_pCheckboxProxy">
+    <widget class="QRadioButton" name="m_pRadioProxyAuto">
      <property name="whatsThis">
-      <string>When checked, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</string>
+      <string>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</string>
      </property>
      <property name="text">
-      <string>&amp;Enable Proxy</string>
+      <string>&amp;Auto-detect Host Proxy Settings</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item row="1" column="0" colspan="2">
+    <widget class="QRadioButton" name="m_pRadioProxyDisabled">
+     <property name="whatsThis">
+      <string>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</string>
+     </property>
+     <property name="text">
+      <string>&amp;Direct Connection to the Internet</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QRadioButton" name="m_pRadioProxyEnabled">
+     <property name="whatsThis">
+      <string>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</string>
+     </property>
+     <property name="text">
+      <string>&amp;Manual Proxy Configuration</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
     <spacer>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -44,7 +64,7 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="1" colspan="2">
+   <item row="3" column="1">
     <widget class="QWidget" name="m_pContainerProxy">
      <property name="sizePolicy">
       <sizepolicy vsizetype="Minimum" hsizetype="MinimumExpanding">
@@ -99,7 +119,7 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0" colspan="3">
+   <item row="4" column="0" colspan="2">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>

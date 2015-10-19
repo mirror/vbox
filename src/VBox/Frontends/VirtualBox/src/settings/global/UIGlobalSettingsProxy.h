@@ -19,6 +19,7 @@
 #define __UIGlobalSettingsProxy_h__
 
 /* Local includes */
+#include "VBoxUtils.h"
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsProxy.gen.h"
 
@@ -26,9 +27,9 @@
 struct UISettingsCacheGlobalProxy
 {
     UISettingsCacheGlobalProxy()
-        : m_fProxyEnabled(false)
+        : m_enmProxyState(UIProxyManager::ProxyState_Auto)
     {}
-    bool m_fProxyEnabled;
+    UIProxyManager::ProxyState m_enmProxyState;
     QString m_strProxyHost;
     QString m_strProxyPort;
 };

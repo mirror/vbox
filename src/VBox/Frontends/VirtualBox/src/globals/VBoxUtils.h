@@ -151,9 +151,17 @@ class UIProxyManager
 {
 public:
 
+    /** Proxy states. */
+    enum ProxyState
+    {
+        ProxyState_Disabled,
+        ProxyState_Enabled,
+        ProxyState_Auto
+    };
+
     /** Constructs object which parses passed @a strProxySettings. */
     UIProxyManager(const QString &strProxySettings = QString())
-        : m_fProxyEnabled(false)
+        : m_enmProxyState(ProxyState_Auto)
         , m_fAuthEnabled(false)
     {
         /* Parse proxy settings: */
@@ -163,7 +171,7 @@ public:
 
         /* Parse proxy state, host and port: */
         if (proxySettings.size() > 0)
-            m_fProxyEnabled = proxySettings[0] == "proxyEnabled";
+            m_enmProxyState = proxyStateFromString(proxySettings[0]);
         if (proxySettings.size() > 1)
             m_strProxyHost = proxySettings[1];
         if (proxySettings.size() > 2)
@@ -183,11 +191,11 @@ public:
     {
         /* Serialize settings: */
         QString strResult;
-        if (m_fProxyEnabled || !m_strProxyHost.isEmpty() || !m_strProxyPort.isEmpty() ||
+        if (m_enmProxyState != ProxyState_Auto || !m_strProxyHost.isEmpty() || !m_strProxyPort.isEmpty() ||
             m_fAuthEnabled || !m_strAuthLogin.isEmpty() || !m_strAuthPassword.isEmpty())
         {
             QStringList proxySettings;
-            proxySettings << QString(m_fProxyEnabled ? "proxyEnabled" : "proxyDisabled");
+            proxySettings << proxyStateToString(m_enmProxyState);
             proxySettings << m_strProxyHost;
             proxySettings << m_strProxyPort;
             proxySettings << QString(m_fAuthEnabled ? "authEnabled" : "authDisabled");
@@ -198,8 +206,8 @@ public:
         return strResult;
     }
 
-    /** Returns whether the proxy is enabled. */
-    bool proxyEnabled() const { return m_fProxyEnabled; }
+    /** Returns the proxy state. */
+    ProxyState proxyState() const { return m_enmProxyState; }
     /** Returns the proxy host. */
     const QString& proxyHost() const { return m_strProxyHost; }
     /** Returns the proxy port. */
@@ -212,8 +220,8 @@ public:
     /** Returns the proxy auth password. */
     const QString& authPassword() const { return m_strAuthPassword; }
 
-    /** Defines whether the proxy is @a fEnabled. */
-    void setProxyEnabled(bool fEnabled) { m_fProxyEnabled = fEnabled; }
+    /** Defines the proxy @a enmState. */
+    void setProxyState(ProxyState enmState) { m_enmProxyState = enmState; }
     /** Defines the proxy @a strHost. */
     void setProxyHost(const QString &strHost) { m_strProxyHost = strHost; }
     /** Defines the proxy @a strPort. */
@@ -228,8 +236,32 @@ public:
 
 private:
 
-    /** Holds whether the proxy is enabled. */
-    bool m_fProxyEnabled;
+    /** Converts passed @a state to corresponding #QString. */
+    static QString proxyStateToString(ProxyState state)
+    {
+        switch (state)
+        {
+            case ProxyState_Disabled: return QString("ProxyDisabled");
+            case ProxyState_Enabled:  return QString("ProxyEnabled");
+            case ProxyState_Auto:     break;
+        }
+        return QString("ProxyAuto");
+    }
+
+    /** Converts passed @a strState to corresponding #ProxyState. */
+    static ProxyState proxyStateFromString(const QString &strState)
+    {
+        /* Compose the map of known states: */
+        QMap<QString, ProxyState> states;
+        states["ProxyDisabled"] = ProxyState_Disabled; // New since VBox 5.0
+        states["proxyEnabled"]  = ProxyState_Enabled;  // Old since VBox 4.1
+        states["ProxyEnabled"]  = ProxyState_Enabled;  // New since VBox 5.0
+        /* Return one of registered or 'Auto' by default: */
+        return states.value(strState, ProxyState_Auto);
+    }
+
+    /** Holds the proxy state. */
+    ProxyState m_enmProxyState;
     /** Holds the proxy host. */
     QString m_strProxyHost;
     /** Holds the proxy port. */
