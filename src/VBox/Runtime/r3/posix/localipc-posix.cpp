@@ -51,6 +51,7 @@
 # include <errno.h>
 #endif
 #include <fcntl.h>
+#include <signal.h>
 #include <unistd.h>
 
 #include "internal/magics.h"
@@ -231,6 +232,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
                 if (RT_SUCCESS(rc))
                 {
                     RTSocketSetInheritance(pThis->hSocket, false /*fInheritable*/);
+                    signal(SIGPIPE, SIG_IGN); /* Required on solaris, at least. */
 
                     uint8_t cbAddr;
                     rc = rtLocalIpcPosixConstructName(&pThis->Name, &cbAddr, pszName,
@@ -510,6 +512,7 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
                 if (RT_SUCCESS(rc))
                 {
                     RTSocketSetInheritance(pThis->hSocket, false /*fInheritable*/);
+                    signal(SIGPIPE, SIG_IGN); /* Required on solaris, at least. */
 
                     struct sockaddr_un  Addr;
                     uint8_t             cbAddr;
@@ -689,13 +692,33 @@ static bool rtLocalIpcPosixHasHup(PRTLOCALIPCSESSIONINT pThis)
     struct pollfd PollFd;
     RT_ZERO(PollFd);
     PollFd.fd      = RTSocketToNative(pThis->hSocket);
-    PollFd.events  = POLLHUP;
-    return poll(&PollFd, 1, 0) >= 1
-       && (PollFd.revents & POLLHUP);
-
-#else /* RT_OS_OS2: */
-    return true;
-#endif
+    PollFd.events  = POLLHUP | POLLIN;
+    if (poll(&PollFd, 1, 0) > 0)
+    {
+       if (PollFd.revents & POLLIN)
+       {
+# ifdef RT_OS_SOLARIS
+           /* Solaris doesn't seem to set POLLHUP for disconnected unix domain
+              sockets. So, we have to do extra stupid work here to detect it. */
+           uint8_t bDummy;
+           ssize_t rcSend = send(PollFd.fd, &bDummy, 0, MSG_DONTWAIT);
+           if (rcSend < 0 && (errno == EPIPE || errno == ECONNRESET))
+               return true;
+           AssertMsg(rcSend == 0, ("rcSend=%zd errno=%d\n", rcSend, errno));
+# endif
+           return false;
+       }
+       Assert(PollFd.revents != 0);
+       return true;
+    }
+#else  /* RT_OS_OS2 */
+    /* No native poll, do zero byte send to check for EPIPE. */
+    uint8_t bDummy;
+    ssize_t rcSend = send(PollFd.fd, &bDummy, 0, 0);
+    if (rcSend < 0 && (errno == EPIPE || errno == ECONNRESET))
+        return true;
+#endif /* RT_OS_OS2 */
+    return false;
 }
 
 
@@ -941,12 +964,14 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
 
                     uint32_t fEvents = 0;
 #ifdef RT_OS_OS2
-                    /* This doesn't give us any error condition on hangup. */
+                    /* This doesn't give us any error condition on hangup, so use HUP check. */
                     Log(("RTLocalIpcSessionWaitForData: Calling RTSocketSelectOneEx...\n"));
                     rc = RTSocketSelectOneEx(pThis->hSocket, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, &fEvents, cMillies);
                     Log(("RTLocalIpcSessionWaitForData: RTSocketSelectOneEx returns %Rrc, fEvents=%#x\n", rc, fEvents));
+                    if (RT_SUCCESS(rc) && fEvents == RTPOLL_EVT_READ && rtLocalIpcPosixHasHup(pThis))
+                        rc = VERR_BROKEN_PIPE;
 #else
-/** @todo RTSocketPoll */
+/** @todo RTSocketPoll? */
                     /* POLLHUP will be set on hangup. */
                     struct pollfd PollFd;
                     RT_ZERO(PollFd);
@@ -956,7 +981,24 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
                     int cFds = poll(&PollFd, 1, cMillies == RT_INDEFINITE_WAIT ? -1 : cMillies);
                     if (cFds >= 1)
                     {
-                        fEvents = PollFd.revents & (POLLHUP | POLLERR) ? RTPOLL_EVT_ERROR : RTPOLL_EVT_READ;
+                        /* Solaris may flag both POLLIN and POLLHUP for pipes when there is more
+                           input to read.  Also, solaris may give us POLLIN without POLLHUP even
+                           if a unix domain socket is already disconnected.  So, extra solaris
+                           hacks are necessary here in addition to prioritizing POLLIN. */
+                        if (PollFd.revents & POLLIN)
+                        {
+                            fEvents = RTPOLL_EVT_READ;
+# ifdef RT_OS_SOLARIS       /* Same hack as in rtLocalIpcPosixHasHup. */
+                            uint8_t bDummy;
+                            ssize_t rcSend = send(PollFd.fd, &bDummy, 0, MSG_DONTWAIT);
+                            if (rcSend < 0 && (errno == EPIPE || errno == ECONNRESET))
+                                fEvents = RTPOLL_EVT_ERROR;
+                            else
+                                AssertMsg(rcSend == 0, ("rcSend=%zd errno=%d\n", rcSend, errno));
+# endif
+                        }
+                        else
+                            fEvents = RTPOLL_EVT_ERROR;
                         rc = VINF_SUCCESS;
                     }
                     else if (rc == 0)
