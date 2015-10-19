@@ -48,8 +48,8 @@
 #include <sys/un.h>
 #ifndef RT_OS_OS2
 # include <sys/poll.h>
-# include <errno.h>
 #endif
+#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
