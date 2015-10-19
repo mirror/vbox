@@ -150,7 +150,7 @@ static int rawFreeImage(PRAWIMAGE pImage, bool fDelete)
                     /* Write data to all image blocks. */
                     while (uOff < pImage->cbSize)
                     {
-                        unsigned cbChunk = (unsigned)RT_MIN(pImage->cbSize,
+                        unsigned cbChunk = (unsigned)RT_MIN(pImage->cbSize - uOff,
                                                             RAW_FILL_SIZE);
 
                         rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
