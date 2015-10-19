@@ -1238,9 +1238,9 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
                 if (cbBuf >= cbDhcpAckPkt)
                 {
                     memcpy(pvBuf, g_abDhcpAck, cbDhcpAckPkt);
-                    PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pvBuf;
-                    PRTNETIPV4     pIpHdr  = (PRTNETIPV4)    (pEthHdr + 1);
-                    PRTNETUDP      pUdpHdr = (PRTNETUDP)     ((uint8_t *)pIpHdr + RTNETIPV4_MIN_LEN);
+                    PRTNETETHERHDR pEthHdr   = (PRTNETETHERHDR)pvBuf;
+                    PRTNETIPV4     pIpHdr    = (PRTNETIPV4)    (pEthHdr + 1);
+                    PRTNETUDP      pUdpHdr   = (PRTNETUDP)     ((uint8_t *)pIpHdr + RTNETIPV4_MIN_LEN);
                     PRTNETBOOTP    pBootpHdr = (PRTNETBOOTP) (pUdpHdr + 1);
                     pBootpHdr->bp_xid = pHv->uBootpXId;
 
