@@ -681,44 +681,42 @@ RTDECL(int) RTLocalIpcSessionCancel(RTLOCALIPCSESSION hSession)
 
 
 /**
- * Checks if the socket has has a HUP condition.
+ * Checks if the socket has has a HUP condition after reading zero bytes.
  *
  * @returns true if HUP, false if no.
  * @param   pThis       The IPC session handle.
  */
 static bool rtLocalIpcPosixHasHup(PRTLOCALIPCSESSIONINT pThis)
 {
-#ifndef RT_OS_OS2
+    int fdNative = RTSocketToNative(pThis->hSocket);
+
+#if !defined(RT_OS_OS2) && !defined(RT_OS_SOLARIS)
     struct pollfd PollFd;
     RT_ZERO(PollFd);
-    PollFd.fd      = RTSocketToNative(pThis->hSocket);
-    PollFd.events  = POLLHUP | POLLIN;
-    if (poll(&PollFd, 1, 0) > 0)
-    {
-       if (PollFd.revents & POLLIN)
-       {
-# ifdef RT_OS_SOLARIS
-           /* Solaris doesn't seem to set POLLHUP for disconnected unix domain
-              sockets. So, we have to do extra stupid work here to detect it. */
-           uint8_t bDummy;
-           ssize_t rcSend = send(PollFd.fd, &bDummy, 0, MSG_DONTWAIT);
-           if (rcSend < 0 && (errno == EPIPE || errno == ECONNRESET))
-               return true;
-           AssertMsg(rcSend == 0, ("rcSend=%zd errno=%d\n", rcSend, errno));
-# endif
-           return false;
-       }
-       Assert(PollFd.revents != 0);
-       return true;
-    }
-#else  /* RT_OS_OS2 */
-    /* No native poll, do zero byte send to check for EPIPE. */
+    PollFd.fd      = fdNative;
+    PollFd.events  = POLLHUP;
+    if (poll(&PollFd, 1, 0) <= 0)
+        return false;
+    if (!(PollFd.revents & (POLLHUP | POLLERR)))
+        return false;
+#else  /* RT_OS_OS2 || RT_OS_SOLARIS */
+    /*
+     * OS/2:    No native poll, do zero byte send to check for EPIPE.
+     * Solaris: We don't get POLLHUP.
+     */
     uint8_t bDummy;
-    ssize_t rcSend = send(PollFd.fd, &bDummy, 0, 0);
-    if (rcSend < 0 && (errno == EPIPE || errno == ECONNRESET))
-        return true;
-#endif /* RT_OS_OS2 */
-    return false;
+    ssize_t rcSend = send(fdNative, &bDummy, 0, 0);
+    if (rcSend >= 0 || (errno != EPIPE && errno != ECONNRESET))
+        return false;
+#endif /* RT_OS_OS2 || RT_OS_SOLARIS */
+
+    /*
+     * We've established EPIPE.  Now make sure there aren't any last bytes to
+     * read that came in between the recv made by the caller and the disconnect.
+     */
+    uint8_t bPeek;
+    ssize_t rcRecv = recv(fdNative, &bPeek, 1, MSG_DONTWAIT | MSG_PEEK);
+    return rcRecv <= 0;
 }
 
 
@@ -981,24 +979,26 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
                     int cFds = poll(&PollFd, 1, cMillies == RT_INDEFINITE_WAIT ? -1 : cMillies);
                     if (cFds >= 1)
                     {
-                        /* Solaris may flag both POLLIN and POLLHUP for pipes when there is more
-                           input to read.  Also, solaris may give us POLLIN without POLLHUP even
-                           if a unix domain socket is already disconnected.  So, extra solaris
-                           hacks are necessary here in addition to prioritizing POLLIN. */
-                        if (PollFd.revents & POLLIN)
-                        {
-                            fEvents = RTPOLL_EVT_READ;
-# ifdef RT_OS_SOLARIS       /* Same hack as in rtLocalIpcPosixHasHup. */
-                            uint8_t bDummy;
-                            ssize_t rcSend = send(PollFd.fd, &bDummy, 0, MSG_DONTWAIT);
-                            if (rcSend < 0 && (errno == EPIPE || errno == ECONNRESET))
-                                fEvents = RTPOLL_EVT_ERROR;
-                            else
-                                AssertMsg(rcSend == 0, ("rcSend=%zd errno=%d\n", rcSend, errno));
-# endif
-                        }
-                        else
+                        /* Linux 4.2.2 sets both POLLIN and POLLHUP when the pipe is
+                           broken and but no more data to read.  Google hints at NetBSD
+                           returning more sane values (POLLIN till no more data, then
+                           POLLHUP).  Solairs OTOH, doesn't ever seem to return POLLHUP. */
+                        fEvents = RTPOLL_EVT_READ;
+                        if (   (PollFd.revents & (POLLHUP | POLLERR))
+                            && !(PollFd.revents & POLLIN))
                             fEvents = RTPOLL_EVT_ERROR;
+# if defined(RT_OS_SOLARIS)
+                        else if (PollFd.revents & POLLIN)
+# else
+                        else if ((PollFd.revents & (POLLIN | POLLHUP)) == (POLLIN | POLLHUP))
+# endif
+                        {
+                            /* Check if there is actually data available. */
+                            uint8_t bPeek;
+                            ssize_t rcRecv = recv(PollFd.fd, &bPeek, 1, MSG_DONTWAIT | MSG_PEEK);
+                            if (rcRecv <= 0)
+                                fEvents = RTPOLL_EVT_ERROR;
+                        }
                         rc = VINF_SUCCESS;
                     }
                     else if (rc == 0)
