@@ -145,32 +145,40 @@ public:
     }
 };
 
+/** Object containing functionality
+  * to (de)serialize proxy settings. */
 class UIProxyManager
 {
 public:
 
+    /** Constructs object which parses passed @a strProxySettings. */
     UIProxyManager(const QString &strProxySettings = QString())
-        : m_fProxyEnabled(false), m_fAuthEnabled(false)
+        : m_fProxyEnabled(false)
+        , m_fAuthEnabled(false)
     {
-        /* Parse settings: */
-        if (!strProxySettings.isEmpty())
-        {
-            QStringList proxySettings = strProxySettings.split(",");
-            if (proxySettings.size() > 0)
-                m_fProxyEnabled = proxySettings[0] == "proxyEnabled";
-            if (proxySettings.size() > 1)
-                m_strProxyHost = proxySettings[1];
-            if (proxySettings.size() > 2)
-                m_strProxyPort = proxySettings[2];
-            if (proxySettings.size() > 3)
-                m_fAuthEnabled = proxySettings[3] == "authEnabled";
-            if (proxySettings.size() > 4)
-                m_strAuthLogin = proxySettings[4];
-            if (proxySettings.size() > 5)
-                m_strAuthPassword = proxySettings[5];
-        }
+        /* Parse proxy settings: */
+        if (strProxySettings.isEmpty())
+            return;
+        QStringList proxySettings = strProxySettings.split(",");
+
+        /* Parse proxy state, host and port: */
+        if (proxySettings.size() > 0)
+            m_fProxyEnabled = proxySettings[0] == "proxyEnabled";
+        if (proxySettings.size() > 1)
+            m_strProxyHost = proxySettings[1];
+        if (proxySettings.size() > 2)
+            m_strProxyPort = proxySettings[2];
+
+        /* Parse whether proxy auth enabled and has login/password: */
+        if (proxySettings.size() > 3)
+            m_fAuthEnabled = proxySettings[3] == "authEnabled";
+        if (proxySettings.size() > 4)
+            m_strAuthLogin = proxySettings[4];
+        if (proxySettings.size() > 5)
+            m_strAuthPassword = proxySettings[5];
     }
 
+    /** Serializes proxy settings. */
     QString toString() const
     {
         /* Serialize settings: */
@@ -190,30 +198,48 @@ public:
         return strResult;
     }
 
-    /* Proxy attribute getters: */
+    /** Returns whether the proxy is enabled. */
     bool proxyEnabled() const { return m_fProxyEnabled; }
+    /** Returns the proxy host. */
     const QString& proxyHost() const { return m_strProxyHost; }
+    /** Returns the proxy port. */
     const QString& proxyPort() const { return m_strProxyPort; }
+
+    /** Returns whether the proxy auth is enabled. */
     bool authEnabled() const { return m_fAuthEnabled; }
+    /** Returns the proxy auth login. */
     const QString& authLogin() const { return m_strAuthLogin; }
+    /** Returns the proxy auth password. */
     const QString& authPassword() const { return m_strAuthPassword; }
 
-    /* Proxy attribute setters: */
-    void setProxyEnabled(bool fProxyEnabled) { m_fProxyEnabled = fProxyEnabled; }
-    void setProxyHost(const QString &strProxyHost) { m_strProxyHost = strProxyHost; }
-    void setProxyPort(const QString &strProxyPort) { m_strProxyPort = strProxyPort; }
-    void setAuthEnabled(bool fAuthEnabled) { m_fAuthEnabled = fAuthEnabled; }
-    void setAuthLogin(const QString &strAuthLogin) { m_strAuthLogin = strAuthLogin; }
-    void setAuthPassword(const QString &strAuthPassword) { m_strAuthPassword = strAuthPassword; }
+    /** Defines whether the proxy is @a fEnabled. */
+    void setProxyEnabled(bool fEnabled) { m_fProxyEnabled = fEnabled; }
+    /** Defines the proxy @a strHost. */
+    void setProxyHost(const QString &strHost) { m_strProxyHost = strHost; }
+    /** Defines the proxy @a strPort. */
+    void setProxyPort(const QString &strPort) { m_strProxyPort = strPort; }
+
+    /** Defines whether the proxy auth is @a fEnabled. */
+    void setAuthEnabled(bool fEnabled) { m_fAuthEnabled = fEnabled; }
+    /** Defines the proxy auth @a strLogin. */
+    void setAuthLogin(const QString &strLogin) { m_strAuthLogin = strLogin; }
+    /** Defines the proxy auth @a strPassword. */
+    void setAuthPassword(const QString &strPassword) { m_strAuthPassword = strPassword; }
 
 private:
 
-    /* Proxy attribute variables: */
+    /** Holds whether the proxy is enabled. */
     bool m_fProxyEnabled;
+    /** Holds the proxy host. */
     QString m_strProxyHost;
+    /** Holds the proxy port. */
     QString m_strProxyPort;
+
+    /** Holds whether the proxy auth is enabled. */
     bool m_fAuthEnabled;
+    /** Holds the proxy auth login. */
     QString m_strAuthLogin;
+    /** Holds the proxy auth password. */
     QString m_strAuthPassword;
 };
 
