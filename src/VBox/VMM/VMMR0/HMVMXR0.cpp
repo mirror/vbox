@@ -6613,6 +6613,7 @@ static int hmR0VmxSaveGuestRegsForIemExec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool
         rc |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     else
         rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+    AssertRCReturn(rc, rc);
     return rc;
 }
 
