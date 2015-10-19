@@ -942,6 +942,30 @@ typedef GIMHVREFTSC *PGIMHVREFTSC;
 typedef GIMHVREFTSC const *PCGIMHVREFTSC;
 
 /**
+ * Type of the next reply to be sent to the debug connection of the guest.
+ */
+typedef enum GIMHVDEBUGREPLY
+{
+    /** Send UDP packet. */
+    GIMHVDEBUGREPLY_UDP = 0,
+    /** Send DHCP offer for DHCP discover. */
+    GIMHVDEBUGREPLY_DHCP_OFFER,
+    /** DHCP offer sent. */
+    GIMHVDEBUGREPLY_DHCP_OFFER_SENT,
+    /** Send DHCP acknowledgement for DHCP request. */
+    GIMHVDEBUGREPLY_DHCP_ACK,
+    /** DHCP acknowledgement sent.  */
+    GIMHVDEBUGREPLY_DHCP_ACK_SENT,
+    /** Sent ARP reply. */
+    GIMHVDEBUGREPLY_ARP_REPLY,
+    /** ARP reply sent. */
+    GIMHVDEBUGREPLY_ARP_REPLY_SENT,
+    /** Customary 32-bit type hack. */
+    GIMHVDEBUGREPLY_32BIT_HACK = 0x7fff0000
+} GIMHVDEBUGREPLY;
+AssertCompileSize(GIMHVDEBUGREPLY, 4);
+
+/**
  * GIM Hyper-V VM instance data.
  * Changes to this must checked against the padding of the gim union in VM!
  */
@@ -1022,7 +1046,12 @@ typedef struct GIMHV
     bool                        afAlignment0[6];
     /** The auto IP address last chosen by the guest after failed ARP queries. */
     RTNETADDRIPV4               DbgGuestAddr;
-    uint32_t                    uAlignment1;
+    /** The action to take while sending replies. */
+    GIMHVDEBUGREPLY             enmDebugReply;
+    /** Transaction ID for the BOOTP+DHCP sequence. */
+    uint32_t                    uBootpXId;
+    /** Padding. */
+    uint32_t                    uAlignment0;
     /** Debug send buffer MSR. */
     uint64_t                    uDebugSendBufferMsr;
     /** Debug receive buffer MSR. */

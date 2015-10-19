@@ -79,6 +79,93 @@ static CPUMMSRRANGE const g_aMsrRanges_HyperV[] =
 };
 #undef GIMHV_MSRRANGE
 
+/**
+ * DHCP OFFER packet response to the guest (client) over the Hyper-V debug
+ * transport.
+ *
+ * - MAC: Destination: broadcast.
+ * - MAC: Source: 00:00:00:00:01 (hypervisor). It's important that it's
+ *   different from the client's MAC address which is all 0's.
+ * - IP: Source: 10.0.5.1 (hypervisor)
+ * - IP: Destination: broadcast.
+ * - IP: Checksum included.
+ * - BOOTP: Client IP address: 10.0.5.5.
+ * - BOOTP: Server IP address: 10.0.5.1.
+ * - DHCP options: Subnet mask, router, lease-time, DHCP server identifier.
+ *   Options are kept to a minimum required for making Windows guests happy.
+ */
+#define GIMHV_DEBUGCLIENT_IPV4          RT_H2N_U32_C(0x0a000505)    /* 10.0.5.5 */
+#define GIMHV_DEBUGSERVER_IPV4          RT_H2N_U32_C(0x0a000501)    /* 10.0.5.1 */
+static const uint8_t g_abDhcpOffer[] =
+{
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x08, 0x00, 0x45, 0x10,
+    0x01, 0x28, 0x00, 0x00, 0x00, 0x00, 0x40, 0x11, 0x6a, 0xb5, 0x0a, 0x00, 0x05, 0x01, 0xff, 0xff,
+    0xff, 0xff, 0x00, 0x43, 0x00, 0x44, 0x01, 0x14, 0x00, 0x00, 0x02, 0x01, 0x06, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x05, 0x05, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x63, 0x82, 0x53, 0x63, 0x35, 0x01, 0x02, 0x01, 0x04, 0xff,
+    0xff, 0xff, 0x00, 0x03, 0x04, 0x0a, 0x00, 0x05, 0x01, 0x33, 0x04, 0xff, 0xff, 0xff, 0xff, 0x36,
+    0x04, 0x0a, 0x00, 0x05, 0x01, 0xff
+};
+
+/**
+ * DHCP ACK packet response to the guest (client) over the Hyper-V debug
+ * transport.
+ *
+ * - MAC: Destination: 00:00:00:00:00 (client).
+ * - IP: Destination: 10.0.5.5 (client).
+ * - Rest are mostly similar to the DHCP offer.
+ */
+static const uint8_t g_abDhcpAck[] =
+{
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x08, 0x00, 0x45, 0x10,
+    0x01, 0x28, 0x00, 0x00, 0x00, 0x00, 0x40, 0x11, 0x5b, 0xb0, 0x0a, 0x00, 0x05, 0x01, 0x0a, 0x00,
+    0x05, 0x05, 0x00, 0x43, 0x00, 0x44, 0x01, 0x14, 0x00, 0x00, 0x02, 0x01, 0x06, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x05, 0x05, 0x0a, 0x00, 0x05, 0x05, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x63, 0x82, 0x53, 0x63, 0x35, 0x01, 0x05, 0x01, 0x04, 0xff,
+    0xff, 0xff, 0x00, 0x03, 0x04, 0x0a, 0x00, 0x05, 0x01, 0x33, 0x04, 0xff, 0xff, 0xff, 0xff, 0x36,
+    0x04, 0x0a, 0x00, 0x05, 0x01, 0xff
+};
+
+/**
+ * ARP reply to the guest (client) over the Hyper-V debug transport.
+ *
+ * - MAC: Destination: 00:00:00:00:00 (client)
+ * - MAC: Source: 00:00:00:00:01 (hypervisor)
+ * - ARP: Reply: 10.0.5.1 is at Source MAC address.
+ */
+static const uint8_t g_abArpReply[] =
+{
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x01,
+    0x08, 0x00, 0x06, 0x04, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x0a, 0x00, 0x05, 0x01,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x05, 0x05
+};
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -1025,68 +1112,169 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
     AssertCompile(sizeof(size_t) >= sizeof(uint32_t));
     AssertReturn(cbBuf >= cbRead, VERR_INVALID_PARAMETER);
 
-    /*
-     * Read the data.
-     */
-    size_t cbReallyRead = cbRead;
-    int rc = GIMR3DebugRead(pVM, pvBuf, &cbReallyRead);
-
-    /*
-     * Encapsulate it in a UDP packet if required.
-     */
-    if (   RT_SUCCESS(rc)
-        && fUdpPkt
-        && cbReallyRead > 0)
+    int rc;
+    if (!fUdpPkt)
     {
-        uint8_t abFrame[sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + sizeof(RTNETUDP)];
-        if (cbReallyRead + sizeof(abFrame) <= cbBuf)
-        {
-            /*
-             * Windows guests pumps ethernet frames over the Hyper-V debug connection as
-             * explained in gimR3HvHypercallPostDebugData(). Here, we reconstruct the packet
-             * with the guest's self-chosen IP ARP address we saved in pHv->DbgGuestAddr.
-             *
-             * Note! We really need to pass the minimum IPv4 header length. The Windows 10 guest
-             * is -not- happy if we include the IPv4 options field, i.e. using sizeof(RTNETIPV4)
-             * instead of RTNETIPV4_MIN_LEN.
-             */
-            PGIMHV pHv = &pVM->gim.s.u.Hv;
-            RT_ZERO(abFrame);
-            PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)&abFrame[0];
-            PRTNETIPV4     pIpHdr  = (PRTNETIPV4)    (pEthHdr + 1);
-            PRTNETUDP      pUdpHdr = (PRTNETUDP)     ((uint8_t *)pIpHdr + RTNETIPV4_MIN_LEN);
-
-            /* Ethernet */
-            pEthHdr->EtherType = RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4);
-            /* IPv4 */
-            pIpHdr->ip_v       = 4;
-            pIpHdr->ip_hl      = RTNETIPV4_MIN_LEN / sizeof(uint32_t);
-            pIpHdr->ip_tos     = 0;
-            pIpHdr->ip_len     = RT_H2N_U16((uint16_t)cbReallyRead + sizeof(RTNETUDP) + RTNETIPV4_MIN_LEN);
-            pIpHdr->ip_id      = 0;
-            pIpHdr->ip_off     = 0;
-            pIpHdr->ip_ttl     = 255;
-            pIpHdr->ip_p       = RTNETIPV4_PROT_UDP;
-            pIpHdr->ip_sum     = 0;
-            pIpHdr->ip_src.u   = 0;
-            pIpHdr->ip_dst.u   = pHv->DbgGuestAddr.u;
-            pIpHdr->ip_sum     = RTNetIPv4HdrChecksum(pIpHdr);
-            /* UDP */
-            pUdpHdr->uh_ulen   = RT_H2N_U16_C((uint16_t)cbReallyRead + sizeof(*pUdpHdr));
-
-            /* Make room by moving the payload and prepending the headers. */
-            uint8_t *pbData = (uint8_t *)pvBuf;
-            memmove(pbData + sizeof(abFrame), pbData, cbReallyRead);
-            memcpy(pbData, &abFrame[0], sizeof(abFrame));
-
-            /* Update the adjusted sizes. */
-            cbReallyRead += sizeof(abFrame);
-        }
-        else
-            rc = VERR_BUFFER_UNDERFLOW;
+        /*
+         * Read the raw debug data.
+         */
+        size_t cbReallyRead = cbRead;
+        rc = GIMR3DebugRead(pVM, pvBuf, &cbReallyRead);
+        *pcbRead = (uint32_t)cbReallyRead;
     }
+    else
+    {
+        /*
+         * Guest requires UDP encapsulated frames.
+         */
+        PGIMHV pHv = &pVM->gim.s.u.Hv;
+        rc = VERR_GIM_IPE_1;
+        switch (pHv->enmDebugReply)
+        {
+            case GIMHVDEBUGREPLY_UDP:
+            {
+                size_t cbReallyRead = cbRead;
+                rc = GIMR3DebugRead(pVM, pvBuf, &cbReallyRead);
+                if (   RT_SUCCESS(rc)
+                    && cbReallyRead > 0)
+                {
+                    uint8_t abFrame[sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + sizeof(RTNETUDP)];
+                    if (cbReallyRead + sizeof(abFrame) <= cbBuf)
+                    {
+                        /*
+                         * Windows guests pumps ethernet frames over the Hyper-V debug connection as
+                         * explained in gimR3HvHypercallPostDebugData(). Here, we reconstruct the packet
+                         * with the guest's self-chosen IP ARP address we saved in pHv->DbgGuestAddr.
+                         *
+                         * Note! We really need to pass the minimum IPv4 header length. The Windows 10 guest
+                         * is -not- happy if we include the IPv4 options field, i.e. using sizeof(RTNETIPV4)
+                         * instead of RTNETIPV4_MIN_LEN.
+                         */
+                        RT_ZERO(abFrame);
+                        PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)&abFrame[0];
+                        PRTNETIPV4     pIpHdr  = (PRTNETIPV4)    (pEthHdr + 1);
+                        PRTNETUDP      pUdpHdr = (PRTNETUDP)     ((uint8_t *)pIpHdr + RTNETIPV4_MIN_LEN);
 
-    *pcbRead = (uint32_t)cbReallyRead;
+                        /* Ethernet */
+                        pEthHdr->EtherType = RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4);
+                        /* IPv4 */
+                        pIpHdr->ip_v       = 4;
+                        pIpHdr->ip_hl      = RTNETIPV4_MIN_LEN / sizeof(uint32_t);
+                        pIpHdr->ip_tos     = 0;
+                        pIpHdr->ip_len     = RT_H2N_U16((uint16_t)cbReallyRead + sizeof(RTNETUDP) + RTNETIPV4_MIN_LEN);
+                        pIpHdr->ip_id      = 0;
+                        pIpHdr->ip_off     = 0;
+                        pIpHdr->ip_ttl     = 255;
+                        pIpHdr->ip_p       = RTNETIPV4_PROT_UDP;
+                        pIpHdr->ip_sum     = 0;
+                        pIpHdr->ip_src.u   = 0;
+                        pIpHdr->ip_dst.u   = pHv->DbgGuestAddr.u;
+                        pIpHdr->ip_sum     = RTNetIPv4HdrChecksum(pIpHdr);
+                        /* UDP */
+                        pUdpHdr->uh_ulen   = RT_H2N_U16_C((uint16_t)cbReallyRead + sizeof(*pUdpHdr));
+
+                        /* Make room by moving the payload and prepending the headers. */
+                        uint8_t *pbData = (uint8_t *)pvBuf;
+                        memmove(pbData + sizeof(abFrame), pbData, cbReallyRead);
+                        memcpy(pbData, &abFrame[0], sizeof(abFrame));
+
+                        /* Update the adjusted sizes. */
+                        cbReallyRead += sizeof(abFrame);
+                    }
+                    else
+                        rc = VERR_BUFFER_UNDERFLOW;
+                }
+                *pcbRead = (uint32_t)cbReallyRead;
+                break;
+            }
+
+            case GIMHVDEBUGREPLY_ARP_REPLY:
+            {
+                uint32_t const cbArpReplyPkt =  sizeof(g_abArpReply);
+                if (cbBuf >= cbArpReplyPkt)
+                {
+                    memcpy(pvBuf, g_abArpReply, cbArpReplyPkt);
+                    rc = VINF_SUCCESS;
+                    *pcbRead = cbArpReplyPkt;
+                    pHv->enmDebugReply = GIMHVDEBUGREPLY_ARP_REPLY_SENT;
+                }
+                else
+                {
+                    rc = VERR_BUFFER_UNDERFLOW;
+                    *pcbRead = 0;
+                }
+                break;
+            }
+
+            case GIMHVDEBUGREPLY_DHCP_OFFER:
+            {
+                uint32_t const cbDhcpOfferPkt = sizeof(g_abDhcpOffer);
+                if (cbBuf >= cbDhcpOfferPkt)
+                {
+                    memcpy(pvBuf, g_abDhcpOffer, cbDhcpOfferPkt);
+                    PRTNETETHERHDR pEthHdr   = (PRTNETETHERHDR)pvBuf;
+                    PRTNETIPV4     pIpHdr    = (PRTNETIPV4)    (pEthHdr + 1);
+                    PRTNETUDP      pUdpHdr   = (PRTNETUDP)     ((uint8_t *)pIpHdr + RTNETIPV4_MIN_LEN);
+                    PRTNETBOOTP    pBootpHdr = (PRTNETBOOTP)   (pUdpHdr + 1);
+                    pBootpHdr->bp_xid = pHv->uBootpXId;
+
+                    rc = VINF_SUCCESS;
+                    *pcbRead = cbDhcpOfferPkt;
+                    pHv->enmDebugReply = GIMHVDEBUGREPLY_DHCP_OFFER_SENT;
+                    LogRel(("GIM: HyperV: Debug DHCP offered IP address %RTnaipv4, transaction Id %#x\n", pBootpHdr->bp_yiaddr,
+                            RT_N2H_U32(pHv->uBootpXId)));
+                }
+                else
+                {
+                    rc = VERR_BUFFER_UNDERFLOW;
+                    *pcbRead = 0;
+                }
+                break;
+            }
+
+            case GIMHVDEBUGREPLY_DHCP_ACK:
+            {
+                uint32_t const cbDhcpAckPkt = sizeof(g_abDhcpAck);
+                if (cbBuf >= cbDhcpAckPkt)
+                {
+                    memcpy(pvBuf, g_abDhcpAck, cbDhcpAckPkt);
+                    PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pvBuf;
+                    PRTNETIPV4     pIpHdr  = (PRTNETIPV4)    (pEthHdr + 1);
+                    PRTNETUDP      pUdpHdr = (PRTNETUDP)     ((uint8_t *)pIpHdr + RTNETIPV4_MIN_LEN);
+                    PRTNETBOOTP    pBootpHdr = (PRTNETBOOTP) (pUdpHdr + 1);
+                    pBootpHdr->bp_xid = pHv->uBootpXId;
+
+                    rc = VINF_SUCCESS;
+                    *pcbRead = cbDhcpAckPkt;
+                    pHv->enmDebugReply = GIMHVDEBUGREPLY_DHCP_ACK_SENT;
+                    LogRel(("GIM: HyperV: Debug DHCP acknowledged IP address %RTnaipv4, transaction Id %#x\n",
+                            pBootpHdr->bp_yiaddr, RT_N2H_U32(pHv->uBootpXId)));
+                }
+                else
+                {
+                    rc = VERR_BUFFER_UNDERFLOW;
+                    *pcbRead = 0;
+                }
+                break;
+            }
+
+            case GIMHVDEBUGREPLY_ARP_REPLY_SENT:
+            case GIMHVDEBUGREPLY_DHCP_OFFER_SENT:
+            case GIMHVDEBUGREPLY_DHCP_ACK_SENT:
+            {
+                rc = VINF_SUCCESS;
+                *pcbRead = 0;
+                break;
+            }
+
+            default:
+            {
+                AssertMsgFailed(("GIM: HyperV: Invalid/unimplemented debug reply type %u\n", pHv->enmDebugReply));
+                rc = VERR_INTERNAL_ERROR_2;
+            }
+        }
+        Assert(rc != VERR_GIM_IPE_1);
+    }
     return rc;
 }
 
@@ -1121,12 +1309,12 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
          * The Microsoft WinDbg debugger talks UDP and thus only expects the actual debug
          * protocol payload.
          *
-         * At present, we only handle guests configured with the "nodhcp" option. This makes
-         * the guest send ARP queries with a self-chosen IP and after a couple of attempts of
-         * receiving no replies, the guest picks its own IP address. After this, the guest
-         * starts sending the UDP packets we require. We thus ignore the initial ARP packets
-         * (and to be safe all non-UDP packets) until the guest eventually starts talking
-         * UDP. Then we can finally feed the UDP payload over the debug connection.
+         * If the guest is configured with the "nodhcp" option it sends ARP queries with
+         * a self-chosen IP and after a couple of attempts of receiving no replies, the guest
+         * picks its own IP address. After this, the guest starts sending the UDP packets
+         * we require. We thus ignore the initial ARP packets until the guest eventually
+         * starts talking UDP. Then we can finally feed the UDP payload over the debug
+         * connection.
          */
         if (cbWrite > sizeof(RTNETETHERHDR))
         {
@@ -1149,18 +1337,49 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
                             && pUdpHdr->uh_ulen <= RT_H2N_U16((uint16_t)cbMaxUdpPkt))
                         {
                             /*
-                             * Extract the UDP payload and pass it to the debugger and record the guest IP address.
-                             * Hyper-V sends UDP debugger packets with source and destination port as 0. If we don't
-                             * filter out the ports here, we would receive BOOTP, NETBIOS and other UDP sub-protocol
-                             * packets which the debugger yells as "Bad packet received from...".
+                             * Check for DHCP.
                              */
-                            if (   !pUdpHdr->uh_dport
-                                && !pUdpHdr->uh_sport)
+                            size_t const cbUdpPkt = cbMaxIpPkt - cbIpHdr;
+                            if (   pUdpHdr->uh_dport == RT_N2H_U16_C(RTNETIPV4_PORT_BOOTPS)
+                                && pUdpHdr->uh_sport == RT_N2H_U16_C(RTNETIPV4_PORT_BOOTPC)
+                                && cbMaxIpPkt >= cbIpHdr + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN)
                             {
+                                PCRTNETBOOTP pDhcpPkt = (PCRTNETBOOTP)(pUdpHdr + 1);
+                                uint8_t bMsgType;
+                                if (RTNetIPv4IsDHCPValid(pUdpHdr, pDhcpPkt, cbUdpPkt - sizeof(*pUdpHdr), &bMsgType))
+                                {
+                                    switch (bMsgType)
+                                    {
+                                        case RTNET_DHCP_MT_DISCOVER:
+                                            pHv->enmDebugReply = GIMHVDEBUGREPLY_DHCP_OFFER;
+                                            pHv->uBootpXId = pDhcpPkt->bp_xid;
+                                            break;
+                                        case RTNET_DHCP_MT_REQUEST:
+                                            pHv->enmDebugReply = GIMHVDEBUGREPLY_DHCP_ACK;
+                                            pHv->uBootpXId = pDhcpPkt->bp_xid;
+                                            break;
+                                        default:
+                                            LogRelMax(5, ("GIM: HyperV: Debug DHCP MsgType %#x not implemented! Packet dropped\n",
+                                                          bMsgType));
+                                            break;
+                                    }
+                                }
+                                fIgnorePkt = true;
+                            }
+                            else if (   !pUdpHdr->uh_dport
+                                     && !pUdpHdr->uh_sport)
+                            {
+                                /*
+                                 * Extract the UDP payload and pass it to the debugger and record the guest IP address.
+                                 * Hyper-V sends UDP debugger packets with source and destination port as 0. If we don't
+                                 * filter out the ports here, we would receive BOOTP, NETBIOS and other UDP sub-protocol
+                                 * packets which the debugger yells as "Bad packet received from...".
+                                 */
                                 uint32_t const cbFrameHdr = sizeof(RTNETETHERHDR) + cbIpHdr + sizeof(RTNETUDP);
                                 pbData  += cbFrameHdr;
                                 cbWrite -= cbFrameHdr;
                                 pHv->DbgGuestAddr = pIp4Hdr->ip_src;
+                                pHv->enmDebugReply = GIMHVDEBUGREPLY_UDP;
                             }
                             else
                             {
@@ -1187,6 +1406,32 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
                     LogFlow(("GIM: HyperV: Ignoring IPv4 packet; too short to be valid UDP. cbWrite=%u\n", cbWrite));
                     fIgnorePkt = true;
                 }
+            }
+            else if (pEtherHdr->EtherType == RT_H2N_U16_C(RTNET_ETHERTYPE_ARP))
+            {
+                /*
+                 * Check for targetted ARP query.
+                 */
+                PCRTNETARPHDR pArpHdr = (PCRTNETARPHDR)(pbData + sizeof(RTNETETHERHDR));
+                if (   pArpHdr->ar_hlen  == sizeof(RTMAC)
+                    && pArpHdr->ar_plen  == sizeof(RTNETADDRIPV4)
+                    && pArpHdr->ar_htype == RT_H2N_U16(RTNET_ARP_ETHER)
+                    && pArpHdr->ar_ptype == RT_H2N_U16(RTNET_ETHERTYPE_IPV4))
+                {
+                    uint16_t uArpOp = pArpHdr->ar_oper;
+                    if (uArpOp == RT_H2N_U16_C(RTNET_ARPOP_REQUEST))
+                    {
+                        PCRTNETARPIPV4 pArpPkt = (PCRTNETARPIPV4)pArpHdr;
+                        bool fGratuitous = pArpPkt->ar_spa.u == pArpPkt->ar_tpa.u;
+                        if (   !fGratuitous
+                            &&  pArpPkt->ar_spa.u == GIMHV_DEBUGCLIENT_IPV4
+                            &&  pArpPkt->ar_tpa.u == GIMHV_DEBUGSERVER_IPV4)
+                        {
+                            pHv->enmDebugReply = GIMHVDEBUGREPLY_ARP_REPLY;
+                        }
+                    }
+                }
+                fIgnorePkt = true;
             }
             else
             {
