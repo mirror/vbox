@@ -32,7 +32,7 @@
       </listitem>
 
       <listitem>
-        <para>VMM: fixed an issue causing artifically high load averages on
+        <para>VMM: fixed an issue causing artificially high load averages on
           Linux hosts</para>
       </listitem>
 
