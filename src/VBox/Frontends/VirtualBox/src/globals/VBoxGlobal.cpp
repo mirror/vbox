@@ -51,7 +51,6 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
-# include "VBoxUtils.h"
 # include "UISelectorWindow.h"
 # include "UIMessageCenter.h"
 # include "UIPopupCenter.h"
@@ -1554,40 +1553,6 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
     /* Return session: */
     return session;
 }
-
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-void VBoxGlobal::reloadProxySettings()
-{
-    UIProxyManager proxyManager(settings().proxySettings());
-    if (proxyManager.authEnabled())
-    {
-        proxyManager.setAuthEnabled(false);
-        proxyManager.setAuthLogin(QString());
-        proxyManager.setAuthPassword(QString());
-        VBoxGlobalSettings globalSettings = settings();
-        globalSettings.setProxySettings(proxyManager.toString());
-        vboxGlobal().setSettings(globalSettings);
-    }
-    if (proxyManager.proxyEnabled())
-    {
-#if 0
-        QNetworkProxy::setApplicationProxy(QNetworkProxy(QNetworkProxy::HttpProxy,
-                                                         proxyManager.proxyHost(),
-                                                         proxyManager.proxyPort().toInt(),
-                                                         proxyManager.authEnabled() ? proxyManager.authLogin() : QString(),
-                                                         proxyManager.authEnabled() ? proxyManager.authPassword() : QString()));
-#else
-        QNetworkProxy::setApplicationProxy(QNetworkProxy(QNetworkProxy::HttpProxy,
-                                                         proxyManager.proxyHost(),
-                                                         proxyManager.proxyPort().toInt()));
-#endif
-    }
-    else
-    {
-        QNetworkProxy::setApplicationProxy(QNetworkProxy(QNetworkProxy::NoProxy));
-    }
-}
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 void VBoxGlobal::createMedium(const UIMedium &medium)
 {
@@ -3869,14 +3834,6 @@ void VBoxGlobal::sltGUILanguageChange(QString strLang)
     loadLanguage(strLang);
 }
 
-void VBoxGlobal::sltProcessGlobalSettingChange()
-{
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* Reload proxy settings: */
-    reloadProxySettings();
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-}
-
 // Protected members
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -4371,12 +4328,6 @@ void VBoxGlobal::prepare()
     }
     if (agressiveCaching())
         startMediumEnumeration();
-
-    /* Prepare global settings change handler: */
-    connect(&settings(), SIGNAL(propertyChanged(const char*, const char*)),
-            this, SLOT(sltProcessGlobalSettingChange()));
-    /* Handle global settings change for the first time: */
-    sltProcessGlobalSettingChange();
 
     /* Create shortcut pool: */
     UIShortcutPool::create();

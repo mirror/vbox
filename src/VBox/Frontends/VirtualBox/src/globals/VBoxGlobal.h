@@ -337,10 +337,6 @@ public:
     /** Shortcut to openSession (aId, true). */
     CSession openExistingSession(const QString &aId) { return openSession(aId, KLockType_Shared); }
 
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    void reloadProxySettings();
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-
     /* API: Medium-processing stuff: */
     void createMedium(const UIMedium &medium);
     void deleteMedium(const QString &strMediumID);
@@ -493,7 +489,6 @@ public slots:
     bool openURL (const QString &aURL);
 
     void sltGUILanguageChange(QString strLang);
-    void sltProcessGlobalSettingChange();
 
 protected slots:
 
