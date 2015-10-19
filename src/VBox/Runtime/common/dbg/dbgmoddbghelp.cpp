@@ -255,7 +255,7 @@ static BOOL CALLBACK rtDbgModDbgHelpCopyLineNumberCallback(PSRCCODEINFOW pLineIn
      */
     int rc = RTDbgModLineAdd(pArgs->hCnt, pArgs->pszPrev, pLineInfo->LineNumber,
                              RTDBGSEGIDX_RVA, pLineInfo->Address - pArgs->uModAddr, NULL);
-    Log((" %#018RX64 %05u  %s  [%Rrc]\n", pLineInfo->Address, pLineInfo->LineNumber, rc));
+    Log((" %#018RX64 %05u  %s  [%Rrc]\n", pLineInfo->Address, pLineInfo->LineNumber, pArgs->pszPrev, rc));
     NOREF(rc);
 
     return TRUE;
