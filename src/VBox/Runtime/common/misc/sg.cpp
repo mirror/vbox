@@ -48,12 +48,12 @@ static void *sgBufGet(PRTSGBUF pSgBuf, size_t *pcbData)
     }
 
 #ifndef RDESKTOP
-    AssertReleaseMsg(      pSgBuf->cbSegLeft <= 32 * _1M
-                     &&    (uintptr_t)pSgBuf->pvSegCur                     >= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg
-                     &&    (uintptr_t)pSgBuf->pvSegCur + pSgBuf->cbSegLeft <= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg + pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg,
-                     ("pSgBuf->idxSeg=%d pSgBuf->cSegs=%d pSgBuf->pvSegCur=%p pSgBuf->cbSegLeft=%zd pSgBuf->paSegs[%d].pvSeg=%p pSgBuf->paSegs[%d].cbSeg=%zd\n",
-                      pSgBuf->idxSeg, pSgBuf->cSegs, pSgBuf->pvSegCur, pSgBuf->cbSegLeft,
-                      pSgBuf->idxSeg, pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg, pSgBuf->idxSeg, pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg));
+    AssertMsg(      pSgBuf->cbSegLeft <= 128 * _1M
+              &&    (uintptr_t)pSgBuf->pvSegCur                     >= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg
+              &&    (uintptr_t)pSgBuf->pvSegCur + pSgBuf->cbSegLeft <= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg + pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg,
+              ("pSgBuf->idxSeg=%d pSgBuf->cSegs=%d pSgBuf->pvSegCur=%p pSgBuf->cbSegLeft=%zd pSgBuf->paSegs[%d].pvSeg=%p pSgBuf->paSegs[%d].cbSeg=%zd\n",
+               pSgBuf->idxSeg, pSgBuf->cSegs, pSgBuf->pvSegCur, pSgBuf->cbSegLeft, pSgBuf->idxSeg, pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg, pSgBuf->idxSeg,
+               pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg));
 #endif
 
     cbData = RT_MIN(*pcbData, pSgBuf->cbSegLeft);
