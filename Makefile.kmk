@@ -445,7 +445,13 @@ OTHER_CLEAN += \
 VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	include/iprt \
 	include/iprt/cpp \
+	include/iprt/crypto \
+	include/iprt/formats \
 	include/iprt/linux \
+	include/iprt/nt \
+	include/iprt/solaris \
+	include/iprt/win \
+	include/iprt/nocrt \
 	include/VBox \
 	include/VBox/vmm \
 	include/VBox/com \
@@ -830,7 +836,7 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e '/\/include\/VBox\/com\/NativeEventQueue\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Devices\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Main\/.* warning/b ignore' \
-               -e '/\/src\/VBox\/HostDrivers\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/HostDrivers\/VBoxPci\/VBoxPci\.c.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/WINNT\/Installer\/VBoxDrvInst\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/WINNT\/VBoxCredProv\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/WINNT\/VBoxGINA\/Helper\.cpp.* warning/b ignore' \
@@ -863,6 +869,9 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e '/\/src\/VBox\/NetworkServices\/DHCP\/Config\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Storage\/.* warning/b ignore' \
                -e '/\/src\/VBox\/ValidationKit\/.* warning/b ignore' \
+               \
+               -e '/unable to resolve link to .dtrace_pops_t./b ignore' \
+               \
                -e 'b end' \
                -e ':ignore' \
                -e 'n' \
