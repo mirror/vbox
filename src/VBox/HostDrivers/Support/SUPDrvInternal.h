@@ -230,11 +230,18 @@
 # undef SUPDRV_WITH_MSR_PROBER
 #endif
 
-#if 1
-/**  Use a dedicated kernel thread to service TSC-delta measurement requests.
- *   @todo Test on servers with many CPUs and sockets. */
-#define SUPDRV_USE_TSC_DELTA_THREAD
+#ifdef DOXYGEN_RUNNING
+# define SUPDRV_WITH_MSR_PROBER
+# define SUPDRV_WITHOUT_MSR_PROBER
 #endif
+
+#if 1
+/** @def SUPDRV_USE_TSC_DELTA_THREAD
+ * Use a dedicated kernel thread to service TSC-delta measurement requests.
+ * @todo Test on servers with many CPUs and sockets. */
+# define SUPDRV_USE_TSC_DELTA_THREAD
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *

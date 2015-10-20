@@ -329,7 +329,8 @@ LOCAL int vboxUSBSolarisProcessIOCtl(int iFunction, void *pvState, int Mode, PVB
                                      size_t *pcbDataOut);
 LOCAL bool vboxUSBSolarisIsUSBDevice(dev_info_t *pDip);
 
-/** Device Operation Hooks */
+/** @name Device Operation Hooks
+ * @{ */
 LOCAL int vboxUSBSolarisSendURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq, int Mode);
 LOCAL int vboxUSBSolarisReapURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq, int Mode);
 LOCAL int vboxUSBSolarisClearEndPoint(vboxusb_state_t *pState, uint8_t bEndpoint);
@@ -339,8 +340,10 @@ LOCAL int vboxUSBSolarisSetInterface(vboxusb_state_t *pState, uint8_t uInterface
 LOCAL int vboxUSBSolarisCloseDevice(vboxusb_state_t *pState, VBOXUSB_RESET_LEVEL enmReset);
 LOCAL int vboxUSBSolarisAbortPipe(vboxusb_state_t *pState, uint8_t bEndpoint);
 LOCAL int vboxUSBSolarisGetConfigIndex(vboxusb_state_t *pState, uint_t uCfgValue);
+/** @} */
 
-/** Hotplug & Power Management Hooks */
+/** @name Hotplug & Power Management Hooks
+ * @{ */
 LOCAL inline void vboxUSBSolarisNotifyHotplug(vboxusb_state_t *pState);
 LOCAL int vboxUSBSolarisDeviceDisconnected(dev_info_t *pDip);
 LOCAL int vboxUSBSolarisDeviceReconnected(dev_info_t *pDip);
@@ -352,13 +355,18 @@ LOCAL void vboxUSBSolarisDeviceResume(vboxusb_state_t *pState);
 LOCAL void vboxUSBSolarisDeviceRestore(vboxusb_state_t *pState);
 LOCAL void vboxUSBSolarisPowerBusy(vboxusb_state_t *pState);
 LOCAL void vboxUSBSolarisPowerIdle(vboxusb_state_t *pState);
+/** @} */
 
-/** Monitor Hooks */
+/** @name Monitor Hooks
+ * @{ */
 int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO pClientInfo);
 int VBoxUSBMonSolarisUnregisterClient(dev_info_t *pClientDip);
+/** @} */
 
-/** Callbacks from Monitor */
+/** @name Callbacks from Monitor
+ * @{ */
 LOCAL int vboxUSBSolarisSetConsumerCredentials(RTPROCESS Process, int Instance, void *pvReserved);
+/** @} */
 
 
 /*********************************************************************************************************************************
@@ -1550,7 +1558,7 @@ static inline int vboxUSBSolarisToVBoxRC(int UsbRc)
 /**
  * Convert Solaris' USBA device state to VBox's error code.
  *
- * @param   UsbRc           Solaris USBA error code.
+ * @param   uDeviceState        The USB device state to convert.
  *
  * @returns VBox error code.
  */
@@ -2059,7 +2067,7 @@ LOCAL int vboxUSBSolarisClearEndPoint(vboxusb_state_t *pState, uint8_t bEndpoint
  * Set configuration (SET_CONFIGURATION)
  *
  * @param   pState          The USB device instance.
- * @param   uCfgValue       The Configuration value.
+ * @param   bCfgValue       The Configuration value.
  *
  * @returns VBox error code.
  */
@@ -2215,7 +2223,7 @@ LOCAL int vboxUSBSolarisSetInterface(vboxusb_state_t *pState, uint8_t uInterface
  * Close the USB device and reset it if required.
  *
  * @param   pState          The USB device instance.
- * @param   ResetLevel      The reset level.
+ * @param   enmReset        The reset level.
  *
  * @returns VBox error code.
  */
@@ -2349,14 +2357,13 @@ LOCAL int vboxUSBSolarisAbortPipe(vboxusb_state_t *pState, uint8_t bEndpoint)
  * @param   pState          The USB device instance.
  * @param   pEpData         The Endpoint data.
  * @param   uCfgValue       The Configuration value.
- * @param   uCfgIndex       The Configuration index.
  * @param   uInterface      The Interface.
  * @param   uAlt            The Alternate setting.
  *
  * @returns VBox error code.
  */
 LOCAL int vboxUSBSolarisInitEndPoint(vboxusb_state_t *pState, usb_ep_data_t *pEpData, uchar_t uCfgValue,
-                                uchar_t uInterface, uchar_t uAlt)
+                                     uchar_t uInterface, uchar_t uAlt)
 {
     LogFunc((DEVICE_NAME ":vboxUSBSolarisInitEndPoint pState=%p pEpData=%p CfgVal=%d Iface=%d Alt=%d", pState,
                     pEpData, uCfgValue, uInterface, uAlt));
@@ -2814,9 +2821,7 @@ LOCAL int vboxUSBSolarisGetConfigIndex(vboxusb_state_t *pState, uint_t uCfgValue
  * Allocates and initializes an Isoc. In URB from the ring-3 equivalent.
  *
  * @param   pState          The USB device instance.
- * @param   pUrb            The URB to initialize.
  * @param   pUrbReq         Opaque pointer to the complete request.
- * @param   pMsg            Pointer to the allocated request data.
  *
  * @returns The allocated Isoc. In URB to be used.
  */

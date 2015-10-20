@@ -1790,8 +1790,11 @@ typedef struct SUPDRVTRACERSTRTAB
  * Destroys a string table, restoring the original pszFunction member valus.
  *
  * @param   pThis               The string table structure.
- * @param   paProbLocs          The probe location array.
- * @param   cProbLocs           The number of probe locations.
+ * @param   paProbeLocs32       The probe location array, 32-bit type variant.
+ * @param   paProbeLocs64       The probe location array, 64-bit type variant.
+ * @param   cProbeLocs          The number of elements in the array.
+ * @param   f32Bit              Set if @a paProbeLocs32 should be used, when
+ *                              clear use @a paProbeLocs64.
  */
 static void supr3TracerDestroyStrTab(PSUPDRVTRACERSTRTAB pThis, PVTGPROBELOC32 paProbeLocs32, PVTGPROBELOC64 paProbeLocs64,
                                      uint32_t cProbeLocs, bool f32Bit)
@@ -1818,9 +1821,12 @@ static void supr3TracerDestroyStrTab(PSUPDRVTRACERSTRTAB pThis, PVTGPROBELOC32 p
  * This will save and replace the pszFunction members with offsets.
  *
  * @returns Pointer to a string table structure.  NULL on failure.
- * @param   paProbLocs          The probe location array.
- * @param   cProbLocs           The number of elements in the array.
- * @param   cBits
+ * @param   paProbeLocs32       The probe location array, 32-bit type variant.
+ * @param   paProbeLocs64       The probe location array, 64-bit type variant.
+ * @param   cProbeLocs          The number of elements in the array.
+ * @param   offDelta            Relocation offset for the string pointers.
+ * @param   f32Bit              Set if @a paProbeLocs32 should be used, when
+ *                              clear use @a paProbeLocs64.
  */
 static PSUPDRVTRACERSTRTAB supr3TracerCreateStrTab(PVTGPROBELOC32 paProbeLocs32,
                                                    PVTGPROBELOC64 paProbeLocs64,

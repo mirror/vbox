@@ -668,10 +668,13 @@ static int VBoxUSBMonSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, c
  * @returns  VBox status code.
  *
  * @param   iFunction           The requested function.
- * @param   pvState             Opaque pointer to driver state used for getting ring-3 process (Id).
- * @param   pvData              The input/output data buffer. Can be NULL depending on the function.
+ * @param   pvState             Opaque pointer to driver state used for getting
+ *                              ring-3 process (Id).
+ * @param   pvData              The input/output data buffer. Can be NULL
+ *                              depending on the function.
  * @param   cbData              The max size of the data buffer.
- * @param   pcbDataReturned     Where to store the amount of returned data. Can be NULL.
+ * @param   pcbReturnedData     Where to store the amount of returned data.  Can
+ *                              be NULL.
  */
 static int vboxUSBMonSolarisProcessIOCtl(int iFunction, void *pvState, void *pvData, size_t cbData, size_t *pcbReturnedData)
 {
@@ -903,8 +906,6 @@ static int vboxUSBMonSolarisClientInfo(vboxusbmon_state_t *pState, PVBOXUSB_CLIE
  * Registers client driver.
  *
  * @returns VBox status code.
- * @param   pszDevicePath       The device path of the client driver.
- * @param   Instance            The client driver instance.
  */
 int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO pClientInfo)
 {
@@ -932,11 +933,9 @@ int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO
 
             return VINF_SUCCESS;
         }
-        else
-            return VERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
     }
-    else
-        return VERR_INVALID_STATE;
+    return VERR_INVALID_STATE;
 }
 
 
@@ -944,8 +943,6 @@ int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO
  * Deregisters client driver.
  *
  * @returns VBox status code.
- * @param   pszDevicePath       The device path of the client driver.
- * @param   Instance            The client driver instance.
  */
 int VBoxUSBMonSolarisUnregisterClient(dev_info_t *pClientDip)
 {
@@ -984,8 +981,7 @@ int VBoxUSBMonSolarisUnregisterClient(dev_info_t *pClientDip)
         LogRel((DEVICE_NAME ":VBoxUSBMonSolarisUnregisterClient Failed to find registered client %p\n", pClientDip));
         return VERR_NOT_FOUND;
     }
-    else
-        return VERR_INVALID_STATE;
+    return VERR_INVALID_STATE;
 }
 
 

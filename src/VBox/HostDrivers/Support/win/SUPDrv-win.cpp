@@ -1004,7 +1004,7 @@ NTSTATUS _stdcall VBoxDrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   cbInput             The size of the input buffer.
  * @param   pvOutput            The output buffer as specfied by the user.
  * @param   cbOutput            The size of the output buffer.
- * @param   uFunction           The function.
+ * @param   uCmd                The I/O command/function being invoked.
  * @param   pIoStatus           Where to return the status of the operation.
  * @param   pDevObj             The device object..
  */
@@ -1258,7 +1258,7 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  *
  * @returns NT status code.
  *
- * @param   pDevObj     Device object.
+ * @param   pDevExt     Device extension.
  * @param   pSession    The session.
  * @param   pIrp        Request packet.
  * @param   pStack      The stack location containing the DeviceControl parameters.

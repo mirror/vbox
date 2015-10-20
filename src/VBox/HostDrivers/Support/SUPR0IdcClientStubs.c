@@ -39,6 +39,7 @@
  * @returns Pointer to the symbol on success, NULL on failure.
  *
  * @param   pHandle     The IDC handle.
+ * @param   ppfn        Where to return the address of the symbol.
  * @param   pszName     The name of the symbol.
  */
 static void supR0IdcGetSymbol(PSUPDRVIDCHANDLE pHandle, PFNRT *ppfn, const char *pszName)
@@ -65,7 +66,8 @@ static void supR0IdcGetSymbol(PSUPDRVIDCHANDLE pHandle, PFNRT *ppfn, const char 
  *
  * @returns Pointer to the symbol on success, NULL on failure.
  *
- * @param   pHandle     The IDC handle.
+ * @param   pSession    The IDC session.
+ * @param   ppfn        Where to return the address of the symbol.
  * @param   pszName     The name of the symbol.
  */
 static void supR0IdcGetSymbolBySession(PSUPDRVSESSION pSession, PFNRT *ppfn, const char *pszName)

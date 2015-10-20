@@ -336,8 +336,10 @@ void vboxNetAdpOsDestroy(PVBOXNETADP pThis)
 /**
  * Device open. Called on open /dev/vboxnetctl
  *
- * @param   pInode      Pointer to inode info structure.
- * @param   pFilp       Associated file pointer.
+ * @param   Dev         The device number.
+ * @param   fFlags      ???.
+ * @param   fDevType    ???.
+ * @param   pProcess    The process issuing this request.
  */
 static int VBoxNetAdpDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {

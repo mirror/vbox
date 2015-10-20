@@ -248,7 +248,6 @@ static int supdrvVtgValidateString(const char *psz)
  * @param   pVtgHdr             The header.
  * @param   uVtgHdrAddr         The address where the header is actually
  *                              loaded.
- * @param   cbVtgObj            The alleged size of the header.
  * @param   pbImage             The image base, if available.
  * @param   cbImage             The image size, if available.
  * @param   fUmod               Whether this is a user module.
@@ -867,7 +866,7 @@ static void supdrvTracerRemoveAllProviders(PSUPDRVDEVEXT pDevExt)
  * Registers the VTG tracepoint providers of a driver.
  *
  * @returns VBox status code.
- * @param   pszName             The driver name.
+ * @param   pDevExt             The device instance data.
  * @param   pVtgHdr             The VTG object header.
  * @param   pImage              The image if applicable.
  * @param   pSession            The session if applicable.
@@ -1102,7 +1101,6 @@ SUPR0DECL(int) SUPR0TracerRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHd
  * Deregister the VTG tracepoint providers of a driver.
  *
  * @param   pSession            The support driver session handle.
- * @param   pVtgHdr             The VTG header.
  */
 SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession)
 {

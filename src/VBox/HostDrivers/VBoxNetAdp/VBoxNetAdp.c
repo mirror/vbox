@@ -1201,7 +1201,6 @@ int  vboxNetAdpInit(void)
  * Finds an adapter by its name.
  *
  * @returns Pointer to the instance by the given name. NULL if not found.
- * @param   pGlobals        The globals.
  * @param   pszName         The name of the instance.
  */
 PVBOXNETADP vboxNetAdpFindByName(const char *pszName)

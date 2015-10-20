@@ -1045,8 +1045,6 @@ static SUPDRVTRACERREG g_VBoxDTraceReg =
 
 /**
  * Module initialization code.
- *
- * @param   hMod            Opque module handle.
  */
 const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void)
 {

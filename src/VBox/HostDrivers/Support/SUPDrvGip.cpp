@@ -4241,7 +4241,7 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
  * @returns VINF_SUCCESS on success, VERR_TIMEOUT if it doesn't respond in time,
  *          other error code on internal error.
  *
- * @param   pThis           Pointer to the grant service instance data.
+ * @param   pDevExt         The device instance data.
  * @param   enmCurState     The current state.
  * @param   enmNewState     The new state we're waiting for it to enter.
  */

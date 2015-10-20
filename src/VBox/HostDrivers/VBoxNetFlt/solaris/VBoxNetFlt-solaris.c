@@ -123,7 +123,7 @@ typedef struct VLANHEADER *PVLANHEADER;
 /**
  * Stream Driver hooks.
  */
-static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
+static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppvResult);
 static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
 static int VBoxNetFltSolarisQuiesceNotNeeded(dev_info_t *pDip);
@@ -717,7 +717,7 @@ static int VBoxNetFltSolarisQuiesceNotNeeded(dev_info_t *pDip)
  *
  * @returns  corresponding solaris error code.
  */
-static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, void **ppResult)
+static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, void **ppvResult)
 {
     LogFunc((DEVICE_NAME ":VBoxNetFltSolarisGetInfo pDip=%p enmCmd=%d pArg=%p instance=%d\n", pDip, enmCmd,
                 getminor((dev_t)pvArg)));
@@ -726,14 +726,14 @@ static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, voi
     {
         case DDI_INFO_DEVT2DEVINFO:
         {
-            *ppResult = g_pVBoxNetFltSolarisDip;
+            *ppvResult = g_pVBoxNetFltSolarisDip;
             return DDI_SUCCESS;
         }
 
         case DDI_INFO_DEVT2INSTANCE:
         {
             int instance = getminor((dev_t)pvArg);
-            *ppResult = (void *)(uintptr_t)instance;
+            *ppvResult = (void *)(uintptr_t)instance;
             return DDI_SUCCESS;
         }
     }
@@ -1317,7 +1317,7 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
  * Put the stream in raw mode.
  *
  * @returns VBox status code.
- * @param   pQueue      Pointer to the read queue.
+ * @param   pPromiscStream  Pointer to the read queue.
  */
 static int vboxNetFltSolarisSetRawMode(vboxnetflt_promisc_stream_t *pPromiscStream)
 {
@@ -1821,6 +1821,7 @@ static int vboxNetFltSolarisSetMuxId(vnode_t *pVNode, struct lifreq *pInterface)
  * Get the multiplexor file descriptor of the lower stream.
  *
  * @returns VBox status code.
+ * @param   pVNode  Pointer to the device vnode.
  * @param   MuxId   The multiplexor ID.
  * @param   pFd     Where to store the lower stream file descriptor.
  */
@@ -1908,6 +1909,7 @@ static int vboxNetFltSolarisRelinkIp6(vnode_t *pVNode, struct lifreq *pInterface
  * Dynamically find the position on the host stack where to attach/detach ourselves.
  *
  * @returns VBox status code.
+ * @param   fAttach     Is this an attach or detach.
  * @param   pVNode      Pointer to the lower stream vnode.
  * @param   pModPos     Where to store the module position.
  */
@@ -2644,7 +2646,7 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
 /**
  * Ipv6 dynamic attachment timer callback to attach to the Ipv6 stream if needed.
  *
- * @param   pThis           Pointer to the timer.
+ * @param   pTimer          Pointer to the timer.
  * @param   pvData          Opaque pointer to the instance.
  * @param   iTick           Timer tick (unused).
  */
@@ -2850,6 +2852,7 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
  * @returns Solaris message block.
  * @param   pThis           The instance.
  * @param   pSG             Pointer to the scatter-gather list.
+ * @param   fDst            The destination mask, INTNETTRUNKDIR_XXX. Ignored.
  */
 static mblk_t *vboxNetFltSolarisMBlkFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
 {
@@ -2966,7 +2969,7 @@ static int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNET
  *
  * @returns VBox status code.
  * @param   pMsg        Pointer to the raw message.
- * @param   pDlpiMsg    Where to store the M_PROTO message.
+ * @param   ppDlpiMsg   Where to store the M_PROTO message.
  *
  * @remarks The original raw message would be no longer valid and will be
  *          linked as part of the new DLPI message. Callers must take care
@@ -3369,7 +3372,7 @@ DECLINLINE(bool) vboxNetFltPortSolarisIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pM
  * @param   pThis       The instance.
  * @param   pStream     Pointer to the stream.
  * @param   pQueue      Pointer to the read queue.
- * @param   pOrigMsg    Pointer to the message.
+ * @param   pMsg        Pointer to the message.
  */
 static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStream, queue_t *pQueue, mblk_t *pMsg)
 {

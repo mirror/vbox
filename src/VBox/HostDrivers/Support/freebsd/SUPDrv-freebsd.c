@@ -74,7 +74,7 @@ static int VBoxDrvFreeBSDUnload(void);
 
 static d_open_t     VBoxDrvFreeBSDOpenUsr;
 static d_open_t     VBoxDrvFreeBSDOpenSys;
-static void         VBoxDrvFreeBSDDtr(void *pData);
+static void         VBoxDrvFreeBSDDtr(void *pvData);
 static d_ioctl_t    VBoxDrvFreeBSDIOCtl;
 static int          VBoxDrvFreeBSDIOCtlSlow(PSUPDRVSESSION pSession, u_long ulCmd, caddr_t pvData, struct thread *pTd);
 
@@ -224,12 +224,13 @@ static int VBoxDrvFreeBSDUnload(void)
  *
  * @returns 0 on success, errno on failure.
  *          EBUSY if the device is used by someone else.
- * @param   pDev        The device node.
- * @param   fOpen       The open flags.
- * @param   pTd         The thread.
- * @param   iDevType    ???
+ * @param   pDev            The device node.
+ * @param   fOpen           The open flags.
+ * @param   iDevType        Some device type thing we don't use.
+ * @param   pTd             The thread.
+ * @param   fUnrestricted   Set if opening /dev/vboxdrv, clear if /dev/vboxdrvu.
  */
-static int vboxdrvFreeBSDOpenCommon(struct cdev *pDev, int fOpen, int iDevtype, struct thread *pTd, bool fUnrestricted)
+static int vboxdrvFreeBSDOpenCommon(struct cdev *pDev, int fOpen, int iDevType, struct thread *pTd, bool fUnrestricted)
 {
     PSUPDRVSESSION pSession;
     int rc;
@@ -252,7 +253,7 @@ static int vboxdrvFreeBSDOpenCommon(struct cdev *pDev, int fOpen, int iDevtype, 
         /** @todo get (r)uid and (r)gid.
         pSession->Uid = stuff;
         pSession->Gid = stuff; */
-        devfs_set_cdevpriv(pSession, VBoxDrvFreeBSDDtr);
+        rc = devfs_set_cdevpriv(pSession, vboxdrvFreeBSDDtr); Assert(rc == 0);
         Log(("VBoxDrvFreeBSDOpen: pSession=%p\n", pSession));
         ASMAtomicIncU32(&g_cUsers);
         return 0;
@@ -263,32 +264,29 @@ static int vboxdrvFreeBSDOpenCommon(struct cdev *pDev, int fOpen, int iDevtype, 
 
 
 /** For vboxdrv. */
-static int VBoxDrvFreeBSDOpenSys(struct cdev *pDev, int fOpen, int iDevtype, struct thread *pTd)
+static int VBoxDrvFreeBSDOpenSys(struct cdev *pDev, int fOpen, int iDevType, struct thread *pTd)
 {
-    return vboxdrvFreeBSDOpenCommon(pDev, fOpen, iDevtype, pTd, true);
+    return vboxdrvFreeBSDOpenCommon(pDev, fOpen, iDevType, pTd, true);
 }
 
 
 /** For vboxdrvu. */
-static int VBoxDrvFreeBSDOpenUsr(struct cdev *pDev, int fOpen, int iDevtype, struct thread *pTd)
+static int VBoxDrvFreeBSDOpenUsr(struct cdev *pDev, int fOpen, int iDevType, struct thread *pTd)
 {
-    return vboxdrvFreeBSDOpenCommon(pDev, fOpen, iDevtype, pTd, false);
+    return vboxdrvFreeBSDOpenCommon(pDev, fOpen, iDevType, pTd, false);
 }
 
 
 /**
- * Close a file device previously opened by VBoxDrvFreeBSDOpen
+ * Close a file device previously opened by VBoxDrvFreeBSDOpen.
  *
  * @returns 0 on success.
- * @param   pDev        The device.
- * @param   fFile       The file descriptor flags.
- * @param   DevType     The device type (CHR.
- * @param   pTd         The calling thread.
+ * @param   pvData      The session being closed.
  */
-static void VBoxDrvFreeBSDDtr(void *pData)
+static void vboxdrvFreeBSDDtr(void *pvData)
 {
-    PSUPDRVSESSION pSession = pData;
-    Log(("VBoxDrvFreeBSDDtr: pSession=%p\n", pSession));
+    PSUPDRVSESSION pSession = pvData;
+    Log(("vboxdrvFreeBSDDtr: pSession=%p\n", pSession));
 
     /*
      * Close the session.
@@ -468,7 +466,7 @@ static int VBoxDrvFreeBSDIOCtlSlow(PSUPDRVSESSION pSession, u_long ulCmd, caddr_
  * The SUPDRV IDC entry point.
  *
  * @returns VBox status code, see supdrvIDC.
- * @param   iReq        The request code.
+ * @param   uReq        The request code.
  * @param   pReq        The request.
  */
 int VBOXCALL SUPDrvFreeBSDIDC(uint32_t uReq, PSUPDRVIDCREQHDR pReq)

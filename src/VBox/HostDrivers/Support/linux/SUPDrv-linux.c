@@ -603,9 +603,10 @@ static int VBoxDrvProbe(struct platform_device *pDev)
 /**
  * Suspend callback.
  * @param   pDev        Pointer to the platform device.
- * @param   State       message type, see Documentation/power/devices.txt.
+ * @param   State       Message type, see Documentation/power/devices.txt.
+ *                      Ignored.
  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30) && !defined(DOXYGEN_RUNNING)
 static int VBoxDrvSuspend(struct device *pDev)
 # else
 static int VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State)
@@ -639,7 +640,7 @@ static int VBoxDrvResume(struct platform_device *pDev)
  * @param   uCmd        The function specified to ioctl().
  * @param   ulArg       The argument specified to ioctl().
  */
-#ifdef HAVE_UNLOCKED_IOCTL
+#if defined(HAVE_UNLOCKED_IOCTL) || defined(DOXYGEN_RUNNING)
 static long VBoxDrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
 #else
 static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
@@ -810,7 +811,7 @@ static int VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned
  * The SUPDRV IDC entry point.
  *
  * @returns VBox status code, see supdrvIDC.
- * @param   iReq        The request code.
+ * @param   uReq        The request code.
  * @param   pReq        The request.
  */
 int VBOXCALL SUPDrvLinuxIDC(uint32_t uReq, PSUPDRVIDCREQHDR pReq)

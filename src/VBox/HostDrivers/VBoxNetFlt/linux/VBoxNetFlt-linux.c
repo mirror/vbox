@@ -770,11 +770,10 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
  * @param   pThis               The instance.
  * @param   pBuf                The sk_buff.
  * @param   pSG                 The SG.
- * @param   pvFrame             The frame pointer, optional.
  * @param   cSegs               The number of segments allocated for the SG.
  *                              This should match the number in the mbuf exactly!
  * @param   fSrc                The source of the frame.
- * @param   pGso                Pointer to the GSO context if it's a GSO
+ * @param   pGsoCtx             Pointer to the GSO context if it's a GSO
  *                              internal network frame.  NULL if regular frame.
  */
 DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf, PINTNETSG pSG,
@@ -845,14 +844,9 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
 }
 
 /**
- * Packet handler,
+ * Packet handler; not really documented - figure it out yourself.
  *
- * @returns 0 or EJUSTRETURN.
- * @param   pThis           The instance.
- * @param   pMBuf           The mbuf.
- * @param   pvFrame         The start of the frame, optional.
- * @param   fSrc            Where the packet (allegedly) comes from, one INTNETTRUNKDIR_* value.
- * @param   eProtocol       The protocol.
+ * @returns 0 or EJUSTRETURN - this is probably copy & pastry and thus wrong.
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
 static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
@@ -1371,7 +1365,9 @@ static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *p
 }
 
 /**
+ * I won't disclose what I do, figure it out yourself, including pThis referencing.
  *
+ * @param   pThis       The net filter instance.
  * @param   pBuf        The socket buffer.  This is consumed by this function.
  */
 static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
@@ -1608,8 +1604,7 @@ static void vboxNetFltSetLinkState(PVBOXNETFLTINS pThis, struct net_device *pDev
  *
  * @returns VBox status code.
  * @param   pThis           The instance.
- * @param   fRediscovery    If set we're doing a rediscovery attempt, so, don't
- *                          flood the release log.
+ * @param   pDev            The device to attach to.
  */
 static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_device *pDev)
 {

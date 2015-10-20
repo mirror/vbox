@@ -22,6 +22,8 @@
 
 RT_C_DECLS_BEGIN
 
+/** @todo r=bird: VBOXUSBFILTER_CONTEXT isn't following the coding
+ *        guildlines. Don't know which clueless dude did this...  */
 #if defined(RT_OS_WINDOWS)
 typedef struct VBOXUSBFLTCTX *VBOXUSBFILTER_CONTEXT;
 #define VBOXUSBFILTER_CONTEXT_NIL NULL

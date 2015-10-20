@@ -381,6 +381,7 @@ DECLHIDDEN(int) vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTN
  * It is only called when the state changes.
  *
  * @param   pThis           The instance.
+ * @param   fActive         Whether to active (@c true) or deactive.
  *
  * @remarks Owns the lock for the out-bound trunk port.
  */

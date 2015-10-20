@@ -2397,6 +2397,7 @@ static int supdrvIOCtlInnerRestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, P
  * @param   pDevExt     Device extention.
  * @param   pSession    Session data.
  * @param   pReqHdr     The request header.
+ * @param   cbReq       The size of the request buffer.
  */
 int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr, size_t cbReq)
 {
@@ -2619,6 +2620,8 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
  * @returns Unique identifier on success (pointer).
  *          All future reference must use this identifier.
  * @returns NULL on failure.
+ * @param   pSession        The caller's session.
+ * @param   enmType         The object type.
  * @param   pfnDestructor   The destructore function which will be called when the reference count reaches 0.
  * @param   pvUser1         The first user argument.
  * @param   pvUser2         The second user argument.
@@ -3380,7 +3383,7 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
  * @param   fFlags      Flags, reserved for the future. Must be zero.
  * @param   ppvR3       Where to store the address of the Ring-3 mapping.
  *                      NULL if no ring-3 mapping.
- * @param   ppvR3       Where to store the address of the Ring-0 mapping.
+ * @param   ppvR0       Where to store the address of the Ring-0 mapping.
  *                      NULL if no ring-0 mapping.
  * @param   paPages     Where to store the addresses of the pages. Optional.
  */
@@ -3645,7 +3648,7 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 /**
  * Reports a bad context, currenctly that means EFLAGS.AC is 0 instead of 1.
  *
- * @param   pSession        The session of the caller.
+ * @param   pDevExt         The device extension.
  * @param   pszFile         The source file where the caller detected the bad
  *                          context.
  * @param   uLine           The line number in @a pszFile.
@@ -3868,14 +3871,14 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
  * Checks if Intel VT-x feature is usable on this CPU.
  *
  * @returns VBox status code.
- * @param   fIsSmxModeAmbiguous   Where to write whether the SMX mode causes
+ * @param   pfIsSmxModeAmbiguous  Where to return whether the SMX mode causes
  *                                ambiguity that makes us unsure whether we
  *                                really can use VT-x or not.
  *
  * @remarks Must be called with preemption disabled.
  *          The caller is also expected to check that the CPU is an Intel (or
  *          VIA) CPU -and- that it supports VT-x.  Otherwise, this function
- *          might throw a #GP fault as it tries to read/write MSRs that may not
+ *          might throw a \#GP fault as it tries to read/write MSRs that may not
  *          be present!
  */
 SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
@@ -5231,8 +5234,7 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
  *
  * @returns IPRT status code.
  * @param   pDevExt             Device globals.
- * @param   pSession            Session data.
- * @param   pVMMR0              VMMR0 image handle.
+ * @param   pvVMMR0             VMMR0 image handle.
  * @param   pvVMMR0EntryFast    VMMR0EntryFast address.
  * @param   pvVMMR0EntryEx      VMMR0EntryEx address.
  * @remark  Caller must own the loader mutex.

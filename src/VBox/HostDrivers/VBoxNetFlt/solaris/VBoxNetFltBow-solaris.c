@@ -120,7 +120,7 @@ extern int      mac_client_set_resources(mac_client_handle_t hClient, mac_resour
 *********************************************************************************************************************************/
 LOCAL int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 LOCAL int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
-LOCAL int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
+LOCAL int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppvResult);
 
 
 /*********************************************************************************************************************************
@@ -424,7 +424,7 @@ LOCAL int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
  *
  * @returns corresponding solaris error code.
  */
-LOCAL int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, void **ppResult)
+LOCAL int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, void **ppvResult)
 {
     Log((DEVICE_NAME ":VBoxNetFltSolarisGetInfo pDip=%p enmCmd=%d pArg=%p instance=%d\n", pDip, enmCmd, getminor((dev_t)pvArg)));
 
@@ -432,14 +432,14 @@ LOCAL int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void
     {
         case DDI_INFO_DEVT2DEVINFO:
         {
-            *ppResult = g_pVBoxNetFltSolarisDip;
+            *ppvResult = g_pVBoxNetFltSolarisDip;
             return DDI_SUCCESS;
         }
 
         case DDI_INFO_DEVT2INSTANCE:
         {
             int instance = getminor((dev_t)pvArg);
-            *ppResult = (void *)(uintptr_t)instance;
+            *ppvResult = (void *)(uintptr_t)instance;
             return DDI_SUCCESS;
         }
     }
@@ -811,8 +811,6 @@ LOCAL int vboxNetFltSolarisReportInfo(PVBOXNETFLTINS pThis, mac_handle_t hInterf
  *
  * @param   pThis           The instance.
  * @param   pVNIC           Pointer to the VNIC.
- * @param   pVNICTemplate   Pointer to the VNIC template initialize from, can be
- *                          NULL.
  *
  * @returns VBox status code.
  */

@@ -292,7 +292,7 @@ static DECLCALLBACK(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
 }
 
 /**
- * @interface_method_impl{RAWPCIDEVPORT,pfnUnapRegion}
+ * @interface_method_impl{RAWPCIDEVPORT,pfnUnmapRegion}
  */
 static DECLCALLBACK(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
                                                int32_t        iRegion,

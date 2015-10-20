@@ -1441,7 +1441,7 @@ typedef struct SUPMSRPROBER
                     uint64_t        fOrMask;
                 } Modify;
 
-                /** Reserve space for the future.. */
+                /** Reserve space for the future. */
                 uint64_t        auPadding[3];
             } uArgs;
         } In;

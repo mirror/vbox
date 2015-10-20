@@ -304,7 +304,7 @@ void supSvcLogErrorStr(const char *pszMsg)
  * In debug builds this will also put it in the debug log.
  *
  * @param   pszFormat   The log string. No trailing newline.
- * @param   ...         Format arguments.
+ * @param   va          Format arguments.
  *
  * @todo    This should later be replaced by the release logger and callback destination(s).
  */

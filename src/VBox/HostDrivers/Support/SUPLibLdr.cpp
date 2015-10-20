@@ -349,7 +349,12 @@ static DECLCALLBACK(int) supLoadModuleCreateTabsCB(RTLDRMOD hLdrMod, const char 
  * Worker for SUPR3LoadModule().
  *
  * @returns VBox status code.
- * @param   pszFilename     Name of the VMMR0 image file
+ * @param   pszFilename         Name of the VMMR0 image file
+ * @param   pszModule           The modulen name.
+ * @param   pszSrvReqHandler    The service request handler symbol name,
+ *                              optional.
+ * @param   pErrInfo            Where to store detailed error info. Optional.
+ * @param   ppvImageBase        Where to return the load address.
  */
 static int supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler,
                          PRTERRINFO pErrInfo, void **ppvImageBase)
