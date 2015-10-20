@@ -865,7 +865,7 @@ int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCt
     AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pMsg,    VERR_INVALID_POINTER);
 
-    DnDURIObject *pObj = pObjCtx->pObjURI;
+    DnDURIObject *pObj = pObjCtx->getObj();
     AssertPtr(pObj);
 
     RTCString strPath = pObj->GetDestPath();
@@ -892,7 +892,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
     AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pMsg,    VERR_INVALID_POINTER);
 
-    DnDURIObject *pObj = pObjCtx->pObjURI;
+    DnDURIObject *pObj = pObjCtx->getObj();
     AssertPtr(pObj);
 
     RTCString strPathSrc = pObj->GetSourcePath();
@@ -919,7 +919,8 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
     {
         if (mDataBase.m_uProtocolVersion >= 2)
         {
-            if (!pObjCtx->fHeaderSent)
+            uint32_t fState = pObjCtx->getState();
+            if (!(fState & DND_OBJCTX_STATE_HAS_HDR))
             {
                 /*
                  * Since protocol v2 the file header and the actual file contents are
@@ -940,7 +941,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
 
                 /** @todo Set progress object title to current file being transferred? */
 
-                pObjCtx->fHeaderSent = true;
+                pObjCtx->setState(fState | DND_OBJCTX_STATE_HAS_HDR);
             }
             else
             {
@@ -971,7 +972,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
     AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pMsg,    VERR_INVALID_POINTER);
 
-    DnDURIObject *pObj = pObjCtx->pObjURI;
+    DnDURIObject *pObj = pObjCtx->getObj();
     AssertPtr(pObj);
 
     GuestDnDResponse *pResp = pCtx->mpResp;
@@ -1057,6 +1058,14 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
 
     switch (uMsg)
     {
+        case GUEST_DND_CONNECT:
+            /* Nothing to do here (yet). */
+            break;
+
+        case GUEST_DND_DISCONNECT:
+            rc = VERR_CANCELLED;
+            break;
+
         case GUEST_DND_GET_NEXT_HOST_MSG:
         {
             PVBOXDNDCBHGGETNEXTHOSTMSG pCBData = reinterpret_cast<PVBOXDNDCBHGGETNEXTHOSTMSG>(pvParms);
@@ -1251,7 +1260,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 #define REGISTER_CALLBACK(x)                                        \
     rc = pCtx->mpResp->setCallback(x, i_sendURIDataCallback, pCtx); \
     if (RT_FAILURE(rc))                                             \
-        break;
+        return rc;
 
 #define UNREGISTER_CALLBACK(x)                        \
     {                                                 \
@@ -1267,6 +1276,20 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     if (RT_FAILURE(rc))
         return rc;
 
+    /*
+     * Register callbacks.
+     */
+    /* Guest callbacks. */
+    REGISTER_CALLBACK(GUEST_DND_CONNECT);
+    REGISTER_CALLBACK(GUEST_DND_DISCONNECT);
+    REGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
+    REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
+    /* Host callbacks. */
+    REGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
+    if (mDataBase.m_uProtocolVersion >= 2)
+        REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
+    REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
+
     do
     {
         /*
@@ -1275,7 +1298,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
         GuestDnDData    *pData = &pCtx->mData;
         GuestDnDURIData *pURI  = &pCtx->mURI;
 
-        rc = pURI->fromMetaData(pData->getMeta());
+        rc = pURI->fromLocalMetaData(pData->getMeta());
         if (RT_FAILURE(rc))
             break;
 
@@ -1290,11 +1313,16 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
             break;
 
         /*
-         * Set the additional size we are going to send after the meta data header + meta data.
-         * This additional data will contain the actual file data we want to transfer.
+         * Set the estimated data sizes we are going to send.
+         * The total size also contains the meta data size.
          */
-        pData->setAdditionalSize(pURI->getURIList().TotalBytes());
+        const uint32_t cbMeta = pData->getMeta().getSize();
+        pData->setEstimatedSize(pURI->getURIList().TotalBytes() + cbMeta /* cbTotal */,
+                                                                  cbMeta /* cbMeta  */);
 
+        /*
+         * Set the meta format.
+         */
         void    *pvFmt = (void *)pCtx->mFmtReq.c_str();
         uint32_t cbFmt = pCtx->mFmtReq.length() + 1;        /* Include terminating zero. */
 
@@ -1325,47 +1353,38 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Register callbacks.
-             */
-            /* Guest callbacks. */
-            REGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
-            REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
-            /* Host callbacks. */
-            REGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
-            if (mDataBase.m_uProtocolVersion >= 2)
-                REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
-            REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
-
             rc = waitForEvent(&pCtx->mCBEvent, pCtx->mpResp, msTimeout);
-            if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_CANCELLED)
-                    rc = pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
-                else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
-                    rc = pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR, rc,
-                                                   GuestDnDTarget::i_hostErrorToString(rc));
-            }
-            else
-                rc = pCtx->mpResp->setProgress(100, DND_PROGRESS_COMPLETE, VINF_SUCCESS);
-
-            /*
-             * Unregister callbacks.
-             */
-            /* Guest callbacks. */
-            UNREGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
-            UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
-            /* Host callbacks. */
-            UNREGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
-            if (mDataBase.m_uProtocolVersion >= 2)
-                UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
-            UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
+            if (RT_SUCCESS(rc))
+                pCtx->mpResp->setProgress(100, DND_PROGRESS_COMPLETE, VINF_SUCCESS);
         }
 
     } while (0);
 
+    /*
+     * Unregister callbacks.
+     */
+    /* Guest callbacks. */
+    UNREGISTER_CALLBACK(GUEST_DND_CONNECT);
+    UNREGISTER_CALLBACK(GUEST_DND_DISCONNECT);
+    UNREGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
+    UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
+    /* Host callbacks. */
+    UNREGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
+    if (mDataBase.m_uProtocolVersion >= 2)
+        UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
+    UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
+
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
+
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_CANCELLED)
+            pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
+        else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+            pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR, rc,
+                                      GuestDnDTarget::i_hostErrorToString(rc));
+    }
 
     /*
      * Now that we've cleaned up tell the guest side to cancel.
@@ -1400,7 +1419,7 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     if (!objCtx.isValid())
         return VERR_WRONG_ORDER;
 
-    DnDURIObject *pCurObj = objCtx.pObjURI;
+    DnDURIObject *pCurObj = objCtx.getObj();
     AssertPtr(pCurObj);
 
     uint32_t fMode = pCurObj->GetMode();

@@ -299,7 +299,7 @@ public:
         return pMessage->getData(m_uMsg, m_cParms, m_paParms);
     }
 
-private:
+protected:
 
     uint32_t m_uClientId;
     /** Optional protocol version the client uses. */
@@ -309,6 +309,22 @@ private:
     uint32_t m_cParms;
     PVBOXHGCMSVCPARM m_paParms;
 };
+
+/**
+ * Structure for keeping a HGCM service context.
+ */
+typedef struct VBOXHGCMSVCTX
+{
+    /** HGCM helper functions. */
+    PVBOXHGCMSVCHELPERS pHelpers;
+    /*
+     * Callback function supplied by the host for notification of updates
+     * to properties.
+     */
+    PFNHGCMSVCEXT       pfnHostCallback;
+    /** User data pointer to be supplied to the host callback function. */
+    void               *pvHostData;
+} VBOXHGCMSVCTX, *PVBOXHGCMSVCTX;
 
 template <class T>
 class AbstractService: public RTCNonCopyable
@@ -382,10 +398,10 @@ public:
 
 protected:
     explicit AbstractService(PVBOXHGCMSVCHELPERS pHelpers)
-        : m_pHelpers(pHelpers)
-        , m_pfnHostCallback(NULL)
-        , m_pvHostData(NULL)
-    {}
+    {
+        RT_ZERO(m_SvcCtx);
+        m_SvcCtx.pHelpers = pHelpers;
+    }
     virtual int  init(VBOXHGCMSVCFNTABLE *ptable) { return VINF_SUCCESS; }
     virtual int  uninit() { return VINF_SUCCESS; }
     virtual int  clientConnect(uint32_t u32ClientID, void *pvClient) = 0;
@@ -395,15 +411,8 @@ protected:
 
     /** Type definition for use in callback functions. */
     typedef AbstractService SELF;
-    /** HGCM helper functions. */
-    PVBOXHGCMSVCHELPERS m_pHelpers;
-    /*
-     * Callback function supplied by the host for notification of updates
-     * to properties.
-     */
-    PFNHGCMSVCEXT m_pfnHostCallback;
-    /** User data pointer to be supplied to the host callback function. */
-    void *m_pvHostData;
+    /** The HGCM service context this service is bound to. */
+    VBOXHGCMSVCTX m_SvcCtx;
 
     /**
      * @copydoc VBOXHGCMSVCFNTABLE::pfnUnload
@@ -499,8 +508,8 @@ protected:
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         LogFlowFunc(("pvService=%p, pfnExtension=%p, pvExtention=%p\n", pvService, pfnExtension, pvExtension));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
-        pSelf->m_pfnHostCallback = pfnExtension;
-        pSelf->m_pvHostData = pvExtension;
+        pSelf->m_SvcCtx.pfnHostCallback = pfnExtension;
+        pSelf->m_SvcCtx.pvHostData      = pvExtension;
         return VINF_SUCCESS;
     }
 };

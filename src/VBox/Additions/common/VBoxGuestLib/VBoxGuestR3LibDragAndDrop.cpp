@@ -130,7 +130,7 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
         Msg.u.v1.uDefAction.SetUInt32(0);
         Msg.u.v1.uAllActions.SetUInt32(0);
         Msg.u.v1.pvFormats.SetPtr(pszFormats, cbFormats);
-        Msg.u.v1.cFormats.SetUInt32(0);
+        Msg.u.v1.cbFormats.SetUInt32(0);
     }
     else
     {
@@ -143,7 +143,7 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
         Msg.u.v3.uDefAction.SetUInt32(0);
         Msg.u.v3.uAllActions.SetUInt32(0);
         Msg.u.v3.pvFormats.SetPtr(pszFormats, cbFormats);
-        Msg.u.v3.cFormats.SetUInt32(0);
+        Msg.u.v3.cbFormats.SetUInt32(0);
     }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -159,7 +159,7 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
                 rc = Msg.u.v1.uY.GetUInt32(puY);                   AssertRC(rc);
                 rc = Msg.u.v1.uDefAction.GetUInt32(puDefAction);   AssertRC(rc);
                 rc = Msg.u.v1.uAllActions.GetUInt32(puAllActions); AssertRC(rc);
-                rc = Msg.u.v1.cFormats.GetUInt32(pcbFormatsRecv);  AssertRC(rc);
+                rc = Msg.u.v1.cbFormats.GetUInt32(pcbFormatsRecv); AssertRC(rc);
             }
             else
             {
@@ -169,7 +169,7 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
                 rc = Msg.u.v3.uY.GetUInt32(puY);                   AssertRC(rc);
                 rc = Msg.u.v3.uDefAction.GetUInt32(puDefAction);   AssertRC(rc);
                 rc = Msg.u.v3.uAllActions.GetUInt32(puAllActions); AssertRC(rc);
-                rc = Msg.u.v3.cFormats.GetUInt32(pcbFormatsRecv);  AssertRC(rc);
+                rc = Msg.u.v3.cbFormats.GetUInt32(pcbFormatsRecv); AssertRC(rc);
             }
 
             AssertReturn(cbFormats >= *pcbFormatsRecv, VERR_TOO_MUCH_DATA);
@@ -446,10 +446,36 @@ static int vbglR3DnDHGRecvFileHdr(PVBGLR3GUESTDNDCMDCTX  pCtx,
     return rc;
 }
 
-static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, DnDDroppedFiles *pDroppedFiles)
+static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr, DnDDroppedFiles *pDroppedFiles)
 {
     AssertPtrReturn(pCtx,          VERR_INVALID_POINTER);
+    AssertPtrReturn(pDataHdr,      VERR_INVALID_POINTER);
     AssertPtrReturn(pDroppedFiles, VERR_INVALID_POINTER);
+
+    /* Only count the raw data minus the already received meta data. */
+    Assert(pDataHdr->cbTotal >= pDataHdr->cbMeta);
+    uint64_t cbToRecvBytes = pDataHdr->cbTotal - pDataHdr->cbMeta;
+    uint64_t cToRecvObjs   = pDataHdr->cObjects;
+
+    LogFlowFunc(("cbToRecvBytes=%RU64, cToRecvObjs=%RU64, (cbTotal=%RU64, cbMeta=%RU32)\n",
+                 cbToRecvBytes, cToRecvObjs, pDataHdr->cbTotal, pDataHdr->cbMeta));
+
+    /*
+     * Only do accounting for protocol v3 and up.
+     * The older protocols did not have any data accounting available, so
+     * we simply tried to receive as much data as available and bail out.
+     */
+    const bool fDoAccounting = pCtx->uProtocol >= 3;
+
+    /* Anything to do at all? */
+    if (fDoAccounting)
+    {
+        if (   !cbToRecvBytes
+            && !cToRecvObjs)
+        {
+            return VINF_SUCCESS;
+        }
+    }
 
     /*
      * Allocate temporary chunk buffer.
@@ -483,14 +509,23 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, DnDDroppedFiles *p
 
     char szPathName[RTPATH_MAX] = { 0 };
     uint32_t cbPathName = 0;
-    uint32_t fFlags = 0;
-    uint32_t fMode = 0;
+    uint32_t fFlags     = 0;
+    uint32_t fMode      = 0;
 
-    while (RT_SUCCESS(rc))
+    /*
+     * Only wait for new incoming commands for protocol v3 and up.
+     * The older protocols did not have any data accounting available, so
+     * we simply tried to receive as much data as available and bail out.
+     */
+    const bool fWait = pCtx->uProtocol >= 3;
+
+    do
     {
+        LogFlowFunc(("Wating for new message ...\n"));
+
         uint32_t uNextMsg;
         uint32_t cNextParms;
-        rc = vbglR3DnDGetNextMsgType(pCtx, &uNextMsg, &cNextParms, false /* fWait */);
+        rc = vbglR3DnDGetNextMsgType(pCtx, &uNextMsg, &cNextParms, fWait);
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("uNextMsg=%RU32, cNextParms=%RU32\n", uNextMsg, cNextParms));
@@ -518,6 +553,13 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, DnDDroppedFiles *p
                         rc = RTDirCreate(pszPathAbs, fCreationMode, 0);
                         if (RT_SUCCESS(rc))
                             rc = pDroppedFiles->AddDir(pszPathAbs);
+
+                        if (   RT_SUCCESS(rc)
+                            && fDoAccounting)
+                        {
+                            Assert(cToRecvObjs);
+                            cToRecvObjs--;
+                        }
 
                         RTStrFree(pszPathAbs);
                     }
@@ -622,6 +664,12 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, DnDDroppedFiles *p
                             {
                                 /* Data transfer complete? Close the file. */
                                 fClose = objFile.IsComplete();
+                                if (   fClose
+                                    && fDoAccounting)
+                                {
+                                    Assert(cToRecvObjs);
+                                    cToRecvObjs--;
+                                }
 
                                 /* Only since protocol v2 we know the file size upfront. */
                                 Assert(cbFileWritten <= cbFileSize);
@@ -630,6 +678,12 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, DnDDroppedFiles *p
                                 fClose = true; /* Always close the file after each chunk. */
 
                             cbFileWritten += cbChunkWritten;
+
+                            if (pCtx->uProtocol >= 3)
+                            {
+                                Assert(cbToRecvBytes >= cbChunkRead);
+                                cbToRecvBytes -= cbChunkRead;
+                            }
                         }
 
                         if (fClose)
@@ -659,7 +713,17 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, DnDDroppedFiles *p
         if (RT_FAILURE(rc))
             break;
 
-    } /* while */
+        if (fDoAccounting)
+        {
+            LogFlowFunc(("cbToRecvBytes=%RU64, cToRecvObjs=%RU64\n", cbToRecvBytes, cToRecvObjs));
+            if (   !cbToRecvBytes
+                && !cToRecvObjs)
+            {
+                break;
+            }
+        }
+
+    } while (RT_SUCCESS(rc));
 
     LogFlowFunc(("Loop ended with %Rrc\n", rc));
 
@@ -722,7 +786,7 @@ static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     {
         uint32_t cbDataRecv;
 
-        if (pCtx->uProtocol < 3) /* For VBox < 5.0.8. */
+        if (pCtx->uProtocol < 3)
         {
             Msg.hdr.cParms  = 5;
 
@@ -900,7 +964,9 @@ static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHD
     int rc;
     uint32_t cbDataRecv;
 
-    if (pCtx->uProtocol < 3) /* For VBox < 5.0.8. */
+    LogFlowFuncEnter();
+
+    if (pCtx->uProtocol < 3)
     {
         uint64_t cbDataTmp = pCtx->cbMaxChunkSize;
         void    *pvDataTmp = RTMemAlloc(cbDataTmp);
@@ -978,12 +1044,12 @@ static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHD
         else
             RTMemFree(pvDataTmp);
     }
-    else /* Protocol v3 and up. Since VBox 5.0.8. */
+    else /* Protocol v3 and up. */
     {
         rc = vbglR3DnDHGRecvDataHdr(pCtx, pDataHdr);
         if (RT_SUCCESS(rc))
         {
-            LogFlowFunc(("cbMeta=%RU32\n", pDataHdr->cbMeta));
+            LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32\n", pDataHdr->cbTotal, pDataHdr->cbMeta));
             if (pDataHdr->cbMeta)
             {
                 uint64_t cbDataTmp = 0;
@@ -1085,7 +1151,7 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
             Assert(cbData);
             rc = lstURI.RootFromURIData(pvData, cbData, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
-                rc = vbglR3DnDHGRecvURIData(pCtx, &droppedFiles);
+                rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
 
             if (RT_SUCCESS(rc)) /** @todo Remove this block as soon as we hand in DnDURIList. */
             {
@@ -1505,6 +1571,8 @@ VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uActio
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_DND_HG_ACK_OP;
 
+    LogFlowFunc(("uProto=%RU32\n", pCtx->uProtocol));
+
     if (pCtx->uProtocol < 3)
     {
         Msg.hdr.cParms = 1;
@@ -1659,7 +1727,7 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
     int rc = VINF_SUCCESS;
 
     /* For protocol v3 and up we need to send the data header first. */
-    if (pCtx->uProtocol > 2)
+    if (pCtx->uProtocol >= 3)
     {
         AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
@@ -1674,7 +1742,7 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
         Msg.uFlags.SetUInt32(0);                             /** @todo Not used yet. */
         Msg.uScreenId.SetUInt32(0);                          /** @todo Not used for guest->host (yet). */
         Msg.cbTotal.SetUInt64(pDataHdr->cbTotal);
-        Msg.cbMeta.SetUInt64(pDataHdr->cbMeta);
+        Msg.cbMeta.SetUInt32(pDataHdr->cbMeta);
         Msg.pvMetaFmt.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
         Msg.cbMetaFmt.SetUInt32(pDataHdr->cbMetaFmt);
         Msg.cObjects.SetUInt64(pDataHdr->cObjects);
@@ -1699,7 +1767,7 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
         Msg.hdr.u32ClientID = pCtx->uClientID;
         Msg.hdr.u32Function = GUEST_DND_GH_SND_DATA;
 
-        if (pCtx->uProtocol > 2)
+        if (pCtx->uProtocol >= 3)
         {
             Msg.hdr.cParms = 5;
 
@@ -1720,7 +1788,7 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
         const uint32_t cbMaxChunk = pCtx->cbMaxChunkSize;
         uint32_t       cbSent     = 0;
 
-        HGCMFunctionParameter *pParm = (pCtx->uProtocol > 2)
+        HGCMFunctionParameter *pParm = (pCtx->uProtocol >= 3)
                                      ? &Msg.u.v3.pvData
                                      : &Msg.u.v1.pvData;
         while (cbSent < cbData)

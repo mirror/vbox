@@ -48,7 +48,7 @@ public:
      * Note: The operation mode is independent of the machine's overall
      *       drag and drop mode.
      */
-    typedef enum DNDMODE
+    typedef enum DNDOPMODE
     {
         /** Unknown mode. */
         DNDMODE_UNKNOWN     = 0,
@@ -59,7 +59,7 @@ public:
         /** @todo Implement guest to guest. */
         /** The usual 32-bit type blow up. */
         DNDMODE_32BIT_HACK = 0x7fffffff
-    } DNDMODE;
+    } DNDOPMODE;
 
     /**
      * Drag and drop data set from the source.
@@ -124,7 +124,7 @@ protected:
 
     int                        dragStartInternal(const QStringList &lstFormats, Qt::DropAction defAction, Qt::DropActions actions);
     int                        retrieveDataInternal(Qt::DropAction dropAction, const QString &strMIMEType, QVector<uint8_t> &vecData);
-    void                       setMode(DNDMODE enmMode);
+    void                       setOpMode(DNDOPMODE enmMode);
 
 protected:
 
@@ -132,13 +132,14 @@ protected:
     UISession        *m_pSession;
     /** Pointer to parent widget. */
     QWidget          *m_pParent;
-
     /** Drag and drop source instance. */
     CDnDSource        m_dndSource;
     /** Drag and drop target instance. */
     CDnDTarget        m_dndTarget;
-    /** Current transfer direction. */
-    DNDMODE           m_enmMode;
+    /** Current operation mode, indicating the transfer direction.
+     *  Note: This is independent of the current drag and drop
+     *        mode being set for this VM! */
+    DNDOPMODE         m_enmOpMode;
     /** Current data from the source (if any).
      *  At the momenet we only support one source at a time. */
     UIDnDDataSource   m_dataSource;

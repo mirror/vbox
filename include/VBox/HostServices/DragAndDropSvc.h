@@ -31,26 +31,27 @@
  *
  * Protocol changelog:
  *
- *     Protocol v1 (VBox < 5.0):
- *         - Initial implementation which only implemented host to guest transfers.
- *         - For file transfers all file information such as the file name and file size were
+ *     Protocol v1 (VBox < 5.0, deprecated):
+ *         | Initial implementation which only implemented host to guest transfers.
+ *         | For file transfers all file information such as the file name and file size were
  *           transferred with every file data chunk being sent.
  *
- *     Protocol v2 (VBox 5.0):
- *         - Added support for guest to host transfers.
- *         - Added protocol version support through VBOXDNDCONNECTMSG. The host takes the installed
+ *     Protocol v2 (VBox 5.0 - VBox 5.0.8, deprecated):
+ *         + Added support for guest to host transfers.
+ *         + Added protocol version support through VBOXDNDCONNECTMSG. The host takes the installed
  *           Guest Additions version as indicator which protocol to use for communicating with the guest.
  *           The guest itself uses VBOXDNDCONNECTMSG to report its supported protocol version to the DnD service.
  *
- *     Protocol v3 (VBox 5.0+):
-             Added context IDs for every HGCM message. Not used yet and must be 0.
- *         - Added VBOXDNDSNDDATAHDR and VBOXDNDCBSNDDATAHDRDATA to support (simple) accounting of objects
+ *     Protocol v3 (VBox 5.0.10 and up, current):
+ *         + Added VBOXDNDDISCONNECTMSG for being able to track client disconnects on host side (Main).
+ *         + Added context IDs for every HGCM message. Not used yet and must be 0.
+ *         + Added VBOXDNDSNDDATAHDR and VBOXDNDCBSNDDATAHDRDATA to support (simple) accounting of objects
  *           being transferred, along with supplying separate meta data size (which is part of the total size being sent).
- *         - Added new HOST_DND_HG_SND_DATA_HDR + GUEST_DND_GH_SND_DATA_HDR commands which now allow specifying an optional
+ *         + Added new HOST_DND_HG_SND_DATA_HDR + GUEST_DND_GH_SND_DATA_HDR commands which now allow specifying an optional
  *           compression type and defining a checksum for the overall data transfer.
- *         - Enhannced VBOXDNDGHSENDDATAMSG to support (rolling) checksums for the supplied data block.
- *         - VBOXDNDHGSENDFILEDATAMSG and VBOXDNDGHSENDFILEDATAMSG are now sharing the same HGCM mesasge.
- *         - VBOXDNDHGSENDDATAMSG and VBOXDNDGHSENDDATAMSG can now contain an optional checksum for the current data block.
+ *         + Enhannced VBOXDNDGHSENDDATAMSG to support (rolling) checksums for the supplied data block.
+ *         + VBOXDNDHGSENDDATAMSG and VBOXDNDGHSENDDATAMSG can now contain an optional checksum for the current data block.
+ *         | VBOXDNDHGSENDFILEDATAMSG and VBOXDNDGHSENDFILEDATAMSG are now sharing the same HGCM mesasge.
  *         - Removed unused HOST_DND_GH_RECV_DIR, HOST_DND_GH_RECV_FILE_DATA and HOST_DND_GH_RECV_FILE_HDR commands.
  */
 
@@ -183,9 +184,14 @@ enum eHostFn
  */
 enum eGuestFn
 {
-    /* Guest sends a connection request to the HGCM service.
+    /* Guest sends a connection request to the HGCM service,
+     * along with some additional information like supported
+     * protocol version and flags.
      * Note: New since protocol version 2. */
     GUEST_DND_CONNECT                  = 10,
+
+    /* Sent when a guest client disconnected from the HGCM service. */
+    GUEST_DND_DISCONNECT               = 11,
 
     /**
      * Guest waits for a new message the host wants to process
@@ -286,7 +292,7 @@ typedef struct VBOXDNDHGACTIONMSG
             HGCMFunctionParameter uDefAction;   /* OUT uint32_t */
             HGCMFunctionParameter uAllActions;  /* OUT uint32_t */
             HGCMFunctionParameter pvFormats;    /* OUT ptr */
-            HGCMFunctionParameter cFormats;     /* OUT uint32_t */
+            HGCMFunctionParameter cbFormats;    /* OUT uint32_t */
         } v1;
         struct
         {
@@ -298,7 +304,7 @@ typedef struct VBOXDNDHGACTIONMSG
             HGCMFunctionParameter uDefAction;   /* OUT uint32_t */
             HGCMFunctionParameter uAllActions;  /* OUT uint32_t */
             HGCMFunctionParameter pvFormats;    /* OUT ptr */
-            HGCMFunctionParameter cFormats;     /* OUT uint32_t */
+            HGCMFunctionParameter cbFormats;    /* OUT uint32_t */
         } v3;
     } u;
 } VBOXDNDHGACTIONMSG;
@@ -679,7 +685,8 @@ typedef struct VBOXDNDCONNECTMSG
 } VBOXDNDCONNECTMSG;
 
 /**
- * HG Acknowledge Operation event.
+ * Acknowledges a host operation along with the allowed
+ * action(s) on the guest.
  *
  * Used by:
  * GUEST_DND_HG_ACK_OP
@@ -922,6 +929,12 @@ typedef struct VBOXDNDCBCONNECTMSGDATA
     uint32_t                    uProtocol;
     uint32_t                    uFlags;
 } VBOXDNDCBCONNECTMSGDATA, *PVBOXDNDCBCONNECTMSGDATA;
+
+typedef struct VBOXDNDCBDISCONNECTMSGDATA
+{
+    /** Callback data header. */
+    VBOXDNDCBHEADERDATA         hdr;
+} VBOXDNDCBDISCONNECTMSGDATA, *PVBOXDNDCBDISCONNECTMSGDATA;
 
 typedef struct VBOXDNDCBHGGETNEXTHOSTMSG
 {

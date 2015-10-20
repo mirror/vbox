@@ -50,6 +50,10 @@ class Progress;
 /** List (vector) of MIME types. */
 typedef std::vector<com::Utf8Str> GuestDnDMIMEList;
 
+/*
+ ** @todo Put most of the implementations below in GuestDnDPrivate.cpp!
+ */
+
 class GuestDnDCallbackEvent
 {
 public:
@@ -99,6 +103,8 @@ public:
 
     size_t add(const void *pvDataAdd, size_t cbDataAdd)
     {
+        LogFlowThisFunc(("pvDataAdd=%p, cbDataAdd=%zu\n", pvDataAdd, cbDataAdd));
+
         if (!cbDataAdd)
             return 0;
         AssertPtrReturn(pvDataAdd, 0);
@@ -216,8 +222,9 @@ class GuestDnDData
 public:
 
     GuestDnDData(void)
-        : cbProcessed(0)
-        , cbAddData(0)
+        : cbEstTotal(0)
+        , cbEstMeta(0)
+        , cbProcessed(0)
     {
         RT_ZERO(dataHdr);
     }
@@ -240,6 +247,7 @@ public:
     bool isComplete(void) const
     {
         const uint64_t cbTotal = getTotal();
+        LogFlowFunc(("cbProcessed=%RU64, cbTotal=%RU64\n", cbProcessed, cbTotal));
         Assert(cbProcessed <= cbTotal);
         return (cbProcessed == cbTotal);
     }
@@ -256,7 +264,7 @@ public:
 
     uint8_t getPercentComplete(void) const
     {
-        int64_t cbTotal  = RT_MAX(getTotal(), 1);
+        int64_t cbTotal = RT_MAX(getTotal(), 1);
         return (uint8_t)(cbProcessed * 100 / cbTotal);
     }
 
@@ -269,7 +277,7 @@ public:
         return cbTotal - cbProcessed;
     }
 
-    uint64_t getTotal(void) const { return dataMeta.getSize() + cbAddData; }
+    uint64_t getTotal(void) const { return cbEstTotal; }
 
     void reset(void)
     {
@@ -279,8 +287,10 @@ public:
         RT_ZERO(dataHdr);
 
         dataMeta.reset();
+
+        cbEstTotal  = 0;
+        cbEstMeta   = 0;
         cbProcessed = 0;
-        cbAddData   = 0;
     }
 
     int setFmt(const void *pvFmt, uint32_t cbFmt)
@@ -305,25 +315,14 @@ public:
         return VINF_SUCCESS;
     }
 
-    void setAdditionalSize(uint64_t cbAdd)
-    {
-        LogFlowFunc(("cbAdd=%RU64\n", cbAdd));
-
-        cbAddData = cbAdd;
-
-        invalidate();
-    }
-
     void setEstimatedSize(uint64_t cbTotal, uint32_t cbMeta)
     {
         Assert(cbMeta <= cbTotal);
 
-        LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU64\n", cbTotal, cbMeta));
+        LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32\n", cbTotal, cbMeta));
 
-        dataMeta.reset();
-
-        dataHdr.cbMeta = cbMeta;
-        setAdditionalSize(cbTotal - cbMeta);
+        cbEstTotal = cbTotal;
+        cbEstMeta  = cbMeta;
     }
 
 protected:
@@ -352,15 +351,6 @@ protected:
         dataHdr.cbMetaFmt = 0;
     }
 
-    void invalidate(void)
-    {
-        /* Update data header. */
-        dataHdr.cbMeta  = dataMeta.getSize();
-        dataHdr.cbTotal = dataHdr.cbMeta + cbAddData;
-
-        LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32\n", dataHdr.cbTotal, dataHdr.cbMeta));
-    }
-
 protected:
 
     /** The data header. */
@@ -369,12 +359,18 @@ protected:
      *  This might be an URI list or just plain raw data,
      *  according to the format being sent. */
     GuestDnDMetaData  dataMeta;
+    /** Estimated total data size when receiving data. */
+    uint64_t          cbEstTotal;
+    /** Estimated meta data size when receiving data. */
+    uint32_t          cbEstMeta;
     /** Overall size (in bytes) of processed data. */
     uint64_t          cbProcessed;
-    /** Additional data to process which does not count
-     *  as meta data. Just in here for accounting reasons. */
-    uint64_t          cbAddData;
 };
+
+/** Initial state. */
+#define DND_OBJCTX_STATE_NONE           0
+/** The header was received/sent. */
+#define DND_OBJCTX_STATE_HAS_HDR        RT_BIT(0)
 
 /**
  * Structure for keeping a DnDURIObject context around.
@@ -386,7 +382,7 @@ public:
     GuestDnDURIObjCtx(void)
         : pObjURI(NULL)
         , fIntermediate(false)
-        , fHeaderSent(false) { }
+        , fState(DND_OBJCTX_STATE_NONE) { }
 
     virtual ~GuestDnDURIObjCtx(void)
     {
@@ -395,52 +391,85 @@ public:
 
 public:
 
-    DnDURIObject *createIntermediate(void)
+    int createIntermediate(DnDURIObject::Type enmType = DnDURIObject::Unknown)
     {
+        LogFlowThisFuncEnter();
+
         reset();
+
+        int rc;
 
         try
         {
-            pObjURI       = new DnDURIObject();
+            pObjURI       = new DnDURIObject(enmType);
             fIntermediate = true;
+
+            rc = VINF_SUCCESS;
         }
         catch (std::bad_alloc &)
         {
+            rc = VERR_NO_MEMORY;
         }
 
-        return pObjURI;
+        return rc;
     }
 
     void destroy(void)
     {
+        LogFlowThisFuncEnter();
+
         if (   pObjURI
             && fIntermediate)
         {
             delete pObjURI;
-            fIntermediate = false;
         }
 
-        pObjURI = NULL;
+        pObjURI       = NULL;
+        fIntermediate = false;
     }
+
+    DnDURIObject *getObj(void) { return pObjURI; }
 
     bool isIntermediate(void) { return fIntermediate; }
 
     bool isValid(void) const { return (pObjURI != NULL); }
 
+    uint32_t getState(void) const { return fState; }
+
     void reset(void)
     {
+        LogFlowThisFuncEnter();
+
         destroy();
 
         fIntermediate = false;
-        fHeaderSent   = false;
+        fState        = 0;
     }
+
+    void setObj(DnDURIObject *pObj)
+    {
+        LogFlowThisFunc(("%p\n", pObj));
+
+        destroy();
+
+        pObjURI = pObj;
+    }
+
+    uint32_t setState(uint32_t fStateNew)
+    {
+        /** @todo Add validation. */
+        fState = fStateNew;
+        return fState;
+    }
+
+protected:
 
     /** Pointer to current object being handled. */
     DnDURIObject             *pObjURI;
     /** Flag whether pObjURI needs deletion after use. */
     bool                      fIntermediate;
-    /** Flag whether the object's file header has been sent already. */
-    bool                      fHeaderSent;
+    /** Internal context state, corresponding to DND_OBJCTX_STATE_XXX. */
+    uint32_t                  fState;
     /** @todo Add more statistics / information here. */
 };
 
@@ -489,7 +518,11 @@ public:
 
     bool isComplete(void) const
     {
-        LogFlowFunc(("cObjToProcess=%RU64, cObjProcessed=%RU64\n", cObjToProcess, cObjProcessed));
+        LogFlowFunc(("cObjProcessed=%RU64, cObjToProcess=%RU64\n", cObjProcessed, cObjToProcess));
+
+        if (!cObjToProcess) /* Always return true if we don't have an object count. */
+            return true;
+
         Assert(cObjProcessed <= cObjToProcess);
         return (cObjProcessed == cObjToProcess);
     }
@@ -513,7 +546,7 @@ public:
             && pCurObj)
         {
             /* Point the context object to the current DnDURIObject to process. */
-            objCtx.pObjURI = pCurObj;
+            objCtx.setObj(pCurObj);
         }
         else
             objCtx.reset();
@@ -533,9 +566,6 @@ public:
         switch (Obj.GetType())
         {
             case DnDURIObject::Directory:
-                rc = processDirectory(Obj.GetDestPath().c_str(), Obj.GetMode());
-                break;
-
             case DnDURIObject::File:
                 rc = VINF_SUCCESS;
                 break;
@@ -569,12 +599,12 @@ public:
         objCtx.reset();
     }
 
-    void reset(uint64_t cObjs = 0)
+    void reset(void)
     {
-        cObjToProcess = cObjs;
-        cObjProcessed = 0;
+        LogFlowFuncEnter();
 
-        LogFlowFunc(("cObjToProcess=%RU64\n", cObjToProcess));
+        cObjToProcess = 0;
+        cObjProcessed = 0;
 
         droppedFiles.Close();
 
@@ -582,30 +612,64 @@ public:
         objCtx.reset();
     }
 
+    void setEstimatedObjects(uint64_t cObjs)
+    {
+        Assert(cObjToProcess == 0);
+        cObjToProcess = cObjs;
+        LogFlowFunc(("cObjToProcess=%RU64\n", cObjs));
+    }
+
 public:
 
-    int fromMetaData(const GuestDnDMetaData &Data)
+    int fromLocalMetaData(const GuestDnDMetaData &Data)
     {
         reset();
 
-        size_t      cbList  = Data.getSize();
-        const char *pszList = (const char *)Data.getData();
-        if (   !pszList
-            || !cbList)
-        {
+        if (!Data.getSize())
             return VINF_SUCCESS;
+
+        char *pszList;
+        int rc = RTStrCurrentCPToUtf8(&pszList, (const char *)Data.getData());
+        if (RT_FAILURE(rc))
+        {
+            LogFlowThisFunc(("String conversion failed with rc=%Rrc\n", rc));
+            return rc;
         }
 
-        if (!RTStrIsValidEncoding(pszList))
-            return VERR_INVALID_PARAMETER;
+        const size_t cbList = Data.getSize();
+        LogFlowThisFunc(("metaData=%p, cbList=%zu\n", &Data, cbList));
 
-        RTCList<RTCString> lstURIOrg = RTCString(pszList, cbList).split("\r\n");
-        if (lstURIOrg.isEmpty())
-            return VINF_SUCCESS;
+        if (cbList)
+        {
+            RTCList<RTCString> lstURIOrg = RTCString(pszList, cbList).split("\r\n");
+            if (!lstURIOrg.isEmpty())
+            {
+                /* Note: All files to be transferred will be kept open during the entire DnD
+                 *       operation, also to keep the accounting right. */
+                rc = lstURI.AppendURIPathsFromList(lstURIOrg, DNDURILIST_FLAGS_KEEP_OPEN);
+                if (RT_SUCCESS(rc))
+                    cObjToProcess = lstURI.TotalCount();
+            }
+        }
 
-        /* Note: All files to be transferred will be kept open during the entire DnD
-         *       operation, also to keep the accounting right. */
-        return lstURI.AppendURIPathsFromList(lstURIOrg, DNDURILIST_FLAGS_KEEP_OPEN);
+        RTStrFree(pszList);
+        return rc;
+    }
+
+    int fromRemoteMetaData(const GuestDnDMetaData &Data)
+    {
+        LogFlowFuncEnter();
+
+        int rc = lstURI.RootFromURIData(Data.getData(), Data.getSize(), 0 /* uFlags */);
+        if (RT_SUCCESS(rc))
+        {
+            const size_t cRootCount = lstURI.RootCount();
+            LogFlowFunc(("cRootCount=%zu, cObjToProcess=%RU64\n", cRootCount, cObjToProcess));
+            if (cRootCount > cObjToProcess)
+                rc = VERR_INVALID_PARAMETER;
+        }
+
+        return rc;
     }
 
     int toMetaData(std::vector<BYTE> &vecData)
@@ -908,6 +972,9 @@ typedef struct GuestDnDCallback
 /** Contains registered callback pointers for specific HGCM message types. */
 typedef std::map<uint32_t, GuestDnDCallback> GuestDnDCallbackMap;
 
+/** @todo r=andy This class needs to go, as this now is too inflexible when it comes to all
+ *               the callback handling/dispatching. It's part of the initial code and only adds
+ *               unnecessary complexity. */
 class GuestDnDResponse
 {
 
