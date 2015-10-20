@@ -635,7 +635,10 @@ DECLHIDDEN(void) supR3HardenedWinInitSyscalls(bool fReportErrors)
  *
  * We must not permanently modify any global data here.
  *
- * @param   uNtDllAddr          The address of the NTDLL.
+ * @param   uNtDllAddr                  The address of the NTDLL.
+ * @param   ppfnNtWaitForSingleObject   Where to store the NtWaitForSingleObject
+ *                                      address.
+ * @param   ppfnNtSetEvent              Where to store the NtSetEvent address.
  */
 DECLHIDDEN(void) supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
                                                      PFNNTWAITFORSINGLEOBJECT *ppfnNtWaitForSingleObject,

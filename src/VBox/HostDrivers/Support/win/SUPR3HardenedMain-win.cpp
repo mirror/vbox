@@ -2957,7 +2957,7 @@ DECLINLINE(bool) suplibCommandLineIsArgSeparator(int ch)
  * argument.
  *
  * @returns Pointer to a command line string (heap).
- * @param   pUniStr         Unicode string structure to initialize to the
+ * @param   pString         Unicode string structure to initialize to the
  *                          command line. Optional.
  * @param   iWhich          Which respawn we're to check for, 1 being the first
  *                          one, and 2 the second and final.
@@ -3748,7 +3748,7 @@ static void supR3HardNtChildFindNtdll(PSUPR3HARDNTCHILD pThis)
 /**
  * Gather child data.
  *
- * @param   This                The child process data structure.
+ * @param   pThis               The child process data structure.
  */
 static void supR3HardNtChildGatherData(PSUPR3HARDNTCHILD pThis)
 {

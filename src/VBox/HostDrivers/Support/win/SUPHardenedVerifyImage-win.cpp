@@ -578,8 +578,8 @@ static bool supHardViUtf16PathEndsWith(PCRTUTF16 pwsz, const char *pszSuffix)
  * Simple case insensitive UTF-16 / ASCII starts-with path predicate.
  *
  * @returns true if starts with given string, false if not.
- * @param   pwsz                The UTF-16 path string.
- * @param   pszPrefix           The ascii prefix string.
+ * @param   pwszLeft            The UTF-16 path string.
+ * @param   pszRight            The ascii prefix string.
  */
 static bool supHardViUtf16PathStartsWithAscii(PCRTUTF16 pwszLeft, const char *pszRight)
 {
@@ -2620,11 +2620,13 @@ l_fresh_context:
  * This is used by supHardenedWinVerifyImageByLdrMod as well as
  * supR3HardenedScreenImage.
  *
- * @returns IPRT status code.
+ * @returns IPRT status code, modified @a rc.
  * @param   hFile               Handle of the file to verify.
  * @param   pwszName            Full NT path to the DLL in question, used for
  *                              dealing with unsigned system dlls as well as for
  *                              error/logging.
+ * @param   fFlags              SUPHNTVI_F_XXX.
+ * @param   rc                  The current status code.
  * @param   pfWinVerifyTrust    Where to return whether WinVerifyTrust was
  *                              actually used.
  * @param   pErrInfo            Pointer to error info structure. Optional.

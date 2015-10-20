@@ -242,7 +242,7 @@ PFNNTQUERYVIRTUALMEMORY g_pfnNtQueryVirtualMemory = NULL;
 #endif
 
 #ifdef IN_RING3
-/** The number of valid entries in the loader cache.. */
+/** The number of valid entries in the loader cache. */
 static uint32_t                 g_cSupNtVpLdrCacheEntries = 0;
 /** The loader cache entries. */
 static SUPHNTLDRCACHEENTRY      g_aSupNtVpLdrCacheEntries[RT_ELEMENTS(g_apszSupNtVpAllowedDlls) + 1 + 3];
@@ -255,8 +255,6 @@ static SUPHNTLDRCACHEENTRY      g_aSupNtVpLdrCacheEntries[RT_ELEMENTS(g_apszSupN
  * @returns @a rc.
  * @param   pErrInfo            Pointer to the extended error info structure.
  *                              Can be NULL.
- * @param   pszErr              Where to return error details.
- * @param   cbErr               Size of the buffer @a pszErr points to.
  * @param   rc                  The status to return.
  * @param   pszMsg              The format string for the message.
  * @param   ...                 The arguments for the format string.
@@ -283,8 +281,6 @@ static int supHardNtVpSetInfo1(PRTERRINFO pErrInfo, int rc, const char *pszMsg, 
  *
  * @returns @a rc.
  * @param   pThis               The process validator instance.
- * @param   pszErr              Where to return error details.
- * @param   cbErr               Size of the buffer @a pszErr points to.
  * @param   rc                  The status to return.
  * @param   pszMsg              The format string for the message.
  * @param   ...                 The arguments for the format string.
@@ -1010,7 +1006,6 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
  * @param   pImage              The image data collected during the address
  *                              space scan.
  * @param   hProcess            Handle to the process.
- * @param   hFile               Handle to the image file.
  */
 static int supHardNtVpVerifyImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, HANDLE hProcess)
 {
@@ -1134,6 +1129,8 @@ DECLHIDDEN(PRTUTF16) supHardNtVpIsPossible8dot3Path(PCRTUTF16 pwszPath)
  *
  * @param   pUniStr     The path to fix up. MaximumLength is the max buffer
  *                      length.
+ * @param   fPathOnly   Whether to only process the path and leave the filename
+ *                      as passed in.
  */
 DECLHIDDEN(void) supHardNtVpFix8dot3Path(PUNICODE_STRING pUniStr, bool fPathOnly)
 {
@@ -1973,7 +1970,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
  * @returns VBox status code.
  * @param   pEntry              The loader cache entry.
  * @param   pwszName            The filename to use in error messages.
- * @param   pErRInfo            Where to return extened error information.
+ * @param   pErrInfo            Where to return extened error information.
  */
 DECLHIDDEN(int) supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUTF16 pwszName, PRTERRINFO pErrInfo)
 {
