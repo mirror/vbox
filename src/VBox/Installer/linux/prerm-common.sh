@@ -26,8 +26,9 @@
 # stopped (installers may show an error themselves or just pass on standard
 # error).
 
-# This is GNU-specific, sorry Solaris.
-MY_PATH="$(dirname $(readlink -f -- "${0}"))/"
+# The below is GNU-specific.  See VBox.sh for the longer Solaris/OS X version.
+TARGET=`readlink -e -- "${0}"` || exit 1
+MY_PATH="${TARGET%/[!/]*}"
 cd "${MY_PATH}"
 . "./routines.sh"
 

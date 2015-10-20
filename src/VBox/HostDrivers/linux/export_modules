@@ -14,6 +14,10 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+# The below is GNU-specific.  See VBox.sh for the longer Solaris/OS X version.
+TARGET=`readlink -e -- "${0}"` || exit 1
+MY_DIR="${TARGET%/[!/]*}"
+
 if [ -z "$1" ]; then
     echo "Usage: $0 <filename.tar.gz> [--without-hardening]"
     echo "  Export VirtualBox kernel modules to <filename.tar.gz>"
@@ -28,7 +32,7 @@ fi
 PATH_TMP="`cd \`dirname $1\`; pwd`/.vbox_modules"
 PATH_OUT=$PATH_TMP
 FILE_OUT="`cd \`dirname $1\`; pwd`/`basename $1`"
-PATH_ROOT="`cd \`dirname $0\`/../../../..; pwd`"
+PATH_ROOT="${MY_DIR}/../../../..; pwd`"
 PATH_LINUX="$PATH_ROOT/src/VBox/HostDrivers/linux"
 PATH_VBOXDRV="$PATH_ROOT/src/VBox/HostDrivers/Support"
 PATH_VBOXNET="$PATH_ROOT/src/VBox/HostDrivers/VBoxNetFlt"

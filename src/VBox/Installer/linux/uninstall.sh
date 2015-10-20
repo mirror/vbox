@@ -15,7 +15,10 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-. `dirname $0`/routines.sh
+# The below is GNU-specific.  See VBox.sh for the longer Solaris/OS X version.
+TARGET=`readlink -e -- "${0}"` || exit 1
+MY_PATH="${TARGET%/[!/]*}"
+. "${MY_PATH}/routines.sh"
 
 if [ -z "$ro_LOG_FILE" ]; then
     create_log "/var/log/vbox-uninstall.log"
@@ -48,7 +51,7 @@ fi
 
 # Do pre-removal common to all installer types, currently service script
 # clean-up.
-`dirname $0`/prerm-common.sh || exit 1  # Arguments intentionally not quoted.
+"${MY_PATH}/prerm-common.sh" || exit 1
 
 # Remove kernel module installed
 if [ -z "$VBOX_DONT_REMOVE_OLD_MODULES" ]; then

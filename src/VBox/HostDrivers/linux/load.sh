@@ -15,12 +15,9 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-MY_DIR=`dirname "$0"`
-MY_DIR=`cd "${MY_DIR}" && pwd`
-if [ ! -d "${MY_DIR}" ]; then
-    echo "Cannot find ${MY_DIR} or it's not a directory..."
-    exit 1;
-fi
+# The below is GNU-specific.  See VBox.sh for the longer Solaris/OS X version.
+TARGET=`readlink -e -- "${0}"` || exit 1
+MY_DIR="${TARGET%/[!/]*}"
 
 set -e
 if ! test   `echo /etc/udev/rules.d/*-vboxdrv.rules` \

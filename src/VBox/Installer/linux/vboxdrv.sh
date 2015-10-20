@@ -31,8 +31,10 @@ DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
 MODPROBE=/sbin/modprobe
 SCRIPTNAME=vboxdrv
-# This is GNU-specific, sorry Solaris.  It fails on directories ending in '\n'.
-SCRIPT_DIR="$(dirname $(readlink -f -- "${0}"))"
+
+# The below is GNU-specific.  See VBox.sh for the longer Solaris/OS X version.
+TARGET=`readlink -e -- "${0}"` || exit 1
+SCRIPT_DIR="${TARGET%/[!/]*}"
 
 if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"

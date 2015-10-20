@@ -22,13 +22,13 @@
 # We assume that all required files are in the same folder as this script
 # (e.g. /opt/VirtualBox, /usr/lib/VirtualBox, the build output directory).
 
-# This is GNU-specific, sorry Solaris.  It fails on directories ending in '\n'.
-MY_PATH="$(dirname $(readlink -f -- "${0}"))"
+# The below is GNU-specific.  See VBox.sh for the longer Solaris/OS X version.
+TARGET=`readlink -e -- "${0}"` || exit 1
+MY_PATH="${TARGET%/[!/]*}"
 cd "${MY_PATH}"
 . "./routines.sh"
 
 START=true
-TARGET="${MY_PATH}"
 while test -n "${1}"; do
     case "${1}" in
         --nostart)
@@ -48,10 +48,10 @@ for i in vboxhost vboxdrv vboxnetflt vboxnetadp; do
 done
 
 # Install runlevel scripts and systemd unit files
-install_init_script "${TARGET}/vboxdrv.sh" vboxdrv
-install_init_script "${TARGET}/vboxballoonctrl-service.sh" vboxballoonctrl-service
-install_init_script "${TARGET}/vboxautostart-service.sh" vboxautostart-service
-install_init_script "${TARGET}/vboxweb-service.sh" vboxweb-service
+install_init_script "${MY_PATH}/vboxdrv.sh" vboxdrv
+install_init_script "${MY_PATH}/vboxballoonctrl-service.sh" vboxballoonctrl-service
+install_init_script "${MY_PATH}/vboxautostart-service.sh" vboxautostart-service
+install_init_script "${MY_PATH}/vboxweb-service.sh" vboxweb-service
 
 delrunlevel vboxdrv
 addrunlevel vboxdrv
