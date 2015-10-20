@@ -44,7 +44,9 @@
 /**
  * GIM Hyper-V saved-state version.
  */
-#define GIM_HV_SAVED_STATE_VERSION          UINT32_C(1)
+#define GIM_HV_SAVED_STATE_VERSION                UINT32_C(2)
+/** Vanilla saved states, prior to any debug support. */
+#define GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG      UINT32_C(1)
 
 #ifdef VBOX_WITH_STATISTICS
 # define GIMHV_MSRRANGE(a_uFirst, a_uLast, a_szName) \
@@ -425,7 +427,7 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
      * Setup non-zero MSRs.
      */
     if (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_CRASH_MSRS)
-        pHv->uCrashCtl = MSR_GIM_HV_CRASH_CTL_NOTIFY_BIT;
+        pHv->uCrashCtlMsr = MSR_GIM_HV_CRASH_CTL_NOTIFY_BIT;
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
         pVM->aCpus[i].gim.s.u.HvCpu.uSint2Msr = MSR_GIM_HV_SINT_MASKED_BIT;
 
@@ -559,11 +561,11 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     pHv->u64GuestOsIdMsr        = 0;
     pHv->u64HypercallMsr        = 0;
     pHv->u64TscPageMsr          = 0;
-    pHv->uCrashP0               = 0;
-    pHv->uCrashP1               = 0;
-    pHv->uCrashP2               = 0;
-    pHv->uCrashP3               = 0;
-    pHv->uCrashP4               = 0;
+    pHv->uCrashP0Msr            = 0;
+    pHv->uCrashP1Msr            = 0;
+    pHv->uCrashP2Msr            = 0;
+    pHv->uCrashP3Msr            = 0;
+    pHv->uCrashP4Msr            = 0;
     pHv->uDebugStatusMsr        = 0;
     pHv->uDebugPendingBufferMsr = 0;
     pHv->uDebugSendBufferMsr    = 0;
@@ -655,8 +657,27 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
         PCGIMHVREFTSC pcRefTsc = (PCGIMHVREFTSC)pcRegion->pvPageR3;
         uTscSequence = pcRefTsc->u32TscSequence;
     }
+    SSMR3PutU32(pSSM, uTscSequence);
 
-    return SSMR3PutU32(pSSM, uTscSequence);
+    /*
+     * Save debug support data.
+     */
+    SSMR3PutU64(pSSM, pcHv->uDebugPendingBufferMsr);
+    SSMR3PutU64(pSSM, pcHv->uDebugSendBufferMsr);
+    SSMR3PutU64(pSSM, pcHv->uDebugRecvBufferMsr);
+    SSMR3PutU64(pSSM, pcHv->uDebugStatusMsr);
+    SSMR3PutU32(pSSM, pcHv->enmDebugReply);
+    SSMR3PutU32(pSSM, pcHv->uBootpXId);
+    SSMR3PutU32(pSSM, pcHv->DbgGuestIp4Addr.u);
+
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
+        SSMR3PutU64(pSSM, pHvCpu->uSimpMsr);
+        SSMR3PutU64(pSSM, pHvCpu->uSint2Msr);
+    }
+
+    return SSMR3PutU8(pSSM, UINT8_MAX);;
 }
 
 
@@ -676,9 +697,10 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     uint32_t uHvSavedStatVersion;
     int rc = SSMR3GetU32(pSSM, &uHvSavedStatVersion);
     AssertRCReturn(rc, rc);
-    if (uHvSavedStatVersion != GIM_HV_SAVED_STATE_VERSION)
+    if (   uHvSavedStatVersion != GIM_HV_SAVED_STATE_VERSION
+        && uHvSavedStatVersion != GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG)
         return SSMR3SetLoadError(pSSM, VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION, RT_SRC_POS,
-                                 N_("Unsupported Hyper-V saved-state version %u (expected %u)."), uHvSavedStatVersion,
+                                 N_("Unsupported Hyper-V saved-state version %u (current %u)!"), uHvSavedStatVersion,
                                  GIM_HV_SAVED_STATE_VERSION);
 
     /*
@@ -764,7 +786,30 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
             return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("TSC-page MMIO2 region not registered. Missing GIM device?!"));
     }
 
-    return rc;
+    /*
+     * Load the debug support data.
+     */
+    if (uHvSavedStatVersion > GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG)
+    {
+        SSMR3GetU64(pSSM, &pHv->uDebugPendingBufferMsr);
+        SSMR3GetU64(pSSM, &pHv->uDebugSendBufferMsr);
+        SSMR3GetU64(pSSM, &pHv->uDebugRecvBufferMsr);
+        SSMR3GetU64(pSSM, &pHv->uDebugStatusMsr);
+        SSMR3GetU32(pSSM, (uint32_t *)&pHv->enmDebugReply);
+        SSMR3GetU32(pSSM, &pHv->uBootpXId);
+        rc = SSMR3GetU32(pSSM, &pHv->DbgGuestIp4Addr.u);
+        AssertRCReturn(rc, rc);
+
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        {
+            PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
+            SSMR3GetU64(pSSM, &pHvCpu->uSimpMsr);
+            SSMR3GetU64(pSSM, &pHvCpu->uSint2Msr);
+        }
+    }
+
+    uint8_t bDelim;
+    return SSMR3GetU8(pSSM, &bDelim);
 }
 
 
@@ -1168,7 +1213,7 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
                         pIpHdr->ip_p       = RTNETIPV4_PROT_UDP;
                         pIpHdr->ip_sum     = 0;
                         pIpHdr->ip_src.u   = 0;
-                        pIpHdr->ip_dst.u   = pHv->DbgGuestAddr.u;
+                        pIpHdr->ip_dst.u   = pHv->DbgGuestIp4Addr.u;
                         pIpHdr->ip_sum     = RTNetIPv4HdrChecksum(pIpHdr);
                         /* UDP */
                         pUdpHdr->uh_ulen   = RT_H2N_U16_C((uint16_t)cbReallyRead + sizeof(*pUdpHdr));
@@ -1378,8 +1423,8 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
                                 uint32_t const cbFrameHdr = sizeof(RTNETETHERHDR) + cbIpHdr + sizeof(RTNETUDP);
                                 pbData  += cbFrameHdr;
                                 cbWrite -= cbFrameHdr;
-                                pHv->DbgGuestAddr = pIp4Hdr->ip_src;
-                                pHv->enmDebugReply = GIMHVDEBUGREPLY_UDP;
+                                pHv->DbgGuestIp4Addr = pIp4Hdr->ip_src;
+                                pHv->enmDebugReply   = GIMHVDEBUGREPLY_UDP;
                             }
                             else
                             {

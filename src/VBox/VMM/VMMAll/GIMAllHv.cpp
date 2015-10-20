@@ -246,10 +246,10 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                      */
                     if (rcHv == GIM_HV_STATUS_SUCCESS)
                     {
-                        if (!fFlags)
-                            rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
-                        else
+                        if (fFlags)
                             LogRelMax(1, ("GIM: HyperV: Resetting debug session via hypercall\n"));
+                        else
+                            rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
                     }
                 }
                 else
@@ -491,14 +491,14 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
             return VINF_SUCCESS;
 
         case MSR_GIM_HV_CRASH_CTL:
-            *puValue = pHv->uCrashCtl;
+            *puValue = pHv->uCrashCtlMsr;
             return VINF_SUCCESS;
 
-        case MSR_GIM_HV_CRASH_P0: *puValue = pHv->uCrashP0;   return VINF_SUCCESS;
-        case MSR_GIM_HV_CRASH_P1: *puValue = pHv->uCrashP1;   return VINF_SUCCESS;
-        case MSR_GIM_HV_CRASH_P2: *puValue = pHv->uCrashP2;   return VINF_SUCCESS;
-        case MSR_GIM_HV_CRASH_P3: *puValue = pHv->uCrashP3;   return VINF_SUCCESS;
-        case MSR_GIM_HV_CRASH_P4: *puValue = pHv->uCrashP4;   return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P0: *puValue = pHv->uCrashP0Msr;   return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P1: *puValue = pHv->uCrashP1Msr;   return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P2: *puValue = pHv->uCrashP2Msr;   return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P3: *puValue = pHv->uCrashP3Msr;   return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P4: *puValue = pHv->uCrashP4Msr;   return VINF_SUCCESS;
 
         case MSR_GIM_HV_DEBUG_OPTIONS_MSR:
         {
@@ -715,7 +715,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             if (uRawValue & MSR_GIM_HV_CRASH_CTL_NOTIFY_BIT)
             {
                 LogRel(("GIM: HyperV: Guest indicates a fatal condition! P0=%#RX64 P1=%#RX64 P2=%#RX64 P3=%#RX64 P4=%#RX64\n",
-                        pHv->uCrashP0, pHv->uCrashP1, pHv->uCrashP2, pHv->uCrashP3, pHv->uCrashP4));
+                        pHv->uCrashP0Msr, pHv->uCrashP1Msr, pHv->uCrashP2Msr, pHv->uCrashP3Msr, pHv->uCrashP4Msr));
             }
             return VINF_SUCCESS;
 #endif
@@ -923,11 +923,11 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #endif
         }
 
-        case MSR_GIM_HV_CRASH_P0:  pHv->uCrashP0 = uRawValue;  return VINF_SUCCESS;
-        case MSR_GIM_HV_CRASH_P1:  pHv->uCrashP1 = uRawValue;  return VINF_SUCCESS;
-        case MSR_GIM_HV_CRASH_P2:  pHv->uCrashP2 = uRawValue;  return VINF_SUCCESS;
-        case MSR_GIM_HV_CRASH_P3:  pHv->uCrashP3 = uRawValue;  return VINF_SUCCESS;
-        case MSR_GIM_HV_CRASH_P4:  pHv->uCrashP4 = uRawValue;  return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P0:  pHv->uCrashP0Msr = uRawValue;  return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P1:  pHv->uCrashP1Msr = uRawValue;  return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P2:  pHv->uCrashP2Msr = uRawValue;  return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P3:  pHv->uCrashP3Msr = uRawValue;  return VINF_SUCCESS;
+        case MSR_GIM_HV_CRASH_P4:  pHv->uCrashP4Msr = uRawValue;  return VINF_SUCCESS;
 
         case MSR_GIM_HV_TIME_REF_COUNT:     /* Read-only MSRs. */
         case MSR_GIM_HV_VP_INDEX:

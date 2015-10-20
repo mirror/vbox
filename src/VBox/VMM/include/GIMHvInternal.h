@@ -943,6 +943,9 @@ typedef GIMHVREFTSC const *PCGIMHVREFTSC;
 
 /**
  * Type of the next reply to be sent to the debug connection of the guest.
+ *
+ * @remarks This is saved as part of saved-state, so don't re-order or
+ *          alter the size!
  */
 typedef enum GIMHVDEBUGREPLY
 {
@@ -963,7 +966,7 @@ typedef enum GIMHVDEBUGREPLY
     /** Customary 32-bit type hack. */
     GIMHVDEBUGREPLY_32BIT_HACK = 0x7fff0000
 } GIMHVDEBUGREPLY;
-AssertCompileSize(GIMHVDEBUGREPLY, 4);
+AssertCompileSize(GIMHVDEBUGREPLY, sizeof(uint32_t));
 
 /**
  * GIM Hyper-V VM instance data.
@@ -1001,17 +1004,17 @@ typedef struct GIMHV
      * @{
      */
     /** Guest crash control MSR. */
-    uint64_t                    uCrashCtl;
+    uint64_t                    uCrashCtlMsr;
     /** Guest crash parameter 0 MSR. */
-    uint64_t                    uCrashP0;
+    uint64_t                    uCrashP0Msr;
     /** Guest crash parameter 1 MSR. */
-    uint64_t                    uCrashP1;
+    uint64_t                    uCrashP1Msr;
     /** Guest crash parameter 2 MSR. */
-    uint64_t                    uCrashP2;
+    uint64_t                    uCrashP2Msr;
     /** Guest crash parameter 3 MSR. */
-    uint64_t                    uCrashP3;
+    uint64_t                    uCrashP3Msr;
     /** Guest crash parameter 4 MSR. */
-    uint64_t                    uCrashP4;
+    uint64_t                    uCrashP4Msr;
     /** @} */
 
     /** @name Time management.
@@ -1045,7 +1048,7 @@ typedef struct GIMHV
     bool                        fIsInterfaceVs;
     bool                        afAlignment0[6];
     /** The auto IP address last chosen by the guest after failed ARP queries. */
-    RTNETADDRIPV4               DbgGuestAddr;
+    RTNETADDRIPV4               DbgGuestIp4Addr;
     /** The action to take while sending replies. */
     GIMHVDEBUGREPLY             enmDebugReply;
     /** Transaction ID for the BOOTP+DHCP sequence. */
