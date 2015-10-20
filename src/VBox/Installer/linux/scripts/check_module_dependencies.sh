@@ -300,7 +300,9 @@ get_system_information()
         fi
     elif $file_exists /etc/redhat-release; then  # Red Hat family
         GET_KERN_PACKAGE="$FIND_KERNEL_RPM"
-        if $do_type yum >/dev/null 2>&1; then
+        if $do_type dns >/dev/null 2>&1; then
+            PACKAGE_INSTALLER="dns install"
+        elif $do_type yum >/dev/null 2>&1; then
             PACKAGE_INSTALLER="yum install"
         else
             PACKAGE_INSTALLER=up2date
