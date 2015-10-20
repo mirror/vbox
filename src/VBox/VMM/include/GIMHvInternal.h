@@ -964,7 +964,7 @@ typedef enum GIMHVDEBUGREPLY
     /** ARP reply sent. */
     GIMHVDEBUGREPLY_ARP_REPLY_SENT,
     /** Customary 32-bit type hack. */
-    GIMHVDEBUGREPLY_32BIT_HACK = 0x7fff0000
+    GIMHVDEBUGREPLY_32BIT_HACK = 0x7fffffff
 } GIMHVDEBUGREPLY;
 AssertCompileSize(GIMHVDEBUGREPLY, sizeof(uint32_t));
 
