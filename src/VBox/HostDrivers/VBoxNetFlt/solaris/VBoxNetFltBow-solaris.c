@@ -453,6 +453,7 @@ LOCAL int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void
  *
  * @param   pThis           The instance.
  * @param   pSG             Pointer to the scatter-gather list.
+ * @param   fDst            INTNETTRUNKDIR_XXX.
  *
  * @returns Solaris message block.
  */
