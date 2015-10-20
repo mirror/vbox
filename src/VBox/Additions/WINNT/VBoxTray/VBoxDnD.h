@@ -113,7 +113,6 @@ protected:
 
     LONG                  mRefCount;
     VBoxDnDWnd           *mpWndParent;
-    VBGLR3GUESTDNDCMDCTX  mDnDCtx;
     DWORD                 mdwCurEffect;
     uint32_t              muCurAction;
 };
@@ -154,7 +153,6 @@ protected:
 
     LONG                  mRefCount;
     VBoxDnDWnd           *mpWndParent;
-    VBGLR3GUESTDNDCMDCTX  mDnDCtx;
     DWORD                 mdwCurEffect;
     /** Copy of the data object's FORMATETC struct.
      *  Note: We don't keep the pointer of the DVTARGETDEVICE here! */

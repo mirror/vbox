@@ -41,20 +41,15 @@ VBoxDnDDropTarget::VBoxDnDDropTarget(VBoxDnDWnd *pParent)
       mcbData(0),
       hEventDrop(NIL_RTSEMEVENT)
 {
-    int rc = VbglR3DnDConnect(&mDnDCtx);
-    if (RT_SUCCESS(rc))
-        rc = RTSemEventCreate(&hEventDrop);
-
-    LogFlowFunc(("clientID=%RU32, rc=%Rrc\n", mDnDCtx.uClientID, rc));
+    int rc = RTSemEventCreate(&hEventDrop);
+    LogFlowFunc(("rc=%Rrc\n", rc));
 }
 
 VBoxDnDDropTarget::~VBoxDnDDropTarget(void)
 {
     reset();
 
-    int rc2 = VbglR3DnDDisconnect(&mDnDCtx);
-    AssertRC(rc2);
-    rc2 = RTSemEventDestroy(hEventDrop);
+    int rc2 = RTSemEventDestroy(hEventDrop);
     AssertRC(rc2);
 
     LogFlowFunc(("rc=%Rrc, mRefCount=%RI32\n", rc2, mRefCount));
