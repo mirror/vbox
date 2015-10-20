@@ -19,12 +19,19 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* VBox includes */
+/* Qt includes: */
+#include <QStyle>
+
+/* GUI includes: */
 # include "UIAbstractDockIconPreview.h"
 # include "UIFrameBuffer.h"
 # include "UIMachineLogic.h"
 # include "UIMachineView.h"
+# include "UIConverter.h"
 # include "UISession.h"
+
+/* COM includes: */
+# include "COMEnums.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -65,11 +72,24 @@ UIAbstractDockIconPreviewHelper::UIAbstractDockIconPreviewHelper(UISession *pSes
     m_overlayImage   = ::darwinToCGImageRef(&overlayImage);
     Assert(m_overlayImage);
 
-    m_statePaused    = ::darwinToCGImageRef("state_paused_16px.png");
+    /* Determine desired icon size for the state-overlay: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+    const QSize iconSize = QSize(iIconMetric, iIconMetric);
+
+    /* Prepare 'Paused' state-overlay: */
+    const QPixmap statePaused = gpConverter->toIcon(KMachineState_Paused).pixmap(iconSize);
+    m_statePaused = ::darwinToCGImageRef(&statePaused);
     Assert(m_statePaused);
-    m_stateSaving    = ::darwinToCGImageRef("state_saving_16px.png");
+
+    /* Prepare 'Saving' state-overlay: */
+    const QPixmap stateSaving = gpConverter->toIcon(KMachineState_Saving).pixmap(iconSize);
+    m_stateSaving = ::darwinToCGImageRef(&stateSaving);
     Assert(m_stateSaving);
-    m_stateRestoring = ::darwinToCGImageRef("state_restoring_16px.png");
+
+    /* Prepare 'Restoring' state-overlay: */
+    const QPixmap stateRestoring = gpConverter->toIcon(KMachineState_Restoring).pixmap(iconSize);
+    m_stateRestoring = ::darwinToCGImageRef(&stateRestoring);
     Assert(m_stateRestoring);
 }
 
