@@ -19,8 +19,12 @@
 TARGET=`readlink -e -- "${0}"` || exit 1
 MY_DIR="${TARGET%/[!/]*}"
 
+if test -f src/vboxdrv.ko; then
+    echo "Cleaning build folder."
+    make -C "${MY_DIR}/src" clean > /dev/null
+fi
 if test ${#} -eq 0; then
-    sudo "${MY_DIR}/vboxdrv.sh" setup
+    sudo "${MY_DIR}/vboxdrv.sh" start
 elif test ${#} = 1 && test "x${1}" = x-u; then
     sudo "${MY_DIR}/vboxdrv.sh" cleanup
 else
