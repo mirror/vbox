@@ -174,6 +174,10 @@ typedef enum PDMAUDIOSTREAMCMD
     PDMAUDIOSTREAMCMD_ENABLE,
     /** Disables the stream. */
     PDMAUDIOSTREAMCMD_DISABLE,
+    /** Pauses the stream. */
+    PDMAUDIOSTREAMCMD_PAUSE,
+    /** Resumes the stream. */
+    PDMAUDIOSTREAMCMD_RESUME,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMCMD_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMCMD;
@@ -299,6 +303,23 @@ typedef struct PDMAUDIOMIXBUF
     uint8_t                cShift;
 } PDMAUDIOMIXBUF;
 
+/** Stream status flag. To be used with PDMAUDIOSTRMSTS_FLAG_ flags. */
+typedef uint32_t PDMAUDIOSTRMSTS;
+
+/** No flags being set. */
+#define PDMAUDIOSTRMSTS_FLAG_NONE            0
+/** Whether this stream General Enabled or disabled flag. */
+#define PDMAUDIOSTRMSTS_FLAG_ENABLED         RT_BIT_32(0)
+/** Whether this stream has been paused or not. This also implies
+ *  that this is an enabled stream! */
+#define PDMAUDIOSTRMSTS_FLAG_PAUSED          RT_BIT_32(1)
+/** Whether this stream was marked as being disabled
+ *  but there are still associated guest output streams
+ *  which rely on its data. */
+#define PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE RT_BIT_32(2)
+/** Validation mask. */
+#define PDMAUDIOSTRMSTS_VALID_MASK           UINT32_C(0x00000007)
+
 /**
  * Represents an audio input on the host of a certain
  * backend (e.g. DirectSound, PulseAudio etc).
@@ -315,8 +336,8 @@ typedef struct PDMAUDIOHSTSTRMIN
     RTLISTNODE             Node;
     /** PCM properties. */
     PDMPCMPROPS            Props;
-    /** Whether this input is enabled or not. */
-    bool                   fEnabled;
+    /** Stream status flag. */
+    PDMAUDIOSTRMSTS        fStatus;
     /** This stream's mixing buffer. */
     PDMAUDIOMIXBUF         MixBuf;
     /** Pointer to (parent) guest stream. */
@@ -336,12 +357,8 @@ typedef struct PDMAUDIOHSTSTRMOUT
     RTLISTNODE             Node;
     /** Stream properites. */
     PDMPCMPROPS            Props;
-    /** Enabled or disabled flag. */
-    bool                   fEnabled;
-    /** Whether this stream was marked as being disabled
-     *  but there are still associated guest output streams
-     *  which rely on its data. */
-    bool                   fPendingDisable;
+    /** Stream status flag. */
+    PDMAUDIOSTRMSTS        fStatus;
     /** This stream's mixing buffer. */
     PDMAUDIOMIXBUF         MixBuf;
     /** Associated guest output streams. */
