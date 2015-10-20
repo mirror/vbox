@@ -35,7 +35,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_spc  RTCrRsa - RSA Public Key Cryptosystem
+/** @defgroup grp_rt_cr_rsa  RTCrRsa - RSA Public Key Cryptosystem
  * @ingroup grp_rt_crypto
  * @{
  */

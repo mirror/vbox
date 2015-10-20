@@ -32,7 +32,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_crtaf RTCrTap - Time-Stamp Protocol (RFC-3161)
+/** @defgroup grp_rt_cr_tap RTCrTap - Time-Stamp Protocol (RFC-3161)
  * @ingroup grp_rt_crypto
  * @{
  */

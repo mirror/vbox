@@ -35,7 +35,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_spc  RTCrSpc - Microsoft Authenticode
+/** @defgroup grp_rt_cr_spc  RTCrSpc - Microsoft Authenticode
  * @ingroup grp_rt_crypto
  * @{
  */
@@ -477,6 +477,7 @@ RTDECL(int) RTCrSpcIndirectDataContent_CheckSanityEx(PCRTCRSPCINDIRECTDATACONTEN
  *
  * @returns Pointer to the attribute with the given type, NULL if not found.
  * @param   pThis               The Authenticode SpcIndirectDataContent.
+ * @param   enmType             The type of attribute to get.
  */
 RTDECL(PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE)
 RTCrSpcIndirectDataContent_GetPeImageObjAttrib(PCRTCRSPCINDIRECTDATACONTENT pThis,

@@ -945,7 +945,7 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRX509CERTIFICATE, RTDECL, RTCrX509Certificate,
  * Checks if a certificate matches a given issuer name and serial number.
  *
  * @returns True / false.
- * @param   pCertificates   The X.509 certificat.
+ * @param   pCertificate    The X.509 certificat.
  * @param   pIssuer         The issuer name to match against.
  * @param   pSerialNumber   The serial number to match against.
  */

@@ -443,14 +443,14 @@ typedef FNRTCRPKCS7VERIFYCERTCALLBACK *PFNRTCRPKCS7VERIFYCERTCALLBACK;
 /** @} */
 
 /**
- * @callback_method_impl{RTCRPKCS7VERIFYCERTCALLBACK,
+ * @callback_method_impl{FNRTCRPKCS7VERIFYCERTCALLBACK,
  *  Default implementation that checks for the DigitalSignature KeyUsage bit.}
  */
 RTDECL(int) RTCrPkcs7VerifyCertCallbackDefault(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths, uint32_t fFlags,
                                                void *pvUser, PRTERRINFO pErrInfo);
 
 /**
- * @callback_method_impl{RTCRPKCS7VERIFYCERTCALLBACK,
+ * @callback_method_impl{FNRTCRPKCS7VERIFYCERTCALLBACK,
  * Standard code signing.  Use this for Microsoft SPC.}
  */
 RTDECL(int) RTCrPkcs7VerifyCertCallbackCodeSigning(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths, uint32_t fFlags,

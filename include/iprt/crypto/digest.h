@@ -153,7 +153,7 @@ RTDECL(PCRTCRDIGESTDESC) RTCrDigestFindByObjIdString(const char *pszObjId, void 
  *
  * @returns Pointer to the message digest details & vtable if found.  NULL if
  *          not found.
- * @param   pszObjId        The ASN.1 object ID of the message digest algorithm.
+ * @param   pObjId          The ASN.1 object ID of the message digest algorithm.
  * @param   ppvOpaque       Where to return an opaque implementation specfici
  *                          sub-type indicator that can be passed to
  *                          RTCrDigestCreate.  This is optional, fewer
