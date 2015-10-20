@@ -26,7 +26,7 @@
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
-SCRIPTNAME=vboxadd-service
+SCRIPTNAME=vboxadd-service.sh
 
 PIDFILE="/var/run/${SCRIPTNAME}"
 
@@ -38,18 +38,18 @@ fi
 begin()
 {
     test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
-    logger "${SCRIPTNAME}: ${1}."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 succ_msg()
 {
-    logger "${SCRIPTNAME}: done."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 fail_msg()
 {
-    echo "${SCRIPTNAME}: failed." >&2
-    logger "${SCRIPTNAME}: failed."
+    echo "${SCRIPTNAME}: ${1}." >&2
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 daemon() {
@@ -94,7 +94,7 @@ start() {
         testbinary
         daemon $binary --pidfile $PIDFILE > /dev/null
         RETVAL=$?
-        succ_msg
+        succ_msg "VirtualBox Guest Addition service started"
     fi
     return $RETVAL
 }
@@ -106,9 +106,9 @@ stop() {
         RETVAL=$?
         if ! pidof VBoxService > /dev/null 2>&1; then
             rm -f $PIDFILE
-            succ_msg
+            succ_msg "VirtualBox Guest Addition service stopped"
         else
-            fail_msg
+            fail_msg "VirtualBox Guest Addition service failed to stop"
         fi
     fi
     return $RETVAL

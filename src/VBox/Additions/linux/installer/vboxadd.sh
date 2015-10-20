@@ -33,7 +33,7 @@ PACKAGE=VBoxGuestAdditions
 LOG="/var/log/vboxadd-install.log"
 MODPROBE=/sbin/modprobe
 OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
-SCRIPTNAME=vboxadd
+SCRIPTNAME=vboxadd.sh
 
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
@@ -66,24 +66,18 @@ fi
 begin()
 {
     test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
-    logger "${SCRIPTNAME}: ${1}."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 succ_msg()
 {
-    logger "${SCRIPTNAME}: done."
-}
-
-fail_msg()
-{
-    echo "${SCRIPTNAME}: failed." >&2
-    logger "${SCRIPTNAME}: failed."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 show_error()
 {
     echo "${SCRIPTNAME}: failed: ${1}." >&2
-    logger "${SCRIPTNAME}: ${1}."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 fail()
@@ -229,9 +223,8 @@ start()
     running_vboxsf || {
         $MODPROBE vboxsf > /dev/null 2>&1 || {
             if dmesg | grep "vboxConnect failed" > /dev/null 2>&1; then
-                fail_msg
-                echo "Unable to start shared folders support.  Make sure that your VirtualBox build"
-                echo "supports this feature."
+                show_error "Unable to start shared folders support.  Make sure that your VirtualBox build"
+                show_error "supports this feature."
                 exit 1
             fi
             fail "modprobe vboxsf failed"

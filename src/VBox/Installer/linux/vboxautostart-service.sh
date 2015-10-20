@@ -26,7 +26,7 @@
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
-SCRIPTNAME=vboxautostart-service
+SCRIPTNAME=vboxautostart-service.sh
 
 [ -f /etc/debian_release -a -f /lib/lsb/init-functions ] || NOLSB=yes
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
@@ -51,18 +51,18 @@ fi
 begin_msg()
 {
     test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
-    logger "${SCRIPTNAME}: ${1}."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 succ_msg()
 {
-    logger "${SCRIPTNAME}: done."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 fail_msg()
 {
     echo "${SCRIPTNAME}: failed: ${1}." >&2
-    logger "${SCRIPTNAME}: failed: ${1}."
+    logger -t "${SCRIPTNAME}" "failed: ${1}."
 }
 
 start_daemon() {

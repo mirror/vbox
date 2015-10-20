@@ -30,7 +30,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
 MODPROBE=/sbin/modprobe
-SCRIPTNAME=vboxdrv
+SCRIPTNAME=vboxdrv.sh
 
 # The below is GNU-specific.  See VBox.sh for the longer Solaris/OS X version.
 TARGET=`readlink -e -- "${0}"` || exit 1
@@ -90,18 +90,18 @@ fi
 begin_msg()
 {
     test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
-    logger "${SCRIPTNAME}: ${1}."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 succ_msg()
 {
-    logger "${SCRIPTNAME}: done."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 fail_msg()
 {
     echo "${SCRIPTNAME}: failed: ${1}." >&2
-    logger "${SCRIPTNAME}: failed: ${1}."
+    logger -t "${SCRIPTNAME}" "failed: ${1}."
 }
 
 failure()
@@ -309,7 +309,7 @@ start()
         mkdir -p -m 0750 /dev/vboxusb 2>/dev/null
         chown root:vboxusers /dev/vboxusb 2>/dev/null
     fi
-    succ_msg
+    succ_msg "VirtualBox services started"
 }
 
 stop()
@@ -345,7 +345,7 @@ stop()
             failure "Cannot unlink $DEVICE"
         fi
     fi
-    succ_msg
+    succ_msg "VirtualBox services stopped"
 }
 
 # enter the following variables in /etc/default/virtualbox:
@@ -369,20 +369,20 @@ stop_vms()
                     for v in $VMS; do
                         $VBOXMANAGE --nologo controlvm $v poweroff
                     done
-                    succ_msg
+                    succ_msg "Remaining VMs powered off"
                 elif [ "$SHUTDOWN" = "acpibutton" ]; then
                     begin_msg "Sending ACPI power button event to remaining VMs"
                     for v in $VMS; do
                         $VBOXMANAGE --nologo controlvm $v acpipowerbutton
                         wait=30
                     done
-                    succ_msg
+                    succ_msg "ACPI power button event sent to remaining VMs"
                 elif [ "$SHUTDOWN" = "savestate" ]; then
                     begin_msg "Saving state of remaining VMs"
                     for v in $VMS; do
                         $VBOXMANAGE --nologo controlvm $v savestate
                     done
-                    succ_msg
+                    succ_msg "State of remaining VMs saved"
                 fi
             fi
         fi
@@ -391,7 +391,7 @@ stop_vms()
     if [ "$wait" -ne 0 ]; then
         begin_msg "Waiting for $wait seconds for VM shutdown"
         sleep $wait
-        succ_msg
+        succ_msg "Waited for $wait seconds for VM shutdown"
     fi
 }
 
@@ -447,7 +447,7 @@ setup()
     fi
     rm -f /etc/vbox/module_not_compiled
     depmod -a
-    succ_msg
+    succ_msg "VirtualBox kernel modules built"
 }
 
 dmnstatus()

@@ -26,7 +26,7 @@
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
-SCRIPTNAME=vboxweb-service
+SCRIPTNAME=vboxweb-service.sh
 
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
 
@@ -54,18 +54,18 @@ fi
 begin_msg()
 {
     test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
-    logger "${SCRIPTNAME}: ${1}."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 succ_msg()
 {
-    logger "${SCRIPTNAME}: done."
+    logger -t "${SCRIPTNAME}" "${1}."
 }
 
 fail_msg()
 {
     echo "${SCRIPTNAME}: failed: ${1}." >&2
-    logger "${SCRIPTNAME}: failed: ${1}."
+    logger -t "${SCRIPTNAME}" "failed: ${1}."
 }
 
 start_daemon() {
@@ -153,10 +153,10 @@ start() {
         if [ -n "$PID" ]; then
             echo "$PID" > $PIDFILE
             RETVAL=0
-            succ_msg
+            succ_msg "VirtualBox web service started"
         else
             RETVAL=1
-            fail_msg
+            fail_msg "VirtualBox web service failed to start"
         fi
     fi
     return $RETVAL
@@ -169,9 +169,9 @@ stop() {
         RETVAL=$?
         if ! pidof $binary > /dev/null 2>&1; then
             rm -f $PIDFILE
-            succ_msg
+            succ_msg "VirtualBox web service stopped"
         else
-            fail_msg
+            fail_msg "VirtualBox web service failed to stop"
         fi
     fi
     return $RETVAL
