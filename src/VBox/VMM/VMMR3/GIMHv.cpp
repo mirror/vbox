@@ -1360,6 +1360,9 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
          * we require. We thus ignore the initial ARP packets until the guest eventually
          * starts talking UDP. Then we can finally feed the UDP payload over the debug
          * connection.
+         *
+         * When 'kdvm.dll' is the debug transport in the guest (Windows 7), it doesn't bother
+         * with this DHCP/ARP phase. It starts sending debug data in a UDP frame right away.
          */
         if (cbWrite > sizeof(RTNETETHERHDR))
         {
