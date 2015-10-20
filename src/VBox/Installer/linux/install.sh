@@ -212,6 +212,9 @@ if [ "$ACTION" = "install" ]; then
         fi
     fi
 
+    # Do additional clean-up in case some-one is running from a build folder.
+    ./prerm-common.sh || exit 1
+
     # Remove previous installation
     test "${BUILD_MODULE}" = true || VBOX_DONT_REMOVE_OLD_MODULES=1
 
