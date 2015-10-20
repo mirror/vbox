@@ -103,9 +103,7 @@ QString g_QStrHintLinuxNoDriver = QApplication::tr(
     "there is a permission problem with /dev/vboxdrv. Please reinstall the kernel "
     "module by executing<br/><br/>"
     "  <font color=blue>'/sbin/vboxconfig'</font><br/><br/>"
-    "as root. If it is available in your distribution, you should install the "
-    "DKMS package first. This package keeps track of Linux kernel changes and "
-    "recompiles the vboxdrv kernel module if necessary."
+    "as root."
     );
 
 QString g_QStrHintOtherWrongDriverVersion = QApplication::tr(
