@@ -357,7 +357,9 @@ get_system_information()
         PATTERN_GCC_MAKE=
         PATTERN_HEADERS=
         PATTERN_HEADERS_META=
-    else abort "Linux distribution base type not recognised."
+    else
+        echo "Linux distribution base type not recognised."
+        exit 0
     fi
 }
 
@@ -374,14 +376,17 @@ generate_install_commands()
     get_system_information
     case "$GET_KERN_PACKAGE" in
     ?*)
-        eval $GET_KERN_PACKAGE ;;
+        eval $GET_KERN_PACKAGE
+        ;;
     "")
-        abort "Unable to determine the software packaging system in use." ;;
+        echo "Unable to determine the software packaging system in use."
+        exit 0
+        ;;
     esac
     # Needed for many installers
     KERN_PACKAGE_BASE="${KERN_PACKAGE%%$KERN_VER_BASE*}"
     KERN_RPM_SUFFIX="${KERN_PACKAGE#"$KERN_PACKAGE_BASE"}"
-    KERN_DEBIAN_SUFFIX="$(expr "$KERN_VER_EXTRA" : '-[0-9]*\(.*\)')"
+    KERN_DEBIAN_SUFFIX="$(expr "$KERN_VER_EXTRA" : '-[^-]*\(.*\)')"
     INSTALL_GCC_MAKE=$(eval echo "$PATTERN_GCC_MAKE")
     INSTALL_HEADERS=$(eval echo "$PATTERN_HEADERS")
     INSTALL_HEADERS_META=$(eval echo "$PATTERN_HEADERS_META")
