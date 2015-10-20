@@ -106,12 +106,21 @@ public:
       * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
     QPixmap guestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
 
+    /** Returns pixmap corresponding to passed @a strOSTypeID and @a physicalSize. */
+    QPixmap guestOSTypePixmap(const QString &strOSTypeID, const QSize &physicalSize) const;
+    /** Returns HiDPI pixmap corresponding to passed @a strOSTypeID and @a physicalSize. */
+    QPixmap guestOSTypePixmapHiDPI(const QString &strOSTypeID, const QSize &physicalSize) const;
+
 private:
 
     /** Guest OS type icon-names cache. */
     QHash<QString, QString> m_guestOSTypeIconNames;
     /** Guest OS type icons cache. */
     mutable QHash<QString, QIcon> m_guestOSTypeIcons;
+    /** Holds the guest OS type pixmaps cache. */
+    mutable QHash<QString, QPixmap> m_guestOSTypePixmaps;
+    /** Holds the guest OS type HiDPI pixmaps cache. */
+    mutable QHash<QString, QPixmap> m_guestOSTypePixmapsHiDPI;
 };
 
 #endif /* !___UIIconPool_h___ */

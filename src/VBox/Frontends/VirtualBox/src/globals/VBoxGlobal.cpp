@@ -659,6 +659,30 @@ QPixmap VBoxGlobal::vmGuestOSTypeIcon(const QString &strOSTypeID, QSize *pLogica
     return m_pIconPool->guestOSTypeIcon(strOSTypeID, pLogicalSize);
 }
 
+QPixmap VBoxGlobal::vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &physicalSize) const
+{
+    /* Prepare fallback pixmap: */
+    static QPixmap nullPixmap;
+
+    /* Make sure general icon-pool initialized: */
+    AssertReturn(m_pIconPool, nullPixmap);
+
+    /* Redirect to general icon-pool: */
+    return m_pIconPool->guestOSTypePixmap(strOSTypeID, physicalSize);
+}
+
+QPixmap VBoxGlobal::vmGuestOSTypePixmapHiDPI(const QString &strOSTypeID, const QSize &physicalSize) const
+{
+    /* Prepare fallback pixmap: */
+    static QPixmap nullPixmap;
+
+    /* Make sure general icon-pool initialized: */
+    AssertReturn(m_pIconPool, nullPixmap);
+
+    /* Redirect to general icon-pool: */
+    return m_pIconPool->guestOSTypePixmapHiDPI(strOSTypeID, physicalSize);
+}
+
 /**
  *  Returns the guest OS type object corresponding to the given type id of list
  *  containing OS types related to OS family determined by family id attribute.

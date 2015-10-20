@@ -255,6 +255,11 @@ public:
       * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
     QPixmap vmGuestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
 
+    /** Returns pixmap corresponding to passed @a strOSTypeID and @a physicalSize. */
+    QPixmap vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &physicalSize) const;
+    /** Returns HiDPI pixmap corresponding to passed @a strOSTypeID and @a physicalSize. */
+    QPixmap vmGuestOSTypePixmapHiDPI(const QString &strOSTypeID, const QSize &physicalSize) const;
+
     CGuestOSType vmGuestOSType (const QString &aTypeId,
                                 const QString &aFamilyId = QString::null) const;
     QString vmGuestOSTypeDescription (const QString &aTypeId) const;
