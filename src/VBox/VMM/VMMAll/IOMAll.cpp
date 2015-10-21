@@ -298,10 +298,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT u
         { /* likely */ }
         else
         {
-            STAM_STATS({ if (pStats)
-                    STAM_COUNTER_INC(&pStats->InRZToR3); });
+            STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->InRZToR3); });
             IOM_UNLOCK_SHARED(pVM);
-            return VINF_SUCCESS;
+            return VINF_IOM_R3_IOPORT_READ;
         }
 #endif
         void           *pvUser    = pRange->pvUser;
@@ -410,12 +409,13 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT u
     /*
      * Ok, no handler for this port.
      */
+    *pcTransfers = 0;
+    memset(pvDst, 0xff, cRequestedTransfers * cb);
 #ifdef VBOX_WITH_STATISTICS
     if (pStats)
         STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 #endif
-
-    Log3(("IOMIOPortReadStr: uPort=%RTiop pvDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=VINF_SUCCESS\n",
+    Log3(("IOMIOPortReadStr: uPort=%RTiop (unused) pvDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=VINF_SUCCESS\n",
           uPort, pvDst, pcTransfers, cRequestedTransfers, *pcTransfers, cb));
     IOM_UNLOCK_SHARED(pVM);
     return VINF_SUCCESS;
@@ -640,7 +640,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT 
         {
             STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->OutRZToR3); });
             IOM_UNLOCK_SHARED(pVM);
-            return VINF_SUCCESS;
+            return VINF_IOM_R3_IOPORT_WRITE;
         }
 #endif
         void           *pvUser    = pRange->pvUser;
@@ -743,12 +743,12 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT 
     /*
      * Ok, no handler for this port.
      */
+    *pcTransfers = 0;
 #ifdef VBOX_WITH_STATISTICS
     if (pStats)
         STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
 #endif
-
-    Log3(("IOMIOPortWriteStr: uPort=%RTiop pvSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=VINF_SUCCESS\n",
+    Log3(("IOMIOPortWriteStr: uPort=%RTiop (unused) pvSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=VINF_SUCCESS\n",
           uPort, pvSrc, pcTransfers, cRequestedTransfers, *pcTransfers, cb));
     IOM_UNLOCK_SHARED(pVM);
     return VINF_SUCCESS;
