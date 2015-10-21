@@ -670,7 +670,9 @@ class UIActionToggleCommonPauseAndResume : public UIActionToggle
 public:
 
     UIActionToggleCommonPauseAndResume(UIActionPool *pParent)
-        : UIActionToggle(pParent, ":/vm_pause_16px.png", ":/vm_pause_disabled_16px.png") {}
+        : UIActionToggle(pParent,
+                         ":/vm_pause_on_16px.png", ":/vm_pause_16px.png",
+                         ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png") {}
 
 protected:
 
