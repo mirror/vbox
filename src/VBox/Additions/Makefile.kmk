@@ -75,41 +75,14 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  endif
 
  ifeq ($(KBUILD_TARGET),linux)
+
   INSTALLS += LnxAddIso-scripts
   LnxAddIso-scripts_INST    = $(INST_ADDITIONS)
   LnxAddIso-scripts_MODE    = a+rx,u+w
   LnxAddIso-scripts_SOURCES = \
-	$(LnxAddIso-scripts_0_OUTDIR)/runasroot.sh \
-	$(LnxAddIso-scripts_0_OUTDIR)/autorun.sh
-  LnxAddIso-scripts_CLEAN = \
-	$(LnxAddIso-scripts_0_OUTDIR)/runasroot.sh \
-	$(LnxAddIso-scripts_0_OUTDIR)/autorun.sh
+		../Installer/linux/runasroot.sh \
+		linux/installer/autorun.sh
 
-  $$(LnxAddIso-scripts_0_OUTDIR)/runasroot.sh: \
-		$(PATH_SUB_CURRENT)/../Installer/linux/runasroot.sh \
-		$(PATH_SUB_CURRENT)/../Installer/linux/sh-utils.sh \
-		| $$(dir $$@)
-	$(QUIET)$(SED) \
-		-e '/#include sh-utils.sh/ {' \
-		-e "r $(PATH_ROOT)/src/VBox/Installer/linux/sh-utils.sh" \
-		-e 'd' \
-		-e '}' \
-		--output $@ \
-		$<
-	$(QUIET)$(CHMOD) a+rx,u+w $@
-
-  $$(LnxAddIso-scripts_0_OUTDIR)/autorun.sh: \
-		$(PATH_SUB_CURRENT)/linux/installer/autorun.sh \
-		$(PATH_SUB_CURRENT)/../Installer/linux/sh-utils.sh \
-		| $$(dir $$@)
-	$(QUIET)$(SED) \
-		-e '/#include sh-utils.sh/ {' \
-		-e "r $(PATH_ROOT)/src/VBox/Installer/linux/sh-utils.sh" \
-		-e 'd' \
-		-e '}' \
-		--output $@ \
-		$<
-	$(QUIET)$(CHMOD) a+rx,u+w $@
  endif # KBUILD_TARGET == linux
  ifeq ($(KBUILD_TARGET),win)
   #
