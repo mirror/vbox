@@ -190,7 +190,7 @@
  *
  *
  *
- * @subsection subsec_netflt_msc_hif_rm    Host Interface Rediscovery - OBSOLETE
+ * @subsection subsec_netflt_msc_hif_rd    Host Interface Rediscovery - OBSOLETE
  *
  * The rediscovery is performed when we receive a send request and a certain
  * period have elapsed since the last attempt, i.e. we're polling it. We
