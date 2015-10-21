@@ -92,38 +92,6 @@ config=/var/lib/VBoxGuestAdditions/config
 owner=vboxadd
 group=1
 
-test_for_gcc_and_make()
-{
-    which make > /dev/null 2>&1 || printf "\nThe make utility was not found. If the following module compilation fails then\nthis could be the reason and you should try installing it.\n"
-    which gcc > /dev/null 2>&1 || printf "\nThe gcc utility was not found. If the following module compilation fails then\nthis could be the reason and you should try installing it.\n"
-}
-
-test_sane_kernel_dir()
-{
-    KERN_VER=`uname -r`
-    KERN_DIR="/lib/modules/$KERN_VER/build"
-    if [ -d "$KERN_DIR" ]; then
-        KERN_REL=`make -sC $KERN_DIR --no-print-directory kernelrelease 2>/dev/null || true`
-        if [ -z "$KERN_REL" -o "x$KERN_REL" = "x$KERN_VER" ]; then
-            return 0
-        fi
-    fi
-    printf "\nThe headers for the current running kernel were not found. If the following\nmodule compilation fails then this could be the reason.\n"
-    if which yum >/dev/null; then
-        if echo "$KERN_VER" | grep -q "uek"; then
-            printf "The missing package can be probably installed with\nyum install kernel-uek-devel-$KERN_VER\n"
-        else
-            printf "The missing package can be probably installed with\nyum install kernel-devel-$KERN_VER\n"
-        fi
-    elif which zypper >/dev/null; then
-        KERN_VER_SUSE=`echo "$KERN_VER" | sed 's/.*-\([^-]*\)/\1/g'`
-        KERN_VER_BASE=`echo "$KERN_VER" | sed 's/\(.*\)-[^-]*/\1/g'`
-        printf "The missing package can be probably installed with\nzypper install kernel-$KERN_VER_SUSE-devel-$KERN_VER_BASE\n"
-    elif which apt-get >/dev/null; then
-        printf "The missing package can be probably installed with\napt-get install linux-headers-$KERN_VER\n"
-    fi
-}
-
 running_vboxguest()
 {
     lsmod | grep -q "vboxguest[^_-]"
@@ -289,9 +257,6 @@ setup_modules()
     cleanup_modules
     begin "Building the VirtualBox Guest Additions kernel modules"
 
-    test_for_gcc_and_make
-    test_sane_kernel_dir
-
     begin "Building the main Guest Additions module"
     if ! $BUILDINTMP \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
@@ -319,7 +284,7 @@ setup_modules()
             --use-module-symvers /tmp/vboxguest-Module.symvers \
             --module-source $MODULE_SRC/vboxvideo \
             --no-print-directory install >> $LOG 2>&1; then
-            show_error "Look at $LOG to find out what went wrong. The module is not built but the others are."
+            show_error "Look at $LOG to find out what went wrong.  All other modules were built successfully."
         else
             succ_msg
         fi
@@ -412,7 +377,8 @@ setup()
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
     chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
 
-    setup_modules
+    setup_modules || \
+        show_error "Please check that you have gcc, make, the header files for your Linux kernel and possibly perl installed."
     mod_succ="$?"
     extra_setup
     if [ "$mod_succ" -eq "0" ]; then
