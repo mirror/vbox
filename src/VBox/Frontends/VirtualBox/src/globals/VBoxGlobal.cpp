@@ -631,8 +631,8 @@ QList<ulong> XGetStrut(Window window)
 QList<CGuestOSType> VBoxGlobal::vmGuestOSFamilyList() const
 {
     QList<CGuestOSType> result;
-    for (int i = 0; i < mFamilyIDs.size(); ++i)
-        result << mTypes[i][0];
+    for (int i = 0; i < m_guestOSFamilyIDs.size(); ++i)
+        result << m_guestOSTypes[i][0];
     return result;
 }
 
@@ -642,9 +642,9 @@ QList<CGuestOSType> VBoxGlobal::vmGuestOSFamilyList() const
  */
 QList<CGuestOSType> VBoxGlobal::vmGuestOSTypeList(const QString &aFamilyId) const
 {
-    AssertMsg(mFamilyIDs.contains(aFamilyId), ("Family ID incorrect: '%s'.", aFamilyId.toLatin1().constData()));
-    return mFamilyIDs.contains(aFamilyId) ?
-           mTypes[mFamilyIDs.indexOf(aFamilyId)] : QList<CGuestOSType>();
+    AssertMsg(m_guestOSFamilyIDs.contains(aFamilyId), ("Family ID incorrect: '%s'.", aFamilyId.toLatin1().constData()));
+    return m_guestOSFamilyIDs.contains(aFamilyId) ?
+           m_guestOSTypes[m_guestOSFamilyIDs.indexOf(aFamilyId)] : QList<CGuestOSType>();
 }
 
 QPixmap VBoxGlobal::vmGuestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize /* = 0 */) const
@@ -692,14 +692,14 @@ CGuestOSType VBoxGlobal::vmGuestOSType(const QString &aTypeId,
              const QString &aFamilyId /* = QString::null */) const
 {
     QList <CGuestOSType> list;
-    if (mFamilyIDs.contains (aFamilyId))
+    if (m_guestOSFamilyIDs.contains (aFamilyId))
     {
-        list = mTypes [mFamilyIDs.indexOf (aFamilyId)];
+        list = m_guestOSTypes [m_guestOSFamilyIDs.indexOf (aFamilyId)];
     }
     else
     {
-        for (int i = 0; i < mFamilyIDs.size(); ++ i)
-            list += mTypes [i];
+        for (int i = 0; i < m_guestOSFamilyIDs.size(); ++ i)
+            list += m_guestOSTypes [i];
     }
     for (int j = 0; j < list.size(); ++ j)
         if (!list [j].GetId().compare (aTypeId))
@@ -713,9 +713,9 @@ CGuestOSType VBoxGlobal::vmGuestOSType(const QString &aTypeId,
  */
 QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aTypeId) const
 {
-    for (int i = 0; i < mFamilyIDs.size(); ++ i)
+    for (int i = 0; i < m_guestOSFamilyIDs.size(); ++ i)
     {
-        QList <CGuestOSType> list (mTypes [i]);
+        QList <CGuestOSType> list (m_guestOSTypes [i]);
         for ( int j = 0; j < list.size(); ++ j)
             if (!list [j].GetId().compare (aTypeId))
                 return list [j].GetDescription();
@@ -4006,12 +4006,8 @@ void VBoxGlobal::prepare()
         msgCenter().cannotCreateVirtualBoxClient(m_client);
         return;
     }
-    /* Fetch corresponding objects/values: */
-    m_vbox = virtualBoxClient().GetVirtualBox();
-    m_host = virtualBox().GetHost();
-    m_strHomeFolder = virtualBox().GetHomeFolder();
-    /* Mark wrappers valid: */
-    m_fWrappersValid = true;
+    /* Init wrappers: */
+    comWrappersReinit();
 
     /* Watch for the VBoxSVC availability changes: */
     connect(gVBoxEvents, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
@@ -4040,33 +4036,6 @@ void VBoxGlobal::prepare()
 
     connect(gEDataManager, SIGNAL(sigLanguageChange(QString)),
             this, SLOT(sltGUILanguageChange(QString)));
-
-    /* Initialize guest OS Type list. */
-    CGuestOSTypeVector coll = m_vbox.GetGuestOSTypes();
-    int osTypeCount = coll.size();
-    AssertMsg(osTypeCount > 0, ("Number of OS types must not be zero"));
-    if (osTypeCount > 0)
-    {
-        /* Here we ASSUME the 'Other' types are always the first, so we
-         * remember it and will append it to the list when finished.
-         * We do a two pass, first adding the specific types, then the two
-         * 'Other' types. */
-        for (int j = 0; j < 2; j++)
-        {
-            int cMax = j == 0 ? coll.size() : RT_MIN(2, coll.size());
-            for (int i = j == 0 ? 2 : 0; i < cMax; ++i)
-            {
-                CGuestOSType os = coll[i];
-                QString familyId(os.GetFamilyId());
-                if (!mFamilyIDs.contains(familyId))
-                {
-                    mFamilyIDs << familyId;
-                    mTypes << QList<CGuestOSType>();
-                }
-                mTypes[mFamilyIDs.indexOf(familyId)].append(os);
-            }
-        }
-    }
 
     qApp->installEventFilter (this);
 
@@ -4418,8 +4387,8 @@ void VBoxGlobal::cleanup()
     m_pIconPool = 0;
 
     /* ensure CGuestOSType objects are no longer used */
-    mFamilyIDs.clear();
-    mTypes.clear();
+    m_guestOSFamilyIDs.clear();
+    m_guestOSTypes.clear();
 
     /* Starting COM cleanup: */
     m_comCleanupProtectionToken.lockForWrite();
@@ -4473,12 +4442,8 @@ void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
     {
         if (!m_fWrappersValid)
         {
-            /* Re-fetch corresponding objects/values: */
-            m_vbox = virtualBoxClient().GetVirtualBox();
-            m_host = virtualBox().GetHost();
-            m_strHomeFolder = virtualBox().GetHomeFolder();
-            /* Mark wrappers valid: */
-            m_fWrappersValid = true;
+            /* Re-init wrappers: */
+            comWrappersReinit();
 
             /* If that is Selector UI: */
             if (!isVMConsoleProcess())
@@ -4492,6 +4457,45 @@ void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
 
     /* Notify listeners about the VBoxSVC availability change: */
     emit sigVBoxSVCAvailabilityChange();
+}
+
+void VBoxGlobal::comWrappersReinit()
+{
+    /* Re-fetch corresponding objects/values: */
+    m_vbox = virtualBoxClient().GetVirtualBox();
+    m_host = virtualBox().GetHost();
+    m_strHomeFolder = virtualBox().GetHomeFolder();
+
+    /* Re-initialize guest OS Type list: */
+    m_guestOSFamilyIDs.clear();
+    m_guestOSTypes.clear();
+    const CGuestOSTypeVector guestOSTypes = m_vbox.GetGuestOSTypes();
+    const int cGuestOSTypeCount = guestOSTypes.size();
+    AssertMsg(cGuestOSTypeCount > 0, ("Number of OS types must not be zero"));
+    if (cGuestOSTypeCount > 0)
+    {
+        /* Here we ASSUME the 'Other' types are always the first,
+         * so we remember them and will append them to the list when finished.
+         * We do a two pass, first adding the specific types, then the two 'Other' types. */
+        for (int j = 0; j < 2; ++j)
+        {
+            int cMax = j == 0 ? cGuestOSTypeCount : RT_MIN(2, cGuestOSTypeCount);
+            for (int i = j == 0 ? 2 : 0; i < cMax; ++i)
+            {
+                const CGuestOSType os = guestOSTypes.at(i);
+                const QString strFamilyID = os.GetFamilyId();
+                if (!m_guestOSFamilyIDs.contains(strFamilyID))
+                {
+                    m_guestOSFamilyIDs << strFamilyID;
+                    m_guestOSTypes << QList<CGuestOSType>();
+                }
+                m_guestOSTypes[m_guestOSFamilyIDs.indexOf(strFamilyID)].append(os);
+            }
+        }
+    }
+
+    /* Mark wrappers valid: */
+    m_fWrappersValid = true;
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
