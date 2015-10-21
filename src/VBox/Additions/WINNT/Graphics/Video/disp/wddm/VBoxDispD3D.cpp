@@ -4269,7 +4269,7 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
                     {
                         D3DLOCKED_RECT LRect;
                         LRect.pBits = LockData.pData;
-                        LRect.Pitch = ((pAlloc->SurfDesc.bpp * pAlloc->SurfDesc.width) + 7) >> 3;
+                        LRect.Pitch = pAlloc->SurfDesc.pitch;
                         Assert(pAlloc->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_VALID);
                         VBoxD3DIfLockUnlockMemSynch(pAlloc, &LRect, &pAlloc->DirtyRegion.Rect, TRUE /* bool bToLockInfo*/);
                         vboxWddmDirtyRegionClear(&pAlloc->DirtyRegion);
