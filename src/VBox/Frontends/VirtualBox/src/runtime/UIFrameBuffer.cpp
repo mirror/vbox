@@ -558,6 +558,11 @@ HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
     /* Cache window ID: */
     m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
+#ifdef Q_WS_X11
+    /* Sync Qt and X11 Server (see xTracker #7547). */
+    XSync(QX11Info::display(), false);
+#endif
+
     /* Assign display: */
     m_display = m_pMachineView->uisession()->display();
 
