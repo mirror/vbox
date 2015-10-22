@@ -242,7 +242,7 @@ HRESULT GuestDnDTarget::getProtocolVersion(ULONG *aProtocolVersion)
 HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
                               DnDAction_T                      aDefaultAction,
                               const std::vector<DnDAction_T>  &aAllowedActions,
-                              const GuestDnDMIMEList           &aFormats,
+                              const GuestDnDMIMEList          &aFormats,
                               DnDAction_T                     *aResultAction)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
@@ -280,9 +280,10 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
      * In the GuestDnDTarget case the source formats are from the host,
      * as GuestDnDTarget acts as a source for the guest.
      */
-    Utf8Str strFormats = GuestDnD::toFormatString(GuestDnD::toFilteredFormatList(m_lstFmtSupported, aFormats));
+    Utf8Str strFormats       = GuestDnD::toFormatString(GuestDnD::toFilteredFormatList(m_lstFmtSupported, aFormats));
     if (strFormats.isEmpty())
         return setError(E_INVALIDARG, tr("No or not supported format(s) specified"));
+    const uint32_t cbFormats = (uint32_t)strFormats.length() + 1; /* Include terminating zero. */
 
     LogRel2(("DnD: Offered formats to guest:\n"));
     RTCList<RTCString> lstFormats = strFormats.split("\r\n");
@@ -309,8 +310,8 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextUInt32(aY);
         Msg.setNextUInt32(uDefAction);
         Msg.setNextUInt32(uAllowedActions);
-        Msg.setNextPointer((void*)strFormats.c_str(), strFormats.length() + 1);
-        Msg.setNextUInt32(strFormats.length() + 1);
+        Msg.setNextPointer((void *)strFormats.c_str(), cbFormats);
+        Msg.setNextUInt32(cbFormats);
 
         rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
@@ -367,9 +368,10 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
      * In the GuestDnDTarget case the source formats are from the host,
      * as GuestDnDTarget acts as a source for the guest.
      */
-    Utf8Str strFormats = GuestDnD::toFormatString(GuestDnD::toFilteredFormatList(m_lstFmtSupported, aFormats));
+    Utf8Str strFormats       = GuestDnD::toFormatString(GuestDnD::toFilteredFormatList(m_lstFmtSupported, aFormats));
     if (strFormats.isEmpty())
         return setError(E_INVALIDARG, tr("No or not supported format(s) specified"));
+    const uint32_t cbFormats = (uint32_t)strFormats.length() + 1; /* Include terminating zero. */
 
     HRESULT hr = S_OK;
 
@@ -385,8 +387,8 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextUInt32(aY);
         Msg.setNextUInt32(uDefAction);
         Msg.setNextUInt32(uAllowedActions);
-        Msg.setNextPointer((void*)strFormats.c_str(), strFormats.length() + 1);
-        Msg.setNextUInt32(strFormats.length() + 1);
+        Msg.setNextPointer((void *)strFormats.c_str(), cbFormats);
+        Msg.setNextUInt32(cbFormats);
 
         rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
@@ -482,9 +484,10 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
      * In the GuestDnDTarget case the source formats are from the host,
      * as GuestDnDTarget acts as a source for the guest.
      */
-    Utf8Str strFormats = GuestDnD::toFormatString(GuestDnD::toFilteredFormatList(m_lstFmtSupported, aFormats));
+    Utf8Str strFormats       = GuestDnD::toFormatString(GuestDnD::toFilteredFormatList(m_lstFmtSupported, aFormats));
     if (strFormats.isEmpty())
         return setError(E_INVALIDARG, tr("No or not supported format(s) specified"));
+    const uint32_t cbFormats = (uint32_t)strFormats.length() + 1; /* Include terminating zero. */
 
     /* Adjust the coordinates in a multi-monitor setup. */
     HRESULT hr = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
@@ -499,8 +502,8 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextUInt32(aY);
         Msg.setNextUInt32(uDefAction);
         Msg.setNextUInt32(uAllowedActions);
-        Msg.setNextPointer((void*)strFormats.c_str(), strFormats.length() + 1);
-        Msg.setNextUInt32(strFormats.length() + 1);
+        Msg.setNextPointer((void*)strFormats.c_str(), cbFormats);
+        Msg.setNextUInt32(cbFormats);
 
         int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
@@ -1324,7 +1327,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
          * Set the meta format.
          */
         void    *pvFmt = (void *)pCtx->mFmtReq.c_str();
-        uint32_t cbFmt = pCtx->mFmtReq.length() + 1;        /* Include terminating zero. */
+        uint32_t cbFmt = (uint32_t)pCtx->mFmtReq.length() + 1;           /* Include terminating zero. */
 
         pData->setFmt(pvFmt, cbFmt);
 

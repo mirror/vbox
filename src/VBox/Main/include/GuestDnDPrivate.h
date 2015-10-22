@@ -101,7 +101,7 @@ public:
 
 public:
 
-    size_t add(const void *pvDataAdd, size_t cbDataAdd)
+    uint32_t add(const void *pvDataAdd, uint32_t cbDataAdd)
     {
         LogFlowThisFunc(("pvDataAdd=%p, cbDataAdd=%zu\n", pvDataAdd, cbDataAdd));
 
@@ -121,12 +121,15 @@ public:
         return cbDataAdd;
     }
 
-    size_t add(const std::vector<BYTE> &vecAdd)
+    uint32_t add(const std::vector<BYTE> &vecAdd)
     {
         if (!vecAdd.size())
             return 0;
 
-        return add(&vecAdd.front(), vecAdd.size());
+        if (vecAdd.size() > UINT32_MAX) /* Paranoia. */
+            return 0;
+
+        return add(&vecAdd.front(), (uint32_t)vecAdd.size());
     }
 
     void reset(void)
@@ -146,7 +149,7 @@ public:
 
     void *getDataMutable(void) { return pvData; }
 
-    size_t getSize(void) const { return cbDataUsed; }
+    uint32_t getSize(void) const { return cbDataUsed; }
 
 public:
 
@@ -156,7 +159,7 @@ public:
 
         if (strData.isNotEmpty())
         {
-            const size_t cbStrData = strData.length() + 1; /* Include terminating zero. */
+            const uint32_t cbStrData = (uint32_t)strData.length() + 1; /* Include terminating zero. */
             rc = resize(cbStrData);
             if (RT_SUCCESS(rc))
                 memcpy(pvData, strData.c_str(), cbStrData);
@@ -172,7 +175,7 @@ public:
 
 protected:
 
-    int resize(size_t cbSize)
+    int resize(uint32_t cbSize)
     {
         if (!cbSize)
         {
@@ -208,9 +211,9 @@ protected:
 
 protected:
 
-    void   *pvData;
-    size_t  cbData;
-    size_t  cbDataUsed;
+    void     *pvData;
+    uint32_t  cbData;
+    uint32_t  cbDataUsed;
 };
 
 /**

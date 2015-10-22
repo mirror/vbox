@@ -34,14 +34,14 @@
 #include <VBox/log.h>
 
 DnDDroppedFiles::DnDDroppedFiles(void)
-    : hDir(NULL)
-    , fOpen(0) { }
+    : m_fOpen(0)
+    , m_hDir(NULL) { }
 
-DnDDroppedFiles::DnDDroppedFiles(const char *pszPath, uint32_t fOpen)
-    : hDir(NULL)
-    , fOpen(0)
+DnDDroppedFiles::DnDDroppedFiles(const char *pszPath, uint32_t fFlags)
+    : m_fOpen(0)
+    , m_hDir(NULL)
 {
-    OpenEx(pszPath, fOpen);
+    OpenEx(pszPath, fFlags);
 }
 
 DnDDroppedFiles::~DnDDroppedFiles(void)
@@ -55,8 +55,8 @@ int DnDDroppedFiles::AddFile(const char *pszFile)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
 
-    if (!this->lstFiles.contains(pszFile))
-        this->lstFiles.append(pszFile);
+    if (!this->m_lstFiles.contains(pszFile))
+        this->m_lstFiles.append(pszFile);
     return VINF_SUCCESS;
 }
 
@@ -64,19 +64,19 @@ int DnDDroppedFiles::AddDir(const char *pszDir)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
 
-    if (!this->lstDirs.contains(pszDir))
-        this->lstDirs.append(pszDir);
+    if (!this->m_lstDirs.contains(pszDir))
+        this->m_lstDirs.append(pszDir);
     return VINF_SUCCESS;
 }
 
 int DnDDroppedFiles::closeInternal(void)
 {
     int rc;
-    if (this->hDir != NULL)
+    if (this->m_hDir != NULL)
     {
-        rc = RTDirClose(this->hDir);
+        rc = RTDirClose(this->m_hDir);
         if (RT_SUCCESS(rc))
-            this->hDir = NULL;
+            this->m_hDir = NULL;
     }
     else
         rc = VINF_SUCCESS;
@@ -92,12 +92,12 @@ int DnDDroppedFiles::Close(void)
 
 const char *DnDDroppedFiles::GetDirAbs(void) const
 {
-    return this->strPathAbs.c_str();
+    return this->m_strPathAbs.c_str();
 }
 
 bool DnDDroppedFiles::IsOpen(void) const
 {
-    return (this->hDir != NULL);
+    return (this->m_hDir != NULL);
 }
 
 int DnDDroppedFiles::OpenEx(const char *pszPath, uint32_t fFlags)
@@ -155,9 +155,9 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, uint32_t fFlags)
             rc = RTDirOpen(&phDir, pszDropDir);
             if (RT_SUCCESS(rc))
             {
-                this->hDir       = phDir;
-                this->strPathAbs = pszDropDir;
-                this->fOpen      = fFlags;
+                this->m_hDir       = phDir;
+                this->m_strPathAbs = pszDropDir;
+                this->m_fOpen      = fFlags;
             }
         }
 
@@ -195,8 +195,8 @@ int DnDDroppedFiles::Reset(bool fRemoveDropDir)
         }
         else
         {
-            this->lstDirs.clear();
-            this->lstFiles.clear();
+            this->m_lstDirs.clear();
+            this->m_lstFiles.clear();
         }
     }
 
@@ -206,15 +206,15 @@ int DnDDroppedFiles::Reset(bool fRemoveDropDir)
 
 int DnDDroppedFiles::Reopen(void)
 {
-    if (this->strPathAbs.isEmpty())
+    if (this->m_strPathAbs.isEmpty())
         return VERR_NOT_FOUND;
 
-    return OpenEx(this->strPathAbs.c_str(), this->fOpen);
+    return OpenEx(this->m_strPathAbs.c_str(), this->m_fOpen);
 }
 
 int DnDDroppedFiles::Rollback(void)
 {
-    if (this->strPathAbs.isEmpty())
+    if (this->m_strPathAbs.isEmpty())
         return VINF_SUCCESS;
 
     int rc = VINF_SUCCESS;
@@ -223,22 +223,22 @@ int DnDDroppedFiles::Rollback(void)
      * Note: Only remove empty directories, never ever delete
      *       anything recursive here! Steam (tm) knows best ... :-) */
     int rc2;
-    for (size_t i = 0; i < this->lstFiles.size(); i++)
+    for (size_t i = 0; i < this->m_lstFiles.size(); i++)
     {
-        rc2 = RTFileDelete(this->lstFiles.at(i).c_str());
+        rc2 = RTFileDelete(this->m_lstFiles.at(i).c_str());
         if (RT_SUCCESS(rc2))
-            this->lstFiles.removeAt(i);
+            this->m_lstFiles.removeAt(i);
 
         if (RT_SUCCESS(rc))
            rc = rc2;
         /* Keep going. */
     }
 
-    for (size_t i = 0; i < this->lstDirs.size(); i++)
+    for (size_t i = 0; i < this->m_lstDirs.size(); i++)
     {
-        rc2 = RTDirRemove(this->lstDirs.at(i).c_str());
+        rc2 = RTDirRemove(this->m_lstDirs.at(i).c_str());
         if (RT_SUCCESS(rc2))
-            this->lstDirs.removeAt(i);
+            this->m_lstDirs.removeAt(i);
 
         if (RT_SUCCESS(rc))
             rc = rc2;
@@ -247,15 +247,15 @@ int DnDDroppedFiles::Rollback(void)
 
     if (RT_SUCCESS(rc))
     {
-        Assert(this->lstFiles.isEmpty());
-        Assert(this->lstDirs.isEmpty());
+        Assert(this->m_lstFiles.isEmpty());
+        Assert(this->m_lstDirs.isEmpty());
 
         rc2 = closeInternal();
         if (RT_SUCCESS(rc2))
         {
             /* Try to remove the empty root dropped files directory as well.
              * Might return VERR_DIR_NOT_EMPTY or similar. */
-            rc2 = RTDirRemove(this->strPathAbs.c_str());
+            rc2 = RTDirRemove(this->m_strPathAbs.c_str());
         }
     }
 

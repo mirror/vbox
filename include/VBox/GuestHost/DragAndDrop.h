@@ -74,15 +74,15 @@ protected:
 protected:
 
     /** Open flags. */
-    uint32_t                     fOpen;
+    uint32_t                     m_fOpen;
     /** Directory handle for drop directory. */
-    PRTDIR                       hDir;
+    PRTDIR                       m_hDir;
     /** Absolute path to drop directory. */
-    RTCString                    strPathAbs;
+    RTCString                    m_strPathAbs;
     /** List for holding created directories in the case of a rollback. */
-    RTCList<RTCString>           lstDirs;
+    RTCList<RTCString>           m_lstDirs;
     /** List for holding created files in the case of a rollback. */
-    RTCList<RTCString>           lstFiles;
+    RTCList<RTCString>           m_lstFiles;
 };
 
 bool DnDMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);

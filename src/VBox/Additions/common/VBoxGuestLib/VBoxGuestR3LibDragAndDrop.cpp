@@ -1826,7 +1826,10 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     LogFlowFunc(("strDir=%s (%zu), fMode=0x%x\n",
                  strPath.c_str(), strPath.length(), pObj->GetMode()));
 
-    const uint32_t cbPath = strPath.length() + 1; /* Include termination. */
+    if (strPath.length() > RTPATH_MAX)
+        return VERR_INVALID_PARAMETER;
+
+    const uint32_t cbPath = (uint32_t)strPath.length() + 1; /* Include termination. */
 
     VBOXDNDGHSENDDIRMSG Msg;
     RT_ZERO(Msg);
@@ -2064,22 +2067,23 @@ static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx,
         RTCString strRootDest = lstURI.RootToString();
         if (strRootDest.isNotEmpty())
         {
-            void *pvURIList  = (void *)strRootDest.c_str(); /* URI root list. */
-            size_t cbURLIist = strRootDest.length() + 1;    /* Include string termination. */
+            void    *pvURIList = (void *)strRootDest.c_str();        /* URI root list. */
+            uint32_t cbURLIist = (uint32_t)strRootDest.length() + 1; /* Include string termination. */
 
             /* The total size also contains the size of the meta data. */
             uint64_t cbTotal  = cbURLIist;
                      cbTotal += lstURI.TotalBytes();
 
             /* We're going to send an URI list in text format. */
-            char szMetaFmt[] = "text/uri-list";
+            const char     szMetaFmt[] = "text/uri-list";
+            const uint32_t cbMetaFmt   = (uint32_t)strlen(szMetaFmt) + 1; /* Include termination. */
 
             VBOXDNDDATAHDR dataHeader;
             dataHeader.uFlags    = 0; /* Flags not used yet. */
             dataHeader.cbTotal   = cbTotal;
             dataHeader.cbMeta    = cbURLIist;
             dataHeader.pvMetaFmt = (void *)szMetaFmt;
-            dataHeader.cbMetaFmt = strlen(szMetaFmt) + 1; /* Include termination. */
+            dataHeader.cbMetaFmt = cbMetaFmt;
             dataHeader.cObjects  = lstURI.TotalCount();
 
             rc = vbglR3DnDGHSendDataInternal(pCtx,
