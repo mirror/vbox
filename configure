@@ -1591,7 +1591,7 @@ EOF
           if [ "$foundqt4" = "2" ]; then
             cnf_append "VBOX_WITH_QT4_SUN" "1"
           fi
-          if [ ! "$foundqt4" = "3" ]; then
+          if [ "$foundqt4" != "3" ]; then
             TOOLQT4BIN="$TOOLQT4/bin"
           fi
           test_header "Qt4 devtools"
