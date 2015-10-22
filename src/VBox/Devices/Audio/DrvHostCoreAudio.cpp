@@ -1480,7 +1480,7 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
 
     /* Not much else to do here. */
 
-    uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut);
+    uint32_t cLive = AudioMixBufAvail(&pHstStrmOut->MixBuf);;
     if (!cLive) /* Not samples to play? Bail out. */
     {
         if (pcSamplesPlayed)
@@ -1507,7 +1507,7 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
         {
             RTCircBufReleaseWriteBlock(pStreamOut->pBuf, cbCopy);
             break;
-        }        
+        }
 
         Assert(cbCopy <= cbToRead);
 
@@ -1878,7 +1878,7 @@ static DECLCALLBACK(int) drvHostCoreAudioInitIn(PPDMIHOSTAUDIO pInterface,
     bool fDeviceByUser = false;
 
     /* Initialize the hardware info section with the audio settings */
-    int rc = drvAudioStreamCfgToProps(pCfg, &pStreamIn->streamIn.Props);
+    int rc = DrvAudioStreamCfgToProps(pCfg, &pStreamIn->streamIn.Props);
     if (RT_SUCCESS(rc))
     {
 #if 0
@@ -1937,7 +1937,7 @@ static DECLCALLBACK(int) drvHostCoreAudioInitOut(PPDMIHOSTAUDIO pInterface,
     pStreamOut->deviceID  = kAudioDeviceUnknown;
 
     /* Initialize the hardware info section with the audio settings */
-    drvAudioStreamCfgToProps(pCfg, &pStreamOut->streamOut.Props);
+    DrvAudioStreamCfgToProps(pCfg, &pStreamOut->streamOut.Props);
 
 #if 0
     /* Try to find the audio device set by the user. Use

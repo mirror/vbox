@@ -309,63 +309,75 @@ static bool drvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
     return fValid;
 }
 
-void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf)
+/**
+ * Clears a sample buffer by the given amount of audio samples.
+ *
+ * @return  IPRT status code.
+ * @param   pPCMProps               PCM properties to use for the buffer to clear.
+ * @param   pvBuf                   Buffer to clear.
+ * @param   cbBuf                   Size (in bytes) of the buffer.
+ * @param   cSamples                Number of audio samples to clear in the buffer.
+ */
+void DrvAudioClearBuf(PPDMPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cSamples)
 {
-    AssertPtrReturnVoid(pPCMInfo);
+    AssertPtrReturnVoid(pPCMProps);
     AssertPtrReturnVoid(pvBuf);
 
-    if (!cbBuf)
+    if (!cbBuf || !cSamples)
         return;
 
-    Log2Func(("pPCMInfo=%p, pvBuf=%p, cbBuf=%zu, fSigned=%RTbool, cBits=%RU8, cShift=%RU8\n",
-              pPCMInfo, pvBuf, cbBuf, pPCMInfo->fSigned, pPCMInfo->cBits, pPCMInfo->cShift));
+    Log2Func(("pPCMInfo=%p, pvBuf=%p, cSamples=%RU32, fSigned=%RTbool, cBits=%RU8, cShift=%RU8\n",
+              pPCMProps, pvBuf, cSamples, pPCMProps->fSigned, pPCMProps->cBits, pPCMProps->cShift));
 
-    if (pPCMInfo->fSigned)
+    if (pPCMProps->fSigned)
     {
-        memset(pvBuf, 0, cbBuf << pPCMInfo->cShift);
+        memset(pvBuf, 0, cSamples << pPCMProps->cShift);
     }
     else
     {
-        switch (pPCMInfo->cBits)
+        switch (pPCMProps->cBits)
         {
+            case 8:
+            {
+                memset(pvBuf, 0x80, cSamples << pPCMProps->cShift);
+                break;
+            }
 
-        case 8:
-            memset(pvBuf, 0x80, cbBuf << pPCMInfo->cShift);
-            break;
+            case 16:
+            {
+                uint16_t *p = (uint16_t *)pvBuf;
+                int shift = pPCMProps->cChannels - 1;
+                short s = INT16_MAX;
 
-        case 16:
-        {
-            uint16_t *p = (uint16_t *)pvBuf;
-            int shift = pPCMInfo->cChannels - 1;
-            short s = INT16_MAX;
+                if (pPCMProps->fSwapEndian)
+                    s = RT_BSWAP_U16(s);
 
-            if (pPCMInfo->fSwapEndian)
-                s = RT_BSWAP_U16(s);
+                for (unsigned i = 0; i < cSamples << shift; i++)
+                    p[i] = s;
 
-            for (unsigned i = 0; i < cbBuf << shift; i++)
-                p[i] = s;
+                break;
+            }
 
-            break;
-        }
+            case 32:
+            {
+                uint32_t *p = (uint32_t *)pvBuf;
+                int shift = pPCMProps->cChannels - 1;
+                int32_t s = INT32_MAX;
 
-        case 32:
-        {
-            uint32_t *p = (uint32_t *)pvBuf;
-            int shift = pPCMInfo->cChannels - 1;
-            int32_t s = INT32_MAX;
+                if (pPCMProps->fSwapEndian)
+                    s = RT_BSWAP_U32(s);
 
-            if (pPCMInfo->fSwapEndian)
-                s = RT_BSWAP_U32(s);
+                for (unsigned i = 0; i < cSamples << shift; i++)
+                    p[i] = s;
 
-            for (unsigned i = 0; i < cbBuf << shift; i++)
-                p[i] = s;
+                break;
+            }
 
-            break;
-        }
-
-        default:
-            AssertMsgFailed(("Invalid bits: %RU8\n", pPCMInfo->cBits));
-            break;
+            default:
+            {
+                AssertMsgFailed(("Invalid bits: %RU8\n", pPCMProps->cBits));
+                break;
+            }
         }
     }
 }
@@ -638,7 +650,7 @@ int drvAudioGstOutInit(PPDMAUDIOGSTSTRMOUT pGstStrmOut, PPDMAUDIOHSTSTRMOUT pHos
     AssertPtrReturn(pszName,      VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,         VERR_INVALID_POINTER);
 
-    int rc = drvAudioStreamCfgToProps(pCfg, &pGstStrmOut->Props);
+    int rc = DrvAudioStreamCfgToProps(pCfg, &pGstStrmOut->Props);
     if (RT_SUCCESS(rc))
     {
         char *pszTemp;
@@ -890,7 +902,7 @@ int drvAudioGstInInit(PPDMAUDIOGSTSTRMIN pGstStrmIn, PPDMAUDIOHSTSTRMIN pHstStrm
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
-    int rc = drvAudioStreamCfgToProps(pCfg, &pGstStrmIn->Props);
+    int rc = DrvAudioStreamCfgToProps(pCfg, &pGstStrmIn->Props);
     if (RT_SUCCESS(rc))
     {
         char *pszTemp;
@@ -1191,7 +1203,7 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
     PPDMAUDIOHSTSTRMOUT pHstStrmOut = NULL;
     while ((pHstStrmOut = drvAudioHstFindAnyEnabledOut(pThis, pHstStrmOut)))
     {
-        cSamplesLive = drvAudioHstOutSamplesLive(pHstStrmOut);
+        cSamplesLive = AudioMixBufAvail(&pHstStrmOut->MixBuf);
 
         /* Has this stream marked as disabled but there still were guest streams relying
          * on it? Check if this stream now can be closed and do so, if possible. */

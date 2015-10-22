@@ -111,7 +111,7 @@ static DECLCALLBACK(int) drvHostNullAudioInitIn(PPDMIHOSTAUDIO pInterface,
     NOREF(enmRecSource);
 
     /* Just adopt the wanted stream configuration. */
-    int rc = drvAudioStreamCfgToProps(pCfg, &pHstStrmIn->Props);
+    int rc = DrvAudioStreamCfgToProps(pCfg, &pHstStrmIn->Props);
     if (RT_SUCCESS(rc))
     {
         if (pcSamples)
@@ -128,7 +128,7 @@ static DECLCALLBACK(int) drvHostNullAudioInitOut(PPDMIHOSTAUDIO pInterface,
     NOREF(pInterface);
 
     /* Just adopt the wanted stream configuration. */
-    int rc = drvAudioStreamCfgToProps(pCfg, &pHstStrmOut->Props);
+    int rc = DrvAudioStreamCfgToProps(pCfg, &pHstStrmOut->Props);
     if (RT_SUCCESS(rc))
     {
         PNULLAUDIOSTREAMOUT pNullStrmOut = (PNULLAUDIOSTREAMOUT)pHstStrmOut;
@@ -163,7 +163,7 @@ static DECLCALLBACK(int) drvHostNullAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
     PNULLAUDIOSTREAMOUT pNullStrmOut = (PNULLAUDIOSTREAMOUT)pHstStrmOut;
 
     /* Consume as many samples as would be played at the current frequency since last call. */
-    uint32_t csLive          = drvAudioHstOutSamplesLive(pHstStrmOut);
+    uint32_t csLive          = AudioMixBufAvail(&pHstStrmOut->MixBuf);;
     uint64_t u64TicksNow     = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
     uint64_t u64TicksElapsed = u64TicksNow  - pNullStrmOut->u64TicksLast;
     uint64_t u64TicksFreq    = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
@@ -184,7 +184,8 @@ static DECLCALLBACK(int) drvHostNullAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
     cSamplesPlayed = RT_MIN(cSamplesPlayed, pNullStrmOut->csPlayBuffer);
 
     uint32_t csRead = 0;
-    AudioMixBufReadCirc(&pHstStrmOut->MixBuf, pNullStrmOut->pu8PlayBuffer, cSamplesPlayed << pHstStrmOut->Props.cShift, &csRead);
+    AudioMixBufReadCirc(&pHstStrmOut->MixBuf, pNullStrmOut->pu8PlayBuffer,
+                        AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cSamplesPlayed), &csRead);
     AudioMixBufFinish(&pHstStrmOut->MixBuf, csRead);
 
     if (pcSamplesPlayed)

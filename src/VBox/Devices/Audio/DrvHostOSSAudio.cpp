@@ -65,8 +65,10 @@ typedef struct OSSAUDIOSTREAMIN
     int                hFile;
     int                cFragments;
     int                cbFragmentSize;
-    void              *pvBuf;
-    size_t             cbBuf;
+    /** Own PCM buffer. */
+    void              *pvPCMBuf;
+    /** Size (in bytes) of own PCM buffer. */
+    size_t             cbPCMBuf;
     int                old_optr;
 } OSSAUDIOSTREAMIN, *POSSAUDIOSTREAMIN;
 
@@ -78,9 +80,14 @@ typedef struct OSSAUDIOSTREAMOUT
     int                 cFragments;
     int                 cbFragmentSize;
 #ifndef RT_OS_L4
+    /** Whether we use a memory mapped file instead of our
+     *  own allocated PCM buffer below. */
     bool                fMemMapped;
 #endif
+    /** Own PCM buffer in case memory mapping is unavailable. */
     void               *pvPCMBuf;
+    /** Size (in bytes) of own PCM buffer. */
+    size_t              cbPCMBuf;
     int                 old_optr;
 } OSSAUDIOSTREAMOUT, *POSSAUDIOSTREAMOUT;
 
@@ -352,8 +359,8 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
-            drvAudioClearBuf(&pHstStrmOut->Props,
-                             pThisStrmOut->pvPCMBuf, AudioMixBufSize(&pHstStrmOut->MixBuf));
+            DrvAudioClearBuf(&pHstStrmOut->Props,
+                             pThisStrmOut->pvPCMBuf, pThisStrmOut->cbPCMBuf, AudioMixBufSize(&pHstStrmOut->MixBuf));
 
             mask = PCM_ENABLE_OUTPUT;
             if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
@@ -405,7 +412,7 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
     POSSAUDIOSTREAMIN pThisStrmIn = (POSSAUDIOSTREAMIN)pHstStrmIn;
 
     int rc = VINF_SUCCESS;
-    size_t cbToRead = RT_MIN(pThisStrmIn->cbBuf,
+    size_t cbToRead = RT_MIN(pThisStrmIn->cbPCMBuf,
                              AudioMixBufFreeBytes(&pHstStrmIn->MixBuf));
 
     LogFlowFunc(("cbToRead=%zu\n", cbToRead));
@@ -417,9 +424,9 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
 
     while (cbToRead)
     {
-        cbTemp = RT_MIN(cbToRead, pThisStrmIn->cbBuf);
+        cbTemp = RT_MIN(cbToRead, pThisStrmIn->cbPCMBuf);
         AssertBreakStmt(cbTemp, rc = VERR_NO_DATA);
-        cbRead = read(pThisStrmIn->hFile, (uint8_t *)pThisStrmIn->pvBuf + offWrite, cbTemp);
+        cbRead = read(pThisStrmIn->hFile, (uint8_t *)pThisStrmIn->pvPCMBuf + offWrite, cbTemp);
 
         LogFlowFunc(("cbRead=%zi, cbTemp=%RU32, cbToRead=%zu\n",
                      cbRead, cbTemp, cbToRead));
@@ -454,7 +461,7 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
         {
             uint32_t cWritten;
             rc = AudioMixBufWriteCirc(&pHstStrmIn->MixBuf,
-                                      pThisStrmIn->pvBuf, cbRead,
+                                      pThisStrmIn->pvPCMBuf, cbRead,
                                       &cWritten);
             if (RT_FAILURE(rc))
                 break;
@@ -500,11 +507,15 @@ static DECLCALLBACK(int) drvHostOSSAudioFiniIn(PPDMIHOSTAUDIO pInterface, PPDMAU
 
     LogFlowFuncEnter();
 
-    if (pThisStrmIn->pvBuf)
+    if (pThisStrmIn->pvPCMBuf)
     {
-        RTMemFree(pThisStrmIn->pvBuf);
-        pThisStrmIn->pvBuf = NULL;
+        Assert(pThisStrmIn->cbPCMBuf);
+
+        RTMemFree(pThisStrmIn->pvPCMBuf);
+        pThisStrmIn->pvPCMBuf = NULL;
     }
+
+    pThisStrmIn->cbPCMBuf = 0;
 
     return VINF_SUCCESS;
 }
@@ -523,9 +534,13 @@ static DECLCALLBACK(int) drvHostOSSAudioFiniOut(PPDMIHOSTAUDIO pInterface, PPDMA
     {
         if (pThisStrmOut->pvPCMBuf)
         {
+            Assert(pThisStrmOut->cbPCMBuf);
+
             RTMemFree(pThisStrmOut->pvPCMBuf);
             pThisStrmOut->pvPCMBuf = NULL;
         }
+
+        pThisStrmOut->cbPCMBuf = 0;
     }
 #endif
 
@@ -586,7 +601,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
             streamCfg.cChannels     = pCfg->cChannels;
             streamCfg.enmEndianness = obtStream.enmENDIANNESS;
 
-            rc = drvAudioStreamCfgToProps(&streamCfg, &pHstStrmIn->Props);
+            rc = DrvAudioStreamCfgToProps(&streamCfg, &pHstStrmIn->Props);
             if (RT_SUCCESS(rc))
             {
                 cSamples = (obtStream.cFragments * obtStream.cbFragmentSize)
@@ -598,16 +613,16 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
 
         if (RT_SUCCESS(rc))
         {
-            size_t cbBuf = cSamples * (1 << pHstStrmIn->Props.cShift);
-            pThisStrmIn->pvBuf = RTMemAlloc(cbBuf);
-            if (!pThisStrmIn->pvBuf)
+            size_t cbSample = (1 << pHstStrmIn->Props.cShift);
+            size_t cbBuf    = cSamples * cbSample;
+            pThisStrmIn->pvPCMBuf = RTMemAlloc(cbBuf);
+            if (!pThisStrmIn->pvPCMBuf)
             {
-                LogRel(("OSS: Failed allocating ADC buffer with %RU32 samples, each %d bytes\n",
-                        cSamples, 1 << pHstStrmIn->Props.cShift));
+                LogRel(("OSS: Failed allocating ADC buffer with %RU32 samples (%zu bytes per sample)\n", cSamples, cbSample));
                 rc = VERR_NO_MEMORY;
             }
 
-            pThisStrmIn->cbBuf = cbBuf;
+            pThisStrmIn->cbPCMBuf = cbBuf;
 
             if (pcSamples)
                 *pcSamples = cSamples;
@@ -663,7 +678,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
             streamCfg.cChannels     = pCfg->cChannels;
             streamCfg.enmEndianness = obtStream.enmENDIANNESS;
 
-            rc = drvAudioStreamCfgToProps(&streamCfg, &pHstStrmOut->Props);
+            rc = DrvAudioStreamCfgToProps(&streamCfg, &pHstStrmOut->Props);
             if (RT_SUCCESS(rc))
                 cSamples = (obtStream.cFragments * obtStream.cbFragmentSize)
                            >> pHstStrmOut->Props.cShift;
@@ -713,9 +728,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
                         int rc2 = munmap(pThisStrmOut->pvPCMBuf,
                                          cSamples << pHstStrmOut->Props.cShift);
                         if (rc2)
-                            LogRel(("OSS: Failed to unmap DAC output file: %s\n",
-                                    strerror(errno)));
-
+                            LogRel(("OSS: Failed to unmap DAC output file: %s\n", strerror(errno)));
                         break;
                     }
                 }
@@ -727,15 +740,20 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
             if (!pThisStrmOut->fMemMapped)
             {
 #endif
+                size_t cbSample = (1 << pHstStrmOut->Props.cShift);
+                size_t cbPCMBuf = cSamples * cbSample;
+
                 LogFlowFunc(("cSamples=%RU32\n", cSamples));
-                pThisStrmOut->pvPCMBuf = RTMemAlloc(cSamples * (1 << pHstStrmOut->Props.cShift));
+
+                pThisStrmOut->pvPCMBuf = RTMemAlloc(cbPCMBuf);
                 if (!pThisStrmOut->pvPCMBuf)
                 {
-                    LogRel(("OSS: Failed allocating DAC buffer with %RU32 samples, each %d bytes\n",
-                            cSamples, 1 << pHstStrmOut->Props.cShift));
+                    LogRel(("OSS: Failed allocating DAC buffer with %RU32 samples (%zu bytes per sample)\n", cSamples, cbSample));
                     rc = VERR_NO_MEMORY;
                     break;
                 }
+
+                pThisStrmOut->cbPCMBuf = cbPCMBuf;
 #ifndef RT_OS_L4
             }
 #endif
@@ -775,7 +793,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
     {
         size_t cbBuf = AudioMixBufSizeBytes(&pHstStrmOut->MixBuf);
 
-        uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut);
+        uint32_t cLive = AudioMixBufAvail(&pHstStrmOut->MixBuf);
         uint32_t cToRead;
 
 #ifndef RT_OS_L4
@@ -857,7 +875,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
                                       cbRead);
             if (cbWritten == -1)
             {
-                LogRel(("OSS: Failed writing output data %s\n", strerror(errno)));
+                LogRel(("OSS: Failed writing output data: %s\n", strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
                 break;
             }

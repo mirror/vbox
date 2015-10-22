@@ -598,7 +598,7 @@ static DECLCALLBACK(int) drvHostPulseAudioInitOut(PPDMIHOSTAUDIO pInterface,
     streamCfg.uHz       = pThisStrmOut->SampleSpec.rate;
     streamCfg.cChannels = pThisStrmOut->SampleSpec.channels;
 
-    rc = drvAudioStreamCfgToProps(&streamCfg, &pHstStrmOut->Props);
+    rc = DrvAudioStreamCfgToProps(&streamCfg, &pHstStrmOut->Props);
     if (RT_SUCCESS(rc))
     {
         uint32_t cbBuf  = RT_MIN(pThisStrmOut->BufAttr.tlength * 2,
@@ -681,7 +681,7 @@ static DECLCALLBACK(int) drvHostPulseAudioInitIn(PPDMIHOSTAUDIO pInterface,
     streamCfg.uHz       = pThisStrmIn->SampleSpec.rate;
     streamCfg.cChannels = pThisStrmIn->SampleSpec.channels;
 
-    rc = drvAudioStreamCfgToProps(&streamCfg, &pHstStrmIn->Props);
+    rc = DrvAudioStreamCfgToProps(&streamCfg, &pHstStrmIn->Props);
     if (RT_SUCCESS(rc))
     {
         uint32_t cSamples = RT_MIN(pThisStrmIn->BufAttr.fragsize * 10, pThisStrmIn->BufAttr.maxlength)
@@ -832,7 +832,7 @@ static DECLCALLBACK(int) drvHostPulseAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPD
     int rc = VINF_SUCCESS;
     uint32_t cbReadTotal = 0;
 
-    uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut);
+    uint32_t cLive = AudioMixBufAvail(&pHstStrmOut->MixBuf);
     if (!cLive)
     {
         LogFlowFunc(("%p: No live samples, skipping\n", pHstStrmOut));

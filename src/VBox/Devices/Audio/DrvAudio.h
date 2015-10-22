@@ -109,7 +109,6 @@ const char *drvAudioRecSourceToString(PDMAUDIORECSOURCE enmRecSource);
 PDMAUDIOFMT drvAudioHlpStringToFormat(const char *pszFormat);
 
 bool drvAudioPCMPropsAreEqual(PPDMPCMPROPS info, PPDMAUDIOSTREAMCFG pCfg);
-int drvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps);
 void drvAudioStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg);
 
 /* AUDIO IN function declarations. */
@@ -143,11 +142,8 @@ int drvAudioHlpPcmHwAddOut(PDRVAUDIO pDrvAudio, PPDMAUDIOSTREAMCFG pCfg, PPDMAUD
 int drvAudioHlpPcmCreateVoicePairOut(PDRVAUDIO pDrvAudio, const char *pszName, PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMOUT *ppGstStrmOut);
 
 /* Common functions between DrvAudio and backends (host audio drivers). */
-int  drvAudioAttachCapture(PDRVAUDIO pDrvAudio, PPDMAUDIOHSTSTRMOUT pHstStrmOut);
-void drvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf);
-void drvAudioDetachCapture(PPDMAUDIOHSTSTRMOUT pHstStrmOut);
-uint32_t drvAudioHstOutSamplesLive(PPDMAUDIOHSTSTRMOUT pHstStrmOut);
-
+void DrvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
+int DrvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps);
 
 typedef struct fixed_settings
 {

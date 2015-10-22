@@ -49,7 +49,7 @@ static int tstSingle(RTTEST hTest)
     };
     PDMPCMPROPS props;
 
-    int rc = drvAudioStreamCfgToProps(&config, &props);
+    int rc = DrvAudioStreamCfgToProps(&config, &props);
     AssertRC(rc);
 
     uint32_t cBufSize = _1K;
@@ -148,7 +148,7 @@ static int tstParentChild(RTTEST hTest)
     };
     PDMPCMPROPS props;
 
-    int rc = drvAudioStreamCfgToProps(&cfg_p, &props);
+    int rc = DrvAudioStreamCfgToProps(&cfg_p, &props);
     AssertRC(rc);
 
     PDMAUDIOMIXBUF parent;
@@ -162,7 +162,7 @@ static int tstParentChild(RTTEST hTest)
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
-    rc = drvAudioStreamCfgToProps(&cfg_c1, &props);
+    rc = DrvAudioStreamCfgToProps(&cfg_c1, &props);
     AssertRC(rc);
 
     PDMAUDIOMIXBUF child1;
@@ -177,7 +177,7 @@ static int tstParentChild(RTTEST hTest)
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
-    rc = drvAudioStreamCfgToProps(&cfg_c2, &props);
+    rc = DrvAudioStreamCfgToProps(&cfg_c2, &props);
     AssertRC(rc);
 
     PDMAUDIOMIXBUF child2;
@@ -259,7 +259,7 @@ static int tstConversion8(RTTEST hTest)
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
-    int rc = drvAudioStreamCfgToProps(&cfg_p, &props);
+    int rc = DrvAudioStreamCfgToProps(&cfg_p, &props);
     AssertRC(rc);
 
     PDMAUDIOMIXBUF parent;
@@ -280,7 +280,7 @@ static int tstConversion8(RTTEST hTest)
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
-    rc = drvAudioStreamCfgToProps(&cfg_c, &props);
+    rc = DrvAudioStreamCfgToProps(&cfg_c, &props);
     AssertRC(rc);
 
     PDMAUDIOMIXBUF child;
@@ -363,7 +363,7 @@ static int tstConversion16(RTTEST hTest)
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
-    int rc = drvAudioStreamCfgToProps(&cfg_p, &props);
+    int rc = DrvAudioStreamCfgToProps(&cfg_p, &props);
     AssertRC(rc);
 
     PDMAUDIOMIXBUF parent;
@@ -377,7 +377,7 @@ static int tstConversion16(RTTEST hTest)
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
-    rc = drvAudioStreamCfgToProps(&cfg_c, &props);
+    rc = DrvAudioStreamCfgToProps(&cfg_c, &props);
     AssertRC(rc);
 
     PDMAUDIOMIXBUF child;
@@ -461,7 +461,7 @@ static int tstVolume(RTTEST hTest)
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
-    int rc = drvAudioStreamCfgToProps(&cfg, &props);
+    int rc = DrvAudioStreamCfgToProps(&cfg, &props);
     AssertRC(rc);
 
     PDMAUDIOVOLUME vol = { false, 0, 0 };   /* Not muted. */

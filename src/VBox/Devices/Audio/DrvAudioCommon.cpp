@@ -308,8 +308,18 @@ bool drvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
     return fEqual;
 }
 
-int drvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps)
+/**
+ * Converts an audio stream configuration to matching PCM properties.
+ *
+ * @return  IPRT status code.
+ * @param   pCfg                    Audio stream configuration to convert.
+ * @param   pProps                  PCM properties to save result to.
+ */
+int DrvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps)
 {
+    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
+
     int rc = VINF_SUCCESS;
 
     int cBits = 8, cShift = 0;
@@ -406,21 +416,3 @@ void drvAudioStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg)
             break;
     }
 }
-
-/**
- * Finds the number of live samples for a specific output stream.
- *
- * @return  uint32_t                Minimum number of live host output samples processed
- *                                  by all connected guest output streams.
- * @param   pHstStrmOut             Host output stream to search in.
- */
-uint32_t drvAudioHstOutSamplesLive(PPDMAUDIOHSTSTRMOUT pHstStrmOut)
-{
-    AssertPtrReturn(pHstStrmOut, 0);
-
-    uint32_t cSamplesLive = AudioMixBufAvail(&pHstStrmOut->MixBuf);
-
-    LogFlowFunc(("%s: cStreamsLive=%RU32, cSamplesLive=%RU32\n", pHstStrmOut->MixBuf.pszName, cSamplesLive));
-    return cSamplesLive;
-}
-
