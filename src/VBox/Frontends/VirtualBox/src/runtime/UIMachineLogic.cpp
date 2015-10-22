@@ -1192,6 +1192,8 @@ void UIMachineLogic::prepareDock()
             this, SLOT(sltDockPreviewModeChanged(QAction*)));
     connect(gEDataManager, SIGNAL(sigDockIconAppearanceChange(bool)),
             this, SLOT(sltChangeDockIconUpdate(bool)));
+    connect(gEDataManager, SIGNAL(sigDockIconOverlayAppearanceChange(bool)),
+            this, SLOT(sltChangeDockIconOverlayAppearance(bool)));
 
     /* Monitor selection if there are more than one monitor */
     int cGuestScreens = machine().GetMonitorCount();
@@ -2126,6 +2128,15 @@ void UIMachineLogic::sltChangeDockIconUpdate(bool fEnabled)
         updateDockIconSize(m_DockIconPreviewMonitor, size.width(), size.height());
         updateDockOverlay();
     }
+}
+
+void UIMachineLogic::sltChangeDockIconOverlayAppearance(bool fEnabled)
+{
+    /* Value of flag is directly referenced from extra-data manager later: */
+    Q_UNUSED(fEnabled);
+    /* Update dock icon overlay: */
+    if (isMachineWindowsCreated())
+        updateDockOverlay();
 }
 #endif /* Q_WS_MAC */
 

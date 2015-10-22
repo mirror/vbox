@@ -1873,7 +1873,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* !Q_WS_MAC */
            << GUI_StatusBar_Enabled << GUI_RestrictedStatusBarIndicators << GUI_StatusBar_IndicatorOrder
 #ifdef Q_WS_MAC
-           << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor
+           << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor << GUI_DockIconOverlayEnabled
 #endif /* Q_WS_MAC */
            << GUI_PassCAD
            << GUI_MouseCapturePolicy
@@ -3429,6 +3429,18 @@ void UIExtraDataManager::setRealtimeDockIconUpdateMonitor(int iIndex, const QStr
 {
     setExtraDataString(GUI_RealtimeDockIconUpdateMonitor, iIndex ? QString::number(iIndex) : QString(), strID);
 }
+
+bool UIExtraDataManager::dockIconOverlayEnabled(const QString &strID)
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_DockIconOverlayEnabled, strID);
+}
+
+void UIExtraDataManager::setdockIconOverlayEnabled(bool fEnabled, const QString &strID)
+{
+    /* 'False' if feature restricted, 'True' otherwise: */
+    setExtraDataString(GUI_DockIconOverlayEnabled, toFeatureRestricted(!fEnabled), strID);
+}
 #endif /* Q_WS_MAC */
 
 bool UIExtraDataManager::passCADtoGuest(const QString &strID)
@@ -3809,9 +3821,12 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
                 emit sigHidLedsSyncStateChange(!isFeatureRestricted(strKey, strMachineID));
 #ifdef Q_WS_MAC
             /* 'Dock icon' appearance changed (allowed if not restricted)? */
-            else if (   strKey == GUI_RealtimeDockIconUpdateEnabled
-                     || strKey == GUI_RealtimeDockIconUpdateMonitor)
+            else if (strKey == GUI_RealtimeDockIconUpdateEnabled ||
+                     strKey == GUI_RealtimeDockIconUpdateMonitor)
                 emit sigDockIconAppearanceChange(!isFeatureRestricted(strKey, strMachineID));
+            /* 'Dock icon overlay' appearance changed (allowed if not restricted)? */
+            else if (strKey == GUI_DockIconOverlayEnabled)
+                emit sigDockIconOverlayAppearanceChange(!isFeatureRestricted(strKey, strMachineID));
 #endif /* Q_WS_MAC */
         }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,11 +24,13 @@
 
 /* GUI includes: */
 # include "UIAbstractDockIconPreview.h"
+# include "UIConverter.h"
+# include "UIExtraDataManager.h"
 # include "UIFrameBuffer.h"
 # include "UIMachineLogic.h"
 # include "UIMachineView.h"
-# include "UIConverter.h"
 # include "UISession.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -159,25 +161,34 @@ CGImageRef UIAbstractDockIconPreviewHelper::stateImage() const
 
 void UIAbstractDockIconPreviewHelper::drawOverlayIcons(CGContextRef context)
 {
-    CGRect overlayRect = CGRectMake(0, 0, 0, 0);
-    /* The overlay image at bottom/right */
-    if (m_overlayImage)
+    /* Determine whether dock icon overlay enabled: */
+    if (gEDataManager->dockIconOverlayEnabled(vboxGlobal().managedVMUuid()))
     {
-        overlayRect = CGRectMake(m_dockIconRect.size.width - CGImageGetWidth(m_overlayImage),
-                                 m_dockIconRect.size.height - CGImageGetHeight(m_overlayImage),
-                                 CGImageGetWidth(m_overlayImage),
-                                 CGImageGetHeight(m_overlayImage));
-        CGContextDrawImage(context, flipRect(overlayRect), m_overlayImage);
-    }
-    CGImageRef sImage = stateImage();
-    /* The state image at bottom/right */
-    if (sImage)
-    {
-        CGRect stateRect = CGRectMake(overlayRect.origin.x - CGImageGetWidth(sImage) / 2.0,
-                                      overlayRect.origin.y - CGImageGetHeight(sImage) / 2.0,
-                                      CGImageGetWidth(sImage),
-                                      CGImageGetHeight(sImage));
-        CGContextDrawImage(context, flipRect(stateRect), sImage);
+        /* Initialize overlayrect: */
+        CGRect overlayRect = CGRectMake(0, 0, 0, 0);
+        /* Make sure overlay image is valid: */
+        if (m_overlayImage)
+        {
+            /* Draw overlay image at bottom-right of dock icon: */
+            overlayRect = CGRectMake(m_dockIconRect.size.width - CGImageGetWidth(m_overlayImage),
+                                     m_dockIconRect.size.height - CGImageGetHeight(m_overlayImage),
+                                     CGImageGetWidth(m_overlayImage),
+                                     CGImageGetHeight(m_overlayImage));
+            CGContextDrawImage(context, flipRect(overlayRect), m_overlayImage);
+        }
+
+        /* Determine correct state-overlay image: */
+        CGImageRef sImage = stateImage();
+        /* Make sure state-overlay image is valid: */
+        if (sImage)
+        {
+            /* Draw state overlay image at top-left of guest-os overlay image: */
+            CGRect stateRect = CGRectMake(overlayRect.origin.x - CGImageGetWidth(sImage) / 2.0,
+                                          overlayRect.origin.y - CGImageGetHeight(sImage) / 2.0,
+                                          CGImageGetWidth(sImage),
+                                          CGImageGetHeight(sImage));
+            CGContextDrawImage(context, flipRect(stateRect), sImage);
+        }
     }
 }
 

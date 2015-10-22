@@ -91,6 +91,8 @@ signals:
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Notifies about 'dock icon' appearance change. */
     void sigDockIconAppearanceChange(bool fEnabled);
+    /** Mac OS X: Notifies about 'dock icon overlay' appearance change. */
+    void sigDockIconOverlayAppearanceChange(bool fEnabled);
 #endif /* RT_OS_DARWIN */
 
 public:
@@ -459,6 +461,11 @@ public:
         int realtimeDockIconUpdateMonitor(const QString &strID);
         /** Mac OS X: Defines guest-screen @a iIndex which Dock icon should reflect at runtime. */
         void setRealtimeDockIconUpdateMonitor(int iIndex, const QString &strID);
+
+        /** Mac OS X: Returns whether Dock icon overlay is enabled. */
+        bool dockIconOverlayEnabled(const QString &strID);
+        /** Mac OS X: Defines whether Dock icon overlay @a fEnabled. */
+        void setdockIconOverlayEnabled(bool fEnabled, const QString &strID);
 #endif /* Q_WS_MAC */
 
         /** Returns whether machine should pass CAD to guest. */
