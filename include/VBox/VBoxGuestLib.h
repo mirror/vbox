@@ -757,13 +757,15 @@ typedef struct VBGLR3GUESTDNDCMDCTX
      *        a second communication channel, e.g. via TCP/IP.
      *        Use a union for the HGCM stuff then. */
 
-    /** IN:  HGCM client ID to use for communication. */
+    /** HGCM client ID to use for communication. */
     uint32_t uClientID;
-    /** IN:  Protocol version to use. */
+    /** The VM's current session ID. */
+    uint64_t uSessionID;
+    /** Protocol version to use. */
     uint32_t uProtocol;
-    /** OUT: Number of parameters retrieved. */
+    /** Number of parameters retrieved for the current command. */
     uint32_t uNumParms;
-    /** IN:  Max chunk size (in bytes) for data transfers. */
+    /** Max chunk size (in bytes) for data transfers. */
     uint32_t cbMaxChunkSize;
 } VBGLR3GUESTDNDCMDCTX, *PVBGLR3GUESTDNDCMDCTX;
 
