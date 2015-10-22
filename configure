@@ -1183,7 +1183,6 @@ EOF
   if test_compile "-lSDL_ttf $I_INCSDL" SDL_ttf SDL_ttf nofatal; then
     test_execute nofatal || \
       cnf_append "VBOX_WITH_SECURELABEL" ""
-    fi
   else
     echo "not found -- disabling VBoxSDL secure label."
     cnf_append "VBOX_WITH_SECURELABEL" ""
