@@ -681,7 +681,10 @@ void UIExtraDataManagerWindow::sltExtraDataChange(QString strID, QString strKey,
             m_pModelSourceOfData->removeRow(iPosition);
         /* If 'changed value' is NOT empty => UPDATE item: */
         else
+        {
+            m_pModelSourceOfData->itemFromIndex(dataKeyIndex(iPosition))->setData(strKey, Qt::UserRole);
             m_pModelSourceOfData->itemFromIndex(dataValueIndex(iPosition))->setText(strValue);
+        }
     }
     /* Else if 'changed value' is NOT empty: */
     else if (!strValue.isEmpty())
@@ -757,19 +760,74 @@ void UIExtraDataManagerWindow::sltDataHandleSelectionChanged(const QItemSelectio
 
 void UIExtraDataManagerWindow::sltDataHandleItemChanged(QStandardItem *pItem)
 {
-    /* Value-data index: */
-    const QModelIndex valueIndex = m_pModelSourceOfData->indexFromItem(pItem);
-    const int iRow = valueIndex.row();
-    const int iColumn = valueIndex.column();
-    AssertMsgReturnVoid(iColumn == 1, ("Only 2nd column can be changed!\n"));
+    /* Make sure passed item is valid: */
+    AssertPtrReturnVoid(pItem);
 
-    /* Key-data index: */
-    const QModelIndex keyIndex = dataKeyIndex(iRow);
+    /* Item-data index: */
+    const QModelIndex itemIndex = m_pModelSourceOfData->indexFromItem(pItem);
+    const int iRow = itemIndex.row();
+    const int iColumn = itemIndex.column();
 
-    /* Update extra-data: */
-    gEDataManager->setExtraDataString(keyIndex.data().toString(),
-                                      valueIndex.data().toString(),
-                                      currentChooserID());
+    /* Key-data is changed: */
+    if (iColumn == 0)
+    {
+        /* Should we replace changed key? */
+        bool fReplace = true;
+
+        /* List of 'known keys': */
+        QStringList knownKeys;
+        for (int iKeyRow = 0; iKeyRow < m_pModelSourceOfData->rowCount(); ++iKeyRow)
+        {
+            /* Do not consider the row we are changing as Qt's model is not yet updated: */
+            if (iKeyRow != iRow)
+                knownKeys << dataKey(iKeyRow);
+        }
+
+        /* If changed key exists: */
+        if (knownKeys.contains(itemIndex.data().toString()))
+        {
+            /* Show warning and ask for overwriting approval: */
+            if (!msgCenter().questionBinary(this, MessageType_Question,
+                                            QString("Overwriting already existing key, Continue?"),
+                                            0 /* auto-confirm id */,
+                                            QString("Overwrite") /* ok button text */,
+                                            QString() /* cancel button text */,
+                                            false /* ok button by default? */))
+            {
+                /* Cancel the operation, restore the original extra-data key: */
+                pItem->setData(itemIndex.data(Qt::UserRole).toString(), Qt::DisplayRole);
+                fReplace = false;
+            }
+            else
+            {
+                /* Delete previous extra-data key: */
+                gEDataManager->setExtraDataString(itemIndex.data().toString(),
+                                                  QString(),
+                                                  currentChooserID());
+            }
+        }
+
+        /* Replace changed extra-data key if necessary: */
+        if (fReplace)
+        {
+            gEDataManager->setExtraDataString(itemIndex.data(Qt::UserRole).toString(),
+                                              QString(),
+                                              currentChooserID());
+            gEDataManager->setExtraDataString(itemIndex.data().toString(),
+                                              dataValue(iRow),
+                                              currentChooserID());
+        }
+    }
+    /* Value-data is changed: */
+    else
+    {
+        /* Key-data index: */
+        const QModelIndex keyIndex = dataKeyIndex(iRow);
+        /* Update extra-data: */
+        gEDataManager->setExtraDataString(keyIndex.data().toString(),
+                                          itemIndex.data().toString(),
+                                          currentChooserID());
+    }
 }
 
 void UIExtraDataManagerWindow::sltDataHandleCustomContextMenuRequested(const QPoint &pos)
@@ -907,9 +965,35 @@ void UIExtraDataManagerWindow::sltAdd()
     /* Execute input-dialog: */
     if (pInputDialog->exec() == QDialog::Accepted)
     {
-        gEDataManager->setExtraDataString(pInputDialog->property("Key").toString(),
-                                          pInputDialog->property("Value").toString(),
-                                          currentChooserID());
+        /* Should we add new key? */
+        bool fAdd = true;
+
+        /* List of 'known keys': */
+        QStringList knownKeys;
+        for (int iKeyRow = 0; iKeyRow < m_pModelSourceOfData->rowCount(); ++iKeyRow)
+            knownKeys << dataKey(iKeyRow);
+
+        /* If new key exists: */
+        if (knownKeys.contains(pInputDialog->property("Key").toString()))
+        {
+            /* Show warning and ask for overwriting approval: */
+            if (!msgCenter().questionBinary(this, MessageType_Question,
+                                            QString("Overwriting already existing key, Continue?"),
+                                            0 /* auto-confirm id */,
+                                            QString("Overwrite") /* ok button text */,
+                                            QString() /* cancel button text */,
+                                            false /* ok button by default? */))
+            {
+                /* Cancel the operation: */
+                fAdd = false;
+            }
+        }
+
+        /* Add new extra-data key if necessary: */
+        if (fAdd)
+            gEDataManager->setExtraDataString(pInputDialog->property("Key").toString(),
+                                              pInputDialog->property("Value").toString(),
+                                              currentChooserID());
     }
 
     /* Destroy input-dialog: */
@@ -1702,7 +1786,7 @@ void UIExtraDataManagerWindow::addDataItem(const QString &strKey,
     QList<QStandardItem*> items;
     /* Create key item: */
     items << new QStandardItem(strKey);
-    items.last()->setEditable(false);
+    items.last()->setData(strKey, Qt::UserRole);
     AssertPtrReturnVoid(items.last());
     /* Create value item: */
     items << new QStandardItem(strValue);
