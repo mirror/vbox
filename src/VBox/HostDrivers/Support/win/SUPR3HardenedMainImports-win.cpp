@@ -700,7 +700,7 @@ DECLHIDDEN(void) supR3HardenedWinInitImportsEarly(uintptr_t uNtDllAddr)
             *g_aSupNtImpDlls[0].paImports[i].ppfnImport = g_aSupNtImpDlls[0].paImports[i].pfnEarlyDummy;
 
     /*
-     * Pointer the other imports at the early init stubs.
+     * Point the other imports at the early init stubs.
      */
     for (uint32_t iDll = 1; iDll < RT_ELEMENTS(g_aSupNtImpDlls); iDll++)
         for (uint32_t i = 0; i < g_aSupNtImpDlls[iDll].cImports; i++)

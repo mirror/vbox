@@ -5587,7 +5587,7 @@ DECLHIDDEN(void) supR3HardenedWinReportErrorToParent(const char *pszWhere, SUPIN
 
 /**
  * Routine called by the supR3HardenedEarlyProcessInitThunk assembly routine
- * when LdrInitializeThunk is executed in during process initialization.
+ * when LdrInitializeThunk is executed during process initialization.
  *
  * This initializes the Stub and VM processes, hooking NTDLL APIs and opening
  * the device driver before any other DLLs gets loaded into the process.  This
