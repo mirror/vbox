@@ -216,6 +216,7 @@ static const char *g_apszSupNtVpAllowedVmExes[] =
     "VBoxSDL.exe",
     "VBoxNetDHCP.exe",
     "VBoxNetNAT.exe",
+    "VBoxVMMPreload.exe",
 
     "tstMicro.exe",
     "tstPDMAsyncCompletion.exe",

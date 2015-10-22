@@ -136,6 +136,8 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxDD" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxDD2" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxDDU" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxVMMPreload" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxVMMPreload" SUPLIB_DLL_SUFF },
 
 //#ifdef VBOX_WITH_DEBUGGER_GUI
     {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxDbg" SUPLIB_DLL_SUFF },
