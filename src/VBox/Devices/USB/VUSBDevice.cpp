@@ -1356,11 +1356,13 @@ static DECLCALLBACK(void) vusbDevResetDoneTimer(PPDMUSBINS pUsbIns, PTMTIMER pTi
     PVUSBRESETARGS  pArgs = (PVUSBRESETARGS)pDev->pvArgs;
     Assert(pDev->pUsbIns == pUsbIns);
 
+    AssertPtr(pArgs);
+
     /*
      * Reset-done processing and cleanup.
      */
-    vusbDevResetDone(pDev, pArgs->rc, pArgs->pfnDone, pArgs->pvUser);
     pDev->pvArgs = NULL;
+    vusbDevResetDone(pDev, pArgs->rc, pArgs->pfnDone, pArgs->pvUser);
     RTMemFree(pArgs);
 }
 
@@ -1378,6 +1380,12 @@ static int vusbDevResetWorker(PVUSBDEV pDev, bool fResetOnLinux, bool fUseTimer,
     if (pDev->pUsbIns->pReg->pfnUsbReset)
         rc = pDev->pUsbIns->pReg->pfnUsbReset(pDev->pUsbIns, fResetOnLinux);
 
+    if (pArgs)
+    {
+        pArgs->rc = rc;
+        rc = VINF_SUCCESS;
+    }
+
     if (fUseTimer)
     {
         /*
@@ -1387,12 +1395,6 @@ static int vusbDevResetWorker(PVUSBDEV pDev, bool fResetOnLinux, bool fUseTimer,
          */
         int rc2 = TMTimerSet(pDev->pResetTimer, u64EndTS);
         AssertReleaseRC(rc2);
-    }
-
-    if (pArgs)
-    {
-        pArgs->rc = rc;
-        rc = VINF_SUCCESS;
     }
 
     LogFlow(("vusbDevResetWorker: %s: returns %Rrc\n", pDev->pUsbIns->pszName, rc));
@@ -1459,6 +1461,7 @@ static DECLCALLBACK(int) vusbIDeviceReset(PVUSBIDEVICE pDevice, bool fResetOnLin
             pArgs->pfnDone = pfnDone;
             pArgs->pvUser  = pvUser;
             pArgs->rc      = VINF_SUCCESS;
+            AssertPtrNull(pDev->pvArgs);
             pDev->pvArgs   = pArgs;
             int rc = vusbDevIoThreadExec(pDev, 0 /* fFlags */, (PFNRT)vusbDevResetWorker, 4, pDev, fResetOnLinux, true, pArgs);
             if (RT_SUCCESS(rc))
