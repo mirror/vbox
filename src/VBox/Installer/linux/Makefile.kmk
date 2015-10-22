@@ -67,7 +67,6 @@ linux-bin_SOURCES = \
 	postinst-common.sh \
 	prerm-common.sh \
 	routines.sh \
-	scripts/install.sh=>scripts/install.sh \
 	scripts/VBoxHeadlessXOrg.sh=>scripts/VBoxHeadlessXOrg.sh \
 	VBoxSysInfo.sh \
 	vboxautostart-service.sh \
