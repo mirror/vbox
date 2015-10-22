@@ -725,6 +725,7 @@ VBoxC_INTERMEDIATES = \
 
 VBoxC_SOURCES = \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
+	src-all/AuthLibrary.cpp \
 	src-all/DisplayPNGUtil.cpp \
 	src-all/DisplayResampleImage.cpp \
 	src-all/DisplayUtils.cpp \
