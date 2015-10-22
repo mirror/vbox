@@ -1181,7 +1181,7 @@ extern "C" int main(void)
 }
 EOF
   if test_compile "-lSDL_ttf $I_INCSDL" SDL_ttf SDL_ttf nofatal; then
-    if ! test_execute nofatal; then
+    test_execute nofatal || \
       cnf_append "VBOX_WITH_SECURELABEL" ""
     fi
   else
@@ -1592,7 +1592,7 @@ EOF
           if [ "$foundqt4" = "2" ]; then
             cnf_append "VBOX_WITH_QT4_SUN" "1"
           fi
-          if ! [ "$foundqt4" = "3" ]; then
+          if [ ! "$foundqt4" = "3" ]; then
             TOOLQT4BIN="$TOOLQT4/bin"
           fi
           test_header "Qt4 devtools"
@@ -1825,7 +1825,7 @@ check_kbuild()
 check_compiler_h()
 {
   test_header compiler.h
-  if ! test -f "/usr/include/linux/compiler.h"; then
+  if test ! -f "/usr/include/linux/compiler.h"; then
     log_success "compiler.h not found"
   else
     cnf_append "VBOX_WITH_LINUX_COMPILER_H" "1"
