@@ -32,7 +32,7 @@
  * asynchronous I/O framework, and so on.
  *
  * @sa  @ref grp_pdm
- *      @subpage grp_pdm_block_cache
+ *      @subpage pg_pdm_block_cache
  *
  *
  * @section sec_pdm_dev     The Pluggable Devices
