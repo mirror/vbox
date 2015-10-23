@@ -18,6 +18,7 @@
 #ifndef ____H_MACHINEIMPL
 #define ____H_MACHINEIMPL
 
+#include "AuthLibrary.h"
 #include "VirtualBoxBase.h"
 #include "SnapshotImpl.h"
 #include "ProgressImpl.h"
@@ -1259,6 +1260,8 @@ private:
                                ULONG aMemSharedTotal,
                                ULONG aVmNetRx,
                                ULONG aVmNetTx);
+    HRESULT authenticateExternal(const std::vector<com::Utf8Str> &aAuthParams,
+                                 com::Utf8Str &aResult);
 };
 
 // SessionMachine class
@@ -1407,6 +1410,8 @@ private:
                                ULONG aMemSharedTotal,
                                ULONG aVmNetRx,
                                ULONG aVmNetTx);
+    HRESULT authenticateExternal(const std::vector<com::Utf8Str> &aAuthParams,
+                                 com::Utf8Str &aResult);
 
 
     struct ConsoleTaskData
@@ -1509,6 +1514,8 @@ private:
     ClientToken *mClientToken;
 
     int miNATNetworksStarted;
+
+    AUTHLIBRARYCONTEXT mAuthLibCtx;
 };
 
 // SnapshotMachine class

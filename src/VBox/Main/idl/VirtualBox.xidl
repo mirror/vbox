@@ -3600,7 +3600,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="ec36f437-ad4d-4512-94dd-f4c568143aa7"
+    uuid="cdbc59df-4f4d-4cf2-809c-917601355afc"
     internal="yes"
     wsmap="suppress"
     >
@@ -3922,6 +3922,22 @@
       </param>
       <param name="vmNetTx" type="unsigned long" dir="in">
         <desc>Network transmit rate for VM.</desc>
+      </param>
+    </method>
+
+    <method name="authenticateExternal">
+      <desc>
+        Verify credentials using the external auth library.
+      </desc>
+      <param name="authParams" type="wstring" dir="in" safearray="yes">
+        <desc>
+          The auth parameters, credentials, etc.
+        </desc>
+      </param>
+      <param name="result" type="wstring" dir="out">
+        <desc>
+          The authentification result.
+        </desc>
       </param>
     </method>
   </interface>

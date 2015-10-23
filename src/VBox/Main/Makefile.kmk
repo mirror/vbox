@@ -345,6 +345,7 @@ VBoxSVC_INTERMEDIATES = \
 
 VBoxSVC_SOURCES = \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
+	src-all/AuthLibrary.cpp \
 	src-all/DisplayPNGUtil.cpp \
 	src-all/DisplayResampleImage.cpp \
 	src-all/DisplayUtils.cpp \
@@ -651,6 +652,7 @@ VBoxC_DEFS = \
 	$(if-expr defined(VBOX_WITH_EHCI) && defined(VBOX_WITH_USB),VBOX_WITH_EHCI,) \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,) \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,) \
+	$(if $(VBOX_WITH_VRDEAUTH_IN_VBOXSVC),VBOX_WITH_VRDEAUTH_IN_VBOXSVC,) \
 	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX,)
 ifdef VBOX_WITH_CRHGSMI
  VBoxC_DEFS += VBOX_WITH_CRHGSMI
@@ -725,7 +727,6 @@ VBoxC_INTERMEDIATES = \
 
 VBoxC_SOURCES = \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
-	src-all/AuthLibrary.cpp \
 	src-all/DisplayPNGUtil.cpp \
 	src-all/DisplayResampleImage.cpp \
 	src-all/DisplayUtils.cpp \
@@ -812,6 +813,10 @@ ifdef VBOX_WITH_VPX
  VBoxC_SOURCES += \
 	src-client/EbmlWriter.cpp \
 	src-client/VideoRec.cpp
+endif
+ifndef VBOX_WITH_VRDEAUTH_IN_VBOXSVC
+ VBoxC_SOURCES += \
+	src-all/AuthLibrary.cpp
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)

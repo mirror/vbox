@@ -1361,7 +1361,9 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
 
     mVRDPBindPort = -1;
 
+#ifndef VBOX_WITH_VRDEAUTH_IN_VBOXSVC
     RT_ZERO(mAuthLibCtx);
+#endif
 
     mu32AudioInputClientId = 0;
     mcClients = 0;
@@ -3003,7 +3005,9 @@ void ConsoleVRDPServer::Stop(void)
         }
     }
 
+#ifndef VBOX_WITH_VRDEAUTH_IN_VBOXSVC
     AuthLibUnload(&mAuthLibCtx);
+#endif
 }
 
 /* Worker thread for Remote USB. The thread polls the clients for
@@ -3123,12 +3127,43 @@ void ConsoleVRDPServer::remoteUSBThreadStop(void)
 #endif /* VBOX_WITH_USB */
 
 AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement guestJudgement,
-                                                const char *pszUser, const char *pszPassword, const char *pszDomain,
-                                                uint32_t u32ClientId)
+                                           const char *pszUser, const char *pszPassword, const char *pszDomain,
+                                           uint32_t u32ClientId)
 {
     LogFlowFunc(("uuid = %RTuuid, guestJudgement = %d, pszUser = %s, pszPassword = %s, pszDomain = %s, u32ClientId = %d\n",
                  uuid.raw(), guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId));
 
+    AuthResult result = AuthResultAccessDenied;
+
+#ifdef VBOX_WITH_VRDEAUTH_IN_VBOXSVC
+    try
+    {
+        /* Init auth parameters. Order is important. */
+        SafeArray<BSTR> authParams;
+        Bstr("VRDEAUTH"          ).detachTo(authParams.appendedRaw());
+        Bstr(uuid.toUtf16()      ).detachTo(authParams.appendedRaw());
+        BstrFmt("%u", guestJudgement).detachTo(authParams.appendedRaw());
+        Bstr(pszUser             ).detachTo(authParams.appendedRaw());
+        Bstr(pszPassword         ).detachTo(authParams.appendedRaw());
+        Bstr(pszDomain           ).detachTo(authParams.appendedRaw());
+        BstrFmt("%u", u32ClientId).detachTo(authParams.appendedRaw());
+
+        Bstr authResult;
+        HRESULT hr = mConsole->mControl->AuthenticateExternal(ComSafeArrayAsInParam(authParams),
+                                                              authResult.asOutParam());
+        LogFlowFunc(("%Rhrc [%ls]\n", hr, authResult.raw()));
+
+        size_t cbPassword = RTUtf16Len((PRTUTF16)authParams[4]) * sizeof(RTUTF16);
+        if (cbPassword)
+            RTMemWipeThoroughly(authParams[4], cbPassword, 10 /* cPasses */);
+
+        if (SUCCEEDED(hr) && authResult == "granted")
+            result = AuthResultAccessGranted;
+    }
+    catch (std::bad_alloc)
+    {
+    }
+#else
     /*
      * Called only from VRDP input thread. So thread safety is not required.
      */
@@ -3154,10 +3189,11 @@ AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement 
         }
     }
 
-    AuthResult result = AuthLibAuthenticate(&mAuthLibCtx,
-                                            uuid.raw(), guestJudgement,
-                                            pszUser, pszPassword, pszDomain,
-                                            u32ClientId);
+    result = AuthLibAuthenticate(&mAuthLibCtx,
+                                 uuid.raw(), guestJudgement,
+                                 pszUser, pszPassword, pszDomain,
+                                 u32ClientId);
+#endif /* !VBOX_WITH_VRDEAUTH_IN_VBOXSVC */
 
     switch (result)
     {
@@ -3185,7 +3221,26 @@ void ConsoleVRDPServer::AuthDisconnect(const Guid &uuid, uint32_t u32ClientId)
     LogFlow(("ConsoleVRDPServer::AuthDisconnect: uuid = %RTuuid, u32ClientId = %d\n",
              uuid.raw(), u32ClientId));
 
+#ifdef VBOX_WITH_VRDEAUTH_IN_VBOXSVC
+    try
+    {
+        /* Init auth parameters. Order is important. */
+        SafeArray<BSTR> authParams;
+        Bstr("VRDEAUTHDISCONNECT").detachTo(authParams.appendedRaw());
+        Bstr(uuid.toUtf16()      ).detachTo(authParams.appendedRaw());
+        BstrFmt("%u", u32ClientId).detachTo(authParams.appendedRaw());
+
+        Bstr authResult;
+        HRESULT hr = mConsole->mControl->AuthenticateExternal(ComSafeArrayAsInParam(authParams),
+                                                              authResult.asOutParam());
+        LogFlowFunc(("%Rhrc [%ls]\n", hr, authResult.raw())); NOREF(hr);
+    }
+    catch (std::bad_alloc)
+    {
+    }
+#else
     AuthLibDisconnect(&mAuthLibCtx, uuid.raw(), u32ClientId);
+#endif /* !VBOX_WITH_VRDEAUTH_IN_VBOXSVC */
 }
 
 int ConsoleVRDPServer::lockConsoleVRDPServer(void)

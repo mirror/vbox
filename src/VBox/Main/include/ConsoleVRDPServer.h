@@ -244,10 +244,12 @@ private:
     void remoteUSBThreadStop (void);
 #endif /* VBOX_WITH_USB */
 
+#ifndef VBOX_WITH_VRDEAUTH_IN_VBOXSVC
     /* External authentication library context. The library is loaded in the
      * Authenticate method and unloaded at the object destructor.
      */
     AUTHLIBRARYCONTEXT mAuthLibCtx;
+#endif
 
     uint32_t volatile mu32AudioInputClientId;
 

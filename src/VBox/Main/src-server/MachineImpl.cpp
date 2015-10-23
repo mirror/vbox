@@ -12331,6 +12331,8 @@ HRESULT SessionMachine::init(Machine *aMachine)
 
     HRESULT rc = S_OK;
 
+    RT_ZERO(mAuthLibCtx);
+
     /* create the machine client token */
     try
     {
@@ -12678,6 +12680,8 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 
     unconst(mParent) = NULL;
     unconst(mPeer) = NULL;
+
+    AuthLibUnload(&mAuthLibCtx);
 
     LogFlowThisFuncLeave();
 }
@@ -13546,6 +13550,94 @@ HRESULT SessionMachine::ejectMedium(const ComPtr<IMediumAttachment> &aAttachment
     pAttach.queryInterfaceTo(aNewAttachment.asOutParam());
 
     return S_OK;
+}
+
+HRESULT SessionMachine::authenticateExternal(const std::vector<com::Utf8Str> &aAuthParams,
+                                             com::Utf8Str &aResult)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hr = S_OK;
+
+    if (aAuthParams[0] == "VRDEAUTH" && aAuthParams.size() == 7)
+    {
+        enum VRDEAuthParams
+        {
+           parmUuid = 1,
+           parmGuestJudgement,
+           parmUser,
+           parmPassword,
+           parmDomain,
+           parmClientId
+        };
+
+        AuthResult result = AuthResultAccessDenied;
+
+        if (!mAuthLibCtx.hAuthLibrary)
+        {
+            /* Load the external authentication library. */
+            Bstr authLibrary;
+            mVRDEServer->COMGETTER(AuthLibrary)(authLibrary.asOutParam());
+
+            Utf8Str filename = authLibrary;
+
+            int rc = AuthLibLoad(&mAuthLibCtx, filename.c_str());
+            if (RT_FAILURE(rc))
+            {
+                hr = setError(E_FAIL,
+                              tr("Could not load the external authentication library '%s' (%Rrc)"),
+                              filename.c_str(), rc);
+            }
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            Guid uuid(aAuthParams[parmUuid]);
+            AuthGuestJudgement guestJudgement = (AuthGuestJudgement)aAuthParams[parmGuestJudgement].toUInt32();
+            uint32_t u32ClientId = aAuthParams[parmClientId].toUInt32();
+
+            result = AuthLibAuthenticate(&mAuthLibCtx,
+                                         uuid.raw(), guestJudgement,
+                                         aAuthParams[parmUser].c_str(),
+                                         aAuthParams[parmPassword].c_str(),
+                                         aAuthParams[parmDomain].c_str(),
+                                         u32ClientId);
+        }
+
+        /* Hack: aAuthParams[parmPassword] is const but the code believes in writable memory. */
+        size_t cbPassword = aAuthParams[parmPassword].length();
+        if (cbPassword)
+        {
+            RTMemWipeThoroughly((void *)aAuthParams[parmPassword].c_str(), cbPassword, 10 /* cPasses */);
+            memset((void *)aAuthParams[parmPassword].c_str(), 'x', cbPassword);
+        }
+
+        if (result == AuthResultAccessGranted)
+            aResult = "granted";
+        else
+            aResult = "denied";
+
+        LogRel(("AUTH: VRDE authentification for user '%s' result '%s'\n",
+                aAuthParams[parmUser].c_str(), aResult.c_str()));
+    }
+    else if (aAuthParams[0] == "VRDEAUTHDISCONNECT" && aAuthParams.size() == 3)
+    {
+        enum VRDEAuthDisconnectParams
+        {
+           parmUuid = 1,
+           parmClientId
+        };
+
+        Guid uuid(aAuthParams[parmUuid]);
+        uint32_t u32ClientId = 0;
+        AuthLibDisconnect(&mAuthLibCtx, uuid.raw(), u32ClientId);
+    }
+    else
+    {
+        hr = E_INVALIDARG;
+    }
+
+    return hr;
 }
 
 // public methods only for internal purposes
@@ -14775,6 +14867,14 @@ HRESULT Machine::reportVmStatistics(ULONG aValidStats,
     NOREF(aMemSharedTotal);
     NOREF(aVmNetRx);
     NOREF(aVmNetTx);
+    ReturnComNotImplemented();
+}
+
+HRESULT Machine::authenticateExternal(const std::vector<com::Utf8Str> &aAuthParams,
+                                             com::Utf8Str &aResult)
+{
+    NOREF(aAuthParams);
+    NOREF(aResult);
     ReturnComNotImplemented();
 }
 
