@@ -18,9 +18,9 @@
 
 /** @page pg_pgm PGM - The Page Manager and Monitor
  *
- * @see grp_pgm,
- * @ref pg_pgm_pool,
- * @ref pg_pgm_phys.
+ * @sa  @ref grp_pgm
+ *      @subpage pg_pgm_pool
+ *      @subpage pg_pgm_phys
  *
  *
  * @section         sec_pgm_modes           Paging Modes

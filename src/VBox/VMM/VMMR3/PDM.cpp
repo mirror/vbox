@@ -31,7 +31,8 @@
  * context synchronization (like critsect), VM centric thread management,
  * asynchronous I/O framework, and so on.
  *
- * @see grp_pdm
+ * @sa  @ref grp_pdm
+ *      @subpage grp_pdm_block_cache
  *
  *
  * @section sec_pdm_dev     The Pluggable Devices

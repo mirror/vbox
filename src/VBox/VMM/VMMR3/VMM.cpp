@@ -45,6 +45,7 @@
  *  - @subpage pg_selm
  *  - @subpage pg_ssm
  *  - @subpage pg_stam
+ *  - @subpage pg_tm
  *  - @subpage pg_trpm
  *  - @subpage pg_vm
  *
