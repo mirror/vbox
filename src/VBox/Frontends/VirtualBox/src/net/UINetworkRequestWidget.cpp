@@ -164,28 +164,9 @@ void UINetworkRequestWidget::sltSetProgressToFailed(const QString &strError)
     /* Show 'retry' button: */
     m_pRetryButton->setHidden(false);
 
-    /* Try to find all the links in the error-message,
-     * replace them with %increment if present: */
-    QString strErrorText(strError);
-    QRegExp linkRegExp("[\\S]+[\\./][\\S]+");
-    QStringList links;
-    for (int i = 1; linkRegExp.indexIn(strErrorText) != -1; ++i)
-    {
-        links << linkRegExp.cap();
-        strErrorText.replace(linkRegExp.cap(), QString("%%1").arg(i));
-    }
-    /* Return back all the links, just in bold: */
-    if (!links.isEmpty())
-        for (int i = 0; i < links.size(); ++i)
-            strErrorText = strErrorText.arg(QString("<b>%1</b>").arg(links[i]));
-
-    // @todo: NLS: Embed <br> directly into error header text.
-    /* Prepend the error-message with <br> symbol: */
-    strErrorText.prepend("<br>");
-
     /* Show error label: */
     m_pErrorPane->setHidden(false);
-    m_pErrorPane->setText(UINetworkManagerDialog::tr("The network operation failed with the following error: %1.").arg(strErrorText));
+    m_pErrorPane->setText(composeErrorText(strError));
 }
 
 void UINetworkRequestWidget::sltTimeIsOut()
@@ -210,4 +191,38 @@ void UINetworkRequestWidget::retranslateUi()
 
     /* Translate cancel button: */
     m_pCancelButton->setStatusTip(UINetworkManagerDialog::tr("Cancel network operation"));
+
+    /* Translate error label: */
+    if (m_pNetworkRequest->reply())
+        m_pErrorPane->setText(composeErrorText(m_pNetworkRequest->reply()->errorString()));
 }
+
+/* static */
+const QString UINetworkRequestWidget::composeErrorText(QString strErrorText)
+{
+    /* Null-string for null-string: */
+    if (strErrorText.isEmpty())
+        return QString();
+
+    /* Try to find all the links in the error-message,
+     * replace them with %increment if present: */
+    QRegExp linkRegExp("[\\S]+[\\./][\\S]+");
+    QStringList links;
+    for (int i = 1; linkRegExp.indexIn(strErrorText) != -1; ++i)
+    {
+        links << linkRegExp.cap();
+        strErrorText.replace(linkRegExp.cap(), QString("%%1").arg(i));
+    }
+    /* Return back all the links, just in bold: */
+    if (!links.isEmpty())
+        for (int i = 0; i < links.size(); ++i)
+            strErrorText = strErrorText.arg(QString("<b>%1</b>").arg(links[i]));
+
+    // @todo: NLS: Embed <br> directly into error header text.
+    /* Prepend the error-message with <br> symbol: */
+    strErrorText.prepend("<br>");
+
+    /* Return final result: */
+    return UINetworkManagerDialog::tr("The network operation failed with the following error: %1.").arg(strErrorText);
+}
+

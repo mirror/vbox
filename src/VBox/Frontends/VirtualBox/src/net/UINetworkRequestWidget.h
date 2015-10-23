@@ -71,6 +71,9 @@ private:
     /* Translation stuff: */
     void retranslateUi();
 
+    /** Composes error text on the basis of the passed @a strErrorText. */
+    static const QString composeErrorText(QString strErrorText);
+
     /* Widgets: */
     QWidget *m_pContentWidget;
     QGridLayout *m_pMainLayout;
