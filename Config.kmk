@@ -657,6 +657,10 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
   endif
  endif
 endif
+# Use the VRDE external authentication library from VBoxSVC
+if1of ($(KBUILD_TARGET), win)
+ VBOX_WITH_VRDEAUTH_IN_VBOXSVC = 1
+endif
 # Enables use of merge modules in the windows installer. This will increase
 # the overall installer size significantly because merge modules are not able
 # to use a common .cab file to reduce their size.
