@@ -1071,6 +1071,7 @@ typedef struct GIMHV
     uint64_t                    uDbgStatusMsr;
     /** Intermediate debug I/O buffer. */
     R3PTRTYPE(void *)           pvDbgBuffer;
+    R3PTRTYPE(void *)           pvAlignment0;
     /** @} */
 
     /** Array of MMIO2 regions. */
