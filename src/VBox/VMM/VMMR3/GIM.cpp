@@ -440,7 +440,7 @@ VMMR3DECL(void) GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevIns, PGIMDEBUG pD
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
- * @param   pDevIns         Where to store the debug setup details.
+ * @param   pDbgSetup       Where to store the debug setup details.
  */
 VMMR3DECL(int) GIMR3GetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup)
 {
