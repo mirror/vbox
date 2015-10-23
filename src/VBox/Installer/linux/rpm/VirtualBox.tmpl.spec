@@ -16,6 +16,7 @@
 
 %define %SPEC% 1
 %define %OSE% 1
+%define VBOXDOCDIR %{_defaultdocdir}/%NAME%-%VER%
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Summary:   Oracle VM VirtualBox
@@ -68,39 +69,18 @@ install -m 755 -d $RPM_BUILD_ROOT/usr/src
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/applications
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/pixmaps
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/icons/hicolor
-install -m 755 -d $RPM_BUILD_ROOT%{_defaultdocdir}/virtualbox
+install -m 755 -d $RPM_BUILD_ROOT%{VBOXDOCDIR}
 install -m 755 -d $RPM_BUILD_ROOT/usr/lib/virtualbox
-install -m 755 -d $RPM_BUILD_ROOT/usr/lib/virtualbox/ExtensionPacks
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/mime/packages
-mv VBoxEFI32.fd $RPM_BUILD_ROOT/usr/lib/virtualbox || true
-mv VBoxEFI64.fd $RPM_BUILD_ROOT/usr/lib/virtualbox || true
-mv *.rc $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv *.r0 $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv *.rel $RPM_BUILD_ROOT/usr/lib/virtualbox || true
-mv VBoxNetDHCP $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv VBoxNetNAT $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv VBoxNetAdpCtl $RPM_BUILD_ROOT/usr/lib/virtualbox
-if [ -f VBoxVolInfo ]; then
-  mv VBoxVolInfo $RPM_BUILD_ROOT/usr/lib/virtualbox
-fi
-mv VBoxXPCOMIPCD $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv components $RPM_BUILD_ROOT/usr/lib/virtualbox/components
-mv *.so $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv *.so.4 $RPM_BUILD_ROOT/usr/lib/virtualbox || true
-ln -s ../VBoxVMM.so $RPM_BUILD_ROOT/usr/lib/virtualbox/components/VBoxVMM.so
-mv VBoxTestOGL $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv vboxshell.py $RPM_BUILD_ROOT/usr/lib/virtualbox
 (export VBOX_INSTALL_PATH=/usr/lib/virtualbox && \
   cd ./sdk/installer && \
   %{__python} ./vboxapisetup.py install --prefix %{_prefix} --root $RPM_BUILD_ROOT)
 rm -rf sdk/installer
-mv sdk $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv nls $RPM_BUILD_ROOT/usr/share/virtualbox
 cp -a src $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBox.sh $RPM_BUILD_ROOT/usr/bin/VBox
 mv VBoxSysInfo.sh $RPM_BUILD_ROOT/usr/share/virtualbox
-mv VBoxCreateUSBNode.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
 cp icons/128x128/virtualbox.png $RPM_BUILD_ROOT/usr/share/pixmaps/virtualbox.png
 cd icons
   for i in *; do
@@ -115,22 +95,6 @@ cd icons
 cd -
 rmdir icons
 mv virtualbox.xml $RPM_BUILD_ROOT/usr/share/mime/packages
-for i in VBoxManage VBoxSVC VirtualBox VBoxHeadless VBoxDTrace VBoxExtPackHelperApp VBoxBalloonCtrl VBoxAutostart vbox-img; do
-  mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
-if %WEBSVC%; then
-  for i in vboxwebsrv webtest; do
-    mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
-fi
-test -f VBoxSDL && mv VBoxSDL $RPM_BUILD_ROOT/usr/lib/virtualbox
-for i in VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetNAT VBoxNetAdpCtl; do
-  chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
-if [ -f $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo ]; then
-  chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo
-fi
-test -f VBoxSDL && chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxSDL
-if [ -d ExtensionPacks/VNC ]; then
-  mv ExtensionPacks/VNC $RPM_BUILD_ROOT/usr/lib/virtualbox/ExtensionPacks
-fi
 mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
 %if %{?is_ose:0}%{!?is_ose:1}
 for d in /lib/modules/*; do
@@ -158,25 +122,15 @@ for d in /lib/modules/*; do
       %INSTMOD%
   fi
 done
+rm -r src
 %endif
 %if %{?is_ose:0}%{!?is_ose:1}
-  mv kchmviewer $RPM_BUILD_ROOT/usr/lib/virtualbox
   for i in rdesktop-vrdp.tar.gz rdesktop-vrdp-keymaps; do
     mv $i $RPM_BUILD_ROOT/usr/share/virtualbox; done
   mv rdesktop-vrdp $RPM_BUILD_ROOT/usr/bin
 %endif
 for i in additions/VBoxGuestAdditions.iso; do
   mv $i $RPM_BUILD_ROOT/usr/share/virtualbox; done
-if [ -d accessible ]; then
-  mv accessible $RPM_BUILD_ROOT/usr/lib/virtualbox
-fi
-mv vboxdrv.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv vboxballoonctrl-service.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv vboxautostart-service.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv vboxweb-service.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv postinst-common.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv prerm-common.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
-mv routines.sh $RPM_BUILD_ROOT/usr/lib/virtualbox
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VirtualBox
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/virtualbox
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxManage
@@ -197,6 +151,18 @@ ln -s /usr/lib/virtualbox/vbox-img $RPM_BUILD_ROOT/usr/bin/vbox-img
 ln -s /usr/share/virtualbox/src/vboxhost $RPM_BUILD_ROOT/usr/src/vboxhost-%VER%
 mv virtualbox.desktop $RPM_BUILD_ROOT/usr/share/applications/virtualbox.desktop
 mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png
+%{!?is_ose: mv LICENSE $RPM_BUILD_ROOT%{VBOXDOCDIR}}
+mv UserManual*.pdf $RPM_BUILD_ROOT%{VBOXDOCDIR}
+%{!?is_ose: mv VirtualBox*.chm $RPM_BUILD_ROOT%{VBOXDOCDIR}}
+mv * $RPM_BUILD_ROOT/usr/lib/virtualbox
+ln -s ../VBoxVMM.so $RPM_BUILD_ROOT/usr/lib/virtualbox/components/VBoxVMM.so
+for i in VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetNAT VBoxNetAdpCtl; do
+  chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
+if [ -f $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo ]; then
+  chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo
+fi
+test -f $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxSDL && \
+  chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxSDL
 
 
 %pre
@@ -317,9 +283,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc %{!?is_ose: LICENSE}
-%doc UserManual*.pdf
-%doc %{!?is_ose: VirtualBox*.chm}
+%doc %{VBOXDOCDIR}/*
 %{?rpm_suse: %{py_sitedir}/*}
 %{!?rpm_suse: %{python_sitelib}/*}
 /etc/vbox
