@@ -43,6 +43,9 @@ private:
     UIDownloaderAdditions();
     ~UIDownloaderAdditions();
 
+    /** Returns description of the current network operation. */
+    virtual const QString description() const;
+
     /* Virtual stuff reimplementations: */
     bool askForDownloadingConfirmation(UINetworkReply *pReply);
     void handleDownloadedObject(UINetworkReply *pReply);

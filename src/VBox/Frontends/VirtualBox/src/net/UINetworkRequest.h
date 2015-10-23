@@ -57,10 +57,10 @@ signals:
 public:
 
     /* Constructor/destructor: */
-    UINetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription,
+    UINetworkRequest(const QNetworkRequest &request, UINetworkRequestType type,
                      UINetworkCustomer *pCustomer,
                      UINetworkManager *pNetworkManager);
-    UINetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription,
+    UINetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type,
                      UINetworkCustomer *pCustomer,
                      UINetworkManager *pNetworkManager);
     ~UINetworkRequest();
@@ -69,7 +69,7 @@ public:
     UINetworkManager* manager() const;
     /* Getters: */
     const QUuid& uuid() const { return m_uuid; }
-    const QString& description() const { return m_strDescription; }
+    const QString description() const;
     UINetworkCustomer* customer() { return m_pCustomer; }
     UINetworkReply* reply() { return m_pReply; }
 

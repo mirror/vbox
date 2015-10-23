@@ -49,12 +49,15 @@ public:
     /* Network-reply finish handler: */
     virtual void processNetworkReplyFinished(UINetworkReply *pReply) = 0;
 
+    /** Returns description of the current network operation. */
+    virtual const QString description() const { return QString(); }
+
 protected:
 
     /* Network-request wrapper: */
-    void createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription);
+    void createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type);
     /* Network-request wrapper (set): */
-    void createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription);
+    void createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type);
 
 private:
 

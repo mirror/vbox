@@ -79,9 +79,8 @@ protected:
     void setTarget(const QString &strTarget) { m_strTarget = strTarget; }
     const QString& target() const { return m_strTarget; }
 
-    /* Description stuff,
-     * allows to set/get Network Customer description for Network Access Manager: */
-    void setDescription(const QString &strDescription) { m_strDescription = strDescription; }
+    /** Returns description of the current network operation. */
+    virtual const QString description() const;
 
     /* Start delayed acknowledging: */
     void startDelayedAcknowledging() { emit sigToStartAcknowledging(); }
@@ -112,7 +111,6 @@ private:
     QList<QUrl> m_sources;
     QUrl m_source;
     QString m_strTarget;
-    QString m_strDescription;
 };
 
 #endif // __UIDownloader_h__

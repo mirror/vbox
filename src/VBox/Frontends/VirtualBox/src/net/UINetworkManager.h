@@ -81,9 +81,9 @@ protected:
     /* Allow UINetworkCustomer to create network-request: */
     friend class UINetworkCustomer;
     /* Network-request creation wrappers for UINetworkCustomer: */
-    void createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription,
+    void createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type,
                               UINetworkCustomer *pCustomer);
-    void createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription,
+    void createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type,
                               UINetworkCustomer *pCustomer);
 
 private:

@@ -35,7 +35,7 @@
 
 
 /* Constructor: */
-UINetworkRequest::UINetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription,
+UINetworkRequest::UINetworkRequest(const QNetworkRequest &request, UINetworkRequestType type,
                                    UINetworkCustomer *pCustomer,
                                    UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
@@ -43,7 +43,6 @@ UINetworkRequest::UINetworkRequest(const QNetworkRequest &request, UINetworkRequ
     , m_requests(QList<QNetworkRequest>() << request)
     , m_iCurrentRequestIndex(0)
     , m_type(type)
-    , m_strDescription(strDescription)
     , m_pCustomer(pCustomer)
     , m_fRunning(false)
 {
@@ -51,7 +50,7 @@ UINetworkRequest::UINetworkRequest(const QNetworkRequest &request, UINetworkRequ
     initialize();
 }
 
-UINetworkRequest::UINetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription,
+UINetworkRequest::UINetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type,
                                    UINetworkCustomer *pCustomer,
                                    UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
@@ -59,7 +58,6 @@ UINetworkRequest::UINetworkRequest(const QList<QNetworkRequest> &requests, UINet
     , m_requests(requests)
     , m_iCurrentRequestIndex(0)
     , m_type(type)
-    , m_strDescription(strDescription)
     , m_pCustomer(pCustomer)
     , m_fRunning(false)
 {
@@ -81,6 +79,11 @@ UINetworkManager* UINetworkRequest::manager() const
 {
     AssertPtrReturn(parent(), 0);
     return qobject_cast<UINetworkManager*>(parent());
+}
+
+const QString UINetworkRequest::description() const
+{
+    return m_pCustomer->description();
 }
 
 /* Network-reply progress handler: */
