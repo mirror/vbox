@@ -30,8 +30,8 @@
  * VirtualBox as a vehicle to obtain kernel level access.
  *
  * The VirtualBox VMM requires supervisor (kernel) level access to the CPU.  For
- * both practical and historical reasons part of the VMM is still implemented in
- * ring-3 and has a rich interface to the kernel part.  While the device
+ * both practical and historical reasons, part of the VMM is still implemented
+ * in ring-3 and has a rich interface to the kernel part.  While the device
  * emulations can be run all in ring-3, we have performance optimizations that
  * loads device emulation code into ring-0 and our special raw-mode execution
  * context (non-VT-x/AMD-V mode) for handling frequent operations.  These share
@@ -50,7 +50,7 @@
  *
  * On UNIX-like systems (Solaris, Linux, darwin, freebsd, ...) only allow root
  * to get full unrestricted access to the support driver.  The device node
- * corresponding to unrestricted access is own by root and has a 0600 access
+ * corresponding to unrestricted access is owned by root and has a 0600 access
  * mode (i.e. only accessible to the owner, root).  In addition to this file
  * system level restriction, the support driver also checks that the effective
  * user ID (EUID) is root when it is being opened.
@@ -74,12 +74,12 @@
  *          - Check that all the parent directories, all the way up to the root
  *            if possible, only permits root (or system admin) to change them -
  *            in order to exclude directory renaming races.
- *          - On systems where it is possible, we may also valiadate signatures.
+ *          - On systems where it is possible, we may also validate signatures.
  *
  *      -# Open a file descriptor for the support device driver
  *         (supR3HardenedMainOpenDevice).
  *
- *      -# Grab ICMP capabilites, if needed (supR3HardenedMainGrabCapabilites).
+ *      -# Grab ICMP capabilities, if needed (supR3HardenedMainGrabCapabilites).
  *
  *      -# Correctly drop the root privileges (supR3HardenedMainDropPrivileges).
  *
@@ -88,7 +88,7 @@
  *
  *      -# Load a dynamic library containing the VM frontend code and run it
  *         (tail of SUPR3HardenedMain).  The set-uid-to-root stub executable is
- *         paired with a dynamic link library which export one TrustedMain
+ *         paired with a dynamic link library which exports one TrustedMain
  *         entrypoint (see FNSUPTRUSTEDMAIN) that we call.
  *
  *         In case of error reporting, the library may also export a
@@ -108,8 +108,8 @@
  *  These functions will perform the validations on the file being loaded as
  *  SUPR3HardenedMain did in its validation step.  So, anything we load must be
  *  installed owned by root:wheel, the directory we load it from must also be
- *  owned by root:wheel and now allow for renaming the file.  Similar ownership
- *  restricts applies to all the parent directories (except on darwin).
+ *  owned by root:wheel and not allow for renaming the file.  Similar ownership
+ *  restrictions apply to all the parent directories (except on darwin).
  *
  *  So, we leave the responsibility of not installing malicious software on the
  *  root user on UNIX-like systems.  Which is fair enough, in our opinion.
@@ -117,16 +117,16 @@
  *
  * @section sec_hardening_win   Hardening on Windows
  *
- * On Windows things are a lot more complicated, unforunately.  This is mainly
- * because on windows you cannot trust the Administrators users.  Some or the
- * blame for this is that Windows is a decentant/replacement for a set of single
+ * On Windows things are a lot more complicated, unfortunately.  This is mainly
+ * because on Windows you cannot trust the Administrators users.  Some of the
+ * blame for this is that Windows is a descendant/replacement for a set of single
  * user systems: DOS, Windows 1.0-3.11 Windows 95-ME, and OS/2.  Users of NT
- * 3.51 and later was inclied to want to always run it with full
- * root/administrator privileges like they had done on the predecessors, while
- * Microsoft made doing some very simple and didn't help with the alternative.
+ * 3.51 and later were inclined to want to always run it with full
+ * root/administrator privileges like they had done on the predecessors, which
+ * Microsoft made doing very simple and didn't help with the alternative.
  * Bad idea, security wise, which is good for the security software industry.
- * For this reason using a set-uid-to-root approach is pointless, even if
- * windows had one, which is doesn't.
+ * For this reason, using a set-uid-to-root approach is pointless, even if
+ * Windows had one, which it doesn't.
  *
  * So, in order to protect access to the support driver and protect the
  * VM process while it's running we have to do a lot more work.  A keystone in
@@ -150,18 +150,18 @@
  *
  * What makes our life REALLY difficult on Windows is this 3rd party "security"
  * software which is more or less required to keep a Windows system safe for
- * normal users and all corporate IT departments righly insists on installing.
+ * normal users and all corporate IT departments rightly insists on installing.
  * After the kernel patching clampdown in Vista, AV software have to do a lot
- * more mucking about in user mode to get their job (kind of) done.  So, it
+ * more mucking about in user mode to get their job (kind of) done.  So, it is
  * common practice to patch a lot of NTDLL, KERNEL32, the executable import
- * table, load extra DLLS into the process, allocate executable memory in the
+ * table, load extra DLLs into the process, allocate executable memory in the
  * process and worse.  The BIG problem with all this is that it is
- * indistiguishable from what malicious software would be doing in order to
- * intercept process acctivity (network sniffing, maybe password snooping) or
- * gain a level of kernel access via the the support driver.
+ * indistinguishable from what malicious software would be doing in order to
+ * intercept process activity (network sniffing, maybe password snooping) or
+ * gain a level of kernel access via the support driver.
  *
  * We share the stub executable approach with the UNIX-like systems, so there's
- * the SUPR3HardenedMain and a paried DLL with TrustedMain and TrustedError.
+ * the SUPR3HardenedMain and a paired DLL with TrustedMain and TrustedError.
  * However, the stub executable is pushed a bit further here.
  *      - It has no CRT (libc) because we don't need one and we need full
  *        control over the code in the stub.
@@ -175,7 +175,7 @@
  * The initial stub process is not really to be trusted, though we try our best
  * to limit potential harm (user mode debugger checks, disable thread creation).
  * So, when it enters SUPR3HardenedMain we only call supR3HardenedVerifyAll to
- * verify the installation (known executables and dlls, checking their code
+ * verify the installation (known executables and DLLs, checking their code
  * signing signatures, keeping them all open to deny deletion and replacing) and
  * does a respawn via supR3HardenedWinReSpawn.
  *
@@ -194,7 +194,8 @@
  * SetThreadContext).  LdrInitializeThunk performs process, NTDLL and
  * sub-system client (kernel32) initialization.  A lot of "protection" software
  * uses triggers in this initialization sequence (like the KERNEL32.DLL load
- * event), so we avoid quite a bit problems by getting our stuff done early on.
+ * event), so we avoid quite a bit of problems by getting our stuff done early
+ * on.
  *
  * However, there is also those that uses events that triggers immediately when
  * the process is created or/and starts executing the first instruction, we have
@@ -207,7 +208,7 @@
  * processes, except that instead of failing when encountering an issue it will
  * take corrective actions:
  *      - Executable memory regions not belonging to a DLL mapping will be
- *        attempted freed, and we'll only fail if we cann evict it.
+ *        attempted freed, and we'll only fail if we can't evict it.
  *      - All pages in the executable images in the process (should be just the
  *        stub executable and NTDLL) will be compared to the pristine fixed-up
  *        copy prepared by the IPRT PE loader code, restoring any bytes which
@@ -215,7 +216,7 @@
  *        is exempted, LdrInitializeThunk is set to call NtTerminateThread.)
  *      - Unwanted DLLs will be unloaded (we have a set of DLLs we like).
  *
- * Before signalling the second stub process that it has been purified and shoud
+ * Before signalling the second stub process that it has been purified and should
  * get on with it, the parent will close all handles with unrestricted access to
  * the process and thread so that the initial stub process no longer can
  * influence the child in any really harmful way.  (The caller of CreateProcess
@@ -230,17 +231,17 @@
  *      - Hook (insert jump instruction) the NtCreateSection entrypoint in NTDLL
  *        so we can check all executable mappings before they're created and can
  *        be mapped.
- *      - Hook (ditto) the LdrLoadDll entrypoint in NTDLL so we can prevalidate
+ *      - Hook (ditto) the LdrLoadDll entrypoint in NTDLL so we can pre-validate
  *        all images that gets loaded the normal way (partly because the
  *        NtCreateSection context is restrictive because the NTDLL loader lock
- *        is usally held, which prevents us from safely calling WinVerityTrust).
- * The image/dll verification hooks are at this point able to verify DLLs
+ *        is usually held, which prevents us from safely calling WinVerityTrust).
+ * The image/DLL verification hooks are at this point able to verify DLLs
  * containing code signing signatures, and will restrict the locations from
  * which DLLs will be loaded.  When SUPR3HardenedMain gets going later one, they
- * will start insiting on everything having valid signatures in the DLL or in an
+ * will start insisting on everything having valid signatures in the DLL or in an
  * installer catalog file.
  *
- * The function also irrevocably disables debug notifications related to teh
+ * The function also irrevocably disables debug notifications related to the
  * current thread, just to make attaching a debugging that much more difficult.
  *
  * Now, the second stub process will open the so called stub device, that is a
@@ -250,7 +251,7 @@
  *      - Check that the process isn't being debugged.
  *      - Check that the process contains exactly one thread.
  *      - Check that the process doesn't have any unknown DLLs loaded into it.
- *      - Check that the process doesn't have any executable memory (other that
+ *      - Check that the process doesn't have any executable memory (other than
  *        DLL sections) in it.
  *      - Check that the process executable is a known VBox executable which may
  *        access the support driver.
