@@ -99,44 +99,55 @@ typedef GIMMMIO2REGION const *PCGIMMMIO2REGION;
 AssertCompileMemberAlignment(GIMMMIO2REGION, cbRegion, 8);
 AssertCompileMemberAlignment(GIMMMIO2REGION, pvPageR0, 8);
 
-#if 0
 /**
- * A GIM Hypercall handler.
+ * Debug data buffer available callback over the GIM debug connection.
  *
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx    Pointer to the guest-CPU context.
+ * @param   pVM             The cross context VM structure.
  */
-typedef DECLCALLBACK(int) FNGIMHYPERCALL(PVMCPU pVCpu, PCPUMCTX pCtx);
-/** Pointer to a GIM hypercall handler. */
-typedef FNGIMHYPERCALL *PFNGIMHYPERCALL;
+typedef DECLCALLBACK(void) FNGIMDEBUGBUFAVAIL(PVM pVM);
+/** Pointer to GIM debug buffer available callback. */
+typedef FNGIMDEBUGBUFAVAIL *PFNGIMDEBUGBUFAVAIL;
 
 /**
- * A GIM MSR-read handler.
+ * GIM debug setup.
  *
- * @returns VBox status code.
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @param   idMsr   The MSR being read.
- * @param   pRange  The range that the MSR belongs to.
- * @param   puValue Where to store the value of the MSR.
+ * These are parameters/options filled in by the GIM provider and passed along
+ * to the GIM device.
  */
-typedef DECLCALLBACK(int) FNGIMRDMSR(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
-/** Pointer to a GIM MSR-read handler. */
-typedef FNGIMRDMSR *PFNGIMRDMSR;
+typedef struct GIMDEBUGSETUP
+{
+    /** The callback to invoke when the receive buffer has data. */
+    PFNGIMDEBUGBUFAVAIL     pfnDbgRecvBufAvail;
+    /** The size of the receive buffer as specified by the GIM provider. */
+    uint32_t                cbDbgRecvBuf;
+} GIMDEBUGSETUP;
+/** Pointer to a GIM debug setup struct. */
+typedef struct GIMDEBUGSETUP *PGIMDEBUGSETUP;
+/** Pointer to a const GIM debug setup struct. */
+typedef struct GIMDEBUGSETUP const *PCGGIMDEBUGSETUP;
 
 /**
- * A GIM MSR-write handler.
+ * GIM debug structure (common to the GIM device and GIM).
  *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   idMsr       The MSR being written.
- * @param   pRange      The range that the MSR belongs to.
- * @param   uValue      The value to set, ignored bits masked.
- * @param   uRawValue   The raw value with the ignored bits not masked.
+ * This is used to exchanging data between the GIM provider and the GIM device.
  */
-typedef DECLCALLBACK(int) FNGIMWRMSR(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
-/** Pointer to a GIM MSR-write handler. */
-typedef FNGIMWRMSR *PFNGIMWRMSR;
-#endif
+typedef struct GIMDEBUG
+{
+    /** The receive buffer. */
+    void                   *pvDbgRecvBuf;
+    /** The debug I/O stream driver. */
+    PPDMISTREAM             pDbgDrvStream;
+    /** Number of bytes pending to be read from the receive buffer. */
+    uint32_t                cbDbgRecvBufRead;
+    /** The flag synchronizing reads of the receive buffer from EMT. */
+    volatile bool           fDbgRecvBufRead;
+    /** The receive thread wakeup semaphore. */
+    RTSEMEVENTMULTI         hDbgRecvThreadSem;
+} GIMDEBUG;
+/** Pointer to a GIM debug struct. */
+typedef struct GIMDEBUG *PGIMDEBUG;
+/** Pointer to a const GIM debug struct. */
+typedef struct GIMDEBUG const *PCGIMDEBUG;
 
 
 #ifdef IN_RC
@@ -165,7 +176,8 @@ VMMR3_INT_DECL(int)         GIMR3Init(PVM pVM);
 VMMR3_INT_DECL(int)         GIMR3InitCompleted(PVM pVM);
 VMMR3_INT_DECL(int)         GIMR3Term(PVM pVM);
 VMMR3_INT_DECL(void)        GIMR3Reset(PVM pVM);
-VMMR3DECL(void)             GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevInsR3, PPDMISTREAM pDebugStreamR3);
+VMMR3DECL(void)             GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevInsR3, PGIMDEBUG pDbg);
+VMMR3DECL(int)              GIMR3GetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup);
 VMMR3DECL(PGIMMMIO2REGION)  GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 /** @} */
 #endif /* IN_RING3 */

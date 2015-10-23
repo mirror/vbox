@@ -241,13 +241,13 @@ VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                     }
 
                     /*
-                     * Since we don't really maintain our own buffers for the debug
-                     * communication channel, we don't have anything to flush.
+                     * Nothing to flush on the sending side as we don't maintain our own buffers.
                      */
+                    /** @todo We should probably ask the debug receive thread to flush it's buffer. */
                     if (rcHv == GIM_HV_STATUS_SUCCESS)
                     {
                         if (fFlags)
-                            LogRelMax(1, ("GIM: HyperV: Resetting debug session via hypercall\n"));
+                            LogRel(("GIM: HyperV: Resetting debug session via hypercall\n"));
                         else
                             rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
                     }
@@ -469,7 +469,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
         }
 
         case MSR_GIM_HV_SYNTH_DEBUG_STATUS:
-            *puValue = pHv->uDebugStatusMsr;
+            *puValue = pHv->uDbgStatusMsr;
             return VINF_SUCCESS;
 
         case MSR_GIM_HV_SINT2:
@@ -507,8 +507,9 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
 #ifndef IN_RING3
                 return VINF_CPUM_R3_MSR_READ;
 #else
-                LogRelMax(1, ("GIM: HyperV: Guest queried debug options MSR\n"));
-                *puValue = GIM_HV_DEBUG_OPTIONS_MSR_ENABLE;
+                LogRelMax(1, ("GIM: HyperV: Guest querying debug options, suggesting %s interface\n",
+                              pHv->fDbgHypercallInterface ? "hypercall" : "MSR"));
+                *puValue = pHv->fDbgHypercallInterface ? GIM_HV_DEBUG_OPTIONS_USE_HYPERCALLS : 0;
                 return VINF_SUCCESS;
 #endif
             }
@@ -723,27 +724,31 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 
         case MSR_GIM_HV_SYNTH_DEBUG_SEND_BUFFER:
         {
+            if (!pHv->fDbgEnabled)
+                return VERR_CPUM_RAISE_GP_0;
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
             RTGCPHYS GCPhysBuffer    = (RTGCPHYS)uRawValue;
-            pHv->uDebugSendBufferMsr = GCPhysBuffer;
+            pHv->uDbgSendBufferMsr = GCPhysBuffer;
             if (PGMPhysIsGCPhysNormal(pVM, GCPhysBuffer))
                 LogRel(("GIM: HyperV: Set up debug send buffer at %#RGp\n", GCPhysBuffer));
             else
                 LogRel(("GIM: HyperV: Destroyed debug send buffer\n"));
-            pHv->uDebugSendBufferMsr = uRawValue;
+            pHv->uDbgSendBufferMsr = uRawValue;
             return VINF_SUCCESS;
 #endif
         }
 
         case MSR_GIM_HV_SYNTH_DEBUG_RECEIVE_BUFFER:
         {
+            if (!pHv->fDbgEnabled)
+                return VERR_CPUM_RAISE_GP_0;
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
-            RTGCPHYS GCPhysBuffer    = (RTGCPHYS)uRawValue;
-            pHv->uDebugRecvBufferMsr = GCPhysBuffer;
+            RTGCPHYS GCPhysBuffer  = (RTGCPHYS)uRawValue;
+            pHv->uDbgRecvBufferMsr = GCPhysBuffer;
             if (PGMPhysIsGCPhysNormal(pVM, GCPhysBuffer))
                 LogRel(("GIM: HyperV: Set up debug receive buffer at %#RGp\n", GCPhysBuffer));
             else
@@ -754,24 +759,15 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 
         case MSR_GIM_HV_SYNTH_DEBUG_PENDING_BUFFER:
         {
+            if (!pHv->fDbgEnabled)
+                return VERR_CPUM_RAISE_GP_0;
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
-            RTGCPHYS GCPhysBuffer        = (RTGCPHYS)uRawValue;
-            pHv->uDebugPendingBufferMsr  = GCPhysBuffer;
+            RTGCPHYS GCPhysBuffer      = (RTGCPHYS)uRawValue;
+            pHv->uDbgPendingBufferMsr  = GCPhysBuffer;
             if (PGMPhysIsGCPhysNormal(pVM, GCPhysBuffer))
-            {
                 LogRel(("GIM: HyperV: Set up debug pending buffer at %#RGp\n", uRawValue));
-
-                /* Indicate that there is always debug data to be read (guest will poll). */
-                /** @todo Later implement this by doing the transport read in a separate
-                 *        thread and updating this page, saves lots of VM-exits as the guest
-                 *        won't poll and fail all the time. */
-                uint8_t uPendingData = 1;
-                int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysBuffer, (void *)&uPendingData, sizeof(uPendingData));
-                if (RT_FAILURE(rc))
-                    LogRelMax(5, ("GIM: HyperV: Failed to update pending buffer at %#RGp, rc=%Rrc\n", GCPhysBuffer, rc));
-            }
             else
                 LogRel(("GIM: HyperV: Destroyed debug pending buffer\n"));
             return VINF_SUCCESS;
@@ -780,88 +776,79 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 
         case MSR_GIM_HV_SYNTH_DEBUG_CONTROL:
         {
+            if (!pHv->fDbgEnabled)
+                return VERR_CPUM_RAISE_GP_0;
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
+            if (   MSR_GIM_HV_SYNTH_DEBUG_CONTROL_IS_WRITE(uRawValue)
+                && MSR_GIM_HV_SYNTH_DEBUG_CONTROL_IS_READ(uRawValue))
+            {
+                LogRel(("GIM: HyperV: Requesting both read and write through debug control MSR -> #GP(0)\n"));
+                return VERR_CPUM_RAISE_GP_0;
+            }
+
             if (MSR_GIM_HV_SYNTH_DEBUG_CONTROL_IS_WRITE(uRawValue))
             {
-                LogRelMax(1, ("GIM: HyperV: Initiated debug data transmission via MSR\n",
-                              MSR_GIM_HV_SYNTH_DEBUG_CONTROL_W_LEN(uRawValue)));
                 uint32_t cbWrite = MSR_GIM_HV_SYNTH_DEBUG_CONTROL_W_LEN(uRawValue);
                 if (   cbWrite > 0
                     && cbWrite < GIM_HV_PAGE_SIZE)
                 {
-                    void *pvBuf = RTMemAlloc(cbWrite);  /** @todo perhaps we can do this alloc once during VM init. */
-                    if (RT_LIKELY(pvBuf))
+                    if (PGMPhysIsGCPhysNormal(pVM, (RTGCPHYS)pHv->uDbgSendBufferMsr))
                     {
-                        if (PGMPhysIsGCPhysNormal(pVM, (RTGCPHYS)pHv->uDebugSendBufferMsr))
+                        Assert(pHv->pvDbgBuffer);
+                        int rc = PGMPhysSimpleReadGCPhys(pVM, pHv->pvDbgBuffer, (RTGCPHYS)pHv->uDbgSendBufferMsr, cbWrite);
+                        if (RT_SUCCESS(rc))
                         {
-                            int rc = PGMPhysSimpleReadGCPhys(pVM, pvBuf, (RTGCPHYS)pHv->uDebugSendBufferMsr, cbWrite);
-                            if (RT_SUCCESS(rc))
-                            {
-                                uint32_t cbWritten = 0;
-                                rc = gimR3HvDebugWrite(pVM, pvBuf, cbWrite, &cbWritten, false /*fUdpPkt*/);
-                                if (   RT_SUCCESS(rc)
-                                    && cbWrite == cbWritten)
-                                    pHv->uDebugStatusMsr = MSR_GIM_HV_SYNTH_DEBUG_STATUS_W_SUCCESS_BIT;
-                                else
-                                    pHv->uDebugStatusMsr = 0;
-                            }
+                            LogRelMax(1, ("GIM: HyperV: Initiated debug data transmission via MSR\n"));
+                            uint32_t cbWritten = 0;
+                            rc = gimR3HvDebugWrite(pVM, pHv->pvDbgBuffer, cbWrite, &cbWritten, false /*fUdpPkt*/);
+                            if (   RT_SUCCESS(rc)
+                                && cbWrite == cbWritten)
+                                pHv->uDbgStatusMsr = MSR_GIM_HV_SYNTH_DEBUG_STATUS_W_SUCCESS_BIT;
                             else
-                            {
-                                LogRelMax(5, ("GIM: HyperV: Failed to read debug send buffer at %#RGp, rc=%Rrc\n",
-                                              (RTGCPHYS)pHv->uDebugSendBufferMsr, rc));
-                            }
+                                pHv->uDbgStatusMsr = 0;
                         }
                         else
-                            LogRelMax(5, ("GIM: HyperV: Debug send buffer address %#RGp invalid! Ignoring debug write\n",
-                                          (RTGCPHYS)pHv->uDebugSendBufferMsr));
-                        RTMemFree(pvBuf);
+                            LogRelMax(5, ("GIM: HyperV: Failed to read debug send buffer at %#RGp, rc=%Rrc\n",
+                                          (RTGCPHYS)pHv->uDbgSendBufferMsr, rc));
                     }
                     else
-                    {
-                        LogRel(("GIM: HyperV: Failed to alloc %u bytes for copying debug send buffer\n", cbWrite));
-                        return VERR_NO_MEMORY;
-                    }
+                        LogRelMax(5, ("GIM: HyperV: Debug send buffer address %#RGp invalid! Ignoring debug write!\n",
+                                      (RTGCPHYS)pHv->uDbgSendBufferMsr));
                 }
+                else
+                    LogRelMax(5, ("GIM: HyperV: Invalid write size %u specified in MSR, ignoring debug write!\n",
+                                  MSR_GIM_HV_SYNTH_DEBUG_CONTROL_W_LEN(uRawValue)));
             }
             else if (MSR_GIM_HV_SYNTH_DEBUG_CONTROL_IS_READ(uRawValue))
             {
-                LogRelMax(1, ("GIM: HyperV: Initiated debug data reception via MSR\n"));
-                if (PGMPhysIsGCPhysNormal(pVM, (RTGCPHYS)pHv->uDebugRecvBufferMsr))
+                if (PGMPhysIsGCPhysNormal(pVM, (RTGCPHYS)pHv->uDbgRecvBufferMsr))
                 {
-                    void *pvBuf = RTMemAlloc(PAGE_SIZE);        /** @todo perhaps we can do this alloc once during VM init. */
-                    if (RT_LIKELY(pvBuf))
+                    LogRelMax(1, ("GIM: HyperV: Initiated debug data reception via MSR\n"));
+                    uint32_t cbReallyRead;
+                    Assert(pHv->pvDbgBuffer);
+                    int rc = gimR3HvDebugRead(pVM, pHv->pvDbgBuffer, PAGE_SIZE, PAGE_SIZE, &cbReallyRead, 0, false /*fUdpPkt*/);
+                    if (   RT_SUCCESS(rc)
+                        && cbReallyRead > 0)
                     {
-                        uint32_t cbReallyRead;
-                        int rc = gimR3HvDebugRead(pVM, pvBuf, PAGE_SIZE, PAGE_SIZE, &cbReallyRead, 0, false /*fUdpPkt*/);
-                        if (   RT_SUCCESS(rc)
-                            && cbReallyRead > 0)
+                        rc = PGMPhysSimpleWriteGCPhys(pVM, (RTGCPHYS)pHv->uDbgRecvBufferMsr, pHv->pvDbgBuffer, cbReallyRead);
+                        if (RT_SUCCESS(rc))
                         {
-                            rc = PGMPhysSimpleWriteGCPhys(pVM, (RTGCPHYS)pHv->uDebugRecvBufferMsr, pvBuf, cbReallyRead);
-                            if (RT_SUCCESS(rc))
-                            {
-                                pHv->uDebugStatusMsr  = ((uint16_t)cbReallyRead) << 16;
-                                pHv->uDebugStatusMsr |= MSR_GIM_HV_SYNTH_DEBUG_STATUS_R_SUCCESS_BIT;
-                            }
-                            else
-                            {
-                                pHv->uDebugStatusMsr = 0;
-                                LogRelMax(5, ("GIM: HyperV: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", rc));
-                            }
+                            pHv->uDbgStatusMsr  = ((uint16_t)cbReallyRead) << 16;
+                            pHv->uDbgStatusMsr |= MSR_GIM_HV_SYNTH_DEBUG_STATUS_R_SUCCESS_BIT;
                         }
                         else
-                            pHv->uDebugStatusMsr = 0;
-                        RTMemFree(pvBuf);
+                        {
+                            pHv->uDbgStatusMsr = 0;
+                            LogRelMax(5, ("GIM: HyperV: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", rc));
+                        }
                     }
                     else
-                    {
-                        LogRel(("GIM: HyperV: Failed to alloc %u bytes for copying debug receive buffer\n", PAGE_SIZE));
-                        return VERR_NO_MEMORY;
-                    }
+                        pHv->uDbgStatusMsr = 0;
                 }
                 else
-                    LogRelMax(5, ("GIM: HyperV: Debug receive buffer address %#RGp invalid! Ignoring debug data reception\n"));
+                    LogRelMax(5, ("GIM: HyperV: Debug receive buffer address %#RGp invalid! Ignoring debug read!\n"));
             }
             return VINF_SUCCESS;
 #endif
@@ -869,6 +856,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 
         case MSR_GIM_HV_SINT2:
         {
+            if (!pHv->fDbgEnabled)
+                return VERR_CPUM_RAISE_GP_0;
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
@@ -892,6 +881,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 
         case MSR_GIM_HV_SIMP:
         {
+            if (!pHv->fDbgEnabled)
+                return VERR_CPUM_RAISE_GP_0;
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else

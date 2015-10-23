@@ -36,6 +36,9 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/version.h>
+#ifdef DEBUG_ramshankar
+# include <iprt/udp.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -174,6 +177,8 @@ static const uint8_t g_abArpReply[] =
 *********************************************************************************************************************************/
 static int    gimR3HvInitHypercallSupport(PVM pVM);
 static void   gimR3HvTermHypercallSupport(PVM pVM);
+static int    gimR3HvInitDebugSupport(PVM pVM);
+static void   gimR3HvTermDebugSupport(PVM pVM);
 
 
 /**
@@ -202,7 +207,8 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
          */
         rc = CFGMR3ValidateConfig(pCfgHv, "/HyperV/",
                                   "VendorID"
-                                  "|VSInterface",
+                                  "|VSInterface"
+                                  "|HypercallDebugInterface",
                                   "" /* pszValidNodes */, "GIM/HyperV" /* pszWho */, 0 /* uInstance */);
         if (RT_FAILURE(rc))
             return rc;
@@ -217,7 +223,7 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     LogRel(("GIM: HyperV: Reporting vendor as '%s'\n", szVendor));
     if (!RTStrNCmp(szVendor, GIM_HV_VENDOR_MICROSOFT, sizeof(GIM_HV_VENDOR_MICROSOFT) - 1))
     {
-        LogRel(("GIM: HyperV: Warning! Posing as the Microsoft vendor, guest behavior may be altered!\n"));
+        LogRel(("GIM: HyperV: Warning! Posing as the Microsoft vendor may alter guest behaviour!\n"));
         pHv->fIsVendorMsHv = true;
     }
 
@@ -226,6 +232,11 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
         /** @cfgm{/GIM/HyperV/VSInterface, bool, true}
          * The Microsoft virtualization service interface (debugging). */
         rc = CFGMR3QueryBoolDef(pCfgHv, "VSInterface", &pHv->fIsInterfaceVs, true);
+        AssertLogRelRCReturn(rc, rc);
+
+        /** @cfgm{/GIM/HyperV/HypercallDebugInterface, bool, true}
+         * Whether we specify the guest to use hypercalls for debugging rather than MSRs. */
+        rc = CFGMR3QueryBoolDef(pCfgHv, "HypercallDebugInterface", &pHv->fDbgHypercallInterface, true);
         AssertLogRelRCReturn(rc, rc);
     }
     else
@@ -437,6 +448,12 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     rc = gimR3HvInitHypercallSupport(pVM);
     AssertLogRelRCReturn(rc, rc);
 
+    /*
+     * Setup debug support.
+     */
+    rc = gimR3HvInitDebugSupport(pVM);
+    AssertLogRelRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 
@@ -558,18 +575,18 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     /*
      * Reset MSRs.
      */
-    pHv->u64GuestOsIdMsr        = 0;
-    pHv->u64HypercallMsr        = 0;
-    pHv->u64TscPageMsr          = 0;
-    pHv->uCrashP0Msr            = 0;
-    pHv->uCrashP1Msr            = 0;
-    pHv->uCrashP2Msr            = 0;
-    pHv->uCrashP3Msr            = 0;
-    pHv->uCrashP4Msr            = 0;
-    pHv->uDebugStatusMsr        = 0;
-    pHv->uDebugPendingBufferMsr = 0;
-    pHv->uDebugSendBufferMsr    = 0;
-    pHv->uDebugRecvBufferMsr    = 0;
+    pHv->u64GuestOsIdMsr      = 0;
+    pHv->u64HypercallMsr      = 0;
+    pHv->u64TscPageMsr        = 0;
+    pHv->uCrashP0Msr          = 0;
+    pHv->uCrashP1Msr          = 0;
+    pHv->uCrashP2Msr          = 0;
+    pHv->uCrashP3Msr          = 0;
+    pHv->uCrashP4Msr          = 0;
+    pHv->uDbgStatusMsr        = 0;
+    pHv->uDbgPendingBufferMsr = 0;
+    pHv->uDbgSendBufferMsr    = 0;
+    pHv->uDbgRecvBufferMsr    = 0;
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
@@ -594,6 +611,75 @@ VMMR3_INT_DECL(PGIMMMIO2REGION) gimR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegi
     *pcRegions = RT_ELEMENTS(pHv->aMmio2Regions);
     Assert(*pcRegions <= UINT8_MAX);    /* See PGMR3PhysMMIO2Register(). */
     return pHv->aMmio2Regions;
+}
+
+
+/**
+ * Callback for when debug data is available over the debugger connection.
+ *
+ * @param pVM       The cross context VM structure.
+ */
+static DECLCALLBACK(void) gimR3HvDebugBufAvail(PVM pVM)
+{
+    PGIMHV   pHv = &pVM->gim.s.u.Hv;
+    RTGCPHYS GCPhysPendingBuffer = pHv->uDbgPendingBufferMsr;
+    if (   GCPhysPendingBuffer
+        && PGMPhysIsGCPhysNormal(pVM, GCPhysPendingBuffer))
+    {
+        uint8_t bPendingData = 1;
+        int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysPendingBuffer, &bPendingData, sizeof(bPendingData));
+        if (RT_FAILURE(rc))
+        {
+            LogRelMax(5, ("GIM: HyperV: Failed to set pending debug receive buffer at %#RGp, rc=%Rrc\n", GCPhysPendingBuffer,
+                          rc));
+        }
+    }
+}
+
+
+/**
+ * Callback for when debug data has been read from the debugger connection.
+ *
+ * This will be invoked before signalling read of the next debug buffer.
+ *
+ * @param pVM       The cross context VM structure.
+ */
+static DECLCALLBACK(void) gimR3HvDebugBufReadCompleted(PVM pVM)
+{
+    PGIMHV   pHv = &pVM->gim.s.u.Hv;
+    RTGCPHYS GCPhysPendingBuffer = pHv->uDbgPendingBufferMsr;
+    if (   GCPhysPendingBuffer
+        && PGMPhysIsGCPhysNormal(pVM, GCPhysPendingBuffer))
+    {
+        uint8_t bPendingData = 0;
+        int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysPendingBuffer, &bPendingData, sizeof(bPendingData));
+        if (RT_FAILURE(rc))
+        {
+            LogRelMax(5, ("GIM: HyperV: Failed to clear pending debug receive buffer at %#RGp, rc=%Rrc\n", GCPhysPendingBuffer,
+                          rc));
+        }
+    }
+}
+
+
+/**
+ * Get Hyper-V debug setup parameters.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pDbgSetup   Where to store the debug setup details.
+ */
+VMMR3_INT_DECL(int) gimR3HvGetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup)
+{
+    Assert(pDbgSetup);
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    if (pHv->fDbgEnabled)
+    {
+        pDbgSetup->pfnDbgRecvBufAvail = gimR3HvDebugBufAvail;
+        pDbgSetup->cbDbgRecvBuf       = GIM_HV_PAGE_SIZE;
+        return VINF_SUCCESS;
+    }
+    return VERR_GIM_NO_DEBUG_CONNECTION;
 }
 
 
@@ -662,12 +748,12 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save debug support data.
      */
-    SSMR3PutU64(pSSM, pcHv->uDebugPendingBufferMsr);
-    SSMR3PutU64(pSSM, pcHv->uDebugSendBufferMsr);
-    SSMR3PutU64(pSSM, pcHv->uDebugRecvBufferMsr);
-    SSMR3PutU64(pSSM, pcHv->uDebugStatusMsr);
-    SSMR3PutU32(pSSM, pcHv->enmDebugReply);
-    SSMR3PutU32(pSSM, pcHv->uBootpXId);
+    SSMR3PutU64(pSSM, pcHv->uDbgPendingBufferMsr);
+    SSMR3PutU64(pSSM, pcHv->uDbgSendBufferMsr);
+    SSMR3PutU64(pSSM, pcHv->uDbgRecvBufferMsr);
+    SSMR3PutU64(pSSM, pcHv->uDbgStatusMsr);
+    SSMR3PutU32(pSSM, pcHv->enmDbgReply);
+    SSMR3PutU32(pSSM, pcHv->uDbgBootpXId);
     SSMR3PutU32(pSSM, pcHv->DbgGuestIp4Addr.u);
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -791,12 +877,12 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
      */
     if (uHvSavedStatVersion > GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG)
     {
-        SSMR3GetU64(pSSM, &pHv->uDebugPendingBufferMsr);
-        SSMR3GetU64(pSSM, &pHv->uDebugSendBufferMsr);
-        SSMR3GetU64(pSSM, &pHv->uDebugRecvBufferMsr);
-        SSMR3GetU64(pSSM, &pHv->uDebugStatusMsr);
-        SSMR3GetU32(pSSM, (uint32_t *)&pHv->enmDebugReply);
-        SSMR3GetU32(pSSM, &pHv->uBootpXId);
+        SSMR3GetU64(pSSM, &pHv->uDbgPendingBufferMsr);
+        SSMR3GetU64(pSSM, &pHv->uDbgSendBufferMsr);
+        SSMR3GetU64(pSSM, &pHv->uDbgRecvBufferMsr);
+        SSMR3GetU64(pSSM, &pHv->uDbgStatusMsr);
+        SSMR3GetU32(pSSM, (uint32_t *)&pHv->enmDbgReply);
+        SSMR3GetU32(pSSM, &pHv->uDbgBootpXId);
         rc = SSMR3GetU32(pSSM, &pHv->DbgGuestIp4Addr.u);
         AssertRCReturn(rc, rc);
 
@@ -1136,6 +1222,43 @@ static void gimR3HvTermHypercallSupport(PVM pVM)
 
 
 /**
+ * Initializes Hyper-V guest debug support.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The cross context VM structure.
+ */
+static int gimR3HvInitDebugSupport(PVM pVM)
+{
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    if (   (pHv->uPartFlags & GIM_HV_PART_FLAGS_DEBUGGING)
+        || pHv->fIsInterfaceVs)
+    {
+        pHv->fDbgEnabled = true;
+        pHv->pvDbgBuffer = RTMemAllocZ(PAGE_SIZE);
+        if (!pHv->pvDbgBuffer)
+            return VERR_NO_MEMORY;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Terminates Hyper-V guest debug support.
+ *
+ * @param   pVM     The cross context VM structure.
+ */
+static void gimR3HvTermDebugSupport(PVM pVM)
+{
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+    if (pHv->pvDbgBuffer)
+    {
+        RTMemFree(pHv->pvDbgBuffer);
+        pHv->pvDbgBuffer = NULL;
+    }
+}
+
+
+/**
  * Reads data from a debugger connection, asynchronous.
  *
  * @returns VBox status code.
@@ -1164,7 +1287,7 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
          * Read the raw debug data.
          */
         size_t cbReallyRead = cbRead;
-        rc = GIMR3DebugRead(pVM, pvBuf, &cbReallyRead);
+        rc = GIMR3DebugRead(pVM, pvBuf, &cbReallyRead, gimR3HvDebugBufReadCompleted);
         *pcbRead = (uint32_t)cbReallyRead;
     }
     else
@@ -1174,12 +1297,12 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
          */
         PGIMHV pHv = &pVM->gim.s.u.Hv;
         rc = VERR_GIM_IPE_1;
-        switch (pHv->enmDebugReply)
+        switch (pHv->enmDbgReply)
         {
             case GIMHVDEBUGREPLY_UDP:
             {
                 size_t cbReallyRead = cbRead;
-                rc = GIMR3DebugRead(pVM, pvBuf, &cbReallyRead);
+                rc = GIMR3DebugRead(pVM, pvBuf, &cbReallyRead, gimR3HvDebugBufReadCompleted);
                 if (   RT_SUCCESS(rc)
                     && cbReallyRead > 0)
                 {
@@ -1216,6 +1339,8 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
                         pIpHdr->ip_dst.u   = pHv->DbgGuestIp4Addr.u;
                         pIpHdr->ip_sum     = RTNetIPv4HdrChecksum(pIpHdr);
                         /* UDP */
+                        pUdpHdr->uh_dport  = pHv->uUdpGuestSrcPort;
+                        pUdpHdr->uh_sport  = pHv->uUdpGuestDstPort;
                         pUdpHdr->uh_ulen   = RT_H2N_U16_C((uint16_t)cbReallyRead + sizeof(*pUdpHdr));
 
                         /* Make room by moving the payload and prepending the headers. */
@@ -1241,7 +1366,7 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
                     memcpy(pvBuf, g_abArpReply, cbArpReplyPkt);
                     rc = VINF_SUCCESS;
                     *pcbRead = cbArpReplyPkt;
-                    pHv->enmDebugReply = GIMHVDEBUGREPLY_ARP_REPLY_SENT;
+                    pHv->enmDbgReply = GIMHVDEBUGREPLY_ARP_REPLY_SENT;
                 }
                 else
                 {
@@ -1261,13 +1386,13 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
                     PRTNETIPV4     pIpHdr    = (PRTNETIPV4)    (pEthHdr + 1);
                     PRTNETUDP      pUdpHdr   = (PRTNETUDP)     ((uint8_t *)pIpHdr + RTNETIPV4_MIN_LEN);
                     PRTNETBOOTP    pBootpHdr = (PRTNETBOOTP)   (pUdpHdr + 1);
-                    pBootpHdr->bp_xid = pHv->uBootpXId;
+                    pBootpHdr->bp_xid = pHv->uDbgBootpXId;
 
                     rc = VINF_SUCCESS;
                     *pcbRead = cbDhcpOfferPkt;
-                    pHv->enmDebugReply = GIMHVDEBUGREPLY_DHCP_OFFER_SENT;
+                    pHv->enmDbgReply = GIMHVDEBUGREPLY_DHCP_OFFER_SENT;
                     LogRel(("GIM: HyperV: Debug DHCP offered IP address %RTnaipv4, transaction Id %#x\n", pBootpHdr->bp_yiaddr,
-                            RT_N2H_U32(pHv->uBootpXId)));
+                            RT_N2H_U32(pHv->uDbgBootpXId)));
                 }
                 else
                 {
@@ -1287,13 +1412,13 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
                     PRTNETIPV4     pIpHdr    = (PRTNETIPV4)    (pEthHdr + 1);
                     PRTNETUDP      pUdpHdr   = (PRTNETUDP)     ((uint8_t *)pIpHdr + RTNETIPV4_MIN_LEN);
                     PRTNETBOOTP    pBootpHdr = (PRTNETBOOTP)   (pUdpHdr + 1);
-                    pBootpHdr->bp_xid = pHv->uBootpXId;
+                    pBootpHdr->bp_xid = pHv->uDbgBootpXId;
 
                     rc = VINF_SUCCESS;
                     *pcbRead = cbDhcpAckPkt;
-                    pHv->enmDebugReply = GIMHVDEBUGREPLY_DHCP_ACK_SENT;
+                    pHv->enmDbgReply = GIMHVDEBUGREPLY_DHCP_ACK_SENT;
                     LogRel(("GIM: HyperV: Debug DHCP acknowledged IP address %RTnaipv4, transaction Id %#x\n",
-                            pBootpHdr->bp_yiaddr, RT_N2H_U32(pHv->uBootpXId)));
+                            pBootpHdr->bp_yiaddr, RT_N2H_U32(pHv->uDbgBootpXId)));
                 }
                 else
                 {
@@ -1314,12 +1439,28 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
 
             default:
             {
-                AssertMsgFailed(("GIM: HyperV: Invalid/unimplemented debug reply type %u\n", pHv->enmDebugReply));
+                AssertMsgFailed(("GIM: HyperV: Invalid/unimplemented debug reply type %u\n", pHv->enmDbgReply));
                 rc = VERR_INTERNAL_ERROR_2;
             }
         }
         Assert(rc != VERR_GIM_IPE_1);
+
+#ifdef DEBUG_ramshankar
+        if (   rc == VINF_SUCCESS
+            && *pcbRead > 0)
+        {
+            RTSOCKET hSocket;
+            int rc2 = RTUdpCreateClientSocket("localhost", 52000, NULL, &hSocket);
+            if (RT_SUCCESS(rc2))
+            {
+                size_t cbTmpWrite = *pcbRead;
+                RTSocketWriteNB(hSocket, pvBuf, *pcbRead, &cbTmpWrite); NOREF(cbTmpWrite);
+                RTSocketClose(hSocket);
+            }
+        }
+#endif
     }
+
     return rc;
 }
 
@@ -1346,6 +1487,16 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
     uint8_t  *pbData     = (uint8_t *)pvData;
     if (fUdpPkt)
     {
+#ifdef DEBUG_ramshankar
+        RTSOCKET hSocket;
+        int rc2 = RTUdpCreateClientSocket("localhost", 52000, NULL, &hSocket);
+        if (RT_SUCCESS(rc2))
+        {
+            size_t cbTmpWrite = cbWrite;
+            RTSocketWriteNB(hSocket, pbData, cbWrite, &cbTmpWrite);  NOREF(cbTmpWrite);
+            RTSocketClose(hSocket);
+        }
+#endif
         /*
          * Windows guests sends us ethernet frames over the Hyper-V debug connection.
          * It sends DHCP/ARP queries with zero'd out MAC addresses and requires fudging up the
@@ -1387,51 +1538,72 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
                             /*
                              * Check for DHCP.
                              */
+                            bool fBuggyPkt = false;
                             size_t const cbUdpPkt = cbMaxIpPkt - cbIpHdr;
                             if (   pUdpHdr->uh_dport == RT_N2H_U16_C(RTNETIPV4_PORT_BOOTPS)
-                                && pUdpHdr->uh_sport == RT_N2H_U16_C(RTNETIPV4_PORT_BOOTPC)
-                                && cbMaxIpPkt >= cbIpHdr + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN)
+                                && pUdpHdr->uh_sport == RT_N2H_U16_C(RTNETIPV4_PORT_BOOTPC))
                             {
                                 PCRTNETBOOTP pDhcpPkt = (PCRTNETBOOTP)(pUdpHdr + 1);
                                 uint8_t bMsgType;
-                                if (RTNetIPv4IsDHCPValid(pUdpHdr, pDhcpPkt, cbUdpPkt - sizeof(*pUdpHdr), &bMsgType))
+                                if (   cbMaxIpPkt >= cbIpHdr + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN
+                                    && RTNetIPv4IsDHCPValid(pUdpHdr, pDhcpPkt, cbUdpPkt - sizeof(*pUdpHdr), &bMsgType))
                                 {
                                     switch (bMsgType)
                                     {
                                         case RTNET_DHCP_MT_DISCOVER:
-                                            pHv->enmDebugReply = GIMHVDEBUGREPLY_DHCP_OFFER;
-                                            pHv->uBootpXId = pDhcpPkt->bp_xid;
+                                            pHv->enmDbgReply = GIMHVDEBUGREPLY_DHCP_OFFER;
+                                            pHv->uDbgBootpXId = pDhcpPkt->bp_xid;
                                             break;
                                         case RTNET_DHCP_MT_REQUEST:
-                                            pHv->enmDebugReply = GIMHVDEBUGREPLY_DHCP_ACK;
-                                            pHv->uBootpXId = pDhcpPkt->bp_xid;
+                                            pHv->enmDbgReply = GIMHVDEBUGREPLY_DHCP_ACK;
+                                            pHv->uDbgBootpXId = pDhcpPkt->bp_xid;
                                             break;
                                         default:
                                             LogRelMax(5, ("GIM: HyperV: Debug DHCP MsgType %#x not implemented! Packet dropped\n",
                                                           bMsgType));
                                             break;
                                     }
+                                    fIgnorePkt = true;
                                 }
-                                fIgnorePkt = true;
+                                else if (   pIp4Hdr->ip_src.u == GIMHV_DEBUGCLIENT_IPV4
+                                         && pIp4Hdr->ip_dst.u == 0)
+                                {
+                                    /*
+                                     * Windows 8.1 seems to be sending malformed BOOTP packets at the final stage of the
+                                     * debugger sequence. It appears that a previously sent DHCP request buffer wasn't cleared
+                                     * in the guest and they re-use it instead of sending a zero destination+source port packet
+                                     * as expected below.
+                                     *
+                                     * We workaround Microsoft's bug here, or at least, I'm classifying it as a bug to
+                                     * preserve my own sanity, see @bugref{8006#c54}.
+                                     */
+                                    fBuggyPkt = true;
+                                }
                             }
-                            else if (   !pUdpHdr->uh_dport
-                                     && !pUdpHdr->uh_sport)
+
+                            if (  (   !pUdpHdr->uh_dport
+                                   && !pUdpHdr->uh_sport)
+                                || fBuggyPkt)
                             {
                                 /*
                                  * Extract the UDP payload and pass it to the debugger and record the guest IP address.
-                                 * Hyper-V sends UDP debugger packets with source and destination port as 0. If we don't
-                                 * filter out the ports here, we would receive BOOTP, NETBIOS and other UDP sub-protocol
-                                 * packets which the debugger yells as "Bad packet received from...".
+                                 *
+                                 * Hyper-V sends UDP debugger packets with source and destination port as 0 except in the
+                                 * aformentioned buggy case. The buggy packet case requires us to remember the ports and
+                                 * reply to them, otherwise the guest won't receive the replies we sent with port 0.
                                  */
                                 uint32_t const cbFrameHdr = sizeof(RTNETETHERHDR) + cbIpHdr + sizeof(RTNETUDP);
                                 pbData  += cbFrameHdr;
                                 cbWrite -= cbFrameHdr;
-                                pHv->DbgGuestIp4Addr = pIp4Hdr->ip_src;
-                                pHv->enmDebugReply   = GIMHVDEBUGREPLY_UDP;
+                                pHv->DbgGuestIp4Addr.u = pIp4Hdr->ip_src.u;
+                                pHv->uUdpGuestDstPort  = pUdpHdr->uh_dport;
+                                pHv->uUdpGuestSrcPort  = pUdpHdr->uh_sport;
+                                pHv->enmDbgReply       = GIMHVDEBUGREPLY_UDP;
                             }
                             else
                             {
-                                LogFlow(("GIM: HyperV: Ignoring UDP packet not src and dst port 0\n"));
+                                LogFlow(("GIM: HyperV: Ignoring UDP packet SourcePort=%u DstPort=%u\n", pUdpHdr->uh_sport,
+                                         pUdpHdr->uh_dport));
                                 fIgnorePkt = true;
                             }
                         }
@@ -1475,7 +1647,7 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
                             &&  pArpPkt->ar_spa.u == GIMHV_DEBUGCLIENT_IPV4
                             &&  pArpPkt->ar_tpa.u == GIMHV_DEBUGSERVER_IPV4)
                         {
-                            pHv->enmDebugReply = GIMHVDEBUGREPLY_ARP_REPLY;
+                            pHv->enmDbgReply = GIMHVDEBUGREPLY_ARP_REPLY;
                         }
                     }
                 }

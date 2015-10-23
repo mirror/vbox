@@ -79,7 +79,7 @@ static DECLCALLBACK(int) drvUDPRead(PPDMISTREAM pInterface, void *pvBuf, size_t 
     if (pThis->hSocket != NIL_RTSOCKET)
     {
         size_t cbReallyRead = 0;
-        rc = RTSocketReadNB(pThis->hSocket, pvBuf, *pcbRead, &cbReallyRead);
+        rc = RTSocketRead(pThis->hSocket, pvBuf, *pcbRead, &cbReallyRead);
         if (RT_SUCCESS(rc))
             *pcbRead = cbReallyRead;
     }
@@ -102,10 +102,10 @@ static DECLCALLBACK(int) drvUDPWrite(PPDMISTREAM pInterface, const void *pvBuf, 
     Assert(pcbWrite);
     if (pThis->hSocket != NIL_RTSOCKET)
     {
-        size_t cbReallyWritten = 0;
-        rc = RTSocketWriteNB(pThis->hSocket, pvBuf, *pcbWrite, &cbReallyWritten);
+        size_t cbBuf = *pcbWrite;
+        rc = RTSocketWriteToNB(pThis->hSocket, pvBuf, cbBuf, NULL /*pDstAddr*/);
         if (RT_SUCCESS(rc))
-            *pcbWrite = cbReallyWritten;
+            *pcbWrite = cbBuf;
     }
     else
         rc = VERR_NET_NOT_SOCKET;
@@ -146,6 +146,8 @@ static DECLCALLBACK(void) drvUDPDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->hSocket != NIL_RTSOCKET)
     {
+        RTSocketRetain(pThis->hSocket);
+        RTSocketShutdown(pThis->hSocket, true, true);
         RTSocketClose(pThis->hSocket);
         pThis->hSocket = NIL_RTSOCKET;
         LogRel(("DrvUDP#%u: Closed socket to %s:%u\n", pThis->pDrvIns->iInstance, pThis->pszServerAddress, pThis->uServerPort));

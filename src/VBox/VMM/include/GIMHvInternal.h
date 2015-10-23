@@ -712,7 +712,7 @@ typedef enum GIMHVHYPERCALLPARAM
 
 /** The undocumented bit for MSR_GIM_HV_DEBUG_OPTIONS_MSR that makes it all
  *  work. */
-#define GIM_HV_DEBUG_OPTIONS_MSR_ENABLE           RT_BIT(2)
+#define GIM_HV_DEBUG_OPTIONS_USE_HYPERCALLS       RT_BIT(2)
 
 /** Guest will perform the HvPostDebugData hypercall until completion. */
 #define GIM_HV_DEBUG_POST_LOOP                    RT_BIT_32(0)
@@ -1046,23 +1046,31 @@ typedef struct GIMHV
     bool                        fIsVendorMsHv;
     /** Whether we're posing as the Microsoft virtualization service. */
     bool                        fIsInterfaceVs;
-    bool                        afAlignment0[6];
-    /** The auto IP address last chosen by the guest after failed ARP queries. */
-    RTNETADDRIPV4               DbgGuestIp4Addr;
+    /** Whether debugging support is enabled. */
+    bool                        fDbgEnabled;
+    /** Whether we should suggest a hypercall-based debug interface to the guest. */
+    bool                        fDbgHypercallInterface;
+    bool                        afAlignment0[4];
     /** The action to take while sending replies. */
-    GIMHVDEBUGREPLY             enmDebugReply;
+    GIMHVDEBUGREPLY             enmDbgReply;
+    /** The IP address chosen by/assigned to the guest. */
+    RTNETADDRIPV4               DbgGuestIp4Addr;
     /** Transaction ID for the BOOTP+DHCP sequence. */
-    uint32_t                    uBootpXId;
-    /** Padding. */
-    uint32_t                    uAlignment0;
+    uint32_t                    uDbgBootpXId;
+    /** The source UDP port used by the guest while sending debug packets. */
+    uint16_t                    uUdpGuestSrcPort;
+    /** The destination UDP port used by the guest while sending debug packets. */
+    uint16_t                    uUdpGuestDstPort;
     /** Debug send buffer MSR. */
-    uint64_t                    uDebugSendBufferMsr;
+    uint64_t                    uDbgSendBufferMsr;
     /** Debug receive buffer MSR. */
-    uint64_t                    uDebugRecvBufferMsr;
+    uint64_t                    uDbgRecvBufferMsr;
     /** Debug pending buffer MSR. */
-    uint64_t                    uDebugPendingBufferMsr;
+    uint64_t                    uDbgPendingBufferMsr;
     /** Debug status MSR. */
-    uint64_t                    uDebugStatusMsr;
+    uint64_t                    uDbgStatusMsr;
+    /** Intermediate debug I/O buffer. */
+    R3PTRTYPE(void *)           pvDbgBuffer;
     /** @} */
 
     /** Array of MMIO2 regions. */
@@ -1112,6 +1120,7 @@ VMMR3_INT_DECL(void)            gimR3HvReset(PVM pVM);
 VMMR3_INT_DECL(PGIMMMIO2REGION) gimR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 VMMR3_INT_DECL(int)             gimR3HvSave(PVM pVM, PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)             gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion);
+VMMR3_INT_DECL(int)             gimR3HvGetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup);
 
 VMMR3_INT_DECL(int)             gimR3HvDisableTscPage(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSeq, uint32_t uTscSeq);

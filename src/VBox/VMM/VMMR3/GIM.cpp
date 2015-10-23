@@ -58,6 +58,7 @@
 #include <VBox/vmm/pdmdev.h>
 
 #include <iprt/err.h>
+#include <iprt/semaphore.h>
 #include <iprt/string.h>
 
 /* Include all GIM providers. */
@@ -166,6 +167,16 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
         else
             rc = VMR3SetError(pVM->pUVM, VERR_GIM_INVALID_PROVIDER, RT_SRC_POS, "Provider '%s' unknown.", szProvider);
     }
+
+    /*
+     * Statistics.
+     */
+    STAM_REL_REG_USED(pVM, &pVM->gim.s.StatDbgXmit,      STAMTYPE_COUNTER, "/GIM/Debug/Transmit",      STAMUNIT_OCCURENCES, "Debug packets sent.");
+    STAM_REL_REG_USED(pVM, &pVM->gim.s.StatDbgXmitBytes, STAMTYPE_COUNTER, "/GIM/Debug/TransmitBytes", STAMUNIT_OCCURENCES, "Debug bytes sent.");
+    STAM_REL_REG_USED(pVM, &pVM->gim.s.StatDbgRecv,      STAMTYPE_COUNTER, "/GIM/Debug/Receive",       STAMUNIT_OCCURENCES, "Debug packets received.");
+    STAM_REL_REG_USED(pVM, &pVM->gim.s.StatDbgRecvBytes, STAMTYPE_COUNTER, "/GIM/Debug/ReceiveBytes",  STAMUNIT_OCCURENCES, "Debug bytes received.");
+
+    STAM_REL_REG_USED(pVM, &pVM->gim.s.StatHypercalls,   STAMTYPE_COUNTER, "/GIM/Hypercalls",          STAMUNIT_OCCURENCES, "Number of hypercalls performed.");
     return rc;
 }
 
@@ -414,13 +425,36 @@ VMMR3_INT_DECL(void) GIMR3Reset(PVM pVM)
  *
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         Pointer to the GIM device instance.
- * @param   pDebugStream    Pointer to the GIM device debug connection, can be
+ * @param   pDbg            Pointer to the GIM device debug structure, can be
  *                          NULL.
  */
-VMMR3DECL(void) GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevIns, PPDMISTREAM pDebugStream)
+VMMR3DECL(void) GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevIns, PGIMDEBUG pDbg)
 {
     pVM->gim.s.pDevInsR3 = pDevIns;
-    pVM->gim.s.pDebugStreamR3 = pDebugStream;
+    pVM->gim.s.pDbgR3    = pDbg;
+}
+
+
+/**
+ * Gets debug setup specified by the provider.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pDevIns         Where to store the debug setup details.
+ */
+VMMR3DECL(int) GIMR3GetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup)
+{
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+    AssertReturn(pDbgSetup, VERR_INVALID_PARAMETER);
+
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            return gimR3HvGetDebugSetup(pVM, pDbgSetup);
+        default:
+            break;
+    }
+    return VERR_GIM_NO_DEBUG_CONNECTION;
 }
 
 
@@ -429,17 +463,37 @@ VMMR3DECL(void) GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevIns, PPDMISTREAM 
  *
  * @returns VBox status code.
  *
- * @param   pVM         The cross context VM structure.
- * @param   pvRead      The read buffer.
- * @param   pcbRead     The size of the read buffer as well as where to store
- *                      the number of bytes read.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pvRead              The read buffer.
+ * @param   pcbRead             The size of the read buffer as well as where to store
+ *                              the number of bytes read.
+ * @param   pfnReadComplete     Callback when the buffer has been read and
+ *                              before signaling reading of the next buffer.
+ *                              Optional, can be NULL.
  * @thread  EMT.
  */
-VMMR3_INT_DECL(int) GIMR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead)
+VMMR3_INT_DECL(int) GIMR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead, PFNGIMDEBUGBUFREADCOMPLETED pfnReadComplete)
 {
-    PPDMISTREAM pDebugStream = pVM->gim.s.pDebugStreamR3;
-    if (pDebugStream)
-        return pDebugStream->pfnRead(pDebugStream, pvRead, pcbRead);
+    PGIMDEBUG pDbg = pVM->gim.s.pDbgR3;
+    if (pDbg)
+    {
+        if (ASMAtomicReadBool(&pDbg->fDbgRecvBufRead) == true)
+        {
+            STAM_COUNTER_INC(&pVM->gim.s.StatDbgRecv);
+            STAM_COUNTER_ADD(&pVM->gim.s.StatDbgRecvBytes, pDbg->cbDbgRecvBufRead);
+
+            memcpy(pvRead, pDbg->pvDbgRecvBuf, pDbg->cbDbgRecvBufRead);
+            *pcbRead = pDbg->cbDbgRecvBufRead;
+            if (pfnReadComplete)
+                pfnReadComplete(pVM);
+            RTSemEventMultiSignal(pDbg->hDbgRecvThreadSem);
+            ASMAtomicWriteBool(&pDbg->fDbgRecvBufRead, false);
+            return VINF_SUCCESS;
+        }
+        else
+            *pcbRead = 0;
+        return VERR_NO_DATA;
+    }
     return VERR_GIM_NO_DEBUG_CONNECTION;
 }
 
@@ -457,9 +511,23 @@ VMMR3_INT_DECL(int) GIMR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead)
  */
 VMMR3_INT_DECL(int) GIMR3DebugWrite(PVM pVM, void *pvWrite, size_t *pcbWrite)
 {
-    PPDMISTREAM pDebugStream = pVM->gim.s.pDebugStreamR3;
-    if (pDebugStream)
-        return pDebugStream->pfnWrite(pDebugStream, pvWrite, pcbWrite);
+    PGIMDEBUG pDbg = pVM->gim.s.pDbgR3;
+    if (pDbg)
+    {
+        PPDMISTREAM pDbgStream = pDbg->pDbgDrvStream;
+        if (pDbgStream)
+        {
+            size_t cbWrite = *pcbWrite;
+            int rc = pDbgStream->pfnWrite(pDbgStream, pvWrite, pcbWrite);
+            if (   RT_SUCCESS(rc)
+                && *pcbWrite == cbWrite)
+            {
+                STAM_COUNTER_INC(&pVM->gim.s.StatDbgXmit);
+                STAM_COUNTER_ADD(&pVM->gim.s.StatDbgXmitBytes, *pcbWrite);
+            }
+            return rc;
+        }
+    }
     return VERR_GIM_NO_DEBUG_CONNECTION;
 }
 
