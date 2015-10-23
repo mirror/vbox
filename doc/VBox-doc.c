@@ -26,18 +26,18 @@
  *    Monitor.
  *      - @ref pg_cfgm
  *      - @ref pg_cpum
- *      - CSAM - Guest OS Code Scanning and Analyis Manager.
+ *      - @ref pg_csam
  *      - @ref pg_dbgf
  *          - @ref pg_dbgf_addr_space
  *          - @ref pg_dbgf_vmcore
  *          - @ref pg_dbgf_module
  *          - @ref pg_dbgc
  *          - VBoxDbg - Debugger GUI (Qt).
- *      - DIS - Disassembler.
+ *      - @ref grp_dis
  *      - @ref pg_em
  *      - @ref pg_gim
- *      - HM - Intel/AMD Hardware Accelerated Virtualization Manager.
- *      - REM - Recompiled Execution Monitor.
+ *      - @ref pg_hm
+ *      - @ref pg_rem
  *          - @ref pg_vboxrem_amd64
  *      - @ref pg_iem
  *      - @ref pg_gmm
@@ -47,7 +47,7 @@
  *              - @ref pg_pgm_pool
  *          - @ref pg_selm
  *      - @ref pg_iom
- *      - PATM - Dynamic Guest OS Patching Manager.
+ *      - @ref pg_patm
  *      - @ref pg_pdm
  *          - Devices / USB Devices, Drivers and their public interfaces.
  *          - Async I/O Completion API.

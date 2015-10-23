@@ -15,6 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/** @page pg_rem REM - Recompiled Execution Manager.
+ *
+ * The recompiled exeuction manager (REM) serves the final fallback for guest
+ * execution, after HM / raw-mode and IEM have given up.
+ *
+ * The REM is qemu with a whole bunch of VBox specific customization for
+ * interfacing with PATM, CSAM, PGM and other components.
+ *
+ * @sa @ref grp_rem
+ */
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *

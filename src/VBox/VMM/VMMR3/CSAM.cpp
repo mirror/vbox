@@ -15,6 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/** @page pg_csam   CSAM - Code Scanning Analysis Manager
+ *
+ * The CSAM is responsible for scanning and marking guest OS kernel code paths
+ * to making safe raw-mode execution possible.
+ *
+ * It works tightly with the @ref pg_patm "patch manager" to patch code
+ * sequences that we could otherwise not execute in raw-mode.
+ *
+ * @sa @ref grp_csam
+ */
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
