@@ -1446,6 +1446,7 @@
 # define RTSocketWrite                                  RT_MANGLER(RTSocketWrite)
 # define RTSocketWriteNB                                RT_MANGLER(RTSocketWriteNB)
 # define RTSocketWriteTo                                RT_MANGLER(RTSocketWriteTo)
+# define RTSocketWriteToNB                              RT_MANGLER(RTSocketWriteToNB)
 # define RTSortApvIsSorted                              RT_MANGLER(RTSortApvIsSorted)
 # define RTSortApvShell                                 RT_MANGLER(RTSortApvShell)
 # define RTSortIsSorted                                 RT_MANGLER(RTSortIsSorted)

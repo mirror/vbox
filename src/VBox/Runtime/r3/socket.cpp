@@ -1069,6 +1069,60 @@ RTDECL(int) RTSocketWriteTo(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
 }
 
 
+RTDECL(int) RTSocketWriteToNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffer, PCRTNETADDR pAddr)
+{
+    /*
+     * Validate input.
+     */
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+
+    /* no locking since UDP reads may be done concurrently to writes, and
+     * this is the normal use case of this code. */
+
+    int rc = rtSocketSwitchBlockingMode(pThis, false /* fBlocking */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Figure out destination address. */
+    struct sockaddr *pSA = NULL;
+#ifdef RT_OS_WINDOWS
+    int cbSA = 0;
+#else
+    socklen_t cbSA = 0;
+#endif
+    RTSOCKADDRUNION u;
+    if (pAddr)
+    {
+        rc = rtSocketAddrFromNetAddr(pAddr, &u, sizeof(u), NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+        pSA = &u.Addr;
+        cbSA = sizeof(u);
+    }
+
+    /*
+     * Must write all at once, otherwise it is a failure.
+     */
+#ifdef RT_OS_WINDOWS
+    int     cbNow     = cbBuffer >= RTSOCKET_MAX_WRITE ? RTSOCKET_MAX_WRITE : (int)cbBuffer;
+#else
+    size_t  cbNow     = cbBuffer >= SSIZE_MAX   ? SSIZE_MAX   :      cbBuffer;
+#endif
+    ssize_t cbWritten = sendto(pThis->hNative, (const char *)pvBuffer, cbNow, MSG_NOSIGNAL, pSA, cbSA);
+    if (RT_LIKELY((size_t)cbWritten == cbBuffer && cbWritten >= 0))
+        rc = VINF_SUCCESS;
+    else if (cbWritten < 0)
+        rc = rtSocketError();
+    else
+        rc = VERR_TOO_MUCH_DATA;
+
+    rtSocketUnlock(pThis);
+    return rc;
+}
+
+
 RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
 {
     /*
