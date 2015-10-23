@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,38 +16,85 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* If defined, debug messages will be written to the specified file. */
-// #define AUTH_DEBUG_FILE_NAME "\\VBoxAuth.log"
-
-#include <stdio.h>
-#include <string.h>
+/* If defined, debug messages will be written to the debugger. */
+// #define AUTH_DEBUG
 
 #include <Windows.h>
 
 #include <VBox/VBoxAuth.h>
 
-static void dprintf(const char *fmt, ...)
-{
-#ifdef AUTH_DEBUG_FILE_NAME
-   va_list va;
+#ifdef AUTH_DEBUG
+#include <stdio.h>
 
+static void dprintfw(const WCHAR *fmt, ...)
+{
+   va_list va;
    va_start(va, fmt);
 
-   char buffer[1024];
+   WCHAR buffer[1024];
 
-   _vsnprintf (buffer, sizeof (buffer), fmt, va);
+   _vsnwprintf(buffer, sizeof (buffer), fmt, va);
 
-   OutputDebugStringA(buffer);
+   OutputDebugStringW(buffer);
 
-   FILE *f = fopen (AUTH_DEBUG_FILE_NAME, "ab");
-   if (f)
-   {
-       fprintf (f, "%s", buffer);
-       fclose (f);
-   }
-
-   va_end (va);
+   va_end(va);
+}
+#define DBGAUTH(a) dprintfw a
+#else
+#define DBGAUTH(a)
 #endif
+
+static WCHAR swszEmpty[] = { L"" };
+
+static void freeWideChar(WCHAR *pwszString)
+{
+    if (pwszString && pwszString != &swszEmpty[0])
+    {
+        size_t cb = (wcslen(pwszString) + 1) * sizeof(WCHAR);
+        SecureZeroMemory(pwszString, cb);
+        free(pwszString);
+    }
+}
+
+static WCHAR *utf8ToWideChar(const char *pszString)
+{
+    /*
+     * Shortcut for empty strings.
+     */
+    if (!pszString || *pszString == 0)
+        return &swszEmpty[0];
+
+    /*
+     * Return NULL on errors.
+     */
+    WCHAR *pwszString = NULL;
+
+    /*
+     * First calc result string length.
+     */
+    const DWORD dwFlags = MB_ERR_INVALID_CHARS;
+    int cwc = MultiByteToWideChar(CP_UTF8, dwFlags, pszString, -1, NULL, 0);
+    if (cwc > 0)
+    {
+        /*
+         * Alloc space for result buffer.
+         */
+        pwszString = (WCHAR *)malloc(cwc * sizeof(WCHAR));
+        if (pwszString)
+        {
+            /*
+             * Do the translation.
+             */
+            if (MultiByteToWideChar(CP_UTF8, dwFlags, pszString, -1, pwszString, cwc) <= 0)
+            {
+                /* translation error */
+                free(pwszString);
+                pwszString = NULL;
+            }
+        }
+    }
+
+    return pwszString;
 }
 
 extern "C"
@@ -63,41 +110,54 @@ AuthResult AUTHCALL AuthEntry (const char *szCaller,
                                int fLogon,
                                unsigned clientId)
 {
+    if (!fLogon)
+    {
+        /* Nothing to cleanup. The return code does not matter. */
+        return AuthResultAccessDenied;
+    }
+
+    LPWSTR lpwszUsername = utf8ToWideChar(szUser);
+    LPWSTR lpwszDomain   = utf8ToWideChar(szDomain);
+    LPWSTR lpwszPassword = utf8ToWideChar(szPassword);
+
+    DBGAUTH((L"u[%ls], d[%ls], p[%ls]\n", lpwszUsername, lpwszDomain, lpwszPassword));
+
     AuthResult result = AuthResultAccessDenied;
 
-    LPTSTR lpszUsername = (char *)szUser;
-    LPTSTR lpszDomain   = (char *)szDomain;
-    LPTSTR lpszPassword = (char *)szPassword;
-
-    /* LOGON32_LOGON_INTERACTIVE is intended for users who will be interactively using the computer,
-     * such as a user being logged on by a terminal server, remote shell, or similar process.
-     */
-    DWORD dwLogonType     = LOGON32_LOGON_INTERACTIVE;
-    DWORD dwLogonProvider = LOGON32_PROVIDER_DEFAULT;
-
-    HANDLE hToken;
-
-    dprintf("u[%s], d[%s], p[%s]\n", lpszUsername, lpszDomain, lpszPassword);
-
-    BOOL fSuccess = LogonUser(lpszUsername,
-                              lpszDomain,
-                              lpszPassword,
-                              dwLogonType,
-                              dwLogonProvider,
-                              &hToken);
-
-    if (fSuccess)
+    if (lpwszUsername && lpwszDomain && lpwszPassword)
     {
-        dprintf("LogonUser success. hToken = %p\n", hToken);
+        /* LOGON32_LOGON_INTERACTIVE is intended for users who will be interactively using the computer,
+         * such as a user being logged on by a terminal server, remote shell, or similar process.
+         */
+        DWORD dwLogonType     = LOGON32_LOGON_INTERACTIVE;
+        DWORD dwLogonProvider = LOGON32_PROVIDER_DEFAULT;
 
-        result = AuthResultAccessGranted;
+        HANDLE hToken;
 
-        CloseHandle (hToken);
+        BOOL fSuccess = LogonUserW(lpwszUsername,
+                                   lpwszDomain,
+                                   lpwszPassword,
+                                   dwLogonType,
+                                   dwLogonProvider,
+                                   &hToken);
+
+        if (fSuccess)
+        {
+            DBGAUTH((L"LogonUser success. hToken = %p\n", hToken));
+
+            result = AuthResultAccessGranted;
+
+            CloseHandle(hToken);
+        }
+        else
+        {
+            DBGAUTH((L"LogonUser failed %08X\n", GetLastError()));
+        }
     }
-    else
-    {
-        dprintf("LogonUser failed %08X\n", GetLastError ());
-    }
+
+    freeWideChar(lpwszUsername);
+    freeWideChar(lpwszDomain);
+    freeWideChar(lpwszPassword);
 
     return result;
 }
