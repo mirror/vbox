@@ -67,7 +67,6 @@ linux-bin_SOURCES = \
 	postinst-common.sh \
 	prerm-common.sh \
 	routines.sh \
-	scripts/VBoxHeadlessXOrg.sh=>scripts/VBoxHeadlessXOrg.sh \
 	VBoxSysInfo.sh \
 	vboxautostart-service.sh \
 	vboxballoonctrl-service.sh \
@@ -179,8 +178,7 @@ VBOX_LNX_STRIP_BIN = \
 		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNC.so \
 		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNCMain.so,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)\
-	VBoxTunctl \
-	helpers/generate_service_file
+	VBoxTunctl
 
 # Do not remove relocation information of these binaries
 VBOX_LNX_STRIP_OBJ = \
@@ -217,8 +215,7 @@ VBOX_LNX_NO_STRIP = \
 	vboxdrv.sh \
 	VBox.sh \
 	vboxweb-service.sh \
-	VBox.png \
-	scripts
+	VBox.png
 
 ifdef VBOX_WITH_EXTPACK
  VBOX_LNX_STRIP_BIN += \
@@ -396,9 +393,7 @@ VBOX_LNX_INST_ARCH_DEPS := \
 	$(wildcard $(PATH_STAGE_BIN)/src/*) \
 	$(wildcard $(PATH_STAGE_BIN)/src/*/*) \
 	$(wildcard $(PATH_STAGE_BIN)/src/*/*/*) \
-	$(wildcard $(PATH_STAGE_BIN)/src/*/*/*/*) \
-	$(wildcard $(PATH_STAGE_BIN)/scripts/*)
-
+	$(wildcard $(PATH_STAGE_BIN)/src/*/*/*/*)
 
 #
 # .tar.bz2 for converting into .run
@@ -470,7 +465,6 @@ $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/,$(VBOX_LNX_NO_STRIP)): \
 BLDDIRS += $(foreach d,\
 	archive \
 	archive/components \
-	archive/helpers \
 	archive/nls \
 	$(if $(VBOX_WITH_QT4_SUN),archive/accessible,) \
 	$(if $(VBOX_WITH_PYTHON),\
@@ -524,7 +518,6 @@ $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(VBOX_LNX_DBG_PATH)/,$(VBOX_LN
 BLDDIRS += $(foreach d,\
 	$(VBOX_LNX_DBG_PATH) \
 	$(VBOX_LNX_DBG_PATH)/components \
-	$(VBOX_LNX_DBG_PATH)/helpers \
 ,$(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(d)/)
 
 include $(FILE_KBUILD_SUB_FOOTER)

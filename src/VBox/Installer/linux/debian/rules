@@ -279,8 +279,6 @@ else
 	for i in additions/VBoxGuestAdditions.iso; do \
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
 endif
-	rm -r $(archdir)/helpers
-	rm -r $(archdir)/scripts
 	mv $(archdir) $(prefix)/usr/lib/$(package)
 	export VBOX_INSTALL_PATH=/usr/lib/$(package) && \
 	    cd $(builddir)/bin/sdk/installer && \
