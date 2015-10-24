@@ -219,11 +219,6 @@ if [ -f /etc/vbox/vbox.cfg ]; then
 fi
 rm -f /etc/vbox/module_not_compiled
 
-# XXX SELinux: allow text relocation entries
-%if %{?rpm_redhat:1}%{!?rpm_redhat:0}
-set_selinux_permissions /usr/lib/virtualbox /usr/share/virtualbox
-%endif
-
 # create users groups (disable with INSTALL_NO_GROUP=1 in /etc/default/virtualbox)
 if [ "$INSTALL_NO_GROUP" != "1" ]; then
   echo

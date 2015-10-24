@@ -64,6 +64,34 @@ addrunlevel vboxweb-service
 
 ln -sf "${MY_PATH}/postinst-common.sh" /sbin/vboxconfig
 
+# Set SELinux permissions
+# XXX SELinux: allow text relocation entries
+if [ -x /usr/bin/chcon ]; then
+    chcon -t texrel_shlib_t "${MY_PATH}"/*VBox* > /dev/null 2>&1
+    chcon -t texrel_shlib_t "${MY_PATH}"/VBoxAuth.so \
+        > /dev/null 2>&1
+    chcon -t texrel_shlib_t "${MY_PATH}"/VirtualBox.so \
+        > /dev/null 2>&1
+    chcon -t texrel_shlib_t "${MY_PATH}"/components/VBox*.so \
+        > /dev/null 2>&1
+    chcon -t java_exec_t    "${MY_PATH}"/VirtualBox > /dev/null 2>&1
+    chcon -t java_exec_t    "${MY_PATH}"/VBoxSDL > /dev/null 2>&1
+    chcon -t java_exec_t    "${MY_PATH}"/VBoxHeadless \
+        > /dev/null 2>&1
+    chcon -t java_exec_t    "${MY_PATH}"/VBoxNetDHCP \
+        > /dev/null 2>&1
+    chcon -t java_exec_t    "${MY_PATH}"/VBoxNetNAT \
+        > /dev/null 2>&1
+    chcon -t java_exec_t    "${MY_PATH}"/VBoxExtPackHelperApp \
+        > /dev/null 2>&1
+    chcon -t java_exec_t    "${MY_PATH}"/vboxwebsrv > /dev/null 2>&1
+    chcon -t java_exec_t    "${MY_PATH}"/webtest > /dev/null 2>&1
+    chcon -t bin_t          "${MY_PATH}"/src/vboxhost/build_in_tmp \
+         > /dev/null 2>&1
+    chcon -t bin_t          /usr/share/virtualbox/src/vboxhost/build_in_tmp \
+         > /dev/null 2>&1
+fi
+
 test -n "${START}" &&
 {
     start_init_script vboxdrv

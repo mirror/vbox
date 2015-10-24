@@ -370,32 +370,3 @@ maybe_run_python_bindings_installer() {
 
     return 0
 }
-
-set_selinux_permissions() {
-    # XXX SELinux: allow text relocation entries
-    local_INSTALLATION_DIR="$1"  # Where the VirtualBox binaries are installed to
-    local_SHARE_DIR="$2"         # Where shared bits are installed to
-    if [ -x /usr/bin/chcon ]; then
-        chcon -t texrel_shlib_t "$local_INSTALLATION_DIR"/*VBox* > /dev/null 2>&1
-        chcon -t texrel_shlib_t "$local_INSTALLATION_DIR"/VBoxAuth.so \
-            > /dev/null 2>&1
-        chcon -t texrel_shlib_t "$local_INSTALLATION_DIR"/VirtualBox.so \
-            > /dev/null 2>&1
-        chcon -t texrel_shlib_t "$local_INSTALLATION_DIR"/components/VBox*.so \
-            > /dev/null 2>&1
-        chcon -t java_exec_t    "$local_INSTALLATION_DIR"/VirtualBox > /dev/null 2>&1
-        chcon -t java_exec_t    "$local_INSTALLATION_DIR"/VBoxSDL > /dev/null 2>&1
-        chcon -t java_exec_t    "$local_INSTALLATION_DIR"/VBoxHeadless \
-            > /dev/null 2>&1
-        chcon -t java_exec_t    "$local_INSTALLATION_DIR"/VBoxNetDHCP \
-            > /dev/null 2>&1
-        chcon -t java_exec_t    "$local_INSTALLATION_DIR"/VBoxNetNAT \
-            > /dev/null 2>&1
-        chcon -t java_exec_t    "$local_INSTALLATION_DIR"/VBoxExtPackHelperApp \
-            > /dev/null 2>&1
-        chcon -t java_exec_t    "$local_INSTALLATION_DIR"/vboxwebsrv > /dev/null 2>&1
-        chcon -t java_exec_t    "$local_INSTALLATION_DIR"/webtest > /dev/null 2>&1
-        chcon -t bin_t          "$local_SHARE_DIR"/src/vboxhost/build_in_tmp \
-             > /dev/null 2>&1
-    fi
-}

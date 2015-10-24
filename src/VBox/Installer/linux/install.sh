@@ -262,10 +262,6 @@ if [ "$ACTION" = "install" ]; then
     cp uninstall.sh $INSTALLATION_DIR
     echo "uninstall.sh" >> $CONFIG_DIR/$CONFIG_FILES
 
-    # XXX SELinux: allow text relocation entries
-    set_selinux_permissions "$INSTALLATION_DIR" \
-                            "$INSTALLATION_DIR"
-
     # Hardened build: Mark selected binaries set-user-ID-on-execution,
     #                 create symlinks for working around unsupported $ORIGIN/.. in VBoxC.so (setuid),
     #                 and finally make sure the directory is only writable by the user (paranoid).
