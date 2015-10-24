@@ -382,18 +382,26 @@ $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX
 		$<
 
 #
-# The files that the tar archives depend on.  The wildcards are ugly, but they
-# do save us from having to update the makefile whenever something new is added
-# to the module source directories.
+# The files that the tar archives depend on.
 #
+
+include $(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/files_vboxdrv
+VBOX_LNX_INST_FILES_VBOXDRV=$(patsubst =>%,$(PATH_STAGE_BIN)/src/vboxdrv/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXDRV_NOBIN)))))
+include $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/linux/files_vboxnetflt
+VBOX_LNX_INST_FILES_VBOXNETFLT=$(patsubst =>%,$(PATH_STAGE_BIN)/src/vboxnetflt/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(VBOX_VBOXNETFLT_SOURCES)))))
+include $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/linux/files_vboxnetadp
+VBOX_LNX_INST_FILES_VBOXNETADP=$(patsubst =>%,$(PATH_STAGE_BIN)/src/vboxnetadp/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(VBOX_VBOXNETADP_SOURCES)))))
+include $(PATH_ROOT)/src/VBox/HostDrivers/VBoxPci/linux/files_vboxpci
+VBOX_LNX_INST_FILES_VBOXPCI=$(patsubst =>%,$(PATH_STAGE_BIN)/src/vboxpci/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(VBOX_VBOXPCI_SOURCES)))))
+
 VBOX_LNX_INST_ARCH_DEPS := \
 	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/, $(VBOX_LNX_ARCH_FILES)) \
 	$(VBOX_LNX_INST_DEP_ON_MAKEFILE) \
 	$(VBOX_VERSION_STAMP) \
-	$(wildcard $(PATH_STAGE_BIN)/src/*) \
-	$(wildcard $(PATH_STAGE_BIN)/src/*/*) \
-	$(wildcard $(PATH_STAGE_BIN)/src/*/*/*) \
-	$(wildcard $(PATH_STAGE_BIN)/src/*/*/*/*)
+	$(VBOX_LNX_INST_FILES_VBOXDRV) \
+	$(VBOX_LNX_INST_FILES_VBOXNETFLT) \
+	$(VBOX_LNX_INST_FILES_VBOXNETADP) \
+	$(VBOX_LNX_INST_FILES_VBOXPCI)
 
 #
 # .tar.bz2 for converting into .run
