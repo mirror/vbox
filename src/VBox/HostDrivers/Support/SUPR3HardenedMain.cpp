@@ -30,41 +30,43 @@
  * VirtualBox as a vehicle to obtain kernel level access.
  *
  * The VirtualBox VMM requires supervisor (kernel) level access to the CPU.  For
- * both practical and historical reasons, part of the VMM is still implemented
- * in ring-3 and has a rich interface to the kernel part.  While the device
- * emulations can be run all in ring-3, we have performance optimizations that
+ * both practical and historical reasons part of the VMM is partly realized in
+ * ring-3 with a rich interface to the kernel part.  While the device emulations
+ * can be run exclusively in ring-3, we have performance optimizations that
  * loads device emulation code into ring-0 and our special raw-mode execution
- * context (non-VT-x/AMD-V mode) for handling frequent operations.  These share
- * data between all three context (ring-3, ring-0 and raw-mode).  All this poses
- * a rather broad attack surface, which the hardening protects.
+ * context (non-VT-x/AMD-V mode) for handling frequent operations a lot more
+ * efficiently.  These share data between all three context (ring-3, ring-0 and
+ * raw-mode).  All this poses a rather broad attack surface, which the hardening
+ * protects.
  *
  * The hardening primarily focuses on restricting access to the support driver,
  * VBoxDrv or vboxdrv depending on the OS, as it is ultimately the link and
  * instigator of the communication between ring-3 and the ring-0 and raw-mode
- * contexts. A secondary focus is to make sure malicious code cannot be loaded
+ * contexts.  A secondary focus is to make sure malicious code cannot be loaded
  * and executed in the VM process.  Exactly how we go about this depends a lot
  * on the host OS.
  *
  *
  * @section sec_hardening_unix  Hardening on UNIX-like OSes
  *
- * On UNIX-like systems (Solaris, Linux, darwin, freebsd, ...) only allow root
- * to get full unrestricted access to the support driver.  The device node
- * corresponding to unrestricted access is owned by root and has a 0600 access
- * mode (i.e. only accessible to the owner, root).  In addition to this file
- * system level restriction, the support driver also checks that the effective
- * user ID (EUID) is root when it is being opened.
+ * On UNIX-like systems (Solaris, Linux, darwin, freebsd, ...) we put our trust
+ * in root and the root knows what he/she/it does.
+ *
+ * We only allow root to get full unrestricted access to the support driver.
+ * The device node corresponding to unrestricted access is own by root and has a
+ * 0600 access mode (i.e. only accessible to the owner, root).  In addition to
+ * this file system level restriction, the support driver also checks that the
+ * effective user ID (EUID) is root when it is being opened.
  *
  * The VM processes temporarily assume root privileges using the set-uid-bit on
- * the executable with root as owner.  In fact, all the executable files, shared
- * objects and the other files and directories we install are owned by root and
- * the wheel (or equivalent gid = 0) group.
+ * the executable with root as owner.  In fact, all the files and directories we
+ * install are owned by root and the wheel (or equivalent gid = 0) group,
+ * including extension pack files.
  *
  * The executable with the set-uid-to-root-bit set is a stub binary that has no
- * unnecessary library dependencies (only libc) and simply calls
- * #SUPR3HardenedMain.  SUPR3HardenedMain does the following:
- *
- *      -# Validate installation (supR3HardenedVerifyAll):
+ * unnecessary library dependencies (only libc, pthreads, dynamic linker) and
+ * simply calls #SUPR3HardenedMain.  It does the following:
+ *      1. Validate installation (supR3HardenedVerifyAll):
  *          - Check that the executable file of the process is one of the known
  *            VirtualBox executables.
  *          - Check that all mandatory files are present.
@@ -72,66 +74,69 @@
  *            mandatory ones) are owned by root:wheel and are not writable by
  *            anyone except root.
  *          - Check that all the parent directories, all the way up to the root
- *            if possible, only permits root (or system admin) to change them -
- *            in order to exclude directory renaming races.
- *          - On systems where it is possible, we may also validate signatures.
+ *            if possible, only permits root (or system admin) to change them.
+ *            This is that to rule out unintentional rename races.
+ *          - On systems where it is possible, we may also valiadate executable
+ *            image signatures.
  *
- *      -# Open a file descriptor for the support device driver
+ *      2. Open a file descriptor for the support device driver
  *         (supR3HardenedMainOpenDevice).
  *
- *      -# Grab ICMP capabilities, if needed (supR3HardenedMainGrabCapabilites).
+ *      3. Grab ICMP capabilities, if needed (supR3HardenedMainGrabCapabilites).
  *
- *      -# Correctly drop the root privileges (supR3HardenedMainDropPrivileges).
+ *      4. Correctly drop the root privileges (supR3HardenedMainDropPrivileges).
  *
- *      -# Load the VBoxRT dynamic link library and hand over the file
+ *      5. Load the VBoxRT dynamic link library and hand over the file
  *         descriptor to the SUPLib code in it (supR3HardenedMainInitRuntime).
  *
- *      -# Load a dynamic library containing the VM frontend code and run it
- *         (tail of SUPR3HardenedMain).  The set-uid-to-root stub executable is
- *         paired with a dynamic link library which exports one TrustedMain
- *         entrypoint (see FNSUPTRUSTEDMAIN) that we call.
+ *      6. Load a dynamic library containing the actual VM frontend code and run
+ *         it (tail of SUPR3HardenedMain).
  *
- *         In case of error reporting, the library may also export a
- *         TrustedError function (FNSUPTRUSTEDERROR).
+ *  The set-uid-to-root stub executable is paired with a dynamic link library
+ *  which export one TrustedMain entrypoint (see FNSUPTRUSTEDMAIN) that we call.
+ *  In case of error reporting, the library may also export a TrustedError
+ *  function (FNSUPTRUSTEDERROR).
  *
- *  That a process was started with a set-uid-to-root-bit applied is something
- *  that sticks with the process even if after dropping the root privileges and
- *  becoming the original user.  The dynamic linkers take special care when
- *  dealing with processes of this kind to not allow the user to load arbitrary
- *  code into a root process and causing a privilege escalation issue.  This is
- *  of course exactly the kind of behavior we're looking for.
+ *  That the set-uid-to-root-bit modifies the dynamic linker behavior on all
+ *  relevant systems, even after we've dropped back to the real UI, is something
+ *  we take advantage of.  The dynamic linkers takes special care to prevent
+ *  users from using clever tricks to inject their own code into set-uid
+ *  processes and causing privilege escalation issues.  This is of course
+ *  exactly the kind of behavior we're looking for.
  *
  *  In addition to what the dynamic linker does for us, we will not directly
  *  call either RTLdrLoad or dlopen to load dynamic link libraries into the
  *  process.  Instead we will call SUPR3HardenedLdrLoad,
- *  SUPR3HardenedLdrLoadAppPriv or SUPR3HardenedLdrLoadPlugIn to do the loading.
- *  These functions will perform the validations on the file being loaded as
- *  SUPR3HardenedMain did in its validation step.  So, anything we load must be
- *  installed owned by root:wheel, the directory we load it from must also be
- *  owned by root:wheel and not allow for renaming the file.  Similar ownership
- *  restrictions apply to all the parent directories (except on darwin).
+ *  SUPR3HardenedLdrLoadAppPriv and SUPR3HardenedLdrLoadPlugIn to do the
+ *  loading.  These functions will perform the validations on the file being
+ *  loaded as SUPR3HardenedMain did in its validation step.  So, anything we
+ *  load must be installed owned by root:wheel, the directory we load it from
+ *  must also be owned by root:wheel and now allow for renaming the file.
+ *  Similar ownership restricts applies to all the parent directories (except on
+ *  darwin).
  *
- *  So, we leave the responsibility of not installing malicious software on the
+ *  So, we place the responsibility of not installing malicious software on the
  *  root user on UNIX-like systems.  Which is fair enough, in our opinion.
  *
  *
  * @section sec_hardening_win   Hardening on Windows
  *
- * On Windows things are a lot more complicated, unfortunately.  This is mainly
- * because on Windows you cannot trust the Administrators users.  Some of the
- * blame for this is that Windows is a descendant/replacement for a set of single
- * user systems: DOS, Windows 1.0-3.11 Windows 95-ME, and OS/2.  Users of NT
- * 3.51 and later were inclined to want to always run it with full
- * root/administrator privileges like they had done on the predecessors, which
- * Microsoft made doing very simple and didn't help with the alternative.
- * Bad idea, security wise, which is good for the security software industry.
- * For this reason, using a set-uid-to-root approach is pointless, even if
- * Windows had one, which it doesn't.
+ * On Windows we cannot put the same level or trust in the Administrator users
+ * (equivalent of root/wheel on unix) as on the UNIX-like systems, which
+ * complicates things greatly.
+ *
+ * Some or the blame for this can be given to Windows being a
+ * descendant/replacement for a set of single user systems: DOS, Windows
+ * 1.0-3.11 Windows 95-ME, and OS/2.  Users of NT 3.51 and later was inclined to
+ * want to always run it with full root/administrator privileges like they had
+ * done on the predecessors, while Microsoft made doing this very simple and
+ * didn't help with the alternatives.  Bad idea, security wise, which is good
+ * for the security software industry.  For this reason using a set-uid-to-root
+ * approach is pointless, even if windows had one, which is doesn't.
  *
  * So, in order to protect access to the support driver and protect the
  * VM process while it's running we have to do a lot more work.  A keystone in
  * the defences is code signing.  The short version is this:
- *
  *      - Minimal stub executable, signed with the same certificate as the
  *        kernel driver.
  *
@@ -148,6 +153,8 @@
  *        thoroughly before allowing them protection and in the final case full
  *        unrestricted access.
  *
+ * @subsection  sec_hardening_win_protsoft      3rd Party "Protection" Software
+ *
  * What makes our life REALLY difficult on Windows is this 3rd party "security"
  * software which is more or less required to keep a Windows system safe for
  * normal users and all corporate IT departments rightly insists on installing.
@@ -155,14 +162,19 @@
  * more mucking about in user mode to get their job (kind of) done.  So, it is
  * common practice to patch a lot of NTDLL, KERNEL32, the executable import
  * table, load extra DLLs into the process, allocate executable memory in the
- * process and worse.  The BIG problem with all this is that it is
- * indistinguishable from what malicious software would be doing in order to
- * intercept process activity (network sniffing, maybe password snooping) or
- * gain a level of kernel access via the support driver.
+ * process (classic code injection) and more.
+ *
+ * The BIG problem with all this is that it is indistiguishable from what
+ * malicious software would be doing in order to intercept process acctivity
+ * (network sniffing, maybe password snooping) or gain a level of kernel access
+ * via the the support driver.
+ *
+ *
+ * @subsection  sec_hardening_win_1st_stub  The Initial Stub Process
  *
  * We share the stub executable approach with the UNIX-like systems, so there's
  * the SUPR3HardenedMain and a paired DLL with TrustedMain and TrustedError.
- * However, the stub executable is pushed a bit further here.
+ * However, the stub executable is fatter and much more bare metal:
  *      - It has no CRT (libc) because we don't need one and we need full
  *        control over the code in the stub.
  *      - It does not statically import anything to avoid having a import table
@@ -179,15 +191,19 @@
  * signing signatures, keeping them all open to deny deletion and replacing) and
  * does a respawn via supR3HardenedWinReSpawn.
  *
- * The second stub process will be created in suspended state (the thread hasn't
- * executed a single instruction) and with less generous ACLs associated with it
- * (skin deep protection only).  In order for SUPR3TrustedMain to figure it's
- * the second stub process, the zero'th command line argument has been replaced
- * by a known magic string (UUID).   Now, before the process starts executing,
- * the parent will patch the LdrInitializeThunk entrypoint in NTDLL to call
- * supR3HardenedEarlyProcessInit via supR3HardenedEarlyProcessInitThunk.  The
- * parent will also plant some synchronization stuff via SUPR3WINPROCPARAMS
- * (NTDLL location, inherited event handles and associated ping-pong equipment).
+ *
+ * @subsection  sec_hardening_win_2nd_stub  The Second Stub Process
+ *
+ * The second stub process will be created in suspended state, i.e. the main
+ * thread is suspended before it executes a single instruction, and with a less
+ * generous ACLs associated with it (skin deep protection only).  In order for
+ * SUPR3TrustedMain to figure that it is the second stub process, the zero'th
+ * command line argument has been replaced by a known magic string (UUID).  Now,
+ * before the process starts executing, the parent (initial stub) will patch the
+ * LdrInitializeThunk entrypoint in NTDLL to call supR3HardenedEarlyProcessInit
+ * via supR3HardenedEarlyProcessInitThunk.  The parent will also plant some
+ * synchronization stuff via SUPR3WINPROCPARAMS (NTDLL location, inherited event
+ * handles and associated ping-pong equipment).
  *
  * The LdrInitializeThunk entrypoint of NTDLL is where the kernel sets up
  * process execution to start executing (via a user alert, so not subject to
@@ -205,8 +221,8 @@
  *
  * What the parent does during the purification is very similar to what the
  * kernel driver will do later on when verifying the second stub and the VM
- * processes, except that instead of failing when encountering an issue it will
- * take corrective actions:
+ * processes, except that instead of failing when encountering an shortcomming
+ * it will take corrective actions:
  *      - Executable memory regions not belonging to a DLL mapping will be
  *        attempted freed, and we'll only fail if we can't evict it.
  *      - All pages in the executable images in the process (should be just the
@@ -263,6 +279,9 @@
  *        not to be signed.
  *
  *
+ * @subsection  sec_hardening_win_3rd_stub  The Final Stub
+ *
+ * Yet to be written...
  *
  */
 
