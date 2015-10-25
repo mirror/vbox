@@ -4484,7 +4484,7 @@ DECLHIDDEN(int) supR3HardenedWinReSpawn(int iWhich)
 
     /*
      * Make sure we're alone in the stub process before creating the VM process
-     * and that there isn't any debuggers attached.
+     * and that there aren't any debuggers attached.
      */
     if (iWhich == 2)
     {
