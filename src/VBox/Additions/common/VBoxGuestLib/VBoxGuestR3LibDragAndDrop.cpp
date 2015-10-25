@@ -1525,7 +1525,7 @@ VBGLR3DECL(int) VbglR3DnDRecvNextMsg(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCM
             }
             case HOST_DND_HG_SND_DATA:
                 /* Protocol v1 + v2: Also contains the header data.
-                /* Note: Fall through is intentional. */
+                 * Note: Fall through is intentional. */
             case HOST_DND_HG_SND_DATA_HDR:
             {
                 rc = vbglR3DnDHGRecvDataMain(pCtx,
