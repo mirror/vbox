@@ -64,6 +64,7 @@ INSTALLS += linux-bin
 linux-bin_INST = bin/
 linux-bin_MODE = a+rx,u+w
 linux-bin_SOURCES = \
+	check_module_dependencies.sh \
 	postinst-common.sh \
 	prerm-common.sh \
 	routines.sh \
@@ -205,6 +206,7 @@ VBOX_LNX_NO_STRIP = \
 	  ExtensionPacks/VNC/ExtPack-license.html \
 	  ExtensionPacks/VNC/ExtPack-license.rtf \
 	  ExtensionPacks/VNC/ExtPack-license.txt,) \
+	check_module_dependencies.sh \
 	postinst-common.sh \
 	prerm-common.sh \
 	routines.sh \
