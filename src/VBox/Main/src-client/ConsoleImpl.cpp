@@ -2323,9 +2323,6 @@ HRESULT Console::i_doCPURemove(ULONG aCpu, PUVM pUVM)
                            (PFNRT)i_unplugCpu, 3,
                            this, pUVM, (VMCPUID)aCpu);
 
-        /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
-        alock.release();
-
         if (vrc == VERR_TIMEOUT)
             vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
         AssertRC(vrc);
