@@ -24,7 +24,9 @@
         <File Id="file_VBoxNetAdp6.cat" Name="VBoxNetAdp6.cat"
               Source="$(env.PATH_OUT)\bin\VBoxNetAdp6.cat" />
 <?endif ?>
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
         <Condition><![CDATA[NETWORKTYPE="NDIS6"]]></Condition>
+<?endif ?>
     </Component>
 
 </Include>
