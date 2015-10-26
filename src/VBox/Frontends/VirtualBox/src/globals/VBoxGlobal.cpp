@@ -144,9 +144,6 @@
 
 #include <QLibraryInfo>
 #include <QProgressDialog>
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include <QNetworkProxy>
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #include <QSettings>
 #include <QStyleOptionSpinBox>
 
