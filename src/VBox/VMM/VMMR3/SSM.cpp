@@ -6691,7 +6691,7 @@ DECLINLINE(int) ssmR3GetHCPtrNI(PSSMHANDLE pSSM, void **ppv, uint32_t fFlags)
 
 
 /**
- * Guts a structure, extended API.
+ * Gets a structure, extended API.
  *
  * @returns VBox status code.
  * @param   pSSM            The saved state handle.
