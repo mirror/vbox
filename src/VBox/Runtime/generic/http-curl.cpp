@@ -705,6 +705,7 @@ static int rtHttpConfigureProxyFromUrl(PRTHTTPINTERNAL pThis, const char *pszPro
 static int rtHttpConfigureProxyForUrlFromEnv(PRTHTTPINTERNAL pThis, const char *pszUrl)
 {
     char szTmp[_1K];
+    szTmp[0] = '\0';
 
     /*
      * First we consult the "no_proxy" / "NO_PROXY" environment variable.
