@@ -24,26 +24,26 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/** @page pg_hardening      VirtualBox VM Process Hardening
+/** @page pg_hardening      %VirtualBox %VM Process Hardening
  *
- * The VM process hardening is to prevent malicious software from using
- * VirtualBox as a vehicle to obtain kernel level access.
+ * The %VM process hardening is to prevent malicious software from using
+ * %VirtualBox as a vehicle to obtain kernel level access.
  *
- * The VirtualBox VMM requires supervisor (kernel) level access to the CPU.  For
- * both practical and historical reasons, part of the VMM is realized in ring-3,
- * with a rich interface to the kernel part.  While the device emulations can be
- * executed exclusively in ring-3, we have performance optimizations that loads
- * device emulation code into ring-0 and our special raw-mode execution context
- * (none VT-x/AMD-V mode) for handling frequent operations a lot more
- * efficiently.  These share data between all three context (ring-3, ring-0 and
- * raw-mode).  All this poses a rather broad attack surface, which the hardening
- * protects.
+ * The %VirtualBox %VMM requires supervisor (kernel) level access to the CPU.
+ * For both practical and historical reasons, part of the %VMM is realized in
+ * ring-3, with a rich interface to the kernel part.  While the device
+ * emulations can be executed exclusively in ring-3, we have performance
+ * optimizations that loads device emulation code into ring-0 and our special
+ * raw-mode execution context (none VT-x/AMD-V mode) for handling frequent
+ * operations a lot more efficiently.  These share data between all three
+ * context (ring-3, ring-0 and raw-mode).  All this poses a rather broad attack
+ * surface, which the hardening protects.
  *
  * The hardening focuses primarily on restricting access to the support driver,
  * VBoxDrv or vboxdrv depending on the OS, as it is ultimately the link and
  * instigator of the communication between ring-3 and the ring-0 and raw-mode
  * contexts.  A secondary focus is to make sure malicious code cannot be loaded
- * and executed in the VM process.  Exactly how we go about this depends a lot
+ * and executed in the %VM process.  Exactly how we go about this depends a lot
  * on the host OS.
  *
  * @section sec_hardening_supdrv    The Support Driver Interfaces
@@ -56,21 +56,21 @@
  *        require protecting, though we limit it to the vboxgroup on some
  *        systems.
  *      - \\Device\\VBoxDrvStub on Windows for protecting the second stub
- *        process and its child, the VM process.  This is an open+close
+ *        process and its child, the %VM process.  This is an open+close
  *        interface, only available to partially verified stub processes.
  *      - \\Device\\VBoxDrvErrorInfo on Windows for obtaining detailed error
  *        information on a previous attempt to open \\Device\\VBoxDrv or
  *        \\Device\\VBoxDrvStub.  Open, read and close only interface.
  *
  * The rest of VBox accesses the device interface thru the support library,
- * SUPR3 / sup.h.
+ * @ref grp_sup "SUPR3" / sup.h.
  *
  * The support driver also exposes a set of functions and data that other VBox
  * ring-0 modules can import from.  This includes much of the IPRT we need in
- * the ring-0 part of the VMM and device emulations.
+ * the ring-0 part of the %VMM and device emulations.
  *
- * The ring-0 part of the VMM and device emulations are loaded via the
- * SUPR3LoadModule and SUPR3LoadServiceModule support library function, which
+ * The ring-0 part of the %VMM and device emulations are loaded via the
+ * #SUPR3LoadModule and #SUPR3LoadServiceModule support library function, which
  * both translates to a sequence of I/O controls against /dev/vboxdrv.  On
  * Windows we use the native kernel loader to load the module, while on the
  * other systems ring-3 prepares the bits with help from the IPRT loader code.
@@ -87,7 +87,7 @@
  * addition to this file system level restriction, the support driver also
  * checks that the effective user ID (EUID) is root when it is being opened.
  *
- * The VM processes temporarily assume root privileges using the set-uid-bit on
+ * The %VM processes temporarily assume root privileges using the set-uid-bit on
  * the executable with root as owner.  In fact, all the files and directories we
  * install are owned by root and the wheel (or equivalent gid = 0) group,
  * including extension pack files.
@@ -95,7 +95,7 @@
  * The executable with the set-uid-to-root-bit set is a stub binary that has no
  * unnecessary library dependencies (only libc, pthreads, dynamic linker) and
  * simply calls #SUPR3HardenedMain.  It does the following:
- *      1. Validate the VirtualBox installation (supR3HardenedVerifyAll):
+ *      1. Validate the VirtualBox installation (#supR3HardenedVerifyAll):
  *          - Check that the executable file of the process is one of the known
  *            VirtualBox executables.
  *          - Check that all mandatory files are present.
@@ -109,24 +109,25 @@
  *            of executable images.
  *
  *      2. Open a file descriptor for the support device driver
- *         (supR3HardenedMainOpenDevice).
+ *         (#supR3HardenedMainOpenDevice).
  *
  *      3. Grab ICMP capabilities for NAT ping support, if required by the OS
- *         (supR3HardenedMainGrabCapabilites).
+ *         (#supR3HardenedMainGrabCapabilites).
  *
- *      4. Correctly drop the root privileges (supR3HardenedMainDropPrivileges).
+ *      4. Correctly drop the root privileges
+ *         (#supR3HardenedMainDropPrivileges).
  *
  *      5. Load the VBoxRT dynamic link library and hand over the file
  *         descriptor to the support library code in it
- *         (supR3HardenedMainInitRuntime).
+ *         (#supR3HardenedMainInitRuntime).
  *
- *      6. Load the dynamic library containing the actual VM front end code and
- *         run it (tail of SUPR3HardenedMain).
+ *      6. Load the dynamic library containing the actual %VM front end code and
+ *         run it (tail of #SUPR3HardenedMain).
  *
  * The set-uid-to-root stub executable is paired with a dynamic link library
- * which export one TrustedMain entry point (see FNSUPTRUSTEDMAIN) that we call.
- * In case of error reporting, the library may also export a TrustedError
- * function (FNSUPTRUSTEDERROR).
+ * which export one TrustedMain entry point (see #FNSUPTRUSTEDMAIN) that we
+ * call. In case of error reporting, the library may also export a TrustedError
+ * function (#FNSUPTRUSTEDERROR).
  *
  * That the set-uid-to-root-bit modifies the dynamic linker behavior on all
  * systems, even after we've dropped back to the real user ID, is something we
@@ -141,14 +142,14 @@
  *
  * In addition to what the dynamic linker does for us, the VirtualBox code will
  * not directly be calling either RTLdrLoad or dlopen to load dynamic link
- * libraries into the process.  Instead it will call SUPR3HardenedLdrLoad,
- * SUPR3HardenedLdrLoadAppPriv and SUPR3HardenedLdrLoadPlugIn to do the loading.
- * These functions will perform the same validations on the file being loaded as
- * SUPR3HardenedMain did in its validation step.  So, anything we load must be
- * installed with root/wheel as owner/group, the directory we load it from must
- * also be owned by root:wheel and now allow for renaming the file.  Similar
- * ownership restrictions applies to all the parent directories (except on
- * darwin).
+ * libraries into the process.  Instead it will call #SUPR3HardenedLdrLoad,
+ * #SUPR3HardenedLdrLoadAppPriv and #SUPR3HardenedLdrLoadPlugIn to do the
+ * loading. These functions will perform the same validations on the file being
+ * loaded as #SUPR3HardenedMain did in its validation step.  So, anything we
+ * load must be installed with root/wheel as owner/group, the directory we load
+ * it from must also be owned by root:wheel and now allow for renaming the file.
+ * Similar ownership restrictions applies to all the parent directories (except
+ * on darwin).
  *
  * So, we place the responsibility of not installing malicious software on the
  * root user on UNIX-like systems.  Which is fair enough, in our opinion.
@@ -169,10 +170,10 @@
  * software industry.  For this reason using a set-uid-to-root approach is
  * pointless, even if Windows had one.
  *
- * So, in order to protect access to the support driver and protect the
- * VM process while it's running we have to do a lot more work.  A keystone in
- * the defences is cryptographic code signing.  Here's the short version of what
- * we do:
+ * So, in order to protect access to the support driver and protect the %VM
+ * process while it's running we have to do a lot more work.  A keystone in the
+ * defences is cryptographic code signing.  Here's the short version of what we
+ * do:
  *      - Minimal stub executable, signed with the same certificate as the
  *        kernel driver.
  *
@@ -211,9 +212,9 @@
  * @subsection  sec_hardening_win_1st_stub  The Initial Stub Process
  *
  * We share the stub executable approach with the UNIX-like systems, so there's
- * the SUPR3HardenedMain calling stub executable with it's parenter DLL
- * exporting TrustedMain and TrustedError.   However, the stub executable does a
- * lot more, while doing it in a more bare metal fashion:
+ * the #SUPR3HardenedMain calling stub executable with its partner DLL exporting
+ * TrustedMain and TrustedError.   However, the stub executable does a lot more,
+ * while doing it in a more bare metal fashion:
  *      - It does not use the Microsoft CRT, what we need of CRT functions comes
  *        from IPRT.
  *      - It does not statically import anything.  This is to avoid having an
@@ -226,10 +227,10 @@
  *
  * The initial stub process is not really to be trusted, though we try our best
  * to limit potential harm (user mode debugger checks, disable thread creation).
- * So, when it enters SUPR3HardenedMain we only call supR3HardenedVerifyAll to
+ * So, when it enters #SUPR3HardenedMain we only call #supR3HardenedVerifyAll to
  * verify the installation (known executables and DLLs, checking their code
  * signing signatures, keeping them all open to deny deletion and replacing) and
- * does a respawn via supR3HardenedWinReSpawn.
+ * does a respawn via #supR3HardenedWinReSpawn.
  *
  *
  * @subsection  sec_hardening_win_2nd_stub  The Second Stub Process
@@ -237,14 +238,14 @@
  * The second stub process will be created in suspended state, i.e. the main
  * thread is suspended before it executes a single instruction.  It is also
  * created with a less generous ACLs, though this doesn't protect us from admin
- * users.  In order for SUPR3TrustedMain to figure that it is the second stub
+ * users.  In order for #SUPR3HardenedMain to figure that it is the second stub
  * process, the zeroth command line argument has been replaced by a known magic
  * string (UUID).
  *
  * Now, before the process starts executing, the parent (initial stub) will
  * patch the LdrInitializeThunk entry point in NTDLL to call
- * supR3HardenedEarlyProcessInit via supR3HardenedEarlyProcessInitThunk.  The
- * parent will also plant some synchronization stuff via g_ProcParams (NTDLL
+ * #supR3HardenedEarlyProcessInit via #supR3HardenedEarlyProcessInitThunk.  The
+ * parent will also plant some synchronization stuff via #g_ProcParams (NTDLL
  * location, inherited event handles and associated ping-pong equipment).
  *
  * The LdrInitializeThunk entry point of NTDLL is where the kernel sets up
@@ -258,12 +259,12 @@
  * However, there are also those that uses events that triggers immediately when
  * the process is created or/and starts executing the first instruction.  But we
  * can easily counter these as we have a known process state we can restore. So,
- * the first thing that supR3HardenedEarlyProcessInit does is to signal the
+ * the first thing that #supR3HardenedEarlyProcessInit does is to signal the
  * parent to  perform a child purification, so the potentially evil influences
  * can be exorcised.
  *
  * What the parent does during the purification is very similar to what the
- * kernel driver will do later on when verifying the second stub and the VM
+ * kernel driver will do later on when verifying the second stub and the %VM
  * processes, except that instead of failing when encountering an shortcoming it
  * will take corrective actions:
  *      - Executable memory regions not belonging to a DLL mapping will be
@@ -271,8 +272,8 @@
  *      - All pages in the executable images in the process (should be just the
  *        stub executable and NTDLL) will be compared to the pristine fixed-up
  *        copy prepared by the IPRT PE loader code, restoring any bytes which
- *        appears differently in the child.  (g_ProcParams (SUPR3WINPROCPARAMS)
- *        is exempted, LdrInitializeThunk is set to call NtTerminateThread.)
+ *        appears differently in the child.  (#g_ProcParams is exempted,
+ *        LdrInitializeThunk is set to call NtTerminateThread.)
  *      - Unwanted DLLs will be unloaded (we have a set of DLLs we like).
  *
  * Before signalling the second stub process that it has been purified and should
@@ -281,25 +282,25 @@
  * influence the child in any really harmful way.  (The caller of CreateProcess
  * usually receives handles with unrestricted access to the child process and
  * its main thread.  These could in theory be used with DuplicateHandle or
- * WriteProcessMemory to get at the VM process if we're not careful.)
+ * WriteProcessMemory to get at the %VM process if we're not careful.)
  *
- * supR3HardenedEarlyProcessInit will continue with opening the log file
+ * #supR3HardenedEarlyProcessInit will continue with opening the log file
  * (requires command line parsing).  It will continue to initialize a bunch of
  * global variables, system calls and trustworthy/harmless NTDLL imports.
- * supR3HardenedWinInit is then called to setup image verification, that is:
+ * #supR3HardenedWinInit is then called to setup image verification, that is:
  *      - Hook the NtCreateSection entry point in NTDLL so we can check all
  *        executable mappings before they're created and can be mapped.  The
- *        NtCreateSection code jumps to supR3HardenedMonitor_NtCreateSection.
+ *        NtCreateSection code jumps to #supR3HardenedMonitor_NtCreateSection.
  *      - Hook (ditto) the LdrLoadDll entry point in NTDLL so we can
  *        pre-validate all images that gets loaded the normal way (partly
  *        because the NtCreateSection context is restrictive because the NTDLL
  *        loader lock is usually held, which prevents us from safely calling
  *        WinVerityTrust).  The LdrLoadDll code jumps to
- *        supR3HardenedMonitor_LdrLoadDll.
+ *        #supR3HardenedMonitor_LdrLoadDll.
  *
  * The image/DLL verification hooks are at this point able to verify DLLs
  * containing embedded code signing signatures, and will restrict the locations
- * from which DLLs will be loaded.  When SUPR3HardenedMain gets going later on,
+ * from which DLLs will be loaded.  When #SUPR3HardenedMain gets going later on,
  * they will start insisting on everything having valid signatures, either
  * embedded or in a signed installer catalog file.
  *
@@ -329,21 +330,21 @@
  *        mapped into the process matches the on disk content (no patches other
  *        than our own two in NTDLL are allowed).
  *
- * Once granted access to the stub device, supR3HardenedEarlyProcessInit will
+ * Once granted access to the stub device, #supR3HardenedEarlyProcessInit will
  * restore the LdrInitializeThunk code and let the process perform normal
- * initialization.  Leading us to SUPR3HardenedMain where we detect that this is
- * the 2nd stub process and does another respawn.
+ * initialization.  Leading us to #SUPR3HardenedMain where we detect that this
+ * is the 2nd stub process and does another respawn.
  *
  *
- * @subsection  sec_hardening_win_3rd_stub  The Final Stub / VM Process
+ * @subsection  sec_hardening_win_3rd_stub  The Final Stub / %VM Process
  *
- * The third stub process is what becomes the VM process.  Because the parent
+ * The third stub process is what becomes the %VM process.  Because the parent
  * has opened \\Device\\VBoxDrvSub, it is protected from malicious OpenProcess &
  * OpenThread calls from the moment of inception, practically speaking.
  *
  * It goes thru the same suspended creation, patching, purification and such as
  * its parent (the second stub process).  However, instead of opening
- * \\Device\\VBoxDrvStub from supR3HardenedEarlyProcessInit, it opens the
+ * \\Device\\VBoxDrvStub from #supR3HardenedEarlyProcessInit, it opens the
  * support driver for full unrestricted access, i.e. \\Device\\VBoxDrv.
  *
  * The support driver will perform the same checks as it did when
@@ -369,9 +370,9 @@
  * work.
  *
  * As in the second stub process, we'll now do normal process initialization and
- * SUPR3HardenedMain will take control.  It will detect that it is being called
+ * #SUPR3HardenedMain will take control.  It will detect that it is being called
  * by the 3rd stub process because of a different magic string starting the
- * command line, and not respawn itself any more.  SUPRR3HardenedMain will
+ * command line, and not respawn itself any more.  #SUPR3HardenedMain will
  * recheck the VirtualBox installation, keeping all known files open just like
  * in two previous stub processes.
  *
