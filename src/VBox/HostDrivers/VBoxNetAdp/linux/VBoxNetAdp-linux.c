@@ -169,6 +169,7 @@ struct net_device_stats *vboxNetAdpLinuxGetStats(struct net_device *pNetDev)
 static void vboxNetAdpEthGetDrvinfo(struct net_device *pNetDev, struct ethtool_drvinfo *info)
 {
     PVBOXNETADPPRIV pPriv = netdev_priv(pNetDev);
+    NOREF(pPriv);
 
     RTStrPrintf(info->driver, sizeof(info->driver),
                 "%s", VBOXNETADP_NAME);
