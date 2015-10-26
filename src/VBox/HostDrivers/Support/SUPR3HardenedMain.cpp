@@ -336,7 +336,7 @@
  * is the 2nd stub process and does another respawn.
  *
  *
- * @subsection  sec_hardening_win_3rd_stub  The Final Stub / %VM Process
+ * @subsection  sec_hardening_win_3rd_stub  The Final Stub / VM Process
  *
  * The third stub process is what becomes the %VM process.  Because the parent
  * has opened \\Device\\VBoxDrvSub, it is protected from malicious OpenProcess &
