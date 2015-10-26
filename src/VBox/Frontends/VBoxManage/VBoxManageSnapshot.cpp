@@ -501,6 +501,11 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             if (fRestoreCurrent)
             {
                 CHECK_ERROR_BREAK(sessionMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
+                if (pSnapshot.isNull())
+                {
+                    RTPrintf("This machine does not have any snapshots\n");
+                    return RTEXITCODE_FAILURE;
+                }
             }
             else
             {
@@ -541,6 +546,11 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                 || !strcmp(a->argv[2], "-current"))
             {
                 CHECK_ERROR_BREAK(sessionMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
+                if (pSnapshot.isNull())
+                {
+                    RTPrintf("This machine does not have any snapshots\n");
+                    return RTEXITCODE_FAILURE;
+                }
             }
             else
             {
