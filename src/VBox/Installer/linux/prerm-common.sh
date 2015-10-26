@@ -33,11 +33,11 @@ cd "${MY_PATH}"
 . "./routines.sh"
 
 # Stop the ballon control service
-stop_init_script vboxballoonctrl-service 2>/dev/null
+stop_init_script vboxballoonctrl-service >/dev/null 2>&1
 # Stop the autostart service
-stop_init_script vboxautostart-service 2>/dev/null
+stop_init_script vboxautostart-service >/dev/null 2>&1
 # Stop the web service
-stop_init_script vboxweb-service 2>/dev/null
+stop_init_script vboxweb-service >/dev/null 2>&1
 # Do this check here after we terminated the web service: check whether VBoxSVC
 # is running and exit if it can't be stopped.
 check_running
@@ -52,14 +52,14 @@ remove_init_script vboxautostart-service
 delrunlevel vboxweb-service
 remove_init_script vboxweb-service
 # Stop kernel module and uninstall runlevel script
-stop_init_script vboxdrv 2>/dev/null
+stop_init_script vboxdrv >/dev/null 2>&1
 delrunlevel vboxdrv
 remove_init_script vboxdrv
 # And do final clean-up
-"${MY_PATH}/vboxdrv.sh" cleanup
+"${MY_PATH}/vboxdrv.sh" cleanup >/dev/null  # Do not silence errors for now
 # Stop host networking and uninstall runlevel script (obsolete)
-stop_init_script vboxnet 2>/dev/null
-delrunlevel vboxnet 2>/dev/null
-remove_init_script vboxnet 2>/dev/null
+stop_init_script vboxnet >/dev/null 2>&1
+delrunlevel vboxnet >/dev/null 2>&1
+remove_init_script vboxnet >/dev/null 2>&1
 rm -f /sbin/vboxconfig
 exit 0
