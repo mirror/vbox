@@ -90,7 +90,7 @@ const QString UIDownloaderExtensionPack::description() const
 
 bool UIDownloaderExtensionPack::askForDownloadingConfirmation(UINetworkReply *pReply)
 {
-    return msgCenter().confirmDownloadExtensionPack(GUI_ExtPackName, source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    return msgCenter().confirmDownloadExtensionPack(GUI_ExtPackName, source().toString(), pReply->header(UINetworkReply::ContentLengthHeader).toInt());
 }
 
 void UIDownloaderExtensionPack::handleDownloadedObject(UINetworkReply *pReply)

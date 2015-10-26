@@ -82,7 +82,7 @@ const QString UIDownloaderAdditions::description() const
 
 bool UIDownloaderAdditions::askForDownloadingConfirmation(UINetworkReply *pReply)
 {
-    return msgCenter().confirmDownloadGuestAdditions(source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    return msgCenter().confirmDownloadGuestAdditions(source().toString(), pReply->header(UINetworkReply::ContentLengthHeader).toInt());
 }
 
 void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)

@@ -106,16 +106,16 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
         return;
 
     /* If network-request was canceled: */
-    if (m_pReply->error() == QNetworkReply::OperationCanceledError)
+    if (m_pReply->error() == UINetworkReply::OperationCanceledError)
     {
         /* Notify network-manager: */
         emit sigCanceled(m_uuid);
     }
     /* If network-reply has no errors: */
-    else if (m_pReply->error() == QNetworkReply::NoError)
+    else if (m_pReply->error() == UINetworkReply::NoError)
     {
         /* Check if redirection required: */
-        QUrl redirect = m_pReply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+        QUrl redirect = m_pReply->attribute(UINetworkReply::RedirectionTargetAttribute).toUrl();
         if (redirect.isValid())
         {
             /* Cleanup current network-reply first: */

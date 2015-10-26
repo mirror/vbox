@@ -46,6 +46,43 @@ signals:
 
 public:
 
+    /** Known error codes.
+      * Came from QtNetwork module.
+      * More to go on demand when necessary. */
+    enum NetworkError
+    {
+        NoError,
+        ConnectionRefusedError,
+        RemoteHostClosedError,
+        HostNotFoundError,
+        OperationCanceledError,
+        SslHandshakeFailedError,
+        ProxyNotFoundError,
+        ContentAccessDenied,
+        AuthenticationRequiredError,
+        ContentReSendError,
+        UnknownNetworkError,
+        ProtocolFailure,
+    };
+
+    /** Known header types.
+      * Came from QtNetwork module.
+      * More to go on demand when necessary. */
+    enum KnownHeader
+    {
+        ContentTypeHeader,
+        ContentLengthHeader,
+        LastModifiedHeader,
+    };
+
+    /** Known attribute types.
+      * Came from QtNetwork module.
+      * More to go on demand when necessary. */
+    enum KnownAttribute
+    {
+        RedirectionTargetAttribute,
+    };
+
     /** Constructs reply for the passed @a request of the passed @a type. */
     UINetworkReply(const QNetworkRequest &request, UINetworkRequestType type);
     /** Destructs reply. */
@@ -58,16 +95,16 @@ public:
     QUrl url() const;
 
     /** Returns the last cached error of the reply. */
-    QNetworkReply::NetworkError error() const;
+    NetworkError error() const;
     /** Returns the user-oriented string corresponding to the last cached error of the reply. */
     QString errorString() const;
 
     /** Returns binary content of the reply. */
     QByteArray readAll() const;
     /** Returns value for the cached reply header of the passed @a type. */
-    QVariant header(QNetworkRequest::KnownHeaders header) const;
+    QVariant header(UINetworkReply::KnownHeader header) const;
     /** Returns value for the cached reply attribute of the passed @a code. */
-    QVariant attribute(QNetworkRequest::Attribute code) const;
+    QVariant attribute(UINetworkReply::KnownAttribute code) const;
 
 private:
 
