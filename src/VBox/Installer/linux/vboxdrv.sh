@@ -425,6 +425,7 @@ setup()
         --save-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxdrv" \
         --no-print-directory install >> $LOG 2>&1; then
+        "${INSTALL_DIR}/check_module_dependencies.sh"
         failure "Look at $LOG to find out what went wrong"
     fi
     if ! $BUILDINTMP \
