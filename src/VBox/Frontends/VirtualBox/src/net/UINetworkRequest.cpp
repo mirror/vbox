@@ -34,30 +34,15 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/* Constructor: */
-UINetworkRequest::UINetworkRequest(const QNetworkRequest &request, UINetworkRequestType type,
+UINetworkRequest::UINetworkRequest(UINetworkRequestType type,
+                                   const QList<QNetworkRequest> &requests,
                                    UINetworkCustomer *pCustomer,
                                    UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
-    , m_uuid(QUuid::createUuid())
-    , m_requests(QList<QNetworkRequest>() << request)
-    , m_iCurrentRequestIndex(0)
     , m_type(type)
-    , m_pCustomer(pCustomer)
-    , m_fRunning(false)
-{
-    /* Initialize: */
-    initialize();
-}
-
-UINetworkRequest::UINetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type,
-                                   UINetworkCustomer *pCustomer,
-                                   UINetworkManager *pNetworkManager)
-    : QObject(pNetworkManager)
     , m_uuid(QUuid::createUuid())
     , m_requests(requests)
     , m_iCurrentRequestIndex(0)
-    , m_type(type)
     , m_pCustomer(pCustomer)
     , m_fRunning(false)
 {
@@ -65,7 +50,6 @@ UINetworkRequest::UINetworkRequest(const QList<QNetworkRequest> &requests, UINet
     initialize();
 }
 
-/* Destructor: */
 UINetworkRequest::~UINetworkRequest()
 {
     /* Destroy network-reply: */
@@ -203,7 +187,7 @@ void UINetworkRequest::initialize()
 void UINetworkRequest::prepareNetworkReply()
 {
     /* Make network-request: */
-    m_pReply = new UINetworkReply(m_request, m_type);
+    m_pReply = new UINetworkReply(m_type, m_request);
     AssertMsg(m_pReply, ("Unable to make network-request!\n"));
     /* Prepare listeners for m_pReply: */
     connect(m_pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(sltHandleNetworkReplyProgress(qint64, qint64)));

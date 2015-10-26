@@ -106,20 +106,11 @@ void UINetworkManager::show()
     m_pNetworkManagerDialog->showNormal();
 }
 
-void UINetworkManager::createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type,
+void UINetworkManager::createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> &requests,
                                             UINetworkCustomer *pCustomer)
 {
     /* Create network-request: */
-    UINetworkRequest *pNetworkRequest = new UINetworkRequest(request, type, pCustomer, this);
-    /* Prepare created network-request: */
-    prepareNetworkRequest(pNetworkRequest);
-}
-
-void UINetworkManager::createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type,
-                                            UINetworkCustomer *pCustomer)
-{
-    /* Create network-request: */
-    UINetworkRequest *pNetworkRequest = new UINetworkRequest(requests, type, pCustomer, this);
+    UINetworkRequest *pNetworkRequest = new UINetworkRequest(type, requests, pCustomer, this);
     /* Prepare created network-request: */
     prepareNetworkRequest(pNetworkRequest);
 }

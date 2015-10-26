@@ -56,13 +56,14 @@ signals:
 
 public:
 
-    /* Constructor/destructor: */
-    UINetworkRequest(const QNetworkRequest &request, UINetworkRequestType type,
+    /** Constructs network-request of the passed @a type
+      * on the basis of the @a requests
+      * for the @a pCustomer and @a pNetworkManager specified. */
+    UINetworkRequest(UINetworkRequestType type,
+                     const QList<QNetworkRequest> &requests,
                      UINetworkCustomer *pCustomer,
                      UINetworkManager *pNetworkManager);
-    UINetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type,
-                     UINetworkCustomer *pCustomer,
-                     UINetworkManager *pNetworkManager);
+    /** Destructs network request. */
     ~UINetworkRequest();
 
     /** Returns parent network-manager. */
@@ -98,11 +99,11 @@ private:
     void abortNetworkReply();
 
     /* Variables: */
+    UINetworkRequestType m_type;
     QUuid m_uuid;
     QList<QNetworkRequest> m_requests;
     QNetworkRequest m_request;
     int m_iCurrentRequestIndex;
-    UINetworkRequestType m_type;
     QString m_strDescription;
     UINetworkCustomer *m_pCustomer;
     QPointer<UINetworkReply> m_pReply;

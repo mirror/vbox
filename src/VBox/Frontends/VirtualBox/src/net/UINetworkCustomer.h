@@ -54,10 +54,8 @@ public:
 
 protected:
 
-    /* Network-request wrapper: */
-    void createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type);
-    /* Network-request wrapper (set): */
-    void createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type);
+    /** Creates network-request of the passed @a type on the basis of the passed @a requests. */
+    void createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> requests);
 
 private:
 

@@ -45,7 +45,7 @@
 {
     NOREF(hTest);
     QNetworkRequest Dummy;
-    UINetworkReplyPrivateThread TestObj(Dummy, UINetworkRequestType_GET);
+    UINetworkReplyPrivateThread TestObj(UINetworkRequestType_GET, Dummy);
 
     /*
      * Do the first setup things that UINetworkReplyPrivateThread::run.
