@@ -10336,6 +10336,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         if (FAILED(rc)) throw rc;
 
         /* Host PCI devices */
+        data.pciAttachments.clear();
         for (HWData::PCIDeviceAssignmentList::const_iterator it = mHWData->mPCIDeviceAssignments.begin();
              it != mHWData->mPCIDeviceAssignments.end();
              ++it)
