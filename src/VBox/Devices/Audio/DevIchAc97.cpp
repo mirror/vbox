@@ -840,8 +840,14 @@ static void ichac97MixerReset(PAC97STATE pThis)
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
         pDrv->Out.phStrmOut   = NULL;
+        pDrv->pConnector->pfnCloseOut(pDrv->pConnector, pDrv->Out.pStrmOut);
+        pDrv->Out.pStrmOut    = NULL;
         pDrv->LineIn.phStrmIn = NULL;
+        pDrv->pConnector->pfnCloseIn(pDrv->pConnector, pDrv->LineIn.pStrmIn);
+        pDrv->LineIn.pStrmIn  = NULL;
         pDrv->MicIn.phStrmIn  = NULL;
+        pDrv->pConnector->pfnCloseIn(pDrv->pConnector, pDrv->MicIn.pStrmIn);
+        pDrv->MicIn.pStrmIn   = NULL;
     }
 
     pThis->pSinkOutput = NULL;
