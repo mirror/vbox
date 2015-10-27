@@ -15,8 +15,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-# The below is GNU-specific.  See VBox.sh for the longer Solaris/OS X version.
-TARGET=`readlink -e -- "${0}"` || exit 1
+TARGET=`readlink -e -- "${0}"` || exit 1 # The GNU-specific way.
 MY_DIR="${TARGET%/[!/]*}"
 
 if test -f src/vboxdrv.ko; then
