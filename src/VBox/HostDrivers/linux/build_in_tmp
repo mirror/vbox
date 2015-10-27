@@ -29,6 +29,11 @@ while true; do
   fi
 done
 
+# Guest optimal number of make jobs.
+MAKE_JOBS=`grep vendor_id /proc/cpuinfo | wc -l`
+if [ "${MAKE_JOBS}" -le "0" ]; then MAKE_JOBS=1; fi
+
+# Parse our arguments, anything we don't grok is for make.
 while true; do
     if [ "$1" = "--save-module-symvers" ]; then
       shift
@@ -59,7 +64,7 @@ fi
 
 # make, cleanup if success
 cd "$tmpdir"
-if make "$@"; then
+if make "-j${MAKE_JOBS}" "$@"; then
   if [ -n "$SAVE_MOD_SYMVERS" ]; then
     if [ -f Module.symvers ]; then
       cp -f Module.symvers $SAVE_MOD_SYMVERS
