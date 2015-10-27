@@ -314,13 +314,18 @@ start()
 
 stop()
 {
-    begin_msg "Stopping VirtualBox services" console
-    # Remove udev description file
-    rm -f /etc/udev/rules.d/60-vboxdrv.rules
-    rm -f /etc/udev/rules.d/10-vboxdrv.rules
+    if test ${#} -eq 0 || ! test "${1}" = "--keep-udev"; then
+        begin_msg "Stopping VirtualBox services" console
 
-    # Remove our USB device tree
-    rm -rf /dev/vboxusb
+        # Remove udev description file
+        rm -f /etc/udev/rules.d/60-vboxdrv.rules
+        rm -f /etc/udev/rules.d/10-vboxdrv.rules
+
+        # Remove our USB device tree
+        rm -rf /dev/vboxusb
+    else
+        begin_msg "Stopping VirtualBox services (keeping udev + usb)" console
+    fi
 
     if running vboxpci; then
         if ! rmmod vboxpci 2>/dev/null; then
@@ -493,6 +498,11 @@ stop)
     ;;
 stop_vms)
     stop_vms
+    ;;
+stop_keep_udev)
+    # This is used by src/VBox/HostDrivers/linux/load.sh.
+    stop_vms
+    stop --keep-udev
     ;;
 restart)
     stop && start
