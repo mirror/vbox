@@ -25,6 +25,7 @@
 # include <QThread>
 # include <QRegExp>
 # include <QVector>
+# include <QVariant>
 
 /* GUI includes: */
 # include "UINetworkReply.h"
@@ -69,8 +70,8 @@ signals:
 
 public:
 
-    /** Constructs network-reply thread of the passed @a type for the passed @a request and @a requestHeaders. */
-    UINetworkReplyPrivateThread(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders);
+    /** Constructs network-reply thread of the passed @a type for the passed @a url and @a requestHeaders. */
+    UINetworkReplyPrivateThread(UINetworkRequestType type, const QUrl &url, const UserDictionary &requestHeaders);
 
     /** @name APIs
      * @{ */
@@ -78,7 +79,7 @@ public:
         void abort();
 
         /** Returns the URL of the reply which is the URL of the request for now. */
-        QUrl url() const { return m_request.url(); }
+        const QUrl& url() const { return m_url; }
 
         /** Returns the last cached IPRT HTTP error of the reply. */
         int error() const { return m_iError; }
@@ -189,8 +190,8 @@ private:
 
     /** Holds the request type. */
     const UINetworkRequestType m_type;
-    /** Holds the request instance. */
-    const QNetworkRequest m_request;
+    /** Holds the request url. */
+    const QUrl m_url;
     /** Holds the request headers. */
     const UserDictionary m_requestHeaders;
 
@@ -203,7 +204,7 @@ private:
     /** Holds the reply instance. */
     QByteArray m_reply;
     /** Holds the cached reply headers. */
-    QMap<QString, QString> m_headers;
+    UserDictionary m_headers;
 
     /** Holds the URLs to root zip files containing certificates we want. */
     static const char * const s_apszRootsZipUrls[];
@@ -242,8 +243,8 @@ signals:
 
 public:
 
-    /** Constructs network-reply private data of the passed @a type for the passed @a request and @a requestHeaders. */
-    UINetworkReplyPrivate(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders);
+    /** Constructs network-reply private data of the passed @a type for the passed @a url and @a requestHeaders. */
+    UINetworkReplyPrivate(UINetworkRequestType type, const QUrl &url, const UserDictionary &requestHeaders);
     /** Destructs reply private data. */
     ~UINetworkReplyPrivate();
 
@@ -342,9 +343,9 @@ const RTCRCERTWANTED UINetworkReplyPrivateThread::s_aCerts[] =
 /* static */
 const QString UINetworkReplyPrivateThread::s_strCertificateFileName = QString("vbox-ssl-cacertificate.crt");
 
-UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders)
+UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(UINetworkRequestType type, const QUrl &url, const UserDictionary &requestHeaders)
     : m_type(type)
-    , m_request(request)
+    , m_url(url)
     , m_requestHeaders(requestHeaders)
     , m_hHttp(NIL_RTHTTP)
     , m_iError(VINF_SUCCESS)
@@ -528,7 +529,7 @@ int UINetworkReplyPrivateThread::performMainRequest()
             /* Perform blocking HTTP HEAD request: */
             void   *pvResponse = 0;
             size_t  cbResponse = 0;
-            rc = RTHttpGetHeaderBinary(m_hHttp, m_request.url().toString().toUtf8().constData(), &pvResponse, &cbResponse);
+            rc = RTHttpGetHeaderBinary(m_hHttp, m_url.toString().toUtf8().constData(), &pvResponse, &cbResponse);
             if (RT_SUCCESS(rc))
             {
                 m_reply = QByteArray((char*)pvResponse, (int)cbResponse);
@@ -555,7 +556,7 @@ int UINetworkReplyPrivateThread::performMainRequest()
             /* Perform blocking HTTP GET request: */
             void   *pvResponse = 0;
             size_t  cbResponse = 0;
-            rc = RTHttpGetBinary(m_hHttp, m_request.url().toString().toUtf8().constData(), &pvResponse, &cbResponse);
+            rc = RTHttpGetBinary(m_hHttp, m_url.toString().toUtf8().constData(), &pvResponse, &cbResponse);
             if (RT_SUCCESS(rc))
             {
                 m_reply = QByteArray((char*)pvResponse, (int)cbResponse);
@@ -918,7 +919,7 @@ DECLCALLBACK(void) UINetworkReplyPrivateThread::handleProgressChange(RTHTTP hHtt
 *   Class UINetworkReplyPrivate implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UINetworkReplyPrivate::UINetworkReplyPrivate(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders)
+UINetworkReplyPrivate::UINetworkReplyPrivate(UINetworkRequestType type, const QUrl &url, const UserDictionary &requestHeaders)
     : m_error(UINetworkReply::NoError)
     , m_pThread(0)
 {
@@ -926,7 +927,7 @@ UINetworkReplyPrivate::UINetworkReplyPrivate(UINetworkRequestType type, const QN
     m_strErrorTemplate = tr("%1: %2", "Context description: Error description");
 
     /* Create and run reply thread: */
-    m_pThread = new UINetworkReplyPrivateThread(type, request, requestHeaders);
+    m_pThread = new UINetworkReplyPrivateThread(type, url, requestHeaders);
     connect(m_pThread, SIGNAL(sigDownloadProgress(qint64, qint64)),
             this, SIGNAL(downloadProgress(qint64, qint64)), Qt::QueuedConnection);
     connect(m_pThread, SIGNAL(finished()), this, SLOT(sltFinished()));
@@ -991,8 +992,8 @@ void UINetworkReplyPrivate::sltFinished()
 *   Class UINetworkReply implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UINetworkReply::UINetworkReply(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders)
-    : m_pReply(new UINetworkReplyPrivate(type, request, requestHeaders))
+UINetworkReply::UINetworkReply(UINetworkRequestType type, const QUrl &url, const UserDictionary &requestHeaders)
+    : m_pReply(new UINetworkReplyPrivate(type, url, requestHeaders))
 {
     /* Prepare network-reply object connections: */
     connect(m_pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SIGNAL(downloadProgress(qint64, qint64)));

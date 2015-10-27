@@ -20,7 +20,6 @@
 
 /* Qt includes: */
 #include <QUuid>
-#include <QNetworkRequest>
 #include <QPointer>
 
 /* GUI inludes: */
@@ -57,10 +56,10 @@ signals:
 public:
 
     /** Constructs network-request of the passed @a type
-      * on the basis of the passed @a requests and the @a requestHeaders
+      * on the basis of the passed @a urls and the @a requestHeaders
       * for the @a pCustomer and @a pNetworkManager specified. */
     UINetworkRequest(UINetworkRequestType type,
-                     const QList<QNetworkRequest> &requests,
+                     const QList<QUrl> &urls,
                      const UserDictionary &requestHeaders,
                      UINetworkCustomer *pCustomer,
                      UINetworkManager *pNetworkManager);
@@ -102,10 +101,10 @@ private:
     /* Variables: */
     UINetworkRequestType m_type;
     QUuid m_uuid;
-    QList<QNetworkRequest> m_requests;
+    QList<QUrl> m_requests;
     /** Holds the request headers. */
     const UserDictionary m_requestHeaders;
-    QNetworkRequest m_request;
+    QUrl m_request;
     int m_iCurrentRequestIndex;
     QString m_strDescription;
     UINetworkCustomer *m_pCustomer;

@@ -20,7 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QNetworkRequest>
+# include <QUrl>
 
 /* Local includes: */
 # include "UINetworkCustomer.h"
@@ -41,9 +41,9 @@ UINetworkCustomer::UINetworkCustomer(QObject *pParent, bool fForceCall)
 {
 }
 
-void UINetworkCustomer::createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> requests,
+void UINetworkCustomer::createNetworkRequest(UINetworkRequestType type, const QList<QUrl> urls,
                                              const UserDictionary requestHeaders /* = UserDictionary() */)
 {
-    gNetworkManager->createNetworkRequest(type, requests, requestHeaders, this);
+    gNetworkManager->createNetworkRequest(type, urls, requestHeaders, this);
 }
 

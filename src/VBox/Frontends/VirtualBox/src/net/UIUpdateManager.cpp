@@ -195,11 +195,9 @@ private:
         QString strUserAgent(QString("VirtualBox %1 <%2>").arg(vboxGlobal().virtualBox().GetVersion()).arg(platformInfo()));
 
         /* Send GET request: */
-        QNetworkRequest request;
-        request.setUrl(url);
         UserDictionary headers;
         headers["User-Agent"] = strUserAgent;
-        createNetworkRequest(UINetworkRequestType_GET, QList<QNetworkRequest>() << request, headers);
+        createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << url, headers);
     }
 
     /* Handle network reply canceled: */

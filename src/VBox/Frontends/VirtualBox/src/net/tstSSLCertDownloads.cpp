@@ -44,7 +44,7 @@
 /*static*/ void UINetworkReplyPrivateThread::testIt(RTTEST hTest)
 {
     NOREF(hTest);
-    QNetworkRequest Dummy1;
+    QUrl Dummy1;
     UserDictionary Dummy2;
     UINetworkReplyPrivateThread TestObj(UINetworkRequestType_GET, Dummy1, Dummy2);
 

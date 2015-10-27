@@ -21,6 +21,7 @@
 
 /* Global includes: */
 # include <QWidget>
+# include <QUrl>
 
 /* Local includes: */
 # include "UINetworkManager.h"
@@ -106,11 +107,11 @@ void UINetworkManager::show()
     m_pNetworkManagerDialog->showNormal();
 }
 
-void UINetworkManager::createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> &requests,
+void UINetworkManager::createNetworkRequest(UINetworkRequestType type, const QList<QUrl> &urls,
                                             const UserDictionary &requestHeaders, UINetworkCustomer *pCustomer)
 {
     /* Create network-request: */
-    UINetworkRequest *pNetworkRequest = new UINetworkRequest(type, requests, requestHeaders, pCustomer, this);
+    UINetworkRequest *pNetworkRequest = new UINetworkRequest(type, urls, requestHeaders, pCustomer, this);
     /* Prepare created network-request: */
     prepareNetworkRequest(pNetworkRequest);
 }

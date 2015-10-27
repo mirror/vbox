@@ -20,7 +20,7 @@
 
 /* Qt includes: */
 #include <QPointer>
-#include <QNetworkReply>
+#include <QUrl>
 
 /* GUI includes: */
 #include "UINetworkDefs.h"
@@ -83,8 +83,8 @@ public:
         RedirectionTargetAttribute,
     };
 
-    /** Constructs network-reply of the passed @a type for the passed @a request and @a requestHeaders. */
-    UINetworkReply(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders);
+    /** Constructs network-reply of the passed @a type for the passed @a url and @a requestHeaders. */
+    UINetworkReply(UINetworkRequestType type, const QUrl &url, const UserDictionary &requestHeaders);
     /** Destructs reply. */
     ~UINetworkReply();
 

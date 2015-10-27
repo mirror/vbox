@@ -18,16 +18,15 @@
 #ifndef __UINetworkManager_h__
 #define __UINetworkManager_h__
 
-/* Global includes: */
+/* Qt includes: */
 #include <QNetworkAccessManager>
 #include <QUuid>
-#include <QMap>
-#include <QNetworkRequest>
 
 /* Local inludes: */
 #include "UINetworkDefs.h"
 
 /* Forward declarations: */
+class QUrl;
 class QWidget;
 class UINetworkRequest;
 class UINetworkCustomer;
@@ -81,8 +80,8 @@ protected:
     /* Allow UINetworkCustomer to create network-request: */
     friend class UINetworkCustomer;
     /** Creates network-request of the passed @a type
-      * on the basis of the passed @a requests and the @a requestHeaders for the @a pCustomer specified. */
-    void createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> &requests,
+      * on the basis of the passed @a urls and the @a requestHeaders for the @a pCustomer specified. */
+    void createNetworkRequest(UINetworkRequestType type, const QList<QUrl> &urls,
                               const UserDictionary &requestHeaders, UINetworkCustomer *pCustomer);
 
 private:
