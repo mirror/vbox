@@ -1051,9 +1051,9 @@
     <const name="HyperV"   value="4">
       <desc>Microsoft Hyper-V.</desc>
     </const>
-	<const name="KVM"      value="5">
-	  <desc>Linux KVM.</desc>
-	</const>
+    <const name="KVM"      value="5">
+      <desc>Linux KVM.</desc>
+    </const>
   </enum>
 
   <enum
@@ -4206,7 +4206,7 @@
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
-    reservedMethods="8" reservedAttributes="16"
+    reservedMethods="8" reservedAttributes="14"
     >
     <desc>
       The IMachine interface represents a virtual machine, or guest, created
@@ -5043,6 +5043,12 @@
         <result name="E_NOTIMPL">
           This attribute is currently not implemented.
         </result>
+      </desc>
+    </attribute>
+
+    <attribute name="paravirtDebug" type="wstring">
+      <desc>
+        Debug parameters for the paravirtualized guest interface provider.
       </desc>
     </attribute>
 

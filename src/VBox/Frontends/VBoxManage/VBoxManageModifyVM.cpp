@@ -63,6 +63,7 @@ enum
     MODIFYVM_CPUID_PORTABILITY,
     MODIFYVM_TFRESET,
     MODIFYVM_PARAVIRTPROVIDER,
+    MODIFYVM_PARAVIRTDEBUG,
     MODIFYVM_HWVIRTEX,
     MODIFYVM_NESTEDPAGING,
     MODIFYVM_LARGEPAGES,
@@ -231,6 +232,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--cpuid-portability-level",  MODIFYVM_CPUID_PORTABILITY,         RTGETOPT_REQ_UINT32 },
     { "--triplefaultreset",         MODIFYVM_TFRESET,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--paravirtprovider",         MODIFYVM_PARAVIRTPROVIDER,          RTGETOPT_REQ_STRING },
+    { "--paravirtdebug",            MODIFYVM_PARAVIRTDEBUG,             RTGETOPT_REQ_STRING },
     { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--largepages",               MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF },
@@ -684,6 +686,12 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     errorArgument("Invalid --paravirtprovider argument '%s'", ValueUnion.psz);
                     rc = E_FAIL;
                 }
+                break;
+            }
+
+            case MODIFYVM_PARAVIRTDEBUG:
+            {
+                CHECK_ERROR(sessionMachine, COMSETTER(ParavirtDebug)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
 

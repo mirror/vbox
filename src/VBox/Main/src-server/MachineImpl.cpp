@@ -1217,6 +1217,32 @@ HRESULT Machine::setChipsetType(ChipsetType_T aChipsetType)
     return S_OK;
 }
 
+HRESULT Machine::getParavirtDebug(com::Utf8Str &aParavirtDebug)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aParavirtDebug = mHWData->mParavirtDebug;
+    return S_OK;
+}
+
+HRESULT Machine::setParavirtDebug(const com::Utf8Str &aParavirtDebug)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    /** @todo Parse/validate options? */
+    if (aParavirtDebug != mHWData->mParavirtDebug)
+    {
+        i_setModified(IsModified_MachineData);
+        mHWData.backup();
+        mHWData->mParavirtDebug = aParavirtDebug;
+    }
+
+    return S_OK;
+}
+
 HRESULT Machine::getParavirtProvider(ParavirtProvider_T *aParavirtProvider)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -8912,6 +8938,7 @@ HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::
         mHWData->mKeyboardHIDType = data.keyboardHIDType;
         mHWData->mChipsetType = data.chipsetType;
         mHWData->mParavirtProvider = data.paravirtProvider;
+        mHWData->mParavirtDebug = data.strParavirtDebug;
         mHWData->mEmulatedUSBCardReaderEnabled = data.fEmulatedUSBCardReader;
         mHWData->mHPETEnabled = data.fHPETEnabled;
 
@@ -10194,8 +10221,9 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
 
         // paravirt
         data.paravirtProvider = mHWData->mParavirtProvider;
+        data.strParavirtDebug = mHWData->mParavirtDebug;
 
-
+        // emulated USB card reader
         data.fEmulatedUSBCardReader = !!mHWData->mEmulatedUSBCardReaderEnabled;
 
         // HPET

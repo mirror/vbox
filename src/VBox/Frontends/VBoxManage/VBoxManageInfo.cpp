@@ -744,6 +744,15 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     else
         RTPrintf("Paravirt. Provider: %s\n", pszParavirtProvider);
 
+    Bstr paravirtDebug;
+    CHECK_ERROR2I_RET(machine, COMGETTER(ParavirtDebug)(paravirtDebug.asOutParam()), hrcCheck);
+    if (paravirtDebug.isNotEmpty())
+    {
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("paravirtdebug=\"%ls\"\n", paravirtDebug.raw());
+        else
+            RTPrintf("Paravirt. Debug: %ls\n", paravirtDebug.raw());
+    }
 
     MachineState_T machineState;
     CHECK_ERROR2I_RET(machine, COMGETTER(State)(&machineState), hrcCheck);

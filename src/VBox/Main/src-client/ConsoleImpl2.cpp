@@ -945,6 +945,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     ParavirtProvider_T paravirtProvider;
     hrc = pMachine->GetEffectiveParavirtProvider(&paravirtProvider);                        H();
 
+    Bstr strParavirtDebug;
+    hrc = pMachine->COMGETTER(ParavirtDebug)(strParavirtDebug.asOutParam());                H();
+
     ChipsetType_T chipsetType;
     hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                   H();
     if (chipsetType == ChipsetType_ICH9)
@@ -1289,6 +1292,63 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         InsertConfigString(pParavirtNode, "Provider", pcszParavirtProvider);
 
         /*
+         * Parse paravirt. debug options.
+         */
+        bool         fGimDebug          = false;
+        com::Utf8Str strGimDebugAddress = "127.0.0.1";
+        uint32_t     uGimDebugPort      = 50000;
+        if (strParavirtDebug.isNotEmpty())
+        {
+            /* Hyper-V debug options. */
+            if (paravirtProvider == ParavirtProvider_HyperV)
+            {
+                bool         fGimHvDebug = false;
+                com::Utf8Str strGimHvVendor;
+                bool         fGimHvVsIf;
+                bool         fGimHvHypercallIf;
+
+                size_t       uPos = 0;
+                com::Utf8Str strDebugOptions = strParavirtDebug;
+                do
+                {
+                    com::Utf8Str strKey;
+                    com::Utf8Str strVal;
+                    uPos = strDebugOptions.parseKeyValue(strKey, strVal, uPos);
+                    if (   strKey == "enabled"
+                        && strVal.toUInt32() == 1)
+                    {
+                        /* Apply defaults. */
+                        fGimHvDebug       = true;
+                        strGimHvVendor    = "Microsoft Hv";
+                        fGimHvVsIf        = true;
+                        fGimHvHypercallIf = false;
+                    }
+                    else if (strKey == "address")
+                        strGimDebugAddress = strVal;
+                    else if (strKey == "port")
+                        uGimDebugPort = strVal.toUInt32();
+                    else if (strKey == "vendor")
+                        strGimHvVendor = strVal;
+                    else if (strKey == "vsinterface")
+                        fGimHvVsIf = RT_BOOL(strVal.toUInt32());
+                    else if (strKey == "hypercallinterface")
+                        fGimHvHypercallIf = RT_BOOL(strVal.toUInt32());
+                } while (uPos != com::Utf8Str::npos);
+
+                /* Update HyperV CFGM node with active debug options. */
+                if (fGimHvDebug)
+                {
+                    PCFGMNODE pHvNode;
+                    InsertConfigNode(pParavirtNode, "HyperV", &pHvNode);
+                    InsertConfigString(pHvNode,  "VendorID", strGimHvVendor);
+                    InsertConfigInteger(pHvNode, "VSInterface", fGimHvVsIf ? 1 : 0);
+                    InsertConfigInteger(pHvNode, "HypercallDebugInterface", fGimHvHypercallIf ? 1 : 0);
+                    fGimDebug = true;
+                }
+            }
+        }
+
+        /*
          * MM values.
          */
         PCFGMNODE pMM;
@@ -1410,11 +1470,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
             //InsertConfigNode(pInst,    "Config", &pCfg);
 
-            InsertConfigNode(pInst,     "LUN#998", &pLunL0);
-            InsertConfigString(pLunL0,  "Driver", "UDP");
-            InsertConfigNode(pLunL0,    "Config", &pLunL1);
-            InsertConfigString(pLunL1,  "ServerAddress", "127.0.0.1");
-            InsertConfigInteger(pLunL1, "ServerPort", 50000);
+            if (fGimDebug)
+            {
+                InsertConfigNode(pInst,     "LUN#998", &pLunL0);
+                InsertConfigString(pLunL0,  "Driver", "UDP");
+                InsertConfigNode(pLunL0,    "Config", &pLunL1);
+                InsertConfigString(pLunL1,  "ServerAddress", strGimDebugAddress);
+                InsertConfigInteger(pLunL1, "ServerPort", uGimDebugPort);
+            }
         }
 
         /*

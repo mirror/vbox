@@ -682,6 +682,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--triplefaultreset on|off]\n"
                      "                            [--paravirtprovider none|default|legacy|minimal|\n"
                      "                                                hyperv|kvm]\n"
+                     "                            [--paravirtdebug [<settings>]\n"
                      "                            [--hwvirtex on|off]\n"
                      "                            [--nestedpaging on|off]\n"
                      "                            [--largepages on|off]\n"

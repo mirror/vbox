@@ -1996,6 +1996,7 @@ Hardware::Hardware()
           keyboardHIDType(KeyboardHIDType_PS2Keyboard),
           chipsetType(ChipsetType_PIIX3),
           paravirtProvider(ParavirtProvider_Legacy),
+          strParavirtDebug(""),
           fEmulatedUSBCardReader(false),
           clipboardMode(ClipboardMode_Disabled),
           dndMode(DnDMode_Disabled),
@@ -2073,6 +2074,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (keyboardHIDType           == h.keyboardHIDType)
                   && (chipsetType               == h.chipsetType)
                   && (paravirtProvider          == h.paravirtProvider)
+                  && (strParavirtDebug          == h.strParavirtDebug)
                   && (fEmulatedUSBCardReader    == h.fEmulatedUSBCardReader)
                   && (vrdeSettings              == h.vrdeSettings)
                   && (biosSettings              == h.biosSettings)
@@ -2968,6 +2970,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                                           N_("Invalid value '%s' in Paravirt/@provider attribute"),
                                           strProvider.c_str());
             }
+
+            Utf8Str strDebug;
+            if (pelmHwChild->getAttributeValue("debug", strDebug))
+                hw.strParavirtDebug = strDebug;
         }
         else if (pelmHwChild->nameEquals("HPET"))
         {
@@ -4295,6 +4301,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
         xml::ElementNode *pelmParavirt = pelmHardware->createChild("Paravirt");
         pelmParavirt->setAttribute("provider", pcszParavirtProvider);
+
+        if (   m->sv >= SettingsVersion_v1_16
+            && hw.strParavirtDebug.isNotEmpty())
+            pelmParavirt->setAttribute("debug", hw.strParavirtDebug);
     }
 
     xml::ElementNode *pelmBoot = pelmHardware->createChild("Boot");
@@ -5593,7 +5603,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_16)
     {
-        // VirtualBox 5.1 adds a NVMe storage controller.
+        // VirtualBox 5.1 adds a NVMe storage controller, paravirt debug options.
         for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
              it != storageMachine.llStorageControllers.end();
              ++it)
@@ -5605,6 +5615,12 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 m->sv = SettingsVersion_v1_16;
                 return;
             }
+        }
+
+        if (hardwareMachine.strParavirtDebug.isNotEmpty())
+        {
+            m->sv = SettingsVersion_v1_16;
+            return;
         }
     }
 

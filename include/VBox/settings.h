@@ -956,6 +956,7 @@ struct Hardware
 
     ChipsetType_T       chipsetType;            // requires settings version 1.11 (VirtualBox 4.0)
     ParavirtProvider_T  paravirtProvider;       // requires settings version 1.15 (VirtualBox 4.4)
+    com::Utf8Str        strParavirtDebug;       // requires settings version 1.16 (VirtualBox 5.1)
 
     bool                fEmulatedUSBCardReader; // 1.12 (VirtualBox 4.1)
 
