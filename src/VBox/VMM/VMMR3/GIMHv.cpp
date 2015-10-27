@@ -278,7 +278,8 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
                          | GIM_HV_HINT_RELAX_TIME_CHECKS;
 
         /* Expose more if we're posing as Microsoft. We can, if needed, force MSR-based Hv
-           debugging by not exposing these bits while exposing the VS interface.*/
+           debugging by not exposing these bits while exposing the VS interface. The better
+           way is what we do currently, via the GIM_HV_DEBUG_OPTIONS_USE_HYPERCALLS bit. */
         if (pHv->fIsVendorMsHv)
         {
             pHv->uMiscFeat  |= GIM_HV_MISC_FEAT_GUEST_DEBUGGING
