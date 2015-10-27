@@ -139,6 +139,18 @@ static DECLCALLBACK(int) gimDevR3DbgRecvThread(RTTHREAD ThreadSelf, void *pvUser
                 RTSemEventMultiWait(pThis->Dbg.hDbgRecvThreadSem, RT_INDEFINITE_WAIT);
             }
         }
+#ifdef RT_OS_LINUX
+        else if (rc == VERR_NET_CONNECTION_REFUSED)
+        {
+            /*
+             * With the current, simplistic PDMISTREAM interface, this is the best we can do.
+             * Even using RTSocketSelectOne[Ex] on Linux returns immediately with 'ready-to-read'
+             * on localhost UDP sockets that are not connected on the other end.
+             */
+            /** @todo Fix socket waiting semantics on localhost Linux unconnected UDP sockets. */
+            RTThreadSleep(400);
+        }
+#endif
         else if (   rc != VINF_TRY_AGAIN
                  && rc != VERR_TRY_AGAIN)
         {

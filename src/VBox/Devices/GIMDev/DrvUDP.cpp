@@ -103,7 +103,7 @@ static DECLCALLBACK(int) drvUDPWrite(PPDMISTREAM pInterface, const void *pvBuf, 
     if (pThis->hSocket != NIL_RTSOCKET)
     {
         size_t cbBuf = *pcbWrite;
-        rc = RTSocketWriteToNB(pThis->hSocket, pvBuf, cbBuf, NULL /*pDstAddr*/);
+        rc = RTSocketWriteTo(pThis->hSocket, pvBuf, cbBuf, NULL /*pDstAddr*/);
         if (RT_SUCCESS(rc))
             *pcbWrite = cbBuf;
     }
@@ -146,6 +146,11 @@ static DECLCALLBACK(void) drvUDPDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->hSocket != NIL_RTSOCKET)
     {
+        /*
+         * We shutdown the socket here to poke out any blocking socket reads. The caller
+         * on the other thread/s need to ensure that they do -not- invoke drvUDPRead()
+         * or drvUDPWrite() after this.
+         */
         RTSocketRetain(pThis->hSocket);
         RTSocketShutdown(pThis->hSocket, true, true);
         RTSocketClose(pThis->hSocket);
