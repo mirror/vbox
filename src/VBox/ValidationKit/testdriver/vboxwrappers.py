@@ -34,7 +34,6 @@ __version__ = "$Revision$"
 import array
 import os
 import socket
-import sys
 
 # Validation Kit imports.
 from common     import utils;
