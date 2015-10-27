@@ -19,7 +19,7 @@
 #define __UINetworkManager_h__
 
 /* Qt includes: */
-#include <QNetworkAccessManager>
+#include <QObject>
 #include <QUuid>
 
 /* Local inludes: */
@@ -33,9 +33,9 @@ class UINetworkCustomer;
 class UINetworkManagerDialog;
 class UINetworkManagerIndicator;
 
-/* QNetworkAccessManager class reimplementation.
+/* QObject class reimplementation.
  * Providing network access for VirtualBox application purposes. */
-class UINetworkManager : public QNetworkAccessManager
+class UINetworkManager : public QObject
 {
     Q_OBJECT;
 
