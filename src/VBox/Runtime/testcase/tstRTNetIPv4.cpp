@@ -96,6 +96,21 @@
     } while (0)
 
 
+#define CHECKANY(String, fExpected)                                     \
+    do {                                                                \
+        bool fRc = RTNetStrIsIPv4AddrAny(String);                       \
+        if (fRc != fExpected)                                           \
+        {                                                               \
+            RTTestIFailed("at line %d: '%s':"                           \
+                          " expected %RTbool got %RTbool\n",            \
+                          __LINE__, (String), fExpected, fRc);          \
+        }                                                               \
+    } while (0)
+
+#define IS_ANY(String)  CHECKANY((String), true)
+#define NOT_ANY(String) CHECKANY((String), false)
+
+
 int main()
 {
     RTTEST hTest;
@@ -129,6 +144,13 @@ int main()
     CHECKADDREX("1.2.3.4",  " ",  VINF_SUCCESS,           0x01020304);
     CHECKADDREX("1.2.3.4",  "x",  VINF_SUCCESS,           0x01020304);
     CHECKADDREX("1.2.3.444", "",  VERR_INVALID_PARAMETER,          0);
+
+
+    IS_ANY("0.0.0.0");
+    IS_ANY("\t 0.0.0.0 \t");
+
+    NOT_ANY("1.1.1.1");         /* good address, but not INADDR_ANY */
+    NOT_ANY("0.0.0.0x");        /* bad address */
 
     return RTTestSummaryAndDestroy(hTest);
 }

@@ -70,6 +70,14 @@ typedef RTNETADDRIPV4 const *PCRTNETADDRIPV4;
 RTDECL(bool) RTNetIsIPv4AddrStr(const char *pcszAddr);
 
 /**
+ * Tests if the given string is a wildcard IPv4 address.
+ *
+ * @returns boolean.
+ * @param   pcszAddr        String which may be an IPv4 address.
+ */
+RTDECL(bool) RTNetStrIsIPv4AddrAny(const char *pcszAddr);
+
+/**
  * Parses dotted-decimal IPv4 address into RTNETADDRIPV4 representation.
  *
  * @returns VINF_SUCCESS on success, VERR_INVALID_PARAMETER on
@@ -111,6 +119,14 @@ typedef RTNETADDRIPV6 const *PCRTNETADDRIPV6;
  * @param   pszAddress          String which may be an IPv6 address.
  */
 RTDECL(bool) RTNetIsIPv6AddrStr(const char *pszAddress);
+
+/**
+ * Tests if the given string is a wildcard IPv6 address.
+ *
+ * @returns @c true if it is, @c false if not.
+ * @param   pszAddress          String which may be an IPv6 address.
+ */
+RTDECL(bool) RTNetStrIsIPv6AddrAny(const char *pszAddress);
 
 /**
  * Parses IPv6 address into RTNETADDRIPV6 representation.
