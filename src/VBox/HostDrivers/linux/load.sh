@@ -19,15 +19,6 @@ TARGET=`readlink -e -- "${0}"` || exit 1  # The GNU-specific way.
 MY_DIR="${TARGET%/[!/]*}"
 
 set -e
-# bird: This is not acceptable.
-#if ! test   "`echo /etc/udev/rules.d/*-vboxdrv.rules`" \
-#          = "/etc/udev/rules.d/*-vboxdrv.rules"; then
-#    echo "You can not use this script while you have a version of VirtualBox installed."
-#    echo "If you are running from the build directory you may have installed using"
-#    echo "loadall.sh.  You may wish to re-run that."
-#    ## @todo Any one who needs different behaviour should decide what and do it.
-#    exit 1
-#fi
 
 # Parse parameters.
 OPT_UNLOAD_ONLY=
