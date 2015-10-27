@@ -83,8 +83,8 @@ public:
         RedirectionTargetAttribute,
     };
 
-    /** Constructs network-reply of the passed @a type for the passed @a request. */
-    UINetworkReply(UINetworkRequestType type, const QNetworkRequest &request);
+    /** Constructs network-reply of the passed @a type for the passed @a request and @a requestHeaders. */
+    UINetworkReply(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders);
     /** Destructs reply. */
     ~UINetworkReply();
 

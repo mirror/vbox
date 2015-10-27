@@ -197,8 +197,9 @@ private:
         /* Send GET request: */
         QNetworkRequest request;
         request.setUrl(url);
-        request.setRawHeader("User-Agent", strUserAgent.toAscii());
-        createNetworkRequest(UINetworkRequestType_GET, QList<QNetworkRequest>() << request);
+        UserDictionary headers;
+        headers["User-Agent"] = strUserAgent;
+        createNetworkRequest(UINetworkRequestType_GET, QList<QNetworkRequest>() << request, headers);
     }
 
     /* Handle network reply canceled: */

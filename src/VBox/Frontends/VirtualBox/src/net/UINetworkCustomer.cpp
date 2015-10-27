@@ -41,8 +41,9 @@ UINetworkCustomer::UINetworkCustomer(QObject *pParent, bool fForceCall)
 {
 }
 
-void UINetworkCustomer::createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> requests)
+void UINetworkCustomer::createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> requests,
+                                             const UserDictionary requestHeaders /* = UserDictionary() */)
 {
-    gNetworkManager->createNetworkRequest(type, requests, this);
+    gNetworkManager->createNetworkRequest(type, requests, requestHeaders, this);
 }
 

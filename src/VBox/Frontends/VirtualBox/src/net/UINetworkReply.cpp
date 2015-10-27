@@ -69,8 +69,8 @@ signals:
 
 public:
 
-    /** Constructs network-reply thread of the passed @a type for the passed @a request. */
-    UINetworkReplyPrivateThread(UINetworkRequestType type, const QNetworkRequest &request);
+    /** Constructs network-reply thread of the passed @a type for the passed @a request and @a requestHeaders. */
+    UINetworkReplyPrivateThread(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders);
 
     /** @name APIs
      * @{ */
@@ -129,9 +129,8 @@ private:
 
         /** Applies raw headers.
           * @param  hHttp    Brings the HTTP client instance.
-          * @param  headers  Brings the list of headers to be applied.
-          * @param  request  Brings the request which contains values for the headers to be applied. */
-        static int applyRawHeaders(RTHTTP hHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
+          * @param  headers  Brings the map of headers to be applied. */
+        static int applyRawHeaders(RTHTTP hHttp, const UserDictionary &headers);
 
         /** Returns the number of certificates found in a search result array.
           * @param  pafFoundCerts  Brings the array parallel to s_aCerts with the status of each wanted certificate. */
@@ -191,7 +190,9 @@ private:
     /** Holds the request type. */
     const UINetworkRequestType m_type;
     /** Holds the request instance. */
-    QNetworkRequest m_request;
+    const QNetworkRequest m_request;
+    /** Holds the request headers. */
+    const UserDictionary m_requestHeaders;
 
     /** Holds the IPRT HTTP client instance handle. */
     RTHTTP m_hHttp;
@@ -241,8 +242,8 @@ signals:
 
 public:
 
-    /** Constructs network-reply private data of the passed @a type for the passed @a request. */
-    UINetworkReplyPrivate(UINetworkRequestType type, const QNetworkRequest &request);
+    /** Constructs network-reply private data of the passed @a type for the passed @a request and @a requestHeaders. */
+    UINetworkReplyPrivate(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders);
     /** Destructs reply private data. */
     ~UINetworkReplyPrivate();
 
@@ -341,9 +342,10 @@ const RTCRCERTWANTED UINetworkReplyPrivateThread::s_aCerts[] =
 /* static */
 const QString UINetworkReplyPrivateThread::s_strCertificateFileName = QString("vbox-ssl-cacertificate.crt");
 
-UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(UINetworkRequestType type, const QNetworkRequest &request)
+UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders)
     : m_type(type)
     , m_request(request)
+    , m_requestHeaders(requestHeaders)
     , m_hHttp(NIL_RTHTTP)
     , m_iError(VINF_SUCCESS)
 {
@@ -500,12 +502,11 @@ int UINetworkReplyPrivateThread::applyRawHeaders()
     m_strContext = tr("During network request");
 
     /* Make sure we have a raw headers at all: */
-    QList<QByteArray> headers = m_request.rawHeaderList();
-    if (headers.isEmpty())
+    if (m_requestHeaders.isEmpty())
         return VINF_SUCCESS;
 
     /* Apply raw headers: */
-    return applyRawHeaders(m_hHttp, headers, m_request);
+    return applyRawHeaders(m_hHttp, m_requestHeaders);
 }
 
 int UINetworkReplyPrivateThread::performMainRequest()
@@ -634,7 +635,7 @@ QString UINetworkReplyPrivateThread::fullCertificateFileName()
 }
 
 /* static */
-int UINetworkReplyPrivateThread::applyRawHeaders(RTHTTP hHttp, const QList<QByteArray> &headers, const QNetworkRequest &request)
+int UINetworkReplyPrivateThread::applyRawHeaders(RTHTTP hHttp, const UserDictionary &headers)
 {
     /* Make sure HTTP is created: */
     if (hHttp == NIL_RTHTTP)
@@ -643,10 +644,10 @@ int UINetworkReplyPrivateThread::applyRawHeaders(RTHTTP hHttp, const QList<QByte
     /* We should format them first: */
     QVector<QByteArray> formattedHeaders;
     QVector<const char*> formattedHeaderPointers;
-    foreach (const QByteArray &header, headers)
+    foreach (const QString &header, headers.keys())
     {
         /* Prepare formatted representation: */
-        QString strFormattedString = QString("%1: %2").arg(QString(header), QString(request.rawHeader(header)));
+        QString strFormattedString = QString("%1: %2").arg(header, headers.value(header));
         formattedHeaders << strFormattedString.toAscii();
         formattedHeaderPointers << formattedHeaders.last().constData();
     }
@@ -917,7 +918,7 @@ DECLCALLBACK(void) UINetworkReplyPrivateThread::handleProgressChange(RTHTTP hHtt
 *   Class UINetworkReplyPrivate implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UINetworkReplyPrivate::UINetworkReplyPrivate(UINetworkRequestType type, const QNetworkRequest &request)
+UINetworkReplyPrivate::UINetworkReplyPrivate(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders)
     : m_error(UINetworkReply::NoError)
     , m_pThread(0)
 {
@@ -925,7 +926,7 @@ UINetworkReplyPrivate::UINetworkReplyPrivate(UINetworkRequestType type, const QN
     m_strErrorTemplate = tr("%1: %2", "Context description: Error description");
 
     /* Create and run reply thread: */
-    m_pThread = new UINetworkReplyPrivateThread(type, request);
+    m_pThread = new UINetworkReplyPrivateThread(type, request, requestHeaders);
     connect(m_pThread, SIGNAL(sigDownloadProgress(qint64, qint64)),
             this, SIGNAL(downloadProgress(qint64, qint64)), Qt::QueuedConnection);
     connect(m_pThread, SIGNAL(finished()), this, SLOT(sltFinished()));
@@ -990,8 +991,8 @@ void UINetworkReplyPrivate::sltFinished()
 *   Class UINetworkReply implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UINetworkReply::UINetworkReply(UINetworkRequestType type, const QNetworkRequest &request)
-    : m_pReply(new UINetworkReplyPrivate(type, request))
+UINetworkReply::UINetworkReply(UINetworkRequestType type, const QNetworkRequest &request, const UserDictionary &requestHeaders)
+    : m_pReply(new UINetworkReplyPrivate(type, request, requestHeaders))
 {
     /* Prepare network-reply object connections: */
     connect(m_pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SIGNAL(downloadProgress(qint64, qint64)));

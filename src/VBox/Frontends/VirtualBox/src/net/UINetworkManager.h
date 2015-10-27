@@ -81,9 +81,9 @@ protected:
     /* Allow UINetworkCustomer to create network-request: */
     friend class UINetworkCustomer;
     /** Creates network-request of the passed @a type
-      * on the basis of the passed @a requests for the @a pCustomer specified. */
+      * on the basis of the passed @a requests and the @a requestHeaders for the @a pCustomer specified. */
     void createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> &requests,
-                              UINetworkCustomer *pCustomer);
+                              const UserDictionary &requestHeaders, UINetworkCustomer *pCustomer);
 
 private:
 

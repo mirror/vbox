@@ -107,10 +107,10 @@ void UINetworkManager::show()
 }
 
 void UINetworkManager::createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> &requests,
-                                            UINetworkCustomer *pCustomer)
+                                            const UserDictionary &requestHeaders, UINetworkCustomer *pCustomer)
 {
     /* Create network-request: */
-    UINetworkRequest *pNetworkRequest = new UINetworkRequest(type, requests, pCustomer, this);
+    UINetworkRequest *pNetworkRequest = new UINetworkRequest(type, requests, requestHeaders, pCustomer, this);
     /* Prepare created network-request: */
     prepareNetworkRequest(pNetworkRequest);
 }

@@ -54,8 +54,9 @@ public:
 
 protected:
 
-    /** Creates network-request of the passed @a type on the basis of the passed @a requests. */
-    void createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> requests);
+    /** Creates network-request of the passed @a type on the basis of the passed @a requests and the @a requestHeaders. */
+    void createNetworkRequest(UINetworkRequestType type, const QList<QNetworkRequest> requests,
+                              const UserDictionary requestHeaders = UserDictionary());
 
 private:
 
