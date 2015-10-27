@@ -46,6 +46,7 @@ static char const g_szPrefix[]    = "\\??\\";
 
 /**
  * Handles the pass thru case for UTF-8 input.
+ * Win32 path uses "\\?\" prefix which is converted to "\??\" NT prefix.
  *
  * @returns IPRT status code.
  * @param   pNtName             Where to return the NT name.
@@ -56,14 +57,15 @@ static int rtNtPathFromWinUtf8PassThru(struct _UNICODE_STRING *pNtName, PHANDLE 
 {
     PRTUTF16 pwszPath = NULL;
     size_t   cwcLen;
-    int rc = RTStrToUtf16Ex(pszPath + 1, RTSTR_MAX, &pwszPath, 0, &cwcLen);
+    int rc = RTStrToUtf16Ex(pszPath, RTSTR_MAX, &pwszPath, 0, &cwcLen);
     if (RT_SUCCESS(rc))
     {
         if (cwcLen < _32K - 1)
         {
             pwszPath[0] = '\\';
-            pwszPath[1] = '.';
-            pwszPath[2] = '\\';
+            pwszPath[1] = '?';
+            pwszPath[2] = '?';
+            pwszPath[3] = '\\';
 
             pNtName->Buffer = pwszPath;
             pNtName->Length = (uint16_t)(cwcLen * sizeof(RTUTF16));
@@ -81,6 +83,7 @@ static int rtNtPathFromWinUtf8PassThru(struct _UNICODE_STRING *pNtName, PHANDLE 
 
 /**
  * Handles the pass thru case for UTF-16 input.
+ * Win32 path uses "\\?\" prefix which is converted to "\??\" NT prefix.
  *
  * @returns IPRT status code.
  * @param   pNtName             Where to return the NT name.
@@ -91,10 +94,6 @@ static int rtNtPathFromWinUtf8PassThru(struct _UNICODE_STRING *pNtName, PHANDLE 
 static int rtNtPathFromWinUtf16PassThru(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir,
                                         PCRTUTF16 pwszWinPath, size_t cwcWinPath)
 {
-    /* Drop a character because: \\?\ -> \.\ */
-    pwszWinPath++;
-    cwcWinPath--;
-
     /* Check length and allocate memory for it. */
     int rc;
     if (cwcWinPath < _32K - 1)
@@ -104,9 +103,10 @@ static int rtNtPathFromWinUtf16PassThru(struct _UNICODE_STRING *pNtName, PHANDLE
         {
             /* Intialize the path. */
             pwszNtPath[0] = '\\';
-            pwszNtPath[1] = '.';
-            pwszNtPath[2] = '\\';
-            memcpy(pwszNtPath + 3, pwszWinPath + 3, (cwcWinPath - 3) * sizeof(RTUTF16));
+            pwszNtPath[1] = '?';
+            pwszNtPath[2] = '?';
+            pwszNtPath[3] = '\\';
+            memcpy(pwszNtPath + 4, pwszWinPath + 4, (cwcWinPath - 4) * sizeof(RTUTF16));
             pwszNtPath[cwcWinPath] = '\0';
 
             /* Initialize the return values. */
