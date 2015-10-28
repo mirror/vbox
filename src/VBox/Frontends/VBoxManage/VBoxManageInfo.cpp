@@ -348,6 +348,47 @@ HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
     return rc;
 }
 
+static const char *paravirtProviderToString(ParavirtProvider_T provider, VMINFO_DETAILS details)
+{
+    switch (provider)
+    {
+        case ParavirtProvider_None:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "none";
+            return "None";
+
+        case ParavirtProvider_Default:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "default";
+            return "Default";
+
+        case ParavirtProvider_Legacy:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "legacy";
+            return "Legacy";
+
+        case ParavirtProvider_Minimal:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "minimal";
+            return "Minimal";
+
+        case ParavirtProvider_HyperV:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "hyperv";
+            return "HyperV";
+
+        case ParavirtProvider_KVM:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "kvm";
+            return "KVM";
+
+        default:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "unknown";
+            return "Unknown";
+    }
+}
+
 
 /* Disable global optimizations for MSC 8.0/64 to make it compile in reasonable
    time. MSC 7.1/32 doesn't have quite as much trouble with it, but still
@@ -688,61 +729,19 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
     ParavirtProvider_T paravirtProvider;
     CHECK_ERROR2I_RET(machine, COMGETTER(ParavirtProvider)(&paravirtProvider), hrcCheck);
-    const char *pszParavirtProvider;
-    switch (paravirtProvider)
-    {
-        case ParavirtProvider_None:
-            if (details == VMINFO_MACHINEREADABLE)
-                pszParavirtProvider = "none";
-            else
-                pszParavirtProvider = "None";
-            break;
-
-        case ParavirtProvider_Default:
-            if (details == VMINFO_MACHINEREADABLE)
-                pszParavirtProvider = "default";
-            else
-                pszParavirtProvider = "Default";
-            break;
-
-        case ParavirtProvider_Legacy:
-            if (details == VMINFO_MACHINEREADABLE)
-                pszParavirtProvider = "legacy";
-            else
-                pszParavirtProvider = "Legacy";
-            break;
-
-        case ParavirtProvider_Minimal:
-            if (details == VMINFO_MACHINEREADABLE)
-                pszParavirtProvider = "minimal";
-            else
-                pszParavirtProvider = "Minimal";
-            break;
-
-        case ParavirtProvider_HyperV:
-            if (details == VMINFO_MACHINEREADABLE)
-                pszParavirtProvider = "hyperv";
-            else
-                pszParavirtProvider = "HyperV";
-            break;
-
-        case ParavirtProvider_KVM:
-            if (details == VMINFO_MACHINEREADABLE)
-                pszParavirtProvider = "kvm";
-            else
-                pszParavirtProvider = "KVM";
-            break;
-
-        default:
-            if (details == VMINFO_MACHINEREADABLE)
-                pszParavirtProvider = "unknown";
-            else
-                pszParavirtProvider = "Unknown";
-    }
+    const char *pszParavirtProvider = paravirtProviderToString(paravirtProvider, details);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("paravirtprovider=\"%s\"\n", pszParavirtProvider);
     else
         RTPrintf("Paravirt. Provider: %s\n", pszParavirtProvider);
+
+    ParavirtProvider_T effParavirtProvider;
+    CHECK_ERROR2I_RET(machine, COMGETTER(EffectiveParavirtProvider)(&effParavirtProvider), hrcCheck);
+    const char *pszEffParavirtProvider = paravirtProviderToString(effParavirtProvider, details);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("effparavirtprovider=\"%s\"\n", pszEffParavirtProvider);
+    else
+        RTPrintf("Effective Paravirt. Provider: %s\n", pszEffParavirtProvider);
 
     Bstr paravirtDebug;
     CHECK_ERROR2I_RET(machine, COMGETTER(ParavirtDebug)(paravirtDebug.asOutParam()), hrcCheck);
