@@ -26,6 +26,8 @@ and they take up space:
         ./EdkShellPkg/ \
         ./EdkShellBinPkg/ \
         ./ShellBinPkg/ \
+        ./Vlv2DeviceRefCodePkg/ \
+        ./Vlv2TbltDevicePkg/ \
 
 :Status: $Id$
 
