@@ -177,7 +177,7 @@ def TargetTxtDict(ConfDir):
     # VBox begin
     if 'VBOX_TARGET_CONF' in os.environ:
         Target.LoadTargetTxtFile(os.path.abspath(os.environ['VBOX_TARGET_CONF']))
-    else:
+        return Target
     # VBox end
     Target.LoadTargetTxtFile(os.path.normpath(os.path.join(ConfDir, gDefaultTargetTxtFile)))
     return Target
