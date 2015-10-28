@@ -1,0 +1,90 @@
+## @file
+#  
+#  Capsule Runtime Driver produces two UEFI capsule runtime services.
+#  (UpdateCapsule, QueryCapsuleCapabilities)
+#  It installs the Capsule Architectural Protocol defined in PI1.0a to signify 
+#  the capsule runtime services are ready.
+#  
+#  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution.  The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php
+#  
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = CapsuleRuntimeDxe
+  FILE_GUID                      = 42857F0A-13F2-4B21-8A23-53D3F714B840
+  MODULE_TYPE                    = DXE_RUNTIME_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = CapsuleServiceInitialize
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
+#
+
+[Sources]
+  CapsuleService.c
+
+[Sources.Ia32, Sources.IPF, Sources.EBC, Sources.ARM]
+  SaveLongModeContext.c
+
+[Sources.X64]
+  X64/SaveLongModeContext.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  UefiBootServicesTableLib
+  PcdLib
+  DebugLib
+  UefiRuntimeServicesTableLib
+  UefiDriverEntryPoint
+  CapsuleLib
+  UefiRuntimeLib
+  BaseLib
+  PrintLib
+  
+[LibraryClasses.X64]
+  LockBoxLib
+  UefiLib
+  BaseMemoryLib
+  HobLib  
+
+[Guids]
+  gEfiCapsuleVendorGuid                         ## SOMETIMES_PRODUCED (Process across reset capsule image) ## Variable:L"CapsuleUpdateData" for capsule updated data
+
+[Guids.X64]
+  gEfiAcpiVariableGuid                          # ALWAYS_CONSUMED
+  gEfiAcpiS3ContextGuid                         # ALWAYS_CONSUMED
+
+[Protocols]
+  gEfiCapsuleArchProtocolGuid                   ## PRODUCED
+
+[Protocols.X64]
+  gEfiDxeSmmReadyToLockProtocolGuid             # ALWAYS_CONSUMED
+
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportUpdateCapsuleReset
+
+[FeaturePcd.X64]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizeNonPopulateCapsule
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizePopulateCapsule || gEfiMdeModulePkgTokenSpaceGuid.PcdSupportUpdateCapsuleReset  ## Populate Image requires reset support.
+
+[Pcd.X64]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdCapsulePeiLongModeStackSize
+
+[Depex]
+  gEfiVariableWriteArchProtocolGuid             ## Depends on variable write functionality to produce capsule data variable

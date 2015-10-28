@@ -1,0 +1,71 @@
+## @file
+# Component description file for IsaFloppy module.
+#
+# ISA Floppy Disk UEFI Driver conforming to the UEFI driver model
+#
+#  1. Support two types diskette drive  
+#     1.44M drive and 2.88M drive (and now only support 1.44M)
+#  2. Support two diskette drives per floppy disk controller
+#  3. Use DMA channel 2 to transfer data
+#  4. Do not use interrupt
+#  5. Support diskette change line signal and write protect
+#
+# Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+#
+# This program and the accompanying materials
+# are licensed and made available under the terms and conditions of the BSD License
+# which accompanies this distribution. The full text of the license may be found at
+# http://opensource.org/licenses/bsd-license.php
+#
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = IsaFloppyDxe
+  FILE_GUID                      = 0abd8284-6da3-4616-971a-83a5148067ba
+  MODULE_TYPE                    = UEFI_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = InitializeIsaFloppy
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
+#  DRIVER_BINDING                = gFdcControllerDriver;
+#  COMPONENT_NAME                = gIsaFloppyComponentName;
+#  COMPONENT_NAME2               = gIsaFloppyComponentName2;
+#
+[Sources]
+  ComponentName.c
+  ComponentName.h
+  IsaFloppyCtrl.c
+  IsaFloppyBlock.c
+  IsaFloppy.c
+  IsaFloppy.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  IntelFrameworkPkg/IntelFrameworkPkg.dec
+  IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
+
+[LibraryClasses]
+  ReportStatusCodeLib
+  UefiBootServicesTableLib
+  MemoryAllocationLib
+  BaseMemoryLib
+  UefiLib
+  BaseLib
+  UefiDriverEntryPoint
+  DebugLib
+  TimerLib
+  PcdLib
+
+[Protocols]
+  gEfiIsaIoProtocolGuid                         # PROTOCOL TO_START
+  gEfiBlockIoProtocolGuid                       # PROTOCOL BY_START
+  gEfiDevicePathProtocolGuid                    # PROTOCOL TO_START
+
+[FeaturePcd]
+  gEfiMdePkgTokenSpaceGuid.PcdComponentNameDisable        # CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdComponentName2Disable       # CONSUMES
