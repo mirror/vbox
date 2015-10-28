@@ -771,6 +771,19 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/version.h \
        \
 	$(PATH_ROOT)/include/VBox/com/com.h
+## DONT COMMIT
+VBOX_CORE_DOXYFILE_INPUT_DIRS = \
+	src/VBox/HostDrivers/Support/ \
+	src/VBox/HostDrivers/Support/win/
+VBOX_CORE_DOXYFILE_INPUT_FIRST = \
+	$(PATH_ROOT)/include/iprt/cdefs.h \
+	$(PATH_ROOT)/include/iprt/types.h \
+	$(PATH_ROOT)/include/VBox/cdefs.h \
+	$(PATH_ROOT)/include/VBox/types.h \
+	$(PATH_ROOT)/include/VBox/sup.h \
+
+## DONT COMMIT
+
 
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(VBOX_CORE_DOXYFILE_INPUT_DIRS)))) ) \
@@ -869,6 +882,10 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e '/\/src\/VBox\/NetworkServices\/DHCP\/Config\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Storage\/.* warning/b ignore' \
                -e '/\/src\/VBox\/ValidationKit\/.* warning/b ignore' \
+               \
+               -e '/\/src\/VBox\/HostDrivers\/Support\/SUPR3HardenedMain\.cpp.*warning...copy/b ignore' \
+               -e '/\/src\/VBox\/HostDrivers\/Support\/SUPR3HardenedMain\.cpp.* warning/b end' \
+               -e 'b ignore' \
                \
                -e '/unable to resolve link to .dtrace_pops_t./b ignore' \
                \
@@ -1627,7 +1644,7 @@ efi-fetch:
 	+ $(KMK) -C tools fetch VBOX_ONLY_EXTPACKS=1
 
 efi-build: $(VBOX_VERSION_HEADER)
-	+ $(KMK) -C src/VBox/Devices/EFI/Firmware
+	+ $(KMK) -C src/VBox/Devices/EFI/FirmwareOld
 
 efi-packing:
 	$(REDIRECT) -C "$(PATH_STAGE_BIN)" -- $(TOOL_ZIP_PACK) $(TOOL_ZIP_PACKFLAGS) -9X \
