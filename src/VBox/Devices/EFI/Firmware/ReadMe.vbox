@@ -28,6 +28,7 @@ and they take up space:
         ./ShellBinPkg/ \
         ./Vlv2DeviceRefCodePkg/ \
         ./Vlv2TbltDevicePkg/ \
+        ./AppPkg/Applications/Python/Python-*/ \
 
 :Status: $Id$
 
