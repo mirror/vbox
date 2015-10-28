@@ -736,7 +736,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         RTPrintf("Paravirt. Provider: %s\n", pszParavirtProvider);
 
     ParavirtProvider_T effParavirtProvider;
-    CHECK_ERROR2I_RET(machine, COMGETTER(EffectiveParavirtProvider)(&effParavirtProvider), hrcCheck);
+    CHECK_ERROR2I_RET(machine, GetEffectiveParavirtProvider(&effParavirtProvider), hrcCheck);
     const char *pszEffParavirtProvider = paravirtProviderToString(effParavirtProvider, details);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("effparavirtprovider=\"%s\"\n", pszEffParavirtProvider);
