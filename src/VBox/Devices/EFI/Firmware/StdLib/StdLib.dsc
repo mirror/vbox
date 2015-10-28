@@ -8,8 +8,10 @@
 #
 # This package contains:
 #       Standard C Library.
+#       Sockets Library.
+#       Posix Library.
 #
-#   Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+#   Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
 #   This program and the accompanying materials
 #   are licensed and made available under the terms and conditions of the BSD License
 #   which accompanies this distribution. The full text of the license may be found at
@@ -25,15 +27,22 @@
   PLATFORM_VERSION               = 0.01
   DSC_SPECIFICATION              = 0x00010006
   OUTPUT_DIRECTORY               = Build/StdLib
-  SUPPORTED_ARCHITECTURES        = IA32|IPF|X64|ARM
+  SUPPORTED_ARCHITECTURES        = IA32|X64|ARM
   BUILD_TARGETS                  = DEBUG|RELEASE
   SKUID_IDENTIFIER               = DEFAULT
+
+#
+#  Debug output control
+#
+  DEFINE DEBUG_ENABLE_OUTPUT      = FALSE       # Set to TRUE to enable debug output
+  DEFINE DEBUG_PRINT_ERROR_LEVEL  = 0x80000000  # Flags to control amount of debug output
+  DEFINE DEBUG_PROPERTY_MASK      = 0x0f
 
 [PcdsFeatureFlag]
 
 [PcdsFixedAtBuild]
-  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x0f
-  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000000
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|$(DEBUG_PROPERTY_MASK)
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|$(DEBUG_PRINT_ERROR_LEVEL)
 
 [PcdsFixedAtBuild.IPF]
 
@@ -55,7 +64,12 @@
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
-  DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+  !if $(DEBUG_ENABLE_OUTPUT)
+    DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
+    DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
+  !else   ## DEBUG_ENABLE_OUTPUT
+    DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+  !endif  ## DEBUG_ENABLE_OUTPUT
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
@@ -113,16 +127,21 @@
   StdLib/LibC/Uefi/Devices/daConsole.inf
   StdLib/LibC/Uefi/Devices/daShell.inf
 
+# Additional, non-standard, libraries
+  StdLib/LibC/Containers/ContainerLib.inf
+
 # Additional libraries for POSIX functionality.
+  StdLib/PosixLib/PosixLib.inf
   StdLib/PosixLib/Err/LibErr.inf
   StdLib/PosixLib/Gen/LibGen.inf
   StdLib/PosixLib/Glob/LibGlob.inf
   StdLib/PosixLib/Stringlist/LibStringlist.inf
+  StdLib/LibC/Uefi/InteractiveIO/IIO.inf
 
 #    Socket Libraries - LibC based
-#  StdLib/BsdSocketLib/BsdSocketLib.inf
-#  StdLib/EfiSocketLib/EfiSocketLib.inf
-#  StdLib/UseSocketDxe/UseSocketDxe.inf
+  StdLib/BsdSocketLib/BsdSocketLib.inf
+  StdLib/EfiSocketLib/EfiSocketLib.inf
+  StdLib/UseSocketDxe/UseSocketDxe.inf
 
 ##############################################################################
 #

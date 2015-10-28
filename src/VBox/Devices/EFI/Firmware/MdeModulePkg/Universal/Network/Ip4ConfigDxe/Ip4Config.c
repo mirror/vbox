@@ -1,7 +1,7 @@
 /** @file
   This code implements the IP4Config and NicIp4Config protocols.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at<BR>
@@ -125,6 +125,15 @@ EfiNicIp4ConfigSetInfo (
   // Signal the IP4 to run the auto configuration again
   //
   if (Reconfig && (Instance->ReconfigEvent != NULL)) {
+    //
+    // When NicConfig is NULL, NIC IP4 configuration parameter is removed,
+    // the auto configuration process should stop running the configuration
+    // policy for the EFI IPv4 Protocol driver.
+    //
+    if (NicConfig == NULL) {
+      Instance->DoNotStart = TRUE;
+    }
+
     Status = gBS->SignalEvent (Instance->ReconfigEvent);
     DispatchDpc ();
   }
@@ -167,7 +176,7 @@ Ip4ConfigOnDhcp4Complete (
   EFI_DHCP4_MODE_DATA       Dhcp4Mode;
   EFI_IP4_IPCONFIG_DATA     *Ip4Config;
   EFI_STATUS                Status;
-  BOOLEAN                   Perment;
+  BOOLEAN                   Permanent;
   IP4_ADDR                  Subnet;
   IP4_ADDR                  Ip1;
   IP4_ADDR                  Ip2;
@@ -193,11 +202,11 @@ Ip4ConfigOnDhcp4Complete (
     // the instance and to NVRam. So, both the IP4 driver and
     // other user can get that address.
     //
-    Perment = FALSE;
+    Permanent = FALSE;
 
     if (Instance->NicConfig != NULL) {
       ASSERT (Instance->NicConfig->Source == IP4_CONFIG_SOURCE_DHCP);
-      Perment = Instance->NicConfig->Perment;
+      Permanent = Instance->NicConfig->Permanent;
       FreePool (Instance->NicConfig);
     }
 
@@ -212,7 +221,7 @@ Ip4ConfigOnDhcp4Complete (
 
     CopyMem (&Instance->NicConfig->NicAddr, &Instance->NicAddr, sizeof (Instance->NicConfig->NicAddr));
     Instance->NicConfig->Source  = IP4_CONFIG_SOURCE_DHCP;
-    Instance->NicConfig->Perment = Perment;
+    Instance->NicConfig->Permanent = Permanent;
 
     Ip4Config                    = &Instance->NicConfig->Ip4Info;
     Ip4Config->StationAddress    = Dhcp4Mode.ClientAddress;
@@ -344,6 +353,12 @@ EfiIp4ConfigStart (
   Instance->NicConfig     = EfiNicIp4ConfigGetInfo (Instance);
 
   if (Instance->NicConfig == NULL) {
+    if (Instance->DoNotStart) {
+      Instance->DoNotStart = FALSE;
+      Status = EFI_SUCCESS;
+      goto ON_EXIT;
+    }
+
     Source = IP4_CONFIG_SOURCE_DHCP;
   } else {
     Source = Instance->NicConfig->Source;

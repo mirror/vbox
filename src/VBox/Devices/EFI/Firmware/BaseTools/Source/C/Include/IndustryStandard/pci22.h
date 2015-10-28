@@ -1,17 +1,15 @@
 /** @file
   Support for PCI 2.2 standard.
 
-  Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials are licensed and made available
   under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at:
-    http://opensource.org/licenses/bsd-license.php
+  distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
 
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
-
-  File Name:  pci22.h
 
 **/
 
@@ -335,7 +333,7 @@ typedef union {
 #pragma pack()
 
 #define PCI_EXPANSION_ROM_HEADER_SIGNATURE              0xaa55
-#define PCI_DATA_STRUCTURE_SIGNATURE                    EFI_SIGNATURE_32 ('P', 'C', 'I', 'R')
+#define PCI_DATA_STRUCTURE_SIGNATURE                    SIGNATURE_32 ('P', 'C', 'I', 'R')
 #define PCI_CODE_TYPE_PCAT_IMAGE                        0x00
 #define PCI_CODE_TYPE_EFI_IMAGE                         0x03
 #define EFI_PCI_EXPANSION_ROM_HEADER_COMPRESSED         0x0001

@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define each component of Target.txt file
 #
-# Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -14,13 +14,14 @@
 ##
 # Import Modules
 #
-import os
+import Common.LongFilePathOs as os
 import EdkLogger
 import DataType
 from BuildToolError import *
 import GlobalData
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
-gDefaultTargetTxtFile = "Conf/target.txt"
+gDefaultTargetTxtFile = "target.txt"
 
 ## TargetTxtClassObject
 #
@@ -43,6 +44,7 @@ class TargetTxtClassObject(object):
             DataType.TAB_TAT_DEFINES_TARGET_ARCH                                : [],
             DataType.TAB_TAT_DEFINES_BUILD_RULE_CONF                            : '',
         }
+        self.ConfDirectoryPath = ""
         if Filename != None:
             self.LoadTargetTxtFile(Filename)
 
@@ -77,7 +79,8 @@ class TargetTxtClassObject(object):
     def ConvertTextFileToDict(self, FileName, CommentCharacter, KeySplitCharacter):
         F = None
         try:
-            F = open(FileName,'r')
+            F = open(FileName, 'r')
+            self.ConfDirectoryPath = os.path.dirname(FileName)
         except:
             EdkLogger.error("build", FILE_OPEN_FAILURE, ExtraData=FileName)
             if F != None:
@@ -98,6 +101,26 @@ class TargetTxtClassObject(object):
             if Key in [DataType.TAB_TAT_DEFINES_ACTIVE_PLATFORM, DataType.TAB_TAT_DEFINES_TOOL_CHAIN_CONF, \
                        DataType.TAB_TAT_DEFINES_ACTIVE_MODULE, DataType.TAB_TAT_DEFINES_BUILD_RULE_CONF]:
                 self.TargetTxtDictionary[Key] = Value.replace('\\', '/')
+                if Key == DataType.TAB_TAT_DEFINES_TOOL_CHAIN_CONF and self.TargetTxtDictionary[Key]:
+                    if self.TargetTxtDictionary[Key].startswith("Conf/"):
+                        Tools_Def = os.path.join(self.ConfDirectoryPath, self.TargetTxtDictionary[Key].strip())
+                        if not os.path.exists(Tools_Def) or not os.path.isfile(Tools_Def):
+                            # If Conf/Conf does not exist, try just the Conf/ directory
+                            Tools_Def = os.path.join(self.ConfDirectoryPath, self.TargetTxtDictionary[Key].replace("Conf/", "", 1).strip())
+                    else:
+                        # The File pointed to by TOOL_CHAIN_CONF is not in a Conf/ directory
+                        Tools_Def = os.path.join(self.ConfDirectoryPath, self.TargetTxtDictionary[Key].strip())
+                    self.TargetTxtDictionary[Key] = Tools_Def
+                if Key == DataType.TAB_TAT_DEFINES_BUILD_RULE_CONF and self.TargetTxtDictionary[Key]:
+                    if self.TargetTxtDictionary[Key].startswith("Conf/"):
+                        Build_Rule = os.path.join(self.ConfDirectoryPath, self.TargetTxtDictionary[Key].strip())
+                        if not os.path.exists(Build_Rule) or not os.path.isfile(Build_Rule):
+                            # If Conf/Conf does not exist, try just the Conf/ directory
+                            Build_Rule = os.path.join(self.ConfDirectoryPath, self.TargetTxtDictionary[Key].replace("Conf/", "", 1).strip())
+                    else:
+                        # The File pointed to by BUILD_RULE_CONF is not in a Conf/ directory
+                        Build_Rule = os.path.join(self.ConfDirectoryPath, self.TargetTxtDictionary[Key].strip())
+                    self.TargetTxtDictionary[Key] = Build_Rule
             elif Key in [DataType.TAB_TAT_DEFINES_TARGET, DataType.TAB_TAT_DEFINES_TARGET_ARCH, \
                          DataType.TAB_TAT_DEFINES_TOOL_CHAIN_TAG]:
                 self.TargetTxtDictionary[Key] = Value.split()
@@ -143,20 +166,20 @@ class TargetTxtClassObject(object):
                         print Item
 ## TargetTxtDict
 #
-# Load target.txt in input workspace dir
+# Load target.txt in input Conf dir
 #
-# @param WorkSpace:  Workspace dir
+# @param ConfDir:  Conf dir
 #
 # @retval Target An instance of TargetTxtClassObject() with loaded target.txt
 #
-def TargetTxtDict(WorkSpace):
+def TargetTxtDict(ConfDir):
     Target = TargetTxtClassObject()
     # VBox begin
     if 'VBOX_TARGET_CONF' in os.environ:
         Target.LoadTargetTxtFile(os.path.abspath(os.environ['VBOX_TARGET_CONF']))
     else:
     # VBox end
-        Target.LoadTargetTxtFile(os.path.normpath(os.path.join(WorkSpace, gDefaultTargetTxtFile)))
+    Target.LoadTargetTxtFile(os.path.normpath(os.path.join(ConfDir, gDefaultTargetTxtFile)))
     return Target
 
 ##

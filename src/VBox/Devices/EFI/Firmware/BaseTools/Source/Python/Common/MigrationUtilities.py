@@ -1,7 +1,7 @@
 ## @file
 # Contains several utilitities shared by migration tools.
 #
-# Copyright (c) 2007, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -14,13 +14,14 @@
 ##
 # Import Modules
 #
-import os
+import Common.LongFilePathOs as os
 import re
 import EdkLogger
 from optparse import OptionParser
 from Common.BuildToolError import *
 from XmlRoutines import *
 from CommonDataClass.CommonClass import *
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ## Set all fields of CommonClass object.
 #
@@ -360,7 +361,7 @@ def StoreTextFile(TextFile, Content):
 # The possible duplication is ensured to be removed.
 #
 # @param  Section            Section dictionary indexed by CPU architecture.
-# @param  Arch               CPU architecture: Ia32, X64, Ipf, ARM, Ebc or Common.
+# @param  Arch               CPU architecture: Ia32, X64, Ipf, ARM, AARCH64, Ebc or Common.
 # @param  Item               The Item to be added to section dictionary.
 #
 def AddToSection(Section, Arch, Item):
@@ -382,7 +383,7 @@ def AddToSection(Section, Arch, Item):
 # @retval Section            The string content of a section.
 #
 def GetSection(SectionName, Method, ObjectList):
-    SupportedArches = ["common", "Ia32", "X64", "Ipf", "Ebc", "ARM"]
+    SupportedArches = ["common", "Ia32", "X64", "Ipf", "Ebc", "ARM", "AARCH64"]
     SectionDict = {}
     for Object in ObjectList:
         Item = Method(Object)

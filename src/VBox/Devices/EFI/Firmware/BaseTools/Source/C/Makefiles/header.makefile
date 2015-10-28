@@ -4,6 +4,7 @@
 # ARCH = x86_64 or x64 for EM64T build
 # ARCH = ia32 or IA32 for IA32 build
 # ARCH = ia64 or IA64 for IA64 build
+# ARCH = Arm or ARM for ARM build
 #
 # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
@@ -20,11 +21,11 @@ CYGWIN:=$(findstring CYGWIN, $(shell uname -s))
 LINUX:=$(findstring Linux, $(shell uname -s))
 DARWIN:=$(findstring Darwin, $(shell uname -s))
 
-CC = gcc
-CXX = g++
-AS = gcc
-AR = ar
-LD = ld
+CC ?= gcc
+CXX ?= g++
+AS ?= gcc
+AR ?= ar
+LD ?= ld
 LINKER ?= $(CC)
 ifeq ($(ARCH), IA32)
 ARCH_INCLUDE = -I $(MAKEROOT)/Include/Ia32/
@@ -34,9 +35,22 @@ ifeq ($(ARCH), X64)
 ARCH_INCLUDE = -I $(MAKEROOT)/Include/X64/
 endif
 
+ifeq ($(ARCH), ARM)
+ARCH_INCLUDE = -I $(MAKEROOT)/Include/Arm/
+endif
+
+ifeq ($(ARCH), AARCH64)
+ARCH_INCLUDE = -I $(MAKEROOT)/Include/AArch64/
+endif
+
 INCLUDE = $(TOOL_INCLUDE) -I $(MAKEROOT) -I $(MAKEROOT)/Include/Common -I $(MAKEROOT)/Include/ -I $(MAKEROOT)/Include/IndustryStandard -I $(MAKEROOT)/Common/ -I .. -I . $(ARCH_INCLUDE) 
 CPPFLAGS = $(INCLUDE)
-CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -fno-merge-constants -nostdlib -Wall -Werror -c -g
+ifeq ($(DARWIN),Darwin)
+# assume clang or clang compatible flags on OS X
+CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -Wall -Werror -Wno-deprecated-declarations -Wno-self-assign -nostdlib -c -g
+else
+CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -Wall -Werror -Wno-deprecated-declarations -nostdlib -c -g
+endif
 LFLAGS =
 
 ifeq ($(ARCH), IA32)
@@ -45,8 +59,7 @@ ifeq ($(ARCH), IA32)
 #  to x86_64. So make sure tools match uname -m. You can manual have a 64-bit kernal on Snow Leopard
 #  so only do this is uname -m returns i386.
 #
-uname_s = $(shell uname -s)
-ifeq ($(uname_s),Darwin)
+ifeq ($(DARWIN),Darwin)
   CFLAGS   += -arch i386
   CPPFLAGS += -arch i386
   LFLAGS   += -arch i386

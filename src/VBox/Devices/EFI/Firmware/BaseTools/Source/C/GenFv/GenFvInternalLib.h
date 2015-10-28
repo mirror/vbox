@@ -1,6 +1,8 @@
 /** @file
-
-Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+This file contains describes the public interfaces to the GenFvImage Library.
+The basic purpose of the library is to create Firmware Volume images.
+  
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -8,15 +10,6 @@ http://opensource.org/licenses/bsd-license.php
                                                                                           
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
-
-Module Name:
-  
-  GenFvInternalLib.h
-
-Abstract:
-
-  This file contains describes the public interfaces to the GenFvImage Library.
-  The basic purpose of the library is to create Firmware Volume images.
 
 **/
 
@@ -82,6 +75,7 @@ Abstract:
 #define EFI_CAPSULE_GUID_STRING           "EFI_CAPSULE_GUID"
 #define EFI_CAPSULE_HEADER_SIZE_STRING    "EFI_CAPSULE_HEADER_SIZE"
 #define EFI_CAPSULE_FLAGS_STRING          "EFI_CAPSULE_FLAGS"
+#define EFI_OEM_CAPSULE_FLAGS_STRING      "EFI_OEM_CAPSULE_FLAGS"
 #define EFI_CAPSULE_VERSION_STRING        "EFI_CAPSULE_VERSION"
 
 #define EFI_FV_TOTAL_SIZE_STRING    "EFI_FV_TOTAL_SIZE"
@@ -144,6 +138,8 @@ Abstract:
 #define EFI_FVB2_ALIGNMENT_1G_STRING      "EFI_FVB2_ALIGNMENT_1G"  
 #define EFI_FVB2_ALIGNMENT_2G_STRING      "EFI_FVB2_ALIGNMENT_2G"  
 
+#define EFI_FV_WEAK_ALIGNMENT_STRING      "EFI_WEAK_ALIGNMENT"
+
 //
 // File sections
 //
@@ -165,7 +161,7 @@ Abstract:
 // VTF (Firmware Volume Top File) signatures
 //
 #define IA32_X64_VTF_SIGNATURE_OFFSET    0x14
-#define IA32_X64_VTF0_SIGNATURE EFI_SIGNATURE_32('V','T','F',0)
+#define IA32_X64_VTF0_SIGNATURE SIGNATURE_32('V','T','F',0)
 
 //
 // Defines to calculate the offset for PEI CORE entry points
@@ -211,7 +207,7 @@ Abstract:
 //
 typedef struct {
   UINTN Size;
-  CHAR8 ComponentName[_MAX_PATH];
+  CHAR8 ComponentName[MAX_LONG_FILE_PATH];
 } COMPONENT_INFO;
 
 //
@@ -224,12 +220,12 @@ typedef struct {
   BOOLEAN                 FvFileSystemGuidSet;
   EFI_GUID                FvNameGuid;
   BOOLEAN                 FvNameGuidSet;
-  CHAR8                   FvExtHeaderFile[_MAX_PATH];
+  CHAR8                   FvExtHeaderFile[MAX_LONG_FILE_PATH];
   UINTN                   Size;
   EFI_FVB_ATTRIBUTES_2    FvAttributes;
-  CHAR8                   FvName[_MAX_PATH];
+  CHAR8                   FvName[MAX_LONG_FILE_PATH];
   EFI_FV_BLOCK_MAP_ENTRY  FvBlocks[MAX_NUMBER_OF_FV_BLOCKS];
-  CHAR8                   FvFiles[MAX_NUMBER_OF_FILES_IN_FV][_MAX_PATH];
+  CHAR8                   FvFiles[MAX_NUMBER_OF_FILES_IN_FV][MAX_LONG_FILE_PATH];
   UINT32                  SizeofFvFiles[MAX_NUMBER_OF_FILES_IN_FV];
   BOOLEAN                 IsPiFvImage;
   INT8                    ForceRebase;
@@ -239,8 +235,8 @@ typedef struct {
   EFI_GUID                CapGuid;
   UINT32                  HeaderSize;
   UINT32                  Flags;
-  CHAR8                   CapName[_MAX_PATH];
-  CHAR8                   CapFiles[MAX_NUMBER_OF_FILES_IN_CAP][_MAX_PATH];
+  CHAR8                   CapName[MAX_LONG_FILE_PATH];
+  CHAR8                   CapFiles[MAX_NUMBER_OF_FILES_IN_CAP][MAX_LONG_FILE_PATH];
 } CAP_INFO;
 
 #pragma pack(1)
@@ -259,6 +255,7 @@ typedef struct {
 extern FV_INFO    mFvDataInfo;
 extern CAP_INFO   mCapDataInfo;
 extern EFI_GUID   mEfiFirmwareFileSystem2Guid;
+extern EFI_GUID   mEfiFirmwareFileSystem3Guid;
 extern UINT32     mFvTotalSize;
 extern UINT32     mFvTakenSize;
 

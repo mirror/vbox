@@ -1,7 +1,7 @@
 /** @file
   The implementation of iSCSI protocol based on RFC3720.
 
-Copyright (c) 2004 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -228,7 +228,7 @@ IScsiCreateConnection (
   Conn->PartialRspRcvd  = FALSE;
   Conn->ParamNegotiated = FALSE;
   Conn->Cid             = Session->NextCid++;
-  Conn->Ipv6Flag        = mPrivate->Ipv6Flag;
+  Conn->Ipv6Flag        = NvData->IpMode == IP_MODE_IP6 || Session->ConfigData->AutoConfigureMode == IP_MODE_AUTOCONFIG_IP6;
 
   Status = gBS->CreateEvent (
                   EVT_TIMER,
@@ -259,15 +259,16 @@ IScsiCreateConnection (
     CopyMem (&Tcp4IoConfig->Gateway, &NvData->Gateway, sizeof (EFI_IPv4_ADDRESS));
     CopyMem (&Tcp4IoConfig->RemoteIp, &NvData->TargetIp, sizeof (EFI_IPv4_ADDRESS));
 
-    Tcp4IoConfig->RemotePort = NvData->TargetPort;
-    Tcp4IoConfig->ActiveFlag = TRUE;
-
+    Tcp4IoConfig->RemotePort  = NvData->TargetPort;
+    Tcp4IoConfig->ActiveFlag  = TRUE;
+    Tcp4IoConfig->StationPort = 0;
   } else {
     Tcp6IoConfig = &TcpIoConfig.Tcp6IoConfigData;
   
     CopyMem (&Tcp6IoConfig->RemoteIp, &NvData->TargetIp, sizeof (EFI_IPv6_ADDRESS));
-    Tcp6IoConfig->RemotePort = NvData->TargetPort;
-    Tcp6IoConfig->ActiveFlag = TRUE;
+    Tcp6IoConfig->RemotePort  = NvData->TargetPort;
+    Tcp6IoConfig->ActiveFlag  = TRUE;
+    Tcp6IoConfig->StationPort = 0;
   }
 
   //
@@ -308,6 +309,98 @@ IScsiDestroyConnection (
   FreePool (Conn);
 }
 
+/**
+  Retrieve the IPv6 Address/Prefix/Gateway from the established TCP connection, these informations
+  will be filled in the iSCSI Boot Firmware Table.
+
+  @param[in]  Conn             The connection used in the iSCSI login phase.
+
+  @retval     EFI_SUCCESS      Get the NIC information successfully.
+  @retval     Others           Other errors as indicated.
+  
+**/
+EFI_STATUS
+IScsiGetIp6NicInfo (
+  IN ISCSI_CONNECTION  *Conn
+  )
+{
+  ISCSI_SESSION_CONFIG_NVDATA  *NvData;
+  EFI_TCP6_PROTOCOL            *Tcp6;
+  EFI_IP6_MODE_DATA            Ip6ModeData;
+  EFI_STATUS                   Status;
+  EFI_IPv6_ADDRESS             *TargetIp;
+  UINTN                        Index;
+  UINT8                        SubnetPrefixLength;
+  UINTN                        RouteEntry;
+
+  NvData   = &Conn->Session->ConfigData->SessionConfigData;
+  TargetIp = &NvData->TargetIp.v6;
+  Tcp6     = Conn->TcpIo.Tcp.Tcp6;
+
+  ZeroMem (&Ip6ModeData, sizeof (EFI_IP6_MODE_DATA));
+  Status = Tcp6->GetModeData (
+                   Tcp6,
+                   NULL,
+                   NULL,
+                   &Ip6ModeData,
+                   NULL,
+                   NULL
+                   );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (!Ip6ModeData.IsConfigured) {
+    Status = EFI_ABORTED;
+    goto ON_EXIT;
+  }
+
+  IP6_COPY_ADDRESS (&NvData->LocalIp, &Ip6ModeData.ConfigData.StationAddress);
+
+  NvData->PrefixLength = 0;
+  for (Index = 0; Index < Ip6ModeData.AddressCount; Index++) {
+    if (EFI_IP6_EQUAL (&NvData->LocalIp.v6, &Ip6ModeData.AddressList[Index].Address)) {
+      NvData->PrefixLength = Ip6ModeData.AddressList[Index].PrefixLength;
+      break;
+    }
+  }
+
+  SubnetPrefixLength = 0;
+  RouteEntry = Ip6ModeData.RouteCount;
+  for (Index = 0; Index < Ip6ModeData.RouteCount; Index++) {
+    if (NetIp6IsNetEqual (TargetIp, &Ip6ModeData.RouteTable[Index].Destination, Ip6ModeData.RouteTable[Index].PrefixLength)) {
+      if (SubnetPrefixLength < Ip6ModeData.RouteTable[Index].PrefixLength) {
+        SubnetPrefixLength = Ip6ModeData.RouteTable[Index].PrefixLength;
+        RouteEntry = Index;
+      }
+    }
+  }
+  if (RouteEntry != Ip6ModeData.RouteCount) {
+    IP6_COPY_ADDRESS (&NvData->Gateway, &Ip6ModeData.RouteTable[RouteEntry].Gateway);
+  }
+
+ON_EXIT:
+  if (Ip6ModeData.AddressList != NULL) {
+    FreePool (Ip6ModeData.AddressList);
+  }
+  if (Ip6ModeData.GroupTable!= NULL) {
+    FreePool (Ip6ModeData.GroupTable);
+  }
+  if (Ip6ModeData.RouteTable!= NULL) {
+    FreePool (Ip6ModeData.RouteTable);
+  }
+  if (Ip6ModeData.NeighborCache!= NULL) {
+    FreePool (Ip6ModeData.NeighborCache);
+  }
+  if (Ip6ModeData.PrefixTable!= NULL) {
+    FreePool (Ip6ModeData.PrefixTable);
+  }
+  if (Ip6ModeData.IcmpTypeList!= NULL) {
+    FreePool (Ip6ModeData.IcmpTypeList);
+  }
+
+  return Status;
+}
 
 /**
   Login the iSCSI session.
@@ -379,7 +472,7 @@ IScsiSessionLogin (
   if (!EFI_ERROR (Status)) {
     Session->State = SESSION_STATE_LOGGED_IN;
 
-    if (!mPrivate->Ipv6Flag) {
+    if (!Conn->Ipv6Flag) {
       ProtocolGuid = &gEfiTcp4ProtocolGuid;      
     } else {
       ProtocolGuid = &gEfiTcp6ProtocolGuid;
@@ -395,6 +488,10 @@ IScsiSessionLogin (
                     );
 
     ASSERT_EFI_ERROR (Status);
+
+    if (Conn->Ipv6Flag) {
+      Status = IScsiGetIp6NicInfo (Conn);
+    }
   }
 
   return Status;
@@ -506,6 +603,8 @@ IScsiReceiveLoginRsp (
 {
   EFI_STATUS  Status;
   NET_BUF     *Pdu;
+
+  Pdu = NULL;
 
   //
   // Receive the iSCSI login response.
@@ -2723,6 +2822,7 @@ IScsiOnNopInRcvd (
   @retval EFI_DEVICE_ERROR     Session state was not as required.
   @retval EFI_OUT_OF_RESOURCES Failed to allocate memory.
   @retval EFI_PROTOCOL_ERROR   There is no such data in the net buffer.
+  @retval EFI_NOT_READY        The target can not accept new commands.
   @retval Others               Other errors as indicated.
 
 **/
@@ -2755,7 +2855,8 @@ IScsiExecuteScsiCommand (
   Timeout       = 0;
 
   if (Session->State != SESSION_STATE_LOGGED_IN) {
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
 
   Conn = NET_LIST_USER_STRUCT_S (
@@ -2900,15 +3001,6 @@ ON_EXIT:
     IScsiDelTcb (Tcb);
   }
 
-  if ((Status != EFI_SUCCESS) && (Status != EFI_NOT_READY)) {
-    //
-    // Reinstate the session.
-    //
-    if (EFI_ERROR (IScsiSessionReinstatement (Session))) {
-      Status = EFI_DEVICE_ERROR;
-    }
-  }
-
   return Status;
 }
 
@@ -2929,7 +3021,7 @@ IScsiSessionReinstatement (
 {
   EFI_STATUS    Status;
 
-  ASSERT (Session->State == SESSION_STATE_LOGGED_IN);
+  ASSERT (Session->State != SESSION_STATE_FREE);
 
   //
   // Abort the session and re-init it.

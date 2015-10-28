@@ -1,7 +1,7 @@
 ## @file
 # section base class
 #
-#  Copyright (c) 2007-2011, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007-2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -17,7 +17,7 @@
 #
 from CommonDataClass.FdfClass import SectionClassObject
 from GenFdsGlobalVariable import GenFdsGlobalVariable
-import os, glob
+import Common.LongFilePathOs as os, glob
 from Common import EdkLogger
 from Common.BuildToolError import *
 
@@ -129,9 +129,11 @@ class Section (SectionClassObject):
         if FileType != None:
             for File in FfsInf.BinFileList:
                 if File.Arch == "COMMON" or FfsInf.CurrentArch == File.Arch:
-                    if File.Type == FileType or (int(FfsInf.PiSpecVersion, 16) >= 0x0001000A and FileType == 'DXE_DPEX'and File.Type == 'SMM_DEPEX'):
+                    if File.Type == FileType or (int(FfsInf.PiSpecVersion, 16) >= 0x0001000A \
+                                                 and FileType == 'DXE_DPEX'and File.Type == 'SMM_DEPEX') \
+                                                 or (FileType == 'TE'and File.Type == 'PE32'):
                         if '*' in FfsInf.TargetOverrideList or File.Target == '*' or File.Target in FfsInf.TargetOverrideList or FfsInf.TargetOverrideList == []:
-                            FileList.append(File.Path)
+                            FileList.append(FfsInf.PatchEfiFile(File.Path, File.Type))
                         else:
                             GenFdsGlobalVariable.InfLogger ("\nBuild Target \'%s\' of File %s is not in the Scope of %s specified by INF %s in FDF" %(File.Target, File.File, FfsInf.TargetOverrideList, FfsInf.InfFileName))
                     else:

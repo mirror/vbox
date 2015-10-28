@@ -1,7 +1,7 @@
 ## @file
 # process FFS generation from FILE statement
 #
-#  Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -17,7 +17,7 @@
 #
 import Ffs
 import Rule
-import os
+import Common.LongFilePathOs as os
 import StringIO
 import subprocess
 
@@ -92,6 +92,8 @@ class FileStatement (FileStatementClassObject) :
 
         elif self.FileName != None:
             self.FileName = GenFdsGlobalVariable.ReplaceWorkspaceMacro(self.FileName)
+            #Replace $(SAPCE) with real space
+            self.FileName = self.FileName.replace('$(SPACE)', ' ')
             SectionFiles = [GenFdsGlobalVariable.MacroExtend(self.FileName, Dict)]
 
         else:
@@ -110,6 +112,8 @@ class FileStatement (FileStatementClassObject) :
                 if FvParentAddr != None and isinstance(section, GuidSection):
                     section.FvParentAddr = FvParentAddr
 
+                if self.KeepReloc == False:
+                    section.KeepReloc = False
                 sectList, align = section.GenSection(OutputDir, self.NameGuid, SecIndex, self.KeyStringList, None, Dict)
                 if sectList != []:
                     for sect in sectList:

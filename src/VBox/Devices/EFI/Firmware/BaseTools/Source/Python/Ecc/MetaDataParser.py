@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define common parser functions for meta-data
 #
-# Copyright (c) 2008, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
 
-import os
+import Common.LongFilePathOs as os
 from CommonDataClass.DataClass import *
 from EccToolError import *
 import EccGlobalData
@@ -184,18 +184,25 @@ def ParseHeaderCommentSection(CommentList, FileName = None):
                     continue
                 License += Comment + EndOfLine
     
-    if not Copyright:
+    if not Copyright.strip():
         SqlStatement = """ select ID from File where FullPath like '%s'""" % FileName
         ResultSet = EccGlobalData.gDb.TblFile.Exec(SqlStatement)
         for Result in ResultSet:
             Msg = 'Header comment section must have copyright information'
             EccGlobalData.gDb.TblReport.Insert(ERROR_DOXYGEN_CHECK_FILE_HEADER, Msg, "File", Result[0])
 
-    if not License:
+    if not License.strip():
         SqlStatement = """ select ID from File where FullPath like '%s'""" % FileName
         ResultSet = EccGlobalData.gDb.TblFile.Exec(SqlStatement)
         for Result in ResultSet:
             Msg = 'Header comment section must have license information'
+            EccGlobalData.gDb.TblReport.Insert(ERROR_DOXYGEN_CHECK_FILE_HEADER, Msg, "File", Result[0])
+                       
+    if not Abstract.strip() or Abstract.find('Component description file') > -1:
+        SqlStatement = """ select ID from File where FullPath like '%s'""" % FileName
+        ResultSet = EccGlobalData.gDb.TblFile.Exec(SqlStatement)
+        for Result in ResultSet:
+            Msg = 'Header comment section must have Abstract information.'
             EccGlobalData.gDb.TblReport.Insert(ERROR_DOXYGEN_CHECK_FILE_HEADER, Msg, "File", Result[0])
                      
     return Abstract.strip(), Description.strip(), Copyright.strip(), License.strip()

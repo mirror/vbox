@@ -1,7 +1,7 @@
 ## @file
 # This file contained the parser for INF file
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials are licensed and made available 
 # under the terms and conditions of the BSD License which accompanies this 
@@ -128,6 +128,10 @@ class InfParser(InfSectionParser):
         #
         HeaderCommentStart = False 
         HeaderCommentEnd   = False
+        HeaderStarLineNo = -1
+        BinaryHeaderCommentStart = False 
+        BinaryHeaderCommentEnd   = False
+        BinaryHeaderStarLineNo = -1
         
         #
         # While Section ends. parse whole section contents.
@@ -196,23 +200,17 @@ class InfParser(InfSectionParser):
             #
             if Line.startswith(DT.TAB_SPECIAL_COMMENT) and \
                (Line.find(DT.TAB_HEADER_COMMENT) > -1) and \
-               not HeaderCommentStart:
-                if CurrentSection != DT.MODEL_UNKNOWN:
-                    Logger.Error("Parser", 
-                                 PARSER_ERROR, 
-                                 ST.ERR_INF_PARSER_HEADER_FILE, 
-                                 File=Filename, 
-                                 Line=LineNo, 
-                                 RaiseError = Logger.IS_RAISE_ERROR)
-                else:
-                    CurrentSection = DT.MODEL_META_DATA_FILE_HEADER
-                    #
-                    # Append the first line to section lines.
-                    #
-                    SectionLines.append((Line, LineNo))
-                    HeaderCommentStart = True
-                    continue        
-            
+               not HeaderCommentStart and not HeaderCommentEnd:
+
+                CurrentSection = DT.MODEL_META_DATA_FILE_HEADER
+                #
+                # Append the first line to section lines.
+                #
+                HeaderStarLineNo = LineNo
+                SectionLines.append((Line, LineNo))
+                HeaderCommentStart = True
+                continue        
+
             #
             # Collect Header content.
             #
@@ -226,16 +224,71 @@ class InfParser(InfSectionParser):
             #
             if (Line.startswith(DT.TAB_SPECIAL_COMMENT) or not Line.strip().startswith("#")) and HeaderCommentStart \
                 and not HeaderCommentEnd:
-                SectionLines.append((Line, LineNo))
-                HeaderCommentStart = False
-                #
-                # Call Header comment parser.
-                #
-                self.InfHeaderParser(SectionLines, self.InfHeader, self.FileName)
+                HeaderCommentEnd = True
+                BinaryHeaderCommentStart = False 
+                BinaryHeaderCommentEnd   = False
+                HeaderCommentStart = False      
+                if Line.find(DT.TAB_BINARY_HEADER_COMMENT) > -1:
+                    self.InfHeaderParser(SectionLines, self.InfHeader, self.FileName) 
+                    SectionLines = []
+                else:
+                    SectionLines.append((Line, LineNo))
+                    #
+                    # Call Header comment parser.
+                    #
+                    self.InfHeaderParser(SectionLines, self.InfHeader, self.FileName)
+                    SectionLines = []
+                    continue
+
+            #
+            # check whether binary header comment section started
+            #
+            if Line.startswith(DT.TAB_SPECIAL_COMMENT) and \
+                (Line.find(DT.TAB_BINARY_HEADER_COMMENT) > -1) and \
+                not BinaryHeaderCommentStart:
                 SectionLines = []
-                HeaderCommentEnd = True               
+                CurrentSection = DT.MODEL_META_DATA_FILE_HEADER
+                #
+                # Append the first line to section lines.
+                #
+                BinaryHeaderStarLineNo = LineNo
+                SectionLines.append((Line, LineNo))
+                BinaryHeaderCommentStart = True
+                HeaderCommentEnd = True
+                continue   
+            
+            #
+            # check whether there are more than one binary header exist
+            #
+            if Line.startswith(DT.TAB_SPECIAL_COMMENT) and BinaryHeaderCommentStart and \
+                not BinaryHeaderCommentEnd and (Line.find(DT.TAB_BINARY_HEADER_COMMENT) > -1):
+                Logger.Error('Parser',
+                             FORMAT_INVALID,
+                             ST.ERR_MULTIPLE_BINARYHEADER_EXIST,
+                             File=Filename)
+            
+            #
+            # Collect Binary Header content.
+            #
+            if (Line.startswith(DT.TAB_COMMENT_SPLIT) and CurrentSection == DT.MODEL_META_DATA_FILE_HEADER) and\
+                BinaryHeaderCommentStart and not Line.startswith(DT.TAB_SPECIAL_COMMENT) and not\
+                BinaryHeaderCommentEnd and NextLine != '':
+                SectionLines.append((Line, LineNo))
+                continue
+            #
+            # Binary Header content end
+            #
+            if (Line.startswith(DT.TAB_SPECIAL_COMMENT) or not Line.strip().startswith(DT.TAB_COMMENT_SPLIT)) and \
+                BinaryHeaderCommentStart and not BinaryHeaderCommentEnd:
+                SectionLines.append((Line, LineNo))
+                BinaryHeaderCommentStart = False
+                #
+                # Call Binary Header comment parser.
+                #
+                self.InfHeaderParser(SectionLines, self.InfBinaryHeader, self.FileName, True)
+                SectionLines = []
+                BinaryHeaderCommentEnd   = True               
                 continue                   
- 
             #
             # Find a new section tab
             # Or at the last line of INF file, 
@@ -249,12 +302,16 @@ class InfParser(InfSectionParser):
                 SectionLines.append((Line, LineNo))
                 if not LastSectionFalg:
                     continue
-                        
+
             #
             # Encountered a section. start with '[' and end with ']'
             #
             if (Line.startswith(DT.TAB_SECTION_START) and \
-               Line.find(DT.TAB_SECTION_END) > -1) or LastSectionFalg:                  
+               Line.find(DT.TAB_SECTION_END) > -1) or LastSectionFalg:   
+                
+                HeaderCommentEnd = True        
+                BinaryHeaderCommentEnd = True       
+                
                 if not LastSectionFalg:
                     #
                     # check to prevent '#' inside section header
@@ -267,13 +324,13 @@ class InfParser(InfSectionParser):
                                      File=self.FullPath,
                                      Line=LineNo, 
                                      ExtraData=Line)                        
-                        
+
                     #
                     # Keep last time section header content for section parser
                     # usage.
                     #
                     self.LastSectionHeaderContent = deepcopy(self.SectionHeaderContent)
-                
+
                     #
                     # TailComments in section define.
                     #
@@ -300,11 +357,11 @@ class InfParser(InfSectionParser):
                     # Compare the new section name with current
                     #
                     self.SectionHeaderParser(Line, self.FileName, LineNo)
-                    
+
                     self._CheckSectionHeaders(Line, LineNo)
 
                     SectionType = _ConvertSecNameToType(self.SectionHeaderContent[0][0])
-                
+
                 if not FirstSectionStartFlag:
                     CurrentSection = SectionType
                     FirstSectionStartFlag = True
@@ -313,10 +370,10 @@ class InfParser(InfSectionParser):
             else:
                 SectionLines.append((Line, LineNo))
                 continue
-                                                        
+
             if LastSectionFalg:
                 SectionLines, CurrentSection = self._ProcessLastSection(SectionLines, Line, LineNo, CurrentSection)
-                         
+
             #
             # End of section content collect.
             # Parser the section content collected previously.
@@ -333,18 +390,17 @@ class InfParser(InfSectionParser):
                 # Clear section lines
                 #
                 SectionLines = []                                             
-        #
-        # End of for
-        #
-        #
-        # Found the first section, No file header.
-        #
-        if DefineSectionParsedFlag and not HeaderCommentEnd:
-            Logger.Error("InfParser", 
-                         FORMAT_INVALID, 
-                         ST.ERR_INF_PARSER_HEADER_MISSGING, 
-                         File=self.FullPath)
         
+        if HeaderStarLineNo == -1:
+            Logger.Error("InfParser", 
+                        FORMAT_INVALID,
+                        ST.ERR_NO_SOURCE_HEADER,
+                        File=self.FullPath) 
+        if BinaryHeaderStarLineNo > -1 and HeaderStarLineNo > -1  and HeaderStarLineNo > BinaryHeaderStarLineNo:
+            Logger.Error("InfParser", 
+                        FORMAT_INVALID,
+                        ST.ERR_BINARY_HEADER_ORDER,
+                        File=self.FullPath)         
         #
         # EDKII INF should not have EDKI style comment
         #

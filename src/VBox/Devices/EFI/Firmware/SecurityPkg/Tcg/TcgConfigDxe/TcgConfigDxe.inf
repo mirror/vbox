@@ -1,7 +1,8 @@
 ## @file
-#  Component name for Tcg configuration module.
+#  Provides the capability to update TPM state setup browser
+#  By this module, user may enable/disable/activate/deactivate/clear TPM, etc.
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution. The full text of the license may be found at
@@ -14,6 +15,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = TcgConfigDxe
+  MODULE_UNI_FILE                = TcgConfigDxe.uni
   FILE_GUID                      = 1FA4DAFE-FA5D-4d75-BEA6-5863862C520A
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
@@ -53,24 +55,29 @@
   TpmCommLib
 
 [Guids]
+  ## SOMETIMES_PRODUCES ## Variable:L"PhysicalPresence"
+  ## SOMETIMES_CONSUMES ## Variable:L"PhysicalPresence"
   gEfiPhysicalPresenceGuid
-  gEfiIfrTianoGuid
+  
+  gEfiIfrTianoGuid                                    ## SOMETIMES_PRODUCES  ## GUID       # HII opcode
+  ## PRODUCES            ## HII
+  ## CONSUMES            ## HII
   gTcgConfigFormSetGuid
+  gEfiTpmDeviceInstanceTpm12Guid                      ## CONSUMES     ## GUID       # TPM device identifier
 
 [Protocols]
-  gEfiHiiConfigAccessProtocolGuid               ## PRODUCES
-  gEfiHiiConfigRoutingProtocolGuid              ## CONSUMES
-  gEfiTcgProtocolGuid                           ## CONSUMES
-
-[FixedPcd]
-  gEfiSecurityPkgTokenSpaceGuid.PcdHideTpmSupport
+  gEfiHiiConfigAccessProtocolGuid                     ## PRODUCES
+  gEfiDevicePathProtocolGuid                          ## PRODUCES
+  gEfiTcgProtocolGuid                                 ## CONSUMES
 
 [Pcd]
-  gEfiSecurityPkgTokenSpaceGuid.PcdMorEnable
-  gEfiSecurityPkgTokenSpaceGuid.PcdHideTpm
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid    ## CONSUMES
 
 [Depex]
   gEfiHiiConfigRoutingProtocolGuid  AND
   gEfiHiiDatabaseProtocolGuid       AND
   gEfiVariableArchProtocolGuid      AND
   gEfiVariableWriteArchProtocolGuid
+  
+[UserExtensions.TianoCore."ExtraFiles"]
+  TcgConfigDxeExtra.uni

@@ -2,7 +2,7 @@
   Extension Form Browser Protocol provides the services that can be used to 
   register the different hot keys for the standard Browser actions described in UEFI specification.
 
-Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available under 
 the terms and conditions of the BSD License that accompanies this distribution.  
 The full text of the license may be found at
@@ -27,6 +27,7 @@ typedef struct _EFI_FORM_BROWSER_EXTENSION_PROTOCOL   EFI_FORM_BROWSER_EXTENSION
 #define BROWSER_NO_CHANGES          0
 #define BROWSER_SAVE_CHANGES        1
 #define BROWSER_DISCARD_CHANGES     2
+#define BROWSER_KEEP_CURRENT        3
 
 //
 // Browser actions. They can be cominbed together. 
@@ -38,6 +39,7 @@ typedef struct _EFI_FORM_BROWSER_EXTENSION_PROTOCOL   EFI_FORM_BROWSER_EXTENSION
 #define BROWSER_ACTION_SUBMIT       BIT2
 #define BROWSER_ACTION_RESET        BIT3
 #define BROWSER_ACTION_EXIT         BIT4
+#define BROWSER_ACTION_GOTO         BIT5
 
 //
 // Scope for Browser action. It may be Form, FormSet or System level.
@@ -126,6 +128,7 @@ VOID
   @retval BROWSER_NO_CHANGES       No browser data is changed.
   @retval BROWSER_SAVE_CHANGES     The changed browser data is saved.
   @retval BROWSER_DISCARD_CHANGES  The changed browser data is discard.
+  @retval BROWSER_KEEP_CURRENT     Browser keep current changes.
 
 **/
 typedef

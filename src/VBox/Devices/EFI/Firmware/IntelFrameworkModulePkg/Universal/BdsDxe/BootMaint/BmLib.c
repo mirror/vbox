@@ -1,7 +1,7 @@
 /** @file
   Utility routines used by boot maintenance modules.
 
-Copyright (c) 2004 - 2009, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -13,36 +13,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include "BootMaint.h"
-
-/**
-
-  Find the first instance of this Protocol
-  in the system and return it's interface.
-
-
-  @param ProtocolGuid    Provides the protocol to search for
-  @param Interface       On return, a pointer to the first interface
-                         that matches ProtocolGuid
-
-  @retval  EFI_SUCCESS      A protocol instance matching ProtocolGuid was found
-  @retval  EFI_NOT_FOUND    No protocol instances were found that match ProtocolGuid
-
-**/
-EFI_STATUS
-EfiLibLocateProtocol (
-  IN  EFI_GUID    *ProtocolGuid,
-  OUT VOID        **Interface
-  )
-{
-  EFI_STATUS  Status;
-
-  Status = gBS->LocateProtocol (
-                  ProtocolGuid,
-                  NULL,
-                  (VOID **) Interface
-                  );
-  return Status;
-}
 
 /**
 
@@ -201,8 +171,17 @@ EfiLibDeleteVariable (
     //
     // Delete variable from Storage
     //
-    Status = gRT->SetVariable (VarName, VarGuid, VAR_FLAG, 0, NULL);
-    ASSERT (!EFI_ERROR (Status));
+    Status = gRT->SetVariable (
+                    VarName,
+                    VarGuid,
+                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                    0,
+                    NULL
+                    );
+    //
+    // Deleting variable with current variable implementation shouldn't fail.
+    //
+    ASSERT_EFI_ERROR (Status);
     FreePool (VarBuf);
   }
 
@@ -382,40 +361,6 @@ EfiReallocatePool (
 }
 
 /**
-  Compare two EFI_TIME data.
-
-
-  @param FirstTime       - A pointer to the first EFI_TIME data.
-  @param SecondTime      - A pointer to the second EFI_TIME data.
-
-  @retval  TRUE              The FirstTime is not later than the SecondTime.
-  @retval  FALSE             The FirstTime is later than the SecondTime.
-
-**/
-BOOLEAN
-TimeCompare (
-  IN EFI_TIME               *FirstTime,
-  IN EFI_TIME               *SecondTime
-  )
-{
-  if (FirstTime->Year != SecondTime->Year) {
-    return (BOOLEAN) (FirstTime->Year < SecondTime->Year);
-  } else if (FirstTime->Month != SecondTime->Month) {
-    return (BOOLEAN) (FirstTime->Month < SecondTime->Month);
-  } else if (FirstTime->Day != SecondTime->Day) {
-    return (BOOLEAN) (FirstTime->Day < SecondTime->Day);
-  } else if (FirstTime->Hour != SecondTime->Hour) {
-    return (BOOLEAN) (FirstTime->Hour < SecondTime->Hour);
-  } else if (FirstTime->Minute != SecondTime->Minute) {
-    return (BOOLEAN) (FirstTime->Minute < FirstTime->Minute);
-  } else if (FirstTime->Second != SecondTime->Second) {
-    return (BOOLEAN) (FirstTime->Second < SecondTime->Second);
-  }
-
-  return (BOOLEAN) (FirstTime->Nanosecond <= SecondTime->Nanosecond);
-}
-
-/**
   Get a string from the Data Hub record based on 
   a device path.
 
@@ -433,3 +378,34 @@ EfiLibStrFromDatahub (
 {
   return NULL;
 }
+
+/**
+
+  Find the first instance of this Protocol
+  in the system and return it's interface.
+
+
+  @param ProtocolGuid    Provides the protocol to search for
+  @param Interface       On return, a pointer to the first interface
+                         that matches ProtocolGuid
+
+  @retval  EFI_SUCCESS      A protocol instance matching ProtocolGuid was found
+  @retval  EFI_NOT_FOUND    No protocol instances were found that match ProtocolGuid
+
+**/
+EFI_STATUS
+EfiLibLocateProtocol (
+  IN  EFI_GUID    *ProtocolGuid,
+  OUT VOID        **Interface
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = gBS->LocateProtocol (
+                  ProtocolGuid,
+                  NULL,
+                  (VOID **) Interface
+                  );
+  return Status;
+}
+

@@ -3,7 +3,7 @@
   Child device(Disk, CDROM, etc) enumeration and child handler installation, and 
   driver stop.
     
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -433,7 +433,7 @@ IDEBusDriverBindingStart (
                     &Supports
                     );
   if (!EFI_ERROR (Status)) {
-    Supports &= EFI_PCI_DEVICE_ENABLE;
+    Supports &= (UINT64)EFI_PCI_DEVICE_ENABLE;
     Status = PciIo->Attributes (
                       PciIo,
                       EfiPciIoAttributeOperationEnable,
@@ -719,6 +719,7 @@ IDEBusDriverBindingStart (
     //
     for (IdeDevice = BeginningIdeDevice; IdeDevice <= EndIdeDevice; IdeDevice++) {
 
+      ASSERT (IdeChannel * 2 + IdeDevice < MAX_IDE_DEVICE);
       if (IdeBusDriverPrivateData->DeviceProcessed[IdeChannel * 2 + IdeDevice]) {
         continue;
       }
@@ -738,6 +739,7 @@ IDEBusDriverBindingStart (
         continue;
       }
 
+      ASSERT (IdeChannel < IdeMaxChannel && IdeDevice < IdeMaxDevice);
       IdeBlkIoDevicePtr = IdeBlkIoDevice[IdeChannel][IdeDevice];
 
       //
@@ -1002,7 +1004,7 @@ IDEBusDriverBindingStop (
                         &Supports
                         );
       if (!EFI_ERROR (Status)) {
-        Supports &= EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE;
+        Supports &= (UINT64)(EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE);
         PciIo->Attributes (
                 PciIo,
                 EfiPciIoAttributeOperationDisable,
@@ -1437,7 +1439,7 @@ IDEDiskInfoWhichIde (
   Clear pending IDE interrupt before OS loader/kernel take control of the IDE device.
 
   @param  Event   Pointer to this event
-  @param  Context Event hanlder private data
+  @param  Context Event handler private data
 
 **/
 VOID
@@ -1473,7 +1475,7 @@ ClearInterrupt (
   // Reset IDE device to force it de-assert interrupt pin
   // Note: this will reset all devices on this IDE channel
   //
-  AtaSoftReset (IdeDev);
+  Status = AtaSoftReset (IdeDev);
   if (EFI_ERROR (Status)) {
     return;
   }

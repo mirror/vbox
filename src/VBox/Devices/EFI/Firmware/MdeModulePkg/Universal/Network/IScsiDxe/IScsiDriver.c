@@ -1,7 +1,7 @@
 /** @file
   The entry point of IScsi driver.
 
-Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -22,6 +22,44 @@ EFI_DRIVER_BINDING_PROTOCOL gIScsiDriverBinding = {
   NULL,
   NULL
 };
+
+/**
+  Tests to see if this driver supports the RemainingDevicePath. 
+
+  @param[in]  RemainingDevicePath  A pointer to the remaining portion of a device path.  This 
+                                   parameter is ignored by device drivers, and is optional for bus 
+                                   drivers. For bus drivers, if this parameter is not NULL, then 
+                                   the bus driver must determine if the bus controller specified 
+                                   by ControllerHandle and the child controller specified 
+                                   by RemainingDevicePath are both supported by this 
+                                   bus driver.
+
+  @retval EFI_SUCCESS              The RemainingDevicePath is supported or NULL.
+  @retval EFI_UNSUPPORTED          The device specified by ControllerHandle and
+                                   RemainingDevicePath is not supported by the driver specified by This.
+**/
+EFI_STATUS
+IScsiIsDevicePathSupported (
+  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath OPTIONAL
+  )
+{
+  EFI_DEVICE_PATH_PROTOCOL  *CurrentDevicePath;
+
+  CurrentDevicePath = RemainingDevicePath;
+  if (CurrentDevicePath != NULL) {
+    while (!IsDevicePathEnd (CurrentDevicePath)) {
+      if ((CurrentDevicePath->Type == MESSAGING_DEVICE_PATH) && (CurrentDevicePath->SubType == MSG_ISCSI_DP)) {
+        return EFI_SUCCESS;
+      }
+
+      CurrentDevicePath = NextDevicePathNode (CurrentDevicePath);
+    }
+
+    return EFI_UNSUPPORTED;
+  }
+
+  return EFI_SUCCESS;
+}
 
 /**
   Tests to see if this driver supports a given controller. If a child device is provided, 
@@ -56,7 +94,6 @@ IScsiDriverBindingSupported (
   )
 {
   EFI_STATUS                Status;
-  EFI_DEVICE_PATH_PROTOCOL  *CurrentDevicePath;
 
   Status = gBS->OpenProtocol (
                   ControllerHandle,
@@ -82,17 +119,23 @@ IScsiDriverBindingSupported (
     return EFI_UNSUPPORTED;
   }
 
-  CurrentDevicePath = RemainingDevicePath;
-  if (CurrentDevicePath != NULL) {
-    while (!IsDevicePathEnd (CurrentDevicePath)) {
-      if ((CurrentDevicePath->Type == MESSAGING_DEVICE_PATH) && (CurrentDevicePath->SubType == MSG_ISCSI_DP)) {
-        return EFI_SUCCESS;
-      }
-
-      CurrentDevicePath = NextDevicePathNode (CurrentDevicePath);
-    }
-
+  Status = IScsiIsDevicePathSupported (RemainingDevicePath);
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
+  }
+
+  if (IScsiDhcpIsConfigured (ControllerHandle)) {
+    Status = gBS->OpenProtocol (
+                    ControllerHandle,
+                    &gEfiDhcp4ServiceBindingProtocolGuid,
+                    NULL,
+                    This->DriverBindingHandle,
+                    ControllerHandle,
+                    EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                    );
+    if (EFI_ERROR (Status)) {
+      return EFI_UNSUPPORTED;
+    }
   }
 
   return EFI_SUCCESS;
@@ -234,6 +277,30 @@ IScsiDriverBindingStart (
   }
 
   //
+  // ISCSI children should share the default Tcp child, just open the default Tcp child via BY_CHILD_CONTROLLER.
+  //
+  Status = gBS->OpenProtocol (
+                  Private->ChildHandle, /// Default Tcp child
+                  &gEfiTcp4ProtocolGuid,
+                  &Interface,
+                  This->DriverBindingHandle,
+                  Private->ExtScsiPassThruHandle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );              
+  if (EFI_ERROR (Status)) {
+    gBS->UninstallMultipleProtocolInterfaces (
+           Private->ExtScsiPassThruHandle,
+           &gEfiExtScsiPassThruProtocolGuid,
+           &Private->IScsiExtScsiPassThru,
+           &gEfiDevicePathProtocolGuid,
+           Private->DevicePath,
+           NULL
+           );
+    
+    goto ON_ERROR;
+  }
+
+  //
   // Update/Publish the iSCSI Boot Firmware Table.
   //
   IScsiPublishIbft ();
@@ -313,6 +380,13 @@ IScsiDriverBindingStop (
     // the protocol here but not uninstall the device path protocol and
     // EXT SCSI PASS THRU protocol installed on ExtScsiPassThruHandle.
     //
+    gBS->CloseProtocol (
+           Private->ChildHandle,
+           &gEfiTcp4ProtocolGuid,
+           Private->Image,
+           Private->ExtScsiPassThruHandle
+           );
+    
     gBS->CloseProtocol (
           Conn->Tcp4Io.Handle,
           &gEfiTcp4ProtocolGuid,
@@ -396,10 +470,12 @@ EfiIScsiUnload (
   IN EFI_HANDLE  ImageHandle
   )
 {
-  EFI_STATUS  Status;
-  UINTN       DeviceHandleCount;
-  EFI_HANDLE  *DeviceHandleBuffer;
-  UINTN       Index;
+  EFI_STATUS                        Status;
+  UINTN                             DeviceHandleCount;
+  EFI_HANDLE                        *DeviceHandleBuffer;
+  UINTN                             Index;
+  EFI_COMPONENT_NAME_PROTOCOL       *ComponentName;
+  EFI_COMPONENT_NAME2_PROTOCOL      *ComponentName2;
 
   //
   // Try to disonnect the driver from the devices it's controlling.
@@ -411,40 +487,89 @@ EfiIScsiUnload (
                   &DeviceHandleCount,
                   &DeviceHandleBuffer
                   );
-  if (!EFI_ERROR (Status)) {
-    for (Index = 0; Index < DeviceHandleCount; Index++) {
-      Status = gBS->DisconnectController (
-                      DeviceHandleBuffer[Index],
-                      ImageHandle,
-                      NULL
-                      );
-    }
-
-    if (DeviceHandleBuffer != NULL) {
-      FreePool (DeviceHandleBuffer);
-    }
+  if (EFI_ERROR (Status)) {
+    return Status;
   }
+
+  for (Index = 0; Index < DeviceHandleCount; Index++) {
+    Status = IScsiTestManagedDevice (
+               DeviceHandleBuffer[Index],
+               gIScsiDriverBinding.DriverBindingHandle,
+               &gEfiTcp4ProtocolGuid
+               );
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+    Status = gBS->DisconnectController (
+                    DeviceHandleBuffer[Index],
+                    gIScsiDriverBinding.DriverBindingHandle,
+                    NULL
+                    );
+    if (EFI_ERROR (Status)) {
+      goto ON_EXIT;
+    }
+  }  
+
   //
   // Unload the iSCSI configuration form.
   //
-  IScsiConfigFormUnload (gIScsiDriverBinding.DriverBindingHandle);
+  Status = IScsiConfigFormUnload (gIScsiDriverBinding.DriverBindingHandle);
+  if (EFI_ERROR (Status)) {
+    goto ON_EXIT;
+  }
 
   //
-  // Uninstall the protocols installed by iSCSI driver.
+  // Uninstall the ComponentName and ComponentName2 protocol from iSCSI4 driver binding handle
+  // if it has been installed.
   //
+  Status = gBS->HandleProtocol (
+                  gIScsiDriverBinding.DriverBindingHandle,
+                  &gEfiComponentNameProtocolGuid,
+                  (VOID **) &ComponentName
+                  );
+  if (!EFI_ERROR (Status)) {
+    Status = gBS->UninstallMultipleProtocolInterfaces (
+           gIScsiDriverBinding.DriverBindingHandle,
+           &gEfiComponentNameProtocolGuid,
+           ComponentName,
+           NULL
+           );
+    if (EFI_ERROR (Status)) {
+      goto ON_EXIT;
+    }
+  }
+  
+  Status = gBS->HandleProtocol (
+                  gIScsiDriverBinding.DriverBindingHandle,
+                  &gEfiComponentName2ProtocolGuid,
+                  (VOID **) &ComponentName2
+                  );
+  if (!EFI_ERROR (Status)) {
+    gBS->UninstallMultipleProtocolInterfaces (
+           gIScsiDriverBinding.DriverBindingHandle,
+           &gEfiComponentName2ProtocolGuid,
+           ComponentName2,
+           NULL
+           );
+    if (EFI_ERROR (Status)) {
+      goto ON_EXIT;
+    }
+  }
+
   Status = gBS->UninstallMultipleProtocolInterfaces (
                   ImageHandle,
                   &gEfiDriverBindingProtocolGuid,
                   &gIScsiDriverBinding,
-                  &gEfiComponentName2ProtocolGuid,
-                  &gIScsiComponentName2,
-                  &gEfiComponentNameProtocolGuid,
-                  &gIScsiComponentName,
                   &gEfiIScsiInitiatorNameProtocolGuid,
                   &gIScsiInitiatorName,
                   NULL
                   );
+ON_EXIT:
 
+  if (DeviceHandleBuffer != NULL) {
+    FreePool (DeviceHandleBuffer);
+  }
+  
   return Status;
 }
 

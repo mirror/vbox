@@ -1,7 +1,7 @@
 /** @file
   This EFI_DHCP6_PROTOCOL interface implementation.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -104,12 +104,6 @@ EfiDhcp6Start (
   Instance->UdpSts = EFI_ALREADY_STARTED;
 
   //
-  // Need to clear initial time to make sure that elapsed-time
-  // is set to 0 for first Solicit.
-  //
-  Instance->StartTime = 0;
-
-  //
   // Send the solicit message to start S.A.R.R process.
   //
   Status = Dhcp6SendSolicitMsg (Instance);
@@ -200,13 +194,13 @@ EfiDhcp6Stop (
   ASSERT (Instance->IaCb.Ia != NULL);
 
   //
-  // The instance has already been stopped.
+  // No valid REPLY message received yet, cleanup this instance directly.
   //
   if (Instance->IaCb.Ia->State == Dhcp6Init ||
       Instance->IaCb.Ia->State == Dhcp6Selecting ||
       Instance->IaCb.Ia->State == Dhcp6Requesting
       ) {
-    return Status;
+    goto ON_EXIT;
   }
 
   //
@@ -215,9 +209,11 @@ EfiDhcp6Stop (
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
   Instance->UdpSts = EFI_ALREADY_STARTED;
-  Dhcp6SendReleaseMsg (Instance, Instance->IaCb.Ia);
-
+  Status = Dhcp6SendReleaseMsg (Instance, Instance->IaCb.Ia);
   gBS->RestoreTPL (OldTpl);
+  if (EFI_ERROR (Status)) {
+    goto ON_EXIT;
+  }
 
   //
   // Poll udp out of the net tpl if synchoronus call.
@@ -229,7 +225,8 @@ EfiDhcp6Stop (
     }
     Status = Instance->UdpSts;
   }
-
+  
+ON_EXIT:
   //
   // Clean up the session data for the released Ia.
   //
@@ -604,11 +601,12 @@ EfiDhcp6InfoRequest (
   )
 {
   EFI_STATUS                   Status;
-  EFI_TPL                      OldTpl;
   DHCP6_INSTANCE               *Instance;
   DHCP6_SERVICE                *Service;
-  DHCP6_INF_CB                 *InfCb;
   UINTN                        Index;
+  EFI_EVENT                    Timer;
+  EFI_STATUS                   TimerStatus;
+  UINTN                        GetMappingTimeOut;
 
   if (This == NULL || OptionRequest == NULL || Retransmission == NULL || ReplyCallback == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -633,57 +631,63 @@ EfiDhcp6InfoRequest (
   Instance = DHCP6_INSTANCE_FROM_THIS (This);
   Service  = Instance->Service;
 
-  OldTpl           = gBS->RaiseTPL (TPL_CALLBACK);
-  Instance->UdpSts = EFI_ALREADY_STARTED;
-
-  //
-  // Create and initialize the control block for the info-request.
-  //
-  InfCb = AllocateZeroPool (sizeof(DHCP6_INF_CB));
-
-  if (InfCb == NULL) {
-    gBS->RestoreTPL (OldTpl);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  InfCb->ReplyCallback   = ReplyCallback;
-  InfCb->CallbackContext = CallbackContext;
-  InfCb->TimeoutEvent    = TimeoutEvent;
-
-  InsertTailList (&Instance->InfList, &InfCb->Link);
-
-  //
-  // Send the info-request message to start exchange process.
-  //
-  Status = Dhcp6SendInfoRequestMsg (
+  Status = Dhcp6StartInfoRequest (
              Instance,
-             InfCb,
              SendClientId,
              OptionRequest,
              OptionCount,
              OptionList,
-             Retransmission
+             Retransmission,
+             TimeoutEvent,
+             ReplyCallback,
+             CallbackContext
              );
+  if (Status == EFI_NO_MAPPING) {
+    //
+    // The link local address is not ready, wait for some time and restart
+    // the DHCP6 information request process.
+    //
+    Status = Dhcp6GetMappingTimeOut(Service->Ip6Cfg, &GetMappingTimeOut);
+    if (EFI_ERROR(Status)) {
+      return Status;
+    }
 
+    Status = gBS->CreateEvent (EVT_TIMER, TPL_CALLBACK, NULL, NULL, &Timer);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    //
+    // Start the timer, wait for link local address DAD to finish.
+    //
+    Status = gBS->SetTimer (Timer, TimerRelative, GetMappingTimeOut);
+    if (EFI_ERROR (Status)) {
+      gBS->CloseEvent (Timer);
+      return Status;
+    }
+
+    do {  
+      TimerStatus = gBS->CheckEvent (Timer);
+      if (!EFI_ERROR (TimerStatus)) {
+        Status = Dhcp6StartInfoRequest (
+                   Instance,
+                   SendClientId,
+                   OptionRequest,
+                   OptionCount,
+                   OptionList,
+                   Retransmission,
+                   TimeoutEvent,
+                   ReplyCallback,
+                   CallbackContext
+                   );
+      }
+    } while (TimerStatus == EFI_NOT_READY);
+    
+    gBS->CloseEvent (Timer);
+  }
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    return Status;
   }
-
-  //
-  // Register receive callback for the stateless exchange process.
-  //
-  Status = UdpIoRecvDatagram(
-             Service->UdpIo,
-             Dhcp6ReceivePacket,
-             Service,
-             0
-             );
-
-  if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED)) {
-    goto ON_ERROR;
-  }
-
-  gBS->RestoreTPL (OldTpl);
 
   //
   // Poll udp out of the net tpl if synchoronus call.
@@ -697,14 +701,6 @@ EfiDhcp6InfoRequest (
   }
 
   return EFI_SUCCESS;
-
-ON_ERROR:
-
-  RemoveEntryList (&InfCb->Link);
-  FreePool (InfCb);
-  gBS->RestoreTPL (OldTpl);
-
-  return Status;
 }
 
 

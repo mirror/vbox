@@ -1,7 +1,7 @@
 /** @file
   Implementation for iSCSI Boot Firmware Table publication.
 
-Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -310,25 +310,21 @@ IScsiFillNICAndTargetSections (
       //
       // Map the various v4 addresses into v6 addresses.
       //
-      IScsiMapV4ToV6Addr (&NvData->LocalIp, &Nic->Ip);
-      IScsiMapV4ToV6Addr (&NvData->Gateway, &Nic->Gateway);
+      IScsiMapV4ToV6Addr (&NvData->LocalIp.v4, &Nic->Ip);
+      IScsiMapV4ToV6Addr (&NvData->Gateway.v4, &Nic->Gateway);
       IScsiMapV4ToV6Addr (&Attempt->PrimaryDns.v4, &Nic->PrimaryDns);
       IScsiMapV4ToV6Addr (&Attempt->SecondaryDns.v4, &Nic->SecondaryDns);
       IScsiMapV4ToV6Addr (&Attempt->DhcpServer.v4, &Nic->DhcpServer);
 
     } else if (NvData->IpMode == IP_MODE_IP6 || NvData->IpMode == IP_MODE_AUTOCONFIG) {
-      //
-      // TODO: The subnet mask/local ip/gateway/dhcpserver for iBFT-IPv6 needs to be 
-      // confirmed with spec owner.
-      //
 
+      Nic->SubnetMaskPrefixLength = NvData->PrefixLength;
+      CopyMem (&Nic->Ip, &NvData->LocalIp, sizeof (EFI_IPv6_ADDRESS));
+      CopyMem (&Nic->Gateway, &NvData->Gateway, sizeof (EFI_IPv6_ADDRESS));
       CopyMem (&Nic->PrimaryDns, &Attempt->PrimaryDns, sizeof (EFI_IPv6_ADDRESS));
       CopyMem (&Nic->SecondaryDns, &Attempt->SecondaryDns, sizeof (EFI_IPv6_ADDRESS));
-      //
-      // TODO: DHCP server address cannot be retrieved by DHCPv6 process since 
-      // DHCP server option is removed.
-      //CopyMem (&Nic->DhcpServer, &Attempt->DhcpServer, sizeof (EFI_IPv6_ADDRESS));
-      //
+      CopyMem (&Nic->DhcpServer, &Attempt->DhcpServer, sizeof (EFI_IPv6_ADDRESS));
+
     } else {
       ASSERT (FALSE);
     }
@@ -363,9 +359,13 @@ IScsiFillNICAndTargetSections (
     Target->Port                = NvData->TargetPort;
 
     if (Attempt->AuthenticationType == ISCSI_AUTH_TYPE_CHAP) {
-      Target->CHAPType          = AuthConfig->CHAPType;
+      if (AuthConfig->CHAPType == ISCSI_CHAP_UNI) {
+        Target->CHAPType = EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_TARGET_STRUCTURE_CHAP_TYPE_CHAP;
+      } else if (AuthConfig->CHAPType == ISCSI_CHAP_MUTUAL) {
+        Target->CHAPType = EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_TARGET_STRUCTURE_CHAP_TYPE_MUTUAL_CHAP;
+      }
     } else if (Attempt->AuthenticationType == ISCSI_AUTH_TYPE_NONE) {
-      Target->CHAPType          = ISCSI_AUTH_TYPE_NONE;
+      Target->CHAPType = EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_TARGET_STRUCTURE_CHAP_TYPE_NO_CHAP;
     }
 
     Target->NicIndex            = (UINT8) Index;
@@ -406,7 +406,7 @@ IScsiFillNICAndTargetSections (
       Target->CHAPSecretLength  = Length;
       Target->CHAPSecretOffset  = (UINT16) ((UINTN) *Heap - (UINTN) Table);
 
-      if (Target->CHAPType == ISCSI_CHAP_MUTUAL) {
+      if (Target->CHAPType == EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_TARGET_STRUCTURE_CHAP_TYPE_MUTUAL_CHAP) {
         //
         // Reverse CHAP Name.
         //

@@ -2,7 +2,7 @@
   The internal header file includes the common header files, defines
   internal structure and functions used by DxeCore module.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -41,6 +41,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/Decompress.h>
 #include <Protocol/LoadPe32Image.h>
 #include <Protocol/Security.h>
+#include <Protocol/Security2.h>
 #include <Protocol/Ebc.h>
 #include <Protocol/Reset.h>
 #include <Protocol/Cpu.h>
@@ -63,8 +64,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Guid/MemoryAllocationHob.h>
 #include <Guid/EventLegacyBios.h>
 #include <Guid/EventGroup.h>
+#include <Guid/EventExitBootServiceFailed.h>
 #include <Guid/LoadModuleAtFixedAddress.h>
 #include <Guid/IdleLoopEvent.h>
+#include <Guid/VectorHandoffTable.h>
+#include <Ppi/VectorHandoffInfo.h>
+#include <Guid/ZeroGuid.h>
+#include <Guid/MemoryProfile.h>
 
 #include <Library/DxeCoreEntryPoint.h>
 #include <Library/DebugLib.h>
@@ -87,6 +93,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/TimerLib.h>
 #include <Library/DxeServicesLib.h>
 #include <Library/DebugAgentLib.h>
+#include <Library/CpuExceptionHandlerLib.h>
 
 
 //
@@ -186,6 +193,56 @@ typedef struct {
   EFI_HANDLE            DeviceHandle;
 } EFI_GCD_MAP_ENTRY;
 
+
+#define LOADED_IMAGE_PRIVATE_DATA_SIGNATURE   SIGNATURE_32('l','d','r','i')
+
+typedef struct {
+  UINTN                       Signature;
+  /// Image handle
+  EFI_HANDLE                  Handle;   
+  /// Image type
+  UINTN                       Type;           
+  /// If entrypoint has been called
+  BOOLEAN                     Started;        
+  /// The image's entry point
+  EFI_IMAGE_ENTRY_POINT       EntryPoint;     
+  /// loaded image protocol
+  EFI_LOADED_IMAGE_PROTOCOL   Info;           
+  /// Location in memory
+  EFI_PHYSICAL_ADDRESS        ImageBasePage;  
+  /// Number of pages
+  UINTN                       NumberOfPages;  
+  /// Original fixup data
+  CHAR8                       *FixupData;     
+  /// Tpl of started image
+  EFI_TPL                     Tpl;            
+  /// Status returned by started image
+  EFI_STATUS                  Status;         
+  /// Size of ExitData from started image
+  UINTN                       ExitDataSize;   
+  /// Pointer to exit data from started image
+  VOID                        *ExitData;      
+  /// Pointer to pool allocation for context save/retore
+  VOID                        *JumpBuffer;    
+  /// Pointer to buffer for context save/retore
+  BASE_LIBRARY_JUMP_BUFFER    *JumpContext;  
+  /// Machine type from PE image
+  UINT16                      Machine;        
+  /// EBC Protocol pointer
+  EFI_EBC_PROTOCOL            *Ebc;           
+  /// Runtime image list
+  EFI_RUNTIME_IMAGE_ENTRY     *RuntimeData;   
+  /// Pointer to Loaded Image Device Path Protocl
+  EFI_DEVICE_PATH_PROTOCOL    *LoadedImageDevicePath;  
+  /// PeCoffLoader ImageContext
+  PE_COFF_LOADER_IMAGE_CONTEXT  ImageContext; 
+  /// Status returned by LoadImage() service.
+  EFI_STATUS                  LoadImageStatus;
+} LOADED_IMAGE_PRIVATE_DATA;
+
+#define LOADED_IMAGE_PRIVATE_DATA_FROM_THIS(a) \
+          CR(a, LOADED_IMAGE_PRIVATE_DATA, Info, LOADED_IMAGE_PRIVATE_DATA_SIGNATURE)
+
 //
 // DXE Core Global Variables
 //
@@ -202,6 +259,7 @@ extern EFI_WATCHDOG_TIMER_ARCH_PROTOCOL         *gWatchdogTimer;
 extern EFI_METRONOME_ARCH_PROTOCOL              *gMetronome;
 extern EFI_TIMER_ARCH_PROTOCOL                  *gTimer;
 extern EFI_SECURITY_ARCH_PROTOCOL               *gSecurity;
+extern EFI_SECURITY2_ARCH_PROTOCOL              *gSecurity2;
 extern EFI_BDS_ARCH_PROTOCOL                    *gBds;
 extern EFI_SMM_BASE2_PROTOCOL                   *gSmmBase2;
 
@@ -669,8 +727,12 @@ CoreInstallProtocolInterfaceNotify (
                                  arguments to InstallProtocolInterface(). All the
                                  protocols are added to Handle.
 
+  @retval EFI_SUCCESS            All the protocol interface was installed.
+  @retval EFI_OUT_OF_RESOURCES   There was not enough memory in pool to install all the protocols.
+  @retval EFI_ALREADY_STARTED    A Device Path Protocol instance was passed in that is already present in
+                                 the handle database.
   @retval EFI_INVALID_PARAMETER  Handle is NULL.
-  @retval EFI_SUCCESS            Protocol interfaces successfully installed.
+  @retval EFI_INVALID_PARAMETER  Protocol is already installed on the handle specified by Handle.
 
 **/
 EFI_STATUS
@@ -1079,19 +1141,27 @@ CoreConnectHandlesByKey (
 /**
   Connects one or more drivers to a controller.
 
-  @param  ControllerHandle                      Handle of the controller to be
-                                                connected.
-  @param  DriverImageHandle                     DriverImageHandle A pointer to an
-                                                ordered list of driver image
-                                                handles.
-  @param  RemainingDevicePath                   RemainingDevicePath A pointer to
-                                                the device path that specifies a
-                                                child of the controller specified
-                                                by ControllerHandle.
-  @param  Recursive                             Whether the function would be
-                                                called recursively or not.
+  @param  ControllerHandle      The handle of the controller to which driver(s) are to be connected.
+  @param  DriverImageHandle     A pointer to an ordered list handles that support the
+                                EFI_DRIVER_BINDING_PROTOCOL.
+  @param  RemainingDevicePath   A pointer to the device path that specifies a child of the
+                                controller specified by ControllerHandle.
+  @param  Recursive             If TRUE, then ConnectController() is called recursively
+                                until the entire tree of controllers below the controller specified
+                                by ControllerHandle have been created. If FALSE, then
+                                the tree of controllers is only expanded one level.
 
-  @return Status code.
+  @retval EFI_SUCCESS           1) One or more drivers were connected to ControllerHandle.
+                                2) No drivers were connected to ControllerHandle, but
+                                RemainingDevicePath is not NULL, and it is an End Device
+                                Path Node.
+  @retval EFI_INVALID_PARAMETER ControllerHandle is NULL.
+  @retval EFI_NOT_FOUND         1) There are no EFI_DRIVER_BINDING_PROTOCOL instances
+                                present in the system.
+                                2) No drivers were connected to ControllerHandle.
+  @retval EFI_SECURITY_VIOLATION 
+                                The user has no permission to start UEFI device drivers on the device path 
+                                associated with the ControllerHandle or specified by the RemainingDevicePath.
 
 **/
 EFI_STATUS
@@ -1174,7 +1244,32 @@ CoreAllocatePages (
   IN OUT EFI_PHYSICAL_ADDRESS  *Memory
   );
 
+/**
+  Allocates pages from the memory map.
 
+  @param  Type                   The type of allocation to perform
+  @param  MemoryType             The type of memory to turn the allocated pages
+                                 into
+  @param  NumberOfPages          The number of pages to allocate
+  @param  Memory                 A pointer to receive the base allocated memory
+                                 address
+
+  @return Status. On success, Memory is filled in with the base address allocated
+  @retval EFI_INVALID_PARAMETER  Parameters violate checking rules defined in
+                                 spec.
+  @retval EFI_NOT_FOUND          Could not allocate pages match the requirement.
+  @retval EFI_OUT_OF_RESOURCES   No enough pages to allocate.
+  @retval EFI_SUCCESS            Pages successfully allocated.
+
+**/
+EFI_STATUS
+EFIAPI
+CoreInternalAllocatePages (
+  IN EFI_ALLOCATE_TYPE      Type,
+  IN EFI_MEMORY_TYPE        MemoryType,
+  IN UINTN                  NumberOfPages,
+  IN OUT EFI_PHYSICAL_ADDRESS  *Memory
+  );
 
 /**
   Frees previous allocated pages.
@@ -1194,7 +1289,23 @@ CoreFreePages (
   IN UINTN                  NumberOfPages
   );
 
+/**
+  Frees previous allocated pages.
 
+  @param  Memory                 Base address of memory being freed
+  @param  NumberOfPages          The number of pages to free
+
+  @retval EFI_NOT_FOUND          Could not find the entry that covers the range
+  @retval EFI_INVALID_PARAMETER  Address not aligned
+  @return EFI_SUCCESS         -Pages successfully freed.
+
+**/
+EFI_STATUS
+EFIAPI
+CoreInternalFreePages (
+  IN EFI_PHYSICAL_ADDRESS   Memory,
+  IN UINTN                  NumberOfPages
+  );
 
 /**
   This function returns a copy of the current memory map. The map is an array of
@@ -1259,7 +1370,26 @@ CoreAllocatePool (
   OUT VOID            **Buffer
   );
 
+/**
+  Allocate pool of a particular type.
 
+  @param  PoolType               Type of pool to allocate
+  @param  Size                   The amount of pool to allocate
+  @param  Buffer                 The address to return a pointer to the allocated
+                                 pool
+
+  @retval EFI_INVALID_PARAMETER  PoolType not valid or Buffer is NULL
+  @retval EFI_OUT_OF_RESOURCES   Size exceeds max pool size or allocation failed.
+  @retval EFI_SUCCESS            Pool successfully allocated.
+
+**/
+EFI_STATUS
+EFIAPI
+CoreInternalAllocatePool (
+  IN EFI_MEMORY_TYPE  PoolType,
+  IN UINTN            Size,
+  OUT VOID            **Buffer
+  );
 
 /**
   Frees pool.
@@ -1276,7 +1406,20 @@ CoreFreePool (
   IN VOID        *Buffer
   );
 
+/**
+  Frees pool.
 
+  @param  Buffer                 The allocated pool entry to free
+
+  @retval EFI_INVALID_PARAMETER  Buffer is not a valid value.
+  @retval EFI_SUCCESS            Pool successfully freed.
+
+**/
+EFI_STATUS
+EFIAPI
+CoreInternalFreePool (
+  IN VOID        *Buffer
+  );
 
 /**
   Loads an EFI image into memory and returns a handle to the image.
@@ -1359,6 +1502,7 @@ CoreUnloadImage (
 
   @retval EFI_INVALID_PARAMETER   Invalid parameter
   @retval EFI_OUT_OF_RESOURCES    No enough buffer to allocate
+  @retval EFI_SECURITY_VIOLATION  The current platform policy specifies that the image should not be started.
   @retval EFI_SUCCESS             Successfully transfer control to the image's
                                   entry point.
 
@@ -1719,7 +1863,7 @@ CoreGetMemorySpaceDescriptor (
                                 resource range specified by BaseAddress and Length.
   @retval EFI_UNSUPPORTED       The bit mask of attributes is not support for the memory resource
                                 range specified by BaseAddress and Length.
-  @retval EFI_ACCESS_DEFINED    The attributes for the memory resource range specified by
+  @retval EFI_ACCESS_DENIED     The attributes for the memory resource range specified by
                                 BaseAddress and Length cannot be modified.
   @retval EFI_OUT_OF_RESOURCES  There are not enough system resources to modify the attributes of
                                 the memory resource range.
@@ -1733,6 +1877,32 @@ CoreSetMemorySpaceAttributes (
   IN EFI_PHYSICAL_ADDRESS  BaseAddress,
   IN UINT64                Length,
   IN UINT64                Attributes
+  );
+
+
+/**
+  Modifies the capabilities for a memory region in the global coherency domain of the
+  processor.
+
+  @param  BaseAddress      The physical address that is the start address of a memory region.
+  @param  Length           The size in bytes of the memory region.
+  @param  Capabilities     The bit mask of capabilities that the memory region supports.
+
+  @retval EFI_SUCCESS           The capabilities were set for the memory region.
+  @retval EFI_INVALID_PARAMETER Length is zero.
+  @retval EFI_UNSUPPORTED       The capabilities specified by Capabilities do not include the
+                                memory region attributes currently in use.
+  @retval EFI_ACCESS_DENIED     The capabilities for the memory resource range specified by
+                                BaseAddress and Length cannot be modified.
+  @retval EFI_OUT_OF_RESOURCES  There are not enough system resources to modify the capabilities
+                                of the memory resource range.
+**/
+EFI_STATUS
+EFIAPI
+CoreSetMemorySpaceCapabilities (
+  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN UINT64                Length,
+  IN UINT64                Capabilities
   );
 
 
@@ -2337,6 +2507,8 @@ GetSection (
   SEP member function.  Deletes an existing section stream
 
   @param  StreamHandleToClose    Indicates the stream to close
+  @param  FreeStreamBuffer       TRUE - Need to free stream buffer;
+                                 FALSE - No need to free stream buffer.
 
   @retval EFI_SUCCESS            The section stream is closed sucessfully.
   @retval EFI_OUT_OF_RESOURCES   Memory allocation failed.
@@ -2347,7 +2519,8 @@ GetSection (
 EFI_STATUS
 EFIAPI
 CloseSectionStream (
-  IN  UINTN                                     StreamHandleToClose
+  IN  UINTN                                     StreamHandleToClose,
+  IN  BOOLEAN                                   FreeStreamBuffer
   );
 
 /**
@@ -2428,6 +2601,19 @@ FwVolBlockDriverInit (
   IN EFI_SYSTEM_TABLE           *SystemTable
   );
 
+/**
+
+  Get FVB authentication status
+
+  @param FvbProtocol    FVB protocol.
+
+  @return Authentication status.
+
+**/
+UINT32
+GetFvbAuthenticationStatus (
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL     *FvbProtocol
+  );
 
 /**
   This routine produces a firmware volume block protocol on a given
@@ -2436,8 +2622,10 @@ FwVolBlockDriverInit (
   @param  BaseAddress            base address of the firmware volume image
   @param  Length                 length of the firmware volume image
   @param  ParentHandle           handle of parent firmware volume, if this image
-                                 came from an FV image file in another firmware
+                                 came from an FV image file and section in another firmware
                                  volume (ala capsules)
+  @param  AuthenticationStatus   Authentication status inherited, if this image
+                                 came from an FV image file and section in another firmware volume.
   @param  FvProtocol             Firmware volume block protocol produced.
 
   @retval EFI_VOLUME_CORRUPTED   Volume corrupted.
@@ -2451,6 +2639,7 @@ ProduceFVBProtocolOnBuffer (
   IN EFI_PHYSICAL_ADDRESS   BaseAddress,
   IN UINT64                 Length,
   IN EFI_HANDLE             ParentHandle,
+  IN UINT32                 AuthenticationStatus,
   OUT EFI_HANDLE            *FvProtocol  OPTIONAL
   );
 
@@ -2577,6 +2766,94 @@ GetFwVolHeader (
 BOOLEAN
 VerifyFvHeaderChecksum (
   IN EFI_FIRMWARE_VOLUME_HEADER *FvHeader
+  );
+
+/**
+  Initialize memory profile.
+
+  @param HobStart   The start address of the HOB.
+
+**/
+VOID
+MemoryProfileInit (
+  IN VOID   *HobStart
+  );
+
+/**
+  Install memory profile protocol.
+
+**/
+VOID
+MemoryProfileInstallProtocol (
+  VOID
+  );
+
+/**
+  Register image to memory profile.
+
+  @param DriverEntry    Image info.
+  @param FileType       Image file type.
+
+  @retval TRUE          Register success.
+  @retval FALSE         Register fail.
+
+**/
+BOOLEAN
+RegisterMemoryProfileImage (
+  IN LOADED_IMAGE_PRIVATE_DATA  *DriverEntry,
+  IN EFI_FV_FILETYPE            FileType
+  );
+
+/**
+  Unregister image from memory profile.
+
+  @param DriverEntry    Image info.
+
+  @retval TRUE          Unregister success.
+  @retval FALSE         Unregister fail.
+
+**/
+BOOLEAN
+UnregisterMemoryProfileImage (
+  IN LOADED_IMAGE_PRIVATE_DATA  *DriverEntry
+  );
+
+/**
+  Update memory profile information.
+
+  @param CallerAddress  Address of caller who call Allocate or Free.
+  @param Action         This Allocate or Free action.
+  @param MemoryType     Memory type.
+  @param Size           Buffer size.
+  @param Buffer         Buffer address.
+
+  @retval TRUE          Profile udpate success.
+  @retval FALSE         Profile update fail.
+
+**/
+BOOLEAN
+CoreUpdateProfile (
+  IN EFI_PHYSICAL_ADDRESS   CallerAddress,
+  IN MEMORY_PROFILE_ACTION  Action,
+  IN EFI_MEMORY_TYPE        MemoryType, // Valid for AllocatePages/AllocatePool
+  IN UINTN                  Size,       // Valid for AllocatePages/FreePages/AllocatePool
+  IN VOID                   *Buffer
+  );
+
+/**
+  Internal function.  Converts a memory range to use new attributes.
+
+  @param  Start                  The first address of the range Must be page
+                                 aligned
+  @param  NumberOfPages          The number of pages to convert
+  @param  NewAttributes          The new attributes value for the range.
+
+**/
+VOID
+CoreUpdateMemoryAttributes (
+  IN EFI_PHYSICAL_ADDRESS  Start,
+  IN UINT64                NumberOfPages,
+  IN UINT64                NewAttributes
   );
 
 #endif

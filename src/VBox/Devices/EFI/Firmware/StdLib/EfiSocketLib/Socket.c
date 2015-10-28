@@ -5,10 +5,10 @@
   * Bound - pSocket->PortList is not NULL
   * Listen - AcceptWait event is not NULL
 
-  Copyright (c) 2011, Intel Corporation
-  All rights reserved. This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
+  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  This program and the accompanying materials are licensed and made available under
+  the terms and conditions of the BSD License that accompanies this distribution.
+  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
 
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
@@ -19,26 +19,26 @@
 
   <code><pre>
 
-                +-------------+   +-------------+   +-------------+   
+                +---------------+   +-------------+   +-------------+
   Service Lists | ::ESL_SERVICE |-->| ESL_SERVICE |-->| ESL_SERVICE |--> NULL (pNext)
-                +-------------+   +-------------+   +-------------+   
+                +---------------+   +-------------+   +-------------+
                   ^                       | (pPortList)    |
     pUdp4List ^   | pTcp4List             |                |
               |   |                       |                |
           ^   |   |                       |                |
  pIp4List |   |   |                       |                |
         +---------------+                 |                |
-        |   ::ESL_LAYER   |   ::mEslLayer     |                |
+        | ::ESL_LAYER   | ::mEslLayer     |                |
         +---------------+                 |                |
                   | (pSocketList)         |                |
     Socket List   V                       V                V
-                +-------------+   +-------------+   +-------------+   
-                | ::ESL_SOCKET  |-->|   ::ESL_PORT  |-->|   ESL_PORT  |--> NULL (pLinkSocket)
-                +-------------+   +-------------+   +-------------+   
+                +---------------+   +-------------+   +-------------+
+                | ::ESL_SOCKET  |-->| ::ESL_PORT  |-->|   ESL_PORT  |--> NULL (pLinkSocket)
+                +---------------+   +-------------+   +-------------+
                   |                       |                |
                   |                       |                V
                   V                       V               NULL
-                +-------------+   +-------------+         
+                +-------------+   +-------------+
                 | ESL_SOCKET  |-->|   ESL_PORT  |--> NULL
                 +-------------+   +-------------+
                   |    | | | |            |
@@ -53,9 +53,9 @@
                        | `---------------.                  |                |
   pTxOobPacketListHead |                 |                  |                |
                        V                 V                  V                V
-                  +------------+    +------------+    +------------+    +------------+
+                  +--------------+    +------------+    +------------+    +------------+
                   | ::ESL_PACKET |    | ESL_PACKET |    | ESL_PACKET |    | ESL_PACKET |
-                  +------------+    +------------+    +------------+    +------------+
+                  +--------------+    +------------+    +------------+    +------------+
                          |                 |                |                |
                          V                 V                V                V
                   +------------+    +------------+    +------------+    +------------+
@@ -154,7 +154,7 @@
       ::EslTcp4PortCloseOp.
     </li>
     <li>State: PORT_STATE_CLOSE_TX_DONE</li>
-    <li>Arc: ::EslSocketPortCloseComplete - Called when the close operation is 
+    <li>Arc: ::EslSocketPortCloseComplete - Called when the close operation is
       complete.  After the transition to PORT_STATE_CLOSE_DONE,
       this routine calls ::EslSocketRxCancel to abort the pending receive operations.
     </li>
@@ -220,13 +220,13 @@
          pPort->pRxActive
                 |
                 V
-          +-------------+   +-------------+   +-------------+   
+          +-------------+   +-------------+   +-------------+
   Active  | ESL_IO_MGMT |-->| ESL_IO_MGMT |-->| ESL_IO_MGMT |--> NULL
-          +-------------+   +-------------+   +-------------+   
+          +-------------+   +-------------+   +-------------+
 
-          +-------------+   +-------------+   +-------------+   
+          +-------------+   +-------------+   +-------------+
   Free    | ESL_IO_MGMT |-->| ESL_IO_MGMT |-->| ESL_IO_MGMT |--> NULL
-          +-------------+   +-------------+   +-------------+   
+          +-------------+   +-------------+   +-------------+
                 ^
                 |
           pPort->pRxFree
@@ -250,7 +250,7 @@
 
 <code><pre>
 
-                    +------------+   +------------+   
+                    +------------+   +------------+
     High     .----->| ESL_PACKET |-->| ESL_PACKET |--> NULL (pNext)
   Priority   |      +------------+   +------------+
              |
@@ -260,14 +260,14 @@
        +------------+
              | pRxPacketListHead
     Low      |
-  Priority   |      +------------+   +------------+   +------------+   
+  Priority   |      +------------+   +------------+   +------------+
              `----->| ::ESL_PACKET |-->| ESL_PACKET |-->| ESL_PACKET |--> NULL
-                    +------------+   +------------+   +------------+   
+                    +------------+   +------------+   +------------+
 
 </pre></code>
 
   ::EslSocketRxStart connects an ::ESL_PACKET structure to the ::ESL_IO_MGMT structure
-  and then calls the network layer to start the receive operation.  Upon 
+  and then calls the network layer to start the receive operation.  Upon
   receive completion, ::EslSocketRxComplete breaks the connection between these
   structrues and places the ESL_IO_MGMT structure onto the ESL_PORT::pRxFree list to
   make token and event available for another receive operation.  EslSocketRxComplete
@@ -371,9 +371,9 @@
      *ppQueueHead: pSocket->pRxPacketListHead or pSocket->pRxOobPacketListHead
           |
           V
-        +------------+   +------------+   +------------+   
+        +------------+   +------------+   +------------+
   Data  | ESL_PACKET |-->| ESL_PACKET |-->| ESL_PACKET |--> NULL
-        +------------+   +------------+   +------------+   
+        +------------+   +------------+   +------------+
                                                      ^
                                                      |
      *ppQueueTail: pSocket->pRxPacketListTail or pSocket->pRxOobPacketListTail
@@ -414,13 +414,13 @@
          pPort->pTxActive or pTxOobActive
                 |
                 V
-          +-------------+   +-------------+   +-------------+   
+          +-------------+   +-------------+   +-------------+
   Active  | ESL_IO_MGMT |-->| ESL_IO_MGMT |-->| ESL_IO_MGMT |--> NULL
-          +-------------+   +-------------+   +-------------+   
+          +-------------+   +-------------+   +-------------+
 
-          +-------------+   +-------------+   +-------------+   
+          +-------------+   +-------------+   +-------------+
   Free    | ESL_IO_MGMT |-->| ESL_IO_MGMT |-->| ESL_IO_MGMT |--> NULL
-          +-------------+   +-------------+   +-------------+   
+          +-------------+   +-------------+   +-------------+
                 ^
                 |
           pPort->pTxFree or pTxOobFree
@@ -481,11 +481,27 @@ CONST ESL_SOCKET_BINDING cEslSocketBinding[] = {
     4,    //  RX buffers
     4,    //  TX buffers
     4 },  //  TX Oob buffers
+  { L"Tcp6",
+    &gEfiTcp6ServiceBindingProtocolGuid,
+    &gEfiTcp6ProtocolGuid,
+    &mEslTcp6ServiceGuid,
+    OFFSET_OF ( ESL_LAYER, pTcp6List ),
+    4,    //  RX buffers
+    4,    //  TX buffers
+    4 },  //  TX Oob buffers
   { L"Udp4",
     &gEfiUdp4ServiceBindingProtocolGuid,
     &gEfiUdp4ProtocolGuid,
     &mEslUdp4ServiceGuid,
     OFFSET_OF ( ESL_LAYER, pUdp4List ),
+    4,    //  RX buffers
+    4,    //  TX buffers
+    0 },  //  TX Oob buffers
+  { L"Udp6",
+    &gEfiUdp6ServiceBindingProtocolGuid,
+    &gEfiUdp6ProtocolGuid,
+    &mEslUdp6ServiceGuid,
+    OFFSET_OF ( ESL_LAYER, pUdp6List ),
     4,    //  RX buffers
     4,    //  TX buffers
     0 }   //  TX Oob buffers
@@ -516,11 +532,11 @@ CONST int cEslAfInetApiSize = DIM ( cEslAfInetApi );
 **/
 CONST ESL_PROTOCOL_API * cEslAfInet6Api[] = {
   NULL,             //  0
-  NULL,             //  SOCK_STREAM
-  NULL,             //  SOCK_DGRAM
+  &cEslTcp6Api,     //  SOCK_STREAM
+  &cEslUdp6Api,     //  SOCK_DGRAM
   NULL,             //  SOCK_RAW
   NULL,             //  SOCK_RDM
-  NULL              //  SOCK_SEQPACKET
+  &cEslTcp6Api      //  SOCK_SEQPACKET
 };
 
 /**
@@ -603,6 +619,7 @@ EslSocket (
     //  Validate the domain value
     //
     if (( AF_INET != domain )
+      && ( AF_INET6 != domain )
       && ( AF_LOCAL != domain )) {
       DEBUG (( DEBUG_ERROR | DEBUG_SOCKET,
                 "ERROR - Invalid domain value\r\n" ));
@@ -939,7 +956,7 @@ EslSocketAccept (
 
 /**
   Allocate and initialize a ESL_SOCKET structure.
-  
+
   This support function allocates an ::ESL_SOCKET structure
   and installs a protocol on ChildHandle.  If pChildHandle is a
   pointer to NULL, then a new handle is created and returned in
@@ -948,7 +965,7 @@ EslSocketAccept (
 
   @param [in, out] pChildHandle Pointer to the handle of the child to create.
                                 If it is NULL, then a new handle is created.
-                                If it is a pointer to an existing UEFI handle, 
+                                If it is a pointer to an existing UEFI handle,
                                 then the protocol is added to the existing UEFI
                                 handle.
   @param [in] DebugFlags        Flags for debug messages
@@ -959,7 +976,7 @@ EslSocketAccept (
   @retval EFI_OUT_OF_RESOURCES  There are not enough resources available to create
                                 the child
   @retval other                 The child handle was not created
-  
+
 **/
 EFI_STATUS
 EFIAPI
@@ -1242,7 +1259,10 @@ EslSocketBind (
       //
       //  Verify that at least one network connection was found
       //
-      if ( NULL == pSocket->pPortList ) {
+      if ( NULL != pSocket->pPortList ) {
+        Status = EFI_SUCCESS;
+      }
+      else {
         if ( EADDRNOTAVAIL == pSocket->errno ) {
           DEBUG (( DEBUG_BIND | DEBUG_POOL | DEBUG_INIT,
                     "ERROR - Socket address is not available!\r\n" ));
@@ -1316,27 +1336,40 @@ EslSocketBindTest (
   pConfigData = (VOID *)pBuffer;
 
   //
-  //  Attempt to use this configuration
+  //  Validate that the port is connected
   //
-  Status = pPort->pfnConfigure ( pPort->pProtocol.v, pConfigData );
+  Status = pPort->pSocket->pApi->pfnVerifyLocalIpAddress ( pPort, pBuffer );
   if ( EFI_ERROR ( Status )) {
     DEBUG (( DEBUG_WARN | DEBUG_BIND,
-              "WARNING - Port 0x%08x failed configuration, Status: %r\r\n",
+              "WARNING - Port 0x%08x invalid IP address: %r\r\n",
               pPort,
               Status ));
     pPort->pSocket->errno = ErrnoValue;
   }
   else {
     //
-    //  Reset the port
+    //  Attempt to use this configuration
     //
-    Status = pPort->pfnConfigure ( pPort->pProtocol.v, NULL );
+    Status = pPort->pfnConfigure ( pPort->pProtocol.v, pConfigData );
     if ( EFI_ERROR ( Status )) {
-      DEBUG (( DEBUG_ERROR | DEBUG_BIND,
-                "ERROR - Port 0x%08x failed configuration reset, Status: %r\r\n",
+      DEBUG (( DEBUG_WARN | DEBUG_BIND,
+                "WARNING - Port 0x%08x failed configuration, Status: %r\r\n",
                 pPort,
                 Status ));
-      ASSERT ( EFI_SUCCESS == Status );
+      pPort->pSocket->errno = ErrnoValue;
+    }
+    else {
+      //
+      //  Reset the port
+      //
+      Status = pPort->pfnConfigure ( pPort->pProtocol.v, NULL );
+      if ( EFI_ERROR ( Status )) {
+        DEBUG (( DEBUG_ERROR | DEBUG_BIND,
+                  "ERROR - Port 0x%08x failed configuration reset, Status: %r\r\n",
+                  pPort,
+                  Status ));
+        ASSERT ( EFI_SUCCESS == Status );
+      }
     }
   }
 
@@ -1611,15 +1644,15 @@ EslSocketCloseStart (
   connection with the specified remote system.  This routine
   is designed to be polled by the connect routine for completion
   of the network connection.
-  
+
   @param [in] pSocketProtocol Address of an ::EFI_SOCKET_PROTOCOL structure.
 
   @param [in] pSockAddr       Network address of the remote system.
-    
+
   @param [in] SockAddrLength  Length in bytes of the network address.
-  
+
   @param [out] pErrno   Address to receive the errno value upon completion.
-  
+
   @retval EFI_SUCCESS   The connection was successfully established.
   @retval EFI_NOT_READY The connection is in progress, call this routine again.
   @retval Others        The connection attempt failed.
@@ -1638,7 +1671,7 @@ EslSocketConnect (
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
   EFI_TPL TplPrevious;
-  
+
   DEBUG (( DEBUG_CONNECT, "Entering SocketConnect\r\n" ));
 
   //
@@ -1771,6 +1804,11 @@ EslSocketConnect (
 
       case SOCKET_STATE_CONNECTING:
         //
+        //  Poll the network adapter
+        //
+        EslSocketRxPoll ( pSocket );
+
+        //
         //  Poll for connection completion
         //
         if ( NULL == pSocket->pApi->pfnConnectPoll ) {
@@ -1787,10 +1825,7 @@ EslSocketConnect (
           //  Set the next state if connected
           //
           if ( EFI_NOT_READY != Status ) {
-            if ( !EFI_ERROR ( Status )) {
-              pSocket->State = SOCKET_STATE_CONNECTED;
-            }
-            else {
+            if ( EFI_ERROR ( Status )) {
               pSocket->State = SOCKET_STATE_BOUND;
             }
           }
@@ -1799,10 +1834,9 @@ EslSocketConnect (
 
       case SOCKET_STATE_CONNECTED:
         //
-        //  Already connected
+        //  Connected
         //
-        pSocket->errno = EISCONN;
-        Status = EFI_ALREADY_STARTED;
+        Status = EFI_SUCCESS;
         break;
       }
 
@@ -1921,6 +1955,168 @@ EslSocketCopyFragmentedBuffer (
 
 
 /**
+  Free the socket.
+
+  This routine frees the socket structure and handle resources.
+
+  The ::close routine calls EslServiceFreeProtocol which then calls
+  this routine to free the socket context structure and close the
+  handle.
+
+  @param [in] pSocketProtocol Address of an ::EFI_SOCKET_PROTOCOL structure.
+
+  @param [out] pErrno         Address to receive the errno value upon completion.
+
+  @retval EFI_SUCCESS   The socket resources were returned successfully.
+
+ **/
+EFI_STATUS
+EslSocketFree (
+  IN EFI_SOCKET_PROTOCOL * pSocketProtocol,
+  IN int * pErrno
+  )
+{
+  EFI_HANDLE ChildHandle;
+  int errno;
+  ESL_LAYER * pLayer;
+  ESL_SOCKET * pSocket;
+  ESL_SOCKET * pSocketPrevious;
+  EFI_STATUS Status;
+  EFI_TPL TplPrevious;
+
+  DBG_ENTER ( );
+
+  //
+  //  Assume failure
+  //
+  errno = EIO;
+  pSocket = NULL;
+  Status = EFI_INVALID_PARAMETER;
+
+  //
+  //  Validate the socket
+  //
+  pLayer = &mEslLayer;
+  if ( NULL != pSocketProtocol ) {
+    pSocket = SOCKET_FROM_PROTOCOL ( pSocketProtocol );
+
+    //
+    //  Synchronize with the socket layer
+    //
+    RAISE_TPL ( TplPrevious, TPL_SOCKETS );
+
+    //
+    //  Walk the socket list
+    //
+    pSocketPrevious = pLayer->pSocketList;
+    if ( NULL != pSocketPrevious ) {
+      if ( pSocket == pSocketPrevious ) {
+        //
+        //  Remove the socket from the head of the list
+        //
+        pLayer->pSocketList = pSocket->pNext;
+      }
+      else {
+        //
+        //  Find the socket in the middle of the list
+        //
+        while (( NULL != pSocketPrevious )
+          && ( pSocket != pSocketPrevious->pNext )) {
+          //
+          //  Set the next socket
+          //
+          pSocketPrevious = pSocketPrevious->pNext;
+        }
+        if ( NULL != pSocketPrevious ) {
+          //
+          //  Remove the socket from the middle of the list
+          //
+          pSocketPrevious = pSocket->pNext;
+        }
+      }
+    }
+    else {
+      DEBUG (( DEBUG_ERROR | DEBUG_POOL,
+                "ERROR - Socket list is empty!\r\n" ));
+    }
+
+    //
+    //  Release the socket layer synchronization
+    //
+    RESTORE_TPL ( TplPrevious );
+
+    //
+    //  Determine if the socket was found
+    //
+    if ( NULL != pSocketPrevious ) {
+      pSocket->pNext = NULL;
+
+      //
+      //  Remove the socket protocol
+      //
+      ChildHandle = pSocket->SocketProtocol.SocketHandle;
+      Status = gBS->UninstallMultipleProtocolInterfaces (
+                ChildHandle,
+                &gEfiSocketProtocolGuid,
+                &pSocket->SocketProtocol,
+                NULL );
+      if ( !EFI_ERROR ( Status )) {
+        DEBUG (( DEBUG_POOL | DEBUG_INFO,
+                    "Removed:   gEfiSocketProtocolGuid from 0x%08x\r\n",
+                    ChildHandle ));
+
+        //
+        //  Free the socket structure
+        //
+        Status = gBS->FreePool ( pSocket );
+        if ( !EFI_ERROR ( Status )) {
+          DEBUG (( DEBUG_POOL,
+                    "0x%08x: Free pSocket, %d bytes\r\n",
+                    pSocket,
+                    sizeof ( *pSocket )));
+          errno = 0;
+        }
+        else {
+          DEBUG (( DEBUG_ERROR | DEBUG_POOL,
+                    "ERROR - Failed to free pSocket 0x%08x, Status: %r\r\n",
+                    pSocket,
+                    Status ));
+        }
+      }
+      else {
+        DEBUG (( DEBUG_ERROR | DEBUG_POOL | DEBUG_INFO,
+                    "ERROR - Failed to remove gEfiSocketProtocolGuid from 0x%08x, Status: %r\r\n",
+                    ChildHandle,
+                    Status ));
+      }
+    }
+    else {
+      DEBUG (( DEBUG_ERROR | DEBUG_INFO,
+                "ERROR - The socket was not in the socket list!\r\n" ));
+      Status = EFI_NOT_FOUND;
+    }
+  }
+  else {
+    DEBUG (( DEBUG_ERROR,
+              "ERROR - Invalid parameter pSocketProtocol is NULL\r\n" ));
+  }
+
+  //
+  //  Return the errno value if possible
+  //
+  if ( NULL != pErrno ) {
+    *pErrno = errno;
+  }
+
+  //
+  //  Return the operation status
+  //
+  DBG_EXIT_STATUS ( Status );
+  return Status;
+}
+
+
+/**
   Get the local address.
 
   This routine calls the network specific layer to get the network
@@ -1930,7 +2126,7 @@ EslSocketCopyFragmentedBuffer (
   address associated with the local host connection point.
 
   @param [in] pSocketProtocol Address of an ::EFI_SOCKET_PROTOCOL structure.
-  
+
   @param [out] pAddress       Network address to receive the local system address
 
   @param [in,out] pAddressLength  Length of the local network address structure
@@ -1953,14 +2149,14 @@ EslSocketGetLocalAddress (
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
   EFI_TPL TplPrevious;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Assume success
   //
   Status = EFI_SUCCESS;
-  
+
   //
   //  Validate the socket
   //
@@ -1971,69 +2167,60 @@ EslSocketGetLocalAddress (
     //
     //  Verify the socket state
     //
-    Status = EslSocketIsConfigured ( pSocket );
-    if ( !EFI_ERROR ( Status )) {
+    EslSocketIsConfigured ( pSocket );
+    if ( pSocket->bAddressSet ) {
       //
       //  Verify the address buffer and length address
       //
       if (( NULL != pAddress ) && ( NULL != pAddressLength )) {
         //
-        //  Verify the socket state
+        //  Verify the API
         //
-        if ( SOCKET_STATE_CONNECTED == pSocket->State ) {
-          //
-          //  Verify the API
-          //
-          if ( NULL == pSocket->pApi->pfnLocalAddrGet ) {
-            Status = EFI_UNSUPPORTED;
-            pSocket->errno = ENOTSUP;
-          }
-          else {
-            //
-            //  Synchronize with the socket layer
-            //
-            RAISE_TPL ( TplPrevious, TPL_SOCKETS );
-
-            //
-            //  Verify that there is just a single connection
-            //
-            pPort = pSocket->pPortList;
-            if (( NULL != pPort ) && ( NULL == pPort->pLinkSocket )) {
-              //
-              //  Verify the address length
-              //
-              LengthInBytes = pSocket->pApi->AddressLength;
-              if (( LengthInBytes <= *pAddressLength ) 
-                && ( 255 >= LengthInBytes )) {
-                //
-                //  Return the local address and address length
-                //
-                ZeroMem ( pAddress, LengthInBytes );
-                pAddress->sa_len = (uint8_t)LengthInBytes;
-                *pAddressLength = pAddress->sa_len;
-                pSocket->pApi->pfnLocalAddrGet ( pPort, pAddress );
-                pSocket->errno = 0;
-                Status = EFI_SUCCESS;
-              }
-              else {
-                pSocket->errno = EINVAL;
-                Status = EFI_INVALID_PARAMETER;
-              }
-            }
-            else {
-              pSocket->errno = ENOTCONN;
-              Status = EFI_NOT_STARTED;
-            }
-            
-            //
-            //  Release the socket layer synchronization
-            //
-            RESTORE_TPL ( TplPrevious );
-          }
+        if ( NULL == pSocket->pApi->pfnLocalAddrGet ) {
+          Status = EFI_UNSUPPORTED;
+          pSocket->errno = ENOTSUP;
         }
         else {
-          pSocket->errno = ENOTCONN;
-          Status = EFI_NOT_STARTED;
+          //
+          //  Synchronize with the socket layer
+          //
+          RAISE_TPL ( TplPrevious, TPL_SOCKETS );
+
+          //
+          //  Verify that there is just a single connection
+          //
+          pPort = pSocket->pPortList;
+          if ( NULL != pPort ) {
+            //
+            //  Verify the address length
+            //
+            LengthInBytes = pSocket->pApi->AddressLength;
+            if (( LengthInBytes <= *pAddressLength )
+              && ( 255 >= LengthInBytes )) {
+              //
+              //  Return the local address and address length
+              //
+              ZeroMem ( pAddress, LengthInBytes );
+              pAddress->sa_len = (uint8_t)LengthInBytes;
+              *pAddressLength = pAddress->sa_len;
+              pSocket->pApi->pfnLocalAddrGet ( pPort, pAddress );
+              pSocket->errno = 0;
+              Status = EFI_SUCCESS;
+            }
+            else {
+              pSocket->errno = EINVAL;
+              Status = EFI_INVALID_PARAMETER;
+            }
+          }
+          else {
+            pSocket->errno = ENOTCONN;
+            Status = EFI_NOT_STARTED;
+          }
+
+          //
+          //  Release the socket layer synchronization
+          //
+          RESTORE_TPL ( TplPrevious );
         }
       }
       else {
@@ -2041,8 +2228,15 @@ EslSocketGetLocalAddress (
         Status = EFI_INVALID_PARAMETER;
       }
     }
+    else {
+      //
+      //  Address not set
+      //
+      Status = EFI_NOT_STARTED;
+      pSocket->errno = EADDRNOTAVAIL;
+    }
   }
-  
+
   //
   //  Return the operation status
   //
@@ -2070,7 +2264,7 @@ EslSocketGetLocalAddress (
   address of the remote connection point.
 
   @param [in] pSocketProtocol Address of an ::EFI_SOCKET_PROTOCOL structure.
-  
+
   @param [out] pAddress       Network address to receive the remote system address
 
   @param [in,out] pAddressLength  Length of the remote network address structure
@@ -2093,14 +2287,14 @@ EslSocketGetPeerAddress (
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
   EFI_TPL TplPrevious;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Assume success
   //
   Status = EFI_SUCCESS;
-  
+
   //
   //  Validate the socket
   //
@@ -2544,7 +2738,7 @@ EslSocketListen (
         //  Create the event for SocketAccept completion
         //
         Status = gBS->CreateEvent ( 0,
-                                    TplPrevious,
+                                    TPL_SOCKETS,
                                     NULL,
                                     NULL,
                                     &pSocket->WaitAccept );
@@ -2776,13 +2970,21 @@ EslSocketOptionGet (
         pOptionData = (CONST UINT8 *)&pSocket->RxTimeout;
         LengthInBytes = sizeof ( pSocket->RxTimeout );
         break;
-        
+
       case SO_RCVBUF:
         //
         //  Return the maximum receive buffer size
         //
         pOptionData = (CONST UINT8 *)&pSocket->MaxRxBuf;
         LengthInBytes = sizeof ( pSocket->MaxRxBuf );
+        break;
+
+      case SO_REUSEADDR:
+        //
+        //  Return the address reuse flag
+        //
+        pOptionData = (UINT8 *)&pSocket->bReUseAddr;
+        LengthInBytes = sizeof ( pSocket->bReUseAddr );
         break;
 
       case SO_SNDBUF:
@@ -2886,9 +3088,9 @@ EslSocketOptionSet (
   UINT8 * pOptionData;
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Assume failure
   //
@@ -2947,7 +3149,7 @@ EslSocketOptionSet (
         errno = ENOPROTOOPT;
         Status = EFI_INVALID_PARAMETER;
         break;
-    
+
       case SOL_SOCKET:
         switch ( OptionName ) {
         default:
@@ -3007,6 +3209,14 @@ EslSocketOptionSet (
           //
           pOptionData = (UINT8 *)&pSocket->MaxRxBuf;
           LengthInBytes = sizeof ( pSocket->MaxRxBuf );
+          break;
+
+        case SO_REUSEADDR:
+          //
+          //  Return the address reuse flag
+          //
+          pOptionData = (UINT8 *)&pSocket->bReUseAddr;
+          LengthInBytes = sizeof ( pSocket->bReUseAddr );
           break;
 
         case SO_SNDBUF:
@@ -3096,7 +3306,7 @@ EslSocketPacketAllocate (
                                LengthInBytes,
                                (VOID **)&pPacket );
   if ( !EFI_ERROR ( Status )) {
-    DEBUG (( DebugFlags | DEBUG_POOL | DEBUG_INIT,
+    DEBUG (( DebugFlags | DEBUG_POOL,
               "0x%08x: Allocate pPacket, %d bytes\r\n",
               pPacket,
               LengthInBytes ));
@@ -3152,7 +3362,7 @@ EslSocketPacketFree (
   DBG_ENTER ( );
 
   //
-  //  Allocate a packet structure
+  //  Free a packet structure
   //
   LengthInBytes = pPacket->PacketSize;
   Status = gBS->FreePool ( pPacket );
@@ -3210,6 +3420,7 @@ EslSocketPoll (
   short DetectedEvents;
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
+  EFI_TPL TplPrevious;
   short ValidEvents;
 
   DEBUG (( DEBUG_POLL, "Entering SocketPoll\r\n" ));
@@ -3247,6 +3458,22 @@ EslSocketPoll (
                 Events & ( ~ValidEvents )));
     }
     else {
+      //
+      //  Synchronize with the socket layer
+      //
+      RAISE_TPL ( TplPrevious, TPL_SOCKETS );
+
+      //
+      //  Increase the network performance by extending the
+      //  polling (idle) loop down into the LAN driver
+      //
+      EslSocketRxPoll ( pSocket );
+
+      //
+      //  Release the socket layer synchronization
+      //
+      RESTORE_TPL ( TplPrevious );
+
       //
       //  Check for pending connections
       //
@@ -3617,7 +3844,7 @@ EslSocketPortAllocate (
     <li>::EslTcp4ConnectComplete - Connection failure and reducing the port list to a single port</li>
   </ul>
   See the \ref PortCloseStateMachine section.
-  
+
   @param [in] pPort       Address of an ::ESL_PORT structure.
 
   @retval EFI_SUCCESS     The port is closed
@@ -3638,7 +3865,7 @@ EslSocketPortClose (
   CONST ESL_SOCKET_BINDING * pSocketBinding;
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
 
   //
@@ -4233,13 +4460,13 @@ EslSocketPortCloseTxDone (
   ::recv and ::read are layered on top of ::recvfrom.
 
   @param [in] pSocketProtocol Address of an ::EFI_SOCKET_PROTOCOL structure.
-  
+
   @param [in] Flags           Message control flags
-  
+
   @param [in] BufferLength    Length of the the buffer
-  
+
   @param [in] pBuffer         Address of a buffer to receive the data.
-  
+
   @param [in] pDataLength     Number of received data bytes in the buffer.
 
   @param [out] pAddress       Network address to receive the remote system address
@@ -4350,7 +4577,7 @@ EslSocketReceive (
                 pRemoteAddress->sa_family = pSocket->pApi->AddressFamily;
                 pRemoteAddress->sa_len = (UINT8)pSocket->pApi->AddressLength;
               }
-              
+
               //
               //  Synchronize with the socket layer
               //
@@ -4366,6 +4593,11 @@ EslSocketReceive (
               //  Verify that the socket is connected
               //
               if ( SOCKET_STATE_CONNECTED == pSocket->State ) {
+                //
+                //  Poll the network to increase performance
+                //
+                EslSocketRxPoll ( pSocket );
+
                 //
                 //  Locate the port
                 //
@@ -4557,7 +4789,7 @@ EslSocketReceive (
         }
       }
 
-      
+
     }
     else {
       //
@@ -4683,13 +4915,13 @@ EslSocketRxComplete (
   //         pPort->pRxActive
   //                |
   //                V
-  //          +-------------+   +-------------+   +-------------+   
+  //          +-------------+   +-------------+   +-------------+
   //  Active  | ESL_IO_MGMT |-->| ESL_IO_MGMT |-->| ESL_IO_MGMT |--> NULL
-  //          +-------------+   +-------------+   +-------------+   
+  //          +-------------+   +-------------+   +-------------+
   //
-  //          +-------------+   +-------------+   +-------------+   
+  //          +-------------+   +-------------+   +-------------+
   //  Free    | ESL_IO_MGMT |-->| ESL_IO_MGMT |-->| ESL_IO_MGMT |--> NULL
-  //          +-------------+   +-------------+   +-------------+   
+  //          +-------------+   +-------------+   +-------------+
   //                ^
   //                |
   //          pPort->pRxFree
@@ -4723,13 +4955,13 @@ EslSocketRxComplete (
   //            pRxOobPacketListHead              pRxOobPacketListTail
   //                      |                                 |
   //                      V                                 V
-  //               +------------+   +------------+   +------------+   
+  //               +------------+   +------------+   +------------+
   //  Urgent Data  | ESL_PACKET |-->| ESL_PACKET |-->| ESL_PACKET |--> NULL
-  //               +------------+   +------------+   +------------+   
+  //               +------------+   +------------+   +------------+
   //
-  //               +------------+   +------------+   +------------+   
+  //               +------------+   +------------+   +------------+
   //  Normal Data  | ESL_PACKET |-->| ESL_PACKET |-->| ESL_PACKET |--> NULL
-  //               +------------+   +------------+   +------------+   
+  //               +------------+   +------------+   +------------+
   //                      ^                                 ^
   //                      |                                 |
   //              pRxPacketListHead                pRxPacketListTail
@@ -4848,6 +5080,49 @@ EslSocketRxComplete (
 
 
 /**
+  Poll a socket for pending receive activity.
+
+  This routine is called at elivated TPL and extends the idle
+  loop which polls a socket down into the LAN driver layer to
+  determine if there is any receive activity.
+
+  The ::EslSocketPoll, ::EslSocketReceive and ::EslSocketTransmit
+  routines call this routine when there is nothing to do.
+
+  @param [in] pSocket   Address of an ::EFI_SOCKET structure.
+
+ **/
+VOID
+EslSocketRxPoll (
+  IN ESL_SOCKET * pSocket
+  )
+{
+  ESL_PORT * pPort;
+
+  DEBUG (( DEBUG_POLL, "Entering EslSocketRxPoll\r\n" ));
+
+  //
+  //  Increase the network performance by extending the
+  //  polling (idle) loop down into the LAN driver
+  //
+  pPort = pSocket->pPortList;
+  while ( NULL != pPort ) {
+    //
+    //  Poll the LAN adapter
+    //
+    pPort->pfnRxPoll ( pPort->pProtocol.v );
+
+    //
+    //  Locate the next LAN adapter
+    //
+    pPort = pPort->pLinkSocket;
+  }
+
+  DEBUG (( DEBUG_POLL, "Exiting EslSocketRxPoll\r\n" ));
+}
+
+
+/**
   Start a receive operation
 
   This routine posts a receive buffer to the network adapter.
@@ -4857,7 +5132,7 @@ EslSocketRxComplete (
   <ul>
     <li>::EslIp4Receive to restart the receive engine to release flow control.</li>
     <li>::EslIp4RxComplete to continue the operation of the receive engine if flow control is not being applied.</li>
-    <li>::EslIp4SocketIsConfigured to start the recevie engine for the new socket.</li>
+    <li>::EslIp4SocketIsConfigured to start the receive engine for the new socket.</li>
     <li>::EslTcp4ListenComplete to start the recevie engine for the new socket.</li>
     <li>::EslTcp4Receive to restart the receive engine to release flow control.</li>
     <li>::EslTcp4RxComplete to continue the operation of the receive engine if flow control is not being applied.</li>
@@ -4972,13 +5247,13 @@ EslSocketRxStart (
           //  Allocate the receive control structure
           //
           pPort->pRxFree = pIo->pNext;
-          
+
           //
           //  Mark this receive as pending
           //
           pIo->pNext = pPort->pRxActive;
           pPort->pRxActive = pIo;
-          
+
         }
         else {
           DEBUG (( DEBUG_RX | DEBUG_INFO,
@@ -5040,9 +5315,9 @@ EslSocketRxStart (
   operations on the socket.
 
   @param [in] pSocketProtocol Address of an ::EFI_SOCKET_PROTOCOL structure.
-  
+
   @param [in] How             Which operations to stop
-  
+
   @param [out] pErrno         Address to receive the errno value upon completion.
 
   @retval EFI_SUCCESS - Socket operations successfully shutdown
@@ -5060,9 +5335,9 @@ EslSocketShutdown (
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
   EFI_TPL TplPrevious;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Assume success
   //
@@ -5179,13 +5454,13 @@ EslSocketShutdown (
   system.  Note that ::send and ::write are layered on top of ::sendto.
 
   @param [in] pSocketProtocol Address of an ::EFI_SOCKET_PROTOCOL structure.
-  
+
   @param [in] Flags           Message control flags
-  
+
   @param [in] BufferLength    Length of the the buffer
-  
+
   @param [in] pBuffer         Address of a buffer containing the data to send
-  
+
   @param [in] pDataLength     Address to receive the number of data bytes sent
 
   @param [in] pAddress        Network address of the remote system address
@@ -5290,6 +5565,11 @@ EslSocketTransmit (
                 //  Synchronize with the socket layer
                 //
                 RAISE_TPL ( TplPrevious, TPL_SOCKETS );
+
+                //
+                //  Poll the network to increase performance
+                //
+                EslSocketRxPoll ( pSocket );
 
                 //
                 //  Attempt to buffer the packet for transmission
@@ -5547,9 +5827,9 @@ EslSocketTxStart (
     //     *ppQueueHead: pSocket->pRxPacketListHead or pSocket->pRxOobPacketListHead
     //          |
     //          V
-    //        +------------+   +------------+   +------------+   
+    //        +------------+   +------------+   +------------+
     //  Data  | ESL_PACKET |-->| ESL_PACKET |-->| ESL_PACKET |--> NULL
-    //        +------------+   +------------+   +------------+   
+    //        +------------+   +------------+   +------------+
     //                                                     ^
     //                                                     |
     //     *ppQueueTail: pSocket->pRxPacketListTail or pSocket->pRxOobPacketListTail
@@ -5620,9 +5900,9 @@ EslSocketTxStart (
       pIo->pPacket = pPacket;
 
       //
-      //          +-------------+   +-------------+   +-------------+   
+      //          +-------------+   +-------------+   +-------------+
       //  Free    | ESL_IO_MGMT |-->| ESL_IO_MGMT |-->| ESL_IO_MGMT |--> NULL
-      //          +-------------+   +-------------+   +-------------+   
+      //          +-------------+   +-------------+   +-------------+
       //              ^
       //              |
       //          *ppFree:  pPort->pTxFree or pTxOobFree
@@ -5631,14 +5911,14 @@ EslSocketTxStart (
       //  Remove the IO structure from the queue
       //
       *ppFree = pIo->pNext;
-      
+
       //
       //         *ppActive:  pPort->pTxActive or pTxOobActive
       //             |
       //             V
-      //          +-------------+   +-------------+   +-------------+   
+      //          +-------------+   +-------------+   +-------------+
       //  Active  | ESL_IO_MGMT |-->| ESL_IO_MGMT |-->| ESL_IO_MGMT |--> NULL
-      //          +-------------+   +-------------+   +-------------+   
+      //          +-------------+   +-------------+   +-------------+
       //
       //
       //  Mark this packet as active
@@ -5648,9 +5928,23 @@ EslSocketTxStart (
       *ppActive = pIo;
     }
     else {
+      //
+      //  Display the transmit error
+      //
+      DEBUG (( DEBUG_TX | DEBUG_INFO,
+                "0x%08x, 0x%08x: pIo, pPacket transmit failure: %r\r\n",
+                pIo,
+                pPacket,
+                Status ));
       if ( EFI_SUCCESS == pSocket->TxError ) {
         pSocket->TxError = Status;
       }
+
+      //
+      //  Free the IO structure
+      //
+      pIo->pNext = *ppFree;
+      *ppFree = pIo;
 
       //
       //  Discard the transmit buffer

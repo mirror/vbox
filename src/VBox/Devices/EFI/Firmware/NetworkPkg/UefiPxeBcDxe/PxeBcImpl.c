@@ -1,7 +1,7 @@
 /** @file
   This implementation of EFI_PXE_BASE_CODE_PROTOCOL and EFI_LOAD_FILE_PROTOCOL.
 
-  Copyright (c) 2007 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -345,6 +345,10 @@ EfiPxeBcStop (
   Private->BootFileSize = 0;
   Private->SolicitTimes = 0;
   Private->ElapsedTime  = 0;
+  ZeroMem (&Private->StationIp, sizeof (EFI_IP_ADDRESS));
+  ZeroMem (&Private->SubnetMask, sizeof (EFI_IP_ADDRESS));
+  ZeroMem (&Private->GatewayIp, sizeof (EFI_IP_ADDRESS));
+  ZeroMem (&Private->ServerIp, sizeof (EFI_IP_ADDRESS));
 
   //
   // Reset the mode data.
@@ -428,10 +432,6 @@ EfiPxeBcDhcp (
     // Start S.A.R.R. process to get a IPv6 address and other boot information.
     //
     Status = PxeBcDhcp6Sarr (Private, Private->Dhcp6);
-
-    if (EFI_ERROR (Status)) {
-      goto ON_EXIT;
-    }
   } else {
 
     //
@@ -443,13 +443,11 @@ EfiPxeBcDhcp (
     // Start D.O.R.A. process to get a IPv4 address and other boot information.
     //
     Status = PxeBcDhcp4Dora (Private, Private->Dhcp4);
-
-    if (EFI_ERROR (Status)) {
-      goto ON_EXIT;
-    }
   }
-  
-ON_EXIT:
+
+  //
+  // Reconfigure the UDP instance with the default configuration.
+  //
   if (Mode->UsingIpv6) {
     Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
   } else {
@@ -529,6 +527,7 @@ EfiPxeBcDiscover (
   UINT16                          Index;
   EFI_STATUS                      Status;
   EFI_PXE_BASE_CODE_IP_FILTER     IpFilter;
+  EFI_PXE_BASE_CODE_DISCOVER_INFO *NewCreatedInfo;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -541,6 +540,7 @@ EfiPxeBcDiscover (
   SrvList                 = NULL;
   Status                  = EFI_DEVICE_ERROR;
   Private->Function       = EFI_PXE_BASE_CODE_FUNCTION_DISCOVER;
+  NewCreatedInfo          = NULL;
 
   if (!Mode->Started) {
     return EFI_NOT_STARTED;
@@ -570,6 +570,7 @@ EfiPxeBcDiscover (
   //
   // There are 3 methods to get the information for discover.
   //
+  ZeroMem (&DefaultInfo, sizeof (EFI_PXE_BASE_CODE_DISCOVER_INFO));
   if (*Layer != EFI_PXE_BASE_CODE_BOOT_LAYER_INITIAL) {
     //
     // 1. Take the previous setting as the discover info.
@@ -594,12 +595,13 @@ EfiPxeBcDiscover (
     //
     // 2. Extract the discover information from the cached packets if unspecified.
     //
-    Info   = &DefaultInfo;
-    Status = PxeBcExtractDiscoverInfo (Private, Type, Info, &BootSvrEntry, &SrvList);
+    NewCreatedInfo = &DefaultInfo;
+    Status = PxeBcExtractDiscoverInfo (Private, Type, &NewCreatedInfo, &BootSvrEntry, &SrvList);
     if (EFI_ERROR (Status)) {
       goto ON_EXIT;
     }
-
+    ASSERT (NewCreatedInfo != NULL);
+    Info = NewCreatedInfo;
   } else {
     //
     // 3. Take the pass-in information as the discover info, and validate the server list.
@@ -615,7 +617,7 @@ EfiPxeBcDiscover (
       if (Index != Info->IpCnt) {
         //
         // It's invalid if the first server doesn't accecpt any response
-        // and meanwhile any of the rest servers accept any reponse.
+        // but any of the other servers does accept any response.
         //
         Status = EFI_INVALID_PARAMETER;
         goto ON_EXIT;
@@ -634,7 +636,36 @@ EfiPxeBcDiscover (
 
   Private->IsDoDiscover = TRUE;
 
-  if (Info->UseUCast) {
+  if (Info->UseMCast) {
+    //
+    // Do discover by multicast.
+    //
+    Status = PxeBcDiscoverBootServer (
+               Private,
+               Type,
+               Layer,
+               UseBis,
+               &Info->ServerMCastIp,
+               Info->IpCnt,
+               SrvList
+               );
+
+  } else if (Info->UseBCast) {
+    //
+    // Do discover by broadcast, but only valid for IPv4.
+    //
+    ASSERT (!Mode->UsingIpv6);
+    Status = PxeBcDiscoverBootServer (
+               Private,
+               Type,
+               Layer,
+               UseBis,
+               NULL,
+               Info->IpCnt,
+               SrvList
+               );
+
+  } else if (Info->UseUCast) {
     //
     // Do discover by unicast.
     //
@@ -652,44 +683,14 @@ EfiPxeBcDiscover (
                  Type,
                  Layer,
                  UseBis,
-                 &SrvList[Index].IpAddr,
-                 0,
-                 NULL
+                 &Private->ServerIp,
+                 Info->IpCnt,
+                 SrvList
                  );
-    }
-  } else if (Info->UseMCast) {
-    //
-    // Do discover by multicast.
-    //
-    Status = PxeBcDiscoverBootServer (
-               Private,
-               Type,
-               Layer,
-               UseBis,
-               &Info->ServerMCastIp,
-               0,
-               NULL
-               );
-
-  } else if (Info->UseBCast) {
-    //
-    // Do discover by broadcast, but only valid for IPv4.
-    //
-    ASSERT (!Mode->UsingIpv6);
-    Status = PxeBcDiscoverBootServer (
-               Private,
-               Type,
-               Layer,
-               UseBis,
-               NULL,
-               Info->IpCnt,
-               SrvList
-               );
+      }
   }
 
-  if (EFI_ERROR (Status)) {
-    goto ON_EXIT;
-  } else {
+  if (!EFI_ERROR (Status)) {
     //
     // Parse the cached PXE reply packet, and store it into mode data if valid.
     //
@@ -698,8 +699,8 @@ EfiPxeBcDiscover (
       if (!EFI_ERROR (Status)) {
         CopyMem (
           &Mode->PxeReply.Dhcpv6,
-          &Private->PxeReply.Dhcp6.Packet.Offer,
-          Private->PxeReply.Dhcp6.Packet.Offer.Length
+          &Private->PxeReply.Dhcp6.Packet.Ack.Dhcp6,
+          Private->PxeReply.Dhcp6.Packet.Ack.Length
           );
         Mode->PxeReplyReceived = TRUE;
         Mode->PxeDiscoverValid = TRUE;
@@ -709,8 +710,8 @@ EfiPxeBcDiscover (
       if (!EFI_ERROR (Status)) {
         CopyMem (
           &Mode->PxeReply.Dhcpv4,
-          &Private->PxeReply.Dhcp4.Packet.Offer,
-          Private->PxeReply.Dhcp4.Packet.Offer.Length
+          &Private->PxeReply.Dhcp4.Packet.Ack.Dhcp4,
+          Private->PxeReply.Dhcp4.Packet.Ack.Length
           );
         Mode->PxeReplyReceived = TRUE;
         Mode->PxeDiscoverValid = TRUE;
@@ -720,6 +721,10 @@ EfiPxeBcDiscover (
 
 ON_EXIT:
 
+  if (NewCreatedInfo != NULL && NewCreatedInfo != &DefaultInfo) {
+    FreePool (NewCreatedInfo);
+  }
+  
   if (Mode->UsingIpv6) {
     Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
   } else {
@@ -957,11 +962,9 @@ EfiPxeBcMtftp (
     Mode->IcmpErrorReceived = TRUE;
   }
 
-  if (EFI_ERROR (Status)) {
-    goto ON_EXIT;
-  }
-  
-ON_EXIT:
+  //
+  // Reconfigure the UDP instance with the default configuration.
+  //
   if (Mode->UsingIpv6) {
     Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
   } else {
@@ -2022,7 +2025,7 @@ EfiPxeBcSetStationIP (
     CopyMem (&Private->SubnetMask ,NewSubnetMask, sizeof (EFI_IP_ADDRESS));
   }
 
-  Status = PxeBcFlushStaionIp (Private, NewStationIp, NewSubnetMask);
+  Status = PxeBcFlushStationIp (Private, NewStationIp, NewSubnetMask);
 ON_EXIT:
   return Status;
 }
@@ -2341,6 +2344,15 @@ EfiPxeLoadFile (
   // Start Pxe Base Code to initialize PXE boot.
   //
   Status = PxeBc->Start (PxeBc, UsingIpv6);
+  if (Status == EFI_ALREADY_STARTED && UsingIpv6 != PxeBc->Mode->UsingIpv6) {
+    //
+    // PxeBc protocol has already been started but not on the required IP version, restart it.
+    //
+    Status = PxeBc->Stop (PxeBc);
+    if (!EFI_ERROR (Status)) {
+      Status = PxeBc->Start (PxeBc, UsingIpv6);
+    }
+  }
   if (Status == EFI_SUCCESS || Status == EFI_ALREADY_STARTED) {
     Status = PxeBcLoadBootFile (Private, BufferSize, Buffer);
   }

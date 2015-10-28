@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 1999 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 1999 - 2014, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -358,7 +358,7 @@ BiosSnp16DriverBindingStart (
                     &Supports
                     );
   if (!EFI_ERROR (Status)) {
-    Supports &= EFI_PCI_DEVICE_ENABLE;
+    Supports &= (UINT64)EFI_PCI_DEVICE_ENABLE;
     Status = PciIo->Attributes (
                       PciIo,
                       EfiPciIoAttributeOperationEnable,
@@ -793,7 +793,7 @@ Done:
                         &Supports
                         );
       if (!EFI_ERROR (Status)) {
-        Supports &= EFI_PCI_DEVICE_ENABLE;
+        Supports &= (UINT64)EFI_PCI_DEVICE_ENABLE;
         Status = PciIo->Attributes (
                           PciIo,
                           EfiPciIoAttributeOperationDisable,
@@ -876,7 +876,7 @@ BiosSnp16DriverBindingStop (
                         &Supports
                         );
       if (!EFI_ERROR (Status)) {
-        Supports &= EFI_PCI_DEVICE_ENABLE;
+        Supports &= (UINT64)EFI_PCI_DEVICE_ENABLE;
         Status = PciIo->Attributes (
                           PciIo,
                           EfiPciIoAttributeOperationDisable,
@@ -1260,6 +1260,11 @@ Undi16SimpleNetworkLoadUndi (
     if (!EFI_ERROR (Status)) {
       return EFI_SUCCESS;
     }
+    
+    //
+    // Free resources allocated in LaunchBaseCode
+    //
+    Undi16SimpleNetworkUnloadUndi (SimpleNetworkDevice);
   }
 
   return EFI_NOT_FOUND;

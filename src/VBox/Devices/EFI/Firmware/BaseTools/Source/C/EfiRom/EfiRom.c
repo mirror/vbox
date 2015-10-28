@@ -1,6 +1,7 @@
 /** @file
+Utility program to create an EFI option ROM image from binary and EFI PE32 files.
 
-Copyright (c) 1999 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 1999 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available 
 under the terms and conditions of the BSD License which accompanies this 
 distribution.  The full text of the license may be found at
@@ -8,15 +9,6 @@ http://opensource.org/licenses/bsd-license.php
 
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
-
-Module Name:
-
-  EfiRom.c
-  
-Abstract:
-
-  Utility program to create an EFI option ROM image from binary and 
-  EFI PE32 files.
 
 **/
 
@@ -135,7 +127,7 @@ Returns:
   //
   // Now open our output file
   //
-  if ((FptrOut = fopen (mOptions.OutFileName, "wb")) == NULL) {
+  if ((FptrOut = fopen (LongFilePath (mOptions.OutFileName), "wb")) == NULL) {
     Error (NULL, 0, 0001, "Error opening file", "Error opening file %s", mOptions.OutFileName);
     goto BailOut;
   }
@@ -237,6 +229,7 @@ Returns:
   PCI_3_0_DATA_STRUCTURE    *PciDs30;
   UINT32                    Index;
   UINT8                     ByteCheckSum;
+  UINT16                    CodeType;
  
   PciDs23 = NULL;
   PciDs30 = NULL;
@@ -245,7 +238,7 @@ Returns:
   //
   // Try to open the input file
   //
-  if ((InFptr = fopen (InFile->FileName, "rb")) == NULL) {
+  if ((InFptr = fopen (LongFilePath (InFile->FileName), "rb")) == NULL) {
     Error (NULL, 0, 0001, "Error opening file", InFile->FileName);
     return STATUS_ERROR;
   }
@@ -337,8 +330,10 @@ Returns:
   //
   if (mOptions.Pci23 == 1) {
     PciDs23->ImageLength = (UINT16) (TotalSize / 512);
+    CodeType = PciDs23->CodeType;
   } else {
     PciDs30->ImageLength = (UINT16) (TotalSize / 512);
+    CodeType = PciDs30->CodeType;
 	}
 
   //
@@ -359,14 +354,16 @@ Returns:
 		}
   }
 
-  ByteCheckSum = 0;
-  for (Index = 0; Index < FileSize - 1; Index++) {
-    ByteCheckSum = (UINT8) (ByteCheckSum + Buffer[Index]);
-  }
+  if (CodeType != PCI_CODE_TYPE_EFI_IMAGE) {
+    ByteCheckSum = 0;
+    for (Index = 0; Index < FileSize - 1; Index++) {
+      ByteCheckSum = (UINT8) (ByteCheckSum + Buffer[Index]);
+    }
 
-  Buffer[FileSize - 1] = (UINT8) ((~ByteCheckSum) + 1);
-  if (mOptions.Verbose) {
-    VerboseMsg("  Checksum = %02x\n\n", Buffer[FileSize - 1]);
+    Buffer[FileSize - 1] = (UINT8) ((~ByteCheckSum) + 1);
+    if (mOptions.Verbose) {
+      VerboseMsg("  Checksum = %02x\n\n", Buffer[FileSize - 1]);
+    }
   }
 
   //
@@ -449,11 +446,13 @@ Returns:
   UINT16                        MachineType;
   UINT16                        SubSystem;
   UINT32                        HeaderPadBytes;
+  UINT32                        PadBytesBeforeImage;
+  UINT32                        PadBytesAfterImage;
 
   //
   // Try to open the input file
   //
-  if ((InFptr = fopen (InFile->FileName, "rb")) == NULL) {
+  if ((InFptr = fopen (LongFilePath (InFile->FileName), "rb")) == NULL) {
     Error (NULL, 0, 0001, "Open file error", "Error opening file: %s", InFile->FileName);
     return STATUS_ERROR;
   }
@@ -559,6 +558,18 @@ Returns:
     TotalSize = (TotalSize + 0x200) &~0x1ff;
   }
   //
+  // Workaround:
+  //   If compressed, put the pad bytes after the image,
+  //   else put the pad bytes before the image.
+  //
+  if ((InFile->FileFlags & FILE_FLAG_COMPRESS) != 0) {
+    PadBytesBeforeImage = 0;
+    PadBytesAfterImage = TotalSize - (FileSize + HeaderSize);
+  } else {
+    PadBytesBeforeImage = TotalSize - (FileSize + HeaderSize);
+    PadBytesAfterImage = 0;
+  }
+  //
   // Check size
   //
   if (TotalSize > MAX_OPTION_ROM_SIZE) {
@@ -581,7 +592,7 @@ Returns:
   RomHdr.EfiSignature         = EFI_PCI_EXPANSION_ROM_HEADER_EFISIGNATURE;
   RomHdr.EfiSubsystem         = SubSystem;
   RomHdr.EfiMachineType       = MachineType;
-  RomHdr.EfiImageHeaderOffset = (UINT16) HeaderSize;
+  RomHdr.EfiImageHeaderOffset = (UINT16) (HeaderSize + PadBytesBeforeImage);
   RomHdr.PcirOffset           = (UINT16) (sizeof (RomHdr) + HeaderPadBytes);
   //
   // Set image as compressed or not
@@ -686,11 +697,18 @@ Returns:
       goto BailOut;
     } 
   }
-  //
-  // Keep track of how many bytes left to write
-  //
-  TotalSize -= HeaderSize;
 
+  //
+  // Pad head to make it a multiple of 512 bytes
+  //
+  while (PadBytesBeforeImage > 0) {
+    if (putc (~0, OutFptr) == EOF) {
+      Error (NULL, 0, 2000, "Failed to write trailing pad bytes output file!", NULL);
+      Status = STATUS_ERROR;
+      goto BailOut;
+    }
+    PadBytesBeforeImage--;
+  }
   //
   // Now dump the input file's contents to the output file
   //
@@ -700,18 +718,17 @@ Returns:
     goto BailOut;
   }
 
-  TotalSize -= FileSize;
   //
   // Pad the rest of the image to make it a multiple of 512 bytes
   //
-  while (TotalSize > 0) {
+  while (PadBytesAfterImage > 0) {
     if (putc (~0, OutFptr) == EOF) {
       Error (NULL, 0, 2000, "Failed to write trailing pad bytes output file!", NULL);
       Status = STATUS_ERROR;
       goto BailOut;
     }
 
-    TotalSize--;
+    PadBytesAfterImage--;
   }
 
 BailOut:
@@ -1205,7 +1222,7 @@ Returns:
   //
   // Copyright declaration
   // 
-  fprintf (stdout, "Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
@@ -1275,7 +1292,7 @@ Returns:
   //
   // Open the input file
   //
-  if ((InFptr = fopen (InFile->FileName, "rb")) == NULL) {
+  if ((InFptr = fopen (LongFilePath (InFile->FileName), "rb")) == NULL) {
     Error (NULL, 0, 0001, "Error opening file", InFile->FileName);
     return ;
   }

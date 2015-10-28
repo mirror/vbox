@@ -1,7 +1,7 @@
 ## @file
 # generate flash image
 #
-#  Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -17,7 +17,7 @@
 #
 from optparse import OptionParser
 import sys
-import os
+import Common.LongFilePathOs as os
 import linecache
 import FdfParser
 import Common.BuildToolError as BuildToolError
@@ -36,12 +36,14 @@ from Common import EdkLogger
 from Common.String import *
 from Common.Misc import DirCache,PathClass
 from Common.Misc import SaveFileOnChange
+from Common.Misc import ClearDuplicatedInf
+from Common.Misc import GuidStructureStringToGuidString
 from Common.BuildVersion import gBUILD_VERSION
 
 ## Version and Copyright
 versionNumber = "1.0" + ' ' + gBUILD_VERSION
 __version__ = "%prog Version " + versionNumber
-__copyright__ = "Copyright (c) 2007 - 2010, Intel Corporation  All rights reserved."
+__copyright__ = "Copyright (c) 2007 - 2014, Intel Corporation  All rights reserved."
 
 ## Tool entrance method
 #
@@ -103,8 +105,6 @@ def main():
                 FdfFilename = os.path.join(GenFdsGlobalVariable.WorkSpaceDir, FdfFilename)
             if not os.path.exists(FdfFilename):
                 EdkLogger.error("GenFds", FILE_NOT_FOUND, ExtraData=FdfFilename)
-            if os.path.normcase (FdfFilename).find(Workspace) != 0:
-                EdkLogger.error("GenFds", FILE_NOT_FOUND, "FdfFile doesn't exist in Workspace!")
 
             GenFdsGlobalVariable.FdfFile = FdfFilename
             GenFdsGlobalVariable.FdfFileTimeStamp = os.path.getmtime(FdfFilename)
@@ -134,10 +134,8 @@ def main():
             if not os.path.exists(ActivePlatform)  :
                 EdkLogger.error("GenFds", FILE_NOT_FOUND, "ActivePlatform doesn't exist!")
 
-            if os.path.normcase (ActivePlatform).find(Workspace) != 0:
-                EdkLogger.error("GenFds", FILE_NOT_FOUND, "ActivePlatform doesn't exist in Workspace!")
-
-            ActivePlatform = ActivePlatform[len(Workspace):]
+            if os.path.normcase (ActivePlatform).find(Workspace) == 0:
+                ActivePlatform = ActivePlatform[len(Workspace):]
             if len(ActivePlatform) > 0 :
                 if ActivePlatform[0] == '\\' or ActivePlatform[0] == '/':
                     ActivePlatform = ActivePlatform[1:]
@@ -148,7 +146,22 @@ def main():
 
         GenFdsGlobalVariable.ActivePlatform = PathClass(NormPath(ActivePlatform), Workspace)
 
-        BuildConfigurationFile = os.path.normpath(os.path.join(GenFdsGlobalVariable.WorkSpaceDir, "Conf/target.txt"))
+        if (Options.ConfDirectory):
+            # Get alternate Conf location, if it is absolute, then just use the absolute directory name
+            ConfDirectoryPath = os.path.normpath(Options.ConfDirectory)
+            if ConfDirectoryPath.startswith('"'):
+                ConfDirectoryPath = ConfDirectoryPath[1:]
+            if ConfDirectoryPath.endswith('"'):
+                ConfDirectoryPath = ConfDirectoryPath[:-1]
+            if not os.path.isabs(ConfDirectoryPath):
+                # Since alternate directory name is not absolute, the alternate directory is located within the WORKSPACE
+                # This also handles someone specifying the Conf directory in the workspace. Using --conf=Conf
+                ConfDirectoryPath = os.path.join(GenFdsGlobalVariable.WorkSpaceDir, ConfDirectoryPath)
+        else:
+            # Get standard WORKSPACE/Conf, use the absolute path to the WORKSPACE/Conf
+            ConfDirectoryPath = os.path.join(GenFdsGlobalVariable.WorkSpaceDir, 'Conf')
+        GenFdsGlobalVariable.ConfDir = ConfDirectoryPath
+        BuildConfigurationFile = os.path.normpath(os.path.join(ConfDirectoryPath, "target.txt"))
         # VBox - begin
         if 'VBOX_TARGET_CONF' in os.environ:
             BuildConfigurationFile = os.path.abspath(os.environ['VBOX_TARGET_CONF']);
@@ -158,9 +171,15 @@ def main():
         else:
             EdkLogger.error("GenFds", FILE_NOT_FOUND, ExtraData=BuildConfigurationFile)
 
+        #Set global flag for build mode
+        GlobalData.gIgnoreSource = Options.IgnoreSources
+
         if Options.Macros:
             for Pair in Options.Macros:
-                Pair.strip('"')
+                if Pair.startswith('"'):
+                    Pair = Pair[1:]
+                if Pair.endswith('"'):
+                    Pair = Pair[:-1]
                 List = Pair.split('=')
                 if len(List) == 2:
                     if List[0].strip() == "EFI_SOURCE":
@@ -180,7 +199,8 @@ def main():
         os.environ["WORKSPACE"] = Workspace
 
         """call Workspace build create database"""
-        BuildWorkSpace = WorkspaceDatabase(None)
+        GlobalData.gDatabasePath = os.path.normpath(os.path.join(ConfDirectoryPath, GlobalData.gDatabasePath))
+        BuildWorkSpace = WorkspaceDatabase(GlobalData.gDatabasePath)
         BuildWorkSpace.InitDatabase()
         
         #
@@ -279,11 +299,13 @@ def main():
                     "\nPython",
                     CODE_ERROR,
                     "Tools code failure",
-                    ExtraData="Please send email to edk2-buildtools-devel@lists.sourceforge.net for help, attaching following call stack trace!\n",
+                    ExtraData="Please send email to edk2-devel@lists.sourceforge.net for help, attaching following call stack trace!\n",
                     RaiseError=False
                     )
         EdkLogger.quiet(traceback.format_exc())
         ReturnCode = CODE_ERROR
+    finally:
+        ClearDuplicatedInf()
     return ReturnCode
 
 gParamCheck = []
@@ -305,7 +327,7 @@ def myOptionParser():
     usage = "%prog [options] -f input_file -a arch_list -b build_target -p active_platform -t tool_chain_tag -D \"MacroName [= MacroValue]\""
     Parser = OptionParser(usage=usage,description=__copyright__,version="%prog " + str(versionNumber))
     Parser.add_option("-f", "--file", dest="filename", type="string", help="Name of FDF file to convert", action="callback", callback=SingleCheckCallback)
-    Parser.add_option("-a", "--arch", dest="archList", help="comma separated list containing one or more of: IA32, X64, IPF, ARM or EBC which should be built, overrides target.txt?s TARGET_ARCH")
+    Parser.add_option("-a", "--arch", dest="archList", help="comma separated list containing one or more of: IA32, X64, IPF, ARM, AARCH64 or EBC which should be built, overrides target.txt?s TARGET_ARCH")
     Parser.add_option("-q", "--quiet", action="store_true", type=None, help="Disable all messages except FATAL ERRORS.")
     Parser.add_option("-v", "--verbose", action="store_true", type=None, help="Turn on verbose output with informational messages printed.")
     Parser.add_option("-d", "--debug", action="store", type="int", help="Enable debug messages at specified level.")
@@ -324,6 +346,9 @@ def myOptionParser():
                       action="callback", callback=SingleCheckCallback)
     Parser.add_option("-D", "--define", action="append", type="string", dest="Macros", help="Macro: \"Name [= Value]\".")
     Parser.add_option("-s", "--specifyaddress", dest="FixedAddress", action="store_true", type=None, help="Specify driver load address.")
+    Parser.add_option("--conf", action="store", type="string", dest="ConfDirectory", help="Specify the customized Conf directory.")
+    Parser.add_option("--ignore-sources", action="store_true", dest="IgnoreSources", default=False, help="Focus to a binary build and ignore all source files")
+
     (Options, args) = Parser.parse_args()
     return Options
 
@@ -515,11 +540,23 @@ class GenFds :
     def GenerateGuidXRefFile(BuildDb, ArchList):
         GuidXRefFileName = os.path.join(GenFdsGlobalVariable.FvDir, "Guid.xref")
         GuidXRefFile = StringIO.StringIO('')
+        GuidDict = {}
         for Arch in ArchList:
             PlatformDataBase = BuildDb.BuildObject[GenFdsGlobalVariable.ActivePlatform, Arch, GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
             for ModuleFile in PlatformDataBase.Modules:
                 Module = BuildDb.BuildObject[ModuleFile, Arch, GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
                 GuidXRefFile.write("%s %s\n" % (Module.Guid, Module.BaseName))
+                for key, item in Module.Protocols.items():
+                    GuidDict[key] = item
+                for key, item in Module.Guids.items():
+                    GuidDict[key] = item
+                for key, item in Module.Ppis.items():
+                    GuidDict[key] = item
+       # Append GUIDs, Protocols, and PPIs to the Xref file
+        GuidXRefFile.write("\n")
+        for key, item in GuidDict.items():
+            GuidXRefFile.write("%s %s\n" % (GuidStructureStringToGuidString(item).upper(), key))
+
         if GuidXRefFile.getvalue():
             SaveFileOnChange(GuidXRefFileName, GuidXRefFile.getvalue(), False)
             GenFdsGlobalVariable.QuietLogger("\nGUID cross reference file can be found at %s" % GuidXRefFileName)

@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define each component of the build database
 #
-# Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -14,7 +14,7 @@
 ##
 # Import Modules
 #
-import os, string, copy, pdb, copy
+import Common.LongFilePathOs as os, string, copy, pdb, copy
 import EdkLogger
 import DataType
 from InfClassObject import *
@@ -405,7 +405,7 @@ class ItemBuild(object):
 #
 # @var WorkspaceDir:      To store value for WorkspaceDir
 # @var SupArchList:       To store value for SupArchList, selection scope is in below list
-#                         EBC | IA32 | X64 | IPF | ARM | PPC
+#                         EBC | IA32 | X64 | IPF | ARM | PPC | AARCH64
 # @var BuildTarget:       To store value for WorkspaceDir, selection scope is in below list
 #                         RELEASE | DEBUG
 # @var SkuId:             To store value for SkuId

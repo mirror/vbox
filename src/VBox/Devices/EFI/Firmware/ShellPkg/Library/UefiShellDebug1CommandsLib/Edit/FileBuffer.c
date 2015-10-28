@@ -1,7 +1,7 @@
 /** @file
   Implements filebuffer interface functions.
 
-  Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -300,8 +300,9 @@ FileBufferRestoreMousePosition (
       // backup the old screen attributes
       //
       Orig                  = MainEditor.ColorAttributes;
-      New.Colors.Foreground = Orig.Colors.Background;
-      New.Colors.Background = Orig.Colors.Foreground;
+      New.Data              = 0;
+      New.Colors.Foreground = Orig.Colors.Background & 0xF;
+      New.Colors.Background = Orig.Colors.Foreground & 0x7;
 
       //
       // clear the old mouse position
@@ -342,7 +343,7 @@ FileBufferRestoreMousePosition (
       //
       // set the new mouse position
       //
-      gST->ConOut->SetAttribute (gST->ConOut, New.Data);
+      gST->ConOut->SetAttribute (gST->ConOut, New.Data & 0x7F);
 
       //
       // clear the old mouse position
@@ -488,7 +489,9 @@ FileBufferPrintLine (
 
   CHAR16  *Buffer;
   UINTN   Limit;
-  CHAR16  PrintLine[200];
+  CHAR16  *PrintLine;
+  CHAR16  *PrintLine2;
+  UINTN   BufLen; 
 
   //
   // print start from correct character
@@ -500,19 +503,31 @@ FileBufferPrintLine (
     Limit = 0;
   }
 
-  StrnCpy (PrintLine, Buffer, MIN(MIN(Limit,MainEditor.ScreenSize.Column), 200));
+  BufLen = (MainEditor.ScreenSize.Column + 1) * sizeof (CHAR16);
+  PrintLine = AllocatePool (BufLen);
+  ASSERT (PrintLine != NULL);
+
+  StrnCpy (PrintLine, Buffer, MIN(Limit, MainEditor.ScreenSize.Column));
   for (; Limit < MainEditor.ScreenSize.Column; Limit++) {
     PrintLine[Limit] = L' ';
   }
 
   PrintLine[MainEditor.ScreenSize.Column] = CHAR_NULL;
 
+  PrintLine2 = AllocatePool (BufLen * 2);
+  ASSERT (PrintLine2 != NULL);
+
+  ShellCopySearchAndReplace(PrintLine, PrintLine2, BufLen * 2, L"%", L"^%", FALSE, FALSE);
+
   ShellPrintEx (
     0,
     (INT32)Row - 1,
     L"%s",
-    PrintLine
+    PrintLine2
     );
+
+  FreePool (PrintLine);
+  FreePool (PrintLine2);
 
   return EFI_SUCCESS;
 }

@@ -2,7 +2,8 @@
   Implement all four UEFI Runtime Variable services for the nonvolatile
   and volatile storage space and install variable architecture protocol.
 
-Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (C) 2013, Red Hat, Inc.
+Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -16,11 +17,14 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "Variable.h"
 #include "AuthService.h"
 
-extern VARIABLE_STORE_HEADER        *mNvVariableCache;
-extern VARIABLE_INFO_ENTRY          *gVariableInfo;
-EFI_HANDLE                          mHandle                    = NULL;
-EFI_EVENT                           mVirtualAddressChangeEvent = NULL;
-EFI_EVENT                           mFtwRegistration           = NULL;
+extern VARIABLE_STORE_HEADER   *mNvVariableCache;
+extern VARIABLE_INFO_ENTRY     *gVariableInfo;
+EFI_HANDLE                     mHandle                    = NULL;
+EFI_EVENT                      mVirtualAddressChangeEvent = NULL;
+EFI_EVENT                      mFtwRegistration           = NULL;
+extern LIST_ENTRY              mLockedVariableList;
+extern BOOLEAN                 mEndOfDxe;
+EDKII_VARIABLE_LOCK_PROTOCOL   mVariableLock              = { VariableLockRequestToLock };
 
 /**
   Return TRUE if ExitBootServices () has been called.
@@ -218,6 +222,10 @@ VariableClassAddressChangeEvent (
   IN VOID                                 *Context
   )
 {
+  LIST_ENTRY     *Link;
+  VARIABLE_ENTRY *Entry;
+  EFI_STATUS     Status;
+
   EfiConvertPointer (0x0, (VOID **) &mVariableModuleGlobal->FvbInstance->GetBlockSize);
   EfiConvertPointer (0x0, (VOID **) &mVariableModuleGlobal->FvbInstance->GetPhysicalAddress);
   EfiConvertPointer (0x0, (VOID **) &mVariableModuleGlobal->FvbInstance->GetAttributes);
@@ -233,9 +241,27 @@ VariableClassAddressChangeEvent (
   EfiConvertPointer (0x0, (VOID **) &mVariableModuleGlobal->VariableGlobal.VolatileVariableBase);
   EfiConvertPointer (0x0, (VOID **) &mVariableModuleGlobal);
   EfiConvertPointer (0x0, (VOID **) &mHashCtx);
-  EfiConvertPointer (0x0, (VOID **) &mStorageArea);
   EfiConvertPointer (0x0, (VOID **) &mSerializationRuntimeBuffer);
   EfiConvertPointer (0x0, (VOID **) &mNvVariableCache);
+  EfiConvertPointer (0x0, (VOID **) &mPubKeyStore);
+  EfiConvertPointer (0x0, (VOID **) &mCertDbStore);
+
+  //
+  // in the list of locked variables, convert the name pointers first
+  //
+  for ( Link = GetFirstNode (&mLockedVariableList)
+      ; !IsNull (&mLockedVariableList, Link)
+      ; Link = GetNextNode (&mLockedVariableList, Link)
+      ) {
+    Entry = BASE_CR (Link, VARIABLE_ENTRY, Link);
+    Status = EfiConvertPointer (0x0, (VOID **) &Entry->Name);
+    ASSERT_EFI_ERROR (Status);
+  }
+  //
+  // second, convert the list itself using UefiRuntimeLib
+  //
+  Status = EfiConvertList (0x0, &mLockedVariableList);
+  ASSERT_EFI_ERROR (Status);
 }
 
 
@@ -257,12 +283,37 @@ OnReadyToBoot (
   VOID                                    *Context
   )
 {
+  //
+  // Set the End Of DXE bit in case the EFI_END_OF_DXE_EVENT_GROUP_GUID event is not signaled.
+  //
+  mEndOfDxe = TRUE;
   ReclaimForOS ();
   if (FeaturePcdGet (PcdVariableCollectStatistics)) {
     gBS->InstallConfigurationTable (&gEfiAuthenticatedVariableGuid, gVariableInfo);
   }
 }
 
+/**
+  Notification function of EFI_END_OF_DXE_EVENT_GROUP_GUID event group.
+
+  This is a notification function registered on EFI_END_OF_DXE_EVENT_GROUP_GUID event group.
+
+  @param  Event        Event whose notification function is being invoked.
+  @param  Context      Pointer to the notification function's context.
+
+**/
+VOID
+EFIAPI
+OnEndOfDxe (
+  EFI_EVENT                               Event,
+  VOID                                    *Context
+  )
+{
+  mEndOfDxe = TRUE;
+  if (PcdGetBool (PcdReclaimVariableSpaceAtEndOfDxe)) {
+    ReclaimForOS ();
+  }
+}
 
 /**
   Fault Tolerant Write protocol notification event handler.
@@ -290,6 +341,7 @@ FtwNotificationEvent (
   UINT64                                  Length;
   EFI_PHYSICAL_ADDRESS                    VariableStoreBase;
   UINT64                                  VariableStoreLength;
+  UINTN                                   FtwMaxBlockSize;
 
   //
   // Ensure FTW protocol is installed.
@@ -297,6 +349,11 @@ FtwNotificationEvent (
   Status = GetFtwProtocol ((VOID**) &FtwProtocol);
   if (EFI_ERROR (Status)) {
     return ;
+  }
+
+  Status = FtwProtocol->GetMaxBlockSize (FtwProtocol, &FtwMaxBlockSize);
+  if (!EFI_ERROR (Status)) {
+    ASSERT (PcdGet32 (PcdFlashNvStorageVariableSize) <= FtwMaxBlockSize);
   }
 
   //
@@ -315,7 +372,7 @@ FtwNotificationEvent (
   //
   // Mark the variable storage region of the FLASH as RUNTIME.
   //
-  VariableStoreBase   = mVariableModuleGlobal->VariableGlobal.NonVolatileVariableBase;
+  VariableStoreBase   = NvStorageVariableBase + (((EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)(NvStorageVariableBase))->HeaderLength);
   VariableStoreLength = ((VARIABLE_STORE_HEADER *)(UINTN)VariableStoreBase)->Size;
   BaseAddress = VariableStoreBase & (~EFI_PAGE_MASK);
   Length      = VariableStoreLength + (VariableStoreBase - BaseAddress);
@@ -323,7 +380,7 @@ FtwNotificationEvent (
 
   Status      = gDS->GetMemorySpaceDescriptor (BaseAddress, &GcdDescriptor);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_WARN, "Variable driver failed to add EFI_MEMORY_RUNTIME attribute to Flash.\n"));
+    DEBUG ((DEBUG_WARN, "Variable driver failed to get flash memory attribute.\n"));
   } else {
     Status = gDS->SetMemorySpaceAttributes (
                     BaseAddress,
@@ -336,7 +393,9 @@ FtwNotificationEvent (
   }
 
   Status = VariableWriteServiceInitialize ();
-  ASSERT_EFI_ERROR (Status);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Variable write service initialization failed. Status = %r\n", Status));
+  }
 
   //
   // Install the Variable Write Architectural protocol.
@@ -378,8 +437,17 @@ VariableServiceInitialize (
 {
   EFI_STATUS                            Status;
   EFI_EVENT                             ReadyToBootEvent;
+  EFI_EVENT                             EndOfDxeEvent;
 
   Status = VariableCommonInitialize ();
+  ASSERT_EFI_ERROR (Status);
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &mHandle,
+                  &gEdkiiVariableLockProtocolGuid,
+                  &mVariableLock,
+                  NULL
+                  );
   ASSERT_EFI_ERROR (Status);
 
   SystemTable->RuntimeServices->GetVariable         = VariableServiceGetVariable;
@@ -428,6 +496,20 @@ VariableServiceInitialize (
              NULL,
              &ReadyToBootEvent
              );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Register the event handling function to set the End Of DXE flag.
+  //
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_NOTIFY,
+                  OnEndOfDxe,
+                  NULL,
+                  &gEfiEndOfDxeEventGroupGuid,
+                  &EndOfDxeEvent
+                  );
+  ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }

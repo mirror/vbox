@@ -1,7 +1,7 @@
 /**@file
   Xen Platform PEI support
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2011, Andrei Warkentin <andreiw@motorola.com>
 
   This program and the accompanying materials
@@ -27,11 +27,46 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
 #include <Guid/XenInfo.h>
+#include <IndustryStandard/E820.h>
+#include <Library/ResourcePublicationLib.h>
+#include <Library/MtrrLib.h>
 
 #include "Platform.h"
+#include "Xen.h"
+
+BOOLEAN mXen = FALSE;
+
+STATIC UINT32 mXenLeaf = 0;
 
 EFI_XEN_INFO mXenInfo;
 
+/**
+  Returns E820 map provided by Xen
+
+  @param Entries      Pointer to E820 map
+  @param Count        Number of entries
+
+  @return EFI_STATUS
+**/
+EFI_STATUS
+XenGetE820Map (
+  EFI_E820_ENTRY64 **Entries,
+  UINT32 *Count
+  )
+{
+  EFI_XEN_OVMF_INFO *Info =
+    (EFI_XEN_OVMF_INFO *)(UINTN) OVMF_INFO_PHYSICAL_ADDRESS;
+
+  if (AsciiStrCmp ((CHAR8 *) Info->Signature, "XenHVMOVMF")) {
+    return EFI_NOT_FOUND;
+  }
+
+  ASSERT (Info->E820 < MAX_ADDRESS);
+  *Entries = (EFI_E820_ENTRY64 *)(UINTN) Info->E820;
+  *Count = Info->E820EntriesCount;
+
+  return EFI_SUCCESS;
+}
 
 /**
   Connects to the Hypervisor.
@@ -84,31 +119,87 @@ XenConnect (
 /**
   Figures out if we are running inside Xen HVM.
 
-  @return UINT32     CPUID index used to connect to HV.
+  @retval TRUE   Xen was detected
+  @retval FALSE  Xen was not detected
 
 **/
-UINT32
+BOOLEAN
 XenDetect (
   VOID
   )
 {
-
-  UINT32 XenLeaf;
   UINT8 Signature[13];
 
-  for (XenLeaf = 0x40000000; XenLeaf < 0x40010000; XenLeaf += 0x100) {
-    AsmCpuid (XenLeaf, NULL, (UINT32 *) &Signature[0],
+  if (mXenLeaf != 0) {
+    return TRUE;
+  }
+
+  Signature[12] = '\0';
+  for (mXenLeaf = 0x40000000; mXenLeaf < 0x40010000; mXenLeaf += 0x100) {
+    AsmCpuid (mXenLeaf,
+              NULL,
+              (UINT32 *) &Signature[0],
               (UINT32 *) &Signature[4],
               (UINT32 *) &Signature[8]);
-    Signature[12] = '\0';
 
     if (!AsciiStrCmp ((CHAR8 *) Signature, "XenVMMXenVMM")) {
-      return XenLeaf;
+      mXen = TRUE;
+      return TRUE;
     }
   }
 
-  return 0;
+  mXenLeaf = 0;
+  return FALSE;
 }
+
+
+VOID
+XenPublishRamRegions (
+  VOID
+  )
+{
+  EFI_E820_ENTRY64  *E820Map;
+  UINT32            E820EntriesCount;
+  EFI_STATUS        Status;
+
+  if (!mXen) {
+    return;
+  }
+
+  DEBUG ((EFI_D_INFO, "Using memory map provided by Xen\n"));
+
+  //
+  // Parse RAM in E820 map
+  //
+  Status = XenGetE820Map (&E820Map, &E820EntriesCount);
+
+  ASSERT_EFI_ERROR (Status);
+
+  if (E820EntriesCount > 0) {
+    EFI_E820_ENTRY64 *Entry;
+    UINT32 Loop;
+
+    for (Loop = 0; Loop < E820EntriesCount; Loop++) {
+      Entry = E820Map + Loop;
+
+      //
+      // Only care about RAM
+      //
+      if (Entry->Type != EfiAcpiAddressRangeMemory) {
+        continue;
+      }
+
+      if (Entry->BaseAddr >= BASE_4GB) {
+        AddUntestedMemoryBaseSizeHob (Entry->BaseAddr, Entry->Length);
+      } else {
+        AddMemoryBaseSizeHob (Entry->BaseAddr, Entry->Length);
+      }
+
+      MtrrSetMemoryAttribute (Entry->BaseAddr, Entry->Length, CacheWriteBack);
+    }
+  }
+}
+
 
 /**
   Perform Xen PEI initialization.
@@ -122,23 +213,19 @@ InitializeXen (
   VOID
   )
 {
-  UINT32 XenLeaf;
-
-  XenLeaf = XenDetect ();
-
-  if (XenLeaf == 0) {
+  if (mXenLeaf == 0) {
     return EFI_NOT_FOUND;
   }
 
-  DEBUG ((EFI_D_INFO, "Xen was detected\n"));
-
-  XenConnect (XenLeaf);
+  XenConnect (mXenLeaf);
 
   //
   // Reserve away HVMLOADER reserved memory [0xFC000000,0xFD000000).
   // This needs to match HVMLOADER RESERVED_MEMBASE/RESERVED_MEMSIZE.
   //
   AddReservedMemoryBaseSizeHob (0xFC000000, 0x1000000);
+
+  PcdSetBool (PcdPciDisableBusEnumeration, TRUE);
 
   return EFI_SUCCESS;
 }

@@ -1,10 +1,10 @@
 /** @file
   This is the code for Boot Script Executer module.
 
-  This driver is dispatched by Dxe core and the driver will reload itself to ACPI NVS memory
+  This driver is dispatched by Dxe core and the driver will reload itself to ACPI reserved memory
   in the entry point. The functionality is to interpret and restore the S3 boot script
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -18,86 +18,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "ScriptExecute.h"
 
-EFI_PHYSICAL_ADDRESS  mPerfDataMemAddress;
-UINT64                mS3BootScriptEntryTick;
-UINT64                mScriptStartTick;
-UINT64                mScriptEndTick;
-
 EFI_GUID              mBootScriptExecutorImageGuid = {
-  0x9a8d3433, 0x9fe8, 0x42b6, 0x87, 0xb, 0x1e, 0x31, 0xc8, 0x4e, 0xbe, 0x3b
+  0x9a8d3433, 0x9fe8, 0x42b6, { 0x87, 0xb, 0x1e, 0x31, 0xc8, 0x4e, 0xbe, 0x3b }
 };
 
-/**
-  The event callback is used to get the base address of boot performance data structure on
-  LegacyBoot event and ExitBootServices event.
-
-  @param  Event    The event handle.
-  @param  Context  The event context.
-
-**/
-VOID
-EFIAPI
-OnBootEvent (
-  IN EFI_EVENT        Event,
-  IN VOID             *Context
-  )
-{
-  EFI_STATUS Status;
-  UINTN      VarSize;
-
-  VarSize = sizeof (EFI_PHYSICAL_ADDRESS);
-  Status = gRT->GetVariable (
-                  L"PerfDataMemAddr",
-                  &gPerformanceProtocolGuid,
-                  NULL,
-                  &VarSize,
-                  &mPerfDataMemAddress
-                  );
-  if (EFI_ERROR (Status)) {
-    mPerfDataMemAddress = 0;
-  }
-}
-
-/**
-  Record S3 Script execution time and adjust total S3 resume time for script running.
-**/
-VOID
-WriteToOsS3PerformanceData (
-  VOID
-  )
-{
-  UINT64               Ticker;
-  UINT64               StartValue;
-  UINT64               EndValue;
-  UINT64               Freq;
-  UINT64               ScriptExecuteTicks;
-  PERF_HEADER          *PerfHeader;
-  PERF_DATA            *PerfData;
-
-  Ticker = GetPerformanceCounter ();
-
-  PerfHeader = (PERF_HEADER *)(UINTN)mPerfDataMemAddress;
-  if (PerfHeader == NULL) {
-    return;
-  }
-
-  Freq   = GetPerformanceCounterProperties (&StartValue, &EndValue);
-  Freq   = DivU64x32 (Freq, 1000);
-
-  if (EndValue >= StartValue) {
-    ScriptExecuteTicks = mScriptEndTick - mScriptStartTick;
-    PerfHeader->S3Resume += Ticker - mS3BootScriptEntryTick;
-  } else {
-    ScriptExecuteTicks = mScriptStartTick - mScriptEndTick;
-    PerfHeader->S3Resume += mS3BootScriptEntryTick - Ticker;
-  }
-  if (PerfHeader->S3EntryNum < PERF_PEI_ENTRY_MAX_NUM) {
-    PerfData = &PerfHeader->S3Entry[PerfHeader->S3EntryNum];
-    PerfData->Duration = (UINT32) DivU64x32 (ScriptExecuteTicks, (UINT32) Freq);;
-    AsciiStrnCpy (PerfData->Token, "ScriptExec", PERF_TOKEN_LENGTH);
-    PerfHeader->S3EntryNum++;
-  }
-}
+BOOLEAN               mPage1GSupport = FALSE;
 
 /**
   Entry function of Boot script exector. This function will be executed in
@@ -122,38 +47,37 @@ S3BootScriptExecutorEntryFunction (
   UINTN                                         TempStackTop;
   UINTN                                         TempStack[0x10];
   UINTN                                         AsmTransferControl16Address;
-
-  PERF_CODE (
-    mS3BootScriptEntryTick = GetPerformanceCounter ();
-    );
+  IA32_DESCRIPTOR                               IdtDescriptor;
 
   //
   // Disable interrupt of Debug timer, since new IDT table cannot handle it.
   //
   SaveAndSetDebugTimerInterrupt (FALSE);
 
+  AsmReadIdtr (&IdtDescriptor);
   //
   // Restore IDT for debug
   //
   SetIdtEntry (AcpiS3Context);
 
   //
-  // Initialize Debug Agent to support source level debug in S3 path.
+  // Initialize Debug Agent to support source level debug in S3 path, it will disable interrupt and Debug Timer.
   //
-  InitializeDebugAgent (DEBUG_AGENT_INIT_S3, NULL, NULL);
+  InitializeDebugAgent (DEBUG_AGENT_INIT_S3, (VOID *)&IdtDescriptor, NULL);
 
   //
   // Because not install BootScriptExecute PPI(used just in this module), So just pass NULL
   // for that parameter.
   //
-  PERF_CODE (
-    mScriptStartTick = GetPerformanceCounter ();
-    );
   Status = S3BootScriptExecute ();
-  PERF_CODE (
-    mScriptEndTick = GetPerformanceCounter ();
-    );
+  
+  //
+  // If invalid script table or opcode in S3 boot script table.
+  //
+  ASSERT_EFI_ERROR (Status);
+  
   if (EFI_ERROR (Status)) {
+    CpuDeadLoop ();
     return Status;
   }
 
@@ -164,17 +88,15 @@ S3BootScriptExecutorEntryFunction (
   //
   Facs = (EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE *) ((UINTN) (AcpiS3Context->AcpiFacsTable));
 
-  if ((Facs == NULL) ||
-      (Facs->Signature != EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE) ||
-      ((Facs->FirmwareWakingVector == 0) && (Facs->XFirmwareWakingVector == 0)) ) {
-    CpuDeadLoop();
-    return EFI_INVALID_PARAMETER;
-  }
-
   //
   // We need turn back to S3Resume - install boot script done ppi and report status code on S3resume.
   //
   if (PeiS3ResumeState != 0) {
+    //
+    // Need report status back to S3ResumePeim. 
+    // If boot script execution is failed, S3ResumePeim wil report the error status code.
+    //
+    PeiS3ResumeState->ReturnStatus = (UINT64)(UINTN)Status;
     if (FeaturePcdGet (PcdDxeIplSwitchToLongMode)) {
       //
       // X64 S3 Resume
@@ -182,12 +104,16 @@ S3BootScriptExecutorEntryFunction (
       DEBUG ((EFI_D_ERROR, "Call AsmDisablePaging64() to return to S3 Resume in PEI Phase\n"));
       PeiS3ResumeState->AsmTransferControl = (EFI_PHYSICAL_ADDRESS)(UINTN)AsmTransferControl32;
 
-      //
-      // more step needed - because relative address is handled differently between X64 and IA32.
-      //
-      AsmTransferControl16Address = (UINTN)AsmTransferControl16;
-      AsmFixAddress16 = (UINT32)AsmTransferControl16Address;
-      AsmJmpAddr32 = (UINT32)((Facs->FirmwareWakingVector & 0xF) | ((Facs->FirmwareWakingVector & 0xFFFF0) << 12));
+      if ((Facs != NULL) &&
+          (Facs->Signature == EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE) &&
+          (Facs->FirmwareWakingVector != 0) ) {
+        //
+        // more step needed - because relative address is handled differently between X64 and IA32.
+        //
+        AsmTransferControl16Address = (UINTN)AsmTransferControl16;
+        AsmFixAddress16 = (UINT32)AsmTransferControl16Address;
+        AsmJmpAddr32 = (UINT32)((Facs->FirmwareWakingVector & 0xF) | ((Facs->FirmwareWakingVector & 0xFFFF0) << 12));
+      }
 
       AsmDisablePaging64 (
         PeiS3ResumeState->ReturnCs,
@@ -217,11 +143,10 @@ S3BootScriptExecutorEntryFunction (
     CpuDeadLoop();
     return EFI_UNSUPPORTED;
   }
-
-  PERF_CODE (
-    WriteToOsS3PerformanceData ();
-    );
-
+  
+  //
+  // S3ResumePeim does not provide a way to jump back to itself, so resume to OS here directly
+  //
   if (Facs->XFirmwareWakingVector != 0) {
     //
     // Switch to native waking vector
@@ -282,6 +207,170 @@ S3BootScriptExecutorEntryFunction (
   CpuDeadLoop();
   return EFI_UNSUPPORTED;
 }
+
+/**
+  Register image to memory profile.
+
+  @param FileName       File name of the image.
+  @param ImageBase      Image base address.
+  @param ImageSize      Image size.
+  @param FileType       File type of the image.
+
+**/
+VOID
+RegisterMemoryProfileImage (
+  IN EFI_GUID                       *FileName,
+  IN PHYSICAL_ADDRESS               ImageBase,
+  IN UINT64                         ImageSize,
+  IN EFI_FV_FILETYPE                FileType
+  )
+{
+  EFI_STATUS                        Status;
+  EDKII_MEMORY_PROFILE_PROTOCOL     *ProfileProtocol;
+  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *FilePath;
+  UINT8                             TempBuffer[sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH) + sizeof (EFI_DEVICE_PATH_PROTOCOL)];
+
+  if ((PcdGet8 (PcdMemoryProfilePropertyMask) & BIT0) != 0) {
+
+    FilePath = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *)TempBuffer;
+    Status = gBS->LocateProtocol (&gEdkiiMemoryProfileGuid, NULL, (VOID **) &ProfileProtocol);
+    if (!EFI_ERROR (Status)) {
+      EfiInitializeFwVolDevicepathNode (FilePath, FileName);
+      SetDevicePathEndNode (FilePath + 1);
+
+      Status = ProfileProtocol->RegisterImage (
+                                  ProfileProtocol,
+                                  (EFI_DEVICE_PATH_PROTOCOL *) FilePath,
+                                  ImageBase,
+                                  ImageSize,
+                                  FileType
+                                  );
+    }
+  }
+}
+
+/**
+  This is the Event notification function to reload BootScriptExecutor image
+  to RESERVED mem and save it to LockBox.
+  
+  @param    Event   Pointer to this event
+  @param    Context Event handler private data 
+ **/
+VOID
+EFIAPI
+ReadyToLockEventNotify (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  EFI_STATUS                                    Status;
+  VOID                                          *Interface;
+  UINT8                                         *Buffer;
+  UINTN                                         BufferSize;
+  EFI_HANDLE                                    NewImageHandle;
+  UINTN                                         Pages;
+  EFI_PHYSICAL_ADDRESS                          FfsBuffer;
+  PE_COFF_LOADER_IMAGE_CONTEXT                  ImageContext;
+
+  Status = gBS->LocateProtocol (&gEfiDxeSmmReadyToLockProtocolGuid, NULL, &Interface);
+  if (EFI_ERROR (Status)) {
+    return;
+  }
+
+  //
+  // A workaround: Here we install a dummy handle
+  //
+  NewImageHandle = NULL;
+  Status = gBS->InstallProtocolInterface (
+                  &NewImageHandle,
+                  &gEfiCallerIdGuid,
+                  EFI_NATIVE_INTERFACE,
+                  NULL
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Reload BootScriptExecutor image itself to RESERVED mem
+  //
+  Status = GetSectionFromAnyFv  (
+             &gEfiCallerIdGuid,
+             EFI_SECTION_PE32,
+             0,
+             (VOID **) &Buffer,
+             &BufferSize
+             );
+  ASSERT_EFI_ERROR (Status);
+  ImageContext.Handle    = Buffer;
+  ImageContext.ImageRead = PeCoffLoaderImageReadFromMemory;
+  //
+  // Get information about the image being loaded
+  //
+  Status = PeCoffLoaderGetImageInfo (&ImageContext);
+  ASSERT_EFI_ERROR (Status);
+  Pages = EFI_SIZE_TO_PAGES(BufferSize + ImageContext.SectionAlignment);
+  FfsBuffer = 0xFFFFFFFF;
+  Status = gBS->AllocatePages (
+                  AllocateMaxAddress,
+                  EfiReservedMemoryType,
+                  Pages,
+                  &FfsBuffer
+                  );
+  ASSERT_EFI_ERROR (Status);
+  ImageContext.ImageAddress = (PHYSICAL_ADDRESS)(UINTN)FfsBuffer;
+  //
+  // Align buffer on section boundry
+  //
+  ImageContext.ImageAddress += ImageContext.SectionAlignment - 1;
+  ImageContext.ImageAddress &= ~((EFI_PHYSICAL_ADDRESS)(ImageContext.SectionAlignment - 1));
+  //
+  // Load the image to our new buffer
+  //
+  Status = PeCoffLoaderLoadImage (&ImageContext);
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Relocate the image in our new buffer
+  //
+  Status = PeCoffLoaderRelocateImage (&ImageContext);
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Free the buffer allocated by ReadSection since the image has been relocated in the new buffer
+  //
+  gBS->FreePool (Buffer);
+
+  //
+  // Flush the instruction cache so the image data is written before we execute it
+  //
+  InvalidateInstructionCacheRange ((VOID *)(UINTN)ImageContext.ImageAddress, (UINTN)ImageContext.ImageSize);
+
+  RegisterMemoryProfileImage (
+    &gEfiCallerIdGuid,
+    ImageContext.ImageAddress,
+    ImageContext.ImageSize,
+    EFI_FV_FILETYPE_DRIVER
+    );
+
+  Status = ((EFI_IMAGE_ENTRY_POINT)(UINTN)(ImageContext.EntryPoint)) (NewImageHandle, gST);
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Additional step for BootScript integrity
+  // Save BootScriptExecutor image
+  //
+  Status = SaveLockBox (
+             &mBootScriptExecutorImageGuid,
+             (VOID *)(UINTN)ImageContext.ImageAddress,
+             (UINTN)ImageContext.ImageSize
+             );
+  ASSERT_EFI_ERROR (Status);
+
+  Status = SetLockBoxAttributes (&mBootScriptExecutorImageGuid, LOCK_BOX_ATTRIBUTE_RESTORE_IN_PLACE);
+  ASSERT_EFI_ERROR (Status);
+
+  gBS->CloseEvent (Event);
+}
+
 /**
   Entrypoint of Boot script exector driver, this function will be executed in
   normal boot phase and invoked by DXE dispatch.
@@ -299,16 +388,16 @@ BootScriptExecutorEntryPoint (
   IN EFI_SYSTEM_TABLE     *SystemTable
   )
 {
-  UINT8                                         *Buffer;
   UINTN                                         BufferSize;
   UINTN                                         Pages;
-  EFI_PHYSICAL_ADDRESS                          FfsBuffer;
-  PE_COFF_LOADER_IMAGE_CONTEXT                  ImageContext;
   BOOT_SCRIPT_EXECUTOR_VARIABLE                 *EfiBootScriptExecutorVariable;
   EFI_PHYSICAL_ADDRESS                          BootScriptExecutorBuffer;
   EFI_STATUS                                    Status;
   VOID                                          *DevicePath;
-  EFI_HANDLE                                    NewImageHandle;
+  EFI_EVENT                                     ReadyToLockEvent;
+  VOID                                          *Registration;
+  UINT32                                        RegEax;
+  UINT32                                        RegEdx;
 
   //
   // Test if the gEfiCallerIdGuid of this image is already installed. if not, the entry
@@ -317,113 +406,43 @@ BootScriptExecutorEntryPoint (
   //
   Status = gBS->LocateProtocol (&gEfiCallerIdGuid, NULL, &DevicePath);
   if (EFI_ERROR (Status)) {
-
       //
-      // This is the first-time loaded by DXE core. reload itself to NVS mem
+      // Create ReadyToLock event to reload BootScriptExecutor image
+      // to RESERVED mem and save it to LockBox.
       //
-      //
-      // A workarouond: Here we install a dummy handle
-      //
-      NewImageHandle = NULL;
-      Status = gBS->InstallProtocolInterface (
-                  &NewImageHandle,
-                  &gEfiCallerIdGuid,
-                  EFI_NATIVE_INTERFACE,
-                  NULL
-                  );
-
-      Status = GetSectionFromAnyFv  (
-                 &gEfiCallerIdGuid,
-                 EFI_SECTION_PE32,
-                 0,
-                 (VOID **) &Buffer,
-                 &BufferSize
-                 );
-      ImageContext.Handle    = Buffer;
-      ImageContext.ImageRead = PeCoffLoaderImageReadFromMemory;
-      //
-      // Get information about the image being loaded
-      //
-      Status = PeCoffLoaderGetImageInfo (&ImageContext);
-      if (EFI_ERROR (Status)) {
-        return Status;
-      }
-      Pages = EFI_SIZE_TO_PAGES(BufferSize + ImageContext.SectionAlignment);
-      FfsBuffer = 0xFFFFFFFF;
-      Status = gBS->AllocatePages (
-                    AllocateMaxAddress,
-                    EfiACPIMemoryNVS,
-                    Pages,
-                    &FfsBuffer
-                    );
-      if (EFI_ERROR (Status)) {
-        return EFI_OUT_OF_RESOURCES;
-      }
-      ImageContext.ImageAddress = (PHYSICAL_ADDRESS)(UINTN)FfsBuffer;
-      //
-      // Align buffer on section boundry
-      //
-      ImageContext.ImageAddress += ImageContext.SectionAlignment - 1;
-      ImageContext.ImageAddress &= ~(ImageContext.SectionAlignment - 1);
-      //
-      // Load the image to our new buffer
-      //
-      Status = PeCoffLoaderLoadImage (&ImageContext);
-      if (EFI_ERROR (Status)) {
-        gBS->FreePages (FfsBuffer, Pages);
-        return Status;
-      }
-
-      //
-      // Relocate the image in our new buffer
-      //
-      Status = PeCoffLoaderRelocateImage (&ImageContext);
-
-      if (EFI_ERROR (Status)) {
-        PeCoffLoaderUnloadImage (&ImageContext);
-        gBS->FreePages (FfsBuffer, Pages);
-        return Status;
-      }
-      //
-      // Flush the instruction cache so the image data is written before we execute it
-      //
-      InvalidateInstructionCacheRange ((VOID *)(UINTN)ImageContext.ImageAddress, (UINTN)ImageContext.ImageSize);
-      Status = ((EFI_IMAGE_ENTRY_POINT)(UINTN)(ImageContext.EntryPoint)) (NewImageHandle, SystemTable);
-      if (EFI_ERROR (Status)) {
-        gBS->FreePages (FfsBuffer, Pages);
-        return Status;
-      }
-      //
-      // Additional step for BootScript integrity
-      // Save BootScriptExecutor image
-      //
-      Status = SaveLockBox (
-                 &mBootScriptExecutorImageGuid,
-                 (VOID *)(UINTN)ImageContext.ImageAddress,
-                 (UINTN)ImageContext.ImageSize
-                 );
-      ASSERT_EFI_ERROR (Status);
-
-      Status = SetLockBoxAttributes (&mBootScriptExecutorImageGuid, LOCK_BOX_ATTRIBUTE_RESTORE_IN_PLACE);
-      ASSERT_EFI_ERROR (Status);
-
+      ReadyToLockEvent = EfiCreateProtocolNotifyEvent  (
+                           &gEfiDxeSmmReadyToLockProtocolGuid,
+                           TPL_NOTIFY,
+                           ReadyToLockEventNotify,
+                           NULL,
+                           &Registration
+                           );
+      ASSERT (ReadyToLockEvent != NULL);
     } else {
       //
-      // the entry point is invoked after reloading. following code only run in  ACPI NVS
+      // the entry point is invoked after reloading. following code only run in RESERVED mem
       //
+      if (PcdGetBool(PcdUse1GPageTable)) {
+        AsmCpuid (0x80000000, &RegEax, NULL, NULL, NULL);
+        if (RegEax >= 0x80000001) {
+          AsmCpuid (0x80000001, NULL, NULL, NULL, &RegEdx);
+          if ((RegEdx & BIT26) != 0) {
+            mPage1GSupport = TRUE;
+          }
+        }
+      }
+
       BufferSize = sizeof (BOOT_SCRIPT_EXECUTOR_VARIABLE);
 
       BootScriptExecutorBuffer = 0xFFFFFFFF;
       Pages = EFI_SIZE_TO_PAGES(BufferSize);
       Status = gBS->AllocatePages (
                       AllocateMaxAddress,
-                      EfiACPIMemoryNVS,
+                      EfiReservedMemoryType,
                       Pages,
                       &BootScriptExecutorBuffer
                       );
-      if (EFI_ERROR (Status)) {
-        return EFI_OUT_OF_RESOURCES;
-      }
+      ASSERT_EFI_ERROR (Status);
 
       EfiBootScriptExecutorVariable = (BOOT_SCRIPT_EXECUTOR_VARIABLE *)(UINTN)BootScriptExecutorBuffer;
       EfiBootScriptExecutorVariable->BootScriptExecutorEntrypoint = (UINTN) S3BootScriptExecutorEntryFunction ;
@@ -448,30 +467,8 @@ BootScriptExecutorEntryPoint (
 
       Status = SetLockBoxAttributes (&gEfiBootScriptExecutorContextGuid, LOCK_BOX_ATTRIBUTE_RESTORE_IN_PLACE);
       ASSERT_EFI_ERROR (Status);
-
-      PERF_CODE (
-        EFI_EVENT Event;
-
-        gBS->CreateEventEx (
-              EVT_NOTIFY_SIGNAL,
-              TPL_NOTIFY,
-              OnBootEvent,
-              NULL,
-              &gEfiEventExitBootServicesGuid,
-              &Event
-              );
-
-        EfiCreateEventLegacyBootEx(
-          TPL_NOTIFY,
-          OnBootEvent,
-          NULL,
-          &Event
-          );
-        );
     }
 
     return EFI_SUCCESS;
 }
-
-
 

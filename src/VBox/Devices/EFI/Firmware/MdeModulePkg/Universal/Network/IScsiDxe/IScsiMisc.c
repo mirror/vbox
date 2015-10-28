@@ -1,7 +1,7 @@
 /** @file
   Miscellaneous routines for iSCSI driver.
 
-Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -219,6 +219,7 @@ IScsiLunToUnicodeStr (
     TempStr += StrLen (TempStr);
   }
 
+  ASSERT (StrLen(Str) >= 1);
   Str[StrLen (Str) - 1] = 0;
 
   for (Index = StrLen (Str) - 1; Index > 1; Index = Index - 2) {
@@ -617,6 +618,59 @@ IScsiCleanDriverData (
 }
 
 /**
+  Check wheather the Controller is configured to use DHCP protocol.
+
+  @param[in]  Controller           The handle of the controller.
+  
+  @retval TRUE                     The handle of the controller need the Dhcp protocol.
+  @retval FALSE                    The handle of the controller does not need the Dhcp protocol.
+  
+**/
+BOOLEAN
+IScsiDhcpIsConfigured (
+  IN EFI_HANDLE  Controller
+  )
+{
+  EFI_STATUS                  Status;
+  EFI_MAC_ADDRESS             MacAddress;
+  UINTN                       HwAddressSize;
+  UINT16                      VlanId;
+  CHAR16                      MacString[70];
+  ISCSI_SESSION_CONFIG_NVDATA *ConfigDataTmp;
+
+  //
+  // Get the mac string, it's the name of various variable
+  //
+  Status = NetLibGetMacAddress (Controller, &MacAddress, &HwAddressSize);
+  if (EFI_ERROR (Status)) {
+    return FALSE;
+  }
+  VlanId = NetLibGetVlanId (Controller);
+  IScsiMacAddrToStr (&MacAddress, (UINT32) HwAddressSize, VlanId, MacString);
+
+  //
+  // Get the normal configuration.
+  //
+  Status = GetVariable2 (
+             MacString,
+             &gEfiIScsiInitiatorNameProtocolGuid,
+             (VOID**)&ConfigDataTmp,
+             NULL
+             );
+  if (ConfigDataTmp == NULL || EFI_ERROR (Status)) {
+    return FALSE;
+  }
+
+  if (ConfigDataTmp->Enabled && ConfigDataTmp->InitiatorInfoFromDhcp) {
+    FreePool (ConfigDataTmp);
+    return TRUE;
+  }
+
+  FreePool (ConfigDataTmp);
+  return FALSE;
+}
+
+/**
   Get the various configuration data of this iSCSI instance.
 
   @param[in]  Private   The iSCSI driver data.
@@ -798,4 +852,71 @@ IScsiOnExitBootService (
   gBS->CloseEvent (Private->ExitBootServiceEvent);
 
   IScsiSessionAbort (&Private->Session);
+}
+
+/**
+  Tests whether a controller handle is being managed by IScsi driver.
+
+  This function tests whether the driver specified by DriverBindingHandle is
+  currently managing the controller specified by ControllerHandle.  This test
+  is performed by evaluating if the the protocol specified by ProtocolGuid is
+  present on ControllerHandle and is was opened by DriverBindingHandle and Nic
+  Device handle with an attribute of EFI_OPEN_PROTOCOL_BY_DRIVER. 
+  If ProtocolGuid is NULL, then ASSERT().
+
+  @param  ControllerHandle     A handle for a controller to test.
+  @param  DriverBindingHandle  Specifies the driver binding handle for the
+                               driver.
+  @param  ProtocolGuid         Specifies the protocol that the driver specified
+                               by DriverBindingHandle opens in its Start()
+                               function.
+
+  @retval EFI_SUCCESS          ControllerHandle is managed by the driver
+                               specified by DriverBindingHandle.
+  @retval EFI_UNSUPPORTED      ControllerHandle is not managed by the driver
+                               specified by DriverBindingHandle.
+
+**/
+EFI_STATUS
+EFIAPI
+IScsiTestManagedDevice (
+  IN  EFI_HANDLE       ControllerHandle,
+  IN  EFI_HANDLE       DriverBindingHandle,
+  IN  EFI_GUID         *ProtocolGuid
+  )
+{
+  EFI_STATUS     Status;
+  VOID           *ManagedInterface;
+  EFI_HANDLE     NicControllerHandle;
+
+  ASSERT (ProtocolGuid != NULL);
+
+  NicControllerHandle = NetLibGetNicHandle (ControllerHandle, ProtocolGuid);
+  if (NicControllerHandle == NULL) {
+    return EFI_UNSUPPORTED;
+  }
+
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  (EFI_GUID *) ProtocolGuid,
+                  &ManagedInterface,
+                  DriverBindingHandle,
+                  NicControllerHandle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (!EFI_ERROR (Status)) {
+    gBS->CloseProtocol (
+           ControllerHandle,
+           (EFI_GUID *) ProtocolGuid,
+           DriverBindingHandle,
+           NicControllerHandle
+           );
+    return EFI_UNSUPPORTED;
+  }
+
+  if (Status != EFI_ALREADY_STARTED) {
+    return EFI_UNSUPPORTED;
+  }
+
+  return EFI_SUCCESS;
 }

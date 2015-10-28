@@ -1,7 +1,7 @@
 /** @file
   Set the socket options
 
-  Copyright (c) 2011, Intel Corporation
+  Copyright (c) 2011-2012, Intel Corporation
   All rights reserved. This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -192,6 +192,9 @@ GetOptionValue (
   if ( pOption->bSetAllowed ) {
     Value.u8 = &mValue[0];
     switch ( pOption->DataType ) {
+    default:
+      break;
+
     case DATA_TYPE_INT32_DECIMAL:
       Values = sscanf ( pValue, "%d", Value.i32 );
       if ( 1 == Values ) {
@@ -201,7 +204,7 @@ GetOptionValue (
       break;
 
     case DATA_TYPE_TIMEVAL:
-      Values = sscanf ( pValue, "%d.%0d",
+      Values = sscanf ( pValue, "%d.%d",
                         &Value.TimeVal->tv_sec,
                         &Value.TimeVal->tv_usec );
       if (( 2 == Values )

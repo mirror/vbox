@@ -1,7 +1,7 @@
 /**@file
   Platform PEI driver
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2011, Andrei Warkentin <andreiw@motorola.com>
 
   This program and the accompanying materials
@@ -30,9 +30,11 @@
 #include <Library/PciLib.h>
 #include <Library/PeimEntryPoint.h>
 #include <Library/PeiServicesLib.h>
+#include <Library/QemuFwCfgLib.h>
 #include <Library/ResourcePublicationLib.h>
 #include <Guid/MemoryTypeInformation.h>
 #include <Ppi/MasterBootMode.h>
+#include <IndustryStandard/Pci22.h>
 
 #include "Platform.h"
 #include "Cmos.h"
@@ -56,6 +58,11 @@ EFI_PEI_PPI_DESCRIPTOR   mPpiBootMode[] = {
     NULL
   }
 };
+
+
+EFI_BOOT_MODE mBootMode = BOOT_WITH_FULL_CONFIGURATION;
+
+BOOLEAN mS3Supported = FALSE;
 
 
 VOID
@@ -209,10 +216,9 @@ AddUntestedMemoryRangeHob (
   AddUntestedMemoryBaseSizeHob (MemoryBase, (UINT64)(MemoryLimit - MemoryBase));
 }
 
-
 VOID
 MemMapInitialization (
-  EFI_PHYSICAL_ADDRESS  TopOfMemory
+  VOID
   )
 {
 #ifdef VBOX
@@ -240,31 +246,34 @@ MemMapInitialization (
     );
 
   //
-  // Add PCI MMIO space available to PCI resource allocations
-  //
-  if (TopOfMemory < BASE_2GB) {
-    AddIoMemoryBaseSizeHob (BASE_2GB, 0xFC000000 - BASE_2GB);
-  } else {
-    AddIoMemoryBaseSizeHob (TopOfMemory, 0xFC000000 - TopOfMemory);
-  }
-
-  //
-  // Local APIC range
-  //
-  AddIoMemoryBaseSizeHob (0xFEC80000, SIZE_512KB);
-
-  //
-  // I/O APIC range
-  //
-  AddIoMemoryBaseSizeHob (0xFEC00000, SIZE_512KB);
-
-  //
   // Video memory + Legacy BIOS region
 #ifdef VBOX
   // This includes ACPI floating pointer region.
 #endif
   //
   AddIoMemoryRangeHob (0x0A0000, BASE_1MB);
+
+  if (!mXen) {
+    UINT32  TopOfLowRam;
+    TopOfLowRam = GetSystemMemorySizeBelow4gb ();
+
+    //
+    // address       purpose   size
+    // ------------  --------  -------------------------
+    // max(top, 2g)  PCI MMIO  0xFC000000 - max(top, 2g)
+    // 0xFC000000    gap                           44 MB
+    // 0xFEC00000    IO-APIC                        4 KB
+    // 0xFEC01000    gap                         1020 KB
+    // 0xFED00000    HPET                           1 KB
+    // 0xFED00400    gap                         1023 KB
+    // 0xFEE00000    LAPIC                          1 MB
+    //
+    AddIoMemoryRangeHob (TopOfLowRam < BASE_2GB ?
+                         BASE_2GB : TopOfLowRam, 0xFC000000);
+    AddIoMemoryBaseSizeHob (0xFEC00000, SIZE_4KB);
+    AddIoMemoryBaseSizeHob (0xFED00000, SIZE_1KB);
+    AddIoMemoryBaseSizeHob (PcdGet32(PcdCpuLocalApicBaseAddress), SIZE_1MB);
+  }
 
 #ifdef VBOX
   //
@@ -283,7 +292,7 @@ MemMapInitialization (
 
 VOID
 MiscInitialization (
-  BOOLEAN Xen
+  VOID
   )
 {
   //
@@ -296,22 +305,50 @@ MiscInitialization (
   //
   BuildCpuHob (36, 16);
 
-  if (!Xen) {
+  //
+  // If PMREGMISC/PMIOSE is set, assume the ACPI PMBA has been configured (for
+  // example by Xen) and skip the setup here. This matches the logic in
+  // AcpiTimerLibConstructor ().
+  //
+  if ((PciRead8 (PCI_LIB_ADDRESS (0, 1, 3, 0x80)) & 0x01) == 0) {
     //
-    // Set the PM I/O base address to 0x400
+    // The PEI phase should be exited with fully accessibe PIIX4 IO space:
+    // 1. set PMBA
     //
-    PciAndThenOr32 (PCI_LIB_ADDRESS (0, 1, 3, 0x40), (UINT32) ~0xfc0, 0x400);
+    PciAndThenOr32 (
+      PCI_LIB_ADDRESS (0, 1, 3, 0x40),
+      (UINT32) ~0xFFC0,
+      PcdGet16 (PcdAcpiPmBaseAddress)
+      );
+
+    //
+    // 2. set PCICMD/IOSE
+    //
+    PciOr8 (
+      PCI_LIB_ADDRESS (0, 1, 3, PCI_COMMAND_OFFSET),
+      EFI_PCI_COMMAND_IO_SPACE
+      );
+
+    //
+    // 3. set PMREGMISC/PMIOSE
+    //
+    PciOr8 (PCI_LIB_ADDRESS (0, 1, 3, 0x80), 0x01);
   }
 }
 
 
 VOID
 BootModeInitialization (
+  VOID
   )
 {
-  EFI_STATUS Status;
+  EFI_STATUS    Status;
 
-  Status = PeiServicesSetBootMode (BOOT_WITH_FULL_CONFIGURATION);
+  if (CmosRead8 (0xF) == 0xFE) {
+    mBootMode = BOOT_ON_S3_RESUME;
+  }
+
+  Status = PeiServicesSetBootMode (mBootMode);
   ASSERT_EFI_ERROR (Status);
 
   Status = PeiServicesInstallPpi (mPpiBootMode);
@@ -333,8 +370,9 @@ ReserveEmuVariableNvStore (
   //
   VariableStore =
     (EFI_PHYSICAL_ADDRESS)(UINTN)
-      AllocateRuntimePool (
-        2 * PcdGet32 (PcdFlashNvStorageFtwSpareSize)
+      AllocateAlignedRuntimePages (
+        EFI_SIZE_TO_PAGES (2 * PcdGet32 (PcdFlashNvStorageFtwSpareSize)),
+        PcdGet32 (PcdFlashNvStorageFtwSpareSize)
         );
   DEBUG ((EFI_D_INFO,
           "Reserved variable store memory: 0x%lX; size: %dkb\n",
@@ -382,34 +420,37 @@ InitializePlatform (
   IN CONST EFI_PEI_SERVICES     **PeiServices
   )
 {
-#ifndef VBOX
-  EFI_STATUS            Status;
-#endif
-  EFI_PHYSICAL_ADDRESS  TopOfMemory;
-  BOOLEAN               Xen;
-
   DEBUG ((EFI_D_ERROR, "Platform PEIM Loaded\n"));
 
   DebugDumpCmos ();
 
-  TopOfMemory = MemDetect ();
+  XenDetect ();
 
-#ifndef VBOX
-  Status = InitializeXen ();
-  Xen = EFI_ERROR (Status) ? FALSE : TRUE;
-#else
-  Xen = FALSE;
-#endif
-
-  ReserveEmuVariableNvStore ();
-
-  PeiFvInitialization ();
-
-  MemMapInitialization (TopOfMemory);
-
-  MiscInitialization (Xen);
+  if (QemuFwCfgS3Enabled ()) {
+    DEBUG ((EFI_D_INFO, "S3 support was detected on QEMU\n"));
+    mS3Supported = TRUE;
+  }
 
   BootModeInitialization ();
+
+  PublishPeiMemory ();
+
+  InitializeRamRegions ();
+
+  if (mXen) {
+    DEBUG ((EFI_D_INFO, "Xen was detected\n"));
+    InitializeXen ();
+  }
+
+  if (mBootMode != BOOT_ON_S3_RESUME) {
+    ReserveEmuVariableNvStore ();
+
+    PeiFvInitialization ();
+
+    MemMapInitialization ();
+  }
+
+  MiscInitialization ();
 
   return EFI_SUCCESS;
 }

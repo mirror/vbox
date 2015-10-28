@@ -1,7 +1,7 @@
 /** @file
   HII Config Access protocol implementation of VLAN configuration module.
 
-Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
 of the BSD License which accompanies this distribution.  The full
@@ -489,6 +489,7 @@ InstallVlanConfigForm (
   CHAR16                          *MacString;
   EFI_DEVICE_PATH_PROTOCOL        *ChildDevicePath;
   EFI_HII_CONFIG_ACCESS_PROTOCOL  *ConfigAccess;
+  EFI_VLAN_CONFIG_PROTOCOL        *VlanConfig;
 
   //
   // Create child handle and install HII Config Access Protocol
@@ -516,6 +517,22 @@ InstallVlanConfigForm (
     return Status;
   }
   PrivateData->DriverHandle = DriverHandle;
+
+  //
+  // Establish the parent-child relationship between the new created
+  // child handle and the ControllerHandle.
+  //
+  Status = gBS->OpenProtocol (
+                  PrivateData->ControllerHandle,
+                  &gEfiVlanConfigProtocolGuid,
+                  (VOID **)&VlanConfig,
+                  PrivateData->ImageHandle,
+                  PrivateData->DriverHandle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   //
   // Publish the HII package list
@@ -571,12 +588,62 @@ InstallVlanConfigForm (
 
   @param[in, out]  PrivateData   Points to VLAN configuration private data.
 
+  @retval EFI_SUCCESS            HII Form has been uninstalled successfully.
+  @retval Others                 Other errors as indicated.
+
 **/
-VOID
+EFI_STATUS
 UninstallVlanConfigForm (
   IN OUT VLAN_CONFIG_PRIVATE_DATA    *PrivateData
   )
 {
+  EFI_STATUS                   Status;
+  EFI_VLAN_CONFIG_PROTOCOL     *VlanConfig;
+  
+  //
+  // End the parent-child relationship.
+  //
+  Status = gBS->CloseProtocol (
+                  PrivateData->ControllerHandle,
+                  &gEfiVlanConfigProtocolGuid,
+                  PrivateData->ImageHandle,
+                  PrivateData->DriverHandle
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Uninstall HII Config Access Protocol
+  //
+  if (PrivateData->DriverHandle != NULL) {
+    Status = gBS->UninstallMultipleProtocolInterfaces (
+                    PrivateData->DriverHandle,
+                    &gEfiDevicePathProtocolGuid,
+                    PrivateData->ChildDevicePath,
+                    &gEfiHiiConfigAccessProtocolGuid,
+                    &PrivateData->ConfigAccess,
+                    NULL
+                    );
+    if (EFI_ERROR (Status)) {
+      gBS->OpenProtocol (
+             PrivateData->ControllerHandle,
+             &gEfiVlanConfigProtocolGuid,
+             (VOID **)&VlanConfig,
+             PrivateData->ImageHandle,
+             PrivateData->DriverHandle,
+             EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+             );
+      return Status;
+    }
+    PrivateData->DriverHandle = NULL;
+
+    if (PrivateData->ChildDevicePath != NULL) {
+      FreePool (PrivateData->ChildDevicePath);
+      PrivateData->ChildDevicePath = NULL;
+    }
+  }
+
   //
   // Free MAC string
   //
@@ -592,24 +659,5 @@ UninstallVlanConfigForm (
     HiiRemovePackages (PrivateData->HiiHandle);
     PrivateData->HiiHandle = NULL;
   }
-
-  //
-  // Uninstall HII Config Access Protocol
-  //
-  if (PrivateData->DriverHandle != NULL) {
-    gBS->UninstallMultipleProtocolInterfaces (
-           PrivateData->DriverHandle,
-           &gEfiDevicePathProtocolGuid,
-           PrivateData->ChildDevicePath,
-           &gEfiHiiConfigAccessProtocolGuid,
-           &PrivateData->ConfigAccess,
-           NULL
-           );
-    PrivateData->DriverHandle = NULL;
-
-    if (PrivateData->ChildDevicePath != NULL) {
-      FreePool (PrivateData->ChildDevicePath);
-      PrivateData->ChildDevicePath = NULL;
-    }
-  }
+  return EFI_SUCCESS;
 }

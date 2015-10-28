@@ -1,7 +1,7 @@
 /** @file
   Provides interface to shell functionality for shell commands and applications.
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -1008,6 +1008,23 @@ ShellStrToUintn(
   );
 
 /**
+  Function return the number converted from a hex representation of a number.
+
+  Note: this function cannot be used when (UINTN)(-1), (0xFFFFFFFF) may be a valid
+  result.  Use ShellConvertStringToUint64 instead.
+
+  @param[in] String   String representation of a number.
+
+  @return             The unsigned integer result of the conversion.
+  @retval (UINTN)(-1) An error occured.
+**/
+UINTN
+EFIAPI
+ShellHexStrToUintn(
+  IN CONST CHAR16 *String
+  );
+
+/**
   Safely append with automatic string resizing given length of Destination and
   desired length of copy from Source.
 
@@ -1326,6 +1343,54 @@ ShellFileHandleReadLine(
   IN OUT UINTN                  *Size,
   IN BOOLEAN                    Truncate,
   IN OUT BOOLEAN                *Ascii
+  );
+
+/**
+  Function to delete a file by name
+  
+  @param[in]       FileName       Pointer to file name to delete.
+  
+  @retval EFI_SUCCESS             the file was deleted sucessfully
+  @retval EFI_WARN_DELETE_FAILURE the handle was closed, but the file was not
+                                  deleted
+  @retval EFI_INVALID_PARAMETER   One of the parameters has an invalid value.
+  @retval EFI_NOT_FOUND           The specified file could not be found on the
+                                  device or the file system could not be found
+                                  on the device.
+  @retval EFI_NO_MEDIA            The device has no medium.
+  @retval EFI_MEDIA_CHANGED       The device has a different medium in it or the
+                                  medium is no longer supported.
+  @retval EFI_DEVICE_ERROR        The device reported an error.
+  @retval EFI_VOLUME_CORRUPTED    The file system structures are corrupted.
+  @retval EFI_WRITE_PROTECTED     The file or medium is write protected.
+  @retval EFI_ACCESS_DENIED       The file was opened read only.
+  @retval EFI_OUT_OF_RESOURCES    Not enough resources were available to open the
+                                  file.
+  @retval other                   The file failed to open
+**/
+EFI_STATUS
+EFIAPI
+ShellDeleteFileByName(
+  IN CONST CHAR16               *FileName
+  );
+
+/**
+  Function to print help file / man page content in the spec from the UEFI Shell protocol GetHelpText function.
+
+  @param[in] CommandToGetHelpOn  Pointer to a string containing the command name of help file to be printed.
+  @param[in] SectionToGetHelpOn  Pointer to the section specifier(s).
+  @param[in] PrintCommandText    If TRUE, prints the command followed by the help content, otherwise prints 
+                                 the help content only.
+  @retval EFI_DEVICE_ERROR       The help data format was incorrect.
+  @retval EFI_NOT_FOUND          The help data could not be found.
+  @retval EFI_SUCCESS            The operation was successful.
+**/
+EFI_STATUS
+EFIAPI
+ShellPrintHelp (
+  IN CONST CHAR16     *CommandToGetHelpOn,
+  IN CONST CHAR16     *SectionToGetHelpOn,
+  IN BOOLEAN          PrintCommandText
   );
 
 #endif // __SHELL_LIB__

@@ -1,11 +1,10 @@
 ## @file
-#  
-#  Capsule Runtime Driver produces two UEFI capsule runtime services.
-#  (UpdateCapsule, QueryCapsuleCapabilities)
+#  Capsule Runtime Driver produces two UEFI capsule runtime services: (UpdateCapsule, QueryCapsuleCapabilities).
+#
 #  It installs the Capsule Architectural Protocol defined in PI1.0a to signify 
 #  the capsule runtime services are ready.
 #  
-#  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
 #  which accompanies this distribution.  The full text of the license may be found at
@@ -19,6 +18,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = CapsuleRuntimeDxe
+  MODULE_UNI_FILE                = CapsuleRuntimeDxe.uni
   FILE_GUID                      = 42857F0A-13F2-4B21-8A23-53D3F714B840
   MODULE_TYPE                    = DXE_RUNTIME_DRIVER
   VERSION_STRING                 = 1.0
@@ -33,7 +33,7 @@
 [Sources]
   CapsuleService.c
 
-[Sources.Ia32, Sources.IPF, Sources.EBC, Sources.ARM]
+[Sources.Ia32, Sources.IPF, Sources.EBC, Sources.ARM, Sources.AARCH64]
   SaveLongModeContext.c
 
 [Sources.X64]
@@ -53,38 +53,49 @@
   UefiRuntimeLib
   BaseLib
   PrintLib
-  
+  BaseMemoryLib
+
 [LibraryClasses.X64]
-  LockBoxLib
   UefiLib
   BaseMemoryLib
   HobLib  
 
 [Guids]
-  gEfiCapsuleVendorGuid                         ## SOMETIMES_PRODUCED (Process across reset capsule image) ## Variable:L"CapsuleUpdateData" for capsule updated data
-
-[Guids.X64]
-  gEfiAcpiVariableGuid                          # ALWAYS_CONSUMED
-  gEfiAcpiS3ContextGuid                         # ALWAYS_CONSUMED
+  ## SOMETIMES_PRODUCES   ## Variable:L"CapsuleUpdateData" # (Process across reset capsule image) for capsule updated data
+  ## SOMETIMES_PRODUCES   ## Variable:L"CapsuleLongModeBuffer" # The long mode buffer used by IA32 Capsule PEIM to call X64 CapsuleCoalesce code to handle >4GB capsule blocks
+  gEfiCapsuleVendorGuid
+  gEfiFmpCapsuleGuid                            ## SOMETIMES_CONSUMES   ## GUID # FMP capsule GUID
 
 [Protocols]
-  gEfiCapsuleArchProtocolGuid                   ## PRODUCED
+  gEfiCapsuleArchProtocolGuid                   ## PRODUCES
 
 [Protocols.X64]
-  gEfiDxeSmmReadyToLockProtocolGuid             # ALWAYS_CONSUMED
+  ## UNDEFINED ## NOTIFY
+  ## SOMETIMES_CONSUMES
+  gEdkiiVariableLockProtocolGuid
 
 [FeaturePcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportUpdateCapsuleReset
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportUpdateCapsuleReset   ## CONSUMES
 
 [FeaturePcd.X64]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode      ## CONSUMES
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizeNonPopulateCapsule
-  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizePopulateCapsule || gEfiMdeModulePkgTokenSpaceGuid.PcdSupportUpdateCapsuleReset  ## Populate Image requires reset support.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizeNonPopulateCapsule   ## SOMETIMES_CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizePopulateCapsule || gEfiMdeModulePkgTokenSpaceGuid.PcdSupportUpdateCapsuleReset ## SOMETIMES_CONSUMES # Populate Image requires reset support.
 
 [Pcd.X64]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCapsulePeiLongModeStackSize
+  ## SOMETIMES_CONSUMES
+  ## SOMETIMES_PRODUCES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdIdentifyMappingPageTablePtr
+  gEfiMdeModulePkgTokenSpaceGuid.PcdCapsulePeiLongModeStackSize   ## SOMETIMES_CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdUse1GPageTable                ## SOMETIMES_CONSUMES
 
 [Depex]
-  gEfiVariableWriteArchProtocolGuid             ## Depends on variable write functionality to produce capsule data variable
+  gEfiVariableWriteArchProtocolGuid             # Depends on variable write functionality to produce capsule data variable
+
+# [Hob.X64]
+# UNDEFINED                 ## SOMETIMES_CONSUMES # CPU
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  CapsuleRuntimeDxeExtra.uni

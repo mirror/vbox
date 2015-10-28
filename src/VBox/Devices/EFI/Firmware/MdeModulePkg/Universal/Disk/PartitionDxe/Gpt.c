@@ -2,7 +2,18 @@
   Decode a hard disk partitioned with the GPT scheme in the UEFI 2.0
   specification.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+  Caution: This file requires additional review when modified.
+  This driver will have external input - disk partition.
+  This external input must be validated carefully to avoid security issue like
+  buffer overflow, integer overflow.
+
+  PartitionInstallGptChildHandles() routine will read disk partition content and
+  do basic validation before PartitionInstallChildHandle().
+
+  PartitionValidGptTable(), PartitionCheckGptEntry() routine will accept disk
+  partition content and validate the GPT table and GPT entry.
+
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -18,6 +29,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 /**
   Install child handles if the Handle supports GPT partition structure.
+
+  Caution: This function may receive untrusted input.
+  The GPT partition table header is external input, so this routine
+  will do basic validation for GPT partition table header before return.
 
   @param[in]  BlockIo     Parent BlockIo interface.
   @param[in]  DiskIo      Disk Io protocol.
@@ -77,8 +92,11 @@ PartitionRestoreGptTable (
 
 
 /**
-  Restore Partition Table to its alternate place.
-  (Primary -> Backup or Backup -> Primary)
+  This routine will check GPT partition entry and return entry status.
+
+  Caution: This function may receive untrusted input.
+  The GPT partition entry is external input, so this routine
+  will do basic validation for GPT partition entry and report status.
 
   @param[in]    PartHeader    Partition table header structure
   @param[in]    PartEntry     The partition entry array
@@ -158,9 +176,15 @@ PartitionSetCrc (
 /**
   Install child handles if the Handle supports GPT partition structure.
 
+  Caution: This function may receive untrusted input.
+  The GPT partition table is external input, so this routine
+  will do basic validation for GPT partition table before install
+  child handle for each GPT partition.
+
   @param[in]  This       Calling context.
   @param[in]  Handle     Parent Handle.
   @param[in]  DiskIo     Parent DiskIo interface.
+  @param[in]  DiskIo2    Parent DiskIo2 interface.
   @param[in]  BlockIo    Parent BlockIo interface.
   @param[in]  BlockIo2   Parent BlockIo2 interface.
   @param[in]  DevicePath Parent Device Path.
@@ -175,6 +199,7 @@ PartitionInstallGptChildHandles (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Handle,
   IN  EFI_DISK_IO_PROTOCOL         *DiskIo,
+  IN  EFI_DISK_IO2_PROTOCOL        *DiskIo2,
   IN  EFI_BLOCK_IO_PROTOCOL        *BlockIo,
   IN  EFI_BLOCK_IO2_PROTOCOL       *BlockIo2,
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
@@ -287,7 +312,7 @@ PartitionInstallGptChildHandles (
     DEBUG ((EFI_D_INFO, " Valid primary and !Valid backup partition table\n"));
     DEBUG ((EFI_D_INFO, " Restore backup partition table by the primary\n"));
     if (!PartitionRestoreGptTable (BlockIo, DiskIo, PrimaryHeader)) {
-      DEBUG ((EFI_D_INFO, " Restore  backup partition table error\n"));
+      DEBUG ((EFI_D_INFO, " Restore backup partition table error\n"));
     }
 
     if (PartitionValidGptTable (BlockIo, DiskIo, PrimaryHeader->AlternateLBA, BackupHeader)) {
@@ -380,6 +405,7 @@ PartitionInstallGptChildHandles (
                This,
                Handle,
                DiskIo,
+               DiskIo2,
                BlockIo,
                BlockIo2,
                DevicePath,
@@ -414,7 +440,11 @@ Done:
 }
 
 /**
-  Install child handles if the Handle supports GPT partition structure.
+  This routine will read GPT partition table header and return it.
+
+  Caution: This function may receive untrusted input.
+  The GPT partition table header is external input, so this routine
+  will do basic validation for GPT partition table header before return.
 
   @param[in]  BlockIo     Parent BlockIo interface.
   @param[in]  DiskIo      Disk Io protocol.
@@ -463,9 +493,18 @@ PartitionValidGptTable (
 
   if ((PartHdr->Header.Signature != EFI_PTAB_HEADER_ID) ||
       !PartitionCheckCrc (BlockSize, &PartHdr->Header) ||
-      PartHdr->MyLBA != Lba
+      PartHdr->MyLBA != Lba ||
+      (PartHdr->SizeOfPartitionEntry < sizeof (EFI_PARTITION_ENTRY))
       ) {
     DEBUG ((EFI_D_INFO, "Invalid efi partition table header\n"));
+    FreePool (PartHdr);
+    return FALSE;
+  }
+
+  //
+  // Ensure the NumberOfPartitionEntries * SizeOfPartitionEntry doesn't overflow.
+  //
+  if (PartHdr->NumberOfPartitionEntries > DivU64x32 (MAX_UINTN, PartHdr->SizeOfPartitionEntry)) {
     FreePool (PartHdr);
     return FALSE;
   }
@@ -643,8 +682,11 @@ Done:
 }
 
 /**
-  Restore Partition Table to its alternate place.
-  (Primary -> Backup or Backup -> Primary)
+  This routine will check GPT partition entry and return entry status.
+
+  Caution: This function may receive untrusted input.
+  The GPT partition entry is external input, so this routine
+  will do basic validation for GPT partition entry and report status.
 
   @param[in]    PartHeader    Partition table header structure
   @param[in]    PartEntry     The partition entry array

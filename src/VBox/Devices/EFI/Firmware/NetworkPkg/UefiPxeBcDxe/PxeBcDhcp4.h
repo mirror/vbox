@@ -1,7 +1,7 @@
 /** @file
   Functions declaration related with DHCPv4 for UefiPxeBc Driver.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -127,7 +127,7 @@ typedef enum {
 
 #define BIT(x)                (1 << x)
 #define CTRL(x)               (0x1F & (x))
-#define DEFAULT_CLASS_ID_DATA "PXEClient:Arch:?????:????:??????"
+#define DEFAULT_CLASS_ID_DATA "PXEClient:Arch:xxxxx:UNDI:003000"
 #define DEFAULT_UNDI_TYPE     1
 #define DEFAULT_UNDI_MAJOR    3
 #define DEFAULT_UNDI_MINOR    0
@@ -145,6 +145,10 @@ typedef enum {
    BIT (PXEBC_VENDOR_TAG_BOOT_SERVERS) | \
    BIT (PXEBC_VENDOR_TAG_BOOT_MENU) | \
    BIT (PXEBC_VENDOR_TAG_MENU_PROMPT))
+
+#define IS_VALID_BOOT_SERVERS(x) \
+  ((((x)[0]) & BIT (PXEBC_VENDOR_TAG_BOOT_SERVERS)) \
+   == BIT (PXEBC_VENDOR_TAG_BOOT_SERVERS))  
 
 #define IS_VALID_BOOT_PROMPT(x) \
   ((((x)[0]) & BIT (PXEBC_VENDOR_TAG_MENU_PROMPT)) \
@@ -196,7 +200,7 @@ typedef enum {
 #define IS_ENABLE_USE_SERVER_LIST(x) \
   (((x) & BIT (2)) == BIT (2))
 
-#define IS_ENABLE_BOOT_FILE_NAME(x) \
+#define IS_DISABLE_PROMPT_MENU(x) \
   (((x) & BIT (3)) == BIT (3))
 
 
@@ -256,6 +260,7 @@ typedef union {
   PXEBC_DHCP4_OPTION_MAX_MESG_SIZE  *MaxMesgSize;
 } PXEBC_DHCP4_OPTION_ENTRY;
 
+#pragma pack(1)
 typedef struct {
   UINT16            Type;
   UINT8             IpCnt;
@@ -272,6 +277,7 @@ typedef struct {
   UINT8             Timeout;
   UINT8             Prompt[1];
 } PXEBC_MENU_PROMPT;
+#pragma pack()
 
 typedef struct {
   UINT32                BitMap[8];

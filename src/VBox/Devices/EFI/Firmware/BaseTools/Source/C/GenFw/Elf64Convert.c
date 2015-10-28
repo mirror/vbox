@@ -1,6 +1,8 @@
 /** @file
+Elf64 convert solution
 
-Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+Portions copyright (c) 2013-2014, ARM Ltd. All rights reserved.<BR>
 
 This program and the accompanying materials are licensed and made available
 under the terms and conditions of the BSD License which accompanies this
@@ -18,6 +20,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <windows.h>
 #include <io.h>
 #endif
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -146,8 +149,8 @@ InitializeElf64 (
     Error (NULL, 0, 3000, "Unsupported", "ELF e_type not ET_EXEC or ET_DYN");
     return FALSE;
   }
-  if (!((mEhdr->e_machine == EM_X86_64))) {
-    Error (NULL, 0, 3000, "Unsupported", "ELF e_machine not EM_X86_64");
+  if (!((mEhdr->e_machine == EM_X86_64) || (mEhdr->e_machine == EM_AARCH64))) {
+    Error (NULL, 0, 3000, "Unsupported", "ELF e_machine not EM_X86_64 or EM_AARCH64");
     return FALSE;
   }
   if (mEhdr->e_version != EV_CURRENT) {
@@ -257,6 +260,7 @@ ScanSections64 (
   EFI_IMAGE_OPTIONAL_HEADER_UNION *NtHdr;
   UINT32                          CoffEntry;
   UINT32                          SectionCount;
+  BOOLEAN                         FoundSection;
 
   CoffEntry = 0;
   mCoffOffset = 0;
@@ -269,6 +273,7 @@ ScanSections64 (
   switch (mEhdr->e_machine) {
   case EM_X86_64:
   case EM_IA_64:
+  case EM_AARCH64:
     mCoffOffset += sizeof (EFI_IMAGE_NT_HEADERS64);
   break;
   default:
@@ -285,6 +290,7 @@ ScanSections64 (
   //
   mCoffOffset = CoffAlign(mCoffOffset);
   mTextOffset = mCoffOffset;
+  FoundSection = FALSE;
   SectionCount = 0;
   for (i = 0; i < mEhdr->e_shnum; i++) {
     Elf_Shdr *shdr = GetShdrByIndex(i);
@@ -308,10 +314,24 @@ ScanSections64 (
           (mEhdr->e_entry < shdr->sh_addr + shdr->sh_size)) {
         CoffEntry = (UINT32) (mCoffOffset + mEhdr->e_entry - shdr->sh_addr);
       }
+
+      //
+      // Set mTextOffset with the offset of the first '.text' section
+      //
+      if (!FoundSection) {
+        mTextOffset = mCoffOffset;
+        FoundSection = TRUE;
+      }
+
       mCoffSectionsOffset[i] = mCoffOffset;
       mCoffOffset += (UINT32) shdr->sh_size;
       SectionCount ++;
     }
+  }
+
+  if (!FoundSection) {
+    Error (NULL, 0, 3000, "Invalid", "Did not find any '.text' section.");
+    assert (FALSE);
   }
 
   if (mEhdr->e_machine != EM_ARM) {
@@ -326,6 +346,7 @@ ScanSections64 (
   //  Then data sections.
   //
   mDataOffset = mCoffOffset;
+  FoundSection = FALSE;
   SectionCount = 0;
   for (i = 0; i < mEhdr->e_shnum; i++) {
     Elf_Shdr *shdr = GetShdrByIndex(i);
@@ -342,6 +363,14 @@ ScanSections64 (
           // Normally doing nothing here works great.
           Error (NULL, 0, 3000, "Invalid", "Unsupported section alignment.");
         }
+      }
+
+      //
+      // Set mDataOffset with the offset of the first '.data' section
+      //
+      if (!FoundSection) {
+        mDataOffset = mCoffOffset;
+        FoundSection = TRUE;
       }
       mCoffSectionsOffset[i] = mCoffOffset;
       mCoffOffset += (UINT32) shdr->sh_size;
@@ -375,6 +404,7 @@ ScanSections64 (
         }
       }
       if (shdr->sh_size != 0) {
+        mHiiRsrcOffset = mCoffOffset;
         mCoffSectionsOffset[i] = mCoffOffset;
         mCoffOffset += (UINT32) shdr->sh_size;
         mCoffOffset = CoffAlign(mCoffOffset);
@@ -410,6 +440,10 @@ ScanSections64 (
     break;
   case EM_IA_64:
     NtHdr->Pe32Plus.FileHeader.Machine = EFI_IMAGE_MACHINE_IPF;
+    NtHdr->Pe32Plus.OptionalHeader.Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    break;
+  case EM_AARCH64:
+    NtHdr->Pe32Plus.FileHeader.Machine = EFI_IMAGE_MACHINE_AARCH64;
     NtHdr->Pe32Plus.OptionalHeader.Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
     break;
   default:
@@ -542,22 +576,55 @@ WriteSections64 (
   //
   VerboseMsg ("Applying Relocations...");
   for (Idx = 0; Idx < mEhdr->e_shnum; Idx++) {
+    //
+    // Determine if this is a relocation section.
+    //
     Elf_Shdr *RelShdr = GetShdrByIndex(Idx);
     if ((RelShdr->sh_type != SHT_REL) && (RelShdr->sh_type != SHT_RELA)) {
       continue;
     }
+
+    //
+    // Relocation section found.  Now extract section information that the relocations
+    // apply to in the ELF data and the new COFF data.
+    //
     SecShdr = GetShdrByIndex(RelShdr->sh_info);
     SecOffset = mCoffSectionsOffset[RelShdr->sh_info];
+
+    //
+    // Only process relocations for the current filter type.
+    //
     if (RelShdr->sh_type == SHT_RELA && (*Filter)(SecShdr)) {
       UINT64 RelIdx;
+
+      //
+      // Determine the symbol table referenced by the relocation data.
+      //
       Elf_Shdr *SymtabShdr = GetShdrByIndex(RelShdr->sh_link);
       UINT8 *Symtab = (UINT8*)mEhdr + SymtabShdr->sh_offset;
+
+      //
+      // Process all relocation entries for this section.
+      //
       for (RelIdx = 0; RelIdx < RelShdr->sh_size; RelIdx += (UINT32) RelShdr->sh_entsize) {
+
+        //
+        // Set pointer to relocation entry
+        //
         Elf_Rela *Rel = (Elf_Rela *)((UINT8*)mEhdr + RelShdr->sh_offset + RelIdx);
+
+        //
+        // Set pointer to symbol table entry associated with the relocation entry.
+        //
         Elf_Sym  *Sym = (Elf_Sym *)(Symtab + ELF_R_SYM(Rel->r_info) * SymtabShdr->sh_entsize);
+
         Elf_Shdr *SymShdr;
         UINT8    *Targ;
 
+        //
+        // Check section header index found in symbol table and get the section
+        // header location.
+        //
         if (Sym->st_shndx == SHN_UNDEF
             || Sym->st_shndx == SHN_ABS
             || Sym->st_shndx > mEhdr->e_shnum) {
@@ -566,11 +633,20 @@ WriteSections64 (
         SymShdr = GetShdrByIndex(Sym->st_shndx);
 
         //
-        // Note: r_offset in a memory address.
-        //  Convert it to a pointer in the coff file.
+        // Convert the relocation data to a pointer into the coff file.
+        //
+        // Note:
+        //   r_offset is the virtual address of the storage unit to be relocated.
+        //   sh_addr is the virtual address for the base of the section.
+        //
+        //   r_offset in a memory address.
+        //   Convert it to a pointer in the coff file.
         //
         Targ = mCoffFile + SecOffset + (Rel->r_offset - SecShdr->sh_addr);
 
+        //
+        // Determine how to handle each relocation type based on the machine type.
+        //
         if (mEhdr->e_machine == EM_X86_64) {
           switch (ELF_R_TYPE(Rel->r_info)) {
           case R_X86_64_NONE:
@@ -618,8 +694,65 @@ WriteSections64 (
           default:
             Error (NULL, 0, 3000, "Invalid", "%s unsupported ELF EM_X86_64 relocation 0x%x.", mInImageName, (unsigned) ELF_R_TYPE(Rel->r_info));
           }
+        } else if (mEhdr->e_machine == EM_AARCH64) {
+
+          // AARCH64 GCC uses RELA relocation, so all relocations have to be fixed up.
+          // As opposed to ARM32 using REL.
+
+          switch (ELF_R_TYPE(Rel->r_info)) {
+
+          case R_AARCH64_ADR_PREL_LO21:
+            if  (Rel->r_addend != 0 ) { /* TODO */
+              Error (NULL, 0, 3000, "Invalid", "AArch64: R_AARCH64_ADR_PREL_LO21 Need to fixup with addend!.");
+            }
+            break;
+
+          case R_AARCH64_CONDBR19:
+            if  (Rel->r_addend != 0 ) { /* TODO */
+              Error (NULL, 0, 3000, "Invalid", "AArch64: R_AARCH64_CONDBR19 Need to fixup with addend!.");
+            }
+            break;
+
+          case R_AARCH64_LD_PREL_LO19:
+            if  (Rel->r_addend != 0 ) { /* TODO */
+              Error (NULL, 0, 3000, "Invalid", "AArch64: R_AARCH64_LD_PREL_LO19 Need to fixup with addend!.");
+            }
+            break;
+
+          case R_AARCH64_CALL26:
+          case R_AARCH64_JUMP26:
+            if  (Rel->r_addend != 0 ) {
+              // Some references to static functions sometime start at the base of .text + addend.
+              // It is safe to ignore these relocations because they patch a `BL` instructions that
+              // contains an offset from the instruction itself and there is only a single .text section.
+              // So we check if the symbol is a "section symbol"
+              if (ELF64_ST_TYPE (Sym->st_info) == STT_SECTION) {
+                break;
+              }
+              Error (NULL, 0, 3000, "Invalid", "AArch64: R_AARCH64_JUMP26 Need to fixup with addend!.");
+            }
+            break;
+
+          case R_AARCH64_ADR_PREL_PG_HI21:
+            // TODO : AArch64 'small' memory model.
+            Error (NULL, 0, 3000, "Invalid", "WriteSections64(): %s unsupported ELF EM_AARCH64 relocation R_AARCH64_ADR_PREL_PG_HI21.", mInImageName);
+            break;
+
+          case R_AARCH64_ADD_ABS_LO12_NC:
+            // TODO : AArch64 'small' memory model.
+            Error (NULL, 0, 3000, "Invalid", "WriteSections64(): %s unsupported ELF EM_AARCH64 relocation R_AARCH64_ADD_ABS_LO12_NC.", mInImageName);
+            break;
+
+          // Absolute relocations.
+          case R_AARCH64_ABS64:
+            *(UINT64 *)Targ = *(UINT64 *)Targ - SymShdr->sh_addr + mCoffSectionsOffset[Sym->st_shndx];
+            break;
+
+          default:
+            Error (NULL, 0, 3000, "Invalid", "WriteSections64(): %s unsupported ELF EM_AARCH64 relocation 0x%x.", mInImageName, (unsigned) ELF_R_TYPE(Rel->r_info));
+          }
         } else {
-          Error (NULL, 0, 3000, "Invalid", "Not EM_X86_X64");
+          Error (NULL, 0, 3000, "Invalid", "Not a supported machine type");
         }
       }
     }
@@ -672,6 +805,51 @@ WriteRelocations64 (
               break;
             default:
               Error (NULL, 0, 3000, "Invalid", "%s unsupported ELF EM_X86_64 relocation 0x%x.", mInImageName, (unsigned) ELF_R_TYPE(Rel->r_info));
+            }
+          } else if (mEhdr->e_machine == EM_AARCH64) {
+            // AArch64 GCC uses RELA relocation, so all relocations has to be fixed up. ARM32 uses REL.
+            switch (ELF_R_TYPE(Rel->r_info)) {
+            case R_AARCH64_ADR_PREL_LO21:
+              break;
+
+            case R_AARCH64_CONDBR19:
+              break;
+
+            case R_AARCH64_LD_PREL_LO19:
+              break;
+
+            case R_AARCH64_CALL26:
+              break;
+
+            case R_AARCH64_JUMP26:
+              break;
+
+            case R_AARCH64_ADR_PREL_PG_HI21:
+              // TODO : AArch64 'small' memory model.
+              Error (NULL, 0, 3000, "Invalid", "WriteRelocations64(): %s unsupported ELF EM_AARCH64 relocation R_AARCH64_ADR_PREL_PG_HI21.", mInImageName);
+              break;
+
+            case R_AARCH64_ADD_ABS_LO12_NC:
+              // TODO : AArch64 'small' memory model.
+              Error (NULL, 0, 3000, "Invalid", "WriteRelocations64(): %s unsupported ELF EM_AARCH64 relocation R_AARCH64_ADD_ABS_LO12_NC.", mInImageName);
+              break;
+
+            case R_AARCH64_ABS64:
+              CoffAddFixup(
+                (UINT32) ((UINT64) mCoffSectionsOffset[RelShdr->sh_info]
+                + (Rel->r_offset - SecShdr->sh_addr)),
+                EFI_IMAGE_REL_BASED_DIR64);
+              break;
+
+            case R_AARCH64_ABS32:
+              CoffAddFixup(
+                (UINT32) ((UINT64) mCoffSectionsOffset[RelShdr->sh_info]
+                + (Rel->r_offset - SecShdr->sh_addr)),
+                EFI_IMAGE_REL_BASED_HIGHLOW);
+             break;
+
+            default:
+                Error (NULL, 0, 3000, "Invalid", "WriteRelocations64(): %s unsupported ELF EM_AARCH64 relocation 0x%x.", mInImageName, (unsigned) ELF_R_TYPE(Rel->r_info));
             }
           } else {
             Error (NULL, 0, 3000, "Not Supported", "This tool does not support relocations for ELF with e_machine %u (processor type).", (unsigned) mEhdr->e_machine);

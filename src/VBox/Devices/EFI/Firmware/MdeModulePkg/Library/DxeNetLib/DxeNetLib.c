@@ -1,7 +1,7 @@
 /** @file
   Network library.
 
-Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -40,6 +40,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/UefiLib.h>
 
 #define NIC_ITEM_CONFIG_SIZE   sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE) * MAX_IP4_CONFIG_IN_VARIABLE
+#define DEFAULT_ZERO_START     ((UINTN) ~0)
 
 //
 // All the supported IP4 maskes in host byte order.
@@ -1065,6 +1066,116 @@ NetListInsertBefore (
   PostEntry->BackLink               = NewEntry;
 }
 
+/**
+  Safe destroy nodes in a linked list, and return the length of the list after all possible operations finished.
+
+  Destroy network child instance list by list traversals is not safe due to graph dependencies between nodes.
+  This function performs a safe traversal to destroy these nodes by checking to see if the node being destroyed
+  has been removed from the list or not.
+  If it has been removed, then restart the traversal from the head.
+  If it hasn't been removed, then continue with the next node directly.
+  This function will end the iterate and return the CallBack's last return value if error happens,
+  or retrun EFI_SUCCESS if 2 complete passes are made with no changes in the number of children in the list.  
+
+  @param[in]    List             The head of the list.
+  @param[in]    CallBack         Pointer to the callback function to destroy one node in the list.
+  @param[in]    Context          Pointer to the callback function's context: corresponds to the
+                                 parameter Context in NET_DESTROY_LINK_LIST_CALLBACK.
+  @param[out]   ListLength       The length of the link list if the function returns successfully.
+
+  @retval EFI_SUCCESS            Two complete passes are made with no changes in the number of children.
+  @retval EFI_INVALID_PARAMETER  The input parameter is invalid.
+  @retval Others                 Return the CallBack's last return value.
+
+**/
+EFI_STATUS
+EFIAPI
+NetDestroyLinkList (
+  IN   LIST_ENTRY                       *List,
+  IN   NET_DESTROY_LINK_LIST_CALLBACK   CallBack,
+  IN   VOID                             *Context,    OPTIONAL
+  OUT  UINTN                            *ListLength  OPTIONAL
+  )
+{
+  UINTN                         PreviousLength;
+  LIST_ENTRY                    *Entry;
+  LIST_ENTRY                    *Ptr;
+  UINTN                         Length;
+  EFI_STATUS                    Status;
+
+  if (List == NULL || CallBack == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Length = 0;
+  do {
+    PreviousLength = Length;
+    Entry = GetFirstNode (List);
+    while (!IsNull (List, Entry)) {
+      Status = CallBack (Entry, Context);
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+      //
+      // Walk through the list to see whether the Entry has been removed or not.
+      // If the Entry still exists, just try to destroy the next one.
+      // If not, go back to the start point to iterate the list again.
+      //
+      for (Ptr = List->ForwardLink; Ptr != List; Ptr = Ptr->ForwardLink) {
+        if (Ptr == Entry) {
+          break;
+        }
+      }
+      if (Ptr == Entry) {
+        Entry = GetNextNode (List, Entry);
+      } else {
+        Entry = GetFirstNode (List);
+      }
+    }
+    for (Length = 0, Ptr = List->ForwardLink; Ptr != List; Length++, Ptr = Ptr->ForwardLink);
+  } while (Length != PreviousLength);
+
+  if (ListLength != NULL) {
+    *ListLength = Length;
+  }
+  return EFI_SUCCESS;
+}
+
+/**
+  This function checks the input Handle to see if it's one of these handles in ChildHandleBuffer.
+
+  @param[in]  Handle             Handle to be checked.
+  @param[in]  NumberOfChildren   Number of Handles in ChildHandleBuffer.
+  @param[in]  ChildHandleBuffer  An array of child handles to be freed. May be NULL
+                                 if NumberOfChildren is 0.
+
+  @retval TURE                   Found the input Handle in ChildHandleBuffer.
+  @retval FALSE                  Can't find the input Handle in ChildHandleBuffer.
+
+**/
+BOOLEAN
+EFIAPI
+NetIsInHandleBuffer (
+  IN  EFI_HANDLE          Handle,
+  IN  UINTN               NumberOfChildren,
+  IN  EFI_HANDLE          *ChildHandleBuffer OPTIONAL
+  )
+{
+  UINTN     Index;
+  
+  if (NumberOfChildren == 0 || ChildHandleBuffer == NULL) {
+    return FALSE;
+  }
+
+  for (Index = 0; Index < NumberOfChildren; Index++) {
+    if (Handle == ChildHandleBuffer[Index]) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
 
 /**
   Initialize the netmap. Netmap is a reposity to keep the <Key, Value> pairs.
@@ -1677,6 +1788,7 @@ NetLibDefaultUnload (
   EFI_HANDLE                        *DeviceHandleBuffer;
   UINTN                             DeviceHandleCount;
   UINTN                             Index;
+  UINTN                             Index2;
   EFI_DRIVER_BINDING_PROTOCOL       *DriverBinding;
   EFI_COMPONENT_NAME_PROTOCOL       *ComponentName;
   EFI_COMPONENT_NAME2_PROTOCOL      *ComponentName2;
@@ -1698,28 +1810,12 @@ NetLibDefaultUnload (
     return Status;
   }
 
-  //
-  // Disconnect the driver specified by ImageHandle from all
-  // the devices in the handle database.
-  //
-  for (Index = 0; Index < DeviceHandleCount; Index++) {
-    Status = gBS->DisconnectController (
-                    DeviceHandleBuffer[Index],
-                    ImageHandle,
-                    NULL
-                    );
-  }
-
-  //
-  // Uninstall all the protocols installed in the driver entry point
-  //
   for (Index = 0; Index < DeviceHandleCount; Index++) {
     Status = gBS->HandleProtocol (
                     DeviceHandleBuffer[Index],
                     &gEfiDriverBindingProtocolGuid,
                     (VOID **) &DriverBinding
                     );
-
     if (EFI_ERROR (Status)) {
       continue;
     }
@@ -1727,12 +1823,28 @@ NetLibDefaultUnload (
     if (DriverBinding->ImageHandle != ImageHandle) {
       continue;
     }
-
+    
+    //
+    // Disconnect the driver specified by ImageHandle from all
+    // the devices in the handle database.
+    //
+    for (Index2 = 0; Index2 < DeviceHandleCount; Index2++) {
+      Status = gBS->DisconnectController (
+                      DeviceHandleBuffer[Index2],
+                      DriverBinding->DriverBindingHandle,
+                      NULL
+                      );
+    }
+    
+    //
+    // Uninstall all the protocols installed in the driver entry point
+    //    
     gBS->UninstallProtocolInterface (
-          ImageHandle,
+          DriverBinding->DriverBindingHandle,
           &gEfiDriverBindingProtocolGuid,
           DriverBinding
           );
+    
     Status = gBS->HandleProtocol (
                     DeviceHandleBuffer[Index],
                     &gEfiComponentNameProtocolGuid,
@@ -1740,7 +1852,7 @@ NetLibDefaultUnload (
                     );
     if (!EFI_ERROR (Status)) {
       gBS->UninstallProtocolInterface (
-             ImageHandle,
+             DriverBinding->DriverBindingHandle,
              &gEfiComponentNameProtocolGuid,
              ComponentName
              );
@@ -1753,7 +1865,7 @@ NetLibDefaultUnload (
                     );
     if (!EFI_ERROR (Status)) {
       gBS->UninstallProtocolInterface (
-             ImageHandle,
+             DriverBinding->DriverBindingHandle,
              &gEfiComponentName2ProtocolGuid,
              ComponentName2
              );
@@ -1829,7 +1941,7 @@ NetLibCreateServiceChild (
 
 
 /**
-  Destory a child of the service that is identified by ServiceBindingGuid.
+  Destroy a child of the service that is identified by ServiceBindingGuid.
 
   Get the ServiceBinding Protocol first, then use it to destroy a child.
 
@@ -1838,10 +1950,10 @@ NetLibCreateServiceChild (
   @param[in]   Controller            The controller which has the service installed.
   @param[in]   Image                 The image handle used to open service.
   @param[in]   ServiceBindingGuid    The service's Guid.
-  @param[in]   ChildHandle           The child to destory.
+  @param[in]   ChildHandle           The child to destroy.
 
-  @retval EFI_SUCCESS           The child is successfully destoried.
-  @retval Others                Failed to destory the child.
+  @retval EFI_SUCCESS           The child is successfully destroyed.
+  @retval Others                Failed to destroy the child.
 
 **/
 EFI_STATUS
@@ -1875,7 +1987,7 @@ NetLibDestroyServiceChild (
   }
 
   //
-  // destory the child
+  // destroy the child
   //
   Status = Service->DestroyChild (Service, ChildHandle);
   return Status;
@@ -2138,7 +2250,7 @@ NetLibGetMacAddress (
     // Try to get SNP mode from MNP
     //
     Status = Mnp->GetModeData (Mnp, NULL, &SnpModeData);
-    if (EFI_ERROR (Status)) {
+    if (EFI_ERROR (Status) && (Status != EFI_NOT_STARTED)) {
       MnpSb->DestroyChild (MnpSb, MnpChildHandle);
       return Status;
     }
@@ -2168,7 +2280,8 @@ NetLibGetMacAddress (
   @param[in]   ServiceHandle         The handle where network service binding protocol is
                                      installed on.
   @param[in]   ImageHandle           The image handle used to act as the agent handle to
-                                     get the simple network protocol.
+                                     get the simple network protocol. This parameter is
+                                     optional and may be NULL.
   @param[out]  MacString             The pointer to store the address of the string
                                      representation of  the mac address.
 
@@ -2181,7 +2294,7 @@ EFI_STATUS
 EFIAPI
 NetLibGetMacString (
   IN  EFI_HANDLE            ServiceHandle,
-  IN  EFI_HANDLE            ImageHandle,
+  IN  EFI_HANDLE            ImageHandle, OPTIONAL
   OUT CHAR16                **MacString
   )
 {
@@ -3174,7 +3287,110 @@ Exit:
   return Status;
 }
 
+/**
 
+  Convert one EFI_IPv6_ADDRESS to Null-terminated Unicode string.
+  The text representation of address is defined in RFC 4291.
+  
+  @param[in]       Ip6Address     The pointer to the IPv6 address.
+  @param[out]      String         The buffer to return the converted string.
+  @param[in]       StringSize     The length in bytes of the input String.
+                                  
+  @retval EFI_SUCCESS             Convert to string successfully.
+  @retval EFI_INVALID_PARAMETER   The input parameter is invalid.
+  @retval EFI_BUFFER_TOO_SMALL    The BufferSize is too small for the result. BufferSize has been 
+                                  updated with the size needed to complete the request.
+**/
+EFI_STATUS
+EFIAPI
+NetLibIp6ToStr (
+  IN         EFI_IPv6_ADDRESS      *Ip6Address,
+  OUT        CHAR16                *String,
+  IN         UINTN                 StringSize
+  )
+{
+  UINT16     Ip6Addr[8];
+  UINTN      Index;
+  UINTN      LongestZerosStart;
+  UINTN      LongestZerosLength;
+  UINTN      CurrentZerosStart;
+  UINTN      CurrentZerosLength;
+  CHAR16     Buffer[sizeof"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"];
+  CHAR16     *Ptr;
+
+  if (Ip6Address == NULL || String == NULL || StringSize == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Convert the UINT8 array to an UINT16 array for easy handling.
+  // 
+  ZeroMem (Ip6Addr, sizeof (Ip6Addr));
+  for (Index = 0; Index < 16; Index++) {
+    Ip6Addr[Index / 2] |= (Ip6Address->Addr[Index] << ((1 - (Index % 2)) << 3));
+  }
+
+  //
+  // Find the longest zeros and mark it.
+  //
+  CurrentZerosStart  = DEFAULT_ZERO_START;
+  CurrentZerosLength = 0;
+  LongestZerosStart  = DEFAULT_ZERO_START;
+  LongestZerosLength = 0;
+  for (Index = 0; Index < 8; Index++) {
+    if (Ip6Addr[Index] == 0) {
+      if (CurrentZerosStart == DEFAULT_ZERO_START) {
+        CurrentZerosStart = Index;
+        CurrentZerosLength = 1;
+      } else {
+        CurrentZerosLength++;
+      }
+    } else {
+      if (CurrentZerosStart != DEFAULT_ZERO_START) {
+        if (CurrentZerosLength > 2 && (LongestZerosStart == (DEFAULT_ZERO_START) || CurrentZerosLength > LongestZerosLength)) {
+          LongestZerosStart  = CurrentZerosStart;
+          LongestZerosLength = CurrentZerosLength;
+        }
+        CurrentZerosStart  = DEFAULT_ZERO_START;
+        CurrentZerosLength = 0;
+      }
+    }
+  }
+  
+  if (CurrentZerosStart != DEFAULT_ZERO_START && CurrentZerosLength > 2) {
+    if (LongestZerosStart == DEFAULT_ZERO_START || LongestZerosLength < CurrentZerosLength) {
+      LongestZerosStart  = CurrentZerosStart;
+      LongestZerosLength = CurrentZerosLength;
+    }
+  }
+
+  Ptr = Buffer;
+  for (Index = 0; Index < 8; Index++) {
+    if (LongestZerosStart != DEFAULT_ZERO_START && Index >= LongestZerosStart && Index < LongestZerosStart + LongestZerosLength) {
+      if (Index == LongestZerosStart) {
+        *Ptr++ = L':';
+      }
+      continue;
+    }
+    if (Index != 0) {
+      *Ptr++ = L':';
+    }
+    Ptr += UnicodeSPrint(Ptr, 10, L"%x", Ip6Addr[Index]);
+  }
+  
+  if (LongestZerosStart != DEFAULT_ZERO_START && LongestZerosStart + LongestZerosLength == 8) {
+    *Ptr++ = L':';
+  }
+  *Ptr = L'\0';
+
+  if ((UINTN)Ptr - (UINTN)Buffer > StringSize) {
+    return EFI_BUFFER_TOO_SMALL;
+  }
+
+  StrCpy (String, Buffer);
+
+  return EFI_SUCCESS;
+}
 
 /**
   This function obtains the system guid from the smbios table.

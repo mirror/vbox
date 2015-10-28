@@ -1,6 +1,7 @@
 /** @file
+Converts a pe32+ image to an FW, Te image type, or other specific image.
 
-Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -8,14 +9,6 @@ http://opensource.org/licenses/bsd-license.php
 
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
-
-Module Name:
-
-    GenFw.c
-
-Abstract:
-
-    Converts a pe32+ image to an FW, Te image type, or other specific image.
 
 **/
 
@@ -65,10 +58,6 @@ Abstract:
 
 #define DEFAULT_MC_PAD_BYTE_VALUE  0xFF
 #define DEFAULT_MC_ALIGNMENT       16
-
-#ifndef _MAX_PATH
-#define _MAX_PATH 500
-#endif
 
 #define STATUS_IGNORE 0xA
 //
@@ -179,7 +168,7 @@ Returns:
   //
   // Copyright declaration
   //
-  fprintf (stdout, "Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
@@ -1559,7 +1548,7 @@ Returns:
   // Open output file and Write image into the output file.
   //
   if (OutImageName != NULL) {
-    fpOut = fopen (OutImageName, "rb");
+    fpOut = fopen (LongFilePath (OutImageName), "rb");
     if (fpOut != NULL) {
       //
       // Get Output file time stamp
@@ -1590,7 +1579,7 @@ Returns:
   //
   // Open input file and read file data into file buffer.
   //
-  fpIn = fopen (mInImageName, "rb");
+  fpIn = fopen (LongFilePath (mInImageName), "rb");
   if (fpIn == NULL) {
     Error (NULL, 0, 0001, "Error opening file", mInImageName);
     goto Finish;
@@ -1621,7 +1610,7 @@ Returns:
     //
     // Open output file handle.
     //
-    fpOut = fopen (OutImageName, "wb");
+    fpOut = fopen (LongFilePath (OutImageName), "wb");
     if (!fpOut) {
       Error (NULL, 0, 0001, "Error opening output file", OutImageName);
       goto Finish;
@@ -1631,7 +1620,7 @@ Returns:
     //
     HiiPackageListHeader.PackageLength = sizeof (EFI_HII_PACKAGE_LIST_HEADER);
     for (Index = 0; Index < InputFileNum; Index ++) {
-      fpIn = fopen (InputFileName [Index], "rb");
+      fpIn = fopen (LongFilePath (InputFileName [Index]), "rb");
       if (fpIn == NULL) {
         Error (NULL, 0, 0001, "Error opening file", InputFileName [Index]);
         goto Finish;
@@ -1677,7 +1666,7 @@ Returns:
     memcpy (HiiPackageListBuffer, &HiiPackageListHeader, sizeof (HiiPackageListHeader));
     HiiPackageDataPointer = HiiPackageListBuffer + sizeof (HiiPackageListHeader);
     for (Index = 0; Index < InputFileNum; Index ++) {
-      fpIn = fopen (InputFileName [Index], "rb");
+      fpIn = fopen (LongFilePath (InputFileName [Index]), "rb");
       if (fpIn == NULL) {
         Error (NULL, 0, 0001, "Error opening file", InputFileName [Index]);
         free (HiiPackageListBuffer);
@@ -1757,13 +1746,13 @@ Returns:
     //
     // Open output file handle.
     //
-    fpOut = fopen (OutImageName, "wb");
+    fpOut = fopen (LongFilePath (OutImageName), "wb");
     if (!fpOut) {
       Error (NULL, 0, 0001, "Error opening output file", OutImageName);
       goto Finish;
     }
     for (Index = 0; Index < InputFileNum; Index ++) {
-      fpIn = fopen (InputFileName [Index], "rb");
+      fpIn = fopen (LongFilePath (InputFileName [Index]), "rb");
       if (!fpIn) {
         Error (NULL, 0, 0001, "Error opening file", InputFileName [Index]);
         goto Finish;
@@ -1805,7 +1794,7 @@ Returns:
   // Convert MicroCode.txt file to MicroCode.bin file
   //
   if (mOutImageType == FW_MCI_IMAGE) {
-    fpIn = fopen (mInImageName, "r");
+    fpIn = fopen (LongFilePath (mInImageName), "r");
     if (fpIn == NULL) {
       Error (NULL, 0, 0001, "Error opening file", mInImageName);
       goto Finish;
@@ -1928,14 +1917,14 @@ Returns:
     // Open the output file handle.
     //
     if (ReplaceFlag) {
-      fpInOut = fopen (mInImageName, "wb");
+      fpInOut = fopen (LongFilePath (mInImageName), "wb");
       if (fpInOut == NULL) {
         Error (NULL, 0, 0001, "Error opening file", mInImageName);
         goto Finish;
       }
     } else {
       if (OutImageName != NULL) {
-        fpOut = fopen (OutImageName, "wb");
+        fpOut = fopen (LongFilePath (OutImageName), "wb");
       } else {
         fpOut = stdout;
       }
@@ -2641,7 +2630,7 @@ WriteFile:
       //
       // Update File when File is changed.
       //
-      fpInOut = fopen (mInImageName, "wb");
+      fpInOut = fopen (LongFilePath (mInImageName), "wb");
       if (fpInOut == NULL) {
         Error (NULL, 0, 0001, "Error opening file", mInImageName);
         goto Finish;
@@ -2654,7 +2643,7 @@ WriteFile:
       //
       // Update File when File is changed or File is old.
       //
-      fpOut = fopen (OutImageName, "wb");
+      fpOut = fopen (LongFilePath (OutImageName), "wb");
       if (fpOut == NULL) {
         Error (NULL, 0, 0001, "Error opening output file", OutImageName);
         goto Finish;
@@ -2696,7 +2685,7 @@ Finish:
       if (OutputFileBuffer == NULL) {
         remove (OutImageName);
       } else {
-        fpOut = fopen (OutImageName, "wb");
+        fpOut = fopen (LongFilePath (OutImageName), "wb");
         fwrite (OutputFileBuffer, 1, OutputFileLength, fpOut);
         fclose (fpOut);
       }
@@ -2722,7 +2711,7 @@ Finish:
     if (ReportFileName != NULL) {
       strcpy (ReportFileName, OutImageName);
       strcpy (ReportFileName + (FileLen - 4), ".txt"); 
-      ReportFile = fopen (ReportFileName, "w+");
+      ReportFile = fopen (LongFilePath (ReportFileName), "w+");
       if (ReportFile != NULL) {
         fprintf (ReportFile, "MODULE_SIZE = %u\n", (unsigned) mImageSize);
         fprintf (ReportFile, "TIME_STAMP = %u\n", (unsigned) mImageTimeStamp);

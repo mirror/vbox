@@ -1,7 +1,7 @@
 /** @file
   Main file for attrib shell level 2 function.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -29,21 +29,18 @@ ShellCommandRunCls (
 {
   EFI_STATUS    Status;
   LIST_ENTRY    *Package;
-  CHAR16        *Message;
   UINTN         Background;
   UINTN         ForeColor;
   CHAR16        *ProblemParam;
   SHELL_STATUS  ShellStatus;
   CONST CHAR16  *Param1;
 
-  ShellStatus   = SHELL_SUCCESS;
-  ProblemParam  = NULL;
-  Background    = 0;
-
   //
   // Initialize variables
   //
-  Message = NULL;
+  ShellStatus   = SHELL_SUCCESS;
+  ProblemParam  = NULL;
+  Background    = 0;
 
   //
   // initialize the shell lib (we must be in non-auto-init...)
@@ -114,7 +111,7 @@ ShellCommandRunCls (
               break;
           }
           ForeColor = (~ShellStrToUintn(Param1)) & 0xF;
-          Status = gST->ConOut->SetAttribute (gST->ConOut, ForeColor | Background);
+          Status = gST->ConOut->SetAttribute (gST->ConOut, (ForeColor | Background) & 0x7F );
           ASSERT_EFI_ERROR(Status);
           Status = gST->ConOut->ClearScreen (gST->ConOut);
           ASSERT_EFI_ERROR(Status);

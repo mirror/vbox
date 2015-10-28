@@ -4,7 +4,8 @@
   This library is for use ONLY by shell commands linked into the shell application.
   This library will not funciton if it is used for UEFI Shell 2.0 Applications.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2013-2014, Hewlett-Packard Development Company, L.P.
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -24,7 +25,6 @@
 #include <Protocol/EfiShell.h>
 #include <Protocol/EfiShellParameters.h>
 #include <Protocol/UnicodeCollation.h>
-#include <Protocol/DevicePathToText.h>
 #include <Protocol/SimpleFileSystem.h>
 
 #include <Library/UefiBootServicesTableLib.h>
@@ -33,7 +33,6 @@
 // The extern global protocol poionters.
 //
 extern        EFI_UNICODE_COLLATION_PROTOCOL    *gUnicodeCollation;
-extern        EFI_DEVICE_PATH_TO_TEXT_PROTOCOL  *gDevPathToText;
 extern        CONST CHAR16*                     SupportLevel[];
 
 //
@@ -582,6 +581,17 @@ ShellCommandAddMapItemAndUpdatePath(
 EFI_STATUS
 EFIAPI
 ShellCommandCreateInitialMappingsAndPaths(
+  VOID
+  );
+
+/**
+  Add mappings for any devices without one.  Do not change any existing maps.
+
+  @retval EFI_SUCCESS   The operation was successful.
+**/
+EFI_STATUS
+EFIAPI
+ShellCommandUpdateMapping (
   VOID
   );
 

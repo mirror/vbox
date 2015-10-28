@@ -5,7 +5,7 @@
   After DxeCore finish DXE phase, gEfiBdsArchProtocolGuid->BdsEntry will be invoked
   to enter BDS phase.
 
-Copyright (c) 2004 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -37,6 +37,17 @@ EFI_BDS_ARCH_PROTOCOL  gBds = {
 };
 
 UINT16                          *mBootNext = NULL;
+
+///
+/// The read-only variables defined in UEFI Spec.
+///
+CHAR16  *mReadOnlyVariables[] = {
+  L"PlatformLangCodes",
+  L"LangCodes",
+  L"BootOptionSupport",
+  L"HwErrRecSupport",
+  L"OsIndicationsSupported"
+  };
 
 /**
 
@@ -72,6 +83,24 @@ BdsInitialize (
   return Status;
 }
 
+
+/**
+  An empty function to pass error checking of CreateEventEx ().
+
+  @param  Event                 Event whose notification function is being invoked.
+  @param  Context               Pointer to the notification function's context,
+                                which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+BdsEmptyCallbackFunction (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
+  )
+{
+}
+
 /**
 
   This function attempts to boot for the boot order specified
@@ -93,18 +122,37 @@ BdsBootDeviceSelect (
   CHAR16            Buffer[20];
   BOOLEAN           BootNextExist;
   LIST_ENTRY        *LinkBootNext;
+  EFI_EVENT         ConnectConInEvent;
 
   //
   // Got the latest boot option
   //
   BootNextExist = FALSE;
   LinkBootNext  = NULL;
+  ConnectConInEvent = NULL;
   InitializeListHead (&BootLists);
 
   //
   // First check the boot next option
   //
   ZeroMem (Buffer, sizeof (Buffer));
+
+  //
+  // Create Event to signal ConIn connection request
+  //
+  if (PcdGetBool (PcdConInConnectOnDemand)) {
+    Status = gBS->CreateEventEx (
+                    EVT_NOTIFY_SIGNAL,
+                    TPL_CALLBACK,
+                    BdsEmptyCallbackFunction,
+                    NULL,
+                    &gConnectConInEventGuid,
+                    &ConnectConInEvent
+                    );
+    if (EFI_ERROR(Status)) {
+      ConnectConInEvent = NULL;
+    }
+  }
 
   if (mBootNext != NULL) {
     //
@@ -116,13 +164,17 @@ BdsBootDeviceSelect (
     //
     // Clear the this variable so it's only exist in this time boot
     //
-    gRT->SetVariable (
-          L"BootNext",
-          &gEfiGlobalVariableGuid,
-          EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
-          0,
-          mBootNext
-          );
+    Status = gRT->SetVariable (
+                    L"BootNext",
+                    &gEfiGlobalVariableGuid,
+                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                    0,
+                    NULL
+                    );
+    //
+    // Deleting variable with current variable implementation shouldn't fail.
+    //
+    ASSERT_EFI_ERROR (Status);
 
     //
     // Add the boot next boot option
@@ -171,6 +223,13 @@ BdsBootDeviceSelect (
     // Check the boot option list first
     //
     if (Link == &BootLists) {
+      //
+      // When LazyConIn enabled, signal connect ConIn event before enter UI
+      //
+      if (PcdGetBool (PcdConInConnectOnDemand) && ConnectConInEvent != NULL) {
+        gBS->SignalEvent (ConnectConInEvent);
+      }
+
       //
       // There are two ways to enter here:
       // 1. There is no active boot option, give user chance to
@@ -248,6 +307,14 @@ BdsBootDeviceSelect (
       // Boot success, then stop process the boot order, and
       // present the boot manager menu, front page
       //
+
+      //
+      // When LazyConIn enabled, signal connect ConIn Event before enter UI
+      //
+      if (PcdGetBool (PcdConInConnectOnDemand) && ConnectConInEvent != NULL) {
+        gBS->SignalEvent (ConnectConInEvent);
+      }
+
       Timeout = 0xffff;
       PlatformBdsEnterFrontPage (Timeout, FALSE);
 
@@ -275,56 +342,6 @@ BdsBootDeviceSelect (
 }
 
 /**
-  Validate the device path instance. 
-
-  Only base on the length filed in the device path node to validate the device path. 
-
-  @param  DevicePath         A pointer to a device path data structure.
-  @param  MaxSize            Max valid device path size. If big than this size, 
-                             return error.
-  
-  @retval TRUE               An valid device path.
-  @retval FALSE              An invalid device path.
-
-**/
-BOOLEAN
-IsValidDevicePath (
-  IN EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
-  IN UINTN                     MaxSize
-  )
-{
-  UINTN  Size;
-  UINTN  NodeSize;
-
-  if (DevicePath == NULL) {
-    return TRUE;
-  }
-
-  Size = 0;
-
-  while (!IsDevicePathEnd (DevicePath)) {
-    NodeSize = DevicePathNodeLength (DevicePath);
-    if (NodeSize < END_DEVICE_PATH_LENGTH) {
-      return FALSE;
-    }
-
-    Size += NodeSize;
-    if (Size > MaxSize) {
-      return FALSE;
-    }
-
-    DevicePath = NextDevicePathNode (DevicePath);
-  }
-
-  Size += DevicePathNodeLength (DevicePath);
-  if (Size > MaxSize) {
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
-/**
 
   Validate input console variable data. 
 
@@ -333,7 +350,6 @@ IsValidDevicePath (
   @param VariableName             Input console variable name.
 
 **/
-
 VOID
 BdsFormalizeConsoleVariable (
   IN  CHAR16          *VariableName
@@ -348,7 +364,7 @@ BdsFormalizeConsoleVariable (
                       &gEfiGlobalVariableGuid,
                       &VariableSize
                       );
-  if (!IsValidDevicePath (DevicePath, VariableSize)) { 
+  if ((DevicePath != NULL) && !IsDevicePathValid (DevicePath, VariableSize)) { 
     Status = gRT->SetVariable (
                     VariableName,
                     &gEfiGlobalVariableGuid,
@@ -356,28 +372,144 @@ BdsFormalizeConsoleVariable (
                     0,
                     NULL
                     );
+    //
+    // Deleting variable with current variable implementation shouldn't fail.
+    //
     ASSERT_EFI_ERROR (Status);
   }
 }
 
 /**
 
-  Validate variables. 
+  Formalize Bds global variables. 
 
-  If found the device path is not a valid device path, remove the variable.
-
+ 1. For ConIn/ConOut/ConErr, if found the device path is not a valid device path, remove the variable.
+ 2. For OsIndicationsSupported, Create a BS/RT/UINT64 variable to report caps 
+ 3. Delete OsIndications variable if it is not NV/BS/RT UINT64
+ Item 3 is used to solve case when OS corrupts OsIndications. Here simply delete this NV variable.
+ 
 **/
 VOID 
 BdsFormalizeEfiGlobalVariable (
   VOID
   )
 {
+  EFI_STATUS Status;
+  UINT64     OsIndicationSupport;
+  UINT64     OsIndication;
+  UINTN      DataSize;
+  UINT32     Attributes;
+  
   //
   // Validate Console variable.
   //
   BdsFormalizeConsoleVariable (L"ConIn");
   BdsFormalizeConsoleVariable (L"ConOut");
   BdsFormalizeConsoleVariable (L"ErrOut");
+
+  //
+  // OS indicater support variable
+  //
+  OsIndicationSupport = EFI_OS_INDICATIONS_BOOT_TO_FW_UI \
+                      | EFI_OS_INDICATIONS_FMP_CAPSULE_SUPPORTED;
+
+  BdsDxeSetVariableAndReportStatusCodeOnError (
+    L"OsIndicationsSupported",
+    &gEfiGlobalVariableGuid,
+    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+    sizeof(UINT64),
+    &OsIndicationSupport
+    );
+
+  //
+  // If OsIndications is invalid, remove it.
+  // Invalid case
+  //   1. Data size != UINT64
+  //   2. OsIndication value inconsistence
+  //   3. OsIndication attribute inconsistence
+  //
+  OsIndication = 0;
+  Attributes = 0;
+  DataSize = sizeof(UINT64);
+  Status = gRT->GetVariable (
+                  L"OsIndications",
+                  &gEfiGlobalVariableGuid,
+                  &Attributes,
+                  &DataSize,
+                  &OsIndication
+                  );
+
+  if (!EFI_ERROR(Status)) {
+    if (DataSize != sizeof(UINT64) ||
+        (OsIndication & ~OsIndicationSupport) != 0 ||
+        Attributes != (EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE)){
+
+      DEBUG ((EFI_D_ERROR, "Unformalized OsIndications variable exists. Delete it\n"));
+      Status = gRT->SetVariable (
+                      L"OsIndications",
+                      &gEfiGlobalVariableGuid,
+                      0,
+                      0,
+                      NULL
+                      );
+      //
+      // Deleting variable with current variable implementation shouldn't fail.
+      //
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
+
+}
+
+/**
+
+  Allocate a block of memory that will contain performance data to OS.
+
+**/
+VOID
+BdsAllocateMemoryForPerformanceData (
+  VOID
+  )
+{
+  EFI_STATUS                    Status;
+  EFI_PHYSICAL_ADDRESS          AcpiLowMemoryBase;
+  EDKII_VARIABLE_LOCK_PROTOCOL  *VariableLock;
+
+  AcpiLowMemoryBase = 0x0FFFFFFFFULL;
+
+  //
+  // Allocate a block of memory that will contain performance data to OS.
+  //
+  Status = gBS->AllocatePages (
+                  AllocateMaxAddress,
+                  EfiReservedMemoryType,
+                  EFI_SIZE_TO_PAGES (PERF_DATA_MAX_LENGTH),
+                  &AcpiLowMemoryBase
+                  );
+  if (!EFI_ERROR (Status)) {
+    //
+    // Save the pointer to variable for use in S3 resume.
+    //
+    BdsDxeSetVariableAndReportStatusCodeOnError (
+      L"PerfDataMemAddr",
+      &gPerformanceProtocolGuid,
+      EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+      sizeof (EFI_PHYSICAL_ADDRESS),
+      &AcpiLowMemoryBase
+      );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "[Bds] PerfDataMemAddr (%08x) cannot be saved to NV storage.\n", AcpiLowMemoryBase));
+    }
+    //
+    // Mark L"PerfDataMemAddr" variable to read-only if the Variable Lock protocol exists
+    // Still lock it even the variable cannot be saved to prevent it's set by 3rd party code.
+    //
+    Status = gBS->LocateProtocol (&gEdkiiVariableLockProtocolGuid, NULL, (VOID **) &VariableLock);
+    if (!EFI_ERROR (Status)) {
+      Status = VariableLock->RequestToLock (VariableLock, L"PerfDataMemAddr", &gPerformanceProtocolGuid);
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
 }
 
 /**
@@ -398,12 +530,20 @@ BdsEntry (
   LIST_ENTRY                      BootOptionList;
   UINTN                           BootNextSize;
   CHAR16                          *FirmwareVendor;
+  EFI_STATUS                      Status;
+  UINT16                          BootTimeOut;
+  UINTN                           Index;
+  EDKII_VARIABLE_LOCK_PROTOCOL    *VariableLock;
 
   //
   // Insert the performance probe
   //
   PERF_END (NULL, "DXE", NULL, 0);
   PERF_START (NULL, "BDS", NULL, 0);
+
+  PERF_CODE (
+    BdsAllocateMemoryForPerformanceData ();
+  );
 
   //
   // Initialize the global system boot option and driver option
@@ -427,6 +567,7 @@ BdsEntry (
   //
   // Fixup Tasble CRC after we updated Firmware Vendor and Revision
   //
+  gST->Hdr.CRC32 = 0;
   gBS->CalculateCrc32 ((VOID *)gST, sizeof(EFI_SYSTEM_TABLE), &gST->Hdr.CRC32);
 
   //
@@ -435,12 +576,44 @@ BdsEntry (
   BdsFormalizeEfiGlobalVariable();
 
   //
-  // Do the platform init, can be customized by OEM/IBV
+  // Mark the read-only variables if the Variable Lock protocol exists
   //
-  PERF_START (NULL, "PlatformBds", "BDS", 0);
-  PlatformBdsInit ();
+  Status = gBS->LocateProtocol (&gEdkiiVariableLockProtocolGuid, NULL, (VOID **) &VariableLock);
+  DEBUG ((EFI_D_INFO, "[BdsDxe] Locate Variable Lock protocol - %r\n", Status));
+  if (!EFI_ERROR (Status)) {
+    for (Index = 0; Index < sizeof (mReadOnlyVariables) / sizeof (mReadOnlyVariables[0]); Index++) {
+      Status = VariableLock->RequestToLock (VariableLock, mReadOnlyVariables[Index], &gEfiGlobalVariableGuid);
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
+
+  //
+  // Report Status Code to indicate connecting drivers will happen
+  //
+  REPORT_STATUS_CODE (
+    EFI_PROGRESS_CODE,
+    (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_BEGIN_CONNECTING_DRIVERS)
+    );
 
   InitializeHwErrRecSupport();
+
+  //
+  // Initialize L"Timeout" EFI global variable.
+  //
+  BootTimeOut = PcdGet16 (PcdPlatformBootTimeOut);
+  if (BootTimeOut != 0xFFFF) {
+    //
+    // If time out value equal 0xFFFF, no need set to 0xFFFF to variable area because UEFI specification
+    // define same behavior between no value or 0xFFFF value for L"Timeout".
+    //
+    BdsDxeSetVariableAndReportStatusCodeOnError (
+                    L"Timeout",
+                    &gEfiGlobalVariableGuid,
+                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                    sizeof (UINT16),
+                    &BootTimeOut
+                    );
+  }
 
   //
   // bugbug: platform specific code
@@ -449,6 +622,12 @@ BdsEntry (
   InitializeStringSupport ();
   InitializeLanguage (TRUE);
   InitializeFrontPage (TRUE);
+
+  //
+  // Do the platform init, can be customized by OEM/IBV
+  //
+  PERF_START (NULL, "PlatformBds", "BDS", 0);
+  PlatformBdsInit ();
 
   //
   // Set up the device list based on EFI 1.1 variables
@@ -487,3 +666,89 @@ BdsEntry (
 
   return ;
 }
+
+
+/**
+  Set the variable and report the error through status code upon failure.
+
+  @param  VariableName           A Null-terminated string that is the name of the vendor's variable.
+                                 Each VariableName is unique for each VendorGuid. VariableName must
+                                 contain 1 or more characters. If VariableName is an empty string,
+                                 then EFI_INVALID_PARAMETER is returned.
+  @param  VendorGuid             A unique identifier for the vendor.
+  @param  Attributes             Attributes bitmask to set for the variable.
+  @param  DataSize               The size in bytes of the Data buffer. Unless the EFI_VARIABLE_APPEND_WRITE, 
+                                 EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS, or 
+                                 EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS attribute is set, a size of zero 
+                                 causes the variable to be deleted. When the EFI_VARIABLE_APPEND_WRITE attribute is 
+                                 set, then a SetVariable() call with a DataSize of zero will not cause any change to 
+                                 the variable value (the timestamp associated with the variable may be updated however 
+                                 even if no new data value is provided,see the description of the 
+                                 EFI_VARIABLE_AUTHENTICATION_2 descriptor below. In this case the DataSize will not 
+                                 be zero since the EFI_VARIABLE_AUTHENTICATION_2 descriptor will be populated). 
+  @param  Data                   The contents for the variable.
+
+  @retval EFI_SUCCESS            The firmware has successfully stored the variable and its data as
+                                 defined by the Attributes.
+  @retval EFI_INVALID_PARAMETER  An invalid combination of attribute bits, name, and GUID was supplied, or the
+                                 DataSize exceeds the maximum allowed.
+  @retval EFI_INVALID_PARAMETER  VariableName is an empty string.
+  @retval EFI_OUT_OF_RESOURCES   Not enough storage is available to hold the variable and its data.
+  @retval EFI_DEVICE_ERROR       The variable could not be retrieved due to a hardware error.
+  @retval EFI_WRITE_PROTECTED    The variable in question is read-only.
+  @retval EFI_WRITE_PROTECTED    The variable in question cannot be deleted.
+  @retval EFI_SECURITY_VIOLATION The variable could not be written due to EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS 
+                                 or EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACESS being set, but the AuthInfo 
+                                 does NOT pass the validation check carried out by the firmware.
+
+  @retval EFI_NOT_FOUND          The variable trying to be updated or deleted was not found.
+**/
+EFI_STATUS
+BdsDxeSetVariableAndReportStatusCodeOnError (
+  IN CHAR16     *VariableName,
+  IN EFI_GUID   *VendorGuid,
+  IN UINT32     Attributes,
+  IN UINTN      DataSize,
+  IN VOID       *Data
+  )
+{
+  EFI_STATUS                 Status;
+  EDKII_SET_VARIABLE_STATUS  *SetVariableStatus;
+  UINTN                      NameSize;
+
+  Status = gRT->SetVariable (
+                  VariableName,
+                  VendorGuid,
+                  Attributes,
+                  DataSize,
+                  Data
+                  );
+  if (EFI_ERROR (Status)) {
+    NameSize = StrSize (VariableName);
+    SetVariableStatus = AllocatePool (sizeof (EDKII_SET_VARIABLE_STATUS) + NameSize + DataSize);
+    if (SetVariableStatus != NULL) {
+      CopyGuid (&SetVariableStatus->Guid, VendorGuid);
+      SetVariableStatus->NameSize   = NameSize;
+      SetVariableStatus->DataSize   = DataSize;
+      SetVariableStatus->SetStatus  = Status;
+      SetVariableStatus->Attributes = Attributes;
+      CopyMem (SetVariableStatus + 1,                          VariableName, NameSize);
+      CopyMem (((UINT8 *) (SetVariableStatus + 1)) + NameSize, Data,         DataSize);
+
+      REPORT_STATUS_CODE_EX (
+        EFI_ERROR_CODE,
+        PcdGet32 (PcdErrorCodeSetVariable),
+        0,
+        NULL,
+        &gEdkiiStatusCodeDataTypeVariableGuid,
+        SetVariableStatus,
+        sizeof (EDKII_SET_VARIABLE_STATUS) + NameSize + DataSize
+        );
+
+      FreePool (SetVariableStatus);
+    }
+  }
+
+  return Status;
+}
+

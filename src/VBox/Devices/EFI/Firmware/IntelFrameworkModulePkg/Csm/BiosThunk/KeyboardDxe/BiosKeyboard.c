@@ -1,7 +1,7 @@
 /** @file
   ConsoleOut Routines that speak VGA.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -1037,95 +1037,96 @@ BiosKeyboardReset (
   // if not skip step 4&5 and jump to step 6 to selftest KBC and report this
   // else   go step 4
   //
-  if ((KeyReadStatusRegister (BiosKeyboardPrivate) & KBC_STSREG_VIA64_SYSF) != 0) {
-    //
-    // 4
-    // CheckMouseStatus to decide enable it later or not
-    //
-    //
-    // Read the command byte of KBC
-    //
-    Status = KeyboardCommand (
-               BiosKeyboardPrivate,
-               KBC_CMDREG_VIA64_CMDBYTE_R
-               );
-
-    if (EFI_ERROR (Status)) {
-      Status    = EFI_DEVICE_ERROR;
-      goto Exit;
-    }
-
-    Status = KeyboardRead (
-               BiosKeyboardPrivate,
-               &CommandByte
-               );
-
-    if (EFI_ERROR (Status)) {
-      Status    = EFI_DEVICE_ERROR;
-      goto Exit;
-    }
-    //
-    // Check mouse enabled or not before
-    //
-    if ((CommandByte & KB_CMMBYTE_DISABLE_AUX) != 0) {
-      MouseEnable = FALSE;
+  if (!PcdGetBool (PcdFastPS2Detection)) {
+    if ((KeyReadStatusRegister (BiosKeyboardPrivate) & KBC_STSREG_VIA64_SYSF) != 0) {
+      //
+      // 4
+      // CheckMouseStatus to decide enable it later or not
+      //
+      //
+      // Read the command byte of KBC
+      //
+      Status = KeyboardCommand (
+                 BiosKeyboardPrivate,
+                 KBC_CMDREG_VIA64_CMDBYTE_R
+                 );
+      
+      if (EFI_ERROR (Status)) {
+        Status    = EFI_DEVICE_ERROR;
+        goto Exit;
+      }
+      
+      Status = KeyboardRead (
+                 BiosKeyboardPrivate,
+                 &CommandByte
+                 );
+      
+      if (EFI_ERROR (Status)) {
+        Status    = EFI_DEVICE_ERROR;
+        goto Exit;
+      }
+      //
+      // Check mouse enabled or not before
+      //
+      if ((CommandByte & KB_CMMBYTE_DISABLE_AUX) != 0) {
+        MouseEnable = FALSE;
+      } else {
+        MouseEnable = TRUE;
+      }
+      //
+      // 5
+      // disable mouse (via KBC) and Keyborad device
+      //
+      Status = KeyboardCommand (
+                 BiosKeyboardPrivate,
+                 KBC_CMDREG_VIA64_AUX_DISABLE
+                 );
+      
+      if (EFI_ERROR (Status)) {
+        Status    = EFI_DEVICE_ERROR;
+        goto Exit;
+      }
+      
+      Status = KeyboardCommand (
+                 BiosKeyboardPrivate,
+                 KBC_CMDREG_VIA64_KB_DISABLE
+                 );
+      
+      if (EFI_ERROR (Status)) {
+        Status    = EFI_DEVICE_ERROR;
+        goto Exit;
+      }
     } else {
-      MouseEnable = TRUE;
-    }
-    //
-    // 5
-    // disable mouse (via KBC) and Keyborad device
-    //
-    Status = KeyboardCommand (
-               BiosKeyboardPrivate,
-               KBC_CMDREG_VIA64_AUX_DISABLE
-               );
-
-    if (EFI_ERROR (Status)) {
-      Status    = EFI_DEVICE_ERROR;
-      goto Exit;
-    }
-
-    Status = KeyboardCommand (
-               BiosKeyboardPrivate,
-               KBC_CMDREG_VIA64_KB_DISABLE
-               );
-
-    if (EFI_ERROR (Status)) {
-      Status    = EFI_DEVICE_ERROR;
-      goto Exit;
-    }
-
-  } else {
-    //
-    // 6
-    // KBC Self Test
-    //
-    //
-    // Report a Progress Code for performing a self test on the keyboard controller
-    //
-    REPORT_STATUS_CODE (
-      EFI_PROGRESS_CODE,
-      EFI_PERIPHERAL_KEYBOARD | EFI_P_KEYBOARD_PC_SELF_TEST
-      );
-
-    Status = KeyboardCommand (
-               BiosKeyboardPrivate,
-               KBC_CMDREG_VIA64_KBC_SLFTEST
-               );
-    if (EFI_ERROR (Status)) {
-      Status    = EFI_DEVICE_ERROR;
-      goto Exit;
-    }
-
-    Status = KeyboardWaitForValue (
-               BiosKeyboardPrivate,
-               KBC_CMDECHO_KBCSLFTEST_OK,
-               KEYBOARD_WAITFORVALUE_TIMEOUT
-               );
-    if (EFI_ERROR (Status)) {
-      Status    = EFI_DEVICE_ERROR;
-      goto Exit;
+      //
+      // 6
+      // KBC Self Test
+      //
+      //
+      // Report a Progress Code for performing a self test on the keyboard controller
+      //    
+      REPORT_STATUS_CODE (
+        EFI_PROGRESS_CODE,
+        EFI_PERIPHERAL_KEYBOARD | EFI_P_KEYBOARD_PC_SELF_TEST
+        );
+      
+      Status = KeyboardCommand (
+                 BiosKeyboardPrivate,
+                 KBC_CMDREG_VIA64_KBC_SLFTEST
+                 );
+      if (EFI_ERROR (Status)) {
+        Status    = EFI_DEVICE_ERROR;
+        goto Exit;
+      }
+      
+      Status = KeyboardWaitForValue (
+                 BiosKeyboardPrivate,
+                 KBC_CMDECHO_KBCSLFTEST_OK,
+                 KEYBOARD_WAITFORVALUE_TIMEOUT
+                 );
+      if (EFI_ERROR (Status)) {
+        Status    = EFI_DEVICE_ERROR;
+        goto Exit;
+      }
     }
   }
   //
@@ -1321,14 +1322,16 @@ BiosKeyboardReset (
   // Done for validating keyboard. Enable keyboard (via KBC)
   // and recover the command byte to proper value
   //
-  Status = KeyboardCommand (
-             BiosKeyboardPrivate,
-             KBC_CMDREG_VIA64_KB_ENABLE
-             );
-
-  if (EFI_ERROR (Status)) {
-    Status    = EFI_DEVICE_ERROR;
-    goto Exit;
+  if (!PcdGetBool (PcdFastPS2Detection)) {
+    Status = KeyboardCommand (
+               BiosKeyboardPrivate,
+               KBC_CMDREG_VIA64_KB_ENABLE
+               );
+    
+    if (EFI_ERROR (Status)) {
+      Status    = EFI_DEVICE_ERROR;
+      goto Exit;
+    }
   }
 
   //
@@ -1674,35 +1677,38 @@ CheckKeyboardConnect (
   // enable keyboard itself and wait for its ack
   // If can't receive ack, Keyboard should not be connected.
   //
-  Status = KeyboardWrite (
-             BiosKeyboardPrivate,
-             KBC_INPBUF_VIA60_KBEN
-             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "[KBD]CheckKeyboardConnect - Keyboard enable failed!\n"));
-    REPORT_STATUS_CODE (
-      EFI_ERROR_CODE | EFI_ERROR_MINOR,
-      EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_CONTROLLER_ERROR
-      );
-    return FALSE;
+  if (!PcdGetBool (PcdFastPS2Detection)) {
+    Status = KeyboardWrite (
+               BiosKeyboardPrivate,
+               KBC_INPBUF_VIA60_KBEN
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "[KBD]CheckKeyboardConnect - Keyboard enable failed!\n"));
+      REPORT_STATUS_CODE (
+        EFI_ERROR_CODE | EFI_ERROR_MINOR,
+        EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_CONTROLLER_ERROR
+        );
+      return FALSE;
+    }
+
+    Status = KeyboardWaitForValue (
+               BiosKeyboardPrivate,
+               KBC_CMDECHO_ACK,
+               KEYBOARD_WAITFORVALUE_TIMEOUT
+               );
+
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "[KBD]CheckKeyboardConnect - Timeout!\n"));
+      REPORT_STATUS_CODE (
+        EFI_ERROR_CODE | EFI_ERROR_MINOR,
+        EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_CONTROLLER_ERROR
+        );
+      return FALSE;
+    }
+    return TRUE;
+  } else {
+    return TRUE;
   }
-
-  Status = KeyboardWaitForValue (
-             BiosKeyboardPrivate,
-             KBC_CMDECHO_ACK,
-             KEYBOARD_WAITFORVALUE_TIMEOUT
-             );
-
-  if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "[KBD]CheckKeyboardConnect - Timeout!\n"));
-    REPORT_STATUS_CODE (
-      EFI_ERROR_CODE | EFI_ERROR_MINOR,
-      EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_CONTROLLER_ERROR
-      );
-    return FALSE;
-  }
-
-  return TRUE;
 }
 
 /**
@@ -2244,7 +2250,7 @@ BiosKeyboardRegisterKeyNotify (
   IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
   IN EFI_KEY_DATA                       *KeyData,
   IN EFI_KEY_NOTIFY_FUNCTION            KeyNotificationFunction,
-  OUT EFI_HANDLE                        *NotifyHandle
+  OUT VOID                              **NotifyHandle
   )
 {
   EFI_STATUS                            Status;
@@ -2277,7 +2283,7 @@ BiosKeyboardRegisterKeyNotify (
                       );
     if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
       if (CurrentNotify->KeyNotificationFn == KeyNotificationFunction) {
-        *NotifyHandle = CurrentNotify->NotifyHandle;        
+        *NotifyHandle = CurrentNotify;
         Status = EFI_SUCCESS;
         goto Exit;
       }
@@ -2296,11 +2302,10 @@ BiosKeyboardRegisterKeyNotify (
 
   NewNotify->Signature         = BIOS_KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE;
   NewNotify->KeyNotificationFn = KeyNotificationFunction;
-  NewNotify->NotifyHandle      = (EFI_HANDLE) NewNotify;
   CopyMem (&NewNotify->KeyData, KeyData, sizeof (EFI_KEY_DATA));
   InsertTailList (&BiosKeyboardPrivate->NotifyList, &NewNotify->NotifyEntry);
 
-  *NotifyHandle                = NewNotify->NotifyHandle;  
+  *NotifyHandle                = NewNotify;
   Status                       = EFI_SUCCESS;
   
 Exit:
@@ -2325,7 +2330,7 @@ EFI_STATUS
 EFIAPI
 BiosKeyboardUnregisterKeyNotify (
   IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
-  IN EFI_HANDLE                         NotificationHandle
+  IN VOID                               *NotificationHandle
   )
 {
   EFI_STATUS                            Status;
@@ -2350,7 +2355,7 @@ BiosKeyboardUnregisterKeyNotify (
   //
   // Enter critical section
   //
-  OldTpl = gBS->RaiseTPL (TPL_NOTIFY);  
+  OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
 
   for (Link = BiosKeyboardPrivate->NotifyList.ForwardLink; Link != &BiosKeyboardPrivate->NotifyList; Link = Link->ForwardLink) {
     CurrentNotify = CR (
@@ -2359,7 +2364,7 @@ BiosKeyboardUnregisterKeyNotify (
                       NotifyEntry, 
                       BIOS_KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE
                       );    
-    if (CurrentNotify->NotifyHandle == NotificationHandle) {
+    if (CurrentNotify == NotificationHandle) {
       //
       // Remove the notification function from NotifyList and free resources
       //

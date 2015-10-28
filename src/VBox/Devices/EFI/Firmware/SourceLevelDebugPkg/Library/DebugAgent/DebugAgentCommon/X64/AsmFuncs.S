@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------
 #
-# Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -28,114 +28,138 @@ ASM_GLOBAL ASM_PFX(ExceptionStubHeaderSize)
 ASM_GLOBAL ASM_PFX(TimerInterruptHandle)
 ASM_GLOBAL ASM_PFX(CommonEntry)
 
+.macro  AGENT_HANDLER_SIGNATURE
+  .byte 0x41, 0x47, 0x54, 0x48   # AGENT_HANDLER_SIGNATURE     SIGNATURE_32('A','G','T','H')
+.endm
+
 .data
 
-ASM_PFX(ExceptionStubHeaderSize):  .word     ASM_PFX(Exception1Handle) - ASM_PFX(Exception0Handle)
+ASM_PFX(ExceptionStubHeaderSize):  .long     ASM_PFX(Exception1Handle) - ASM_PFX(Exception0Handle)
 
 
 .text
 
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception0Handle):
    cli
    pushq %rcx
    mov   $0, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception1Handle):
    cli
    pushq %rcx
    mov   $1, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception2Handle):
    cli
    pushq %rcx
    mov   $2, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception3Handle):
    cli
    pushq %rcx
    mov   $3, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception4Handle):
    cli
    pushq %rcx
    mov   $4, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception5Handle):
    cli
    pushq %rcx
    mov   $5, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception6Handle):
    cli
    pushq %rcx
    mov   $6, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception7Handle):
    cli
    pushq %rcx
    mov   $7, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception8Handle):
    cli
    pushq %rcx
    mov   $8, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception9Handle):
    cli
    pushq %rcx
    mov   $9, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception10Handle):
    cli
    pushq %rcx
    mov   $10, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception11Handle):
    cli
    pushq %rcx
    mov   $11, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception12Handle):
    cli
    pushq %rcx
    mov   $12, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception13Handle):
    cli
    pushq %rcx
    mov   $13, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception14Handle):
    cli
    pushq %rcx
    mov   $14, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception15Handle):
    cli
    pushq %rcx
    mov   $15, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception16Handle):
    cli
    pushq %rcx
    mov   $16, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception17Handle):
    cli
    pushq %rcx
    mov   $17, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception18Handle):
    cli
    pushq %rcx
    mov   $18, %rcx
    jmp   ASM_PFX(CommonEntry)
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(Exception19Handle):
    cli
    pushq %rcx
    mov   $19, %rcx
    jmp   ASM_PFX(CommonEntry)
-
+AGENT_HANDLER_SIGNATURE
 ASM_PFX(TimerInterruptHandle):
    cli
    pushq %rcx
@@ -247,13 +271,13 @@ NoExtrPush:
   movzwq   32(%rbp), %rax
 #  movq     %cs, %rax
   pushq    %rax
-  movq     %ds, %rax
+  mov      %ds, %rax
   pushq    %rax
-  movq     %es, %rax
+  mov      %es, %rax
   pushq    %rax
-  movq     %fs, %rax
+  mov      %fs, %rax
   pushq    %rax
-  movq     %gs, %rax
+  mov      %gs, %rax
   pushq    %rax
 
 ## UINT64  Rip;
@@ -280,7 +304,7 @@ NoExtrPush:
   pushq   %rax
 ## clear Dr7 while executing debugger itself
    xorq    %rax, %rax
-#debug   movq    %rax, %dr7
+   movq    %rax, %dr7
 
    movq    %dr6, %rax
   pushq    %rax
@@ -302,6 +326,9 @@ NoExtrPush:
    movq    %rsp, %rdi
    .byte   0x0f, 0xae, 0b00000111
 
+## save the exception data;
+   pushq   16(%rbp)
+
 ## Clear Direction Flag
   cld
 
@@ -313,9 +340,12 @@ NoExtrPush:
   # Per X64 calling convention, allocate maximum parameter stack space
   # and make sure RSP is 16-byte aligned
   #
-   subq    $(4 * 8), %rsp
+   subq    $(32 + 8), %rsp
    call    ASM_PFX(InterruptProcess)
-   addq    $(4 * 8), %rsp
+   addq    $(32 + 8), %rsp
+
+## skip the exception data;
+   addq    $8, %rsp
 
 ## FX_SAVE_STATE_X64 FxSaveState;
 
@@ -355,9 +385,9 @@ NoExtrPush:
   # mov     fs, rax ; not for fs
   # (X64 will not use fs and gs, so we do not restore it)
    popq     %rax
-  movw    %rax, %es
+   mov      %rax, %es
    popq     %rax
-  movw    %rax, %ds
+   mov      %rax, %ds
    popq     32(%rbp)
    popq     56(%rbp)
 

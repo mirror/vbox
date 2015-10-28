@@ -1,7 +1,7 @@
 /** @file
   Mtftp6 Rrq process functions implementation.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -59,6 +59,7 @@ Mtftp6RrqSendAck (
   // Reset current retry count of the instance.
   //
   Instance->CurRetry = 0;
+  Instance->LastPacket = Packet;
 
   return Mtftp6TransmitPacket (Instance, Packet);
 }
@@ -453,8 +454,10 @@ Mtftp6RrqHandleOack (
   MTFTP6_EXT_OPTION_INFO    ExtInfo;
   EFI_STATUS                Status;
   INTN                      Expected;
+  EFI_UDP6_PROTOCOL         *Udp6;
 
   *IsCompleted = FALSE;
+  Options = NULL;
 
   //
   // If already started the master download, don't change the
@@ -547,13 +550,30 @@ Mtftp6RrqHandleOack (
         );
 
       Instance->McastPort  = ExtInfo.McastPort;
-      Instance->McastUdpIo = UdpIoCreateIo (
-                               Instance->Service->Controller,
-                               Instance->Service->Image,
-                               Mtftp6RrqConfigMcastUdpIo,
-                               UDP_IO_UDP6_VERSION,
-                               Instance
-                               );
+      if (Instance->McastUdpIo == NULL) {
+        Instance->McastUdpIo = UdpIoCreateIo (
+                                 Instance->Service->Controller,
+                                 Instance->Service->Image,
+                                 Mtftp6RrqConfigMcastUdpIo,
+                                 UDP_IO_UDP6_VERSION,
+                                 Instance
+                                 );
+        if (Instance->McastUdpIo != NULL) {
+          Status = gBS->OpenProtocol (
+                          Instance->McastUdpIo->UdpHandle,
+                          &gEfiUdp6ProtocolGuid,
+                          (VOID **) &Udp6,
+                          Instance->Service->Image,
+                          Instance->Handle,
+                          EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                          );
+          if (EFI_ERROR (Status)) {
+            UdpIoFreeIo (Instance->McastUdpIo);
+            Instance->McastUdpIo = NULL;
+            return EFI_DEVICE_ERROR;
+          }
+        }
+      }
 
       if (Instance->McastUdpIo == NULL) {
         return EFI_DEVICE_ERROR;

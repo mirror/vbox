@@ -1,7 +1,7 @@
 /** @file
   EFI PEI Core PPI services
   
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -30,15 +30,80 @@ InitializePpiServices (
   )
 {
   if (OldCoreData == NULL) {
-    PrivateData->PpiData.NotifyListEnd = FixedPcdGet32 (PcdPeiCoreMaxPpiSupported)-1;
-    PrivateData->PpiData.DispatchListEnd = FixedPcdGet32 (PcdPeiCoreMaxPpiSupported)-1;
-    PrivateData->PpiData.LastDispatchedNotify = FixedPcdGet32 (PcdPeiCoreMaxPpiSupported)-1;
+    PrivateData->PpiData.NotifyListEnd = PcdGet32 (PcdPeiCoreMaxPpiSupported)-1;
+    PrivateData->PpiData.DispatchListEnd = PcdGet32 (PcdPeiCoreMaxPpiSupported)-1;
+    PrivateData->PpiData.LastDispatchedNotify = PcdGet32 (PcdPeiCoreMaxPpiSupported)-1;
   }
 }
 
 /**
 
-  Migrate the Hob list from the temporary memory stack to PEI installed memory.
+  Migrate Single PPI Pointer from the temporary memory to PEI installed memory.
+
+  @param PpiPointer      Pointer to Ppi
+  @param TempBottom      Base of old temporary memory
+  @param TempTop         Top of old temporary memory
+  @param Offset          Offset of new memory to old temporary memory.
+  @param OffsetPositive  Positive flag of Offset value. 
+
+**/
+VOID
+ConverSinglePpiPointer (
+  IN PEI_PPI_LIST_POINTERS *PpiPointer,
+  IN UINTN                 TempBottom,
+  IN UINTN                 TempTop,
+  IN UINTN                 Offset,
+  IN BOOLEAN               OffsetPositive
+  )
+{
+  if (((UINTN)PpiPointer->Raw < TempTop) &&
+      ((UINTN)PpiPointer->Raw >= TempBottom)) {
+    //
+    // Convert the pointer to the PPI descriptor from the old TempRam
+    // to the relocated physical memory.
+    //
+    if (OffsetPositive) {
+      PpiPointer->Raw = (VOID *) ((UINTN)PpiPointer->Raw + Offset);
+    } else {
+      PpiPointer->Raw = (VOID *) ((UINTN)PpiPointer->Raw - Offset);
+    }
+
+    //
+    // Only when the PEIM descriptor is in the old TempRam should it be necessary
+    // to try to convert the pointers in the PEIM descriptor
+    //
+
+    if (((UINTN)PpiPointer->Ppi->Guid < TempTop) &&
+        ((UINTN)PpiPointer->Ppi->Guid >= TempBottom)) {
+      //
+      // Convert the pointer to the GUID in the PPI or NOTIFY descriptor
+      // from the old TempRam to the relocated physical memory.
+      //
+      if (OffsetPositive) {
+        PpiPointer->Ppi->Guid = (VOID *) ((UINTN)PpiPointer->Ppi->Guid + Offset);
+      } else {
+        PpiPointer->Ppi->Guid = (VOID *) ((UINTN)PpiPointer->Ppi->Guid - Offset);
+      }
+    }
+
+    //
+    // Convert the pointer to the PPI interface structure in the PPI descriptor
+    // from the old TempRam to the relocated physical memory.
+    //
+    if ((UINTN)PpiPointer->Ppi->Ppi < TempTop &&
+        (UINTN)PpiPointer->Ppi->Ppi >= TempBottom) {
+      if (OffsetPositive) {
+        PpiPointer->Ppi->Ppi = (VOID *) ((UINTN)PpiPointer->Ppi->Ppi + Offset);
+      } else {
+        PpiPointer->Ppi->Ppi = (VOID *) ((UINTN)PpiPointer->Ppi->Ppi - Offset);
+      }
+    }
+  }
+}
+
+/**
+
+  Migrate PPI Pointers from the temporary memory stack to PEI installed memory.
 
   @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size 
                          and location of temporary RAM, the stack location and the BFV location.
@@ -52,114 +117,47 @@ ConvertPpiPointers (
   )
 {
   UINT8                 Index;
-  PEI_PPI_LIST_POINTERS *PpiPointer;
-  UINTN                 OldHeapTop;
-  UINTN                 OldHeapBottom;
-  UINTN                 OldStackTop;
-  UINTN                 OldStackBottom;
+  UINT8                 IndexHole;
 
-  OldHeapBottom = (UINTN)SecCoreData->PeiTemporaryRamBase;
-  OldHeapTop = (UINTN)SecCoreData->PeiTemporaryRamBase + SecCoreData->PeiTemporaryRamSize;
-  OldStackBottom = (UINTN)SecCoreData->StackBase;
-  OldStackTop = (UINTN)SecCoreData->StackBase + SecCoreData->StackSize;
-
-  for (Index = 0; Index < FixedPcdGet32 (PcdPeiCoreMaxPpiSupported); Index++) {
-    if (Index < PrivateData->PpiData.PpiListEnd ||
-        Index > PrivateData->PpiData.NotifyListEnd) {
-      PpiPointer = &PrivateData->PpiData.PpiListPtrs[Index];
-
-      if (((UINTN)PpiPointer->Raw < OldHeapTop) &&
-          ((UINTN)PpiPointer->Raw >= OldHeapBottom)) {
-        //
-        // Convert the pointer to the PPI descriptor from the old HOB heap
-        // to the relocated HOB heap.
-        //
-        if (PrivateData->HeapOffsetPositive) {
-          PpiPointer->Raw = (VOID *) ((UINTN)PpiPointer->Raw + PrivateData->HeapOffset);
-        } else {
-          PpiPointer->Raw = (VOID *) ((UINTN)PpiPointer->Raw - PrivateData->HeapOffset);
+  for (Index = 0; Index < PcdGet32 (PcdPeiCoreMaxPpiSupported); Index++) {
+    if (Index < PrivateData->PpiData.PpiListEnd || Index > PrivateData->PpiData.NotifyListEnd) {
+      //
+      // Convert PPI pointer in old Heap
+      //
+      ConverSinglePpiPointer (
+        &PrivateData->PpiData.PpiListPtrs[Index],
+        (UINTN)SecCoreData->PeiTemporaryRamBase,
+        (UINTN)SecCoreData->PeiTemporaryRamBase + SecCoreData->PeiTemporaryRamSize,
+        PrivateData->HeapOffset,
+        PrivateData->HeapOffsetPositive
+        );
+        
+      //
+      // Convert PPI pointer in old Stack
+      //
+      ConverSinglePpiPointer (
+        &PrivateData->PpiData.PpiListPtrs[Index],
+        (UINTN)SecCoreData->StackBase,
+        (UINTN)SecCoreData->StackBase + SecCoreData->StackSize,
+        PrivateData->StackOffset,
+        PrivateData->StackOffsetPositive
+        );
+        
+      //
+      // Convert PPI pointer in old TempRam Hole
+      //
+      for (IndexHole = 0; IndexHole < HOLE_MAX_NUMBER; IndexHole ++) {
+        if (PrivateData->HoleData[IndexHole].Size == 0) {
+          continue;
         }
-
-        //
-        // Only when the PEIM descriptor is in the old HOB should it be necessary
-        // to try to convert the pointers in the PEIM descriptor
-        //
-
-        if (((UINTN)PpiPointer->Ppi->Guid < OldHeapTop) &&
-            ((UINTN)PpiPointer->Ppi->Guid >= OldHeapBottom)) {
-          //
-          // Convert the pointer to the GUID in the PPI or NOTIFY descriptor
-          // from the old HOB heap to the relocated HOB heap.
-          //
-          if (PrivateData->HeapOffsetPositive) {
-            PpiPointer->Ppi->Guid = (VOID *) ((UINTN)PpiPointer->Ppi->Guid + PrivateData->HeapOffset);
-          } else {
-            PpiPointer->Ppi->Guid = (VOID *) ((UINTN)PpiPointer->Ppi->Guid - PrivateData->HeapOffset);
-          }
-        }
-
-        //
-        // Assume that no code is located in the temporary memory, so the pointer to
-        // the notification function in the NOTIFY descriptor needs not be converted.
-        //
-        if (Index < PrivateData->PpiData.PpiListEnd &&
-            (UINTN)PpiPointer->Ppi->Ppi < OldHeapTop &&
-            (UINTN)PpiPointer->Ppi->Ppi >= OldHeapBottom) {
-          //
-          // Convert the pointer to the PPI interface structure in the PPI descriptor
-          // from the old HOB heap to the relocated HOB heap.
-          //
-          if (PrivateData->HeapOffsetPositive) {
-            PpiPointer->Ppi->Ppi = (VOID *) ((UINTN)PpiPointer->Ppi->Ppi + PrivateData->HeapOffset);
-          } else {
-            PpiPointer->Ppi->Ppi = (VOID *) ((UINTN)PpiPointer->Ppi->Ppi - PrivateData->HeapOffset);
-          }
-        }
-      } else if (((UINTN)PpiPointer->Raw < OldStackTop) && ((UINTN)PpiPointer->Raw >= OldStackBottom)) {
-        //
-        // Convert the pointer to the PPI descriptor from the temporary stack
-        // to the permanent PEI stack.
-        //
-        if (PrivateData->StackOffsetPositive) {
-          PpiPointer->Raw = (VOID *) ((UINTN)PpiPointer->Raw + PrivateData->StackOffset);
-        } else {
-          PpiPointer->Raw = (VOID *) ((UINTN)PpiPointer->Raw - PrivateData->StackOffset);
-        }
-
-        //
-        // Try to convert the pointers in the PEIM descriptor
-        //
-
-        if (((UINTN)PpiPointer->Ppi->Guid < OldStackTop) &&
-            ((UINTN)PpiPointer->Ppi->Guid >= OldStackBottom)) {
-          //
-          // Convert the pointer to the GUID in the PPI or NOTIFY descriptor
-          // from the the temporary stack to the permanent PEI stack.
-          //
-          if (PrivateData->StackOffsetPositive) {
-            PpiPointer->Ppi->Guid = (VOID *) ((UINTN)PpiPointer->Ppi->Guid + PrivateData->StackOffset);
-          } else {
-            PpiPointer->Ppi->Guid = (VOID *) ((UINTN)PpiPointer->Ppi->Guid - PrivateData->StackOffset);
-          }
-        }
-
-        //
-        // Assume that no code is located in the temporary memory, so the pointer to
-        // the notification function in the NOTIFY descriptor needs not be converted.
-        //
-        if (Index < PrivateData->PpiData.PpiListEnd &&
-            (UINTN)PpiPointer->Ppi->Ppi < OldStackTop &&
-            (UINTN)PpiPointer->Ppi->Ppi >= OldStackBottom) {
-          //
-          // Convert the pointer to the PPI interface structure in the PPI descriptor
-          // from the the temporary stack to the permanent PEI stack.
-          //
-          if (PrivateData->StackOffsetPositive) {
-            PpiPointer->Ppi->Ppi = (VOID *) ((UINTN)PpiPointer->Ppi->Ppi + PrivateData->StackOffset);
-          } else {
-            PpiPointer->Ppi->Ppi = (VOID *) ((UINTN)PpiPointer->Ppi->Ppi - PrivateData->StackOffset);
-          }
-        }
+        
+        ConverSinglePpiPointer (
+          &PrivateData->PpiData.PpiListPtrs[Index],
+          (UINTN)PrivateData->HoleData[IndexHole].Base,
+          (UINTN)PrivateData->HoleData[IndexHole].Base + PrivateData->HoleData[IndexHole].Size,
+          PrivateData->HoleData[IndexHole].Offset,
+          PrivateData->HoleData[IndexHole].OffsetPositive
+          );
       }
     }
   }
@@ -314,7 +312,7 @@ PeiReInstallPpi (
   // Remove the old PPI from the database, add the new one.
   //
   DEBUG((EFI_D_INFO, "Reinstall PPI: %g\n", NewPpi->Guid));
-  ASSERT (Index < (INTN)(FixedPcdGet32 (PcdPeiCoreMaxPpiSupported)));
+  ASSERT (Index < (INTN)(PcdGet32 (PcdPeiCoreMaxPpiSupported)));
   PrivateData->PpiData.PpiListPtrs[Index].Ppi = (EFI_PEI_PPI_DESCRIPTOR *) NewPpi;
 
   //
@@ -572,7 +570,7 @@ ProcessNotifyList (
         EFI_PEI_PPI_DESCRIPTOR_NOTIFY_DISPATCH,
         PrivateData->PpiData.LastDispatchedInstall,
         PrivateData->PpiData.PpiListEnd,
-        FixedPcdGet32 (PcdPeiCoreMaxPpiSupported)-1,
+        PcdGet32 (PcdPeiCoreMaxPpiSupported)-1,
         PrivateData->PpiData.DispatchListEnd
         );
       PrivateData->PpiData.LastDispatchedInstall = TempValue;

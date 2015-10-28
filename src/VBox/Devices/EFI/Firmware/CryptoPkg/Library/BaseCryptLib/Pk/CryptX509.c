@@ -1,7 +1,7 @@
 /** @file
   X.509 Certificate Handler Wrapper Implementation over OpenSSL.
 
-Copyright (c) 2010 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -38,9 +38,8 @@ X509ConstructCertificate (
   OUT  UINT8        **SingleX509Cert
   )
 {
-  BIO      *CertBio;
-  X509     *X509Cert;
-  BOOLEAN  Status;
+  X509         *X509Cert;
+  CONST UINT8  *Temp;
 
   //
   // Check input parameters.
@@ -49,31 +48,18 @@ X509ConstructCertificate (
     return FALSE;
   }
 
-  Status = FALSE;
-
   //
   // Read DER-encoded X509 Certificate and Construct X509 object.
   //
-  CertBio = BIO_new (BIO_s_mem ());
-  BIO_write (CertBio, Cert, (int) CertSize);
-  if (CertBio == NULL) {
-    goto _Exit;
-  }
-  X509Cert = d2i_X509_bio (CertBio, NULL);
+  Temp     = Cert;
+  X509Cert = d2i_X509 (NULL, &Temp, (long) CertSize);
   if (X509Cert == NULL) {
-    goto _Exit;
+    return FALSE;
   }
 
   *SingleX509Cert = (UINT8 *) X509Cert;
-  Status = TRUE;
 
-_Exit:
-  //
-  // Release Resources.
-  //
-  BIO_free (CertBio);
-
-  return Status;
+  return TRUE;
 }
 
 /**
@@ -81,7 +67,7 @@ _Exit:
 
   If X509Stack is NULL, then return FALSE.
 
-  @param[in, out]  X509Stack  On input, pointer to an existing X509 stack object.
+  @param[in, out]  X509Stack  On input, pointer to an existing or NULL X509 stack object.
                               On output, pointer to the X509 stack object with new
                               inserted X509 certificate.
   @param           ...        A list of DER-encoded single certificate data followed
@@ -139,17 +125,23 @@ X509ConstructCertificateStack (
     }
 
     CertSize = VA_ARG (Args, UINTN);
+    if (CertSize == 0) {
+      break;
+    }
 
     //
     // Construct X509 Object from the given DER-encoded certificate data.
     //
+    X509Cert = NULL;
     Status = X509ConstructCertificate (
                (CONST UINT8 *) Cert,
                CertSize,
                (UINT8 **) &X509Cert
                );
     if (!Status) {
-      X509_free (X509Cert);
+      if (X509Cert != NULL) {
+        X509_free (X509Cert);
+      }
       break;
     }
 
@@ -225,91 +217,6 @@ X509StackFree (
 }
 
 /**
-  Pop single certificate from STACK_OF(X509).
-
-  If X509Stack, Cert, or CertSize is NULL, then return FALSE.
-
-  @param[in]  X509Stack       Pointer to a X509 stack object.
-  @param[out] Cert            Pointer to a X509 certificate.
-  @param[out] CertSize        Length of output X509 certificate in bytes.
-                                 
-  @retval     TRUE            The X509 stack pop succeeded.
-  @retval     FALSE           The pop operation failed.
-
-**/
-BOOLEAN
-X509PopCertificate (
-  IN  VOID  *X509Stack,
-  OUT UINT8 **Cert,
-  OUT UINTN *CertSize
-  )
-{
-  BIO             *CertBio;
-  X509            *X509Cert;
-  STACK_OF(X509)  *CertStack;
-  BOOLEAN         Status;
-  int             Result;
-  int             Length;
-  VOID            *Buffer;
-
-  Status = FALSE;
-
-  if ((X509Stack == NULL) || (Cert == NULL) || (CertSize == NULL)) {
-    return Status;
-  }
-
-  CertStack = (STACK_OF(X509) *) X509Stack;
-
-  X509Cert = sk_X509_pop (CertStack);
-
-  if (X509Cert == NULL) {
-    return Status;
-  }
-
-  Buffer = NULL;
-
-  CertBio = BIO_new (BIO_s_mem ());
-  if (CertBio == NULL) {
-    return Status;
-  }
-
-  Result = i2d_X509_bio (CertBio, X509Cert);
-  if (Result == 0) {
-    goto _Exit;
-  }
-
-  Length = ((BUF_MEM *) CertBio->ptr)->length;
-  if (Length <= 0) {
-    goto _Exit;
-  }
-
-  Buffer = malloc (Length);
-  if (Buffer == NULL) {
-    goto _Exit;
-  }
-
-  Result = BIO_read (CertBio, Buffer, Length);
-  if (Result != Length) {
-    goto _Exit;
-  }
-
-  *Cert     = Buffer;
-  *CertSize = Length;
-
-  Status = TRUE;
-
-_Exit:
-
-  BIO_free (CertBio);
-
-  if (!Status && (Buffer != NULL)) {
-    free (Buffer);
-  }
-
-  return Status;
-}
-
-/**
   Retrieve the subject bytes from one X.509 certificate.
 
   @param[in]      Cert         Pointer to the DER-encoded X509 certificate.
@@ -346,7 +253,6 @@ X509GetSubjectName (
     return FALSE;
   }
 
-  Status   = FALSE;
   X509Cert = NULL;
 
   //
@@ -354,20 +260,27 @@ X509GetSubjectName (
   //
   Status = X509ConstructCertificate (Cert, CertSize, (UINT8 **) &X509Cert);
   if ((X509Cert == NULL) || (!Status)) {
+    Status = FALSE;
     goto _Exit;
   }
+
+  Status = FALSE;
 
   //
   // Retrieve subject name from certificate object.
   //
   X509Name = X509_get_subject_name (X509Cert);
+  if (X509Name == NULL) {
+    goto _Exit;
+  }
+
   if (*SubjectSize < (UINTN) X509Name->bytes->length) {
     *SubjectSize = (UINTN) X509Name->bytes->length;
     goto _Exit;
   }
   *SubjectSize = (UINTN) X509Name->bytes->length;
   if (CertSubject != NULL) {
-    CopyMem (CertSubject, (UINT8 *)X509Name->bytes->data, *SubjectSize);
+    CopyMem (CertSubject, (UINT8 *) X509Name->bytes->data, *SubjectSize);
     Status = TRUE;
   }
 
@@ -375,7 +288,9 @@ _Exit:
   //
   // Release Resources.
   //
-  X509_free (X509Cert);
+  if (X509Cert != NULL) {
+    X509_free (X509Cert);
+  }
 
   return Status;
 }
@@ -415,7 +330,6 @@ RsaGetPublicKeyFromX509 (
     return FALSE;
   }
 
-  Status   = FALSE;
   Pkey     = NULL;
   X509Cert = NULL;
 
@@ -424,8 +338,11 @@ RsaGetPublicKeyFromX509 (
   //
   Status = X509ConstructCertificate (Cert, CertSize, (UINT8 **) &X509Cert);
   if ((X509Cert == NULL) || (!Status)) {
+    Status = FALSE;
     goto _Exit;
   }
+
+  Status = FALSE;
 
   //
   // Retrieve and check EVP_PKEY data from X509 Certificate.
@@ -446,8 +363,13 @@ _Exit:
   //
   // Release Resources.
   //
-  X509_free (X509Cert);
-  EVP_PKEY_free (Pkey);
+  if (X509Cert != NULL) {
+    X509_free (X509Cert);
+  }
+
+  if (Pkey != NULL) {
+    EVP_PKEY_free (Pkey);
+  }  
 
   return Status;
 }
@@ -498,15 +420,22 @@ X509VerifyCert (
   //
   // Register & Initialize necessary digest algorithms for certificate verification.
   //
-  EVP_add_digest (EVP_md5());
-  EVP_add_digest (EVP_sha1());
-  EVP_add_digest (EVP_sha256());
+  if (EVP_add_digest (EVP_md5 ()) == 0) {
+    goto _Exit;
+  }
+  if (EVP_add_digest (EVP_sha1 ()) == 0) {
+    goto _Exit;
+  }
+  if (EVP_add_digest (EVP_sha256 ()) == 0) {
+    goto _Exit;
+  }
 
   //
   // Read DER-encoded certificate to be verified and Construct X509 object.
   //
   Status = X509ConstructCertificate (Cert, CertSize, (UINT8 **) &X509Cert);
   if ((X509Cert == NULL) || (!Status)) {
+    Status = FALSE;
     goto _Exit;
   }
 
@@ -515,8 +444,11 @@ X509VerifyCert (
   //
   Status = X509ConstructCertificate (CACert, CACertSize, (UINT8 **) &X509CACert);
   if ((X509CACert == NULL) || (!Status)) {
+    Status = FALSE;
     goto _Exit;
   }
+
+  Status = FALSE;
 
   //
   // Set up X509 Store for trusted certificate.
@@ -546,9 +478,94 @@ _Exit:
   //
   // Release Resources.
   //
-  X509_free (X509Cert);
-  X509_free (X509CACert);
-  X509_STORE_free (CertStore);
+  if (X509Cert != NULL) {
+    X509_free (X509Cert);
+  }
 
+  if (X509CACert != NULL) {
+    X509_free (X509CACert);
+  }
+
+  if (CertStore != NULL) {
+    X509_STORE_free (CertStore);
+  }
+  
   return Status;
+}
+
+/**
+  Retrieve the TBSCertificate from one given X.509 certificate.
+
+  @param[in]      Cert         Pointer to the given DER-encoded X509 certificate.
+  @param[in]      CertSize     Size of the X509 certificate in bytes.
+  @param[out]     TBSCert      DER-Encoded To-Be-Signed certificate.
+  @param[out]     TBSCertSize  Size of the TBS certificate in bytes.
+
+  If Cert is NULL, then return FALSE.
+  If TBSCert is NULL, then return FALSE.
+  If TBSCertSize is NULL, then return FALSE.
+
+  @retval  TRUE   The TBSCertificate was retrieved successfully.
+  @retval  FALSE  Invalid X.509 certificate.
+
+**/
+BOOLEAN
+EFIAPI
+X509GetTBSCert (
+  IN  CONST UINT8  *Cert,
+  IN  UINTN        CertSize,
+  OUT UINT8        **TBSCert,
+  OUT UINTN        *TBSCertSize
+  )
+{
+  CONST UINT8  *Temp;
+  INTN         Asn1Tag;
+  INTN         ObjClass;
+  UINTN        Length;
+
+  //
+  // Check input parameters.
+  //
+  if ((Cert == NULL) || (TBSCert == NULL) ||
+      (TBSCertSize == NULL) || (CertSize > INT_MAX)) {
+    return FALSE;
+  }
+
+  //
+  // An X.509 Certificate is: (defined in RFC3280)
+  //   Certificate  ::=  SEQUENCE  {
+  //     tbsCertificate       TBSCertificate,
+  //     signatureAlgorithm   AlgorithmIdentifier,
+  //     signature            BIT STRING }
+  //
+  // and
+  //
+  //  TBSCertificate  ::=  SEQUENCE  {
+  //    version         [0]  Version DEFAULT v1,
+  //    ...
+  //    }
+  //
+  // So we can just ASN1-parse the x.509 DER-encoded data. If we strip
+  // the first SEQUENCE, the second SEQUENCE is the TBSCertificate.
+  //
+  Temp = Cert;
+  ASN1_get_object (&Temp, (long *)&Length, (int *)&Asn1Tag, (int *)&ObjClass, (long)CertSize);
+
+  if (Asn1Tag != V_ASN1_SEQUENCE) {
+    return FALSE;
+  }
+
+  *TBSCert = (UINT8 *)Temp;
+
+  ASN1_get_object (&Temp, (long *)&Length, (int *)&Asn1Tag, (int *)&ObjClass, (long)Length);
+  //
+  // Verify the parsed TBSCertificate is one correct SEQUENCE data.
+  //
+  if (Asn1Tag != V_ASN1_SEQUENCE) {
+    return FALSE;
+  }
+
+  *TBSCertSize = Length + (Temp - *TBSCert);
+  
+  return TRUE;
 }

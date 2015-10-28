@@ -23,4 +23,3 @@
 extern EFI_GUID gShellAliasGuid;
 
 #endif
-

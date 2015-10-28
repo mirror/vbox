@@ -1,7 +1,7 @@
 /** @file
   SEC Core Debug Agent Library instance implementition.
 
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -14,70 +14,158 @@
 
 #include "SecPeiDebugAgentLib.h"
 
-CONST BOOLEAN                MultiProcessorDebugSupport = FALSE;
+GLOBAL_REMOVE_IF_UNREFERENCED BOOLEAN  mSkipBreakpoint = FALSE;
+
+
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_PEI_VECTOR_HANDOFF_INFO_PPI mVectorHandoffInfoPpi = {
+  &mVectorHandoffInfoDebugAgent[0]
+};
+
+//
+// Ppis to be installed
+//
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_PEI_PPI_DESCRIPTOR           mVectorHandoffInfoPpiList[] = {
+  {
+    (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
+    &gEfiVectorHandoffInfoPpiGuid,
+    &mVectorHandoffInfoPpi
+  }
+};
+
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_PEI_NOTIFY_DESCRIPTOR mMemoryDiscoveredNotifyList[1] = {
+  {
+    (EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
+    &gEfiPeiMemoryDiscoveredPpiGuid,
+    DebugAgentCallbackMemoryDiscoveredPpi
+  }
+};
 
 /**
-  Get pointer to Mailbox from IDT entry before memory is ready.
+  Check if debug agent support multi-processor.
+
+  @retval TRUE    Multi-processor is supported.
+  @retval FALSE   Multi-processor is not supported.
 
 **/
-VOID *
-GetMailboxPointerInIdtEntry (
+BOOLEAN
+MultiProcessorDebugSupport (
   VOID
   )
 {
-  IA32_IDT_GATE_DESCRIPTOR   *IdtEntry;
-  IA32_DESCRIPTOR            IdtDescriptor;
-  UINTN                      Mailbox;
+  return FALSE;
+}
 
-  AsmReadIdtr (&IdtDescriptor);
-  IdtEntry = (IA32_IDT_GATE_DESCRIPTOR *) IdtDescriptor.Base;
+/**
+  Read the Attach/Break-in symbols from the debug port.
 
-  Mailbox = IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetLow + (IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetHigh << 16);
-  return (VOID *) Mailbox;
+  @param[in]  Handle         Pointer to Debug Port handle.
+  @param[out] BreakSymbol    Returned break symbol.
+
+  @retval EFI_SUCCESS        Read the symbol in BreakSymbol.
+  @retval EFI_NOT_FOUND      No read the break symbol.
+
+**/
+EFI_STATUS
+DebugReadBreakSymbol (
+  IN  DEBUG_PORT_HANDLE      Handle,
+  OUT UINT8                  *BreakSymbol
+  )
+{
+  EFI_STATUS                 Status;
+  DEBUG_PACKET_HEADER        DebugHeader;
+  UINT8                      *Data8;
+
+  *BreakSymbol = 0;
+  //
+  // If Debug Port buffer has data, read it till it was break symbol or Debug Port buffer empty.
+  //
+  Data8 = (UINT8 *) &DebugHeader;
+  while (TRUE) {
+    //
+    // If start symbol is not received
+    //
+    if (!DebugPortPollBuffer (Handle)) {
+      //
+      // If no data in Debug Port, exit
+      //
+      break;
+    }
+    //
+    // Try to read the start symbol
+    //
+    DebugPortReadBuffer (Handle, Data8, 1, 0);
+    if (*Data8 == DEBUG_STARTING_SYMBOL_ATTACH) {
+      *BreakSymbol = *Data8;
+      DebugAgentMsgPrint (DEBUG_AGENT_INFO, "Debug Timer attach symbol received %x", *BreakSymbol);
+      return EFI_SUCCESS;
+    }
+    if (*Data8 == DEBUG_STARTING_SYMBOL_NORMAL) {
+      Status = ReadRemainingBreakPacket (Handle, &DebugHeader);
+      if (Status == EFI_SUCCESS) {
+        *BreakSymbol = DebugHeader.Command;
+        DebugAgentMsgPrint (DEBUG_AGENT_INFO, "Debug Timer break symbol received %x", *BreakSymbol);
+        return EFI_SUCCESS;
+      }
+      if (Status == EFI_TIMEOUT) {
+        break;
+      }
+    }
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+/**
+  Get the pointer to location saved Mailbox pointer from IDT entry.
+
+**/
+VOID *
+GetLocationSavedMailboxPointerInIdtEntry (
+  VOID
+  )
+{
+  UINTN                     *MailboxLocation;
+
+  MailboxLocation = (UINTN *) GetExceptionHandlerInIdtEntry (DEBUG_MAILBOX_VECTOR);
+  //
+  // *MailboxLocation is the pointer to Mailbox
+  //
+  VerifyMailboxChecksum ((DEBUG_AGENT_MAILBOX *) (*MailboxLocation));
+  return MailboxLocation;
 }
 
 /**
   Set the pointer of Mailbox into IDT entry before memory is ready.
 
-  @param[in]  Mailbox       The pointer of Mailbox.
+  @param[in]  MailboxLocation    Pointer to location saved Mailbox pointer.
 
 **/
 VOID
-SetMailboxPointerInIdtEntry (
-  IN VOID                    *Mailbox
+SetLocationSavedMailboxPointerInIdtEntry (
+  IN VOID                  *MailboxLocation
   )
 {
-  IA32_IDT_GATE_DESCRIPTOR   *IdtEntry;
-  IA32_DESCRIPTOR            IdtDescriptor;
-
-  AsmReadIdtr (&IdtDescriptor);
-  IdtEntry = (IA32_IDT_GATE_DESCRIPTOR *) IdtDescriptor.Base;
-
-  IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetLow  = (UINT16)(UINTN)Mailbox;
-  IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetHigh = (UINT16)((UINTN)Mailbox >> 16);
+  SetExceptionHandlerInIdtEntry (DEBUG_MAILBOX_VECTOR, MailboxLocation);
 }
 
 /**
-  Get the pointer to Mailbox from IDT entry and build the Mailbox into GUIDed Hob
-  after memory is ready.
+  Get the location of Mailbox pointer from the GUIDed HOB.
 
-  @return Pointer to Mailbox.
+  @return Pointer to the location saved Mailbox pointer.
 
 **/
-DEBUG_AGENT_MAILBOX *
-BuildMailboxHob (
+UINT64 *
+GetMailboxLocationFromHob (
   VOID
   )
 {
-  DEBUG_AGENT_MAILBOX       *Mailbox;
+  EFI_HOB_GUID_TYPE        *GuidHob;
 
-  Mailbox = (DEBUG_AGENT_MAILBOX *) GetMailboxPointerInIdtEntry ();
-
-  return BuildGuidDataHob (
-           &gEfiDebugAgentGuid,
-           Mailbox,
-           sizeof (DEBUG_AGENT_MAILBOX)
-           );
+  GuidHob = GetFirstGuidHob (&gEfiDebugAgentGuid);
+  if (GuidHob == NULL) {
+    return NULL;
+  }
+  return (UINT64 *) (GET_GUID_HOB_DATA(GuidHob));
 }
 
 /**
@@ -91,7 +179,52 @@ GetMailboxPointer (
   VOID
   )
 {
-  return (DEBUG_AGENT_MAILBOX *) GetMailboxPointerInIdtEntry ();
+  UINT64               DebugPortHandle;
+  UINT64               *MailboxLocationInIdt;
+  UINT64               *MailboxLocationInHob;
+  DEBUG_AGENT_MAILBOX  *Mailbox;
+
+  //
+  // Get mailbox from IDT entry firstly
+  //
+  MailboxLocationInIdt = GetLocationSavedMailboxPointerInIdtEntry ();
+  Mailbox = (DEBUG_AGENT_MAILBOX *)(UINTN)(*MailboxLocationInIdt);
+  //
+  // Cannot used GetDebugFlag() to get Debug Flag to avoid GetMailboxPointer() nested
+  //
+  if (Mailbox->DebugFlag.Bits.CheckMailboxInHob != 1 ||
+      Mailbox->DebugFlag.Bits.InitArch != DEBUG_ARCH_SYMBOL) {
+    //
+    // If mailbox was setup in SEC or the current CPU arch is different from the init arch
+    // Debug Agent initialized, return the mailbox from IDT entry directly.
+    // Otherwise, we need to check the mailbox location saved in GUIDed HOB further.
+    //
+    return Mailbox;
+  }
+
+  MailboxLocationInHob = GetMailboxLocationFromHob ();
+  //
+  // Compare mailbox in IDT enry with mailbox in HOB,
+  // need to fix mailbox location if HOB moved by PEI CORE
+  //
+  if (MailboxLocationInHob != MailboxLocationInIdt && MailboxLocationInHob != NULL) {
+    Mailbox = (DEBUG_AGENT_MAILBOX *)(UINTN)(*MailboxLocationInHob);
+    //
+    // Fix up Debug Port handler and save new mailbox in IDT entry
+    //
+    Mailbox = (DEBUG_AGENT_MAILBOX *)((UINTN)Mailbox + ((UINTN)(MailboxLocationInHob) - (UINTN)MailboxLocationInIdt));
+    DebugPortHandle = (UINT64)((UINTN)Mailbox->DebugPortHandle + ((UINTN)(MailboxLocationInHob) - (UINTN)MailboxLocationInIdt));
+    UpdateMailboxContent (Mailbox, DEBUG_MAILBOX_DEBUG_PORT_HANDLE_INDEX, DebugPortHandle);
+    *MailboxLocationInHob = (UINT64)(UINTN)Mailbox;
+    SetLocationSavedMailboxPointerInIdtEntry (MailboxLocationInHob);
+    //
+    // Clean CheckMailboxInHob flag
+    //
+    Mailbox->DebugFlag.Bits.CheckMailboxInHob = 0;
+    UpdateMailboxChecksum (Mailbox);
+  }
+
+  return Mailbox;
 }
 
 /**
@@ -106,50 +239,89 @@ GetDebugPortHandle (
   )
 {
   DEBUG_AGENT_MAILBOX    *DebugAgentMailbox;
-  
-  DebugAgentMailbox = (DEBUG_AGENT_MAILBOX *)GetMailboxPointerInIdtEntry ();
+
+  DebugAgentMailbox = GetMailboxPointer ();
 
   return (DEBUG_PORT_HANDLE) (UINTN)(DebugAgentMailbox->DebugPortHandle);
 }
 
 /**
-  Trigger one software interrupt to debug agent to handle it.
+  Debug Agent provided notify callback function on Memory Discovered PPI.
 
-  @param Signature       Software interrupt signature.
+  @param[in] PeiServices      Indirect reference to the PEI Services Table.
+  @param[in] NotifyDescriptor Address of the notification descriptor data structure.
+  @param[in] Ppi              Address of the PPI that was installed.
+
+  @retval EFI_SUCCESS If the function completed successfully.
 
 **/
-VOID
-TriggerSoftInterrupt (
-  UINT32                 Signature
+EFI_STATUS
+EFIAPI
+DebugAgentCallbackMemoryDiscoveredPpi (
+  IN EFI_PEI_SERVICES                     **PeiServices,
+  IN EFI_PEI_NOTIFY_DESCRIPTOR            *NotifyDescriptor,
+  IN VOID                                 *Ppi
   )
 {
-  UINTN                  Dr0;
-  UINTN                  Dr1;
+  EFI_STATUS                     Status;
+  DEBUG_AGENT_MAILBOX            *Mailbox;
+  BOOLEAN                        InterruptStatus;
+  EFI_PHYSICAL_ADDRESS           Address;
+  DEBUG_AGENT_MAILBOX            *NewMailbox;
+  UINT64                         *MailboxLocationInHob;
 
   //
-  // Save Debug Register State
+  // Save and disable original interrupt status
   //
-  Dr0 = AsmReadDr0 ();
-  Dr1 = AsmReadDr1 ();
+  InterruptStatus = SaveAndDisableInterrupts ();
 
   //
-  // DR0 = Signature
+  // Allocate ACPI NVS memory for new Mailbox and Debug Port Handle buffer
   //
-  AsmWriteDr0 (SOFT_INTERRUPT_SIGNATURE);
-  AsmWriteDr1 (Signature);
+  Status = PeiServicesAllocatePages (
+             EfiACPIMemoryNVS,
+             EFI_SIZE_TO_PAGES (sizeof(DEBUG_AGENT_MAILBOX) + PcdGet16(PcdDebugPortHandleBufferSize)),
+             &Address
+             );
+  ASSERT_EFI_ERROR (Status);
+  NewMailbox = (DEBUG_AGENT_MAILBOX *) (UINTN) Address;
+  //
+  // Copy Mailbox and Debug Port Handle buffer to new location in ACPI NVS memory, because original Mailbox
+  // and Debug Port Handle buffer in the allocated pool that may be marked as free by DXE Core after DXE Core
+  // reallocates the HOB.
+  //
+  Mailbox = GetMailboxPointer ();
+  CopyMem (NewMailbox, Mailbox, sizeof (DEBUG_AGENT_MAILBOX));
+  CopyMem (NewMailbox + 1, (VOID *)(UINTN)Mailbox->DebugPortHandle, PcdGet16(PcdDebugPortHandleBufferSize));
+  //
+  // Update Mailbox Location pointer in GUIDed HOB and IDT entry with new one
+  //
+  MailboxLocationInHob = GetMailboxLocationFromHob ();
+  ASSERT (MailboxLocationInHob != NULL);
+  *MailboxLocationInHob = (UINT64)(UINTN)NewMailbox;
+  SetLocationSavedMailboxPointerInIdtEntry (MailboxLocationInHob);
+  //
+  // Update Debug Port Handle in new Mailbox
+  //
+  UpdateMailboxContent (NewMailbox, DEBUG_MAILBOX_DEBUG_PORT_HANDLE_INDEX, (UINT64)(UINTN)(NewMailbox + 1));
+  //
+  // Set physical memory ready flag
+  //
+  SetDebugFlag (DEBUG_AGENT_FLAG_MEMORY_READY, 1);
+
+  if (IsHostAttached ()) {
+    //
+    // Trigger one software interrupt to inform HOST
+    //
+    TriggerSoftInterrupt (MEMORY_READY_SIGNATURE);
+  }
 
   //
-  // Do INT3 to communicate with HOST side
+  // Restore interrupt state.
   //
-  CpuBreakpoint ();
+  SetInterruptState (InterruptStatus);
 
-  //
-  // Restore Debug Register State only when Host didn't change it inside exception handler.
-  //   Dr registers can only be changed by setting the HW breakpoint.
-  //
-  AsmWriteDr0 (Dr0);
-  AsmWriteDr1 (Dr1);
-
+  return EFI_SUCCESS;
 }
 
 /**
@@ -192,9 +364,17 @@ InitializeDebugAgent (
   )
 {
   DEBUG_AGENT_MAILBOX              *Mailbox;
+  DEBUG_AGENT_MAILBOX              *NewMailbox;
   DEBUG_AGENT_MAILBOX              MailboxInStack;
   DEBUG_AGENT_PHASE2_CONTEXT       Phase2Context;
   DEBUG_AGENT_CONTEXT_POSTMEM_SEC  *DebugAgentContext;
+  EFI_STATUS                       Status;
+  IA32_DESCRIPTOR                  *Ia32Idtr;
+  IA32_IDT_ENTRY                   *Ia32IdtEntry;
+  UINT64                           DebugPortHandle;
+  UINT64                           MailboxLocation;
+  UINT64                           *MailboxLocationPointer;
+  EFI_PHYSICAL_ADDRESS             Address;
 
   DisableInterrupts ();
 
@@ -204,20 +384,28 @@ InitializeDebugAgent (
 
     InitializeDebugIdt ();
 
+    MailboxLocation = (UINT64)(UINTN)&MailboxInStack;
     Mailbox = &MailboxInStack;
     ZeroMem ((VOID *) Mailbox, sizeof (DEBUG_AGENT_MAILBOX));
-
     //
     // Get and save debug port handle and set the length of memory block.
     //
-    SetMailboxPointerInIdtEntry ((VOID *) Mailbox);
+    SetLocationSavedMailboxPointerInIdtEntry (&MailboxLocation);
+    //
+    // Force error message could be printed during the first shakehand between Target/HOST.
+    //
+    SetDebugFlag (DEBUG_AGENT_FLAG_PRINT_ERROR_LEVEL, DEBUG_AGENT_ERROR);
+    //
+    // Save init arch type when debug agent initialized
+    //
+    SetDebugFlag (DEBUG_AGENT_FLAG_INIT_ARCH, DEBUG_ARCH_SYMBOL);
 
     InitializeDebugTimer ();
 
+    Phase2Context.InitFlag = InitFlag;
     Phase2Context.Context  = Context;
     Phase2Context.Function = Function;
     DebugPortInitialize ((VOID *) &Phase2Context, InitializeDebugAgentPhase2);
-
     //
     // If reaches here, it means Debug Port initialization failed.
     //
@@ -226,48 +414,207 @@ InitializeDebugAgent (
     break;
 
   case DEBUG_AGENT_INIT_POSTMEM_SEC:
-
+    Mailbox = GetMailboxPointer ();
     //
     // Memory has been ready
     //
-    if (IsHostConnected()) {
+    SetDebugFlag (DEBUG_AGENT_FLAG_MEMORY_READY, 1);
+    if (IsHostAttached ()) {
       //
       // Trigger one software interrupt to inform HOST
       //
       TriggerSoftInterrupt (MEMORY_READY_SIGNATURE);
     }
-
+    //
+    // Install Vector Handoff Info PPI to persist vectors used by Debug Agent
+    //
+    Status = PeiServicesInstallPpi (&mVectorHandoffInfoPpiList[0]);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "DebugAgent: Failed to install Vector Handoff Info PPI!\n"));
+      CpuDeadLoop ();
+    }
+    //
+    // Fix up Debug Port handle address and mailbox address
+    //
     DebugAgentContext = (DEBUG_AGENT_CONTEXT_POSTMEM_SEC *) Context;
+    if (DebugAgentContext != NULL) {
+      DebugPortHandle = (UINT64)(UINT32)(Mailbox->DebugPortHandle + DebugAgentContext->StackMigrateOffset);
+      UpdateMailboxContent (Mailbox, DEBUG_MAILBOX_DEBUG_PORT_HANDLE_INDEX, DebugPortHandle);
+      Mailbox = (DEBUG_AGENT_MAILBOX *) ((UINTN) Mailbox + DebugAgentContext->StackMigrateOffset);
+      MailboxLocation = (UINT64)(UINTN)Mailbox;
+      //
+      // Build mailbox location in HOB and fix-up its address
+      //
+      MailboxLocationPointer = BuildGuidDataHob (
+                                 &gEfiDebugAgentGuid,
+                                 &MailboxLocation,
+                                 sizeof (UINT64)
+                                 );
+      MailboxLocationPointer = (UINT64 *) ((UINTN) MailboxLocationPointer + DebugAgentContext->HeapMigrateOffset);
+    } else {
+      //
+      // DebugAgentContext is NULL. Then, Mailbox can directly be copied into memory.
+      // Allocate ACPI NVS memory for new Mailbox and Debug Port Handle buffer
+      //
+      Status = PeiServicesAllocatePages (
+                 EfiACPIMemoryNVS,
+                 EFI_SIZE_TO_PAGES (sizeof(DEBUG_AGENT_MAILBOX) + PcdGet16(PcdDebugPortHandleBufferSize)),
+                 &Address
+                 );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((EFI_D_ERROR, "DebugAgent: Failed to allocate pages!\n"));
+        CpuDeadLoop ();
+      }
+      NewMailbox = (DEBUG_AGENT_MAILBOX *) (UINTN) Address;
+      //
+      // Copy Mailbox and Debug Port Handle buffer to new location in ACPI NVS memory, because original Mailbox
+      // and Debug Port Handle buffer in the allocated pool that may be marked as free by DXE Core after DXE Core
+      // reallocates the HOB.
+      //
+      CopyMem (NewMailbox, Mailbox, sizeof (DEBUG_AGENT_MAILBOX));
+      CopyMem (NewMailbox + 1, (VOID *)(UINTN)Mailbox->DebugPortHandle, PcdGet16(PcdDebugPortHandleBufferSize));
+      UpdateMailboxContent (NewMailbox, DEBUG_MAILBOX_DEBUG_PORT_HANDLE_INDEX, (UINT64)(UINTN)(NewMailbox + 1));
+      MailboxLocation = (UINT64)(UINTN)NewMailbox;
+      //
+      // Build mailbox location in HOB
+      //
+      MailboxLocationPointer = BuildGuidDataHob (
+                                 &gEfiDebugAgentGuid,
+                                 &MailboxLocation,
+                                 sizeof (UINT64)
+                                 );
+    }
+    //
+    // Update IDT entry to save the location saved mailbox pointer
+    //
+    SetLocationSavedMailboxPointerInIdtEntry (MailboxLocationPointer);
+    break;
 
-    Mailbox = (DEBUG_AGENT_MAILBOX *) GetMailboxPointerInIdtEntry ();
-    Mailbox->DebugPortHandle = Mailbox->DebugPortHandle + DebugAgentContext->StackMigrateOffset;
+  case DEBUG_AGENT_INIT_PEI:
+    if (Context == NULL) {
+      DEBUG ((EFI_D_ERROR, "DebugAgent: Input parameter Context cannot be NULL!\n"));
+      CpuDeadLoop ();
+    }
+    //
+    // Check if Debug Agent has initialized before
+    //
+    if (IsDebugAgentInitialzed()) {
+      DEBUG ((EFI_D_WARN, "Debug Agent: It has already initialized in SEC Core!\n"));
+      break;
+    }
+    //
+    // Install Vector Handoff Info PPI to persist vectors used by Debug Agent
+    //
+    Status = PeiServicesInstallPpi (&mVectorHandoffInfoPpiList[0]);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "DebugAgent: Failed to install Vector Handoff Info PPI!\n"));
+      CpuDeadLoop ();
+    }
+    //
+    // Set up IDT entries
+    //
+    InitializeDebugIdt ();
+    //
+    // Build mailbox in HOB and setup Mailbox Set In Pei flag
+    //
+    Mailbox = AllocateZeroPool (sizeof (DEBUG_AGENT_MAILBOX));
+    MailboxLocation = (UINT64)(UINTN)Mailbox;
+    MailboxLocationPointer = BuildGuidDataHob (
+                               &gEfiDebugAgentGuid,
+                               &MailboxLocation,
+                               sizeof (UINT64)
+                               );
 
-    Mailbox = BuildMailboxHob ();
-    Mailbox = (DEBUG_AGENT_MAILBOX *) ((UINTN) Mailbox + DebugAgentContext->HeapMigrateOffset);
+    InitializeDebugTimer ();
+    //
+    // Update IDT entry to save the location pointer saved mailbox pointer
+    //
+    SetLocationSavedMailboxPointerInIdtEntry (MailboxLocationPointer);
+    //
+    // Save init arch type when debug agent initialized
+    //
+    SetDebugFlag (DEBUG_AGENT_FLAG_INIT_ARCH, DEBUG_ARCH_SYMBOL);
+    //
+    // Register for a callback once memory has been initialized.
+    // If memery has been ready, the callback funtion will be invoked immediately
+    //
+    Status = PeiServicesNotifyPpi (&mMemoryDiscoveredNotifyList[0]);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "DebugAgent: Failed to register memory discovered callback function!\n"));
+      CpuDeadLoop ();
+    }
+    //
+    // Set HOB check flag if memory has not been ready yet
+    //
+    if (GetDebugFlag (DEBUG_AGENT_FLAG_MEMORY_READY) == 0) {
+      SetDebugFlag (DEBUG_AGENT_FLAG_CHECK_MAILBOX_IN_HOB, 1);
+    }
 
-    SetMailboxPointerInIdtEntry ((VOID *) Mailbox);
+    Phase2Context.InitFlag = InitFlag;
+    Phase2Context.Context  = Context;
+    Phase2Context.Function = Function;
+    DebugPortInitialize ((VOID *) &Phase2Context, InitializeDebugAgentPhase2);
 
-    EnableInterrupts ();
+    FindAndReportModuleImageInfo (4);
 
     break;
 
-  default:
+  case DEBUG_AGENT_INIT_THUNK_PEI_IA32TOX64:
+    if (Context == NULL) {
+      DEBUG ((EFI_D_ERROR, "DebugAgent: Input parameter Context cannot be NULL!\n"));
+      CpuDeadLoop ();
+    } else {
+      Ia32Idtr =  (IA32_DESCRIPTOR *) Context;
+      Ia32IdtEntry = (IA32_IDT_ENTRY *)(Ia32Idtr->Base);
+      MailboxLocationPointer = (UINT64 *) (UINTN) (Ia32IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetLow +
+                                                (Ia32IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetHigh << 16));
+      Mailbox = (DEBUG_AGENT_MAILBOX *) (UINTN)(*MailboxLocationPointer);
+      //
+      // Mailbox should valid and setup before executing thunk code
+      //
+      VerifyMailboxChecksum (Mailbox);
 
+      DebugPortHandle = (UINT64) (UINTN)DebugPortInitialize ((VOID *)(UINTN)Mailbox->DebugPortHandle, NULL);
+      UpdateMailboxContent (Mailbox, DEBUG_MAILBOX_DEBUG_PORT_HANDLE_INDEX, DebugPortHandle);
+      //
+      // Set up IDT entries
+      //
+      InitializeDebugIdt ();
+      //
+      // Update IDT entry to save location pointer saved the mailbox pointer
+      //
+      SetLocationSavedMailboxPointerInIdtEntry (MailboxLocationPointer);
+
+      FindAndReportModuleImageInfo (4);
+    }
+    break;
+
+  default:
     //
-    // Only DEBUG_AGENT_INIT_PREMEM_SEC and DEBUG_AGENT_INIT_POSTMEM_SEC are allowed for this 
+    // Only DEBUG_AGENT_INIT_PREMEM_SEC and DEBUG_AGENT_INIT_POSTMEM_SEC are allowed for this
     // Debug Agent library instance.
     //
     DEBUG ((EFI_D_ERROR, "Debug Agent: The InitFlag value is not allowed!\n"));
     CpuDeadLoop ();
     break;
-
   }
+
+  //
+  // Enable CPU interrupts so debug timer interrupts can be delivered
+  //
+  EnableInterrupts ();
 
   //
   // If Function is not NULL, invoke it always whatever debug agent was initialized sucesssfully or not.
   //
   if (Function != NULL) {
     Function (Context);
+  }
+  //
+  // Set return status for DEBUG_AGENT_INIT_PEI
+  //
+  if (InitFlag == DEBUG_AGENT_INIT_PEI && Context != NULL) {
+    *(EFI_STATUS *)Context = EFI_SUCCESS;
   }
 }
 
@@ -288,36 +635,45 @@ InitializeDebugAgentPhase2 (
   )
 {
   DEBUG_AGENT_PHASE2_CONTEXT *Phase2Context;
+  UINT64                     *MailboxLocation;
   DEBUG_AGENT_MAILBOX        *Mailbox;
   EFI_SEC_PEI_HAND_OFF       *SecCoreData;
+  UINT16                     BufferSize;
+  UINT64                     NewDebugPortHandle;
 
-  Mailbox = GetMailboxPointerInIdtEntry ();
-  Mailbox->DebugPortHandle = (UINT64) (UINTN)DebugPortHandle;
+  Phase2Context = (DEBUG_AGENT_PHASE2_CONTEXT *) Context;
+  MailboxLocation = GetLocationSavedMailboxPointerInIdtEntry ();
+  Mailbox = (DEBUG_AGENT_MAILBOX *)(UINTN)(*MailboxLocation);
+  BufferSize = PcdGet16(PcdDebugPortHandleBufferSize);
+  if (Phase2Context->InitFlag == DEBUG_AGENT_INIT_PEI) {
+    NewDebugPortHandle = (UINT64)(UINTN)AllocateCopyPool (BufferSize, DebugPortHandle);
+  } else {
+    NewDebugPortHandle = (UINT64)(UINTN)DebugPortHandle;
+  }
+  UpdateMailboxContent (Mailbox, DEBUG_MAILBOX_DEBUG_PORT_HANDLE_INDEX, NewDebugPortHandle);
 
   //
   // Trigger one software interrupt to inform HOST
   //
   TriggerSoftInterrupt (SYSTEM_RESET_SIGNATURE);
 
-  //
-  // If Temporary RAM region is below 128 MB, then send message to 
-  // host to disable low memory filtering.
-  //
-  Phase2Context = (DEBUG_AGENT_PHASE2_CONTEXT *) Context;
-  SecCoreData = (EFI_SEC_PEI_HAND_OFF *)Phase2Context->Context;
-  if ((UINTN)SecCoreData->TemporaryRamBase < BASE_128MB && IsHostConnected ()) {
-    TriggerSoftInterrupt (MEMORY_READY_SIGNATURE);
-  }
-
-  //
-  // Enable CPU interrupts so debug timer interrupts can be delivered
-  //
-  EnableInterrupts ();
-
-  //
-  // Call continuation function if it is not NULL.
-  //
-  if (Phase2Context->Function != NULL) {
+  if (Phase2Context->InitFlag == DEBUG_AGENT_INIT_PREMEM_SEC) {
+    //
+    // If Temporary RAM region is below 128 MB, then send message to
+    // host to disable low memory filtering.
+    //
+    SecCoreData = (EFI_SEC_PEI_HAND_OFF *)Phase2Context->Context;
+    if ((UINTN)SecCoreData->TemporaryRamBase < BASE_128MB && IsHostAttached ()) {
+      SetDebugFlag (DEBUG_AGENT_FLAG_MEMORY_READY, 1);
+      TriggerSoftInterrupt (MEMORY_READY_SIGNATURE);
+    }
+    //
+    // Enable CPU interrupts so debug timer interrupts can be delivered
+    //
+    EnableInterrupts ();
+    //
+    // Call continuation function if it is not NULL.
+    //
     Phase2Context->Function (Phase2Context->Context);
   }
 }

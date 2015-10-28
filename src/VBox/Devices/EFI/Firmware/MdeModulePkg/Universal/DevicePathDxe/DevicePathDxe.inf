@@ -6,7 +6,7 @@
 #  PcdDevicePathSupportDevicePathToText & PcdDevicePathSupportDevicePathFromText
 #  respectively.
 #
-#  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
 #  which accompanies this distribution.  The full text of the license may be found at
@@ -20,6 +20,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = DevicePathDxe
+  MODULE_UNI_FILE                = DevicePathDxe.uni
   FILE_GUID                      = 9B680FCE-AD6B-4F3A-B60B-F59899003443
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
@@ -32,44 +33,28 @@
 #
 
 [Sources]
-  DevicePathUtilities.c
-  DevicePathToText.c   ||||gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText
-  DevicePathFromText.c ||||gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText
-  DevicePath.h
   DevicePath.c
 
 [Packages]
-  MdeModulePkg/MdeModulePkg.dec
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
-  PcdLib
   DevicePathLib
   UefiBootServicesTableLib
-  MemoryAllocationLib
-  BaseMemoryLib
-  BaseLib
   UefiDriverEntryPoint
-  PrintLib
-  DebugLib
-
-[Guids]
-  gEfiVTUTF8Guid         | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText OR gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## SOMETIMES_CONSUMES ## GUID
-  gEfiVT100Guid          | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText OR gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## SOMETIMES_CONSUMES ## GUID
-  gEfiVT100PlusGuid      | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText OR gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## SOMETIMES_CONSUMES ## GUID
-  gEfiPcAnsiGuid         | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText OR gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## SOMETIMES_CONSUMES ## GUID
-  gEfiUartDevicePathGuid | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText OR gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## SOMETIMES_CONSUMES ## GUID
-  gEfiSasDevicePathGuid  | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText OR gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## SOMETIMES_CONSUMES ## GUID
   
 [Protocols]
-  gEfiDevicePathToTextProtocolGuid   | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText ## PRODUCES
-  gEfiDevicePathFromTextProtocolGuid | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## PRODUCES
+  gEfiDevicePathToTextProtocolGuid   | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText ## SOMETIMES_PRODUCES
+  gEfiDevicePathFromTextProtocolGuid | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## SOMETIMES_PRODUCES
   gEfiDevicePathUtilitiesProtocolGuid ## PRODUCES
-  gEfiDebugPortProtocolGuid          | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText OR gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## SOMETIMES_CONSUMES ## GUID
 
 [FeaturePcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText   ## CONSUMES
 
 [Depex]
   TRUE
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  DevicePathDxeExtra.uni

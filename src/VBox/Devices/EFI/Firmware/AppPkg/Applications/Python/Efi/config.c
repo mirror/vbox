@@ -1,7 +1,7 @@
 /** @file
     Python Module configuration.
 
-    Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2011-2012, Intel Corporation. All rights reserved.<BR>
     This program and the accompanying materials are licensed and made available under
     the terms and conditions of the BSD License that accompanies this distribution.
     The full text of the license may be found at
@@ -17,55 +17,58 @@
 #include "Python.h"
 
 extern void initarray(void);
-#ifndef MS_WINI64
-extern void initaudioop(void);
-#endif
+extern void init_ast(void);
 extern void initbinascii(void);
+extern void init_bisect(void);
 extern void initcmath(void);
+extern void init_codecs(void);
+extern void init_collections(void);
+extern void initcPickle(void);
+extern void initcStringIO(void);
+extern void init_csv(void);
+extern void init_ctypes(void);
+extern void initdatetime(void);
+extern void initedk2(void);
 extern void initerrno(void);
+extern void init_functools(void);
 extern void initfuture_builtins(void);
 extern void initgc(void);
-#ifndef MS_WINI64
-extern void initimageop(void);
-#endif
+extern void init_heapq(void);
+extern void init_hotshot(void);
+extern void initimp(void);
+extern void init_io(void);
+extern void inititertools(void);
+extern void init_json(void);
+extern void init_lsprof(void);
 extern void initmath(void);
 extern void init_md5(void);
-extern void initnt(void);
+extern void initmmap(void);
 extern void initoperator(void);
-extern void initsignal(void);
+extern void initparser(void);
+extern void initpyexpat(void);
+extern void init_random(void);
+extern void initselect(void);
 extern void init_sha(void);
 extern void init_sha256(void);
 extern void init_sha512(void);
+extern void initsignal(void);
+extern void init_socket(void);
+extern void init_sre(void);
 extern void initstrop(void);
-extern void inittime(void);
+extern void init_struct(void);
+extern void init_subprocess(void);
+extern void init_symtable(void);
 extern void initthread(void);
-extern void initcStringIO(void);
-extern void initcPickle(void);
-#ifdef WIN32
-extern void initmsvcrt(void);
-extern void init_locale(void);
-#endif
-extern void init_codecs(void);
+extern void inittime(void);
+extern void initunicodedata(void);
 extern void init_weakref(void);
-extern void init_hotshot(void);
+extern void init_winreg(void);
 extern void initxxsubtype(void);
 extern void initzipimport(void);
-extern void init_random(void);
-extern void inititertools(void);
-extern void init_collections(void);
-extern void init_heapq(void);
-extern void init_bisect(void);
-extern void init_symtable(void);
-extern void initmmap(void);
-extern void init_csv(void);
-extern void init_sre(void);
-extern void initparser(void);
-extern void init_winreg(void);
-extern void init_struct(void);
-extern void initdatetime(void);
-extern void init_functools(void);
-extern void init_json(void);
 extern void initzlib(void);
+
+extern void PyMarshal_Init(void);
+extern void _PyWarnings_Init(void);
 
 extern void init_multibytecodec(void);
 extern void init_codecs_cn(void);
@@ -74,106 +77,71 @@ extern void init_codecs_iso2022(void);
 extern void init_codecs_jp(void);
 extern void init_codecs_kr(void);
 extern void init_codecs_tw(void);
-extern void init_subprocess(void);
-extern void init_lsprof(void);
-extern void init_ast(void);
-extern void init_io(void);
-extern void _PyWarnings_Init(void);
-
-/* tools/freeze/makeconfig.py marker for additional "extern" */
-/* -- ADDMODULE MARKER 1 -- */
-
-extern void PyMarshal_Init(void);
-extern void initimp(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
-    {"array", initarray},
-    {"_ast", init_ast},
-#ifdef MS_WINDOWS
-#ifndef MS_WINI64
-    {"audioop", initaudioop},
-#endif
-#endif
-    {"binascii", initbinascii},
+    //{"_ast", init_ast},
+    //{"_bisect", init_bisect},               /* A fast version of bisect.py */
+    //{"_csv", init_csv},
+    //{"_heapq", init_heapq},                 /* A fast version of heapq.py */
+    //{"_io", init_io},
+    //{"_json", init_json},
+    //{"_md5", init_md5},
+    //{"_sha", init_sha},
+    //{"_sha256", init_sha256},
+    //{"_sha512", init_sha512},
+    //{"_socket", init_socket},
+    //{"_symtable", init_symtable},
+
+    //{"array", initarray},
     //{"cmath", initcmath},
-    {"errno", initerrno},
-
-    {"gc", initgc},
-    {"signal", initsignal},
-
-#if 0
-    {"future_builtins", initfuture_builtins},
-#ifndef MS_WINI64
-    {"imageop", initimageop},
-#endif
-    {"math", initmath},
-    {"_md5", init_md5},
-    //{"nt", initnt}, /* Use the NT os functions, not posix */
-    {"operator", initoperator},
-    {"_sha", init_sha},
-    {"_sha256", init_sha256},
-    {"_sha512", init_sha512},
-    {"strop", initstrop},
-    {"time", inittime},
-#ifdef WITH_THREAD
-    {"thread", initthread},
-#endif
-    {"cStringIO", initcStringIO},
-    {"cPickle", initcPickle},
-#ifdef WIN32
-    {"msvcrt", initmsvcrt},
-    {"_locale", init_locale},
-#endif
-    /* XXX Should _subprocess go in a WIN32 block?  not WIN64? */
-    //{"_subprocess", init_subprocess},
-
-    {"_codecs", init_codecs},
-    //{"_weakref", init_weakref},
-    //{"_hotshot", init_hotshot},
-    {"_random", init_random},
-    {"_bisect", init_bisect},
-    {"_heapq", init_heapq},
-    //{"_lsprof", init_lsprof},
-    {"itertools", inititertools},
-    {"_collections", init_collections},
-    {"_symtable", init_symtable},
-    //{"mmap", initmmap},
-    {"_csv", init_csv},
-    {"_sre", init_sre},
-#endif
-
-    {"parser", initparser},
-
-#if 0
-    //{"_winreg", init_winreg},
-    {"_struct", init_struct},
-    {"datetime", initdatetime},
-    {"_functools", init_functools},
-    {"_json", init_json},
-
-    {"xxsubtype", initxxsubtype},
+    //{"cPickle", initcPickle},
+    //{"datetime", initdatetime},
+    //{"future_builtins", initfuture_builtins},
+    //{"parser", initparser},
+    //{"pyexpat", initpyexpat},
+    //{"select", initselect},
+    //{"signal", initsignal},
+    //{"strop", initstrop},                   /* redefines some string operations that are 100-1000 times faster */
+    //{"unicodedata", initunicodedata},
+    //{"xxsubtype", initxxsubtype},
     //{"zipimport", initzipimport},
     //{"zlib", initzlib},
 
     /* CJK codecs */
-    {"_multibytecodec", init_multibytecodec},
-    {"_codecs_cn", init_codecs_cn},
-    {"_codecs_hk", init_codecs_hk},
-    {"_codecs_iso2022", init_codecs_iso2022},
-    {"_codecs_jp", init_codecs_jp},
-    {"_codecs_kr", init_codecs_kr},
-    {"_codecs_tw", init_codecs_tw},
+    //{"_multibytecodec", init_multibytecodec},
+    //{"_codecs_cn", init_codecs_cn},
+    //{"_codecs_hk", init_codecs_hk},
+    //{"_codecs_iso2022", init_codecs_iso2022},
+    //{"_codecs_jp", init_codecs_jp},
+    //{"_codecs_kr", init_codecs_kr},
+    //{"_codecs_tw", init_codecs_tw},
+
+#ifdef WITH_THREAD
+    {"thread", initthread},
 #endif
 
-/* tools/freeze/makeconfig.py marker for additional "_inittab" entries */
-/* -- ADDMODULE MARKER 2 -- */
+    /* These modules are required for the full built-in help() facility provided by pydoc. */
+    {"_codecs", init_codecs},
+    {"_collections", init_collections},
+    {"_functools", init_functools},
+    {"_random", init_random},
+    {"_sre", init_sre},
+    {"_struct", init_struct},                   /* Required by the logging package. */
+    {"_weakref", init_weakref},
+    {"binascii", initbinascii},
+    {"cStringIO", initcStringIO},               /* Required by several modules, such as logging. */
+    {"gc", initgc},
+    {"itertools", inititertools},
+    {"math", initmath},
+    {"operator", initoperator},
+    {"time", inittime},
 
-    /* This module "lives in" with marshal.c */
-    {"marshal", PyMarshal_Init},
-
-    /* This lives in with import.c */
-    {"imp", initimp},
+    /* These four modules should always be built in. */
+    {"edk2", initedk2},
+    {"errno", initerrno},
+    {"imp", initimp},                   /* We get this for free from Python/import.c  */
+    {"marshal", PyMarshal_Init},        /* We get this for free from Python/marshal.c */
 
     /* These entries are here for sys.builtin_module_names */
     {"__main__", NULL},
@@ -181,8 +149,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"sys", NULL},
     {"exceptions", NULL},
     {"_warnings", _PyWarnings_Init},
-
-    {"_io", init_io},
 
     /* Sentinel */
     {0, 0}

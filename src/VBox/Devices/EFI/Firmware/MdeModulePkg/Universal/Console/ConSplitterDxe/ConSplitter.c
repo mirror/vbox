@@ -16,7 +16,7 @@
   never removed. Such design ensures sytem function well during none console
   device situation.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -28,6 +28,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include "ConSplitter.h"
+
+//
+// Identify if ConIn is connected in PcdConInConnectOnDemand enabled mode. 
+// default not connect
+//
+BOOLEAN  mConInIsConnect = FALSE;
 
 //
 // Text In Splitter Private Data template
@@ -412,49 +418,12 @@ ConSplitterDriverEntry(
   //
   Status = ConSplitterTextOutConstructor (&mConOut);
   if (!EFI_ERROR (Status)) {
-    if (!FeaturePcdGet (PcdConOutGopSupport)) {
-      //
-      // If Graphics Outpurt protocol not supported, UGA Draw protocol is installed
-      // on the virtual handle.
-      //
-      Status = gBS->InstallMultipleProtocolInterfaces (
-                      &mConOut.VirtualHandle,
-                      &gEfiSimpleTextOutProtocolGuid,
-                      &mConOut.TextOut,
-                      &gEfiUgaDrawProtocolGuid,
-                      &mConOut.UgaDraw,
-                      NULL
-                      );
-    } else if (!FeaturePcdGet (PcdConOutUgaSupport)) {
-      //
-      // If UGA Draw protocol not supported, Graphics Output Protocol is installed
-      // on virtual handle.
-      //
-      Status = gBS->InstallMultipleProtocolInterfaces (
-                      &mConOut.VirtualHandle,
-                      &gEfiSimpleTextOutProtocolGuid,
-                      &mConOut.TextOut,
-                      &gEfiGraphicsOutputProtocolGuid,
-                      &mConOut.GraphicsOutput,
-                      NULL
-                      );
-    } else {
-      //
-      // Boot Graphics Output protocol and UGA Draw protocol are supported,
-      // both they will be installed on virtual handle.
-      //
-      Status = gBS->InstallMultipleProtocolInterfaces (
-                      &mConOut.VirtualHandle,
-                      &gEfiSimpleTextOutProtocolGuid,
-                      &mConOut.TextOut,
-                      &gEfiGraphicsOutputProtocolGuid,
-                      &mConOut.GraphicsOutput,
-                      &gEfiUgaDrawProtocolGuid,
-                      &mConOut.UgaDraw,
-                      NULL
-                      );
-    }
-
+    Status = gBS->InstallMultipleProtocolInterfaces (
+                    &mConOut.VirtualHandle,
+                    &gEfiSimpleTextOutProtocolGuid,
+                    &mConOut.TextOut,
+                    NULL
+                    );
     if (!EFI_ERROR (Status)) {
       //
       // Update the EFI System Table with new virtual console
@@ -613,6 +582,18 @@ ConSplitterTextInConstructor (
                   ConSplitterSimplePointerWaitForInput,
                   ConInPrivate,
                   &ConInPrivate->SimplePointer.WaitForInput
+                  );
+  ASSERT_EFI_ERROR (Status);
+  //
+  // Create Event to signal ConIn connection request
+  //
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  ConSplitterEmptyCallbackFunction,
+                  NULL,
+                  &gConnectConInEventGuid,
+                  &ConInPrivate->ConnectConInEvent
                   );
 
   return Status;
@@ -1297,7 +1278,7 @@ ConSplitterConOutDriverBindingStart (
 
       FreePool (Info);
 
-    } else if (UgaDraw != NULL  && FeaturePcdGet (PcdUgaConsumeSupport)) {
+    } else if (UgaDraw != NULL) {
       Status = UgaDraw->GetMode (
                  UgaDraw,
                  &mConOut.UgaHorizontalResolution,
@@ -1708,12 +1689,12 @@ ConSplitterStdErrDriverBindingStop (
 
 
 /**
-  Take the passed in Buffer of size SizeOfCount and grow the buffer
-  by MAX (CONSOLE_SPLITTER_CONSOLES_ALLOC_UNIT, MaxGrow) * SizeOfCount
-  bytes. Copy the current data in Buffer to the new version of Buffer
-  and free the old version of buffer.
+  Take the passed in Buffer of size ElementSize and grow the buffer
+  by CONSOLE_SPLITTER_ALLOC_UNIT * ElementSize bytes.
+  Copy the current data in Buffer to the new version of Buffer and
+  free the old version of buffer.
 
-  @param  SizeOfCount              Size of element in array.
+  @param  ElementSize              Size of element in array.
   @param  Count                    Current number of elements in array.
   @param  Buffer                   Bigger version of passed in Buffer with all the
                                    data.
@@ -1724,7 +1705,7 @@ ConSplitterStdErrDriverBindingStop (
 **/
 EFI_STATUS
 ConSplitterGrowBuffer (
-  IN      UINTN                       SizeOfCount,
+  IN      UINTN                       ElementSize,
   IN OUT  UINTN                       *Count,
   IN OUT  VOID                        **Buffer
   )
@@ -1736,15 +1717,15 @@ ConSplitterGrowBuffer (
   // copy the old buffer's content to the new-size buffer,
   // then free the old buffer.
   //
-  *Count += CONSOLE_SPLITTER_CONSOLES_ALLOC_UNIT;
   Ptr = ReallocatePool (
-          SizeOfCount * ((*Count) - CONSOLE_SPLITTER_CONSOLES_ALLOC_UNIT),
-          SizeOfCount * (*Count),
+          ElementSize * (*Count),
+          ElementSize * ((*Count) + CONSOLE_SPLITTER_ALLOC_UNIT),
           *Buffer
           );
   if (Ptr == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
+  *Count += CONSOLE_SPLITTER_ALLOC_UNIT;
   *Buffer = Ptr;
   return EFI_SUCCESS;
 }
@@ -1847,12 +1828,28 @@ ConSplitterTextInExAddDevice (
   IN  EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL     *TextInEx
   )
 {
-  EFI_STATUS  Status;
+  EFI_STATUS                  Status;
+  LIST_ENTRY                  *Link;
+  TEXT_IN_EX_SPLITTER_NOTIFY  *CurrentNotify;
+  UINTN                       TextInExListCount;
 
   //
-  // If the Text Input Ex List is full, enlarge it by calling ConSplitterGrowBuffer().
+  // Enlarge the NotifyHandleList and the TextInExList
   //
   if (Private->CurrentNumberOfExConsoles >= Private->TextInExListCount) {
+    for (Link = Private->NotifyList.ForwardLink; Link != &Private->NotifyList; Link = Link->ForwardLink) {
+      CurrentNotify     = TEXT_IN_EX_SPLITTER_NOTIFY_FROM_THIS (Link);
+      TextInExListCount = Private->TextInExListCount;
+
+      Status = ConSplitterGrowBuffer (
+                 sizeof (EFI_HANDLE),
+                 &TextInExListCount,
+                 (VOID **) &CurrentNotify->NotifyHandleList
+                 );
+      if (EFI_ERROR (Status)) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+    }
     Status = ConSplitterGrowBuffer (
               sizeof (EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *),
               &Private->TextInExListCount,
@@ -1862,6 +1859,30 @@ ConSplitterTextInExAddDevice (
       return EFI_OUT_OF_RESOURCES;
     }
   }
+
+  //
+  // Register the key notify in the new text-in device
+  //
+  for (Link = Private->NotifyList.ForwardLink; Link != &Private->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = TEXT_IN_EX_SPLITTER_NOTIFY_FROM_THIS (Link);
+    Status = TextInEx->RegisterKeyNotify (
+                         TextInEx,
+                         &CurrentNotify->KeyData,
+                         CurrentNotify->KeyNotificationFn,
+                         &CurrentNotify->NotifyHandleList[Private->CurrentNumberOfExConsoles]
+                         );
+    if (EFI_ERROR (Status)) {
+      for (Link = Link->BackLink; Link != &Private->NotifyList; Link = Link->BackLink) {
+        CurrentNotify = TEXT_IN_EX_SPLITTER_NOTIFY_FROM_THIS (Link);
+        TextInEx->UnregisterKeyNotify (
+                    TextInEx,
+                    CurrentNotify->NotifyHandleList[Private->CurrentNumberOfExConsoles]
+                    );
+      }
+      return Status;
+    }
+  }
+
   //
   // Add the new text-in device data structure into the Text Input Ex List.
   //
@@ -2088,6 +2109,8 @@ ConSplitterGrowMapTable (
   INT32 *OldTextOutModeMap;
   INT32 *SrcAddress;
   INT32 Index;
+  UINTN OldStepSize;
+  UINTN NewStepSize;
 
   NewSize           = Private->TextOutListCount * sizeof (INT32);
   OldTextOutModeMap = Private->TextOutModeMap;
@@ -2125,14 +2148,26 @@ ConSplitterGrowMapTable (
     Size        = Private->CurrentNumberOfConsoles * sizeof (INT32);
     Index       = 0;
     SrcAddress  = OldTextOutModeMap;
+    NewStepSize = NewSize / sizeof(INT32);    
+    // If Private->CurrentNumberOfConsoles is not zero and OldTextOutModeMap
+    // is not NULL, it indicates that the original TextOutModeMap is not enough
+    // for the new console devices and has been enlarged by CONSOLE_SPLITTER_ALLOC_UNIT columns.
+    //
+    OldStepSize = NewStepSize - CONSOLE_SPLITTER_ALLOC_UNIT;
 
     //
     // Copy the old data to the new one
     //
     while (Index < Private->TextOutMode.MaxMode) {
       CopyMem (TextOutModeMap, SrcAddress, Size);
-      TextOutModeMap += NewSize;
-      SrcAddress += Size;
+      //
+      // Go to next row of new TextOutModeMap.
+      //
+      TextOutModeMap += NewStepSize;
+      //
+      // Go to next row of old TextOutModeMap.
+      //
+      SrcAddress += OldStepSize;
       Index++;
     }
     //
@@ -2740,7 +2775,7 @@ ConSplitterAddGraphicsOutputMode (
         }
       }
     }
-  } else if (UgaDraw != NULL && FeaturePcdGet (PcdUgaConsumeSupport)) {
+  } else if (UgaDraw != NULL) {
     //
     // Graphics console driver can ensure the same mode for all GOP devices
     // so we can get the current mode from this video device
@@ -2780,7 +2815,7 @@ Done:
   if (GraphicsOutput != NULL) {
     Private->CurrentNumberOfGraphicsOutput++;
   }
-  if (UgaDraw != NULL && FeaturePcdGet (PcdUgaConsumeSupport)) {
+  if (UgaDraw != NULL) {
     Private->CurrentNumberOfUgaDraw++;
   }
 
@@ -3003,13 +3038,13 @@ ConSplitterTextOutAddDevice (
   ASSERT (MaxMode >= 1);
 
   DeviceStatus = EFI_DEVICE_ERROR;
-  if (FeaturePcdGet (PcdConOutGopSupport)) {
-    //
-    // If GOP is produced by Consplitter, this device display mode will be added into Graphics Ouput modes.
-    //
-    if ((GraphicsOutput != NULL) || (UgaDraw != NULL && FeaturePcdGet (PcdUgaConsumeSupport))) {
-      DeviceStatus = ConSplitterAddGraphicsOutputMode (Private, GraphicsOutput, UgaDraw);
-    }
+  Status       = EFI_DEVICE_ERROR;
+  
+  //
+  // This device display mode will be added into Graphics Ouput modes.
+  //
+  if ((GraphicsOutput != NULL) || (UgaDraw != NULL)) {
+    DeviceStatus = ConSplitterAddGraphicsOutputMode (Private, GraphicsOutput, UgaDraw);
   }
 
   if (FeaturePcdGet (PcdConOutUgaSupport)) {
@@ -3028,7 +3063,7 @@ ConSplitterTextOutAddDevice (
 
       FreePool (Info);
 
-    } else if (UgaDraw != NULL && FeaturePcdGet (PcdUgaConsumeSupport)) {
+    } else if (UgaDraw != NULL) {
       Status = UgaDraw->GetMode (
                     UgaDraw,
                     &UgaHorizontalResolution,
@@ -3060,6 +3095,46 @@ ConSplitterTextOutAddDevice (
                     60
                     );
       }
+    }
+  }
+
+  if (((!EFI_ERROR (DeviceStatus)) || (!EFI_ERROR (Status))) &&
+      ((Private->CurrentNumberOfGraphicsOutput + Private->CurrentNumberOfUgaDraw) == 1)) {
+    if (!FeaturePcdGet (PcdConOutGopSupport)) {
+      //
+      // If Graphics Outpurt protocol not supported, UGA Draw protocol is installed
+      // on the virtual handle.
+      //
+      Status = gBS->InstallMultipleProtocolInterfaces (
+                      &mConOut.VirtualHandle,
+                      &gEfiUgaDrawProtocolGuid,
+                      &mConOut.UgaDraw,
+                      NULL
+                      );
+    } else if (!FeaturePcdGet (PcdConOutUgaSupport)) {
+      //
+      // If UGA Draw protocol not supported, Graphics Output Protocol is installed
+      // on virtual handle.
+      //
+      Status = gBS->InstallMultipleProtocolInterfaces (
+                      &mConOut.VirtualHandle,
+                      &gEfiGraphicsOutputProtocolGuid,
+                      &mConOut.GraphicsOutput,
+                      NULL
+                      );
+    } else {
+      //
+      // Boot Graphics Output protocol and UGA Draw protocol are supported,
+      // both they will be installed on virtual handle.
+      //
+      Status = gBS->InstallMultipleProtocolInterfaces (
+                      &mConOut.VirtualHandle,
+                      &gEfiGraphicsOutputProtocolGuid,
+                      &mConOut.GraphicsOutput,
+                      &gEfiUgaDrawProtocolGuid,
+                      &mConOut.UgaDraw,
+                      NULL
+                      );
     }
   }
 
@@ -3103,7 +3178,7 @@ ConSplitterTextOutDeleteDevice (
   TextOutList           = Private->TextOutList;
   while (Index >= 0) {
     if (TextOutList->TextOut == TextOut) {
-      if (TextOutList->UgaDraw != NULL && FeaturePcdGet (PcdUgaConsumeSupport)) {
+      if (TextOutList->UgaDraw != NULL) {
         Private->CurrentNumberOfUgaDraw--;
       }
       if (TextOutList->GraphicsOutput != NULL) {
@@ -3122,6 +3197,35 @@ ConSplitterTextOutDeleteDevice (
   //
   if (Index < 0) {
     return EFI_NOT_FOUND;
+  }
+
+  if ((Private->CurrentNumberOfGraphicsOutput == 0) && (Private->CurrentNumberOfUgaDraw == 0)) {
+    //
+    // If there is not any physical GOP and UGA device in system,
+    // Consplitter GOP or UGA protocol will be uninstalled
+    //
+    if (!FeaturePcdGet (PcdConOutGopSupport)) {
+      Status = gBS->UninstallProtocolInterface (
+                      Private->VirtualHandle,
+                      &gEfiUgaDrawProtocolGuid,
+                      &Private->UgaDraw
+                      );      
+    } else if (!FeaturePcdGet (PcdConOutUgaSupport)) {
+      Status = gBS->UninstallProtocolInterface (
+                      Private->VirtualHandle,
+                      &gEfiGraphicsOutputProtocolGuid,
+                      &Private->GraphicsOutput
+                      );
+    } else {
+      Status = gBS->UninstallMultipleProtocolInterfaces (
+             Private->VirtualHandle,
+             &gEfiUgaDrawProtocolGuid,
+             &Private->UgaDraw,
+             &gEfiGraphicsOutputProtocolGuid,
+             &Private->GraphicsOutput,
+             NULL
+             );
+    }
   }
 
   if (CurrentNumOfConsoles == 0) {
@@ -3265,6 +3369,7 @@ ConSplitterTextInPrivateReadKeyStroke (
 }
 
 
+
 /**
   Reads the next keystroke from the input device. The WaitForKey Event can
   be used to test for existance of a keystroke via WaitForEvent () call.
@@ -3290,6 +3395,15 @@ ConSplitterTextInReadKeyStroke (
   Private = TEXT_IN_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
 
   Private->KeyEventSignalState = FALSE;
+
+  //
+  // Signal ConnectConIn event on first call in Lazy ConIn mode
+  //
+  if (!mConInIsConnect && PcdGetBool (PcdConInConnectOnDemand)) {
+    DEBUG ((EFI_D_INFO, "Connect ConIn in first ReadKeyStoke in Lazy ConIn mode.\n"));    
+    gBS->SignalEvent (Private->ConnectConInEvent);
+    mConInIsConnect = TRUE;
+  }
 
   return ConSplitterTextInPrivateReadKeyStroke (Private, Key);
 }
@@ -3471,6 +3585,15 @@ ConSplitterTextInReadKeyStrokeEx (
   KeyData->Key.ScanCode     = SCAN_NULL;
 
   //
+  // Signal ConnectConIn event on first call in Lazy ConIn mode
+  //
+  if (!mConInIsConnect && PcdGetBool (PcdConInConnectOnDemand)) {
+    DEBUG ((EFI_D_INFO, "Connect ConIn in first ReadKeyStoke in Lazy ConIn mode.\n"));    
+    gBS->SignalEvent (Private->ConnectConInEvent);
+    mConInIsConnect = TRUE;
+  }
+
+  //
   // if no physical console input device exists, return EFI_NOT_READY;
   // if any physical console input device has key input,
   // return the key and EFI_SUCCESS.
@@ -3566,7 +3689,7 @@ ConSplitterTextInRegisterKeyNotify (
   IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
   IN EFI_KEY_DATA                       *KeyData,
   IN EFI_KEY_NOTIFY_FUNCTION            KeyNotificationFunction,
-  OUT EFI_HANDLE                        *NotifyHandle
+  OUT VOID                              **NotifyHandle
   )
 {
   TEXT_IN_SPLITTER_PRIVATE_DATA *Private;
@@ -3584,21 +3707,13 @@ ConSplitterTextInRegisterKeyNotify (
   Private = TEXT_IN_EX_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
 
   //
-  // If no physical console input device exists,
-  // return EFI_SUCCESS directly.
-  //
-  if (Private->CurrentNumberOfExConsoles <= 0) {
-    return EFI_SUCCESS;
-  }
-
-  //
   // Return EFI_SUCCESS if the (KeyData, NotificationFunction) is already registered.
   //
   for (Link = Private->NotifyList.ForwardLink; Link != &Private->NotifyList; Link = Link->ForwardLink) {
     CurrentNotify = TEXT_IN_EX_SPLITTER_NOTIFY_FROM_THIS (Link);
     if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) {
       if (CurrentNotify->KeyNotificationFn == KeyNotificationFunction) {
-        *NotifyHandle = CurrentNotify->NotifyHandle;
+        *NotifyHandle = CurrentNotify;
         return EFI_SUCCESS;
       }
     }
@@ -3611,14 +3726,13 @@ ConSplitterTextInRegisterKeyNotify (
   if (NewNotify == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  NewNotify->NotifyHandleList = (EFI_HANDLE *) AllocateZeroPool (sizeof (EFI_HANDLE) * Private->CurrentNumberOfExConsoles);
+  NewNotify->NotifyHandleList = (EFI_HANDLE *) AllocateZeroPool (sizeof (EFI_HANDLE) *  Private->TextInExListCount);
   if (NewNotify->NotifyHandleList == NULL) {
     gBS->FreePool (NewNotify);
     return EFI_OUT_OF_RESOURCES;
   }
   NewNotify->Signature         = TEXT_IN_EX_SPLITTER_NOTIFY_SIGNATURE;
   NewNotify->KeyNotificationFn = KeyNotificationFunction;
-  NewNotify->NotifyHandle      = (EFI_HANDLE) NewNotify;
   CopyMem (&NewNotify->KeyData, KeyData, sizeof (EFI_KEY_DATA));
 
   //
@@ -3633,6 +3747,15 @@ ConSplitterTextInRegisterKeyNotify (
                                              &NewNotify->NotifyHandleList[Index]
                                              );
     if (EFI_ERROR (Status)) {
+      //
+      // Un-register the key notify on all physical console input devices
+      //
+      while (Index-- != 0) {
+        Private->TextInExList[Index]->UnregisterKeyNotify (
+                                        Private->TextInExList[Index],
+                                        NewNotify->NotifyHandleList[Index]
+                                        );
+      }
       gBS->FreePool (NewNotify->NotifyHandleList);
       gBS->FreePool (NewNotify);
       return Status;
@@ -3641,7 +3764,7 @@ ConSplitterTextInRegisterKeyNotify (
 
   InsertTailList (&mConIn.NotifyList, &NewNotify->NotifyEntry);
 
-  *NotifyHandle                = NewNotify->NotifyHandle;
+  *NotifyHandle                = NewNotify;
 
   return EFI_SUCCESS;
 
@@ -3664,11 +3787,10 @@ EFI_STATUS
 EFIAPI
 ConSplitterTextInUnregisterKeyNotify (
   IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
-  IN EFI_HANDLE                         NotificationHandle
+  IN VOID                               *NotificationHandle
   )
 {
   TEXT_IN_SPLITTER_PRIVATE_DATA *Private;
-  EFI_STATUS                    Status;
   UINTN                         Index;
   TEXT_IN_EX_SPLITTER_NOTIFY    *CurrentNotify;
   LIST_ENTRY                    *Link;
@@ -3677,31 +3799,16 @@ ConSplitterTextInUnregisterKeyNotify (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (((TEXT_IN_EX_SPLITTER_NOTIFY *) NotificationHandle)->Signature != TEXT_IN_EX_SPLITTER_NOTIFY_SIGNATURE) {
-    return EFI_INVALID_PARAMETER;
-  }
-
   Private = TEXT_IN_EX_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
-
-  //
-  // if no physical console input device exists,
-  // return EFI_SUCCESS directly.
-  //
-  if (Private->CurrentNumberOfExConsoles <= 0) {
-    return EFI_SUCCESS;
-  }
 
   for (Link = Private->NotifyList.ForwardLink; Link != &Private->NotifyList; Link = Link->ForwardLink) {
     CurrentNotify = TEXT_IN_EX_SPLITTER_NOTIFY_FROM_THIS (Link);
-    if (CurrentNotify->NotifyHandle == NotificationHandle) {
+    if (CurrentNotify == NotificationHandle) {
       for (Index = 0; Index < Private->CurrentNumberOfExConsoles; Index++) {
-        Status = Private->TextInExList[Index]->UnregisterKeyNotify (
-                                                 Private->TextInExList[Index],
-                                                 CurrentNotify->NotifyHandleList[Index]
-                                                 );
-        if (EFI_ERROR (Status)) {
-          return Status;
-        }
+        Private->TextInExList[Index]->UnregisterKeyNotify (
+                                        Private->TextInExList[Index],
+                                        CurrentNotify->NotifyHandleList[Index]
+                                        );
       }
       RemoveEntryList (&CurrentNotify->NotifyEntry);
 
@@ -4450,7 +4557,7 @@ ConSplitterTextOutSetAttribute (
   //
   // Check whether param Attribute is valid.
   //
-  if ( (Attribute > (UINTN)(((UINT32)-1)>>1)) ) {
+  if ((Attribute | 0x7F) != 0x7F) {
     return EFI_UNSUPPORTED;
   }
 
@@ -4650,3 +4757,20 @@ ConSplitterTextOutEnableCursor (
   return ReturnStatus;
 }
 
+
+/**
+  An empty function to pass error checking of CreateEventEx ().
+
+  @param  Event                 Event whose notification function is being invoked.
+  @param  Context               Pointer to the notification function's context,
+                                which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+ConSplitterEmptyCallbackFunction (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
+  )
+{
+}

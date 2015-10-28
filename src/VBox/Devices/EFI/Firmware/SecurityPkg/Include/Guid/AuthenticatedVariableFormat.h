@@ -4,7 +4,7 @@
   AuthenticatedVariableFormat.h defines variable data headers 
   and variable storage region headers.
 
-Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -27,15 +27,18 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 extern EFI_GUID gEfiAuthenticatedVariableGuid;
 extern EFI_GUID gEfiSecureBootEnableDisableGuid;
+extern EFI_GUID gEfiCertDbGuid;
+extern EFI_GUID gEfiCustomModeEnableGuid;
+extern EFI_GUID gEfiVendorKeysNvGuid;
 
 ///
-/// "SecureBootEnable" variable for the Secure boot feature enable/disable.
+/// "SecureBootEnable" variable for the Secure Boot feature enable/disable.
+/// This variable is used for allowing a physically present user to disable
+/// Secure Boot via firmware setup without the possession of PKpriv.
 ///
 #define EFI_SECURE_BOOT_ENABLE_NAME      L"SecureBootEnable"
 #define SECURE_BOOT_ENABLE               1
 #define SECURE_BOOT_DISABLE              0
-
-extern EFI_GUID gEfiCustomModeEnableGuid;
 
 ///
 ///  "CustomMode" variable for two Secure Boot modes feature: "Custom" and "Standard".
@@ -50,13 +53,14 @@ extern EFI_GUID gEfiCustomModeEnableGuid;
 #define STANDARD_SECURE_BOOT_MODE     0
 
 ///
-/// "certdb" variable stores the signer's certificates for non PK/KEK/DB/DBX
-/// variables with EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS set.
-/// 
+///  "VendorKeysNv" variable to record the out of band secure boot keys modification.
+///  This variable is a read-only NV varaible that indicates whether someone other than
+///  the platform vendor has used a mechanism not defined by the UEFI Specification to
+///  transition the system to setup mode or to update secure boot keys.
 ///
-#define EFI_CERT_DB_NAME L"certdb"
-
-extern EFI_GUID gEfiCertDbGuid;
+#define EFI_VENDOR_KEYS_NV_VARIABLE_NAME       L"VendorKeysNv"
+#define VENDOR_KEYS_VALID             1
+#define VENDOR_KEYS_MODIFIED          0
 
 ///
 /// Alignment of variable name and data, according to the architecture:

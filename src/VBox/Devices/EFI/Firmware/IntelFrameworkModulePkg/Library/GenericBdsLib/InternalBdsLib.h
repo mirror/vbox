@@ -1,7 +1,7 @@
 /** @file
   BDS library definition, include the file and data structure
 
-Copyright (c) 2004 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -31,7 +31,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/LegacyBios.h>
 #include <Protocol/SimpleTextOut.h>
 #include <Protocol/SimpleNetwork.h>
-#include <Protocol/DevicePathToText.h>
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/PciIo.h>
 #include <Protocol/AcpiS3Save.h>
@@ -51,6 +50,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Guid/BdsLibHii.h>
 #include <Guid/HdBootVariable.h>
 #include <Guid/LastEnumLang.h>
+#include <Guid/LegacyDevOrder.h>
+#include <Guid/StatusCodeDataTypeVariable.h>
 
 #include <Library/PrintLib.h>
 #include <Library/DebugLib.h>
@@ -95,13 +96,18 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 /**
 
-  Allocates a block of memory and writes performance data of booting into it.
-  OS can processing these record.
-  
+  Writes performance data of booting into the allocated memory.
+  OS can process these records.
+
+  @param  Event                 The triggered event.
+  @param  Context               Context for this event.
+
 **/
 VOID
+EFIAPI
 WriteBootToOsPerformanceData (
-  VOID
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
   );
 
 /**
@@ -149,6 +155,50 @@ BOOLEAN
 ValidateOption (
   UINT8                     *Variable,
   UINTN                     VariableSize
+  );
+
+/**
+  Set the variable and report the error through status code upon failure.
+
+  @param  VariableName           A Null-terminated string that is the name of the vendor's variable.
+                                 Each VariableName is unique for each VendorGuid. VariableName must
+                                 contain 1 or more characters. If VariableName is an empty string,
+                                 then EFI_INVALID_PARAMETER is returned.
+  @param  VendorGuid             A unique identifier for the vendor.
+  @param  Attributes             Attributes bitmask to set for the variable.
+  @param  DataSize               The size in bytes of the Data buffer. Unless the EFI_VARIABLE_APPEND_WRITE, 
+                                 EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS, or 
+                                 EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS attribute is set, a size of zero 
+                                 causes the variable to be deleted. When the EFI_VARIABLE_APPEND_WRITE attribute is 
+                                 set, then a SetVariable() call with a DataSize of zero will not cause any change to 
+                                 the variable value (the timestamp associated with the variable may be updated however 
+                                 even if no new data value is provided,see the description of the 
+                                 EFI_VARIABLE_AUTHENTICATION_2 descriptor below. In this case the DataSize will not 
+                                 be zero since the EFI_VARIABLE_AUTHENTICATION_2 descriptor will be populated). 
+  @param  Data                   The contents for the variable.
+
+  @retval EFI_SUCCESS            The firmware has successfully stored the variable and its data as
+                                 defined by the Attributes.
+  @retval EFI_INVALID_PARAMETER  An invalid combination of attribute bits, name, and GUID was supplied, or the
+                                 DataSize exceeds the maximum allowed.
+  @retval EFI_INVALID_PARAMETER  VariableName is an empty string.
+  @retval EFI_OUT_OF_RESOURCES   Not enough storage is available to hold the variable and its data.
+  @retval EFI_DEVICE_ERROR       The variable could not be retrieved due to a hardware error.
+  @retval EFI_WRITE_PROTECTED    The variable in question is read-only.
+  @retval EFI_WRITE_PROTECTED    The variable in question cannot be deleted.
+  @retval EFI_SECURITY_VIOLATION The variable could not be written due to EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS 
+                                 or EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACESS being set, but the AuthInfo 
+                                 does NOT pass the validation check carried out by the firmware.
+
+  @retval EFI_NOT_FOUND          The variable trying to be updated or deleted was not found.
+**/
+EFI_STATUS
+SetVariableAndReportStatusCodeOnError (
+  IN CHAR16     *VariableName,
+  IN EFI_GUID   *VendorGuid,
+  IN UINT32     Attributes,
+  IN UINTN      DataSize,
+  IN VOID       *Data
   );
 
 #endif // _BDS_LIB_H_

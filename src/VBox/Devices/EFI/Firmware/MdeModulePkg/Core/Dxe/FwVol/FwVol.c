@@ -3,7 +3,7 @@
   Layers on top of Firmware Block protocol to produce a file abstraction
   of FV based files.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -45,7 +45,10 @@ FV_DEVICE mFvDevice = {
   NULL,
   NULL,
   { NULL, NULL },
-  0
+  0,
+  0,
+  FALSE,
+  FALSE
 };
 
 
@@ -252,7 +255,14 @@ FreeFvDeviceResource (
       //
       // Close stream and free resources from SEP
       //
-      CloseSectionStream (FfsFileEntry->StreamHandle);
+      CloseSectionStream (FfsFileEntry->StreamHandle, FALSE);
+    }
+
+    if (FfsFileEntry->FileCached) {
+      //
+      // Free the cached file buffer.
+      //
+      CoreFreePool (FfsFileEntry->FfsHeader);
     }
 
     CoreFreePool (FfsFileEntry);
@@ -260,11 +270,12 @@ FreeFvDeviceResource (
     FfsFileEntry = (FFS_FILE_LIST_ENTRY *) NextEntry;
   }
 
-
-  //
-  // Free the cache
-  //
-  CoreFreePool (FvDevice->CachedFv);
+  if (!FvDevice->IsMemoryMapped) {
+    //
+    // Free the cached FV buffer.
+    //
+    CoreFreePool (FvDevice->CachedFv);
+  }
 
   //
   // Free Volume Header
@@ -308,7 +319,13 @@ FvCheck (
   EFI_FFS_FILE_STATE                    FileState;
   UINT8                                 *TopFvAddress;
   UINTN                                 TestLength;
+  EFI_PHYSICAL_ADDRESS                  PhysicalAddress;
+  BOOLEAN                               FileCached;
+  UINTN                                 WholeFileSize;
+  EFI_FFS_FILE_HEADER                   *CacheFfsHeader;
 
+  FileCached = FALSE;
+  CacheFfsHeader = NULL;
 
   Fvb = FvDevice->Fvb;
   FwVolHeader = FvDevice->FwVolHeader;
@@ -323,10 +340,25 @@ FvCheck (
   // the header to check to make sure the volume is valid
   //
   Size = (UINTN)(FwVolHeader->FvLength - FwVolHeader->HeaderLength);
-  FvDevice->CachedFv = AllocatePool (Size);
+  if ((FvbAttributes & EFI_FVB2_MEMORY_MAPPED) != 0) {
+    FvDevice->IsMemoryMapped = TRUE;
 
-  if (FvDevice->CachedFv == NULL) {
-    return EFI_OUT_OF_RESOURCES;
+    Status = Fvb->GetPhysicalAddress (Fvb, &PhysicalAddress);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    //
+    // Don't cache memory mapped FV really.
+    //
+    FvDevice->CachedFv = (UINT8 *) (UINTN) (PhysicalAddress + FwVolHeader->HeaderLength);
+  } else {
+    FvDevice->IsMemoryMapped = FALSE;
+    FvDevice->CachedFv = AllocatePool (Size);
+
+    if (FvDevice->CachedFv == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
   }
 
   //
@@ -334,69 +366,71 @@ FvCheck (
   //
   FvDevice->EndOfCachedFv = FvDevice->CachedFv + Size;
 
-  //
-  // Copy FV minus header into memory using the block map we have all ready
-  // read into memory.
-  //
-  BlockMap = FwVolHeader->BlockMap;
-  CacheLocation = FvDevice->CachedFv;
-  LbaIndex = 0;
-  LbaOffset = 0;
-  HeaderSize = FwVolHeader->HeaderLength;
-  while ((BlockMap->NumBlocks != 0) || (BlockMap->Length != 0)) {
-    Index = 0;
-    Size  = BlockMap->Length;
-    if (HeaderSize > 0) {
-      //
-      // Skip header size
-      //
-      for (; Index < BlockMap->NumBlocks && HeaderSize >= BlockMap->Length; Index ++) {
-        HeaderSize -= BlockMap->Length;
-        LbaIndex ++;
-      }
-
-      //
-      // Check whether FvHeader is crossing the multi block range.
-      //
-      if (Index >= BlockMap->NumBlocks) {
-        BlockMap++;
-        continue;
-      } else if (HeaderSize > 0) {
-        LbaOffset = HeaderSize;
-        Size = BlockMap->Length - HeaderSize;
-        HeaderSize = 0;
-      }
-    }
-    
+  if (!FvDevice->IsMemoryMapped) {
     //
-    // read the FV data  
+    // Copy FV minus header into memory using the block map we have all ready
+    // read into memory.
     //
-    for (; Index < BlockMap->NumBlocks; Index ++) {
-      Status = Fvb->Read (Fvb,
-                      LbaIndex,
-                      LbaOffset,
-                      &Size,
-                      CacheLocation
-                      );
-
-      //
-      // Not check EFI_BAD_BUFFER_SIZE, for Size = BlockMap->Length
-      //
-      if (EFI_ERROR (Status)) {
-        goto Done;
-      }
-
-      LbaIndex++;
-      CacheLocation += Size;
-
-      //
-      // After we skip Fv Header always read from start of block
-      //
-      LbaOffset = 0;
+    BlockMap = FwVolHeader->BlockMap;
+    CacheLocation = FvDevice->CachedFv;
+    LbaIndex = 0;
+    LbaOffset = 0;
+    HeaderSize = FwVolHeader->HeaderLength;
+    while ((BlockMap->NumBlocks != 0) || (BlockMap->Length != 0)) {
+      Index = 0;
       Size  = BlockMap->Length;
-    }
+      if (HeaderSize > 0) {
+        //
+        // Skip header size
+        //
+        for (; Index < BlockMap->NumBlocks && HeaderSize >= BlockMap->Length; Index ++) {
+          HeaderSize -= BlockMap->Length;
+          LbaIndex ++;
+        }
 
-    BlockMap++;
+        //
+        // Check whether FvHeader is crossing the multi block range.
+        //
+        if (Index >= BlockMap->NumBlocks) {
+          BlockMap++;
+          continue;
+        } else if (HeaderSize > 0) {
+          LbaOffset = HeaderSize;
+          Size = BlockMap->Length - HeaderSize;
+          HeaderSize = 0;
+        }
+      }
+    
+      //
+      // read the FV data  
+      //
+      for (; Index < BlockMap->NumBlocks; Index ++) {
+        Status = Fvb->Read (Fvb,
+                        LbaIndex,
+                        LbaOffset,
+                        &Size,
+                        CacheLocation
+                        );
+
+        //
+        // Not check EFI_BAD_BUFFER_SIZE, for Size = BlockMap->Length
+        //
+        if (EFI_ERROR (Status)) {
+          goto Done;
+        }
+
+        LbaIndex++;
+        CacheLocation += Size;
+
+        //
+        // After we skip Fv Header always read from start of block
+        //
+        LbaOffset = 0;
+        Size  = BlockMap->Length;
+      }
+
+      BlockMap++;
+    }
   }
 
   //
@@ -430,7 +464,12 @@ FvCheck (
     FfsHeader = (EFI_FFS_FILE_HEADER *) (FvDevice->CachedFv);
   }
   TopFvAddress = FvDevice->EndOfCachedFv;
-  while ((UINT8 *) FfsHeader < TopFvAddress) {
+  while (((UINTN) FfsHeader >= (UINTN) FvDevice->CachedFv) && ((UINTN) FfsHeader <= (UINTN) ((UINTN) TopFvAddress - sizeof (EFI_FFS_FILE_HEADER)))) {
+
+    if (FileCached) {
+      CoreFreePool (CacheFfsHeader);
+      FileCached = FALSE;
+    }
 
     TestLength = TopFvAddress - ((UINT8 *) FfsHeader);
     if (TestLength > sizeof (EFI_FFS_FILE_HEADER)) {
@@ -465,7 +504,25 @@ FvCheck (
       }
     }
 
-    if (!IsValidFfsFile (FvDevice->ErasePolarity, FfsHeader)) {
+    CacheFfsHeader = FfsHeader;
+    if ((CacheFfsHeader->Attributes & FFS_ATTRIB_CHECKSUM) == FFS_ATTRIB_CHECKSUM) {
+      if (FvDevice->IsMemoryMapped) {
+        //
+        // Memory mapped FV has not been cached.
+        // Here is to cache FFS file to memory buffer for following checksum calculating.
+        // And then, the cached file buffer can be also used for FvReadFile.
+        //
+        WholeFileSize = IS_FFS_FILE2 (CacheFfsHeader) ? FFS_FILE2_SIZE (CacheFfsHeader): FFS_FILE_SIZE (CacheFfsHeader);
+        CacheFfsHeader = AllocateCopyPool (WholeFileSize, CacheFfsHeader);
+        if (CacheFfsHeader == NULL) {
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Done;
+        }
+        FileCached = TRUE;
+      }
+    }
+
+    if (!IsValidFfsFile (FvDevice->ErasePolarity, CacheFfsHeader)) {
       //
       // File system is corrupted
       //
@@ -473,11 +530,11 @@ FvCheck (
       goto Done;
     }
 
-    if (IS_FFS_FILE2 (FfsHeader)) {
-      ASSERT (FFS_FILE2_SIZE (FfsHeader) > 0x00FFFFFF);
+    if (IS_FFS_FILE2 (CacheFfsHeader)) {
+      ASSERT (FFS_FILE2_SIZE (CacheFfsHeader) > 0x00FFFFFF);
       if (!FvDevice->IsFfs3Fv) {
-        DEBUG ((EFI_D_ERROR, "Found a FFS3 formatted file: %g in a non-FFS3 formatted FV.\n", &FfsHeader->Name));
-        FfsHeader = (EFI_FFS_FILE_HEADER *) ((UINT8 *) FfsHeader + FFS_FILE2_SIZE (FfsHeader));
+        DEBUG ((EFI_D_ERROR, "Found a FFS3 formatted file: %g in a non-FFS3 formatted FV.\n", &CacheFfsHeader->Name));
+        FfsHeader = (EFI_FFS_FILE_HEADER *) ((UINT8 *) FfsHeader + FFS_FILE2_SIZE (CacheFfsHeader));
         //
         // Adjust pointer to the next 8-byte aligned boundry.
         //
@@ -486,7 +543,7 @@ FvCheck (
       }
     }
 
-    FileState = GetFileState (FvDevice->ErasePolarity, FfsHeader);
+    FileState = GetFileState (FvDevice->ErasePolarity, CacheFfsHeader);
 
     //
     // check for non-deleted file
@@ -501,14 +558,16 @@ FvCheck (
         goto Done;
       }
 
-      FfsFileEntry->FfsHeader = FfsHeader;
+      FfsFileEntry->FfsHeader = CacheFfsHeader;
+      FfsFileEntry->FileCached = FileCached;
+      FileCached = FALSE;
       InsertTailList (&FvDevice->FfsFileListHeader, &FfsFileEntry->Link);
     }
 
-    if (IS_FFS_FILE2 (FfsHeader)) {
-      FfsHeader = (EFI_FFS_FILE_HEADER *) ((UINT8 *) FfsHeader + FFS_FILE2_SIZE (FfsHeader));
+    if (IS_FFS_FILE2 (CacheFfsHeader)) {
+      FfsHeader = (EFI_FFS_FILE_HEADER *) ((UINT8 *) FfsHeader + FFS_FILE2_SIZE (CacheFfsHeader));
     } else {
-      FfsHeader = (EFI_FFS_FILE_HEADER *) ((UINT8 *) FfsHeader + FFS_FILE_SIZE (FfsHeader));
+      FfsHeader = (EFI_FFS_FILE_HEADER *) ((UINT8 *) FfsHeader + FFS_FILE_SIZE (CacheFfsHeader));
     }
 
     //
@@ -520,6 +579,10 @@ FvCheck (
 
 Done:
   if (EFI_ERROR (Status)) {
+    if (FileCached) {
+      CoreFreePool (CacheFfsHeader);
+      FileCached = FALSE;
+    }
     FreeFvDeviceResource (FvDevice);
   }
 
@@ -638,8 +701,15 @@ NotifyFwVolBlock (
       FvDevice->Fvb             = Fvb;
       FvDevice->Handle          = Handle;
       FvDevice->FwVolHeader     = FwVolHeader;
-      FvDevice->Fv.ParentHandle = Fvb->ParentHandle;
       FvDevice->IsFfs3Fv        = CompareGuid (&FwVolHeader->FileSystemGuid, &gEfiFirmwareFileSystem3Guid);
+      FvDevice->Fv.ParentHandle = Fvb->ParentHandle;
+
+      if (Fvb->ParentHandle != NULL) {
+        //
+        // Inherit the authentication status from FVB.
+        //
+        FvDevice->AuthenticationStatus = GetFvbAuthenticationStatus (Fvb);
+      }
       
       if (!EFI_ERROR (FvCheck (FvDevice))) {
         //

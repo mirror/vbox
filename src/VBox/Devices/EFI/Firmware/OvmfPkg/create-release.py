@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
@@ -10,8 +10,6 @@
 # THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
-
-release_type = 'alpha'
 
 import os
 import re
@@ -33,11 +31,6 @@ if not os.path.exists(os.path.join('OvmfPkg', 'OvmfPkgX64.dsc')):
     print "OvmfPkg/OvmfPkgX64.dsc doesn't exist"
     sys.exit(-1)
 
-if 'TOOLCHAIN' in os.environ:
-    TOOLCHAIN = os.environ['TOOLCHAIN']
-else:
-    TOOLCHAIN = 'GCC44'
-
 def run_and_capture_output(args, checkExitCode = True):
     p = subprocess.Popen(args=args, stdout=subprocess.PIPE)
     stdout = p.stdout.read()
@@ -46,12 +39,37 @@ def run_and_capture_output(args, checkExitCode = True):
         assert ret_code == 0
     return stdout
 
-def git_svn_info():
+gcc_version = run_and_capture_output(args=('gcc', '--version'))
+gcc_re = re.compile(r'\s*\S+\s+\([^\)]+?\)\s+(\d+(?:\.\d+)*)(?:\s+.*)?')
+mo = gcc_re.match(gcc_version)
+if not mo:
+    print "Unable to find GCC version"
+    sys.exit(-1)
+gcc_version = map(lambda n: int(n), mo.group(1).split('.'))
+
+if 'TOOLCHAIN' in os.environ:
+    TOOLCHAIN = os.environ['TOOLCHAIN']
+else:
+    assert(gcc_version[0] == 4)
+    minor = max(4, min(7, gcc_version[1]))
+    TOOLCHAIN = 'GCC4' + str(minor)
+
+def git_based_version():
     dir = os.getcwd()
-    os.chdir('OvmfPkg')
-    stdout = run_and_capture_output(args=('git', 'svn', 'info'))
+    if not os.path.exists('.git'):
+        os.chdir('OvmfPkg')
+    stdout = run_and_capture_output(args=('git', 'log',
+                                          '-n', '1',
+                                          '--abbrev-commit'))
+    regex = re.compile(r'^\s*git-svn-id:\s+\S+@(\d+)\s+[0-9a-f\-]+$',
+                       re.MULTILINE)
+    mo = regex.search(stdout)
+    if mo:
+        version = 'r' + mo.group(1)
+    else:
+        version = stdout.split(None, 3)[1]
     os.chdir(dir)
-    return stdout
+    return version
 
 def svn_info():
     dir = os.getcwd()
@@ -60,18 +78,18 @@ def svn_info():
     os.chdir(dir)
     return stdout
 
-def get_svn_info_output():
-    if os.path.exists(os.path.join('OvmfPkg', '.svn')):
-        return svn_info()
-    else:
-        return git_svn_info()
+def svn_based_version():
+        buf = svn_info()
+        revision_re = re.compile('^Revision\:\s*([\da-f]+)$', re.MULTILINE)
+        mo = revision_re.search(buf)
+        assert(mo is not None)
+        return 'r' + mo.group(1)
 
 def get_revision():
-    buf = get_svn_info_output()
-    revision_re = re.compile('^Revision\:\s*(\d+)$', re.MULTILINE)
-    mo = revision_re.search(buf)
-    if mo is not None:
-        return int(mo.group(1))
+    if os.path.exists(os.path.join('OvmfPkg', '.svn')):
+        return svn_based_version()
+    else:
+        return git_based_version()
 
 revision = get_revision()
 
@@ -84,8 +102,7 @@ def gen_build_info():
 
     machine = run_and_capture_output(args=('uname', '-m')).strip()
 
-    gcc_version = run_and_capture_output(args=('gcc', '--version'))
-    gcc_version = gcc_version.split('\n')[0].split()[-1]
+    gcc_version_str = '.'.join(map(lambda v: str(v), gcc_version))
 
     ld_version = run_and_capture_output(args=('ld', '--version'))
     ld_version = ld_version.split('\n')[0].split()[-1]
@@ -95,12 +112,18 @@ def gen_build_info():
     iasl_version = iasl_version.split(' version ')[1].strip()
 
     sb = StringIO.StringIO()
-    print >> sb, 'edk2:    ', 'r%d' % revision
-    print >> sb, 'compiler: GCC', gcc_version
+    print >> sb, 'edk2:    ', revision
+    print >> sb, 'compiler: GCC', gcc_version_str, '(' + TOOLCHAIN + ')'
     print >> sb, 'binutils:', ld_version
     print >> sb, 'iasl:    ', iasl_version
     print >> sb, 'system:  ', distro, machine.replace('_', '-')
     return to_dos_text(sb.getvalue())
+
+def read_file(filename):
+    f = open(filename)
+    d = f.read()
+    f.close()
+    return d
 
 LICENSE = to_dos_text(
 '''This OVMF binary release is built from source code licensed under
@@ -116,76 +139,22 @@ and a copy is shown below (following the normal BSD license).
 
 === BSD license: START ===
 
-Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.
+''')
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+LICENSE += read_file(os.path.join('MdePkg', 'License.txt'))
 
-* Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-* Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-* Neither the name of the Intel Corporation nor the names of its
-  contributors may be used to endorse or promote products derived
-  from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
+LICENSE += to_dos_text(
+'''
 === BSD license: END ===
 
 === FAT filesystem driver license: START ===
 
-Copyright (c) 2004, Intel Corporation. All rights reserved.
+''')
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+LICENSE += read_file(os.path.join('FatBinPkg', 'License.txt'))
 
-* Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-* Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-* Neither the name of Intel nor the names of its
-  contributors may be used to endorse or promote products derived
-  from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
-Additional terms:
-In addition to the forgoing, redistribution and use of the code is
-conditioned upon the FAT 32 File System Driver and all derivative
-works thereof being used for and designed only to read and/or write
-to a file system that is directly managed by an Extensible Firmware
-Interface (EFI) implementation or by an emulator of an EFI
-implementation.
-
+LICENSE += to_dos_text(
+'''
 === FAT filesystem driver license: END ===
 ''')
 
@@ -210,7 +179,7 @@ def build(arch):
 
 def create_zip(arch):
     global build_info
-    filename = 'OVMF-%s-r%d-%s.zip' % (arch, revision, release_type)
+    filename = 'OVMF-%s-%s.zip' % (arch, revision)
     print 'Creating', filename, '...',
     sys.stdout.flush()
     if os.path.exists(filename):
@@ -227,7 +196,6 @@ def create_zip(arch):
         'FV'
         )
     zipf.write(os.path.join(FV_DIR, 'OVMF.fd'), 'OVMF.fd')
-    zipf.write(os.path.join(FV_DIR, 'CirrusLogic5446.rom'), 'CirrusLogic5446.rom')
     zipf.close()
     print '[done]'
 

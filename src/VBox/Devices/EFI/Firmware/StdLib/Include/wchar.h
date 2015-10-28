@@ -150,7 +150,7 @@
               - WEOF might not be negative.
               - mbstate_t objects are not intended to be inspected by programs.
 
-    Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
     This program and the accompanying materials are licensed and made available under
     the terms and conditions of the BSD License that accompanies this distribution.
     The full text of the license may be found at
@@ -913,7 +913,7 @@ wint_t fgetwc(FILE *Stream);
     @param[out] S         A pointer to the array to receive the input string.
     @param[in]  Limit     The maximum number of characters to put into Buff,
                           including the terminating null character.
-    @param[in]  Stream    An input stream from which to obtain a character.
+    @param[in]  Stream    An input stream from which to obtain the string.
 
     @return   The fgetws function returns S if successful. If end-of-file is
               encountered and no characters have been read into the array, the
@@ -1089,7 +1089,7 @@ by the value of base, and a final wide string of one or more unrecognized wide
 characters, including the terminating null wide character of the input wide string. Then,
 they attempt to convert the subject sequence to an integer, and return the result.
 
-    @param[in]  Nptr    Pointer to the string to convert to a floating-point value.
+    @param[in]  Nptr    Pointer to the string to convert.
     @param[in]  EndPtr  Optional pointer to an object in which to store a pointer
                         to the final wide string.
     @param[in]  Base    Base, 0 to 36, of the value represented by the string
@@ -1415,12 +1415,18 @@ int mbsinit(const mbstate_t *ps);
     where internal is the mbstate_t object for the mbrlen function, except that
     the expression designated by ps is evaluated only once.
 
-    @return   The mbrlen function returns a value between zero and n,
-              inclusive, (size_t)(-2), or (size_t)(-1).
-**/
-size_t mbrlen(const char * __restrict S, size_t n, mbstate_t * __restrict ps);
+    @param[in]  s     Pointer to a multibyte character sequence.
+    @param[in]  n     Maximum number of bytes to examine.
+    @param[in]  pS    Pointer to the conversion state object.
 
-/**
+    @retval   0       The next n or fewer characters complete a NUL.
+    @retval   1..n    The number of bytes that complete the multibyte character.
+    @retval   -2      The next n bytes contribute to an incomplete (but potentially valid) multibyte character.
+    @retval   -1      An encoding error occurred.
+**/
+size_t mbrlen(const char * __restrict S, size_t n, mbstate_t * __restrict pS);
+
+/** Restartable Multibyte to Wide character conversion.
 If S is a null pointer, the mbrtowc function is equivalent to the call:<BR>
 @verbatim
         mbrtowc(NULL, "", 1, ps)
@@ -1476,22 +1482,27 @@ to restore the initial shift state; the resulting state described is the initial
 **/
 size_t wcrtomb(char * __restrict S, wchar_t wc, mbstate_t * __restrict ps);
 
-/**
-The mbsrtowcs function converts a sequence of multibyte characters that begins in the
-conversion state described by the object pointed to by ps, from the array indirectly
-pointed to by src into a sequence of corresponding wide characters. If dst is not a null
-pointer, the converted characters are stored into the array pointed to by dst. Conversion
-continues up to and including a terminating null character, which is also stored.
-Conversion stops earlier in two cases: when a sequence of bytes is encountered that does
-not form a valid multibyte character, or (if dst is not a null pointer) when len wide
-characters have been stored into the array pointed to by dst. Each conversion takes
-place as if by a call to the mbrtowc function.
+/** Convert a sequence of multibyte characters into a sequence of wide characters.
+    The mbsrtowcs function converts a sequence of multibyte characters that begins in the
+    conversion state described by the object pointed to by ps, from the array indirectly
+    pointed to by src into a sequence of corresponding wide characters. If dst is not a null
+    pointer, the converted characters are stored into the array pointed to by dst. Conversion
+    continues up to and including a terminating null character, which is also stored.
+    Conversion stops earlier in two cases: when a sequence of bytes is encountered that does
+    not form a valid multibyte character, or (if dst is not a null pointer) when len wide
+    characters have been stored into the array pointed to by dst. Each conversion takes
+    place as if by a call to the mbrtowc function.
 
-If dst is not a null pointer, the pointer object pointed to by src is assigned either a null
-pointer (if conversion stopped due to reaching a terminating null character) or the address
-just past the last multibyte character converted (if any). If conversion stopped due to
-reaching a terminating null character and if dst is not a null pointer, the resulting state
-described is the initial conversion state.
+    If dst is not a null pointer, the pointer object pointed to by src is assigned either a null
+    pointer (if conversion stopped due to reaching a terminating null character) or the address
+    just past the last multibyte character converted (if any). If conversion stopped due to
+    reaching a terminating null character and if dst is not a null pointer, the resulting state
+    described is the initial conversion state.
+
+    @param[in]    dst   Destination for the Wide character sequence.
+    @param[in]    src   Pointer to Pointer to MBCS char. sequence to convert.
+    @param[in]    len   Length of dest, in WIDE characters.
+    @param[in]    ps    Pointer to the conversion state object to be used for this conversion.
 
     @return   If the input conversion encounters a sequence of bytes that do
               not form a valid multibyte character, an encoding error occurs:
@@ -1522,6 +1533,11 @@ size_t mbsrtowcs(wchar_t * __restrict dst, const char ** __restrict src, size_t 
     character converted (if any). If conversion stopped due to reaching a
     terminating null wide character, the resulting state described is the
     initial conversion state.
+
+    @param[in]    dst   Destination for the MBCS sequence.
+    @param[in]    src   Pointer to Pointer to wide char. sequence to convert.
+    @param[in]    len   Length of dest, in bytes.
+    @param[in]    ps    Pointer to the conversion state object to be used for this conversion.
 
     @return     If conversion stops because a wide character is reached that
                 does not correspond to a valid multibyte character, an

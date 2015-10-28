@@ -1,7 +1,8 @@
 /** @file
   Main file for Drivers shell Driver1 function.
 
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2012-2014, Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -13,6 +14,8 @@
 **/
 
 #include "UefiShellDriver1CommandsLib.h"
+
+#define MAX_LEN_DRIVER_NAME 35
 
 STATIC CONST SHELL_PARAM_ITEM ParamList[] = {
   {L"-sfo", TypeFlag},
@@ -80,7 +83,7 @@ GetDevicePathTextForHandle(
   }
   RetVal = gEfiShellProtocol->GetFilePathFromDevicePath(FinalPath);
   if (RetVal == NULL) {
-    RetVal = gDevPathToText->ConvertDevicePathToText(FinalPath, TRUE, TRUE);
+    RetVal = ConvertDevicePathToText(FinalPath, TRUE, TRUE);
   }
   FreePool(FinalPath);
   return (RetVal);
@@ -185,15 +188,19 @@ ShellCommandRunDrivers (
   UINTN               ChildCount;
   UINTN               DeviceCount;
   CHAR16              *Temp2;
+  CONST CHAR16        *FullDriverName;
+  CHAR16              *TruncatedDriverName;
   CHAR16              *FormatString;
   UINT32              DriverVersion;
   BOOLEAN             DriverConfig;
   BOOLEAN             DriverDiag;
+  BOOLEAN             SfoFlag;
 
   ShellStatus         = SHELL_SUCCESS;
   Status              = EFI_SUCCESS;
   Language            = NULL;
   FormatString        = NULL;
+  SfoFlag             = FALSE;
 
   //
   // initialize the shell lib (we must be in non-auto-init...)
@@ -221,25 +228,34 @@ ShellCommandRunDrivers (
       ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellDriver1HiiHandle);
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
-      Lang = ShellCommandLineGetValue(Package, L"-l");
-      if (Lang != NULL) {
-        Language = AllocateZeroPool(StrSize(Lang));
-        AsciiSPrint(Language, StrSize(Lang), "%S", Lang);
-      } else if (!ShellCommandLineGetFlag(Package, L"-l")){
-        ASSERT(Language == NULL);
-  //      Language = AllocateZeroPool(10);
-  //      AsciiSPrint(Language, 10, "en-us");
-      } else {
-        ASSERT(Language == NULL);
-        ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_NO_VALUE), gShellDriver1HiiHandle, L"-l");
-        ShellCommandLineFreeVarList (Package);
-        return (SHELL_INVALID_PARAMETER);
+      if (ShellCommandLineGetFlag(Package, L"-l")){
+        Lang = ShellCommandLineGetValue(Package, L"-l");
+        if (Lang != NULL) {
+          Language = AllocateZeroPool(StrSize(Lang));
+          AsciiSPrint(Language, StrSize(Lang), "%S", Lang);
+        } else {
+          ASSERT(Language == NULL);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_NO_VALUE), gShellDriver1HiiHandle, L"-l");
+          ShellCommandLineFreeVarList (Package);
+          return (SHELL_INVALID_PARAMETER);
+        }
       }
 
-      if (ShellCommandLineGetFlag(Package, L"-sfo")) {
-        FormatString = HiiGetString(gShellDriver1HiiHandle, STRING_TOKEN(STR_DRIVERS_ITEM_LINE_SFO), Language);
+      if (ShellCommandLineGetFlag (Package, L"-sfo")) {
+        SfoFlag = TRUE;
+        FormatString = HiiGetString (gShellDriver1HiiHandle, STRING_TOKEN (STR_DRIVERS_ITEM_LINE_SFO), Language);
+        //
+        // print the SFO header
+        //
+        ShellPrintHiiEx (
+          -1,
+          -1,
+          Language,
+          STRING_TOKEN (STR_GEN_SFO_HEADER),
+          gShellDriver1HiiHandle,
+          L"drivers");
       } else {
-        FormatString = HiiGetString(gShellDriver1HiiHandle, STRING_TOKEN(STR_DRIVERS_ITEM_LINE), Language);
+        FormatString = HiiGetString (gShellDriver1HiiHandle, STRING_TOKEN (STR_DRIVERS_ITEM_LINE), Language);
         //
         // print the header row
         //
@@ -247,21 +263,27 @@ ShellCommandRunDrivers (
           -1,
           -1,
           Language,
-          STRING_TOKEN(STR_DRIVERS_HEADER_LINES),
+          STRING_TOKEN (STR_DRIVERS_HEADER_LINES),
           gShellDriver1HiiHandle);
       }
 
       HandleList = GetHandleListByProtocol(&gEfiDriverBindingProtocolGuid);
       for (HandleWalker = HandleList ; HandleWalker != NULL && *HandleWalker != NULL ; HandleWalker++){
-        ChildCount    = 0;
-        DeviceCount   = 0;
-        Status        = ParseHandleDatabaseForChildDevices (*HandleWalker, &ChildCount , NULL);
-        Status        = PARSE_HANDLE_DATABASE_DEVICES      (*HandleWalker, &DeviceCount, NULL);
-        Temp2         = GetDevicePathTextForHandle(*HandleWalker);
-        DriverVersion = ReturnDriverVersion(*HandleWalker);
-        DriverConfig  = ReturnDriverConfig(*HandleWalker);
-        DriverDiag    = ReturnDriverDiag  (*HandleWalker);
-        Lang          = GetStringNameFromHandle(*HandleWalker, Language==NULL?"en":Language);
+        ChildCount     = 0;
+        DeviceCount    = 0;
+        Status         = ParseHandleDatabaseForChildDevices (*HandleWalker, &ChildCount , NULL);
+        Status         = PARSE_HANDLE_DATABASE_DEVICES      (*HandleWalker, &DeviceCount, NULL);
+        Temp2          = GetDevicePathTextForHandle(*HandleWalker);
+        DriverVersion  = ReturnDriverVersion(*HandleWalker);
+        DriverConfig   = ReturnDriverConfig(*HandleWalker);
+        DriverDiag     = ReturnDriverDiag  (*HandleWalker);
+        FullDriverName = GetStringNameFromHandle(*HandleWalker, Language);
+
+        TruncatedDriverName = NULL;
+        if (!SfoFlag && (FullDriverName != NULL)) {
+          TruncatedDriverName = AllocateZeroPool ((MAX_LEN_DRIVER_NAME + 1) * sizeof (CHAR16));
+          StrnCpy (TruncatedDriverName, FullDriverName, MAX_LEN_DRIVER_NAME);
+        }
 
         ShellPrintEx(
           -1,
@@ -274,11 +296,19 @@ ShellCommandRunDrivers (
           DriverDiag?L'Y':L'N',
           DeviceCount,
           ChildCount,
-          Lang,
+          SfoFlag?FullDriverName:TruncatedDriverName,
           Temp2==NULL?L"":Temp2
          );
+        if (TruncatedDriverName != NULL) {
+          FreePool (TruncatedDriverName);
+        }
         if (Temp2 != NULL) {
           FreePool(Temp2);
+        }
+        
+        if (ShellGetExecutionBreakFlag ()) {
+          ShellStatus = SHELL_ABORTED;
+          break;
         }
       }
     }

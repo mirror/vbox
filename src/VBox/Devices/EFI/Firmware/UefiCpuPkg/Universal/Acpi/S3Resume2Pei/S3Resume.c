@@ -1,10 +1,10 @@
 /** @file
-  This module produces the EFI_PEI_S3_RESUME_PPI.
+  This module produces the EFI_PEI_S3_RESUME2_PPI.
   This module works with StandAloneBootScriptExecutor to S3 resume to OS.
   This module will excute the boot script saved during last boot and after that,
   control is passed to OS waking up handler.
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions
@@ -47,6 +47,16 @@
 #include <Library/HobLib.h>
 #include <Library/LockBoxLib.h>
 #include <IndustryStandard/Acpi.h>
+
+/**
+  This macro aligns the address of a variable with auto storage
+  duration down to CPU_STACK_ALIGNMENT.
+
+  Since the stack grows downward, the result preserves more of the
+  stack than the original address (or the same amount), not less.
+**/
+#define STACK_ALIGN_DOWN(Ptr) \
+          ((UINTN)(Ptr) & ~(UINTN)(CPU_STACK_ALIGNMENT - 1))
 
 #pragma pack(1)
 typedef union {
@@ -193,6 +203,18 @@ S3RestoreConfig2 (
   IN EFI_PEI_S3_RESUME2_PPI  *This
   );
 
+/**
+  Set data segment selectors value including DS/ES/FS/GS/SS.
+
+  @param[in]  SelectorValue      Segment selector value to be set.
+
+**/
+VOID
+EFIAPI
+AsmSetDataSelectors (
+  IN UINT16   SelectorValue
+  );
+
 //
 // Globals
 //
@@ -231,6 +253,8 @@ GLOBAL_REMOVE_IF_UNREFERENCED IA32_GDT mGdtEntries[] = {
 /* 0x38 */  {{0xFFFF, 0,  0,  0xB,  1,  0,  1,  0xF,  0,  1, 0,  1,  0}},
 /* 0x40 */  {{0,      0,  0,  0,    0,  0,  0,  0,    0,  0, 0,  0,  0}},
 };
+
+#define DATA_SEGEMENT_SELECTOR        0x18
 
 //
 // IA32 Gdt register
@@ -284,7 +308,9 @@ WriteToOsS3PerformanceData (
              NULL,
              (VOID **) &VariableServices
              );
-  ASSERT_EFI_ERROR (Status);
+  if (EFI_ERROR (Status)) {
+    return;
+  }
 
   VarSize   = sizeof (EFI_PHYSICAL_ADDRESS);
   Status = VariableServices->GetVariable (
@@ -341,6 +367,7 @@ WriteToOsS3PerformanceData (
         AsciiSPrint (PerfData->Token, PERF_TOKEN_LENGTH, "0x%11p", Handle);
       } else {
         AsciiStrnCpy (PerfData->Token, Token, PERF_TOKEN_LENGTH);
+        PerfData->Token[PERF_TOKEN_LENGTH] = '\0';
       }
       if (StartTicker == 1) {
         StartTicker = StartValue;
@@ -363,6 +390,41 @@ WriteToOsS3PerformanceData (
     }
   }
   PerfHeader->S3EntryNum = (UINT32) Index;
+}
+
+/**
+  The function will check if current waking vector is long mode.
+
+  @param  AcpiS3Context                 a pointer to a structure of ACPI_S3_CONTEXT
+
+  @retval TRUE   Current context need long mode waking vector.
+  @retval FALSE  Current context need not long mode waking vector.
+**/
+BOOLEAN
+IsLongModeWakingVector (
+  IN ACPI_S3_CONTEXT                *AcpiS3Context
+  )
+{
+  EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE  *Facs;
+
+  Facs = (EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE *) ((UINTN) (AcpiS3Context->AcpiFacsTable));
+  if ((Facs == NULL) ||
+      (Facs->Signature != EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE) ||
+      ((Facs->FirmwareWakingVector == 0) && (Facs->XFirmwareWakingVector == 0)) ) {
+    // Something wrong with FACS
+    return FALSE;
+  }
+  if (Facs->XFirmwareWakingVector != 0) {
+    if ((Facs->Version == EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION) &&
+        ((Facs->Flags & EFI_ACPI_4_0_64BIT_WAKE_SUPPORTED_F) != 0) &&
+        ((Facs->Flags & EFI_ACPI_4_0_OSPM_64BIT_WAKE__F) != 0)) {
+      // Both BIOS and OS wants 64bit vector
+      if (FeaturePcdGet (PcdDxeIplSwitchToLongMode)) {
+        return TRUE;
+      }
+    }
+  }
+  return FALSE;
 }
 
 /**
@@ -390,6 +452,24 @@ S3ResumeBootOs (
   //
   AsmWriteIdtr (&PeiS3ResumeState->Idtr);
 
+  if (PeiS3ResumeState->ReturnStatus != EFI_SUCCESS) {
+    //
+    // Report Status code that boot script execution is failed
+    //
+    REPORT_STATUS_CODE (
+      EFI_ERROR_CODE | EFI_ERROR_MINOR,
+      (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_EC_S3_BOOT_SCRIPT_ERROR)
+      );
+  }
+
+  //
+  // NOTE: Because Debug Timer interrupt and system interrupts will be disabled 
+  // in BootScriptExecuteDxe, the rest code in S3ResumeBootOs() cannot be halted
+  // by soft debugger.
+  //
+
+  PERF_END (NULL, "ScriptExec", NULL, 0);
+
   //
   // Install BootScriptDonePpi
   //
@@ -404,20 +484,27 @@ S3ResumeBootOs (
   if ((Facs == NULL) ||
       (Facs->Signature != EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE) ||
       ((Facs->FirmwareWakingVector == 0) && (Facs->XFirmwareWakingVector == 0)) ) {
+    //
+    // Report Status code that no valid vector is found
+    //
+    REPORT_STATUS_CODE (
+      EFI_ERROR_CODE | EFI_ERROR_MAJOR,
+      (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_EC_S3_OS_WAKE_ERROR)
+      );
     CpuDeadLoop ();
     return ;
   }
-
-  //
-  // report status code on S3 resume
-  //
-  REPORT_STATUS_CODE (EFI_PROGRESS_CODE, EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_PC_OS_WAKE);
 
   //
   // Install EndOfPeiPpi
   //
   Status = PeiServicesInstallPpi (&mPpiListEndOfPeiTable);
   ASSERT_EFI_ERROR (Status);
+
+  //
+  // report status code on S3 resume
+  //
+  REPORT_STATUS_CODE (EFI_PROGRESS_CODE, EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_PC_OS_WAKE);
 
   PERF_CODE (
     WriteToOsS3PerformanceData ();
@@ -445,8 +532,17 @@ S3ResumeBootOs (
           (UINT64)(UINTN)TempStackTop
           );
       } else {
+        //
+        // Report Status code that no valid waking vector is found
+        //
+        REPORT_STATUS_CODE (
+          EFI_ERROR_CODE | EFI_ERROR_MAJOR,
+          (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_EC_S3_OS_WAKE_ERROR)
+          );
         DEBUG (( EFI_D_ERROR, "Unsupported for 32bit DXE transfer to 64bit OS waking vector!\r\n"));
         ASSERT (FALSE);
+        CpuDeadLoop ();
+        return ;
       }
     } else {
       //
@@ -469,6 +565,14 @@ S3ResumeBootOs (
   }
 
   //
+  // Report Status code the failure of S3Resume
+  //
+  REPORT_STATUS_CODE (
+    EFI_ERROR_CODE | EFI_ERROR_MAJOR,
+    (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_EC_S3_OS_WAKE_ERROR)
+    );
+
+  //
   // Never run to here
   //
   CpuDeadLoop();
@@ -479,10 +583,12 @@ S3ResumeBootOs (
   If BootScriptExector driver will not run in 64-bit mode, this function will do nothing. 
 
   @param S3NvsPageTableAddress   PageTableAddress in ACPINvs
+  @param Build4GPageTableOnly    If BIOS just build 4G page table only
 **/
 VOID
 RestoreS3PageTables (
-  IN UINTN                                         S3NvsPageTableAddress
+  IN UINTN                                         S3NvsPageTableAddress,
+  IN BOOLEAN                                       Build4GPageTableOnly
   )
 {
   if (FeaturePcdGet (PcdDxeIplSwitchToLongMode)) {
@@ -509,7 +615,7 @@ RestoreS3PageTables (
     //
     // The assumption is : whole page table is allocated in CONTINOUS memory and CR3 points to TOP page.
     //
-    DEBUG ((EFI_D_ERROR, "S3NvsPageTableAddress - %x\n", S3NvsPageTableAddress));
+    DEBUG ((EFI_D_ERROR, "S3NvsPageTableAddress - %x (%x)\n", (UINTN)S3NvsPageTableAddress, (UINTN)Build4GPageTableOnly));
 
     //
     // By architecture only one PageMapLevel4 exists - so lets allocate storgage for it.
@@ -552,6 +658,14 @@ RestoreS3PageTables (
       PhysicalAddressBits = 48;
     }
 
+    //
+    // NOTE: In order to save time to create full page table, we just create 4G page table by default.
+    // And let PF handler in BootScript driver to create more on request.
+    //
+    if (Build4GPageTableOnly) {
+      PhysicalAddressBits = 32;
+      ZeroMem (PageMap, EFI_PAGES_TO_SIZE(2));
+    }
     //
     // Calculate the table entries needed.
     //
@@ -652,6 +766,7 @@ S3ResumeExecuteBootScript (
   IA32_DESCRIPTOR            *IdtDescriptor;
   VOID                       *IdtBuffer;
   PEI_S3_RESUME_STATE        *PeiS3ResumeState;
+  BOOLEAN                    InterruptStatus;
 
   DEBUG ((EFI_D_ERROR, "S3ResumeExecuteBootScript()\n"));
 
@@ -679,17 +794,18 @@ S3ResumeExecuteBootScript (
                               NULL,
                               (VOID **) &SmmAccess
                               );
+    if (!EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "Close all SMRAM regions before executing boot script\n"));
+  
+      for (Index = 0, Status = EFI_SUCCESS; !EFI_ERROR (Status); Index++) {
+        Status = SmmAccess->Close ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), SmmAccess, Index);
+      }
 
-    DEBUG ((EFI_D_ERROR, "Close all SMRAM regions before executing boot script\n"));
-
-    for (Index = 0, Status = EFI_SUCCESS; !EFI_ERROR (Status); Index++) {
-      Status = SmmAccess->Close ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), SmmAccess, Index);
-    }
-
-    DEBUG ((EFI_D_ERROR, "Lock all SMRAM regions before executing boot script\n"));
-
-    for (Index = 0, Status = EFI_SUCCESS; !EFI_ERROR (Status); Index++) {
-      Status = SmmAccess->Lock ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), SmmAccess, Index);
+      DEBUG ((EFI_D_ERROR, "Lock all SMRAM regions before executing boot script\n"));
+  
+      for (Index = 0, Status = EFI_SUCCESS; !EFI_ERROR (Status); Index++) {
+        Status = SmmAccess->Lock ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), SmmAccess, Index);
+      }
     }
   }
 
@@ -708,15 +824,30 @@ S3ResumeExecuteBootScript (
     // 
     IdtBuffer = AllocatePages (EFI_SIZE_TO_PAGES((IdtDescriptor->Limit + 1) + 16));
     ASSERT (IdtBuffer != NULL);
+    //
+    // Additional 16 bytes allocated to save IA32 IDT descriptor and Pei Service Table Pointer
+    // IA32 IDT descriptor will be used to setup IA32 IDT table for 32-bit Framework Boot Script code
+    // 
+    ZeroMem (IdtBuffer, 16);
+    AsmReadIdtr ((IA32_DESCRIPTOR *)IdtBuffer);
     CopyMem ((VOID*)((UINT8*)IdtBuffer + 16),(VOID*)(IdtDescriptor->Base), (IdtDescriptor->Limit + 1));
     IdtDescriptor->Base = (UINTN)((UINT8*)IdtBuffer + 16);
     *(UINTN*)(IdtDescriptor->Base - sizeof(UINTN)) = (UINTN)GetPeiServicesTablePointer ();
   }
 
+  InterruptStatus = SaveAndDisableInterrupts ();
   //
   // Need to make sure the GDT is loaded with values that support long mode and real mode.
   //
   AsmWriteGdtr (&mGdt);
+  //
+  // update segment selectors per the new GDT.
+  //
+  AsmSetDataSelectors (DATA_SEGEMENT_SELECTOR);
+  //
+  // Restore interrupt state.
+  //
+  SetInterruptState (InterruptStatus);
 
   //
   // Prepare data for return back
@@ -726,11 +857,18 @@ S3ResumeExecuteBootScript (
   DEBUG (( EFI_D_ERROR, "PeiS3ResumeState - %x\r\n", PeiS3ResumeState));
   PeiS3ResumeState->ReturnCs           = 0x10;
   PeiS3ResumeState->ReturnEntryPoint   = (EFI_PHYSICAL_ADDRESS)(UINTN)S3ResumeBootOs;
-  PeiS3ResumeState->ReturnStackPointer = (EFI_PHYSICAL_ADDRESS)(UINTN)&Status;
+  PeiS3ResumeState->ReturnStackPointer = (EFI_PHYSICAL_ADDRESS)STACK_ALIGN_DOWN (&Status);
   //
   // Save IDT
   //
   AsmReadIdtr (&PeiS3ResumeState->Idtr);
+  
+  //
+  // Report Status Code to indicate S3 boot script execution
+  //
+  REPORT_STATUS_CODE (EFI_PROGRESS_CODE, EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_PC_S3_BOOT_SCRIPT);
+
+  PERF_START (NULL, "ScriptExec", NULL, 0);
 
   if (FeaturePcdGet (PcdDxeIplSwitchToLongMode)) {
     //
@@ -807,7 +945,6 @@ S3RestoreConfig2 (
   PEI_SMM_ACCESS_PPI                            *SmmAccess;
   UINTN                                         Index;
   ACPI_S3_CONTEXT                               *AcpiS3Context;
-  EFI_PEI_READ_ONLY_VARIABLE2_PPI               *VariableServices;
   EFI_PHYSICAL_ADDRESS                          TempEfiBootScriptExecutorVariable;
   EFI_PHYSICAL_ADDRESS                          TempAcpiS3Context;
   BOOT_SCRIPT_EXECUTOR_VARIABLE                 *EfiBootScriptExecutorVariable;
@@ -815,28 +952,13 @@ S3RestoreConfig2 (
   EFI_SMRAM_DESCRIPTOR                          *SmramDescriptor;
   SMM_S3_RESUME_STATE                           *SmmS3ResumeState;
   VOID                                          *GuidHob;
+  BOOLEAN                                       Build4GPageTableOnly;
+  BOOLEAN                                       InterruptStatus;
+
+  TempAcpiS3Context = 0;
+  TempEfiBootScriptExecutorVariable = 0;
 
   DEBUG ((EFI_D_ERROR, "Enter S3 PEIM\r\n"));
-
-  Status = PeiServicesLocatePpi (
-                            &gPeiSmmAccessPpiGuid,
-                            0,
-                            NULL,
-                            (VOID **) &SmmAccess
-                            );
-  for (Index = 0; !EFI_ERROR (Status); Index++) {
-    Status = SmmAccess->Open ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), SmmAccess, Index);
-  }
-
-  Status = PeiServicesLocatePpi (
-                            &gEfiPeiReadOnlyVariable2PpiGuid,
-                            0,
-                            NULL,
-                            (VOID **) &VariableServices
-                            );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
 
   VarSize = sizeof (EFI_PHYSICAL_ADDRESS);
   Status = RestoreLockBox (
@@ -846,9 +968,6 @@ S3RestoreConfig2 (
              );
   ASSERT_EFI_ERROR (Status);
 
-  AcpiS3Context = (ACPI_S3_CONTEXT *)(UINTN)TempAcpiS3Context;
-  ASSERT (AcpiS3Context != NULL);
-
   Status = RestoreLockBox (
              &gEfiAcpiS3ContextGuid,
              NULL,
@@ -856,7 +975,10 @@ S3RestoreConfig2 (
              );
   ASSERT_EFI_ERROR (Status);
 
-  VarSize   = sizeof (TempEfiBootScriptExecutorVariable);
+  AcpiS3Context = (ACPI_S3_CONTEXT *)(UINTN)TempAcpiS3Context;
+  ASSERT (AcpiS3Context != NULL);
+
+  VarSize   = sizeof (EFI_PHYSICAL_ADDRESS);
   Status = RestoreLockBox (
              &gEfiBootScriptExecutorVariableGuid,
              &TempEfiBootScriptExecutorVariable,
@@ -872,12 +994,16 @@ S3RestoreConfig2 (
   ASSERT_EFI_ERROR (Status);
 
   EfiBootScriptExecutorVariable = (BOOT_SCRIPT_EXECUTOR_VARIABLE *) (UINTN) TempEfiBootScriptExecutorVariable;
+  ASSERT (EfiBootScriptExecutorVariable != NULL);
 
   DEBUG (( EFI_D_ERROR, "AcpiS3Context = %x\n", AcpiS3Context));
   DEBUG (( EFI_D_ERROR, "Waking Vector = %x\n", ((EFI_ACPI_2_0_FIRMWARE_ACPI_CONTROL_STRUCTURE *) ((UINTN) (AcpiS3Context->AcpiFacsTable)))->FirmwareWakingVector));
   DEBUG (( EFI_D_ERROR, "AcpiS3Context->AcpiFacsTable = %x\n", AcpiS3Context->AcpiFacsTable));
+  DEBUG (( EFI_D_ERROR, "AcpiS3Context->IdtrProfile = %x\n", AcpiS3Context->IdtrProfile));  
   DEBUG (( EFI_D_ERROR, "AcpiS3Context->S3NvsPageTableAddress = %x\n", AcpiS3Context->S3NvsPageTableAddress));
   DEBUG (( EFI_D_ERROR, "AcpiS3Context->S3DebugBufferAddress = %x\n", AcpiS3Context->S3DebugBufferAddress));
+  DEBUG (( EFI_D_ERROR, "AcpiS3Context->BootScriptStackBase = %x\n", AcpiS3Context->BootScriptStackBase));
+  DEBUG (( EFI_D_ERROR, "AcpiS3Context->BootScriptStackSize = %x\n", AcpiS3Context->BootScriptStackSize));
   DEBUG (( EFI_D_ERROR, "EfiBootScriptExecutorVariable->BootScriptExecutorEntrypoint = %x\n", EfiBootScriptExecutorVariable->BootScriptExecutorEntrypoint));
 
   //
@@ -896,7 +1022,12 @@ S3RestoreConfig2 (
     //
     // Need reconstruct page table here, since we do not trust ACPINvs.
     //
-    RestoreS3PageTables ((UINTN)AcpiS3Context->S3NvsPageTableAddress);
+    if (IsLongModeWakingVector (AcpiS3Context)) {
+      Build4GPageTableOnly = FALSE;
+    } else {
+      Build4GPageTableOnly = TRUE;
+    }
+    RestoreS3PageTables ((UINTN)AcpiS3Context->S3NvsPageTableAddress, Build4GPageTableOnly);
   }
 
   //
@@ -904,6 +1035,16 @@ S3RestoreConfig2 (
   //
   GuidHob = GetFirstGuidHob (&gEfiAcpiVariableGuid);
   if (GuidHob != NULL) {
+    Status = PeiServicesLocatePpi (
+                              &gPeiSmmAccessPpiGuid,
+                              0,
+                              NULL,
+                              (VOID **) &SmmAccess
+                              );
+    for (Index = 0; !EFI_ERROR (Status); Index++) {
+      Status = SmmAccess->Open ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), SmmAccess, Index);
+    }
+
     SmramDescriptor = (EFI_SMRAM_DESCRIPTOR *) GET_GUID_HOB_DATA (GuidHob);
     SmmS3ResumeState = (SMM_S3_RESUME_STATE *)(UINTN)SmramDescriptor->CpuStart;
 
@@ -911,7 +1052,7 @@ S3RestoreConfig2 (
     SmmS3ResumeState->ReturnEntryPoint   = (EFI_PHYSICAL_ADDRESS)(UINTN)S3ResumeExecuteBootScript;
     SmmS3ResumeState->ReturnContext1     = (EFI_PHYSICAL_ADDRESS)(UINTN)AcpiS3Context;
     SmmS3ResumeState->ReturnContext2     = (EFI_PHYSICAL_ADDRESS)(UINTN)EfiBootScriptExecutorVariable;
-    SmmS3ResumeState->ReturnStackPointer = (EFI_PHYSICAL_ADDRESS)(UINTN)&Status;
+    SmmS3ResumeState->ReturnStackPointer = (EFI_PHYSICAL_ADDRESS)STACK_ALIGN_DOWN (&Status);
 
     DEBUG (( EFI_D_ERROR, "SMM S3 Signature                = %x\n", SmmS3ResumeState->Signature));
     DEBUG (( EFI_D_ERROR, "SMM S3 Stack Base               = %x\n", SmmS3ResumeState->SmmS3StackBase));
@@ -927,11 +1068,6 @@ S3RestoreConfig2 (
     DEBUG (( EFI_D_ERROR, "SMM S3 Return Stack Pointer     = %x\n", SmmS3ResumeState->ReturnStackPointer));
     DEBUG (( EFI_D_ERROR, "SMM S3 Smst                     = %x\n", SmmS3ResumeState->Smst));
 
-    //
-    // Disable interrupt of Debug timer.
-    //
-    SaveAndSetDebugTimerInterrupt (FALSE);
-
     if (SmmS3ResumeState->Signature == SMM_S3_RESUME_SMM_32) {
       SwitchStack (
         (SWITCH_STACK_ENTRY_POINT)(UINTN)SmmS3ResumeState->SmmS3ResumeEntryPoint,
@@ -945,11 +1081,29 @@ S3RestoreConfig2 (
       // Switch to long mode to complete resume.
       //
 
+      InterruptStatus = SaveAndDisableInterrupts ();
       //
       // Need to make sure the GDT is loaded with values that support long mode and real mode.
       //
       AsmWriteGdtr (&mGdt);
+      //
+      // update segment selectors per the new GDT.
+      //      
+      AsmSetDataSelectors (DATA_SEGEMENT_SELECTOR);
+      //
+      // Restore interrupt state.
+      //
+      SetInterruptState (InterruptStatus);
+
       AsmWriteCr3 ((UINTN)SmmS3ResumeState->SmmS3Cr3);
+
+      //
+      // Disable interrupt of Debug timer, since IDT table cannot work in long mode.
+      // NOTE: On x64 platforms, because DisablePaging64() will disable interrupts,
+      // the code in S3ResumeExecuteBootScript() cannot be halted by soft debugger.
+      //
+      SaveAndSetDebugTimerInterrupt (FALSE);
+
       AsmEnablePaging64 (
         0x38,
         SmmS3ResumeState->SmmS3ResumeEntryPoint,

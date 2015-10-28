@@ -21,8 +21,8 @@
 
   * functions are non-interactive only
 
-
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -93,7 +93,7 @@ ShellLevel2CommandsLibConstructor (
   ShellCommandRegisterCommandName(L"mv",       ShellCommandRunMv      , ShellCommandGetManFileNameLevel2, 2, L"", TRUE, gShellLevel2HiiHandle, STRING_TOKEN(STR_GET_HELP_MV)     );
   ShellCommandRegisterCommandName(L"parse",    ShellCommandRunParse   , ShellCommandGetManFileNameLevel2, 2, L"", TRUE, gShellLevel2HiiHandle, STRING_TOKEN(STR_GET_HELP_PARSE)  );
   ShellCommandRegisterCommandName(L"reset",    ShellCommandRunReset   , ShellCommandGetManFileNameLevel2, 2, L"", TRUE, gShellLevel2HiiHandle, STRING_TOKEN(STR_GET_HELP_RESET)  );
-  ShellCommandRegisterCommandName(L"set",      ShellCommandRunSet     , ShellCommandGetManFileNameLevel2, 2, L"", TRUE, gShellLevel2HiiHandle, STRING_TOKEN(STR_GET_HELP_SET)    );
+  ShellCommandRegisterCommandName(L"set",      ShellCommandRunSet     , ShellCommandGetManFileNameLevel2, 2, L"",FALSE, gShellLevel2HiiHandle, STRING_TOKEN(STR_GET_HELP_SET)    );
   ShellCommandRegisterCommandName(L"ls",       ShellCommandRunLs      , ShellCommandGetManFileNameLevel2, 2, L"", TRUE, gShellLevel2HiiHandle, STRING_TOKEN(STR_GET_HELP_LS)     );
   ShellCommandRegisterCommandName(L"rm",       ShellCommandRunRm      , ShellCommandGetManFileNameLevel2, 2, L"", TRUE, gShellLevel2HiiHandle, STRING_TOKEN(STR_GET_HELP_RM)     );
   ShellCommandRegisterCommandName(L"vol",      ShellCommandRunVol     , ShellCommandGetManFileNameLevel2, 2, L"", TRUE, gShellLevel2HiiHandle, STRING_TOKEN(STR_GET_HELP_VOL)    );
@@ -107,7 +107,9 @@ ShellLevel2CommandsLibConstructor (
   ShellCommandRegisterAlias(L"mkdir", L"md");
   ShellCommandRegisterAlias(L"cd ..", L"cd..");
   ShellCommandRegisterAlias(L"cd \\", L"cd\\");
-  ShellCommandRegisterAlias(L"ren", L"mv");
+  ShellCommandRegisterAlias(L"mv", L"ren");
+  ShellCommandRegisterAlias(L"mv", L"move");
+  ShellCommandRegisterAlias(L"map", L"mount");
   //
   // These are installed in level 2 or 3...
   //
@@ -306,4 +308,43 @@ StrniCmp(
   }
   return (NULL);
 }
+
+
+/**
+  Cleans off all the quotes in the string.
+
+  @param[in]     OriginalString   pointer to the string to be cleaned.
+  @param[out]   CleanString      The new string with all quotes removed. 
+                                                  Memory allocated in the function and free 
+                                                  by caller.
+
+  @retval EFI_SUCCESS   The operation was successful.
+**/
+EFI_STATUS
+EFIAPI
+ShellLevel2StripQuotes (
+  IN  CONST CHAR16     *OriginalString,
+  OUT CHAR16           **CleanString
+  )
+{
+  CHAR16            *Walker;
+  
+  if (OriginalString == NULL || CleanString == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *CleanString = AllocateCopyPool (StrSize (OriginalString), OriginalString);
+  if (*CleanString == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  for (Walker = *CleanString; Walker != NULL && *Walker != CHAR_NULL ; Walker++) {
+    if (*Walker == L'\"') {
+      CopyMem(Walker, Walker+1, StrSize(Walker) - sizeof(Walker[0]));
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+
 

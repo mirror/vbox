@@ -1,29 +1,20 @@
-/*++
-  This file contains an 'Intel UEFI Application' and is
-  licensed for Intel CPUs and chipsets under the terms of your
-  license agreement with Intel or your vendor.  This file may
-  be modified by the user, subject to additional terms of the
-  license agreement
---*/
-/*++
-
-Copyright (c)  2011 Intel Corporation. All rights reserved
-This software and associated documentation (if any) is furnished
-under a license and may only be used or copied in accordance
-with the terms of the license. Except as permitted by such
-license, no part of this software or documentation may be
-reproduced, stored in a retrieval system, or transmitted in any
-form or by any means without the express written consent of
-Intel Corporation.
-
---*/
-
-/** @file
+/**
+  @file
   HTTP processing for the web server.
+
+  Copyright (c) 2011-2012, Intel Corporation
+  All rights reserved. This program and the accompanying materials
+  are licensed and made available under the terms and conditions of the BSD License
+  which accompanies this distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
+
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
 #include <WebServer.h>
+
 
 /**
   Get a UTF-8 character from the buffer
@@ -401,8 +392,8 @@ HttpPageTrailer (
   int RetVal;
   EFI_STATUS Status;
   socklen_t LengthInBytes;
-  struct sockaddr_in LocalAddress;
-  struct sockaddr_in RemoteAddress;
+  struct sockaddr_in6 LocalAddress;
+  struct sockaddr_in6 RemoteAddress;
 
   DBG_ENTER ( );
 
@@ -413,12 +404,13 @@ HttpPageTrailer (
     LengthInBytes = sizeof ( LocalAddress );
     RetVal = getsockname ( SocketFD, (struct sockaddr *)&LocalAddress, &LengthInBytes );
     if ( 0 == RetVal ) {
+      LengthInBytes = sizeof ( LocalAddress );
       RetVal = getpeername ( SocketFD, (struct sockaddr *)&RemoteAddress, &LengthInBytes );
       if ( 0 == RetVal ) {
         //
         //  Seperate the body from the trailer
         //
-        Status = HttpSendAnsiString ( SocketFD, pPort, "  <hr>\r\n" );
+        Status = HttpSendAnsiString ( SocketFD, pPort, "  <hr>\r\n<code>" );
         if ( EFI_ERROR ( Status )) {
           break;
         }
@@ -438,7 +430,7 @@ HttpPageTrailer (
         if ( EFI_ERROR ( Status )) {
           break;
         }
-        Status = HttpSendAnsiString ( SocketFD, pPort, "\r\n" );
+        Status = HttpSendAnsiString ( SocketFD, pPort, "</code>\r\n" );
         if ( EFI_ERROR ( Status )) {
           break;
         }
@@ -917,7 +909,7 @@ HttpSendDump (
       Status = HttpSendHexBits ( SocketFD,
                                  pPort,
                                  sizeof ( pData ) * 8,
-                                 (UINT64)pData );
+                                 (UINT64)(UINTN)pData );
       if ( EFI_ERROR ( Status )) {
         break;
       }
@@ -1213,7 +1205,7 @@ HttpSendHexBits (
     //
     Digit = (UINT32)(( Value >> Shift ) & 0xf );
     if ( 10 <= Digit ) {
-      Digit += 'A' - '0' - 10;
+      Digit += 'a' - '0' - 10;
     }
 
     //
@@ -1274,7 +1266,7 @@ HttpSendHexValue (
     //
     Digit = (UINT32)(( Value >> Shift ) & 0xf );
     if ( 10 <= Digit ) {
-      Digit += 'A' - '0' - 10;
+      Digit += 'a' - '0' - 10;
     }
 
     //
@@ -1306,6 +1298,112 @@ HttpSendHexValue (
 
 
 /**
+  Output an IP6 address value to the HTML page
+
+  @param [in] SocketFD          Socket file descriptor
+  @param [in] pPort             The WSDT_PORT structure address
+  @param [in] Value             Value to display
+  @param [in] bFirstValue       TRUE if first value
+  @param [in] bLastValue        TRUE if last value
+  @param [in] bZeroSuppression  TRUE while zeros are being suppressed
+  @param [in] pbZeroSuppression Address to receive TRUE when zero suppression
+                                has started, use NULL if next colon value not
+                                needed.
+
+  @retval EFI_SUCCESS Successfully displayed the address
+**/
+EFI_STATUS
+HttpSendIp6Value (
+  IN int SocketFD,
+  IN WSDT_PORT * pPort,
+  IN UINT16 Value,
+  IN BOOLEAN bFirstValue,
+  IN BOOLEAN bLastValue,
+  IN BOOLEAN bZeroSuppression,
+  IN BOOLEAN * pbZeroSuppression
+  )
+{
+  BOOLEAN bZeroSuppressionStarting;
+  UINT32 Digit;
+  EFI_STATUS Status;
+
+  //
+  //  Use break instead of goto
+  //
+  bZeroSuppressionStarting = FALSE;
+  Status = EFI_SUCCESS;
+  for ( ; ; ) {
+    //
+    //  Display the leading colon if necessary
+    //
+    if ( bZeroSuppression && ( bLastValue || ( 0 != Value ))) {
+      Status = HttpSendByte ( SocketFD, pPort, ':' );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+    }
+
+    //
+    //  Skip over a series of zero values
+    //
+    bZeroSuppressionStarting = (BOOLEAN)( 0 == Value );
+    if ( !bZeroSuppressionStarting ) {
+      //
+      //  Display the value
+      //
+      Digit = ( Value >> 4 ) & 0xf;
+      Status = HttpSendHexValue ( SocketFD,
+                                  pPort,
+                                  Digit );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      Digit = Value & 0xf;
+      Status = HttpSendHexValue ( SocketFD,
+                                  pPort,
+                                  Digit );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      Digit = ( Value >> 12 ) & 0xf;
+      Status = HttpSendHexValue ( SocketFD,
+                                  pPort,
+                                  Digit );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      Digit = ( Value >> 8 ) & 0xf;
+      Status = HttpSendHexValue ( SocketFD,
+                                  pPort,
+                                  Digit );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+    }
+
+    //
+    //  Display the trailing colon if necessary
+    //
+    if (( !bLastValue ) && ( bFirstValue || ( 0 != Value ))) {
+      Status = HttpSendByte ( SocketFD, pPort, ':' );
+    }
+    break;
+  }
+
+  //
+  //  Return the next colon display
+  if ( NULL != pbZeroSuppression ) {
+    *pbZeroSuppression = bZeroSuppressionStarting;
+  }
+
+  //
+  //  Return the operation status
+  //
+  return Status;
+}
+
+
+/**
   Output an IP address to the HTML page
 
   @param [in] SocketFD    Socket file descriptor
@@ -1318,41 +1416,109 @@ EFI_STATUS
 HttpSendIpAddress (
   IN int SocketFD,
   IN WSDT_PORT * pPort,
-  IN struct sockaddr_in * pAddress
+  IN struct sockaddr_in6 * pAddress
   )
 {
+  BOOLEAN bZeroSuppression;
+  UINT32 Index;
+  struct sockaddr_in * pIpv4;
+  struct sockaddr_in6 * pIpv6;
+  UINT16 PortNumber;
   EFI_STATUS Status;
 
   //
-  //  Output the IPv4 address
+  //  Use break instead of goto
   //
-  Status = HttpSendValue ( SocketFD, pPort, (UINT8)pAddress->sin_addr.s_addr );
-  if ( !EFI_ERROR ( Status )) {
-    Status = HttpSendByte ( SocketFD, pPort, '.' );
-    if ( !EFI_ERROR ( Status )) {
-      Status = HttpSendValue ( SocketFD, pPort, (UINT8)( pAddress->sin_addr.s_addr >> 8 ));
-      if ( !EFI_ERROR ( Status )) {
-        Status = HttpSendByte ( SocketFD, pPort, '.' );
-        if ( !EFI_ERROR ( Status )) {
-          Status = HttpSendValue ( SocketFD, pPort, (UINT8)( pAddress->sin_addr.s_addr >> 16 ));
-          if ( !EFI_ERROR ( Status )) {
-            Status = HttpSendByte ( SocketFD, pPort, '.' );
-            if ( !EFI_ERROR ( Status )) {
-              Status = HttpSendValue ( SocketFD, pPort, (UINT8)( pAddress->sin_addr.s_addr >> 24 ));
-              if ( !EFI_ERROR ( Status )) {
-                //
-                //  Output the port number
-                //
-                Status = HttpSendByte ( SocketFD, pPort, ':' );
-                if ( !EFI_ERROR ( Status )) {
-                  Status = HttpSendValue ( SocketFD, pPort, htons ( pAddress->sin_port ));
-                }
-              }
-            }
-          }
+  for ( ; ; ) {
+    //
+    //  Determine the type of address
+    //
+    if ( AF_INET6 == pAddress->sin6_family ) {
+      pIpv6 = pAddress;
+
+      //
+      //  Display the address in RFC2732 format
+      //
+      bZeroSuppression = FALSE;
+      Status = HttpSendByte ( SocketFD, pPort, '[' );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      for ( Index = 0; 8 > Index; Index++ ) {
+        Status = HttpSendIp6Value ( SocketFD,
+                                    pPort,
+                                    pIpv6->sin6_addr.__u6_addr.__u6_addr16[ Index ],
+                                    (BOOLEAN)( 0 == Index ),
+                                    (BOOLEAN)( 7 == Index ),
+                                    bZeroSuppression,
+                                    &bZeroSuppression );
+        if ( EFI_ERROR ( Status )) {
+          break;
         }
       }
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+
+      //
+      //  Separate the port number
+      //
+      Status = HttpSendByte ( SocketFD, pPort, ']' );
+
+      //
+      //  Get the port number
+      //
+      PortNumber = pIpv6->sin6_port;
     }
+    else {
+      //
+      //  Output the IPv4 address
+      //
+      pIpv4 = (struct sockaddr_in *)pAddress;
+      Status = HttpSendValue ( SocketFD, pPort, (UINT8)pIpv4->sin_addr.s_addr );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      Status = HttpSendByte ( SocketFD, pPort, '.' );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      Status = HttpSendValue ( SocketFD, pPort, (UINT8)( pIpv4->sin_addr.s_addr >> 8 ));
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      Status = HttpSendByte ( SocketFD, pPort, '.' );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      Status = HttpSendValue ( SocketFD, pPort, (UINT8)( pIpv4->sin_addr.s_addr >> 16 ));
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      Status = HttpSendByte ( SocketFD, pPort, '.' );
+      if ( EFI_ERROR ( Status )) {
+        break;
+      }
+      Status = HttpSendValue ( SocketFD, pPort, (UINT8)( pIpv4->sin_addr.s_addr >> 24 ));
+
+      //
+      //  Get the port number
+      //
+      PortNumber = pIpv4->sin_port;
+    }
+    if ( EFI_ERROR ( Status )) {
+      break;
+    }
+
+    //
+    //  Display the port number
+    //
+    Status = HttpSendByte ( SocketFD, pPort, ':' );
+    if ( EFI_ERROR ( Status )) {
+      break;
+    }
+    Status = HttpSendValue ( SocketFD, pPort, htons ( PortNumber ));
+    break;
   }
 
   //
@@ -1488,25 +1654,25 @@ HttpSendValue (
   CONST UINT64 * pEnd;
   CONST UINT64 * pDivisor;
   CONST UINT64 pDivisors[ ] = {
-     10000000000000000000L,
-      1000000000000000000L,
-       100000000000000000L,
-        10000000000000000L,
-         1000000000000000L,
-          100000000000000L,
-           10000000000000L,
-            1000000000000L,
-             100000000000L,
-              10000000000L,
-               1000000000L,
-                100000000L,
-                 10000000L,
-                  1000000L,
-                   100000L,
-                    10000L,
-                     1000L,
-                      100L,
-                       10L
+     10000000000000000000ULL,
+      1000000000000000000ULL,
+       100000000000000000ULL,
+        10000000000000000ULL,
+         1000000000000000ULL,
+          100000000000000ULL,
+           10000000000000ULL,
+            1000000000000ULL,
+             100000000000ULL,
+              10000000000ULL,
+               1000000000ULL,
+                100000000ULL,
+                 10000000ULL,
+                  1000000ULL,
+                   100000ULL,
+                    10000ULL,
+                     1000ULL,
+                      100ULL,
+                       10ULL
   };
   EFI_STATUS Status;
   UINT64 Temp;

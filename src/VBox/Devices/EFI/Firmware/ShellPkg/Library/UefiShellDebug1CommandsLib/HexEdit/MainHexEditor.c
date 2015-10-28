@@ -4,7 +4,7 @@
      - Instances of the other objects of the editor
      - Main Interfaces
   
-  Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2005 - 2012, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -50,8 +50,7 @@ HEFI_EDITOR_GLOBAL_EDITOR       HMainEditorBackupVar;
 HEFI_EDITOR_GLOBAL_EDITOR       HMainEditorConst = {
   &HBufferImage,
   {
-    0,
-    0
+    {0, 0}
   },
   {
     0,
@@ -291,7 +290,6 @@ HMainCommandSaveBuffer (
         // the file won't be saved
         //
         return EFI_SUCCESS;
-        break;
 
       case L'c':
       case L'C':
@@ -599,7 +597,6 @@ HMainCommandCut (
   )
 {
   UINTN             Index;
-  HEFI_EDITOR_LINE  *Line;
   LIST_ENTRY    *Link;
   UINT8             *Buffer;
   UINTN             Count;
@@ -623,8 +620,6 @@ HMainCommandCut (
   for (Index = 0; Index < (HMainEditor.SelectEnd - 1) / 0x10; Index++) {
     Link = Link->ForwardLink;
   }
-
-  Line    = CR (Link, HEFI_EDITOR_LINE, Link, EFI_EDITOR_LINE_LIST);
 
   Count   = HMainEditor.SelectEnd - HMainEditor.SelectStart + 1;
   Buffer  = AllocateZeroPool (Count);
@@ -1688,7 +1683,7 @@ HMainEditorInit (
   //
   // below will call the five components' init function
   //
-  Status = MainTitleBarInit (NULL);
+  Status = MainTitleBarInit (L"UEFI HEXEDIT");
   if (EFI_ERROR (Status)) {
     ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_HEXEDIT_LIBEDITOR_MAINEDITOR_TITLE), gShellDebug1HiiHandle);
     return EFI_LOAD_ERROR;

@@ -1,7 +1,7 @@
 /** @file
   Miscellaneous routines for iSCSI driver.
 
-Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -209,7 +209,7 @@ IScsiLunToUnicodeStr (
   for (Index = 0; Index < 4; Index++) {
 
     if ((Lun[2 * Index] | Lun[2 * Index + 1]) == 0) {
-      StrCpy (TempStr, L"0-");
+      CopyMem (TempStr, L"0-", sizeof (L"0-"));
     } else {
       TempStr[0]  = (CHAR16) IScsiHexString[Lun[2 * Index] >> 4];
       TempStr[1]  = (CHAR16) IScsiHexString[Lun[2 * Index] & 0x0F];
@@ -223,7 +223,10 @@ IScsiLunToUnicodeStr (
 
     TempStr += StrLen (TempStr);
   }
-
+  //
+  // Remove the last '-'
+  //
+  ASSERT (StrLen(Str) >= 1);
   Str[StrLen (Str) - 1] = 0;
 
   for (Index = StrLen (Str) - 1; Index > 1; Index = Index - 2) {
@@ -890,6 +893,100 @@ IScsiCleanDriverData (
   FreePool (Private);
 }
 
+/**
+  Check wheather the Controller handle is configured to use DHCP protocol.
+
+  @param[in]  Controller           The handle of the controller.
+  @param[in]  IpVersion            IP_VERSION_4 or IP_VERSION_6.
+  
+  @retval TRUE                     The handle of the controller need the Dhcp protocol.
+  @retval FALSE                    The handle of the controller does not need the Dhcp protocol.
+  
+**/
+BOOLEAN
+IScsiDhcpIsConfigured (
+  IN EFI_HANDLE  Controller,
+  IN UINT8       IpVersion
+  )
+{
+  ISCSI_ATTEMPT_CONFIG_NVDATA *AttemptTmp;
+  UINT8                       *AttemptConfigOrder;
+  UINTN                       AttemptConfigOrderSize;
+  UINTN                       Index;
+  EFI_STATUS                  Status;
+  EFI_MAC_ADDRESS             MacAddr;
+  UINTN                       HwAddressSize;
+  UINT16                      VlanId;
+  CHAR16                      MacString[ISCSI_MAX_MAC_STRING_LEN];
+  CHAR16                      AttemptName[ISCSI_NAME_IFR_MAX_SIZE];
+  
+  AttemptConfigOrder = IScsiGetVariableAndSize (
+                         L"AttemptOrder",
+                         &gIScsiConfigGuid,
+                         &AttemptConfigOrderSize
+                         );
+  if (AttemptConfigOrder == NULL || AttemptConfigOrderSize == 0) {
+    return FALSE;
+  }
+  
+  //
+  // Get MAC address of this network device.
+  //
+  Status = NetLibGetMacAddress (Controller, &MacAddr, &HwAddressSize);
+  if(EFI_ERROR (Status)) {
+    return FALSE;
+  }
+  //
+  // Get VLAN ID of this network device.
+  //
+  VlanId = NetLibGetVlanId (Controller);
+  IScsiMacAddrToStr (&MacAddr, (UINT32) HwAddressSize, VlanId, MacString);
+  
+  for (Index = 0; Index < AttemptConfigOrderSize / sizeof (UINT8); Index++) {
+    UnicodeSPrint (
+      AttemptName,
+      (UINTN) 128,
+      L"%s%d",
+      MacString,
+      (UINTN) AttemptConfigOrder[Index]
+      );
+    Status = GetVariable2 (
+               AttemptName,
+               &gEfiIScsiInitiatorNameProtocolGuid,
+               (VOID**)&AttemptTmp,
+               NULL
+               );
+    if(AttemptTmp == NULL || EFI_ERROR (Status)) {
+      continue;
+    }
+    
+    ASSERT (AttemptConfigOrder[Index] == AttemptTmp->AttemptConfigIndex);
+
+    if (AttemptTmp->SessionConfigData.Enabled == ISCSI_DISABLED) {
+      FreePool (AttemptTmp);
+      continue;
+    }
+
+    if (AttemptTmp->SessionConfigData.IpMode != IP_MODE_AUTOCONFIG && 
+        AttemptTmp->SessionConfigData.IpMode != ((IpVersion == IP_VERSION_4) ? IP_MODE_IP4 : IP_MODE_IP6)) {
+      FreePool (AttemptTmp);
+      continue;
+    }
+    
+    if(AttemptTmp->SessionConfigData.IpMode == IP_MODE_AUTOCONFIG ||
+       AttemptTmp->SessionConfigData.InitiatorInfoFromDhcp == TRUE ||
+       AttemptTmp->SessionConfigData.TargetInfoFromDhcp == TRUE) { 
+      FreePool (AttemptTmp);
+      FreePool (AttemptConfigOrder);
+      return TRUE;
+    }
+
+    FreePool (AttemptTmp);
+  }
+  
+  FreePool (AttemptConfigOrder);
+  return FALSE;
+}
 
 /**
   Get the various configuration data.
@@ -1076,10 +1173,12 @@ IScsiGetConfigData (
       (UINTN) AttemptConfigOrder[Index]
       );
 
-    AttemptConfigData = (ISCSI_ATTEMPT_CONFIG_NVDATA *) GetVariable (
-                                                          mPrivate->PortString,
-                                                          &gEfiIScsiInitiatorNameProtocolGuid
-                                                          );
+    GetVariable2 (
+                 mPrivate->PortString,
+                 &gEfiIScsiInitiatorNameProtocolGuid,
+                 (VOID**)&AttemptConfigData,
+                 NULL
+                 );
 
     if (AttemptConfigData == NULL) {
       continue;
@@ -1339,4 +1438,71 @@ IScsiOnExitBootService (
   if (Private->Session != NULL) {
     IScsiSessionAbort (Private->Session);
   }
+}
+
+/**
+  Tests whether a controller handle is being managed by IScsi driver.
+
+  This function tests whether the driver specified by DriverBindingHandle is
+  currently managing the controller specified by ControllerHandle.  This test
+  is performed by evaluating if the the protocol specified by ProtocolGuid is
+  present on ControllerHandle and is was opened by DriverBindingHandle and Nic
+  Device handle with an attribute of EFI_OPEN_PROTOCOL_BY_DRIVER. 
+  If ProtocolGuid is NULL, then ASSERT().
+
+  @param  ControllerHandle     A handle for a controller to test.
+  @param  DriverBindingHandle  Specifies the driver binding handle for the
+                               driver.
+  @param  ProtocolGuid         Specifies the protocol that the driver specified
+                               by DriverBindingHandle opens in its Start()
+                               function.
+
+  @retval EFI_SUCCESS          ControllerHandle is managed by the driver
+                               specified by DriverBindingHandle.
+  @retval EFI_UNSUPPORTED      ControllerHandle is not managed by the driver
+                               specified by DriverBindingHandle.
+
+**/
+EFI_STATUS
+EFIAPI
+IScsiTestManagedDevice (
+  IN  EFI_HANDLE       ControllerHandle,
+  IN  EFI_HANDLE       DriverBindingHandle,
+  IN  EFI_GUID         *ProtocolGuid
+  )
+{
+  EFI_STATUS     Status;
+  VOID           *ManagedInterface;
+  EFI_HANDLE     NicControllerHandle;
+
+  ASSERT (ProtocolGuid != NULL);
+
+  NicControllerHandle = NetLibGetNicHandle (ControllerHandle, ProtocolGuid);
+  if (NicControllerHandle == NULL) {
+    return EFI_UNSUPPORTED;
+  }
+
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  (EFI_GUID *) ProtocolGuid,
+                  &ManagedInterface,
+                  DriverBindingHandle,
+                  NicControllerHandle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (!EFI_ERROR (Status)) {
+    gBS->CloseProtocol (
+           ControllerHandle,
+           (EFI_GUID *) ProtocolGuid,
+           DriverBindingHandle,
+           NicControllerHandle
+           );
+    return EFI_UNSUPPORTED;
+  }
+
+  if (Status != EFI_ALREADY_STARTED) {
+    return EFI_UNSUPPORTED;
+  }
+
+  return EFI_SUCCESS;
 }

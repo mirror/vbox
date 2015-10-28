@@ -1,7 +1,7 @@
 /** @file
 The module is used to implement Usb Io PPI interfaces.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved. <BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved. <BR>
   
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -24,7 +24,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @param  This                   The pointer of PEI_USB_IO_PPI.
   @param  Request                USB device request to send.
   @param  Direction              Specifies the data direction for the data stage.
-  @param  Timeout                Indicates the maximum timeout, in millisecond.
+  @param  Timeout                Indicates the maximum timeout, in millisecond. If Timeout
+                                 is 0, then the caller must wait for the function to be
+                                 completed until EFI_SUCCESS or EFI_DEVICE_ERROR is returned.
   @param  Data                   Data buffer to be transmitted or received from USB device.
   @param  DataLength             The size (in bytes) of the data buffer.
 
@@ -50,8 +52,37 @@ PeiUsbControlTransfer (
   EFI_STATUS                  Status;
   PEI_USB_DEVICE              *PeiUsbDev;
   UINT32                      TransferResult;
+  EFI_USB_ENDPOINT_DESCRIPTOR *EndpointDescriptor;
+  UINT8                       EndpointIndex;
 
   PeiUsbDev = PEI_USB_DEVICE_FROM_THIS (This);
+
+  EndpointDescriptor = NULL;
+  EndpointIndex = 0;
+
+  if ((Request->Request     == USB_REQ_CLEAR_FEATURE) &&
+      (Request->RequestType == USB_DEV_CLEAR_FEATURE_REQ_TYPE_E) &&
+      (Request->Value       == USB_FEATURE_ENDPOINT_HALT)) {
+    //
+    // Request->Index is the Endpoint Address, use it to get the Endpoint Index.
+    //
+    while (EndpointIndex < MAX_ENDPOINT) {
+      Status = PeiUsbGetEndpointDescriptor (PeiServices, This, EndpointIndex, &EndpointDescriptor);
+      if (EFI_ERROR (Status)) {
+        return EFI_INVALID_PARAMETER;
+      }
+
+      if (EndpointDescriptor->EndpointAddress == Request->Index) {
+        break;
+      }
+
+      EndpointIndex++;
+    }
+
+    if (EndpointIndex == MAX_ENDPOINT) {
+      return EFI_INVALID_PARAMETER;
+    }
+  }
 
   if (PeiUsbDev->Usb2HcPpi != NULL) {
     Status = PeiUsbDev->Usb2HcPpi->ControlTransfer (
@@ -74,7 +105,7 @@ PeiUsbControlTransfer (
                         PeiUsbDev->UsbHcPpi,
                         PeiUsbDev->DeviceAddress,
                         PeiUsbDev->DeviceSpeed,
-                        PeiUsbDev->MaxPacketSize0,
+                        (UINT8) PeiUsbDev->MaxPacketSize0,
                         Request,
                         Direction,
                         Data,
@@ -83,6 +114,19 @@ PeiUsbControlTransfer (
                         &TransferResult
                         );
   }
+
+  //
+  // Reset the endpoint toggle when endpoint stall is cleared
+  //
+  if ((Request->Request     == USB_REQ_CLEAR_FEATURE) &&
+      (Request->RequestType == USB_DEV_CLEAR_FEATURE_REQ_TYPE_E) &&
+      (Request->Value       == USB_FEATURE_ENDPOINT_HALT)) {
+    if ((PeiUsbDev->DataToggle & (1 << EndpointIndex)) != 0) {
+      PeiUsbDev->DataToggle = (UINT16) (PeiUsbDev->DataToggle ^ (1 << EndpointIndex));
+    }
+  }
+
+  DEBUG ((EFI_D_INFO, "PeiUsbControlTransfer: %r\n", Status));
   return Status;
 }
 
@@ -96,7 +140,9 @@ PeiUsbControlTransfer (
                                 from or receive into.
   @param  DataLength            The lenght of the data buffer.
   @param  Timeout               Indicates the maximum time, in millisecond, which the
-                                transfer is allowed to complete.
+                                transfer is allowed to complete. If Timeout is 0, then
+                                the caller must wait for the function to be completed
+                                until EFI_SUCCESS or EFI_DEVICE_ERROR is returned.
 
   @retval EFI_SUCCESS           The transfer was completed successfully.
   @retval EFI_OUT_OF_RESOURCES  The transfer failed due to lack of resource.
@@ -190,9 +236,10 @@ PeiUsbBulkTransfer (
   }
 
   if (OldToggle != DataToggle) {
-    PeiUsbDev->DataToggle = (UINT8) (PeiUsbDev->DataToggle ^ (1 << EndpointIndex));
+    PeiUsbDev->DataToggle = (UINT16) (PeiUsbDev->DataToggle ^ (1 << EndpointIndex));
   }
 
+  DEBUG ((EFI_D_INFO, "PeiUsbBulkTransfer: %r\n", Status));
   return Status;
 }
 

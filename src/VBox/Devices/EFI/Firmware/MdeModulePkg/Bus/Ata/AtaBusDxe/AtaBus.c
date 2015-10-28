@@ -4,7 +4,7 @@
   This file implements protocol interfaces: Driver Binding protocol,
   Block IO protocol and DiskInfo protocol.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -17,6 +17,8 @@
 **/
 
 #include "AtaBus.h"
+
+UINT8   mMorControl;
 
 //
 // ATA Bus Driver Binding Protocol Instance
@@ -88,7 +90,8 @@ ATA_DEVICE gAtaDeviceTemplate = {
   NULL,                        // ControllerNameTable
   {L'\0', },                   // ModelName
   {NULL, NULL},                // AtaTaskList
-  {NULL, NULL}                 // AtaSubTaskList
+  {NULL, NULL},                // AtaSubTaskList
+  FALSE                        // Abort
 };
 
 /**
@@ -170,7 +173,7 @@ ReleaseAtaResources (
        ) {
       DelEntry = Entry;
       Entry    = Entry->ForwardLink;
-      SubTask  = ATA_AYNS_SUB_TASK_FROM_ENTRY (DelEntry);
+      SubTask  = ATA_ASYN_SUB_TASK_FROM_ENTRY (DelEntry);
 
       RemoveEntryList (DelEntry);
       FreeAtaSubTask (SubTask);
@@ -185,7 +188,7 @@ ReleaseAtaResources (
        ) {
       DelEntry = Entry;
       Entry    = Entry->ForwardLink;
-      AtaTask     = ATA_AYNS_TASK_FROM_ENTRY (DelEntry);
+      AtaTask  = ATA_ASYN_TASK_FROM_ENTRY (DelEntry);
 
       RemoveEntryList (DelEntry);
       FreePool (AtaTask);
@@ -293,6 +296,15 @@ RegisterAtaDevice (
   InitializeListHead (&AtaDevice->AtaSubTaskList);
 
   //
+  // Report Status Code to indicate the ATA device will be enabled
+  //
+  REPORT_STATUS_CODE_WITH_DEVICE_PATH (
+    EFI_PROGRESS_CODE,
+    (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_PC_ENABLE),
+    AtaBusDriverData->ParentDevicePath
+    );
+
+  //
   // Try to identify the ATA device via the ATA pass through command.
   //
   Status = DiscoverAtaDevice (AtaDevice);
@@ -364,6 +376,18 @@ RegisterAtaDevice (
     if (EFI_ERROR (Status)) {
       goto Done;
     }
+    DEBUG ((EFI_D_INFO, "Successfully Install Storage Security Protocol on the ATA device\n"));
+  }
+
+
+  if (((mMorControl & 0x01) == 0x01) && ((AtaDevice->IdentifyData->trusted_computing_support & BIT0) != 0)) {
+    DEBUG ((EFI_D_INFO,
+            "mMorControl = %x, AtaDevice->IdentifyData->trusted_computing_support & BIT0 = %x\n",
+            mMorControl,
+            (AtaDevice->IdentifyData->trusted_computing_support & BIT0)
+            ));
+    DEBUG ((EFI_D_INFO, "Try to lock device by sending TPer Reset command...\n"));
+    InitiateTPerReset(AtaDevice);
   }
 
   gBS->OpenProtocol (
@@ -450,6 +474,7 @@ UnregisterAtaDevice (
   if (BlockIo != NULL) {
     AtaDevice = ATA_DEVICE_FROM_BLOCK_IO (BlockIo);
   } else {
+    ASSERT (BlockIo2 != NULL);
     AtaDevice = ATA_DEVICE_FROM_BLOCK_IO2 (BlockIo2);
   }
 
@@ -606,11 +631,36 @@ AtaBusDriverBindingSupported (
   }
 
   //
+  // Test to see if this ATA Pass Thru Protocol is for a LOGICAL channel
+  //
+  if ((AtaPassThru->Mode->Attributes & EFI_ATA_PASS_THRU_ATTRIBUTES_LOGICAL) == 0) {
+    //
+    // Close the I/O Abstraction(s) used to perform the supported test
+    //
+    gBS->CloseProtocol (
+          Controller,
+          &gEfiAtaPassThruProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
+    return EFI_UNSUPPORTED;
+  }
+
+  //
   // Test RemainingDevicePath is valid or not.
   //
   if ((RemainingDevicePath != NULL) && !IsDevicePathEnd (RemainingDevicePath)) {
     Status = AtaPassThru->GetDevice (AtaPassThru, RemainingDevicePath, &Port, &PortMultiplierPort);
     if (EFI_ERROR (Status)) {
+      //
+      // Close the I/O Abstraction(s) used to perform the supported test
+      //
+      gBS->CloseProtocol (
+            Controller,
+            &gEfiAtaPassThruProtocolGuid,
+            This->DriverBindingHandle,
+            Controller
+            );
       return Status;
     }
   }
@@ -704,6 +754,15 @@ AtaBusDriverBindingStart (
     return Status;
   }
 
+  //
+  // Report Status Code to indicate ATA bus starts
+  //
+  REPORT_STATUS_CODE_WITH_DEVICE_PATH (
+    EFI_PROGRESS_CODE,
+    (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_PC_INIT),
+    ParentDevicePath
+    );
+
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiAtaPassThruProtocolGuid,
@@ -755,6 +814,15 @@ AtaBusDriverBindingStart (
       goto ErrorExit;
     }
   }
+
+  //
+  // Report Status Code to indicate detecting devices on bus
+  //
+  REPORT_STATUS_CODE_WITH_DEVICE_PATH (
+    EFI_PROGRESS_CODE,
+    (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_PC_DETECT),
+    ParentDevicePath
+    );
 
   if (RemainingDevicePath == NULL) {
     Port = 0xFFFF;
@@ -1004,6 +1072,10 @@ BlockIoReadWrite (
   }
 
   if (BufferSize == 0) {
+    if ((Token != NULL) && (Token->Event != NULL)) {
+      Token->TransactionStatus = EFI_SUCCESS;
+      gBS->SignalEvent (Token->Event);
+    }
     return EFI_SUCCESS;
   }
 
@@ -1149,6 +1221,8 @@ AtaBlockIoResetEx (
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
   AtaDevice = ATA_DEVICE_FROM_BLOCK_IO2 (This);
+
+  AtaTerminateNonBlockingTask (AtaDevice);
 
   Status = ResetAtaDevice (AtaDevice);
 
@@ -1638,6 +1712,7 @@ InitializeAtaBus(
   )
 {
   EFI_STATUS              Status;
+  UINTN                   DataSize;
 
   //
   // Install driver model protocol(s).
@@ -1652,5 +1727,194 @@ InitializeAtaBus(
              );
   ASSERT_EFI_ERROR (Status);
 
+  //
+  // Get the MorControl bit.
+  //
+  DataSize = sizeof (mMorControl);
+  Status = gRT->GetVariable (
+                  MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME,
+                  &gEfiMemoryOverwriteControlDataGuid,
+                  NULL,
+                  &DataSize,
+                  &mMorControl
+                  );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_INFO, "AtaBus:gEfiMemoryOverwriteControlDataGuid doesn't exist!!***\n"));
+    mMorControl = 0;
+    Status      = EFI_SUCCESS;
+  } else {
+    DEBUG ((EFI_D_INFO, "AtaBus:Get the gEfiMemoryOverwriteControlDataGuid = %x!!***\n", mMorControl));
+  }
+
   return Status;
+}
+
+/**
+  Send TPer Reset command to reset eDrive to lock all protected bands.
+  Typically, there are 2 mechanism for resetting eDrive. They are:
+  1. TPer Reset through IEEE 1667 protocol.
+  2. TPer Reset through native TCG protocol.
+  This routine will detect what protocol the attached eDrive comform to, TCG or
+  IEEE 1667 protocol. Then send out TPer Reset command separately.
+
+  @param[in] AtaDevice    ATA_DEVICE pointer.
+
+**/
+VOID
+InitiateTPerReset (
+  IN   ATA_DEVICE       *AtaDevice
+  )
+{
+
+  EFI_STATUS                                   Status;
+  UINT8                                        *Buffer;
+  UINTN                                        XferSize;
+  UINTN                                        Len;
+  UINTN                                        Index;
+  BOOLEAN                                      TcgFlag;
+  BOOLEAN                                      IeeeFlag;
+  EFI_BLOCK_IO_PROTOCOL                        *BlockIo;
+  EFI_STORAGE_SECURITY_COMMAND_PROTOCOL        *Ssp;
+  SUPPORTED_SECURITY_PROTOCOLS_PARAMETER_DATA  *Data;
+
+  Buffer        = NULL;
+  TcgFlag       = FALSE;
+  IeeeFlag      = FALSE;
+  Ssp           = &AtaDevice->StorageSecurity;
+  BlockIo       = &AtaDevice->BlockIo;
+
+  //
+  // ATA8-ACS 7.57.6.1 indicates the Transfer Length field requirements a multiple of 512.
+  // If the length of the TRUSTED RECEIVE parameter data is greater than the Transfer Length,
+  // then the device shall return the TRUSTED RECEIVE parameter data truncated to the requested Transfer Length.
+  //
+  Len           = ROUNDUP512(sizeof(SUPPORTED_SECURITY_PROTOCOLS_PARAMETER_DATA));
+  Buffer        = AllocateZeroPool(Len);
+
+  if (Buffer == NULL) {
+    return;
+  }
+
+  //
+  // When the Security Protocol field is set to 00h, and SP Specific is set to 0000h in a TRUSTED RECEIVE
+  // command, the device basic information data shall be returned.
+  //
+  Status = Ssp->ReceiveData (
+                  Ssp,
+                  BlockIo->Media->MediaId,
+                  100000000,                    // Timeout 10-sec
+                  0,                            // SecurityProtocol
+                  0,                            // SecurityProtocolSpecifcData
+                  Len,                          // PayloadBufferSize,
+                  Buffer,                       // PayloadBuffer
+                  &XferSize
+                  );
+  if (EFI_ERROR (Status)) {
+    goto Exit;
+  }
+
+  //
+  // In returned data, the ListLength field indicates the total length, in bytes,
+  // of the supported security protocol list.
+  //
+  Data = (SUPPORTED_SECURITY_PROTOCOLS_PARAMETER_DATA*)Buffer;
+  Len  = ROUNDUP512(sizeof (SUPPORTED_SECURITY_PROTOCOLS_PARAMETER_DATA) +
+                    (Data->SupportedSecurityListLength[0] << 8) +
+                    (Data->SupportedSecurityListLength[1])
+                    );
+
+  //
+  // Free original buffer and allocate new buffer.
+  //
+  FreePool(Buffer);
+  Buffer = AllocateZeroPool(Len);
+  if (Buffer == NULL) {
+    return;
+  }
+
+  //
+  // Read full supported security protocol list from device.
+  //
+  Status = Ssp->ReceiveData (
+                  Ssp,
+                  BlockIo->Media->MediaId,
+                  100000000,                    // Timeout 10-sec
+                  0,                            // SecurityProtocol
+                  0,                            // SecurityProtocolSpecifcData
+                  Len,                          // PayloadBufferSize,
+                  Buffer,                       // PayloadBuffer
+                  &XferSize
+                  );
+
+  if (EFI_ERROR (Status)) {
+    goto Exit;
+  }
+
+  Data = (SUPPORTED_SECURITY_PROTOCOLS_PARAMETER_DATA*)Buffer;
+  Len  = (Data->SupportedSecurityListLength[0] << 8) + Data->SupportedSecurityListLength[1];
+
+  //
+  // Iterate full supported security protocol list to check if TCG or IEEE 1667 protocol
+  // is supported.
+  //
+  for (Index = 0; Index < Len; Index++) {
+    if (Data->SupportedSecurityProtocol[Index] == SECURITY_PROTOCOL_TCG) {
+      //
+      // Found a  TCG device.
+      //
+      TcgFlag = TRUE;
+      DEBUG ((EFI_D_INFO, "This device is a TCG protocol device\n"));
+      break;
+    }
+
+    if (Data->SupportedSecurityProtocol[Index] == SECURITY_PROTOCOL_IEEE1667) {
+      //
+      // Found a IEEE 1667 device.
+      //
+      IeeeFlag = TRUE;
+      DEBUG ((EFI_D_INFO, "This device is a IEEE 1667 protocol device\n"));
+      break;
+    }
+  }
+
+  if (!TcgFlag && !IeeeFlag) {
+    DEBUG ((EFI_D_INFO, "Neither a TCG nor IEEE 1667 protocol device is found\n"));
+    goto Exit;
+  }
+
+  if (TcgFlag) {
+    //
+    // As long as TCG protocol is supported, send out a TPer Reset
+    // TCG command to the device via the TrustedSend command with a non-zero Transfer Length.
+    //
+    Status = Ssp->SendData (
+                    Ssp,
+                    BlockIo->Media->MediaId,
+                    100000000,                    // Timeout 10-sec
+                    SECURITY_PROTOCOL_TCG,        // SecurityProtocol
+                    0x0400,                       // SecurityProtocolSpecifcData
+                    512,                          // PayloadBufferSize,
+                    Buffer                        // PayloadBuffer
+                    );
+
+    if (!EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_INFO, "Send TPer Reset Command Successfully !\n"));
+    } else {
+      DEBUG ((EFI_D_INFO, "Send TPer Reset Command Fail !\n"));
+    }
+  }
+
+  if (IeeeFlag) {
+    //
+    // TBD : Perform a TPer Reset via IEEE 1667 Protocol
+    //
+    DEBUG ((EFI_D_INFO, "IEEE 1667 Protocol didn't support yet!\n"));
+  }
+
+Exit:
+
+  if (Buffer != NULL) {
+    FreePool(Buffer);
+  }
 }

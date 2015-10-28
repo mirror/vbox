@@ -23,8 +23,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "ParseInf.h"
 
 #define PROGRAM_NAME                       "VfrCompile"
-#define VFR_COMPILER_VERSION               " 2.00 (UEFI 2.3.1)"
-#define VFR_COMPILER_UPDATE_TIME           " updated on 2011/07/15"
+#define VFR_COMPILER_VERSION               " 2.00 (UEFI 2.4) "
 //
 // This is how we invoke the C preprocessor on the VFR source file
 // to resolve #defines, #includes, etc. To make C source files
@@ -57,10 +56,12 @@ typedef struct {
   BOOLEAN CompatibleMode;
   BOOLEAN HasOverrideClassGuid;
   EFI_GUID OverrideClassGuid;
+  BOOLEAN WarningAsError;
 } OPTIONS;
 
 typedef enum {
-  STATUS_INITIALIZED = 1,
+  STATUS_STARTED = 0,
+  STATUS_INITIALIZED,
   STATUS_PREPROCESSED,
   STATUS_COMPILEED,
   STATUS_GENBINARY,
@@ -87,6 +88,7 @@ private:
 
   VOID    SET_RUN_STATUS (IN COMPILER_RUN_STATUS);
   BOOLEAN IS_RUN_STATUS (IN COMPILER_RUN_STATUS);
+  VOID    UpdateInfoForDynamicOpcode (VOID);
 
 public:
   COMPILER_RUN_STATUS RunStatus (VOID) {
@@ -98,6 +100,7 @@ public:
   ~CVfrCompiler ();
 
   VOID                Usage (VOID);
+  VOID                Version (VOID);
 
   VOID                PreProcess (VOID);
   VOID                Compile (VOID);

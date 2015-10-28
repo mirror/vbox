@@ -1,7 +1,7 @@
 /** @file
   Processor or Compiler specific defines and types for ARM.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
   This program and the accompanying materials                          
   are licensed and made available under the terms and conditions of the BSD License         
@@ -30,7 +30,7 @@
 
 #if _MSC_EXTENSIONS 
   //
-  // use Microsoft* C complier dependent interger width types 
+  // use Microsoft* C complier dependent integer width types 
   //
   typedef unsigned __int64    UINT64;
   typedef __int64             INT64;
@@ -42,7 +42,7 @@
   typedef unsigned char       BOOLEAN;
   typedef unsigned char       UINT8;
   typedef char                CHAR8;
-  typedef char                INT8;
+  typedef signed char         INT8;
 #else
   //
   // Assume standard ARM alignment. 
@@ -58,7 +58,7 @@
   typedef unsigned char       BOOLEAN;
   typedef unsigned char       UINT8;
   typedef char                CHAR8;
-  typedef char                INT8;
+  typedef signed char         INT8;
 #endif
 
 ///
@@ -91,6 +91,12 @@ typedef INT32   INTN;
 /// Maximum legal ARM address
 ///
 #define MAX_ADDRESS  0xFFFFFFFF
+
+///
+/// Maximum legal ARM INTN and UINTN values.
+///
+#define MAX_INTN   ((INTN)0x7FFFFFFF)
+#define MAX_UINTN  ((UINTN)0xFFFFFFFF)
 
 ///
 /// The stack alignment required for ARM
@@ -151,6 +157,10 @@ typedef INT32   INTN;
   
 **/
 #define FUNCTION_ENTRY_POINT(FunctionPointer) (VOID *)(UINTN)(FunctionPointer)
+
+#ifndef __USER_LABEL_PREFIX__
+#define __USER_LABEL_PREFIX__
+#endif
 
 #endif
 

@@ -1,7 +1,7 @@
 /** @file
   Main file for attrib shell level 2 function.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -33,17 +33,17 @@ IsDirectoryEmpty (
   IN EFI_HANDLE   FileHandle
   )
 {
-  EFI_STATUS      Status;
   EFI_FILE_INFO   *FileInfo;
   BOOLEAN         NoFile;
   BOOLEAN         RetVal;
 
   RetVal = TRUE;
   NoFile = FALSE;
+  FileInfo = NULL;
 
-  for (Status = FileHandleFindFirstFile(FileHandle, &FileInfo)
+  for (FileHandleFindFirstFile(FileHandle, &FileInfo)
     ;  !NoFile
-    ;  Status = FileHandleFindNextFile(FileHandle, FileInfo, &NoFile)
+    ;  FileHandleFindNextFile(FileHandle, FileInfo, &NoFile)
    ){
     if (StrStr(FileInfo->FileName, L".") != FileInfo->FileName
       &&StrStr(FileInfo->FileName, L"..") != FileInfo->FileName) {
@@ -76,6 +76,8 @@ CascadeDelete(
   EFI_SHELL_FILE_INFO   *Node2;
   EFI_STATUS            Status;
   SHELL_PROMPT_RESPONSE *Resp;
+  CHAR16                *TempName;
+  UINTN                 NewSize;
 
   Resp                  = NULL;
   ShellStatus           = SHELL_SUCCESS;
@@ -92,7 +94,6 @@ CascadeDelete(
       if (!Quiet) {
         Status = ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN(STR_RM_LOG_DELETE_CONF), gShellLevel2HiiHandle, Node->FullName);
         Status = ShellPromptForResponse(ShellPromptResponseTypeYesNo, NULL, (VOID**)&Resp);
-        ASSERT_EFI_ERROR(Status);
         ASSERT(Resp != NULL);
         if (EFI_ERROR(Status) || *Resp != ShellPromptResponseYes) {
           SHELL_FREE_NON_NULL(Resp);
@@ -121,7 +122,32 @@ CascadeDelete(
           continue;
         }
         Node2->Status = gEfiShellProtocol->OpenFileByName (Node2->FullName, &Node2->Handle, EFI_FILE_MODE_READ|EFI_FILE_MODE_WRITE);
-        ShellStatus = CascadeDelete(Node2, Quiet);
+        if (EFI_ERROR(Node2->Status) && StrStr(Node2->FileName, L":") == NULL) {
+          //
+          // Update the node filename to have full path with file system identifier
+          //
+          NewSize = StrSize(Node->FullName) + StrSize(Node2->FullName);
+          TempName = AllocateZeroPool(NewSize);
+          if (TempName == NULL) {
+            ShellStatus = SHELL_OUT_OF_RESOURCES;
+          } else {
+            StrnCpy(TempName, Node->FullName, NewSize/sizeof(CHAR16) -1);
+            TempName[StrStr(TempName, L":")+1-TempName] = CHAR_NULL;
+            StrnCat(TempName, Node2->FullName, NewSize/sizeof(CHAR16) -1 - StrLen(TempName));
+            FreePool((VOID*)Node2->FullName);
+            Node2->FullName = TempName;
+
+            //
+            // Now try again to open the file
+            //
+            Node2->Status = gEfiShellProtocol->OpenFileByName (Node2->FullName, &Node2->Handle, EFI_FILE_MODE_READ|EFI_FILE_MODE_WRITE);
+          }
+        }
+        if (!EFI_ERROR(Node2->Status)) {
+          ShellStatus = CascadeDelete(Node2, Quiet);
+        } else if (ShellStatus == SHELL_SUCCESS) {
+          ShellStatus = (SHELL_STATUS)(Node2->Status&(~0x80000000));
+        }
         if (ShellStatus != SHELL_SUCCESS) {
           if (List!=NULL) {
             gEfiShellProtocol->FreeFileList(&List);
@@ -139,7 +165,9 @@ CascadeDelete(
     //
     // now delete the current node...
     //
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_RM_LOG_DELETE), gShellLevel2HiiHandle, Node->FullName);
+    if (!Quiet) {
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_RM_LOG_DELETE), gShellLevel2HiiHandle, Node->FullName);
+    }
     Status = gEfiShellProtocol->DeleteFile(Node->Handle);
     Node->Handle = NULL;
   }
@@ -151,13 +179,15 @@ CascadeDelete(
     ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_RM_LOG_DELETE_ERR), gShellLevel2HiiHandle, Status);
     return (SHELL_ACCESS_DENIED);
   } else {
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_RM_LOG_DELETE_COMP), gShellLevel2HiiHandle);
+    if (!Quiet) {
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_RM_LOG_DELETE_COMP), gShellLevel2HiiHandle);
+    }
     return (SHELL_SUCCESS);
   }
 }
 
 /**
-  Determins if a Node is a valid delete target.  Will prevent deleting the root directory.
+  Determines if a Node is a valid delete target.  Will prevent deleting the root directory.
 
   @param[in] List       RESERVED.  Not used.
   @param[in] Node       The node to analyze.
@@ -202,7 +232,10 @@ IsValidDeleteTarget(
   Size          = 0;
   Pattern       = StrnCatGrow(&Pattern     , NULL, TempLocation  , 0);
   SearchString  = StrnCatGrow(&SearchString, &Size, Node->FullName, 0);
-  SearchString  = StrnCatGrow(&SearchString, &Size, L"*", 0);
+  if (!EFI_ERROR(ShellIsDirectory(SearchString))) {
+    SearchString  = StrnCatGrow(&SearchString, &Size, L"\\", 0);
+    SearchString  = StrnCatGrow(&SearchString, &Size, L"*", 0);
+  }
 
   if (Pattern == NULL || SearchString == NULL) {
     RetVal = FALSE;

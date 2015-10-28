@@ -1,7 +1,21 @@
 /** @file
   The library instance provides security service of TPM measure boot.  
 
-Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Caution: This file requires additional review when modified.
+  This library will have external input - PE/COFF image and GPT partition.
+  This external input must be validated carefully to avoid security issue like
+  buffer overflow, integer overflow.
+
+  DxeTpmMeasureBootLibImageRead() function will make sure the PE/COFF image content
+  read is within the image buffer.
+
+  TcgMeasurePeImage() function will accept untrusted PE/COFF image and validate its
+  data structure within this image buffer before use.
+
+  TcgMeasureGptTable() function will receive untrusted GPT partition table, and parse
+  partition data carefully.
+
+Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -15,10 +29,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <PiDxe.h>
 
 #include <Protocol/TcgService.h>
-#include <Protocol/FirmwareVolume2.h>
 #include <Protocol/BlockIo.h>
 #include <Protocol/DiskIo.h>
-#include <Protocol/DevicePathToText.h>
+#include <Protocol/FirmwareVolumeBlock.h>
+
+#include <Guid/MeasuredFvHob.h>
 
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
@@ -29,6 +44,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/BaseCryptLib.h>
 #include <Library/PeCoffLib.h>
 #include <Library/SecurityManagementLib.h>
+#include <Library/HobLib.h>
 
 //
 // Flag to check GPT partition. It only need be measured once.
@@ -38,9 +54,18 @@ EFI_GUID                          mZeroGuid = {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}
 UINTN                             mMeasureGptCount = 0;
 VOID                              *mFileBuffer;
 UINTN                             mImageSize;
+//
+// Measured FV handle cache
+//
+EFI_HANDLE                        mCacheMeasuredHandle  = NULL;
+MEASURED_HOB_DATA                 *mMeasuredHobData     = NULL;
 
 /**
   Reads contents of a PE/COFF image in memory buffer.
+
+  Caution: This function may receive untrusted input.
+  PE/COFF image is external input, so this function will make sure the PE/COFF image content
+  read is within the image buffer.
 
   @param  FileHandle      Pointer to the file handle to read the PE/COFF image.
   @param  FileOffset      Offset into the PE/COFF image to begin the read operation.
@@ -85,6 +110,9 @@ DxeTpmMeasureBootLibImageRead (
 
 /**
   Measure GPT table data into TPM log.
+
+  Caution: This function may receive untrusted input.
+  The GPT partition table is external input, so this function should parse partition data carefully.
 
   @param TcgProtocol             Pointer to the located TCG protocol instance.
   @param GptHandle               Handle that GPT partition was installed.
@@ -177,15 +205,15 @@ TcgMeasureGptTable (
     if (!CompareGuid (&PartitionEntry->PartitionTypeGUID, &mZeroGuid)) {
       NumberOfPartition++;  
     }
-    PartitionEntry++;
+    PartitionEntry = (EFI_PARTITION_ENTRY *)((UINT8 *)PartitionEntry + PrimaryHeader->SizeOfPartitionEntry);
   }
 
   //
-  // Parepare Data for Measurement
+  // Prepare Data for Measurement
   // 
   EventSize = (UINT32)(sizeof (EFI_GPT_DATA) - sizeof (GptData->Partitions) 
                         + NumberOfPartition * PrimaryHeader->SizeOfPartitionEntry);
-  TcgEvent = (TCG_PCR_EVENT *) AllocateZeroPool (EventSize + sizeof (TCG_PCR_EVENT));
+  TcgEvent = (TCG_PCR_EVENT *) AllocateZeroPool (EventSize + sizeof (TCG_PCR_EVENT_HDR));
   if (TcgEvent == NULL) {
     FreePool (PrimaryHeader);
     FreePool (EntryPtr);
@@ -210,13 +238,13 @@ TcgMeasureGptTable (
   for (Index = 0; Index < PrimaryHeader->NumberOfPartitionEntries; Index++) {
     if (!CompareGuid (&PartitionEntry->PartitionTypeGUID, &mZeroGuid)) {
       CopyMem (
-        (UINT8 *)&GptData->Partitions + NumberOfPartition * sizeof (EFI_PARTITION_ENTRY),
+        (UINT8 *)&GptData->Partitions + NumberOfPartition * PrimaryHeader->SizeOfPartitionEntry,
         (UINT8 *)PartitionEntry,
-        sizeof (EFI_PARTITION_ENTRY)
+        PrimaryHeader->SizeOfPartitionEntry
         );
       NumberOfPartition++;
     }
-    PartitionEntry++;
+    PartitionEntry =(EFI_PARTITION_ENTRY *)((UINT8 *)PartitionEntry + PrimaryHeader->SizeOfPartitionEntry);
   }
 
   //
@@ -246,6 +274,10 @@ TcgMeasureGptTable (
 /**
   Measure PE image into TPM log based on the authenticode image hashing in
   PE/COFF Specification 8.0 Appendix A.
+
+  Caution: This function may receive untrusted input.
+  PE/COFF image is external input, so this function will validate its data structure
+  within this image buffer before use.
 
   @param[in] TcgProtocol    Pointer to the located TCG protocol instance.
   @param[in] ImageAddress   Start address of image buffer.
@@ -339,7 +371,9 @@ TcgMeasurePeImage (
   ImageLoad->ImageLengthInMemory   = ImageSize;
   ImageLoad->ImageLinkTimeAddress  = LinkTimeBase;
   ImageLoad->LengthOfDevicePath    = FilePathSize;
-  CopyMem (ImageLoad->DevicePath, FilePath, FilePathSize);
+  if ((FilePath != NULL) && (FilePathSize != 0)) {
+    CopyMem (ImageLoad->DevicePath, FilePath, FilePathSize);
+  }
 
   //
   // Check PE/COFF image
@@ -382,7 +416,20 @@ TcgMeasurePeImage (
   // Measuring PE/COFF Image Header;
   // But CheckSum field and SECURITY data directory (certificate) are excluded
   //
-  Magic = Hdr.Pe32->OptionalHeader.Magic;
+  if (Hdr.Pe32->FileHeader.Machine == IMAGE_FILE_MACHINE_IA64 && Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    //
+    // NOTE: Some versions of Linux ELILO for Itanium have an incorrect magic value 
+    //       in the PE/COFF Header. If the MachineType is Itanium(IA64) and the 
+    //       Magic value in the OptionalHeader is EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC
+    //       then override the magic value to EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC
+    //
+    Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+  } else {
+    //
+    // Get the magic value from the PE/COFF Optional Header
+    //
+    Magic = Hdr.Pe32->OptionalHeader.Magic;
+  }
   
   //
   // 3.  Calculate the distance from the base of the image header to the image checksum address.
@@ -618,6 +665,14 @@ TcgMeasurePeImage (
              &EventNumber,
              &EventLogLastEntry
              );
+  if (Status == EFI_OUT_OF_RESOURCES) {
+    //
+    // Out of resource here means the image is hashed and its result is extended to PCR.
+    // But the event log cann't be saved since log area is full.
+    // Just return EFI_SUCCESS in order not to block the image load.
+    //
+    Status = EFI_SUCCESS;
+  }
 
 Finish:
   FreePool (TcgEvent);
@@ -656,51 +711,45 @@ Finish:
   might be possible to use it at a future time, then EFI_SECURITY_VIOLATION is 
   returned.
 
-  @param[in, out] AuthenticationStatus  This is the authentication status returned
+  @param[in]      AuthenticationStatus  This is the authentication status returned
                                         from the securitymeasurement services for the
                                         input file.
   @param[in]      File       This is a pointer to the device path of the file that is
                              being dispatched. This will optionally be used for logging.
   @param[in]      FileBuffer File buffer matches the input file device path.
   @param[in]      FileSize   Size of File buffer matches the input file device path.
+  @param[in]      BootPolicy A boot policy that was used to call LoadImage() UEFI service.
 
-  @retval EFI_SUCCESS            The file specified by File did authenticate, and the
-                                 platform policy dictates that the DXE Core may use File.
-  @retval EFI_INVALID_PARAMETER  File is NULL.
-  @retval EFI_SECURITY_VIOLATION The file specified by File did not authenticate, and
-                                 the platform policy dictates that File should be placed
-                                 in the untrusted state. A file may be promoted from
-                                 the untrusted to the trusted state at a future time
-                                 with a call to the Trust() DXE Service.
-  @retval EFI_ACCESS_DENIED      The file specified by File did not authenticate, and
-                                 the platform policy dictates that File should not be
-                                 used for any purpose.
-
+  @retval EFI_SUCCESS             The file specified by DevicePath and non-NULL
+                                  FileBuffer did authenticate, and the platform policy dictates
+                                  that the DXE Foundation may use the file.
+  @retval other error value
 **/
 EFI_STATUS
 EFIAPI
 DxeTpmMeasureBootHandler (
-  IN  OUT   UINT32                     AuthenticationStatus,
+  IN  UINT32                           AuthenticationStatus,
   IN  CONST EFI_DEVICE_PATH_PROTOCOL   *File,
-  IN  VOID                             *FileBuffer OPTIONAL,
-  IN  UINTN                            FileSize OPTIONAL
+  IN  VOID                             *FileBuffer,
+  IN  UINTN                            FileSize,
+  IN  BOOLEAN                          BootPolicy
   )
 {
-  EFI_TCG_PROTOCOL                  *TcgProtocol;
-  EFI_STATUS                        Status;
-  TCG_EFI_BOOT_SERVICE_CAPABILITY   ProtocolCapability;
-  UINT32                            TCGFeatureFlags;
-  EFI_PHYSICAL_ADDRESS              EventLogLocation;
-  EFI_PHYSICAL_ADDRESS              EventLogLastEntry;
-  EFI_DEVICE_PATH_PROTOCOL          *DevicePathNode;
-  EFI_DEVICE_PATH_PROTOCOL          *OrigDevicePathNode;
-  EFI_HANDLE                        Handle;
-  BOOLEAN                           ApplicationRequired;
-  PE_COFF_LOADER_IMAGE_CONTEXT      ImageContext;
-
-  if (File == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
+  EFI_TCG_PROTOCOL                    *TcgProtocol;
+  EFI_STATUS                          Status;
+  TCG_EFI_BOOT_SERVICE_CAPABILITY     ProtocolCapability;
+  UINT32                              TCGFeatureFlags;
+  EFI_PHYSICAL_ADDRESS                EventLogLocation;
+  EFI_PHYSICAL_ADDRESS                EventLogLastEntry;
+  EFI_DEVICE_PATH_PROTOCOL            *DevicePathNode;
+  EFI_DEVICE_PATH_PROTOCOL            *OrigDevicePathNode;
+  EFI_HANDLE                          Handle;
+  EFI_HANDLE                          TempHandle;
+  BOOLEAN                             ApplicationRequired;
+  PE_COFF_LOADER_IMAGE_CONTEXT        ImageContext;
+  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *FvbProtocol;
+  EFI_PHYSICAL_ADDRESS                FvAddress;
+  UINT32                              Index;
 
   Status = gBS->LocateProtocol (&gEfiTcgProtocolGuid, NULL, (VOID **) &TcgProtocol);
   if (EFI_ERROR (Status)) {
@@ -719,7 +768,7 @@ DxeTpmMeasureBootHandler (
              &EventLogLocation,
              &EventLogLastEntry
            );
-  if (EFI_ERROR (Status) || ProtocolCapability.TPMDeactivatedFlag) {
+  if (EFI_ERROR (Status) || ProtocolCapability.TPMDeactivatedFlag || (!ProtocolCapability.TPMPresentFlag)) {
     //
     // TPM device doesn't work or activate.
     //
@@ -730,7 +779,6 @@ DxeTpmMeasureBootHandler (
   // Copy File Device Path
   //
   OrigDevicePathNode = DuplicateDevicePath (File);
-  ASSERT (OrigDevicePathNode != NULL);
   
   //
   // 1. Check whether this device path support BlockIo protocol.
@@ -743,6 +791,7 @@ DxeTpmMeasureBootHandler (
     // Find the gpt partion on the given devicepath
     //
     DevicePathNode = OrigDevicePathNode;
+    ASSERT (DevicePathNode != NULL);
     while (!IsDevicePathEnd (DevicePathNode)) {
       //
       // Find the Gpt partition
@@ -794,10 +843,10 @@ DxeTpmMeasureBootHandler (
   ApplicationRequired = FALSE;
 
   //
-  // Check whether this device path support FV2 protocol.
+  // Check whether this device path support FVB protocol.
   //
   DevicePathNode = OrigDevicePathNode;
-  Status = gBS->LocateDevicePath (&gEfiFirmwareVolume2ProtocolGuid, &DevicePathNode, &Handle);
+  Status = gBS->LocateDevicePath (&gEfiFirmwareVolumeBlockProtocolGuid, &DevicePathNode, &Handle);
   if (!EFI_ERROR (Status)) {
     //
     // Don't check FV image, and directly return EFI_SUCCESS.
@@ -807,13 +856,50 @@ DxeTpmMeasureBootHandler (
       return EFI_SUCCESS;
     }
     //
-    // The image from Firmware image will not be mearsured.
-    // Current policy doesn't measure PeImage from Firmware if it is driver
-    // If the got PeImage is application, it will be still be measured.
+    // The PE image from unmeasured Firmware volume need be measured
+    // The PE image from measured Firmware volume will be mearsured according to policy below.
+    //   If it is driver, do not measure
+    //   If it is application, still measure.
     //
     ApplicationRequired = TRUE;
+
+    if (mCacheMeasuredHandle != Handle && mMeasuredHobData != NULL) {
+      //
+      // Search for Root FV of this PE image
+      //
+      TempHandle = Handle;
+      do {
+        Status = gBS->HandleProtocol(
+                        TempHandle, 
+                        &gEfiFirmwareVolumeBlockProtocolGuid,
+                        (VOID**)&FvbProtocol
+                        );
+        TempHandle = FvbProtocol->ParentHandle;
+      } while (!EFI_ERROR(Status) && FvbProtocol->ParentHandle != NULL);
+
+      //
+      // Search in measured FV Hob
+      //
+      Status = FvbProtocol->GetPhysicalAddress(FvbProtocol, &FvAddress);
+      if (EFI_ERROR(Status)){
+        return Status;
+      }
+
+      ApplicationRequired = FALSE;
+
+      for (Index = 0; Index < mMeasuredHobData->Num; Index++) {
+        if(mMeasuredHobData->MeasuredFvBuf[Index].BlobBase == FvAddress) {
+          //
+          // Cache measured FV for next measurement
+          //
+          mCacheMeasuredHandle = Handle;
+          ApplicationRequired  = TRUE;
+          break;
+        }
+      }
+    }
   }
-  
+
   //
   // File is not found.
   //
@@ -855,21 +941,14 @@ DxeTpmMeasureBootHandler (
     //    
     DEBUG_CODE_BEGIN ();
       CHAR16                            *ToText;
-      EFI_DEVICE_PATH_TO_TEXT_PROTOCOL  *DevPathToText;
-      Status = gBS->LocateProtocol (
-                      &gEfiDevicePathToTextProtocolGuid,
-                      NULL,
-                      (VOID **) &DevPathToText
-                      );
-      if (!EFI_ERROR (Status)) {
-        ToText = DevPathToText->ConvertDevicePathToText (
-                                  DevicePathNode,
-                                  FALSE,
-                                  TRUE
-                                  );
-        if (ToText != NULL) {
-          DEBUG ((DEBUG_INFO, "The measured image path is %s.\n", ToText));
-        }
+      ToText = ConvertDevicePathToText (
+                 DevicePathNode,
+                 FALSE,
+                 TRUE
+                 );
+      if (ToText != NULL) {
+        DEBUG ((DEBUG_INFO, "The measured image path is %s.\n", ToText));
+        FreePool (ToText);
       }
     DEBUG_CODE_END ();
 
@@ -890,7 +969,9 @@ DxeTpmMeasureBootHandler (
   // Done, free the allocated resource.
   //
 Finish:
-  FreePool (OrigDevicePathNode);
+  if (OrigDevicePathNode != NULL) {
+    FreePool (OrigDevicePathNode);
+  }
 
   return Status;
 }
@@ -911,7 +992,17 @@ DxeTpmMeasureBootLibConstructor (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  return RegisterSecurityHandler (
+  EFI_HOB_GUID_TYPE  *GuidHob;
+
+  GuidHob = NULL;
+
+  GuidHob = GetFirstGuidHob (&gMeasuredFvHobGuid);
+
+  if (GuidHob != NULL) {
+    mMeasuredHobData = GET_GUID_HOB_DATA (GuidHob);
+  }
+
+  return RegisterSecurity2Handler (
           DxeTpmMeasureBootHandler,
           EFI_AUTH_OPERATION_MEASURE_IMAGE | EFI_AUTH_OPERATION_IMAGE_REQUIRED
           );

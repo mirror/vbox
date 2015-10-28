@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -1198,7 +1198,7 @@ PciProgramAllInterruptLineRegisters (
                       &Supports
                       );
     if (!EFI_ERROR (Status)) {
-      Supports &= EFI_PCI_DEVICE_ENABLE;
+      Supports &= (UINT64)EFI_PCI_DEVICE_ENABLE;
       Status = PciIo->Attributes (
                         PciIo,
                         EfiPciIoAttributeOperationEnable,
@@ -1500,54 +1500,52 @@ UpdateBevBcvTable (
     }
   }
 
-  if (PciPtr >= (EFI_LEGACY_EXPANSION_ROM_HEADER *) ((UINTN) 0xc8000)) {
-    while (TRUE) {
-      Status    = FindNextPnpExpansionHeader (Private, Instance, &PnpPtr);
-      Instance  = NOT_FIRST_INSTANCE;
-      if (EFI_ERROR (Status)) {
-        break;
-      }
-      //
-      // There can be additional $PnP headers within the OPROM.
-      // Example: SCSI can have one per drive.
-      //
-      BbsTable[BbsIndex].BootPriority             = BBS_UNPRIORITIZED_ENTRY;
-      BbsTable[BbsIndex].DeviceType               = DeviceType;
-      BbsTable[BbsIndex].Bus                      = (UINT32) Bus;
-      BbsTable[BbsIndex].Device                   = (UINT32) Device;
-      BbsTable[BbsIndex].Function                 = (UINT32) Function;
-      BbsTable[BbsIndex].StatusFlags.OldPosition  = 0;
-      BbsTable[BbsIndex].StatusFlags.Reserved1    = 0;
-      BbsTable[BbsIndex].StatusFlags.Enabled      = 0;
-      BbsTable[BbsIndex].StatusFlags.Failed       = 0;
-      BbsTable[BbsIndex].StatusFlags.MediaPresent = 0;
-      BbsTable[BbsIndex].StatusFlags.Reserved2    = 0;
-      BbsTable[BbsIndex].Class                    = PnpPtr->Class;
-      BbsTable[BbsIndex].SubClass                 = PnpPtr->SubClass;
-      BbsTable[BbsIndex].DescStringOffset         = PnpPtr->ProductNamePointer;
-      BbsTable[BbsIndex].DescStringSegment        = mBbsRomSegment;
-      BbsTable[BbsIndex].MfgStringOffset          = PnpPtr->MfgPointer;
-      BbsTable[BbsIndex].MfgStringSegment         = mBbsRomSegment;
-      BbsTable[BbsIndex].BootHandlerSegment       = mBbsRomSegment;
+  while (TRUE) {
+    Status    = FindNextPnpExpansionHeader (Private, Instance, &PnpPtr);
+    Instance  = NOT_FIRST_INSTANCE;
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+    //
+    // There can be additional $PnP headers within the OPROM.
+    // Example: SCSI can have one per drive.
+    //
+    BbsTable[BbsIndex].BootPriority             = BBS_UNPRIORITIZED_ENTRY;
+    BbsTable[BbsIndex].DeviceType               = DeviceType;
+    BbsTable[BbsIndex].Bus                      = (UINT32) Bus;
+    BbsTable[BbsIndex].Device                   = (UINT32) Device;
+    BbsTable[BbsIndex].Function                 = (UINT32) Function;
+    BbsTable[BbsIndex].StatusFlags.OldPosition  = 0;
+    BbsTable[BbsIndex].StatusFlags.Reserved1    = 0;
+    BbsTable[BbsIndex].StatusFlags.Enabled      = 0;
+    BbsTable[BbsIndex].StatusFlags.Failed       = 0;
+    BbsTable[BbsIndex].StatusFlags.MediaPresent = 0;
+    BbsTable[BbsIndex].StatusFlags.Reserved2    = 0;
+    BbsTable[BbsIndex].Class                    = PnpPtr->Class;
+    BbsTable[BbsIndex].SubClass                 = PnpPtr->SubClass;
+    BbsTable[BbsIndex].DescStringOffset         = PnpPtr->ProductNamePointer;
+    BbsTable[BbsIndex].DescStringSegment        = mBbsRomSegment;
+    BbsTable[BbsIndex].MfgStringOffset          = PnpPtr->MfgPointer;
+    BbsTable[BbsIndex].MfgStringSegment         = mBbsRomSegment;
+    BbsTable[BbsIndex].BootHandlerSegment       = mBbsRomSegment;
 
-      //
-      // Have seen case where PXE base code have PnP expansion ROM
-      // header but no Bcv or Bev vectors.
-      //
-      if (PnpPtr->Bcv != 0) {
-        BbsTable[BbsIndex].BootHandlerOffset = PnpPtr->Bcv;
-        ++BbsIndex;
-      }
+    //
+    // Have seen case where PXE base code have PnP expansion ROM
+    // header but no Bcv or Bev vectors.
+    //
+    if (PnpPtr->Bcv != 0) {
+      BbsTable[BbsIndex].BootHandlerOffset = PnpPtr->Bcv;
+      ++BbsIndex;
+    }
 
-      if (PnpPtr->Bev != 0) {
-        BbsTable[BbsIndex].BootHandlerOffset  = PnpPtr->Bev;
-        BbsTable[BbsIndex].DeviceType         = BBS_BEV_DEVICE;
-        ++BbsIndex;
-      }
+    if (PnpPtr->Bev != 0) {
+      BbsTable[BbsIndex].BootHandlerOffset  = PnpPtr->Bev;
+      BbsTable[BbsIndex].DeviceType         = BBS_BEV_DEVICE;
+      ++BbsIndex;
+    }
 
-      if ((PnpPtr == (LEGACY_PNP_EXPANSION_HEADER *) PciPtr) || (PnpPtr > (LEGACY_PNP_EXPANSION_HEADER *) RomEnd)) {
-        break;
-      }
+    if ((PnpPtr == (LEGACY_PNP_EXPANSION_HEADER *) PciPtr) || (PnpPtr > (LEGACY_PNP_EXPANSION_HEADER *) RomEnd)) {
+      break;
     }
   }
 
@@ -1717,6 +1715,20 @@ PciShadowRoms (
     if (!EFI_ERROR (Status)) {
       continue;
     }
+    
+    //
+    // If legacy VBIOS Oprom has not been dispatched before, install legacy VBIOS here.
+    //
+    if (IS_PCI_DISPLAY (&Pci) && Index == 0) {    
+      Status = LegacyBiosInstallVgaRom (Private);
+      //
+      // A return status of EFI_NOT_FOUND is considered valid (No EFI
+      // driver is controlling video).
+      //
+      ASSERT ((Status == EFI_SUCCESS) || (Status == EFI_NOT_FOUND));
+      continue;
+    }
+
     //
     // Install legacy ROM
     //
@@ -1760,7 +1772,7 @@ PciShadowRoms (
                           &Supports
                           );
         if (!EFI_ERROR (Status)) {
-          Supports &= EFI_PCI_DEVICE_ENABLE;
+          Supports &= (UINT64)EFI_PCI_DEVICE_ENABLE;
           Status = PciIo->Attributes (
                             PciIo,
                             EfiPciIoAttributeOperationEnable,
@@ -1867,6 +1879,7 @@ LegacyBiosCheckPciRomEx (
   PCI_TYPE00                      PciConfigHeader;
   VOID                            *LocalConfigUtilityCodeHeader;
 
+  LocalConfigUtilityCodeHeader = NULL;
   *Flags = NO_ROM;
   Status = gBS->HandleProtocol (
                   PciHandle,
@@ -1882,7 +1895,7 @@ LegacyBiosCheckPciRomEx (
   //
   Status = IsLegacyRom (PciHandle);
   if (!EFI_ERROR (Status)) {
-    *Flags |= (ROM_FOUND | VALID_LEGACY_ROM);
+    *Flags |= (UINTN)(ROM_FOUND | VALID_LEGACY_ROM);
     return EFI_SUCCESS;
   }
   //
@@ -2174,8 +2187,8 @@ LegacyBiosInstallVgaRom (
                     &Supports
                     );
   if (!EFI_ERROR (Status)) {
-    Supports &= EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | \
-                EFI_PCI_IO_ATTRIBUTE_VGA_IO | EFI_PCI_IO_ATTRIBUTE_VGA_IO_16;
+    Supports &= (UINT64)(EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | \
+                         EFI_PCI_IO_ATTRIBUTE_VGA_IO | EFI_PCI_IO_ATTRIBUTE_VGA_IO_16);
     Status = PciIo->Attributes (
                       PciIo,
                       EfiPciIoAttributeOperationEnable,
@@ -2304,6 +2317,13 @@ LegacyBiosInstallRom (
         
     if (EFI_ERROR (Status)) {
       DEBUG ((EFI_D_ERROR, "return LegacyBiosInstallRom(%d): EFI_OUT_OF_RESOURCES (no more space for OpROM)\n", __LINE__));
+      //
+      // Report Status Code to indicate that there is no enough space for OpROM
+      //
+      REPORT_STATUS_CODE (
+        EFI_ERROR_CODE | EFI_ERROR_MINOR,
+        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_LEGACY_OPROM_NO_SPACE)
+        );
       return EFI_OUT_OF_RESOURCES;
     }
     InitAddress = (UINTN) PhysicalAddress;
@@ -2314,6 +2334,13 @@ LegacyBiosInstallRom (
     if (RuntimeAddress + *RuntimeImageLength > PcdGet32 (PcdEndOpromShadowAddress)) {
       DEBUG ((EFI_D_ERROR, "return LegacyBiosInstallRom(%d): EFI_OUT_OF_RESOURCES (no more space for OpROM)\n", __LINE__));
       gBS->FreePages (PhysicalAddress, EFI_SIZE_TO_PAGES (ImageSize));
+      //
+      // Report Status Code to indicate that there is no enough space for OpROM
+      //
+      REPORT_STATUS_CODE (
+        EFI_ERROR_CODE | EFI_ERROR_MINOR,
+        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_LEGACY_OPROM_NO_SPACE)
+        );
       return EFI_OUT_OF_RESOURCES;
     }
   } else {
@@ -2324,6 +2351,13 @@ LegacyBiosInstallRom (
     InitAddress    = PCI_START_ADDRESS (Private->OptionRom);
     if (InitAddress + ImageSize > PcdGet32 (PcdEndOpromShadowAddress)) {
       DEBUG ((EFI_D_ERROR, "return LegacyBiosInstallRom(%d): EFI_OUT_OF_RESOURCES (no more space for OpROM)\n", __LINE__));
+      //
+      // Report Status Code to indicate that there is no enough space for OpROM
+      //
+      REPORT_STATUS_CODE (
+        EFI_ERROR_CODE | EFI_ERROR_MINOR,
+        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_LEGACY_OPROM_NO_SPACE)
+        );
       return EFI_OUT_OF_RESOURCES;
     }
 
@@ -2380,7 +2414,7 @@ LegacyBiosInstallRom (
     //
     // Store current mode settings since PrepareToScanRom may change mode.
     //
-    VideoMode = *(UINT8 *) ((UINTN) 0x449);
+    VideoMode = *(UINT8 *) ((UINTN) (0x400 + BDA_VIDEO_MODE));
   }
   //
   // Notify the platform that we are about to scan the ROM
@@ -2520,9 +2554,14 @@ LegacyBiosInstallRom (
     //
     // Set mode settings since PrepareToScanRom may change mode
     //
-    Regs.H.AH = 0x00;
-    Regs.H.AL = VideoMode;
-    Private->LegacyBios.Int86 (&Private->LegacyBios, 0x10, &Regs);
+    if (VideoMode != *(UINT8 *) ((UINTN) (0x400 + BDA_VIDEO_MODE))) {
+      //
+      // The active video mode is changed, restore it to original mode.
+      //
+      Regs.H.AH = 0x00;
+      Regs.H.AL = VideoMode;
+      Private->LegacyBios.Int86 (&Private->LegacyBios, 0x10, &Regs);
+    }
   }
   //
   // Regs.X.AX from the adapter initializion is ignored since some adapters
@@ -2531,7 +2570,16 @@ LegacyBiosInstallRom (
   //
   // The ROM could have updated it's size so we need to read again.
   //
-  *RuntimeImageLength = ((EFI_LEGACY_EXPANSION_ROM_HEADER *) (RuntimeAddress))->Size512 * 512;
+  if (((EFI_LEGACY_EXPANSION_ROM_HEADER *) RuntimeAddress)->Signature != PCI_EXPANSION_ROM_HEADER_SIGNATURE) {
+    //
+    // Now we check the signature (0xaa55) to judge whether the run-time code is truly generated by INIT function.
+    // If signature is not valid, that means the INIT function didn't copy the run-time code to RuntimeAddress.
+    //
+    *RuntimeImageLength = 0;
+  } else {
+    *RuntimeImageLength = ((EFI_LEGACY_EXPANSION_ROM_HEADER *) RuntimeAddress)->Size512 * 512;
+  }
+
   DEBUG ((EFI_D_INFO, " fsize = %x\n", *RuntimeImageLength));
 
   //
@@ -2867,7 +2915,15 @@ LegacyBiosInstallPciRom (
       return EFI_UNSUPPORTED;
     }
 
-    if (!Private->VgaInstalled) {
+    Status = Private->LegacyBiosPlatform->GetPlatformHandle (
+                                            Private->LegacyBiosPlatform,
+                                            EfiGetPlatformVgaHandle,
+                                            0,
+                                            &HandleBuffer,
+                                            &HandleCount,
+                                            NULL
+                                            );
+    if ((!EFI_ERROR (Status)) && (!Private->VgaInstalled)) {
       //
       // A return status of EFI_NOT_FOUND is considered valid (No EFI
       // driver is controlling video.
@@ -2895,7 +2951,7 @@ LegacyBiosInstallPciRom (
     Pcir = (PCI_3_0_DATA_STRUCTURE *)
            ((UINT8 *) LocalRomImage + ((PCI_EXPANSION_ROM_HEADER *) LocalRomImage)->PcirOffset);
 
-    if (Pcir->Signature != PCI_DATA_STRUCTURE_SIGNATURE) {
+    if ((Pcir->Signature != PCI_DATA_STRUCTURE_SIGNATURE) || (Pcir->CodeType != PCI_CODE_TYPE_PCAT_IMAGE)) {
       mVgaInstallationInProgress = FALSE;
       return EFI_UNSUPPORTED;
     }

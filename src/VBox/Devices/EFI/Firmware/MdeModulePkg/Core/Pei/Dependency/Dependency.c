@@ -5,7 +5,7 @@
   if a driver can be scheduled for execution.  The criteria for
   schedulability is that the dependency expression is satisfied.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -106,7 +106,7 @@ PeimDispatchReadiness (
 
   Iterator  = DependencyExpression;
 
-  StackPtr = &EvalStack[0];
+  StackPtr = EvalStack;
 
   while (TRUE) {
 
@@ -196,7 +196,6 @@ PeimDispatchReadiness (
         }
         DEBUG ((DEBUG_DISPATCH, "  RESULT = %a\n", IsPpiInstalled (PeiServices, StackPtr) ? "TRUE" : "FALSE"));
         return IsPpiInstalled (PeiServices, StackPtr);
-        break;
 
       case (EFI_DEP_NOT):    
         DEBUG ((DEBUG_DISPATCH, "  NOT\n"));

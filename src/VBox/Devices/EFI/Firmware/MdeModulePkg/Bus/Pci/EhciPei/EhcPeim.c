@@ -2,7 +2,7 @@
 PEIM to produce gPeiUsb2HostControllerPpiGuid based on gPeiUsbControllerPpiGuid
 which is used to enable recovery function from USB Drivers.
 
-Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
   
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -401,6 +401,26 @@ EhcRunHC (
 }
 
 /**
+  Power On All EHCI Ports.
+  
+  @param  Ehc             The EHCI device.
+
+**/
+VOID
+EhcPowerOnAllPorts (
+  IN PEI_USB2_HC_DEV          *Ehc
+  )
+{
+  UINT8 PortNumber;
+  UINT8 Index;
+
+  PortNumber = (UINT8)(Ehc->HcStructParams & HCSP_NPORTS);
+  for (Index = 0; Index < PortNumber; Index++) {
+    EhcSetOpRegBit (Ehc, EHC_PORT_STAT_OFFSET + 4 * Index, PORTSC_POWER);
+  }
+}
+
+/**
   Initialize the HC hardware. 
   EHCI spec lists the five things to do to initialize the hardware.
   1. Program CTRLDSSEGMENT.
@@ -443,6 +463,9 @@ EhcInitHC (
   if (Ehc->Urb  == NULL) {
     return Status;
   }
+
+  EhcPowerOnAllPorts (Ehc);  
+  MicroSecondDelay (EHC_ROOT_PORT_RECOVERY_STALL);
   
   Status = EhcInitSched (Ehc);
 
@@ -509,6 +532,8 @@ EhcInitHC (
                                 the subsequent bulk transfer.
   @param  TimeOut               Indicates the maximum time, in millisecond, which the
                                 transfer is allowed to complete.
+                                If Timeout is 0, then the caller must wait for the function
+                                to be completed until EFI_SUCCESS or EFI_DEVICE_ERROR is returned.
   @param  Translator            A pointr to the transaction translator data.                                
   @param  TransferResult        A pointer to the detailed result information of the
                                 bulk transfer.
@@ -972,6 +997,8 @@ ON_EXIT:
   @param  Data                   Data buffer to be transmitted or received from USB device.
   @param  DataLength             The size (in bytes) of the data buffer.
   @param  TimeOut                Indicates the maximum timeout, in millisecond.
+                                 If Timeout is 0, then the caller must wait for the function
+                                 to be completed until EFI_SUCCESS or EFI_DEVICE_ERROR is returned.
   @param  Translator             Transaction translator to be used by this device.
   @param  TransferResult         Return the result of this control transfer.
 

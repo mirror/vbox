@@ -14,8 +14,8 @@
 
 #include "PrintLibInternal.h"
 
-#define WARNING_STATUS_NUMBER         4
-#define ERROR_STATUS_NUMBER           24
+#define WARNING_STATUS_NUMBER         5
+#define ERROR_STATUS_NUMBER           33
 
 GLOBAL_REMOVE_IF_UNREFERENCED CONST CHAR8 mHexStr[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
@@ -25,6 +25,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED CONST CHAR8 *mStatusString[] = {
   "Warning Delete Failure",       //  RETURN_WARN_DELETE_FAILURE    = 2
   "Warning Write Failure",        //  RETURN_WARN_WRITE_FAILURE     = 3
   "Warning Buffer Too Small",     //  RETURN_WARN_BUFFER_TOO_SMALL  = 4
+  "Warning Stale Data",           //  RETURN_WARN_STALE_DATA        = 5
   "Load Error",                   //  RETURN_LOAD_ERROR             = 1  | MAX_BIT
   "Invalid Parameter",            //  RETURN_INVALID_PARAMETER      = 2  | MAX_BIT
   "Unsupported",                  //  RETURN_UNSUPPORTED            = 3  | MAX_BIT
@@ -48,7 +49,16 @@ GLOBAL_REMOVE_IF_UNREFERENCED CONST CHAR8 *mStatusString[] = {
   "Aborted",                      //  RETURN_ABORTED                = 21 | MAX_BIT
   "ICMP Error",                   //  RETURN_ICMP_ERROR             = 22 | MAX_BIT
   "TFTP Error",                   //  RETURN_TFTP_ERROR             = 23 | MAX_BIT
-  "Protocol Error"                //  RETURN_PROTOCOL_ERROR         = 24 | MAX_BIT
+  "Protocol Error",               //  RETURN_PROTOCOL_ERROR         = 24 | MAX_BIT
+  "Incompatible Version",         //  RETURN_INCOMPATIBLE_VERSION   = 25 | MAX_BIT
+  "Security Violation",           //  RETURN_SECURITY_VIOLATION     = 26 | MAX_BIT
+  "CRC Error",                    //  RETURN_CRC_ERROR              = 27 | MAX_BIT
+  "End of Media",                 //  RETURN_END_OF_MEDIA           = 28 | MAX_BIT
+  "Reserved (29)",                //  RESERVED                      = 29 | MAX_BIT
+  "Reserved (30)",                //  RESERVED                      = 30 | MAX_BIT
+  "End of File",                  //  RETURN_END_OF_FILE            = 31 | MAX_BIT
+  "Invalid Language",             //  RETURN_INVALID_LANGUAGE       = 32 | MAX_BIT
+  "Compromised Data"              //  RETURN_COMPROMISED_DATA       = 33 | MAX_BIT
 };
 
 
@@ -203,7 +213,7 @@ BasePrintLibConvertValueToString (
   // Width is 0 or COMMA_TYPE is set, PREFIX_ZERO is ignored.
   //
   if (Width == 0 || (Flags & COMMA_TYPE) != 0) {
-    Flags &= (~PREFIX_ZERO);
+    Flags &= ~((UINTN) PREFIX_ZERO);
   }
   //
   // If Width is 0 then a width of  MAXIMUM_VALUE_CHARACTERS is assumed.
@@ -363,17 +373,21 @@ BasePrintLibSPrintMarker (
   }
 
   LengthToReturn = 0;
+  EndBuffer = NULL;
+  OriginalBuffer = NULL;
 
   //
   // Reserve space for the Null terminator.
   //
-  BufferSize--;
-  OriginalBuffer = Buffer;
+  if (Buffer != NULL) {
+    BufferSize--;
+    OriginalBuffer = Buffer;
 
-  //
-  // Set the tag for the end of the input Buffer.
-  //
-  EndBuffer      = Buffer + BufferSize * BytesPerOutputCharacter;
+    //
+    // Set the tag for the end of the input Buffer.
+    //
+    EndBuffer = Buffer + BufferSize * BytesPerOutputCharacter;
+  }
 
   if ((Flags & FORMAT_UNICODE) != 0) {
     //
@@ -401,11 +415,14 @@ BasePrintLibSPrintMarker (
   //
   // Loop until the end of the format string is reached or the output buffer is full
   //
-  while (FormatCharacter != 0 && Buffer < EndBuffer) {
+  while (FormatCharacter != 0) {
+    if ((Buffer != NULL) && (Buffer >= EndBuffer)) {
+      break;
+    }
     //
     // Clear all the flag bits except those that may have been passed in
     //
-    Flags &= (OUTPUT_UNICODE | FORMAT_UNICODE | COUNT_ONLY_NO_PRINT);
+    Flags &= (UINTN) (OUTPUT_UNICODE | FORMAT_UNICODE | COUNT_ONLY_NO_PRINT);
 
     //
     // Set the default width to zero, and the default precision to 1
@@ -513,10 +530,13 @@ BasePrintLibSPrintMarker (
         //
         // Flag space, +, 0, L & l are invalid for type p.
         //
-        Flags &= ~(PREFIX_BLANK | PREFIX_SIGN | PREFIX_ZERO | LONG_TYPE);
+        Flags &= ~((UINTN) (PREFIX_BLANK | PREFIX_SIGN | PREFIX_ZERO | LONG_TYPE));
         if (sizeof (VOID *) > 4) {
           Flags |= LONG_TYPE;
         }
+        //
+        // break skipped on purpose
+        //
       case 'X':
         Flags |= PREFIX_ZERO;
         //
@@ -561,7 +581,7 @@ BasePrintLibSPrintMarker (
         if ((Flags & RADIX_HEX) == 0) {
           Radix = 10;
           if (Comma) {
-            Flags &= (~PREFIX_ZERO);
+            Flags &= ~((UINTN) PREFIX_ZERO);
             Precision = 1;
           }
           if (Value < 0) {
@@ -630,7 +650,7 @@ BasePrintLibSPrintMarker (
           ArgumentString = BASE_ARG (BaseListMarker, CHAR8 *);
         }
         if (ArgumentString == NULL) {
-          Flags &= (~ARGUMENT_UNICODE);
+          Flags &= ~((UINTN) ARGUMENT_UNICODE);
           ArgumentString = "<null string>";
         }
         //

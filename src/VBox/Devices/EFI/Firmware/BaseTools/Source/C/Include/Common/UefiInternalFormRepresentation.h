@@ -3,20 +3,18 @@
   IFR is primarily consumed by the EFI presentation engine, and produced by EFI
   internal application and drivers as well as all add-in card option-ROM drivers
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+  @par Revision Reference:
+  These definitions are from UEFI2.1.
+
+  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials are licensed and made available
   under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at:
+  distribution.  The full text of the license may be found at
     http://opensource.org/licenses/bsd-license.php
 
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
-
-  File Name: UefiInternalFormRepresentation.h
-
-  @par Revision Reference:
-  These definitions are from UEFI2.1.
 
 **/
 
@@ -691,6 +689,7 @@ typedef union {
 #define EFI_IFR_SECURITY_OP            0x60
 #define EFI_IFR_MODAL_TAG_OP           0x61
 #define EFI_IFR_REFRESH_ID_OP          0x62
+#define EFI_IFR_WARNING_IF_OP          0x63
 
 
 typedef struct _EFI_IFR_OP_HEADER {
@@ -783,9 +782,9 @@ typedef struct _EFI_IFR_IMAGE {
   EFI_IMAGE_ID             Id;
 } EFI_IFR_IMAGE;
 
-typedef struct _EFI_IFR_MODAL {
+typedef struct _EFI_IFR_MODAL_TAG {
   EFI_IFR_OP_HEADER        Header;
-} EFI_IFR_MODAL;
+} EFI_IFR_MODAL_TAG;
 
 typedef struct _EFI_IFR_LOCKED {
   EFI_IFR_OP_HEADER        Header;
@@ -802,6 +801,12 @@ typedef struct _EFI_IFR_DEFAULT {
   UINT8                    Type;
   EFI_IFR_TYPE_VALUE       Value;
 } EFI_IFR_DEFAULT;
+
+typedef struct _EFI_IFR_DEFAULT_2 {
+  EFI_IFR_OP_HEADER        Header;
+  UINT16                   DefaultId;
+  UINT8                    Type;
+} EFI_IFR_DEFAULT_2;
 
 typedef struct _EFI_IFR_VALUE {
   EFI_IFR_OP_HEADER        Header;
@@ -1008,6 +1013,12 @@ typedef struct _EFI_IFR_NO_SUBMIT_IF {
   EFI_IFR_OP_HEADER        Header;
   EFI_STRING_ID            Error;
 } EFI_IFR_NO_SUBMIT_IF;
+
+typedef struct _EFI_IFR_WARNING_IF {
+  EFI_IFR_OP_HEADER        Header;
+  EFI_STRING_ID            Warning;
+  UINT8                    TimeOut;
+} EFI_IFR_WARNING_IF;
 
 typedef struct _EFI_IFR_REFRESH {
   EFI_IFR_OP_HEADER        Header;

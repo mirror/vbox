@@ -1,7 +1,7 @@
 /** @file
   The implementation of common functions shared by IP6 driver.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -329,6 +329,38 @@ Ip6AddAddr (
 }
 
 /**
+  Callback function which provided by user to remove one node in NetDestroyLinkList process.
+  
+  @param[in]    Entry           The entry to be removed.
+  @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
+
+  @retval EFI_SUCCESS           The entry has been removed successfully.
+  @retval Others                Fail to remove the entry.
+
+**/
+EFI_STATUS
+EFIAPI
+Ip6DestroyChildEntryByAddr (
+  IN LIST_ENTRY         *Entry,
+  IN VOID               *Context
+  )
+{
+  IP6_PROTOCOL                  *Instance;
+  EFI_SERVICE_BINDING_PROTOCOL  *ServiceBinding;
+  EFI_IPv6_ADDRESS              *Address;
+  
+  Instance = NET_LIST_USER_STRUCT_S (Entry, IP6_PROTOCOL, Link, IP6_PROTOCOL_SIGNATURE);
+  ServiceBinding = ((IP6_DESTROY_CHILD_BY_ADDR_CALLBACK_CONTEXT*) Context)->ServiceBinding;
+  Address = ((IP6_DESTROY_CHILD_BY_ADDR_CALLBACK_CONTEXT*) Context)->Address;
+
+  if ((Instance->State == IP6_STATE_CONFIGED) && EFI_IP6_EQUAL (&Instance->ConfigData.StationAddress, Address)) {
+    return ServiceBinding->DestroyChild (ServiceBinding, Instance->Handle);
+  }
+  
+  return EFI_SUCCESS;
+}
+
+/**
   Destroy the IP instance if its StationAddress is removed. It is the help function
   for Ip6RemoveAddr().
 
@@ -342,35 +374,20 @@ Ip6DestroyInstanceByAddress (
   IN EFI_IPv6_ADDRESS  *Address
   )
 {
-  BOOLEAN                       OneDestroyed;
-  EFI_SERVICE_BINDING_PROTOCOL  *ServiceBinding;
-  LIST_ENTRY                    *Entry;
-  IP6_PROTOCOL                  *Instance;
+  LIST_ENTRY                    *List;
+  IP6_DESTROY_CHILD_BY_ADDR_CALLBACK_CONTEXT  Context;
 
   NET_CHECK_SIGNATURE (IpSb, IP6_SERVICE_SIGNATURE);
 
-  ServiceBinding = &IpSb->ServiceBinding;
-
-  //
-  // Upper layer IP protocol consumers may have tight relationship between several
-  // IP protocol instances, in other words, calling ServiceBinding->DestroyChild to
-  // destroy one IP child may cause other related IP children destroyed too. This
-  // will probably leave hole in the children list when we iterate it. So everytime
-  // we just destroy one child then back to the start point to iterate the list.
-  //
-  do {
-    OneDestroyed = FALSE;
-
-    NET_LIST_FOR_EACH (Entry, &IpSb->Children) {
-      Instance = NET_LIST_USER_STRUCT_S (Entry, IP6_PROTOCOL, Link, IP6_PROTOCOL_SIGNATURE);
-
-      if ((Instance->State == IP6_STATE_CONFIGED) && EFI_IP6_EQUAL (&Instance->ConfigData.StationAddress, Address)) {
-        ServiceBinding->DestroyChild (ServiceBinding, Instance->Handle);
-        OneDestroyed = TRUE;
-        break;
-      }
-    }
-  } while (OneDestroyed);
+  List = &IpSb->Children;
+  Context.ServiceBinding = &IpSb->ServiceBinding;
+  Context.Address = Address;
+  NetDestroyLinkList (
+    List,
+    Ip6DestroyChildEntryByAddr,
+    &Context,
+    NULL
+    );
 }
 
 /**
@@ -631,146 +648,6 @@ Ip6GetMulticastMac (
   IP6_COPY_ADDRESS (&EfiIp.v6, Multicast);
 
   return Mnp->McastIpToMac (Mnp, TRUE, &EfiIp, Mac);
-}
-
-/**
-  Set the Ip6 variable data.
-
-  @param[in]  IpSb              Points to an IP6 service binding instance.
-
-  @retval EFI_OUT_OF_RESOURCES  There are not enough resources to set the variable.
-  @retval other                 Set variable failed.
-
-**/
-EFI_STATUS
-Ip6SetVariableData (
-  IN IP6_SERVICE  *IpSb
-  )
-{
-  UINT32                 NumConfiguredInstance;
-  LIST_ENTRY             *Entry;
-  UINTN                  VariableDataSize;
-  EFI_IP6_VARIABLE_DATA  *Ip6VariableData;
-  EFI_IP6_ADDRESS_PAIR   *Ip6AddressPair;
-  IP6_PROTOCOL           *IpInstance;
-  CHAR16                 *NewMacString;
-  EFI_STATUS             Status;
-
-  NumConfiguredInstance = 0;
-
-  //
-  // Go through the children list to count the configured children.
-  //
-  NET_LIST_FOR_EACH (Entry, &IpSb->Children) {
-    IpInstance = NET_LIST_USER_STRUCT_S (Entry, IP6_PROTOCOL, Link, IP6_PROTOCOL_SIGNATURE);
-
-    if (IpInstance->State == IP6_STATE_CONFIGED) {
-      NumConfiguredInstance++;
-    }
-  }
-
-  //
-  // Calculate the size of the Ip6VariableData. As there may be no IP child,
-  // we should add extra buffer for the address paris only if the number of configured
-  // children is more than 1.
-  //
-  VariableDataSize = sizeof (EFI_IP6_VARIABLE_DATA);
-
-  if (NumConfiguredInstance > 1) {
-    VariableDataSize += sizeof (EFI_IP6_ADDRESS_PAIR) * (NumConfiguredInstance - 1);
-  }
-
-  Ip6VariableData = AllocatePool (VariableDataSize);
-  if (Ip6VariableData == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  Ip6VariableData->DriverHandle = IpSb->Image;
-  Ip6VariableData->AddressCount = NumConfiguredInstance;
-
-  Ip6AddressPair                = &Ip6VariableData->AddressPairs[0];
-
-  //
-  // Go through the children list to fill the configured children's address pairs.
-  //
-  NET_LIST_FOR_EACH (Entry, &IpSb->Children) {
-    IpInstance = NET_LIST_USER_STRUCT_S (Entry, IP6_PROTOCOL, Link, IP6_PROTOCOL_SIGNATURE);
-
-    if (IpInstance->State == IP6_STATE_CONFIGED) {
-      Ip6AddressPair->InstanceHandle = IpInstance->Handle;
-      Ip6AddressPair->PrefixLength   = IpInstance->PrefixLength;
-      IP6_COPY_ADDRESS (&Ip6AddressPair->Ip6Address, &IpInstance->ConfigData.StationAddress);
-
-      Ip6AddressPair++;
-    }
-  }
-
-  //
-  // Get the mac string.
-  //
-  Status = NetLibGetMacString (IpSb->Controller, IpSb->Image, &NewMacString);
-  if (EFI_ERROR (Status)) {
-    goto Exit;
-  }
-
-  if (IpSb->MacString != NULL) {
-    //
-    // The variable is set already, we're going to update it.
-    //
-    if (StrCmp (IpSb->MacString, NewMacString) != 0) {
-      //
-      // The mac address is changed, delete the previous variable first.
-      //
-      gRT->SetVariable (
-             IpSb->MacString,
-             &gEfiIp6ServiceBindingProtocolGuid,
-             EFI_VARIABLE_BOOTSERVICE_ACCESS,
-             0,
-             NULL
-             );
-    }
-
-    FreePool (IpSb->MacString);
-  }
-
-  IpSb->MacString = NewMacString;
-
-  Status = gRT->SetVariable (
-                  IpSb->MacString,
-                  &gEfiIp6ServiceBindingProtocolGuid,
-                  EFI_VARIABLE_BOOTSERVICE_ACCESS,
-                  VariableDataSize,
-                  (VOID *) Ip6VariableData
-                  );
-
-Exit:
-  FreePool (Ip6VariableData);
-  return Status;
-}
-
-/**
-  Clear the variable and free the resource.
-
-  @param[in]  IpSb                  Ip6 service binding instance.
-
-**/
-VOID
-Ip6ClearVariableData (
-  IN IP6_SERVICE  *IpSb
-  )
-{
-  ASSERT (IpSb->MacString != NULL);
-
-  gRT->SetVariable (
-         IpSb->MacString,
-         &gEfiIp6ServiceBindingProtocolGuid,
-         EFI_VARIABLE_BOOTSERVICE_ACCESS,
-         0,
-         NULL
-         );
-
-  FreePool (IpSb->MacString);
-  IpSb->MacString = NULL;
 }
 
 /**

@@ -1,7 +1,7 @@
 /** @file
   Helper functions for USB Keyboard Driver.
 
-Copyright (c) 2004 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -79,6 +79,7 @@ USB_KEYBOARD_LAYOUT_PACK_BIN  mUsbKeyboardLayoutBin = {
     {EfiKeyD11,        '[',      '{',  0, 0,  EFI_NULL_MODIFIER,   EFI_AFFECTED_BY_STANDARD_SHIFT},
     {EfiKeyD12,        ']',      '}',  0, 0,  EFI_NULL_MODIFIER,   EFI_AFFECTED_BY_STANDARD_SHIFT},
     {EfiKeyD13,        '\\',     '|',  0, 0,  EFI_NULL_MODIFIER,   EFI_AFFECTED_BY_STANDARD_SHIFT},
+    {EfiKeyC12,        '\\',     '|',  0, 0,  EFI_NULL_MODIFIER,   EFI_AFFECTED_BY_STANDARD_SHIFT},
     {EfiKeyC10,        ';',      ':',  0, 0,  EFI_NULL_MODIFIER,   EFI_AFFECTED_BY_STANDARD_SHIFT},
     {EfiKeyC11,        '\'',     '"',  0, 0,  EFI_NULL_MODIFIER,   EFI_AFFECTED_BY_STANDARD_SHIFT},
     {EfiKeyE0,         '`',      '~',  0, 0,  EFI_NULL_MODIFIER,   EFI_AFFECTED_BY_STANDARD_SHIFT},
@@ -808,8 +809,6 @@ InitUSBKeyboard (
 {
   UINT16              ConfigValue;
   UINT8               Protocol;
-  UINT8               ReportId;
-  UINT8               Duration;
   EFI_STATUS          Status;
   UINT32              TransferResult;
 
@@ -873,23 +872,6 @@ InitUSBKeyboard (
       BOOT_PROTOCOL
       );
   }
-
-  //
-  // ReportId is zero, which means the idle rate applies to all input reports.
-  //
-  ReportId = 0;
-  //
-  // Duration is zero, which means the duration is infinite.
-  // so the endpoint will inhibit reporting forever,
-  // and only reporting when a change is detected in the report data.
-  //
-  Duration = 0;
-  UsbSetIdleRequest (
-    UsbKeyboardDevice->UsbIo,
-    UsbKeyboardDevice->InterfaceDescriptor.InterfaceNumber,
-    ReportId,
-    Duration
-    );
 
   UsbKeyboardDevice->CtrlOn     = FALSE;
   UsbKeyboardDevice->AltOn      = FALSE;

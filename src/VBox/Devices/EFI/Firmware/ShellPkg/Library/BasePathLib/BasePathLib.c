@@ -1,7 +1,7 @@
 /** @file
   Provides interface to path manipulation functions.
 
-  Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -15,6 +15,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/PathLib.h>
 #include <Library/BaseLib.h>
+#include <Protocol/SimpleTextIn.h> 
 
 /**
   Removes the last directory or file entry in a path by changing the last
@@ -115,7 +116,15 @@ PathCleanUpDirectories(
     *(TempString + 1) = CHAR_NULL;
   }
 
-
+  while ((TempString = StrStr(Path, L"\\\\")) != NULL) {
+    *TempString = CHAR_NULL;
+    TempString  += 1;
+    TempSize = StrSize(TempString);
+    CopyMem(Path+StrLen(Path), TempString, TempSize);
+  }
+  if ((TempString = StrStr(Path, L"\\\\")) != NULL && *(TempString + 1) == CHAR_NULL) {
+    *(TempString) = CHAR_NULL;
+  }
 
   return (Path);
 }

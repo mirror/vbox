@@ -1,7 +1,7 @@
 /** @file
   IP4 input process.
   
-Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -292,7 +292,7 @@ Ip4Reassemble (
   // check whether THIS.Start < PREV.End for overlap. If two fragments
   // overlaps, trim the overlapped part off THIS fragment.
   //
-  if ((Cur != Head) && ((Prev = Cur->BackLink) != Head)) {
+  if ((Prev = Cur->BackLink) != Head) {
     Fragment  = NET_LIST_USER_STRUCT (Prev, NET_BUF, List);
     Node      = IP4_GET_CLIP_INFO (Fragment);
 
@@ -714,7 +714,7 @@ Ip4PreProcessPacket (
   UINT16                    Checksum;
 
   //
-  // Check that the IP4 header is correctly formatted
+  // Check if the IP4 header is correctly formatted.
   //
   if ((*Packet)->TotalSize < IP4_MIN_HEADLEN) {
     return EFI_INVALID_PARAMETER;
@@ -774,7 +774,7 @@ Ip4PreProcessPacket (
   }
 
   //
-  // Trim the head off, after this point, the packet is headless.
+  // Trim the head off, after this point, the packet is headless,
   // and Packet->TotalLen == Info->Length.
   //
   NetbufTrim (*Packet, HeadLen, TRUE);
@@ -845,11 +845,12 @@ Ip4AccpetFrame (
   IpSb   = (IP4_SERVICE *) Context;
   Option = NULL;
 
-  if (EFI_ERROR (IoStatus) || (IpSb->State == IP4_SERVICE_DESTORY)) {
+  if (EFI_ERROR (IoStatus) || (IpSb->State == IP4_SERVICE_DESTROY)) {
     goto DROP;
   }
 
-  Head      = (IP4_HEAD *) NetbufGetByte (Packet, 0, NULL); 
+  Head      = (IP4_HEAD *) NetbufGetByte (Packet, 0, NULL);
+  ASSERT (Head != NULL);
   OptionLen = (Head->HeadLen << 2) - IP4_MIN_HEADLEN;
   if (OptionLen > 0) {
     Option = (UINT8 *) (Head + 1);
@@ -899,6 +900,7 @@ Ip4AccpetFrame (
   // is transfered to the packet process logic.
   //
     Head = (IP4_HEAD *) NetbufGetByte (Packet, 0, NULL);
+    ASSERT (Head != NULL);
     Status = Ip4PreProcessPacket (
                IpSb,
                &Packet,
@@ -926,7 +928,7 @@ Ip4AccpetFrame (
     break;
 
   default:
-    Ip4Demultiplex (IpSb, Head, Packet);
+    Ip4Demultiplex (IpSb, Head, Packet, Option, OptionLen);
   }
 
   Packet = NULL;
@@ -1149,8 +1151,8 @@ Ip4OnRecyclePacket (
   to the upper layer. Upper layer will signal the recycle event in
   it when it is done with the packet.
 
-  @param[in]  IpInstance             The IP4 child to receive the packet
-  @param[in]  Packet                 The packet to deliver up.
+  @param[in]  IpInstance    The IP4 child to receive the packet.
+  @param[in]  Packet        The packet to deliver up.
 
   @retval Wrap              if warp the packet succeed.
   @retval NULL              failed to wrap the packet .
@@ -1165,6 +1167,7 @@ Ip4WrapRxData (
   IP4_RXDATA_WRAP           *Wrap;
   EFI_IP4_RECEIVE_DATA      *RxData;
   EFI_STATUS                Status;
+  BOOLEAN                   RawData;
 
   Wrap = AllocatePool (IP4_RXDATA_WRAP_SIZE (Packet->BlockOpNum));
 
@@ -1178,7 +1181,7 @@ Ip4WrapRxData (
   Wrap->Packet      = Packet;
   RxData            = &Wrap->RxData;
 
-  ZeroMem (&RxData->TimeStamp, sizeof (EFI_TIME));
+  ZeroMem (RxData, sizeof (EFI_IP4_RECEIVE_DATA));
 
   Status = gBS->CreateEvent (
                   EVT_NOTIFY_SIGNAL,
@@ -1195,17 +1198,21 @@ Ip4WrapRxData (
 
   ASSERT (Packet->Ip.Ip4 != NULL);
 
+  ASSERT (IpInstance != NULL);
+  RawData = IpInstance->ConfigData.RawData;
+
   //
   // The application expects a network byte order header.
   //
-  RxData->HeaderLength  = (Packet->Ip.Ip4->HeadLen << 2);
-  RxData->Header        = (EFI_IP4_HEADER *) Ip4NtohHead (Packet->Ip.Ip4);
+  if (!RawData) {
+    RxData->HeaderLength  = (Packet->Ip.Ip4->HeadLen << 2);
+    RxData->Header        = (EFI_IP4_HEADER *) Ip4NtohHead (Packet->Ip.Ip4);
+    RxData->OptionsLength = RxData->HeaderLength - IP4_MIN_HEADLEN;
+    RxData->Options       = NULL;
 
-  RxData->OptionsLength = RxData->HeaderLength - IP4_MIN_HEADLEN;
-  RxData->Options       = NULL;
-
-  if (RxData->OptionsLength != 0) {
-    RxData->Options = (VOID *) (RxData->Header + 1);
+    if (RxData->OptionsLength != 0) {
+      RxData->Options = (VOID *) (RxData->Header + 1);
+    }
   }
 
   RxData->DataLength  = Packet->TotalSize;
@@ -1244,6 +1251,7 @@ Ip4InstanceDeliverPacket (
   NET_BUF                   *Packet;
   NET_BUF                   *Dup;
   UINT8                     *Head;
+  UINT32                    HeadLen;
 
   //
   // Deliver a packet if there are both a packet and a receive token.
@@ -1269,24 +1277,32 @@ Ip4InstanceDeliverPacket (
       //
       // Create a duplicated packet if this packet is shared
       //
-      Dup = NetbufDuplicate (Packet, NULL, IP4_MAX_HEADLEN);
+      if (IpInstance->ConfigData.RawData) {
+        HeadLen = 0;
+      } else {
+        HeadLen = IP4_MAX_HEADLEN;
+      }
+
+      Dup = NetbufDuplicate (Packet, NULL, HeadLen);
 
       if (Dup == NULL) {
         return EFI_OUT_OF_RESOURCES;
       }
 
-      //
-      // Copy the IP head over. The packet to deliver up is
-      // headless. Trim the head off after copy. The IP head
-      // may be not continuous before the data.
-      //
-      Head = NetbufAllocSpace (Dup, IP4_MAX_HEADLEN, NET_BUF_HEAD);
-      ASSERT (Head != NULL);
-      
-      Dup->Ip.Ip4 = (IP4_HEAD *) Head;
+      if (!IpInstance->ConfigData.RawData) {
+        //
+        // Copy the IP head over. The packet to deliver up is
+        // headless. Trim the head off after copy. The IP head
+        // may be not continuous before the data.
+        //
+        Head = NetbufAllocSpace (Dup, IP4_MAX_HEADLEN, NET_BUF_HEAD);
+        ASSERT (Head != NULL);
+        
+        Dup->Ip.Ip4 = (IP4_HEAD *) Head;
 
-      CopyMem (Head, Packet->Ip.Ip4, Packet->Ip.Ip4->HeadLen << 2);
-      NetbufTrim (Dup, IP4_MAX_HEADLEN, TRUE);
+        CopyMem (Head, Packet->Ip.Ip4, Packet->Ip.Ip4->HeadLen << 2);
+        NetbufTrim (Dup, IP4_MAX_HEADLEN, TRUE);
+      }
 
       Wrap = Ip4WrapRxData (IpInstance, Dup);
 
@@ -1324,10 +1340,12 @@ Ip4InstanceDeliverPacket (
   Enqueue a received packet to all the IP children that share
   the same interface.
 
-  @param[in]  IpSb                   The IP4 service instance that receive the packet
-  @param[in]  Head                   The header of the received packet
-  @param[in]  Packet                 The data of the received packet
-  @param[in]  IpIf                   The interface to enqueue the packet to
+  @param[in]  IpSb               The IP4 service instance that receive the packet.
+  @param[in]  Head               The header of the received packet.
+  @param[in]  Packet             The data of the received packet.
+  @param[in]  Option             Point to the IP4 packet header options.
+  @param[in]  OptionLen          Length of the IP4 packet header options.  
+  @param[in]  IpIf               The interface to enqueue the packet to.
 
   @return The number of the IP4 children that accepts the packet
 
@@ -1337,6 +1355,8 @@ Ip4InterfaceEnquePacket (
   IN IP4_SERVICE            *IpSb,
   IN IP4_HEAD               *Head,
   IN NET_BUF                *Packet,
+  IN UINT8                  *Option,
+  IN UINT32                 OptionLen,
   IN IP4_INTERFACE          *IpIf
   )
 {
@@ -1402,6 +1422,13 @@ Ip4InterfaceEnquePacket (
     IpInstance = NET_LIST_USER_STRUCT (Entry, IP4_PROTOCOL, AddrLink);
     NET_CHECK_SIGNATURE (IpInstance, IP4_PROTOCOL_SIGNATURE);
 
+    //
+    // In RawData mode, add IPv4 headers and options back to packet.
+    //
+    if ((IpInstance->ConfigData.RawData) && (Option != NULL) && (OptionLen != 0)){
+      Ip4PrependHead (Packet, Head, Option, OptionLen);
+    }
+
     if (Ip4InstanceEnquePacket (IpInstance, Head, Packet) == EFI_SUCCESS) {
       Enqueued++;
     }
@@ -1448,11 +1475,13 @@ Ip4InterfaceDeliverPacket (
   child wants to consume the packet because each IP child needs
   its own copy of the packet to make changes.
 
-  @param[in]  IpSb                   The IP4 service instance that received the packet
-  @param[in]  Head                   The header of the received packet
-  @param[in]  Packet                 The data of the received packet
+  @param[in]  IpSb               The IP4 service instance that received the packet.
+  @param[in]  Head               The header of the received packet.
+  @param[in]  Packet             The data of the received packet.
+  @param[in]  Option             Point to the IP4 packet header options.
+  @param[in]  OptionLen          Length of the IP4 packet header options.
 
-  @retval EFI_NOT_FOUND          No IP child accepts the packet
+  @retval EFI_NOT_FOUND          No IP child accepts the packet.
   @retval EFI_SUCCESS            The packet is enqueued or delivered to some IP
                                  children.
 
@@ -1461,7 +1490,9 @@ EFI_STATUS
 Ip4Demultiplex (
   IN IP4_SERVICE            *IpSb,
   IN IP4_HEAD               *Head,
-  IN NET_BUF                *Packet
+  IN NET_BUF                *Packet,
+  IN UINT8                  *Option,
+  IN UINT32                 OptionLen
   )
 {
   LIST_ENTRY                *Entry;
@@ -1478,7 +1509,14 @@ Ip4Demultiplex (
     IpIf = NET_LIST_USER_STRUCT (Entry, IP4_INTERFACE, Link);
 
     if (IpIf->Configured) {
-      Enqueued += Ip4InterfaceEnquePacket (IpSb, Head, Packet, IpIf);
+      Enqueued += Ip4InterfaceEnquePacket (
+                    IpSb,
+                    Head,
+                    Packet,
+                    Option,
+                    OptionLen,
+                    IpIf
+                    );
     }
   }
 

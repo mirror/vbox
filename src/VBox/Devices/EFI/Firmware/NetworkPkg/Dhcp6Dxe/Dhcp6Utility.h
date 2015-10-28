@@ -1,7 +1,7 @@
 /** @file
   Dhcp6 support functions declaration.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -17,7 +17,8 @@
 #define __EFI_DHCP6_UTILITY_H__
 
 
-#define  DHCP6_10_BIT_MASK     0x3ff
+#define  DHCP6_10_BIT_MASK             0x3ff
+#define  DHCP6_DAD_ADDITIONAL_DELAY    30000000 // 3 seconds
 
 /**
   Generate client Duid in the format of Duid-llt.
@@ -191,6 +192,7 @@ Dhcp6AppendOption (
   @param[in]      Ia            The pointer to the Ia.
   @param[in]      T1            The time of T1.
   @param[in]      T2            The time of T2.
+  @param[in]      MessageType   Message type of DHCP6 package.
 
   @return         Buf           The position to append the next Ia option.
 
@@ -200,7 +202,8 @@ Dhcp6AppendIaOption (
   IN OUT UINT8                  *Buf,
   IN     EFI_DHCP6_IA           *Ia,
   IN     UINT32                 T1,
-  IN     UINT32                 T2
+  IN     UINT32                 T2,
+  IN     UINT32                 MessageType
   );
 
 /**
@@ -273,6 +276,7 @@ Dhcp6SeekIaOption (
 /**
   Parse the address option and update the address info.
 
+  @param[in]      CurrentIa     The pointer to the Ia Address in control blcok.
   @param[in]      IaInnerOpt    The pointer to the buffer.
   @param[in]      IaInnerLen    The length to parse.
   @param[out]     AddrNum       The number of addresses.
@@ -281,6 +285,7 @@ Dhcp6SeekIaOption (
 **/
 VOID
 Dhcp6ParseAddrOption (
+  IN     EFI_DHCP6_IA            *CurrentIa,
   IN     UINT8                   *IaInnerOpt,
   IN     UINT16                  IaInnerLen,
      OUT UINT32                  *AddrNum,
@@ -299,6 +304,7 @@ Dhcp6ParseAddrOption (
   @retval     EFI_NOT_FOUND         No valid IA option is found.
   @retval     EFI_SUCCESS           Create an IA control block successfully.
   @retval     EFI_OUT_OF_RESOURCES  Required system resources could not be allocated.
+  @retval     EFI_DEVICE_ERROR      An unexpected error.
 
 **/
 EFI_STATUS
@@ -337,4 +343,18 @@ Dhcp6AppendCacheIa (
   IN DHCP6_INSTANCE           *Instance
   );
 
+/**
+  Calculate the Dhcp6 get mapping timeout by adding additinal delay to the IP6 DAD transmits count.
+
+  @param[in]   Ip6Cfg              The pointer to Ip6 config protocol.
+  @param[out]  TimeOut             The time out value in 100ns units.
+
+  @retval   EFI_INVALID_PARAMETER  Input parameters are invalid.
+  @retval   EFI_SUCCESS            Calculate the time out value successfully.
+**/
+EFI_STATUS
+Dhcp6GetMappingTimeOut (
+  IN  EFI_IP6_CONFIG_PROTOCOL       *Ip6Cfg,
+  OUT UINTN                         *TimeOut
+  );
 #endif

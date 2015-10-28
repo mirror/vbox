@@ -763,7 +763,12 @@ UsbHubInit (
       UsbHubCtrlSetPortFeature (HubIf->Device, Index, (EFI_USB_PORT_FEATURE) USB_HUB_PORT_POWER);
     }
 
-    gBS->Stall (HubDesc.PwrOn2PwrGood * USB_SET_PORT_POWER_STALL);
+    //
+    // Update for the usb hub has no power on delay requirement
+    //
+    if (HubDesc.PwrOn2PwrGood > 0) {
+      gBS->Stall (HubDesc.PwrOn2PwrGood * USB_SET_PORT_POWER_STALL);
+    }
     UsbHubAckHubStatus (HubIf->Device);
   }
 
@@ -963,6 +968,15 @@ UsbHubResetPort (
   UINTN                   Index;
   EFI_STATUS              Status;
 
+  Status = UsbHubGetPortStatus (HubIf, Port, &PortState);
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  } else if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_RESET)) {
+    DEBUG (( EFI_D_INFO, "UsbHubResetPort: skip reset on hub %p port %d\n", HubIf, Port));
+    return EFI_SUCCESS;
+  }
+
   Status  = UsbHubSetPortFeature (HubIf, Port, (EFI_USB_PORT_FEATURE) USB_HUB_PORT_RESET);
 
   if (EFI_ERROR (Status)) {
@@ -970,22 +984,26 @@ UsbHubResetPort (
   }
 
   //
-  // Drive the reset signal for at least 10ms. Check USB 2.0 Spec
+  // Drive the reset signal for worst 20ms. Check USB 2.0 Spec
   // section 7.1.7.5 for timing requirements.
   //
   gBS->Stall (USB_SET_PORT_RESET_STALL);
 
   //
-  // USB hub will clear RESET bit if reset is actually finished.
+  // Check USB_PORT_STAT_C_RESET bit to see if the resetting state is done.
   //
   ZeroMem (&PortState, sizeof (EFI_USB_PORT_STATUS));
 
   for (Index = 0; Index < USB_WAIT_PORT_STS_CHANGE_LOOP; Index++) {
     Status = UsbHubGetPortStatus (HubIf, Port, &PortState);
 
-    if (!EFI_ERROR (Status) &&
-        !USB_BIT_IS_SET (PortState.PortStatus, USB_PORT_STAT_RESET)) {
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
 
+    if (!EFI_ERROR (Status) &&
+        USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_RESET)) {
+      gBS->Stall (USB_SET_PORT_RECOVERY_STALL);
       return EFI_SUCCESS;
     }
 
@@ -1263,6 +1281,16 @@ UsbRootHubResetPort (
   // should be handled in the EHCI driver.
   //
   Bus     = RootIf->Device->Bus;
+
+  Status = UsbHcGetRootHubPortStatus (Bus, Port, &PortState);
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  } else if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_RESET)) {
+    DEBUG (( EFI_D_INFO, "UsbRootHubResetPort: skip reset on root port %d\n", Port));
+    return EFI_SUCCESS;
+  }
+
   Status  = UsbHcSetRootHubPortFeature (Bus, Port, EfiUsbPortReset);
 
   if (EFI_ERROR (Status)) {

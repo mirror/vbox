@@ -1,7 +1,8 @@
 /** @file
   function definitions for internal to shell functions.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2014, Hewlett-Packard Development Company, L.P.
+  Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -19,6 +20,7 @@
 #include <ShellBase.h>
 
 #include <Guid/ShellVariableGuid.h>
+#include <Guid/ShellAliasGuid.h>
 
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleTextOut.h>
@@ -45,6 +47,7 @@
 #include <Library/PrintLib.h>
 #include <Library/HandleParsingLib.h>
 #include <Library/PathLib.h>
+#include <Library/FileHandleLib.h>
 
 #include "ShellParametersProtocol.h"
 #include "ShellProtocol.h"
@@ -52,6 +55,7 @@
 #include "ConsoleLogger.h"
 #include "ShellManParser.h"
 #include "ConsoleWrappers.h"
+#include "FileHandleWrappers.h"
 
 typedef struct {
   LIST_ENTRY        Link;           ///< Standard linked list handler.
@@ -68,7 +72,8 @@ typedef struct {
   UINT32  NoMap:1;        ///< Was "-nomap"         found on command line.
   UINT32  NoVersion:1;    ///< Was "-noversion"     found on command line.
   UINT32  Delay:1;        ///< Was "-delay[:n]      found on command line
-  UINT32  Reserved:8;     ///< Extra bits
+  UINT32  Exit:1;         ///< Was "-_exit"          found on command line
+  UINT32  Reserved:7;     ///< Extra bits
 } SHELL_BITS;
 
 typedef union {
@@ -107,18 +112,52 @@ typedef struct {
   EFI_SHELL_PARAMETERS_PROTOCOL *OldShellParameters;  ///< old shell parameters to reinstall upon exiting.
   SHELL_PROTOCOL_HANDLE_LIST    OldShellList;         ///< List of other instances to reinstall when closing.
   SPLIT_LIST                    SplitList;            ///< List of Splits in FILO stack.
-  EFI_HANDLE                    CtrlCNotifyHandle1;   ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
-  EFI_HANDLE                    CtrlCNotifyHandle2;   ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
-  EFI_HANDLE                    CtrlCNotifyHandle3;   ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
-  EFI_HANDLE                    CtrlCNotifyHandle4;   ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
-  EFI_HANDLE                    CtrlSNotifyHandle1;   ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
-  EFI_HANDLE                    CtrlSNotifyHandle2;   ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
-  EFI_HANDLE                    CtrlSNotifyHandle3;   ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
-  EFI_HANDLE                    CtrlSNotifyHandle4;   ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
+  VOID                          *CtrlCNotifyHandle1;  ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
+  VOID                          *CtrlCNotifyHandle2;  ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
+  VOID                          *CtrlCNotifyHandle3;  ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
+  VOID                          *CtrlCNotifyHandle4;  ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
+  VOID                          *CtrlSNotifyHandle1;  ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
+  VOID                          *CtrlSNotifyHandle2;  ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
+  VOID                          *CtrlSNotifyHandle3;  ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
+  VOID                          *CtrlSNotifyHandle4;  ///< The NotifyHandle returned from SimpleTextInputEx.RegisterKeyNotify.
   BOOLEAN                       HaltOutput;           ///< TRUE to start a CTRL-S halt.
 } SHELL_INFO;
 
 extern SHELL_INFO ShellInfoObject;
+
+typedef enum {
+  Internal_Command,
+  Script_File_Name,
+  Efi_Application,
+  File_Sys_Change,
+  Unknown_Invalid
+} SHELL_OPERATION_TYPES;
+
+/**
+  Converts the command line to it's post-processed form.  this replaces variables and alias' per UEFI Shell spec.
+
+  @param[in,out] CmdLine        pointer to the command line to update
+
+  @retval EFI_SUCCESS           The operation was successful
+  @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
+  @return                       some other error occured
+**/
+EFI_STATUS
+EFIAPI
+ProcessCommandLineToFinal(
+  IN OUT CHAR16 **CmdLine
+  );
+
+/**
+  Function to update the shell variable "lasterror".
+
+  @param[in] ErrorCode      the error code to put into lasterror
+**/
+EFI_STATUS
+EFIAPI
+SetLastError(
+  IN CONST SHELL_STATUS   ErrorCode
+  );
 
 /**
   Sets all the alias' that were registered with the ShellCommandLib library.
@@ -289,15 +328,38 @@ RunScriptFileHandle (
   Function to process a NSH script file.
 
   @param[in] ScriptPath         Pointer to the script file name (including file system path).
+  @param[in] Handle             the handle of the script file already opened.
+  @param[in] CmdLine            the command line to run.
+  @param[in] ParamProtocol      the shell parameters protocol pointer
 
   @retval EFI_SUCCESS           the script completed sucessfully
 **/
 EFI_STATUS
 EFIAPI
 RunScriptFile (
-  IN CONST CHAR16 *ScriptPath
+  IN CONST CHAR16                   *ScriptPath,
+  IN SHELL_FILE_HANDLE              Handle OPTIONAL,
+  IN CONST CHAR16                   *CmdLine,
+  IN EFI_SHELL_PARAMETERS_PROTOCOL  *ParamProtocol
   );
 
+/**
+  Return the pointer to the first occurance of any character from a list of characters
+
+  @param[in] String           the string to parse
+  @param[in] CharacterList    the list of character to look for
+  @param[in] EscapeCharacter  An escape character to skip
+
+  @return the location of the first character in the string
+  @retval CHAR_NULL no instance of any character in CharacterList was found in String
+**/
+CONST CHAR16*
+EFIAPI
+FindFirstCharacter(
+  IN CONST CHAR16 *String,
+  IN CONST CHAR16 *CharacterList,
+  IN CONST CHAR16 EscapeCharacter
+  );
 
 #endif //_SHELL_INTERNAL_HEADER_
 

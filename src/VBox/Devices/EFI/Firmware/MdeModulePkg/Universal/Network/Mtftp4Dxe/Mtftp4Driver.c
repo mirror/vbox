@@ -1,7 +1,7 @@
 /** @file
   Implementation of Mtftp drivers.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -159,7 +159,6 @@ Mtftp4CreateService (
 
   MtftpSb->Signature      = MTFTP4_SERVICE_SIGNATURE;
   MtftpSb->ServiceBinding = gMtftp4ServiceBindingTemplete;
-  MtftpSb->InDestory      = FALSE;
   MtftpSb->ChildrenNum    = 0;
   InitializeListHead (&MtftpSb->Children);
 
@@ -318,6 +317,43 @@ ON_ERROR:
   return Status;
 }
 
+/**
+  Callback function which provided by user to remove one node in NetDestroyLinkList process.
+  
+  @param[in]    Entry           The entry to be removed.
+  @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
+
+  @retval EFI_SUCCESS           The entry has been removed successfully.
+  @retval Others                Fail to remove the entry.
+
+**/
+EFI_STATUS
+EFIAPI
+Mtftp4DestroyChildEntryInHandleBuffer (
+  IN LIST_ENTRY         *Entry,
+  IN VOID               *Context
+  )
+{
+  MTFTP4_PROTOCOL               *Instance;
+  EFI_SERVICE_BINDING_PROTOCOL  *ServiceBinding;
+  UINTN                         NumberOfChildren;
+  EFI_HANDLE                    *ChildHandleBuffer;
+
+  if (Entry == NULL || Context == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Instance = NET_LIST_USER_STRUCT_S (Entry, MTFTP4_PROTOCOL, Link, MTFTP4_PROTOCOL_SIGNATURE);
+  ServiceBinding    = ((MTFTP4_DESTROY_CHILD_IN_HANDLE_BUF_CONTEXT *) Context)->ServiceBinding;
+  NumberOfChildren  = ((MTFTP4_DESTROY_CHILD_IN_HANDLE_BUF_CONTEXT *) Context)->NumberOfChildren;
+  ChildHandleBuffer = ((MTFTP4_DESTROY_CHILD_IN_HANDLE_BUF_CONTEXT *) Context)->ChildHandleBuffer;
+
+  if (!NetIsInHandleBuffer (Instance->Handle, NumberOfChildren, ChildHandleBuffer)) {
+    return EFI_SUCCESS;
+  }
+
+  return ServiceBinding->DestroyChild (ServiceBinding, Instance->Handle);
+}
 
 /**
   Stop the MTFTP driver on controller. The controller is a UDP
@@ -341,12 +377,12 @@ Mtftp4DriverBindingStop (
   IN EFI_HANDLE                  *ChildHandleBuffer
   )
 {
-  EFI_SERVICE_BINDING_PROTOCOL  *ServiceBinding;
-  MTFTP4_SERVICE                *MtftpSb;
-  MTFTP4_PROTOCOL               *Instance;
-  EFI_HANDLE                    NicHandle;
-  EFI_STATUS                    Status;
-  EFI_TPL                       OldTpl;
+  EFI_SERVICE_BINDING_PROTOCOL               *ServiceBinding;
+  MTFTP4_SERVICE                             *MtftpSb;
+  EFI_HANDLE                                 NicHandle;
+  EFI_STATUS                                 Status;
+  LIST_ENTRY                                 *List;
+  MTFTP4_DESTROY_CHILD_IN_HANDLE_BUF_CONTEXT Context;
 
   //
   // MTFTP driver opens UDP child, So, Controller is a UDP
@@ -356,7 +392,7 @@ Mtftp4DriverBindingStop (
   NicHandle = NetLibGetNicHandle (Controller, &gEfiUdp4ProtocolGuid);
 
   if (NicHandle == NULL) {
-    return EFI_DEVICE_ERROR;
+    return EFI_SUCCESS;
   }
 
   Status = gBS->OpenProtocol (
@@ -374,16 +410,23 @@ Mtftp4DriverBindingStop (
 
   MtftpSb = MTFTP4_SERVICE_FROM_THIS (ServiceBinding);
 
-  if (MtftpSb->InDestory) {
-    return EFI_SUCCESS;
+  if (!IsListEmpty (&MtftpSb->Children)) {
+    //
+    // Destroy the Mtftp4 child instance in ChildHandleBuffer.
+    //
+    List = &MtftpSb->Children;
+    Context.ServiceBinding    = ServiceBinding;
+    Context.NumberOfChildren  = NumberOfChildren;
+    Context.ChildHandleBuffer = ChildHandleBuffer;
+    Status = NetDestroyLinkList (
+               List,
+               Mtftp4DestroyChildEntryInHandleBuffer,
+               &Context,
+               NULL
+               );
   }
 
-  OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
-
-  if (NumberOfChildren == 0) {
-
-    MtftpSb->InDestory = TRUE;
-
+  if (NumberOfChildren == 0 && IsListEmpty (&MtftpSb->Children)) {
     gBS->UninstallProtocolInterface (
            NicHandle,
            &gEfiMtftp4ServiceBindingProtocolGuid,
@@ -391,21 +434,15 @@ Mtftp4DriverBindingStop (
            );
 
     Mtftp4CleanService (MtftpSb);
-
+    if (gMtftp4ControllerNameTable != NULL) {
+      FreeUnicodeStringTable (gMtftp4ControllerNameTable);
+      gMtftp4ControllerNameTable = NULL;
+    }
     FreePool (MtftpSb);
-  } else {
 
-    while (!IsListEmpty (&MtftpSb->Children)) {
-      Instance = NET_LIST_HEAD (&MtftpSb->Children, MTFTP4_PROTOCOL, Link);
-      Mtftp4ServiceBindingDestroyChild (ServiceBinding, Instance->Handle);
-    }
-
-    if (MtftpSb->ChildrenNum != 0) {
-      Status = EFI_DEVICE_ERROR;
-    }
+    Status = EFI_SUCCESS;
   }
 
-  gBS->RestoreTPL (OldTpl);
   return Status;
 }
 
@@ -429,7 +466,6 @@ Mtftp4InitProtocol (
   InitializeListHead (&Instance->Link);
   CopyMem (&Instance->Mtftp4, &gMtftp4ProtocolTemplate, sizeof (Instance->Mtftp4));
   Instance->State     = MTFTP4_STATE_UNCONFIGED;
-  Instance->InDestory = FALSE;
   Instance->Service   = MtftpSb;
 
   InitializeListHead (&Instance->Blocks);
@@ -499,7 +535,9 @@ Mtftp4ServiceBindingCreateChild (
                   );
 
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    UdpIoFreeIo (Instance->UnicastPort);
+    FreePool (Instance);
+    return Status;
   }
 
   Instance->Handle  = *ChildHandle;
@@ -516,13 +554,30 @@ Mtftp4ServiceBindingCreateChild (
                   EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
                   );
   if (EFI_ERROR (Status)) {
-    gBS->UninstallMultipleProtocolInterfaces (
-           Instance->Handle,
-           &gEfiMtftp4ProtocolGuid,
-           &Instance->Mtftp4,
-           NULL
-           );
+    goto ON_ERROR;
+  }
 
+  //
+  // Open the Udp4 protocol by child.
+  //
+  Status = gBS->OpenProtocol (
+                  Instance->UnicastPort->UdpHandle,
+                  &gEfiUdp4ProtocolGuid,
+                  (VOID **) &Udp4,
+                  gMtftp4DriverBinding.DriverBindingHandle,
+                  Instance->Handle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    //
+    // Close the Udp4 protocol.
+    //
+    gBS->CloseProtocol (
+           MtftpSb->ConnectUdp->UdpHandle,
+           &gEfiUdp4ProtocolGuid,
+           gMtftp4DriverBinding.DriverBindingHandle,
+           ChildHandle
+           );
     goto ON_ERROR;
   }
 
@@ -536,26 +591,34 @@ Mtftp4ServiceBindingCreateChild (
 
   gBS->RestoreTPL (OldTpl);
 
-ON_ERROR:
+  return EFI_SUCCESS;
 
-  if (EFI_ERROR (Status)) {
-    UdpIoFreeIo (Instance->UnicastPort);
-    FreePool (Instance);
+ON_ERROR:
+  if (Instance->Handle != NULL) {
+    gBS->UninstallMultipleProtocolInterfaces (
+           Instance->Handle,
+           &gEfiMtftp4ProtocolGuid,
+           &Instance->Mtftp4,
+           NULL
+           );
   }
+
+  UdpIoFreeIo (Instance->UnicastPort);
+  FreePool (Instance);
 
   return Status;
 }
 
 
 /**
-  Destory one of the service binding's child.
+  Destroy one of the service binding's child.
 
   @param  This                   The service binding instance
-  @param  ChildHandle            The child handle to destory
+  @param  ChildHandle            The child handle to destroy
 
   @retval EFI_INVALID_PARAMETER  The parameter is invaid.
-  @retval EFI_UNSUPPORTED        The child may have already been destoried.
-  @retval EFI_SUCCESS            The child is destoried and removed from the
+  @retval EFI_UNSUPPORTED        The child may have already been destroyed.
+  @retval EFI_SUCCESS            The child is destroyed and removed from the
                                  parent's child list.
 
 **/
@@ -599,11 +662,11 @@ Mtftp4ServiceBindingDestroyChild (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (Instance->InDestory) {
+  if (Instance->InDestroy) {
     return EFI_SUCCESS;
   }
 
-  Instance->InDestory = TRUE;
+  Instance->InDestroy = TRUE;
 
   //
   // Close the Udp4 protocol.
@@ -615,6 +678,22 @@ Mtftp4ServiceBindingDestroyChild (
          ChildHandle
          );
 
+  gBS->CloseProtocol (
+         Instance->UnicastPort->UdpHandle,
+         &gEfiUdp4ProtocolGuid,
+         gMtftp4DriverBinding.DriverBindingHandle,
+         ChildHandle
+         );
+
+  if (Instance->McastUdpPort != NULL) {
+    gBS->CloseProtocol (
+           Instance->McastUdpPort->UdpHandle,
+           &gEfiUdp4ProtocolGuid,
+           gMtftp4DriverBinding.DriverBindingHandle,
+           ChildHandle
+           );  
+  }
+
   //
   // Uninstall the MTFTP4 protocol first to enable a top down destruction.
   //
@@ -625,7 +704,7 @@ Mtftp4ServiceBindingDestroyChild (
                   );
 
   if (EFI_ERROR (Status)) {
-    Instance->InDestory = FALSE;
+    Instance->InDestroy = FALSE;
     return Status;
   }
 

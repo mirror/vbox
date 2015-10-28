@@ -2,7 +2,7 @@
   The internal header file includes the common header files, defines
   internal structure and functions used by Variable modules.
 
-Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -21,6 +21,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/FaultTolerantWrite.h>
 #include <Protocol/FirmwareVolumeBlock.h>
 #include <Protocol/Variable.h>
+#include <Protocol/VariableLock.h>
 #include <Library/PcdLib.h>
 #include <Library/HobLib.h>
 #include <Library/UefiDriverEntryPoint.h>
@@ -40,8 +41,25 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Guid/AuthenticatedVariableFormat.h>
 #include <Guid/ImageAuthentication.h>
 #include <Guid/SystemNvDataGuid.h>
+#include <Guid/FaultTolerantWrite.h>
+#include <Guid/HardwareErrorVariable.h>
 
-#define VARIABLE_RECLAIM_THRESHOLD (1024)
+#define EFI_VARIABLE_ATTRIBUTES_MASK (EFI_VARIABLE_NON_VOLATILE | \
+                                      EFI_VARIABLE_BOOTSERVICE_ACCESS | \
+                                      EFI_VARIABLE_RUNTIME_ACCESS | \
+                                      EFI_VARIABLE_HARDWARE_ERROR_RECORD | \
+                                      EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS | \
+                                      EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS | \
+                                      EFI_VARIABLE_APPEND_WRITE)
+
+#define VARIABLE_ATTRIBUTE_BS_RT        (EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS)
+#define VARIABLE_ATTRIBUTE_NV_BS_RT     (VARIABLE_ATTRIBUTE_BS_RT | EFI_VARIABLE_NON_VOLATILE)
+#define VARIABLE_ATTRIBUTE_NV_BS_RT_AT  (VARIABLE_ATTRIBUTE_NV_BS_RT | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS)
+
+typedef struct {
+  CHAR16      *Name;
+  UINT32      Attributes;
+} GLOBAL_VARIABLE_ENTRY;
 
 ///
 /// The size of a 3 character ISO639 language code.
@@ -57,6 +75,13 @@ typedef enum {
 
 typedef struct {
   VARIABLE_HEADER *CurrPtr;
+  //
+  // If both ADDED and IN_DELETED_TRANSITION variable are present,
+  // InDeletedTransitionPtr will point to the IN_DELETED_TRANSITION one.
+  // Otherwise, CurrPtr will point to the ADDED or IN_DELETED_TRANSITION one,
+  // and InDeletedTransitionPtr will be NULL at the same time.
+  //
+  VARIABLE_HEADER *InDeletedTransitionPtr;
   VARIABLE_HEADER *EndPtr;
   VARIABLE_HEADER *StartPtr;
   BOOLEAN         Volatile;
@@ -86,10 +111,27 @@ typedef struct {
 typedef struct {
   EFI_GUID    *Guid;
   CHAR16      *Name;
-  UINT32      Attributes;
-  UINTN       DataSize;
-  VOID        *Data;
-} VARIABLE_CACHE_ENTRY;
+  UINTN       VariableSize;
+} VARIABLE_ENTRY_CONSISTENCY;
+
+typedef struct {
+  EFI_GUID    Guid;
+  CHAR16      *Name;
+  LIST_ENTRY  Link;
+} VARIABLE_ENTRY;
+
+/**
+  Flush the HOB variable to flash.
+
+  @param[in] VariableName       Name of variable has been updated or deleted.
+  @param[in] VendorGuid         Guid of variable has been updated or deleted.
+
+**/
+VOID
+FlushHobVariableToFlash (
+  IN CHAR16                     *VariableName,
+  IN EFI_GUID                   *VendorGuid
+  );
 
 /**
   Writes a buffer to variable storage space, in the working block.
@@ -99,8 +141,7 @@ typedef struct {
   VariableBase. Fault Tolerant Write protocol is used for writing.
 
   @param  VariableBase   Base address of the variable to write.
-  @param  Buffer         Point to the data buffer.
-  @param  BufferSize     The number of bytes of the data Buffer.
+  @param  VariableBuffer Point to the variable data buffer.
 
   @retval EFI_SUCCESS    The function completed successfully.
   @retval EFI_NOT_FOUND  Fail to locate Fault Tolerant Write protocol.
@@ -110,8 +151,7 @@ typedef struct {
 EFI_STATUS
 FtwVariableSpace (
   IN EFI_PHYSICAL_ADDRESS   VariableBase,
-  IN UINT8                  *Buffer,
-  IN UINTN                  BufferSize
+  IN VARIABLE_STORE_HEADER  *VariableBuffer
   );
 
 /**
@@ -178,6 +218,32 @@ DataSizeOfVariable (
   );
 
 /**
+  This function is to check if the remaining variable space is enough to set
+  all Variables from argument list successfully. The purpose of the check
+  is to keep the consistency of the Variables to be in variable storage.
+
+  Note: Variables are assumed to be in same storage.
+  The set sequence of Variables will be same with the sequence of VariableEntry from argument list,
+  so follow the argument sequence to check the Variables.
+
+  @param[in] Attributes         Variable attributes for Variable entries.
+  @param ...                    The variable argument list with type VARIABLE_ENTRY_CONSISTENCY *.
+                                A NULL terminates the list. The VariableSize of 
+                                VARIABLE_ENTRY_CONSISTENCY is the variable data size as input.
+                                It will be changed to variable total size as output.
+
+  @retval TRUE                  Have enough variable space to set the Variables successfully.
+  @retval FALSE                 No enough variable space to set the Variables successfully.
+
+**/
+BOOLEAN
+EFIAPI
+CheckRemainingSpaceForConsistency (
+  IN UINT32                     Attributes,
+  ...
+  );
+  
+/**
   Update the variable region with Variable information. If EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS is set,
   index of associated public key is needed.
 
@@ -188,7 +254,7 @@ DataSizeOfVariable (
   @param[in] Attributes         Attributes of the variable.
   @param[in] KeyIndex           Index of associated public key.
   @param[in] MonotonicCount     Value of associated monotonic count.
-  @param[in] Variable           The variable information that is used to keep track of variable usage.
+  @param[in, out] Variable      The variable information that is used to keep track of variable usage.
 
   @param[in] TimeStamp          Value of associated TimeStamp.
 
@@ -205,7 +271,7 @@ UpdateVariable (
   IN      UINT32          Attributes OPTIONAL,
   IN      UINT32          KeyIndex  OPTIONAL,
   IN      UINT64          MonotonicCount  OPTIONAL,
-  IN      VARIABLE_POINTER_TRACK *Variable,
+  IN OUT  VARIABLE_POINTER_TRACK *Variable,
   IN      EFI_TIME        *TimeStamp  OPTIONAL  
   );
 
@@ -346,6 +412,40 @@ VariableCommonInitialize (
   );
 
 /**
+
+  Variable store garbage collection and reclaim operation.
+
+  If ReclaimPubKeyStore is FALSE, reclaim variable space by deleting the obsoleted varaibles.
+  If ReclaimPubKeyStore is TRUE, reclaim invalid key in public key database and update the PubKeyIndex
+  for all the count-based authenticate variable in NV storage.
+
+  @param[in]      VariableBase            Base address of variable store.
+  @param[out]     LastVariableOffset      Offset of last variable.
+  @param[in]      IsVolatile              The variable store is volatile or not;
+                                          if it is non-volatile, need FTW.
+  @param[in, out] UpdatingPtrTrack        Pointer to updating variable pointer track structure.
+  @param[in]      NewVariable             Pointer to new variable.
+  @param[in]      NewVariableSize         New variable size.
+  @param[in]      ReclaimPubKeyStore      Reclaim for public key database or not.
+  
+  @return EFI_SUCCESS                  Reclaim operation has finished successfully.
+  @return EFI_OUT_OF_RESOURCES         No enough memory resources or variable space.
+  @return EFI_DEVICE_ERROR             The public key database doesn't exist.
+  @return Others                       Unexpect error happened during reclaim operation.
+
+**/
+EFI_STATUS
+Reclaim (
+  IN     EFI_PHYSICAL_ADDRESS         VariableBase,
+  OUT    UINTN                        *LastVariableOffset,
+  IN     BOOLEAN                      IsVolatile,
+  IN OUT VARIABLE_POINTER_TRACK       *UpdatingPtrTrack,
+  IN     VARIABLE_HEADER              *NewVariable,
+  IN     UINTN                        NewVariableSize,
+  IN     BOOLEAN                      ReclaimPubKeyStore
+  );
+
+/**
   This function reclaims variable storage if free size is below the threshold.
   
 **/
@@ -401,6 +501,10 @@ GetFvbInfoByAddress (
 
   This code finds variable in storage blocks (Volatile or Non-Volatile).
 
+  Caution: This function may receive untrusted input.
+  This function may be invoked in SMM mode, and datasize and data are external input.
+  This function will do basic validation, before parse the data.
+
   @param VariableName               Name of Variable to be found.
   @param VendorGuid                 Variable vendor GUID.
   @param Attributes                 Attribute value of the variable found.
@@ -428,6 +532,9 @@ VariableServiceGetVariable (
 
   This code Finds the Next available variable.
 
+  Caution: This function may receive untrusted input.
+  This function may be invoked in SMM mode. This function will do basic validation, before parse the data.
+
   @param VariableNameSize           Size of the variable name.
   @param VariableName               Pointer to variable name.
   @param VendorGuid                 Variable Vendor Guid.
@@ -449,6 +556,13 @@ VariableServiceGetNextVariableName (
 /**
 
   This code sets variable in storage blocks (Volatile or Non-Volatile).
+
+  Caution: This function may receive untrusted input.
+  This function may be invoked in SMM mode, and datasize and data are external input.
+  This function will do basic validation, before parse the data.
+  This function will parse the authentication carefully to avoid security issues, like
+  buffer overflow, integer overflow.
+  This function will check attribute carefully to avoid authentication bypass.
 
   @param VariableName                     Name of Variable to be found.
   @param VendorGuid                       Variable vendor GUID.
@@ -478,6 +592,37 @@ VariableServiceSetVariable (
 
   This code returns information about the EFI variables.
 
+  Caution: This function may receive untrusted input.
+  This function may be invoked in SMM mode. This function will do basic validation, before parse the data.
+
+  @param Attributes                     Attributes bitmask to specify the type of variables
+                                        on which to return information.
+  @param MaximumVariableStorageSize     Pointer to the maximum size of the storage space available
+                                        for the EFI variables associated with the attributes specified.
+  @param RemainingVariableStorageSize   Pointer to the remaining size of the storage space available
+                                        for EFI variables associated with the attributes specified.
+  @param MaximumVariableSize            Pointer to the maximum size of an individual EFI variables
+                                        associated with the attributes specified.
+
+  @return EFI_SUCCESS                   Query successfully.
+
+**/
+EFI_STATUS
+EFIAPI
+VariableServiceQueryVariableInfoInternal (
+  IN  UINT32                 Attributes,
+  OUT UINT64                 *MaximumVariableStorageSize,
+  OUT UINT64                 *RemainingVariableStorageSize,
+  OUT UINT64                 *MaximumVariableSize
+  );
+
+/**
+
+  This code returns information about the EFI variables.
+
+  Caution: This function may receive untrusted input.
+  This function may be invoked in SMM mode. This function will do basic validation, before parse the data.
+
   @param Attributes                     Attributes bitmask to specify the type of variables
                                         on which to return information.
   @param MaximumVariableStorageSize     Pointer to the maximum size of the storage space available
@@ -500,7 +645,30 @@ VariableServiceQueryVariableInfo (
   OUT UINT64                 *RemainingVariableStorageSize,
   OUT UINT64                 *MaximumVariableSize
   );  
-  
+
+/**
+  Mark a variable that will become read-only after leaving the DXE phase of execution.
+
+  @param[in] This          The VARIABLE_LOCK_PROTOCOL instance.
+  @param[in] VariableName  A pointer to the variable name that will be made read-only subsequently.
+  @param[in] VendorGuid    A pointer to the vendor GUID that will be made read-only subsequently.
+
+  @retval EFI_SUCCESS           The variable specified by the VariableName and the VendorGuid was marked
+                                as pending to be read-only.
+  @retval EFI_INVALID_PARAMETER VariableName or VendorGuid is NULL.
+                                Or VariableName is an empty string.
+  @retval EFI_ACCESS_DENIED     EFI_END_OF_DXE_EVENT_GROUP_GUID or EFI_EVENT_GROUP_READY_TO_BOOT has
+                                already been signaled.
+  @retval EFI_OUT_OF_RESOURCES  There is not enough resource to hold the lock request.
+**/
+EFI_STATUS
+EFIAPI
+VariableLockRequestToLock (
+  IN CONST EDKII_VARIABLE_LOCK_PROTOCOL *This,
+  IN       CHAR16                       *VariableName,
+  IN       EFI_GUID                     *VendorGuid
+  );
+
 extern VARIABLE_MODULE_GLOBAL  *mVariableModuleGlobal;
 
 #endif

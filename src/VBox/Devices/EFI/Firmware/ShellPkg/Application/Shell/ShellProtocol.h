@@ -2,7 +2,8 @@
   Member functions of EFI_SHELL_PROTOCOL and functions for creation,
   manipulation, and initialization of EFI_SHELL_PROTOCOL.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2014, Hewlett-Packard Development Company, L.P.
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -16,40 +17,7 @@
 #ifndef _SHELL_PROTOCOL_HEADER_
 #define _SHELL_PROTOCOL_HEADER_
 
-#include <Uefi.h>
-#include <ShellBase.h>
-
-#include <Guid/ShellVariableGuid.h>
-#include <Guid/ShellMapGuid.h>
-#include <Guid/ShellAliasGuid.h>
-
-#include <Protocol/EfiShell.h>
-#include <Protocol/EfiShellParameters.h>
-#include <Protocol/SimpleFileSystem.h>
-#include <Protocol/DevicePathToText.h>
-#include <Protocol/ComponentName2.h>
-#include <Protocol/LoadedImage.h>
-#include <Protocol/UnicodeCollation.h>
-#include <Protocol/DevicePath.h>
-#include <Protocol/SimpleTextInEx.h>
-
-#include <Library/UefiBootServicesTableLib.h>
-#include <Library/BaseLib.h>
-#include <Library/ShellCommandLib.h>
-#include <Library/PrintLib.h>
-#include <Library/DevicePathLib.h>
-#include <Library/UefiRuntimeServicesTableLib.h>
-#include <Library/DebugLib.h>
-#include <Library/MemoryAllocationLib.h>
-#include <Library/BaseMemoryLib.h>
-#include <Library/UefiLib.h>
-#include <Library/SortLib.h>
-#include <Library/PcdLib.h>
-#include <Library/ShellLib.h>
-
-#include "FileHandleWrappers.h"
-#include "ShellEnvVar.h"
-#include "ShellManParser.h"
+#include "Shell.h"
 
 typedef struct {
   LIST_ENTRY                Link;
@@ -466,17 +434,17 @@ EfiShellEnablePageBreak (
 /**
   internal worker function to run a command via Device Path
 
-  @param ParentImageHandle  A handle of the image that is executing the specified
-                            command line.
-  @param DevicePath         device path of the file to execute
-  @param CommandLine        Points to the NULL-terminated UCS-2 encoded string
-                            containing the command line. If NULL then the command-
-                            line will be empty.
-  @param Environment        Points to a NULL-terminated array of environment
-                            variables with the format 'x=y', where x is the
-                            environment variable name and y is the value. If this
-                            is NULL, then the current shell environment is used.
-  @param StatusCode         Points to the status code returned by the command.
+  @param ParentImageHandle      A handle of the image that is executing the specified
+                                command line.
+  @param DevicePath             device path of the file to execute
+  @param CommandLine            Points to the NULL-terminated UCS-2 encoded string
+                                containing the command line. If NULL then the command-
+                                line will be empty.
+  @param Environment            Points to a NULL-terminated array of environment
+                                variables with the format 'x=y', where x is the
+                                environment variable name and y is the value. If this
+                                is NULL, then the current shell environment is used.
+  @param[out] StartImageStatus  Returned status from gBS->StartImage.
 
   @retval EFI_SUCCESS       The command executed successfully. The  status code
                             returned by the command is pointed to by StatusCode.
@@ -487,11 +455,11 @@ EfiShellEnablePageBreak (
 EFI_STATUS
 EFIAPI
 InternalShellExecuteDevicePath(
-  IN CONST EFI_HANDLE *ParentImageHandle,
+  IN CONST EFI_HANDLE               *ParentImageHandle,
   IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath,
-  IN CONST CHAR16 *CommandLine OPTIONAL,
-  IN CONST CHAR16 **Environment OPTIONAL,
-  OUT EFI_STATUS *StatusCode OPTIONAL
+  IN CONST CHAR16                   *CommandLine OPTIONAL,
+  IN CONST CHAR16                   **Environment OPTIONAL,
+  OUT EFI_STATUS                    *StartImageStatus OPTIONAL
   );
 
 /**
@@ -588,7 +556,6 @@ EfiShellRemoveDupInFileList(
 
   @param[in] BasePath         the Path to prepend onto filename for FullPath
   @param[in] Status           Status member initial value.
-  @param[in] FullName         FullName member initial value.
   @param[in] FileName         FileName member initial value.
   @param[in] Handle           Handle member initial value.
   @param[in] Info             Info struct to copy.
@@ -599,7 +566,6 @@ EFIAPI
 CreateAndPopulateShellFileInfo(
   IN CONST CHAR16 *BasePath,
   IN CONST EFI_STATUS Status,
-  IN CONST CHAR16 *FullName,
   IN CONST CHAR16 *FileName,
   IN CONST SHELL_FILE_HANDLE Handle,
   IN CONST EFI_FILE_INFO *Info
@@ -688,7 +654,7 @@ EfiShellOpenFileList(
 
   @param Name                   A pointer to the environment variable name
 
-  @return !=NULL                The environment variable's value. The returned
+  @retval !=NULL                The environment variable's value. The returned
                                 pointer does not need to be freed by the caller.
   @retval NULL                  The environment variable doesn't exist.
 **/

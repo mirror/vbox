@@ -9,7 +9,14 @@
   This library is mainly used by SMM Core to start performance logging to ensure that
   SMM Performance and PerformanceEx Protocol are installed at the very beginning of SMM phase.
 
-Copyright (c) 2011 - 2012, Intel Corporation. All rights reserved.<BR>
+ Caution: This module requires additional review when modified.
+ This driver will have external input - performance data and communicate buffer in SMM mode.
+ This external input must be validated carefully to avoid security issue like
+ buffer overflow, integer overflow.
+
+ SmmPerformanceHandlerEx(), SmmPerformanceHandler() will receive untrusted input and do basic validation.
+
+Copyright (c) 2011 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -43,9 +50,6 @@ EFI_HANDLE              mHandle = NULL;
 BOOLEAN                 mPerformanceMeasurementEnabled;
 
 SPIN_LOCK               mSmmPerfLock;
-
-EFI_SMRAM_DESCRIPTOR    *mSmramRanges;
-UINTN                   mSmramRangeCount;
 
 //
 // Interfaces for SMM Performance Protocol.
@@ -93,6 +97,7 @@ SmmSearchForGaugeEntry (
   )
 {
   UINT32                    Index;
+  UINT32                    Index2;
   UINT32                    NumberOfEntries;
   GAUGE_DATA_ENTRY_EX       *GaugeEntryExArray;
 
@@ -106,12 +111,16 @@ SmmSearchForGaugeEntry (
   NumberOfEntries = mGaugeData->NumberOfEntries;
   GaugeEntryExArray = (GAUGE_DATA_ENTRY_EX *) (mGaugeData + 1);
 
+  Index2 = 0;
+
   for (Index = 0; Index < NumberOfEntries; Index++) {
-    if ((GaugeEntryExArray[Index].Handle == (EFI_PHYSICAL_ADDRESS) (UINTN) Handle) &&
-         AsciiStrnCmp (GaugeEntryExArray[Index].Token, Token, SMM_PERFORMANCE_STRING_LENGTH) == 0 &&
-         AsciiStrnCmp (GaugeEntryExArray[Index].Module, Module, SMM_PERFORMANCE_STRING_LENGTH) == 0 &&
-         (GaugeEntryExArray[Index].Identifier == Identifier) &&
-         GaugeEntryExArray[Index].EndTimeStamp == 0) {
+    Index2 = NumberOfEntries - 1 - Index;
+    if (GaugeEntryExArray[Index2].EndTimeStamp == 0 &&
+        (GaugeEntryExArray[Index2].Handle == (EFI_PHYSICAL_ADDRESS) (UINTN) Handle) &&
+        AsciiStrnCmp (GaugeEntryExArray[Index2].Token, Token, SMM_PERFORMANCE_STRING_LENGTH) == 0 &&
+        AsciiStrnCmp (GaugeEntryExArray[Index2].Module, Module, SMM_PERFORMANCE_STRING_LENGTH) == 0 &&
+        (GaugeEntryExArray[Index2].Identifier == Identifier)) {
+      Index = Index2;
       break;
     }
   }
@@ -439,36 +448,12 @@ GetGauge (
 }
 
 /**
-  This function check if the address is in SMRAM.
-
-  @param Buffer  the buffer address to be checked.
-  @param Length  the buffer length to be checked.
-
-  @retval TRUE  this address is in SMRAM.
-  @retval FALSE this address is NOT in SMRAM.
-**/
-BOOLEAN
-IsAddressInSmram (
-  IN EFI_PHYSICAL_ADDRESS  Buffer,
-  IN UINT64                Length
-  )
-{
-  UINTN  Index;
-
-  for (Index = 0; Index < mSmramRangeCount; Index ++) {
-    if (((Buffer >= mSmramRanges[Index].CpuStart) && (Buffer < mSmramRanges[Index].CpuStart + mSmramRanges[Index].PhysicalSize)) ||
-        ((mSmramRanges[Index].CpuStart >= Buffer) && (mSmramRanges[Index].CpuStart < Buffer + Length))) {
-      return TRUE;
-    }
-  }
-
-  return FALSE;
-}
-
-/**
   Communication service SMI Handler entry.
 
   This SMI handler provides services for the performance wrapper driver.
+  
+   Caution: This function may receive untrusted input.
+   Communicate buffer and buffer size are external input, so this function will do basic validation.
 
   @param[in]     DispatchHandle  The unique handle assigned to this handler by SmiHandlerRegister().
   @param[in]     RegisterContext Points to an optional handler context which was specified when the
@@ -498,11 +483,31 @@ SmmPerformanceHandlerEx (
   SMM_PERF_COMMUNICATE_EX   *SmmPerfCommData;
   GAUGE_DATA_ENTRY_EX       *GaugeEntryExArray;
   UINTN                     DataSize;
+  GAUGE_DATA_ENTRY_EX       *GaugeDataEx;
+  UINTN                     NumberOfEntries;
+  UINTN                     LogEntryKey;
+  UINTN                     TempCommBufferSize;
 
   GaugeEntryExArray = NULL;
 
-  ASSERT (CommBuffer != NULL);
+  //
+  // If input is invalid, stop processing this SMI
+  //
+  if (CommBuffer == NULL || CommBufferSize == NULL) {
+    return EFI_SUCCESS;
+  }
 
+  TempCommBufferSize = *CommBufferSize;
+
+  if(TempCommBufferSize < sizeof (SMM_PERF_COMMUNICATE_EX)) {
+    return EFI_SUCCESS;
+  }
+
+  if (!SmmIsBufferOutsideSmmValid ((UINTN)CommBuffer, TempCommBufferSize)) {
+    DEBUG ((EFI_D_ERROR, "SmmPerformanceHandlerEx: SMM communcation data buffer in SMRAM or overflow!\n"));
+    return EFI_SUCCESS;
+  }
+  
   SmmPerfCommData = (SMM_PERF_COMMUNICATE_EX *)CommBuffer;
 
   switch (SmmPerfCommData->Function) {
@@ -512,8 +517,11 @@ SmmPerformanceHandlerEx (
        break;
 
     case SMM_PERF_FUNCTION_GET_GAUGE_DATA :
-       if ( SmmPerfCommData->GaugeDataEx == NULL || SmmPerfCommData->NumberOfEntries == 0 ||
-         (SmmPerfCommData->LogEntryKey + SmmPerfCommData->NumberOfEntries) > mGaugeData->NumberOfEntries) {
+      GaugeDataEx = SmmPerfCommData->GaugeDataEx;
+      NumberOfEntries = SmmPerfCommData->NumberOfEntries;
+      LogEntryKey = SmmPerfCommData->LogEntryKey;
+       if (GaugeDataEx == NULL || NumberOfEntries == 0 || LogEntryKey > mGaugeData->NumberOfEntries ||
+           NumberOfEntries > mGaugeData->NumberOfEntries || (LogEntryKey + NumberOfEntries) > mGaugeData->NumberOfEntries) {
          Status = EFI_INVALID_PARAMETER;
          break;
        }
@@ -521,28 +529,29 @@ SmmPerformanceHandlerEx (
        //
        // Sanity check
        //
-       DataSize = SmmPerfCommData->NumberOfEntries * sizeof(GAUGE_DATA_ENTRY_EX);
-       if (IsAddressInSmram ((EFI_PHYSICAL_ADDRESS)(UINTN)SmmPerfCommData->GaugeDataEx, DataSize)) {
-         DEBUG ((EFI_D_ERROR, "Smm Performance Data buffer is in SMRAM!\n"));
+       DataSize = NumberOfEntries * sizeof(GAUGE_DATA_ENTRY_EX);
+       if (!SmmIsBufferOutsideSmmValid ((UINTN)GaugeDataEx, DataSize)) {
+         DEBUG ((EFI_D_ERROR, "SmmPerformanceHandlerEx: SMM Performance Data buffer in SMRAM or overflow!\n"));
          Status = EFI_ACCESS_DENIED;
-         break ;
+         break;
        }
 
        GaugeEntryExArray = (GAUGE_DATA_ENTRY_EX *) (mGaugeData + 1);
        CopyMem(
-         (UINT8 *) (SmmPerfCommData->GaugeDataEx),
-         (UINT8 *) &GaugeEntryExArray[SmmPerfCommData->LogEntryKey],
+         (UINT8 *) GaugeDataEx,
+         (UINT8 *) &GaugeEntryExArray[LogEntryKey],
          DataSize
          );
        Status = EFI_SUCCESS;
        break;
 
     default:
-       ASSERT (FALSE);
        Status = EFI_UNSUPPORTED;
   }
 
+
   SmmPerfCommData->ReturnStatus = Status;
+  
   return EFI_SUCCESS;
 }
 
@@ -550,6 +559,9 @@ SmmPerformanceHandlerEx (
   Communication service SMI Handler entry.
 
   This SMI handler provides services for the performance wrapper driver.
+
+  Caution: This function may receive untrusted input.
+  Communicate buffer and buffer size are external input, so this function will do basic validation.
 
   @param[in]     DispatchHandle  The unique handle assigned to this handler by SmiHandlerRegister().
   @param[in]     RegisterContext Points to an optional handler context which was specified when the
@@ -580,11 +592,30 @@ SmmPerformanceHandler (
   GAUGE_DATA_ENTRY_EX   *GaugeEntryExArray;
   UINTN                 DataSize;
   UINTN                 Index;
+  GAUGE_DATA_ENTRY      *GaugeData;
+  UINTN                 NumberOfEntries;
   UINTN                 LogEntryKey;
+  UINTN                 TempCommBufferSize;
 
   GaugeEntryExArray = NULL;
 
-  ASSERT (CommBuffer != NULL);
+  //
+  // If input is invalid, stop processing this SMI
+  //
+  if (CommBuffer == NULL || CommBufferSize == NULL) {
+    return EFI_SUCCESS;
+  }
+
+  TempCommBufferSize = *CommBufferSize;
+
+  if(TempCommBufferSize < sizeof (SMM_PERF_COMMUNICATE)) {
+    return EFI_SUCCESS;
+  }
+
+  if (!SmmIsBufferOutsideSmmValid ((UINTN)CommBuffer, TempCommBufferSize)) {
+    DEBUG ((EFI_D_ERROR, "SmmPerformanceHandler: SMM communcation data buffer in SMRAM or overflow!\n"));
+    return EFI_SUCCESS;
+  }
 
   SmmPerfCommData = (SMM_PERF_COMMUNICATE *)CommBuffer;
 
@@ -595,8 +626,11 @@ SmmPerformanceHandler (
        break;
 
     case SMM_PERF_FUNCTION_GET_GAUGE_DATA :
-       if ( SmmPerfCommData->GaugeData == NULL || SmmPerfCommData->NumberOfEntries == 0 ||
-         (SmmPerfCommData->LogEntryKey + SmmPerfCommData->NumberOfEntries) > mGaugeData->NumberOfEntries) {
+       GaugeData = SmmPerfCommData->GaugeData;
+       NumberOfEntries = SmmPerfCommData->NumberOfEntries;
+       LogEntryKey = SmmPerfCommData->LogEntryKey;
+       if (GaugeData == NULL || NumberOfEntries == 0 || LogEntryKey > mGaugeData->NumberOfEntries ||
+           NumberOfEntries > mGaugeData->NumberOfEntries || (LogEntryKey + NumberOfEntries) > mGaugeData->NumberOfEntries) {
          Status = EFI_INVALID_PARAMETER;
          break;
        }
@@ -604,19 +638,18 @@ SmmPerformanceHandler (
        //
        // Sanity check
        //
-       DataSize = SmmPerfCommData->NumberOfEntries * sizeof(GAUGE_DATA_ENTRY);
-       if (IsAddressInSmram ((EFI_PHYSICAL_ADDRESS)(UINTN)SmmPerfCommData->GaugeData, DataSize)) {
-         DEBUG ((EFI_D_ERROR, "Smm Performance Data buffer is in SMRAM!\n"));
+       DataSize = NumberOfEntries * sizeof(GAUGE_DATA_ENTRY);
+       if (!SmmIsBufferOutsideSmmValid ((UINTN)GaugeData, DataSize)) {
+         DEBUG ((EFI_D_ERROR, "SmmPerformanceHandler: SMM Performance Data buffer in SMRAM or overflow!\n"));
          Status = EFI_ACCESS_DENIED;
-         break ;
+         break;
        }
 
        GaugeEntryExArray = (GAUGE_DATA_ENTRY_EX *) (mGaugeData + 1);
 
-       LogEntryKey = SmmPerfCommData->LogEntryKey;
-       for (Index = 0; Index < SmmPerfCommData->NumberOfEntries; Index++) {
+       for (Index = 0; Index < NumberOfEntries; Index++) {
          CopyMem(
-           (UINT8 *) &(SmmPerfCommData->GaugeData[Index]),
+           (UINT8 *) &GaugeData[Index],
            (UINT8 *) &GaugeEntryExArray[LogEntryKey++],
            sizeof (GAUGE_DATA_ENTRY)
            );
@@ -625,11 +658,12 @@ SmmPerformanceHandler (
        break;
 
     default:
-       ASSERT (FALSE);
        Status = EFI_UNSUPPORTED;
   }
 
+
   SmmPerfCommData->ReturnStatus = Status;
+  
   return EFI_SUCCESS;
 }
 
@@ -650,9 +684,6 @@ InitializeSmmCorePerformanceLib (
 {
   EFI_STATUS                Status;
   EFI_HANDLE                Handle;
-  EFI_SMM_ACCESS2_PROTOCOL  *SmmAccess;
-  UINTN                     Size;
-
 
   //
   // Initialize spin lock
@@ -664,28 +695,6 @@ InitializeSmmCorePerformanceLib (
   mGaugeData = AllocateZeroPool (sizeof (GAUGE_DATA_HEADER) + (sizeof (GAUGE_DATA_ENTRY_EX) * mMaxGaugeRecords));
   ASSERT (mGaugeData != NULL);
   
-  //
-  // Get SMRAM information
-  //
-  Status = gBS->LocateProtocol (&gEfiSmmAccess2ProtocolGuid, NULL, (VOID **)&SmmAccess);
-  ASSERT_EFI_ERROR (Status);
-
-  Size = 0;
-  Status = SmmAccess->GetCapabilities (SmmAccess, &Size, NULL);
-  ASSERT (Status == EFI_BUFFER_TOO_SMALL);
-
-  Status = gSmst->SmmAllocatePool (
-                    EfiRuntimeServicesData,
-                    Size,
-                    (VOID **)&mSmramRanges
-                    );
-  ASSERT_EFI_ERROR (Status);
-
-  Status = SmmAccess->GetCapabilities (SmmAccess, &Size, mSmramRanges);
-  ASSERT_EFI_ERROR (Status);
-
-  mSmramRangeCount = Size / sizeof (EFI_SMRAM_DESCRIPTOR);
-
   //
   // Install the protocol interfaces.
   //

@@ -1,7 +1,7 @@
 /** @file
   Internal library implementation for PCI Bus module.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -182,7 +182,7 @@ DumpBridgeResource (
 
   if ((BridgeResource != NULL) && (BridgeResource->Length != 0)) {
     DEBUG ((
-      EFI_D_INFO, "Type = %s; Base = 0x%x;\tLength = 0x%x;\tAlignment = 0x%x\n",
+      EFI_D_INFO, "Type = %s; Base = 0x%lx;\tLength = 0x%lx;\tAlignment = 0x%lx\n",
       mBarTypeStr[MIN (BridgeResource->ResType, PciBarTypeMaxType)],
       BridgeResource->PciDev->PciBar[BridgeResource->Bar].BaseAddress,
       BridgeResource->Length, BridgeResource->Alignment
@@ -195,7 +195,7 @@ DumpBridgeResource (
       if (Resource->ResourceUsage == PciResUsageTypical) {
         Bar = Resource->Virtual ? Resource->PciDev->VfPciBar : Resource->PciDev->PciBar;
         DEBUG ((
-          EFI_D_INFO, " Base = 0x%x;\tLength = 0x%x;\tAlignment = 0x%x;\tOwner = %s ",
+          EFI_D_INFO, " Base = 0x%lx;\tLength = 0x%lx;\tAlignment = 0x%lx;\tOwner = %s ",
           Bar[Resource->Bar].BaseAddress, Resource->Length, Resource->Alignment,
           IS_PCI_BRIDGE (&Resource->PciDev->Pci)     ? L"PPB" :
           IS_CARDBUS_BRIDGE (&Resource->PciDev->Pci) ? L"P2C" :
@@ -225,7 +225,7 @@ DumpBridgeResource (
             ));
         }
       } else {
-        DEBUG ((EFI_D_INFO, " Padding:Length = 0x%x;\tAlignment = 0x%x\n", Resource->Length, Resource->Alignment));
+        DEBUG ((EFI_D_INFO, " Padding:Length = 0x%lx;\tAlignment = 0x%lx\n", Resource->Length, Resource->Alignment));
       }
     }
   }
@@ -290,7 +290,6 @@ DumpResourceMap (
   PCI_RESOURCE_NODE                *ChildPMem32Node;
   PCI_RESOURCE_NODE                *ChildMem64Node;
   PCI_RESOURCE_NODE                *ChildPMem64Node;
-  EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *ToText;
   CHAR16                           *Str;
 
   DEBUG ((EFI_D_INFO, "PciBus: Resource Map for "));
@@ -309,19 +308,11 @@ DumpResourceMap (
       Bridge->BusNumber, Bridge->DeviceNumber, Bridge->FunctionNumber
       ));
   } else {
-    Status = gBS->LocateProtocol (
-                    &gEfiDevicePathToTextProtocolGuid,
-                    NULL,
-                    (VOID **) &ToText
-                    );
-    Str = NULL;
-    if (!EFI_ERROR (Status)) {
-      Str = ToText->ConvertDevicePathToText (
-                      DevicePathFromHandle (Bridge->Handle),
-                      FALSE,
-                      FALSE
-                      );
-    }
+    Str = ConvertDevicePathToText (
+            DevicePathFromHandle (Bridge->Handle),
+            FALSE,
+            FALSE
+            );
     DEBUG ((EFI_D_INFO, "Root Bridge %s\n", Str != NULL ? Str : L""));
     if (Str != NULL) {
       FreePool (Str);
@@ -568,6 +559,12 @@ PciHostBridgeResourceAllocator (
                                 RootBridgeDev->Handle,
                                 AcpiConfig
                                 );
+        //
+        // If SubmitResources returns error, PciBus isn't able to start.
+        // It's a fatal error so assertion is added.
+        //
+        DEBUG ((EFI_D_INFO, "PciBus: HostBridge->SubmitResources() - %r\n", Status));
+        ASSERT_EFI_ERROR (Status);
       }
 
       //
@@ -598,6 +595,7 @@ PciHostBridgeResourceAllocator (
     // Notify platform to start to program the resource
     //
     Status = NotifyPhase (PciResAlloc, EfiPciHostBridgeAllocateResources);
+    DEBUG ((EFI_D_INFO, "PciBus: HostBridge->NotifyPhase(AllocateResources) - %r\n", Status));
     if (!FeaturePcdGet (PcdPciBusHotplugDeviceSupport)) {
       //
       // If Hot Plug is not supported
@@ -752,7 +750,11 @@ PciHostBridgeResourceAllocator (
   //
   // Notify pci bus driver starts to program the resource
   //
-  NotifyPhase (PciResAlloc, EfiPciHostBridgeSetResources);
+  Status = NotifyPhase (PciResAlloc, EfiPciHostBridgeSetResources);
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   RootBridgeDev     = NULL;
 
@@ -891,9 +893,9 @@ PciHostBridgeResourceAllocator (
   //
   // Notify the resource allocation phase is to end
   //
-  NotifyPhase (PciResAlloc, EfiPciHostBridgeEndResourceAllocation);
+  Status = NotifyPhase (PciResAlloc, EfiPciHostBridgeEndResourceAllocation);
 
-  return EFI_SUCCESS;
+  return Status;
 }
 
 /**
@@ -1436,7 +1438,11 @@ PciHostBridgeEnumerator (
   //
   // Notify the bus allocation phase is about to start
   //
-  NotifyPhase (PciResAlloc, EfiPciHostBridgeBeginBusAllocation);
+  Status = NotifyPhase (PciResAlloc, EfiPciHostBridgeBeginBusAllocation);
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   DEBUG((EFI_D_INFO, "PCI Bus First Scanning\n"));
   RootBridgeHandle = NULL;
@@ -1524,7 +1530,11 @@ PciHostBridgeEnumerator (
     //
     // Notify the bus allocation phase is about to start for the 2nd time
     //
-    NotifyPhase (PciResAlloc, EfiPciHostBridgeBeginBusAllocation);
+    Status = NotifyPhase (PciResAlloc, EfiPciHostBridgeBeginBusAllocation);
+
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
 
     DEBUG((EFI_D_INFO, "PCI Bus Second Scanning\n"));
     RootBridgeHandle = NULL;
@@ -1562,7 +1572,11 @@ PciHostBridgeEnumerator (
   //
   // Notify the resource allocation phase is to start
   //
-  NotifyPhase (PciResAlloc, EfiPciHostBridgeBeginResourceAllocation);
+  Status = NotifyPhase (PciResAlloc, EfiPciHostBridgeBeginResourceAllocation);
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   RootBridgeHandle = NULL;
   while (PciResAlloc->GetNextRootBridge (PciResAlloc, &RootBridgeHandle) == EFI_SUCCESS) {

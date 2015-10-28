@@ -5,7 +5,7 @@
   from a software point of view. The path must persist from boot to boot, so 
   it can not contain things like PCI bus numbers that change from boot to boot.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available under 
 the terms and conditions of the BSD License that accompanies this distribution.  
 The full text of the license may be found at
@@ -786,6 +786,32 @@ typedef struct {
 } SASEX_DEVICE_PATH;
 
 ///
+/// NvmExpress Namespace Device Path SubType.
+///
+#define MSG_NVME_NAMESPACE_DP     0x17
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT32                          NamespaceId;
+  UINT64                          NamespaceUuid;
+} NVME_NAMESPACE_DEVICE_PATH;
+
+///
+/// Universal Flash Storage (UFS) Device Path SubType.
+///
+#define MSG_UFS_DP                0x19
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  ///
+  /// Target ID on the UFS bus (PUN).
+  ///
+  UINT8                           Pun;
+  ///
+  /// Logical Unit Number (LUN).
+  ///
+  UINT8                           Lun;
+} UFS_DEVICE_PATH;
+
+///
 /// iSCSI Device Path SubType
 ///
 #define MSG_ISCSI_DP              0x13
@@ -1083,6 +1109,8 @@ typedef union {
   UART_FLOW_CONTROL_DEVICE_PATH              UartFlowControl;
   SAS_DEVICE_PATH                            Sas;
   SASEX_DEVICE_PATH                          SasEx;
+  NVME_NAMESPACE_DEVICE_PATH                 NvmeNamespace;
+  UFS_DEVICE_PATH                            Ufs;
   HARDDRIVE_DEVICE_PATH                      HardDrive;
   CDROM_DEVICE_PATH                          CD;
 
@@ -1132,6 +1160,8 @@ typedef union {
   UART_FLOW_CONTROL_DEVICE_PATH              *UartFlowControl;
   SAS_DEVICE_PATH                            *Sas;
   SASEX_DEVICE_PATH                          *SasEx;
+  NVME_NAMESPACE_DEVICE_PATH                 *NvmeNamespace;
+  UFS_DEVICE_PATH                            *Ufs;
   HARDDRIVE_DEVICE_PATH                      *HardDrive;
   CDROM_DEVICE_PATH                          *CD;
 

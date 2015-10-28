@@ -1,7 +1,7 @@
 ## @file
-# Capsule library instance for DXE_DRIVER, DXE_RUNTIME_DRIVER
+# Capsule library instance for DXE_DRIVER, DXE_RUNTIME_DRIVER.
 #
-# Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2015, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
@@ -16,6 +16,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = DxeCapsuleLib
+  MODULE_UNI_FILE                = DxeCapsuleLib.uni
   FILE_GUID                      = 654950df-1ede-4b04-b144-6b77845736ad
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
@@ -33,15 +34,22 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  IntelFrameworkPkg/IntelFrameworkPkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  IntelFrameworkPkg/IntelFrameworkPkg.dec
+  IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
 
 [LibraryClasses]
   BaseMemoryLib
   DebugLib
   MemoryAllocationLib
   DxeServicesTableLib
+  GenericBdsLib
+  UefiBootServicesTableLib
+  DevicePathLib
+
+[Protocols]
+  gEfiFirmwareManagementProtocolGuid      ## SOMETIMES_CONSUMES
 
 [Guids]
-  gEfiCapsuleGuid                         # SOMETIMES_CONSUMED
-  
+  gEfiCapsuleGuid                         ## SOMETIMES_CONSUMES ## GUID # Capsule Image Header Guid
+  gEfiFmpCapsuleGuid                      ## SOMETIMES_CONSUMES ## GUID

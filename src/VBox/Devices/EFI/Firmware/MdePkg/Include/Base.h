@@ -6,7 +6,7 @@
   environment. There are a set of base libraries in the Mde Package that can
   be used to implement base modules.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -79,21 +79,20 @@ VERIFY_SIZE_OF (CHAR16, 2);
 #endif
 
 //
-// For symbol name in GNU assembly code, an extra "_" is necessary
+// For symbol name in assembly code, an extra "_" is sometimes necessary
 //
-#if defined(__GNUC__)
-  ///
-  /// Private worker functions for ASM_PFX()
-  ///
-  #define _CONCATENATE(a, b)  __CONCATENATE(a, b)
-  #define __CONCATENATE(a, b) a ## b
 
-  ///
-  /// The __USER_LABEL_PREFIX__ macro predefined by GNUC represents the prefix
-  /// on symbols in assembly language.
-  ///
-  #define ASM_PFX(name) _CONCATENATE (__USER_LABEL_PREFIX__, name)
-#endif
+///
+/// Private worker functions for ASM_PFX()
+///
+#define _CONCATENATE(a, b)  __CONCATENATE(a, b)
+#define __CONCATENATE(a, b) a ## b
+
+///
+/// The __USER_LABEL_PREFIX__ macro predefined by GNUC represents the prefix
+/// on symbols in assembly language.
+///
+#define ASM_PFX(name) _CONCATENATE (__USER_LABEL_PREFIX__, name)
 
 #if __APPLE__
   //
@@ -206,6 +205,17 @@ struct _LIST_ENTRY {
 ///
 #define NULL  ((VOID *) 0)
 
+///
+/// Maximum values for common UEFI Data Types
+///
+#define MAX_INT8    ((INT8)0x7F)
+#define MAX_UINT8   ((UINT8)0xFF)
+#define MAX_INT16   ((INT16)0x7FFF)
+#define MAX_UINT16  ((UINT16)0xFFFF)
+#define MAX_INT32   ((INT32)0x7FFFFFFF)
+#define MAX_UINT32  ((UINT32)0xFFFFFFFF)
+#define MAX_INT64   ((INT64)0x7FFFFFFFFFFFFFFFULL)
+#define MAX_UINT64  ((UINT64)0xFFFFFFFFFFFFFFFFULL)
 
 #define  BIT0     0x00000001
 #define  BIT1     0x00000002
@@ -454,6 +464,11 @@ struct _LIST_ENTRY {
 #define VA_ARG(Marker, TYPE)          __va_arg(Marker, TYPE)
 
 #define VA_END(Marker)                ((void)0)
+
+// For some ARM RVCT compilers, __va_copy is not defined
+#ifndef __va_copy
+  #define __va_copy(dest, src) ((void)((dest) = (src)))
+#endif
 
 #define VA_COPY(Dest, Start)          __va_copy (Dest, Start)
 
@@ -1000,6 +1015,47 @@ typedef UINTN RETURN_STATUS;
 **/
 #define SIGNATURE_64(A, B, C, D, E, F, G, H) \
     (SIGNATURE_32 (A, B, C, D) | ((UINT64) (SIGNATURE_32 (E, F, G, H)) << 32))
+
+#if defined(_MSC_EXTENSIONS) && !defined (MDE_CPU_EBC)
+  #pragma intrinsic(_ReturnAddress)
+  /**
+    Get the return address of the calling funcation.
+
+    Based on intrinsic function _ReturnAddress that provides the address of
+    the instruction in the calling function that will be executed after
+    control returns to the caller.
+
+    @param L    Return Level.
+
+    @return The return address of the calling funcation or 0 if L != 0.
+
+  **/
+  #define RETURN_ADDRESS(L)     ((L == 0) ? _ReturnAddress() : (VOID *) 0)
+#elif defined(__GNUC__)
+  void * __builtin_return_address (unsigned int level);
+  /**
+    Get the return address of the calling funcation.
+
+    Based on built-in Function __builtin_return_address that returns
+    the return address of the current function, or of one of its callers.
+
+    @param L    Return Level.
+
+    @return The return address of the calling funcation.
+
+  **/
+  #define RETURN_ADDRESS(L)     __builtin_return_address (L)
+#else
+  /**
+    Get the return address of the calling funcation.
+
+    @param L    Return Level.
+
+    @return 0 as compilers don't support this feature.
+
+  **/
+  #define RETURN_ADDRESS(L)     ((VOID *) 0)
+#endif
 
 #endif
 

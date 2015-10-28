@@ -1,7 +1,7 @@
 /** @file
     Manually generated Python Configuration file for EDK II.
 
-    Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2011 - 2012, Intel Corporation. All rights reserved.<BR>
     This program and the accompanying materials are licensed and made available under
     the terms and conditions of the BSD License that accompanies this distribution.
     The full text of the license may be found at
@@ -10,16 +10,12 @@
     THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
     WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
-
-
 #ifndef Py_PYCONFIG_H
 #define Py_PYCONFIG_H
 
-#define PLATFORM    "UEFI 2.3 X64"
+#include  <Uefi.h>
 
-//#ifndef PYTHONPATH
-//# define PYTHONPATH "/Efi/StdLib/lib/python.27;/Efi/StdLib/lib/python.27/lib-dynload"
-//#endif
+#define PLATFORM    "uefi"
 
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
@@ -185,7 +181,7 @@
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
-#undef HAVE_DIRENT_H
+#define HAVE_DIRENT_H   1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -328,7 +324,7 @@
 #undef HAVE_GETPAGESIZE
 
 /* Define to 1 if you have the `getpeername' function. */
-#undef HAVE_GETPEERNAME
+#define HAVE_GETPEERNAME  1
 
 /* Define to 1 if you have the `getpgid' function. */
 #undef HAVE_GETPGID
@@ -514,10 +510,10 @@
 #undef HAVE_PLOCK
 
 /* Define to 1 if you have the `poll' function. */
-#undef HAVE_POLL
+#define HAVE_POLL         1
 
 /* Define to 1 if you have the <poll.h> header file. */
-#define HAVE_POLL_H     1
+#undef HAVE_POLL_H
 
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
@@ -550,7 +546,7 @@
 #undef HAVE_READLINK
 
 /* Define to 1 if you have the `realpath' function. */
-#undef HAVE_REALPATH
+#define HAVE_REALPATH   1
 
 /* Define if you have readline 2.1 */
 #undef HAVE_RL_CALLBACK
@@ -577,7 +573,7 @@
 #undef HAVE_ROUND
 
 /* Define to 1 if you have the `select' function. */
-#undef HAVE_SELECT
+#define HAVE_SELECT       1
 
 /* Define to 1 if you have the `sem_getvalue' function. */
 #undef HAVE_SEM_GETVALUE
@@ -814,6 +810,9 @@
 /* Define to 1 if you have the <sys/wait.h> header file. */
 #undef HAVE_SYS_WAIT_H
 
+/* Define to 1 if you have the system() command. */
+#define HAVE_SYSTEM       1
+
 /* Define to 1 if you have the `tcgetpgrp' function. */
 #undef HAVE_TCGETPGRP
 
@@ -824,7 +823,7 @@
 #define HAVE_TEMPNAM      1
 
 /* Define to 1 if you have the <termios.h> header file. */
-#define HAVE_TERMIOS_H    1
+#undef HAVE_TERMIOS_H
 
 /* Define to 1 if you have the <term.h> header file. */
 #undef HAVE_TERM_H
@@ -888,7 +887,7 @@
 #undef HAVE_UTIMES
 
 /* Define to 1 if you have the <utime.h> header file. */
-#undef HAVE_UTIME_H
+#define HAVE_UTIME_H    1
 
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
@@ -939,7 +938,7 @@
 #define PACKAGE_NAME    "EDK II Python Package"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING  "EDK II Python Package V0.2"
+#define PACKAGE_STRING  "EDK II Python Package V0.8"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME   "EADK_Python"
@@ -948,7 +947,7 @@
 #define PACKAGE_URL   "http://edk2.tianocore.org/toolkit/python"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION  "V0.2"
+#define PACKAGE_VERSION  "V0.8"
 
 /* Define if POSIX semaphores aren't enabled on your system */
 #define POSIX_SEMAPHORES_NOT_ENABLED    1
@@ -1096,7 +1095,7 @@
 
 /* Define if you want wctype.h functions to be used instead of the one
    supplied by Python itself. (see Include/unicodectype.h). */
-#undef WANT_WCTYPE_FUNCTIONS
+#define WANT_WCTYPE_FUNCTIONS   1
 
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
@@ -1165,7 +1164,9 @@
 #undef _MINIX
 
 /* Define on NetBSD to activate all library features */
-#define _NETBSD_SOURCE
+#ifndef _NETBSD_SOURCE
+  #define _NETBSD_SOURCE  1
+#endif
 
 /* Define _OSF_SOURCE to get the makedev macro. */
 #undef _OSF_SOURCE

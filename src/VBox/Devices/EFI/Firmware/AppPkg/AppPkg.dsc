@@ -7,7 +7,7 @@
 #   for important information about configuring this package for your
 #   environment.
 #
-#   Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+#   Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
 #   This program and the accompanying materials
 #   are licensed and made available under the terms and conditions of the BSD License
 #   which accompanies this distribution. The full text of the license may be found at
@@ -23,15 +23,22 @@
   PLATFORM_VERSION               = 0.01
   DSC_SPECIFICATION              = 0x00010006
   OUTPUT_DIRECTORY               = Build/AppPkg
-  SUPPORTED_ARCHITECTURES        = IA32|IPF|X64
+  SUPPORTED_ARCHITECTURES        = IA32|IPF|X64|ARM|AARCH64
   BUILD_TARGETS                  = DEBUG|RELEASE
   SKUID_IDENTIFIER               = DEFAULT
+
+#
+#  Debug output control
+#
+  DEFINE DEBUG_ENABLE_OUTPUT      = FALSE       # Set to TRUE to enable debug output
+  DEFINE DEBUG_PRINT_ERROR_LEVEL  = 0x80000040  # Flags to control amount of debug output
+  DEFINE DEBUG_PROPERTY_MASK      = 0
 
 [PcdsFeatureFlag]
 
 [PcdsFixedAtBuild]
-  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x0f
-  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000000
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|$(DEBUG_PROPERTY_MASK)
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|$(DEBUG_PRINT_ERROR_LEVEL)
 
 [PcdsFixedAtBuild.IPF]
 
@@ -53,7 +60,13 @@
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
-  DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+  !if $(DEBUG_ENABLE_OUTPUT)
+    DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
+    DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
+  !else   ## DEBUG_ENABLE_OUTPUT
+    DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+  !endif  ## DEBUG_ENABLE_OUTPUT
+
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
@@ -70,6 +83,8 @@
   FileHandleLib|ShellPkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
   SortLib|ShellPkg/Library/UefiSortLib/UefiSortLib.inf
   PathLib|ShellPkg/Library/BasePathLib/BasePathLib.inf
+
+  CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
 
 ###################################################################################################
 #
@@ -95,42 +110,38 @@
 #### Sample Applications.
   AppPkg/Applications/Hello/Hello.inf        # No LibC includes or functions.
   AppPkg/Applications/Main/Main.inf          # Simple invocation. No other LibC functions.
-  AppPkg/Applications/Enquire/Enquire.inf
+  AppPkg/Applications/Enquire/Enquire.inf    #
+  AppPkg/Applications/ArithChk/ArithChk.inf  #
 
-#### After extracting the Python distribution, un-comment the following line to build Python.
+#### A simple fuzzer for OrderedCollectionLib, in particular for
+#### BaseOrderedCollectionRedBlackTreeLib.
+  AppPkg/Applications/OrderedCollectionTest/OrderedCollectionTest.inf {
+    <LibraryClasses>
+      OrderedCollectionLib|MdePkg/Library/BaseOrderedCollectionRedBlackTreeLib/BaseOrderedCollectionRedBlackTreeLib.inf
+      DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
+      DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
+    <PcdsFeatureFlag>
+      gEfiMdePkgTokenSpaceGuid.PcdValidateOrderedCollection|TRUE
+    <PcdsFixedAtBuild>
+      gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x2F
+      gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80400040
+  }
+
+#### Un-comment the following line to build Python.
 #  AppPkg/Applications/Python/PythonCore.inf
 
-##########
-#    Socket Applications - LibC based
-##########
-#  AppPkg/Applications/Sockets/DataSink/DataSink.inf
-#  AppPkg/Applications/Sockets/DataSource/DataSource.inf
-#  SocketPkg/Application/FtpNew/FTP.inf
-#  AppPkg/Applications/Sockets/GetHostByAddr/GetHostByAddr.inf
-#  AppPkg/Applications/Sockets/GetHostByDns/GetHostByDns.inf
-#  AppPkg/Applications/Sockets/GetHostByName/GetHostByName.inf
-#  AppPkg/Applications/Sockets/GetNetByAddr/GetNetByAddr.inf
-#  AppPkg/Applications/Sockets/GetNetByName/GetNetByName.inf
-#  AppPkg/Applications/Sockets/GetServByName/GetServByName.inf
-#  AppPkg/Applications/Sockets/GetServByPort/GetServByPort.inf
-#  AppPkg/Applications/Sockets/RecvDgram/RecvDgram.inf
-#  SocketPkg/Application/route/route.inf
-#  AppPkg/Applications/Sockets/SetHostName/SetHostName.inf
-#  AppPkg/Applications/Sockets/SetSockOpt/SetSockOpt.inf
-#  AppPkg/Applications/Sockets/TftpServer/TftpServer.inf
-#  AppPkg/Applications/Sockets/WebServer/WebServer.inf {
-#    <PcdsFixedAtBuild>
-#      gStdLibTokenSpaceGuid.WebServer_HttpPort|80
-#  }
+
+##############################################################################
+#
+# Specify whether we are running in an emulation environment, or not.
+# Define EMULATE if we are, else keep the DEFINE commented out.
+#
+# DEFINE  EMULATE = 1
 
 ##############################################################################
 #
 #  Include Boilerplate text required for building with the Standard Libraries.
 #
 ##############################################################################
-# Specify whether we are running in an emulation environment, or not.
-# Define EMULATE if we are.
-#
-#DEFINE  EMULATE = 1
-
 !include StdLib/StdLib.inc
+!include AppPkg/Applications/Sockets/Sockets.inc

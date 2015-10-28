@@ -1,7 +1,7 @@
 /** @file
 Parser for IFR binary encoding.
 
-Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -16,8 +16,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 UINT16           mStatementIndex;
 UINT16           mExpressionOpCodeIndex;
-
-BOOLEAN          mInScopeSubtitle;
+EFI_QUESTION_ID  mUsedQuestionId;
+extern LIST_ENTRY      gBrowserStorageList;
 /**
   Initialize Statement header members.
 
@@ -41,9 +41,9 @@ CreateStatement (
 
   if (Form == NULL) {
     //
-    // We are currently not in a Form Scope, so just skip this Statement
+    // Only guid op may out side the form level.
     //
-    return NULL;
+    ASSERT (((EFI_IFR_OP_HEADER *) OpCodeData)->OpCode == EFI_IFR_GUID_OP);
   }
 
   Statement = &FormSet->StatementBuffer[mStatementIndex];
@@ -53,10 +53,12 @@ CreateStatement (
   InitializeListHead (&Statement->OptionListHead);
   InitializeListHead (&Statement->InconsistentListHead);
   InitializeListHead (&Statement->NoSubmitListHead);
+  InitializeListHead (&Statement->WarningListHead);
 
   Statement->Signature = FORM_BROWSER_STATEMENT_SIGNATURE;
 
   Statement->Operand = ((EFI_IFR_OP_HEADER *) OpCodeData)->OpCode;
+  Statement->OpCode  = (EFI_IFR_OP_HEADER *) OpCodeData;
 
   StatementHdr = (EFI_IFR_STATEMENT_HEADER *) (OpCodeData + sizeof (EFI_IFR_OP_HEADER));
   CopyMem (&Statement->Prompt, &StatementHdr->Prompt, sizeof (EFI_STRING_ID));
@@ -76,13 +78,14 @@ CreateStatement (
     CopyMem (Statement->Expression->Expression, GetConditionalExpressionList(ExpressStatement), (UINTN) (sizeof (FORM_EXPRESSION *) * ConditionalExprCount));
   }
 
-  Statement->InSubtitle = mInScopeSubtitle;
-
   //
   // Insert this Statement into current Form
   //
-  InsertTailList (&Form->StatementListHead, &Statement->Link);
-
+  if (Form == NULL) {
+    InsertTailList (&FormSet->StatementListOSF, &Statement->Link);
+  } else {
+    InsertTailList (&Form->StatementListHead, &Statement->Link);
+  }
   return Statement;
 }
 
@@ -179,6 +182,7 @@ CreateQuestion (
   FORMSET_STORAGE          *Storage;
   NAME_VALUE_NODE          *NameValueNode;
   EFI_STATUS               Status;
+  BOOLEAN                  Find;
 
   Statement = CreateStatement (OpCodeData, FormSet, Form);
   if (Statement == NULL) {
@@ -220,7 +224,7 @@ CreateQuestion (
     Storage = FORMSET_STORAGE_FROM_LINK (Link);
 
     if (Storage->VarStoreId == Statement->VarStoreId) {
-      Statement->Storage = Storage;
+      Statement->Storage = Storage->BrowserStorage;
       break;
     }
 
@@ -238,19 +242,39 @@ CreateQuestion (
 
     if (Statement->Storage->Type == EFI_HII_VARSTORE_NAME_VALUE) {
       //
-      // Insert to Name/Value varstore list
+      // Check whether old string node already exist.
       //
-      NameValueNode = AllocateZeroPool (sizeof (NAME_VALUE_NODE));
-      ASSERT (NameValueNode != NULL);
-      NameValueNode->Signature = NAME_VALUE_NODE_SIGNATURE;
-      NameValueNode->Name = AllocateCopyPool (StrSize (Statement->VariableName), Statement->VariableName);
-      ASSERT (NameValueNode->Name != NULL);
-      NameValueNode->Value = AllocateZeroPool (0x10);
-      ASSERT (NameValueNode->Value != NULL);
-      NameValueNode->EditValue = AllocateZeroPool (0x10);
-      ASSERT (NameValueNode->EditValue != NULL);
+      Find = FALSE;
+      if (!IsListEmpty(&Statement->Storage->NameValueListHead)) {  
+        Link = GetFirstNode (&Statement->Storage->NameValueListHead);
+        while (!IsNull (&Statement->Storage->NameValueListHead, Link)) {
+          NameValueNode = NAME_VALUE_NODE_FROM_LINK (Link);
 
-      InsertTailList (&Statement->Storage->NameValueListHead, &NameValueNode->Link);
+          if (StrCmp (Statement->VariableName, NameValueNode->Name) == 0) {
+            Find = TRUE;
+            break;
+          }
+
+          Link = GetNextNode (&Statement->Storage->NameValueListHead, Link);
+        }
+      }
+
+      if (!Find) {
+        //
+        // Insert to Name/Value varstore list
+        //
+        NameValueNode = AllocateZeroPool (sizeof (NAME_VALUE_NODE));
+        ASSERT (NameValueNode != NULL);
+        NameValueNode->Signature = NAME_VALUE_NODE_SIGNATURE;
+        NameValueNode->Name = AllocateCopyPool (StrSize (Statement->VariableName), Statement->VariableName);
+        ASSERT (NameValueNode->Name != NULL);
+        NameValueNode->Value = AllocateZeroPool (0x10);
+        ASSERT (NameValueNode->Value != NULL);
+        NameValueNode->EditValue = AllocateZeroPool (0x10);
+        ASSERT (NameValueNode->EditValue != NULL);
+
+        InsertTailList (&Statement->Storage->NameValueListHead, &NameValueNode->Link);
+      }
     }
   }
 
@@ -262,13 +286,15 @@ CreateQuestion (
   Allocate a FORM_EXPRESSION node.
 
   @param  Form                   The Form associated with this Expression
+  @param  OpCode                 The binary opcode data.
 
   @return Pointer to a FORM_EXPRESSION data structure.
 
 **/
 FORM_EXPRESSION *
 CreateExpression (
-  IN OUT FORM_BROWSER_FORM        *Form
+  IN OUT FORM_BROWSER_FORM        *Form,
+  IN     UINT8                    *OpCode
   )
 {
   FORM_EXPRESSION  *Expression;
@@ -277,35 +303,10 @@ CreateExpression (
   ASSERT (Expression != NULL);
   Expression->Signature = FORM_EXPRESSION_SIGNATURE;
   InitializeListHead (&Expression->OpCodeListHead);
+  Expression->OpCode = (EFI_IFR_OP_HEADER *) OpCode;
 
   return Expression;
 }
-
-
-/**
-  Allocate a FORMSET_STORAGE data structure and insert to FormSet Storage List.
-
-  @param  FormSet                Pointer of the current FormSet
-
-  @return Pointer to a FORMSET_STORAGE data structure.
-
-**/
-FORMSET_STORAGE *
-CreateStorage (
-  IN FORM_BROWSER_FORMSET  *FormSet
-  )
-{
-  FORMSET_STORAGE  *Storage;
-
-  Storage = AllocateZeroPool (sizeof (FORMSET_STORAGE));
-  ASSERT (Storage != NULL);
-  Storage->Signature = FORMSET_STORAGE_SIGNATURE;
-  InitializeListHead (&Storage->NameValueListHead);
-  InsertTailList (&FormSet->StorageListHead, &Storage->Link);
-
-  return Storage;
-}
-
 
 /**
   Create ConfigHdr string for a storage.
@@ -324,15 +325,15 @@ InitializeConfigHdr (
 {
   CHAR16      *Name;
 
-  if (Storage->Type == EFI_HII_VARSTORE_BUFFER || 
-      Storage->Type == EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER) {
-    Name = Storage->Name;
+  if (Storage->BrowserStorage->Type == EFI_HII_VARSTORE_BUFFER || 
+      Storage->BrowserStorage->Type == EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER) {
+    Name = Storage->BrowserStorage->Name;
   } else {
     Name = NULL;
   }
 
   Storage->ConfigHdr = HiiConstructConfigHdr (
-                         &Storage->Guid,
+                         &Storage->BrowserStorage->Guid,
                          Name,
                          FormSet->DriverHandle
                          );
@@ -341,12 +342,324 @@ InitializeConfigHdr (
     return EFI_NOT_FOUND;
   }
 
-  Storage->ConfigRequest = AllocateCopyPool (StrSize (Storage->ConfigHdr), Storage->ConfigHdr);
-  Storage->SpareStrLen = 0;
-
   return EFI_SUCCESS;
 }
 
+/**
+  Find the global storage link base on the input storate type, name and guid.
+
+  For EFI_HII_VARSTORE_EFI_VARIABLE and EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER,
+  same guid + name = same storage
+
+  For EFI_HII_VARSTORE_NAME_VALUE:
+  same guid + HiiHandle = same storage
+
+  For EFI_HII_VARSTORE_BUFFER:
+  same guid + name + HiiHandle = same storage
+
+  @param  StorageType                Storage type.
+  @param  StorageGuid                Storage guid.
+  @param  StorageName                Storage Name.
+  @param  HiiHandle                  HiiHandle for this varstore.
+
+  @return Pointer to a GLOBAL_STORAGE data structure.
+
+**/
+BROWSER_STORAGE *
+FindStorageInList (
+  IN UINT8                 StorageType,
+  IN EFI_GUID              *StorageGuid,
+  IN CHAR16                *StorageName,
+  IN EFI_HII_HANDLE        HiiHandle
+  )
+{
+  LIST_ENTRY       *Link;
+  BROWSER_STORAGE  *BrowserStorage;
+
+  Link  = GetFirstNode (&gBrowserStorageList);
+  while (!IsNull (&gBrowserStorageList, Link)) {
+    BrowserStorage = BROWSER_STORAGE_FROM_LINK (Link);
+    Link = GetNextNode (&gBrowserStorageList, Link);
+
+    if ((BrowserStorage->Type == StorageType) && CompareGuid (&BrowserStorage->Guid, StorageGuid)) {
+      if (StorageType == EFI_HII_VARSTORE_NAME_VALUE) {
+        if (BrowserStorage->HiiHandle == HiiHandle) {
+          return BrowserStorage;
+        }
+
+        continue;
+      }
+
+      ASSERT (StorageName != NULL);
+      if (StrCmp (BrowserStorage->Name, StorageName) == 0) {
+        if (StorageType == EFI_HII_VARSTORE_EFI_VARIABLE || StorageType == EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER) {
+          return BrowserStorage;
+        } else if (StorageType == EFI_HII_VARSTORE_BUFFER && BrowserStorage->HiiHandle == HiiHandle) {
+          return BrowserStorage;
+        }
+      }
+    }
+  }
+
+  return NULL;
+}
+
+/**
+  Intialize the Global Storage.
+
+  @param  BrowserStorage              Pointer to the global storage.
+  @param  StorageType                Storage type.
+  @param  OpCodeData                 Binary data for this opcode.
+
+**/
+VOID
+IntializeBrowserStorage (
+  IN BROWSER_STORAGE       *BrowserStorage,
+  IN UINT8                 StorageType,
+  IN UINT8                 *OpCodeData
+  )
+{
+  switch (StorageType) {
+    case EFI_HII_VARSTORE_BUFFER:
+      CopyMem (&BrowserStorage->Guid, &((EFI_IFR_VARSTORE *) OpCodeData)->Guid, sizeof (EFI_GUID));
+      CopyMem (&BrowserStorage->Size, &((EFI_IFR_VARSTORE *) OpCodeData)->Size, sizeof (UINT16));
+
+      BrowserStorage->Buffer     = AllocateZeroPool (BrowserStorage->Size);
+      BrowserStorage->EditBuffer = AllocateZeroPool (BrowserStorage->Size);
+      break;
+
+    case EFI_HII_VARSTORE_EFI_VARIABLE:
+    case EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER:
+      CopyMem (&BrowserStorage->Guid,       &((EFI_IFR_VARSTORE_EFI *) OpCodeData)->Guid,       sizeof (EFI_GUID));
+      CopyMem (&BrowserStorage->Attributes, &((EFI_IFR_VARSTORE_EFI *) OpCodeData)->Attributes, sizeof (UINT32));
+      CopyMem (&BrowserStorage->Size,       &((EFI_IFR_VARSTORE_EFI *) OpCodeData)->Size,       sizeof (UINT16));
+
+      if (StorageType ==  EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER) {
+        BrowserStorage->Buffer     = AllocateZeroPool (BrowserStorage->Size);
+        BrowserStorage->EditBuffer = AllocateZeroPool (BrowserStorage->Size);
+      }
+      break;
+
+    case EFI_HII_VARSTORE_NAME_VALUE:
+      CopyMem (&BrowserStorage->Guid, &((EFI_IFR_VARSTORE_NAME_VALUE *) OpCodeData)->Guid, sizeof (EFI_GUID));
+
+      InitializeListHead (&BrowserStorage->NameValueListHead);
+      break;
+
+    default:
+      break;
+  }
+}
+
+/**
+  Check whether exist device path info in the ConfigHdr string.
+
+  @param  String                 UEFI configuration string
+
+  @retval TRUE                   Device Path exist.
+  @retval FALSE                  Not exist device path info.
+
+**/
+BOOLEAN
+IsDevicePathExist (
+  IN  EFI_STRING                   String
+  )
+{
+  UINTN                    Length;
+
+  for (; (*String != 0 && StrnCmp (String, L"PATH=", StrLen (L"PATH=")) != 0); String++);
+  if (*String == 0) {
+    return FALSE;
+  }
+
+  String += StrLen (L"PATH=");
+  if (*String == 0) {
+    return FALSE;
+  }
+
+  for (Length = 0; *String != 0 && *String != L'&'; String++, Length++);
+  if (((Length + 1) / 2) < sizeof (EFI_DEVICE_PATH_PROTOCOL)) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+  Allocate a FORMSET_STORAGE data structure and insert to FormSet Storage List.
+
+  @param  FormSet                    Pointer of the current FormSet
+  @param  StorageType                Storage type.
+  @param  OpCodeData                 Binary data for this opcode.
+
+  @return Pointer to a FORMSET_STORAGE data structure.
+
+**/
+FORMSET_STORAGE *
+CreateStorage (
+  IN FORM_BROWSER_FORMSET  *FormSet,
+  IN UINT8                 StorageType,
+  IN UINT8                 *OpCodeData
+  )
+{
+  FORMSET_STORAGE         *Storage;
+  CHAR16                  *UnicodeString;
+  UINT16                  Index;
+  BROWSER_STORAGE         *BrowserStorage;
+  EFI_GUID                *StorageGuid;
+  CHAR8                   *StorageName;
+
+  UnicodeString = NULL;
+  StorageName   = NULL;
+  switch (StorageType) {
+    case EFI_HII_VARSTORE_BUFFER:
+      StorageGuid = (EFI_GUID *) (CHAR8*) &((EFI_IFR_VARSTORE *) OpCodeData)->Guid;
+      StorageName = (CHAR8 *) ((EFI_IFR_VARSTORE *) OpCodeData)->Name;
+      break;
+
+    case EFI_HII_VARSTORE_EFI_VARIABLE:
+    case EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER:
+      StorageGuid = (EFI_GUID *) (CHAR8*) &((EFI_IFR_VARSTORE_EFI *) OpCodeData)->Guid;
+      StorageName = (CHAR8 *) ((EFI_IFR_VARSTORE_EFI *) OpCodeData)->Name;
+      break;
+
+    default:
+      ASSERT (StorageType == EFI_HII_VARSTORE_NAME_VALUE);
+      StorageGuid = &((EFI_IFR_VARSTORE_NAME_VALUE *) OpCodeData)->Guid;
+      break;
+  }
+
+  if (StorageType != EFI_HII_VARSTORE_NAME_VALUE) {
+    ASSERT (StorageName != NULL);
+
+    UnicodeString = AllocateZeroPool (AsciiStrSize (StorageName) * 2);
+    ASSERT (UnicodeString != NULL);
+    for (Index = 0; StorageName[Index] != 0; Index++) {
+      UnicodeString[Index] = (CHAR16) StorageName[Index];
+    }
+  }
+
+  Storage = AllocateZeroPool (sizeof (FORMSET_STORAGE));
+  ASSERT (Storage != NULL);
+  Storage->Signature = FORMSET_STORAGE_SIGNATURE;
+  InsertTailList (&FormSet->StorageListHead, &Storage->Link);
+
+  BrowserStorage = FindStorageInList(StorageType, StorageGuid, UnicodeString, FormSet->HiiHandle);
+  if (BrowserStorage == NULL) {
+    BrowserStorage = AllocateZeroPool (sizeof (BROWSER_STORAGE));
+    ASSERT (BrowserStorage != NULL);
+
+    BrowserStorage->Signature = BROWSER_STORAGE_SIGNATURE;
+    InsertTailList (&gBrowserStorageList, &BrowserStorage->Link);
+
+    IntializeBrowserStorage (BrowserStorage, StorageType, OpCodeData);
+    BrowserStorage->Type = StorageType;
+    if (StorageType != EFI_HII_VARSTORE_NAME_VALUE) {
+      BrowserStorage->Name = UnicodeString;
+    }
+
+    BrowserStorage->HiiHandle = FormSet->HiiHandle;
+
+    BrowserStorage->Initialized = FALSE;
+  }
+
+  Storage->BrowserStorage = BrowserStorage;
+  InitializeConfigHdr (FormSet, Storage);
+  Storage->ConfigRequest = AllocateCopyPool (StrSize (Storage->ConfigHdr), Storage->ConfigHdr);
+  Storage->SpareStrLen = 0;
+
+  return Storage;
+}
+
+/**
+  Get Formset_storage base on the input varstoreid info.
+
+  @param  FormSet                Pointer of the current FormSet.
+  @param  VarStoreId             Varstore ID info.
+
+  @return Pointer to a FORMSET_STORAGE data structure.
+
+**/
+FORMSET_STORAGE *
+GetFstStgFromVarId (
+  IN FORM_BROWSER_FORMSET  *FormSet,
+  IN EFI_VARSTORE_ID       VarStoreId
+  )
+{
+  FORMSET_STORAGE  *FormsetStorage;
+  LIST_ENTRY       *Link;
+  BOOLEAN          Found;
+
+  Found = FALSE;
+  FormsetStorage = NULL;
+  //
+  // Find Formset Storage for this Question
+  //
+  Link = GetFirstNode (&FormSet->StorageListHead);
+  while (!IsNull (&FormSet->StorageListHead, Link)) {
+    FormsetStorage = FORMSET_STORAGE_FROM_LINK (Link);
+
+    if (FormsetStorage->VarStoreId == VarStoreId) {
+      Found = TRUE;
+      break;
+    }
+
+    Link = GetNextNode (&FormSet->StorageListHead, Link);
+  }
+
+  return Found ? FormsetStorage : NULL;
+}
+
+/**
+  Get Formset_storage base on the input browser storage.
+
+  More than one formsets may share the same browser storage,
+  this function just get the first formset storage which
+  share the browser storage.
+
+  @param  Storage              browser storage info.
+
+  @return Pointer to a FORMSET_STORAGE data structure.
+  
+
+**/
+FORMSET_STORAGE *
+GetFstStgFromBrsStg (
+  IN BROWSER_STORAGE       *Storage
+  )
+{
+  FORMSET_STORAGE      *FormsetStorage;
+  LIST_ENTRY           *Link;
+  LIST_ENTRY           *FormsetLink;
+  FORM_BROWSER_FORMSET *FormSet;
+  BOOLEAN              Found;
+
+  Found = FALSE;
+  FormsetStorage = NULL;
+
+  FormsetLink = GetFirstNode (&gBrowserFormSetList);
+  while (!IsNull (&gBrowserFormSetList, FormsetLink)) {
+    FormSet = FORM_BROWSER_FORMSET_FROM_LINK (FormsetLink);
+    FormsetLink = GetNextNode (&gBrowserFormSetList, FormsetLink);
+
+    Link = GetFirstNode (&FormSet->StorageListHead);
+    while (!IsNull (&FormSet->StorageListHead, Link)) {
+      FormsetStorage = FORMSET_STORAGE_FROM_LINK (Link);
+      Link = GetNextNode (&FormSet->StorageListHead, Link);
+
+      if (FormsetStorage->BrowserStorage == Storage) {
+        Found = TRUE;
+        break;
+      }
+    }
+
+    if (Found) {
+      break;
+    }
+  }
+
+  return Found ? FormsetStorage : NULL;
+}
 
 /**
   Initialize Request Element of a Question. <RequestElement> ::= '&'<BlockName> | '&'<Label>
@@ -366,7 +679,8 @@ InitializeRequestElement (
   IN OUT FORM_BROWSER_FORM        *Form
   )
 {
-  FORMSET_STORAGE  *Storage;
+  BROWSER_STORAGE  *Storage;
+  FORMSET_STORAGE  *FormsetStorage;
   UINTN            StrLen;
   UINTN            StringSize;
   CHAR16           *NewStr;
@@ -414,26 +728,32 @@ InitializeRequestElement (
   }
 
   //
+  // Find Formset Storage for this Question
+  //
+  FormsetStorage = GetFstStgFromVarId(FormSet, Question->VarStoreId);
+  ASSERT (FormsetStorage != NULL);
+
+  //
   // Append <RequestElement> to <ConfigRequest>
   //
-  if (StrLen > Storage->SpareStrLen) {
+  if (StrLen > FormsetStorage->SpareStrLen) {
     //
     // Old String buffer is not sufficient for RequestElement, allocate a new one
     //
-    StringSize = (Storage->ConfigRequest != NULL) ? StrSize (Storage->ConfigRequest) : sizeof (CHAR16);
+    StringSize = (FormsetStorage->ConfigRequest != NULL) ? StrSize (FormsetStorage->ConfigRequest) : sizeof (CHAR16);
     NewStr = AllocateZeroPool (StringSize + CONFIG_REQUEST_STRING_INCREMENTAL * sizeof (CHAR16));
     ASSERT (NewStr != NULL);
-    if (Storage->ConfigRequest != NULL) {
-      CopyMem (NewStr, Storage->ConfigRequest, StringSize);
-      FreePool (Storage->ConfigRequest);
+    if (FormsetStorage->ConfigRequest != NULL) {
+      CopyMem (NewStr, FormsetStorage->ConfigRequest, StringSize);
+      FreePool (FormsetStorage->ConfigRequest);
     }
-    Storage->ConfigRequest = NewStr;
-    Storage->SpareStrLen   = CONFIG_REQUEST_STRING_INCREMENTAL;
+    FormsetStorage->ConfigRequest = NewStr;
+    FormsetStorage->SpareStrLen   = CONFIG_REQUEST_STRING_INCREMENTAL;
   }
 
-  StrCat (Storage->ConfigRequest, RequestElement);
-  Storage->ElementCount++;
-  Storage->SpareStrLen -= StrLen;
+  StrCat (FormsetStorage->ConfigRequest, RequestElement);
+  FormsetStorage->ElementCount++;
+  FormsetStorage->SpareStrLen -= StrLen;
 
   //
   // Update the Config Request info saved in the form.
@@ -444,7 +764,7 @@ InitializeRequestElement (
   while (!IsNull (&Form->ConfigRequestHead, Link)) {
     ConfigInfo = FORM_BROWSER_CONFIG_REQUEST_FROM_LINK (Link);
 
-    if (ConfigInfo != NULL && ConfigInfo->Storage->VarStoreId == Storage->VarStoreId) {
+    if (ConfigInfo != NULL && ConfigInfo->Storage == FormsetStorage->BrowserStorage) {
       Find = TRUE;
       break;
     }
@@ -456,9 +776,10 @@ InitializeRequestElement (
     ConfigInfo = AllocateZeroPool(sizeof (FORM_BROWSER_CONFIG_REQUEST));
     ASSERT (ConfigInfo != NULL);
     ConfigInfo->Signature     = FORM_BROWSER_CONFIG_REQUEST_SIGNATURE;
-    ConfigInfo->ConfigRequest = AllocateCopyPool (StrSize (Storage->ConfigHdr), Storage->ConfigHdr);
+    ConfigInfo->ConfigRequest = AllocateCopyPool (StrSize (FormsetStorage->ConfigHdr), FormsetStorage->ConfigHdr);
+    ASSERT (ConfigInfo->ConfigRequest != NULL);
     ConfigInfo->SpareStrLen   = 0;
-    ConfigInfo->Storage       = Storage;
+    ConfigInfo->Storage       = FormsetStorage->BrowserStorage;
     InsertTailList(&Form->ConfigRequestHead, &ConfigInfo->Link);
   }
 
@@ -532,7 +853,6 @@ DestroyExpression (
   FreePool (Expression);
 }
 
-
 /**
   Free resources of a storage.
 
@@ -544,43 +864,10 @@ DestroyStorage (
   IN FORMSET_STORAGE   *Storage
   )
 {
-  LIST_ENTRY         *Link;
-  NAME_VALUE_NODE    *NameValueNode;
-
   if (Storage == NULL) {
     return;
   }
 
-  if (Storage->Name != NULL) {
-    FreePool (Storage->Name);
-  }
-  if (Storage->Buffer != NULL) {
-    FreePool (Storage->Buffer);
-  }
-  if (Storage->EditBuffer != NULL) {
-    FreePool (Storage->EditBuffer);
-  }
-
-  while (!IsListEmpty (&Storage->NameValueListHead)) {
-    Link = GetFirstNode (&Storage->NameValueListHead);
-    NameValueNode = NAME_VALUE_NODE_FROM_LINK (Link);
-    RemoveEntryList (&NameValueNode->Link);
-
-    if (NameValueNode->Name != NULL) {
-      FreePool (NameValueNode->Name);
-    }
-    if (NameValueNode->Value != NULL) {
-      FreePool (NameValueNode->Value);
-    }
-    if (NameValueNode->EditValue != NULL) {
-      FreePool (NameValueNode->EditValue);
-    }
-    FreePool (NameValueNode);
-  }
-
-  if (Storage->ConfigHdr != NULL) {
-    FreePool (Storage->ConfigHdr);
-  }
   if (Storage->ConfigRequest != NULL) {
     FreePool (Storage->ConfigRequest);
   }
@@ -648,6 +935,17 @@ DestroyStatement (
   //
   while (!IsListEmpty (&Statement->NoSubmitListHead)) {
     Link = GetFirstNode (&Statement->NoSubmitListHead);
+    Expression = FORM_EXPRESSION_FROM_LINK (Link);
+    RemoveEntryList (&Expression->Link);
+
+    DestroyExpression (Expression);
+  }
+
+  //
+  // Free WarningIf List
+  //
+  while (!IsListEmpty (&Statement->WarningListHead)) {
+    Link = GetFirstNode (&Statement->WarningListHead);
     Expression = FORM_EXPRESSION_FROM_LINK (Link);
     RemoveEntryList (&Expression->Link);
 
@@ -728,6 +1026,8 @@ DestroyForm (
   if (Form->SuppressExpression != NULL) {
     FreePool (Form->SuppressExpression);
   }
+
+  UiFreeMenuList (&Form->FormViewListHead);
 
   //
   // Free this Form
@@ -856,6 +1156,56 @@ IsExpressionOpCode (
   }
 }
 
+/**
+  Tell whether this Operand is an Statement OpCode.
+
+  @param  Operand                Operand of an IFR OpCode.
+
+  @retval TRUE                   This is an Statement OpCode.
+  @retval FALSE                  Not an Statement OpCode.
+
+**/
+BOOLEAN
+IsStatementOpCode (
+  IN UINT8              Operand
+  )
+{
+  if ((Operand == EFI_IFR_SUBTITLE_OP) ||
+      (Operand == EFI_IFR_TEXT_OP) ||
+      (Operand == EFI_IFR_RESET_BUTTON_OP) ||
+      (Operand == EFI_IFR_REF_OP) ||
+      (Operand == EFI_IFR_ACTION_OP) ||
+      (Operand == EFI_IFR_NUMERIC_OP) ||
+      (Operand == EFI_IFR_ORDERED_LIST_OP) ||
+      (Operand == EFI_IFR_CHECKBOX_OP) ||
+      (Operand == EFI_IFR_STRING_OP) ||
+      (Operand == EFI_IFR_PASSWORD_OP) ||
+      (Operand == EFI_IFR_DATE_OP) ||
+      (Operand == EFI_IFR_TIME_OP) ||
+      (Operand == EFI_IFR_GUID_OP) ||
+      (Operand == EFI_IFR_ONE_OF_OP)) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+/**
+  Tell whether this Operand is an known OpCode.
+
+  @param  Operand                Operand of an IFR OpCode.
+
+  @retval TRUE                   This is an Statement OpCode.
+  @retval FALSE                  Not an Statement OpCode.
+
+**/
+BOOLEAN
+IsUnKnownOpCode (
+  IN UINT8              Operand
+  )
+{
+  return Operand > EFI_IFR_WARNING_IF_OP ? TRUE : FALSE;
+}
 
 /**
   Calculate number of Statemens(Questions) and Expression OpCodes.
@@ -915,9 +1265,9 @@ ParseOpCodes (
   )
 {
   EFI_STATUS              Status;
-  UINT16                  Index;
   FORM_BROWSER_FORM       *CurrentForm;
   FORM_BROWSER_STATEMENT  *CurrentStatement;
+  FORM_BROWSER_STATEMENT  *ParentStatement;
   EXPRESSION_OPCODE       *ExpressionOpCode;
   FORM_EXPRESSION         *CurrentExpression;
   UINT8                   Operand;
@@ -931,7 +1281,6 @@ ParseOpCodes (
   QUESTION_DEFAULT        *CurrentDefault;
   QUESTION_OPTION         *CurrentOption;
   UINT8                   Width;
-  CHAR8                   *AsciiString;
   UINT16                  NumberOfStatement;
   UINT16                  NumberOfExpression;
   EFI_IMAGE_ID            *ImageId;
@@ -950,8 +1299,9 @@ ParseOpCodes (
   EFI_VARSTORE_ID         TempVarstoreId;
   BOOLEAN                 InScopeDisable;
   INTN                    ConditionalExprCount;
+  BOOLEAN                 InUnknownScope;
+  UINT8                   UnknownDepth;
 
-  mInScopeSubtitle         = FALSE;
   SuppressForQuestion      = FALSE;
   SuppressForOption        = FALSE;
   InScopeDisable           = FALSE;
@@ -970,6 +1320,8 @@ ParseOpCodes (
   MapExpressionList        = NULL;
   TempVarstoreId           = 0;
   ConditionalExprCount     = 0;
+  InUnknownScope           = FALSE;
+  UnknownDepth             = 0;
 
   //
   // Get the number of Statements and Expressions
@@ -977,6 +1329,7 @@ ParseOpCodes (
   CountOpCodes (FormSet, &NumberOfStatement, &NumberOfExpression);
 
   mStatementIndex = 0;
+  mUsedQuestionId = 1;
   FormSet->StatementBuffer = AllocateZeroPool (NumberOfStatement * sizeof (FORM_BROWSER_STATEMENT));
   if (FormSet->StatementBuffer == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -988,7 +1341,9 @@ ParseOpCodes (
     return EFI_OUT_OF_RESOURCES;
   }
 
+  InitializeListHead (&FormSet->StatementListOSF);
   InitializeListHead (&FormSet->StorageListHead);
+  InitializeListHead (&FormSet->SaveFailStorageListHead);
   InitializeListHead (&FormSet->DefaultStoreListHead);
   InitializeListHead (&FormSet->FormListHead);
   InitializeListHead (&FormSet->ExpressionListHead);
@@ -997,6 +1352,7 @@ ParseOpCodes (
 
   CurrentForm = NULL;
   CurrentStatement = NULL;
+  ParentStatement  = NULL;
 
   ResetScopeStack ();
 
@@ -1008,6 +1364,31 @@ ParseOpCodes (
     OpCodeOffset += OpCodeLength;
     Operand = ((EFI_IFR_OP_HEADER *) OpCodeData)->OpCode;
     Scope = ((EFI_IFR_OP_HEADER *) OpCodeData)->Scope;
+
+    if (InUnknownScope) {
+      if (Operand == EFI_IFR_END_OP) {
+        UnknownDepth --;
+
+        if (UnknownDepth == 0) {
+          InUnknownScope = FALSE;
+        }
+      } else {
+        if (Scope != 0) {
+          UnknownDepth ++;
+        }
+      }
+
+      continue;
+    }
+
+    if (IsUnKnownOpCode(Operand)) {
+      if (Scope != 0) {
+        InUnknownScope = TRUE;
+        UnknownDepth ++;
+      }
+
+      continue;
+    }
 
     //
     // If scope bit set, push onto scope stack
@@ -1062,7 +1443,7 @@ ParseOpCodes (
         CopyMem (&ExpressionOpCode->QuestionId2, &((EFI_IFR_EQ_ID_ID *) OpCodeData)->QuestionId2, sizeof (EFI_QUESTION_ID));
         break;
 
-      case EFI_IFR_EQ_ID_LIST_OP:
+      case EFI_IFR_EQ_ID_VAL_LIST_OP:
         CopyMem (&ExpressionOpCode->QuestionId, &((EFI_IFR_EQ_ID_VAL_LIST *) OpCodeData)->QuestionId, sizeof (EFI_QUESTION_ID));
         CopyMem (&ExpressionOpCode->ListLength, &((EFI_IFR_EQ_ID_VAL_LIST *) OpCodeData)->ListLength, sizeof (UINT16));
         ExpressionOpCode->ValueList = AllocateCopyPool (ExpressionOpCode->ListLength * sizeof (UINT16), &((EFI_IFR_EQ_ID_VAL_LIST *) OpCodeData)->ValueList);
@@ -1087,8 +1468,8 @@ ParseOpCodes (
         break;
 
       case EFI_IFR_THIS_OP:
-        ASSERT (CurrentStatement != NULL);
-        ExpressionOpCode->QuestionId = CurrentStatement->QuestionId;
+        ASSERT (ParentStatement != NULL);
+        ExpressionOpCode->QuestionId = ParentStatement->QuestionId;
         break;
 
       case EFI_IFR_SECURITY_OP:
@@ -1104,7 +1485,7 @@ ParseOpCodes (
             while (!IsNull (&FormSet->StorageListHead, Link)) {
               VarStorage = FORMSET_STORAGE_FROM_LINK (Link);
               if (VarStorage->VarStoreId == ((EFI_IFR_GET *) OpCodeData)->VarStoreId) {
-                ExpressionOpCode->VarStorage = VarStorage;
+                ExpressionOpCode->VarStorage = VarStorage->BrowserStorage;
                 break;
               }
               Link = GetNextNode (&FormSet->StorageListHead, Link);
@@ -1252,7 +1633,7 @@ ParseOpCodes (
       // Create sub expression nested in MAP opcode
       //
       if (CurrentExpression == NULL && MapScopeDepth > 0) {
-        CurrentExpression = CreateExpression (CurrentForm);
+        CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
         ASSERT (MapExpressionList != NULL);
         InsertTailList (MapExpressionList, &CurrentExpression->Link);
         if (Scope == 0) {
@@ -1296,11 +1677,7 @@ ParseOpCodes (
             return Status;
           }
 
-          if (CurrentExpression->Result.Type != EFI_IFR_TYPE_BOOLEAN) {
-            return EFI_INVALID_PARAMETER;
-          }
-
-          OpCodeDisabled = CurrentExpression->Result.Value.b;
+          OpCodeDisabled = IsTrue(&CurrentExpression->Result);
         }
 
         CurrentExpression = NULL;
@@ -1344,9 +1721,9 @@ ParseOpCodes (
       InitializeListHead (&CurrentForm->ExpressionListHead);
       InitializeListHead (&CurrentForm->StatementListHead);
       InitializeListHead (&CurrentForm->ConfigRequestHead);
+      InitializeListHead (&CurrentForm->FormViewListHead);
 
       CurrentForm->FormType = STANDARD_MAP_FORM_TYPE;
-      CurrentForm->NvUpdateRequired = FALSE;
       CopyMem (&CurrentForm->FormId,    &((EFI_IFR_FORM *) OpCodeData)->FormId,    sizeof (UINT16));
       CopyMem (&CurrentForm->FormTitle, &((EFI_IFR_FORM *) OpCodeData)->FormTitle, sizeof (EFI_STRING_ID));
 
@@ -1383,10 +1760,11 @@ ParseOpCodes (
       CurrentForm = AllocateZeroPool (sizeof (FORM_BROWSER_FORM));
       ASSERT (CurrentForm != NULL);
       CurrentForm->Signature = FORM_BROWSER_FORM_SIGNATURE;
-      CurrentForm->NvUpdateRequired = FALSE;
       InitializeListHead (&CurrentForm->ExpressionListHead);
       InitializeListHead (&CurrentForm->StatementListHead);
       InitializeListHead (&CurrentForm->ConfigRequestHead);
+      InitializeListHead (&CurrentForm->FormViewListHead);
+
       CopyMem (&CurrentForm->FormId, &((EFI_IFR_FORM *) OpCodeData)->FormId, sizeof (UINT16));
 
       MapMethod = (EFI_IFR_FORM_MAP_METHOD *) (OpCodeData + sizeof (EFI_IFR_FORM_MAP));
@@ -1448,76 +1826,34 @@ ParseOpCodes (
       //
       // Create a buffer Storage for this FormSet
       //
-      Storage = CreateStorage (FormSet);
-      Storage->Type = EFI_HII_VARSTORE_BUFFER;
-
+      Storage = CreateStorage (FormSet, EFI_HII_VARSTORE_BUFFER, OpCodeData);
       CopyMem (&Storage->VarStoreId, &((EFI_IFR_VARSTORE *) OpCodeData)->VarStoreId, sizeof (EFI_VARSTORE_ID));
-      CopyMem (&Storage->Guid,       &((EFI_IFR_VARSTORE *) OpCodeData)->Guid,       sizeof (EFI_GUID));
-      CopyMem (&Storage->Size,       &((EFI_IFR_VARSTORE *) OpCodeData)->Size,       sizeof (UINT16));
-
-      Storage->Buffer = AllocateZeroPool (Storage->Size);
-      Storage->EditBuffer = AllocateZeroPool (Storage->Size);
-
-      AsciiString = (CHAR8 *) ((EFI_IFR_VARSTORE *) OpCodeData)->Name;
-      Storage->Name = AllocateZeroPool (AsciiStrSize (AsciiString) * 2);
-      ASSERT (Storage->Name != NULL);
-      for (Index = 0; AsciiString[Index] != 0; Index++) {
-        Storage->Name[Index] = (CHAR16) AsciiString[Index];
-      }
-
-      //
-      // Initialize <ConfigHdr>
-      //
-      InitializeConfigHdr (FormSet, Storage);
       break;
 
     case EFI_IFR_VARSTORE_NAME_VALUE_OP:
       //
       // Create a name/value Storage for this FormSet
       //
-      Storage = CreateStorage (FormSet);
-      Storage->Type = EFI_HII_VARSTORE_NAME_VALUE;
-
+      Storage = CreateStorage (FormSet, EFI_HII_VARSTORE_NAME_VALUE, OpCodeData);
       CopyMem (&Storage->VarStoreId, &((EFI_IFR_VARSTORE_NAME_VALUE *) OpCodeData)->VarStoreId, sizeof (EFI_VARSTORE_ID));
-      CopyMem (&Storage->Guid,       &((EFI_IFR_VARSTORE_NAME_VALUE *) OpCodeData)->Guid,       sizeof (EFI_GUID));
-
-      //
-      // Initialize <ConfigHdr>
-      //
-      InitializeConfigHdr (FormSet, Storage);
       break;
 
     case EFI_IFR_VARSTORE_EFI_OP:
       //
       // Create a EFI variable Storage for this FormSet
       //
-      Storage = CreateStorage (FormSet);
-
-      CopyMem (&Storage->VarStoreId, &((EFI_IFR_VARSTORE_EFI *) OpCodeData)->VarStoreId, sizeof (EFI_VARSTORE_ID));
-      CopyMem (&Storage->Guid,       &((EFI_IFR_VARSTORE_EFI *) OpCodeData)->Guid,       sizeof (EFI_GUID));
-      CopyMem (&Storage->Attributes, &((EFI_IFR_VARSTORE_EFI *) OpCodeData)->Attributes, sizeof (UINT32));
-      CopyMem (&Storage->Size,       &((EFI_IFR_VARSTORE_EFI *) OpCodeData)->Size,       sizeof (UINT16));
-
       if (OpCodeLength < sizeof (EFI_IFR_VARSTORE_EFI)) {
-        Storage->Type = EFI_HII_VARSTORE_EFI_VARIABLE;
-        break;
-      } 
-
-      Storage->Type = EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER;
-      Storage->Buffer = AllocateZeroPool (Storage->Size);
-      Storage->EditBuffer = AllocateZeroPool (Storage->Size);
-
-      AsciiString = (CHAR8 *) ((EFI_IFR_VARSTORE_EFI *) OpCodeData)->Name;
-      Storage->Name = AllocateZeroPool (AsciiStrSize (AsciiString) * 2);
-      ASSERT (Storage->Name != NULL);
-      for (Index = 0; AsciiString[Index] != 0; Index++) {
-        Storage->Name[Index] = (CHAR16) AsciiString[Index];
+        //
+        // Create efi varstore with format follow UEFI spec before 2.3.1.
+        //
+        Storage = CreateStorage (FormSet, EFI_HII_VARSTORE_EFI_VARIABLE, OpCodeData);
+      } else {
+        //
+        // Create efi varstore with format follow UEFI spec 2.3.1 and later.
+        //
+        Storage = CreateStorage (FormSet, EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER, OpCodeData);
       }
-
-      //
-      // Initialize <ConfigHdr>
-      //
-      InitializeConfigHdr (FormSet, Storage);
+      CopyMem (&Storage->VarStoreId, &((EFI_IFR_VARSTORE_EFI *) OpCodeData)->VarStoreId, sizeof (EFI_VARSTORE_ID));
       break;
 
     //
@@ -1545,22 +1881,20 @@ ParseOpCodes (
       ASSERT (CurrentStatement != NULL);
 
       CurrentStatement->Flags = ((EFI_IFR_SUBTITLE *) OpCodeData)->Flags;
-
-      if (Scope != 0) {
-        mInScopeSubtitle = TRUE;
-      }
+      CurrentStatement->FakeQuestionId = mUsedQuestionId++;
       break;
 
     case EFI_IFR_TEXT_OP:
       CurrentStatement = CreateStatement (OpCodeData, FormSet, CurrentForm);
       ASSERT (CurrentStatement != NULL);
-
+      CurrentStatement->FakeQuestionId = mUsedQuestionId++;
       CopyMem (&CurrentStatement->TextTwo, &((EFI_IFR_TEXT *) OpCodeData)->TextTwo, sizeof (EFI_STRING_ID));
       break;
 
     case EFI_IFR_RESET_BUTTON_OP:
       CurrentStatement = CreateStatement (OpCodeData, FormSet, CurrentForm);
       ASSERT (CurrentStatement != NULL);
+      CurrentStatement->FakeQuestionId = mUsedQuestionId++;
       CopyMem (&CurrentStatement->DefaultId, &((EFI_IFR_RESET_BUTTON *) OpCodeData)->DefaultId, sizeof (EFI_DEFAULT_ID));
       break;
 
@@ -1779,13 +2113,15 @@ ParseOpCodes (
 
       CurrentDefault->Value.Type = ((EFI_IFR_DEFAULT *) OpCodeData)->Type;
       CopyMem (&CurrentDefault->DefaultId, &((EFI_IFR_DEFAULT *) OpCodeData)->DefaultId, sizeof (UINT16));
-      CopyMem (&CurrentDefault->Value.Value, &((EFI_IFR_DEFAULT *) OpCodeData)->Value, sizeof (EFI_IFR_TYPE_VALUE));
-      ExtendValueToU64 (&CurrentDefault->Value);
+      if (OpCodeLength > OFFSET_OF (EFI_IFR_DEFAULT, Value)) {
+        CopyMem (&CurrentDefault->Value.Value, &((EFI_IFR_DEFAULT *) OpCodeData)->Value, OpCodeLength - OFFSET_OF (EFI_IFR_DEFAULT, Value));
+        ExtendValueToU64 (&CurrentDefault->Value);
+      }
 
       //
       // Insert to Default Value list of current Question
       //
-      InsertTailList (&CurrentStatement->DefaultListHead, &CurrentDefault->Link);
+      InsertTailList (&ParentStatement->DefaultListHead, &CurrentDefault->Link);
 
       if (Scope != 0) {
         InScopeDefault = TRUE;
@@ -1803,11 +2139,12 @@ ParseOpCodes (
       CurrentOption = AllocateZeroPool (sizeof (QUESTION_OPTION));
       ASSERT (CurrentOption != NULL);
       CurrentOption->Signature = QUESTION_OPTION_SIGNATURE;
+      CurrentOption->OpCode    = (EFI_IFR_ONE_OF_OPTION *) OpCodeData;
 
       CurrentOption->Flags = ((EFI_IFR_ONE_OF_OPTION *) OpCodeData)->Flags;
       CurrentOption->Value.Type = ((EFI_IFR_ONE_OF_OPTION *) OpCodeData)->Type;
       CopyMem (&CurrentOption->Text, &((EFI_IFR_ONE_OF_OPTION *) OpCodeData)->Option, sizeof (EFI_STRING_ID));
-      CopyMem (&CurrentOption->Value.Value, &((EFI_IFR_ONE_OF_OPTION *) OpCodeData)->Value, sizeof (EFI_IFR_TYPE_VALUE));
+      CopyMem (&CurrentOption->Value.Value, &((EFI_IFR_ONE_OF_OPTION *) OpCodeData)->Value, OpCodeLength - OFFSET_OF (EFI_IFR_ONE_OF_OPTION, Value));
       ExtendValueToU64 (&CurrentOption->Value);
 
       ConditionalExprCount = GetConditionalExpressionCount(ExpressOption);
@@ -1823,16 +2160,15 @@ ParseOpCodes (
         CopyMem (CurrentOption->SuppressExpression->Expression, GetConditionalExpressionList(ExpressOption), (UINTN) (sizeof (FORM_EXPRESSION *) * ConditionalExprCount));
       }
 
+      ASSERT (ParentStatement != NULL);
       //
       // Insert to Option list of current Question
       //
-      InsertTailList (&CurrentStatement->OptionListHead, &CurrentOption->Link);
-
+      InsertTailList (&ParentStatement->OptionListHead, &CurrentOption->Link);
       //
       // Now we know the Storage width of nested Ordered List
       //
-      ASSERT (CurrentStatement != NULL);
-      if ((CurrentStatement->Operand == EFI_IFR_ORDERED_LIST_OP) && (CurrentStatement->BufferValue == NULL)) {
+      if ((ParentStatement->Operand == EFI_IFR_ORDERED_LIST_OP) && (ParentStatement->BufferValue == NULL)) {
         Width = 1;
         switch (CurrentOption->Value.Type) {
         case EFI_IFR_TYPE_NUM_SIZE_8:
@@ -1858,15 +2194,15 @@ ParseOpCodes (
           break;
         }
 
-        CurrentStatement->StorageWidth = (UINT16) (CurrentStatement->MaxContainers * Width);
-        CurrentStatement->BufferValue = AllocateZeroPool (CurrentStatement->StorageWidth);
-        CurrentStatement->ValueType = CurrentOption->Value.Type;
-        if (CurrentStatement->HiiValue.Type == EFI_IFR_TYPE_BUFFER) {
-          CurrentStatement->HiiValue.Buffer = CurrentStatement->BufferValue;
-          CurrentStatement->HiiValue.BufferLen = CurrentStatement->StorageWidth;
+        ParentStatement->StorageWidth = (UINT16) (ParentStatement->MaxContainers * Width);
+        ParentStatement->BufferValue = AllocateZeroPool (ParentStatement->StorageWidth);
+        ParentStatement->ValueType = CurrentOption->Value.Type;
+        if (ParentStatement->HiiValue.Type == EFI_IFR_TYPE_BUFFER) {
+          ParentStatement->HiiValue.Buffer = ParentStatement->BufferValue;
+          ParentStatement->HiiValue.BufferLen = ParentStatement->StorageWidth;
         }
 
-        InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
+        InitializeRequestElement (FormSet, ParentStatement, CurrentForm);
       }
       break;
 
@@ -1878,16 +2214,35 @@ ParseOpCodes (
       //
       // Create an Expression node
       //
-      CurrentExpression = CreateExpression (CurrentForm);
+      CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
       CopyMem (&CurrentExpression->Error, &((EFI_IFR_INCONSISTENT_IF *) OpCodeData)->Error, sizeof (EFI_STRING_ID));
 
       if (Operand == EFI_IFR_NO_SUBMIT_IF_OP) {
         CurrentExpression->Type = EFI_HII_EXPRESSION_NO_SUBMIT_IF;
-        InsertTailList (&CurrentStatement->NoSubmitListHead, &CurrentExpression->Link);
+        InsertTailList (&ParentStatement->NoSubmitListHead, &CurrentExpression->Link);
       } else {
         CurrentExpression->Type = EFI_HII_EXPRESSION_INCONSISTENT_IF;
-        InsertTailList (&CurrentStatement->InconsistentListHead, &CurrentExpression->Link);
+        InsertTailList (&ParentStatement->InconsistentListHead, &CurrentExpression->Link);
       }
+
+      //
+      // Take a look at next OpCode to see whether current expression consists
+      // of single OpCode
+      //
+      if (((EFI_IFR_OP_HEADER *) (OpCodeData + OpCodeLength))->Scope == 0) {
+        SingleOpCodeExpression = TRUE;
+      }
+      break;
+
+    case EFI_IFR_WARNING_IF_OP:
+      //
+      // Create an Expression node
+      //
+      CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+      CopyMem (&CurrentExpression->Error, &((EFI_IFR_WARNING_IF *) OpCodeData)->Warning, sizeof (EFI_STRING_ID));
+      CurrentExpression->TimeOut = ((EFI_IFR_WARNING_IF *) OpCodeData)->TimeOut;
+      CurrentExpression->Type    = EFI_HII_EXPRESSION_WARNING_IF;
+      InsertTailList (&ParentStatement->WarningListHead, &CurrentExpression->Link);
 
       //
       // Take a look at next OpCode to see whether current expression consists
@@ -1902,7 +2257,7 @@ ParseOpCodes (
       //
       // Question and Option will appear in scope of this OpCode
       //
-      CurrentExpression = CreateExpression (CurrentForm);
+      CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
       CurrentExpression->Type = EFI_HII_EXPRESSION_SUPPRESS_IF;
 
       if (CurrentForm == NULL) {
@@ -1932,7 +2287,7 @@ ParseOpCodes (
       //
       // Questions will appear in scope of this OpCode
       //
-      CurrentExpression = CreateExpression (CurrentForm);
+      CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
       CurrentExpression->Type = EFI_HII_EXPRESSION_GRAY_OUT_IF;
       InsertTailList (&CurrentForm->ExpressionListHead, &CurrentExpression->Link);
       PushConditionalExpression(CurrentExpression, ExpressStatement);
@@ -1980,7 +2335,7 @@ ParseOpCodes (
     // Expression
     //
     case EFI_IFR_VALUE_OP:
-      CurrentExpression = CreateExpression (CurrentForm);
+      CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
       CurrentExpression->Type = EFI_HII_EXPRESSION_VALUE;
       InsertTailList (&CurrentForm->ExpressionListHead, &CurrentExpression->Link);
 
@@ -1998,8 +2353,8 @@ ParseOpCodes (
         // If it is NULL, 1) ParseOpCodes functions may parse the IFR wrongly. Or 2) the IFR
         // file is wrongly generated by tools such as VFR Compiler. There may be a bug in VFR Compiler.
         //
-        ASSERT (CurrentStatement != NULL);
-        CurrentStatement->ValueExpression = CurrentExpression;
+        ASSERT (ParentStatement != NULL);
+        ParentStatement->ValueExpression = CurrentExpression;
       }
 
       //
@@ -2012,7 +2367,7 @@ ParseOpCodes (
       break;
 
     case EFI_IFR_RULE_OP:
-      CurrentExpression = CreateExpression (CurrentForm);
+      CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
       CurrentExpression->Type = EFI_HII_EXPRESSION_RULE;
 
       CurrentExpression->RuleId = ((EFI_IFR_RULE *) OpCodeData)->RuleId;
@@ -2028,7 +2383,7 @@ ParseOpCodes (
       break;
 
     case EFI_IFR_READ_OP:
-      CurrentExpression = CreateExpression (CurrentForm);
+      CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
       CurrentExpression->Type = EFI_HII_EXPRESSION_READ;
       InsertTailList (&CurrentForm->ExpressionListHead, &CurrentExpression->Link);
 
@@ -2037,8 +2392,8 @@ ParseOpCodes (
       // If it is NULL, 1) ParseOpCodes functions may parse the IFR wrongly. Or 2) the IFR
       // file is wrongly generated by tools such as VFR Compiler. There may be a bug in VFR Compiler.
       //
-      ASSERT (CurrentStatement != NULL);
-      CurrentStatement->ReadExpression = CurrentExpression;
+      ASSERT (ParentStatement != NULL);
+      ParentStatement->ReadExpression = CurrentExpression;
 
       //
       // Take a look at next OpCode to see whether current expression consists
@@ -2050,7 +2405,7 @@ ParseOpCodes (
       break;
 
     case EFI_IFR_WRITE_OP:
-      CurrentExpression = CreateExpression (CurrentForm);
+      CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
       CurrentExpression->Type = EFI_HII_EXPRESSION_WRITE;
       InsertTailList (&CurrentForm->ExpressionListHead, &CurrentExpression->Link);
 
@@ -2059,8 +2414,8 @@ ParseOpCodes (
       // If it is NULL, 1) ParseOpCodes functions may parse the IFR wrongly. Or 2) the IFR
       // file is wrongly generated by tools such as VFR Compiler. There may be a bug in VFR Compiler.
       //
-      ASSERT (CurrentStatement != NULL);
-      CurrentStatement->WriteExpression = CurrentExpression;
+      ASSERT (ParentStatement != NULL);
+      ParentStatement->WriteExpression = CurrentExpression;
 
       //
       // Take a look at next OpCode to see whether current expression consists
@@ -2093,6 +2448,7 @@ ParseOpCodes (
         break;
 
       case EFI_IFR_ONE_OF_OPTION_OP:
+        ASSERT (CurrentOption != NULL);
         ImageId = &CurrentOption->ImageId;
         break;
 
@@ -2102,8 +2458,8 @@ ParseOpCodes (
         // If it is NULL, 1) ParseOpCodes functions may parse the IFR wrongly. Or 2) the IFR
         // file is wrongly generated by tools such as VFR Compiler.
         //
-        ASSERT (CurrentStatement != NULL);
-        ImageId = &CurrentStatement->ImageId;
+        ASSERT (ParentStatement != NULL);
+        ImageId = &ParentStatement->ImageId;
         break;
       }
 
@@ -2115,16 +2471,16 @@ ParseOpCodes (
     // Refresh
     //
     case EFI_IFR_REFRESH_OP:
-      ASSERT (CurrentStatement != NULL);
-      CurrentStatement->RefreshInterval = ((EFI_IFR_REFRESH *) OpCodeData)->RefreshInterval;
+      ASSERT (ParentStatement != NULL);
+      ParentStatement->RefreshInterval = ((EFI_IFR_REFRESH *) OpCodeData)->RefreshInterval;
       break;
 
     //
     // Refresh guid.
     //
     case EFI_IFR_REFRESH_ID_OP:
-      ASSERT (CurrentStatement != NULL);
-      CopyMem (&CurrentStatement->RefreshGuid, &((EFI_IFR_REFRESH_ID *) OpCodeData)->RefreshEventGroupId, sizeof (EFI_GUID));
+      ASSERT (ParentStatement != NULL);
+      CopyMem (&ParentStatement->RefreshGuid, &((EFI_IFR_REFRESH_ID *) OpCodeData)->RefreshEventGroupId, sizeof (EFI_GUID));
       break;
 
     //
@@ -2152,53 +2508,16 @@ ParseOpCodes (
         break;
 
       default:
-        ASSERT (CurrentStatement != NULL);
-        CurrentStatement->Locked = TRUE;
+        ASSERT (ParentStatement != NULL);
+        ParentStatement->Locked = TRUE;
       }      
       break;
 
     //
     // Vendor specific
     //
-    case EFI_IFR_GUID_OP:
-      if (CompareGuid (&gEfiIfrTianoGuid, (EFI_GUID *)(OpCodeData + sizeof (EFI_IFR_OP_HEADER)))) {
-        //
-        // Tiano specific GUIDed opcodes
-        //
-        switch (((EFI_IFR_GUID_LABEL *) OpCodeData)->ExtendOpCode) {
-        case EFI_IFR_EXTEND_OP_LABEL:
-          //
-          // just ignore label
-          //
-          break;
-
-        case EFI_IFR_EXTEND_OP_BANNER:
-          //
-          // By SubClass to get Banner Data from Front Page
-          //
-          if (FormSet->SubClass == EFI_FRONT_PAGE_SUBCLASS) {
-            CopyMem (
-              &gBannerData->Banner[((EFI_IFR_GUID_BANNER *) OpCodeData)->LineNumber][
-              ((EFI_IFR_GUID_BANNER *) OpCodeData)->Alignment],
-              &((EFI_IFR_GUID_BANNER *) OpCodeData)->Title,
-              sizeof (EFI_STRING_ID)
-              );
-          }
-          break;
-
-        case EFI_IFR_EXTEND_OP_CLASS:
-          CopyMem (&FormSet->Class, &((EFI_IFR_GUID_CLASS *) OpCodeData)->Class, sizeof (UINT16));
-          break;
-
-        case EFI_IFR_EXTEND_OP_SUBCLASS:
-          CopyMem (&FormSet->SubClass, &((EFI_IFR_GUID_SUBCLASS *) OpCodeData)->SubClass, sizeof (UINT16));
-          break;
-
-        default:
-          break;
-        }
-      }
-
+    case EFI_IFR_GUID_OP:     
+      CurrentStatement = CreateStatement (OpCodeData, FormSet, CurrentForm);
       break;
 
     //
@@ -2209,6 +2528,13 @@ ParseOpCodes (
       if (EFI_ERROR (Status)) {
         ResetScopeStack ();
         return Status;
+      }
+      
+      //
+      // Parent statement end tag found, update ParentStatement info.
+      //
+      if (IsStatementOpCode(ScopeOpCode) && (ParentStatement != NULL) && (ParentStatement->Operand == ScopeOpCode)) {
+        ParentStatement  = ParentStatement->ParentStatement;
       }
 
       switch (ScopeOpCode) {
@@ -2236,12 +2562,9 @@ ParseOpCodes (
         CurrentOption = NULL;
         break;
 
-      case EFI_IFR_SUBTITLE_OP:
-        mInScopeSubtitle = FALSE;
-        break;
-
       case EFI_IFR_NO_SUBMIT_IF_OP:
       case EFI_IFR_INCONSISTENT_IF_OP:
+      case EFI_IFR_WARNING_IF_OP:
         //
         // Ignore end of EFI_IFR_NO_SUBMIT_IF and EFI_IFR_INCONSISTENT_IF
         //
@@ -2307,11 +2630,8 @@ ParseOpCodes (
               return Status;
             }
 
-            if (CurrentExpression->Result.Type != EFI_IFR_TYPE_BOOLEAN) {
-              return EFI_INVALID_PARAMETER;
-            }
+            OpCodeDisabled = IsTrue (&CurrentExpression->Result);
 
-            OpCodeDisabled = CurrentExpression->Result.Value.b;
             //
             // DisableIf Expression is only used once and not queued, free it
             //
@@ -2329,6 +2649,17 @@ ParseOpCodes (
 
     default:
       break;
+    }
+
+    if (IsStatementOpCode(Operand)) {
+      CurrentStatement->ParentStatement = ParentStatement;
+      if (Scope != 0) {
+        //
+        // Scope != 0, other statements or options may nest in this statement.
+        // Update the ParentStatement info.
+        //
+        ParentStatement = CurrentStatement;
+      }
     }
   }
 

@@ -5,7 +5,7 @@
   be provided in the Framework version library instance, which means some of these 
   APIs cannot be used if the underlying firmware is Framework and not PI.
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions
@@ -281,7 +281,7 @@ S3BootScriptSaveStall (
   );
 
 /**
-  Adds a record for an execution stall on the processor into a specified boot script table.
+  Adds a record for dispatching specified arbitrary code into a specified boot script table.
 
   @param[in] EntryPoint   The entry point of the code to be dispatched.
   @param[in] Context      The argument to be passed into the EntryPoint of the code 
@@ -316,7 +316,12 @@ S3BootScriptSaveDispatch (
 /**
   Adds a record for memory reads of the memory location and continues when the exit 
   criteria is satisfied, or after a defined duration.
-  
+
+  Please aware, below interface is different with PI specification, Vol 5:
+  EFI_S3_SAVE_STATE_PROTOCOL.Write() for EFI_BOOT_SCRIPT_MEM_POLL_OPCODE.
+  "Duration" below is microseconds, while "Delay" in PI specification means
+  the number of 100ns units to poll.
+
   @param[in] Width       The width of the memory operations.
   @param[in] Address     The base address of the memory operations.
   @param[in] BitMask     A pointer to the bit mask to be AND-ed with the data read 
@@ -348,7 +353,6 @@ S3BootScriptSaveMemPoll (
   @param[in] InformationLength   Length of the data in bytes
   @param[in] Information        Information to be logged in the boot scrpit
  
-  @retval RETURN_UNSUPPORTED        In runtime, this method is not supported.
   @retval RETURN_OUT_OF_RESOURCES   Not enough memory for the table to perform 
                                     the operation.
   @retval RETURN_SUCCESS            The opcode was added.
@@ -461,7 +465,6 @@ S3BootScriptSavePci2Poll (
   @param[in] String   The Null-terminated ASCII string to store into the S3 boot 
                       script table.
 
-  @retval RETURN_UNSUPPORTED        In runtime, this method is not supported.
   @retval RETURN_OUT_OF_RESOURCES   Not enough memory for the table to perform 
                                     the operation.
   @retval RETURN_SUCCESS            The opcode was added.
@@ -494,7 +497,7 @@ S3BootScriptSaveInformationAsciiString (
   for figuring out how to get the script to run on an S3 resume because the boot script 
   maintained by the lib will be destroyed.
  
-  @return the base address of the new copy of the boot script tble.   
+  @return the base address of the new copy of the boot script table.   
 
 **/
 UINT8*

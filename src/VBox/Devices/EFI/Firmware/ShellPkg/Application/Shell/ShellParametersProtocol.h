@@ -2,7 +2,7 @@
   Member functions of EFI_SHELL_PARAMETERS_PROTOCOL and functions for creation,
   manipulation, and initialization of EFI_SHELL_PARAMETERS_PROTOCOL.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -16,26 +16,6 @@
 #ifndef _SHELL_PARAMETERS_PROTOCOL_PROVIDER_HEADER_
 #define _SHELL_PARAMETERS_PROTOCOL_PROVIDER_HEADER_
 
-#include <Uefi.h>
-
-#include <Protocol/SimpleFileSystem.h>
-#include <Protocol/EfiShellParameters.h>
-#include <Protocol/LoadedImage.h>
-#include <Protocol/SimpleTextOut.h>
-#include <Protocol/SimpleTextIn.h>
-
-#include <Guid/ShellVariableGuid.h>
-
-#include <Library/UefiBootServicesTableLib.h>
-#include <Library/UefiRuntimeServicesTableLib.h>
-#include <Library/MemoryAllocationLib.h>
-#include <Library/UefiLib.h>
-#include <Library/DebugLib.h>
-#include <Library/ShellLib.h>
-#include <Library/FileHandleLib.h>
-
-#include "ShellEnvVar.h"
-#include "FileHandleWrappers.h"
 #include "Shell.h"
 
 /**
@@ -123,8 +103,8 @@ typedef struct {
   EFI_HANDLE                            ConInHandle;
   EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL       *ConOut;
   EFI_HANDLE                            ConOutHandle;
-  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL       *ConErr;
-  EFI_HANDLE                            ConErrHandle;
+  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL       *ErrOut;
+  EFI_HANDLE                            ErrOutHandle;
 } SYSTEM_TABLE_INFO;
 
 /**
@@ -210,13 +190,17 @@ ParseCommandLineToArgs(
   @param[in, out] Walker        pointer to string of command line.  Adjusted to
                                 reminaing command line on return
   @param[in, out] TempParameter pointer to string of command line item extracted.
+  @param[in]      Length        Length of (*TempParameter) in bytes
 
+  @return   EFI_INALID_PARAMETER  A required parameter was NULL or pointed to a NULL or empty string.
+  @return   EFI_NOT_FOUND         A closing " could not be found on the specified string
 **/
-VOID
+EFI_STATUS
 EFIAPI
 GetNextParameter(
-  CHAR16 **Walker,
-  CHAR16 **TempParameter
+  IN OUT CHAR16   **Walker,
+  IN OUT CHAR16   **TempParameter,
+  IN CONST UINTN  Length
   );
 
 #endif //_SHELL_PARAMETERS_PROTOCOL_PROVIDER_HEADER_

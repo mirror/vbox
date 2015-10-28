@@ -1,7 +1,7 @@
 /** @file
   Tcp request dispatcher implementation.
 
-Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -216,12 +216,10 @@ Tcp4FlushPcb (
   )
 {
   SOCKET           *Sock;
-  TCP4_PROTO_DATA  *TcpProto;
 
   IpIoConfigIp (Tcb->IpInfo, NULL);
 
   Sock     = Tcb->Sk;
-  TcpProto = (TCP4_PROTO_DATA *) Sock->ProtoReserved;
 
   if (SOCK_IS_CONFIGURED (Sock)) {
     RemoveEntryList (&Tcb->List);
@@ -237,8 +235,6 @@ Tcp4FlushPcb (
              );
       FreePool (Sock->DevicePath);
     }
-
-    TcpSetVariableData (TcpProto->TcpService);
   }
 
   NetbufFreeList (&Tcb->SndQue);
@@ -263,6 +259,8 @@ Tcp4AttachPcb (
   TCP_CB            *Tcb;
   TCP4_PROTO_DATA   *ProtoData;
   IP_IO             *IpIo;
+  EFI_STATUS        Status;
+  VOID              *Ip;
 
   Tcb = AllocateZeroPool (sizeof (TCP_CB));
 
@@ -284,6 +282,22 @@ Tcp4AttachPcb (
 
     FreePool (Tcb);
     return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Open the new created IP instance BY_CHILD.
+  //
+  Status = gBS->OpenProtocol (
+                  Tcb->IpInfo->ChildHandle,
+                  &gEfiIp4ProtocolGuid,
+                  &Ip,
+                  IpIo->Image,
+                  Sk->SockHandle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    IpIoRemoveIp (IpIo, Tcb->IpInfo);
+    return Status;
   }
 
   InitializeListHead (&Tcb->List);
@@ -318,6 +332,16 @@ Tcp4DetachPcb (
 
   Tcp4FlushPcb (Tcb);
 
+  //
+  // Close the IP protocol.
+  //
+  gBS->CloseProtocol (
+         Tcb->IpInfo->ChildHandle,
+         &gEfiIp4ProtocolGuid,
+         ProtoData->TcpService->IpIo->Image,
+         Sk->SockHandle
+         );
+  
   IpIoRemoveIp (ProtoData->TcpService->IpIo, Tcb->IpInfo);
 
   FreePool (Tcb);
@@ -662,8 +686,6 @@ Tcp4Dispatcher (
 
     return Tcp4AttachPcb (Sock);
 
-    break;
-
   case SOCK_FLUSH:
 
     Tcp4FlushPcb (Tcb);
@@ -683,15 +705,11 @@ Tcp4Dispatcher (
             (EFI_TCP4_CONFIG_DATA *) Data
             );
 
-    break;
-
   case SOCK_MODE:
 
     ASSERT ((Data != NULL) && (Tcb != NULL));
 
     return Tcp4GetMode (Tcb, (TCP4_MODE_DATA *) Data);
-
-    break;
 
   case SOCK_ROUTE:
 

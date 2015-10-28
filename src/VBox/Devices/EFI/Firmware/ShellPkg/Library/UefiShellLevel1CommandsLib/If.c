@@ -1,6 +1,7 @@
 /** @file
   Main file for If and else shell level 1 function.
 
+  Copyright (c) 2013, Hewlett-Packard Development Company, L.P.
   Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -166,7 +167,6 @@ TestOperation (
       }
     }
     return (FALSE);
-    break;
   case OperatorUnsignedLessThan:
   case OperatorLessThan:
     if (ForceStringCompare || !ShellIsHexOrDecimalNumber(Compare1, FALSE, FALSE) || !ShellIsHexOrDecimalNumber(Compare2, FALSE, FALSE)) {
@@ -202,7 +202,6 @@ TestOperation (
 
     }
     return (FALSE);
-    break;
   case OperatorEqual:
     if (ForceStringCompare || !ShellIsHexOrDecimalNumber(Compare1, FALSE, FALSE) || !ShellIsHexOrDecimalNumber(Compare2, FALSE, FALSE)) {
       //
@@ -230,7 +229,6 @@ TestOperation (
       }
     }
     return (FALSE);
-    break;
   case OperatorNotEqual:
     if (ForceStringCompare || !ShellIsHexOrDecimalNumber(Compare1, FALSE, FALSE) || !ShellIsHexOrDecimalNumber(Compare2, FALSE, FALSE)) {
       //
@@ -258,7 +256,6 @@ TestOperation (
       }
     }
     return (FALSE);
-    break;
   case OperatorUnsignedGreaterOrEqual:
   case OperatorGreatorOrEqual:
     if (ForceStringCompare || !ShellIsHexOrDecimalNumber(Compare1, FALSE, FALSE) || !ShellIsHexOrDecimalNumber(Compare2, FALSE, FALSE)) {
@@ -293,7 +290,6 @@ TestOperation (
       }
     }
     return (FALSE);
-    break;
   case OperatorLessOrEqual:
   case OperatorUnsignedLessOrEqual:
     if (ForceStringCompare || !ShellIsHexOrDecimalNumber(Compare1, FALSE, FALSE) || !ShellIsHexOrDecimalNumber(Compare2, FALSE, FALSE)) {
@@ -328,7 +324,6 @@ TestOperation (
       }
     }
     return (FALSE);
-    break;
   default:
     ASSERT(FALSE);
     return (FALSE);
@@ -662,12 +657,9 @@ BuildNextStatement (
   OUT END_TAG_TYPE  *EndTag
   )
 {
-  CHAR16    *Buffer;
-  UINTN     BufferSize;
-
   *EndTag = EndTagMax;
 
-  for(Buffer = NULL, BufferSize = 0
+  for(
     ; ParameterNumber < gEfiShellParametersProtocol->Argc
     ; ParameterNumber++
    ) {
@@ -743,7 +735,11 @@ MoveToTagSpecial (
       continue;
     }
     CommandWalker = CommandName;
-    while (CommandWalker[0] == L' ') {
+
+    //
+    // Skip leading spaces and tabs.
+    //
+    while ((CommandWalker[0] == L' ') || (CommandWalker[0] == L'\t')) {
       CommandWalker++;
     }
     TempLocation  = StrStr(CommandWalker, L" ");
@@ -856,7 +852,7 @@ ShellCommandRunIf (
       NULL, 
       STRING_TOKEN (STR_SYNTAX_NO_MATCHING), 
       gShellLevel1HiiHandle, 
-      L"EnfIf", 
+      L"EndIf", 
       L"If", 
       CurrentScriptFile!=NULL 
         && CurrentScriptFile->CurrentCommand!=NULL

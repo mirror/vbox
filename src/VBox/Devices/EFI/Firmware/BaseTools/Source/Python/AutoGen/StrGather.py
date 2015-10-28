@@ -1,4 +1,8 @@
-# Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+## @file
+# This file is used to parse a strings file and create or add to a string database 
+# file.
+#
+# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -6,10 +10,6 @@
 #
 # THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
-
-#
-#This file is used to parse a strings file and create or add to a string database file.
-#
 
 ##
 # Import Modules
@@ -20,6 +20,7 @@ from Common.BuildToolError import *
 from UniClassObject import *
 from StringIO import StringIO
 from struct import pack
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ##
 # Static definitions

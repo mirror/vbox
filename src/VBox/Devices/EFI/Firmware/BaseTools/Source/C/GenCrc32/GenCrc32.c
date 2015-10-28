@@ -1,6 +1,7 @@
 /** @file
+Calculate Crc32 value and Verify Crc32 value for input data.
 
-Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -8,13 +9,6 @@ http://opensource.org/licenses/bsd-license.php
                                                                                           
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
-
-Module Name:
-
-  GenCrc32.c
-
-Abstract:
-  Calculate Crc32 value and Verify Crc32 value for input data.
 
 **/
 
@@ -29,7 +23,7 @@ Abstract:
 
 #define UTILITY_NAME            "GenCrc32"
 #define UTILITY_MAJOR_VERSION   0
-#define UTILITY_MINOR_VERSION   1
+#define UTILITY_MINOR_VERSION   2
 
 #define CRC32_NULL              0
 #define CRC32_ENCODE            1
@@ -81,26 +75,32 @@ Returns:
   //
   // Summary usage
   //
-  fprintf (stdout, "\nUsage: %s -e|-d [options] <input_file>\n\n", UTILITY_NAME);
+  fprintf (stdout, "Usage: GenCrc32 -e|-d [options] <input_file>\n\n");
   
   //
   // Copyright declaration
   // 
-  fprintf (stdout, "Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
   //
-  fprintf (stdout, "Options:\n");
-  fprintf (stdout, "  -o FileName, --output FileName\n\
-                        File will be created to store the ouput content.\n");
-  fprintf (stdout, "  -e, --encode          Calculate CRC32 value for the input file.\n");
-  fprintf (stdout, "  -d, --decode          Verify CRC32 value for the input file.\n");
-  fprintf (stdout, "  -v, --verbose         Turn on verbose output with informational messages.\n");
-  fprintf (stdout, "  -q, --quiet           Disable all messages except key message and fatal error\n");
-  fprintf (stdout, "  --debug level         Enable debug messages, at input debug level.\n");
-  fprintf (stdout, "  --version             Show program's version number and exit.\n");
-  fprintf (stdout, "  -h, --help            Show this help message and exit.\n"); 
+  fprintf (stdout, "optional arguments:\n");
+  fprintf (stdout, "  -h, --help            Show this help message and exit\n");
+  fprintf (stdout, "  --version             Show program's version number and exit\n");
+  fprintf (stdout, "  --debug [DEBUG]       Output DEBUG statements, where DEBUG_LEVEL is 0 (min)\n\
+                        - 9 (max)\n");
+  fprintf (stdout, "  -v, --verbose         Print informational statements\n");
+  fprintf (stdout, "  -q, --quiet           Returns the exit code, error messages will be\n\
+                        displayed\n");
+  fprintf (stdout, "  -s, --silent          Returns only the exit code; informational and error\n\
+                        messages are not displayed\n");
+  fprintf (stdout, "  -e, --encode          Calculate CRC32 value for the input file\n");
+  fprintf (stdout, "  -d, --decode          Verify CRC32 value for the input file\n");
+  fprintf (stdout, "  -o OUTPUT_FILENAME, --output OUTPUT_FILENAME\n\
+                        Output file name\n");
+  fprintf (stdout, "  --sfo                 Reserved for future use\n");
+  
 }
 
 int
@@ -164,7 +164,6 @@ Returns:
   argv ++;
 
   if ((stricmp (argv[0], "-h") == 0) || (stricmp (argv[0], "--help") == 0)) {
-    Version ();
     Usage ();
     return STATUS_SUCCESS;    
   }
@@ -277,7 +276,7 @@ Returns:
   //
   // Open Input file and read file data.
   //
-  InFile = fopen (InputFileName, "rb");
+  InFile = fopen (LongFilePath (InputFileName), "rb");
   if (InFile == NULL) {
     Error (NULL, 0, 0001, "Error opening file", InputFileName);
     return STATUS_ERROR;
@@ -300,7 +299,7 @@ Returns:
   //
   // Open output file
   //
-  OutFile = fopen (OutputFileName, "wb");
+  OutFile = fopen (LongFilePath (OutputFileName), "wb");
   if (OutFile == NULL) {
     Error (NULL, 0, 0001, "Error opening file", OutputFileName);
     goto Finish;

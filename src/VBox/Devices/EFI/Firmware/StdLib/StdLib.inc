@@ -5,7 +5,7 @@
 # The including DSC file must DEFINE the EMULATE macro if
 # the application is to be run in an emulation environment.
 #
-#  Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
 #  which accompanies this distribution. The full text of the license may be found at
@@ -25,6 +25,12 @@
   UseSocketDxe|StdLib/UseSocketDxe/UseSocketDxe.inf
 
 [LibraryClasses.Common.UEFI_APPLICATION]
+  ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
+  FileHandleLib|ShellPkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+  SortLib|ShellPkg/Library/UefiSortLib/UefiSortLib.inf
+  PathLib|ShellPkg/Library/BasePathLib/BasePathLib.inf
+  ShellCEntryLib|ShellPkg/Library/UefiShellCEntryLib/UefiShellCEntryLib.inf
+
   #
   # C Standard Libraries
   #
@@ -44,10 +50,16 @@
   LibNetUtil|StdLib/LibC/NetUtil/NetUtil.inf
 
 # Additional libraries for POSIX functionality.
+  LibPosix|StdLib/PosixLib/PosixLib.inf   # Combines LibErr, LibGen, LibGlob, LibStringlist, GetPass into one library
+
   LibErr|StdLib/PosixLib/Err/LibErr.inf
   LibGen|StdLib/PosixLib/Gen/LibGen.inf
   LibGlob|StdLib/PosixLib/Glob/LibGlob.inf
   LibStringlist|StdLib/PosixLib/Stringlist/LibStringlist.inf
+  LibIIO|StdLib/LibC/Uefi/InteractiveIO/IIO.inf
+
+# Additional, non-standard, libraries
+  LibContainer|StdLib/LibC/Containers/ContainerLib.inf
 
 # Libraries for device abstractions within the Standard C Library
 # Applications should not directly access any functions defined in these libraries.
@@ -56,7 +68,10 @@
   DevShell|StdLib/LibC/Uefi/Devices/daShell.inf
   DevUtility|StdLib/LibC/Uefi/Devices/daUtility.inf
 
-[LibraryClasses.ARM.UEFI_APPLICATION]
+[LibraryClasses.ARM]
+  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+
+[LibraryClasses.AArch64]
   NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 
 [Components]
@@ -90,19 +105,21 @@
 !ifndef $(EMULATE)
   # These Build Options are used when building the Standard Libraries to be run
   # on real hardware.
-  INTEL:*_*_*_CC_FLAGS      = /Qfreestanding
-   MSFT:*_*_*_CC_FLAGS      = /X /Zc:wchar_t
-    GCC:*_*_*_CC_FLAGS      = -nostdinc -nostdlib
-    RVCT:*_*_*_CC_FLAGS      = --library_interface=none -J$(WORKSPACE)/StdLib/Include -J$(WORKSPACE)/StdLib/Include/Arm
-  ARMGCC:*_*_*_CC_FLAGS      = -nostdinc -nostdlib -Wno-unknown-pragmas -Wno-unused -Wno-format-zero-length
+   INTEL:*_*_*_CC_FLAGS     = /Qfreestanding /D UEFI_C_SOURCE
+    MSFT:*_*_*_CC_FLAGS     = /X /Zc:wchar_t /D UEFI_C_SOURCE
+     GCC:*_*_*_CC_FLAGS     = -nostdinc -nostdlib -DUEFI_C_SOURCE
+    RVCT:*_*_*_CC_FLAGS     = --library_interface=none -DUEFI_C_SOURCE -J$(WORKSPACE)/StdLib/Include -J$(WORKSPACE)/StdLib/Include/Arm
+  ARMGCC:*_*_*_CC_FLAGS     = -nostdinc -nostdlib -DUEFI_C_SOURCE -Wno-unknown-pragmas -Wno-unused -Wno-format-zero-length
+   XCODE:*_*_*_CC_FLAGS     = -nostdinc -nostdlib -DUEFI_C_SOURCE -Wno-unused-const-variable -Wno-string-compare -Wno-sometimes-uninitialized
 
 !else
   # The Build Options, below, are only used when building the Standard Libraries
   # to be run under an emulation environment.
   # They disable optimization which facillitates debugging under the Emulation environment.
-  INTEL:*_*_IA32_CC_FLAGS     = /Od
-   MSFT:*_*_IA32_CC_FLAGS     = /Od
-    GCC:*_*_IA32_CC_FLAGS     = -O0
-    RVCT:*_*_*_CC_FLAGS      = --library_interface=none -J$(WORKSPACE)/StdLib/Include -J$(WORKSPACE)/StdLib/Include/Arm
-  ARMGCC:*_*_*_CC_FLAGS      = -O0 -Wno-unknown-pragmas -Wno-unused -Wno-format-zero-length
+  INTEL:*_*_IA32_CC_FLAGS   = /Od /D UEFI_C_SOURCE
+   MSFT:*_*_IA32_CC_FLAGS   = /Od /D UEFI_C_SOURCE
+    GCC:*_*_IA32_CC_FLAGS   = -O0 -DUEFI_C_SOURCE
+    RVCT:*_*_*_CC_FLAGS     = --library_interface=none -DUEFI_C_SOURCE -J$(WORKSPACE)/StdLib/Include -J$(WORKSPACE)/StdLib/Include/Arm
+  ARMGCC:*_*_*_CC_FLAGS     = -O0 -DUEFI_C_SOURCE -Wno-unknown-pragmas -Wno-unused -Wno-format-zero-length
+   XCODE:*_*_*_CC_FLAGS     = -O0 -DUEFI_C_SOURCE -Wno-unused-const-variable -Wno-string-compare -Wno-sometimes-uninitialized
 !endif

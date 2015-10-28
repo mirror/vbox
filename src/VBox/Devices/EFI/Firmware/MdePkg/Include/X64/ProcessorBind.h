@@ -1,7 +1,7 @@
 /** @file
   Processor or Compiler specific defines and types x64 (Intel 64, AMD64).
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials                          
   are licensed and made available under the terms and conditions of the BSD License         
   which accompanies this distribution.  The full text of the license may be found at        
@@ -94,6 +94,26 @@
 //
 #pragma warning ( disable : 4206 )
 
+#if _MSC_VER == 1800
+
+//
+// Disable these warnings for VS2013.
+//
+
+//
+// This warning is for potentially uninitialized local variable, and it may cause false 
+// positive issues in VS2013 build
+//
+#pragma warning ( disable : 4701 )
+  
+//
+// This warning is for potentially uninitialized local pointer variable, and it may cause 
+// false positive issues in VS2013 build
+//
+#pragma warning ( disable : 4703 )
+  
+#endif
+
 #endif
 
 
@@ -147,7 +167,7 @@
   ///
   /// 1-byte signed value
   ///
-  typedef char                INT8;
+  typedef signed char         INT8;
 #else
   ///
   /// 8-byte unsigned value
@@ -194,7 +214,7 @@
   ///
   /// 1-byte signed value
   ///
-  typedef char                INT8;
+  typedef signed char         INT8;
 #endif
 
 ///
@@ -226,6 +246,12 @@ typedef INT64   INTN;
 /// Maximum legal x64 address
 ///
 #define MAX_ADDRESS   0xFFFFFFFFFFFFFFFFULL
+
+///
+/// Maximum legal x64 INTN and UINTN values.
+///
+#define MAX_INTN   ((INTN)0x7FFFFFFFFFFFFFFFULL)
+#define MAX_UINTN  ((UINTN)0xFFFFFFFFFFFFFFFFULL)
 
 ///
 /// The stack alignment required for x64
@@ -283,6 +309,10 @@ typedef INT64   INTN;
   
 **/
 #define FUNCTION_ENTRY_POINT(FunctionPointer) (VOID *)(UINTN)(FunctionPointer)
+
+#ifndef __USER_LABEL_PREFIX__
+#define __USER_LABEL_PREFIX__
+#endif
 
 #endif
 

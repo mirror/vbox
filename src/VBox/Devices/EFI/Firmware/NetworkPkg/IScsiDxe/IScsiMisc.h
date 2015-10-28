@@ -1,7 +1,7 @@
 /** @file
   Miscellaneous definitions for iSCSI driver.
 
-Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -23,14 +23,15 @@ typedef struct _ISCSI_SESSION_CONFIG_NVDATA {
   UINT8             Enabled;
   UINT8             IpMode;
 
-  EFI_IPv4_ADDRESS  LocalIp;
+  EFI_IP_ADDRESS    LocalIp;
   EFI_IPv4_ADDRESS  SubnetMask;
-  EFI_IPv4_ADDRESS  Gateway;
+  EFI_IP_ADDRESS    Gateway;
 
   BOOLEAN           InitiatorInfoFromDhcp;
   BOOLEAN           TargetInfoFromDhcp;
   CHAR8             TargetName[ISCSI_NAME_MAX_SIZE];
   EFI_IP_ADDRESS    TargetIp;
+  UINT8             PrefixLength;
   UINT8             BootLun[8];
 
   UINT16            ConnectTimeout; ///< timout value in milliseconds
@@ -298,6 +299,22 @@ IScsiCleanDriverData (
   );
 
 /**
+  Check wheather the Controller handle is configured to use DHCP protocol.
+
+  @param[in]  Controller           The handle of the controller.
+  @param[in]  IpVersion            IP_VERSION_4 or IP_VERSION_6.
+  
+  @retval TRUE                     The handle of the controller need the Dhcp protocol.
+  @retval FALSE                    The handle of the controller does not need the Dhcp protocol.
+  
+**/
+BOOLEAN
+IScsiDhcpIsConfigured (
+  IN EFI_HANDLE  Controller,
+  IN UINT8       IpVersion
+  );
+
+/**
   Get the various configuration data of this iSCSI instance.
 
   @param[in]  Private   The iSCSI driver data.
@@ -340,4 +357,34 @@ IScsiOnExitBootService (
   IN VOID       *Context
   );
 
+/**
+  Tests whether a controller handle is being managed by IScsi driver.
+
+  This function tests whether the driver specified by DriverBindingHandle is
+  currently managing the controller specified by ControllerHandle.  This test
+  is performed by evaluating if the the protocol specified by ProtocolGuid is
+  present on ControllerHandle and is was opened by DriverBindingHandle and Nic
+  Device handle with an attribute of EFI_OPEN_PROTOCOL_BY_DRIVER. 
+  If ProtocolGuid is NULL, then ASSERT().
+
+  @param  ControllerHandle     A handle for a controller to test.
+  @param  DriverBindingHandle  Specifies the driver binding handle for the
+                               driver.
+  @param  ProtocolGuid         Specifies the protocol that the driver specified
+                               by DriverBindingHandle opens in its Start()
+                               function.
+
+  @retval EFI_SUCCESS          ControllerHandle is managed by the driver
+                               specified by DriverBindingHandle.
+  @retval EFI_UNSUPPORTED      ControllerHandle is not managed by the driver
+                               specified by DriverBindingHandle.
+
+**/
+EFI_STATUS
+EFIAPI
+IScsiTestManagedDevice (
+  IN  EFI_HANDLE       ControllerHandle,
+  IN  EFI_HANDLE       DriverBindingHandle,
+  IN  EFI_GUID         *ProtocolGuid
+  );
 #endif

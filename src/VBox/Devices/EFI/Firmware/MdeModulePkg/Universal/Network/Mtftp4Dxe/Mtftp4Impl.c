@@ -1,7 +1,7 @@
 /** @file
   Interface routine for Mtftp4.
   
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -58,6 +58,12 @@ Mtftp4CleanOperation (
   }
 
   if (Instance->McastUdpPort != NULL) {
+    gBS->CloseProtocol (
+           Instance->McastUdpPort->UdpHandle,
+           &gEfiUdp4ProtocolGuid,
+           gMtftp4DriverBinding.DriverBindingHandle,
+           Instance->Handle
+           );
     UdpIoFreeIo (Instance->McastUdpPort);
     Instance->McastUdpPort = NULL;
   }
@@ -114,6 +120,7 @@ Mtftp4GetInfoCheckPacket (
   MTFTP4_GETINFO_STATE      *State;
   EFI_STATUS                Status;
   UINT16                    OpCode;
+  EFI_MTFTP4_ERROR_HEADER  *ErrorHeader;
 
   State   = (MTFTP4_GETINFO_STATE *) Token->Context;
   OpCode   = NTOHS (Packet->OpCode);
@@ -123,6 +130,12 @@ Mtftp4GetInfoCheckPacket (
   //
   switch (OpCode) {
   case EFI_MTFTP4_OPCODE_ERROR:
+    ErrorHeader = (EFI_MTFTP4_ERROR_HEADER *) Packet;
+    if (ErrorHeader->ErrorCode == EFI_MTFTP4_ERRORCODE_FILE_NOT_FOUND) {
+      DEBUG ((EFI_D_ERROR, "TFTP error code 1 (File Not Found)\n"));
+    } else {
+      DEBUG ((EFI_D_ERROR, "TFTP error code %d\n", ErrorHeader->ErrorCode));
+    }
     State->Status = EFI_TFTP_ERROR;
     break;
 
@@ -1073,7 +1086,7 @@ EfiMtftp4Poll (
 
   if (Instance->State == MTFTP4_STATE_UNCONFIGED) {
     return EFI_NOT_STARTED;
-  } else if (Instance->State == MTFTP4_STATE_DESTORY) {
+  } else if (Instance->State == MTFTP4_STATE_DESTROY) {
     return EFI_DEVICE_ERROR;
   }
 

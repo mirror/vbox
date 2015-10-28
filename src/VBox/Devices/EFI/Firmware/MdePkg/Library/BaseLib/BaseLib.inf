@@ -1,8 +1,9 @@
 ## @file
 #  Base Library implementation.
 #
-#  Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 #  Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
+#  Portions copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -17,13 +18,14 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = BaseLib
+  MODULE_UNI_FILE                = BaseLib.uni
   FILE_GUID                      = 27d67720-ea68-48ae-93da-a3a074c90e30
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = BaseLib 
 
 #
-#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC ARM
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC ARM AARCH64
 #
 
 [Sources]
@@ -59,6 +61,7 @@
   CpuDeadLoop.c
   Cpu.c
   LinkedList.c
+  SafeString.c
   String.c
   BaseLibInternals.h
 
@@ -250,7 +253,10 @@
   Ia32/DisableCache.asm | INTEL
 
   Ia32/GccInline.c | GCC
-  Ia32/Thunk16.S | GCC 
+# VBox begin (yasm doesn't like the nasm variant) - original:
+#  Ia32/Thunk16.nasm | GCC 
+  Ia32/Thunk16.asm | GCC
+# VBox end
   Ia32/EnableDisableInterrupts.S | GCC 
   Ia32/EnablePaging64.S | GCC 
   Ia32/DisablePaging32.S | GCC 
@@ -416,7 +422,10 @@
   X86DisablePaging64.c
   X86DisablePaging32.c
   X64/GccInline.c | GCC
-  X64/Thunk16.S | GCC 
+# VBox begin (yasm doesn't like the nasm variant) - original:
+#  Ia32/Thunk16.nasm | GCC 
+  Ia32/Thunk16.asm | GCC
+# VBox end
   X64/SwitchStack.S | GCC 
   X64/SetJump.S | GCC 
   X64/LongJump.S | GCC 
@@ -480,6 +489,7 @@
   Arm/GetInterruptsState.asm | RVCT
   Arm/CpuPause.asm           | RVCT
   Arm/CpuBreakpoint.asm      | RVCT
+  Arm/MemoryFence.asm        | RVCT
  
   Arm/Math64.S                  | GCC
   Arm/SwitchStack.S             | GCC
@@ -488,6 +498,20 @@
   Arm/GetInterruptsState.S      | GCC
   Arm/SetJumpLongJump.S         | GCC
   Arm/CpuBreakpoint.S           | GCC
+  Arm/MemoryFence.S             | GCC
+
+[Sources.AARCH64]
+  Arm/InternalSwitchStack.c
+  Arm/Unaligned.c
+  Math64.c
+
+  AArch64/MemoryFence.S             | GCC
+  AArch64/SwitchStack.S             | GCC
+  AArch64/EnableInterrupts.S        | GCC
+  AArch64/DisableInterrupts.S       | GCC
+  AArch64/GetInterruptsState.S      | GCC
+  AArch64/SetJumpLongJump.S         | GCC
+  AArch64/CpuBreakpoint.S           | GCC
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -498,10 +522,13 @@
   BaseMemoryLib
 
 [Pcd]
-  gEfiMdePkgTokenSpaceGuid.PcdMaximumLinkedListLength
-  gEfiMdePkgTokenSpaceGuid.PcdMaximumAsciiStringLength
-  gEfiMdePkgTokenSpaceGuid.PcdMaximumUnicodeStringLength
-  gEfiMdePkgTokenSpaceGuid.PcdVerifyNodeInList
+  gEfiMdePkgTokenSpaceGuid.PcdMaximumLinkedListLength      ## SOMETIMES_CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdMaximumAsciiStringLength     ## SOMETIMES_CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdMaximumUnicodeStringLength   ## SOMETIMES_CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask            ## SOMETIMES_CONSUMES
+
+[FeaturePcd]
+  gEfiMdePkgTokenSpaceGuid.PcdVerifyNodeInList  ## CONSUMES
 
 # VBox - enable this for non-optimized IA32 builds.
 #[BuildOptions]

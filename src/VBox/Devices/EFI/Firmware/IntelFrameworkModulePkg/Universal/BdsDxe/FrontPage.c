@@ -1,7 +1,7 @@
 /** @file
   FrontPage routines to handle the callbacks and browser calls
 
-Copyright (c) 2004 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -21,6 +21,7 @@ BOOLEAN   mModeInitialized = FALSE;
 
 BOOLEAN   gConnectAllHappened = FALSE;
 UINTN     gCallbackKey;
+CHAR8     *mLanguageString;
 
 //
 // Boot video resolution and text mode.
@@ -178,13 +179,9 @@ FrontPageCallback (
   OUT EFI_BROWSER_ACTION_REQUEST             *ActionRequest
   )
 {
-  CHAR8                         *LanguageString;
   CHAR8                         *LangCode;
   CHAR8                         *Lang;
   UINTN                         Index;
-  EFI_STATUS                    Status;
-  CHAR8                         *PlatformSupportedLanguages;
-  CHAR8                         *BestLanguage;
 
   if (Action != EFI_BROWSER_ACTION_CHANGING && Action != EFI_BROWSER_ACTION_CHANGED) {
     //
@@ -210,18 +207,13 @@ FrontPageCallback (
 
     case FRONT_PAGE_KEY_LANGUAGE:
       //
-      // Collect the languages from what our current Language support is based on our VFR
-      //
-      LanguageString = HiiGetSupportedLanguages (gFrontPagePrivate.HiiHandle);
-      ASSERT (LanguageString != NULL);
-      //
       // Allocate working buffer for RFC 4646 language in supported LanguageString.
       //
-      Lang = AllocatePool (AsciiStrSize (LanguageString));
-      ASSERT (Lang != NULL);
+      Lang = AllocatePool (AsciiStrSize (mLanguageString));
+      ASSERT (Lang != NULL);  
 
       Index = 0;
-      LangCode = LanguageString;
+      LangCode = mLanguageString;
       while (*LangCode != 0) {
         GetNextLanguage (&LangCode, Lang);
 
@@ -232,43 +224,21 @@ FrontPageCallback (
         Index++;
       }
 
-      PlatformSupportedLanguages = GetEfiGlobalVariable (L"PlatformLangCodes");
-      if (PlatformSupportedLanguages == NULL) {
-        PlatformSupportedLanguages = AllocateCopyPool (
-                                       AsciiStrSize ((CHAR8 *) PcdGetPtr (PcdUefiVariableDefaultPlatformLangCodes)),
-                                       (CHAR8 *) PcdGetPtr (PcdUefiVariableDefaultPlatformLangCodes)
-                                       );
-        ASSERT (PlatformSupportedLanguages != NULL);
-      }
-
-      //
-      // Select the best language in platform supported Language.
-      //
-      BestLanguage = GetBestLanguage (
-                       PlatformSupportedLanguages,
-                       FALSE,
-                       Lang,
-                       NULL
-                       );
-      if (BestLanguage != NULL) {
-        Status = gRT->SetVariable (
+      if (Index == Value->u8) {
+        BdsDxeSetVariableAndReportStatusCodeOnError (
                         L"PlatformLang",
                         &gEfiGlobalVariableGuid,
                         EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                        AsciiStrSize (BestLanguage),
+                        AsciiStrSize (Lang),
                         Lang
                         );
-        ASSERT_EFI_ERROR(Status);
-        FreePool (BestLanguage);
       } else {
         ASSERT (FALSE);
       }
 
       *ActionRequest = EFI_BROWSER_ACTION_REQUEST_EXIT;
 
-      FreePool (PlatformSupportedLanguages);
       FreePool (Lang);
-      FreePool (LanguageString);
       break;
 
     default:
@@ -328,11 +298,9 @@ InitializeFrontPage (
   )
 {
   EFI_STATUS                  Status;
-  CHAR8                       *LanguageString;
   CHAR8                       *LangCode;
   CHAR8                       *Lang;
   CHAR8                       *CurrentLang;
-  CHAR8                       *BestLanguage;
   UINTN                       OptionCount;
   CHAR16                      *StringBuffer;
   EFI_HII_HANDLE              HiiHandle;
@@ -341,7 +309,11 @@ InitializeFrontPage (
   VOID                        *EndOpCodeHandle;
   EFI_IFR_GUID_LABEL          *StartLabel;
   EFI_IFR_GUID_LABEL          *EndLabel;
-  BOOLEAN                     FirstFlag;
+  EFI_HII_STRING_PROTOCOL     *HiiString;
+  UINTN                       StringSize;
+
+  Lang         = NULL;
+  StringBuffer = NULL;
 
   if (InitializeHiiData) {
     //
@@ -422,62 +394,84 @@ InitializeFrontPage (
   // Collect the languages from what our current Language support is based on our VFR
   //
   HiiHandle = gFrontPagePrivate.HiiHandle;
-  LanguageString = HiiGetSupportedLanguages (HiiHandle);
-  ASSERT (LanguageString != NULL);
-  //
-  // Allocate working buffer for RFC 4646 language in supported LanguageString.
-  //
-  Lang = AllocatePool (AsciiStrSize (LanguageString));
-  ASSERT (Lang != NULL);
 
   CurrentLang = GetEfiGlobalVariable (L"PlatformLang");
-  //
-  // Select the best language in LanguageString as the default one.
-  //
-  BestLanguage = GetBestLanguage (
-                   LanguageString,
-                   FALSE,
-                   (CurrentLang != NULL) ? CurrentLang : "",
-                   (CHAR8 *) PcdGetPtr (PcdUefiVariableDefaultPlatformLang),
-                   LanguageString,
-                   NULL
-                   );
-  //
-  // BestLanguage must be selected as it is the first language in LanguageString by default
-  //
-  ASSERT (BestLanguage != NULL);
 
-  OptionCount = 0;
-  LangCode    = LanguageString;
-  FirstFlag   = FALSE;
+  //
+  // Get Support language list from variable.
+  //
+  if (mLanguageString == NULL){
+    mLanguageString = GetEfiGlobalVariable (L"PlatformLangCodes");
+    if (mLanguageString == NULL) {
+      mLanguageString = AllocateCopyPool (
+                                 AsciiStrSize ((CHAR8 *) PcdGetPtr (PcdUefiVariableDefaultPlatformLangCodes)),
+                                 (CHAR8 *) PcdGetPtr (PcdUefiVariableDefaultPlatformLangCodes)
+                                 );
+      ASSERT (mLanguageString != NULL);
+    }
+  }
 
   if (gFrontPagePrivate.LanguageToken == NULL) {
+    //
+    // Count the language list number.
+    //  
+    LangCode      = mLanguageString;
+    Lang          = AllocatePool (AsciiStrSize (mLanguageString));
+    ASSERT (Lang != NULL);
+    OptionCount = 0;
     while (*LangCode != 0) {
       GetNextLanguage (&LangCode, Lang);
       OptionCount ++;
     }
-    gFrontPagePrivate.LanguageToken = AllocatePool (OptionCount * sizeof (EFI_STRING_ID));
+
+    //
+    // Allocate extra 1 as the end tag.
+    //
+    gFrontPagePrivate.LanguageToken = AllocateZeroPool ((OptionCount + 1) * sizeof (EFI_STRING_ID));
     ASSERT (gFrontPagePrivate.LanguageToken != NULL);
-    FirstFlag = TRUE;
+
+    Status = gBS->LocateProtocol (&gEfiHiiStringProtocolGuid, NULL, (VOID **) &HiiString);
+    ASSERT_EFI_ERROR (Status);
+
+    LangCode     = mLanguageString;
+    OptionCount  = 0;
+    while (*LangCode != 0) {
+      GetNextLanguage (&LangCode, Lang);
+
+      StringSize = 0;
+      Status = HiiString->GetString (HiiString, Lang, HiiHandle, PRINTABLE_LANGUAGE_NAME_STRING_ID, StringBuffer, &StringSize, NULL);
+      if (Status == EFI_BUFFER_TOO_SMALL) {
+        StringBuffer = AllocateZeroPool (StringSize);
+        ASSERT (StringBuffer != NULL);
+        Status = HiiString->GetString (HiiString, Lang, HiiHandle, PRINTABLE_LANGUAGE_NAME_STRING_ID, StringBuffer, &StringSize, NULL);
+        ASSERT_EFI_ERROR (Status);
+      }
+
+      if (EFI_ERROR (Status)) {
+        StringBuffer = AllocatePool (AsciiStrSize (Lang) * sizeof (CHAR16));
+        ASSERT (StringBuffer != NULL);
+        AsciiStrToUnicodeStr (Lang, StringBuffer);
+      }
+
+      ASSERT (StringBuffer != NULL);
+      gFrontPagePrivate.LanguageToken[OptionCount] = HiiSetString (HiiHandle, 0, StringBuffer, NULL);
+      FreePool (StringBuffer);
+
+      OptionCount++;
+    }
   }
 
-  OptionCount = 0;
-  LangCode = LanguageString;
+  ASSERT (gFrontPagePrivate.LanguageToken != NULL);
+  LangCode     = mLanguageString;
+  OptionCount  = 0;
+  if (Lang == NULL) {
+    Lang = AllocatePool (AsciiStrSize (mLanguageString));
+    ASSERT (Lang != NULL);
+  }
   while (*LangCode != 0) {
     GetNextLanguage (&LangCode, Lang);
 
-    if (FirstFlag) {
-      StringBuffer = HiiGetString (HiiHandle, PRINTABLE_LANGUAGE_NAME_STRING_ID, Lang);
-      ASSERT (StringBuffer != NULL);
-
-      //
-      // Save the string Id for each language
-      //
-      gFrontPagePrivate.LanguageToken[OptionCount] = HiiSetString (HiiHandle, 0, StringBuffer, NULL);
-      FreePool (StringBuffer);
-    }
-
-    if (AsciiStrCmp (Lang, BestLanguage) == 0) {
+    if (CurrentLang != NULL && AsciiStrCmp (Lang, CurrentLang) == 0) {
       HiiCreateOneOfOptionOpCode (
         OptionsOpCodeHandle,
         gFrontPagePrivate.LanguageToken[OptionCount],
@@ -501,9 +495,7 @@ InitializeFrontPage (
   if (CurrentLang != NULL) {
     FreePool (CurrentLang);
   }
-  FreePool (BestLanguage);
   FreePool (Lang);
-  FreePool (LanguageString);
 
   HiiCreateOneOfOpCode (
     StartOpCodeHandle,
@@ -902,7 +894,7 @@ ShowProgress (
   if (TimeoutDefault == 0) {
     return EFI_TIMEOUT;
   }
-  
+
   DEBUG ((EFI_D_INFO, "\n\nStart showing progress bar... Press any key to stop it! ...Zzz....\n"));
 
   SetMem (&Foreground, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
@@ -962,16 +954,18 @@ ShowProgress (
   //
   // User pressed some key
   //
-  Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
+  if (!PcdGetBool (PcdConInConnectOnDemand)) {
+    Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
 
-  if (Key.UnicodeChar == CHAR_CARRIAGE_RETURN) {
-    //
-    // User pressed enter, equivalent to select "continue"
-    //
-    return EFI_TIMEOUT;
+    if (Key.UnicodeChar == CHAR_CARRIAGE_RETURN) {
+      //
+      // User pressed enter, equivalent to select "continue"
+      //
+      return EFI_TIMEOUT;
+    }
   }
 
   return EFI_SUCCESS;
@@ -1002,7 +996,10 @@ PlatformBdsEnterFrontPage (
   EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL    *SimpleTextOut;
   UINTN                              BootTextColumn;
   UINTN                              BootTextRow;
-  
+  UINT64                             OsIndication;
+  UINTN                              DataSize;
+  EFI_INPUT_KEY                      Key;
+
   GraphicsOutput = NULL;
   SimpleTextOut = NULL;
 
@@ -1013,7 +1010,7 @@ PlatformBdsEnterFrontPage (
   if (ConnectAllHappened) {
     gConnectAllHappened = TRUE;
   }
-  
+
   if (!mModeInitialized) {
     //
     // After the console is ready, get current video resolution 
@@ -1067,27 +1064,75 @@ PlatformBdsEnterFrontPage (
     mModeInitialized           = TRUE;
   }
 
- 
 
-  HotkeyBoot ();
-  if (TimeoutDefault != 0xffff) {
-    Status = ShowProgress (TimeoutDefault);
-    StatusHotkey = HotkeyBoot ();
+  //
+  // goto FrontPage directly when EFI_OS_INDICATIONS_BOOT_TO_FW_UI is set
+  //
+  OsIndication = 0;
+  DataSize = sizeof(UINT64);
+  Status = gRT->GetVariable (
+                  L"OsIndications",
+                  &gEfiGlobalVariableGuid,
+                  NULL,
+                  &DataSize,
+                  &OsIndication
+                  );
 
-    if (!FeaturePcdGet(PcdBootlogoOnlyEnable) || !EFI_ERROR(StatusHotkey)){
-      //
-      // Ensure screen is clear when switch Console from Graphics mode to Text mode
-      // Skip it in normal boot 
-      //
-      gST->ConOut->EnableCursor (gST->ConOut, TRUE);
-      gST->ConOut->ClearScreen (gST->ConOut);
+  //
+  // goto FrontPage directly when EFI_OS_INDICATIONS_BOOT_TO_FW_UI is set. Skip HotkeyBoot
+  //
+  if (!EFI_ERROR(Status) && ((OsIndication & EFI_OS_INDICATIONS_BOOT_TO_FW_UI) != 0)) {
+    //
+    // Clear EFI_OS_INDICATIONS_BOOT_TO_FW_UI to acknowledge OS
+    // 
+    OsIndication &= ~((UINT64)EFI_OS_INDICATIONS_BOOT_TO_FW_UI);
+    Status = gRT->SetVariable (
+                    L"OsIndications",
+                    &gEfiGlobalVariableGuid,
+                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                    sizeof(UINT64),
+                    &OsIndication
+                    );
+    //
+    // Changing the content without increasing its size with current variable implementation shouldn't fail.
+    //
+    ASSERT_EFI_ERROR (Status);
+
+    //
+    // Follow generic rule, Call ReadKeyStroke to connect ConIn before enter UI
+    //
+    if (PcdGetBool (PcdConInConnectOnDemand)) {
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
     }
 
-    if (EFI_ERROR (Status)) {
-      //
-      // Timeout or user press enter to continue
-      //
-      goto Exit;
+    //
+    // Ensure screen is clear when switch Console from Graphics mode to Text mode
+    //
+    gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+    gST->ConOut->ClearScreen (gST->ConOut);
+
+  } else {
+
+    HotkeyBoot ();
+    if (TimeoutDefault != 0xffff) {
+      Status = ShowProgress (TimeoutDefault);
+      StatusHotkey = HotkeyBoot ();
+
+      if (!FeaturePcdGet(PcdBootlogoOnlyEnable) || !EFI_ERROR(Status) || !EFI_ERROR(StatusHotkey)){
+        //
+        // Ensure screen is clear when switch Console from Graphics mode to Text mode
+        // Skip it in normal boot 
+        //
+        gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+        gST->ConOut->ClearScreen (gST->ConOut);
+      }
+
+      if (EFI_ERROR (Status)) {
+        //
+        // Timeout or user press enter to continue
+        //
+        goto Exit;
+      }
     }
   }
 
@@ -1098,6 +1143,12 @@ PlatformBdsEnterFrontPage (
   if (!EFI_ERROR (Status) && (BootLogo != NULL)) {
     BootLogo->SetBootLogo (BootLogo, NULL, 0, 0, 0, 0);
   }
+
+  //
+  // Install BM HiiPackages. 
+  // Keep BootMaint HiiPackage, so that it can be covered by global setting. 
+  //
+  InitBMPackage ();
 
   Status = EFI_SUCCESS;
   do {
@@ -1155,9 +1206,19 @@ PlatformBdsEnterFrontPage (
 
     case FRONT_PAGE_KEY_BOOT_MANAGER:
       //
+      // Remove the installed BootMaint HiiPackages when exit.
+      //
+      FreeBMPackage ();
+
+      //
       // User chose to run the Boot Manager
       //
       CallBootManager ();
+
+      //
+      // Reinstall BootMaint HiiPackages after exiting from Boot Manager.
+      //
+      InitBMPackage ();
       break;
 
     case FRONT_PAGE_KEY_DEVICE_MANAGER:
@@ -1179,10 +1240,19 @@ PlatformBdsEnterFrontPage (
 
   } while ((Status == EFI_SUCCESS) && (gCallbackKey != FRONT_PAGE_KEY_CONTINUE));
 
+  if (mLanguageString != NULL) {
+    FreePool (mLanguageString);
+    mLanguageString = NULL;
+  }
   //
   //Will leave browser, check any reset required change is applied? if yes, reset system
   //
   SetupResetReminder ();
+
+  //
+  // Remove the installed BootMaint HiiPackages when exit.
+  //
+  FreeBMPackage ();
 
 Exit:
   //

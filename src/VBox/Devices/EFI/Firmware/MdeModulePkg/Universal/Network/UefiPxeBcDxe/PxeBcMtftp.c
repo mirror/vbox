@@ -1,7 +1,7 @@
 /** @file
   PxeBc MTFTP functions.
   
-Copyright (c) 2007 - 2009, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -60,7 +60,8 @@ PxeBcCheckPacket (
   if (Packet->OpCode == EFI_MTFTP4_OPCODE_ERROR) {
     Private->Mode.TftpErrorReceived = TRUE;
     Private->Mode.TftpError.ErrorCode = (UINT8) Packet->Error.ErrorCode;
-    AsciiStrnCpy (Private->Mode.TftpError.ErrorString, (CHAR8 *) Packet->Error.ErrorMessage, 127);
+    AsciiStrnCpy (Private->Mode.TftpError.ErrorString, (CHAR8 *) Packet->Error.ErrorMessage, PXE_MTFTP_ERROR_STRING_LENGTH);
+    Private->Mode.TftpError.ErrorString[PXE_MTFTP_ERROR_STRING_LENGTH - 1] = '\0';
   }
 
   if (Callback != NULL) {
@@ -146,7 +147,7 @@ PxeBcTftpGetFileSize (
 
   Status = Mtftp4->GetInfo (
                     Mtftp4,
-                    FALSE,
+                    NULL,
                     Filename,
                     NULL,
                     (UINT8) OptCnt,
@@ -162,8 +163,9 @@ PxeBcTftpGetFileSize (
       AsciiStrnCpy (
         Private->Mode.TftpError.ErrorString, 
         (CHAR8 *) Packet->Error.ErrorMessage, 
-        127
+        PXE_MTFTP_ERROR_STRING_LENGTH
         );
+      Private->Mode.TftpError.ErrorString[PXE_MTFTP_ERROR_STRING_LENGTH - 1] = '\0';
     }
     goto ON_ERROR;
   }

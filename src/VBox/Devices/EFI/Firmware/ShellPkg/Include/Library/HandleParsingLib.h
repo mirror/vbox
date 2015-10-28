@@ -1,7 +1,7 @@
 /** @file
   Provides interface to advanced shell functionality for parsing both handle and protocol database.
 
-  Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -16,6 +16,27 @@
 #define __HANDLE_PARSING_LIB__
 
 #include <Uefi.h>
+
+/**
+  Function to add a new GUID/Name mapping.
+
+  This cannot overwrite an existing mapping.
+
+  @param[in] Guid       The Guid
+  @param[in] TheName    The Guid's name
+  @param[in] Lang       RFC4646 language code list or NULL
+
+  @retval EFI_SUCCESS           The operation was sucessful
+  @retval EFI_ACCESS_DENIED     There was a duplicate
+  @retval EFI_OUT_OF_RESOURCES  A memory allocation failed
+**/
+EFI_STATUS
+EFIAPI
+AddNewGuidNameMapping(
+  IN CONST EFI_GUID *Guid,
+  IN CONST CHAR16   *TheName,
+  IN CONST CHAR8    *Lang OPTIONAL
+  );
 
 /**
   Function to get the name of a protocol or struct from it's GUID.
@@ -38,9 +59,11 @@ GetStringNameFromGuid(
 /**
   Function to get the Guid for a protocol or struct based on it's string name.
 
+  Do not free or modify the returned GUID.
+
   @param[in] Name           The pointer to the string name.
   @param[in] Lang           The pointer to the language code (string).
-  @param[in] Guid           The pointer to the pointer to the Guid.
+  @param[out] Guid          The pointer to the pointer to the Guid.
 
   @retval EFI_SUCCESS       The operation was successful.
 **/
@@ -49,7 +72,7 @@ EFIAPI
 GetGuidFromStringName(
   IN CONST CHAR16 *Name,
   IN CONST CHAR8  *Lang OPTIONAL,
-  IN EFI_GUID     **Guid
+  OUT EFI_GUID    **Guid
   );
 
 /**
@@ -93,6 +116,27 @@ EFIAPI
 GetStringNameFromHandle(
   IN CONST EFI_HANDLE TheHandle,
   IN CONST CHAR8      *Language
+  );
+
+/**
+  Get best support language for this driver.
+  
+  First base on the user input language  to search, second base on the current 
+  platform used language to search, third get the first language from the 
+  support language list. The caller need to free the buffer of the best language.
+
+  @param[in] SupportedLanguages      The support languages for this driver.
+  @param[in] InputLanguage           The user input language.
+  @param[in] Iso639Language          Whether get language for ISO639.
+
+  @return                            The best support language for this driver.
+**/
+CHAR8 *
+EFIAPI
+GetBestLanguageForDriver (
+  IN CONST CHAR8  *SupportedLanguages,
+  IN CONST CHAR8  *InputLanguage,
+  IN BOOLEAN      Iso639Language
   );
 
 #define HR_UNKNOWN                     0

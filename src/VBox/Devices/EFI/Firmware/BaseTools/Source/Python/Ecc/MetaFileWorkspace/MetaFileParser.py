@@ -1,7 +1,7 @@
 ## @file
 # This file is used to parse meta files
 #
-# Copyright (c) 2008 - 2010, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -14,7 +14,7 @@
 ##
 # Import Modules
 #
-import os
+import Common.LongFilePathOs as os
 import re
 import time
 import copy
@@ -31,7 +31,8 @@ from Common.Expression import *
 from CommonDataClass.Exceptions import *
 
 from MetaFileTable import MetaFileStorage
-from GenFds.FdfParser import FdfParser  
+from GenFds.FdfParser import FdfParser
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ## A decorator used to parse macro definition
 def ParseMacro(Parser):
@@ -432,6 +433,7 @@ class InfParser(MetaFileParser):
     def Start(self):
         NmakeLine = ''
         Content = ''
+        Usage = ''
         try:
             Content = open(str(self.MetaFile), 'r').readlines()
         except:
@@ -450,8 +452,27 @@ class InfParser(MetaFileParser):
         IsFindBlockComment = False
 
         for Index in range(0, len(Content)):
+            if self._SectionType in [MODEL_EFI_GUID,
+                                     MODEL_EFI_PROTOCOL,
+                                     MODEL_EFI_PPI,
+                                     MODEL_PCD_FIXED_AT_BUILD,
+                                     MODEL_PCD_PATCHABLE_IN_MODULE,
+                                     MODEL_PCD_FEATURE_FLAG,
+                                     MODEL_PCD_DYNAMIC_EX,
+                                     MODEL_PCD_DYNAMIC]:
+                Line = Content[Index].strip()
+                if Line.startswith(TAB_SPECIAL_COMMENT):
+                    Usage += ' ' + Line[Line.find(TAB_SPECIAL_COMMENT):]
+                    continue
+                elif Line.startswith(TAB_COMMENT_SPLIT):
+                    continue
+                elif Line.find(TAB_COMMENT_SPLIT) > 0:
+                    Usage += ' ' + Line[Line.find(TAB_COMMENT_SPLIT):]
+                    Line = Line[:Line.find(TAB_COMMENT_SPLIT)]
+            else:
             # skip empty, commented, block commented lines
-            Line = CleanString(Content[Index], AllowCppStyleComment=True)
+                Line = CleanString(Content[Index], AllowCppStyleComment=True)
+                Usage = ''
             NextLine = ''
             if Index + 1 < len(Content):
                 NextLine = CleanString(Content[Index + 1])
@@ -525,6 +546,7 @@ class InfParser(MetaFileParser):
             # LineBegin=-1, ColumnBegin=-1, LineEnd=-1, ColumnEnd=-1, Enabled=-1
             #
             self._ValueList[0] = self._ValueList[0].replace('/', '\\')
+            Usage = Usage.strip()
             for Arch, Platform in self._Scope:
                 self._Store(self._SectionType,
                             self._ValueList[0],
@@ -538,8 +560,10 @@ class InfParser(MetaFileParser):
                             -1,
                             self._LineIndex+1,
                             -1,
-                            0
+                            0,
+                            Usage
                             )
+            Usage = ''
         if IsFindBlockComment:
             EdkLogger.error("Parser", FORMAT_INVALID, "Open block comments (starting with /*) are expected to end with */", 
                             File=self.MetaFile)
@@ -710,6 +734,7 @@ class DscParser(MetaFileParser):
         TAB_ELSE_IF.upper()                         :   MODEL_META_DATA_CONDITIONAL_STATEMENT_ELSEIF,
         TAB_ELSE.upper()                            :   MODEL_META_DATA_CONDITIONAL_STATEMENT_ELSE,
         TAB_END_IF.upper()                          :   MODEL_META_DATA_CONDITIONAL_STATEMENT_ENDIF,
+        TAB_ERROR.upper()                           :   MODEL_META_DATA_CONDITIONAL_STATEMENT_ERROR,
     }
 
     # Valid names in define section
@@ -719,6 +744,7 @@ class DscParser(MetaFileParser):
         "PLATFORM_GUID",
         "PLATFORM_VERSION",
         "SKUID_IDENTIFIER",
+        "PCD_INFO_GENERATION",
         "SUPPORTED_ARCHITECTURES",
         "BUILD_TARGETS",
         "OUTPUT_DIRECTORY",
@@ -1053,7 +1079,7 @@ class DscParser(MetaFileParser):
 
     ## Override parent's method since we'll do all macro replacements in parser
     def _GetMacros(self):
-        Macros = {}
+        Macros = dict( [('ARCH','IA32'), ('FAMILY','MSFT'),('TOOL_CHAIN_TAG','VS2008x86'),('TARGET','DEBUG')])
         Macros.update(self._FileLocalMacros)
         Macros.update(self._GetApplicableSectionMacro())
         Macros.update(GlobalData.gEdkGlobal)
@@ -1095,6 +1121,7 @@ class DscParser(MetaFileParser):
             MODEL_META_DATA_BUILD_OPTION                    :   self.__ProcessBuildOption,
             MODEL_UNKNOWN                                   :   self._Skip,
             MODEL_META_DATA_USER_EXTENSION                  :   self._Skip,
+            MODEL_META_DATA_CONDITIONAL_STATEMENT_ERROR     :   self._Skip,
         }
         
         self._RawTable = self._Table
@@ -1130,9 +1157,10 @@ class DscParser(MetaFileParser):
                 # Only catch expression evaluation error here. We need to report
                 # the precise number of line on which the error occurred
                 #
-                EdkLogger.error('Parser', FORMAT_INVALID, "Invalid expression: %s" % str(Excpt),
-                                File=self._FileWithError, ExtraData=' '.join(self._ValueList), 
-                                Line=self._LineIndex+1)
+                pass
+#                 EdkLogger.error('Parser', FORMAT_INVALID, "Invalid expression: %s" % str(Excpt),
+#                                 File=self._FileWithError, ExtraData=' '.join(self._ValueList),
+#                                 Line=self._LineIndex+1)
             except MacroException, Excpt:
                 EdkLogger.error('Parser', FORMAT_INVALID, str(Excpt),
                                 File=self._FileWithError, ExtraData=' '.join(self._ValueList), 
@@ -1787,7 +1815,10 @@ class Fdf(FdfObject):
         # Load Fdf file if filename is not None
         #
         if Filename != None:
-            self.LoadFdfFile(Filename)
+            try:
+                self.LoadFdfFile(Filename)
+            except Exception:
+                pass
 
     #
     # Insert a FDF file record into database

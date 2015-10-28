@@ -1,7 +1,8 @@
 /** @file
   The implementation for ifcommand shell command.
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
+  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -270,16 +271,16 @@ AppendOffsetWidthValue (
 
   OriString = String;
 
-  StrCpy (String, L"&OFFSET=");
+  StrnCpy (String, L"&OFFSET=", 9);
   String += StrLen (L"&OFFSET=");
   String += UnicodeSPrint (String, 20, L"%x", Offset);
 
-  StrCpy (String,L"&WIDTH=");
+  StrnCpy (String,L"&WIDTH=", 8);
   String += StrLen (L"&WIDTH=");
   String += UnicodeSPrint (String, 20, L"%x", Width);
 
   if (Block != NULL) {
-    StrCpy (String,L"&VALUE=");
+    StrnCpy (String,L"&VALUE=", 8);
     String += StrLen (L"&VALUE=");
     while ((Width--) != 0) {
       String += UnicodeSPrint (String, 20, L"%x", Block[Width]);
@@ -368,7 +369,7 @@ ConstructConfigHdr (
   } 
 
   String = ConfigHdr;
-  StrCpy (String, L"GUID=");
+  StrnCpy (String, L"GUID=", 6);
   String += StrLen (L"GUID=");
 
   //
@@ -381,7 +382,7 @@ ConstructConfigHdr (
   //
   // Append L"&NAME="
   //
-  StrCpy (String, L"&NAME=");
+  StrnCpy (String, L"&NAME=", 7);
   String += StrLen (L"&NAME=");
   for (Index = 0; Index < NameLength ; Index++) {
     String += UnicodeSPrint (String, 10, L"00%x", Name[Index]);
@@ -390,7 +391,7 @@ ConstructConfigHdr (
   //
   // Append L"&PATH="
   //
-  StrCpy (String, L"&PATH=");
+  StrnCpy (String, L"&PATH=", 7);
   String += StrLen (L"&PATH=");
   for (Index = 0, Buffer = (UINT8 *) DevicePath; Index < DevicePathLength; Index++) {
     String += UnicodeSPrint (String, 6, L"%02x", *Buffer++);
@@ -617,7 +618,7 @@ IfconfigGetAllNicInfoByHii (
       goto ON_ERROR;
     }
     if (ConfigHdr != NULL) {
-      StrCpy (ConfigResp, ConfigHdr);
+      StrnCpy (ConfigResp, ConfigHdr, Length + NIC_ITEM_CONFIG_SIZE * 2 + 100 - 1);
     }
  
     //
@@ -790,7 +791,7 @@ IfconfigSetNicAddrByHii (
     goto ON_EXIT;
   }
   if (ConfigHdr != NULL) {
-    StrCpy (ConfigResp, ConfigHdr);
+    StrnCpy (ConfigResp, ConfigHdr, Length + NIC_ITEM_CONFIG_SIZE * 2 + 100 - 1);
   }
 
   NicConfig = AllocateZeroPool (NIC_ITEM_CONFIG_SIZE);
@@ -1042,7 +1043,7 @@ TimeoutToGetMap (
 }
 
 /**
-  Create an IP child, use it to start the auto configuration, then destory it.
+  Create an IP child, use it to start the auto configuration, then destroy it.
 
   @param[in] NicInfo    The pointer to the NIC_INFO of the Nic to be configured.
 
@@ -1115,7 +1116,7 @@ IfconfigStartIp4(
     mTimeout = FALSE;
     Status  = gBS->CreateEvent (
                     EVT_NOTIFY_SIGNAL | EVT_TIMER,
-                    TPL_CALLBACK - 1,
+                    TPL_CALLBACK,
                     TimeoutToGetMap,
                     NULL,
                     &TimerToGetMap
@@ -1249,7 +1250,7 @@ IfconfigSetNicAddr (
   
   if (StringNoCaseCompare(&Temp, &DhcpTemp) == 0) {
     //
-    // Validate the parameter for DHCP, two valid forms: eth0 DHCP and eth0 DHCP perment
+    // Validate the parameter for DHCP, two valid forms: eth0 DHCP and eth0 DHCP permanent
     //
     if ((Argc != 2) && (Argc!= 3)) {
       ShellPrintHiiEx(-1, -1, NULL,STRING_TOKEN (STR_GEN_PROBLEM_VAL), gShellNetwork1HiiHandle, Temp);
@@ -1274,7 +1275,7 @@ IfconfigSetNicAddr (
     }
 
     if ((OldConfig != NULL) && (OldConfig->Source == IP4_CONFIG_SOURCE_DHCP) &&
-        (OldConfig->Perment == Permanent)) {
+        (OldConfig->Permanent == Permanent)) {
 
       ShellPrintHiiEx(-1, -1, NULL,STRING_TOKEN (STR_IFCONFIG_INTERFACE_CONFIGURED), gShellNetwork1HiiHandle, Info->Name);
       ShellStatus = SHELL_ALREADY_STARTED;
@@ -1285,7 +1286,7 @@ IfconfigSetNicAddr (
   } else if (StringNoCaseCompare(&Temp, &StaticTemp) == 0) {
     //
     // validate the parameter, two forms: eth0 static IP NETMASK GATEWAY and
-    // eth0 static IP NETMASK GATEWAY perment
+    // eth0 static IP NETMASK GATEWAY permanent 
     //
     if ((Argc != 5) && (Argc != 6)) {
       ShellPrintHiiEx(-1, -1, NULL,STRING_TOKEN (STR_GEN_PROBLEM_VAL), gShellNetwork1HiiHandle, Temp);
@@ -1388,7 +1389,7 @@ IfconfigSetNicAddr (
   }
 
   CopyMem (&Config->NicAddr, &Info->NicAddress, sizeof (NIC_ADDR));
-  Config->Perment = Permanent;
+  Config->Permanent = Permanent;
 
   //
   // Use HII service to set NIC address
@@ -1474,9 +1475,9 @@ IfconfigShowNicInfo (
     }
 
     ShellPrintHiiEx(-1, -1, NULL,
-      STRING_TOKEN (STR_IFCONFIG_PERMENT_STATUS),
+      STRING_TOKEN (STR_IFCONFIG_PERMANENT_STATUS),
       gShellNetwork1HiiHandle,
-      (NicInfo->ConfigInfo->Perment? L"TRUE":L"FALSE")
+      (NicInfo->ConfigInfo->Permanent? L"TRUE":L"FALSE")
       );
 
     Ip4Config = &NicInfo->ConfigInfo->Ip4Info;
@@ -1716,8 +1717,8 @@ ShellCommandRunIfconfig (
 
     //
     // The correct command line arguments for setting address are:
-    // IfConfig -s eth0 DHCP [perment]
-    // IfConfig -s eth0 static ip netmask gateway [perment]
+    // IfConfig -s eth0 DHCP [permanent]
+    // IfConfig -s eth0 static ip netmask gateway [permanent]
     //
     if (Item == NULL || (CountSubItems(Item) < 2) || (CountSubItems(Item) > 6) || (CountSubItems(Item) == 4)) {
       ShellPrintHiiEx(-1, -1, NULL,STRING_TOKEN (STR_GEN_PROBLEM_VAL), gShellNetwork1HiiHandle, L"-s");

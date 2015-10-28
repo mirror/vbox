@@ -6,7 +6,10 @@
     PCI-to-PCI Bridge Architecture Specification, Revision 1.2
     PC Card Standard, 8.0
 
-  Copyright (c) 2006 - 2009, Intel Corporation. All rights reserved.<BR>
+  
+
+  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2014, Hewlett-Packard Development Company, L.P.<BR>
   This program and the accompanying materials                          
   are licensed and made available under the terms and conditions of the BSD License         
   which accompanies this distribution.  The full text of the license may be found at        
@@ -219,7 +222,7 @@ typedef struct {
 #define     PCI_IF_16550_MODEM            0x02
 #define     PCI_IF_16650_MODEM            0x03
 #define     PCI_IF_16750_MODEM            0x04
-#define   PCI_SUBCLASS_SCC_OTHER          0x80
+#define   PCI_SUBCLASS_SCC_OTHER        0x80
 
 #define PCI_CLASS_SYSTEM_PERIPHERAL   0x08
 #define   PCI_SUBCLASS_PIC              0x00
@@ -238,7 +241,7 @@ typedef struct {
 #define     PCI_IF_EISA_TIMER             0x02
 #define   PCI_SUBCLASS_RTC              0x03
 #define     PCI_IF_GENERIC_RTC            0x00
-#define     PCI_IF_ISA_RTC                0x00
+#define     PCI_IF_ISA_RTC                0x01
 #define   PCI_SUBCLASS_PNP_CONTROLLER   0x04    ///< HotPlug Controller
 #define   PCI_SUBCLASS_PERIPHERAL_OTHER 0x80
 
@@ -249,10 +252,12 @@ typedef struct {
 #define   PCI_SUBCLASS_SCAN_CONTROLLER  0x03
 #define   PCI_SUBCLASS_GAMEPORT         0x04
 #define     PCI_IF_GAMEPORT               0x00
-#define     PCI_IF_GAMEPORT1              0x01
+#define     PCI_IF_GAMEPORT1              0x10
 #define   PCI_SUBCLASS_INPUT_OTHER      0x80
 
 #define PCI_CLASS_DOCKING_STATION     0x0A
+#define   PCI_SUBCLASS_DOCKING_GENERIC  0x00
+#define   PCI_SUBCLASS_DOCKING_OTHER    0x80
 
 #define PCI_CLASS_PROCESSOR           0x0B
 #define   PCI_SUBCLASS_PROC_386         0x00
@@ -280,7 +285,7 @@ typedef struct {
 #define PCI_CLASS_WIRELESS            0x0D
 #define   PCI_SUBCLASS_IRDA             0x00
 #define   PCI_SUBCLASS_IR               0x01
-#define   PCI_SUBCLASS_RF               0x02
+#define   PCI_SUBCLASS_RF               0x10
 #define   PCI_SUBCLASS_WIRELESS_OTHER   0x80
 
 #define PCI_CLASS_INTELLIGENT_IO      0x0E
@@ -651,6 +656,42 @@ typedef struct {
   UINT8                   BridgeExtention;
   UINT8                   Data;
 } EFI_PCI_CAPABILITY_PMI;
+
+///
+/// PMC - Power Management Capabilities
+/// Section 3.2.3, PCI Power Management Interface Specifiction, Revision 1.2
+///
+typedef union {
+  struct {
+    UINT16 Version : 3;
+    UINT16 PmeClock : 1;
+    UINT16 : 1;
+    UINT16 DeviceSpecificInitialization : 1;
+    UINT16 AuxCurrent : 3;
+    UINT16 D1Support : 1;
+    UINT16 D2Support : 1;
+    UINT16 PmeSupport : 5;
+  } Bits;
+  UINT16 Data;
+} EFI_PCI_PMC;
+
+#define EFI_PCI_PMC_D3_COLD_MASK    (BIT15)
+
+///
+/// PMCSR - Power Management Control/Status
+/// Section 3.2.4, PCI Power Management Interface Specifiction, Revision 1.2
+///
+typedef union {
+  struct {
+    UINT16 PowerState : 2;
+    UINT16 : 6;
+    UINT16 PmeEnable : 1;
+    UINT16 DataSelect : 4;
+    UINT16 DataScale : 2;
+    UINT16 PmeStatus : 1;
+  } Bits;
+  UINT16 Data;
+} EFI_PCI_PMCSR;
 
 ///
 /// A.G.P Capability

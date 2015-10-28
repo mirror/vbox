@@ -1,7 +1,7 @@
 /** @file
   PCI emumeration support functions implementation for PCI Bus module.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -334,7 +334,7 @@ DumpPciBars (
 
     DEBUG ((
       EFI_D_INFO,
-      "   BAR[%d]: Type = %s; Alignment = 0x%x;\tLength = 0x%x;\tOffset = 0x%02x\n",
+      "   BAR[%d]: Type = %s; Alignment = 0x%lx;\tLength = 0x%lx;\tOffset = 0x%02x\n",
       Index, mBarTypeStr[MIN (PciIoDevice->PciBar[Index].BarType, PciBarTypeMaxType)],
       PciIoDevice->PciBar[Index].Alignment, PciIoDevice->PciBar[Index].Length, PciIoDevice->PciBar[Index].Offset
       ));
@@ -347,7 +347,7 @@ DumpPciBars (
 
     DEBUG ((
       EFI_D_INFO,
-      " VFBAR[%d]: Type = %s; Alignment = 0x%x;\tLength = 0x%x;\tOffset = 0x%02x\n",
+      " VFBAR[%d]: Type = %s; Alignment = 0x%lx;\tLength = 0x%lx;\tOffset = 0x%02x\n",
       Index, mBarTypeStr[MIN (PciIoDevice->VfPciBar[Index].BarType, PciBarTypeMaxType)],
       PciIoDevice->VfPciBar[Index].Alignment, PciIoDevice->VfPciBar[Index].Length, PciIoDevice->VfPciBar[Index].Offset
       ));
@@ -391,14 +391,6 @@ GatherDeviceInfo (
   if (PciIoDevice == NULL) {
     return NULL;
   }
-
-  //
-  // Create a device path for this PCI device and store it into its private data
-  //
-  CreatePciDevicePath (
-    Bridge->DevicePath,
-    PciIoDevice
-    );
 
   //
   // If it is a full enumeration, disconnect the device in advance
@@ -474,14 +466,6 @@ GatherPpbInfo (
   if (PciIoDevice == NULL) {
     return NULL;
   }
-
-  //
-  // Create a device path for this PCI device and store it into its private data
-  //
-  CreatePciDevicePath (
-    Bridge->DevicePath,
-    PciIoDevice
-    );
 
   if (gFullEnumeration) {
     PCI_DISABLE_COMMAND_REGISTER (PciIoDevice, EFI_PCI_COMMAND_BITS_OWNED);
@@ -633,14 +617,6 @@ GatherP2CInfo (
   if (PciIoDevice == NULL) {
     return NULL;
   }
-
-  //
-  // Create a device path for this PCI device and store it into its private data
-  //
-  CreatePciDevicePath (
-    Bridge->DevicePath,
-    PciIoDevice
-    );
 
   if (gFullEnumeration) {
     PCI_DISABLE_COMMAND_REGISTER (PciIoDevice, EFI_PCI_COMMAND_BITS_OWNED);
@@ -971,17 +947,17 @@ PciSetDeviceAttribute (
 
   if (Option == EFI_SET_SUPPORTS) {
 
-    Attributes |= EFI_PCI_IO_ATTRIBUTE_MEMORY_WRITE_COMBINE |
+    Attributes |= (UINT64) (EFI_PCI_IO_ATTRIBUTE_MEMORY_WRITE_COMBINE |
                   EFI_PCI_IO_ATTRIBUTE_MEMORY_CACHED        |
                   EFI_PCI_IO_ATTRIBUTE_MEMORY_DISABLE       |
                   EFI_PCI_IO_ATTRIBUTE_EMBEDDED_DEVICE      |
                   EFI_PCI_IO_ATTRIBUTE_EMBEDDED_ROM         |
-                  EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE;
+                  EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE);
 
     if (IS_PCI_LPC (&PciIoDevice->Pci)) {
         Attributes |= EFI_PCI_IO_ATTRIBUTE_ISA_MOTHERBOARD_IO;
-        Attributes |= (mReserveIsaAliases ? EFI_PCI_IO_ATTRIBUTE_ISA_IO : \
-                                            EFI_PCI_IO_ATTRIBUTE_ISA_IO_16);
+        Attributes |= (mReserveIsaAliases ? (UINT64) EFI_PCI_IO_ATTRIBUTE_ISA_IO : \
+                                            (UINT64) EFI_PCI_IO_ATTRIBUTE_ISA_IO_16);
     }
 
     if (IS_PCI_BRIDGE (&PciIoDevice->Pci) || IS_CARDBUS_BRIDGE (&PciIoDevice->Pci)) {
@@ -1007,8 +983,8 @@ PciSetDeviceAttribute (
 
       if (IS_PCI_VGA (&PciIoDevice->Pci)) {
         Attributes |= EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY;
-        Attributes |= (mReserveVgaAliases ? EFI_PCI_IO_ATTRIBUTE_VGA_IO : \
-                                            EFI_PCI_IO_ATTRIBUTE_VGA_IO_16);
+        Attributes |= (mReserveVgaAliases ? (UINT64) EFI_PCI_IO_ATTRIBUTE_VGA_IO : \
+                                            (UINT64) EFI_PCI_IO_ATTRIBUTE_VGA_IO_16);
       }
     }
 
@@ -1144,7 +1120,7 @@ DetermineDeviceAttribute (
     //
     // Assume the PCI Root Bridge supports DAC
     //
-    PciIoDevice->Supports |= (EFI_PCI_IO_ATTRIBUTE_EMBEDDED_DEVICE |
+    PciIoDevice->Supports |= (UINT64)(EFI_PCI_IO_ATTRIBUTE_EMBEDDED_DEVICE |
                               EFI_PCI_IO_ATTRIBUTE_EMBEDDED_ROM |
                               EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE);
 
@@ -1473,8 +1449,6 @@ PciIovParseVfBar (
   UINT32      Value;
   UINT32      OriginalValue;
   UINT32      Mask;
-  UINT32      Data;
-  UINT8       Index;
   EFI_STATUS  Status;
 
   //
@@ -1592,12 +1566,7 @@ PciIovParseVfBar (
       //
       // Fix the length to support some spefic 64 bit BAR
       //
-      Data  = Value;
-      Index = 0;
-      for (Data = Value; Data != 0; Data >>= 1) {
-      	Index ++;
-      }
-      Value |= ((UINT32)(-1) << Index); 
+      Value |= ((UINT32) -1 << HighBitSet32 (Value));
 
       //
       // Calculate the size of 64bit bar
@@ -1672,8 +1641,6 @@ PciParseBar (
   UINT32      Value;
   UINT32      OriginalValue;
   UINT32      Mask;
-  UINT32      Data;
-  UINT8       Index;
   EFI_STATUS  Status;
 
   OriginalValue = 0;
@@ -1810,12 +1777,7 @@ PciParseBar (
       //
       // Fix the length to support some spefic 64 bit BAR
       //
-      Data  = Value;
-      Index = 0;
-      for (Data = Value; Data != 0; Data >>= 1) {
-        Index ++;
-      }
-      Value |= ((UINT32)(-1) << Index);
+      Value |= ((UINT32)(-1) << HighBitSet32 (Value));
 
       //
       // Calculate the size of 64bit bar
@@ -2041,6 +2003,14 @@ CreatePciIoDevice (
   InitializePciDriverOverrideInstance (PciIoDevice);
   InitializePciLoadFile2 (PciIoDevice);
   PciIo = &PciIoDevice->PciIo;
+
+  //
+  // Create a device path for this PCI device and store it into its private data
+  //
+  CreatePciDevicePath (
+    Bridge->DevicePath,
+    PciIoDevice
+    );
 
   //
   // Detect if PCI Express Device

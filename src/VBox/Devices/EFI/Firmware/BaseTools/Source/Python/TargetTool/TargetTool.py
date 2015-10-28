@@ -1,5 +1,7 @@
+## @file
+# Target Tool Parser
 #
-#  Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -10,7 +12,7 @@
 #  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
 
-import os
+import Common.LongFilePathOs as os
 import sys
 import traceback
 from optparse import OptionParser
@@ -19,6 +21,7 @@ import Common.EdkLogger as EdkLogger
 import Common.BuildToolError as BuildToolError
 from Common.DataType import *
 from Common.BuildVersion import gBUILD_VERSION
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 # To Do 1.set clean, 2. add item, if the line is disabled.
 
@@ -204,8 +207,8 @@ def RangeCheckCallback(option, opt_str, value, parser):
         
 def MyOptionParser():
     parser = OptionParser(version=__version__,prog="TargetTool.exe",usage=__usage__,description=__copyright__)
-    parser.add_option("-a", "--arch", action="append", type="choice", choices=['IA32','X64','IPF','EBC', 'ARM','0'], dest="TARGET_ARCH",
-        help="ARCHS is one of list: IA32, X64, IPF, ARM or EBC, which replaces target.txt's TARGET_ARCH definition. To specify more archs, please repeat this option. 0 will clear this setting in target.txt and can't combine with other value.")
+    parser.add_option("-a", "--arch", action="append", type="choice", choices=['IA32','X64','IPF','EBC', 'ARM', 'AARCH64','0'], dest="TARGET_ARCH",
+        help="ARCHS is one of list: IA32, X64, IPF, ARM, AARCH64 or EBC, which replaces target.txt's TARGET_ARCH definition. To specify more archs, please repeat this option. 0 will clear this setting in target.txt and can't combine with other value.")
     parser.add_option("-p", "--platform", action="callback", type="string", dest="DSCFILE", callback=SingleCheckCallback,
         help="Specify a DSC file, which replace target.txt's ACTIVE_PLATFORM definition. 0 will clear this setting in target.txt and can't combine with other value.")
     parser.add_option("-c", "--tooldef", action="callback", type="string", dest="TOOL_DEFINITION_FILE", callback=SingleCheckCallback,

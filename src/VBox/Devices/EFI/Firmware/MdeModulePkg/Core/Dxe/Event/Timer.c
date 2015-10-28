@@ -1,7 +1,7 @@
 /** @file
   Core Timer Services
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -261,7 +261,7 @@ CoreSetTimer (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (Type < 0 || Type > TimerRelative  || (Event->Type & EVT_TIMER) == 0) {
+  if ((UINT32)Type > TimerRelative  || (Event->Type & EVT_TIMER) == 0) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -281,6 +281,9 @@ CoreSetTimer (
   if (Type != TimerCancel) {
 
     if (Type == TimerPeriodic) {
+      if (TriggerTime == 0) {
+        gTimer->GetTimerPeriod (gTimer, &TriggerTime);
+      }
       Event->Timer.Period = TriggerTime;
     }
 

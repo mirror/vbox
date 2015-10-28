@@ -143,7 +143,7 @@ UINT16 Seq_1024_768_32bpp_60[15] = {
 ///
 /// Table of supported video modes
 ///
-QEMU_VIDEO_VIDEO_MODES  QemuVideoVideoModes[] = {
+QEMU_VIDEO_CIRRUS_MODES  QemuVideoCirrusModes[] = {
 //  {  640, 480, 8, 60, Crtc_640_480_256_60,  Seq_640_480_256_60,  0xe3 },
 //  {  800, 600, 8, 60, Crtc_800_600_256_60,  Seq_800_600_256_60,  0xef },
   {  640, 480, 32, 60, Crtc_640_480_32bpp_60,  Seq_640_480_32bpp_60,  0xef },
@@ -154,39 +154,43 @@ QEMU_VIDEO_VIDEO_MODES  QemuVideoVideoModes[] = {
 //  { 960, 720, 32, 60, Crtc_960_720_32bpp_60, Seq_1024_768_32bpp_60, 0xef }
 };
 
-#define QEMU_VIDEO_MODE_COUNT \
-  (sizeof (QemuVideoVideoModes) / sizeof (QemuVideoVideoModes[0]))
+#define QEMU_VIDEO_CIRRUS_MODE_COUNT \
+  (sizeof (QemuVideoCirrusModes) / sizeof (QemuVideoCirrusModes[0]))
 
 /**
   Construct the valid video modes for QemuVideo.
 
 **/
 EFI_STATUS
-QemuVideoVideoModeSetup (
+QemuVideoCirrusModeSetup (
   QEMU_VIDEO_PRIVATE_DATA  *Private
   )
 {
   UINT32                                 Index;
   QEMU_VIDEO_MODE_DATA                   *ModeData;
-  QEMU_VIDEO_VIDEO_MODES                 *VideoMode;
+  QEMU_VIDEO_CIRRUS_MODES                *VideoMode;
 
   //
   // Setup Video Modes
   //
   Private->ModeData = AllocatePool (
-                        sizeof (Private->ModeData[0]) * QEMU_VIDEO_MODE_COUNT
+                        sizeof (Private->ModeData[0]) * QEMU_VIDEO_CIRRUS_MODE_COUNT
                         );
+  if (Private->ModeData == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
   ModeData = Private->ModeData;
-  VideoMode = &QemuVideoVideoModes[0];
-  for (Index = 0; Index < QEMU_VIDEO_MODE_COUNT; Index ++) {
-    ModeData->ModeNumber = Index;
+  VideoMode = &QemuVideoCirrusModes[0];
+  for (Index = 0; Index < QEMU_VIDEO_CIRRUS_MODE_COUNT; Index ++) {
+    ModeData->InternalModeIndex = Index;
     ModeData->HorizontalResolution          = VideoMode->Width;
     ModeData->VerticalResolution            = VideoMode->Height;
     ModeData->ColorDepth                    = VideoMode->ColorDepth;
     ModeData->RefreshRate                   = VideoMode->RefreshRate;
     DEBUG ((EFI_D_INFO,
-      "Adding Video Mode %d: %dx%d, %d-bit, %d Hz\n",
-      ModeData->ModeNumber,
+      "Adding Mode %d as Cirrus Internal Mode %d: %dx%d, %d-bit, %d Hz\n",
+      (INT32) (ModeData - Private->ModeData),
+      ModeData->InternalModeIndex,
       ModeData->HorizontalResolution,
       ModeData->VerticalResolution,
       ModeData->ColorDepth,
@@ -196,7 +200,152 @@ QemuVideoVideoModeSetup (
     ModeData ++ ;
     VideoMode ++;
   }
-  Private->MaxMode = QEMU_VIDEO_MODE_COUNT;
+  Private->MaxMode = ModeData - Private->ModeData;
+
+  return EFI_SUCCESS;
+}
+
+///
+/// Table of supported video modes
+///
+QEMU_VIDEO_BOCHS_MODES  QemuVideoBochsModes[] = {
+  {  640,  480, 32 },
+  {  800,  480, 32 },
+  {  800,  600, 32 },
+  {  832,  624, 32 },
+  {  960,  640, 32 },
+  { 1024,  600, 32 },
+  { 1024,  768, 32 },
+  { 1152,  864, 32 },
+  { 1152,  870, 32 },
+  { 1280,  720, 32 },
+  { 1280,  760, 32 },
+  { 1280,  768, 32 },
+  { 1280,  800, 32 },
+  { 1280,  960, 32 },
+  { 1280, 1024, 32 },
+  { 1360,  768, 32 },
+  { 1366,  768, 32 },
+  { 1400, 1050, 32 },
+  { 1440,  900, 32 },
+  { 1600,  900, 32 },
+  { 1600, 1200, 32 },
+  { 1680, 1050, 32 },
+  { 1920, 1080, 32 },
+  { 1920, 1200, 32 },
+  { 1920, 1440, 32 },
+  { 2000, 2000, 32 },
+  { 2048, 1536, 32 },
+  { 2048, 2048, 32 },
+  { 2560, 1440, 32 },
+  { 2560, 1600, 32 },
+  { 2560, 2048, 32 },
+  { 2800, 2100, 32 },
+  { 3200, 2400, 32 },
+  { 3840, 2160, 32 },
+  { 4096, 2160, 32 },
+  { 7680, 4320, 32 },
+  { 8192, 4320, 32 }
+};
+
+#define QEMU_VIDEO_BOCHS_MODE_COUNT \
+  (sizeof (QemuVideoBochsModes) / sizeof (QemuVideoBochsModes[0]))
+
+EFI_STATUS
+QemuVideoBochsModeSetup (
+  QEMU_VIDEO_PRIVATE_DATA  *Private,
+  BOOLEAN                  IsQxl
+  )
+{
+  UINT32                                 AvailableFbSize;
+  UINT32                                 Index;
+  QEMU_VIDEO_MODE_DATA                   *ModeData;
+  QEMU_VIDEO_BOCHS_MODES                 *VideoMode;
+
+  //
+  // Fetch the available framebuffer size.
+  //
+  // VBE_DISPI_INDEX_VIDEO_MEMORY_64K is expected to return the size of the
+  // drawable framebuffer. Up to and including qemu-2.1 however it used to
+  // return the size of PCI BAR 0 (ie. the full video RAM size).
+  //
+  // On stdvga the two concepts coincide with each other; the full memory size
+  // is usable for drawing.
+  //
+  // On QXL however, only a leading segment, "surface 0", can be used for
+  // drawing; the rest of the video memory is used for the QXL guest-host
+  // protocol. VBE_DISPI_INDEX_VIDEO_MEMORY_64K should report the size of
+  // "surface 0", but since it doesn't (up to and including qemu-2.1), we
+  // retrieve the size of the drawable portion from a field in the QXL ROM BAR,
+  // where it is also available.
+  //
+  if (IsQxl) {
+    UINT32 Signature;
+    UINT32 DrawStart;
+
+    Signature = 0;
+    DrawStart = 0xFFFFFFFF;
+    AvailableFbSize = 0;
+    if (EFI_ERROR (
+          Private->PciIo->Mem.Read (Private->PciIo, EfiPciIoWidthUint32,
+                                PCI_BAR_IDX2, 0, 1, &Signature)) ||
+        Signature != SIGNATURE_32 ('Q', 'X', 'R', 'O') ||
+        EFI_ERROR (
+          Private->PciIo->Mem.Read (Private->PciIo, EfiPciIoWidthUint32,
+                                PCI_BAR_IDX2, 36, 1, &DrawStart)) ||
+        DrawStart != 0 ||
+        EFI_ERROR (
+          Private->PciIo->Mem.Read (Private->PciIo, EfiPciIoWidthUint32,
+                                PCI_BAR_IDX2, 40, 1, &AvailableFbSize))) {
+      DEBUG ((EFI_D_ERROR, "%a: can't read size of drawable buffer from QXL "
+        "ROM\n", __FUNCTION__));
+      return EFI_NOT_FOUND;
+    }
+  } else {
+    AvailableFbSize  = BochsRead (Private, VBE_DISPI_INDEX_VIDEO_MEMORY_64K);
+    AvailableFbSize *= SIZE_64KB;
+  }
+  DEBUG ((EFI_D_VERBOSE, "%a: AvailableFbSize=0x%x\n", __FUNCTION__,
+    AvailableFbSize));
+
+  //
+  // Setup Video Modes
+  //
+  Private->ModeData = AllocatePool (
+                        sizeof (Private->ModeData[0]) * QEMU_VIDEO_BOCHS_MODE_COUNT
+                        );
+  if (Private->ModeData == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  ModeData = Private->ModeData;
+  VideoMode = &QemuVideoBochsModes[0];
+  for (Index = 0; Index < QEMU_VIDEO_BOCHS_MODE_COUNT; Index ++) {
+    UINTN RequiredFbSize;
+
+    ASSERT (VideoMode->ColorDepth % 8 == 0);
+    RequiredFbSize = (UINTN) VideoMode->Width * VideoMode->Height *
+                     (VideoMode->ColorDepth / 8);
+    if (RequiredFbSize <= AvailableFbSize) {
+      ModeData->InternalModeIndex    = Index;
+      ModeData->HorizontalResolution = VideoMode->Width;
+      ModeData->VerticalResolution   = VideoMode->Height;
+      ModeData->ColorDepth           = VideoMode->ColorDepth;
+      ModeData->RefreshRate          = 60;
+      DEBUG ((EFI_D_INFO,
+        "Adding Mode %d as Bochs Internal Mode %d: %dx%d, %d-bit, %d Hz\n",
+        (INT32) (ModeData - Private->ModeData),
+        ModeData->InternalModeIndex,
+        ModeData->HorizontalResolution,
+        ModeData->VerticalResolution,
+        ModeData->ColorDepth,
+        ModeData->RefreshRate
+        ));
+
+      ModeData ++ ;
+    }
+    VideoMode ++;
+  }
+  Private->MaxMode = ModeData - Private->ModeData;
 
   return EFI_SUCCESS;
 }

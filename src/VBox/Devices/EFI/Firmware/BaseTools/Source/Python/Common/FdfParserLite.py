@@ -1,7 +1,7 @@
 ## @file
 # parse FDF file
 #
-#  Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -16,9 +16,10 @@
 # Import Modules
 #
 import re
-import os
+import Common.LongFilePathOs as os
 
 import CommonDataClass.FdfClass
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ##define T_CHAR_SPACE                ' '
 ##define T_CHAR_NULL                 '\0'
@@ -2769,7 +2770,7 @@ class FdfParser(object):
             raise Warning("expected '.' At Line ", self.FileName, self.CurrentLineNumber)
         
         Arch = self.__SkippedChars.rstrip(".")
-        if Arch.upper() not in ("IA32", "X64", "IPF", "EBC", "ARM", "COMMON"):
+        if Arch.upper() not in ("IA32", "X64", "IPF", "EBC", "ARM", "AARCH64", "COMMON"):
             raise Warning("Unknown Arch '%s'" % Arch, self.FileName, self.CurrentLineNumber)
         
         ModuleType = self.__GetModuleType()
@@ -3356,7 +3357,7 @@ class FdfParser(object):
             raise Warning("expected '.' At Line ", self.FileName, self.CurrentLineNumber)
 
         Arch = self.__SkippedChars.rstrip(".").upper()
-        if Arch not in ("IA32", "X64", "IPF", "ARM"):
+        if Arch not in ("IA32", "X64", "IPF", "ARM", "AARCH64"):
             raise Warning("Unknown Arch At line ", self.FileName, self.CurrentLineNumber)
 
         if not self.__GetNextWord():
@@ -3370,7 +3371,7 @@ class FdfParser(object):
         if self.__IsToken(","):
             if not self.__GetNextWord():
                 raise Warning("expected Arch list At Line ", self.FileName, self.CurrentLineNumber)
-            if self.__Token.upper() not in ("IA32", "X64", "IPF", "ARM"):
+            if self.__Token.upper() not in ("IA32", "X64", "IPF", "ARM", "AARCH64"):
                 raise Warning("Unknown Arch At line ", self.FileName, self.CurrentLineNumber)
             VtfObj.ArchList = self.__Token.upper()
 

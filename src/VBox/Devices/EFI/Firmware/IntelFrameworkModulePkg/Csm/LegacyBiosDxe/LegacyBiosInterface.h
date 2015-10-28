@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -18,12 +18,15 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 
 #include <FrameworkDxe.h>
+#include <IndustryStandard/Pci.h>
+#include <IndustryStandard/SmBios.h>
 
 #include <Guid/SmBios.h>
 #include <Guid/Acpi.h>
 #include <Guid/DxeServices.h>
 #include <Guid/LegacyBios.h>
 #include <Guid/StatusCodeDataTypeId.h>
+#include <Guid/ImageAuthentication.h>
 
 #include <Protocol/BlockIo.h>
 #include <Protocol/LoadedImage.h>
@@ -131,6 +134,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define LEGACY_PCI_TRACE_00E LEGACY_PCI_TRACE + 0x0E
 #define LEGACY_PCI_TRACE_00F LEGACY_PCI_TRACE + 0x0F
 
+#define BDA_VIDEO_MODE      0x49
+
+#define IDE_PI_REGISTER_PNE     BIT0
+#define IDE_PI_REGISTER_SNE     BIT2
 
 typedef struct {
   UINTN   PciSegment;
@@ -474,7 +481,8 @@ typedef enum {
   EfiAcpiAddressRangeMemory   = 1,
   EfiAcpiAddressRangeReserved = 2,
   EfiAcpiAddressRangeACPI     = 3,
-  EfiAcpiAddressRangeNVS      = 4
+  EfiAcpiAddressRangeNVS      = 4,
+  EfiAddressRangePersistentMemory = 7
 } EFI_ACPI_MEMORY_TYPE;
 
 typedef struct {
@@ -1512,6 +1520,22 @@ InternalLegacyBiosFarCall (
   IN  EFI_IA32_REGISTER_SET           *Regs,
   IN  VOID                            *Stack,
   IN  UINTN                           StackSize
+  );
+
+/**
+  Load a legacy PC-AT OpROM for VGA controller.
+
+  @param  Private                Driver private data.
+
+  @retval EFI_SUCCESS            Legacy ROM successfully installed for this device.
+  @retval EFI_DEVICE_ERROR       No VGA device handle found, or native EFI video
+                                 driver cannot be successfully disconnected, or VGA
+                                 thunk driver cannot be successfully connected.
+
+**/
+EFI_STATUS
+LegacyBiosInstallVgaRom (
+  IN  LEGACY_BIOS_INSTANCE            *Private
   );
 
 #endif

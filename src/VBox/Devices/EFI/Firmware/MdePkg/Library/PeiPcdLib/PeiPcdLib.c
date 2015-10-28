@@ -1,7 +1,7 @@
 /** @file
 Implementation of PcdLib class library for PEI phase.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -20,6 +20,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <Ppi/Pcd.h>
 #include <Ppi/PiPcd.h>
+#include <Ppi/PcdInfo.h>
+#include <Ppi/PiPcdInfo.h>
 
 #include <Library/PeiServicesLib.h>
 #include <Library/PcdLib.h>
@@ -71,7 +73,53 @@ GetPiPcdPpiPointer (
   
   return PiPcdPpi;
 }  
+
+/**
+  Retrieve the GET_PCD_INFO_PPI pointer.
+
+  This function is to locate GET_PCD_INFO_PPI PPI via PeiService. 
+  If fail to locate GET_PCD_INFO_PPI, then ASSERT_EFI_ERROR().
+
+  @retval GET_PCD_INFO_PPI * The pointer to the GET_PCD_INFO_PPI.
+
+**/
+GET_PCD_INFO_PPI *
+GetPcdInfoPpiPointer (
+  VOID
+  ) 
+{
+  EFI_STATUS            Status;
+  GET_PCD_INFO_PPI      *PcdInfoPpi;
   
+  Status = PeiServicesLocatePpi (&gGetPcdInfoPpiGuid, 0, NULL, (VOID **)&PcdInfoPpi);
+  ASSERT_EFI_ERROR (Status);
+
+  return PcdInfoPpi;
+}
+
+/**
+  Retrieve the pointer of EFI_GET_PCD_INFO_PPI defined in PI 1.2.1 Vol 3.
+
+  This function is to locate EFI_GET_PCD_INFO_PPI PPI via PeiService. 
+  If fail to locate EFI_GET_PCD_INFO_PPI, then ASSERT_EFI_ERROR().
+
+  @retval EFI_GET_PCD_INFO_PPI * The pointer to the EFI_GET_PCD_INFO_PPI.
+
+**/
+EFI_GET_PCD_INFO_PPI *
+GetPiPcdInfoPpiPointer (
+  VOID
+  )
+{
+  EFI_STATUS            Status;
+  EFI_GET_PCD_INFO_PPI  *PiPcdInfoPpi;
+  
+  Status = PeiServicesLocatePpi (&gEfiGetPcdInfoPpiGuid, 0, NULL, (VOID **)&PiPcdInfoPpi);
+  ASSERT_EFI_ERROR (Status);
+  
+  return PiPcdInfoPpi;
+}  
+
 /**
   This function provides a means by which SKU support can be established in the PCD infrastructure.
 
@@ -442,7 +490,9 @@ LibPcdGetExSize (
   
   Sets the 8-bit value for the token specified by TokenNumber 
   to the value specified by Value.  Value is returned.
-  
+
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  TokenNumber   The PCD token number to set a current value for.
   @param[in]  Value         The 8-bit value to set.
 
@@ -472,7 +522,9 @@ LibPcdSet8 (
   
   Sets the 16-bit value for the token specified by TokenNumber 
   to the value specified by Value.  Value is returned.
-  
+
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  TokenNumber   The PCD token number to set a current value for.
   @param[in]  Value         The 16-bit value to set.
 
@@ -502,7 +554,9 @@ LibPcdSet16 (
   
   Sets the 32-bit value for the token specified by TokenNumber 
   to the value specified by Value.  Value is returned.
-  
+
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  TokenNumber   The PCD token number to set a current value for.
   @param[in]  Value         The 32-bit value to set.
 
@@ -532,7 +586,9 @@ LibPcdSet32 (
   
   Sets the 64-bit value for the token specified by TokenNumber 
   to the value specified by Value.  Value is returned.
-  
+
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  TokenNumber   The PCD token number to set a current value for.
   @param[in]  Value         The 64-bit value to set.
 
@@ -564,7 +620,8 @@ LibPcdSet64 (
   specified by Buffer and SizeOfBuffer.  Buffer is returned.  
   If SizeOfBuffer is greater than the maximum size support by TokenNumber, 
   then set SizeOfBuffer to the maximum size supported by TokenNumber and 
-  return NULL to indicate that the set operation was not actually performed.  
+  return NULL to indicate that the set operation was not actually performed,
+  or ASSERT() if the set operation was not corretly performed.
 
   If SizeOfBuffer is set to MAX_ADDRESS, then SizeOfBuffer must be set to the 
   maximum size supported by TokenName and NULL must be returned.
@@ -588,18 +645,20 @@ LibPcdSetPtr (
   )
 {
   EFI_STATUS Status;
+  UINTN      InputSizeOfBuffer;
 
   ASSERT (SizeOfBuffer != NULL);
 
   if (*SizeOfBuffer > 0) {
     ASSERT (Buffer != NULL);
   }
-  
-  Status = (GetPcdPpiPointer ())->SetPtr (TokenNumber, SizeOfBuffer, (VOID *) Buffer);
 
-  if (EFI_ERROR (Status)) {
+  InputSizeOfBuffer = *SizeOfBuffer;
+  Status = (GetPcdPpiPointer ())->SetPtr (TokenNumber, SizeOfBuffer, (VOID *) Buffer);
+  if (EFI_ERROR (Status) && (*SizeOfBuffer < InputSizeOfBuffer)) {
     return NULL;
   }
+  ASSERT_EFI_ERROR (Status);
 
   return (VOID *) Buffer;
 }
@@ -611,7 +670,9 @@ LibPcdSetPtr (
   
   Sets the Boolean value for the token specified by TokenNumber 
   to the value specified by Value.  Value is returned.
-  
+
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  TokenNumber   The PCD token number to set a current value for.
   @param[in]  Value         The boolean value to set.
 
@@ -641,9 +702,10 @@ LibPcdSetBool (
   
   Sets the 8-bit value for the token specified by TokenNumber and 
   Guid to the value specified by Value. Value is returned.
-  
+
   If Guid is NULL, then ASSERT().
-  
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  Guid          The pointer to a 128-bit unique value that 
                             designates which namespace to set a value from.
   @param[in]  TokenNumber   The PCD token number to set a current value for.
@@ -678,9 +740,10 @@ LibPcdSetEx8 (
   
   Sets the 16-bit value for the token specified by TokenNumber and 
   Guid to the value specified by Value. Value is returned.
-  
+
   If Guid is NULL, then ASSERT().
-  
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  Guid          The pointer to a 128-bit unique value that 
                             designates which namespace to set a value from.
   @param[in]  TokenNumber   The PCD token number to set a current value for.
@@ -713,9 +776,10 @@ LibPcdSetEx16 (
   
   Sets the 32-bit value for the token specified by TokenNumber and 
   Guid to the value specified by Value. Value is returned.
-  
+
   If Guid is NULL, then ASSERT().
-  
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  Guid          The pointer to a 128-bit unique value that 
                             designates which namespace to set a value from.
   @param[in]  TokenNumber   The PCD token number to set a current value for.
@@ -750,8 +814,10 @@ LibPcdSetEx32 (
   
   Sets the 64-bit value for the token specified by TokenNumber and 
   Guid to the value specified by Value. Value is returned.
+
   If Guid is NULL, then ASSERT().
-  
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  Guid          The pointer to a 128-bit unique value that 
                             designates which namespace to set a value from.
   @param[in]  TokenNumber   The PCD token number to set a current value for.
@@ -787,7 +853,7 @@ LibPcdSetEx64 (
   Buffer and SizeOfBuffer.  Buffer is returned.  If SizeOfBuffer is greater than 
   the maximum size support by TokenNumber, then set SizeOfBuffer to the maximum size 
   supported by TokenNumber and return NULL to indicate that the set operation 
-  was not actually performed. 
+  was not actually performed, or ASSERT() if the set operation was not corretly performed.
   
   If Guid is NULL, then ASSERT().
   If SizeOfBuffer is NULL, then ASSERT().
@@ -812,17 +878,21 @@ LibPcdSetExPtr (
   )
 {
   EFI_STATUS      Status;
+  UINTN           InputSizeOfBuffer;
+
+
   ASSERT (SizeOfBuffer != NULL);
   if (*SizeOfBuffer > 0) {
     ASSERT (Buffer != NULL);
   }
   ASSERT (Guid != NULL);
 
+  InputSizeOfBuffer = *SizeOfBuffer;
   Status = (GetPiPcdPpiPointer ())->SetPtr (Guid, TokenNumber, SizeOfBuffer, Buffer);
-
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) && (*SizeOfBuffer < InputSizeOfBuffer)) {
     return NULL;
   }
+  ASSERT_EFI_ERROR (Status);
 
   return Buffer;
 }
@@ -834,9 +904,10 @@ LibPcdSetExPtr (
   
   Sets the Boolean value for the token specified by TokenNumber and 
   Guid to the value specified by Value. Value is returned.
-  
+
   If Guid is NULL, then ASSERT().
-  
+  If the set operation was not correctly performed, then ASSERT().
+
   @param[in]  Guid          The pointer to a 128-bit unique value that 
                             designates which namespace to set a value from.
   @param[in]  TokenNumber   The PCD token number to set a current value for.
@@ -962,11 +1033,10 @@ LibPcdGetNextToken (
   IN UINTN                    TokenNumber
   )
 {
-  EFI_STATUS Status;
+  EFI_STATUS    Status;
 
   Status = (GetPiPcdPpiPointer ())->GetNextToken (Guid, &TokenNumber);
-
-  ASSERT_EFI_ERROR (Status);
+  ASSERT (!EFI_ERROR (Status) || TokenNumber == 0);
 
   return TokenNumber;
 }
@@ -991,11 +1061,7 @@ LibPcdGetNextTokenSpace (
   IN CONST GUID  *TokenSpaceGuid
   )
 {
-  EFI_STATUS Status;
-
-  Status = (GetPiPcdPpiPointer ())->GetNextTokenSpace (&TokenSpaceGuid);
-
-  ASSERT_EFI_ERROR (Status);
+  (GetPiPcdPpiPointer ())->GetNextTokenSpace (&TokenSpaceGuid);
 
   return (GUID *) TokenSpaceGuid;
 }
@@ -1052,4 +1118,77 @@ LibPatchPcdSetPtr (
   return (VOID *) Buffer;
 }
 
+/**
+  Retrieve additional information associated with a PCD token.
 
+  This includes information such as the type of value the TokenNumber is associated with as well as possible
+  human readable name that is associated with the token.
+
+  If TokenNumber is not in the default token space specified, then ASSERT().
+
+  @param[in]    TokenNumber The PCD token number.
+  @param[out]   PcdInfo     The returned information associated with the requested TokenNumber.
+                            The caller is responsible for freeing the buffer that is allocated by callee for PcdInfo->PcdName.
+**/
+VOID
+EFIAPI
+LibPcdGetInfo (
+  IN        UINTN           TokenNumber,
+  OUT       PCD_INFO        *PcdInfo
+  )
+{
+  EFI_STATUS Status;
+
+  Status = GetPcdInfoPpiPointer()->GetInfo (TokenNumber, (EFI_PCD_INFO *) PcdInfo);
+  ASSERT_EFI_ERROR (Status);
+}
+
+/**
+  Retrieve additional information associated with a PCD token.
+
+  This includes information such as the type of value the TokenNumber is associated with as well as possible
+  human readable name that is associated with the token.
+
+  If TokenNumber is not in the token space specified by Guid, then ASSERT().
+
+  @param[in]    Guid        The 128-bit unique value that designates the namespace from which to extract the value.
+  @param[in]    TokenNumber The PCD token number.
+  @param[out]   PcdInfo     The returned information associated with the requested TokenNumber.
+                            The caller is responsible for freeing the buffer that is allocated by callee for PcdInfo->PcdName.
+**/
+VOID
+EFIAPI
+LibPcdGetInfoEx (
+  IN CONST  GUID            *Guid,
+  IN        UINTN           TokenNumber,
+  OUT       PCD_INFO        *PcdInfo
+  )
+{
+  EFI_STATUS Status;
+
+  Status = GetPiPcdInfoPpiPointer()->GetInfo (Guid, TokenNumber, (EFI_PCD_INFO *) PcdInfo);
+  ASSERT_EFI_ERROR (Status);
+}
+
+/**
+  Retrieve the currently set SKU Id.
+
+  If the sku id got >= PCD_MAX_SKU_ID, then ASSERT().
+
+  @return   The currently set SKU Id. If the platform has not set at a SKU Id, then the
+            default SKU Id value of 0 is returned. If the platform has set a SKU Id, then the currently set SKU
+            Id is returned.
+**/
+UINTN
+EFIAPI
+LibPcdGetSku (
+  VOID
+  )
+{
+  UINTN SkuId;
+
+  SkuId = GetPiPcdInfoPpiPointer()->GetSku ();
+  ASSERT (SkuId < PCD_MAX_SKU_ID);
+
+  return SkuId;
+}

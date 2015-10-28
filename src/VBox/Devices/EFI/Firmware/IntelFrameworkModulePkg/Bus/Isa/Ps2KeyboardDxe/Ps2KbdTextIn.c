@@ -2,7 +2,7 @@
   Routines implements SIMPLE_TEXT_IN protocol's interfaces based on 8042 interfaces
   provided by Ps2KbdCtrller.c.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -549,7 +549,7 @@ KeyboardRegisterKeyNotify (
   IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
   IN EFI_KEY_DATA                       *KeyData,
   IN EFI_KEY_NOTIFY_FUNCTION            KeyNotificationFunction,
-  OUT EFI_HANDLE                        *NotifyHandle
+  OUT VOID                              **NotifyHandle
   )
 {
   EFI_STATUS                            Status;
@@ -582,7 +582,7 @@ KeyboardRegisterKeyNotify (
                       );
     if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) {
       if (CurrentNotify->KeyNotificationFn == KeyNotificationFunction) {
-        *NotifyHandle = CurrentNotify->NotifyHandle;
+        *NotifyHandle = CurrentNotify;
         Status = EFI_SUCCESS;
         goto Exit;
       }
@@ -600,11 +600,10 @@ KeyboardRegisterKeyNotify (
 
   NewNotify->Signature         = KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE;
   NewNotify->KeyNotificationFn = KeyNotificationFunction;
-  NewNotify->NotifyHandle      = (EFI_HANDLE) NewNotify;
   CopyMem (&NewNotify->KeyData, KeyData, sizeof (EFI_KEY_DATA));
   InsertTailList (&ConsoleInDev->NotifyList, &NewNotify->NotifyEntry);
 
-  *NotifyHandle                = NewNotify->NotifyHandle;
+  *NotifyHandle                = NewNotify;
   Status                       = EFI_SUCCESS;
 
 Exit:
@@ -631,7 +630,7 @@ EFI_STATUS
 EFIAPI
 KeyboardUnregisterKeyNotify (
   IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
-  IN EFI_HANDLE                         NotificationHandle
+  IN VOID                               *NotificationHandle
   )
 {
   EFI_STATUS                            Status;
@@ -641,10 +640,6 @@ KeyboardUnregisterKeyNotify (
   KEYBOARD_CONSOLE_IN_EX_NOTIFY         *CurrentNotify;
 
   if (NotificationHandle == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  if (((KEYBOARD_CONSOLE_IN_EX_NOTIFY *) NotificationHandle)->Signature != KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -662,7 +657,7 @@ KeyboardUnregisterKeyNotify (
                       NotifyEntry,
                       KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE
                       );
-    if (CurrentNotify->NotifyHandle == NotificationHandle) {
+    if (CurrentNotify == NotificationHandle) {
       //
       // Remove the notification function from NotifyList and free resources
       //

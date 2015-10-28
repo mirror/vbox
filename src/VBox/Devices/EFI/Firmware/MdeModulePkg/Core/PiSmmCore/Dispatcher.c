@@ -27,7 +27,8 @@
 
   Depex - Dependency Expresion.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2014, Hewlett-Packard Development Company, L.P.
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials are licensed and made available 
   under the terms and conditions of the BSD License which accompanies this 
   distribution.  The full text of the license may be found at        
@@ -120,6 +121,7 @@ FV_FILEPATH_DEVICE_PATH  mFvDevicePath;
 // DXE Architecture Protocols
 //
 EFI_SECURITY_ARCH_PROTOCOL  *mSecurity = NULL;
+EFI_SECURITY2_ARCH_PROTOCOL *mSecurity2 = NULL;
 
 //
 // The global variable is defined for Loading modules at fixed address feature to track the SMM code
@@ -349,27 +351,19 @@ SmmLoadImage (
   }
 
   //
-  // If the Security Architectural Protocol has not been located yet, then attempt to locate it
+  // If the Security2 and Security Architectural Protocol has not been located yet, then attempt to locate it
   //
+  if (mSecurity2 == NULL) {
+    gBS->LocateProtocol (&gEfiSecurity2ArchProtocolGuid, NULL, (VOID**)&mSecurity2);
+  }
   if (mSecurity == NULL) {
     gBS->LocateProtocol (&gEfiSecurityArchProtocolGuid, NULL, (VOID**)&mSecurity);
   }
+  //
+  // When Security2 is installed, Security Architectural Protocol must be published.
+  //
+  ASSERT (mSecurity2 == NULL || mSecurity != NULL);
 
-  //
-  // Verify the Authentication Status through the Security Architectural Protocol
-  //
-  if ((mSecurity != NULL) && (OriginalFilePath != NULL)) {
-    SecurityStatus = mSecurity->FileAuthenticationState (
-                                  mSecurity,
-                                  AuthenticationStatus,
-                                  OriginalFilePath
-                                  );
-    if (EFI_ERROR (SecurityStatus) && SecurityStatus != EFI_SECURITY_VIOLATION) {
-      Status = SecurityStatus;
-      return Status;
-    }
-  }
-  
   //
   // Pull out just the file portion of the DevicePath for the LoadedImage FilePath
   //
@@ -412,11 +406,42 @@ SmmLoadImage (
   
   if (EFI_ERROR (Status)) {
     if (Buffer != NULL) {
-      Status = gBS->FreePool (Buffer);
+      gBS->FreePool (Buffer);
     }
     return Status;
   }
 
+  //
+  // Verify File Authentication through the Security2 Architectural Protocol
+  //
+  if (mSecurity2 != NULL) {
+    SecurityStatus = mSecurity2->FileAuthentication (
+                                  mSecurity2,
+                                  OriginalFilePath,
+                                  Buffer,
+                                  Size,
+                                  FALSE
+                                  );
+  }
+
+  //
+  // Verify the Authentication Status through the Security Architectural Protocol
+  // Only on images that have been read using Firmware Volume protocol.
+  // All SMM images are from FV protocol. 
+  //
+  if (!EFI_ERROR (SecurityStatus) && (mSecurity != NULL)) {
+    SecurityStatus = mSecurity->FileAuthenticationState (
+                                  mSecurity,
+                                  AuthenticationStatus,
+                                  OriginalFilePath
+                                  );
+  }
+
+  if (EFI_ERROR (SecurityStatus) && SecurityStatus != EFI_SECURITY_VIOLATION) {
+    Status = SecurityStatus;
+    return Status;
+  }
+  
   //
   // Initialize ImageContext
   //
@@ -429,7 +454,7 @@ SmmLoadImage (
   Status = PeCoffLoaderGetImageInfo (&ImageContext);
   if (EFI_ERROR (Status)) {
     if (Buffer != NULL) {
-      Status = gBS->FreePool (Buffer);
+      gBS->FreePool (Buffer);
     }
     return Status;
   }
@@ -465,7 +490,7 @@ SmmLoadImage (
                    );
        if (EFI_ERROR (Status)) {
          if (Buffer != NULL) {
-           Status = gBS->FreePool (Buffer);
+           gBS->FreePool (Buffer);
          } 
          return Status;
        }     
@@ -483,7 +508,7 @@ SmmLoadImage (
                   );
      if (EFI_ERROR (Status)) {
        if (Buffer != NULL) {
-         Status = gBS->FreePool (Buffer);
+         gBS->FreePool (Buffer);
        }
        return Status;
      }
@@ -494,7 +519,7 @@ SmmLoadImage (
   // Align buffer on section boundry
   //
   ImageContext.ImageAddress += ImageContext.SectionAlignment - 1;
-  ImageContext.ImageAddress &= ~(ImageContext.SectionAlignment - 1);
+  ImageContext.ImageAddress &= ~((EFI_PHYSICAL_ADDRESS)(ImageContext.SectionAlignment - 1));
 
   //
   // Load the image to our new buffer
@@ -502,7 +527,7 @@ SmmLoadImage (
   Status = PeCoffLoaderLoadImage (&ImageContext);
   if (EFI_ERROR (Status)) {
     if (Buffer != NULL) {
-      Status = gBS->FreePool (Buffer);
+      gBS->FreePool (Buffer);
     }
     SmmFreePages (DstBuffer, PageCount);
     return Status;
@@ -514,7 +539,7 @@ SmmLoadImage (
   Status = PeCoffLoaderRelocateImage (&ImageContext);
   if (EFI_ERROR (Status)) {
     if (Buffer != NULL) {
-      Status = gBS->FreePool (Buffer);
+      gBS->FreePool (Buffer);
     }
     SmmFreePages (DstBuffer, PageCount);
     return Status;
@@ -538,12 +563,13 @@ SmmLoadImage (
   Status = gBS->AllocatePool (EfiBootServicesData, sizeof (EFI_LOADED_IMAGE_PROTOCOL), (VOID **)&DriverEntry->LoadedImage);
   if (EFI_ERROR (Status)) {
     if (Buffer != NULL) {
-      Status = gBS->FreePool (Buffer);
+      gBS->FreePool (Buffer);
     }
     SmmFreePages (DstBuffer, PageCount);
     return Status;
   }
 
+  ZeroMem (DriverEntry->LoadedImage, sizeof (EFI_LOADED_IMAGE_PROTOCOL));
   //
   // Fill in the remaining fields of the Loaded Image Protocol instance.
   // Note: ImageBase is an SMRAM address that can not be accessed outside of SMRAM if SMRAM window is closed.
@@ -559,7 +585,7 @@ SmmLoadImage (
   Status = gBS->AllocatePool (EfiBootServicesData, GetDevicePathSize (FilePath), (VOID **)&DriverEntry->LoadedImage->FilePath);
   if (EFI_ERROR (Status)) {
     if (Buffer != NULL) {
-      Status = gBS->FreePool (Buffer);
+      gBS->FreePool (Buffer);
     }
     SmmFreePages (DstBuffer, PageCount);
     return Status;
@@ -647,6 +673,9 @@ SmmLoadImage (
   // used the UEFI Boot Services AllocatePool() function
   //
   Status = gBS->FreePool(Buffer);
+  if (!EFI_ERROR (Status) && EFI_ERROR (SecurityStatus)) {
+    Status = SecurityStatus;
+  }
   return Status;  
 }
 
@@ -845,10 +874,12 @@ SmmDispatcher (
       //
       // For each SMM driver, pass NULL as ImageHandle
       //
+      RegisterSmramProfileImage (DriverEntry, TRUE);
       PERF_START (DriverEntry->ImageHandle, "StartImage:", NULL, 0);
       Status = ((EFI_IMAGE_ENTRY_POINT)(UINTN)DriverEntry->ImageEntryPoint)(DriverEntry->ImageHandle, gST);
       PERF_END (DriverEntry->ImageHandle, "StartImage:", NULL, 0);
       if (EFI_ERROR(Status)){
+        UnregisterSmramProfileImage (DriverEntry, TRUE);
         SmmFreePages(DriverEntry->ImageBuffer, DriverEntry->NumberOfPage);
       }
 
@@ -1173,7 +1204,6 @@ SmmDriverDispatchHandler (
   UINTN                         HandleCount;
   EFI_HANDLE                    *HandleBuffer;
   EFI_STATUS                    GetNextFileStatus;
-  EFI_STATUS                    SecurityStatus;
   EFI_FIRMWARE_VOLUME2_PROTOCOL *Fv;
   EFI_DEVICE_PATH_PROTOCOL      *FvDevicePath;
   EFI_HANDLE                    FvHandle;
@@ -1232,31 +1262,6 @@ SmmDriverDispatchHandler (
       // The Firmware volume doesn't have device path, can't be dispatched.
       //
       continue;
-    }
-
-    //
-    // If the Security Architectural Protocol has not been located yet, then attempt to locate it
-    //
-    if (mSecurity == NULL) {
-      gBS->LocateProtocol (&gEfiSecurityArchProtocolGuid, NULL, (VOID**)&mSecurity);
-    }
-
-    //
-    // Evaluate the authentication status of the Firmware Volume through
-    // Security Architectural Protocol
-    //
-    if (mSecurity != NULL) {
-      SecurityStatus = mSecurity->FileAuthenticationState (
-                                    mSecurity,
-                                    0,
-                                    FvDevicePath
-                                    );
-      if (SecurityStatus != EFI_SUCCESS) {
-        //
-        // Security check failed. The firmware volume should not be used for any purpose.
-        //
-        continue;
-      }
     }
 
     //

@@ -1,7 +1,7 @@
 ## @file
 # process FV generation
 #
-#  Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -15,8 +15,7 @@
 ##
 # Import Modules
 #
-import os
-import shutil
+import Common.LongFilePathOs as os
 import subprocess
 import StringIO
 from struct import *
@@ -27,6 +26,8 @@ from GenFdsGlobalVariable import GenFdsGlobalVariable
 from GenFds import GenFds
 from CommonDataClass.FdfClass import FvClassObject
 from Common.Misc import SaveFileOnChange
+from Common.LongFilePathSupport import CopyLongFilePath
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 T_CHAR_LF = '\n'
 
@@ -86,6 +87,8 @@ class FV (FvClassObject):
                                 GenFdsGlobalVariable.ErrorLogger("Capsule %s in FD region can't contain a FV %s in FD region." % (self.CapsuleName, self.UiFvName.upper()))
 
         GenFdsGlobalVariable.InfLogger( "\nGenerating %s FV" %self.UiFvName)
+        GenFdsGlobalVariable.LargeFileInFvFlags.append(False)
+        FFSGuid = None
         
         if self.FvBaseAddress != None:
             BaseAddress = self.FvBaseAddress
@@ -126,16 +129,19 @@ class FV (FvClassObject):
             FvOutputFile = self.CreateFileName
 
         FvInfoFileName = os.path.join(GenFdsGlobalVariable.FfsDir, self.UiFvName + '.inf')
-        shutil.copy(GenFdsGlobalVariable.FvAddressFileName, FvInfoFileName)
+        CopyLongFilePath(GenFdsGlobalVariable.FvAddressFileName, FvInfoFileName)
         OrigFvInfo = None
         if os.path.exists (FvInfoFileName):
             OrigFvInfo = open(FvInfoFileName, 'r').read()
+        if GenFdsGlobalVariable.LargeFileInFvFlags[-1]:
+            FFSGuid = GenFdsGlobalVariable.EFI_FIRMWARE_FILE_SYSTEM3_GUID;
         GenFdsGlobalVariable.GenerateFirmwareVolume(
                                 FvOutputFile,
                                 [self.InfFileName],
                                 AddressFile=FvInfoFileName,
                                 FfsList=FfsFileList,
-                                ForceRebase=self.FvForceRebase
+                                ForceRebase=self.FvForceRebase,
+                                FileSystemGuid=FFSGuid
                                 )
 
         NewFvInfo = None
@@ -159,13 +165,16 @@ class FV (FvClassObject):
                 for FfsFile in self.FfsList :
                     FileName = FfsFile.GenFfs(MacroDict, FvChildAddr, BaseAddress)
                 
+                if GenFdsGlobalVariable.LargeFileInFvFlags[-1]:
+                    FFSGuid = GenFdsGlobalVariable.EFI_FIRMWARE_FILE_SYSTEM3_GUID;
                 #Update GenFv again
                 GenFdsGlobalVariable.GenerateFirmwareVolume(
                                         FvOutputFile,
                                         [self.InfFileName],
                                         AddressFile=FvInfoFileName,
                                         FfsList=FfsFileList,
-                                        ForceRebase=self.FvForceRebase
+                                        ForceRebase=self.FvForceRebase,
+                                        FileSystemGuid=FFSGuid
                                         )
 
         #
@@ -194,6 +203,7 @@ class FV (FvClassObject):
             self.FvAlignment = str (FvAlignmentValue)
         FvFileObj.close()
         GenFds.ImageBinDict[self.UiFvName.upper() + 'fv'] = FvOutputFile
+        GenFdsGlobalVariable.LargeFileInFvFlags.pop()
         return FvOutputFile
 
     ## __InitializeInf__()

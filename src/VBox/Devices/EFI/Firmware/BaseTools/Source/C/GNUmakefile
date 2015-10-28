@@ -1,5 +1,5 @@
 ## @file
-#  GNU Make makefile for C tools build.
+#  GNU/Linux makefile for C tools build.
 #
 #  Copyright (c) 2007 - 2012, Intel Corporation. All rights reserved.<BR>
 #
@@ -19,7 +19,7 @@ ifndef ARCH
   #
   uname_m = $(shell uname -m)
   $(info Attempting to detect ARCH from 'uname -m': $(uname_m))
-  ifeq ($(uname_m),x86_64)
+  ifneq (,$(strip $(filter $(uname_m), x86_64 amd64)))
     ARCH=X64
   endif
   ifeq ($(patsubst i%86,IA32,$(uname_m)),IA32)

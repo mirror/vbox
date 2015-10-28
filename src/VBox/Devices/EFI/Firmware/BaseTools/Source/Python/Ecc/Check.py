@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define checkpoints used by ECC tool
 #
-# Copyright (c) 2008 - 2010, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -10,14 +10,15 @@
 # THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
-import os
+import Common.LongFilePathOs as os
 import re
 from CommonDataClass.DataClass import *
-from Common.DataType import SUP_MODULE_LIST_STRING, TAB_VALUE_SPLIT
+import Common.DataType as DT
 from EccToolError import *
 from MetaDataParser import ParseHeaderCommentSection
 import EccGlobalData
 import c
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ## Check
 #
@@ -40,15 +41,29 @@ class Check(object):
         self.FunctionLayoutCheck()
         self.NamingConventionCheck()
 
+    # Check UNI files
+    def UniCheck(self):
+        if EccGlobalData.gConfig.GeneralCheckUni == '1' or EccGlobalData.gConfig.GeneralCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+            EdkLogger.quiet("Checking whether UNI file is UTF-16 ...")
+            SqlCommand = """select ID, FullPath, ExtName from File where ExtName like 'uni'"""
+            RecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
+            for Record in RecordSet:
+                File = Record[1]
+                FileIn = open(File, 'rb').read(2)
+                if FileIn != '\xff\xfe':
+                    OtherMsg = "File %s is not a valid UTF-16 UNI file" % Record[1]
+                    EccGlobalData.gDb.TblReport.Insert(ERROR_GENERAL_CHECK_UNI, OtherMsg=OtherMsg, BelongsToTable='File', BelongsToItem=Record[0])
+
     # General Checking
     def GeneralCheck(self):
         self.GeneralCheckNonAcsii()
+        self.UniCheck()
 
     # Check whether file has non ACSII char
     def GeneralCheckNonAcsii(self):
         if EccGlobalData.gConfig.GeneralCheckNonAcsii == '1' or EccGlobalData.gConfig.GeneralCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
             EdkLogger.quiet("Checking Non-ACSII char in file ...")
-            SqlCommand = """select ID, FullPath, ExtName from File"""
+            SqlCommand = """select ID, FullPath, ExtName from File where ExtName in ('.dec', '.inf', '.dsc', 'c', 'h')"""
             RecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
             for Record in RecordSet:
                 if Record[2].upper() not in EccGlobalData.gConfig.BinaryExtList:
@@ -554,6 +569,10 @@ class Check(object):
         self.MetaDataFileCheckModuleFileNoUse()
         self.MetaDataFileCheckPcdType()
         self.MetaDataFileCheckModuleFileGuidDuplication()
+        self.MetaDataFileCheckModuleFileGuidFormat()
+        self.MetaDataFileCheckModuleFileProtocolFormat()
+        self.MetaDataFileCheckModuleFilePpiFormat()
+        self.MetaDataFileCheckModuleFilePcdFormat()
 
     # Check whether each file defined in meta-data exists
     def MetaDataFileCheckPathName(self):
@@ -583,7 +602,7 @@ class Check(object):
                 List = Record[1].split('|', 1)
                 SupModType = []
                 if len(List) == 1:
-                    SupModType = SUP_MODULE_LIST_STRING.split(TAB_VALUE_SPLIT)
+                    SupModType = DT.SUP_MODULE_LIST_STRING.split(DT.TAB_VALUE_SPLIT)
                 elif len(List) == 2:
                     SupModType = List[1].split()
 
@@ -667,7 +686,7 @@ class Check(object):
                             % (MODEL_EFI_LIBRARY_CLASS, MODEL_EFI_LIBRARY_CLASS)
             RecordSet = EccGlobalData.gDb.TblDsc.Exec(SqlCommand)
             for Record in RecordSet:
-                if Record[3] and Record[4] and Record[3] != Record[4]:
+                if Record[3] and Record[4] and Record[3] != Record[4] and Record[1] != 'NULL':
                     SqlCommand = """select FullPath from File where ID = %s""" % (Record[2])
                     FilePathList = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
                     for FilePath in FilePathList:
@@ -897,6 +916,142 @@ class Check(object):
                         Msg = "The FILE_GUID of INF file [%s] is duplicated with that of %s" % (InfPath1, InfPath2)
                         EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_MODULE_FILE_GUID_DUPLICATION, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
 
+
+    # Check Guid Format in module INF
+    def MetaDataFileCheckModuleFileGuidFormat(self):
+        if EccGlobalData.gConfig.MetaDataFileCheckModuleFileGuidFormat or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+            EdkLogger.quiet("Check Guid Format in module INF ...")
+            Table = EccGlobalData.gDb.TblInf
+            SqlCommand = """
+                         select ID, Value1, Usage, BelongsToFile from %s where Model = %s group by ID
+                         """ % (Table.Table, MODEL_EFI_GUID)
+            RecordSet = Table.Exec(SqlCommand)
+            for Record in RecordSet:
+                Value1 = Record[1]
+                Value2 = Record[2]
+                GuidCommentList = []
+                InfPath = self.GetInfFilePathFromID(Record[3])
+                Msg = "The GUID format of %s in INF file [%s] does not follow rules" % (Value1, InfPath)
+                if Value2.startswith(DT.TAB_SPECIAL_COMMENT):
+                    GuidCommentList = Value2[2:].split(DT.TAB_SPECIAL_COMMENT)
+                    if GuidCommentList[0].strip().startswith(DT.TAB_INF_USAGE_UNDEFINED):
+                        continue
+                    elif len(GuidCommentList) > 1:
+                        if not GuidCommentList[0].strip().startswith((DT.TAB_INF_USAGE_PRO,
+                                                                      DT.TAB_INF_USAGE_SOME_PRO,
+                                                                      DT.TAB_INF_USAGE_CON,
+                                                                      DT.TAB_INF_USAGE_SOME_CON)):
+                            EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_GUID, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+                        if not (GuidCommentList[1].strip()).startswith(DT.TAB_INF_GUIDTYPE_VAR) and \
+                            not GuidCommentList[1].strip().startswith((DT.TAB_INF_GUIDTYPE_EVENT,
+                                                                       DT.TAB_INF_GUIDTYPE_HII,
+                                                                       DT.TAB_INF_GUIDTYPE_FILE,
+                                                                       DT.TAB_INF_GUIDTYPE_HOB,
+                                                                       DT.TAB_INF_GUIDTYPE_FV,
+                                                                       DT.TAB_INF_GUIDTYPE_ST,
+                                                                       DT.TAB_INF_GUIDTYPE_TSG,
+                                                                       DT.TAB_INF_GUIDTYPE_GUID,
+                                                                       DT.TAB_INF_GUIDTYPE_PROTOCOL,
+                                                                       DT.TAB_INF_GUIDTYPE_PPI,
+                                                                       DT.TAB_INF_USAGE_UNDEFINED)):
+                                EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_GUID, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+                    else:
+                        EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_GUID, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+                else:
+                    EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_GUID, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+
+    # Check Protocol Format in module INF
+    def MetaDataFileCheckModuleFileProtocolFormat(self):
+        if EccGlobalData.gConfig.MetaDataFileCheckModuleFileProtocolFormat or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+            EdkLogger.quiet("Check Protocol Format in module INF ...")
+            Table = EccGlobalData.gDb.TblInf
+            SqlCommand = """
+                         select ID, Value1, Usage, BelongsToFile from %s where Model = %s group by ID
+                         """ % (Table.Table, MODEL_EFI_PROTOCOL)
+            RecordSet = Table.Exec(SqlCommand)
+            for Record in RecordSet:
+                Value1 = Record[1]
+                Value2 = Record[2]
+                GuidCommentList = []
+                InfPath = self.GetInfFilePathFromID(Record[3])
+                Msg = "The Protocol format of %s in INF file [%s] does not follow rules" % (Value1, InfPath)
+                if Value2.startswith(DT.TAB_SPECIAL_COMMENT):
+                    GuidCommentList = Value2[2:].split(DT.TAB_SPECIAL_COMMENT)
+                    if len(GuidCommentList) >= 1:
+                        if not GuidCommentList[0].strip().startswith((DT.TAB_INF_USAGE_PRO,
+                                                                      DT.TAB_INF_USAGE_SOME_PRO,
+                                                                      DT.TAB_INF_USAGE_CON,
+                                                                      DT.TAB_INF_USAGE_SOME_CON,
+                                                                      DT.TAB_INF_USAGE_NOTIFY,
+                                                                      DT.TAB_INF_USAGE_TO_START,
+                                                                      DT.TAB_INF_USAGE_BY_START,
+                                                                      DT.TAB_INF_USAGE_UNDEFINED)):
+                            EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_PROTOCOL, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+                else:
+                    EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_PROTOCOL, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+
+
+    # Check Ppi Format in module INF
+    def MetaDataFileCheckModuleFilePpiFormat(self):
+        if EccGlobalData.gConfig.MetaDataFileCheckModuleFilePpiFormat or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+            EdkLogger.quiet("Check Ppi Format in module INF ...")
+            Table = EccGlobalData.gDb.TblInf
+            SqlCommand = """
+                         select ID, Value1, Usage, BelongsToFile from %s where Model = %s group by ID
+                         """ % (Table.Table, MODEL_EFI_PPI)
+            RecordSet = Table.Exec(SqlCommand)
+            for Record in RecordSet:
+                Value1 = Record[1]
+                Value2 = Record[2]
+                GuidCommentList = []
+                InfPath = self.GetInfFilePathFromID(Record[3])
+                Msg = "The Ppi format of %s in INF file [%s] does not follow rules" % (Value1, InfPath)
+                if Value2.startswith(DT.TAB_SPECIAL_COMMENT):
+                    GuidCommentList = Value2[2:].split(DT.TAB_SPECIAL_COMMENT)
+                    if len(GuidCommentList) >= 1:
+                        if not GuidCommentList[0].strip().startswith((DT.TAB_INF_USAGE_PRO,
+                                                                      DT.TAB_INF_USAGE_SOME_PRO,
+                                                                      DT.TAB_INF_USAGE_CON,
+                                                                      DT.TAB_INF_USAGE_SOME_CON,
+                                                                      DT.TAB_INF_USAGE_NOTIFY,
+                                                                      DT.TAB_INF_USAGE_UNDEFINED)):
+                            EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_PPI, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+                else:
+                    EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_PPI, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+
+    # Check Pcd Format in module INF
+    def MetaDataFileCheckModuleFilePcdFormat(self):
+        if EccGlobalData.gConfig.MetaDataFileCheckModuleFilePcdFormat or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+            EdkLogger.quiet("Check Pcd Format in module INF ...")
+            Table = EccGlobalData.gDb.TblInf
+            SqlCommand = """
+                         select ID, Model, Value1, Value2, Usage, BelongsToFile from %s where Model >= %s and Model < %s group by ID
+                         """ % (Table.Table, MODEL_PCD, MODEL_META_DATA_HEADER)
+            RecordSet = Table.Exec(SqlCommand)
+            for Record in RecordSet:
+                Model = Record[1]
+                PcdName = Record[2] + '.' + Record[3]
+                Usage = Record[4]
+                PcdCommentList = []
+                InfPath = self.GetInfFilePathFromID(Record[5])
+                Msg = "The Pcd format of %s in INF file [%s] does not follow rules" % (PcdName, InfPath)
+                if Usage.startswith(DT.TAB_SPECIAL_COMMENT):
+                    PcdCommentList = Usage[2:].split(DT.TAB_SPECIAL_COMMENT)
+                    if len(PcdCommentList) >= 1:
+                        if Model in [MODEL_PCD_FIXED_AT_BUILD, MODEL_PCD_FEATURE_FLAG] \
+                            and not PcdCommentList[0].strip().startswith((DT.TAB_INF_USAGE_SOME_PRO,
+                                                                          DT.TAB_INF_USAGE_CON,
+                                                                          DT.TAB_INF_USAGE_UNDEFINED)):
+                            EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_PCD, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+                        if Model in [MODEL_PCD_PATCHABLE_IN_MODULE, MODEL_PCD_DYNAMIC, MODEL_PCD_DYNAMIC_EX] \
+                            and not PcdCommentList[0].strip().startswith((DT.TAB_INF_USAGE_PRO,
+                                                                          DT.TAB_INF_USAGE_SOME_PRO,
+                                                                          DT.TAB_INF_USAGE_CON,
+                                                                          DT.TAB_INF_USAGE_SOME_CON,
+                                                                          DT.TAB_INF_USAGE_UNDEFINED)):
+                            EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_PCD, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
+                else:
+                    EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_FORMAT_PCD, OtherMsg=Msg, BelongsToTable=Table.Table, BelongsToItem=Record[0])
 
     # Check whether these is duplicate Guid/Ppi/Protocol name
     def CheckGuidProtocolPpi(self, ErrorID, Model, Table):

@@ -1,7 +1,7 @@
 @REM @file
 @REM   Windows batch file to setup a WORKSPACE environment
 @REM
-@REM Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+@REM Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 @REM This program and the accompanying materials
 @REM are licensed and made available under the terms and conditions of the BSD License
 @REM which accompanies this distribution.  The full text of the license may be found at
@@ -31,12 +31,12 @@ pushd .
 cd %~dp0
 
 if not defined WORKSPACE (
-  @goto SetWorkSpace
+  goto SetWorkSpace
 )
 
 if %WORKSPACE% == %CD% (
   @REM Workspace is not changed.
-  @goto ParseArgs
+  goto ParseArgs
 )
 
 :SetWorkSpace
@@ -47,32 +47,44 @@ set EFI_SOURCE=
 set EDK_SOURCE=
 
 :ParseArgs
-@if /I "%1"=="-h" goto Usage
-@if /I "%1"=="-help" goto Usage
-@if /I "%1"=="--help" goto Usage
-@if /I "%1"=="/h" goto Usage
-@if /I "%1"=="/?" goto Usage
-@if /I "%1"=="/help" goto Usage
+if /I "%1"=="-h" goto Usage
+if /I "%1"=="-help" goto Usage
+if /I "%1"=="--help" goto Usage
+if /I "%1"=="/h" goto Usage
+if /I "%1"=="/?" goto Usage
+if /I "%1"=="/help" goto Usage
 
-@if /I not "%1"=="--nt32" goto no_nt32
+if /I not "%1"=="--nt32" goto no_nt32
 
 @REM Flag, --nt32 is set
 @REM The Nt32 Emluation Platform requires Microsoft Libraries
 @REM and headers to interface with Windows.
 
 if not defined VCINSTALLDIR (
-  if defined VS71COMNTOOLS (
-    call "%VS71COMNTOOLS%\vsvars32.bat"
+  if defined VS120COMNTOOLS (
+    call "%VS120COMNTOOLS%\vsvars32.bat"
   ) else (
-    if defined VS80COMNTOOLS (
-      call "%VS80COMNTOOLS%\vsvars32.bat"
+    if defined VS110COMNTOOLS (
+      call "%VS110COMNTOOLS%\vsvars32.bat"
     ) else (
-      if defined VS90COMNTOOLS (
-        call "%VS90COMNTOOLS%\vsvars32.bat"
+      if defined VS100COMNTOOLS (
+        call "%VS100COMNTOOLS%\vsvars32.bat"
       ) else (
-        echo.
-        echo !!! WARNING !!! Cannot find Visual Studio !!!
-        echo.
+        if defined VS90COMNTOOLS (
+          call "%VS90COMNTOOLS%\vsvars32.bat"
+        ) else (
+          if defined VS80COMNTOOLS (
+            call "%VS80COMNTOOLS%\vsvars32.bat"
+          ) else (
+            if defined VS71COMNTOOLS (
+              call "%VS71COMNTOOLS%\vsvars32.bat"
+            ) else (
+              echo.
+              echo !!! WARNING !!! Cannot find Visual Studio !!!
+              echo.
+            )
+          )
+        )
       )
     )
   )
@@ -80,38 +92,46 @@ if not defined VCINSTALLDIR (
 shift
 
 :no_nt32
-@if /I "%1"=="NewBuild" shift
-@if not defined EDK_TOOLS_PATH set EDK_TOOLS_PATH=%WORKSPACE%\BaseTools
-@IF NOT EXIST "%EDK_TOOLS_PATH%\toolsetup.bat" goto BadBaseTools
-@call %EDK_TOOLS_PATH%\toolsetup.bat %*
-@if /I "%1"=="Reconfig" shift
-@goto check_cygwin
+if /I "%1"=="NewBuild" shift
+set EDK_TOOLS_PATH=%WORKSPACE%\BaseTools
+IF NOT EXIST "%EDK_TOOLS_PATH%\toolsetup.bat" goto BadBaseTools
+call %EDK_TOOLS_PATH%\toolsetup.bat %*
+if /I "%1"=="Reconfig" shift
+goto check_cygwin
 
 :BadBaseTools
   @REM
-  @REM Need the BaseTools Package in order to build
+  REM Need the BaseTools Package in order to build
   @REM
-  echo.
-  echo !!! ERROR !!! The BaseTools Package was not found !!!
-  echo.
-  echo Set the system environment variable, EDK_TOOLS_PATH to the BaseTools,
-  echo For example,
-  echo   set EDK_TOOLS_PATH=C:\MyTools\BaseTools
-  echo The setup script, toolsetup.bat must reside in this folder.
-  echo.
-  @goto end
+  @echo.
+  @echo !!! ERROR !!! The BaseTools Package was not found !!!
+  @echo.
+  @echo Set the system environment variable, EDK_TOOLS_PATH to the BaseTools,
+  @echo For example,
+  @echo   set EDK_TOOLS_PATH=C:\MyTools\BaseTools
+  @echo The setup script, toolsetup.bat must reside in this folder.
+  @echo.
+  goto end
 
 :check_cygwin
-  @if exist c:\cygwin (
-    @set CYGWIN_HOME=c:\cygwin
+if defined CYGWIN_HOME (
+  if not exist "%CYGWIN_HOME%" (
+    @echo.
+    @echo !!! WARNING !!! CYGWIN_HOME not found, gcc build may not be used !!!
+    @echo.
+  )
+) else (
+  if exist c:\cygwin (
+    set CYGWIN_HOME=c:\cygwin
   ) else (
     @echo.
     @echo !!! WARNING !!! No CYGWIN_HOME set, gcc build may not be used !!!
     @echo.
   )
+)
 
-@if NOT "%1"=="" goto Usage
-@goto end
+:cygwin_done
+if "%1"=="" goto end
 
 :Usage
   @echo.
@@ -121,12 +141,11 @@ shift
   @echo         Reconfig       Reinstall target.txt, tools_def.txt and build_rule.txt.
   @echo.
   @echo  Note that target.template, tools_def.template and build_rules.template
-  @echo  will be only copied to target.txt, tools_def.txt and build_rule.txt
-  @echo  respectively if they do not exist. Using option [Reconfig] to force the copy. 
+  @echo  will only be copied to target.txt, tools_def.txt and build_rule.txt
+  @echo  respectively if they do not exist. Use option [Reconfig] to force the copy.
   @echo.
-  @goto end
+  goto end
 
 :end
-  @popd
-  @echo on
+  popd
 

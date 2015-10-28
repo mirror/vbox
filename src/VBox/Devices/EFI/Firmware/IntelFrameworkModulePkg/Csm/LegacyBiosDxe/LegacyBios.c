@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -28,6 +28,18 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //  protocol you are not required to dynamically allocate the PrivateData.
 //
 LEGACY_BIOS_INSTANCE  mPrivateData;
+
+//
+// The SMBIOS table in EfiRuntimeServicesData memory
+//
+VOID                  *mRuntimeSmbiosEntryPoint = NULL;
+
+//
+// The SMBIOS table in EfiReservedMemoryType memory
+//
+EFI_PHYSICAL_ADDRESS  mReserveSmbiosEntryPoint = 0;
+EFI_PHYSICAL_ADDRESS  mStructureTableAddress   = 0;
+UINTN                 mStructureTablePages     = 0;
 
 /**
   Do an AllocatePages () of type AllocateMaxAddress for EfiBootServicesCode
@@ -662,6 +674,98 @@ GetPciInterfaceVersion (
 }
 
 /**
+  Callback function to calculate SMBIOS table size, and allocate memory for SMBIOS table.
+  SMBIOS table will be copied into EfiReservedMemoryType memory in legacy boot path.
+
+  @param  Event                 Event whose notification function is being invoked.
+  @param  Context               The pointer to the notification function's context,
+                                which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+InstallSmbiosEventCallback (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
+  )
+{
+  EFI_STATUS                  Status;
+  SMBIOS_TABLE_ENTRY_POINT    *EntryPointStructure;
+  
+  //
+  // Get SMBIOS table from EFI configuration table
+  //
+  Status = EfiGetSystemConfigurationTable (
+            &gEfiSmbiosTableGuid,
+            &mRuntimeSmbiosEntryPoint
+            );
+  if ((EFI_ERROR (Status)) || (mRuntimeSmbiosEntryPoint == NULL)) {
+    return;
+  }
+  
+  EntryPointStructure = (SMBIOS_TABLE_ENTRY_POINT *) mRuntimeSmbiosEntryPoint;
+
+  //
+  // Allocate memory for SMBIOS Entry Point Structure.
+  // CSM framework spec requires SMBIOS table below 4GB in EFI_TO_COMPATIBILITY16_BOOT_TABLE.
+  //
+  if (mReserveSmbiosEntryPoint == 0) {
+    //
+    // Entrypoint structure with fixed size is allocated only once.
+    //
+    mReserveSmbiosEntryPoint = SIZE_4GB - 1;
+    Status = gBS->AllocatePages (
+                    AllocateMaxAddress,
+                    EfiReservedMemoryType,
+                    EFI_SIZE_TO_PAGES ((UINTN) (EntryPointStructure->EntryPointLength)),
+                    &mReserveSmbiosEntryPoint
+                    );
+    if (EFI_ERROR (Status)) {
+      mReserveSmbiosEntryPoint = 0;
+      return;
+    }
+    DEBUG ((EFI_D_INFO, "Allocate memory for Smbios Entry Point Structure\n"));
+  }
+  
+  if ((mStructureTableAddress != 0) && 
+      (mStructureTablePages < (UINTN) EFI_SIZE_TO_PAGES (EntryPointStructure->TableLength))) {
+    //
+    // If original buffer is not enough for the new SMBIOS table, free original buffer and re-allocate
+    //
+    gBS->FreePages (mStructureTableAddress, mStructureTablePages);
+    mStructureTableAddress = 0;
+    mStructureTablePages   = 0;
+    DEBUG ((EFI_D_INFO, "Original size is not enough. Re-allocate the memory.\n"));
+  }
+  
+  if (mStructureTableAddress == 0) {
+    //
+    // Allocate reserved memory below 4GB.
+    // Smbios spec requires the structure table is below 4GB.
+    //
+    mStructureTableAddress = SIZE_4GB - 1;
+    mStructureTablePages   = EFI_SIZE_TO_PAGES (EntryPointStructure->TableLength);
+    Status = gBS->AllocatePages (
+                    AllocateMaxAddress,
+                    EfiReservedMemoryType,
+                    mStructureTablePages,
+                    &mStructureTableAddress
+                    );
+    if (EFI_ERROR (Status)) {
+      gBS->FreePages (
+        mReserveSmbiosEntryPoint, 
+        EFI_SIZE_TO_PAGES ((UINTN) (EntryPointStructure->EntryPointLength))
+        );
+      mReserveSmbiosEntryPoint = 0;
+      mStructureTableAddress   = 0;
+      mStructureTablePages     = 0;
+      return;
+    }
+    DEBUG ((EFI_D_INFO, "Allocate memory for Smbios Structure Table\n"));
+  }
+}
+
+/**
   Install Driver to produce Legacy BIOS protocol.
 
   @param  ImageHandle  Handle of driver image.
@@ -682,6 +786,7 @@ LegacyBiosInstall (
   LEGACY_BIOS_INSTANCE               *Private;
   EFI_TO_COMPATIBILITY16_INIT_TABLE  *EfiToLegacy16InitTable;
   EFI_PHYSICAL_ADDRESS               MemoryAddress;
+  EFI_PHYSICAL_ADDRESS               EbdaReservedBaseAddress;
   VOID                               *MemoryPtr;
   EFI_PHYSICAL_ADDRESS               MemoryAddressUnder1MB;
   UINTN                              Index;
@@ -695,6 +800,8 @@ LegacyBiosInstall (
   UINT32                             MemorySize;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR    Descriptor;
   UINT64                             Length;
+  UINT8                              *SecureBoot;
+  EFI_EVENT                          InstallSmbiosEvent;
 
   //
   // Load this driver's image to memory
@@ -702,6 +809,20 @@ LegacyBiosInstall (
   Status = RelocateImageUnder4GIfNeeded (ImageHandle, SystemTable);
   if (EFI_ERROR (Status)) {
     return Status;
+  }
+
+  //
+  // When UEFI Secure Boot is enabled, CSM module will not start any more.
+  //
+  SecureBoot = NULL;
+  GetEfiGlobalVariable2 (EFI_SECURE_BOOT_MODE_NAME, (VOID**)&SecureBoot, NULL);
+  if ((SecureBoot != NULL) && (*SecureBoot == SECURE_BOOT_MODE_ENABLE)) {
+    FreePool (SecureBoot);
+    return EFI_SECURITY_VIOLATION;
+  }
+  
+  if (SecureBoot != NULL) {
+    FreePool (SecureBoot);
   }
 
   Private = &mPrivateData;
@@ -865,17 +986,29 @@ LegacyBiosInstall (
   //
   // Allocate all 32k chunks from 0x60000 ~ 0x88000 for Legacy OPROMs that
   // don't use PMM but look for zeroed memory. Note that various non-BBS
-  // SCSIs expect different areas to be free
+  // OpROMs expect different areas to be free
   //
-  for (MemStart = 0x60000; MemStart < 0x88000; MemStart += 0x1000) {
+  EbdaReservedBaseAddress = MemoryAddress;
+  MemoryAddress = PcdGet32 (PcdOpromReservedMemoryBase);
+  MemorySize    = PcdGet32 (PcdOpromReservedMemorySize);
+  //
+  // Check if base address and size for reserved memory are 4KB aligned.
+  //
+  ASSERT ((MemoryAddress & 0xFFF) == 0);
+  ASSERT ((MemorySize & 0xFFF) == 0);
+  //
+  // Check if the reserved memory is below EBDA reserved range.
+  //
+  ASSERT ((MemoryAddress < EbdaReservedBaseAddress) && ((MemoryAddress + MemorySize - 1) < EbdaReservedBaseAddress));
+  for (MemStart = MemoryAddress; MemStart < MemoryAddress + MemorySize; MemStart += 0x1000) {
     Status = AllocateLegacyMemory (
                AllocateAddress,
                MemStart,
                1,
-               &MemoryAddress
+               &StartAddress
                );
     if (!EFI_ERROR (Status)) {
-      MemoryPtr = (VOID *) ((UINTN) MemoryAddress);
+      MemoryPtr = (VOID *) ((UINTN) StartAddress);
       ZeroMem (MemoryPtr, 0x1000);
     } else {
       DEBUG ((EFI_D_ERROR, "WARNING: Allocate legacy memory fail for SCSI card - %x\n", MemStart));
@@ -922,21 +1055,32 @@ LegacyBiosInstall (
   EfiToLegacy16InitTable->LowPmmMemory            = (UINT32) MemoryAddressUnder1MB;
   EfiToLegacy16InitTable->LowPmmMemorySizeInBytes = MemorySize;
 
+  MemorySize = PcdGet32 (PcdHighPmmMemorySize);
+  ASSERT ((MemorySize & 0xFFF) == 0);
   //
   // Allocate high PMM Memory under 16 MB
-  //
-  MemorySize = PcdGet32 (PcdHighPmmMemorySize);
-  ASSERT ((MemorySize & 0xFFF) == 0);    
+  //   
   Status = AllocateLegacyMemory (
              AllocateMaxAddress,
              0x1000000,
              EFI_SIZE_TO_PAGES (MemorySize),
              &MemoryAddress
              );
+  if (EFI_ERROR (Status)) {
+    //
+    // If it fails, allocate high PMM Memory under 4GB
+    //   
+    Status = AllocateLegacyMemory (
+               AllocateMaxAddress,
+               0xFFFFFFFF,
+               EFI_SIZE_TO_PAGES (MemorySize),
+               &MemoryAddress
+               );    
+  }
   if (!EFI_ERROR (Status)) {
     EfiToLegacy16InitTable->HiPmmMemory            = (UINT32) (EFI_PHYSICAL_ADDRESS) (UINTN) MemoryAddress;
     EfiToLegacy16InitTable->HiPmmMemorySizeInBytes = MemorySize;
-  }
+  } 
 
   //
   //  ShutdownAPs();
@@ -970,6 +1114,24 @@ LegacyBiosInstall (
   // Save EFI value
   //
   Private->ThunkSeg = (UINT16) (EFI_SEGMENT (IntRedirCode));
+  
+  //
+  // Allocate reserved memory for SMBIOS table used in legacy boot if SMBIOS table exists
+  //
+  InstallSmbiosEventCallback (NULL, NULL);
+
+  //
+  // Create callback function to update the size of reserved memory after LegacyBiosDxe starts
+  //
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_NOTIFY,
+                  InstallSmbiosEventCallback,
+                  NULL,
+                  &gEfiSmbiosTableGuid,
+                  &InstallSmbiosEvent
+                  );
+  ASSERT_EFI_ERROR (Status);  
 
   //
   // Make a new handle and install the protocol

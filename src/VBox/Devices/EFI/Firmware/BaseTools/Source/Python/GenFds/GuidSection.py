@@ -1,7 +1,7 @@
 ## @file
 # process GUIDed section generation
 #
-#  Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -18,7 +18,7 @@
 import Section
 import subprocess
 from Ffs import Ffs
-import os
+import Common.LongFilePathOs as os
 from GenFdsGlobalVariable import GenFdsGlobalVariable
 from CommonDataClass.FdfClass import GuidSectionClassObject
 from Common import ToolDefClassObject
@@ -26,6 +26,7 @@ import sys
 from Common import EdkLogger
 from Common.BuildToolError import *
 from FvImageSection import FvImageSection
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ## generate GUIDed section
 #
@@ -158,6 +159,13 @@ class GuidSection(GuidSectionClassObject) :
                        SecNum     + \
                        '.tmp'
             TempFile = os.path.normpath(TempFile)
+            #
+            # Remove temp file if its time stamp is older than dummy file
+            # Just in case the external tool fails at this time but succeeded before
+            # Error should be reported if the external tool does not generate a new output based on new input
+            #
+            if os.path.exists(TempFile) and os.path.exists(DummyFile) and os.path.getmtime(TempFile) < os.path.getmtime(DummyFile):
+                os.remove(TempFile)
 
             FirstCall = False
             CmdOption = '-e'
@@ -182,6 +190,12 @@ class GuidSection(GuidSectionClassObject) :
                 FirstCall = False
                 ReturnValue[0] = 0
                 GenFdsGlobalVariable.GuidTool(TempFile, [DummyFile], ExternalTool, CmdOption)
+            #
+            # There is external tool which does not follow standard rule which return nonzero if tool fails
+            # The output file has to be checked
+            #
+            if not os.path.exists(TempFile):
+                EdkLogger.error("GenFds", COMMAND_FAILURE, 'Fail to call %s, no output file was generated' % ExternalTool)
 
             FileHandleIn = open(DummyFile,'rb')
             FileHandleIn.seek(0,2)
@@ -197,7 +211,7 @@ class GuidSection(GuidSectionClassObject) :
                 HeaderLength = str(self.ExtraHeaderSize)
 
             if self.ProcessRequired == "NONE" and HeaderLength == None:
-                if TempFileSize > InputFileSize and TempFileSize % 4 == 0:
+                if TempFileSize > InputFileSize:
                     FileHandleIn.seek(0)
                     BufferIn  = FileHandleIn.read()
                     FileHandleOut.seek(0)
@@ -246,16 +260,17 @@ class GuidSection(GuidSectionClassObject) :
         if self.KeyStringList == None or self.KeyStringList == []:
             Target = GenFdsGlobalVariable.TargetName
             ToolChain = GenFdsGlobalVariable.ToolChainTag
-            ToolDb = ToolDefClassObject.ToolDefDict(GenFdsGlobalVariable.WorkSpaceDir).ToolsDefTxtDatabase
+            ToolDb = ToolDefClassObject.ToolDefDict(GenFdsGlobalVariable.ConfDir).ToolsDefTxtDatabase
             if ToolChain not in ToolDb['TOOL_CHAIN_TAG']:
                 EdkLogger.error("GenFds", GENFDS_ERROR, "Can not find external tool because tool tag %s is not defined in tools_def.txt!" % ToolChain)
             self.KeyStringList = [Target+'_'+ToolChain+'_'+self.CurrentArchList[0]]
             for Arch in self.CurrentArchList:
-                if Target+'_'+ToolChain+'_'+Arch not in self.KeyStringList:
-                    self.KeyStringList.append(Target+'_'+ToolChain+'_'+Arch)
-                    
-        ToolDefinition = ToolDefClassObject.ToolDefDict(GenFdsGlobalVariable.WorkSpaceDir).ToolsDefTxtDictionary
+                if Target + '_' + ToolChain + '_' + Arch not in self.KeyStringList:
+                    self.KeyStringList.append(Target + '_' + ToolChain + '_' + Arch)
+
+        ToolDefinition = ToolDefClassObject.ToolDefDict(GenFdsGlobalVariable.ConfDir).ToolsDefTxtDictionary
         ToolPathTmp = None
+        ToolOption = None
         for ToolDef in ToolDefinition.items():
             if self.NameGuid == ToolDef[1]:
                 KeyList = ToolDef[0].split('_')

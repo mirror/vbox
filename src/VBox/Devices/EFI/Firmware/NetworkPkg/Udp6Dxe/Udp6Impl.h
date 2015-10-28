@@ -1,7 +1,7 @@
 /** @file
   Udp6 driver's whole implementation and internal data structures.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -30,11 +30,13 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/DpcLib.h>
+#include <Library/PrintLib.h>
 
 #include "Udp6Driver.h"
 
 extern EFI_COMPONENT_NAME2_PROTOCOL   gUdp6ComponentName2;
 extern EFI_COMPONENT_NAME_PROTOCOL    gUdp6ComponentName;
+extern EFI_UNICODE_STRING_TABLE       *gUdp6ControllerNameTable;
 extern EFI_SERVICE_BINDING_PROTOCOL   mUdp6ServiceBinding;
 extern EFI_UDP6_PROTOCOL              mUdp6Protocol;
 extern UINT16                         mUdp6RandomPort;
@@ -77,8 +79,7 @@ typedef struct _UDP6_SERVICE_DATA {
   UINTN                         ChildrenNumber;
   IP_IO                         *IpIo;
   EFI_EVENT                     TimeoutEvent;
-  CHAR16                        *MacString;
-} UDP6_SERVICE_DATA;
+ } UDP6_SERVICE_DATA;
 
 typedef struct _UDP6_INSTANCE_DATA {
   UINT32                Signature;
@@ -97,7 +98,7 @@ typedef struct _UDP6_INSTANCE_DATA {
   UINT16                HeadSum;
   EFI_STATUS            IcmpError;
   IP_IO_IP_INFO         *IpInfo;
-  BOOLEAN               Destroyed;
+  BOOLEAN               InDestroy;
 } UDP6_INSTANCE_DATA;
 
 typedef struct _UDP6_RXDATA_WRAP {
@@ -106,6 +107,12 @@ typedef struct _UDP6_RXDATA_WRAP {
   UINT32                 TimeoutTick;
   EFI_UDP6_RECEIVE_DATA  RxData;
 } UDP6_RXDATA_WRAP;
+
+typedef struct {
+  EFI_SERVICE_BINDING_PROTOCOL  *ServiceBinding;
+  UINTN                         NumberOfChildren;
+  EFI_HANDLE                    *ChildHandleBuffer;
+} UDP6_DESTROY_CHILD_IN_HANDLE_BUF_CONTEXT;
 
 /**
   Clean the Udp service context data.
@@ -137,22 +144,7 @@ Udp6CreateService (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_HANDLE         ControllerHandle
   );
-
-/**
-  Set the Udp6 variable data.
-
-  @param[in]  Udp6Service            Udp6 service data.
-
-  @retval     EFI_OUT_OF_RESOURCES   There are not enough resources to set the
-                                     variable.
-  @retval     other                  Set variable failed.
-
-**/
-EFI_STATUS
-Udp6SetVariableData (
-  IN UDP6_SERVICE_DATA  *Udp6Service
-  );
-
+ 
 /**
   This function cleans the udp instance.
 
@@ -163,18 +155,7 @@ VOID
 Udp6CleanInstance (
   IN OUT UDP6_INSTANCE_DATA  *Instance
   );
-
-/**
-  Clear the variable and free the resource.
-
-  @param[in, out]  Udp6Service            Udp6 service data.
-
-**/
-VOID
-Udp6ClearVariableData (
-  IN OUT UDP6_SERVICE_DATA  *Udp6Service
-  );
-
+ 
 /**
   This function intializes the new created udp instance.
 

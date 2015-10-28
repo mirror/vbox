@@ -3,7 +3,7 @@
 #
 # This file is used to build all modules in IntelFrameworkModulePkg.
 #
-#Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
+#Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 #This program and the accompanying materials are licensed and made available under 
 #the terms and conditions of the BSD License that accompanies this distribution.  
 #The full text of the license may be found at
@@ -22,7 +22,7 @@
 [Defines]
   PLATFORM_NAME                  = IntelFrameworkModuleAll
   PLATFORM_GUID                  = FFF87D9A-E5BB-4AFF-9ADE-8645492E8087
-  PLATFORM_VERSION               = 0.92
+  PLATFORM_VERSION               = 0.94
   DSC_SPECIFICATION              = 0x00010005
   OUTPUT_DIRECTORY               = Build/IntelFrameworkModuleAll
   SUPPORTED_ARCHITECTURES        = IA32|IPF|X64|EBC|ARM
@@ -79,6 +79,9 @@
   HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
   PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
   MemoryAllocationLib|MdePkg/Library/PeiMemoryAllocationLib/PeiMemoryAllocationLib.inf
+
+[LibraryClasses.EBC.PEIM]
+  IoLib|MdePkg/Library/PeiIoLibCpuIo/PeiIoLibCpuIo.inf
 
 [LibraryClasses.common.DXE_DRIVER]
   LockBoxLib|MdeModulePkg/Library/SmmLockBoxLib/SmmLockBoxDxeLib.inf
@@ -167,6 +170,7 @@
 
 [Components.IA32,Components.X64]
   IntelFrameworkModulePkg/Universal/Acpi/AcpiS3SaveDxe/AcpiS3SaveDxe.inf
+  IntelFrameworkModulePkg/Library/LzmaCustomDecompressLib/LzmaArchCustomDecompressLib.inf
 
 [Components.IA32,Components.X64,Components.IPF]
   IntelFrameworkModulePkg/Csm/LegacyBiosDxe/LegacyBiosDxe.inf

@@ -2,7 +2,7 @@
 //
 //    Sample Setup formset.
 //
-//  Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+//  Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 //  This program and the accompanying materials
 //  are licensed and made available under the terms and conditions of the BSD License
 //  which accompanies this distribution.  The full text of the license may be found at
@@ -125,28 +125,24 @@ formset
     text
       help   = STRING_TOKEN(STR_EXIT_TEXT),
       text   = STRING_TOKEN(STR_EXIT_TEXT),
-        text   = STRING_TOKEN(STR_EXIT_TEXT),
       flags  = INTERACTIVE,   // VfrCompiler will generate opcode EFI_IFR_ACTION for Text marked as INTERACTIVE
       key    = 0x1237;
 
     text
       help   = STRING_TOKEN(STR_SAVE_TEXT),
       text   = STRING_TOKEN(STR_SAVE_TEXT),
-        text   = STRING_TOKEN(STR_SAVE_TEXT),
       flags  = INTERACTIVE,
       key    = 0x1238;
 
     text
       help   = STRING_TOKEN(STR_SAVE_CURRENT),
       text   = STRING_TOKEN(STR_SAVE_CURRENT),
-        text   = STRING_TOKEN(STR_SAVE_CURRENT),
       flags  = INTERACTIVE,
       key    = 0x1243;
 
     text
       help   = STRING_TOKEN(STR_DISCARD_CURRENT_AND_EXIT),
       text   = STRING_TOKEN(STR_DISCARD_CURRENT_AND_EXIT),
-        text   = STRING_TOKEN(STR_DISCARD_CURRENT_AND_EXIT),
       flags  = INTERACTIVE,
       key    = 0x1244;
     //
@@ -186,11 +182,10 @@ formset
                  // CHECKBOX_DEFAULT_MFG indicate EFI_IFR_CHECKBOX_DEFAULT_MFG.
                  //
                  flags    = CHECKBOX_DEFAULT | CHECKBOX_DEFAULT_MFG,
-                 key      = 0,
-                 default  = 1,
+                 default  = TRUE,
         endcheckbox;
       endif;
-	endif;
+    endif;
 
     //
     // Ordered list:
@@ -211,11 +206,12 @@ formset
                 varid       = MyIfrNVData.BootOrder,
                 prompt      = STRING_TOKEN(STR_BOOT_OPTIONS),
                 help        = STRING_TOKEN(STR_NULL_STRING),
-                option text = STRING_TOKEN(STR_BOOT_OPTION2), value = 2, flags = RESET_REQUIRED;
-                option text = STRING_TOKEN(STR_BOOT_OPTION1), value = 1, flags = RESET_REQUIRED;
-                option text = STRING_TOKEN(STR_BOOT_OPTION3), value = 3, flags = RESET_REQUIRED;
+                flags       = RESET_REQUIRED,
+                option text = STRING_TOKEN(STR_BOOT_OPTION2), value = 2, flags = 0;
+                option text = STRING_TOKEN(STR_BOOT_OPTION1), value = 1, flags = 0;
+                option text = STRING_TOKEN(STR_BOOT_OPTION3), value = 3, flags = 0;
               suppressif ideqval MyIfrNVData.BootOrderLarge == 0;
-                option text = STRING_TOKEN(STR_BOOT_OPTION4), value = 4, flags = RESET_REQUIRED;
+                option text = STRING_TOKEN(STR_BOOT_OPTION4), value = 4, flags = 0;
               endif
       endlist;
 
@@ -231,9 +227,10 @@ formset
         varid       = MyIfrNVData.OrderedList,
         prompt      = STRING_TOKEN(STR_TEST_OPCODE),
         help        = STRING_TOKEN(STR_TEXT_HELP),
-        option text = STRING_TOKEN(STR_ONE_OF_TEXT1), value = 3, flags = RESET_REQUIRED;
-        option text = STRING_TOKEN(STR_ONE_OF_TEXT2), value = 2, flags = RESET_REQUIRED;
-        option text = STRING_TOKEN(STR_ONE_OF_TEXT3), value = 1, flags = RESET_REQUIRED;
+        flags       = RESET_REQUIRED,
+        option text = STRING_TOKEN(STR_ONE_OF_TEXT1), value = 3, flags = 0;
+        option text = STRING_TOKEN(STR_ONE_OF_TEXT2), value = 2, flags = 0;
+        option text = STRING_TOKEN(STR_ONE_OF_TEXT3), value = 1, flags = 0;
       endlist;
     endif;
 
@@ -257,16 +254,21 @@ formset
     oneof varid  = MyIfrNVData.TestLateCheck,
       prompt      = STRING_TOKEN(STR_TEST_OPCODE),
       help        = STRING_TOKEN(STR_ONE_OF_HELP),
-      option text = STRING_TOKEN(STR_ONE_OF_TEXT1), value = 0, flags = RESET_REQUIRED;
-      option text = STRING_TOKEN(STR_ONE_OF_TEXT2), value = 1, flags = DEFAULT | RESET_REQUIRED;
+      flags       = RESET_REQUIRED,
+      option text = STRING_TOKEN(STR_ONE_OF_TEXT1), value = 0, flags = 0;
+      option text = STRING_TOKEN(STR_ONE_OF_TEXT2), value = 1, flags = DEFAULT;
+      warningif prompt = STRING_TOKEN(STR_WARNING_POPUP), timeout = 5,
+        ideqval MyIfrNVData.TestLateCheck == 0
+      endif
 
     endoneof;
 
     oneof varid  = MyIfrNVData.TestLateCheck2,
       prompt      = STRING_TOKEN(STR_TEST_OPCODE2),
       help        = STRING_TOKEN(STR_ONE_OF_HELP),
-      option text = STRING_TOKEN(STR_ONE_OF_TEXT1), value = 0, flags = DEFAULT | RESET_REQUIRED;
-      option text = STRING_TOKEN(STR_ONE_OF_TEXT2), value = 1, flags = RESET_REQUIRED;
+      flags       = RESET_REQUIRED,
+      option text = STRING_TOKEN(STR_ONE_OF_TEXT1), value = 0, flags = DEFAULT;
+      option text = STRING_TOKEN(STR_ONE_OF_TEXT2), value = 1, flags = 0;
 
       inconsistentif prompt = STRING_TOKEN(STR_ERROR_POPUP),
         ideqid MyIfrNVData.TestLateCheck == MyIfrNVData.TestLateCheck2
@@ -277,10 +279,10 @@ formset
     oneof varid  = MyIfrNVData.QuestionAboutTreeHugging,
       prompt      = STRING_TOKEN(STR_ONE_OF_PROMPT),
       help        = STRING_TOKEN(STR_ONE_OF_HELP),
-      option text = STRING_TOKEN(STR_ONE_OF_TEXT1), value = 0, flags = RESET_REQUIRED;
-      option text = STRING_TOKEN(STR_ONE_OF_TEXT2), value = 1, flags = DEFAULT | RESET_REQUIRED;
-      option text = STRING_TOKEN(STR_ONE_OF_TEXT3), value = 0x03, flags = RESET_REQUIRED;
-
+      flags       = RESET_REQUIRED,
+      option text = STRING_TOKEN(STR_ONE_OF_TEXT1), value = 0, flags = 0;
+      option text = STRING_TOKEN(STR_ONE_OF_TEXT2), value = 1, flags = DEFAULT;
+      option text = STRING_TOKEN(STR_ONE_OF_TEXT3), value = 3, flags = 0;
     endoneof;
 
     //
@@ -359,6 +361,8 @@ formset
             maximum = 0xff,
             step    = 0,
             locked,
+            default = 16, defaultstore = MyStandardDefault,     // This is standard default value
+            default = 17, defaultstore = MyManufactureDefault,  // This is manufacture default value
     endnumeric;
 
     numeric varid   = MyNameValueVar[1],     // This numeric take NameValueVar1 as storage
@@ -368,6 +372,8 @@ formset
             minimum = 0,
             maximum = 0xffff,
             step    = 0,
+            default = 18, defaultstore = MyStandardDefault,     // This is standard default value
+            default = 19, defaultstore = MyManufactureDefault,  // This is manufacture default value
     endnumeric;
 
     //
@@ -517,30 +523,12 @@ formset
     form formid = 2,               // SecondSetupPage,
       title = STRING_TOKEN(STR_FORM2_TITLE);  // note formid is a variable (for readability) (UINT16) - also added Form to the line to signify the Op-Code
 
-
-      date    year varid  = Date.Year,    // Note that it is a member of NULL, so the RTC will be the system resource to retrieve and save from
-              prompt      = STRING_TOKEN(STR_DATE_PROMPT),
-              help        = STRING_TOKEN(STR_DATE_HELP),
-              minimum     = 1998,
-              maximum     = 2099,
-              step        = 1,
-              default     = 2004,
-
-              month varid = Date.Month,    // Note that it is a member of NULL, so the RTC will be the system resource to retrieve and save from
-              prompt      = STRING_TOKEN(STR_DATE_PROMPT),
-              help        = STRING_TOKEN(STR_DATE_HELP),
-              minimum     = 1,
-              maximum     = 12,
-              step        = 1,
-              default     = 1,
-
-              day varid   = Date.Day,          // Note that it is a member of NULL, so the RTC will be the system resource to retrieve and save from
-              prompt      = STRING_TOKEN(STR_DATE_PROMPT),
-              help        = STRING_TOKEN(STR_DATE_HELP),
-              minimum     = 1,
-              maximum     = 31,
-              step        = 0x1,
-              default     = 1,
+      date
+        name    = Date,
+        prompt  = STRING_TOKEN(STR_DATE_PROMPT),
+        help    = STRING_TOKEN(STR_DATE_HELP),
+        flags   = STORAGE_TIME,
+        default = 2004/1/1,
 
         inconsistentif prompt = STRING_TOKEN(STR_ERROR_POPUP),
           ideqval Date.Day == 31
@@ -574,41 +562,19 @@ formset
       text
         help   = STRING_TOKEN(STR_SAVE_CURRENT_AND_EXIT),
         text   = STRING_TOKEN(STR_SAVE_CURRENT_AND_EXIT),
-          text   = STRING_TOKEN(STR_SAVE_CURRENT_AND_EXIT),
         flags  = INTERACTIVE,
         key    = 0x1241;
 
       text
         help   = STRING_TOKEN(STR_DISCARD_CURRENT),
         text   = STRING_TOKEN(STR_DISCARD_CURRENT),
-          text   = STRING_TOKEN(STR_DISCARD_CURRENT),
         flags  = INTERACTIVE,
         key    = 0x1242;
 
-      time    hour varid  = Time.Hour,         // Note that it is a member of NULL, so the RTC will be the system resource to retrieve and save from
-              prompt      = STRING_TOKEN(STR_TIME_PROMPT),
-              help        = STRING_TOKEN(STR_TIME_HELP),
-              minimum     = 0,
-              maximum     = 23,
-              step        = 1,
-              default     = 0,
-
-              minute varid  = Time.Minute,       // Note that it is a member of NULL, so the RTC will be the system resource to retrieve and save from
-              prompt        = STRING_TOKEN(STR_TIME_PROMPT),
-              help          = STRING_TOKEN(STR_TIME_HELP),
-              minimum       = 0,
-              maximum       = 59,
-              step          = 1,
-              default       = 0,
-
-              second varid  = Time.Second,       // Note that it is a member of NULL, so the RTC will be the system resource to retrieve and save from
-              prompt        = STRING_TOKEN(STR_TIME_PROMPT),
-              help          = STRING_TOKEN(STR_TIME_HELP),
-              minimum       = 0,
-              maximum       = 59,
-              step          = 1,
-              default       = 0,
-
+      time
+        prompt  = STRING_TOKEN(STR_TIME_PROMPT),
+        help    = STRING_TOKEN(STR_TIME_HELP),
+        flags   = STORAGE_TIME,
       endtime;
       
       time 
@@ -624,7 +590,6 @@ formset
               prompt   = STRING_TOKEN(STR_CHECK_BOX_PROMPT),
               help     = STRING_TOKEN(STR_CHECK_BOX_HELP),
               flags    = CHECKBOX_DEFAULT,
-              key      = 0,
       endcheckbox;
 
       text
@@ -758,14 +723,12 @@ formset
     text
       help   = STRING_TOKEN(STR_EXIT_TEXT),
       text   = STRING_TOKEN(STR_EXIT_TEXT),
-        text   = STRING_TOKEN(STR_EXIT_TEXT),
       flags  = INTERACTIVE,   // VfrCompiler will generate opcode EFI_IFR_ACTION for Text marked as INTERACTIVE
       key    = 0x1245;
 
     text
       help   = STRING_TOKEN(STR_SAVE_TEXT),
       text   = STRING_TOKEN(STR_SAVE_TEXT),
-        text   = STRING_TOKEN(STR_SAVE_TEXT),
       flags  = INTERACTIVE,   // VfrCompiler will generate opcode EFI_IFR_ACTION for Text marked as INTERACTIVE
       key    = 0x1246;
   endform;

@@ -1,6 +1,6 @@
 /* zutil.h -- internal interface and configuration of the compression library
 
-    Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2011 - 2012, Intel Corporation. All rights reserved.<BR>
     This program and the accompanying materials are licensed and made available under
     the terms and conditions of the BSD License that accompanies this distribution.
     The full text of the license may be found at
@@ -11,14 +11,12 @@
 
  * Copyright (C) 1995-2005 Jean-loup Gailly.
  * For conditions of distribution and use, see copyright notice in zlib.h
- */
+**/
 
 /* WARNING: this file should *not* be used by applications. It is
    part of the implementation of the compression library and is
    subject to change. Applications should only use zlib.h.
  */
-
-/* @(#) $Id$ */
 
 #ifndef ZUTIL_H
 #define ZUTIL_H
@@ -26,7 +24,7 @@
 #define ZLIB_INTERNAL
 #include "zlib.h"
 
-#ifdef STDC
+#if defined(UEFI_C_SOURCE) || defined(STDC)
 #  ifndef _WIN32_WCE
 #    include <stddef.h>
 #  endif
@@ -161,8 +159,8 @@ extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  define fdopen(fd,mode) NULL /* No fdopen() */
 #endif
 
-#if (defined(_MSC_VER) && (_MSC_VER > 600))
-#  if defined(_WIN32_WCE) || defined(_EFI_STDLIB)
+#if !defined(UEFI_C_SOURCE) && (defined(_MSC_VER) && (_MSC_VER > 600))
+#  if defined(_WIN32_WCE)
 #    define fdopen(fd,mode) NULL /* No fdopen() */
 #    ifndef _PTRDIFF_T_DEFINED
        typedef int ptrdiff_t;

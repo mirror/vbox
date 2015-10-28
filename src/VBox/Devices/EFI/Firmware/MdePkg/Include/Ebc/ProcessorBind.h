@@ -4,7 +4,7 @@
   We currently only have one EBC compiler so there may be some Intel compiler
   specific functions in this file.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available under 
 the terms and conditions of the BSD License that accompanies this distribution.  
 The full text of the license may be found at
@@ -30,7 +30,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 ///
 /// 1-byte signed value
 ///
-typedef char                  INT8;
+typedef signed char           INT8;
 ///
 /// Logical Boolean.  1-byte value containing 0 for FALSE or a 1 for TRUE.  Other
 /// values are undefined.
@@ -104,6 +104,12 @@ typedef unsigned long         UINTN;
 #define MAX_ADDRESS   ((UINTN) ~0)
 
 ///
+/// Maximum legal EBC INTN and UINTN values.
+///
+#define MAX_UINTN  ((UINTN) ~0)
+#define MAX_INTN   ((INTN)~MAX_BIT)
+
+///
 /// The stack alignment required for EBC
 ///
 #define CPU_STACK_ALIGNMENT   sizeof(UINTN)
@@ -131,6 +137,10 @@ typedef unsigned long         UINTN;
   @return The pointer to the first instruction of a function given a function pointer.
 **/
 #define FUNCTION_ENTRY_POINT(FunctionPointer) (VOID *)(UINTN)(FunctionPointer)
+
+#ifndef __USER_LABEL_PREFIX__
+#define __USER_LABEL_PREFIX__
+#endif
 
 #endif 
 

@@ -1,7 +1,7 @@
 /** @file
   USB Mouse Driver that manages USB mouse and produces Absolute Pointer Protocol.
 
-Copyright (c) 2004 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -188,6 +188,16 @@ USBMouseAbsolutePointerDriverBindingStart (
   if (EFI_ERROR (Status)) {
     goto ErrorExit;
   }
+
+  //
+  // Report Status Code here since USB mouse will be detected next.
+  //
+  REPORT_STATUS_CODE_WITH_DEVICE_PATH (
+    EFI_PROGRESS_CODE,
+    (EFI_PERIPHERAL_MOUSE | EFI_P_PC_PRESENCE_DETECT),
+    UsbMouseAbsolutePointerDevice->DevicePath
+    );
+
   //
   // Get interface & endpoint descriptor
   //
@@ -221,11 +231,27 @@ USBMouseAbsolutePointerDriverBindingStart (
 
   if (!Found) {
     //
+    // Report Status Code to indicate that there is no USB mouse
+    //
+    REPORT_STATUS_CODE (
+      EFI_ERROR_CODE | EFI_ERROR_MINOR,
+      (EFI_PERIPHERAL_MOUSE | EFI_P_EC_NOT_DETECTED)
+      );
+    //
     // No interrupt endpoint found, then return unsupported.
     //
     Status = EFI_UNSUPPORTED;
     goto ErrorExit;
   }
+
+  //
+  // Report Status Code here since USB mouse has be detected.
+  //
+  REPORT_STATUS_CODE_WITH_DEVICE_PATH (
+    EFI_PROGRESS_CODE,
+    (EFI_PERIPHERAL_MOUSE | EFI_P_PC_DETECTED),
+    UsbMouseAbsolutePointerDevice->DevicePath
+    );
 
   Status = InitializeUsbMouseDevice (UsbMouseAbsolutePointerDevice);
   if (EFI_ERROR (Status)) {
@@ -521,46 +547,106 @@ InitializeUsbMouseDevice (
   IN  USB_MOUSE_ABSOLUTE_POINTER_DEV           *UsbMouseAbsolutePointerDev
   )
 {
-  EFI_USB_IO_PROTOCOL     *UsbIo;
-  UINT8                   Protocol;
-  EFI_STATUS              Status;
-  EFI_USB_HID_DESCRIPTOR  MouseHidDesc;
-  UINT8                   *ReportDesc;
-  UINT8                   ReportId;
-  UINT8                   Duration;
+  EFI_USB_IO_PROTOCOL       *UsbIo;
+  UINT8                     Protocol;
+  EFI_STATUS                Status;
+  EFI_USB_HID_DESCRIPTOR    *MouseHidDesc;
+  UINT8                     *ReportDesc;
+  EFI_USB_CONFIG_DESCRIPTOR ConfigDesc;
+  VOID                      *Buf;
+  UINT32                    TransferResult;
+  UINT16                    Total;
+  USB_DESC_HEAD             *Head;
+  BOOLEAN                   Start;
 
   UsbIo = UsbMouseAbsolutePointerDev->UsbIo;
 
   //
-  // Get HID descriptor
+  // Get the current configuration descriptor. Note that it doesn't include other descriptors.
   //
-  Status = UsbGetHidDescriptor (
-             UsbIo,
-             UsbMouseAbsolutePointerDev->InterfaceDescriptor.InterfaceNumber,
-             &MouseHidDesc
-             );
+  Status = UsbIo->UsbGetConfigDescriptor (
+                    UsbIo,
+                    &ConfigDesc
+                    );
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   //
-  // Get report descriptor
+  // By issuing Get_Descriptor(Configuration) request with total length, we get the Configuration descriptor,
+  // all Interface descriptors, all Endpoint descriptors, and the HID descriptor for each interface.
   //
-  if (MouseHidDesc.HidClassDesc[0].DescriptorType != USB_DESC_TYPE_REPORT) {
+  Buf = AllocateZeroPool (ConfigDesc.TotalLength);
+  if (Buf == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = UsbGetDescriptor (
+             UsbIo,
+             (UINT16)((USB_DESC_TYPE_CONFIG << 8) | (ConfigDesc.ConfigurationValue - 1)),
+             0,
+             ConfigDesc.TotalLength,
+             Buf,
+             &TransferResult
+             );
+  if (EFI_ERROR (Status)) {
+    FreePool (Buf);
+    return Status;
+  }
+
+  Total = 0;
+  Start = FALSE;
+  Head  = (USB_DESC_HEAD *)Buf;  
+  MouseHidDesc = NULL;
+
+  //
+  // Get HID descriptor from the receipt of Get_Descriptor(Configuration) request.
+  // This algorithm is based on the fact that the HID descriptor shall be interleaved
+  // between the interface and endpoint descriptors for HID interfaces.
+  //
+  while (Total < ConfigDesc.TotalLength) {
+    if (Head->Type == USB_DESC_TYPE_INTERFACE) {
+      if ((((USB_INTERFACE_DESCRIPTOR *)Head)->InterfaceNumber == UsbMouseAbsolutePointerDev->InterfaceDescriptor.InterfaceNumber) &&
+        (((USB_INTERFACE_DESCRIPTOR *)Head)->AlternateSetting == UsbMouseAbsolutePointerDev->InterfaceDescriptor.AlternateSetting)) {
+        Start = TRUE;
+      }
+    }
+    if (Start && (Head->Type == USB_DESC_TYPE_ENDPOINT)) {
+      break;
+    }
+    if (Start && (Head->Type == USB_DESC_TYPE_HID)) {
+      MouseHidDesc = (EFI_USB_HID_DESCRIPTOR *)Head;
+      break;
+    }
+    Total = Total + (UINT16)Head->Len;
+    Head  = (USB_DESC_HEAD*)((UINT8 *)Buf + Total);
+  }
+
+  if (MouseHidDesc == NULL) {
+    FreePool (Buf);
     return EFI_UNSUPPORTED;
   }
 
-  ReportDesc = AllocateZeroPool (MouseHidDesc.HidClassDesc[0].DescriptorLength);
+  //
+  // Get report descriptor
+  //
+  if (MouseHidDesc->HidClassDesc[0].DescriptorType != USB_DESC_TYPE_REPORT) {
+    FreePool (Buf);
+    return EFI_UNSUPPORTED;
+  }
+
+  ReportDesc = AllocateZeroPool (MouseHidDesc->HidClassDesc[0].DescriptorLength);
   ASSERT (ReportDesc != NULL);
 
   Status = UsbGetReportDescriptor (
              UsbIo,
              UsbMouseAbsolutePointerDev->InterfaceDescriptor.InterfaceNumber,
-             MouseHidDesc.HidClassDesc[0].DescriptorLength,
+             MouseHidDesc->HidClassDesc[0].DescriptorLength,
              ReportDesc
              );
 
   if (EFI_ERROR (Status)) {
+    FreePool (Buf);
     FreePool (ReportDesc);
     return Status;
   }
@@ -571,10 +657,11 @@ InitializeUsbMouseDevice (
   Status = ParseMouseReportDescriptor (
              UsbMouseAbsolutePointerDev,
              ReportDesc,
-             MouseHidDesc.HidClassDesc[0].DescriptorLength
+             MouseHidDesc->HidClassDesc[0].DescriptorLength
              );
 
   if (EFI_ERROR (Status)) {
+    FreePool (Buf);
     FreePool (ReportDesc);
     return Status;
   }
@@ -604,28 +691,13 @@ InitializeUsbMouseDevice (
                );
 
     if (EFI_ERROR (Status)) {
+      FreePool (Buf);
       FreePool (ReportDesc);
       return Status;
     }
   }
 
-  //
-  // ReportId is zero, which means the idle rate applies to all input reports.
-  //
-  ReportId = 0;
-  //
-  // Duration is zero, which means the duration is infinite.
-  // so the endpoint will inhibit reporting forever,
-  // and only reporting when a change is detected in the report data.
-  //
-  Duration = 0;
-  UsbSetIdleRequest (
-    UsbIo,
-    UsbMouseAbsolutePointerDev->InterfaceDescriptor.InterfaceNumber,
-    ReportId,
-    Duration
-    );
-
+  FreePool (Buf);
   FreePool (ReportDesc);
 
   //

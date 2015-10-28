@@ -1,7 +1,7 @@
 /** @file
   SMM IPL that produces SMM related runtime protocols and load the SMM Core into SMRAM
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials are licensed and made available 
   under the terms and conditions of the BSD License which accompanies this 
   distribution.  The full text of the license may be found at        
@@ -263,6 +263,12 @@ SMM_IPL_EVENT_NOTIFICATION  mSmmIplEvents[] = {
   //
   { TRUE,  TRUE,  &gEfiDxeSmmReadyToLockProtocolGuid, SmmIplReadyToLockEventNotify,      &gEfiDxeSmmReadyToLockProtocolGuid, TPL_CALLBACK, NULL },
   //
+  // Declare event notification on EndOfDxe event.  When this notification is etablished, 
+  // the associated event is immediately signalled, so the notification function will be executed and the 
+  // SMM End Of Dxe Protocol will be found if it is already in the handle database.
+  //
+  { FALSE, FALSE,  &gEfiEndOfDxeEventGroupGuid,        SmmIplGuidedEventNotify,           &gEfiEndOfDxeEventGroupGuid,        TPL_CALLBACK, NULL },
+  //
   // Declare event notification on the DXE Dispatch Event Group.  This event is signaled by the DXE Core
   // each time the DXE Core dispatcher has completed its work.  When this event is signalled, the SMM Core
   // if notified, so the SMM Core can dispatch SMM drivers.
@@ -504,7 +510,7 @@ SmmCommunicationCommunicate (
   //
   gSmmCorePrivate->InSmm = OldInSmm;
 
-  return (Status == EFI_WARN_INTERRUPT_SOURCE_QUIESCED) ? EFI_SUCCESS : EFI_NOT_FOUND;
+  return (Status == EFI_SUCCESS) ? EFI_SUCCESS : EFI_NOT_FOUND;
 }
 
 /**
@@ -946,7 +952,7 @@ ExecuteSmmCoreFromSmram (
   }
   
   ImageContext.ImageAddress += ImageContext.SectionAlignment - 1;
-  ImageContext.ImageAddress &= ~(ImageContext.SectionAlignment - 1);
+  ImageContext.ImageAddress &= ~((EFI_PHYSICAL_ADDRESS)(ImageContext.SectionAlignment - 1));
 
   //
   // Print debug message showing SMM Core load address.
@@ -972,6 +978,13 @@ ExecuteSmmCoreFromSmram (
       // Print debug message showing SMM Core entry point address.
       //
       DEBUG ((DEBUG_INFO, "SMM IPL calling SMM Core at SMRAM address %p\n", (VOID *)(UINTN)ImageContext.EntryPoint));
+
+      gSmmCorePrivate->PiSmmCoreImageBase = ImageContext.ImageAddress;
+      gSmmCorePrivate->PiSmmCoreImageSize = ImageContext.ImageSize;
+      DEBUG ((DEBUG_INFO, "PiSmmCoreImageBase - 0x%016lx\n", gSmmCorePrivate->PiSmmCoreImageBase));
+      DEBUG ((DEBUG_INFO, "PiSmmCoreImageSize - 0x%016lx\n", gSmmCorePrivate->PiSmmCoreImageSize));
+
+      gSmmCorePrivate->PiSmmCoreEntryPoint = ImageContext.EntryPoint;
 
       //
       // Execute image
@@ -1069,6 +1082,14 @@ SmmIplEntry (
   ASSERT_EFI_ERROR (Status);
 
   gSmmCorePrivate->SmramRangeCount = Size / sizeof (EFI_SMRAM_DESCRIPTOR);
+
+  //
+  // Save a full copy
+  //
+  gSmmCorePrivate->FullSmramRangeCount = gSmmCorePrivate->SmramRangeCount;
+  gSmmCorePrivate->FullSmramRanges = (EFI_SMRAM_DESCRIPTOR *) AllocatePool (Size);
+  ASSERT (gSmmCorePrivate->FullSmramRanges != NULL);
+  CopyMem (gSmmCorePrivate->FullSmramRanges, gSmmCorePrivate->SmramRanges, Size);
 
   //
   // Open all SMRAM ranges

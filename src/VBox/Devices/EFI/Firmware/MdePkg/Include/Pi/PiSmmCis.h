@@ -2,7 +2,7 @@
   Common definitions in the Platform Initialization Specification version 1.2
   VOLUME 4 System Management Mode Core Interface version.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -29,7 +29,7 @@ typedef struct _EFI_SMM_SYSTEM_TABLE2  EFI_SMM_SYSTEM_TABLE2;
 /// The System Management System Table (SMST) revision is 1.2
 ///
 #define SMM_SPECIFICATION_MAJOR_REVISION  1
-#define SMM_SPECIFICATION_MINOR_REVISION  20
+#define SMM_SPECIFICATION_MINOR_REVISION  30
 #define EFI_SMM_SYSTEM_TABLE2_REVISION    ((SMM_SPECIFICATION_MAJOR_REVISION<<16) | (SMM_SPECIFICATION_MINOR_REVISION))
 
 /**
@@ -106,6 +106,7 @@ EFI_STATUS
   The SmmRegisterProtocolNotify() function creates a registration Function that is to be 
   called whenever a protocol interface is installed for Protocol by 
   SmmInstallProtocolInterface().
+  If Function == NULL and Registration is an existing registration, then the callback is unhooked.
 
   @param[in]  Protocol          The unique ID of the protocol for which the event is to be registered.
   @param[in]  Function          Points to the notification function.
@@ -114,6 +115,7 @@ EFI_STATUS
   @retval EFI_SUCCESS           Successfully returned the registration record that has been added.
   @retval EFI_INVALID_PARAMETER One or more of Protocol, Function and Registration is NULL.
   @retval EFI_OUT_OF_RESOURCES  Not enough memory resource to finish the request.
+  @retval EFI_NOT_FOUND         If the registration is not found when Function == NULL.
 **/
 typedef
 EFI_STATUS
@@ -131,10 +133,10 @@ EFI_STATUS
   @param[in,out] CommBuffer      Points to the optional communication buffer.
   @param[in,out] CommBufferSize  Points to the size of the optional communication buffer.
 
-  @retval EFI_SUCCESS                        Interrupt source was processed successfully but not quiesced.
+  @retval EFI_WARN_INTERRUPT_SOURCE_PENDING  Interrupt source was processed successfully but not quiesced.
   @retval EFI_INTERRUPT_PENDING              One or more SMI sources could not be quiesced.
-  @retval EFI_WARN_INTERRUPT_SOURCE_PENDING  Interrupt source was not handled or quiesced.
-  @retval EFI_WARN_INTERRUPT_SOURCE_QUIESCED Interrupt source was handled and quiesced.
+  @retval EFI_NOT_FOUND                      Interrupt source was not handled or quiesced.
+  @retval EFI_SUCCESS                        Interrupt source was handled and quiesced.
 **/
 typedef
 EFI_STATUS
@@ -216,7 +218,7 @@ typedef struct _EFI_SMM_ENTRY_CONTEXT {
   ///
   UINTN                    CurrentlyExecutingCpu;
   ///
-  /// The number of current operational processors in the platform.  This is a 1 based 
+  /// The number of possible processors in the platform.  This is a 1 based 
   /// counter.  This does not indicate the number of processors that entered SMM.
   ///
   UINTN                    NumberOfCpus;
@@ -297,7 +299,7 @@ struct _EFI_SMM_SYSTEM_TABLE2 {
   ///
   UINTN                                CurrentlyExecutingCpu;
   ///
-  /// The number of current operational processors in the platform.  This is a 1 based counter.
+  /// The number of possible processors in the platform.  This is a 1 based counter.
   ///
   UINTN                                NumberOfCpus;
   ///

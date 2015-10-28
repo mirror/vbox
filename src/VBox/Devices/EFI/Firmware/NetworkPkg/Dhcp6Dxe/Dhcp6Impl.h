@@ -1,7 +1,7 @@
 /** @file
   Dhcp6 internal data structure and definition declaration.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -21,6 +21,7 @@
 
 #include <Protocol/Dhcp6.h>
 #include <Protocol/Udp6.h>
+#include <Protocol/Ip6Config.h>
 #include <Protocol/ServiceBinding.h>
 #include <Protocol/DriverBinding.h>
 
@@ -33,6 +34,7 @@
 #include <Library/UefiLib.h>
 #include <Library/BaseLib.h>
 #include <Library/NetLib.h>
+#include <Library/PrintLib.h>
 
 
 typedef struct _DHCP6_IA_CB    DHCP6_IA_CB;
@@ -244,9 +246,13 @@ struct _DHCP6_INSTANCE {
   EFI_DHCP6_PACKET              *AdSelect;
   UINT8                         AdPref;
   EFI_IPv6_ADDRESS              *Unicast;
-  EFI_STATUS                    UdpSts;
-  BOOLEAN                       InDestory;
+  volatile EFI_STATUS           UdpSts;
+  BOOLEAN                       InDestroy;
   BOOLEAN                       MediaPresent;
+  //
+  // StartTime is used to calculate the 'elapsed-time' option. Refer to RFC3315,
+  // the elapsed-time is amount of time since the client began its current DHCP transaction. 
+  //
   UINT64                        StartTime;
 };
 
@@ -259,12 +265,12 @@ struct _DHCP6_SERVICE {
   EFI_HANDLE                    Image;
   EFI_SERVICE_BINDING_PROTOCOL  ServiceBinding;
   EFI_SIMPLE_NETWORK_PROTOCOL   *Snp;
+  EFI_IP6_CONFIG_PROTOCOL       *Ip6Cfg;
   EFI_DHCP6_DUID                *ClientId;
   UDP_IO                        *UdpIo;
   UINT32                        Xid;
   LIST_ENTRY                    Child;
   UINTN                         NumOfChild;
-  BOOLEAN                       InDestory;
 };
 
 /**

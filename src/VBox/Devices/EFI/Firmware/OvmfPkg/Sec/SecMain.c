@@ -1,7 +1,7 @@
 /** @file
   Main SEC phase code.  Transitions to PEI.
 
-  Copyright (c) 2008 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2008 - 2013, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -128,9 +128,13 @@ FindMainFv (
   Locates a section within a series of sections
   with the specified section type.
 
+  The Instance parameter indicates which instance of the section
+  type to return. (0 is first instance, 1 is second...)
+
   @param[in]   Sections        The sections to search
   @param[in]   SizeOfSections  Total size of all sections
   @param[in]   SectionType     The section type to locate
+  @param[in]   Instance        The section instance number
   @param[out]  FoundSection    The FFS section if found
 
   @retval EFI_SUCCESS           The file and section was found
@@ -139,10 +143,11 @@ FindMainFv (
 
 **/
 EFI_STATUS
-FindFfsSectionInSections (
+FindFfsSectionInstance (
   IN  VOID                             *Sections,
   IN  UINTN                            SizeOfSections,
   IN  EFI_SECTION_TYPE                 SectionType,
+  IN  UINTN                            Instance,
   OUT EFI_COMMON_SECTION_HEADER        **FoundSection
   )
 {
@@ -167,7 +172,6 @@ FindFfsSectionInSections (
     }
 
     Section = (EFI_COMMON_SECTION_HEADER*)(UINTN) CurrentAddress;
-    DEBUG ((EFI_D_INFO, "Section->Type: 0x%x\n", Section->Type));
 
     Size = SECTION_SIZE (Section);
     if (Size < sizeof (*Section)) {
@@ -183,13 +187,47 @@ FindFfsSectionInSections (
     // Look for the requested section type
     //
     if (Section->Type == SectionType) {
-      *FoundSection = Section;
-      return EFI_SUCCESS;
+      if (Instance == 0) {
+        *FoundSection = Section;
+        return EFI_SUCCESS;
+      } else {
+        Instance--;
+      }
     }
-    DEBUG ((EFI_D_INFO, "Section->Type (0x%x) != SectionType (0x%x)\n", Section->Type, SectionType));
   }
 
   return EFI_NOT_FOUND;
+}
+
+/**
+  Locates a section within a series of sections
+  with the specified section type.
+
+  @param[in]   Sections        The sections to search
+  @param[in]   SizeOfSections  Total size of all sections
+  @param[in]   SectionType     The section type to locate
+  @param[out]  FoundSection    The FFS section if found
+
+  @retval EFI_SUCCESS           The file and section was found
+  @retval EFI_NOT_FOUND         The file and section was not found
+  @retval EFI_VOLUME_CORRUPTED  The firmware volume was corrupted
+
+**/
+EFI_STATUS
+FindFfsSectionInSections (
+  IN  VOID                             *Sections,
+  IN  UINTN                            SizeOfSections,
+  IN  EFI_SECTION_TYPE                 SectionType,
+  OUT EFI_COMMON_SECTION_HEADER        **FoundSection
+  )
+{
+  return FindFfsSectionInstance (
+           Sections,
+           SizeOfSections,
+           SectionType,
+           0,
+           FoundSection
+           );
 }
 
 /**
@@ -207,7 +245,6 @@ FindFfsSectionInSections (
 
 **/
 EFI_STATUS
-EFIAPI
 FindFfsFileAndSection (
   IN  EFI_FIRMWARE_VOLUME_HEADER       *Fv,
   IN  EFI_FV_FILETYPE                  FileType,
@@ -223,7 +260,7 @@ FindFfsFileAndSection (
   EFI_PHYSICAL_ADDRESS        EndOfFile;
 
   if (Fv->Signature != EFI_FVH_SIGNATURE) {
-    DEBUG ((EFI_D_INFO, "FV at %p does not have FV header signature\n", Fv));
+    DEBUG ((EFI_D_ERROR, "FV at %p does not have FV header signature\n", Fv));
     return EFI_VOLUME_CORRUPTED;
   }
 
@@ -245,7 +282,6 @@ FindFfsFileAndSection (
     if (Size < (sizeof (*File) + sizeof (EFI_COMMON_SECTION_HEADER))) {
       return EFI_VOLUME_CORRUPTED;
     }
-    DEBUG ((EFI_D_INFO, "File->Type: 0x%x\n", File->Type));
 
     EndOfFile = CurrentAddress + Size;
     if (EndOfFile > EndOfFirmwareVolume) {
@@ -256,7 +292,6 @@ FindFfsFileAndSection (
     // Look for the request file type
     //
     if (File->Type != FileType) {
-      DEBUG ((EFI_D_INFO, "File->Type (0x%x) != FileType (0x%x)\n", File->Type, FileType));
       continue;
     }
 
@@ -276,7 +311,7 @@ FindFfsFileAndSection (
   Locates the compressed main firmware volume and decompresses it.
 
   @param[in,out]  Fv            On input, the firmware volume to search
-                                On output, the decompressed main FV
+                                On output, the decompressed BOOT/PEI FV
 
   @retval EFI_SUCCESS           The file and section was found
   @retval EFI_NOT_FOUND         The file and section was not found
@@ -284,8 +319,7 @@ FindFfsFileAndSection (
 
 **/
 EFI_STATUS
-EFIAPI
-DecompressGuidedFv (
+DecompressMemFvs (
   IN OUT EFI_FIRMWARE_VOLUME_HEADER       **Fv
   )
 {
@@ -297,10 +331,11 @@ DecompressGuidedFv (
   UINT32                            AuthenticationStatus;
   VOID                              *OutputBuffer;
   VOID                              *ScratchBuffer;
-  EFI_FIRMWARE_VOLUME_IMAGE_SECTION *NewFvSection;
-  EFI_FIRMWARE_VOLUME_HEADER        *NewFv;
+  EFI_FIRMWARE_VOLUME_IMAGE_SECTION *FvSection;
+  EFI_FIRMWARE_VOLUME_HEADER        *PeiMemFv;
+  EFI_FIRMWARE_VOLUME_HEADER        *DxeMemFv;
 
-  NewFvSection = (EFI_FIRMWARE_VOLUME_IMAGE_SECTION*) NULL;
+  FvSection = (EFI_FIRMWARE_VOLUME_IMAGE_SECTION*) NULL;
 
   Status = FindFfsFileAndSection (
              *Fv,
@@ -324,8 +359,7 @@ DecompressGuidedFv (
     return Status;
   }
 
-  //PcdGet32 (PcdOvmfMemFvBase), PcdGet32 (PcdOvmfMemFvSize)
-  OutputBuffer = (VOID*) ((UINT8*)(UINTN) PcdGet32 (PcdOvmfMemFvBase) + SIZE_1MB);
+  OutputBuffer = (VOID*) ((UINT8*)(UINTN) PcdGet32 (PcdOvmfDxeMemFvBase) + SIZE_1MB);
   ScratchBuffer = ALIGN_POINTER ((UINT8*) OutputBuffer + OutputBufferSize, SIZE_1MB);
   Status = ExtractGuidedSectionDecode (
              Section,
@@ -338,27 +372,57 @@ DecompressGuidedFv (
     return Status;
   }
 
-  Status = FindFfsSectionInSections (
+  Status = FindFfsSectionInstance (
              OutputBuffer,
              OutputBufferSize,
              EFI_SECTION_FIRMWARE_VOLUME_IMAGE,
-             (EFI_COMMON_SECTION_HEADER**) &NewFvSection
+             0,
+             (EFI_COMMON_SECTION_HEADER**) &FvSection
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "Unable to find FV image in extracted data\n"));
+    DEBUG ((EFI_D_ERROR, "Unable to find PEI FV section\n"));
     return Status;
   }
 
-  NewFv = (EFI_FIRMWARE_VOLUME_HEADER*)(UINTN) PcdGet32 (PcdOvmfMemFvBase);
-  CopyMem (NewFv, (VOID*) (NewFvSection + 1), PcdGet32 (PcdOvmfMemFvSize));
+  ASSERT (SECTION_SIZE (FvSection) ==
+          (PcdGet32 (PcdOvmfPeiMemFvSize) + sizeof (*FvSection)));
+  ASSERT (FvSection->Type == EFI_SECTION_FIRMWARE_VOLUME_IMAGE);
 
-  if (NewFv->Signature != EFI_FVH_SIGNATURE) {
-    DEBUG ((EFI_D_ERROR, "Extracted FV at %p does not have FV header signature\n", NewFv));
+  PeiMemFv = (EFI_FIRMWARE_VOLUME_HEADER*)(UINTN) PcdGet32 (PcdOvmfPeiMemFvBase);
+  CopyMem (PeiMemFv, (VOID*) (FvSection + 1), PcdGet32 (PcdOvmfPeiMemFvSize));
+
+  if (PeiMemFv->Signature != EFI_FVH_SIGNATURE) {
+    DEBUG ((EFI_D_ERROR, "Extracted FV at %p does not have FV header signature\n", PeiMemFv));
     CpuDeadLoop ();
     return EFI_VOLUME_CORRUPTED;
   }
 
-  *Fv = NewFv;
+  Status = FindFfsSectionInstance (
+             OutputBuffer,
+             OutputBufferSize,
+             EFI_SECTION_FIRMWARE_VOLUME_IMAGE,
+             1,
+             (EFI_COMMON_SECTION_HEADER**) &FvSection
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_ERROR, "Unable to find DXE FV section\n"));
+    return Status;
+  }
+
+  ASSERT (FvSection->Type == EFI_SECTION_FIRMWARE_VOLUME_IMAGE);
+  ASSERT (SECTION_SIZE (FvSection) ==
+          (PcdGet32 (PcdOvmfDxeMemFvSize) + sizeof (*FvSection)));
+
+  DxeMemFv = (EFI_FIRMWARE_VOLUME_HEADER*)(UINTN) PcdGet32 (PcdOvmfDxeMemFvBase);
+  CopyMem (DxeMemFv, (VOID*) (FvSection + 1), PcdGet32 (PcdOvmfDxeMemFvSize));
+
+  if (DxeMemFv->Signature != EFI_FVH_SIGNATURE) {
+    DEBUG ((EFI_D_ERROR, "Extracted FV at %p does not have FV header signature\n", DxeMemFv));
+    CpuDeadLoop ();
+    return EFI_VOLUME_CORRUPTED;
+  }
+
+  *Fv = PeiMemFv;
   return EFI_SUCCESS;
 }
 
@@ -374,7 +438,6 @@ DecompressGuidedFv (
 
 **/
 EFI_STATUS
-EFIAPI
 FindPeiCoreImageBaseInFv (
   IN  EFI_FIRMWARE_VOLUME_HEADER       *Fv,
   OUT  EFI_PHYSICAL_ADDRESS             *PeiCoreImageBase
@@ -406,6 +469,50 @@ FindPeiCoreImageBaseInFv (
   return EFI_SUCCESS;
 }
 
+
+/**
+  Reads 8-bits of CMOS data.
+
+  Reads the 8-bits of CMOS data at the location specified by Index.
+  The 8-bit read value is returned.
+
+  @param  Index  The CMOS location to read.
+
+  @return The value read.
+
+**/
+STATIC
+UINT8
+CmosRead8 (
+  IN      UINTN                     Index
+  )
+{
+  IoWrite8 (0x70, (UINT8) Index);
+  return IoRead8 (0x71);
+}
+
+
+STATIC
+BOOLEAN
+IsS3Resume (
+  VOID
+  )
+{
+  return (CmosRead8 (0xF) == 0xFE);
+}
+
+
+STATIC
+EFI_STATUS
+GetS3ResumePeiFv (
+  IN OUT EFI_FIRMWARE_VOLUME_HEADER       **PeiFv
+  )
+{
+  *PeiFv = (EFI_FIRMWARE_VOLUME_HEADER*)(UINTN) PcdGet32 (PcdOvmfPeiMemFvBase);
+  return EFI_SUCCESS;
+}
+
+
 /**
   Locates the PEI Core entry point address
 
@@ -418,7 +525,6 @@ FindPeiCoreImageBaseInFv (
 
 **/
 VOID
-EFIAPI
 FindPeiCoreImageBase (
   IN OUT  EFI_FIRMWARE_VOLUME_HEADER       **BootFv,
      OUT  EFI_PHYSICAL_ADDRESS             *PeiCoreImageBase
@@ -426,9 +532,15 @@ FindPeiCoreImageBase (
 {
   *PeiCoreImageBase = 0;
 
-  FindMainFv (BootFv);
+  if (IsS3Resume ()) {
+    DEBUG ((EFI_D_VERBOSE, "SEC: S3 resume\n"));
+    GetS3ResumePeiFv (BootFv);
+  } else {
+    DEBUG ((EFI_D_VERBOSE, "SEC: Normal boot\n"));
+    FindMainFv (BootFv);
 
-  DecompressGuidedFv (BootFv);
+    DecompressMemFvs (BootFv);
+  }
 
   FindPeiCoreImageBaseInFv (*BootFv, PeiCoreImageBase);
 }
@@ -438,7 +550,6 @@ FindPeiCoreImageBase (
 
 **/
 EFI_STATUS
-EFIAPI
 FindImageBase (
   IN  EFI_FIRMWARE_VOLUME_HEADER       *BootFirmwareVolumePtr,
   OUT EFI_PHYSICAL_ADDRESS             *SecCoreImageBase
@@ -531,7 +642,6 @@ FindImageBase (
 
 **/
 VOID
-EFIAPI
 FindAndReportEntryPoints (
   IN  EFI_FIRMWARE_VOLUME_HEADER       **BootFirmwareVolumePtr,
   OUT EFI_PEI_CORE_ENTRY_POINT         *PeiCoreEntryPoint
@@ -590,7 +700,7 @@ SecCoreStartupWithStack (
 
   ProcessLibraryConstructorList (NULL, NULL);
 
-  DEBUG ((EFI_D_ERROR,
+  DEBUG ((EFI_D_INFO,
     "SecCoreStartupWithStack(0x%x, 0x%x)\n",
     (UINT32)(UINTN)BootFv,
     (UINT32)(UINTN)TopOfCurrentStack
@@ -615,6 +725,14 @@ SecCoreStartupWithStack (
 
   AsmWriteIdtr (&IdtDescriptor);
 
+#if defined (MDE_CPU_X64)
+  //
+  // ASSERT that the Page Tables were set by the reset vector code to
+  // the address we expect.
+  //
+  ASSERT (AsmReadCr3 () == (UINTN) PcdGet32 (PcdOvmfSecPageTablesBase));
+#endif
+
   //
   // |-------------|       <-- TopOfCurrentStack
   // |   Stack     | 32k
@@ -623,12 +741,16 @@ SecCoreStartupWithStack (
   // |-------------|       <-- SecCoreData.TemporaryRamBase
   //
 
+  ASSERT ((UINTN) (PcdGet32 (PcdOvmfSecPeiTempRamBase) +
+                   PcdGet32 (PcdOvmfSecPeiTempRamSize)) ==
+          (UINTN) TopOfCurrentStack);
+
   //
   // Initialize SEC hand-off state
   //
   SecCoreData.DataSize = sizeof(EFI_SEC_PEI_HAND_OFF);
 
-  SecCoreData.TemporaryRamSize       = SIZE_64KB;
+  SecCoreData.TemporaryRamSize       = (UINTN) PcdGet32 (PcdOvmfSecPeiTempRamSize);
   SecCoreData.TemporaryRamBase       = (VOID*)((UINT8 *)TopOfCurrentStack - SecCoreData.TemporaryRamSize);
 
   SecCoreData.PeiTemporaryRamBase    = SecCoreData.TemporaryRamBase;
@@ -713,7 +835,12 @@ TemporaryRamMigration (
   BOOLEAN                          OldStatus;
   BASE_LIBRARY_JUMP_BUFFER         JumpBuffer;
   
-  DEBUG ((EFI_D_ERROR, "TemporaryRamMigration(0x%x, 0x%x, 0x%x)\n", (UINTN)TemporaryMemoryBase, (UINTN)PermanentMemoryBase, CopySize));
+  DEBUG ((EFI_D_INFO,
+    "TemporaryRamMigration(0x%x, 0x%x, 0x%x)\n",
+    (UINTN) TemporaryMemoryBase,
+    (UINTN) PermanentMemoryBase,
+    CopySize
+    ));
   
   OldHeap = (VOID*)(UINTN)TemporaryMemoryBase;
   NewHeap = (VOID*)((UINTN)PermanentMemoryBase + (CopySize >> 1));

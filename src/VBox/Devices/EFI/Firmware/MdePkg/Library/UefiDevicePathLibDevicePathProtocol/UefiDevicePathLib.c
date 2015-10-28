@@ -2,7 +2,7 @@
   Library instance that implement UEFI Device Path Library class based on protocol
   gEfiDevicePathUtilitiesProtocolGuid.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -17,6 +17,8 @@
 #include <Uefi.h>
 
 #include <Protocol/DevicePathUtilities.h>
+#include <Protocol/DevicePathToText.h>
+#include <Protocol/DevicePathFromText.h>
 
 #include <Library/DevicePathLib.h>
 #include <Library/DebugLib.h>
@@ -24,8 +26,11 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/PcdLib.h>
 
-EFI_DEVICE_PATH_UTILITIES_PROTOCOL          *mDevicePathUtilities = NULL;
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_DEVICE_PATH_UTILITIES_PROTOCOL *mDevicePathLibDevicePathUtilities = NULL;
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_DEVICE_PATH_TO_TEXT_PROTOCOL   *mDevicePathLibDevicePathToText    = NULL;
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_DEVICE_PATH_FROM_TEXT_PROTOCOL *mDevicePathLibDevicePathFromText  = NULL;
 
 //
 // Template for an end-of-device path node.
@@ -63,12 +68,66 @@ DevicePathLibConstructor (
   Status = gBS->LocateProtocol (
                   &gEfiDevicePathUtilitiesProtocolGuid,
                   NULL,
-                  (VOID**) &mDevicePathUtilities
+                  (VOID**) &mDevicePathLibDevicePathUtilities
                   );
   ASSERT_EFI_ERROR (Status);
-  ASSERT (mDevicePathUtilities != NULL);
-
+  ASSERT (mDevicePathLibDevicePathUtilities != NULL);
   return Status;
+}
+
+/**
+  Determine whether a given device path is valid.
+  If DevicePath is NULL, then ASSERT().
+
+  @param  DevicePath  A pointer to a device path data structure.
+  @param  MaxSize     The maximum size of the device path data structure.
+
+  @retval TRUE        DevicePath is valid.
+  @retval FALSE       The length of any node node in the DevicePath is less
+                      than sizeof (EFI_DEVICE_PATH_PROTOCOL).
+  @retval FALSE       If MaxSize is not zero, the size of the DevicePath
+                      exceeds MaxSize.
+  @retval FALSE       If PcdMaximumDevicePathNodeCount is not zero, the node
+                      count of the DevicePath exceeds PcdMaximumDevicePathNodeCount.
+**/
+BOOLEAN
+EFIAPI
+IsDevicePathValid (
+  IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath,
+  IN       UINTN                    MaxSize
+  )
+{
+  UINTN Count;
+  UINTN Size;
+  UINTN NodeLength;
+
+  ASSERT (DevicePath != NULL);
+
+  for (Count = 0, Size = 0; !IsDevicePathEnd (DevicePath); DevicePath = NextDevicePathNode (DevicePath)) {
+    NodeLength = DevicePathNodeLength (DevicePath);
+    if (NodeLength < sizeof (EFI_DEVICE_PATH_PROTOCOL)) {
+      return FALSE;
+    }
+
+    if (MaxSize > 0) {
+      Size += NodeLength;
+      if (Size + END_DEVICE_PATH_LENGTH > MaxSize) {
+        return FALSE;
+      }
+    }
+
+    if (PcdGet32 (PcdMaximumDevicePathNodeCount) > 0) {
+      Count++;
+      if (Count >= PcdGet32 (PcdMaximumDevicePathNodeCount)) {
+        return FALSE;
+      }
+    }
+  }
+
+  //
+  // Only return TRUE when the End Device Path node is valid.
+  //
+  return (BOOLEAN) (DevicePathNodeLength (DevicePath) == END_DEVICE_PATH_LENGTH);
 }
 
 /**
@@ -256,7 +315,8 @@ IsDevicePathEndInstance (
   be used to set the contents of the Length field.
 
   If Node is NULL, then ASSERT().
-  If NodeLength >= 0x10000, then ASSERT().
+  If NodeLength >= SIZE_64KB, then ASSERT().
+  If NodeLength < sizeof (EFI_DEVICE_PATH_PROTOCOL), then ASSERT().
 
   @param  Node      A pointer to a device path node data structure.
   @param  Length    The length, in bytes, of the device path node.
@@ -272,7 +332,7 @@ SetDevicePathNodeLength (
   )
 {
   ASSERT (Node != NULL);
-  ASSERT (Length < 0x10000);
+  ASSERT ((Length >= sizeof (EFI_DEVICE_PATH_PROTOCOL)) && (Length < SIZE_64KB));
   return WriteUnaligned16 ((UINT16 *)&((EFI_DEVICE_PATH_PROTOCOL *)(Node))->Length[0], (UINT16)(Length));
 }
 
@@ -305,13 +365,14 @@ SetDevicePathEndNode (
 /**
   Returns the size of a device path in bytes.
 
-  This function returns the size, in bytes, of the device path data structure specified by
-  DevicePath including the end of device path node.  If DevicePath is NULL, then 0 is returned.
+  This function returns the size, in bytes, of the device path data structure 
+  specified by DevicePath including the end of device path node.
+  If DevicePath is NULL or invalid, then 0 is returned.
 
-  @param  DevicePath                 A pointer to a device path data structure.
-  
-  @retval 0       If DevicePath is NULL.
-  @retval Others  The size of a device path in bytes.
+  @param  DevicePath  A pointer to a device path data structure.
+
+  @retval 0           If DevicePath is NULL or invalid.
+  @retval Others      The size of a device path in bytes.
 
 **/
 UINTN
@@ -320,7 +381,7 @@ GetDevicePathSize (
   IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath
   )
 {
-  return mDevicePathUtilities->GetDevicePathSize (DevicePath);
+  return mDevicePathLibDevicePathUtilities->GetDevicePathSize (DevicePath);
 }
 
 /**
@@ -336,7 +397,7 @@ GetDevicePathSize (
   
   @param  DevicePath                 A pointer to a device path data structure.
 
-  @retval NULL    If DevicePath is NULL.
+  @retval NULL    If DevicePath is NULL or invalid.
   @retval Others  A pointer to the duplicated device path.
   
 **/
@@ -346,7 +407,7 @@ DuplicateDevicePath (
   IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath
   )
 {
-  return mDevicePathUtilities->DuplicateDevicePath (DevicePath);
+  return mDevicePathLibDevicePathUtilities->DuplicateDevicePath (DevicePath);
 }
 
 /**
@@ -367,6 +428,7 @@ DuplicateDevicePath (
   @param  SecondDevicePath           A pointer to a device path data structure.
   
   @retval NULL      If there is not enough memory for the newly allocated buffer.
+  @retval NULL      If FirstDevicePath or SecondDevicePath is invalid.
   @retval Others    A pointer to the new device path if success.
                     Or a copy an end-of-device-path if both FirstDevicePath and 
                     SecondDevicePath are NULL.
@@ -379,7 +441,7 @@ AppendDevicePath (
   IN CONST EFI_DEVICE_PATH_PROTOCOL  *SecondDevicePath  OPTIONAL
   )
 {
-  return mDevicePathUtilities->AppendDevicePath (FirstDevicePath, SecondDevicePath);
+  return mDevicePathLibDevicePathUtilities->AppendDevicePath (FirstDevicePath, SecondDevicePath);
 }
 
 /**
@@ -417,7 +479,7 @@ AppendDevicePathNode (
   IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePathNode  OPTIONAL
   )
 {
-  return mDevicePathUtilities->AppendDeviceNode (DevicePath, DevicePathNode);
+  return mDevicePathLibDevicePathUtilities->AppendDeviceNode (DevicePath, DevicePathNode);
 }
 
 /**
@@ -431,6 +493,7 @@ AppendDevicePathNode (
   path instance and a new end-of-device-path-instance node is inserted between. 
   If DevicePath is NULL, then a copy if DevicePathInstance is returned.
   If DevicePathInstance is NULL, then NULL is returned.
+  If DevicePath or DevicePathInstance is invalid, then NULL is returned.
   If there is not enough memory to allocate space for the new device path, then 
   NULL is returned.   
   The memory is allocated from EFI boot services memory. It is the responsibility 
@@ -449,7 +512,7 @@ AppendDevicePathInstance (
   IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePathInstance OPTIONAL
   )
 {
-  return mDevicePathUtilities->AppendDevicePathInstance (DevicePath, DevicePathInstance);
+  return mDevicePathLibDevicePathUtilities->AppendDevicePathInstance (DevicePath, DevicePathInstance);
 }
 
 /**
@@ -487,7 +550,7 @@ GetNextDevicePathInstance (
   )
 {
   ASSERT (Size != NULL);
-  return mDevicePathUtilities->GetNextDevicePathInstance (DevicePath, Size);
+  return mDevicePathLibDevicePathUtilities->GetNextDevicePathInstance (DevicePath, Size);
 }
 
 /**
@@ -500,8 +563,7 @@ GetNextDevicePathInstance (
   If there is not enough memory to allocate space for the new device path, then 
   NULL is returned.  
   The memory is allocated from EFI boot services memory. It is the responsibility 
-  of the caller to
-  free the memory allocated.
+  of the caller to free the memory allocated.
 
   @param  NodeType                   The device node type for the new device node.
   @param  NodeSubType                The device node sub-type for the new device node.
@@ -518,21 +580,22 @@ CreateDeviceNode (
   IN UINT16                          NodeLength
   )
 {
-  return mDevicePathUtilities->CreateDeviceNode (NodeType, NodeSubType, NodeLength);
+  return mDevicePathLibDevicePathUtilities->CreateDeviceNode (NodeType, NodeSubType, NodeLength);
 }
 
 /**
   Determines if a device path is single or multi-instance.
 
-  This function returns TRUE if the device path specified by DevicePath is 
+  This function returns TRUE if the device path specified by DevicePath is
   multi-instance.
-  Otherwise, FALSE is returned.  If DevicePath is NULL, then FALSE is returned.
+  Otherwise, FALSE is returned.
+  If DevicePath is NULL or invalid, then FALSE is returned.
 
   @param  DevicePath                 A pointer to a device path data structure.
 
   @retval  TRUE                      DevicePath is multi-instance.
-  @retval  FALSE                     DevicePath is not multi-instance or DevicePath 
-                                     is NULL.
+  @retval  FALSE                     DevicePath is not multi-instance, or DevicePath 
+                                     is NULL or invalid.
 
 **/
 BOOLEAN
@@ -541,7 +604,7 @@ IsDevicePathMultiInstance (
   IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath
   )
 {
-  return mDevicePathUtilities->IsDevicePathMultiInstance (DevicePath);
+  return mDevicePathLibDevicePathUtilities->IsDevicePathMultiInstance (DevicePath);
 }
 
 /**
@@ -633,3 +696,151 @@ FileDevicePath (
 
   return DevicePath;
 }
+
+/**
+  Locate and return the protocol instance identified by the ProtocolGuid.
+
+  @param ProtocolGuid     The GUID of the protocol.
+
+  @return A pointer to the protocol instance or NULL when absent.
+**/
+VOID *
+UefiDevicePathLibLocateProtocol (
+  EFI_GUID                         *ProtocolGuid
+  )
+{
+  EFI_STATUS Status;
+  VOID       *Protocol;
+  Status = gBS->LocateProtocol (
+                  ProtocolGuid,
+                  NULL,
+                  (VOID**) &Protocol
+                  );
+  if (EFI_ERROR (Status)) {
+    return NULL;
+  } else {
+    return Protocol;
+  }
+}
+
+/**
+  Converts a device node to its string representation.
+
+  @param DeviceNode        A Pointer to the device node to be converted.
+  @param DisplayOnly       If DisplayOnly is TRUE, then the shorter text representation
+                           of the display node is used, where applicable. If DisplayOnly
+                           is FALSE, then the longer text representation of the display node
+                           is used.
+  @param AllowShortcuts    If AllowShortcuts is TRUE, then the shortcut forms of text
+                           representation for a device node can be used, where applicable.
+
+  @return A pointer to the allocated text representation of the device node or NULL if DeviceNode
+          is NULL or there was insufficient memory.
+
+**/
+CHAR16 *
+EFIAPI
+ConvertDeviceNodeToText (
+  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DeviceNode,
+  IN BOOLEAN                         DisplayOnly,
+  IN BOOLEAN                         AllowShortcuts
+  )
+{
+  if (mDevicePathLibDevicePathToText == NULL) {
+    mDevicePathLibDevicePathToText = UefiDevicePathLibLocateProtocol (&gEfiDevicePathToTextProtocolGuid);
+  }
+  if (mDevicePathLibDevicePathToText != NULL) {
+    return mDevicePathLibDevicePathToText->ConvertDeviceNodeToText (DeviceNode, DisplayOnly, AllowShortcuts);
+  } else {
+    return NULL;
+  }
+}
+
+/**
+  Converts a device path to its text representation.
+
+  @param DevicePath      A Pointer to the device to be converted.
+  @param DisplayOnly     If DisplayOnly is TRUE, then the shorter text representation
+                         of the display node is used, where applicable. If DisplayOnly
+                         is FALSE, then the longer text representation of the display node
+                         is used.
+  @param AllowShortcuts  If AllowShortcuts is TRUE, then the shortcut forms of text
+                         representation for a device node can be used, where applicable.
+
+  @return A pointer to the allocated text representation of the device path or
+          NULL if DeviceNode is NULL or there was insufficient memory.
+
+**/
+CHAR16 *
+EFIAPI
+ConvertDevicePathToText (
+  IN CONST EFI_DEVICE_PATH_PROTOCOL   *DevicePath,
+  IN BOOLEAN                          DisplayOnly,
+  IN BOOLEAN                          AllowShortcuts
+  )
+{
+  if (mDevicePathLibDevicePathToText == NULL) {
+    mDevicePathLibDevicePathToText = UefiDevicePathLibLocateProtocol (&gEfiDevicePathToTextProtocolGuid);
+  }
+  if (mDevicePathLibDevicePathToText != NULL) {
+    return mDevicePathLibDevicePathToText->ConvertDevicePathToText (DevicePath, DisplayOnly, AllowShortcuts);
+  } else {
+    return NULL;
+  }
+}
+
+/**
+  Convert text to the binary representation of a device node.
+
+  @param TextDeviceNode  TextDeviceNode points to the text representation of a device
+                         node. Conversion starts with the first character and continues
+                         until the first non-device node character.
+
+  @return A pointer to the EFI device node or NULL if TextDeviceNode is NULL or there was
+          insufficient memory or text unsupported.
+
+**/
+EFI_DEVICE_PATH_PROTOCOL *
+EFIAPI
+ConvertTextToDeviceNode (
+  IN CONST CHAR16 *TextDeviceNode
+  )
+{
+  if (mDevicePathLibDevicePathFromText == NULL) {
+    mDevicePathLibDevicePathFromText = UefiDevicePathLibLocateProtocol (&gEfiDevicePathFromTextProtocolGuid);
+  }
+  if (mDevicePathLibDevicePathFromText != NULL) {
+    return mDevicePathLibDevicePathFromText->ConvertTextToDeviceNode (TextDeviceNode);
+  } else {
+    return NULL;
+  }
+}
+
+/**
+  Convert text to the binary representation of a device path.
+
+
+  @param TextDevicePath  TextDevicePath points to the text representation of a device
+                         path. Conversion starts with the first character and continues
+                         until the first non-device node character.
+
+  @return A pointer to the allocated device path or NULL if TextDeviceNode is NULL or
+          there was insufficient memory.
+
+**/
+EFI_DEVICE_PATH_PROTOCOL *
+EFIAPI
+ConvertTextToDevicePath (
+  IN CONST CHAR16 *TextDevicePath
+  )
+{
+  if (mDevicePathLibDevicePathFromText == NULL) {
+    mDevicePathLibDevicePathFromText = UefiDevicePathLibLocateProtocol (&gEfiDevicePathFromTextProtocolGuid);
+  }
+  if (mDevicePathLibDevicePathFromText != NULL) {
+    return mDevicePathLibDevicePathFromText->ConvertTextToDevicePath (TextDevicePath);
+  } else {
+    return NULL;
+  }
+}
+

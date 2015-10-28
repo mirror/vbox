@@ -1,7 +1,7 @@
 /** @file
   Common head file for TCP socket.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -477,7 +477,7 @@ struct _TCP_SOCKET {
   SOCK_BUFFER               SndBuffer;      ///< Send buffer of application's data
   SOCK_BUFFER               RcvBuffer;      ///< Receive buffer of received data
   EFI_STATUS                SockError;      ///< The error returned by low layer protocol
-  BOOLEAN                   IsDestroyed;
+  BOOLEAN                   InDestroy;
 
   //
   // Fields used to manage the connection request
@@ -696,7 +696,7 @@ SockCreateChild (
   );
 
 /**
-  Destory the socket Sock and its associated protocol control block.
+  Destroy the socket Sock and its associated protocol control block.
 
   @param[in, out]  Sock                 The socket to be destroyed.
 

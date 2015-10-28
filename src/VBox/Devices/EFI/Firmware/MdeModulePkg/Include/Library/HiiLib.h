@@ -1,7 +1,7 @@
 /** @file
   Public include file for the HII Library
 
-Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available under 
 the terms and conditions of the BSD License that accompanies this distribution.  
 The full text of the license may be found at
@@ -680,6 +680,49 @@ HiiCreateGotoOpCode (
   );
 
 /**
+  Create EFI_IFR_REF_OP, EFI_IFR_REF2_OP, EFI_IFR_REF3_OP and EFI_IFR_REF4_OP opcode.
+
+  When RefDevicePath is not zero, EFI_IFR_REF4 opcode will be created. 
+  When RefDevicePath is zero and RefFormSetId is not NULL, EFI_IFR_REF3 opcode will be created.
+  When RefDevicePath is zero, RefFormSetId is NULL and RefQuestionId is not zero, EFI_IFR_REF2 opcode will be created.
+  When RefDevicePath is zero, RefFormSetId is NULL and RefQuestionId is zero, EFI_IFR_REF opcode will be created.
+
+  If OpCodeHandle is NULL, then ASSERT().
+  If any reserved bits are set in QuestionFlags, then ASSERT().
+
+  @param[in]  OpCodeHandle   The handle to the buffer of opcodes.
+  @param[in]  RefFormId      The Destination Form ID.
+  @param[in]  Prompt         The string ID for Prompt.
+  @param[in]  Help           The string ID for Help.
+  @param[in]  QuestionFlags  The flags in Question Header
+  @param[in]  QuestionId     Question ID.
+  @param[in]  RefQuestionId  The question on the form to which this link is referring. 
+                             If its value is zero, then the link refers to the top of the form.
+  @param[in]  RefFormSetId   The form set to which this link is referring. If its value is NULL, and RefDevicePath is 
+                             zero, then the link is to the current form set.
+  @param[in]  RefDevicePath  The string identifier that specifies the string containing the text representation of 
+                             the device path to which the form set containing the form specified by FormId.
+                             If its value is zero, then the link refers to the current page.
+
+  @retval NULL   There is not enough space left in Buffer to add the opcode.
+  @retval Other  A pointer to the created opcode.
+
+**/
+UINT8 *
+EFIAPI
+HiiCreateGotoExOpCode (
+  IN VOID             *OpCodeHandle,
+  IN EFI_FORM_ID      RefFormId,
+  IN EFI_STRING_ID    Prompt,
+  IN EFI_STRING_ID    Help,
+  IN UINT8            QuestionFlags,
+  IN EFI_QUESTION_ID  QuestionId,
+  IN EFI_QUESTION_ID  RefQuestionId,
+  IN EFI_GUID         *RefFormSetId,    OPTIONAL
+  IN EFI_STRING_ID    RefDevicePath
+  );
+
+/**
   Create EFI_IFR_CHECKBOX_OP opcode.
 
   If OpCodeHandle is NULL, then ASSERT().
@@ -689,7 +732,8 @@ HiiCreateGotoOpCode (
   @param[in]  OpCodeHandle          The handle to the buffer of opcodes.
   @param[in]  QuestionId            The question ID.
   @param[in]  VarStoreId            The storage ID.
-  @param[in]  VarOffset             The offset in Storage.
+  @param[in]  VarOffset             Offset in Storage or String ID of the name (VarName)
+                                    for this name/value pair.
   @param[in]  Prompt                The string ID for Prompt.
   @param[in]  Help                  The string ID for Help.
   @param[in]  QuestionFlags         The flags in Question Header.
@@ -725,7 +769,8 @@ HiiCreateCheckBoxOpCode (
   @param[in]  OpCodeHandle          The handle to the buffer of opcodes.
   @param[in]  QuestionId            The question ID.
   @param[in]  VarStoreId            The storage ID.
-  @param[in]  VarOffset             The offset in Storage.
+  @param[in]  VarOffset             Offset in Storage or String ID of the name (VarName)
+                                    for this name/value pair.
   @param[in]  Prompt                The string ID for Prompt.
   @param[in]  Help                  The string ID for Help.
   @param[in]  QuestionFlags         The flags in Question Header.
@@ -767,7 +812,8 @@ HiiCreateNumericOpCode (
   @param[in]  OpCodeHandle          The handle to the buffer of opcodes.
   @param[in]  QuestionId            The question ID.
   @param[in]  VarStoreId            The storage ID.
-  @param[in]  VarOffset             The offset in Storage.
+  @param[in]  VarOffset             Offset in Storage or String ID of the name (VarName)
+                                    for this name/value pair.
   @param[in]  Prompt                The string ID for Prompt.
   @param[in]  Help                  The string ID for Help.
   @param[in]  QuestionFlags         The flags in Question Header.
@@ -807,7 +853,8 @@ HiiCreateStringOpCode (
   @param[in]  OpCodeHandle          The handle to the buffer of opcodes.
   @param[in]  QuestionId            The question ID.
   @param[in]  VarStoreId            The storage ID.
-  @param[in]  VarOffset             The offset in Storage.
+  @param[in]  VarOffset             Offset in Storage or String ID of the name (VarName)
+                                    for this name/value pair.
   @param[in]  Prompt                The string ID for Prompt.
   @param[in]  Help                  The string ID for Help.
   @param[in]  QuestionFlags         The flags in Question Header.
@@ -845,7 +892,8 @@ HiiCreateOneOfOpCode (
   @param[in]  OpCodeHandle          The handle to the buffer of opcodes.
   @param[in]  QuestionId            The question ID.
   @param[in]  VarStoreId            The storage ID.
-  @param[in]  VarOffset             The offset in Storage.
+  @param[in]  VarOffset             Offset in Storage or String ID of the name (VarName)
+                                    for this name/value pair.
   @param[in]  Prompt                The string ID for Prompt.
   @param[in]  Help                  The string ID for Help.
   @param[in]  QuestionFlags         The flags in Question Header.
@@ -911,7 +959,8 @@ HiiCreateTextOpCode (
   @param[in]  QuestionId            Question ID
   @param[in]  VarStoreId            Storage ID, optional. If DateFlags is not
                                     QF_DATE_STORAGE_NORMAL, this parameter is ignored.
-  @param[in]  VarOffset             Offset in Storage, optional. If DateFlags is not
+  @param[in]  VarOffset             Offset in Storage or String ID of the name (VarName)
+                                    for this name/value pair, optional. If DateFlags is not
                                     QF_DATE_STORAGE_NORMAL, this parameter is ignored.
   @param[in]  Prompt                String ID for Prompt
   @param[in]  Help                  String ID for Help
@@ -949,7 +998,8 @@ HiiCreateDateOpCode (
   @param[in]  QuestionId            Question ID
   @param[in]  VarStoreId            Storage ID, optional. If TimeFlags is not
                                     QF_TIME_STORAGE_NORMAL, this parameter is ignored.
-  @param[in]  VarOffset             Offset in Storage, optional. If TimeFlags is not
+  @param[in]  VarOffset             Offset in Storage or String ID of the name (VarName)
+                                    for this name/value pair, optional. If TimeFlags is not
                                     QF_TIME_STORAGE_NORMAL, this parameter is ignored.
   @param[in]  Prompt                String ID for Prompt
   @param[in]  Help                  String ID for Help

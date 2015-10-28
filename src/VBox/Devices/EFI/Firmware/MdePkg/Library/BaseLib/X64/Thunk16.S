@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------
 #
-# Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -146,8 +146,8 @@ L_64Eip:    .space      4
 L_SavedCs:  .space      2
 L_64BitCode:
     .byte   0x90
-    .byte   0x67,0xbc                  # mov esp, imm32
-L_SavedSp:  .space      4              # restore stack
+    .byte   0x48,0xbc                  # mov rsp, imm64
+L_SavedSp:  .space      8              # restore stack
     nop
     ret
 
@@ -295,7 +295,7 @@ ASM_PFX(InternalAsmThunk16):
     andl    $0x7ffffffe,%eax            # clear PE, PG bits
     movq    %cr4, %rbp
     movl    %ebp, (%rcx)                # save CR4 in SavedCr4
-    andl    $0x300,%ebp                 # clear all but PCE and OSFXSR bits
+    andl    $0xffffffcf,%ebp            # clear PAE, PSE bits
     movl    %r8d, %esi                  # esi <- 16-bit stack segment
     .byte      0x6a, DATA32
     popq    %rdx
@@ -307,7 +307,7 @@ ASM_PFX(InternalAsmThunk16):
     pushq   %r8
     movl    %cs, %r8d
     movw    %r8w, (L_SavedCs - L_SavedCr4)(%rcx)
-    movl    %esp, (L_SavedSp - L_SavedCr4)(%rcx)
+    movq    %rsp, (L_SavedSp - L_SavedCr4)(%rcx)
     .byte   0xff, 0x69                  #  jmp (_EntryPoint - L_SavedCr4)(%rcx)
     .set    Ltemp1, _EntryPoint - L_SavedCr4
     .byte   Ltemp1

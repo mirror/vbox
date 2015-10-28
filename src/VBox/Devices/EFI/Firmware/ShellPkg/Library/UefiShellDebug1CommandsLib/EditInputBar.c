@@ -1,7 +1,7 @@
 /** @file
   Implements inputbar interface functions.
 
-  Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -103,7 +103,7 @@ InputBarPrintInput (
 
 typedef struct {
   UINT32  Foreground : 4;
-  UINT32  Background : 4;
+  UINT32  Background : 3;
 } INPUT_BAR_COLOR_ATTRIBUTES;
 
 typedef union {
@@ -133,8 +133,6 @@ InputBarRefresh (
   UINTN                   Size;
   EFI_STATUS              Status;
   BOOLEAN                 NoDisplay;
-  UINTN                   Limit;
-  UINTN                   mPromptLen;
   UINTN                   EventIndex;
   UINTN                   CursorRow;
   UINTN                   CursorCol;
@@ -151,10 +149,11 @@ InputBarRefresh (
   CursorCol             = gST->ConOut->Mode->CursorColumn;
   CursorRow             = gST->ConOut->Mode->CursorRow;
   Orig.Data             = gST->ConOut->Mode->Attribute;
-  New.Colors.Foreground = Orig.Colors.Background;
-  New.Colors.Background = Orig.Colors.Foreground;
+  New.Data              = 0;
+  New.Colors.Foreground = Orig.Colors.Background & 0xF;
+  New.Colors.Background = Orig.Colors.Foreground & 0x7;
 
-  gST->ConOut->SetAttribute (gST->ConOut, New.Data);
+  gST->ConOut->SetAttribute (gST->ConOut, New.Data & 0x7F);
 
   //
   // clear input bar
@@ -163,12 +162,6 @@ InputBarRefresh (
 
   gST->ConOut->SetCursorPosition (gST->ConOut, 0, LastRow - 1);
   ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN(STR_EDIT_LIBINPUTBAR_MAININPUTBAR), gShellDebug1HiiHandle, mPrompt);
-
-  //
-  // that's the maximum input length that can be displayed on screen
-  //
-  mPromptLen = StrLen (mPrompt);
-  Limit     = LastColumn - mPromptLen;
 
   //
   // this is a selection mPrompt, cursor will stay in edit area

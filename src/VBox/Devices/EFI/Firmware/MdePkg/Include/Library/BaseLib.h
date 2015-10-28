@@ -2,7 +2,7 @@
   Provides string functions, linked list functions, math functions, synchronization
   functions, and CPU architecture-specific functions.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -146,11 +146,346 @@ typedef struct {
 
 #endif  // defined (MDE_CPU_ARM)
 
+#if defined (MDE_CPU_AARCH64)
+typedef struct {
+  // GP regs
+  UINT64    X19;
+  UINT64    X20;
+  UINT64    X21;
+  UINT64    X22;
+  UINT64    X23;
+  UINT64    X24;
+  UINT64    X25;
+  UINT64    X26;
+  UINT64    X27;
+  UINT64    X28;
+  UINT64    FP;
+  UINT64    LR;
+  UINT64    IP0;
+
+  // FP regs
+  UINT64    D8;
+  UINT64    D9;
+  UINT64    D10;
+  UINT64    D11;
+  UINT64    D12;
+  UINT64    D13;
+  UINT64    D14;
+  UINT64    D15;
+} BASE_LIBRARY_JUMP_BUFFER;
+
+#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 8
+
+#endif  // defined (MDE_CPU_AARCH64)
+
+
 //
 // String Services
 //
 
+
 /**
+  Returns the length of a Null-terminated Unicode string.
+
+  If String is not aligned on a 16-bit boundary, then ASSERT().
+
+  @param  String   A pointer to a Null-terminated Unicode string.
+  @param  MaxSize  The maximum number of Destination Unicode
+                   char, including terminating null char.
+
+  @retval 0        If String is NULL.
+  @retval MaxSize  If there is no null character in the first MaxSize characters of String.
+  @return The number of characters that percede the terminating null character.
+
+**/
+UINTN
+EFIAPI
+StrnLenS (
+  IN CONST CHAR16              *String,
+  IN UINTN                     MaxSize
+  );
+
+/**
+  Copies the string pointed to by Source (including the terminating null char)
+  to the array pointed to by Destination.
+
+  If Destination is not aligned on a 16-bit boundary, then ASSERT().
+  If Source is not aligned on a 16-bit boundary, then ASSERT().
+
+  @param  Destination              A pointer to a Null-terminated Unicode string.
+  @param  DestMax                  The maximum number of Destination Unicode
+                                   char, including terminating null char.
+  @param  Source                   A pointer to a Null-terminated Unicode string.
+
+  @retval RETURN_SUCCESS           String is copied.
+  @retval RETURN_BUFFER_TOO_SMALL  If DestMax is NOT greater than StrLen(Source).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumUnicodeStringLength is not zero,
+                                    and DestMax is greater than 
+                                    PcdMaximumUnicodeStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+**/
+RETURN_STATUS
+EFIAPI
+StrCpyS (
+  OUT CHAR16       *Destination,
+  IN  UINTN        DestMax,
+  IN  CONST CHAR16 *Source
+  );
+
+/**
+  Copies not more than Length successive char from the string pointed to by
+  Source to the array pointed to by Destination. If no null char is copied from
+  Source, then Destination[Length] is always set to null.
+
+  If Length > 0 and Destination is not aligned on a 16-bit boundary, then ASSERT().
+  If Length > 0 and Source is not aligned on a 16-bit boundary, then ASSERT().
+
+  @param  Destination              A pointer to a Null-terminated Unicode string.
+  @param  DestMax                  The maximum number of Destination Unicode
+                                   char, including terminating null char.
+  @param  Source                   A pointer to a Null-terminated Unicode string.
+  @param  Length                   The maximum number of Unicode characters to copy.
+
+  @retval RETURN_SUCCESS           String is copied.
+  @retval RETURN_BUFFER_TOO_SMALL  If DestMax is NOT greater than 
+                                   MIN(StrLen(Source), Length).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumUnicodeStringLength is not zero,
+                                    and DestMax is greater than 
+                                    PcdMaximumUnicodeStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+**/
+RETURN_STATUS
+EFIAPI
+StrnCpyS (
+  OUT CHAR16       *Destination,
+  IN  UINTN        DestMax,
+  IN  CONST CHAR16 *Source,
+  IN  UINTN        Length
+  );
+
+/**
+  Appends a copy of the string pointed to by Source (including the terminating
+  null char) to the end of the string pointed to by Destination.
+
+  If Destination is not aligned on a 16-bit boundary, then ASSERT().
+  If Source is not aligned on a 16-bit boundary, then ASSERT().
+
+  @param  Destination              A pointer to a Null-terminated Unicode string.
+  @param  DestMax                  The maximum number of Destination Unicode
+                                   char, including terminating null char.
+  @param  Source                   A pointer to a Null-terminated Unicode string.
+
+  @retval RETURN_SUCCESS           String is appended.
+  @retval RETURN_BAD_BUFFER_SIZE   If DestMax is NOT greater than 
+                                   StrLen(Destination).
+  @retval RETURN_BUFFER_TOO_SMALL  If (DestMax - StrLen(Destination)) is NOT
+                                   greater than StrLen(Source).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumUnicodeStringLength is not zero,
+                                    and DestMax is greater than 
+                                    PcdMaximumUnicodeStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+**/
+RETURN_STATUS
+EFIAPI
+StrCatS (
+  IN OUT CHAR16       *Destination,
+  IN     UINTN        DestMax,
+  IN     CONST CHAR16 *Source
+  );
+
+/**
+  Appends not more than Length successive char from the string pointed to by
+  Source to the end of the string pointed to by Destination. If no null char is
+  copied from Source, then Destination[StrLen(Destination) + Length] is always
+  set to null.
+
+  If Destination is not aligned on a 16-bit boundary, then ASSERT().
+  If and Source is not aligned on a 16-bit boundary, then ASSERT().
+
+  @param  Destination              A pointer to a Null-terminated Unicode string.
+  @param  DestMax                  The maximum number of Destination Unicode
+                                   char, including terminating null char.
+  @param  Source                   A pointer to a Null-terminated Unicode string.
+  @param  Length                   The maximum number of Unicode characters to copy.
+
+  @retval RETURN_SUCCESS           String is appended.
+  @retval RETURN_BAD_BUFFER_SIZE   If DestMax is NOT greater than
+                                   StrLen(Destination).
+  @retval RETURN_BUFFER_TOO_SMALL  If (DestMax - StrLen(Destination)) is NOT
+                                   greater than MIN(StrLen(Source), Length).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumUnicodeStringLength is not zero,
+                                    and DestMax is greater than 
+                                    PcdMaximumUnicodeStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+**/
+RETURN_STATUS
+EFIAPI
+StrnCatS (
+  IN OUT CHAR16       *Destination,
+  IN     UINTN        DestMax,
+  IN     CONST CHAR16 *Source,
+  IN     UINTN        Length
+  );
+
+/**
+  Returns the length of a Null-terminated Ascii string.
+
+  @param  String   A pointer to a Null-terminated Ascii string.
+  @param  MaxSize  The maximum number of Destination Ascii
+                   char, including terminating null char.
+
+  @retval 0        If String is NULL.
+  @retval MaxSize  If there is no null character in the first MaxSize characters of String.
+  @return The number of characters that percede the terminating null character.
+
+**/
+UINTN
+EFIAPI
+AsciiStrnLenS (
+  IN CONST CHAR8               *String,
+  IN UINTN                     MaxSize
+  );
+
+/**
+  Copies the string pointed to by Source (including the terminating null char)
+  to the array pointed to by Destination.
+
+  @param  Destination              A pointer to a Null-terminated Ascii string.
+  @param  DestMax                  The maximum number of Destination Ascii
+                                   char, including terminating null char.
+  @param  Source                   A pointer to a Null-terminated Ascii string.
+
+  @retval RETURN_SUCCESS           String is copied.
+  @retval RETURN_BUFFER_TOO_SMALL  If DestMax is NOT greater than StrLen(Source).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                    and DestMax is greater than 
+                                    PcdMaximumAsciiStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrCpyS (
+  OUT CHAR8        *Destination,
+  IN  UINTN        DestMax,
+  IN  CONST CHAR8  *Source
+  );
+
+/**
+  Copies not more than Length successive char from the string pointed to by
+  Source to the array pointed to by Destination. If no null char is copied from
+  Source, then Destination[Length] is always set to null.
+
+  @param  Destination              A pointer to a Null-terminated Ascii string.
+  @param  DestMax                  The maximum number of Destination Ascii
+                                   char, including terminating null char.
+  @param  Source                   A pointer to a Null-terminated Ascii string.
+  @param  Length                   The maximum number of Ascii characters to copy.
+
+  @retval RETURN_SUCCESS           String is copied.
+  @retval RETURN_BUFFER_TOO_SMALL  If DestMax is NOT greater than 
+                                   MIN(StrLen(Source), Length).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                    and DestMax is greater than 
+                                    PcdMaximumAsciiStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrnCpyS (
+  OUT CHAR8        *Destination,
+  IN  UINTN        DestMax,
+  IN  CONST CHAR8  *Source,
+  IN  UINTN        Length
+  );
+
+/**
+  Appends a copy of the string pointed to by Source (including the terminating
+  null char) to the end of the string pointed to by Destination.
+
+  @param  Destination              A pointer to a Null-terminated Ascii string.
+  @param  DestMax                  The maximum number of Destination Ascii
+                                   char, including terminating null char.
+  @param  Source                   A pointer to a Null-terminated Ascii string.
+
+  @retval RETURN_SUCCESS           String is appended.
+  @retval RETURN_BAD_BUFFER_SIZE   If DestMax is NOT greater than 
+                                   StrLen(Destination).
+  @retval RETURN_BUFFER_TOO_SMALL  If (DestMax - StrLen(Destination)) is NOT
+                                   greater than StrLen(Source).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                    and DestMax is greater than 
+                                    PcdMaximumAsciiStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrCatS (
+  IN OUT CHAR8        *Destination,
+  IN     UINTN        DestMax,
+  IN     CONST CHAR8  *Source
+  );
+
+/**
+  Appends not more than Length successive char from the string pointed to by
+  Source to the end of the string pointed to by Destination. If no null char is
+  copied from Source, then Destination[StrLen(Destination) + Length] is always
+  set to null.
+
+  @param  Destination              A pointer to a Null-terminated Ascii string.
+  @param  DestMax                  The maximum number of Destination Ascii
+                                   char, including terminating null char.
+  @param  Source                   A pointer to a Null-terminated Ascii string.
+  @param  Length                   The maximum number of Ascii characters to copy.
+
+  @retval RETURN_SUCCESS           String is appended.
+  @retval RETURN_BAD_BUFFER_SIZE   If DestMax is NOT greater than
+                                   StrLen(Destination).
+  @retval RETURN_BUFFER_TOO_SMALL  If (DestMax - StrLen(Destination)) is NOT
+                                   greater than MIN(StrLen(Source), Length).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                    and DestMax is greater than 
+                                    PcdMaximumAsciiStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrnCatS (
+  IN OUT CHAR8        *Destination,
+  IN     UINTN        DestMax,
+  IN     CONST CHAR8  *Source,
+  IN     UINTN        Length
+  );
+
+
+#ifndef DISABLE_NEW_DEPRECATED_INTERFACES
+
+/**
+  [ATTENTION] This function will be deprecated for security reason.
+
   Copies one Null-terminated Unicode string to another Null-terminated Unicode
   string and returns the new Unicode string.
 
@@ -182,6 +517,8 @@ StrCpy (
 
 
 /**
+  [ATTENTION] This function will be deprecated for security reason.
+
   Copies up to a specified length from one Null-terminated Unicode string to 
   another Null-terminated Unicode string and returns the new Unicode string.
 
@@ -218,7 +555,7 @@ StrnCpy (
   IN      CONST CHAR16              *Source,
   IN      UINTN                     Length
   );
-
+#endif
 
 /**
   Returns the length of a Null-terminated Unicode string.
@@ -346,7 +683,11 @@ StrnCmp (
   );
 
 
+#ifndef DISABLE_NEW_DEPRECATED_INTERFACES
+
 /**
+  [ATTENTION] This function will be deprecated for security reason.
+
   Concatenates one Null-terminated Unicode string to another Null-terminated
   Unicode string, and returns the concatenated Unicode string.
 
@@ -387,6 +728,8 @@ StrCat (
 
 
 /**
+  [ATTENTION] This function will be deprecated for security reason.
+
   Concatenates up to a specified length one Null-terminated Unicode to the end 
   of another Null-terminated Unicode string, and returns the concatenated 
   Unicode string.
@@ -431,6 +774,7 @@ StrnCat (
   IN      CONST CHAR16              *Source,
   IN      UINTN                     Length
   );
+#endif
 
 /**
   Returns the first occurrence of a Null-terminated Unicode sub-string
@@ -669,7 +1013,11 @@ UnicodeStrToAsciiStr (
   );
 
 
+#ifndef DISABLE_NEW_DEPRECATED_INTERFACES
+
 /**
+  [ATTENTION] This function will be deprecated for security reason.
+
   Copies one Null-terminated ASCII string to another Null-terminated ASCII
   string and returns the new ASCII string.
 
@@ -699,6 +1047,8 @@ AsciiStrCpy (
 
 
 /**
+  [ATTENTION] This function will be deprecated for security reason.
+
   Copies up to a specified length one Null-terminated ASCII string to another 
   Null-terminated ASCII string and returns the new ASCII string.
 
@@ -732,7 +1082,7 @@ AsciiStrnCpy (
   IN      CONST CHAR8               *Source,
   IN      UINTN                     Length
   );
-
+#endif
 
 /**
   Returns the length of a Null-terminated ASCII string.
@@ -892,7 +1242,11 @@ AsciiStrnCmp (
   );
 
 
+#ifndef DISABLE_NEW_DEPRECATED_INTERFACES
+
 /**
+  [ATTENTION] This function will be deprecated for security reason.
+
   Concatenates one Null-terminated ASCII string to another Null-terminated
   ASCII string, and returns the concatenated ASCII string.
 
@@ -928,6 +1282,8 @@ AsciiStrCat (
 
 
 /**
+  [ATTENTION] This function will be deprecated for security reason.
+
   Concatenates up to a specified length one Null-terminated ASCII string to 
   the end of another Null-terminated ASCII string, and returns the 
   concatenated ASCII string.
@@ -970,7 +1326,7 @@ AsciiStrnCat (
   IN      CONST CHAR8               *Source,
   IN      UINTN                     Length
   );
-
+#endif
 
 /**
   Returns the first occurrence of a Null-terminated ASCII sub-string
@@ -1291,7 +1647,7 @@ InitializeListHead (
   If Entry is NULL, then ASSERT().
   If ListHead was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or
   InitializeListHead(), then ASSERT().
-  If PcdMaximumLinkedListLenth is not zero, and prior to insertion the number
+  If PcdMaximumLinkedListLength is not zero, and prior to insertion the number
   of nodes in ListHead, including the ListHead node, is greater than or
   equal to PcdMaximumLinkedListLength, then ASSERT().
 
@@ -1321,7 +1677,7 @@ InsertHeadList (
   If Entry is NULL, then ASSERT().
   If ListHead was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
   InitializeListHead(), then ASSERT().
-  If PcdMaximumLinkedListLenth is not zero, and prior to insertion the number
+  If PcdMaximumLinkedListLength is not zero, and prior to insertion the number
   of nodes in ListHead, including the ListHead node, is greater than or
   equal to PcdMaximumLinkedListLength, then ASSERT().
 
@@ -1350,14 +1706,14 @@ InsertTailList (
   If List is NULL, then ASSERT().
   If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
   InitializeListHead(), then ASSERT().
-  If PcdMaximumLinkedListLenth is not zero, and the number of nodes
+  If PcdMaximumLinkedListLength is not zero, and the number of nodes
   in List, including the List node, is greater than or equal to
   PcdMaximumLinkedListLength, then ASSERT().
 
   @param  List  A pointer to the head node of a doubly linked list.
 
   @return The first node of a doubly linked list.
-  @retval NULL  The list is empty.
+  @retval List  The list is empty.
 
 **/
 LIST_ENTRY *
@@ -1378,8 +1734,8 @@ GetFirstNode (
   If Node is NULL, then ASSERT().
   If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
   InitializeListHead(), then ASSERT().
-  If PcdMaximumLinkedListLenth is not zero, and List contains more than
-  PcdMaximumLinkedListLenth nodes, then ASSERT().
+  If PcdMaximumLinkedListLength is not zero, and List contains more than
+  PcdMaximumLinkedListLength nodes, then ASSERT().
   If PcdVerifyNodeInList is TRUE and Node is not a node in List, then ASSERT().
 
   @param  List  A pointer to the head node of a doubly linked list.
@@ -1407,8 +1763,8 @@ GetNextNode (
   If Node is NULL, then ASSERT().
   If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
   InitializeListHead(), then ASSERT().
-  If PcdMaximumLinkedListLenth is not zero, and List contains more than
-  PcdMaximumLinkedListLenth nodes, then ASSERT().
+  If PcdMaximumLinkedListLength is not zero, and List contains more than
+  PcdMaximumLinkedListLength nodes, then ASSERT().
   If PcdVerifyNodeInList is TRUE and Node is not a node in List, then ASSERT().
  
   @param  List  A pointer to the head node of a doubly linked list.
@@ -1434,7 +1790,7 @@ GetPreviousNode (
   If ListHead is NULL, then ASSERT().
   If ListHead was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
   InitializeListHead(), then ASSERT().
-  If PcdMaximumLinkedListLenth is not zero, and the number of nodes
+  If PcdMaximumLinkedListLength is not zero, and the number of nodes
   in List, including the List node, is greater than or equal to
   PcdMaximumLinkedListLength, then ASSERT().
 
@@ -1464,7 +1820,7 @@ IsListEmpty (
   If Node is NULL, then ASSERT().
   If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or InitializeListHead(), 
   then ASSERT().
-  If PcdMaximumLinkedListLenth is not zero, and the number of nodes
+  If PcdMaximumLinkedListLength is not zero, and the number of nodes
   in List, including the List node, is greater than or equal to
   PcdMaximumLinkedListLength, then ASSERT().
   If PcdVerifyNodeInList is TRUE and Node is not a node in List the and Node is not equal 
@@ -1496,7 +1852,7 @@ IsNull (
   If Node is NULL, then ASSERT().
   If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or
   InitializeListHead(), then ASSERT().
-  If PcdMaximumLinkedListLenth is not zero, and the number of nodes
+  If PcdMaximumLinkedListLength is not zero, and the number of nodes
   in List, including the List node, is greater than or equal to
   PcdMaximumLinkedListLength, then ASSERT().
   If PcdVerifyNodeInList is TRUE and Node is not a node in List, then ASSERT().
@@ -2343,6 +2699,7 @@ BitFieldRead8 (
   If StartBit is greater than 7, then ASSERT().
   If EndBit is greater than 7, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If Value is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2376,6 +2733,7 @@ BitFieldWrite8 (
   If StartBit is greater than 7, then ASSERT().
   If EndBit is greater than 7, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2409,6 +2767,7 @@ BitFieldOr8 (
   If StartBit is greater than 7, then ASSERT().
   If EndBit is greater than 7, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2443,6 +2802,8 @@ BitFieldAnd8 (
   If StartBit is greater than 7, then ASSERT().
   If EndBit is greater than 7, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2505,6 +2866,7 @@ BitFieldRead16 (
   If StartBit is greater than 15, then ASSERT().
   If EndBit is greater than 15, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If Value is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2538,6 +2900,7 @@ BitFieldWrite16 (
   If StartBit is greater than 15, then ASSERT().
   If EndBit is greater than 15, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2571,6 +2934,7 @@ BitFieldOr16 (
   If StartBit is greater than 15, then ASSERT().
   If EndBit is greater than 15, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2605,6 +2969,8 @@ BitFieldAnd16 (
   If StartBit is greater than 15, then ASSERT().
   If EndBit is greater than 15, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2667,6 +3033,7 @@ BitFieldRead32 (
   If StartBit is greater than 31, then ASSERT().
   If EndBit is greater than 31, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If Value is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2700,6 +3067,7 @@ BitFieldWrite32 (
   If StartBit is greater than 31, then ASSERT().
   If EndBit is greater than 31, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2733,6 +3101,7 @@ BitFieldOr32 (
   If StartBit is greater than 31, then ASSERT().
   If EndBit is greater than 31, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2767,6 +3136,8 @@ BitFieldAnd32 (
   If StartBit is greater than 31, then ASSERT().
   If EndBit is greater than 31, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2829,6 +3200,7 @@ BitFieldRead64 (
   If StartBit is greater than 63, then ASSERT().
   If EndBit is greater than 63, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If Value is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2862,6 +3234,7 @@ BitFieldWrite64 (
   If StartBit is greater than 63, then ASSERT().
   If EndBit is greater than 63, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2895,6 +3268,7 @@ BitFieldOr64 (
   If StartBit is greater than 63, then ASSERT().
   If EndBit is greater than 63, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -2929,6 +3303,8 @@ BitFieldAnd64 (
   If StartBit is greater than 63, then ASSERT().
   If EndBit is greater than 63, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Operand   Operand on which to perform the bitfield operation.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -5380,6 +5756,7 @@ AsmMsrBitFieldRead32 (
   If StartBit is greater than 31, then ASSERT().
   If EndBit is greater than 31, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If Value is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Index     The 32-bit MSR index to write.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -5416,6 +5793,7 @@ AsmMsrBitFieldWrite32 (
   If StartBit is greater than 31, then ASSERT().
   If EndBit is greater than 31, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Index     The 32-bit MSR index to write.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -5452,6 +5830,7 @@ AsmMsrBitFieldOr32 (
   If StartBit is greater than 31, then ASSERT().
   If EndBit is greater than 31, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Index     The 32-bit MSR index to write.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -5490,6 +5869,8 @@ AsmMsrBitFieldAnd32 (
   If StartBit is greater than 31, then ASSERT().
   If EndBit is greater than 31, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Index     The 32-bit MSR index to write.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -5684,6 +6065,7 @@ AsmMsrBitFieldRead64 (
   If StartBit is greater than 63, then ASSERT().
   If EndBit is greater than 63, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If Value is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Index     The 32-bit MSR index to write.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -5720,6 +6102,7 @@ AsmMsrBitFieldWrite64 (
   If StartBit is greater than 63, then ASSERT().
   If EndBit is greater than 63, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Index     The 32-bit MSR index to write.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -5756,6 +6139,7 @@ AsmMsrBitFieldOr64 (
   If StartBit is greater than 63, then ASSERT().
   If EndBit is greater than 63, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Index     The 32-bit MSR index to write.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -5793,6 +6177,8 @@ AsmMsrBitFieldAnd64 (
   If StartBit is greater than 63, then ASSERT().
   If EndBit is greater than 63, then ASSERT().
   If EndBit is less than StartBit, then ASSERT().
+  If AndData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
+  If OrData is larger than the bitmask value range specified by StartBit and EndBit, then ASSERT().
 
   @param  Index     The 32-bit MSR index to write.
   @param  StartBit  The ordinal of the least significant bit in the bit field.
@@ -7122,7 +7508,7 @@ AsmGetThunk16Properties (
 VOID
 EFIAPI
 AsmPrepareThunk16 (
-  OUT     THUNK_CONTEXT             *ThunkContext
+  IN OUT  THUNK_CONTEXT             *ThunkContext
   );
 
 

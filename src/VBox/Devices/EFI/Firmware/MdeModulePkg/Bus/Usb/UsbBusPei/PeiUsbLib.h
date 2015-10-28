@@ -1,7 +1,7 @@
 /** @file
 Common Libarary for PEI USB
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved. <BR>
+Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved. <BR>
   
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -70,6 +70,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define USB_DT_INTERFACE  0x04
 #define USB_DT_ENDPOINT   0x05
 #define USB_DT_HUB        0x29
+#define USB_DT_SUPERSPEED_HUB 0x2A
 #define USB_DT_HID        0x21
 
 //
@@ -188,25 +189,6 @@ PeiUsbSetConfiguration (
   );
 
 /**
-  Clear Endpoint Halt.
-
-  @param  PeiServices       General-purpose services that are available to every PEIM.
-  @param  UsbIoPpi          Indicates the PEI_USB_IO_PPI instance.
-  @param  EndpointAddress   The endpoint address.
-
-  @retval EFI_SUCCESS       Endpoint halt is cleared successfully.
-  @retval EFI_DEVICE_ERROR  Cannot clear the endpoint halt status due to a hardware error.
-  @retval Others            Other failure occurs.
-
-**/
-EFI_STATUS
-PeiUsbClearEndpointHalt (
-  IN EFI_PEI_SERVICES         **PeiServices,
-  IN PEI_USB_IO_PPI           *UsbIoPpi,
-  IN UINT8                    EndpointAddress
-  );
-
-/**
   Judge if the port is connected with a usb device or not.
 
   @param  PortStatus  The usb port status gotten.
@@ -221,17 +203,16 @@ IsPortConnect (
   );
 
 /**
-  Judge if the port is connected with a low-speed usb device or not.
+  Get device speed according to port status.
 
-  @param  PortStatus  The usb port status gotten.
+  @param    PortStatus  The usb port status gotten.
 
-  @retval TRUE        A low-speed usb device is connected with the port.
-  @retval FALSE       No low-speed usb device is connected with the port.
+  @return   Device speed value.
 
 **/
 UINTN
-IsPortLowSpeedDeviceAttached (
-  IN UINT16  PortStatus
+PeiUsbGetDeviceSpeed (
+  IN UINT16 PortStatus
   );
 
 /**

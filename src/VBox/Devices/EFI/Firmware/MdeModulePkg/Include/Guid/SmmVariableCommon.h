@@ -1,7 +1,7 @@
 /** @file
   The file defined some common structures used for communicating between SMM variable module and SMM variable wrapper module.
 
-Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2011 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available under 
 the terms and conditions of the BSD License that accompanies this distribution.  
 The full text of the license may be found at
@@ -60,6 +60,10 @@ typedef struct {
 // is gEfiSmmVariableProtocolGuid.
 //
 #define SMM_VARIABLE_FUNCTION_GET_STATISTICS          7
+//
+// The payload for this function is SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE
+//
+#define SMM_VARIABLE_FUNCTION_LOCK_VARIABLE           8
 
 ///
 /// Size of SMM communicate header, without including the payload.
@@ -87,7 +91,7 @@ typedef struct {
 ///
 typedef struct {
   EFI_GUID    Guid;
-  UINTN       NameSize;
+  UINTN       NameSize;     // Return name buffer size
   CHAR16      Name[1];
 } SMM_VARIABLE_COMMUNICATE_GET_NEXT_VARIABLE_NAME;
 
@@ -100,5 +104,7 @@ typedef struct {
   UINT64          MaximumVariableSize;
   UINT32          Attributes; 
 } SMM_VARIABLE_COMMUNICATE_QUERY_VARIABLE_INFO;
+
+typedef SMM_VARIABLE_COMMUNICATE_GET_NEXT_VARIABLE_NAME SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE;
 
 #endif // _SMM_VARIABLE_COMMON_H_

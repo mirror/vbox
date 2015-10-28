@@ -1,6 +1,8 @@
 /** @file
+Elf32 Convert solution
 
-Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+Portions copyright (c) 2013, ARM Ltd. All rights reserved.<BR>
 
 This program and the accompanying materials are licensed and made available
 under the terms and conditions of the BSD License which accompanies this
@@ -18,6 +20,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <windows.h>
 #include <io.h>
 #endif
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -264,6 +267,7 @@ ScanSections32 (
   EFI_IMAGE_OPTIONAL_HEADER_UNION *NtHdr;
   UINT32                          CoffEntry;
   UINT32                          SectionCount;
+  BOOLEAN                         FoundSection;
 
   CoffEntry = 0;
   mCoffOffset = 0;
@@ -292,6 +296,7 @@ ScanSections32 (
   //
   mCoffOffset = CoffAlign(mCoffOffset);
   mTextOffset = mCoffOffset;
+  FoundSection = FALSE;
   SectionCount = 0;
   for (i = 0; i < mEhdr->e_shnum; i++) {
     Elf_Shdr *shdr = GetShdrByIndex(i);
@@ -315,10 +320,24 @@ ScanSections32 (
           (mEhdr->e_entry < shdr->sh_addr + shdr->sh_size)) {
         CoffEntry = mCoffOffset + mEhdr->e_entry - shdr->sh_addr;
       }
+
+      //
+      // Set mTextOffset with the offset of the first '.text' section
+      //
+      if (!FoundSection) {
+        mTextOffset = mCoffOffset;
+        FoundSection = TRUE;
+      }
+
       mCoffSectionsOffset[i] = mCoffOffset;
       mCoffOffset += shdr->sh_size;
       SectionCount ++;
     }
+  }
+
+  if (!FoundSection) {
+    Error (NULL, 0, 3000, "Invalid", "Did not find any '.text' section.");
+    assert (FALSE);
   }
 
   if (mEhdr->e_machine != EM_ARM) {
@@ -333,6 +352,7 @@ ScanSections32 (
   //  Then data sections.
   //
   mDataOffset = mCoffOffset;
+  FoundSection = FALSE;
   SectionCount = 0;
   for (i = 0; i < mEhdr->e_shnum; i++) {
     Elf_Shdr *shdr = GetShdrByIndex(i);
@@ -350,6 +370,15 @@ ScanSections32 (
           Error (NULL, 0, 3000, "Invalid", "Unsupported section alignment.");
         }
       }
+
+      //
+      // Set mDataOffset with the offset of the first '.data' section
+      //
+      if (!FoundSection) {
+        mDataOffset = mCoffOffset;
+        FoundSection = TRUE;
+      }
+
       mCoffSectionsOffset[i] = mCoffOffset;
       mCoffOffset += shdr->sh_size;
       SectionCount ++;
@@ -382,6 +411,7 @@ ScanSections32 (
         }
       }
       if (shdr->sh_size != 0) {
+        mHiiRsrcOffset = mCoffOffset;
         mCoffSectionsOffset[i] = mCoffOffset;
         mCoffOffset += shdr->sh_size;
         mCoffOffset = CoffAlign(mCoffOffset);

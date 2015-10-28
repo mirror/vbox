@@ -1,7 +1,7 @@
 /** @file
   Private data structures for the Console Splitter driver
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -16,6 +16,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define _CON_SPLITTER_H_
 
 #include <Uefi.h>
+#include <PiDxe.h>
 
 #include <Protocol/DevicePath.h>
 #include <Protocol/ComponentName.h>
@@ -31,6 +32,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Guid/ConsoleInDevice.h>
 #include <Guid/StandardErrorDevice.h>
 #include <Guid/ConsoleOutDevice.h>
+#include <Guid/ConnectConInEvent.h>
 
 #include <Library/PcdLib.h>
 #include <Library/DebugLib.h>
@@ -41,7 +43,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
-
 
 //
 // Driver Binding Externs
@@ -74,8 +75,7 @@ extern EFI_COMPONENT_NAME2_PROTOCOL gConSplitterStdErrComponentName2;
 //
 // Private Data Structures
 //
-#define CONSOLE_SPLITTER_CONSOLES_ALLOC_UNIT  32
-#define CONSOLE_SPLITTER_MODES_ALLOC_UNIT     32
+#define CONSOLE_SPLITTER_ALLOC_UNIT  32
 
 
 typedef struct {
@@ -96,8 +96,7 @@ typedef struct {
 //
 typedef struct _TEXT_IN_EX_SPLITTER_NOTIFY {
   UINTN                                 Signature;
-  EFI_HANDLE                            *NotifyHandleList;
-  EFI_HANDLE                            NotifyHandle;
+  VOID                                  **NotifyHandleList;
   EFI_KEY_DATA                          KeyData;
   EFI_KEY_NOTIFY_FUNCTION               KeyNotificationFn;
   LIST_ENTRY                            NotifyEntry;
@@ -146,6 +145,7 @@ typedef struct {
 
   BOOLEAN                            KeyEventSignalState;
   BOOLEAN                            InputEventSignalState;
+  EFI_EVENT                          ConnectConInEvent;
 } TEXT_IN_SPLITTER_PRIVATE_DATA;
 
 #define TEXT_IN_SPLITTER_PRIVATE_DATA_FROM_THIS(a)  \
@@ -1406,7 +1406,7 @@ ConSplitterTextInRegisterKeyNotify (
   IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
   IN EFI_KEY_DATA                       *KeyData,
   IN EFI_KEY_NOTIFY_FUNCTION            KeyNotificationFunction,
-  OUT EFI_HANDLE                        *NotifyHandle
+  OUT VOID                              **NotifyHandle
   );
 
 
@@ -1427,7 +1427,7 @@ EFI_STATUS
 EFIAPI
 ConSplitterTextInUnregisterKeyNotify (
   IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
-  IN EFI_HANDLE                         NotificationHandle
+  IN VOID                               *NotificationHandle
   );
 
 /**
@@ -1732,12 +1732,12 @@ ConSplitterTextOutEnableCursor (
   );
 
 /**
-  Take the passed in Buffer of size SizeOfCount and grow the buffer
-  by MAX (CONSOLE_SPLITTER_CONSOLES_ALLOC_UNIT, MaxGrow) * SizeOfCount
-  bytes. Copy the current data in Buffer to the new version of Buffer
-  and free the old version of buffer.
+  Take the passed in Buffer of size ElementSize and grow the buffer
+  by CONSOLE_SPLITTER_ALLOC_UNIT * ElementSize bytes.
+  Copy the current data in Buffer to the new version of Buffer and
+  free the old version of buffer.
 
-  @param  SizeOfCount              Size of element in array.
+  @param  ElementSize              Size of element in array.
   @param  Count                    Current number of elements in array.
   @param  Buffer                   Bigger version of passed in Buffer with all the
                                    data.
@@ -1748,7 +1748,7 @@ ConSplitterTextOutEnableCursor (
 **/
 EFI_STATUS
 ConSplitterGrowBuffer (
-  IN      UINTN                       SizeOfCount,
+  IN      UINTN                       ElementSize,
   IN OUT  UINTN                       *Count,
   IN OUT  VOID                        **Buffer
   );
@@ -1983,6 +1983,21 @@ VOID
 TextOutSetMode (
   IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private,
   IN  UINTN                           ModeNumber
+  );
+
+/**
+  An empty function to pass error checking of CreateEventEx ().
+
+  @param  Event                 Event whose notification function is being invoked.
+  @param  Context               Pointer to the notification function's context,
+                                which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+ConSplitterEmptyCallbackFunction (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
   );
 
 

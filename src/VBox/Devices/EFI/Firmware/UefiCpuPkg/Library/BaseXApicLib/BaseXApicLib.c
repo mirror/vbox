@@ -3,7 +3,7 @@
 
   This local APIC library instance supports xAPIC mode only.
 
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -21,11 +21,56 @@
 #include <Library/LocalApicLib.h>
 #include <Library/IoLib.h>
 #include <Library/TimerLib.h>
-#include <Library/PcdLib.h>
 
 //
 // Library internal functions
 //
+
+/**
+  Retrieve the base address of local APIC.
+
+  @return The base address of local APIC.
+
+**/
+UINTN
+EFIAPI
+GetLocalApicBaseAddress (
+  VOID
+  )
+{
+  MSR_IA32_APIC_BASE ApicBaseMsr;
+  
+  ApicBaseMsr.Uint64 = AsmReadMsr64 (MSR_IA32_APIC_BASE_ADDRESS);
+  
+  return (UINTN)(LShiftU64 ((UINT64) ApicBaseMsr.Bits.ApicBaseHigh, 32)) +
+           (((UINTN)ApicBaseMsr.Bits.ApicBaseLow) << 12);
+}
+
+/**
+  Set the base address of local APIC.
+
+  If BaseAddress is not aligned on a 4KB boundary, then ASSERT().
+
+  @param[in] BaseAddress   Local APIC base address to be set.
+
+**/
+VOID
+EFIAPI
+SetLocalApicBaseAddress (
+  IN UINTN                BaseAddress
+  )
+{
+  MSR_IA32_APIC_BASE ApicBaseMsr;
+
+  ASSERT ((BaseAddress & (SIZE_4KB - 1)) == 0);
+
+  ApicBaseMsr.Uint64 = AsmReadMsr64 (MSR_IA32_APIC_BASE_ADDRESS);
+
+  ApicBaseMsr.Bits.ApicBaseLow  = (UINT32) (BaseAddress >> 12);
+  ApicBaseMsr.Bits.ApicBaseHigh = (UINT32) (RShiftU64((UINT64) BaseAddress, 32));
+
+  AsmWriteMsr64 (MSR_IA32_APIC_BASE_ADDRESS, ApicBaseMsr.Uint64);
+}
 
 /**
   Read from a local APIC register.
@@ -49,7 +94,7 @@ ReadLocalApicReg (
   ASSERT ((MmioOffset & 0xf) == 0);
   ASSERT (GetApicMode () == LOCAL_APIC_MODE_XAPIC);
 
-  return MmioRead32 (PcdGet32 (PcdCpuLocalApicBaseAddress) + MmioOffset);
+  return MmioRead32 (GetLocalApicBaseAddress() + MmioOffset);
 }
 
 /**
@@ -76,7 +121,7 @@ WriteLocalApicReg (
   ASSERT ((MmioOffset & 0xf) == 0);
   ASSERT (GetApicMode () == LOCAL_APIC_MODE_XAPIC);
 
-  MmioWrite32 (PcdGet32 (PcdCpuLocalApicBaseAddress) + MmioOffset, Value);
+  MmioWrite32 (GetLocalApicBaseAddress() + MmioOffset, Value);
 }
 
 /**
@@ -94,18 +139,47 @@ SendIpi (
   )
 {
   LOCAL_APIC_ICR_LOW IcrLowReg;
+  UINT32             IcrHigh;
+  BOOLEAN            InterruptState;
 
   ASSERT (GetApicMode () == LOCAL_APIC_MODE_XAPIC);
   ASSERT (ApicId <= 0xff);
+
+  InterruptState = SaveAndDisableInterrupts ();
+
+  //
+  // Save existing contents of ICR high 32 bits
+  //
+  IcrHigh = ReadLocalApicReg (XAPIC_ICR_HIGH_OFFSET);
+
+  //
+  // Wait for DeliveryStatus clear in case a previous IPI
+  //  is still being sent
+  //
+  do {
+    IcrLowReg.Uint32 = ReadLocalApicReg (XAPIC_ICR_LOW_OFFSET);
+  } while (IcrLowReg.Bits.DeliveryStatus != 0);
 
   //
   // For xAPIC, the act of writing to the low doubleword of the ICR causes the IPI to be sent.
   //
   WriteLocalApicReg (XAPIC_ICR_HIGH_OFFSET, ApicId << 24);
   WriteLocalApicReg (XAPIC_ICR_LOW_OFFSET, IcrLow);
+
+  //
+  // Wait for DeliveryStatus clear again
+  //
   do {
     IcrLowReg.Uint32 = ReadLocalApicReg (XAPIC_ICR_LOW_OFFSET);
   } while (IcrLowReg.Bits.DeliveryStatus != 0);
+
+  //
+  // And restore old contents of ICR high
+  //
+  WriteLocalApicReg (XAPIC_ICR_HIGH_OFFSET, IcrHigh);
+
+  SetInterruptState (InterruptState);
+
 }
 
 //
@@ -148,6 +222,9 @@ GetApicMode (
   If the specified local APIC mode can't be set as current, then ASSERT.
 
   @param ApicMode APIC mode to be set.
+
+  @note  This API must not be called from an interrupt handler or SMI handler.
+         It may result in unpredictable behavior.
 **/
 VOID
 EFIAPI
@@ -162,7 +239,7 @@ SetApicMode (
 /**
   Get the initial local APIC ID of the executing processor assigned by hardware upon power on or reset.
 
-  In xAPIC mode, the initial local APIC ID is 8-bit, and may be different from current APIC ID.
+  In xAPIC mode, the initial local APIC ID may be different from current APIC ID.
   In x2APIC mode, the local APIC ID can't be changed and there is no concept of initial APIC ID. In this case, 
   the 32-bit local APIC ID is returned as initial APIC ID.
 
@@ -174,9 +251,26 @@ GetInitialApicId (
   VOID
   )
 {
+  UINT32 ApicId;
+  UINT32 MaxCpuIdIndex;
   UINT32 RegEbx;
 
   ASSERT (GetApicMode () == LOCAL_APIC_MODE_XAPIC);
+
+  //
+  // Get the max index of basic CPUID
+  //
+  AsmCpuid (CPUID_SIGNATURE, &MaxCpuIdIndex, NULL, NULL, NULL);
+
+  //
+  // If CPUID Leaf B is supported, 
+  // Then the initial 32-bit APIC ID = CPUID.0BH:EDX
+  // Else the initial 8-bit APIC ID = CPUID.1:EBX[31:24]
+  //
+  if (MaxCpuIdIndex >= CPUID_EXTENDED_TOPOLOGY) {
+    AsmCpuidEx (CPUID_EXTENDED_TOPOLOGY, 0, NULL, NULL, NULL, &ApicId);
+    return ApicId;
+  }
 
   AsmCpuid (CPUID_VERSION_INFO, NULL, &RegEbx, NULL, NULL);
   return RegEbx >> 24;
@@ -196,9 +290,15 @@ GetApicId (
   UINT32 ApicId;
 
   ASSERT (GetApicMode () == LOCAL_APIC_MODE_XAPIC);
-
-  ApicId = ReadLocalApicReg (XAPIC_ID_OFFSET);
-  ApicId >>= 24;
+  
+  if ((ApicId = GetInitialApicId ()) < 0x100) {
+    //
+    // If the initial local APIC ID is less 0x100, read APIC ID from
+    // XAPIC_ID_OFFSET, otherwise return the initial local APIC ID.
+    //
+    ApicId = ReadLocalApicReg (XAPIC_ID_OFFSET);
+    ApicId >>= 24;
+  }
   return ApicId;
 }
 
@@ -370,7 +470,7 @@ SendInitSipiSipi (
   ASSERT ((StartupRoutine & 0xfff) == 0);
 
   SendInitIpi (ApicId);
-  MicroSecondDelay (10);
+  MicroSecondDelay (PcdGet32(PcdCpuInitIpiDelayInMicroSeconds));
   IcrLow.Uint32 = 0;
   IcrLow.Bits.Vector = (StartupRoutine >> 12);
   IcrLow.Bits.DeliveryMode = LOCAL_APIC_DELIVERY_MODE_STARTUP;
@@ -403,7 +503,7 @@ SendInitSipiSipiAllExcludingSelf (
   ASSERT ((StartupRoutine & 0xfff) == 0);
 
   SendInitIpiAllExcludingSelf ();
-  MicroSecondDelay (10);
+  MicroSecondDelay (PcdGet32(PcdCpuInitIpiDelayInMicroSeconds));
   IcrLow.Uint32 = 0;
   IcrLow.Bits.Vector = (StartupRoutine >> 12);
   IcrLow.Bits.DeliveryMode = LOCAL_APIC_DELIVERY_MODE_STARTUP;

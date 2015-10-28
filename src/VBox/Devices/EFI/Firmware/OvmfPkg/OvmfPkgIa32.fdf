@@ -1,7 +1,7 @@
 ## @file
 #  Open Virtual Machine Firmware: FDF
 #
-#  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -14,32 +14,98 @@
 ##
 
 ################################################################################
-[FD.OVMF]
-BaseAddress   = 0xFFF00000
-Size          = 0x00100000
-ErasePolarity = 1
-BlockSize     = 0x1000
-NumBlocks     = 0x100
 
-#VBox: Debug needs more space, original: 0x00000000|0x000EC000
-0x00000000|0x000F4000
+#
+# Default flash size for DEBUG build is 2MB. For RELEASE it is 1MB.
+#
+# Defining FD_SIZE_1MB or FD_SIZE_2MB on the build command line can
+# override this.
+#
+[Defines]
+!if $(TARGET) == RELEASE
+!ifndef $(FD_SIZE_2MB)
+DEFINE FD_SIZE_1MB=
+!endif
+!endif
+
+!include OvmfPkg.fdf.inc
+
+#
+# Build the variable store and the firmware code as one unified flash device
+# image.
+#
+[FD.OVMF]
+BaseAddress   = $(FW_BASE_ADDRESS)
+Size          = $(FW_SIZE)
+ErasePolarity = 1
+BlockSize     = $(BLOCK_SIZE)
+NumBlocks     = $(FW_BLOCKS)
+
+!include VarStore.fdf.inc
+
+$(VARS_SIZE)|$(FVMAIN_SIZE)
 FV = FVMAIN_COMPACT
 
-#VBox: Debug needs more space, original: 0x000EC000|0x14000
-0x000F4000|0x0000C000
+$(SECFV_OFFSET)|$(SECFV_SIZE)
+FV = SECFV
+
+#
+# Build the variable store and the firmware code as separate flash device
+# images.
+#
+[FD.OVMF_VARS]
+BaseAddress   = $(FW_BASE_ADDRESS)
+Size          = $(VARS_SIZE)
+ErasePolarity = 1
+BlockSize     = $(BLOCK_SIZE)
+NumBlocks     = $(VARS_BLOCKS)
+
+!include VarStore.fdf.inc
+
+[FD.OVMF_CODE]
+BaseAddress   = $(CODE_BASE_ADDRESS)
+Size          = $(CODE_SIZE)
+ErasePolarity = 1
+BlockSize     = $(BLOCK_SIZE)
+NumBlocks     = $(CODE_BLOCKS)
+
+0x00000000|$(FVMAIN_SIZE)
+FV = FVMAIN_COMPACT
+
+$(FVMAIN_SIZE)|$(SECFV_SIZE)
 FV = SECFV
 
 ################################################################################
 
 [FD.MEMFD]
-BaseAddress   = 0x2000000|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfMemFvBase
-Size          = 0x600000|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfMemFvSize
+BaseAddress   = 0x800000
+Size          = 0x900000
 ErasePolarity = 1
 BlockSize     = 0x10000
-NumBlocks     = 0x60
+NumBlocks     = 0x90
 
-0x0|0x600000
-FV = MAINFV
+0x000000|0x006000
+gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPageTablesBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPageTablesSize
+
+0x006000|0x001000
+gUefiOvmfPkgTokenSpaceGuid.PcdOvmfLockBoxStorageBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfLockBoxStorageSize
+
+0x007000|0x001000
+gEfiMdePkgTokenSpaceGuid.PcdGuidedExtractHandlerTableAddress|gUefiOvmfPkgTokenSpaceGuid.PcdGuidedExtractHandlerTableSize
+
+0x010000|0x008000
+gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamSize
+
+0x018000|0x008000
+gUefiOvmfPkgTokenSpaceGuid.PcdS3AcpiReservedMemoryBase|gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdS3AcpiReservedMemorySize
+
+0x020000|0x0E0000
+gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvSize
+FV = PEIFV
+
+0x100000|0x800000
+gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvSize
+FV = DXEFV
 
 ################################################################################
 
@@ -66,14 +132,14 @@ READ_LOCK_STATUS   = TRUE
 # SEC Phase modules
 #
 # The code in this FV handles the initial firmware startup, and
-# decompresses the MAINFV which handles the majority of the boot sequence.
+# decompresses the PEI and DXE FVs which handles the rest of the boot sequence.
 #
 INF  OvmfPkg/Sec/SecMain.inf
 
-INF  RuleOverride=RESET_VECTOR UefiCpuPkg/ResetVector/Vtf0/Bin/ResetVector.inf
+INF  RuleOverride=RESET_VECTOR OvmfPkg/ResetVector/ResetVector.inf
 
 ################################################################################
-[FV.MAINFV]
+[FV.PEIFV]
 BlockSize          = 0x10000
 FvAlignment        = 16
 ERASE_POLARITY     = 1
@@ -92,15 +158,6 @@ READ_STATUS        = TRUE
 READ_LOCK_CAP      = TRUE
 READ_LOCK_STATUS   = TRUE
 
-#
-# Files to be placed in MAIN FV
-#
-# This firmware volume will have files placed in it uncompressed,
-# and then then entire firmware volume will be compressed in a
-# single compression operation in order to achieve better
-# overall compression.
-#
-
 APRIORI PEI {
   INF  MdeModulePkg/Universal/PCD/Pei/Pcd.inf
 }
@@ -113,12 +170,7 @@ INF  MdeModulePkg/Universal/PCD/Pei/Pcd.inf
 INF  IntelFrameworkModulePkg/Universal/StatusCode/Pei/StatusCodePei.inf
 INF  OvmfPkg/PlatformPei/PlatformPei.inf
 INF  MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
-
-FILE FV_IMAGE = A4EF5A93-3F1B-4232-A1C4-F0910E6D1D9C {
-  SECTION COMPRESS PI_NONE {
-    SECTION FV_IMAGE = DXEFV
-  }
-}
+INF  UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei.inf
 
 ################################################################################
 
@@ -142,7 +194,11 @@ READ_LOCK_CAP      = TRUE
 READ_LOCK_STATUS   = TRUE
 
 APRIORI DXE {
+  INF  MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
   INF  MdeModulePkg/Universal/PCD/Dxe/Pcd.inf
+!ifndef $(VBOX)
+  INF  OvmfPkg/QemuFlashFvbServicesRuntimeDxe/FvbServicesRuntimeDxe.inf
+!endif
 }
 
 #
@@ -167,10 +223,21 @@ INF  MdeModulePkg/Universal/Metronome/Metronome.inf
 INF  PcAtChipsetPkg/PcatRealTimeClockRuntimeDxe/PcatRealTimeClockRuntimeDxe.inf
 
 INF  OvmfPkg/BlockMmioToBlockIoDxe/BlockIo.inf
-INF  OvmfPkg/EmuVariableFvbRuntimeDxe/Fvb.inf
-INF  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe.inf
 !ifndef $(VBOX)
-INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
+INF  OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
+INF  OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
+INF  OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+INF  OvmfPkg/QemuFlashFvbServicesRuntimeDxe/FvbServicesRuntimeDxe.inf
+!endif
+INF  OvmfPkg/EmuVariableFvbRuntimeDxe/Fvb.inf
+!ifndef $(VBOX)
+INF  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe.inf
+!if $(SECURE_BOOT_ENABLE) == TRUE
+  INF  SecurityPkg/VariableAuthenticated/RuntimeDxe/VariableRuntimeDxe.inf
+  INF  OvmfPkg/SecureBootConfigDxe/SecureBootConfigDxe.inf
+!else
+  INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
+!endif
 !else
 INF  MdeModulePkg/Universal/Variable/EmuRuntimeDxe/EmuVariableRuntimeDxe.inf
 !endif
@@ -195,6 +262,7 @@ INF  IntelFrameworkModulePkg/Bus/Pci/IdeBusDxe/IdeBusDxe.inf
 INF  PcAtChipsetPkg/Bus/Pci/IdeControllerDxe/IdeControllerDxe.inf
 INF  MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
 INF  MdeModulePkg/Universal/SetupBrowserDxe/SetupBrowserDxe.inf
+INF  MdeModulePkg/Universal/DisplayEngineDxe/DisplayEngineDxe.inf
 INF  MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
 
 !ifdef $(VBOX)
@@ -226,22 +294,23 @@ INF  IntelFrameworkModulePkg/Bus/Isa/IsaFloppyDxe/IsaFloppyDxe.inf
 INF  MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
 INF  OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe.inf
 
+!ifndef $(VBOX)
+INF  OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf
+INF  RuleOverride=ACPITABLE OvmfPkg/AcpiTables/AcpiTables.inf
+INF  OvmfPkg/AcpiS3SaveDxe/AcpiS3SaveDxe.inf
+INF  MdeModulePkg/Universal/Acpi/S3SaveStateDxe/S3SaveStateDxe.inf
+INF  MdeModulePkg/Universal/Acpi/BootScriptExecutorDxe/BootScriptExecutorDxe.inf
+!else
 INF  MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
 INF  MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatformDxe.inf
-!ifndef $(VBOX)
-INF  RuleOverride=ACPITABLE OvmfPkg/AcpiTables/AcpiTables.inf
 !endif
 
 INF  RuleOverride = BINARY FatBinPkg/EnhancedFatDxe/Fat.inf
 
-!if $(BUILD_NEW_SHELL)
+!ifndef $(USE_OLD_SHELL)
 INF  ShellPkg/Application/Shell/Shell.inf
 !else
-!if $(USE_NEW_SHELL)
-INF  RuleOverride = BINARY ShellBinPkg/UefiShell/UefiShell.inf
-!else
 INF  RuleOverride = BINARY EdkShellBinPkg/FullShell/FullShell.inf
-!endif
 !endif
 
 FILE FREEFORM = PCD(gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdLogoFile) {
@@ -259,10 +328,12 @@ FILE FREEFORM = PCD(gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdLogoFile) {
 #
 # Network modules
 #
-!if $(NETWORK_ENABLE)
+!ifndef $(VBOX)
+!if $(E1000_ENABLE)
   FILE DRIVER = 5D695E11-9B3F-4b83-B25F-4A8D5D69BE07 {
     SECTION PE32 = Intel3.5/EFI32/E3507E2.EFI
   }
+!endif
   INF  MdeModulePkg/Universal/Network/SnpDxe/SnpDxe.inf
   INF  MdeModulePkg/Universal/Network/DpcDxe/DpcDxe.inf
   INF  MdeModulePkg/Universal/Network/MnpDxe/MnpDxe.inf
@@ -276,6 +347,7 @@ FILE FREEFORM = PCD(gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdLogoFile) {
   INF  MdeModulePkg/Universal/Network/Udp4Dxe/Udp4Dxe.inf
   INF  MdeModulePkg/Universal/Network/UefiPxeBcDxe/UefiPxeBcDxe.inf
   INF  MdeModulePkg/Universal/Network/IScsiDxe/IScsiDxe.inf
+  INF  OvmfPkg/VirtioNetDxe/VirtioNet.inf
 !endif
 
 #
@@ -294,6 +366,11 @@ INF  IntelFrameworkModulePkg/Csm/BiosThunk/VideoDxe/VideoDxe.inf
 INF  IntelFrameworkModulePkg/Csm/LegacyBiosDxe/LegacyBiosDxe.inf
 INF  RuleOverride=CSM OvmfPkg/Csm/Csm16/Csm16.inf
 !endif
+
+!ifndef $(VBOX)
+INF  OvmfPkg/QemuVideoDxe/QemuVideoDxe.inf
+!endif
+INF  OvmfPkg/PlatformDxe/Platform.inf
 
 ################################################################################
 
@@ -317,7 +394,13 @@ READ_LOCK_STATUS   = TRUE
 
 FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
    SECTION GUIDED EE4E5898-3914-4259-9D6E-DC7BD79403CF PROCESSING_REQUIRED = TRUE {
-     SECTION FV_IMAGE = MAINFV
+     #
+     # These firmware volumes will have files placed in them uncompressed,
+     # and then both firmware volumes will be compressed in a single
+     # compression operation in order to achieve better overall compression.
+     #
+     SECTION FV_IMAGE = PEIFV
+     SECTION FV_IMAGE = DXEFV
    }
  }
 
@@ -383,7 +466,7 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
     UI        STRING="$(MODULE_NAME)" Optional
     VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
   }
-  
+
 [Rule.Common.UEFI_APPLICATION]
   FILE APPLICATION = $(NAMED_GUID) {
     PE32     PE32                    $(INF_OUTPUT)/$(MODULE_NAME).efi
@@ -397,7 +480,7 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
     UI        STRING="$(MODULE_NAME)" Optional
     VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
   }
-  
+
 [Rule.Common.USER_DEFINED.ACPITABLE]
   FILE FREEFORM = $(NAMED_GUID) {
     RAW ACPI               |.acpi
@@ -411,12 +494,5 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
 
 [Rule.Common.SEC.RESET_VECTOR]
   FILE RAW = $(NAMED_GUID) {
-    RAW RAW                |.raw
+    RAW BIN   Align = 16   |.bin
   }
-
-!ifndef $(VBOX)
-[OptionRom.OvmfVideo]
-INF  OvmfPkg/QemuVideoDxe/QemuVideoDxe.inf {
-    PCI_DEVICE_ID  = 0x00B8
-  }
-!endif

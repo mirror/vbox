@@ -1,15 +1,24 @@
 ## @file
-#  Component description file for SMM Authenticated Variable module.
+#  Provides SMM authenticated variable service
 #
 #  This module installs SMM variable protocol into SMM protocol database,
 #  which can be used by SMM driver, and installs SMM variable protocol
 #  into BS protocol database, which can be used to notify the SMM Runtime
 #  Dxe driver that the SMM variable service is ready.
 #  This module should be used with SMM Runtime DXE module together. The
-#  SMM Runtime DXE module would install variable arch protocol and variable
+#  SMM Runtime DXE module installs variable arch protocol and variable
 #  write arch protocol based on SMM variable module.
 #
-# Copyright (c) 2010 - 2012, Intel Corporation. All rights reserved.<BR>
+#  Caution: This module requires additional review when modified.
+#  This driver will have external input - variable data and communicate buffer in SMM mode.
+#  This external input must be validated carefully to avoid security issues such as 
+#  buffer overflow or integer overflow.
+#    The whole SMM authentication variable design relies on the integrity of flash part and SMM.
+#  which is assumed to be protected by platform.  All variable code and metadata in flash/SMM Memory
+#  may not be modified without authorization. If platform fails to protect these resources, 
+#  the authentication service provided in this driver will be broken, and the behavior is undefined.
+#
+# Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution. The full text of the license may be found at
@@ -21,7 +30,8 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = VariableSmm
+  BASE_NAME                      = VariableAuthSmm
+  MODULE_UNI_FILE                = VariableAuthSmm.uni
   FILE_GUID                      = D34BDC5E-968A-40f5-A48C-E594F45AE211
   MODULE_TYPE                    = DXE_SMM_DRIVER
   VERSION_STRING                 = 1.0
@@ -62,39 +72,86 @@
   BaseCryptLib
   PlatformSecureLib
   HobLib
+  SmmMemLib
 
 [Protocols]
-  gEfiSmmFirmwareVolumeBlockProtocolGuid        ## SOMETIMES_CONSUMES
-  gEfiSmmVariableProtocolGuid                   ## ALWAYS_PRODUCES
-  gEfiSmmFaultTolerantWriteProtocolGuid         ## SOMETIMES_CONSUMES
+  gEfiSmmFirmwareVolumeBlockProtocolGuid        ## CONSUMES
+  
+  ## PRODUCES
+  ## UNDEFINED     # SmiHandlerRegister
+  gEfiSmmVariableProtocolGuid
+  
+  ## CONSUMES
+  ## NOTIFY  
+  gEfiSmmFaultTolerantWriteProtocolGuid
+  gEfiSmmEndOfDxeProtocolGuid              ## NOTIFY
 
 [Guids]
-  gEfiAuthenticatedVariableGuid                 ## PRODUCES ## Configuration Table Guid
-  gEfiGlobalVariableGuid                        ## PRODUCES ## Variable Guid
-  gSmmVariableWriteGuid                         ## PRODUCES ## SMM Variable Write Guid
-  gEfiCertTypeRsa2048Sha256Guid
+  ## PRODUCES             ## GUID # Variable store header
+  ## CONSUMES             ## GUID # Variable store header
+  ## SOMETIMES_CONSUMES   ## HOB
+  gEfiAuthenticatedVariableGuid
+  
+  ## SOMETIMES_CONSUMES   ## Variable:L"PlatformLang"
+  ## SOMETIMES_PRODUCES   ## Variable:L"PlatformLang"
+  ## SOMETIMES_CONSUMES   ## Variable:L"Lang"
+  ## SOMETIMES_PRODUCES   ## Variable:L"Lang"
+  ## SOMETIMES_CONSUMES   ## Variable:L"HwErrRecSupport"
+  ## CONSUMES             ## Variable:L"SetupMode"
+  ## PRODUCES             ## Variable:L"SetupMode"
+  ## SOMETIMES_CONSUMES   ## Variable:L"PK"
+  ## SOMETIMES_CONSUMES   ## Variable:L"KEK"
+  ## CONSUMES             ## Variable:L"SecureBoot"
+  ## PRODUCES             ## Variable:L"SecureBoot"
+  ## CONSUMES             ## Variable:L"SignatureSupport"
+  ## PRODUCES             ## Variable:L"SignatureSupport"
+  ## PRODUCES             ## Variable:L"VendorKeys"
+  gEfiGlobalVariableGuid
+  
+  ## SOMETIMES_CONSUMES   ## Variable:L"DB"
+  ## SOMETIMES_CONSUMES   ## Variable:L"DBX"
   gEfiImageSecurityDatabaseGuid
-  gEfiCertX509Guid
-  gEfiCertPkcs7Guid
-  gEfiCertRsa2048Guid
+ 
+  ## CONSUMES             ## Variable:L"SecureBootEnable"
+  ## PRODUCES             ## Variable:L"SecureBootEnable"
   gEfiSecureBootEnableDisableGuid
+  
+  ## CONSUMES             ## Variable:L"CustomMode"
+  ## PRODUCES             ## Variable:L"CustomMode"
   gEfiCustomModeEnableGuid
-  gEfiSystemNvDataFvGuid                        ## CONSUMES
+  
+  ## CONSUMES             ## Variable:L"certdb"
+  ## PRODUCES             ## Variable:L"certdb"
   gEfiCertDbGuid
 
+  ## CONSUMES             ## Variable:L"VendorKeysNv"
+  ## PRODUCES             ## Variable:L"VendorKeysNv"
+  gEfiVendorKeysNvGuid
+    
+  gSmmVariableWriteGuid                    ## PRODUCES               ## GUID        # Install protocol
+  gEfiCertTypeRsa2048Sha256Guid            ## SOMETIMES_CONSUMES     ## GUID        # Unique ID for the format of the CertData.
+  gEfiCertPkcs7Guid                        ## SOMETIMES_CONSUMES     ## GUID        # Unique ID for the format of the CertData.
+  gEfiCertX509Guid                         ## SOMETIMES_CONSUMES     ## GUID        # Unique ID for the type of the signature.
+  gEfiSystemNvDataFvGuid                   ## CONSUMES               ## GUID
+  gEfiHardwareErrorVariableGuid            ## SOMETIMES_CONSUMES     ## Variable:L"HwErrRec####"
+  gEdkiiFaultTolerantWriteGuid             ## SOMETIMES_CONSUMES     ## HOB
+  
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase64
-  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize
-  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxHardwareErrorVariableSize
-  gEfiMdeModulePkgTokenSpaceGuid.PcdVariableStoreSize
-  gEfiMdeModulePkgTokenSpaceGuid.PcdHwErrStorageSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize       ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase       ## SOMETIMES_CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase64     ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize                  ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxHardwareErrorVariableSize     ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVariableStoreSize                ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHwErrStorageSize                 ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdReclaimVariableSpaceAtEndOfDxe   ## CONSUMES
 
 [FeaturePcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdVariableCollectStatistics  ## SOMETIME_CONSUMES (statistic the information of variable.)
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVariableCollectStatistics        ## CONSUMES  # statistic the information of variable.
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangDeprecate       ## CONSUMES  # Auto update PlatformLang/Lang
 
 [Depex]
   TRUE
-
-
+  
+[UserExtensions.TianoCore."ExtraFiles"]
+  VariableSmmExtra.uni

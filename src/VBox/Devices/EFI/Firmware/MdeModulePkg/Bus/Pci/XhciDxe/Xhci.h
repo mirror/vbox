@@ -2,7 +2,7 @@
 
   Provides some data structure definitions used by the XHCI host controller driver.
 
-Copyright (c) 2011 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -30,6 +30,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiLib.h>
 #include <Library/DebugLib.h>
+#include <Library/ReportStatusCodeLib.h>
 
 #include <IndustryStandard/Pci.h>
 
@@ -39,7 +40,12 @@ typedef struct _USB_DEV_CONTEXT      USB_DEV_CONTEXT;
 #include "XhciReg.h"
 #include "XhciSched.h"
 #include "ComponentName.h"
+#include "UsbHcMem.h"
 
+//
+// The unit is microsecond, setting it as 1us.
+//
+#define XHC_1_MICROSECOND            (1)
 //
 // Convert millisecond to microsecond.
 //
@@ -190,12 +196,21 @@ struct _USB_DEV_CONTEXT {
   // These information is used to support XHCI's Config_Endpoint cmd.
   //
   EFI_USB_CONFIG_DESCRIPTOR **ConfDesc;
+  //
+  // A device has an active Configuration.
+  //
+  UINT8                     ActiveConfiguration;
+  //
+  // Every interface has an active AlternateSetting.
+  //
+  UINT8                     *ActiveAlternateSetting;
 };
 
 struct _USB_XHCI_INSTANCE {
   UINT32                    Signature;
   EFI_PCI_IO_PROTOCOL       *PciIo;
   UINT64                    OriginalPciAttributes;
+  USBHC_MEM_POOL            *MemPool;
 
   EFI_USB2_HC_PROTOCOL      Usb2Hc;
 
@@ -218,10 +233,15 @@ struct _USB_XHCI_INSTANCE {
   UINT16                    MaxInterrupt;
   UINT32                    PageSize;
   UINT64                    *ScratchBuf;
+  VOID                      *ScratchMap;
   UINT32                    MaxScratchpadBufs;
+  UINT64                    *ScratchEntry;
+  UINTN                     *ScratchEntryMap;
   UINT32                    ExtCapRegBase;
   UINT32                    UsbLegSupOffset;
+  UINT32                    DebugCapSupOffset;
   UINT64                    *DCBAA;
+  VOID                      *DCBAAMap;
   UINT32                    MaxSlotsEn;
   //
   // Cmd Transfer Ring

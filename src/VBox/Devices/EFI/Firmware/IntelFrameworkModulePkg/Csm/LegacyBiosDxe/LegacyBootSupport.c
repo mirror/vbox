@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -32,6 +32,10 @@ VOID                *mServiceAreaData   = NULL;
 UINT64              mLowWater           = 0xffffffffffffffffULL;
 
 extern BBS_TABLE           *mBbsTable;
+
+extern VOID                  *mRuntimeSmbiosEntryPoint;
+extern EFI_PHYSICAL_ADDRESS  mReserveSmbiosEntryPoint;
+extern EFI_PHYSICAL_ADDRESS  mStructureTableAddress;
 
 /**
   Print the BBS Table.
@@ -777,6 +781,63 @@ LegacyGetDataOrTable (
   return EFI_SUCCESS;
 }
 
+/**
+  Copy SMBIOS table to EfiReservedMemoryType of memory for legacy boot.
+
+**/
+VOID
+CreateSmbiosTableInReservedMemory (
+  VOID
+  )
+{
+  SMBIOS_TABLE_ENTRY_POINT    *EntryPointStructure;
+  
+  if ((mRuntimeSmbiosEntryPoint == NULL) || 
+      (mReserveSmbiosEntryPoint == 0) || 
+      (mStructureTableAddress == 0)) {
+    return;
+  }
+  
+  EntryPointStructure = (SMBIOS_TABLE_ENTRY_POINT *) mRuntimeSmbiosEntryPoint;
+  
+  //
+  // Copy SMBIOS Entry Point Structure
+  //
+  CopyMem (
+    (VOID *)(UINTN) mReserveSmbiosEntryPoint,
+    EntryPointStructure,
+    EntryPointStructure->EntryPointLength
+  );
+  
+  //
+  // Copy SMBIOS Structure Table into EfiReservedMemoryType memory
+  //
+  CopyMem (
+    (VOID *)(UINTN) mStructureTableAddress,
+    (VOID *)(UINTN) EntryPointStructure->TableAddress,
+    EntryPointStructure->TableLength
+  );
+  
+  //
+  // Update TableAddress in Entry Point Structure
+  //
+  EntryPointStructure = (SMBIOS_TABLE_ENTRY_POINT *)(UINTN) mReserveSmbiosEntryPoint;
+  EntryPointStructure->TableAddress = (UINT32)(UINTN) mStructureTableAddress;
+  
+  //
+  // Fixup checksums in the Entry Point Structure
+  //
+  EntryPointStructure->IntermediateChecksum = 0;
+  EntryPointStructure->EntryPointStructureChecksum = 0;
+
+  EntryPointStructure->IntermediateChecksum = 
+    CalculateCheckSum8 (
+      (UINT8 *) EntryPointStructure + OFFSET_OF (SMBIOS_TABLE_ENTRY_POINT, IntermediateAnchorString), 
+      EntryPointStructure->EntryPointLength - OFFSET_OF (SMBIOS_TABLE_ENTRY_POINT, IntermediateAnchorString)
+      );
+  EntryPointStructure->EntryPointStructureChecksum =
+    CalculateCheckSum8 ((UINT8 *) EntryPointStructure, EntryPointStructure->EntryPointLength);
+}
 
 /**
   Assign drive number to legacy HDD drives prior to booting an EFI
@@ -815,7 +876,6 @@ GenericLegacyBoot (
   EFI_HANDLE                        IdeController;
   UINTN                             HandleCount;
   EFI_HANDLE                        *HandleBuffer;
-  VOID                              *SmbiosTable;
   VOID                              *AcpiTable;
   UINTN                             ShadowAddress;
   UINT32                            Granularity;
@@ -904,21 +964,15 @@ GenericLegacyBoot (
       );
     Private->Legacy16Table->E820Length = (UINT32) CopySize;
   }
-  //
-  // Get SMBIOS and ACPI table pointers
-  //
-  SmbiosTable = NULL;
-  EfiGetSystemConfigurationTable (
-    &gEfiSmbiosTableGuid,
-    &SmbiosTable
-    );
+
   //
   // We do not ASSERT if SmbiosTable not found. It is possbile that a platform does not produce SmbiosTable.
   //
-  if (SmbiosTable == NULL) {
+  if (mReserveSmbiosEntryPoint == 0) {
     DEBUG ((EFI_D_INFO, "Smbios table is not found!\n"));
   }
-  EfiToLegacy16BootTable->SmbiosTable = (UINT32)(UINTN)SmbiosTable;
+  CreateSmbiosTableInReservedMemory ();
+  EfiToLegacy16BootTable->SmbiosTable = (UINT32)(UINTN)mReserveSmbiosEntryPoint;
 
   AcpiTable = NULL;
   Status = EfiGetSystemConfigurationTable (
@@ -1199,6 +1253,14 @@ GenericLegacyBoot (
   //
   EnableAllControllers (Private);
   if ((mBootMode == BOOT_LEGACY_OS) || (mBootMode == BOOT_UNCONVENTIONAL_DEVICE)) {
+    //
+    // Report Status Code to indicate legacy boot event will be signalled
+    //
+    REPORT_STATUS_CODE (
+      EFI_PROGRESS_CODE,
+      (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_LEGACY_BOOT_EVENT)
+      );
+
     //
     // Signal all the events that are waiting on EVT_SIGNAL_LEGACY_BOOT
     //
@@ -1534,6 +1596,9 @@ EfiMemoryTypeToE820Type (
   case EfiRuntimeServicesCode:
   case EfiRuntimeServicesData:
     return EfiAcpiAddressRangeMemory;
+
+  case EfiPersistentMemory:
+    return EfiAddressRangePersistentMemory;
 
   case EfiACPIReclaimMemory:
     return EfiAcpiAddressRangeACPI;
@@ -2039,7 +2104,7 @@ LegacyBiosCompleteStandardCmosBeforeBoot (
   //
   // redo memory size since it can change
   //
-  Size = 15 * SIZE_1MB;
+  Size = (15 * SIZE_1MB) >> 10;
   if (Private->IntThunk->EfiToLegacy16InitTable.OsMemoryAbove1Mb < (15 * SIZE_1MB)) {
     Size  = Private->IntThunk->EfiToLegacy16InitTable.OsMemoryAbove1Mb >> 10;
   }

@@ -4,7 +4,7 @@
 # This module contains the functionality to generate build report after
 # build all target completes successfully.
 #
-# Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -16,7 +16,7 @@
 
 ## Import Modules
 #
-import os
+import Common.LongFilePathOs as os
 import re
 import platform
 import textwrap
@@ -40,6 +40,7 @@ from Common.DataType import TAB_SPACE_SPLIT
 from Common.DataType import TAB_BRG_PCD
 from Common.DataType import TAB_BRG_LIBRARY
 from Common.DataType import TAB_BACK_SLASH
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ## Pattern to extract contents in EDK DXS files
 gDxsDependencyPattern = re.compile(r"DEPENDENCY_START(.+)DEPENDENCY_END", re.DOTALL)
@@ -72,6 +73,9 @@ gGlueLibEntryPoint = re.compile(r"__EDKII_GLUE_MODULE_ENTRY_POINT__\s*=\s*(\w+)"
 ## Tags for MaxLength of line in report
 gLineMaxLength = 120
 
+## Tags for end of line in report
+gEndOfLine = "\r\n"
+
 ## Tags for section start, end and separator
 gSectionStart = ">" + "=" * (gLineMaxLength-2) + "<"
 gSectionEnd = "<" + "=" * (gLineMaxLength-2) + ">" + "\n"
@@ -91,9 +95,9 @@ gPcdTypeMap = {
   'Dynamic'          : ('DYN',    'Dynamic'),
   'DynamicHii'       : ('DYNHII', 'Dynamic'),
   'DynamicVpd'       : ('DYNVPD', 'Dynamic'),
-  'DynamicEx'        : ('DEX',    'Dynamic'),
-  'DynamicExHii'     : ('DEXHII', 'Dynamic'),
-  'DynamicExVpd'     : ('DEXVPD', 'Dynamic'),
+  'DynamicEx'        : ('DEX',    'DynamicEx'),
+  'DynamicExHii'     : ('DEXHII', 'DynamicEx'),
+  'DynamicExVpd'     : ('DEXVPD', 'DynamicEx'),
   }
 
 ## The look up table to map module type to driver type
@@ -128,7 +132,7 @@ gOpCodeList = ["BEFORE", "AFTER", "PUSH", "AND", "OR", "NOT", "TRUE", "FALSE", "
 def FileWrite(File, String, Wrapper=False):
     if Wrapper:
         String = textwrap.fill(String, 120)
-    File.write(String + "\r\n")
+    File.write(String + gEndOfLine)
 
 ##
 # Find all the header file that the module source directly includes.
@@ -203,6 +207,8 @@ def FileLinesSplit(Content=None, MaxLength=None):
             NewContentList.append(Line)
     for NewLine in NewContentList:
         NewContent += NewLine + TAB_LINE_BREAK
+    
+    NewContent = NewContent.replace(TAB_LINE_BREAK, gEndOfLine).replace('\r\r\n', gEndOfLine)
     return NewContent
     
     
@@ -254,7 +260,7 @@ class DepexParser(object):
             Statement = gOpCodeList[struct.unpack("B", OpCode)[0]]
             if Statement in ["BEFORE", "AFTER", "PUSH"]:
                 GuidValue = "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X" % \
-                            struct.unpack("LHHBBBBBBBB", DepexFile.read(16))
+                            struct.unpack("=LHHBBBBBBBB", DepexFile.read(16))
                 GuidString = self._GuidDb.get(GuidValue, GuidValue)
                 Statement = "%s %s" % (Statement, GuidString)
             DepexStatement.append(Statement)
@@ -694,7 +700,8 @@ class PcdReport(object):
         # Collect PCDs defined in DSC common section
         #
         self.DscPcdDefault = {}
-        for Platform in Wa.BuildDatabase.WorkspaceDb.PlatformList:
+        for Arch in Wa.ArchList:
+            Platform = Wa.BuildDatabase[Wa.MetaFile, Arch, Wa.BuildTarget, Wa.ToolChain]
             for (TokenCName, TokenSpaceGuidCName) in Platform.Pcds:
                 DscDefaultValue = Platform.Pcds[(TokenCName, TokenSpaceGuidCName)].DefaultValue
                 if DscDefaultValue:

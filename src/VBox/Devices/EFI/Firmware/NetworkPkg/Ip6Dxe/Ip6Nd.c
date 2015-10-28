@@ -1,7 +1,7 @@
 /** @file
   Implementation of Neighbor Discovery support routines.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -261,7 +261,7 @@ Ip6CreatePrefixListEntry (
 }
 
 /**
-  Destory a IP6 prefix list entry.
+  Destroy a IP6 prefix list entry.
 
   @param[in]  IpSb              The pointer to IP6_SERVICE instance.
   @param[in]  PrefixEntry       The to be destroyed prefix list entry.
@@ -821,7 +821,8 @@ Ip6OnDADFinished (
   UINT16                    OptBuf[4];
   EFI_DHCP6_PACKET_OPTION   *Oro;
   EFI_DHCP6_RETRANSMISSION  InfoReqReXmit;
-
+  EFI_IPv6_ADDRESS          AllNodes;
+  
   IpSb     = IpIf->Service;
   AddrInfo = DadEntry->AddressInfo;
 
@@ -921,6 +922,11 @@ Ip6OnDADFinished (
     FreePool (AddrInfo);
     RemoveEntryList (&DadEntry->Link);
     FreePool (DadEntry);
+    //
+    // Leave link-scope all-nodes multicast address (FF02::1)
+    //
+    Ip6SetToAllNodeMulticast (FALSE, IP6_LINK_LOCAL_SCOPE, &AllNodes);
+    Ip6LeaveGroup (IpSb, &AllNodes);
     //
     // Disable IP operation since link-local address is a duplicate address.
     //

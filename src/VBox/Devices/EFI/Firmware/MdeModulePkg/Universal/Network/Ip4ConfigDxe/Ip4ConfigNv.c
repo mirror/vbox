@@ -1,7 +1,7 @@
 /** @file
   Helper functions for configuring or getting the parameters relating to Ip4.
 
-Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -271,7 +271,7 @@ Ip4ConfigConvertIfrNvDataToDeviceConfigData (
     ZeroMem (&Ip4ConfigInstance->Ip4ConfigCallbackInfo.Gateway, sizeof (EFI_IPv4_ADDRESS));
   }
 
-  NicInfo->Perment = TRUE;
+  NicInfo->Permanent = TRUE;
   CopyMem (&NicInfo->NicAddr, &Ip4ConfigInstance->NicAddr, sizeof (NIC_ADDR));
 
   return EfiNicIp4ConfigSetInfo (Ip4ConfigInstance, NicInfo, TRUE);

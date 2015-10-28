@@ -3,7 +3,7 @@
 
 ;------------------------------------------------------------------------------
 ;
-; Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+; Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 ; This program and the accompanying materials
 ; are licensed and made available under the terms and conditions of the BSD License
 ; which accompanies this distribution.  The full text of the license may be found at
@@ -142,8 +142,8 @@ SavedCr0    DD      ?
 SavedCs     DW      ?
 @64BitCode:
     db      090h 
-    db      067h, 0bch                 ; mov esp, imm32
-SavedSp     DD   ?                     ; restore stack
+    db      048h, 0bch                 ; mov rsp, imm64
+SavedSp     DQ   ?                     ; restore stack
     nop
     ret
 _BackFromUserCode   ENDP
@@ -282,7 +282,7 @@ InternalAsmThunk16  PROC    USES    rbp rbx rsi rdi
     and     eax, 7ffffffeh              ; clear PE, PG bits
     mov     rbp, cr4
     mov     [rcx], ebp                  ; save CR4 in SavedCr4
-    and     ebp, 300h                   ; clear all but PCE and OSFXSR bits
+    and     ebp, NOT 30h                ; clear PAE, PSE bits
     mov     esi, r8d                    ; esi <- 16-bit stack segment
     DB      6ah, DATA32                 ; push DATA32
     pop     rdx                         ; rdx <- 32-bit data segment selector
@@ -294,7 +294,7 @@ InternalAsmThunk16  PROC    USES    rbp rbx rsi rdi
     push    r8
     mov     r8d, cs
     mov     [rcx + (SavedCs - SavedCr4)], r8w
-    mov     [rcx + (SavedSp - SavedCr4)], esp
+    mov     [rcx + (SavedSp - SavedCr4)], rsp
     jmp     fword ptr [rcx + (_EntryPoint - SavedCr4)]
 @RetFromRealMode:
     popfq

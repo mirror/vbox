@@ -1,7 +1,8 @@
 /** @file
   Function definitions for shell simple text in and out on top of file handles.
 
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
+  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -12,22 +13,20 @@
 
 **/
 
-#include <Uefi.h>
-#include <ShellBase.h>
-
-#include "ConsoleWrappers.h"
 #include "Shell.h"
 
 typedef struct {
   EFI_SIMPLE_TEXT_INPUT_PROTOCOL  SimpleTextIn;
   SHELL_FILE_HANDLE               FileHandle;
   EFI_HANDLE                      TheHandle;
+  UINT64                          RemainingBytesOfInputFile;
 } SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL;
 
 typedef struct {
   EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL SimpleTextOut;
   SHELL_FILE_HANDLE               FileHandle;
   EFI_HANDLE                      TheHandle;
+  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *OriginalSimpleTextOut;
 } SHELL_EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL;
 
 /**
@@ -45,19 +44,7 @@ ConInWaitForKey (
   IN  VOID            *Context
   )
 {
-  UINT64 Position;
-  UINT64 Size;
-  //
-  // Someone is waiting on the keystroke event, if there's
-  // a key pending, signal the event
-  //
-  // Context is the pointer to EFI_SIMPLE_TEXT_INPUT_PROTOCOL
-  //
-  ShellInfoObject.NewEfiShellProtocol->GetFilePosition(((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)Context)->FileHandle, &Position);
-  ShellInfoObject.NewEfiShellProtocol->GetFileSize    (((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)Context)->FileHandle, &Size    );
-  if (Position < Size) {
-    gBS->SignalEvent (Event);
-  }
+  gBS->SignalEvent (Event);
 }
 
 /**
@@ -94,10 +81,32 @@ FileBasedSimpleTextInReadKeyStroke(
   )
 {
   UINTN Size;
-  Size = sizeof(CHAR16);
+
+  //
+  // Verify the parameters
+  //
   if (Key == NULL || This == NULL) {
     return (EFI_INVALID_PARAMETER);
   }
+
+  //
+  // Check if we have any characters left in the stream.
+  //
+  if (((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->RemainingBytesOfInputFile == 0) {
+    return (EFI_NOT_READY);
+  }
+
+  Size = sizeof(CHAR16);
+
+  //
+  // Decrement the amount of free space by Size or set to zero (for odd length files)
+  //
+  if (((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->RemainingBytesOfInputFile > Size) {
+    ((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->RemainingBytesOfInputFile -= Size;
+  } else {
+    ((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->RemainingBytesOfInputFile = 0;
+  }
+
   Key->ScanCode = 0;
   return (ShellInfoObject.NewEfiShellProtocol->ReadFile(
     ((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->FileHandle,
@@ -124,6 +133,8 @@ CreateSimpleTextInOnFile(
 {
   SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL  *ProtocolToReturn;
   EFI_STATUS                            Status;
+  UINT64                                CurrentPosition;
+  UINT64                                FileSize;
 
   if (HandleLocation == NULL || FileHandleToUse == NULL) {
     return (NULL);
@@ -133,7 +144,15 @@ CreateSimpleTextInOnFile(
   if (ProtocolToReturn == NULL) {
     return (NULL);
   }
-  ProtocolToReturn->FileHandle                  = FileHandleToUse;
+
+  ShellGetFileSize    (FileHandleToUse, &FileSize);
+  ShellGetFilePosition(FileHandleToUse, &CurrentPosition);
+
+  //
+  // Initialize the protocol members
+  //
+  ProtocolToReturn->RemainingBytesOfInputFile  = FileSize - CurrentPosition;
+  ProtocolToReturn->FileHandle                 = FileHandleToUse;
   ProtocolToReturn->SimpleTextIn.Reset         = FileBasedSimpleTextInReset;
   ProtocolToReturn->SimpleTextIn.ReadKeyStroke = FileBasedSimpleTextInReadKeyStroke;
   
@@ -257,7 +276,16 @@ FileBasedSimpleTextOutQueryMode (
   OUT UINTN                           *Rows
   )
 {
-  return (EFI_UNSUPPORTED);
+  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *PassThruProtocol;
+  
+  PassThruProtocol = ((SHELL_EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *)This)->OriginalSimpleTextOut;
+  
+  // Pass the QueryMode call thru to the original SimpleTextOutProtocol
+  return (PassThruProtocol->QueryMode(
+    PassThruProtocol,
+    ModeNumber,
+    Columns,
+    Rows));
 }
 
 /**
@@ -390,8 +418,9 @@ FileBasedSimpleTextOutOutputString (
   Function to create a EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL on top of a 
   SHELL_FILE_HANDLE to support redirecting output from a file.
 
-  @param[in]  FileHandleToUse The pointer to the SHELL_FILE_HANDLE to use.
-  @param[in]  HandleLocation  The pointer of a location to copy handle with protocol to.
+  @param[in]  FileHandleToUse  The pointer to the SHELL_FILE_HANDLE to use.
+  @param[in]  HandleLocation   The pointer of a location to copy handle with protocol to.
+  @param[in]  OriginalProtocol The pointer to the original output protocol for pass thru of functions.
 
   @retval NULL                There was insufficient memory available.
   @return                     A pointer to the allocated protocol structure;
@@ -399,8 +428,9 @@ FileBasedSimpleTextOutOutputString (
 EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*
 EFIAPI
 CreateSimpleTextOutOnFile(
-  IN SHELL_FILE_HANDLE  FileHandleToUse,
-  IN EFI_HANDLE         *HandleLocation
+  IN SHELL_FILE_HANDLE               FileHandleToUse,
+  IN EFI_HANDLE                      *HandleLocation,
+  IN EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *OriginalProtocol
   )
 {
   SHELL_EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *ProtocolToReturn;
@@ -415,6 +445,7 @@ CreateSimpleTextOutOnFile(
     return (NULL);
   }
   ProtocolToReturn->FileHandle                      = FileHandleToUse;
+  ProtocolToReturn->OriginalSimpleTextOut           = OriginalProtocol;
   ProtocolToReturn->SimpleTextOut.Reset             = FileBasedSimpleTextOutReset;
   ProtocolToReturn->SimpleTextOut.TestString        = FileBasedSimpleTextOutTestString;
   ProtocolToReturn->SimpleTextOut.QueryMode         = FileBasedSimpleTextOutQueryMode;
@@ -429,12 +460,12 @@ CreateSimpleTextOutOnFile(
     FreePool(ProtocolToReturn);
     return (NULL);
   }
-  ProtocolToReturn->SimpleTextOut.Mode->MaxMode       = 0;
-  ProtocolToReturn->SimpleTextOut.Mode->Mode          = 0;
-  ProtocolToReturn->SimpleTextOut.Mode->Attribute     = 0;
-  ProtocolToReturn->SimpleTextOut.Mode->CursorColumn  = 0;
-  ProtocolToReturn->SimpleTextOut.Mode->CursorRow     = 0;
-  ProtocolToReturn->SimpleTextOut.Mode->CursorVisible = FALSE;
+  ProtocolToReturn->SimpleTextOut.Mode->MaxMode       = OriginalProtocol->Mode->MaxMode;
+  ProtocolToReturn->SimpleTextOut.Mode->Mode          = OriginalProtocol->Mode->Mode;
+  ProtocolToReturn->SimpleTextOut.Mode->Attribute     = OriginalProtocol->Mode->Attribute;
+  ProtocolToReturn->SimpleTextOut.Mode->CursorColumn  = OriginalProtocol->Mode->CursorColumn;
+  ProtocolToReturn->SimpleTextOut.Mode->CursorRow     = OriginalProtocol->Mode->CursorRow;
+  ProtocolToReturn->SimpleTextOut.Mode->CursorVisible = OriginalProtocol->Mode->CursorVisible;
 
   Status = gBS->InstallProtocolInterface(
     &(ProtocolToReturn->TheHandle), 

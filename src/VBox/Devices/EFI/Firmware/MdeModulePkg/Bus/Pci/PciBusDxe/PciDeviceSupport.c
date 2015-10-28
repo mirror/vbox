@@ -1,7 +1,7 @@
 /** @file
   Supporting functions implementaion for PCI devices management.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -711,7 +711,7 @@ StartPciDevicesOnBridge (
                              0,
                              &Supports
                              );
-        Supports &= EFI_PCI_DEVICE_ENABLE;
+        Supports &= (UINT64)EFI_PCI_DEVICE_ENABLE;
         PciIoDevice->PciIo.Attributes (
                              &(PciIoDevice->PciIo),
                              EfiPciIoAttributeOperationEnable,
@@ -763,7 +763,7 @@ StartPciDevicesOnBridge (
                              0,
                              &Supports
                              );
-        Supports &= EFI_PCI_DEVICE_ENABLE;
+        Supports &= (UINT64)EFI_PCI_DEVICE_ENABLE;
         PciIoDevice->PciIo.Attributes (
                              &(PciIoDevice->PciIo),
                              EfiPciIoAttributeOperationEnable,

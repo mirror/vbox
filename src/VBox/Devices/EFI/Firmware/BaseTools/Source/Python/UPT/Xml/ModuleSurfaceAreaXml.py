@@ -1,11 +1,11 @@
 ## @file
 # This file is used to parse a Module file of .PKG file
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available 
-# under the terms and conditions of the BSD License which accompanies this 
-# distribution. The full text of the license may be found at 
+# This program and the accompanying materials are licensed and made available
+# under the terms and conditions of the BSD License which accompanies this
+# distribution. The full text of the license may be found at
 # http://opensource.org/licenses/bsd-license.php
 #
 # THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
@@ -20,6 +20,7 @@ from xml.dom import minidom
 from Library.String import ConvertNEToNOTEQ
 from Library.String import ConvertNOTEQToNE
 from Library.String import GetStringOfList
+from Library.String import IsMatchArch
 from Library.Xml.XmlRoutines import XmlElement
 from Library.Xml.XmlRoutines import XmlAttribute
 from Library.Xml.XmlRoutines import XmlNode
@@ -66,7 +67,7 @@ from Library.Misc import GetSplitValueList
 #    </Filename> {1,}
 #    <AsBuilt> ... </AsBuilt> {0,}
 #    </BinaryFile> {1,}
-#    
+#
 class BinaryFileXml(object):
     def __init__(self):
         self.FileNames = []
@@ -81,11 +82,16 @@ class BinaryFileXml(object):
             pass
         BinaryFile = BinaryFileObject()
         FilenameList = []
+        SupArchList = ['COMMON']
         for SubItem in XmlList(Item, '%s/Filename' % Key):
             Axml = FilenameXml()
             Bxml = Axml.FromXml(SubItem, 'Filename')
             FilenameList.append(Bxml)
         BinaryFile.SetFileNameList(FilenameList)
+        for FileName in FilenameList:
+            if FileName.GetSupArchList():
+                SupArchList = FileName.GetSupArchList()
+        BinaryFile.SetSupArchList(SupArchList)
         if GlobalData.gIS_BINARY_INF:
             AsBuiltList = []
             for AsBuiltItem in XmlList(Item, '%s/AsBuilt' % Key):
@@ -128,44 +134,50 @@ class BinaryFileXml(object):
             pass
         NodeList = []
         FilenameList = BinaryFile.GetFileNameList()
+        SupportArch = None
         for Filename in FilenameList:
             Tmp = FilenameXml()
             NodeList.append(Tmp.ToXml(Filename, 'Filename'))
+            SupportArch = Filename.SupArchList
 
-        if GlobalData.gIS_BINARY_INF:
-            AsBuildList = BinaryFile.GetAsBuiltList()
-            PatchPcdValueList = AsBuildList.GetPatchPcdList()
-            PcdExList = AsBuildList.GetPcdExList()
-            LibGuidVerList = AsBuildList.GetLibraryInstancesList()
-            BuildFlagList = AsBuildList.GetBuildFlagsList()
+        AsBuildList = BinaryFile.GetAsBuiltList()
+        PatchPcdValueList = AsBuildList.GetPatchPcdList()
+        PcdExList = AsBuildList.GetPcdExList()
+        LibGuidVerList = AsBuildList.GetLibraryInstancesList()
+        BuildFlagList = AsBuildList.GetBuildFlagsList()
 
-            AsBuiltNodeList = []
+        AsBuiltNodeList = []
 
-            for Pcd in PatchPcdValueList:
+        for Pcd in PatchPcdValueList:
+            if IsMatchArch(Pcd.SupArchList, SupportArch):
                 Tmp = PcdEntryXml()
                 AsBuiltNodeList.append(Tmp.ToXml4(Pcd, 'PatchPcdValue'))
 
-            for Pcd in PcdExList:
+        for Pcd in PcdExList:
+            if IsMatchArch(Pcd.SupArchList, SupportArch):
                 Tmp = PcdEntryXml()
                 AsBuiltNodeList.append(Tmp.ToXml4(Pcd, 'PcdExValue'))
 
-            GuiVerElemList = []
-            for LibGuidVer in LibGuidVerList:
+        GuiVerElemList = []
+        for LibGuidVer in LibGuidVerList:
+            if LibGuidVer.GetLibGuid() and IsMatchArch(LibGuidVer.GetSupArchList(), SupportArch):
                 GuiVerElem = \
                 CreateXmlElement('GUID', LibGuidVer.GetLibGuid(), [], [['Version', LibGuidVer.GetLibVersion()]])
                 GuiVerElemList.append(GuiVerElem)
-            if len(GuiVerElemList) > 0:
-                LibGuidVerElem = CreateXmlElement('LibraryInstances', '', GuiVerElemList, [])
-                AsBuiltNodeList.append(LibGuidVerElem)
+        if len(GuiVerElemList) > 0:
+            LibGuidVerElem = CreateXmlElement('LibraryInstances', '', GuiVerElemList, [])
+            AsBuiltNodeList.append(LibGuidVerElem)
 
-            for BuildFlag in BuildFlagList:
-                Tmp = BuildFlagXml()
-                Elem = CreateXmlElement('BuildFlags', ''.join(BuildFlag), [], [])
-                AsBuiltNodeList.append(Elem)
+        for BuildFlag in BuildFlagList:
+            if IsMatchArch(BuildFlag.GetSupArchList(), SupportArch):
+                for Item in BuildFlag.GetAsBuildList():
+                    Tmp = BuildFlagXml()
+                    Elem = CreateXmlElement('BuildFlags', ''.join(Item), [], [])
+                    AsBuiltNodeList.append(Elem)
 
-            if len(AsBuiltNodeList) > 0:
-                Element = CreateXmlElement('AsBuilt', '', AsBuiltNodeList, [])
-                NodeList.append(Element)
+        if len(AsBuiltNodeList) > 0:
+            Element = CreateXmlElement('AsBuilt', '', AsBuiltNodeList, [])
+            NodeList.append(Element)
 
         Root = CreateXmlElement('%s' % Key, '', NodeList, [])
 
@@ -281,7 +293,7 @@ class ExternXml(object):
         for Item in self.HelpText:
             Str = Str + '\n\t' + str(Item)
         return Str
-##    
+##
 # DepexXml
 #
 class DepexXml(object):
@@ -649,7 +661,7 @@ class ModuleSurfaceAreaXml(object):
         else:
             Module.SetMiscFileList([])
 
-        #           
+        #
         # UserExtensions
         #
         for Item in XmlList(Item, '/ModuleSurfaceArea/UserExtensions'):
@@ -735,7 +747,7 @@ class ModuleSurfaceAreaXml(object):
            not XmlList(Item, '/ModuleSurfaceArea/PackageDependencies/Package'):
             Module.SetPackageDependencyList([None])
 
-        # 
+        #
         # Guid
         #
         for SubItem in XmlList(Item, '/ModuleSurfaceArea/Guids/GuidCName'):

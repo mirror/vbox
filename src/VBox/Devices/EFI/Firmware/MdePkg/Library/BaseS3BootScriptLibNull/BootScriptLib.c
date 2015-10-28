@@ -1,7 +1,7 @@
 /** @file
   Null function implementation for EFI S3 boot script. 
 
-  Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions
@@ -257,7 +257,7 @@ S3BootScriptSaveDispatch (
   return RETURN_SUCCESS;
 }
 /**
-  Adds a record for an execution stall on the processor into a specified boot script table.
+  Adds a record for dispatching specified arbitrary code into a specified boot script table.
 
   @param EntryPoint   Entry point of the code to be dispatched.
   @param Context      Argument to be passed into the EntryPoint of the code to be dispatched.
@@ -278,7 +278,12 @@ S3BootScriptSaveDispatch2 (
 /**
   Adds a record for memory reads of the memory location and continues when the exit criteria is
   satisfied or after a defined duration.
-  
+ 
+  Please aware, below interface is different with PI specification, Vol 5:
+  EFI_S3_SAVE_STATE_PROTOCOL.Write() for EFI_BOOT_SCRIPT_MEM_POLL_OPCODE.
+  "Duration" below is microseconds, while "Delay" in PI specification means
+  the number of 100ns units to poll.
+
   @param Width     The width of the memory operations.
   @param Address   The base address of the memory operations.
   @param BitMask   A pointer to the bit mask to be AND-ed with the data read from the register.
@@ -455,7 +460,7 @@ S3BootScriptSaveInformationAsciiString (
   how to get the script to run on an S3 resume because the boot script maintained by the lib will be 
   destroyed.
  
-  @return the base address of the new copy of the boot script tble.   
+  @return the base address of the new copy of the boot script table.   
 
 **/
 UINT8*

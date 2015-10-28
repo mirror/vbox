@@ -2,7 +2,7 @@
   Last PEIM.
   Responsibility of this module is to load the DXE Core from a Firmware Volume.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -92,27 +92,26 @@ PeimInitializeDxeIpl (
     // Ensure that DXE IPL is shadowed to permanent memory.
     //
     ASSERT (Status == EFI_ALREADY_STARTED);
+  }
      
-    //
-    // Get custom extract guided section method guid list 
-    //
-    ExtractHandlerNumber = ExtractGuidedSectionGetGuidList (&ExtractHandlerGuidTable);
-    
-    //
-    // Install custom extraction guid PPI
-    //
-    if (ExtractHandlerNumber > 0) {
-      GuidPpi = (EFI_PEI_PPI_DESCRIPTOR *) AllocatePool (ExtractHandlerNumber * sizeof (EFI_PEI_PPI_DESCRIPTOR));
-      ASSERT (GuidPpi != NULL);
-      while (ExtractHandlerNumber-- > 0) {
-        GuidPpi->Flags = EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST;
-        GuidPpi->Ppi   = (VOID *) &mCustomGuidedSectionExtractionPpi;
-        GuidPpi->Guid  = &ExtractHandlerGuidTable[ExtractHandlerNumber];
-        Status = PeiServicesInstallPpi (GuidPpi++);
-        ASSERT_EFI_ERROR(Status);
-      }
+  //
+  // Get custom extract guided section method guid list 
+  //
+  ExtractHandlerNumber = ExtractGuidedSectionGetGuidList (&ExtractHandlerGuidTable);
+  
+  //
+  // Install custom extraction guid PPI
+  //
+  if (ExtractHandlerNumber > 0) {
+    GuidPpi = (EFI_PEI_PPI_DESCRIPTOR *) AllocatePool (ExtractHandlerNumber * sizeof (EFI_PEI_PPI_DESCRIPTOR));
+    ASSERT (GuidPpi != NULL);
+    while (ExtractHandlerNumber-- > 0) {
+      GuidPpi->Flags = EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST;
+      GuidPpi->Ppi   = (VOID *) &mCustomGuidedSectionExtractionPpi;
+      GuidPpi->Guid  = &ExtractHandlerGuidTable[ExtractHandlerNumber];
+      Status = PeiServicesInstallPpi (GuidPpi++);
+      ASSERT_EFI_ERROR(Status);
     }
-    
   }
   
   //
@@ -122,6 +121,53 @@ PeimInitializeDxeIpl (
   ASSERT_EFI_ERROR(Status);
 
   return Status;
+}
+
+/**
+   Validate variable data for the MemoryTypeInformation. 
+
+   @param MemoryData       Variable data.
+   @param MemoryDataSize   Variable data length.
+
+   @return TRUE            The variable data is valid.
+   @return FALSE           The variable data is invalid.
+
+**/
+BOOLEAN
+ValidateMemoryTypeInfoVariable (
+  IN EFI_MEMORY_TYPE_INFORMATION      *MemoryData,
+  IN UINTN                            MemoryDataSize
+  )
+{
+  UINTN                       Count;
+  UINTN                       Index;
+
+  // Check the input parameter.
+  if (MemoryData == NULL) {
+    return FALSE;
+  }
+
+  // Get Count
+  Count = MemoryDataSize / sizeof (*MemoryData);
+
+  // Check Size
+  if (Count * sizeof(*MemoryData) != MemoryDataSize) {
+    return FALSE;
+  }
+
+  // Check last entry type filed.
+  if (MemoryData[Count - 1].Type != EfiMaxMemoryType) {
+    return FALSE;
+  }
+
+  // Check the type filed.
+  for (Index = 0; Index < Count - 1; Index++) {
+    if (MemoryData[Index].Type >= EfiMaxMemoryType) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
 }
 
 /**
@@ -174,25 +220,54 @@ DxeLoadCore (
                NULL,
                (VOID **) &S3Resume
                );
+    if (EFI_ERROR (Status)) {
+      //
+      // Report Status code that S3Resume PPI can not be found
+      //
+      REPORT_STATUS_CODE (
+        EFI_ERROR_CODE | EFI_ERROR_MAJOR,
+        (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_EC_S3_RESUME_PPI_NOT_FOUND)
+        );
+    }
     ASSERT_EFI_ERROR (Status);
     
     Status = S3Resume->S3RestoreConfig2 (S3Resume);
     ASSERT_EFI_ERROR (Status);
   } else if (BootMode == BOOT_IN_RECOVERY_MODE) {
+    REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_PC_RECOVERY_BEGIN));
     Status = PeiServicesLocatePpi (
                &gEfiPeiRecoveryModulePpiGuid,
                0,
                NULL,
                (VOID **) &PeiRecovery
                );
-    ASSERT_EFI_ERROR (Status);
-    
-    Status = PeiRecovery->LoadRecoveryCapsule (PeiServices, PeiRecovery);
+
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "Load Recovery Capsule Failed.(Status = %r)\n", Status));
+      DEBUG ((DEBUG_ERROR, "Locate Recovery PPI Failed.(Status = %r)\n", Status));
+      //
+      // Report Status code the failure of locating Recovery PPI 
+      //
+      REPORT_STATUS_CODE (
+        EFI_ERROR_CODE | EFI_ERROR_MAJOR,
+        (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_EC_RECOVERY_PPI_NOT_FOUND)
+        );
       CpuDeadLoop ();
     }
 
+    REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_PC_CAPSULE_LOAD));
+    Status = PeiRecovery->LoadRecoveryCapsule (PeiServices, PeiRecovery);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Load Recovery Capsule Failed.(Status = %r)\n", Status));
+      //
+      // Report Status code that recovery image can not be found
+      //
+      REPORT_STATUS_CODE (
+        EFI_ERROR_CODE | EFI_ERROR_MAJOR,
+        (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_EC_NO_RECOVERY_CAPSULE)
+        );
+      CpuDeadLoop ();
+    }
+    REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_PC_CAPSULE_START));
     //
     // Now should have a HOB with the DXE core
     //
@@ -214,7 +289,7 @@ DxeLoadCore (
                          &DataSize,
                          &MemoryData
                          );
-    if (!EFI_ERROR (Status)) {
+    if (!EFI_ERROR (Status) && ValidateMemoryTypeInfoVariable(MemoryData, DataSize)) {
       //
       // Build the GUID'd HOB for DXE
       //

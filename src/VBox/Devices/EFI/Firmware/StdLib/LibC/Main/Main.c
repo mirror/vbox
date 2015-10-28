@@ -4,7 +4,7 @@
   All of the global data in the gMD structure is initialized to 0, NULL, or
   SIG_DFL; as appropriate.
 
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials are licensed and made available under
   the terms and conditions of the BSD License that accompanies this distribution.
   The full text of the license may be found at
@@ -74,25 +74,25 @@ static
 char **
 ArgvConvert(UINTN Argc, CHAR16 **Argv)
 {
-  size_t  AVsz;       /* Size of a single nArgv string */
+  ssize_t  AVsz;       /* Size of a single nArgv string, or -1 */
   UINTN   count;
   char  **nArgv;
   char   *string;
   INTN    nArgvSize;  /* Cumulative size of narrow Argv[i] */
 
 DEBUG_CODE_BEGIN();
-  Print(L"ArgvConvert called with %d arguments.\n", Argc);
+  DEBUG((DEBUG_INIT, "ArgvConvert called with %d arguments.\n", Argc));
   for(count = 0; count < ((Argc > 5)? 5: Argc); ++count) {
-    Print(L"Argument[%d] = \"%s\".\n", count, Argv[count]);
+    DEBUG((DEBUG_INIT, "Argument[%d] = \"%s\".\n", count, Argv[count]));
   }
 DEBUG_CODE_END();
 
   nArgvSize = Argc;
   /* Determine space needed for narrow Argv strings. */
   for(count = 0; count < Argc; ++count) {
-    AVsz = wcstombs(NULL, Argv[count], ARG_MAX);
+    AVsz = (ssize_t)wcstombs(NULL, Argv[count], ARG_MAX);
     if(AVsz < 0) {
-      Print(L"ABORTING: Argv[%d] contains an unconvertable character.\n", count);
+      DEBUG((DEBUG_ERROR, "ABORTING: Argv[%d] contains an unconvertable character.\n", count));
       exit(EXIT_FAILURE);
       /* Not Reached */
     }
@@ -102,7 +102,7 @@ DEBUG_CODE_END();
   /* Reserve space for the converted strings. */
   gMD->NCmdLine = (char *)AllocateZeroPool(nArgvSize+1);
   if(gMD->NCmdLine == NULL) {
-    Print(L"ABORTING: Insufficient memory.\n");
+    DEBUG((DEBUG_ERROR, "ABORTING: Insufficient memory.\n"));
     exit(EXIT_FAILURE);
     /* Not Reached */
   }
@@ -112,13 +112,12 @@ DEBUG_CODE_END();
   string  = gMD->NCmdLine;
   for(count = 0; count < Argc; ++count) {
     nArgv[count] = string;
-    AVsz = wcstombs(string, Argv[count], nArgvSize);
-    string[AVsz] = 0;   /* NULL terminate the argument */
+    AVsz = wcstombs(string, Argv[count], nArgvSize) + 1;
     DEBUG((DEBUG_INFO, "Cvt[%d] %d \"%s\" --> \"%a\"\n", (INT32)count, (INT32)AVsz, Argv[count], nArgv[count]));
-    string += AVsz + 1;
-    nArgvSize -= AVsz + 1;
+    string += AVsz;
+    nArgvSize -= AVsz;
     if(nArgvSize < 0) {
-      Print(L"ABORTING: Internal Argv[%d] conversion error.\n", count);
+      DEBUG((DEBUG_ERROR, "ABORTING: Internal Argv[%d] conversion error.\n", count));
       exit(EXIT_FAILURE);
       /* Not Reached */
     }
@@ -159,9 +158,10 @@ ShellAppMain (
       mfd[i].MyFD = (UINT16)i;
     }
 
-    i = open("stdin:", O_RDONLY, 0444);
+    DEBUG((DEBUG_INIT, "StdLib: Open Standard IO.\n"));
+    i = open("stdin:", (O_RDONLY | O_TTY_INIT), 0444);
     if(i == 0) {
-      i = open("stdout:", O_WRONLY, 0222);
+      i = open("stdout:", (O_WRONLY | O_TTY_INIT), 0222);
       if(i == 1) {
         i = open("stderr:", O_WRONLY, 0222);
       }
@@ -178,6 +178,7 @@ ShellAppMain (
     }
     else {
       if( setjmp(gMD->MainExit) == 0) {
+        errno   = 0;    // Clean up any "scratch" values from startup.
         ExitVal = (INTN)main( (int)Argc, gMD->NArgV);
         exitCleanup(ExitVal);
       }

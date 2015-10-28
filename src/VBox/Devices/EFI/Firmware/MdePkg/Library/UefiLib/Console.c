@@ -1,7 +1,7 @@
 /** @file
   This module provide help function for displaying unicode string.
 
-  Copyright (c) 2006 - 2009, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials                          
   are licensed and made available under the terms and conditions of the BSD License         
   which accompanies this distribution.  The full text of the license may be found at        
@@ -21,6 +21,9 @@ typedef struct {
   CHAR16  WChar;
   UINT32  Width;
 } UNICODE_WIDTH_ENTRY;
+
+#define NARROW_CHAR         0xFFF0
+#define WIDE_CHAR           0xFFF1
 
 GLOBAL_REMOVE_IF_UNREFERENCED CONST UNICODE_WIDTH_ENTRY mUnicodeWidthTable[] = {
   //
@@ -289,6 +292,89 @@ UnicodeStringDisplayLength (
 }
 
 /**
+  Count the storage space of a Unicode string. 
+
+  This function handles the Unicode string with NARROW_CHAR
+  and WIDE_CHAR control characters. NARROW_HCAR and WIDE_CHAR
+  does not count in the resultant output. If a WIDE_CHAR is
+  hit, then 2 Unicode character will consume an output storage
+  space with size of CHAR16 till a NARROW_CHAR is hit.
+
+  @param String          The input string to be counted.
+  @param LimitLen        Whether need to limit the string length.
+  @param MaxWidth        The max length this function supported.
+  @param Offset          The max index of the string can be show out. 
+
+  @return Storage space for the input string.
+
+**/
+UINTN
+UefiLibGetStringWidth (
+  IN  CHAR16               *String,
+  IN  BOOLEAN              LimitLen,
+  IN  UINTN                MaxWidth,
+  OUT UINTN                *Offset
+  )
+{
+  UINTN Index;
+  UINTN Count;
+  UINTN IncrementValue;
+
+  if (String == NULL) {
+    return 0;
+  }
+
+  Index           = 0;
+  Count           = 0;
+  IncrementValue  = 1;
+
+  do {
+    //
+    // Advance to the null-terminator or to the first width directive
+    //
+    for (;(String[Index] != NARROW_CHAR) && (String[Index] != WIDE_CHAR) && (String[Index] != 0); Index++) {
+      Count = Count + IncrementValue;
+
+      if (LimitLen && Count > MaxWidth) {
+        break;
+      }
+    }
+
+    //
+    // We hit the null-terminator, we now have a count
+    //
+    if (String[Index] == 0) {
+      break;
+    }
+
+    if (LimitLen && Count > MaxWidth) {
+      *Offset = Index;
+      break;
+    }
+
+    //
+    // We encountered a narrow directive - strip it from the size calculation since it doesn't get printed
+    // and also set the flag that determines what we increment by.(if narrow, increment by 1, if wide increment by 2)
+    //
+    if (String[Index] == NARROW_CHAR) {
+      //
+      // Skip to the next character
+      //
+      Index++;
+      IncrementValue = 1;
+    } else {
+      //
+      // Skip to the next character
+      //
+      Index++;
+      IncrementValue = 2;
+    }
+  } while (String[Index] != 0);
+
+  return Count * sizeof (CHAR16);
+}
+
+/**
   Draws a dialog box to the console output device specified by 
   ConOut defined in the EFI_SYSTEM_TABLE and waits for a keystroke
   from the console input device specified by ConIn defined in the 
@@ -314,6 +400,7 @@ CreatePopUp (
   ...
   )
 {
+  EFI_STATUS                       Status;
   VA_LIST                          Args;
   EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *ConOut;
   EFI_SIMPLE_TEXT_OUTPUT_MODE      SavedConsoleMode;
@@ -327,6 +414,7 @@ CreatePopUp (
   UINTN                            Length;
   CHAR16                           *Line;
   UINTN                            EventIndex;
+  CHAR16                           *TmpString;
 
   //
   // Determine the length of the longest line in the popup and the the total 
@@ -336,7 +424,7 @@ CreatePopUp (
   MaxLength = 0;
   NumberOfLines = 0;
   while ((String = VA_ARG (Args, CHAR16 *)) != NULL) {
-    MaxLength = MAX (MaxLength, StrLen (String));
+    MaxLength = MAX (MaxLength, UefiLibGetStringWidth (String, FALSE, 0, NULL) / 2);
     NumberOfLines++;
   }
   VA_END (Args);
@@ -409,24 +497,33 @@ CreatePopUp (
   //
   VA_START (Args, Key);
   while ((String = VA_ARG (Args, CHAR16 *)) != NULL && NumberOfLines > 0) {
-    Length = StrLen (String);
     SetMem16 (Line, (MaxLength + 2) * 2, L' ');
+    Line[0]             = BOXDRAW_VERTICAL;
+    Line[MaxLength + 1] = BOXDRAW_VERTICAL;
+    Line[MaxLength + 2] = L'\0';
+    ConOut->SetCursorPosition (ConOut, Column, Row);
+    ConOut->OutputString (ConOut, Line);
+    Length = UefiLibGetStringWidth (String, FALSE, 0, NULL) / 2;
     if (Length <= MaxLength) {
       //
       // Length <= MaxLength
       //
-      CopyMem (Line + 1 + (MaxLength - Length) / 2, String , Length * sizeof (CHAR16));
+      ConOut->SetCursorPosition (ConOut, Column + 1 + (MaxLength - Length) / 2, Row++);
+      ConOut->OutputString (ConOut, String);
     } else {
       //
       // Length > MaxLength
       //
-      CopyMem (Line + 1, String + (Length - MaxLength) / 2 , MaxLength * sizeof (CHAR16));
+      UefiLibGetStringWidth (String, TRUE, MaxLength, &Length);
+      TmpString = AllocateZeroPool ((Length + 1) * sizeof (CHAR16));
+      ASSERT (TmpString != NULL);
+      StrnCpy(TmpString, String, Length - 3);
+      StrCat (TmpString, L"...");
+
+      ConOut->SetCursorPosition (ConOut, Column + 1, Row++);
+      ConOut->OutputString (ConOut, TmpString);
+      FreePool (TmpString);
     }
-    Line[0]             = BOXDRAW_VERTICAL;
-    Line[MaxLength + 1] = BOXDRAW_VERTICAL;
-    Line[MaxLength + 2] = L'\0';
-    ConOut->SetCursorPosition (ConOut, Column, Row++);
-    ConOut->OutputString (ConOut, Line);
     NumberOfLines--;
   }
   VA_END (Args);
@@ -457,7 +554,19 @@ CreatePopUp (
   // Wait for a keystroke
   //
   if (Key != NULL) {
-    gBS->WaitForEvent (1, &gST->ConIn->WaitForKey, &EventIndex);
-    gST->ConIn->ReadKeyStroke (gST->ConIn, Key);
+    while (TRUE) {
+      Status = gST->ConIn->ReadKeyStroke (gST->ConIn, Key);
+      if (!EFI_ERROR (Status)) {
+        break;
+      }
+
+      //
+      // If we encounter error, continue to read another key in.
+      //
+      if (Status != EFI_NOT_READY) {
+        continue;
+      }
+      gBS->WaitForEvent (1, &gST->ConIn->WaitForKey, &EventIndex);
+    }
   }
 }

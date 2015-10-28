@@ -50,7 +50,7 @@
 // QEMU Vide Graphical Mode Data
 //
 typedef struct {
-  UINT32  ModeNumber;
+  UINT32  InternalModeIndex; // points into card-specific mode table
   UINT32  HorizontalResolution;
   UINT32  VerticalResolution;
   UINT32  ColorDepth;
@@ -86,6 +86,20 @@ typedef struct {
 //
 #define QEMU_VIDEO_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('Q', 'V', 'I', 'D')
 
+typedef enum {
+  QEMU_VIDEO_CIRRUS_5430 = 1,
+  QEMU_VIDEO_CIRRUS_5446,
+  QEMU_VIDEO_BOCHS,
+  QEMU_VIDEO_BOCHS_MMIO,
+} QEMU_VIDEO_VARIANT;
+
+typedef struct {
+  UINT16                                VendorId;
+  UINT16                                DeviceId;
+  QEMU_VIDEO_VARIANT                    Variant;
+  CHAR16                                *Name;
+} QEMU_VIDEO_CARD;
+
 typedef struct {
   UINT64                                Signature;
   EFI_HANDLE                            Handle;
@@ -93,15 +107,22 @@ typedef struct {
   UINT64                                OriginalPciAttributes;
   EFI_GRAPHICS_OUTPUT_PROTOCOL          GraphicsOutput;
   EFI_DEVICE_PATH_PROTOCOL              *GopDevicePath;
+
+  //
+  // The next three fields match the client-visible
+  // EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE.Mode and
+  // EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE.MaxMode fields.
+  //
   UINTN                                 CurrentMode;
   UINTN                                 MaxMode;
   QEMU_VIDEO_MODE_DATA                  *ModeData;
+
   UINT8                                 *LineBuffer;
-  BOOLEAN                               HardwareNeedsStarting;
+  QEMU_VIDEO_VARIANT                    Variant;
 } QEMU_VIDEO_PRIVATE_DATA;
 
 ///
-/// Video Mode structure
+/// Card-specific Video Mode structures
 ///
 typedef struct {
   UINT32  Width;
@@ -111,7 +132,13 @@ typedef struct {
   UINT8   *CrtcSettings;
   UINT16  *SeqSettings;
   UINT8   MiscSetting;
-} QEMU_VIDEO_VIDEO_MODES;
+} QEMU_VIDEO_CIRRUS_MODES;
+
+typedef struct {
+  UINT32  Width;
+  UINT32  Height;
+  UINT32  ColorDepth;
+} QEMU_VIDEO_BOCHS_MODES;
 
 #define QEMU_VIDEO_PRIVATE_DATA_FROM_GRAPHICS_OUTPUT_THIS(a) \
   CR(a, QEMU_VIDEO_PRIVATE_DATA, GraphicsOutput, QEMU_VIDEO_PRIVATE_DATA_SIGNATURE)
@@ -128,7 +155,8 @@ extern UINT8                                      Crtc_800_600_256_60[];
 extern UINT16                                     Seq_800_600_256_60[];
 extern UINT8                                      Crtc_1024_768_256_60[];
 extern UINT16                                     Seq_1024_768_256_60[];
-extern QEMU_VIDEO_VIDEO_MODES              QemuVideoVideoModes[];
+extern QEMU_VIDEO_CIRRUS_MODES                    QemuVideoCirrusModes[];
+extern QEMU_VIDEO_BOCHS_MODES                     QemuVideoBochsModes[];
 extern EFI_DRIVER_BINDING_PROTOCOL                gQemuVideoDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL                gQemuVideoComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL               gQemuVideoComponentName2;
@@ -150,6 +178,34 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gQemuVideoDriverSupportedEfiVe
 #define PALETTE_INDEX_REGISTER  0x3c8
 #define PALETTE_DATA_REGISTER   0x3c9
 
+#define VBE_DISPI_IOPORT_INDEX           0x01CE
+#define VBE_DISPI_IOPORT_DATA            0x01D0
+
+#define VBE_DISPI_INDEX_ID               0x0
+#define VBE_DISPI_INDEX_XRES             0x1
+#define VBE_DISPI_INDEX_YRES             0x2
+#define VBE_DISPI_INDEX_BPP              0x3
+#define VBE_DISPI_INDEX_ENABLE           0x4
+#define VBE_DISPI_INDEX_BANK             0x5
+#define VBE_DISPI_INDEX_VIRT_WIDTH       0x6
+#define VBE_DISPI_INDEX_VIRT_HEIGHT      0x7
+#define VBE_DISPI_INDEX_X_OFFSET         0x8
+#define VBE_DISPI_INDEX_Y_OFFSET         0x9
+#define VBE_DISPI_INDEX_VIDEO_MEMORY_64K 0xa
+
+#define VBE_DISPI_ID0                    0xB0C0
+#define VBE_DISPI_ID1                    0xB0C1
+#define VBE_DISPI_ID2                    0xB0C2
+#define VBE_DISPI_ID3                    0xB0C3
+#define VBE_DISPI_ID4                    0xB0C4
+#define VBE_DISPI_ID5                    0xB0C5
+
+#define VBE_DISPI_DISABLED               0x00
+#define VBE_DISPI_ENABLED                0x01
+#define VBE_DISPI_GETCAPS                0x02
+#define VBE_DISPI_8BIT_DAC               0x20
+#define VBE_DISPI_LFB_ENABLED            0x40
+#define VBE_DISPI_NOCLEARMEM             0x80
 
 //
 // Graphics Output Hardware abstraction internal worker functions
@@ -358,9 +414,15 @@ QemuVideoComponentNameGetControllerName (
 // Local Function Prototypes
 //
 VOID
-InitializeGraphicsMode (
+InitializeCirrusGraphicsMode (
   QEMU_VIDEO_PRIVATE_DATA  *Private,
-  QEMU_VIDEO_VIDEO_MODES   *ModeData
+  QEMU_VIDEO_CIRRUS_MODES  *ModeData
+  );
+
+VOID
+InitializeBochsGraphicsMode (
+  QEMU_VIDEO_PRIVATE_DATA  *Private,
+  QEMU_VIDEO_BOCHS_MODES   *ModeData
   );
 
 VOID
@@ -410,9 +472,40 @@ inw (
   UINTN                           Address
   );
 
+VOID
+BochsWrite (
+  QEMU_VIDEO_PRIVATE_DATA  *Private,
+  UINT16                   Reg,
+  UINT16                   Data
+  );
+
+UINT16
+BochsRead (
+  QEMU_VIDEO_PRIVATE_DATA  *Private,
+  UINT16                   Reg
+  );
+
+VOID
+VgaOutb (
+  QEMU_VIDEO_PRIVATE_DATA  *Private,
+  UINTN                    Reg,
+  UINT8                    Data
+  );
+
 EFI_STATUS
-QemuVideoVideoModeSetup (
+QemuVideoCirrusModeSetup (
   QEMU_VIDEO_PRIVATE_DATA  *Private
   );
 
+EFI_STATUS
+QemuVideoBochsModeSetup (
+  QEMU_VIDEO_PRIVATE_DATA  *Private,
+  BOOLEAN                  IsQxl
+  );
+
+VOID
+InstallVbeShim (
+  IN CONST CHAR16         *CardName,
+  IN EFI_PHYSICAL_ADDRESS FrameBufferBase
+  );
 #endif

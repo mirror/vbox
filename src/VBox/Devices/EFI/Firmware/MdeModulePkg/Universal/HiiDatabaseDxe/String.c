@@ -2,7 +2,7 @@
 Implementation for EFI_HII_STRING_PROTOCOL.
 
 
-Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -335,7 +335,7 @@ FindStringBlock (
 
     case EFI_HII_SIBT_STRINGS_SCSU:
       CopyMem (&StringCount, BlockHdr + sizeof (EFI_HII_STRING_BLOCK), sizeof (UINT16));
-      StringTextPtr = BlockHdr + sizeof (EFI_HII_SIBT_STRINGS_SCSU_BLOCK) - sizeof (UINT8);
+      StringTextPtr = (UINT8*)((UINTN)BlockHdr + sizeof (EFI_HII_SIBT_STRINGS_SCSU_BLOCK) - sizeof (UINT8));
       BlockSize += StringTextPtr - BlockHdr;
 
       for (Index = 0; Index < StringCount; Index++) {
@@ -355,10 +355,10 @@ FindStringBlock (
     case EFI_HII_SIBT_STRINGS_SCSU_FONT:
       CopyMem (
         &StringCount,
-        BlockHdr + sizeof (EFI_HII_STRING_BLOCK) + sizeof (UINT8),
+        (UINT8*)((UINTN)BlockHdr + sizeof (EFI_HII_STRING_BLOCK) + sizeof (UINT8)),
         sizeof (UINT16)
         );
-      StringTextPtr = BlockHdr + sizeof (EFI_HII_SIBT_STRINGS_SCSU_FONT_BLOCK) - sizeof (UINT8);
+      StringTextPtr = (UINT8*)((UINTN)BlockHdr + sizeof (EFI_HII_SIBT_STRINGS_SCSU_FONT_BLOCK) - sizeof (UINT8));
       BlockSize += StringTextPtr - BlockHdr;
 
       for (Index = 0; Index < StringCount; Index++) {
@@ -425,7 +425,7 @@ FindStringBlock (
       BlockSize += Offset;
       CopyMem (
         &StringCount,
-        BlockHdr + sizeof (EFI_HII_STRING_BLOCK) + sizeof (UINT8),
+        (UINT8*)((UINTN)BlockHdr + sizeof (EFI_HII_STRING_BLOCK) + sizeof (UINT8)),
         sizeof (UINT16)
         );
       for (Index = 0; Index < StringCount; Index++) {
@@ -465,7 +465,7 @@ FindStringBlock (
       break;
 
     case EFI_HII_SIBT_SKIP1:
-      SkipCount = (UINT16) (*(BlockHdr + sizeof (EFI_HII_STRING_BLOCK)));
+      SkipCount = (UINT16) (*(UINT8*)((UINTN)BlockHdr + sizeof (EFI_HII_STRING_BLOCK)));
       CurrentStringId = (UINT16) (CurrentStringId + SkipCount);
       BlockSize       +=  sizeof (EFI_HII_SIBT_SKIP1_BLOCK);
       break;
@@ -479,7 +479,7 @@ FindStringBlock (
     case EFI_HII_SIBT_EXT1:
       CopyMem (
         &Length8,
-        BlockHdr + sizeof (EFI_HII_STRING_BLOCK) + sizeof (UINT8),
+        (UINT8*)((UINTN)BlockHdr + sizeof (EFI_HII_STRING_BLOCK) + sizeof (UINT8)),
         sizeof (UINT8)
         );
       BlockSize += Length8;
@@ -494,7 +494,7 @@ FindStringBlock (
         //
         BlockHdr += sizeof (EFI_HII_SIBT_EXT2_BLOCK);
         CopyMem (&FontId, BlockHdr, sizeof (UINT8));
-        BlockHdr += sizeof (UINT8);
+        BlockHdr ++;
         CopyMem (&FontSize, BlockHdr, sizeof (UINT16));
         BlockHdr += sizeof (UINT16);
         CopyMem (&FontStyle, BlockHdr, sizeof (EFI_HII_FONT_STYLE));
@@ -535,7 +535,7 @@ FindStringBlock (
     case EFI_HII_SIBT_EXT4:
       CopyMem (
         &Length32,
-        BlockHdr + sizeof (EFI_HII_STRING_BLOCK) + sizeof (UINT8),
+        (UINT8*)((UINTN)BlockHdr + sizeof (EFI_HII_STRING_BLOCK) + sizeof (UINT8)),
         sizeof (UINT32)
         );
 
@@ -899,6 +899,7 @@ SetStringWorker (
   EFI_STRING_ID                        StartStringId;
 
   StartStringId = 0;
+  StringSize    = 0;
   ASSERT (Private != NULL && StringPackage != NULL && String != NULL);
   ASSERT (Private->Signature == HII_DATABASE_PRIVATE_DATA_SIGNATURE);
   //
@@ -1079,7 +1080,7 @@ SetStringWorker (
   BlockPtr += sizeof (EFI_HII_SIBT_EXT2_BLOCK);
 
   *BlockPtr = LocalFont->FontId;
-  BlockPtr += sizeof (UINT8);
+  BlockPtr ++;
   CopyMem (BlockPtr, &GlobalFont->FontInfo->FontSize, sizeof (UINT16));
   BlockPtr += sizeof (UINT16);
   CopyMem (BlockPtr, &GlobalFont->FontInfo->FontStyle, sizeof (UINT32));
@@ -1441,7 +1442,7 @@ HiiNewString (
       *BlockPtr = EFI_HII_SIBT_STRING_UCS2_FONT;
       BlockPtr  += sizeof (EFI_HII_STRING_BLOCK);
       *BlockPtr = LocalFont->FontId;
-      BlockPtr  += sizeof (UINT8);
+      BlockPtr ++;
       CopyMem (BlockPtr, (EFI_STRING) String, StrSize ((EFI_STRING) String));
       BlockPtr += StrSize ((EFI_STRING) String);
 
@@ -1485,7 +1486,7 @@ HiiNewString (
       BlockPtr += sizeof (EFI_HII_SIBT_EXT2_BLOCK);
 
       *BlockPtr = LocalFont->FontId;
-      BlockPtr += sizeof (UINT8);
+      BlockPtr ++;
       CopyMem (BlockPtr, &((EFI_FONT_INFO *) StringFontInfo)->FontSize, sizeof (UINT16));
       BlockPtr += sizeof (UINT16);
       CopyMem (BlockPtr, &((EFI_FONT_INFO *) StringFontInfo)->FontStyle, sizeof (EFI_HII_FONT_STYLE));
@@ -1502,7 +1503,7 @@ HiiNewString (
       *BlockPtr = EFI_HII_SIBT_STRING_UCS2_FONT;
       BlockPtr  += sizeof (EFI_HII_STRING_BLOCK);
       *BlockPtr = LocalFont->FontId;
-      BlockPtr  += sizeof (UINT8);
+      BlockPtr  ++;
       CopyMem (BlockPtr, (EFI_STRING) String, StrSize ((EFI_STRING) String));
       BlockPtr += StrSize ((EFI_STRING) String);
 
@@ -1589,7 +1590,8 @@ Done:
   @retval EFI_INVALID_LANGUAGE   - The string specified by StringId is available but
   @retval EFI_BUFFER_TOO_SMALL   The buffer specified by StringSize is too small to
                                   hold the string.
-  @retval EFI_INVALID_PARAMETER  The String or Language or StringSize was NULL.
+  @retval EFI_INVALID_PARAMETER  The Language or StringSize was NULL.
+  @retval EFI_INVALID_PARAMETER  The value referenced by StringSize was not zero and String was NULL.
   @retval EFI_OUT_OF_RESOURCES   There were insufficient resources to complete the
                                  request.
 
@@ -1774,7 +1776,8 @@ HiiSetString (
                                  the length of Languages, in bytes.
 
   @retval EFI_SUCCESS            The languages were returned successfully.
-  @retval EFI_INVALID_PARAMETER  The Languages or LanguagesSize was NULL.
+  @retval EFI_INVALID_PARAMETER  The LanguagesSize was NULL.
+  @retval EFI_INVALID_PARAMETER  The value referenced by LanguagesSize is not zero and Languages is NULL.
   @retval EFI_BUFFER_TOO_SMALL   The LanguagesSize is too small to hold the list of
                                   supported languages. LanguageSize is updated to
                                  contain the required size.
@@ -1798,7 +1801,10 @@ HiiGetLanguages (
   HII_STRING_PACKAGE_INSTANCE         *StringPackage;
   UINTN                               ResultSize;
 
-  if (This == NULL || Languages == NULL || LanguagesSize == NULL || PackageList == NULL) {
+  if (This == NULL || LanguagesSize == NULL || PackageList == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  if (*LanguagesSize != 0 && Languages == NULL) {
     return EFI_INVALID_PARAMETER;
   }
   if (!IsHiiHandleValid (PackageList)) {
@@ -1870,15 +1876,16 @@ HiiGetLanguages (
                                  points to the length of SecondaryLanguages in bytes.
 
   @retval EFI_SUCCESS            Secondary languages were correctly returned.
-  @retval EFI_INVALID_PARAMETER  PrimaryLanguage or SecondaryLanguages or
-                                 SecondaryLanguagesSize was NULL.
+  @retval EFI_INVALID_PARAMETER  PrimaryLanguage or SecondaryLanguagesSize was NULL.
+  @retval EFI_INVALID_PARAMETER  The value referenced by SecondaryLanguagesSize is not
+                                 zero and SecondaryLanguages is NULL.
   @retval EFI_BUFFER_TOO_SMALL   The buffer specified by SecondaryLanguagesSize is
                                  too small to hold the returned information.
                                  SecondaryLanguageSize is updated to hold the size of
                                  the buffer required.
   @retval EFI_INVALID_LANGUAGE   The language specified by PrimaryLanguage is not
                                  present in the specified package list.
-  @retval EFI_NOT_FOUND          The specified PackageList is not in the Database.                                
+  @retval EFI_NOT_FOUND          The specified PackageList is not in the Database.
 
 **/
 EFI_STATUS
@@ -1900,10 +1907,10 @@ HiiGetSecondaryLanguages (
   CHAR8                               *Languages;
   UINTN                               ResultSize;
 
-  if (This == NULL || PackageList == NULL || PrimaryLanguage == NULL) {
+  if (This == NULL || PackageList == NULL || PrimaryLanguage == NULL || SecondaryLanguagesSize == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  if (SecondaryLanguages == NULL || SecondaryLanguagesSize == NULL) {
+  if (SecondaryLanguages == NULL && *SecondaryLanguagesSize != 0) {
     return EFI_INVALID_PARAMETER;
   }
   if (!IsHiiHandleValid (PackageList)) {

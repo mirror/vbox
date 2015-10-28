@@ -1,7 +1,7 @@
 ## @file
 # Create makefile for MS nmake and GNU make
 #
-# Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -13,11 +13,12 @@
 
 ## Import Modules
 #
-import os
+import Common.LongFilePathOs as os
 import sys
 import string
 import re
 import os.path as path
+from Common.LongFilePathSupport import OpenLongFilePath as open
 
 from Common.BuildToolError import *
 from Common.Misc import *
@@ -246,6 +247,7 @@ MODULE_FILE = ${module_file}
 MODULE_FILE_BASE_NAME = ${module_file_base_name}
 BASE_NAME = $(MODULE_NAME)
 MODULE_RELATIVE_DIR = ${module_relative_directory}
+PACKAGE_RELATIVE_DIR = ${package_relative_directory}
 MODULE_DIR = $(WORKSPACE)${separator}${module_relative_directory}
 
 MODULE_ENTRY_POINT = ${module_entry_point}
@@ -551,6 +553,10 @@ cleanlib:
             Command = self._MAKE_TEMPLATE_[self._FileType] % {"file":os.path.join(D, MakefileName)}
             LibraryMakeCommandList.append(Command)
 
+        package_rel_dir = self._AutoGenObject.SourceDir
+        if os.sep in package_rel_dir:
+            package_rel_dir = package_rel_dir[package_rel_dir.index(os.sep) + 1:]
+
         MakefileTemplateDict = {
             "makefile_header"           : self._FILE_HEADER_[self._FileType],
             "makefile_path"             : os.path.join("$(MODULE_BUILD_DIR)", MakefileName),
@@ -568,7 +574,8 @@ cleanlib:
             "module_file"               : self._AutoGenObject.MetaFile.Name,
             "module_file_base_name"     : self._AutoGenObject.MetaFile.BaseName,
             "module_relative_directory" : self._AutoGenObject.SourceDir,
-            "module_extra_defines"      : ["%s = %s" % (k, v) for k,v in self._AutoGenObject.Module.Defines.iteritems()],
+            "package_relative_directory": package_rel_dir,
+            "module_extra_defines"      : ["%s = %s" % (k, v) for k, v in self._AutoGenObject.Module.Defines.iteritems()],
 
             "architecture"              : self._AutoGenObject.Arch,
             "toolchain_tag"             : self._AutoGenObject.ToolChain,
@@ -672,7 +679,8 @@ cleanlib:
                     NewFile = self.PlaceMacro(str(F), self.Macros)
                     # In order to use file list macro as dependency
                     if T.GenListFile:
-                        self.ListFileMacros[T.ListFileMacro].append(str(F))
+                        # gnu tools need forward slash path separater, even on Windows
+                        self.ListFileMacros[T.ListFileMacro].append(str(F).replace ('\\', '/'))
                         self.FileListMacros[T.FileListMacro].append(NewFile)
                     elif T.GenFileListMacro:
                         self.FileListMacros[T.FileListMacro].append(NewFile)
@@ -1118,6 +1126,7 @@ cleanlib:
         self.IntermediateDirectoryList = []
         self.ModuleBuildDirectoryList = []
         self.LibraryBuildDirectoryList = []
+        self.LibraryMakeCommandList = []
 
     # Compose a dict object containing information used to do replacement in template
     def _CreateTemplateDict(self):
@@ -1141,6 +1150,7 @@ cleanlib:
             Command = self._MAKE_TEMPLATE_[self._FileType] % {"file":Makefile}
             LibraryMakefileList.append(Makefile)
             LibraryMakeCommandList.append(Command)
+        self.LibraryMakeCommandList = LibraryMakeCommandList
 
         ModuleMakefileList = []
         ModuleMakeCommandList = []
@@ -1188,7 +1198,8 @@ cleanlib:
     def GetModuleBuildDirectoryList(self):
         DirList = []
         for ModuleAutoGen in self._AutoGenObject.ModuleAutoGenList:
-            DirList.append(os.path.join(self._AutoGenObject.BuildDir, ModuleAutoGen.BuildDir))
+            if not ModuleAutoGen.IsBinaryModule:
+                DirList.append(os.path.join(self._AutoGenObject.BuildDir, ModuleAutoGen.BuildDir))
         return DirList
 
     ## Get the root directory list for intermediate files of all libraries build
@@ -1198,7 +1209,8 @@ cleanlib:
     def GetLibraryBuildDirectoryList(self):
         DirList = []
         for LibraryAutoGen in self._AutoGenObject.LibraryAutoGenList:
-            DirList.append(os.path.join(self._AutoGenObject.BuildDir, LibraryAutoGen.BuildDir))
+            if not LibraryAutoGen.IsBinaryModule:
+                DirList.append(os.path.join(self._AutoGenObject.BuildDir, LibraryAutoGen.BuildDir))
         return DirList
 
     _TemplateDict = property(_CreateTemplateDict)
@@ -1211,99 +1223,7 @@ cleanlib:
 #
 class TopLevelMakefile(BuildFile):
     ## template used to generate toplevel makefile
-    _TEMPLATE_ = TemplateString('''\
-${makefile_header}
-
-#
-# Platform Macro Definition
-#
-PLATFORM_NAME = ${platform_name}
-PLATFORM_GUID = ${platform_guid}
-PLATFORM_VERSION = ${platform_version}
-
-#
-# Build Configuration Macro Definition
-#
-TOOLCHAIN = ${toolchain_tag}
-TOOLCHAIN_TAG = ${toolchain_tag}
-TARGET = ${build_target}
-
-#
-# Build Directory Macro Definition
-#
-BUILD_DIR = ${platform_build_directory}
-FV_DIR = ${platform_build_directory}${separator}FV
-
-#
-# Shell Command Macro
-#
-${BEGIN}${shell_command_code} = ${shell_command}
-${END}
-
-MAKE = ${make_path}
-MAKE_FILE = ${makefile_path}
-
-#
-# Default target
-#
-all: modules fds
-
-#
-# Initialization target: print build information and create necessary directories
-#
-init:
-\t-@
-\t${BEGIN}-@${create_directory_command}
-\t${END}
-#
-# library build target
-#
-libraries: init
-${BEGIN}\t@cd $(BUILD_DIR)${separator}${arch} && "$(MAKE)" $(MAKE_FLAGS) libraries
-${END}\t@cd $(BUILD_DIR)
-
-#
-# module build target
-#
-modules: init
-${BEGIN}\t@cd $(BUILD_DIR)${separator}${arch} && "$(MAKE)" $(MAKE_FLAGS) modules
-${END}\t@cd $(BUILD_DIR)
-
-#
-# Flash Device Image Target
-#
-fds: init
-\t-@cd $(FV_DIR)
-${BEGIN}\tGenFds -f ${fdf_file} -o $(BUILD_DIR) -t $(TOOLCHAIN) -b $(TARGET) -p ${active_platform} -a ${build_architecture_list} ${extra_options}${END}${BEGIN} -r ${fd} ${END}${BEGIN} -i ${fv} ${END}${BEGIN} -C ${cap} ${END}${BEGIN} -D ${macro} ${END}
-
-#
-# run command for emulator platform only
-#
-run:
-\tcd $(BUILD_DIR)${separator}IA32 && ".${separator}SecMain"
-\tcd $(BUILD_DIR)
-
-#
-# Clean intermediate files
-#
-clean:
-${BEGIN}\t-@${sub_build_command} clean
-${END}\t@cd $(BUILD_DIR)
-
-#
-# Clean all generated files except to makefile
-#
-cleanall:
-${BEGIN}\t${cleanall_command}
-${END}
-
-#
-# Clean all library files
-#
-cleanlib:
-${BEGIN}\t-@${sub_build_command} cleanlib
-${END}\t@cd $(BUILD_DIR)\n
-''')
+    _TEMPLATE_ = TemplateString('''${BEGIN}\tGenFds -f ${fdf_file} --conf=${conf_directory} -o ${platform_build_directory} -t ${toolchain_tag} -b ${build_target} -p ${active_platform} -a ${build_architecture_list} ${extra_options}${END}${BEGIN} -r ${fd} ${END}${BEGIN} -i ${fv} ${END}${BEGIN} -C ${cap} ${END}${BEGIN} -D ${macro} ${END}''')
 
     ## Constructor of TopLevelMakefile
     #
@@ -1361,6 +1281,9 @@ ${END}\t@cd $(BUILD_DIR)\n
         if GlobalData.gCaseInsensitive:
             ExtraOption += " -c"
 
+        if GlobalData.gIgnoreSource:
+            ExtraOption += " --ignore-sources"
+
         MakefileName = self._FILE_NAME_[self._FileType]
         SubBuildCommandList = []
         for A in PlatformInfo.ArchList:
@@ -1375,6 +1298,7 @@ ${END}\t@cd $(BUILD_DIR)\n
             "platform_guid"             : PlatformInfo.Guid,
             "platform_version"          : PlatformInfo.Version,
             "platform_build_directory"  : PlatformInfo.BuildDir,
+            "conf_directory"            : GlobalData.gConfDirectory,
 
             "toolchain_tag"             : PlatformInfo.ToolChain,
             "build_target"              : PlatformInfo.BuildTarget,
@@ -1404,7 +1328,8 @@ ${END}\t@cd $(BUILD_DIR)\n
     def GetModuleBuildDirectoryList(self):
         DirList = []
         for ModuleAutoGen in self._AutoGenObject.ModuleAutoGenList:
-            DirList.append(os.path.join(self._AutoGenObject.BuildDir, ModuleAutoGen.BuildDir))
+            if not ModuleAutoGen.IsBinaryModule:
+                DirList.append(os.path.join(self._AutoGenObject.BuildDir, ModuleAutoGen.BuildDir))
         return DirList
 
     ## Get the root directory list for intermediate files of all libraries build
@@ -1414,7 +1339,8 @@ ${END}\t@cd $(BUILD_DIR)\n
     def GetLibraryBuildDirectoryList(self):
         DirList = []
         for LibraryAutoGen in self._AutoGenObject.LibraryAutoGenList:
-            DirList.append(os.path.join(self._AutoGenObject.BuildDir, LibraryAutoGen.BuildDir))
+            if not LibraryAutoGen.IsBinaryModule:
+                DirList.append(os.path.join(self._AutoGenObject.BuildDir, LibraryAutoGen.BuildDir))
         return DirList
 
     _TemplateDict = property(_CreateTemplateDict)

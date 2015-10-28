@@ -1,7 +1,7 @@
 /** @file
   Utility functions used by the Dp application.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -31,7 +31,6 @@
 #include <Protocol/DriverBinding.h>
 #include <Protocol/ComponentName2.h>
 #include <Protocol/DevicePath.h>
-#include <Protocol/DevicePathToText.h>
 
 #include <Guid/Performance.h>
 
@@ -219,8 +218,11 @@ GetNameFromHandle (
   CHAR16                      *NameString;
   UINTN                       StringSize;
   CHAR8                       *PlatformLanguage;
+  CHAR8                       *BestLanguage;
   EFI_COMPONENT_NAME2_PROTOCOL      *ComponentName2;
-  EFI_DEVICE_PATH_TO_TEXT_PROTOCOL  *DevicePathToText;
+
+  BestLanguage     = NULL;
+  PlatformLanguage = NULL;
 
   //
   // Method 1: Get the name string from image PDB
@@ -270,14 +272,24 @@ GetNameFromHandle (
     //
     // Get the current platform language setting
     //
-    PlatformLanguage = GetEfiGlobalVariable (L"PlatformLang");
+    GetEfiGlobalVariable2 (L"PlatformLang", (VOID**)&PlatformLanguage, NULL);
+
+    BestLanguage = GetBestLanguage(
+                     ComponentName2->SupportedLanguages,
+                     FALSE,
+                     PlatformLanguage,
+                     ComponentName2->SupportedLanguages,
+                     NULL
+                     );
+
+    SafeFreePool (PlatformLanguage);
     Status = ComponentName2->GetDriverName (
                                ComponentName2,
-                               PlatformLanguage != NULL ? PlatformLanguage : "en-US",
+                               BestLanguage,
                                &StringPtr
                                );
+    SafeFreePool (BestLanguage);
     if (!EFI_ERROR (Status)) {
-      SafeFreePool (PlatformLanguage);
       StrnCpy (mGaugeString, StringPtr, DP_GAUGE_STRING_LENGTH);
       mGaugeString[DP_GAUGE_STRING_LENGTH] = 0;
       return;
@@ -289,7 +301,7 @@ GetNameFromHandle (
                   &gEfiLoadedImageDevicePathProtocolGuid,
                   (VOID **) &LoadedImageDevicePath
                   );
-  if (!EFI_ERROR (Status)) {
+  if (!EFI_ERROR (Status) && (LoadedImageDevicePath != NULL)) {
     DevicePath = LoadedImageDevicePath;
 
     //
@@ -336,19 +348,12 @@ GetNameFromHandle (
       //
       // Method 5: Get the name string from image DevicePath
       //
-      Status = gBS->LocateProtocol (
-                      &gEfiDevicePathToTextProtocolGuid,
-                      NULL,
-                      (VOID **) &DevicePathToText
-                      );
-      if (!EFI_ERROR (Status)) {
-        NameString = DevicePathToText->ConvertDevicePathToText (LoadedImageDevicePath, TRUE, FALSE);
-        if (NameString != NULL) {
-          StrnCpy (mGaugeString, NameString, DP_GAUGE_STRING_LENGTH);
-          mGaugeString[DP_GAUGE_STRING_LENGTH] = 0;
-          FreePool (NameString);
-          return;
-        }
+      NameString = ConvertDevicePathToText (LoadedImageDevicePath, TRUE, FALSE);
+      if (NameString != NULL) {
+        StrnCpy (mGaugeString, NameString, DP_GAUGE_STRING_LENGTH);
+        mGaugeString[DP_GAUGE_STRING_LENGTH] = 0;
+        FreePool (NameString);
+        return;
       }
     }
   }
@@ -397,6 +402,7 @@ DurationInMicroSeconds (
   
 **/
 UINTN
+EFIAPI
 PrintToken (
   IN UINT16           Token,
   ...

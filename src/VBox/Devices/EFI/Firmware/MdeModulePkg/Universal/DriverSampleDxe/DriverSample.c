@@ -2,7 +2,7 @@
 This is an example of how a driver might export data to the HII protocol to be
 later utilized by the Setup Protocol
 
-Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -388,7 +388,7 @@ SetPassword (
   //
   // Get user input password
   //
-  Password = &PrivateData->Configuration.WhatIsThePassword2[0];
+  Password = PrivateData->Configuration.WhatIsThePassword2;
   PasswordSize = sizeof (PrivateData->Configuration.WhatIsThePassword2);
   ZeroMem (Password, PasswordSize);
 
@@ -671,6 +671,7 @@ AppendAltCfgString (
   UINTN                               ValueWidth;
   EFI_STATUS                          Status;
 
+  TmpBuffer = NULL;
   StringPtr = *RequestResult;
   StringPtr = StrStr (StringPtr, L"OFFSET");
   BlockSize = sizeof (DRIVER_SAMPLE_CONFIGURATION);
@@ -1794,12 +1795,17 @@ DriverSampleInit (
   DRIVER_SAMPLE_CONFIGURATION     *Configuration;
   BOOLEAN                         ActionFlag;
   EFI_STRING                      ConfigRequestHdr;
+  EFI_STRING                      NameRequestHdr;
   MY_EFI_VARSTORE_DATA            *VarStoreConfig;
+  EFI_INPUT_KEY                   HotKey;
+  EFI_FORM_BROWSER_EXTENSION_PROTOCOL *FormBrowserEx;
 
   //
   // Initialize the local variables.
   //
   ConfigRequestHdr = NULL;
+  NewString        = NULL;
+
   //
   // Initialize screen dimensions for SendForm().
   // Remove 3 characters from top and bottom
@@ -1919,11 +1925,15 @@ DriverSampleInit (
   //
   // Update the device path string.
   //
-  if (HiiSetString (HiiHandle[0], STRING_TOKEN (STR_DEVICE_PATH), (EFI_STRING) &mHiiVendorDevicePath0, NULL) == 0) {
+  NewString = ConvertDevicePathToText((EFI_DEVICE_PATH_PROTOCOL*)&mHiiVendorDevicePath0, FALSE, FALSE);
+  if (HiiSetString (HiiHandle[0], STRING_TOKEN (STR_DEVICE_PATH), NewString, NULL) == 0) {
     DriverSampleUnload (ImageHandle);
     return EFI_OUT_OF_RESOURCES;
   }
-  
+  if (NewString != NULL) {
+    FreePool (NewString);
+  }
+
   //
   // Very simple example of how one would update a string that is already
   // in the HII database
@@ -1956,6 +1966,9 @@ DriverSampleInit (
   ConfigRequestHdr = HiiConstructConfigHdr (&gDriverSampleFormSetGuid, VariableName, DriverHandle[0]);
   ASSERT (ConfigRequestHdr != NULL);
 
+  NameRequestHdr = HiiConstructConfigHdr (&gDriverSampleFormSetGuid, NULL, DriverHandle[0]);
+  ASSERT (NameRequestHdr != NULL);
+
   BufferSize = sizeof (DRIVER_SAMPLE_CONFIGURATION);
   Status = gRT->GetVariable (VariableName, &gDriverSampleFormSetGuid, NULL, &BufferSize, Configuration);
   if (EFI_ERROR (Status)) {
@@ -1969,19 +1982,40 @@ DriverSampleInit (
                     sizeof (DRIVER_SAMPLE_CONFIGURATION),
                     Configuration
                     );
-    ASSERT (Status == EFI_SUCCESS);
+    if (EFI_ERROR (Status)) {
+      DriverSampleUnload (ImageHandle);
+      return Status;
+    }
     //
     // EFI variable for NV config doesn't exit, we should build this variable
     // based on default values stored in IFR
     //
+    ActionFlag = HiiSetToDefaults (NameRequestHdr, EFI_HII_DEFAULT_CLASS_STANDARD);
+    if (!ActionFlag) {
+      DriverSampleUnload (ImageHandle);
+      return EFI_INVALID_PARAMETER;
+    }
+
     ActionFlag = HiiSetToDefaults (ConfigRequestHdr, EFI_HII_DEFAULT_CLASS_STANDARD);
-    ASSERT (ActionFlag);
+    if (!ActionFlag) {
+      DriverSampleUnload (ImageHandle);
+      return EFI_INVALID_PARAMETER;
+    }
   } else {
     //
     // EFI variable does exist and Validate Current Setting
     //
+    ActionFlag = HiiValidateSettings (NameRequestHdr);
+    if (!ActionFlag) {
+      DriverSampleUnload (ImageHandle);
+      return EFI_INVALID_PARAMETER;
+    }
+
     ActionFlag = HiiValidateSettings (ConfigRequestHdr);
-    ASSERT (ActionFlag);
+    if (!ActionFlag) {
+      DriverSampleUnload (ImageHandle);
+      return EFI_INVALID_PARAMETER;
+    }
   }
   FreePool (ConfigRequestHdr);
 
@@ -2007,19 +2041,28 @@ DriverSampleInit (
                     sizeof (MY_EFI_VARSTORE_DATA),
                     VarStoreConfig
                     );
-    ASSERT (Status == EFI_SUCCESS);
+    if (EFI_ERROR (Status)) {
+      DriverSampleUnload (ImageHandle);
+      return Status;
+    }
     //
     // EFI variable for NV config doesn't exit, we should build this variable
     // based on default values stored in IFR
     //
     ActionFlag = HiiSetToDefaults (ConfigRequestHdr, EFI_HII_DEFAULT_CLASS_STANDARD);
-    ASSERT (ActionFlag);
+    if (!ActionFlag) {
+      DriverSampleUnload (ImageHandle);
+      return EFI_INVALID_PARAMETER;
+    }
   } else {
     //
     // EFI variable does exist and Validate Current Setting
     //
     ActionFlag = HiiValidateSettings (ConfigRequestHdr);
-    ASSERT (ActionFlag);
+    if (!ActionFlag) {
+      DriverSampleUnload (ImageHandle);
+      return EFI_INVALID_PARAMETER;
+    }
   }
   FreePool (ConfigRequestHdr);
 
@@ -2032,6 +2075,34 @@ DriverSampleInit (
         &mEvent
         );
   ASSERT_EFI_ERROR (Status);
+
+  //
+  // Example of how to use BrowserEx protocol to register HotKey.
+  // 
+  Status = gBS->LocateProtocol (&gEfiFormBrowserExProtocolGuid, NULL, (VOID **) &FormBrowserEx);
+  if (!EFI_ERROR (Status)) {
+    //
+    // First unregister the default hot key F9 and F10.
+    //
+    HotKey.UnicodeChar = CHAR_NULL;
+    HotKey.ScanCode    = SCAN_F9;
+    FormBrowserEx->RegisterHotKey (&HotKey, 0, 0, NULL);
+    HotKey.ScanCode    = SCAN_F10;
+    FormBrowserEx->RegisterHotKey (&HotKey, 0, 0, NULL);
+    
+    //
+    // Register the default HotKey F9 and F10 again.
+    //
+    HotKey.ScanCode   = SCAN_F10;
+    NewString         = HiiGetString (PrivateData->HiiHandle[0], STRING_TOKEN (FUNCTION_TEN_STRING), NULL);
+    ASSERT (NewString != NULL);
+    FormBrowserEx->RegisterHotKey (&HotKey, BROWSER_ACTION_SUBMIT, 0, NewString);
+    HotKey.ScanCode   = SCAN_F9;
+    NewString         = HiiGetString (PrivateData->HiiHandle[0], STRING_TOKEN (FUNCTION_NINE_STRING), NULL);
+    ASSERT (NewString != NULL);
+    FormBrowserEx->RegisterHotKey (&HotKey, BROWSER_ACTION_DEFAULT, EFI_HII_DEFAULT_CLASS_STANDARD, NewString);
+  }
+
   //
   // In default, this driver is built into Flash device image,
   // the following code doesn't run.

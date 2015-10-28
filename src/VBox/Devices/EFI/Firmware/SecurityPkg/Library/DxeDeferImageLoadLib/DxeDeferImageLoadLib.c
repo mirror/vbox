@@ -1,7 +1,7 @@
 /** @file
   Implement defer image load services for user identification in UEFI2.2.
 
-Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -246,7 +246,7 @@ GetAccessControl (
     CheckLen  = 0;
     while (CheckLen < Info->InfoSize - sizeof (EFI_USER_INFO)) {
       Access = (EFI_USER_INFO_ACCESS_CONTROL *) ((UINT8 *) (Info + 1) + CheckLen);
-      if ((Access->Type == AccessType)) {
+      if (Access->Type == AccessType) {
         *AccessControl = AllocateZeroPool (Access->Size);
         ASSERT (*AccessControl != NULL);
         CopyMem (*AccessControl, Access, Access->Size);
@@ -263,57 +263,107 @@ GetAccessControl (
   return EFI_NOT_FOUND;
 }
 
-
 /**
-  Convert the '/' to '\' in the specified string.
+  Get file name from device path.
 
-  @param[in, out]  Str       Points to the string to convert.
+  The file name may contain one or more device path node. Save the file name in a 
+  buffer if file name is found. The caller is responsible to free the buffer.  
+  
+  @param[in]  DevicePath     A pointer to a device path.
+  @param[out] FileName       The callee allocated buffer to save the file name if file name is found.
+  @param[out] FileNameOffset The offset of file name in device path if file name is found.
+  
+  @retval     UINTN          The file name length. 0 means file name is not found.
 
 **/
-VOID
-ConvertDPStr (
-  IN OUT EFI_STRING                     Str 
+UINTN 
+GetFileName (
+  IN  CONST EFI_DEVICE_PATH_PROTOCOL          *DevicePath,
+  OUT UINT8                                   **FileName,
+  OUT UINTN                                   *FileNameOffset
   )
 {
-  INTN                                  Count;
-  INTN                                  Index;
-  
-  Count = StrSize(Str) / 2 - 1;
+  UINTN                                       Length;
+  EFI_DEVICE_PATH_PROTOCOL                    *TmpDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL                    *RootDevicePath;
+  CHAR8                                       *NodeStr;
+  UINTN                                       NodeStrLength;
+  CHAR16                                      LastNodeChar;
+  CHAR16                                      FirstNodeChar;
 
-  if (Count < 4) {
-    return;
+  //
+  // Get the length of DevicePath before file name.
+  //
+  Length = 0;
+  RootDevicePath = (EFI_DEVICE_PATH_PROTOCOL *)DevicePath;
+  while (!IsDevicePathEnd (RootDevicePath)) {
+    if ((DevicePathType(RootDevicePath) == MEDIA_DEVICE_PATH) && (DevicePathSubType(RootDevicePath) == MEDIA_FILEPATH_DP)) {
+      break;
+    }
+    Length += DevicePathNodeLength (RootDevicePath);
+    RootDevicePath = NextDevicePathNode (RootDevicePath);
   }
-  
+
+  *FileNameOffset = Length;
+  if (Length == 0) {
+    return 0;
+  }
+
   //
-  // Convert device path string.
+  // Get the file name length.
   //
-  Index = Count - 1;
-  while (Index > 0) {
-    //
-    // Find the last '/'.
-    //
-    for (Index = Count - 1; Index > 0; Index--) {
-      if (Str[Index] == L'/')
-        break;
+  Length = 0;
+  TmpDevicePath = RootDevicePath;
+  while (!IsDevicePathEnd (TmpDevicePath)) {
+    if ((DevicePathType(TmpDevicePath) != MEDIA_DEVICE_PATH) || (DevicePathSubType(TmpDevicePath) != MEDIA_FILEPATH_DP)) {
+      break;
+    }
+    Length += DevicePathNodeLength (TmpDevicePath) - sizeof (EFI_DEVICE_PATH_PROTOCOL);
+    TmpDevicePath = NextDevicePathNode (TmpDevicePath);
+  }
+  if (Length == 0) {
+    return 0;
+  }
+
+  *FileName = AllocateZeroPool (Length);
+  ASSERT (*FileName != NULL);
+
+  //
+  // Copy the file name to the buffer.
+  //
+  Length = 0;
+  LastNodeChar = '\\';
+  TmpDevicePath = RootDevicePath;
+  while (!IsDevicePathEnd (TmpDevicePath)) {
+    if ((DevicePathType(TmpDevicePath) != MEDIA_DEVICE_PATH) || (DevicePathSubType(TmpDevicePath) != MEDIA_FILEPATH_DP)) {
+      break;
     }
 
-    //
-    // Check next char.
-    //
-    if (Str[Index + 1] == L'\\')
-      return;
+    FirstNodeChar = (CHAR16) ReadUnaligned16 ((UINT16 *)((UINT8 *)TmpDevicePath + sizeof (EFI_DEVICE_PATH_PROTOCOL)));
+    NodeStr = (CHAR8 *)TmpDevicePath + sizeof (EFI_DEVICE_PATH_PROTOCOL);
+    NodeStrLength = DevicePathNodeLength (TmpDevicePath) - sizeof (EFI_DEVICE_PATH_PROTOCOL) - sizeof(CHAR16);
     
-    Str[Index] = L'\\';
+    if ((FirstNodeChar == '\\') && (LastNodeChar == '\\')) {
+      //
+      // Skip separator "\" when there are two separators.
+      //
+      NodeStr += sizeof (CHAR16);
+      NodeStrLength -= sizeof (CHAR16);      
+    } else if ((FirstNodeChar != '\\') && (LastNodeChar != '\\')) {
+      //
+      // Add separator "\" when there is no separator.
+      //
+      WriteUnaligned16 ((UINT16 *)(*FileName + Length), '\\');
+      Length += sizeof (CHAR16);
+    } 
+    CopyMem (*FileName + Length, NodeStr, NodeStrLength);
+    Length += NodeStrLength;
     
-    //
-    // Check previous char.
-    //
-    if ((Index > 0) && (Str[Index - 1] == L'\\')) {
-      CopyMem (&Str[Index - 1], &Str[Index], (UINTN) ((Count - Index + 1) * sizeof (CHAR16)));
-      return;
-    }
-    Index--;
-  }
+    LastNodeChar  = (CHAR16) ReadUnaligned16 ((UINT16 *) (NodeStr + NodeStrLength - sizeof(CHAR16)));
+    TmpDevicePath = NextDevicePathNode (TmpDevicePath);
+  }    
+
+  return Length;
 }
 
 
@@ -342,54 +392,72 @@ CheckDevicePath (
   IN  CONST EFI_DEVICE_PATH_PROTOCOL          *DevicePath2
   )
 {
-  EFI_STATUS                            Status;
-  EFI_STRING                            DevicePathStr1;
-  EFI_STRING                            DevicePathStr2;
-  UINTN                                 StrLen1;
-  UINTN                                 StrLen2;
-  EFI_DEVICE_PATH_TO_TEXT_PROTOCOL      *DevicePathText;
-  BOOLEAN                               DevicePathEqual;
+  UINTN                                       DevicePathSize;
+  UINTN                                       FileNameSize1;
+  UINTN                                       FileNameSize2;
+  UINT8                                       *FileName1;
+  UINT8                                       *FileName2;
+  UINTN                                       FileNameOffset1;
+  UINTN                                       FileNameOffset2;
+  BOOLEAN                                     DevicePathEqual;
+
+  FileName1       = NULL;
+  FileName2       = NULL;
+  DevicePathEqual = TRUE;
 
   ASSERT (DevicePath1 != NULL);
   ASSERT (DevicePath2 != NULL);
-  
-  DevicePathEqual = FALSE;
-  DevicePathText  = NULL;
-  Status = gBS->LocateProtocol ( 
-                  &gEfiDevicePathToTextProtocolGuid,
-                  NULL,
-                  (VOID **) &DevicePathText
-                  );
-  ASSERT (Status == EFI_SUCCESS);
+  if (IsDevicePathEnd (DevicePath1)) {
+    return FALSE;
+  }
   
   //
-  // Get first device path string.
+  // The file name may contain one or more device path node. 
+  // To compare the file name, copy file name to a buffer and compare the buffer.
   //
-  DevicePathStr1 = DevicePathText->ConvertDevicePathToText (DevicePath1, TRUE, TRUE);
-  ConvertDPStr (DevicePathStr1);
-  //
-  // Get second device path string.
-  //
-  DevicePathStr2 = DevicePathText->ConvertDevicePathToText (DevicePath2, TRUE, TRUE);
-  ConvertDPStr (DevicePathStr2);
-  
-  //
-  // Compare device path string.
-  //
-  StrLen1 = StrSize (DevicePathStr1);
-  StrLen2 = StrSize (DevicePathStr2);
-  if (StrLen1 > StrLen2) {
-    DevicePathEqual = FALSE;
+  FileNameSize1 = GetFileName (DevicePath1, &FileName1, &FileNameOffset1);
+  if (FileNameSize1 != 0) {
+    FileNameSize2 = GetFileName (DevicePath2, &FileName2, &FileNameOffset2);
+    if (FileNameOffset1 != FileNameOffset2) {
+      DevicePathEqual = FALSE;
+      goto Done;
+    }
+    if (CompareMem (DevicePath1, DevicePath2, FileNameOffset1) != 0) {      
+      DevicePathEqual = FALSE;
+      goto Done;
+    }
+    if (FileNameSize1 > FileNameSize2) {
+      DevicePathEqual = FALSE;
+      goto Done;
+    }
+    if (CompareMem (FileName1, FileName2, FileNameSize1) != 0) {      
+      DevicePathEqual = FALSE;
+      goto Done;
+    }
+    DevicePathEqual = TRUE;
     goto Done;
   }
-  
-  if (CompareMem (DevicePathStr1, DevicePathStr2, StrLen1) == 0) {
-    DevicePathEqual = TRUE;
+
+  DevicePathSize = GetDevicePathSize (DevicePath1);
+  if (DevicePathSize > GetDevicePathSize (DevicePath2)) {
+    return FALSE;
   }
 
-Done:
-  FreePool (DevicePathStr1);
-  FreePool (DevicePathStr2);
+  //
+  // Exclude the end of device path node.
+  //
+  DevicePathSize -= sizeof (EFI_DEVICE_PATH_PROTOCOL);
+  if (CompareMem (DevicePath1, DevicePath2, DevicePathSize) != 0) {
+    DevicePathEqual = FALSE;
+  } 
+  
+Done: 
+  if (FileName1 != NULL) {
+    FreePool (FileName1);
+  }
+  if (FileName2 != NULL) {
+    FreePool (FileName2);
+  }
   return DevicePathEqual;
 }
 
@@ -532,7 +600,7 @@ IsBootOption (
     // Try to find the DevicePath in BootOption
     //
     UnicodeSPrint (StrTemp, sizeof (StrTemp), L"Boot%04x", Index);
-    OptionBuffer = GetEfiGlobalVariable (StrTemp);
+    GetEfiGlobalVariable2 (StrTemp, (VOID**)&OptionBuffer, NULL);
     if (OptionBuffer == NULL) {
       continue;
     }
@@ -714,18 +782,22 @@ GetDefferedImageInfo (
                                     logging.
   @param[in]  FileBuffer            File buffer matches the input file device path.
   @param[in]  FileSize              Size of File buffer matches the input file device path.
+  @param[in]  BootPolicy            A boot policy that was used to call LoadImage() UEFI service.
 
-  @retval EFI_SUCCESS               The file specified by File did authenticate, and the
-                                    platform policy dictates that the DXE Core may use File.
-  @retval EFI_INVALID_PARAMETER     File is NULL.
-  @retval EFI_SECURITY_VIOLATION    The file specified by File did not authenticate, and
-                                    the platform policy dictates that File should be placed
-                                    in the untrusted state. A file may be promoted from
-                                    the untrusted to the trusted state at a future time
-                                    with a call to the Trust() DXE Service.
-  @retval EFI_ACCESS_DENIED         The file specified by File did not authenticate, and
-                                    the platform policy dictates that File should not be
-                                    used for any purpose.
+  @retval EFI_SUCCESS               FileBuffer is NULL and current user has permission to start
+                                    UEFI device drivers on the device path specified by DevicePath.
+  @retval EFI_SUCCESS               The file specified by DevicePath and non-NULL
+                                    FileBuffer did authenticate, and the platform policy dictates
+                                    that the DXE Foundation may use the file.
+  @retval EFI_SECURITY_VIOLATION    FileBuffer is NULL and the user has no
+                                    permission to start UEFI device drivers on the device path specified
+                                    by DevicePath.
+  @retval EFI_SECURITY_VIOLATION    FileBuffer is not NULL and the user has no permission to load
+                                    drivers from the device path specified by DevicePath. The
+                                    image has been added into the list of the deferred images.
+  @retval EFI_ACCESS_DENIED         The file specified by File and FileBuffer did not
+                                    authenticate, and the platform policy dictates that the DXE
+                                    Foundation many not use File.
 
 **/
 EFI_STATUS
@@ -734,17 +806,20 @@ DxeDeferImageLoadHandler (
   IN  UINT32                           AuthenticationStatus,
   IN  CONST EFI_DEVICE_PATH_PROTOCOL   *File,
   IN  VOID                             *FileBuffer,
-  IN  UINTN                            FileSize
+  IN  UINTN                            FileSize,
+  IN  BOOLEAN                          BootPolicy
   )
-
 {
   EFI_STATUS                           Status;
   EFI_USER_PROFILE_HANDLE              CurrentUser;
   UINT32                               Policy;
   UINT32                               FileType;
 
+  //
+  // Ignore if File is NULL.
+  //
   if (File == NULL) {
-    return EFI_INVALID_PARAMETER;
+    return EFI_SUCCESS;
   }
 
   //
@@ -759,7 +834,7 @@ DxeDeferImageLoadHandler (
       //
       if (!VerifyDevicePath (File)) {
         DEBUG ((EFI_D_ERROR, "[Security] The image is forbidden to load!\n"));
-        return EFI_ACCESS_DENIED;
+        return EFI_SECURITY_VIOLATION;
       }
       return EFI_SUCCESS;
     }
@@ -778,8 +853,8 @@ DxeDeferImageLoadHandler (
     return EFI_SUCCESS;
   }
  
-  DEBUG ((EFI_D_ERROR, "[Security] No user identified, the image is deferred to load!\n"));
-  PutDefferedImageInfo (File, NULL, 0);
+  DEBUG ((EFI_D_INFO, "[Security] No user identified, the image is deferred to load!\n"));
+  PutDefferedImageInfo (File, FileBuffer, FileSize);
 
   //
   // Install the Deferred Image Load Protocol onto a new handle.
@@ -849,7 +924,7 @@ DxeDeferImageLoadLibConstructor (
     &Registration
     );
   
-  return RegisterSecurityHandler (
+  return RegisterSecurity2Handler (
            DxeDeferImageLoadHandler,
            EFI_AUTH_OPERATION_DEFER_IMAGE_LOAD 
            );      

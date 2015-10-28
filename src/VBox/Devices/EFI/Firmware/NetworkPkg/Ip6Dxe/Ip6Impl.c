@@ -1,7 +1,7 @@
 /** @file
   Implementation of EFI_IP6_PROTOCOL protocol interfaces.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -635,7 +635,7 @@ EfiIp6Configure (
   IpInstance = IP6_INSTANCE_FROM_PROTOCOL (This);
   IpSb       = IpInstance->Service;
 
-  if (IpSb->LinkLocalDadFail) {
+  if (IpSb->LinkLocalDadFail && Ip6ConfigData != NULL) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -689,7 +689,7 @@ EfiIp6Configure (
     Status = Ip6CleanProtocol (IpInstance);
 
     //
-    // Don't change the state if it is DESTORY, consider the following
+    // Don't change the state if it is DESTROY, consider the following
     // valid sequence: Mnp is unloaded-->Ip Stopped-->Udp Stopped,
     // Configure (ThisIp, NULL). If the state is changed to UNCONFIGED,
     // the unload fails miserably.
@@ -704,11 +704,6 @@ EfiIp6Configure (
   // whether it is necessary to reconfigure the MNP.
   //
   Ip6ServiceConfigMnp (IpInstance->Service, FALSE);
-
-  //
-  // Update the variable data.
-  //
-  Ip6SetVariableData (IpInstance->Service);
 
 Exit:
   gBS->RestoreTPL (OldTpl);
@@ -1776,10 +1771,6 @@ EfiIp6Cancel (
 
   IpInstance = IP6_INSTANCE_FROM_PROTOCOL (This);
   IpSb       = IpInstance->Service;
-
-  if (IpSb->LinkLocalDadFail) {
-    return EFI_DEVICE_ERROR;
-  }
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 

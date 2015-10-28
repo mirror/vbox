@@ -1,6 +1,6 @@
 ;------------------------------------------------------------------------------
 ;
-; Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
+; Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
 ; This program and the accompanying materials
 ; are licensed and made available under the terms and conditions of the BSD License
 ; which accompanies this distribution.  The full text of the license may be found at
@@ -28,112 +28,136 @@ data SEGMENT
 
 public          Exception0Handle, TimerInterruptHandle, ExceptionStubHeaderSize
 
-ExceptionStubHeaderSize        dw      Exception1Handle - Exception0Handle ;
+AGENT_HANDLER_SIGNATURE  MACRO
+  db   41h, 47h, 54h, 48h       ; SIGNATURE_32('A','G','T','H')
+ENDM
+
+ExceptionStubHeaderSize        dd      Exception1Handle - Exception0Handle ;
 CommonEntryAddr                dq      CommonEntry ;
 
 .code
 
+AGENT_HANDLER_SIGNATURE
 Exception0Handle:
     cli
     push    rcx
     mov     rcx, 0
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE	
 Exception1Handle:
     cli
     push    rcx
     mov     rcx, 1
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception2Handle:
     cli
     push    rcx
     mov     rcx, 2
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception3Handle:
     cli
     push    rcx
     mov     rcx, 3
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception4Handle:
     cli
     push    rcx
     mov     rcx, 4
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception5Handle:
     cli
     push    rcx
     mov     rcx, 5
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception6Handle:
     cli
     push    rcx
     mov     rcx, 6
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception7Handle:
     cli
     push    rcx
     mov     rcx, 7
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception8Handle:
     cli
     push    rcx
     mov     rcx, 8
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception9Handle:
     cli
     push    rcx
     mov     rcx, 9
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception10Handle:
     cli
     push    rcx
     mov     rcx, 10
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception11Handle:
     cli
     push    rcx
     mov     rcx, 11
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception12Handle:
     cli
     push    rcx
     mov     rcx, 12
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception13Handle:
     cli
     push    rcx
     mov     rcx, 13
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception14Handle:
     cli
     push    rcx
     mov     rcx, 14
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception15Handle:
     cli
     push    rcx
     mov     rcx, 15
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception16Handle:
     cli
     push    rcx
     mov     rcx, 16
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception17Handle:
     cli
     push    rcx
     mov     rcx, 17
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception18Handle:
     cli
     push    rcx
     mov     rcx, 18
     jmp     qword ptr [CommonEntryAddr]
+AGENT_HANDLER_SIGNATURE
 Exception19Handle:
     cli
     push    rcx
     mov     rcx, 19
     jmp     qword ptr [CommonEntryAddr]
-
+AGENT_HANDLER_SIGNATURE
 TimerInterruptHandle:
     cli
     push    rcx
@@ -198,7 +222,7 @@ NoExtrPush:
     push    rax
     mov     rax, cr2
     push    rax
-    push    0         ; cr0 will not saved???
+    push    0
     mov     rax, cr0
     push    rax
 
@@ -263,8 +287,11 @@ NoExtrPush:
     push    rax
 
     sub     rsp, 512
-    mov rdi, rsp
+    mov     rdi, rsp
     db 0fh, 0aeh, 00000111y ;fxsave [rdi]
+
+    ;; save the exception data
+    push    qword ptr [rbp + 16]
 
     ;; Clear Direction Flag
     cld
@@ -273,9 +300,16 @@ NoExtrPush:
     mov     rdx, rsp      ; Structure
     mov     r15, rcx      ; save vector in r15
     
-    sub     rsp, 32
+    ;
+    ; Per X64 calling convention, allocate maximum parameter stack space
+    ; and make sure RSP is 16-byte aligned
+    ;
+    sub     rsp, 32 + 8
     call    InterruptProcess
-    add     rsp, 32
+    add     rsp, 32 + 8
+
+    ;; skip the exception data
+    add     rsp, 8
     
     mov     rsi, rsp
     db 0fh, 0aeh, 00001110y ; fxrstor [rsi]

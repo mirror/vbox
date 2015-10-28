@@ -2,7 +2,7 @@
 
    Internal functions to operate Working Block Space.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -16,14 +16,73 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "FaultTolerantWrite.h"
 
+EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER mWorkingBlockHeader = {ZERO_GUID, 0, 0, 0, 0, {0, 0, 0}, 0};
+
+/**
+  Initialize a local work space header.
+
+  Since Signature and WriteQueueSize have been known, Crc can be calculated out,
+  then the work space header will be fixed.
+**/
+VOID
+InitializeLocalWorkSpaceHeader (
+  VOID
+  )
+{
+  EFI_STATUS                              Status;
+
+  //
+  // Check signature with gEdkiiWorkingBlockSignatureGuid.
+  //
+  if (CompareGuid (&gEdkiiWorkingBlockSignatureGuid, &mWorkingBlockHeader.Signature)) {
+    //
+    // The local work space header has been initialized.
+    //
+    return;
+  }
+
+  SetMem (
+    &mWorkingBlockHeader,
+    sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER),
+    FTW_ERASED_BYTE
+    );
+
+  //
+  // Here using gEdkiiWorkingBlockSignatureGuid as the signature.
+  //
+  CopyMem (
+    &mWorkingBlockHeader.Signature,
+    &gEdkiiWorkingBlockSignatureGuid,
+    sizeof (EFI_GUID)
+    );
+  mWorkingBlockHeader.WriteQueueSize = (UINT64) (PcdGet32 (PcdFlashNvStorageFtwWorkingSize) - sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER));
+
+  //
+  // Crc is calculated with all the fields except Crc and STATE, so leave them as FTW_ERASED_BYTE.
+  //
+
+  //
+  // Calculate the Crc of woking block header
+  //
+  Status = gBS->CalculateCrc32 (
+                  &mWorkingBlockHeader,
+                  sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER),
+                  &mWorkingBlockHeader.Crc
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  mWorkingBlockHeader.WorkingBlockValid    = FTW_VALID_STATE;
+  mWorkingBlockHeader.WorkingBlockInvalid  = FTW_INVALID_STATE;
+}
+
 /**
   Check to see if it is a valid work space.
 
 
   @param WorkingHeader   Pointer of working block header
 
-  @retval  EFI_SUCCESS    The function completed successfully
-  @retval  EFI_ABORTED    The function could not complete successfully.
+  @retval TRUE          The work space is valid.
+  @retval FALSE         The work space is invalid.
 
 **/
 BOOLEAN
@@ -31,62 +90,16 @@ IsValidWorkSpace (
   IN EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER *WorkingHeader
   )
 {
-  EFI_STATUS                              Status;
-  EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER WorkingBlockHeader;
-
   if (WorkingHeader == NULL) {
     return FALSE;
   }
 
-  if (WorkingHeader->WorkingBlockValid != FTW_VALID_STATE) {
-    DEBUG ((EFI_D_ERROR, "Ftw: Work block header valid bit check error\n"));
-    return FALSE;
-  }
-  //
-  // Check signature with gEfiSystemNvDataFvGuid
-  //
-  if (!CompareGuid (&gEfiSystemNvDataFvGuid, &WorkingHeader->Signature)) {
-    DEBUG ((EFI_D_ERROR, "Ftw: Work block header signature check error\n"));
-    return FALSE;
-  }
-  //
-  // Check the CRC of header
-  //
-  CopyMem (
-    &WorkingBlockHeader,
-    WorkingHeader,
-    sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER)
-    );
-
-  //
-  // Filter out the Crc and State fields
-  //
-  SetMem (
-    &WorkingBlockHeader.Crc,
-    sizeof (UINT32),
-    FTW_ERASED_BYTE
-    );
-  WorkingBlockHeader.WorkingBlockValid    = FTW_ERASE_POLARITY;
-  WorkingBlockHeader.WorkingBlockInvalid  = FTW_ERASE_POLARITY;
-
-  //
-  // Calculate the Crc of woking block header
-  //
-  Status = gBS->CalculateCrc32 (
-                  (UINT8 *) &WorkingBlockHeader,
-                  sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER),
-                  &WorkingBlockHeader.Crc
-                  );
-  if (EFI_ERROR (Status)) {
-    return FALSE;
+  if (CompareMem (WorkingHeader, &mWorkingBlockHeader, sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER)) == 0) {
+    return TRUE;
   }
 
-  if (WorkingBlockHeader.Crc != WorkingHeader->Crc) {
-    DEBUG ((EFI_D_ERROR, "Ftw: Work block header CRC check error\n"));
-    return FALSE;
-  }
-
-  return TRUE;
+  DEBUG ((EFI_D_ERROR, "Ftw: Work block header check error\n"));
+  return FALSE;
 }
 
 /**
@@ -103,49 +116,11 @@ InitWorkSpaceHeader (
   IN EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER *WorkingHeader
   )
 {
-  EFI_STATUS  Status;
-
   if (WorkingHeader == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  //
-  // Here using gEfiSystemNvDataFvGuid as the signature.
-  //
-  CopyMem (
-    &WorkingHeader->Signature,
-    &gEfiSystemNvDataFvGuid,
-    sizeof (EFI_GUID)
-    );
-  WorkingHeader->WriteQueueSize = (UINT64) (PcdGet32 (PcdFlashNvStorageFtwWorkingSize) - sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER));
 
-  //
-  // Crc is calculated with all the fields except Crc and STATE
-  //
-  WorkingHeader->WorkingBlockValid    = FTW_ERASE_POLARITY;
-  WorkingHeader->WorkingBlockInvalid  = FTW_ERASE_POLARITY;
-
-  SetMem (
-    &WorkingHeader->Crc,
-    sizeof (UINT32),
-    FTW_ERASED_BYTE
-    );
-
-  //
-  // Calculate the CRC value
-  //
-  Status = gBS->CalculateCrc32 (
-                  (UINT8 *) WorkingHeader,
-                  sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER),
-                  &WorkingHeader->Crc
-                  );
-  if (EFI_ERROR (Status)) {
-    return EFI_ABORTED;
-  }
-  //
-  // Restore the WorkingBlockValid flag to VALID state
-  //
-  WorkingHeader->WorkingBlockValid    = FTW_VALID_STATE;
-  WorkingHeader->WorkingBlockInvalid  = FTW_INVALID_STATE;
+  CopyMem (WorkingHeader, &mWorkingBlockHeader, sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER));
 
   return EFI_SUCCESS;
 }
@@ -166,8 +141,7 @@ WorkSpaceRefresh (
 {
   EFI_STATUS                      Status;
   UINTN                           Length;
-  UINTN                           Offset;
-  EFI_FAULT_TOLERANT_WRITE_HEADER *FtwHeader;
+  UINTN                           RemainingSpaceSize;
 
   //
   // Initialize WorkSpace as FTW_ERASED_BYTE
@@ -200,14 +174,15 @@ WorkSpaceRefresh (
             FtwDevice->FtwWorkSpaceSize,
             &FtwDevice->FtwLastWriteHeader
             );
-
-  FtwHeader = FtwDevice->FtwLastWriteHeader;
-  Offset    = (UINTN) (UINT8 *) FtwHeader - (UINTN) FtwDevice->FtwWorkSpace;
-
+  RemainingSpaceSize = FtwDevice->FtwWorkSpaceSize - ((UINTN) FtwDevice->FtwLastWriteHeader - (UINTN) FtwDevice->FtwWorkSpace);
+  DEBUG ((EFI_D_INFO, "Ftw: Remaining work space size - %x\n", RemainingSpaceSize));
   //
-  // if the Header is out of the workspace limit, call reclaim.
+  // If FtwGetLastWriteHeader() returns error, or the remaining space size is even not enough to contain
+  // one EFI_FAULT_TOLERANT_WRITE_HEADER + one EFI_FAULT_TOLERANT_WRITE_RECORD(It will cause that the header
+  // pointed by FtwDevice->FtwLastWriteHeader or record pointed by FtwDevice->FtwLastWriteRecord may contain invalid data),
+  // it needs to reclaim work space.
   //
-  if (EFI_ERROR (Status) && (Offset >= FtwDevice->FtwWorkSpaceSize)) {
+  if (EFI_ERROR (Status) || RemainingSpaceSize < sizeof (EFI_FAULT_TOLERANT_WRITE_HEADER) + sizeof (EFI_FAULT_TOLERANT_WRITE_RECORD)) {
     //
     // reclaim work space in working block.
     //
@@ -236,6 +211,9 @@ WorkSpaceRefresh (
               FtwDevice->FtwWorkSpaceSize,
               &FtwDevice->FtwLastWriteHeader
               );
+    if (EFI_ERROR (Status)) {
+      return EFI_ABORTED;
+    }
   }
   //
   // Refresh the FtwLastWriteRecord
@@ -278,8 +256,11 @@ FtwReclaimWorkSpace (
   EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER *WorkingBlockHeader;
   UINTN                                   Index;
   UINT8                                   *Ptr;
+  EFI_LBA                                 WorkSpaceLbaOffset;
 
-  DEBUG ((EFI_D_ERROR, "Ftw: start to reclaim work space\n"));
+  DEBUG ((EFI_D_INFO, "Ftw: start to reclaim work space\n"));
+
+  WorkSpaceLbaOffset = FtwDevice->FtwWorkSpaceLba - FtwDevice->FtwWorkBlockLba;
 
   //
   // Read all original data from working block to a memory buffer
@@ -311,7 +292,7 @@ FtwReclaimWorkSpace (
   // Clean up the workspace, remove all the completed records.
   //
   Ptr = TempBuffer +
-        ((UINTN) (FtwDevice->FtwWorkSpaceLba - FtwDevice->FtwWorkBlockLba)) * FtwDevice->BlockSize + 
+        (UINTN) WorkSpaceLbaOffset * FtwDevice->BlockSize +
         FtwDevice->FtwWorkSpaceBase;
 
   //
@@ -341,7 +322,7 @@ FtwReclaimWorkSpace (
       CopyMem (
         Ptr + sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER),
         FtwDevice->FtwLastWriteHeader,
-        WRITE_TOTAL_SIZE (Header->NumberOfWrites, Header->PrivateDataSize)
+        FTW_WRITE_TOTAL_SIZE (Header->NumberOfWrites, Header->PrivateDataSize)
         );
     }
   }
@@ -358,10 +339,17 @@ FtwReclaimWorkSpace (
     &FtwDevice->FtwLastWriteHeader
     );
 
+  FtwGetLastWriteRecord (
+    FtwDevice->FtwLastWriteHeader,
+    &FtwDevice->FtwLastWriteRecord
+    );
+
   //
   // Set the WorkingBlockValid and WorkingBlockInvalid as INVALID
   //
-  WorkingBlockHeader                      = (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER *) (TempBuffer + FtwDevice->FtwWorkSpaceBase);
+  WorkingBlockHeader                      = (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER *) (TempBuffer +
+                                            (UINTN) WorkSpaceLbaOffset * FtwDevice->BlockSize +
+                                            FtwDevice->FtwWorkSpaceBase);
   WorkingBlockHeader->WorkingBlockValid   = FTW_INVALID_STATE;
   WorkingBlockHeader->WorkingBlockInvalid = FTW_INVALID_STATE;
 
@@ -426,7 +414,7 @@ FtwReclaimWorkSpace (
   //
   Status = FtwUpdateFvState (
             FtwDevice->FtwBackupFvb,
-            FtwDevice->FtwWorkSpaceLba,
+            FtwDevice->FtwSpareLba + WorkSpaceLbaOffset,
             FtwDevice->FtwWorkSpaceBase + sizeof (EFI_GUID) + sizeof (UINT32),
             WORKING_BLOCK_VALID
             );
@@ -485,7 +473,7 @@ FtwReclaimWorkSpace (
 
   FreePool (SpareBuffer);
 
-  DEBUG ((EFI_D_ERROR, "Ftw: reclaim work space successfully\n"));
+  DEBUG ((EFI_D_INFO, "Ftw: reclaim work space successfully\n"));
 
   return EFI_SUCCESS;
 }

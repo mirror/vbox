@@ -1,7 +1,7 @@
 /** @file
 Implementation for EFI_HII_DATABASE_PROTOCOL.
 
-Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -2417,8 +2417,14 @@ AddPackages (
   //
   // Initialize Variables
   //
-  StringPkgIsAdd = FALSE;
-  FontPackage = NULL;
+  StringPkgIsAdd        = FALSE;
+  FontPackage           = NULL;
+  StringPackage         = NULL;
+  GuidPackage           = NULL;
+  FormPackage           = NULL;
+  ImagePackage          = NULL;
+  SimpleFontPackage     = NULL;
+  KeyboardLayoutPackage = NULL;
 
   //
   // Process the package list header
@@ -2505,6 +2511,7 @@ AddPackages (
       if (EFI_ERROR (Status)) {
         return Status;
       }
+      ASSERT (StringPackage != NULL);
       Status = InvokeRegisteredFunction (
                  Private,
                  NotifyType,
@@ -3100,17 +3107,18 @@ HiiUpdatePackageList (
   @param  Handle                 An array of EFI_HII_HANDLE instances returned.
 
   @retval EFI_SUCCESS            The matching handles are outputed successfully.
-                                               HandleBufferLength is updated with the actual length.
+                                 HandleBufferLength is updated with the actual length.
   @retval EFI_BUFFER_TO_SMALL    The HandleBufferLength parameter indicates that
                                  Handle is too small to support the number of
                                  handles. HandleBufferLength is updated with a
                                  value that will  enable the data to fit.
   @retval EFI_NOT_FOUND          No matching handle could not be found in database.
-  @retval EFI_INVALID_PARAMETER  Handle or HandleBufferLength was NULL.
-  
+  @retval EFI_INVALID_PARAMETER  HandleBufferLength was NULL.
+  @retval EFI_INVALID_PARAMETER  The value referenced by HandleBufferLength was not
+                                 zero and Handle was NULL.
   @retval EFI_INVALID_PARAMETER  PackageType is not a EFI_HII_PACKAGE_TYPE_GUID but
-                                                     PackageGuid is not NULL, PackageType is a EFI_HII_
-                                                     PACKAGE_TYPE_GUID but PackageGuid is NULL.
+                                 PackageGuid is not NULL, PackageType is a EFI_HII_
+                                 PACKAGE_TYPE_GUID but PackageGuid is NULL.
 
 **/
 EFI_STATUS
@@ -3263,7 +3271,9 @@ HiiListPackageLists (
                                  value that will enable the data to fit.
   @retval EFI_NOT_FOUND          The specifiecd Handle could not be found in the
                                  current database.
-  @retval EFI_INVALID_PARAMETER  Handle or Buffer or BufferSize was NULL.
+  @retval EFI_INVALID_PARAMETER  BufferSize was NULL.
+  @retval EFI_INVALID_PARAMETER  The value referenced by BufferSize was not zero 
+                                 and Buffer was NULL.
 
 **/
 EFI_STATUS
@@ -3525,7 +3535,9 @@ HiiUnregisterPackageNotify (
                                  number of GUIDs. KeyGuidBufferLength is
                                  updated with a value that will enable the data to
                                  fit.
-  @retval EFI_INVALID_PARAMETER  The KeyGuidBuffer or KeyGuidBufferLength was NULL.
+  @retval EFI_INVALID_PARAMETER  The KeyGuidBufferLength is NULL.
+  @retval EFI_INVALID_PARAMETER  The value referenced by KeyGuidBufferLength is not
+                                 zero and KeyGuidBuffer is NULL.
   @retval EFI_NOT_FOUND          There was no keyboard layout.
 
 **/

@@ -1,7 +1,15 @@
 /** @file
   Authenticode Portable Executable Signature Verification over OpenSSL.
 
-Copyright (c) 2011 - 2012, Intel Corporation. All rights reserved.<BR>
+  Caution: This module requires additional review when modified.
+  This library will have external input - signature (e.g. PE/COFF Authenticode).
+  This external input must be validated carefully to avoid security issue like
+  buffer overflow, integer overflow.
+
+  AuthenticodeVerify() will get PE/COFF Authenticode and will do basic check for
+  data structure.
+
+Copyright (c) 2011 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -18,6 +26,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <openssl/x509.h>
 #include <openssl/pkcs7.h>
 
+//
+// OID ASN.1 Value for SPC_INDIRECT_DATA_OBJID
+//
+UINT8 mSpcIndirectOidValue[] = {
+  0x2B, 0x06, 0x01, 0x04, 0x01, 0x82, 0x37, 0x02, 0x01, 0x04
+  };
 
 /**
   Verifies the validility of a PE/COFF Authenticode Signature as described in "Windows
@@ -25,6 +39,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   If AuthData is NULL, then return FALSE.
   If ImageHash is NULL, then return FALSE.
+
+  Caution: This function may receive untrusted input.
+  PE/COFF Authenticode is external input, so this function will do basic check for
+  Authenticode data structure.
 
   @param[in]  AuthData     Pointer to the Authenticode Signature retrieved from signed
                            PE/COFF image to be verified.
@@ -54,10 +72,12 @@ AuthenticodeVerify (
 {
   BOOLEAN      Status;
   PKCS7        *Pkcs7;
+  CONST UINT8  *Temp;
   CONST UINT8  *OrigAuthData;
   UINT8        *SpcIndirectDataContent;
   UINT8        Asn1Byte;
   UINTN        ContentSize;
+  UINT8        *SpcIndirectDataOid;
 
   //
   // Check input parameters.
@@ -77,7 +97,8 @@ AuthenticodeVerify (
   //
   // Retrieve & Parse PKCS#7 Data (DER encoding) from Authenticode Signature
   //
-  Pkcs7 = d2i_PKCS7 (NULL, &AuthData, (int)DataSize);
+  Temp  = AuthData;
+  Pkcs7 = d2i_PKCS7 (NULL, &Temp, (int)DataSize);
   if (Pkcs7 == NULL) {
     goto _Exit;
   }
@@ -94,6 +115,19 @@ AuthenticodeVerify (
   //       some authenticode-specific structure. Use opaque ASN.1 string to retrieve
   //       PKCS#7 ContentInfo here.
   //
+  SpcIndirectDataOid = (UINT8 *)(Pkcs7->d.sign->contents->type->data);
+  if (CompareMem (
+        SpcIndirectDataOid,
+        mSpcIndirectOidValue,
+        sizeof (mSpcIndirectOidValue)
+        ) != 0) {
+    //
+    // Un-matched SPC_INDIRECT_DATA_OBJID.
+    //
+    goto _Exit;
+  }
+
+
   SpcIndirectDataContent = (UINT8 *)(Pkcs7->d.sign->contents->d.other->value.asn1_string->data);
 
   //
@@ -103,23 +137,35 @@ AuthenticodeVerify (
 
   if ((Asn1Byte & 0x80) == 0) {
     //
-    // Short Form of Length Encoding
+    // Short Form of Length Encoding (Length < 128)
     //
     ContentSize = (UINTN) (Asn1Byte & 0x7F);
     //
     // Skip the SEQUENCE Tag;
     //
     SpcIndirectDataContent += 2;
+
+  } else if ((Asn1Byte & 0x81) == 0x81) {
+    //
+    // Long Form of Length Encoding (128 <= Length < 255, Single Octet)
+    //
+    ContentSize = (UINTN) (*(UINT8 *)(SpcIndirectDataContent + 2));
+    //
+    // Skip the SEQUENCE Tag;
+    //
+    SpcIndirectDataContent += 3;
+
   } else if ((Asn1Byte & 0x82) == 0x82) {
     //
-    // Long Form of Length Encoding, only support two bytes.
+    // Long Form of Length Encoding (Length > 255, Two Octet)
     //
-    ContentSize  = (UINTN) (*(SpcIndirectDataContent + 2));
-    ContentSize = (ContentSize << 8) + (UINTN)(*(SpcIndirectDataContent + 3));
+    ContentSize = (UINTN) (*(UINT8 *)(SpcIndirectDataContent + 2));
+    ContentSize = (ContentSize << 8) + (UINTN)(*(UINT8 *)(SpcIndirectDataContent + 3));
     //
     // Skip the SEQUENCE Tag;
     //
     SpcIndirectDataContent += 4;
+
   } else {
     goto _Exit;
   }

@@ -1,7 +1,7 @@
 /** @file
   VFR file used by the SecureBoot configuration component.
 
-Copyright (c) 2011 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2011 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -32,14 +32,21 @@ formset
     title = STRING_TOKEN(STR_SECUREBOOT_TITLE);
 
     subtitle text = STRING_TOKEN(STR_NULL);
-    
+
+    text
+      help   = STRING_TOKEN(STR_SECURE_BOOT_STATE_HELP),
+      text   = STRING_TOKEN(STR_SECURE_BOOT_STATE_PROMPT),
+        text   = STRING_TOKEN(STR_SECURE_BOOT_STATE_CONTENT);
+        
     //
     // Define of Check Box: Attempt Secure Boot
     //
     suppressif TRUE;
       checkbox varid   = SECUREBOOT_CONFIGURATION.HideSecureBoot,
+              questionid = KEY_HIDE_SECURE_BOOT,
               prompt   = STRING_TOKEN(STR_NULL),
               help     = STRING_TOKEN(STR_NULL),
+              flags    = INTERACTIVE,
       endcheckbox;
     endif;  
     
@@ -47,31 +54,40 @@ formset
     // Display of Check Box: Attempt Secure Boot
     //
     grayoutif ideqval SECUREBOOT_CONFIGURATION.HideSecureBoot == 1;
-    checkbox varid = SECUREBOOT_CONFIGURATION.SecureBootState,
+    checkbox varid = SECUREBOOT_CONFIGURATION.AttemptSecureBoot,
           questionid = KEY_SECURE_BOOT_ENABLE,
           prompt = STRING_TOKEN(STR_SECURE_BOOT_PROMPT),
           help   = STRING_TOKEN(STR_SECURE_BOOT_HELP),
-          flags  = INTERACTIVE,
+          flags  = INTERACTIVE | RESET_REQUIRED,
     endcheckbox;
     endif;
     
     //
     // Display of Oneof: 'Secure Boot Mode'
     //
-    oneof varid  = SECUREBOOT_CONFIGURATION.SecureBootMode,
-          questionid = KEY_SECURE_BOOT_MODE,      
-          prompt = STRING_TOKEN(STR_SECURE_BOOT_MODE_PROMPT),
-          help   = STRING_TOKEN(STR_SECURE_BOOT_MODE_HELP),
-          flags  = INTERACTIVE,
-          option text = STRING_TOKEN(STR_STANDARD_MODE),    value = SECURE_BOOT_MODE_STANDARD, flags = DEFAULT;
-          option text = STRING_TOKEN(STR_CUSTOM_MODE),      value = SECURE_BOOT_MODE_CUSTOM,   flags = 0;
-    endoneof;
+    disableif TRUE;
+      oneof varid  = SECUREBOOT_CONFIGURATION.SecureBootMode,
+            prompt = STRING_TOKEN(STR_SECURE_BOOT_MODE_PROMPT),
+            help   = STRING_TOKEN(STR_SECURE_BOOT_MODE_HELP),
+            flags  = INTERACTIVE,
+            option text = STRING_TOKEN(STR_STANDARD_MODE),    value = SECURE_BOOT_MODE_STANDARD, flags = 0;
+            option text = STRING_TOKEN(STR_CUSTOM_MODE),      value = SECURE_BOOT_MODE_CUSTOM,   flags = 0;
+      endoneof;
+    endif;
+      oneof name = SecureBootMode,
+            questionid = KEY_SECURE_BOOT_MODE,      
+            prompt = STRING_TOKEN(STR_SECURE_BOOT_MODE_PROMPT),
+            help   = STRING_TOKEN(STR_SECURE_BOOT_MODE_HELP),
+            flags  = INTERACTIVE | NUMERIC_SIZE_1,
+            option text = STRING_TOKEN(STR_STANDARD_MODE),    value = SECURE_BOOT_MODE_STANDARD, flags = DEFAULT;
+            option text = STRING_TOKEN(STR_CUSTOM_MODE),      value = SECURE_BOOT_MODE_CUSTOM,   flags = 0;
+      endoneof;
     
     //
     //
     // Display of 'Current Secure Boot Mode'
     //
-    suppressif ideqval SECUREBOOT_CONFIGURATION.SecureBootMode == SECURE_BOOT_MODE_STANDARD;
+    suppressif questionref(SecureBootMode) == SECURE_BOOT_MODE_STANDARD;
       grayoutif NOT ideqval SECUREBOOT_CONFIGURATION.PhysicalPresent == 1;
       goto FORMID_SECURE_BOOT_OPTION_FORM,
            prompt = STRING_TOKEN(STR_SECURE_BOOT_OPTION),
@@ -158,7 +174,7 @@ formset
           questionid = KEY_SECURE_BOOT_DELETE_PK,
           prompt = STRING_TOKEN(STR_DELETE_PK),          
           help   = STRING_TOKEN(STR_DELETE_PK_HELP),
-          flags  = INTERACTIVE,
+          flags  = INTERACTIVE | RESET_REQUIRED,
     endcheckbox;
     endif;
   endform;
@@ -479,14 +495,12 @@ formset
      text
        help   = STRING_TOKEN(STR_SAVE_AND_EXIT),
        text   = STRING_TOKEN(STR_SAVE_AND_EXIT),
-       text   = STRING_TOKEN(STR_NULL),
        flags  = INTERACTIVE,
        key    = KEY_VALUE_SAVE_AND_EXIT_PK;
 
      text
        help   = STRING_TOKEN(STR_NO_SAVE_AND_EXIT),
        text   = STRING_TOKEN(STR_NO_SAVE_AND_EXIT),
-       text   = STRING_TOKEN(STR_NULL),
        flags  = INTERACTIVE,
        key    = KEY_VALUE_NO_SAVE_AND_EXIT_PK;
 
