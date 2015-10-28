@@ -511,12 +511,37 @@
   <xsl:template match="tgroup">
     <xsl:choose>
       <xsl:when test="@style='verywide'">
-        <xsl:text>&#x0a;&#x0a;{\small\begin{center}&#x0a;\begin{tabulary}{1.1\textwidth}[]{|L|L|L|}&#x0a;\hline&#x0a;</xsl:text>
+        <xsl:text>&#x0a;&#x0a;{\small\begin{center}&#x0a;\begin{tabulary}{1.1\textwidth}[]</xsl:text>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:text>&#x0a;&#x0a;{\small\begin{center}&#x0a;\begin{tabulary}{.9\textwidth}[]{|L|L|L|}&#x0a;\hline&#x0a;</xsl:text>
+        <xsl:text>&#x0a;&#x0a;{\small\begin{center}&#x0a;\begin{tabulary}{.9\textwidth}[]</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
+    <xsl:text>{</xsl:text>
+    <xsl:choose>
+      <xsl:when test="@cols='1'">
+        <xsl:text>|L|</xsl:text>
+      </xsl:when>
+      <xsl:when test="@cols='2'">
+        <xsl:text>|L|L|</xsl:text>
+      </xsl:when>
+      <xsl:when test="@cols='3'">
+        <xsl:text>|L|L|L|</xsl:text>
+      </xsl:when>
+      <xsl:when test="@cols='4'">
+        <xsl:text>|L|L|L|L|</xsl:text>
+      </xsl:when>
+      <xsl:when test="@cols='5'">
+        <xsl:text>|L|L|L|L|L|</xsl:text>
+      </xsl:when>
+      <xsl:when test="@cols='6'">
+        <xsl:text>|L|L|L|L|L|L|</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:message terminate="yes">Unsupported number of columns (<xsl:value-of select="@cols"/>), fix document or converter</xsl:message>
+      </xsl:otherwise>
+    </xsl:choose>
+    <xsl:text>}&#x0a;\hline&#x0a;</xsl:text>
     <xsl:apply-templates />
     <xsl:text>&#x0a;\end{tabulary}&#x0a;\end{center}}&#x0a;</xsl:text>
   </xsl:template>
