@@ -85,6 +85,7 @@ PartitionInstallAppleChildHandles (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Handle,
   IN  EFI_DISK_IO_PROTOCOL         *DiskIo,
+  IN  EFI_DISK_IO2_PROTOCOL        *DiskIo2,
   IN  EFI_BLOCK_IO_PROTOCOL        *BlockIo,
   IN  EFI_BLOCK_IO2_PROTOCOL       *BlockIo2,
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
@@ -206,6 +207,7 @@ PartitionInstallAppleChildHandles (
               This,
               Handle,
               DiskIo,
+              DiskIo2,
               BlockIo,
               BlockIo2,
               DevicePath,

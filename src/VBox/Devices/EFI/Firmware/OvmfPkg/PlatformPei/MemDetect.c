@@ -219,7 +219,7 @@ VBoxInitializeRam (
   MtrrSetMemoryAttribute (0, BASE_512KB + BASE_128KB, CacheWriteBack);
 
   if (UpperMemorySize != 0) {
-      AddUntestedMemoryBaseSizeHob (BASE_4GB, UpperMemorySize);
+    AddUntestedMemoryBaseSizeHob (BASE_4GB, UpperMemorySize);
 
     MtrrSetMemoryAttribute (BASE_4GB, UpperMemorySize, CacheWriteBack);
   }

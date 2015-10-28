@@ -26,6 +26,8 @@ DEFINE IASL_BIN                = @VBOX_IASLCMD@
 DEFINE IASL_FLAGS              =
 DEFINE IASL_OUTFLAGS           = -p
 
+DEFINE NASM_BIN                = @VBOX_YASMCMD@
+
 DEFINE MSFT_ASLPP_FLAGS        = /nologo /E /C /FIAutoGen.h
 DEFINE MSFT_ASLCC_FLAGS        = /nologo /c /FIAutoGen.h /TC /Dmain=ReferenceAcpiTable
 DEFINE MSFT_ASLDLINK_FLAGS     = /NODEFAULTLIB /ENTRY:ReferenceAcpiTable /SUBSYSTEM:CONSOLE
@@ -345,4 +347,11 @@ RELEASE_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -O2 -fno-omit-frame
 ##################
 *_*_*_VPDTOOL_PATH         = BPDG
 *_*_*_VPDTOOL_GUID         = 8C3D856A-9BE6-468E-850A-24F7A8D38E08
+
+##################
+# NASM tool definitions
+##################
+*_*_*_NASM_PATH                = DEF(NASM_BIN)
+# NASMB uses NASM produce a .bin from a .nasmb NASM source file
+*_*_*_NASMB_FLAGS              = -f bin -D__YASM__ -DASM_FORMAT_BIN
 

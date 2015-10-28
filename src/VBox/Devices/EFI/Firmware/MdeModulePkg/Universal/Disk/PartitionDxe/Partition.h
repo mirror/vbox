@@ -432,12 +432,13 @@ PartitionInstallMbrChildHandles (
 /**
   Install child handles if the Handle supports Apple format.
 
-  @param  This              Calling context.
-  @param  Handle            Parent Handle.
-  @param  DiskIo            Parent DiskIo interface.
-  @param  BlockIo           Parent BlockIo interface.
+  @param[in]  This              Calling context.
+  @param[in]  Handle            Parent Handle.
+  @param[in]  DiskIo            Parent DiskIo interface.
+  @param[in]  DiskIo2           Parent DiskIo2 interface.
+  @param[in]  BlockIo           Parent BlockIo interface.
   @param[in]  BlockIo2          Parent BlockIo2 interface.
-  @param  DevicePath        Parent Device Path.
+  @param[in]  DevicePath        Parent Device Path.
 
   @retval EFI_SUCCESS       A child handle was added.
   @retval EFI_MEDIA_CHANGED Media change was detected.
@@ -449,6 +450,7 @@ PartitionInstallAppleChildHandles (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Handle,
   IN  EFI_DISK_IO_PROTOCOL         *DiskIo,
+  IN  EFI_DISK_IO2_PROTOCOL        *DiskIo2,
   IN  EFI_BLOCK_IO_PROTOCOL        *BlockIo,
   IN  EFI_BLOCK_IO2_PROTOCOL       *BlockIo2,
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath

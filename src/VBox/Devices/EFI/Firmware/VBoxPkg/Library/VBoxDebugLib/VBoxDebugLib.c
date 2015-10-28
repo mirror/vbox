@@ -260,6 +260,14 @@ DebugPrintEnabled(VOID)
 
 
 BOOLEAN EFIAPI
+DebugPrintLevelEnabled(IN CONST UINTN ErrorLevel)
+{
+    /** @todo some PCD for this so we can disable it in release builds. */
+    return TRUE;
+}
+
+
+BOOLEAN EFIAPI
 DebugCodeEnabled(VOID)
 {
     /** @todo ditto */

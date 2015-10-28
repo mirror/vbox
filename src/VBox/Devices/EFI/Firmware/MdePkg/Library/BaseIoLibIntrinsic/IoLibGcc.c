@@ -160,9 +160,7 @@ IoRead32 (
 {
   UINT32   Data;
 
-#if 0
   ASSERT ((Port & 3) == 0);
-#endif
   __asm__ __volatile__ ("inl %w1,%0" : "=a" (Data) : "d" ((UINT16)Port));
   return Data;
 }

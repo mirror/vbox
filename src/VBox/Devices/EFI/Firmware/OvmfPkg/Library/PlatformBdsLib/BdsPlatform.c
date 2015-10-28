@@ -74,6 +74,7 @@ VBoxConsoleSwitchMode (
     gBS->LocateProtocol(&gEfiSimpleTextOutProtocolGuid, NULL, (VOID **)&TextOutputProtocol);
     gBS->LocateProtocol(&gEfiUgaDrawProtocolGuid, NULL, (VOID **)&Uga);
     gBS->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID **)&Gop);
+
     if (Gop)
     {
         UINT32 mode = 2;
@@ -105,6 +106,7 @@ EFIAPI
 VBoxConsoleInit()
 {
     EFI_EVENT event;
+
     gBS->CreateEventEx(EVT_NOTIFY_SIGNAL, TPL_NOTIFY, VBoxConsoleSwitchMode, NULL, &gEfiEventReadyToBootGuid, &event);
     return EFI_SUCCESS;
 }

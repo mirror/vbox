@@ -1023,7 +1023,7 @@ RootBridgeIoIoRW (
         else
           ASMInStrU32((RTIOPORT)Address, (uint32_t*)Buffer, (size_t)Count);
         break;
-        default:
+      default:
           ASSERT (FALSE);
     }
   } else {

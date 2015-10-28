@@ -154,7 +154,6 @@ TOOL_VBoxEfiResetVectorLd_LINK_MISCBIN_DEPEND =
 TOOL_VBoxEfiResetVectorLd_LINK_MISCBIN_DEPORD =
 define TOOL_VBoxEfiResetVectorLd_LINK_MISCBIN_CMDS
 	$(VBOX_BLD_PYTHON) $(VBOX_PATH_EFI_FIRMWARE)/UefiCpuPkg/ResetVector/Vtf0/Tools/FixupForRawSection.py \
-       	"--only-padd-image" \
 		"$(objs)" \
 		"$(out)"
 endef
@@ -167,17 +166,18 @@ TEMPLATE_VBoxEfiResetVectorRaw_MODE    = 0644
 TEMPLATE_VBoxEfiResetVectorRaw_ASTOOL  = YASM
 TEMPLATE_VBoxEfiResetVectorRaw_ASFLAGS:= -f bin $(VBOX_YASM_Wno-segreg-in-64bit) --mapfile
 TEMPLATE_VBoxEfiResetVectorRaw_ASDEFS  = ASM_FORMAT_BIN __YASM__
+TEMPLATE_VBoxEfiResetVectorRaw_INCS    = UefiCpuPkg/ResetVector/Vtf0
 TEMPLATE_VBoxEfiResetVectorRaw_LDTOOL  = VBoxEfiResetVectorLd
 
 MISCBINS += VBoxEfiResetVector-x86
 VBoxEfiResetVector-x86_TEMPLATE = VBoxEfiResetVectorRaw
 VBoxEfiResetVector-x86_DEFS     = ARCH_IA32 RT_ARCH_X86 DEBUG_NONE
-VBoxEfiResetVector-x86_SOURCES  = UefiCpuPkg/ResetVector/Vtf0/ResetVectorCode.asm
+VBoxEfiResetVector-x86_SOURCES  = OvmfPkg/ResetVector/ResetVectorCode.asm
 
 MISCBINS += VBoxEfiResetVector-amd64
 VBoxEfiResetVector-amd64_TEMPLATE = VBoxEfiResetVectorRaw
 VBoxEfiResetVector-amd64_DEFS     = ARCH_X64 RT_ARCH_AMD64 DEBUG_NONE
-VBoxEfiResetVector-amd64_SOURCES  = UefiCpuPkg/ResetVector/Vtf0/ResetVectorCode.asm
+VBoxEfiResetVector-amd64_SOURCES  = OvmfPkg/ResetVector/ResetVectorCode.asm
 
 
 #
@@ -229,6 +229,7 @@ VBOX_EFI_BUILD_CMD += \
 	-E 'PYTHONPATH=$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python' \
 	-E 'PYTHONDONTWRITEBYTECODE=1' \
 	-E 'IASL_BIN=$(VBOX_IASLCMD)' \
+	-E 'NASM_BIN=$(VBOX_YASMCMD)' \
 	-E 'WORKSPACE=$(VBOX_PATH_EFI_FIRMWARE)' \
 	-E 'EDK_TOOLS_PATH=$(VBOX_PATH_EFI_FIRMWARE)/BaseTools' \
 	-E 'EFI_SOURCE$(VBOX_EFI_REDIRECT_E_EQUAL)' \
@@ -266,6 +267,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
 	$(RM) -f -- "$@"
 	$(SED) \
 		-e 's,@VBOX_IASLCMD@,$(VBOX_IASLCMD),' \
+		-e 's,@VBOX_YASMCMD@,$(VBOX_YASMCMD),' \
 		-e 's,@KMK@,$(MAKE),' \
                \
 		-e 's,@VBOX_PATH_PREFIX_MINGW32@,$(VBOX_PATH_PREFIX_MINGW32),' \
@@ -288,7 +290,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(VBO
 		"" \
 		"# These variables cannot be overriden by the build.py command line." \
 		"TOOL_CHAIN_CONF = $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt" \
-		"BUILD_RULE_CONF = BaseTools/Conf/build_rule.template" \
+		"BUILD_RULE_CONF = $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/build_rule.template" \
 		"" \
 		"# These variables are overridden and this is just for show." \
 		"ACTIVE_PLATFORM = OvmfPkg/OvmfPkgIa32.dsc" \
@@ -297,7 +299,6 @@ $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(VBO
 		"TOOL_CHAIN_TAG  = $(VBOX_EFI_TOOL_CHAIN)" \
 		"MAX_CONCURRENT_THREAD_NUMBER = 1"
 
-## @todo 32-bit DEBUG is busted, image to big.
 $(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 + $(VBoxEfiFirmwareDbg32_SOURCES): \
 		$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt \
@@ -321,7 +322,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(V
 		"" \
 		"# These variables cannot be overriden by the build.py command line." \
 		"TOOL_CHAIN_CONF = $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt" \
-		"BUILD_RULE_CONF = BaseTools/Conf/build_rule.template" \
+		"BUILD_RULE_CONF = $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/build_rule.template" \
 		"" \
 		"# These variables are overridden and this is just for show." \
 		"ACTIVE_PLATFORM = OvmfPkg/OvmfPkgX64.dsc" \

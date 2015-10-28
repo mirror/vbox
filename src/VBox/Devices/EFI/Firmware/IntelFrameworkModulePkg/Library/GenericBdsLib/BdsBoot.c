@@ -2419,12 +2419,12 @@ BdsLibBootViaBootOption (
       VBoxLogFlowFuncMarkVar(Handle, "%p");
       if (Handle != NULL) {
 #ifdef VBOX /* We have more options to try out because of apple. */
-      //
-      // Try parse any config="folder-path/" stuff found in the optional
-      // section of the boot option and attempt to load boot.efi it.
-      //
-      if (Option->LoadOptionsSize) {
-        /*
+        //
+        // Try parse any config="folder-path/" stuff found in the optional
+        // section of the boot option and attempt to load boot.efi it.
+        //
+        if (Option->LoadOptionsSize) {
+          /*
            * First, see the there is a config=folder in the load options.  We
            * interpret it as a path to the folder containing boot.efi and go
            * about constructing the path in a bit of a round about way...
@@ -2460,68 +2460,68 @@ BdsLibBootViaBootOption (
            *   00b0: 74 00 22 00 00 00                               t."...
            */
           VBoxLogFlowFuncMarkVar(Option->LoadOptions, "%s");
-        if (StrnCmp(L"config=", (CHAR16 *)Option->LoadOptions, 7) == 0) {
-          EFI_SIMPLE_FILE_SYSTEM_PROTOCOL  *Volume;
-          CHAR16 *pszConfigValue = &((CHAR16 *)Option->LoadOptions)[7];
-          CHAR16 *pszFolder = NULL;
-          CHAR16 *pszTemp0 = NULL;
-          CHAR16 *pszTemp1 = NULL;
-          BOOLEAN fQuoted = (pszConfigValue[0] == L'\"');
-          pszTemp0 = &pszConfigValue[fQuoted ? 2 : 1];
-          pszTemp1 = pszTemp0;
-          VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
-          VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
-          pszFolder = AllocateZeroPool((StrLen(pszConfigValue) + StrLen(L"\\boot.efi") + 1) * sizeof(UINT16));
-          while (pszTemp0) {
-              VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
-              VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
-              pszFolder = StrnCat(pszFolder, pszTemp1, StrLen(pszTemp1) - StrLen(pszTemp0));
-              pszTemp1 = pszTemp0;
-              pszFolder = StrCat(pszFolder, L"\\");
-              VBoxLogFlowFuncMarkVar(pszFolder, "%s");
-              VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
-              VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
-              pszTemp0 = StrStr(&pszTemp0[1], L"\\");
-              VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
-          }
-          pszFolder = StrCat(pszFolder, L"boot.efi");
-          VBoxLogFlowFuncMarkVar(pszFolder,"%s");
-
-          Status = gBS->HandleProtocol(Handle, &gEfiSimpleFileSystemProtocolGuid, (VOID **)&Volume);
-          VBoxLogFlowFuncMarkRC(Status);
-          if (!EFI_ERROR(Status)) {
-            FilePath = FileDevicePath((EFI_HANDLE)Handle, pszFolder);
-            if (FilePath) {
-              VBoxLogFlowFuncMarkVar(DevicePathToStr(FilePath), "%s");
-              REPORT_STATUS_CODE(EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderLoad));
-              Status = gBS->LoadImage(TRUE, gImageHandle, FilePath, NULL, 0, &ImageHandle );
-              VBoxLogFlowFuncMarkRC(Status);
-              /** @todo Probably leaking memory here! */
+          if (StrnCmp(L"config=", (CHAR16 *)Option->LoadOptions, 7) == 0) {
+            EFI_SIMPLE_FILE_SYSTEM_PROTOCOL  *Volume;
+            CHAR16 *pszConfigValue = &((CHAR16 *)Option->LoadOptions)[7];
+            CHAR16 *pszFolder = NULL;
+            CHAR16 *pszTemp0 = NULL;
+            CHAR16 *pszTemp1 = NULL;
+            BOOLEAN fQuoted = (pszConfigValue[0] == L'\"');
+            pszTemp0 = &pszConfigValue[fQuoted ? 2 : 1];
+            pszTemp1 = pszTemp0;
+            VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
+            VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
+            pszFolder = AllocateZeroPool((StrLen(pszConfigValue) + StrLen(L"\\boot.efi") + 1) * sizeof(UINT16));
+            while (pszTemp0) {
+                VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
+                VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
+                pszFolder = StrnCat(pszFolder, pszTemp1, StrLen(pszTemp1) - StrLen(pszTemp0));
+                pszTemp1 = pszTemp0;
+                pszFolder = StrCat(pszFolder, L"\\");
+                VBoxLogFlowFuncMarkVar(pszFolder, "%s");
+                VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
+                VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
+                pszTemp0 = StrStr(&pszTemp0[1], L"\\");
+                VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
             }
-          }
-        }
-      }
+            pszFolder = StrCat(pszFolder, L"boot.efi");
+            VBoxLogFlowFuncMarkVar(pszFolder,"%s");
 
-      //
-      // Try load any of the default boot files.
-      //
-      if (EFI_ERROR(Status)) {
-        UINT32 IdxFile;
-        for (IdxFile = 0; IdxFile < sizeof(maBdsLibBootFiles) / sizeof(maBdsLibBootFiles[0]); IdxFile++) {
-          FilePath = FileDevicePath(Handle, maBdsLibBootFiles[IdxFile]);
-          if (FilePath) {
-            VBoxLog(("BdsLibBootViaBootOption: Trying to load '%s'...\n", DevicePathToStr(FilePath)));
-            REPORT_STATUS_CODE(EFI_PROGRESS_CODE, PcdGet32(PcdProgressCodeOsLoaderLoad));
-            Status = gBS->LoadImage(TRUE, gImageHandle, FilePath, NULL, 0, &ImageHandle );
+            Status = gBS->HandleProtocol(Handle, &gEfiSimpleFileSystemProtocolGuid, (VOID **)&Volume);
+            VBoxLogFlowFuncMarkRC(Status);
             if (!EFI_ERROR(Status)) {
-              VBoxLog(("BdsLibBootViaBootOption: Successfully loaded boot file: %s\n", DevicePathToStr(FilePath)));
-              break;
+              FilePath = FileDevicePath((EFI_HANDLE)Handle, pszFolder);
+              if (FilePath) {
+                VBoxLogFlowFuncMarkVar(DevicePathToStr(FilePath), "%s");
+                REPORT_STATUS_CODE(EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderLoad));
+                Status = gBS->LoadImage(TRUE, gImageHandle, FilePath, NULL, 0, &ImageHandle );
+                VBoxLogFlowFuncMarkRC(Status);
+                /** @todo Probably leaking memory here! */
+              }
             }
-            VBoxLog(("BdsLibBootViaBootOption: Failed loading '%s': 0x%x(%r)\n", DevicePathToStr(FilePath), Status, Status));
-            FilePath = NULL; /** @todo Probably leaking memory here! */
           }
         }
-      }
+
+        //
+        // Try load any of the default boot files.
+        //
+        if (EFI_ERROR(Status)) {
+          UINT32 IdxFile;
+          for (IdxFile = 0; IdxFile < sizeof(maBdsLibBootFiles) / sizeof(maBdsLibBootFiles[0]); IdxFile++) {
+            FilePath = FileDevicePath(Handle, maBdsLibBootFiles[IdxFile]);
+            if (FilePath) {
+              VBoxLog(("BdsLibBootViaBootOption: Trying to load '%s'...\n", DevicePathToStr(FilePath)));
+              REPORT_STATUS_CODE(EFI_PROGRESS_CODE, PcdGet32(PcdProgressCodeOsLoaderLoad));
+              Status = gBS->LoadImage(TRUE, gImageHandle, FilePath, NULL, 0, &ImageHandle );
+              if (!EFI_ERROR(Status)) {
+                VBoxLog(("BdsLibBootViaBootOption: Successfully loaded boot file: %s\n", DevicePathToStr(FilePath)));
+                break;
+              }
+              VBoxLog(("BdsLibBootViaBootOption: Failed loading '%s': 0x%x(%r)\n", DevicePathToStr(FilePath), Status, Status));
+              FilePath = NULL; /** @todo Probably leaking memory here! */
+            }
+          }
+        }
 #else  /* !VBOX */
         //
         // Load the default boot file \EFI\BOOT\boot{machinename}.EFI from removable Media
@@ -2540,8 +2540,8 @@ BdsLibBootViaBootOption (
                           );
         }
 #endif /* !VBOX */
+      }
     }
-  }
   }
   //
   // Provide the image with it's load options

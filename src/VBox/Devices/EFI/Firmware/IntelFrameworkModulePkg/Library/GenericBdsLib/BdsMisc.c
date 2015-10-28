@@ -564,8 +564,8 @@ ValidateOption (
   }
 
   if (TempSize + FilePathSize + sizeof (UINT16) + sizeof (UINT32) > VariableSize) {
-      VBoxLogFlowFuncLeave();
-      return FALSE;
+    VBoxLogFlowFuncLeave();
+    return FALSE;
   }
 
   return (BOOLEAN) (GetDevicePathSizeEx (DevicePath, FilePathSize) != 0);

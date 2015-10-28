@@ -42,6 +42,8 @@ VBOX_PATH_STAGE_EFI_BLDPROGS = $(PATH_STAGE)/EfiBldProgs
 VBOX_EFI_BUILD_TARGET  = $(if-expr $(intersects release profile, $(KBUILD_TYPE)),RELEASE,DEBUG)
 VBOX_EFI_OUTPUT_SUBDIR = $(VBOX_EFI_BUILD_TARGET)_$(VBOX_EFI_TOOL_CHAIN)
 
+# VBox Yasm command
+VBOX_YASMCMD   ?= $(firstword $(wildcard $(KBUILD_DEVTOOLS_HST)/bin/yasm$(HOSTSUFF_EXE)) yasm$(HOSTSUFF_EXE))
 
 #
 # Decide which tool chain to use for the EFI binaries.
@@ -166,7 +168,7 @@ VBOX_EFI_MODULES = \
 	MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/StatusCodeHandlerRuntimeDxe \
 	MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer/$(VBOX_EFI_DEBUG_DIR)/WatchdogTimer \
 	OvmfPkg/BlockMmioToBlockIoDxe/BlockIo/$(VBOX_EFI_DEBUG_DIR)/BlockMmioToBlockIoDxe \
-	OvmfPkg/EmuVariableFvbRuntimeDxe/Fvb/$(VBOX_EFI_DEBUG_DIR)/EmuVariableFvbRuntimeDxe \
+	OvmfPkg/PlatformPei/PlatformPei/$(VBOX_EFI_DEBUG_DIR)/PlatformPei \
 	OvmfPkg/Sec/SecMain/$(VBOX_EFI_DEBUG_DIR)/SecMain \
 	OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe/$(VBOX_EFI_DEBUG_DIR)/SmbiosPlatformDxe \
 	PcAtChipsetPkg/8254TimerDxe/8254Timer/$(VBOX_EFI_DEBUG_DIR)/Timer \
@@ -179,14 +181,12 @@ VBOX_EFI_MODULES = \
 	ShellPkg/Application/Shell/Shell/$(VBOX_EFI_DEBUG_DIR)/Shell \
 	UefiCpuPkg/CpuDxe/CpuDxe/$(VBOX_EFI_DEBUG_DIR)/CpuDxe \
 	UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe/$(VBOX_EFI_DEBUG_DIR)/CpuIo2Dxe \
-	OvmfPkg/PlatformPei/PlatformPei/$(VBOX_EFI_DEBUG_DIR)/PlatformPei \
 	VBoxPkg/VBoxAppleSim/VBoxAppleSim/$(VBOX_EFI_DEBUG_DIR)/VBoxAppleSim \
 	VBoxPkg/VBoxFsDxe/VBoxHfs/$(VBOX_EFI_DEBUG_DIR)/VBoxHfs \
 	VBoxPkg/VBoxFsDxe/VBoxIso9660/$(VBOX_EFI_DEBUG_DIR)/VBoxIso9600 \
 	VBoxPkg/VBoxSysTables/VBoxSysTables/$(VBOX_EFI_DEBUG_DIR)/VBoxSysTables \
-	VBoxPkg/VBoxVariable/VBoxVariableRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/EmuVariableRuntimeDxe \
 	VBoxPkg/VBoxVgaDxe/VBoxVgaDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaDxe \
-	VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaMiniPortDxe \
+	VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaMiniPortDxe
 
 # Version of VBOX_EFI_MODULES without directories. (Using $(value ) to avoid
 # expanding all the build target macros and then immediately discarding them.)
