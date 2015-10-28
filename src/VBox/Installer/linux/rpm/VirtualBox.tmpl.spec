@@ -29,7 +29,7 @@ License:   GPLv2
 Group:     Applications/System
 Vendor:    Oracle Corporation
 BuildRoot: %BUILDROOT%
-Requires:  %INITSCRIPTS% %LIBASOUND%
+Requires:  %INITSCRIPTS% %LIBASOUND% net-tools
 
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
 %debug_package
