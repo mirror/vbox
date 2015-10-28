@@ -227,20 +227,15 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
         pHv->fIsVendorMsHv = true;
     }
 
-    if (pHv->fIsVendorMsHv)
-    {
-        /** @cfgm{/GIM/HyperV/VSInterface, bool, true}
-         * The Microsoft virtualization service interface (debugging). */
-        rc = CFGMR3QueryBoolDef(pCfgHv, "VSInterface", &pHv->fIsInterfaceVs, true);
-        AssertLogRelRCReturn(rc, rc);
+    /** @cfgm{/GIM/HyperV/VSInterface, bool, true}
+     * The Microsoft virtualization service interface (debugging). */
+    rc = CFGMR3QueryBoolDef(pCfgHv, "VSInterface", &pHv->fIsInterfaceVs, false);
+    AssertLogRelRCReturn(rc, rc);
 
-        /** @cfgm{/GIM/HyperV/HypercallDebugInterface, bool, true}
-         * Whether we specify the guest to use hypercalls for debugging rather than MSRs. */
-        rc = CFGMR3QueryBoolDef(pCfgHv, "HypercallDebugInterface", &pHv->fDbgHypercallInterface, true);
-        AssertLogRelRCReturn(rc, rc);
-    }
-    else
-        Assert(pHv->fIsInterfaceVs == false);
+    /** @cfgm{/GIM/HyperV/HypercallDebugInterface, bool, false}
+     * Whether we specify the guest to use hypercalls for debugging rather than MSRs. */
+    rc = CFGMR3QueryBoolDef(pCfgHv, "HypercallDebugInterface", &pHv->fDbgHypercallInterface, false);
+    AssertLogRelRCReturn(rc, rc);
 
     /*
      * Determine interface capabilities based on the version.
