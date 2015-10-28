@@ -165,10 +165,21 @@ enum
     AC97_6Ch_Vol_C_LFE_Mute        = 0x36,
     AC97_6Ch_Vol_L_R_Surround_Mute = 0x38,
     AC97_Vendor_Reserved           = 0x58,
+    AC97_AD_Misc                   = 0x76,
     AC97_Vendor_ID1                = 0x7c,
     AC97_Vendor_ID2                = 0x7e
 };
 
+/* Codec models. */
+enum {
+    Codec_STAC9700 = 0,     /* SigmaTel STAC9700 */
+    Codec_AD1980,           /* Analog Devices AD1980 */
+    Codec_AD1981B           /* Analog Devices AD1981B */
+};
+
+/* Analog Devices miscellaneous regiter bits used in AD1980. */
+#define AD_MISC_LOSEL       RT_BIT(5)   /* Surround (rear) goes to line out outputs. */
+#define AD_MISC_HPSEL       RT_BIT(10)  /* PCM (front) goes to headphone outputs. */
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -301,6 +312,8 @@ typedef struct AC97STATE
     R3PTRTYPE(uint8_t *)    pvReadWriteBuf;
     /** Size of the temporary scratch read/write buffer. */
     uint32_t                cbReadWriteBuf;
+    /** Codec model. */
+    uint32_t                uCodecModel;
 } AC97STATE;
 /** Pointer to the AC97 device state. */
 typedef AC97STATE *PAC97STATE;
@@ -500,7 +513,7 @@ static uint16_t ichac97MixerLoad(PAC97STATE pThis, uint32_t i)
 
     if (i + 2 > sizeof(pThis->mixer_data))
     {
-        LogFlowFunc(("mixer_store: index %d out of bounds %d\n", i, sizeof(pThis->mixer_data)));
+        LogFlowFunc(("mixer_load: index %d out of bounds %d\n", i, sizeof(pThis->mixer_data)));
         val = 0xffff;
     }
     else
@@ -908,11 +921,19 @@ static void ichac97MixerReset(PAC97STATE pThis)
     ichac97MixerStore(pThis, AC97_PCM_LR_ADC_Rate         , 0xbb80);
     ichac97MixerStore(pThis, AC97_MIC_ADC_Rate            , 0xbb80);
 
-    if (PCIDevGetSubSystemVendorId(&pThis->PciDev) == 0x1028)
+    if (pThis->uCodecModel == Codec_AD1980)
     {
         /* Analog Devices 1980 (AD1980) */
+        ichac97MixerStore(pThis, AC97_Reset                   , 0x0010);    /* Headphones. */
         ichac97MixerStore(pThis, AC97_Vendor_ID1              , 0x4144);
         ichac97MixerStore(pThis, AC97_Vendor_ID2              , 0x5370);
+        ichac97MixerStore(pThis, AC97_Headphone_Volume_Mute   , 0x8000);
+    }
+    else if (pThis->uCodecModel == Codec_AD1981B)
+    {
+        /* Analog Devices 1981B (AD1981B) */
+        ichac97MixerStore(pThis, AC97_Vendor_ID1              , 0x4144);
+        ichac97MixerStore(pThis, AC97_Vendor_ID2              , 0x5374);
     }
     else
     {
@@ -1711,7 +1732,16 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                     ichac97MixerStore(pThis, index, u32);
                     break;
                 case AC97_Master_Volume_Mute:
+                    if (pThis->uCodecModel == Codec_AD1980)
+                        if (ichac97MixerLoad(pThis, AC97_AD_Misc) & AD_MISC_LOSEL)
+                            break;  /* Register controls surround (rear), do nothing. */
                     ichac97SetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME, u32);
+                    break;
+                case AC97_Headphone_Volume_Mute:
+                    if (pThis->uCodecModel == Codec_AD1980)
+                        if (ichac97MixerLoad(pThis, AC97_AD_Misc) & AD_MISC_HPSEL)
+                            /* Register controls PCM (front) outputs. */
+                            ichac97SetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME, u32);
                     break;
                 case AC97_PCM_Out_Volume_Mute:
                     ichac97SetVolume(pThis, index, PDMAUDIOMIXERCTL_PCM, u32);
@@ -1913,6 +1943,11 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     V_(AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_PCM);
     V_(AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN);
 # undef V_
+    if (pThis->uCodecModel == Codec_AD1980)
+        if (ichac97MixerLoad(pThis, AC97_AD_Misc) & AD_MISC_HPSEL)
+            ichac97SetVolume(pThis, AC97_Headphone_Volume_Mute, PDMAUDIOMIXERCTL_VOLUME, 
+                             ichac97MixerLoad(pThis, AC97_Headphone_Volume_Mute));
+
     ichac97ResetStreams(pThis, active);
 
     pThis->bup_flag = 0;
@@ -2102,13 +2137,15 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * The AD1980 codec (with corresponding PCI subsystem vendor ID) is whitelisted
      * in the Linux kernel; Linux makes no attempt to measure the data rate and assumes
-     * 48 kHz rate, which is exactly what we need.
+     * 48 kHz rate, which is exactly what we need. Same goes for AD1981B.
      */
     bool fChipAD1980 = false;
     if (!strcmp(szCodec, "STAC9700"))
-        fChipAD1980 = false;
+        pThis->uCodecModel = Codec_STAC9700;
     else if (!strcmp(szCodec, "AD1980"))
-        fChipAD1980 = true;
+        pThis->uCodecModel = Codec_AD1980;
+    else if (!strcmp(szCodec, "AD1981B"))
+        pThis->uCodecModel = Codec_AD1981B;
     else
     {
         return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
@@ -2140,10 +2177,15 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PCIDevSetInterruptLine    (&pThis->PciDev, 0x00);   /* 3c rw. */                       Assert(pThis->PciDev.config[0x3c] == 0x00);
     PCIDevSetInterruptPin     (&pThis->PciDev, 0x01);   /* 3d ro - INTA#. */               Assert(pThis->PciDev.config[0x3d] == 0x01);
 
-    if (fChipAD1980)
+    if (pThis->uCodecModel == Codec_AD1980)
     {
         PCIDevSetSubSystemVendorId(&pThis->PciDev, 0x1028); /* 2c ro - Dell.) */
         PCIDevSetSubSystemId      (&pThis->PciDev, 0x0177); /* 2e ro. */
+    }
+    else if (pThis->uCodecModel == Codec_AD1981B)
+    {
+        PCIDevSetSubSystemVendorId(&pThis->PciDev, 0x1028); /* 2c ro - Dell.) */
+        PCIDevSetSubSystemId      (&pThis->PciDev, 0x01ad); /* 2e ro. */
     }
     else
     {
