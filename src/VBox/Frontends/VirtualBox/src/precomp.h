@@ -85,7 +85,6 @@
 #include <QHash>
 #include <QHeaderView>
 #include <QHelpEvent>
-//#include <QHostAddress> - only used once
 #include <QIcon>
 #include <QImage>
 //#include <QImageWriter> - only used once
@@ -119,10 +118,6 @@
 #include <QMouseEvent>
 //#include <QMouseEventTransition> - only used once
 #include <QMutex>
-#include <QNetworkAccessManager>
-//#include <QNetworkProxy> - only used once
-#include <QNetworkReply>
-#include <QNetworkRequest>
 #include <QObject>
 #include <QPaintEvent>
 #include <QPainter>

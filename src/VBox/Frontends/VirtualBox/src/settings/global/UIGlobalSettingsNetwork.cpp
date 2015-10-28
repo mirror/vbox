@@ -40,8 +40,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <QHostAddress>
-
 #include "CDHCPServer.h"
 
 
@@ -244,25 +242,25 @@ bool UIItemNetworkHost::validate(UIValidationMessage &message)
     /* Host interface validation: */
     if (!m_data.m_interface.m_fDhcpClientEnabled)
     {
-        if (m_data.m_interface.m_strInterfaceAddress.isEmpty() &&
-            (QHostAddress(m_data.m_interface.m_strInterfaceAddress) == QHostAddress::Any ||
-             QHostAddress(m_data.m_interface.m_strInterfaceAddress).protocol() != QAbstractSocket::IPv4Protocol))
+        if (!m_data.m_interface.m_strInterfaceAddress.trimmed().isEmpty() &&
+            (   !RTNetIsIPv4AddrStr(m_data.m_interface.m_strInterfaceAddress.toAscii().constData())
+             || RTNetStrIsIPv4AddrAny(m_data.m_interface.m_strInterfaceAddress.toAscii().constData())))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid IPv4 address.").arg(text(0));
             fPass = false;
         }
-        if (!m_data.m_interface.m_strInterfaceMask.isEmpty() &&
-            (QHostAddress(m_data.m_interface.m_strInterfaceMask) == QHostAddress::Any ||
-             QHostAddress(m_data.m_interface.m_strInterfaceMask).protocol() != QAbstractSocket::IPv4Protocol))
+        if (!m_data.m_interface.m_strInterfaceMask.trimmed().isEmpty() &&
+            (   !RTNetIsIPv4AddrStr(m_data.m_interface.m_strInterfaceMask.toAscii().constData())
+             || RTNetStrIsIPv4AddrAny(m_data.m_interface.m_strInterfaceMask.toAscii().constData())))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid IPv4 network mask.").arg(text(0));
             fPass = false;
         }
         if (m_data.m_interface.m_fIpv6Supported)
         {
-            if (!m_data.m_interface.m_strInterfaceAddress6.isEmpty() &&
-                (QHostAddress(m_data.m_interface.m_strInterfaceAddress6) == QHostAddress::AnyIPv6 ||
-                 QHostAddress(m_data.m_interface.m_strInterfaceAddress6).protocol() != QAbstractSocket::IPv6Protocol))
+            if (!m_data.m_interface.m_strInterfaceAddress6.trimmed().isEmpty() &&
+                (   !RTNetIsIPv6AddrStr(m_data.m_interface.m_strInterfaceAddress6.toAscii().constData())
+                 || RTNetStrIsIPv6AddrAny(m_data.m_interface.m_strInterfaceAddress6.toAscii().constData())))
             {
                 message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid IPv6 address.").arg(text(0));
                 fPass = false;
@@ -273,26 +271,26 @@ bool UIItemNetworkHost::validate(UIValidationMessage &message)
     /* DHCP server validation: */
     if (m_data.m_dhcpserver.m_fDhcpServerEnabled)
     {
-        if (QHostAddress(m_data.m_dhcpserver.m_strDhcpServerAddress) == QHostAddress::Any ||
-            QHostAddress(m_data.m_dhcpserver.m_strDhcpServerAddress).protocol() != QAbstractSocket::IPv4Protocol)
+        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpServerAddress.toAscii().constData())
+            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpServerAddress.toAscii().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server address.").arg(text(0));
             fPass = false;
         }
-        if (QHostAddress(m_data.m_dhcpserver.m_strDhcpServerMask) == QHostAddress::Any ||
-            QHostAddress(m_data.m_dhcpserver.m_strDhcpServerMask).protocol() != QAbstractSocket::IPv4Protocol)
+        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpServerMask.toAscii().constData())
+            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpServerMask.toAscii().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server mask.").arg(text(0));
             fPass = false;
         }
-        if (QHostAddress(m_data.m_dhcpserver.m_strDhcpLowerAddress) == QHostAddress::Any ||
-            QHostAddress(m_data.m_dhcpserver.m_strDhcpLowerAddress).protocol() != QAbstractSocket::IPv4Protocol)
+        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpLowerAddress.toAscii().constData())
+            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpLowerAddress.toAscii().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server lower address bound.").arg(text(0));
             fPass = false;
         }
-        if (QHostAddress(m_data.m_dhcpserver.m_strDhcpUpperAddress) == QHostAddress::Any ||
-            QHostAddress(m_data.m_dhcpserver.m_strDhcpUpperAddress).protocol() != QAbstractSocket::IPv4Protocol)
+        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpUpperAddress.toAscii().constData())
+            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpUpperAddress.toAscii().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server upper address bound.").arg(text(0));
             fPass = false;
@@ -1100,19 +1098,25 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataNetworkHost &
     /* Manual host interface configuration: */
     else
     {
-        AssertMsg(data.m_interface.m_strInterfaceAddress.isEmpty() ||
-                  QHostAddress(data.m_interface.m_strInterfaceAddress).protocol() == QAbstractSocket::IPv4Protocol,
+        AssertMsg(data.m_interface.m_strInterfaceAddress.trimmed().isEmpty() ||
+                  RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceAddress.toAscii().constData()),
                   ("Interface IPv4 address must be empty or IPv4-valid!\n"));
-        AssertMsg(data.m_interface.m_strInterfaceMask.isEmpty() ||
-                  QHostAddress(data.m_interface.m_strInterfaceMask).protocol() == QAbstractSocket::IPv4Protocol,
+        AssertMsg(data.m_interface.m_strInterfaceMask.trimmed().isEmpty() ||
+                  RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceMask.toAscii().constData()),
                   ("Interface IPv4 network mask must be empty or IPv4-valid!\n"));
-        iface.EnableStaticIPConfig(data.m_interface.m_strInterfaceAddress, data.m_interface.m_strInterfaceMask);
+        if (   (   data.m_interface.m_strInterfaceAddress.trimmed().isEmpty()
+                || RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceAddress.toAscii().constData()))
+            && (   data.m_interface.m_strInterfaceMask.trimmed().isEmpty()
+                || RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceMask.toAscii().constData())))
+            iface.EnableStaticIPConfig(data.m_interface.m_strInterfaceAddress, data.m_interface.m_strInterfaceMask);
         if (iface.GetIPV6Supported())
         {
-            AssertMsg(data.m_interface.m_strInterfaceAddress6.isEmpty() ||
-                      QHostAddress(data.m_interface.m_strInterfaceAddress6).protocol() == QAbstractSocket::IPv6Protocol,
+            AssertMsg(data.m_interface.m_strInterfaceAddress6.trimmed().isEmpty() ||
+                      RTNetIsIPv6AddrStr(data.m_interface.m_strInterfaceAddress6.toAscii().constData()),
                       ("Interface IPv6 address must be empty or IPv6-valid!\n"));
-            iface.EnableStaticIPConfigV6(data.m_interface.m_strInterfaceAddress6, data.m_interface.m_strInterfaceMaskLength6.toULong());
+            if (   data.m_interface.m_strInterfaceAddress6.trimmed().isEmpty()
+                || RTNetIsIPv6AddrStr(data.m_interface.m_strInterfaceAddress6.toAscii().constData()))
+                iface.EnableStaticIPConfigV6(data.m_interface.m_strInterfaceAddress6, data.m_interface.m_strInterfaceMaskLength6.toULong());
         }
     }
 
@@ -1123,18 +1127,18 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataNetworkHost &
 
     /* Save DHCP server configuration: */
     dhcp.SetEnabled(data.m_dhcpserver.m_fDhcpServerEnabled);
-    AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpServerAddress).protocol() == QAbstractSocket::IPv4Protocol,
+    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toAscii().constData()),
               ("DHCP server IPv4 address must be IPv4-valid!\n"));
-    AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpServerMask).protocol() == QAbstractSocket::IPv4Protocol,
+    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toAscii().constData()),
               ("DHCP server IPv4 network mask must be IPv4-valid!\n"));
-    AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpLowerAddress).protocol() == QAbstractSocket::IPv4Protocol,
+    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toAscii().constData()),
               ("DHCP server IPv4 lower bound must be IPv4-valid!\n"));
-    AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpUpperAddress).protocol() == QAbstractSocket::IPv4Protocol,
+    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toAscii().constData()),
               ("DHCP server IPv4 upper bound must be IPv4-valid!\n"));
-    if (QHostAddress(data.m_dhcpserver.m_strDhcpServerAddress).protocol() == QAbstractSocket::IPv4Protocol &&
-        QHostAddress(data.m_dhcpserver.m_strDhcpServerMask).protocol() == QAbstractSocket::IPv4Protocol &&
-        QHostAddress(data.m_dhcpserver.m_strDhcpLowerAddress).protocol() == QAbstractSocket::IPv4Protocol &&
-        QHostAddress(data.m_dhcpserver.m_strDhcpUpperAddress).protocol() == QAbstractSocket::IPv4Protocol)
+    if (RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toAscii().constData()) &&
+        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toAscii().constData()) &&
+        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toAscii().constData()) &&
+        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toAscii().constData()))
         dhcp.SetConfiguration(data.m_dhcpserver.m_strDhcpServerAddress, data.m_dhcpserver.m_strDhcpServerMask,
                               data.m_dhcpserver.m_strDhcpLowerAddress, data.m_dhcpserver.m_strDhcpUpperAddress);
 }

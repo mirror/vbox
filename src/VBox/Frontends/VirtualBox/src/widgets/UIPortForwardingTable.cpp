@@ -29,7 +29,6 @@
 # include <QComboBox>
 # include <QLineEdit>
 # include <QSpinBox>
-# include <QHostAddress>
 
 /* GUI includes: */
 # include "UIPortForwardingTable.h"
@@ -727,10 +726,14 @@ bool UIPortForwardingTable::validate() const
         if (hostPort.value() == 0 || guestPort.value() == 0)
             return msgCenter().warnAboutIncorrectPort(window());
         /* If at aleast one address is incorrect: */
-        if (   (!hostIp.isEmpty() && QHostAddress(hostIp).isNull())
-            || (!guestIp.isEmpty() && QHostAddress(guestIp).isNull()))
+        if (!hostIp.trimmed().isEmpty() &&
+            (   !RTNetIsIPv4AddrStr(hostIp.toAscii().constData())
+             || RTNetStrIsIPv4AddrAny(hostIp.toAscii().constData())))
             return msgCenter().warnAboutIncorrectAddress(window());
-
+        if (!guestIp.trimmed().isEmpty() &&
+            (   !RTNetIsIPv4AddrStr(guestIp.toAscii().constData())
+             || RTNetStrIsIPv4AddrAny(guestIp.toAscii().constData())))
+            return msgCenter().warnAboutIncorrectAddress(window());
         /* If empty guest address is not allowed: */
         if (   !m_fAllowEmptyGuestIPs
             && guestIp.isEmpty())
