@@ -1317,7 +1317,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     if (   strKey == "enabled"
                         && strVal.toUInt32() == 1)
                     {
-                        /* Apply defaults. */
+                        /* Apply defaults.
+                           The defaults are documented in the user manual,
+                           changes need to be reflected accordingly. */
                         fGimHvDebug       = true;
                         strGimHvVendor    = "Microsoft Hv";
                         fGimHvVsIf        = true;
