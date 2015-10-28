@@ -19,10 +19,14 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
-include $(PATH_SUB_CURRENT)/install_service/Makefile.kmk
-ifdef VBOX_WITH_TESTCASES
- include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-endif
+
+# We do not install VBoxHeadlessXOrg.sh any more, so neither of these are
+# needed.
+#
+# include $(PATH_SUB_CURRENT)/install_service/Makefile.kmk
+# ifdef VBOX_WITH_TESTCASES
+#  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+# endif
 
 ifneq ($(KBUILD_HOST),linux)
  $(error "The Linux installer can only be built on Linux!")
