@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -260,6 +260,7 @@ private:
 
     /* Handler: Drag&drop event: */
     bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
+    bool processDragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent);
 
     /* Helpers: Loading stuff: */
     void loadGroupTree();

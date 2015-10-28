@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1379,9 +1379,12 @@ bool UIGChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
         /* Context-menu handler: */
         case QEvent::GraphicsSceneContextMenu:
             return processContextMenuEvent(static_cast<QGraphicsSceneContextMenuEvent*>(pEvent));
-        /* Drag&drop scroll-event handler: */
+        /* Drag&drop scroll-event(drag-move) handler: */
         case QEvent::GraphicsSceneDragMove:
             return processDragMoveEvent(static_cast<QGraphicsSceneDragDropEvent*>(pEvent));
+        /* Drag&drop scroll-event(drag-leave) handler: */
+        case QEvent::GraphicsSceneDragLeave:
+            return processDragLeaveEvent(static_cast<QGraphicsSceneDragDropEvent*>(pEvent));
     }
 
     /* Call to base-class: */
@@ -1679,6 +1682,19 @@ bool UIGChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
         /* Start scrolling: */
         QTimer::singleShot(200, this, SLOT(sltStartScrolling()));
     }
+
+    /* Pass event: */
+    return false;
+}
+
+bool UIGChooserModel::processDragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent)
+{
+    /* Event object is not required here: */
+    Q_UNUSED(pEvent);
+
+    /* Make sure to stop scrolling as drag-leave event happened: */
+    if (m_fIsScrollingInProgress)
+        m_fIsScrollingInProgress = false;
 
     /* Pass event: */
     return false;
