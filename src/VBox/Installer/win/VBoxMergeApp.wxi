@@ -273,8 +273,6 @@
               Source="$(env.PATH_OUT)\bin\QtCoreVBox4.dll" />
         <File Id="file_QtGuiVBox4.dll" Name="QtGuiVBox4.dll"
               Source="$(env.PATH_OUT)\bin\QtGuiVBox4.dll" />
-        <File Id="file_QtNetworkVBox4.dll" Name="QtNetworkVBox4.dll"
-              Source="$(env.PATH_OUT)\bin\QtNetworkVBox4.dll" />
 <?endif ?>
 <?if $(env.VBOX_WITH_DEBUGGER_GUI) = "yes" ?>
         <File Id="file_VBoxDbg.dll" Name="VBoxDbg.dll"
