@@ -48,7 +48,6 @@ public:
     UIAbstractDockIconPreviewHelper(UISession *pSession, const QPixmap& overlayImage);
     virtual ~UIAbstractDockIconPreviewHelper();
     void initPreviewImages();
-    inline CGImageRef stateImage() const;
     void drawOverlayIcons(CGContextRef context);
 
     void* currentPreviewWindowId() const;
@@ -65,10 +64,6 @@ public:
     CGImageRef m_overlayImage;
     CGImageRef m_dockMonitor;
     CGImageRef m_dockMonitorGlossy;
-
-    CGImageRef m_statePaused;
-    CGImageRef m_stateSaving;
-    CGImageRef m_stateRestoring;
 
     CGRect m_updateRect;
     CGRect m_monitorRect;

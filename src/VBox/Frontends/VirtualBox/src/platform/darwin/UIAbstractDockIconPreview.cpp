@@ -73,26 +73,6 @@ UIAbstractDockIconPreviewHelper::UIAbstractDockIconPreviewHelper(UISession *pSes
 {
     m_overlayImage   = ::darwinToCGImageRef(&overlayImage);
     Assert(m_overlayImage);
-
-    /* Determine desired icon size for the state-overlay: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-    const QSize iconSize = QSize(iIconMetric, iIconMetric);
-
-    /* Prepare 'Paused' state-overlay: */
-    const QPixmap statePaused = gpConverter->toIcon(KMachineState_Paused).pixmap(iconSize);
-    m_statePaused = ::darwinToCGImageRef(&statePaused);
-    Assert(m_statePaused);
-
-    /* Prepare 'Saving' state-overlay: */
-    const QPixmap stateSaving = gpConverter->toIcon(KMachineState_Saving).pixmap(iconSize);
-    m_stateSaving = ::darwinToCGImageRef(&stateSaving);
-    Assert(m_stateSaving);
-
-    /* Prepare 'Restoring' state-overlay: */
-    const QPixmap stateRestoring = gpConverter->toIcon(KMachineState_Restoring).pixmap(iconSize);
-    m_stateRestoring = ::darwinToCGImageRef(&stateRestoring);
-    Assert(m_stateRestoring);
 }
 
 void* UIAbstractDockIconPreviewHelper::currentPreviewWindowId() const
@@ -112,10 +92,6 @@ UIAbstractDockIconPreviewHelper::~UIAbstractDockIconPreviewHelper()
         CGImageRelease(m_dockMonitor);
     if (m_dockMonitorGlossy)
         CGImageRelease(m_dockMonitorGlossy);
-
-    CGImageRelease(m_statePaused);
-    CGImageRelease(m_stateSaving);
-    CGImageRelease(m_stateRestoring);
 }
 
 void UIAbstractDockIconPreviewHelper::initPreviewImages()
@@ -142,23 +118,6 @@ void UIAbstractDockIconPreviewHelper::initPreviewImages()
     }
 }
 
-CGImageRef UIAbstractDockIconPreviewHelper::stateImage() const
-{
-    CGImageRef img;
-    if (   m_pSession->machineState() == KMachineState_Paused
-        || m_pSession->machineState() == KMachineState_TeleportingPausedVM)
-        img = m_statePaused;
-    else if (   m_pSession->machineState() == KMachineState_Restoring
-             || m_pSession->machineState() == KMachineState_TeleportingIn)
-        img = m_stateRestoring;
-    else if (   m_pSession->machineState() == KMachineState_Saving
-             || m_pSession->machineState() == KMachineState_LiveSnapshotting)
-        img = m_stateSaving;
-    else
-        img = NULL;
-    return img;
-}
-
 void UIAbstractDockIconPreviewHelper::drawOverlayIcons(CGContextRef context)
 {
     /* Determine whether dock icon overlay enabled: */
@@ -175,19 +134,6 @@ void UIAbstractDockIconPreviewHelper::drawOverlayIcons(CGContextRef context)
                                      CGImageGetWidth(m_overlayImage),
                                      CGImageGetHeight(m_overlayImage));
             CGContextDrawImage(context, flipRect(overlayRect), m_overlayImage);
-        }
-
-        /* Determine correct state-overlay image: */
-        CGImageRef sImage = stateImage();
-        /* Make sure state-overlay image is valid: */
-        if (sImage)
-        {
-            /* Draw state overlay image at top-left of guest-os overlay image: */
-            CGRect stateRect = CGRectMake(overlayRect.origin.x - CGImageGetWidth(sImage) / 2.0,
-                                          overlayRect.origin.y - CGImageGetHeight(sImage) / 2.0,
-                                          CGImageGetWidth(sImage),
-                                          CGImageGetHeight(sImage));
-            CGContextDrawImage(context, flipRect(stateRect), sImage);
         }
     }
 }
