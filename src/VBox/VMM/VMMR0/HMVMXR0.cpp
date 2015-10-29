@@ -10149,6 +10149,8 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         rc     |= hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc, rc);
 
+        /** @todo pre-increment RIP before hypercall will break when we have to implement
+         *  continuing hypercalls (e.g. Hyper-V). */
         rc = GIMHypercall(pVCpu, pMixedCtx);
         /* If the hypercall changes anything other than guest general-purpose registers,
            we would need to reload the guest changed bits here before VM-entry. */
