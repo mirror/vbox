@@ -114,7 +114,7 @@ void UIAbstractDockIconPreviewHelper::initPreviewImages()
         m_updateRect = CGRectMake(m_monitorRect.origin.x + 8 /* left-frame */ + 1 /* indent-size */,
                                   m_monitorRect.origin.y + 8 /* top-frame  */ + 1 /* indent-size */,
                                   128 /* .png-width  */ - 8 /* left-frame */ -  8 /* right-frame  */ - 2 * 1 /* indent-size */,
-                                  128 /* .png-height */ - 8 /* top-frame  */ - 25 /* bottom-frame */ - 2 * 1 /* frame-size  */);
+                                  128 /* .png-height */ - 8 /* top-frame  */ - 25 /* bottom-frame */ - 2 * 1 /* indent-size */);
     }
 }
 
