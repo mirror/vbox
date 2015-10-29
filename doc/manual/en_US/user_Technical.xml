@@ -81,7 +81,7 @@
       <computeroutput>Logs</computeroutput>, and once you have taken
       snapshots, they will appear in a
       <computeroutput>Snapshots</computeroutput> subfolder. For each VM, you
-      can change the location of its snapsnots folder in the VM
+      can change the location of its snapshots folder in the VM
       settings.</para>
 
       <para>You can change the default machine folder by selecting

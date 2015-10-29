@@ -359,10 +359,10 @@
       <sect3>
         <title>Unattended Installation</title>
 
-        <para>As a prerequiste for performing an unattended installation of the
+        <para>As a prerequisite for performing an unattended installation of the
         VirtualBox Guest Additions on a Windows guest, there need to be
         Oracle CA (Certificate Authority)
-        certificates installed in order to prevent user intervention popus which
+        certificates installed in order to prevent user intervention popups which
         will undermine a silent installation.</para>
 
         <note><para>On some Windows versions like Windows 2000 and Windows XP the user intervention
@@ -1338,7 +1338,7 @@ $</screen>
 
       <para>As VirtualBox can run on a variety of host OSes and also supports a wide
       range of guests, certain data formats must be translated after those
-      got transfered over so that the target OS (that is, the side which receiving the
+      got transferred over so that the target OS (that is, the side which receiving the
       data) is able to handle them in an appropriate manner.</para>
 
       <note><para>When dragging files however, no data conversion is done in any way, e.g.

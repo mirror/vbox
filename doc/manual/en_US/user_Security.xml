@@ -71,7 +71,7 @@
           <glossdef>
             <para>
               Oracle continually improves its software and documentation. Check this
-              note note yearly for revisions.
+              note yearly for revisions.
             </para>
           </glossdef>
         </glossentry>
@@ -123,7 +123,7 @@
         password during the installation of the extension pack.
       </para>
     </sect2>
-  
+
     <sect2>
       <title>Post Installation Configuration</title>
       <para>
@@ -139,7 +139,7 @@
       </para>
     </sect2>
   </sect1>
-  
+
   <sect1>
     <title>Security Features</title>
     <para>This section outlines the specific security mechanisms offered
@@ -160,7 +160,7 @@
         (for example remote control, certain screen settings and others).
       </para>
     </sect2>
-    
+
     <sect2>
       <title>Secure Configuration of Virtual Machines</title>
       <para>
@@ -330,7 +330,7 @@
         <listitem>
           <para>When Page Fusion (see <xref linkend="guestadd-pagefusion"/>)
           is enabled, it is possible that a side-channel opens up that allows
-          a malicious guest to determin the address space layout (i.e. where
+          a malicious guest to determine the address space layout (i.e. where
           DLLs are typically loaded) of one other VM running on the same host.
           This information leak in it self is harmless, however the malicious
           guest may use it to optimize attack against that VM via unrelated
@@ -350,7 +350,7 @@
           a regular user and only the VMs of that user can be controlled. By
           default, the service binds to localhost preventing any remote connection.</para>
         </listitem>
-        
+
         <listitem>
           <para>Traffic sent over a UDP Tunnel network attachment is not
           encrypted. You can either encrypt it on the host network level (with

@@ -418,7 +418,7 @@
 
   <sect1 id="network_nat_service">
     <title>Network Address Translation Service (experimental)</title>
-    
+
     <para>The Network Address Translation (NAT) service works in a similar way
     to a home router, grouping the systems using it into a network and
     preventing systems outside of this network from directly accessing systems
@@ -444,7 +444,7 @@
     <para><screen>VBoxManage natnetwork modify --netname natnet1 --dhcp on</screen></para>
     <para>To disable it again, use:</para>
     <para><screen>VBoxManage natnetwork modify --netname natnet1 --dhcp off</screen></para>
-    <para>DHCP server provides list of registered nameservers, but doesn't map 
+    <para>DHCP server provides list of registered nameservers, but doesn't map
     servers from 127/8 network.</para>
     <para>To start the NAT service, use the following command:</para>
     <para><screen>VBoxManage natnetwork start --netname natnet1</screen></para>
@@ -702,7 +702,7 @@
       create at least one host-only interface, either from the GUI:
       "File" -&gt; "Preferences" -&gt; "Network" -&gt; "Host-only network"
       -&gt; "(+)Add host-only network", or via command line with</para>
-      <screen>VBoxManage hostonlyif create</screen> 
+      <screen>VBoxManage hostonlyif create</screen>
       <para>see <xref linkend="vboxmanage-hostonlyif" /> for details.</para>
 
     <para>For host-only networking, like with internal networking, you may

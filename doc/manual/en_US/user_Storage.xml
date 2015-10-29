@@ -62,7 +62,7 @@
           IDE devices was most common.</para>
 
           <para>In VirtualBox, each virtual machine may have one IDE
-          contoller enabled, which gives you up to four virtual storage
+          controller enabled, which gives you up to four virtual storage
           devices that you can attach to the machine. (By default, one of
           these four -- the secondary master -- is preconfigured to be the
           machine's virtual CD/DVD drive, but this can be changed.<footnote>
@@ -193,7 +193,7 @@
 
         <listitem>
           <para>The <emphasis role="bold">USB mass storage device class</emphasis>
-          is a standard to connect external storage devices like hard disksor flash
+          is a standard to connect external storage devices like hard disks or flash
           drives to a host through USB. All major operating systems support these
           devices for a long time and ship generic drivers making third-party
           drivers superfluous. In particular legacy operating systems without
@@ -555,7 +555,7 @@
         written, for instance picture galleries, where every guest changes
         only a small amount of data and the majority of the disk content
         remains unchanged. The modified blocks are stored in differencing
-        images which remain reletively small and the shared content is stored
+        images which remain relatively small and the shared content is stored
         only once at the host.</para>
       </listitem>
 
@@ -722,7 +722,7 @@
     linkend="vboxmanage-clonevdi" />. This is because VirtualBox assigns a
     unique identity number (UUID) to each disk image, which is also stored
     inside the image, and VirtualBox will refuse to work with two images that
-    use the same number. If you do accidentally try to reimport a disk image
+    use the same number. If you do accidentally try to re-import a disk image
     which you copied normally, you can make a second copy using VirtualBox's
     utility and import that instead.</para>
 
@@ -760,7 +760,7 @@
     scenario in enterprise-class setups (see <xref
     linkend="storage-iscsi" />).</para>
 
-    <para>While buffering is a useful default setting for virtualizating a few
+    <para>While buffering is a useful default setting for virtualizing a few
     machines on a desktop computer, there are some disadvantages to this
     approach:<orderedlist>
         <listitem>
