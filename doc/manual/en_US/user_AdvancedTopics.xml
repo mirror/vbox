@@ -3977,7 +3977,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
           <para>Value: <computeroutput>0</computeroutput> or <computeroutput>1</computeroutput></para>
           <para>Default: When debugging is enabled, <computeroutput>1</computeroutput>,
           otherwise <computeroutput>0</computeroutput></para>
-          <para>Specify whether to expose the "VS#1" (virtualization service interface) to the
+          <para>Specify whether to expose the "VS#1" (virtualization service) interface to the
           guest. This interface is required for debugging Microsoft Windows 10 32-bit guests, but
           is optional for other Windows versions.</para>
         </listitem>
@@ -4016,7 +4016,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
               Windows 7 does not. To enable Hyper-V debugging on a Windows 7 guest, copy the file
               <computeroutput>kdvm.dll</computeroutput> from a Windows 8.0 installation<footnote>
               <para>Only Windows 8.0 ships <computeroutput>kdvm.dll</computeroutput>. Windows 8.1
-              and newer Windows guests do not.</para></footnote>. This file is
+              and newer Windows versions do not.</para></footnote>. This file is
               typically located in <computeroutput>C:\Windows\System32</computeroutput>. Copy it
               to the same location in your Windows 7 guest. Make sure you copy the 32-bit or
               or 64-bit version of the DLL which matches your Windows 7 guest.</para>
@@ -4067,7 +4067,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
                   relevant and must be valid. The key "1.2.3.4" used in the above example is valid
                   and may be used if security is not a concern. If you do not specify any encryption key,
                   <computeroutput>bcdedit</computeroutput> will generate one for you and you will need to copy
-                  this key to later paste into Microsoft WinDbg on the remote end.</para>
+                  this key to later enter in Microsoft WinDbg on the remote end.</para>
                 </listitem>
                 <listitem>
                   <para>Execute one or more of the following commands to enable debugging for
@@ -4077,7 +4077,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
                     <screen>bcdedit /set bootdebug on</screen>
                     <screen>bcdedit /set bootdebug {bootmgr} on</screen>
                   </para>
-                  <para>Refer to your official Microsoft documentation for what each of the above
+                  <para>Please refer to Microsoft Windows documentation for what each of the above
                   debug option covers.</para>
                 </listitem>
               </itemizedlist>
@@ -4096,6 +4096,11 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
 
               <para>Now press "OK" to start listening for connections. Microsoft WinDbg typically shows
               a "Waiting to reconnect" message during this phase.</para>
+
+              <para>Alternatively, launch WinDbg from the command line to launch a debug session:
+                <screen>windbg.exe -k net:port=50000,key=1.2.3.4</screen>
+              Please refer to the WinDbg documentation for complete command line syntax.
+              </para>
 
             </listitem>
 
