@@ -259,6 +259,14 @@ VBOX_EFI_BUILD_CMD += \
 	--tagname $(VBOX_EFI_TOOL_CHAIN)
 
 #
+# Derive the number of parallel jobs (on windows) from KMK_OPTS_JOBS.
+#
+VBOX_EFI_MAX_THREADS := 1
+if defined(KMK_OPTS_JOBS) && "$(KBUILD_HOST)" == "win"
+ VBOX_EFI_MAX_THREADS := $(expr $(KMK_OPTS_JOBS) / 2)
+endif
+
+#
 # Tools configurations.
 #
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
@@ -298,7 +306,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(VBO
 		"TARGET          = $(VBOX_EFI_BUILD_TARGET)" \
 		"TARGET_ARCH     = IA32" \
 		"TOOL_CHAIN_TAG  = $(VBOX_EFI_TOOL_CHAIN)" \
-		"MAX_CONCURRENT_THREAD_NUMBER = 1"
+		"MAX_CONCURRENT_THREAD_NUMBER = $(VBOX_EFI_MAX_THREADS)"
 
 $(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 + $(VBoxEfiFirmwareDbg32_SOURCES): \
@@ -311,8 +319,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 	+ $(VBOX_EFI_BUILD_CMD) \
 		--vbox-target-conf "$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt" \
 		--arch IA32 \
-		--platform OvmfPkg/OvmfPkgIa32.dsc \
-		-n 1 # -v
+		--platform OvmfPkg/OvmfPkgIa32.dsc
 
 #
 # VBoxEFI64
@@ -330,7 +337,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(V
 		"TARGET          = $(VBOX_EFI_BUILD_TARGET)" \
 		"TARGET_ARCH     = X64" \
 		"TOOL_CHAIN_TAG  = $(VBOX_EFI_TOOL_CHAIN)" \
-		"MAX_CONCURRENT_THREAD_NUMBER = 1"
+		"MAX_CONCURRENT_THREAD_NUMBER = $(VBOX_EFI_MAX_THREADS)"
 
 $(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 + $(VBoxEfiFirmwareDbg64_SOURCES): \
@@ -343,8 +350,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 	+ $(VBOX_EFI_BUILD_CMD) \
 		--vbox-target-conf "$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt" \
 		--arch X64 \
-		--platform OvmfPkg/OvmfPkgX64.dsc \
-               -n 1 # -v
+		--platform OvmfPkg/OvmfPkgX64.dsc
 
 #
 # Some aliases.
