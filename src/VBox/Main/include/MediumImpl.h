@@ -168,6 +168,7 @@ public:
                                 ComObjPtr<Progress> *aProgress,
                                 bool aWait);
     Utf8Str i_getPreferredDiffFormat();
+    MediumVariant_T i_getPreferredDiffVariant();
 
     HRESULT i_close(AutoCaller &autoCaller);
     HRESULT i_unlockRead(MediumState_T *aState);

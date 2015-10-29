@@ -724,7 +724,8 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine>
         if (FAILED(rc)) throw rc;
 
         /* this already registers the new diff image */
-        rc = pParent->i_createDiffStorage(diff, MediumVariant_Standard,
+        rc = pParent->i_createDiffStorage(diff,
+                                          pParent->i_getPreferredDiffVariant(),
                                           pMediumLockList,
                                           NULL /* aProgress */,
                                           true /* aWait */);
