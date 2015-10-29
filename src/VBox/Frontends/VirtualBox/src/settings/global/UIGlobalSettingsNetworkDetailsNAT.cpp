@@ -40,16 +40,6 @@ UIGlobalSettingsNetworkDetailsNAT::UIGlobalSettingsNetworkDetailsNAT(QWidget *pP
     /* Setup dialog: */
     setWindowIcon(QIcon(":/guesttools_16px.png"));
 
-    /* Setup validators: */
-    const QString strTemplateName("\\S+");
-    const QString strTemplateCIDRPrefix1("([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])");
-    const QString strTemplateCIDRPrefix2("([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])");
-    const QString strTemplateCIDRPostfix("([1-9]|1[0-9]|2[0-9]|3[0-2])");
-    const QString strTemplateCIDR("%1(\\.%2(\\.%2(\\.%2)?)?)?/%3");
-    const QString strTemplateCIDRFull = strTemplateCIDR.arg(strTemplateCIDRPrefix1, strTemplateCIDRPrefix2, strTemplateCIDRPostfix);
-    m_pEditorNetworkName->setValidator(new QRegExpValidator(QRegExp(strTemplateName), this));
-    m_pEditorNetworkCIDR->setValidator(new QRegExpValidator(QRegExp(strTemplateCIDRFull), this));
-
     /* Apply language settings: */
     retranslateUi();
 
@@ -111,8 +101,8 @@ void UIGlobalSettingsNetworkDetailsNAT::save()
 {
     /* NAT Network: */
     m_data.m_fEnabled = m_pCheckboxNetwork->isChecked();
-    m_data.m_strNewName = m_pEditorNetworkName->text();
-    m_data.m_strCIDR = m_pEditorNetworkCIDR->text();
+    m_data.m_strNewName = m_pEditorNetworkName->text().trimmed();
+    m_data.m_strCIDR = m_pEditorNetworkCIDR->text().trimmed();
     m_data.m_fSupportsDHCP = m_pCheckboxSupportsDHCP->isChecked();
     m_data.m_fSupportsIPv6 = m_pCheckboxSupportsIPv6->isChecked();
     m_data.m_fAdvertiseDefaultIPv6Route = m_pCheckboxAdvertiseDefaultIPv6Route->isChecked();
