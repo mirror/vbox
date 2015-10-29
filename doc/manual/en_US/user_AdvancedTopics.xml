@@ -3933,6 +3933,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
         <listitem>
           <para>Key: <emphasis role="bold"><computeroutput>enabled</computeroutput></emphasis></para>
           <para>Value: <computeroutput>0</computeroutput> or <computeroutput>1</computeroutput></para>
+          <para>Default: <computeroutput>0</computeroutput></para>
           <para>Specify <computeroutput>1</computeroutput> to enable the Hyper-V debug
             interface. If this key-value pair is not specified or the value is not
             <computeroutput>1</computeroutput>, the Hyper-V debug interface is disabled
