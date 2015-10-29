@@ -251,8 +251,11 @@ def LaunchCommand(Command, WorkingDir):
     # ubuntu may fail with an error message that the command is not found.
     # So here we may need convert command from string to list instance.
     if not isinstance(Command, list):
-        if platform.system() != 'Windows':
+        if platform.system() != 'Windows' or True: # VBox: Added 'or True' (for the hack below).
             Command = Command.split()
+    # VBox: Ugly hack! python 2.7.6 on Windows doesn't seem to correctly search for GenFds (should find GenFds.cmd).
+    if Command[0] in ['GenFds',] and platform.system() == 'Windows':
+        Command = [Command[0] + '.cmd'] + Command[1:];
 
     EdkLogger.info("Launching: '%s'; CWD=%s" % ("' '".join(Command), WorkingDir));
     Proc = None
