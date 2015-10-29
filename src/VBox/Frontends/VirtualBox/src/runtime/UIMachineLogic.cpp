@@ -1223,7 +1223,7 @@ void UIMachineLogic::prepareDock()
 
     /* Now the dock icon preview */
     QString osTypeId = guest().GetOSTypeId();
-    m_pDockIconPreview = new UIDockIconPreview(uisession(), vboxGlobal().vmGuestOSTypePixmapHiDPI(osTypeId, QSize(64, 64)));
+    m_pDockIconPreview = new UIDockIconPreview(uisession(), vboxGlobal().vmGuestOSTypePixmapHiDPI(osTypeId, QSize(42, 42)));
 
     /* Should the dock-icon be updated at runtime? */
     bool fEnabled = gEDataManager->realtimeDockIconUpdateEnabled(vboxGlobal().managedVMUuid());
