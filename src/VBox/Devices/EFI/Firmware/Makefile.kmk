@@ -313,7 +313,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 		--vbox-target-conf "$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt" \
 		--arch IA32 \
 		--platform OvmfPkg/OvmfPkgIa32.dsc \
-		-n 1 -v
+		-n 1 # -v
 
 #
 # VBoxEFI64
@@ -345,7 +345,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 		--vbox-target-conf "$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt" \
 		--arch X64 \
 		--platform OvmfPkg/OvmfPkgX64.dsc \
-               -n 1 -v
+               -n 1 # -v
 
 #
 # Some aliases.
