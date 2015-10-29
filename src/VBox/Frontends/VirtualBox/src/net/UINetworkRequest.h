@@ -33,24 +33,35 @@ class UINetworkManagerIndicator;
 class UINetworkRequestWidget;
 class UINetworkCustomer;
 
-/* Network-request contianer: */
+/** QObject extension used as network-request container. */
 class UINetworkRequest : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifications to UINetworkManager: */
+    /** Notifies common UINetworkManager about progress with @a uuid changed.
+      * @param  iReceived  Holds the amount of bytes received.
+      * @param  iTotal     Holds the amount of total bytes to receive. */
     void sigProgress(const QUuid &uuid, qint64 iReceived, qint64 iTotal);
+    /** Notifies UINetworkManager about progress with @a uuid started. */
     void sigStarted(const QUuid &uuid);
+    /** Notifies UINetworkManager about progress with @a uuid canceled. */
     void sigCanceled(const QUuid &uuid);
+    /** Notifies UINetworkManager about progress with @a uuid finished. */
     void sigFinished(const QUuid &uuid);
+    /** Notifies UINetworkManager about progress with @a uuid failed with @a strError. */
     void sigFailed(const QUuid &uuid, const QString &strError);
 
-    /* Notifications to UINetworkRequestWidget: */
+    /** Notifies own UINetworkRequestWidget about progress changed.
+      * @param  iReceived  Holds the amount of bytes received.
+      * @param  iTotal     Holds the amount of total bytes to receive. */
     void sigProgress(qint64 iReceived, qint64 iTotal);
+    /** Notifies own UINetworkRequestWidget about progress started. */
     void sigStarted();
+    /** Notifies own UINetworkRequestWidget about progress finished. */
     void sigFinished();
+    /** Notifies own UINetworkRequestWidget about progress failed with @a strError. */
     void sigFailed(const QString &strError);
 
 public:
@@ -66,51 +77,64 @@ public:
     /** Destructs network-request. */
     ~UINetworkRequest();
 
-    /* Getters: */
+    /** Returns the request description. */
     const QString description() const;
+    /** Returns the request customer. */
     UINetworkCustomer* customer() { return m_pCustomer; }
-    /** Returns parent network-manager. */
+    /** Returns the request manager. */
     UINetworkManager* manager() const { return m_pNetworkManager; }
+    /** Returns unique request QUuid. */
     const QUuid& uuid() const { return m_uuid; }
+    /** Returns the request reply. */
     UINetworkReply* reply() { return m_pReply; }
 
 private slots:
 
-    /* Network-reply progress handler: */
+    /** Handles reply about progress changed.
+      * @param  iReceived  Brings the amount of bytes received.
+      * @param  iTotal     Brings the amount of total bytes to receive. */
     void sltHandleNetworkReplyProgress(qint64 iReceived, qint64 iTotal);
-    /* Network-reply finish handler: */
+    /** Handles reply about progress finished. */
     void sltHandleNetworkReplyFinish();
 
-    /* Slot to retry network-request: */
+    /** Initiates request retrying. */
     void sltRetry();
-    /* Slot to cancel network-request: */
+    /** Initiates request cancelling. */
     void sltCancel();
 
 private:
 
-    /* Prepare: */
+    /** Prepares request. */
     void prepare();
-    /* Prepare network-reply: */
+    /** Prepares request's reply. */
     void prepareNetworkReply();
 
-    /* Cleanup network-reply: */
+    /** Cleanups request's reply. */
     void cleanupNetworkReply();
-    /* Cleanup: */
+    /** Cleanups request. */
     void cleanup();
 
-    /* Variables: */
+    /** Holds the request type. */
     const UINetworkRequestType m_type;
+    /** Holds the request urls. */
     const QList<QUrl> m_requests;
     /** Holds the request headers. */
     const UserDictionary m_requestHeaders;
+    /** Holds the request customer. */
     UINetworkCustomer *m_pCustomer;
+    /** Holds the request manager. */
     UINetworkManager *m_pNetworkManager;
+    /** Holds unique request QUuid. */
     const QUuid m_uuid;
 
+    /** Holds current request url. */
     QUrl m_request;
+    /** Holds number of current request url. */
     int m_iCurrentRequestIndex;
+    /** Holds whether current request url is in progress. */
     bool m_fRunning;
 
+    /** Holds the request reply. */
     QPointer<UINetworkReply> m_pReply;
 };
 
