@@ -301,7 +301,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
           <para>Edit the PAM configuration file for GDM found at
           <computeroutput>/etc/pam.d/gdm</computeroutput>, adding the line
           <computeroutput>auth requisite pam_vbox.so</computeroutput> at the
-          top. Additionaly, in most Linux distributions there is a file called
+          top. Additionally, in most Linux distributions there is a file called
           <computeroutput>/etc/pam.d/common-auth</computeroutput>. This file
           is included in many other services (like the GDM file mentioned
           above). There you also have to add the line <computeroutput>auth
@@ -756,7 +756,7 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
     particular device. Both, regular PCI and some PCI Express cards, are
     supported. AGP and certain PCI Express cards are not supported at the
     moment if they rely on GART (Graphics Address Remapping Table) unit
-    programming for texture management as it does rather nontrivial operations
+    programming for texture management as it does rather non-trivial operations
     with pages remapping interfering with IOMMU. This limitation may be lifted
     in future releases.</para>
 
@@ -852,7 +852,8 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
         </listitem>
 
         <listitem>
-           <para>No lazy physical memory allocation. The host will preallocate the whole RAM required for the VM on startup (as we cannot catch physical hardware accesses to the physical memory).</para>
+           <para>No lazy physical memory allocation. The host will preallocate the whole RAM required for the VM on startup
+           (as we cannot catch physical hardware accesses to the physical memory).</para>
         </listitem>
       </orderedlist></para>
   </sect1>
@@ -1423,7 +1424,7 @@ VBoxManage modifyvm "VM name" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</scree
           <para>In some cases it might be useful to intercept the name resolving mechanism,
             providing a user-defined IP address on a particular DNS request. The intercepting
             mechanism allows the user to map not only a single host but domains and even more
-            complex namings conventions if required.</para>
+            complex naming conventions if required.</para>
             <para>
               The following command sets a rule for mapping a name to a specified IP:</para>
             <screen>VBoxManage setextradata "VM name" \
@@ -2591,8 +2592,8 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           <glossterm><computeroutput>FloppyDisks</computeroutput></glossterm>
           <glossdef>
             <para>Don't show the floppy icon in the VM window status bar. By default the
-              floppy icon is only shown if the VM configuration contains one more
-              more floppy drives.</para>
+              floppy icon is only shown if the VM configuration contains one or more
+              floppy drives.</para>
           </glossdef>
         </glossentry>
 
@@ -2911,7 +2912,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
           <glossdef>
             <para>The VM is immediately powered-off without showing any message
-              window. The VM logfile will show information about what happend.</para>
+              window. The VM logfile will show information about what happened.</para>
           </glossdef>
         </glossentry>
 
@@ -2932,7 +2933,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
       <para>
         By default, the mouse is captured if the user clicks on the guest window
-        and the guest expects relative mouse coordiantes at this time. This
+        and the guest expects relative mouse coordinates at this time. This
         happens if the pointing device is configured as PS/2 mouse and the guest did
         not (yet) start the VirtualBox Guest Additions (for instance, the guest is
         booting or no Guest Additions installed at all) or if the pointing device
@@ -2976,7 +2977,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
       <para>
         By default, the mouse is captured if the user clicks on the guest window
-        and the guest expects relative mouse coordiantes at this time. This
+        and the guest expects relative mouse coordinates at this time. This
         happens if the pointing device is configured as PS/2 mouse and the guest did
         not (yet) start the VirtualBox Guest Additions (for instance, the guest is
         booting or no Guest Additions installed at all) or if the pointing device
@@ -3238,7 +3239,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     <para>
     All configuration values can be either specified via command line or global
     extradata, whereas command line values always have a higher priority when set.
-    Some of the configuration values also be be specified on a per-VM basis. So
+    Some of the configuration values also be specified on a per-VM basis. So
     the overall lookup order is: command line, per-VM basis extradata (if available),
     global extradata.
     </para>
@@ -3639,7 +3640,7 @@ alice = {
              <para>
                This event is currently only handled on Windows hosts and Mac OS X hosts.
                When this event is generated, VirtualBox will save the state and
-               terminate all VMs in preperation of a potential host powerdown.
+               terminate all VMs in preparation of a potential host powerdown.
              </para>
              <para>The behavior can be configured. By executing the following command,
              no VM is saved:</para>
