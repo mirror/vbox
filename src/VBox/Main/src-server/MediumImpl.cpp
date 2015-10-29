@@ -4524,7 +4524,7 @@ MediumVariant_T Medium::i_getPreferredDiffVariant()
         return MediumVariant_Standard;
 
     /* m->variant is const, no need to lock */
-    return m->variant;
+    return m->variant & ~MediumVariant_Fixed | MediumVariant_Diff;
 }
 
 /**
