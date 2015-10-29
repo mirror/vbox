@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UINetworkRequest stuff declaration.
+ * VBox Qt GUI - UINetworkRequest class declaration.
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UINetworkRequest_h__
-#define __UINetworkRequest_h__
+#ifndef ___UINetworkRequest_h___
+#define ___UINetworkRequest_h___
 
 /* Qt includes: */
 #include <QUuid>
@@ -63,15 +63,15 @@ public:
                      const UserDictionary &requestHeaders,
                      UINetworkCustomer *pCustomer,
                      UINetworkManager *pNetworkManager);
-    /** Destructs network request. */
+    /** Destructs network-request. */
     ~UINetworkRequest();
 
-    /** Returns parent network-manager. */
-    UINetworkManager* manager() const;
     /* Getters: */
-    const QUuid& uuid() const { return m_uuid; }
     const QString description() const;
     UINetworkCustomer* customer() { return m_pCustomer; }
+    /** Returns parent network-manager. */
+    UINetworkManager* manager() const { return m_pNetworkManager; }
+    const QUuid& uuid() const { return m_uuid; }
     UINetworkReply* reply() { return m_pReply; }
 
 private slots:
@@ -88,28 +88,31 @@ private slots:
 
 private:
 
-    /* Initialize: */
-    void initialize();
-
+    /* Prepare: */
+    void prepare();
     /* Prepare network-reply: */
     void prepareNetworkReply();
+
     /* Cleanup network-reply: */
     void cleanupNetworkReply();
-    /* Abort network-reply: */
-    void abortNetworkReply();
+    /* Cleanup: */
+    void cleanup();
 
     /* Variables: */
-    UINetworkRequestType m_type;
-    QUuid m_uuid;
-    QList<QUrl> m_requests;
+    const UINetworkRequestType m_type;
+    const QList<QUrl> m_requests;
     /** Holds the request headers. */
     const UserDictionary m_requestHeaders;
+    UINetworkCustomer *m_pCustomer;
+    UINetworkManager *m_pNetworkManager;
+    const QUuid m_uuid;
+
     QUrl m_request;
     int m_iCurrentRequestIndex;
-    QString m_strDescription;
-    UINetworkCustomer *m_pCustomer;
-    QPointer<UINetworkReply> m_pReply;
     bool m_fRunning;
+
+    QPointer<UINetworkReply> m_pReply;
 };
 
-#endif // __UINetworkRequest_h__
+#endif /* !___UINetworkRequest_h___ */
+

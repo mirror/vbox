@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UINetworkRequest stuff implementation.
+ * VBox Qt GUI - UINetworkRequest class implementation.
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
 UINetworkRequest::UINetworkRequest(UINetworkRequestType type,
                                    const QList<QUrl> &urls,
                                    const UserDictionary &requestHeaders,
@@ -38,30 +37,22 @@ UINetworkRequest::UINetworkRequest(UINetworkRequestType type,
                                    UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
     , m_type(type)
-    , m_uuid(QUuid::createUuid())
     , m_requests(urls)
     , m_requestHeaders(requestHeaders)
-    , m_iCurrentRequestIndex(0)
     , m_pCustomer(pCustomer)
+    , m_pNetworkManager(pNetworkManager)
+    , m_uuid(QUuid::createUuid())
+    , m_iCurrentRequestIndex(0)
     , m_fRunning(false)
 {
-    /* Initialize: */
-    initialize();
+    /* Prepare: */
+    prepare();
 }
 
 UINetworkRequest::~UINetworkRequest()
 {
-    /* Destroy network-reply: */
-    cleanupNetworkReply();
-
-    /* Unregister network-request from network-manager: */
-    manager()->unregisterNetworkRequest(m_uuid);
-}
-
-UINetworkManager* UINetworkRequest::manager() const
-{
-    AssertPtrReturn(parent(), 0);
-    return qobject_cast<UINetworkManager*>(parent());
+    /* Cleanup: */
+    cleanup();
 }
 
 const QString UINetworkRequest::description() const
@@ -69,7 +60,6 @@ const QString UINetworkRequest::description() const
     return m_pCustomer->description();
 }
 
-/* Network-reply progress handler: */
 void UINetworkRequest::sltHandleNetworkReplyProgress(qint64 iReceived, qint64 iTotal)
 {
     /* Notify general network-requests listeners: */
@@ -78,7 +68,6 @@ void UINetworkRequest::sltHandleNetworkReplyProgress(qint64 iReceived, qint64 iT
     emit sigProgress(iReceived, iTotal);
 }
 
-/* Network-reply finish handler: */
 void UINetworkRequest::sltHandleNetworkReplyFinish()
 {
     /* Set as non-running: */
@@ -144,7 +133,6 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
     }
 }
 
-/* Slot to retry network-request: */
 void UINetworkRequest::sltRetry()
 {
     /* Cleanup current network-reply first: */
@@ -158,18 +146,22 @@ void UINetworkRequest::sltRetry()
     prepareNetworkReply();
 }
 
-/* Slot to cancel network-request: */
 void UINetworkRequest::sltCancel()
 {
     /* Abort network-reply if present: */
-    abortNetworkReply();
+    if (m_pReply)
+    {
+        if (m_fRunning)
+            m_pReply->abort();
+        else
+            emit sigCanceled(m_uuid);
+    }
 }
 
-/* Initialize: */
-void UINetworkRequest::initialize()
+void UINetworkRequest::prepare()
 {
-    /* Prepare listeners for parent(): */
-    connect(parent(), SIGNAL(sigCancelNetworkRequests()), this, SLOT(sltCancel()), Qt::QueuedConnection);
+    /* Prepare listeners for manager(): */
+    connect(manager(), SIGNAL(sigCancelNetworkRequests()), this, SLOT(sltCancel()), Qt::QueuedConnection);
 
     /* Register network-request in network-manager: */
     manager()->registerNetworkRequest(this);
@@ -178,11 +170,10 @@ void UINetworkRequest::initialize()
     m_iCurrentRequestIndex = 0;
     m_request = m_requests.at(m_iCurrentRequestIndex);
 
-    /* Create network-reply: */
+    /* Prepare network-reply: */
     prepareNetworkReply();
 }
 
-/* Prepare network-reply: */
 void UINetworkRequest::prepareNetworkReply()
 {
     /* Make network-request: */
@@ -201,7 +192,6 @@ void UINetworkRequest::prepareNetworkReply()
     emit sigStarted();
 }
 
-/* Cleanup network-reply: */
 void UINetworkRequest::cleanupNetworkReply()
 {
     /* Destroy current reply: */
@@ -211,16 +201,12 @@ void UINetworkRequest::cleanupNetworkReply()
     m_pReply = 0;
 }
 
-/* Abort network-reply: */
-void UINetworkRequest::abortNetworkReply()
+void UINetworkRequest::cleanup()
 {
-    /* Abort network-reply if present: */
-    if (m_pReply)
-    {
-        if (m_fRunning)
-            m_pReply->abort();
-        else
-            emit sigCanceled(m_uuid);
-    }
+    /* Cleanup network-reply: */
+    cleanupNetworkReply();
+
+    /* Unregister network-request from network-manager: */
+    manager()->unregisterNetworkRequest(m_uuid);
 }
 
